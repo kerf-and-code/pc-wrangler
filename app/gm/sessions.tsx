@@ -125,7 +125,7 @@ export default function SessionWorkspace() {
 
   async function deleteEvent(id: string) {
     const { error } = await supabase.from("events").delete().eq("id", id);
-    if (error) setErr(error.message); else loadEvents(session);
+    if (error) setErr(error.message); else if (session) loadEvents(session);
   }
 
   // ---- derived ----
