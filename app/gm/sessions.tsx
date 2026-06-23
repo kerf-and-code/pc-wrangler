@@ -97,7 +97,7 @@ export default function SessionWorkspace() {
     if (!session) return;
     const { error } = await supabase.from("sessions")
       .update({ status: "completed", ended_at: new Date().toISOString() }).eq("id", session);
-    if (error) setErr(error.message); else loadCampaignData(campaign);
+    if (error) setErr(error.message); else if (campaign) loadCampaignData(campaign);
   }
 
   function pickType(key: string) {
