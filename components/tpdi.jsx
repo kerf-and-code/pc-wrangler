@@ -120,7 +120,8 @@ function Astrolabe({ size = 320, spin = false }) {
 
 export default function TPDI() {
   const [phase, setPhase] = useState("intro"); // intro | quiz | results
-  const order = useMemo(() => shuffled(ITEMS), []);
+  const [order, setOrder] = useState(ITEMS);
+  useEffect(() => { setOrder(shuffled(ITEMS)); }, []);
   const [idx, setIdx] = useState(0);
   const [answers, setAnswers] = useState({}); // id -> 1..5 or "NB"
   const liveRef = useRef(null);
