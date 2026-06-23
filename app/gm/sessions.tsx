@@ -292,7 +292,7 @@ export default function SessionWorkspace() {
   );
 }
 
-function Shell({ children }) {
+function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div style={{ background: C.ink, color: C.vellum, minHeight: "100vh", fontFamily: "ui-sans-serif, system-ui, sans-serif" }}>
       <style>{`.mono{font-family:ui-monospace,"SF Mono",Menlo,monospace;}`}</style>
