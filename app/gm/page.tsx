@@ -325,7 +325,7 @@ export default function GMWorkspace() {
             ) : (
               dispositions.map((d) => {
                 const leanings = (d.scores?.weights || []).slice(0, 2)
-                  .map((w) => `${AXIS_LABEL[w.key] || w.key} ${Math.round((w.w || 0) * 100)}%`).join(", ");
+					.map((w: any) => `${AXIS_LABEL[w.key] || w.key} ${Math.round((w.w || 0) * 100)}%`).join(", ");
                 return (
                   <div key={d.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: `1px solid ${C.line}`, gap: 10 }}>
                     <div style={{ fontSize: 13, minWidth: 0 }}>
