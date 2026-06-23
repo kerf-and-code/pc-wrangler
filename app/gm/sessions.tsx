@@ -31,10 +31,14 @@ export default function SessionWorkspace() {
   const [sessions, setSessions] = useState<any[]>([]);
   const [session, setSession] = useState<string | null>(null);
   const [events, setEvents] = useState<any[]>([]);
+  const [arcs, setArcs] = useState<any[]>([]);
+  const [loot, setLoot] = useState<any[]>([]);
 
   // forms
   const [newSession, setNewSession] = useState({ modality: "in_person", consent: false, notes: "" });
   const [entry, setEntry] = useState({ characterId: "", typeKey: "", axis: "", frame: "", target: "", note: "" });
+  const [newLoot, setNewLoot] = useState({ characterId: "", item: "", rarity: "", value: "" });
+  const [newArc, setNewArc] = useState({ title: "", characterId: "" });
 
   // ---- initial load ----
   useEffect(() => {
@@ -57,23 +61,31 @@ export default function SessionWorkspace() {
   }, [supabase]);
 
   const loadCampaignData = useCallback(async (campaignId: string) => {
-    const [{ data: chars }, { data: sess }] = await Promise.all([
+    const [{ data: chars }, { data: sess }, { data: arcRows }] = await Promise.all([
       supabase.from("characters").select("id,name,class,subclass,kind,active")
         .eq("campaign_id", campaignId).eq("active", true).order("kind").order("name"),
       supabase.from("sessions").select("id,session_number,status,capture_modality,consent_recorded,notes,created_at")
         .eq("campaign_id", campaignId).order("session_number", { ascending: false, nullsFirst: false }),
+      supabase.from("arcs").select("id,title,status,character_id,last_touched_session_id")
+        .eq("campaign_id", campaignId).order("created_at", { ascending: true }),
     ]);
     setCharacters(chars || []);
     setSessions(sess || []);
+    setArcs(arcRows || []);
   }, [supabase]);
 
   useEffect(() => { if (campaign) loadCampaignData(campaign); }, [campaign, loadCampaignData]);
 
   const loadEvents = useCallback(async (sessionId: string) => {
-    const { data } = await supabase.from("events")
-      .select("id,character_id,event_type,axis,frame,target,payload,created_at")
-      .eq("session_id", sessionId).order("created_at", { ascending: false });
-    setEvents(data || []);
+    const [{ data: evs }, { data: lootRows }] = await Promise.all([
+      supabase.from("events")
+        .select("id,character_id,event_type,axis,frame,target,payload,created_at")
+        .eq("session_id", sessionId).order("created_at", { ascending: false }),
+      supabase.from("loot_grants").select("id,character_id,item_name,rarity,est_value")
+        .eq("session_id", sessionId).order("created_at", { ascending: false }),
+    ]);
+    setEvents(evs || []);
+    setLoot(lootRows || []);
   }, [supabase]);
 
   useEffect(() => { if (session) loadEvents(session); else setEvents([]); }, [session, loadEvents]);
@@ -126,6 +138,48 @@ export default function SessionWorkspace() {
   async function deleteEvent(id: string) {
     const { error } = await supabase.from("events").delete().eq("id", id);
     if (error) setErr(error.message); else if (session) loadEvents(session);
+  }
+
+  async function addLoot() {
+    if (!session || !campaign || !newLoot.item.trim() || busy) return;
+    setBusy(true); setErr(null);
+    const { error } = await supabase.from("loot_grants").insert({
+      campaign_id: campaign, session_id: session,
+      character_id: newLoot.characterId || null,
+      item_name: newLoot.item.trim(),
+      rarity: newLoot.rarity.trim() || null,
+      est_value: newLoot.value ? Number(newLoot.value) : null,
+    });
+    if (error) setErr(error.message);
+    else { setNewLoot({ characterId: "", item: "", rarity: "", value: "" }); if (session) await loadEvents(session); }
+    setBusy(false);
+  }
+
+  async function removeLoot(id: string) {
+    const { error } = await supabase.from("loot_grants").delete().eq("id", id);
+    if (error) setErr(error.message); else if (session) loadEvents(session);
+  }
+
+  async function addArc() {
+    if (!campaign || !newArc.title.trim() || busy) return;
+    setBusy(true); setErr(null);
+    const { error } = await supabase.from("arcs").insert({
+      campaign_id: campaign, title: newArc.title.trim(),
+      character_id: newArc.characterId || null, status: "open",
+      opened_session_id: session || null,
+    });
+    if (error) setErr(error.message);
+    else { setNewArc({ title: "", characterId: "" }); if (campaign) await loadCampaignData(campaign); }
+    setBusy(false);
+  }
+
+  async function touchArc(arcId: string) {
+    if (!session || !campaign) return;
+    setErr(null);
+    const { error } = await supabase.from("arc_touches").insert({
+      campaign_id: campaign, arc_id: arcId, session_id: session,
+    });
+    if (error) setErr(error.message); else if (campaign) await loadCampaignData(campaign);
   }
 
   // ---- derived ----
@@ -285,6 +339,56 @@ export default function SessionWorkspace() {
               </div>
             ))}
             {events.length === 0 && <p style={{ color: C.muted, fontSize: 13 }}>Nothing logged yet. Pick an actor and an event type above.</p>}
+          </div>
+
+          {/* loot */}
+          <div style={box}>
+            <div style={{ fontSize: 13, color: C.muted, marginBottom: 12 }}>Loot this session</div>
+            {loot.map((l) => (
+              <div key={l.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 0", borderBottom: `1px solid ${C.line}` }}>
+                <div style={{ fontSize: 13 }}>
+                  <span style={{ fontWeight: 600 }}>{l.item_name}</span>
+                  {l.rarity && <span style={{ color: C.muted }}>{"  "}· {l.rarity}</span>}
+                  <span style={{ color: C.muted }}>{"  -> "}{charName(l.character_id)}</span>
+                  {l.est_value != null && <span className="mono" style={{ color: C.muted }}>{"  "}{l.est_value} gp</span>}
+                </div>
+                <button onClick={() => removeLoot(l.id)} style={{ background: "none", border: "none", color: C.muted, cursor: "pointer", fontSize: 12 }}>delete</button>
+              </div>
+            ))}
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12 }}>
+              <select style={inputStyle} value={newLoot.characterId} onChange={(e) => setNewLoot({ ...newLoot, characterId: e.target.value })}>
+                <option value="">recipient...</option>
+                {characters.filter((c) => c.kind !== "npc").map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+              <input style={{ ...inputStyle, flex: 1, minWidth: 140 }} placeholder="Item" value={newLoot.item} onChange={(e) => setNewLoot({ ...newLoot, item: e.target.value })} />
+              <input style={{ ...inputStyle, maxWidth: 110 }} placeholder="Rarity" value={newLoot.rarity} onChange={(e) => setNewLoot({ ...newLoot, rarity: e.target.value })} />
+              <input style={{ ...inputStyle, maxWidth: 90 }} type="number" placeholder="Value" value={newLoot.value} onChange={(e) => setNewLoot({ ...newLoot, value: e.target.value })} />
+              <button style={btn} onClick={addLoot} disabled={busy || !newLoot.item.trim()}>Add</button>
+            </div>
+          </div>
+
+          {/* arcs */}
+          <div style={box}>
+            <div style={{ fontSize: 13, color: C.muted, marginBottom: 12 }}>Character arcs</div>
+            {arcs.map((a) => (
+              <div key={a.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: `1px solid ${C.line}` }}>
+                <div style={{ fontSize: 13 }}>
+                  <span style={{ fontWeight: 600 }}>{a.title}</span>
+                  {a.character_id && <span style={{ color: C.muted }}>{"  "}· {charName(a.character_id)}</span>}
+                  <span style={{ color: C.muted }}>{"  "}· {a.status}</span>
+                </div>
+                <button onClick={() => touchArc(a.id)} style={btnGhost}>Touch this session</button>
+              </div>
+            ))}
+            {arcs.length === 0 && <p style={{ color: C.muted, fontSize: 13 }}>No arcs yet.</p>}
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12 }}>
+              <input style={{ ...inputStyle, flex: 1, minWidth: 160 }} placeholder="New arc title" value={newArc.title} onChange={(e) => setNewArc({ ...newArc, title: e.target.value })} />
+              <select style={inputStyle} value={newArc.characterId} onChange={(e) => setNewArc({ ...newArc, characterId: e.target.value })}>
+                <option value="">whose arc (optional)...</option>
+                {characters.filter((c) => c.kind !== "npc").map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+              <button style={btn} onClick={addArc} disabled={busy || !newArc.title.trim()}>Add arc</button>
+            </div>
           </div>
         </>
       )}
