@@ -98,8 +98,6 @@ function scoreColor(v) {
 function Astrolabe({ size = 320, spin = false, axes = true }) {
   const r = size / 2;
   const ticks = Array.from({ length: 60 });
-  const rr = r * 0.72; // mount radius for the six axes
-  const s = size / 240; // axe glyph is drawn for size 240, then scaled
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden="true"
       style={{ display: "block" }}>
@@ -118,18 +116,25 @@ function Astrolabe({ size = 320, spin = false, axes = true }) {
               stroke={C.brass} strokeWidth={long ? 1.2 : 0.6} opacity={long ? 0.6 : 0.35} />
           );
         })}
-        {axes && Array.from({ length: 6 }).map((_, i) => (
-          <g key={`axe-${i}`}
-            transform={`translate(${r} ${r}) rotate(${i * 60}) translate(0 ${-rr}) scale(${s})`}>
-            {/* haft + pommel, pointing inward toward the hub */}
-            <line x1="0" y1="8" x2="0" y2="-9" stroke={C.brassDim} strokeWidth="1.8" strokeLinecap="round" />
-            <circle cx="0" cy="8" r="1.5" fill={C.brassDim} />
-            {/* double-bit head, blades facing outward */}
-            <circle cx="0" cy="-10" r="2" fill={C.brass} />
-            <path d="M 1.4 -7 L 10 -8.4 Q 12 -10.4 10 -12.4 L 1.4 -13.4 Q 2.8 -10.2 1.4 -7 Z" fill={C.brass} opacity="0.92" />
-            <path d="M -1.4 -7 L -10 -8.4 Q -12 -10.4 -10 -12.4 L -1.4 -13.4 Q -2.8 -10.2 -1.4 -7 Z" fill={C.brass} opacity="0.92" />
-          </g>
-        ))}
+        {axes && (
+          <>
+            {/* hub the hafts meet at */}
+            <circle cx={r} cy={r} r={r * 0.085} fill="none" stroke={C.brassDim} strokeWidth="1" opacity="0.5" />
+            <circle cx={r} cy={r} r={r * 0.04} fill={C.brass} opacity="0.9" />
+            {Array.from({ length: 6 }).map((_, i) => (
+              <g key={`axe-${i}`} transform={`translate(${r} ${r}) rotate(${i * 60})`}>
+                {/* haft from the hub outward, with a small pommel */}
+                <circle cx="0" cy={-r * 0.12} r={r * 0.025} fill={C.brassDim} />
+                <line x1="0" y1={-r * 0.12} x2="0" y2={-r * 0.58} stroke={C.brassDim} strokeWidth={r * 0.022} strokeLinecap="round" />
+                {/* eye where the head meets the haft */}
+                <circle cx="0" cy={-r * 0.6} r={r * 0.045} fill={C.brass} />
+                {/* double-bit head: a blade flaring to each side, cutting edge outward */}
+                <path d={`M ${r * 0.02} ${-r * 0.66} Q ${r * 0.12} ${-r * 0.71} ${r * 0.20} ${-r * 0.70} Q ${r * 0.27} ${-r * 0.67} ${r * 0.27} ${-r * 0.60} Q ${r * 0.27} ${-r * 0.53} ${r * 0.20} ${-r * 0.50} Q ${r * 0.12} ${-r * 0.49} ${r * 0.02} ${-r * 0.54} Z`} fill={C.brass} opacity="0.95" />
+                <path d={`M ${-r * 0.02} ${-r * 0.66} Q ${-r * 0.12} ${-r * 0.71} ${-r * 0.20} ${-r * 0.70} Q ${-r * 0.27} ${-r * 0.67} ${-r * 0.27} ${-r * 0.60} Q ${-r * 0.27} ${-r * 0.53} ${-r * 0.20} ${-r * 0.50} Q ${-r * 0.12} ${-r * 0.49} ${-r * 0.02} ${-r * 0.54} Z`} fill={C.brass} opacity="0.95" />
+              </g>
+            ))}
+          </>
+        )}
       </g>
     </svg>
   );
