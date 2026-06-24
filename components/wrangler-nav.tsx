@@ -3,15 +3,22 @@
 import React, { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 
-const ALL_LINKS = [
-  { href: "/play", label: "Inventory", gm: false },
-  { href: "/gm", label: "Workspace", gm: true },
-  { href: "/gm/sessions", label: "Sessions", gm: true },
-  { href: "/gm/codex", label: "Codex", gm: true },
-  { href: "/gm/timeline", label: "Timeline", gm: true },
-  { href: "/gm/search", label: "Search", gm: true },
-  { href: "/gm/table", label: "Check-in", gm: true },
-  { href: "/gm/dashboard", label: "Dashboard", gm: true },
+const GM_LINKS = [
+  { href: "/play", label: "Inventory" },
+  { href: "/gm", label: "Workspace" },
+  { href: "/gm/sessions", label: "Sessions" },
+  { href: "/gm/codex", label: "Codex" },
+  { href: "/gm/timeline", label: "Timeline" },
+  { href: "/gm/search", label: "Search" },
+  { href: "/gm/table", label: "Check-in" },
+  { href: "/gm/dashboard", label: "Dashboard" },
+];
+
+// Player portal: one share link, three tabs.
+const PLAYER_LINKS = [
+  { href: "/play", label: "Inventory" },
+  { href: "/vibe", label: "Check-in" },
+  { href: "/chat", label: "Chat" },
 ];
 
 const NAV_CSS = `
@@ -41,7 +48,7 @@ export default function WranglerNav() {
     }
   }, []);
 
-  const links = ALL_LINKS.filter((l) => !l.gm || !share.on);
+  const links = share.on ? PLAYER_LINKS : GM_LINKS;
   const home = share.on ? `/play${share.qs}` : "/";
 
   return (
@@ -54,7 +61,7 @@ export default function WranglerNav() {
       <nav className="wgn-links">
         {links.map((l) => {
           const active = pathname === l.href;
-          const href = l.href === "/play" && share.on ? `/play${share.qs}` : l.href;
+          const href = share.on ? `${l.href}${share.qs}` : l.href;
           return (
             <a key={l.href} className={`wgn-link${active ? " on" : ""}`} href={href}>{l.label}</a>
           );
