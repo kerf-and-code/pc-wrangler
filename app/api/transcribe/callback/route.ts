@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
-
 type DgUtterance = { start: number; end: number; transcript: string };
 type DgBody = {
   results?: {
