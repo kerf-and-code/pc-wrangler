@@ -71,7 +71,7 @@ export default function ReviewPage() {
       .eq("campaign_id", cid)
       .in("status", ["extracting", "review", "done"])
       .order("created_at", { ascending: false });
-    const list = (data as JobRow[]) || [];
+    const list = (data as unknown as JobRow[]) || [];
     setJobs(list);
     setJobId(list.length ? list[0].id : "");
   }
@@ -84,7 +84,7 @@ export default function ReviewPage() {
       .select("id, event_type, axis, frame, target, confidence, rationale, status, character:characters(name), segment:transcript_segments(text, start_ms)")
       .eq("job_id", jid)
       .order("confidence", { ascending: false });
-    const all = (data as Prop[]) || [];
+    const all = (data as unknown as Prop[]) || [];
     setProps(all.filter((p) => p.status === "proposed"));
     setCounts({
       accepted: all.filter((p) => p.status === "accepted").length,
