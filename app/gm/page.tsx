@@ -21,7 +21,8 @@ const LABEL: Record<string, string> = {
 };
 
 const CORE_CLASSES = ["Artificer","Barbarian","Bard","Cleric","Druid","Fighter","Monk","Paladin","Ranger","Rogue","Sorcerer","Warlock","Wizard"];
-const PARTNERED_CLASSES = ["Blood Hunter"]; // Critical Role / Matt Mercer
+// Fallback coverage profile for "Other" / unrecognized classes.
+const GENERAL_PROFILE = ["melee","single_target","utility"];
 
 const AXIS_LABEL: Record<string, string> = { N: "Character", T: "Encounter", O: "System", S: "Table", E: "World", I: "Presence" };
 
@@ -54,7 +55,7 @@ export default function GMWorkspace() {
   const [characters, setCharacters] = useState<any[]>([]);
   const [dispositions, setDispositions] = useState<any[]>([]);
   const [copied, setCopied] = useState<string | null>(null);
-  const [partneredOn, setPartneredOn] = useState(false);
+  const [enabledPartners, setEnabledPartners] = useState<Set<string>>(new Set());
 
   // forms
   const [newCampaign, setNewCampaign] = useState({ name: "", system: "5e" });
@@ -71,7 +72,7 @@ export default function GMWorkspace() {
       setUserId(user.id);
       const [{ data: camps, error: e1 }, { data: capRows, error: e2 }, { data: dispRows }] = await Promise.all([
         supabase.from("campaigns").select("id,name,system,gm_id,share_code").order("created_at", { ascending: false }),
-        supabase.from("class_capabilities").select("class,subclass,capabilities,partnered"),
+        supabase.from("class_capabilities").select("class,subclass,capabilities,partnered,partner"),
         supabase.from("tpdi_responses").select("id,player_name,scores,assigned_character_id,respondent_id,campaign_id,created_at").not("player_name", "is", null).order("created_at", { ascending: false }),
       ]);
       if (!active) return;
@@ -174,6 +175,23 @@ export default function GMWorkspace() {
     if (selected === id) { setSelected(null); setCharacters([]); }
   }
 
+  const partnerList = useMemo(
+    () => [...new Set(caps.filter((r: any) => r.partner).map((r: any) => r.partner as string))].sort(),
+    [caps]
+  );
+  const partnerClasses = useMemo(
+    () => [...new Set(caps.filter((r: any) => r.partner && enabledPartners.has(r.partner) && !r.subclass).map((r: any) => r.class as string))].sort(),
+    [caps, enabledPartners]
+  );
+  const partnerOn = (p: string | null | undefined) => !p || enabledPartners.has(p);
+  function togglePartner(p: string) {
+    setEnabledPartners((prev) => {
+      const next = new Set(prev);
+      if (next.has(p)) next.delete(p); else next.add(p);
+      return next;
+    });
+  }
+
   // ---- coverage analysis (deterministic) ----
   const capIndex = useMemo(() => {
     // class -> baseline caps; "class|subclass" -> subclass caps
@@ -189,7 +207,7 @@ export default function GMWorkspace() {
     const present = new Set<string>();
     const contributors: Record<string, string[]> = {}; // bucket -> [char names]
     for (const ch of characters) {
-      const base = capIndex[ch.class] || [];
+      const base = capIndex[ch.class] || GENERAL_PROFILE;
       const sub = ch.subclass ? (capIndex[`${ch.class}|${ch.subclass}`] || []) : [];
       for (const b of [...base, ...sub]) {
         present.add(b);
@@ -201,7 +219,7 @@ export default function GMWorkspace() {
     const suggestFor = (bucket: string) => {
       const classes: string[] = [];
       for (const r of caps) {
-        if ((r.capabilities || []).includes(bucket) && (!r.partnered || partneredOn)) {
+        if ((r.capabilities || []).includes(bucket) && partnerOn(r.partner)) {
           const label = r.subclass ? `${r.class} (${r.subclass})` : r.class;
           if (!classes.includes(label)) classes.push(label);
         }
@@ -216,7 +234,7 @@ export default function GMWorkspace() {
       contributors,
       suggestions,
     };
-  }, [characters, capIndex, caps, partneredOn]);
+  }, [characters, capIndex, caps, enabledPartners]);
 
   // ---- render ----
   if (loading) return <Shell><p style={{ color: C.muted }}>Loading workspace...</p></Shell>;
@@ -276,13 +294,27 @@ export default function GMWorkspace() {
         <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 18 }}>
           {/* roster */}
           <div style={box}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12, gap: 12, flexWrap: "wrap" }}>
-              <span style={{ fontSize: 13, color: C.muted }}>Party roster</span>
-              <label style={{ fontSize: 12.5, color: C.muted, display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
-                <input type="checkbox" checked={partneredOn} onChange={(e) => setPartneredOn(e.target.checked)} />
-                Include partnered content
-              </label>
-            </div>
+            <div style={{ fontSize: 13, color: C.muted, marginBottom: 12 }}>Party roster</div>
+            {partnerList.length > 0 && (
+              <div style={{ marginBottom: 14 }}>
+                <div style={{ fontSize: 11.5, color: C.muted, marginBottom: 7 }}>
+                  Partnered content {enabledPartners.size > 0 ? `(${enabledPartners.size} on)` : "— off by default; toggle a partner to add its options"}
+                </div>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  {partnerList.map((p) => {
+                    const on = enabledPartners.has(p);
+                    return (
+                      <button key={p} onClick={() => togglePartner(p)}
+                        style={{ background: on ? C.brass : "none", color: on ? C.ink : C.muted,
+                          border: `1px solid ${on ? C.brass : C.line}`, borderRadius: 999, padding: "4px 11px",
+                          fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+                        {p}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
             {characters.length === 0 && <p style={{ color: C.muted, fontSize: 13 }}>No characters yet.</p>}
             {characters.map((ch) => (
               <div key={ch.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: `1px solid ${C.line}` }}>
@@ -304,14 +336,14 @@ export default function GMWorkspace() {
                 list="class-options" placeholder="Class (any)"
                 onChange={(e) => setNewChar({ ...newChar, class: e.target.value, subclass: "" })} />
               <datalist id="class-options">
-                {[...CORE_CLASSES, ...(partneredOn ? PARTNERED_CLASSES : [])].map((c) => <option key={c} value={c} />)}
+                {[...CORE_CLASSES, ...partnerClasses, "Other"].map((c) => <option key={c} value={c} />)}
               </datalist>
               <input style={{ ...inputStyle, maxWidth: 180 }} value={newChar.subclass}
                 list="subclass-options" placeholder="Subclass (any, optional)"
                 onChange={(e) => setNewChar({ ...newChar, subclass: e.target.value })} />
               <datalist id="subclass-options">
                 {caps
-                  .filter((r) => (!newChar.class || r.class === newChar.class) && r.subclass && (!r.partnered || partneredOn))
+                  .filter((r) => (!newChar.class || r.class === newChar.class) && r.subclass && partnerOn(r.partner))
                   .map((r) => r.subclass)
                   .sort()
                   .map((s) => <option key={s} value={s} />)}
@@ -322,7 +354,7 @@ export default function GMWorkspace() {
                 list="species-options" placeholder="Species (any, optional)"
                 onChange={(e) => setNewChar({ ...newChar, species: e.target.value })} />
               <datalist id="species-options">
-                {[...CORE_SPECIES, ...(partneredOn ? PARTNERED_SPECIES : [])].map((sp) => <option key={sp} value={sp} />)}
+                {[...CORE_SPECIES, ...(enabledPartners.has("Critical Role") ? PARTNERED_SPECIES : [])].map((sp) => <option key={sp} value={sp} />)}
               </datalist>
               <button style={btn} onClick={addCharacter} disabled={busy}>Add</button>
             </div>
