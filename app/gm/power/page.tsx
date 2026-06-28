@@ -4,10 +4,15 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 /* Wrangler — the Power Room.
-   A standalone engine-room page. The DM throws the knife switch to bring the
+   A standalone engine-room page. The DM throws the breaker to bring the
    disposition engine to life. The switch is honest about state: it only latches
    while a fit is genuinely running, only flashes "alive" when the run row says
-   done, and snaps to a fault when it errors. */
+   done, and snaps to a fault when it errors.
+
+   Visuals are layered: a painted base plate (breaker-base.png), an SVG handle
+   drawn on top that drops onto the fuse contacts (seated) or lifts clear
+   (dormant), and an arc/glow plate (breaker-alive.png) faded in while live.
+   A slowly spinning Six Axes astrolabe sits above as the engine motif. */
 
 const C = {
   bg: "#140E1F", room: "#1B1426", stone: "#241A33", stone2: "#2D2140",
@@ -16,12 +21,41 @@ const C = {
   spark: "#BFE3FF", sun: "#F4C430", plum: "#9B7BD4", warn: "#E07A5F", good: "#5DBE9A",
 };
 
+/* the six disposition axes, for the upright labels around the astrolabe */
+const AXES: { k: string; c: string }[] = [
+  { k: "N", c: "#B7615A" },
+  { k: "T", c: "#C8A24B" },
+  { k: "O", c: "#4E8077" },
+  { k: "S", c: "#CE8A42" },
+  { k: "E", c: "#6C76B0" },
+  { k: "I", c: "#9A93B0" },
+];
+const axisPos = (i: number) => {
+  const a = ((-90 + 60 * i) * Math.PI) / 180;
+  return { left: `${50 + 46 * Math.cos(a)}%`, top: `${50 + 46 * Math.sin(a)}%` };
+};
+
 type Phase = "dormant" | "arming" | "animating" | "alive" | "fault";
 type Campaign = { id: string; name: string };
 
-const PULL_PX = 200;     // drag distance for a full throw
-const COMMIT = 0.8;      // fraction past which the switch latches
-const OPEN_DEG = -68;    // blade angle when open
+const PULL_PX = 200;        // drag distance for a full throw
+const COMMIT = 0.8;         // fraction past which the switch latches
+const OPEN_LIFT_U = 130;    // handle lift (viewBox units) when dormant
+
+/* one copper blade arm with its forked contact tip (drawn seated) */
+function Blade({ cx }: { cx: number }) {
+  const x = cx - 18;
+  return (
+    <g>
+      <rect x={x} y={206} width={36} height={300} rx={4} fill="url(#hCopper)" stroke="#1a1119" strokeWidth={2} />
+      <rect x={x} y={206} width={36} height={300} rx={4} fill="url(#hHeat)" />
+      <rect x={x + 4} y={210} width={5} height={292} fill="#f0c98a" opacity={0.45} />
+      <rect x={cx - 26} y={490} width={13} height={34} rx={3} fill="url(#hCopper)" stroke="#1a1119" strokeWidth={2} />
+      <rect x={cx + 13} y={490} width={13} height={34} rx={3} fill="url(#hCopper)" stroke="#1a1119" strokeWidth={2} />
+      <rect x={cx - 26} y={488} width={52} height={14} rx={3} fill="url(#hCopper)" stroke="#1a1119" strokeWidth={2} />
+    </g>
+  );
+}
 
 export default function PowerRoomPage() {
   const supabase = createClient();
@@ -190,8 +224,7 @@ export default function PowerRoomPage() {
   };
 
   /* ---- derived geometry ------------------------------------------------- */
-  const angle = OPEN_DEG * (1 - pull);          // 0 = seated (down)
-  const seated = pull > 0.96;
+  const lift = OPEN_LIFT_U * (1 - pull);        // 0 = seated (down), max = lifted (dormant)
   const live = phase === "animating" || phase === "alive";
 
   const plate = {
@@ -230,98 +263,101 @@ export default function PowerRoomPage() {
       </header>
 
       <div style={S.stage}>
-        <svg viewBox="0 0 400 520" style={S.svg} role="img"
-             aria-label="Knife switch that starts a disposition fit">
-          <defs>
-            <radialGradient id="halo" cx="50%" cy="42%" r="55%">
-              <stop offset="0%" stopColor={live ? "#3a2d12" : "#1f1730"} />
-              <stop offset="100%" stopColor="#100b18" />
-            </radialGradient>
-            <linearGradient id="brass" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#E4C56B" />
-              <stop offset="100%" stopColor={C.brassDim} />
-            </linearGradient>
-            <linearGradient id="copper" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#D9974F" />
-              <stop offset="100%" stopColor="#8A5526" />
-            </linearGradient>
-          </defs>
+        {/* Six Axes astrolabe: slow spin, faster while live; upright labels */}
+        <div style={S.astroWrap} aria-hidden="true">
+          <img
+            src="/astrolabe.png"
+            alt=""
+            draggable={false}
+            className={live ? "astro-disc fast" : "astro-disc"}
+            style={S.astroDisc}
+          />
+          {AXES.map((a, i) => {
+            const p = axisPos(i);
+            return (
+              <span key={a.k} style={{ ...S.axisLabel, color: a.c, left: p.left, top: p.top }}>
+                {a.k}
+              </span>
+            );
+          })}
+        </div>
 
-          {/* room halo */}
-          <rect x="0" y="0" width="400" height="520" fill="url(#halo)" />
+        {/* the breaker: painted base + SVG handle + arc/glow plate */}
+        <div style={S.breakerWrap}>
+          <img src="/breaker-base.png" alt="" draggable={false} style={S.layerImg} />
 
-          {/* flanking coils */}
-          {[78, 322].map((cx, i) => (
-            <g key={i} className={live ? "coil coil-on" : "coil"}>
-              <rect x={cx - 18} y="120" width="36" height="250" rx="8" fill={C.stone2} stroke={C.line} />
-              {[150, 190, 230, 270, 310].map((cy) => (
-                <ellipse key={cy} cx={cx} cy={cy} rx="22" ry="7" fill="none"
-                         stroke={live ? C.copper : "#5a4a2c"} strokeWidth="3" />
-              ))}
-              <circle cx={cx} cy="118" r="12" fill={live ? C.spark : "#2d2140"}
-                      className={live ? "orb" : ""} />
+          <svg viewBox="0 0 1024 1024" style={S.handleSvg} role="img"
+               aria-label="Breaker switch that starts a disposition fit">
+            <defs>
+              <radialGradient id="hBake" cx="40%" cy="32%" r="75%">
+                <stop offset="0%" stopColor="#4a4350" />
+                <stop offset="45%" stopColor="#211d28" />
+                <stop offset="100%" stopColor="#0c0a10" />
+              </radialGradient>
+              <linearGradient id="hCopper" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stopColor="#5d3a1e" />
+                <stop offset="30%" stopColor="#c98a4e" />
+                <stop offset="50%" stopColor="#e6ad6a" />
+                <stop offset="70%" stopColor="#a86a35" />
+                <stop offset="100%" stopColor="#4f3219" />
+              </linearGradient>
+              <linearGradient id="hBrass" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stopColor="#6e571f" />
+                <stop offset="45%" stopColor="#d9bd63" />
+                <stop offset="60%" stopColor="#e8d27e" />
+                <stop offset="100%" stopColor="#5f4b1a" />
+              </linearGradient>
+              <linearGradient id="hIron" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#3a3543" />
+                <stop offset="50%" stopColor="#211e28" />
+                <stop offset="100%" stopColor="#100e15" />
+              </linearGradient>
+              <linearGradient id="hHeat" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#6f86a0" stopOpacity={0} />
+                <stop offset="50%" stopColor="#7f93a6" stopOpacity={0.18} />
+                <stop offset="100%" stopColor="#6f86a0" stopOpacity={0} />
+              </linearGradient>
+            </defs>
+
+            {/* moving assembly: crossbar, two blades, neck, pivot boss, ball */}
+            <g transform={`translate(0 ${-lift})`}>
+              <rect x={328} y={194} width={368} height={28} rx={10} fill="url(#hIron)" stroke="#0c0a10" strokeWidth={2} />
+              <rect x={334} y={198} width={356} height={6} rx={3} fill="#534e5e" opacity={0.7} />
+              <Blade cx={358} />
+              <Blade cx={662} />
+              <rect x={500} y={124} width={24} height={60} rx={6} fill="url(#hBake)" stroke="#0c0a10" strokeWidth={2} />
+              <circle cx={512} cy={180} r={25} fill="url(#hBrass)" stroke="#0c0a10" strokeWidth={2} />
+              <circle cx={512} cy={180} r={7} fill="#3a2f12" />
+              <circle cx={512} cy={96} r={47} fill="url(#hBake)" stroke="#0c0a10" strokeWidth={2} />
+              <ellipse cx={497} cy={79} rx={16} ry={11} fill="#6f6878" opacity={0.6} />
+
+              {/* drag target (larger than the ball, for easy grabbing) */}
+              <circle
+                cx={512} cy={96} r={90} fill="transparent"
+                onPointerDown={onDown} onPointerMove={onMove}
+                onPointerUp={onUp} onPointerCancel={onUp}
+                style={{ pointerEvents: "all", cursor: canThrow ? "grab" : "default", touchAction: "none" }}
+              />
             </g>
-          ))}
 
-          {/* Jacob's ladder between the coils (only while live) */}
-          {live && (
-            <g className="ladder" stroke={C.spark} strokeWidth="2" fill="none" opacity="0.9">
-              <path className="arc a1" d="M90 150 L160 142 L120 162 L200 150 L150 168 L240 158 L310 150" />
-              <path className="arc a2" d="M90 150 L150 158 L130 140 L210 156 L160 142 L250 154 L310 150" />
-            </g>
-          )}
-
-          {/* slate base board */}
-          <rect x="120" y="92" width="160" height="356" rx="14" fill={C.stone} stroke={C.line} strokeWidth="2" />
-          <rect x="120" y="92" width="160" height="356" rx="14" fill="none" stroke="#0c0814" strokeWidth="1" opacity="0.6" />
-
-          {/* terminal bolts */}
-          {[120, 280].map((x) => [120, 420].map((y) => (
-            <circle key={`${x}-${y}`} cx={x} cy={y} r="4" fill="#0c0814" />
-          )))}
-
-          {/* lower jaws (the contacts the blade seats into) */}
-          <g>
-            <rect x="178" y="404" width="14" height="34" rx="3" fill="url(#copper)" />
-            <rect x="208" y="404" width="14" height="34" rx="3" fill="url(#copper)" />
-            {seated && (
-              <g className="seatArc" stroke={C.spark} strokeWidth="2" fill="none">
-                <path d="M186 410 L200 402 L196 414 L214 406" />
+            {/* throw-progress hint while arming */}
+            {phase === "arming" && (
+              <g>
+                <rect x={764} y={230} width={16} height={280} rx={8} fill="#0c0814" />
+                <rect x={764} y={230 + 280 * (1 - pull)} width={16} height={280 * pull} rx={8}
+                      fill={pull >= COMMIT ? C.good : C.sun} />
               </g>
             )}
-          </g>
+          </svg>
 
-          {/* pivot hinge */}
-          <circle cx="200" cy="150" r="12" fill="url(#brass)" stroke="#0c0814" />
-          <circle cx="200" cy="150" r="4" fill="#0c0814" />
-
-          {/* the blade + handle, rotating about the pivot */}
-          <g transform={`rotate(${angle} 200 150)`} style={{ cursor: canThrow ? "grab" : "default" }}>
-            {/* double-pole copper blades */}
-            <rect x="184" y="150" width="9" height="268" rx="4" fill="url(#copper)" stroke="#5a3717" />
-            <rect x="207" y="150" width="9" height="268" rx="4" fill="url(#copper)" stroke="#5a3717" />
-            {/* tie bar */}
-            <rect x="184" y="300" width="32" height="10" rx="3" fill="url(#brass)" />
-            {/* insulated handle shaft + ball */}
-            <rect x="195" y="404" width="10" height="46" rx="4" fill="#2a1d10" />
-            <circle cx="200" cy="462" r="22" fill="#1c130a" stroke={C.brass} strokeWidth="3" />
-            <circle cx="193" cy="455" r="6" fill="#3a2a16" />
-            {/* drag target (bigger than the ball, for easy grabbing) */}
-            <circle cx="200" cy="462" r="40" fill="transparent"
-                    onPointerDown={onDown} onPointerMove={onMove}
-                    onPointerUp={onUp} onPointerCancel={onUp}
-                    style={{ cursor: canThrow ? "grab" : "default", touchAction: "none" }} />
-          </g>
-
-          {/* throw-progress hint while arming */}
-          {phase === "arming" && (
-            <g>
-              <rect x="300" y="150" width="10" height="268" rx="5" fill="#0c0814" />
-              <rect x="300" y={150 + 268 * (1 - pull)} width="10" height={268 * pull} rx="5"
-                    fill={pull >= COMMIT ? C.good : C.sun} />
-            </g>
-          )}
-        </svg>
+          <img
+            src="/breaker-alive.png"
+            alt=""
+            draggable={false}
+            className={live ? "alive-on" : undefined}
+            style={{ ...S.layerImg, opacity: live ? 1 : 0, transition: "opacity 0.3s ease" }}
+          />
+        </div>
 
         {/* status plate */}
         <div style={{ ...S.plate, borderColor: phase === "fault" ? C.warn : C.line }}>
@@ -381,9 +417,31 @@ const S: Record<string, React.CSSProperties> = {
     fontFamily: "'Iowan Old Style', Georgia, serif",
   },
   stage: { maxWidth: 460, margin: "0 auto", display: "flex", flexDirection: "column", alignItems: "center" },
-  svg: { width: "100%", maxWidth: 400, display: "block", userSelect: "none" },
+
+  astroWrap: { position: "relative", width: 150, height: 150, margin: "6px auto 34px", flex: "none" },
+  astroDisc: { position: "absolute", inset: 0, width: "100%", height: "100%", opacity: 0.9 },
+  axisLabel: {
+    position: "absolute", transform: "translate(-50%, -50%)",
+    fontFamily: "ui-monospace, monospace", fontSize: 11, fontWeight: 700, letterSpacing: 1,
+    lineHeight: 1, padding: "1px 5px", borderRadius: 6,
+    background: "rgba(20,14,31,0.78)", border: "1px solid rgba(61,47,82,0.85)",
+  },
+
+  breakerWrap: {
+    position: "relative", width: "min(330px, 80vw)", aspectRatio: "1 / 1",
+    margin: "0 auto", overflow: "visible", touchAction: "none", userSelect: "none",
+  },
+  layerImg: {
+    position: "absolute", inset: 0, width: "100%", height: "100%",
+    objectFit: "contain", userSelect: "none", pointerEvents: "none",
+  },
+  handleSvg: {
+    position: "absolute", inset: 0, width: "100%", height: "100%",
+    overflow: "visible", pointerEvents: "none",
+  },
+
   plate: {
-    marginTop: 6, width: "100%", maxWidth: 380, textAlign: "center",
+    marginTop: 14, width: "100%", maxWidth: 380, textAlign: "center",
     background: C.stone, border: `1px solid ${C.line}`, borderRadius: 12, padding: "16px 18px",
   },
   plateBig: { fontSize: 26, fontWeight: 700, letterSpacing: 0.3 },
@@ -403,16 +461,13 @@ const S: Record<string, React.CSSProperties> = {
 
 const CSS = `
   @media (prefers-reduced-motion: no-preference) {
-    .arc { stroke-dasharray: 4 6; animation: flick 0.18s steps(2) infinite; }
-    .a2 { animation-delay: 0.09s; }
-    .seatArc { animation: flick 0.12s steps(2) infinite; }
-    .orb { animation: orb 1.1s ease-in-out infinite; }
-    .coil-on ellipse { animation: warm 1.6s ease-in-out infinite; }
+    .astro-disc { animation: spin 70s linear infinite; transform-origin: 50% 50%; }
+    .astro-disc.fast { animation: spin 9s linear infinite; }
+    .alive-on { animation: flicker 1.4s ease-in-out infinite; }
     .alivePulse { animation: alive 0.5s ease-out 3; }
   }
-  @keyframes flick { 0%{opacity:.35} 50%{opacity:1} 100%{opacity:.5} }
-  @keyframes orb { 0%,100%{opacity:.5} 50%{opacity:1} }
-  @keyframes warm { 0%,100%{opacity:.7} 50%{opacity:1} }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes flicker { 0%,100%{opacity:.8} 45%{opacity:1} 60%{opacity:.62} 78%{opacity:.96} }
   @keyframes alive { 0%{transform:scale(1)} 40%{transform:scale(1.12)} 100%{transform:scale(1)} }
   select:focus, button:focus, a:focus { outline: 2px solid ${C.brass}; outline-offset: 2px; }
 `;
