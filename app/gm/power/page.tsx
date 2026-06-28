@@ -2,36 +2,23 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import WranglerNav from "@/components/wrangler-nav";
+import PageShell from "@/components/page-shell";
+import { SAX, surfaces, ui } from "@/lib/theme";
 
-/* Wrangler — the Power Room.
-   The DM throws a wall-mounted breaker to bring the disposition engine to life.
-   The switch is a flipbook of pre-rendered frames: the lever travels from OPEN
-   (top) to CLOSE (bottom) as you drag down or hit the button, then two alive
-   frames alternate to crackle while the cloud fit runs. The state machine stays
-   honest: it only latches while a fit is genuinely running, flashes alive when
-   the run row says done, and snaps back open on error. */
-
-const C = {
-  bg: "#0D0916", room: "#1B1426", stone: "#241A33", line: "#3D2F52",
-  text: "#F4EEFA", muted: "#A597BD", brass: "#C8A24B", plum: "#9B7BD4",
-  warn: "#E07A5F", good: "#5DBE9A", sun: "#F4C430", ember: "#E8923A",
-};
+/* Six Axes — the Power Room.
+   The DM throws a wall-mounted breaker to animate the disposition engine. The
+   switch is a flipbook (open to closed) driven by a drag-down or the button;
+   two alive frames alternate to crackle while the cloud fit runs. State stays
+   honest: latches only while a fit runs, flashes alive on done, snaps back on
+   error. Sits on the big wall image via PageShell. */
 
 type Phase = "dormant" | "arming" | "animating" | "alive" | "fault";
 type Campaign = { id: string; name: string };
 
-const PULL_PX = 200;   // drag distance for a full throw
-const COMMIT = 0.8;    // fraction past which the switch latches
+const PULL_PX = 200;
+const COMMIT = 0.8;
 
-// lever flipbook, OPEN (top) to CLOSE (bottom)
-const FRAMES = [
-  "/breaker-open.png",
-  "/breaker-1.png",
-  "/breaker-2.png",
-  "/breaker-3.png",
-  "/breaker-closed.png",
-];
+const FRAMES = ["/breaker-open.png", "/breaker-1.png", "/breaker-2.png", "/breaker-3.png", "/breaker-closed.png"];
 const ALIVE = ["/breaker-alive-1.png", "/breaker-alive-2.png"];
 
 export default function PowerRoomPage() {
@@ -40,7 +27,7 @@ export default function PowerRoomPage() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [campaignId, setCampaignId] = useState<string>("");
   const [phase, setPhase] = useState<Phase>("dormant");
-  const [pull, setPull] = useState(0);          // 0 = open (top), 1 = closed (seated)
+  const [pull, setPull] = useState(0);
   const [fault, setFault] = useState<string>("");
 
   const runIdRef = useRef<string | null>(null);
@@ -48,7 +35,6 @@ export default function PowerRoomPage() {
   const dragStartY = useRef<number | null>(null);
   const rafRef = useRef<number | null>(null);
 
-  /* preload every frame so the flipbook never flickers mid-drag */
   useEffect(() => {
     [...FRAMES, ...ALIVE].forEach((src) => {
       const img = new Image();
@@ -56,7 +42,6 @@ export default function PowerRoomPage() {
     });
   }, []);
 
-  /* ---- load campaigns, and resume a fit already in progress -------------- */
   useEffect(() => {
     (async () => {
       const { data } = await supabase.from("campaigns").select("id,name").order("created_at");
@@ -95,7 +80,6 @@ export default function PowerRoomPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [campaignId]);
 
-  /* ---- spring the lever to a target, flipping frames as it travels ------- */
   const animatePull = useCallback((target: number, then?: () => void) => {
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
     const step = () => {
@@ -113,7 +97,6 @@ export default function PowerRoomPage() {
     rafRef.current = requestAnimationFrame(step);
   }, []);
 
-  /* ---- polling the run row ---------------------------------------------- */
   const stopPoll = () => {
     if (pollRef.current) clearInterval(pollRef.current);
     pollRef.current = null;
@@ -123,11 +106,7 @@ export default function PowerRoomPage() {
     pollRef.current = setInterval(async () => {
       const id = runIdRef.current;
       if (!id) return;
-      const { data } = await supabase
-        .from("disposition_runs")
-        .select("status,error")
-        .eq("id", id)
-        .single();
+      const { data } = await supabase.from("disposition_runs").select("status,error").eq("id", id).single();
       const row = data as { status: string; error: string | null } | null;
       if (!row) return;
       if (row.status === "done") {
@@ -143,10 +122,9 @@ export default function PowerRoomPage() {
     }, 2500);
   };
 
-  /* ---- throwing the switch --------------------------------------------- */
   const engage = useCallback(async () => {
     setPhase("animating");
-    animatePull(1);                  // lever travels the rest of the way to CLOSE
+    animatePull(1);
     try {
       const res = await fetch("/api/dispositions/run", {
         method: "POST",
@@ -181,8 +159,7 @@ export default function PowerRoomPage() {
   };
   const onMove = (e: React.PointerEvent) => {
     if (phase !== "arming" || dragStartY.current === null) return;
-    const frac = Math.max(0, Math.min(1, (e.clientY - dragStartY.current) / PULL_PX));
-    setPull(frac);
+    setPull(Math.max(0, Math.min(1, (e.clientY - dragStartY.current) / PULL_PX)));
   };
   const onUp = () => {
     if (phase !== "arming") return;
@@ -198,14 +175,12 @@ export default function PowerRoomPage() {
     });
   };
 
-  // Button / keyboard fallback: auto-throw and fire.
   const throwIt = () => {
     if (!canThrow || !campaignId) return;
     setFault("");
     engage();
   };
 
-  /* ---- which frame to show --------------------------------------------- */
   const seated = pull > 0.985;
   const live = phase === "animating" || phase === "alive";
   const showAlive = live && seated;
@@ -222,153 +197,99 @@ export default function PowerRoomPage() {
   const campaignName = campaigns.find((c) => c.id === campaignId)?.name || "";
 
   return (
-    <div style={S.room}>
+    <PageShell bg="/wall.png" width={620}>
       <style>{CSS}</style>
 
-      <div style={S.shell}>
-        <WranglerNav />
-
-        <header style={S.header}>
-          <div>
-            <div style={S.eyebrow}>The Power Room</div>
-            <h1 style={S.title}>Animate the engine</h1>
-          </div>
-          <label style={S.pick}>
-            <span style={S.pickLabel}>Campaign</span>
-            <select value={campaignId} onChange={(e) => setCampaignId(e.target.value)} style={S.select} disabled={live}>
-              {campaigns.length === 0 && <option value="">No campaigns</option>}
-              {campaigns.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
-          </label>
-        </header>
-
-        <div style={S.stage}>
-          {/* breaker on the wall, with a glow that swells when live */}
-          <div style={S.breakerStage}>
-            <div style={{ ...S.glow, opacity: showAlive ? 1 : live ? 0.7 : 0.28 }} />
-            <div
-              style={{ ...S.breakerWrap, cursor: canThrow ? "grab" : "default" }}
-              onPointerDown={onDown}
-              onPointerMove={onMove}
-              onPointerUp={onUp}
-              onPointerCancel={onUp}
-              role="img"
-              aria-label={`Breaker switch, ${seated ? "closed" : "open"}`}
-            >
-              {showAlive ? (
-                <>
-                  <img src={ALIVE[0]} alt="" draggable={false} className="alive-a" style={S.layerImg} />
-                  <img src={ALIVE[1]} alt="" draggable={false} className="alive-b" style={S.layerImg} />
-                </>
-              ) : (
-                <img src={FRAMES[frameIdx]} alt="" draggable={false} style={S.layerImg} />
-              )}
-            </div>
-          </div>
-
-          {/* status plate */}
-          <div style={{ ...S.plate, borderColor: phase === "fault" ? C.warn : C.line }}>
-            <div
-              style={{ ...S.plateBig, color: phase === "alive" ? C.sun : phase === "fault" ? C.warn : C.text }}
-              className={phase === "alive" ? "alivePulse" : undefined}
-            >
-              {plate.big}
-            </div>
-            <div style={S.plateSub}>{plate.sub}</div>
-            {campaignName && phase !== "fault" && <div style={S.plateMeta}>{campaignName}</div>}
-          </div>
-
-          {/* button throw */}
-          <button onClick={throwIt} disabled={!canThrow || !campaignId} style={{
-            ...S.throwBtn,
-            opacity: canThrow && campaignId ? 1 : 0.5,
-            cursor: canThrow && campaignId ? "pointer" : "default",
-          }}>
-            {phase === "animating" ? "Animating…" : "Throw the switch"}
-          </button>
-
-          {phase === "alive" && <a href="/gm/dispositions" style={S.link}>View dispositions →</a>}
+      <header style={H.header}>
+        <div>
+          <div style={ui.eyebrow}>The Power Room</div>
+          <h1 style={ui.h1}>Animate the engine</h1>
         </div>
+        <label style={H.pick}>
+          <span style={ui.label}>Campaign</span>
+          <select value={campaignId} onChange={(e) => setCampaignId(e.target.value)} style={H.select} disabled={live}>
+            {campaigns.length === 0 && <option value="">No campaigns</option>}
+            {campaigns.map((c) => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
+        </label>
+      </header>
+
+      <div style={H.stage}>
+        <div style={H.breakerStage}>
+          <div style={{ ...H.glow, opacity: showAlive ? 1 : live ? 0.7 : 0.26 }} />
+          <div
+            style={{ ...H.breakerWrap, cursor: canThrow ? "grab" : "default" }}
+            onPointerDown={onDown}
+            onPointerMove={onMove}
+            onPointerUp={onUp}
+            onPointerCancel={onUp}
+            role="img"
+            aria-label={`Breaker switch, ${seated ? "closed" : "open"}`}
+          >
+            {showAlive ? (
+              <>
+                <img src={ALIVE[0]} alt="" draggable={false} className="alive-a" style={H.layerImg} />
+                <img src={ALIVE[1]} alt="" draggable={false} className="alive-b" style={H.layerImg} />
+              </>
+            ) : (
+              <img src={FRAMES[frameIdx]} alt="" draggable={false} style={H.layerImg} />
+            )}
+          </div>
+        </div>
+
+        <div style={{ ...surfaces.panel, ...H.plate, borderColor: phase === "fault" ? SAX.warn : SAX.line }}>
+          <div
+            style={{ ...H.plateBig, color: phase === "alive" ? SAX.sun : phase === "fault" ? SAX.warn : SAX.text }}
+            className={phase === "alive" ? "sax-pulse" : undefined}
+          >
+            {plate.big}
+          </div>
+          <div style={H.plateSub}>{plate.sub}</div>
+          {campaignName && phase !== "fault" && <div style={{ ...ui.label, marginTop: 8, color: SAX.brass }}>{campaignName}</div>}
+        </div>
+
+        <button
+          onClick={throwIt}
+          disabled={!canThrow || !campaignId}
+          style={{ ...ui.btnGhost, marginTop: 18, opacity: canThrow && campaignId ? 1 : 0.5, cursor: canThrow && campaignId ? "pointer" : "default" }}
+        >
+          {phase === "animating" ? "Animating…" : "Throw the switch"}
+        </button>
+
+        {phase === "alive" && (
+          <a href="/gm/dispositions" style={H.link}>View dispositions →</a>
+        )}
       </div>
-    </div>
+    </PageShell>
   );
 }
 
-/* ----------------------------------------------------------------------- */
-const WALL =
-  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.045'/%3E%3C/svg%3E\")";
-
-const S: Record<string, React.CSSProperties> = {
-  room: {
-    minHeight: "100dvh", color: C.text,
-    fontFamily: "'Iowan Old Style', Georgia, serif",
-    backgroundColor: C.bg,
-    backgroundImage: [
-      WALL,
-      "radial-gradient(ellipse 90% 55% at 50% -8%, rgba(74,54,98,0.40), transparent 70%)",
-      "radial-gradient(ellipse 120% 70% at 50% 118%, rgba(8,5,14,0.92), transparent 60%)",
-      "linear-gradient(180deg, #241B33, #120C1E 70%, #0B0714)",
-    ].join(","),
-    backgroundAttachment: "fixed",
-  },
-  shell: { maxWidth: 820, margin: "0 auto", padding: "32px 20px 64px" },
-  header: {
-    margin: "0 auto 6px", display: "flex",
-    alignItems: "flex-end", justifyContent: "space-between", gap: 16, flexWrap: "wrap",
-  },
-  eyebrow: {
-    fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
-    fontSize: 11, letterSpacing: 3, textTransform: "uppercase", color: C.brass,
-  },
-  title: { margin: "4px 0 0", fontSize: 30, fontWeight: 600, letterSpacing: 0.2 },
+const H: Record<string, React.CSSProperties> = {
+  header: { display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 16, flexWrap: "wrap", marginBottom: 6 },
   pick: { display: "flex", flexDirection: "column", gap: 4 },
-  pickLabel: {
-    fontFamily: "ui-monospace, monospace", fontSize: 10, letterSpacing: 2,
-    textTransform: "uppercase", color: C.muted,
-  },
   select: {
-    background: C.stone, color: C.text, border: `1px solid ${C.line}`,
-    borderRadius: 8, padding: "8px 12px", fontSize: 14, minWidth: 220,
-    fontFamily: "'Iowan Old Style', Georgia, serif",
+    background: "rgba(20,14,31,0.85)", color: SAX.text, border: `1px solid ${SAX.line}`,
+    borderRadius: 8, padding: "8px 12px", fontSize: 14, minWidth: 220, fontFamily: SAX.serif,
   },
   stage: { maxWidth: 460, margin: "14px auto 0", display: "flex", flexDirection: "column", alignItems: "center" },
-
   breakerStage: { position: "relative", width: "100%", display: "flex", justifyContent: "center", padding: "8px 0" },
   glow: {
     position: "absolute", top: "50%", left: "50%", width: "78%", height: "70%",
     transform: "translate(-50%, -50%)", borderRadius: "50%", pointerEvents: "none",
-    background: `radial-gradient(ellipse at center, ${C.ember} 0%, rgba(232,146,58,0.35) 35%, transparent 70%)`,
-    filter: "blur(26px)", transition: "opacity 0.35s ease",
+    background: `radial-gradient(ellipse at center, ${SAX.ember} 0%, rgba(232,146,58,0.35) 35%, transparent 70%)`,
+    filter: "blur(28px)", transition: "opacity 0.35s ease",
   },
-  breakerWrap: {
-    position: "relative", width: "min(340px, 84vw)", aspectRatio: "1792 / 2338",
-    touchAction: "none", userSelect: "none",
-  },
+  breakerWrap: { position: "relative", width: "min(340px, 84vw)", aspectRatio: "1792 / 2338", touchAction: "none", userSelect: "none" },
   layerImg: {
-    position: "absolute", inset: 0, width: "100%", height: "100%",
-    objectFit: "contain", userSelect: "none", pointerEvents: "none",
-    filter: "drop-shadow(0 18px 30px rgba(0,0,0,0.55))",
+    position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain",
+    userSelect: "none", pointerEvents: "none", filter: "drop-shadow(0 18px 30px rgba(0,0,0,0.6))",
   },
-
-  plate: {
-    marginTop: 10, width: "100%", maxWidth: 380, textAlign: "center",
-    background: "rgba(36,27,51,0.78)", border: `1px solid ${C.line}`, borderRadius: 12,
-    padding: "16px 18px", backdropFilter: "blur(2px)",
-  },
-  plateBig: { fontSize: 26, fontWeight: 700, letterSpacing: 0.3 },
-  plateSub: { marginTop: 6, fontSize: 14, color: C.muted, minHeight: 20 },
-  plateMeta: {
-    marginTop: 8, fontFamily: "ui-monospace, monospace", fontSize: 11,
-    letterSpacing: 1.5, textTransform: "uppercase", color: C.brass,
-  },
-  throwBtn: {
-    marginTop: 18, background: "transparent", color: C.brass,
-    border: `1px solid ${C.brass}`, borderRadius: 999, padding: "10px 22px",
-    fontFamily: "ui-monospace, monospace", fontSize: 12, letterSpacing: 1.5, textTransform: "uppercase",
-  },
-  link: { marginTop: 14, color: C.plum, fontSize: 14, textDecoration: "none", borderBottom: `1px solid ${C.plum}` },
+  plate: { marginTop: 10, width: "100%", maxWidth: 380, textAlign: "center", padding: "16px 18px" },
+  plateBig: { fontSize: 26, fontWeight: 700, letterSpacing: 0.3, fontFamily: SAX.serif },
+  plateSub: { marginTop: 6, fontSize: 14, color: SAX.muted, minHeight: 20 },
+  link: { marginTop: 14, color: SAX.plum, fontSize: 14, textDecoration: "none", borderBottom: `1px solid ${SAX.plum}` },
 };
 
 const CSS = `
@@ -376,10 +297,8 @@ const CSS = `
   @media (prefers-reduced-motion: no-preference) {
     .alive-a { animation: aflipA 0.22s steps(1, end) infinite; }
     .alive-b { animation: aflipB 0.22s steps(1, end) infinite; }
-    .alivePulse { animation: alive 0.5s ease-out 3; }
   }
   @keyframes aflipA { 0%, 49.9% { opacity: 1 } 50%, 100% { opacity: 0 } }
   @keyframes aflipB { 0%, 49.9% { opacity: 0 } 50%, 100% { opacity: 1 } }
-  @keyframes alive { 0% { transform: scale(1) } 40% { transform: scale(1.12) } 100% { transform: scale(1) } }
-  select:focus, button:focus, a:focus { outline: 2px solid ${C.brass}; outline-offset: 2px; }
+  select:focus, button:focus, a:focus { outline: 2px solid ${SAX.brass}; outline-offset: 2px; }
 `;
