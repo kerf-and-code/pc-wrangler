@@ -104,10 +104,9 @@ export default function SearchPage() {
         .from("transcript_segments")
         .select("id, text, start_ms, job_id, character_id")
         .eq("campaign_id", campaignId)
-        .ilike("text", `%${ql2}%`)
-        .limit(40);
+        .ilike("text", `%${ql2}%`);
       if (pc) query = query.eq("character_id", pc);
-      const { data } = await query;
+      const { data } = await query.limit(40);
       if (active) setSegHits((data as Seg[]) || []);
     }, 250);
     return () => { active = false; clearTimeout(t); };
@@ -326,7 +325,7 @@ export default function SearchPage() {
             {tHits.map((seg) => (
               <div key={seg.id} style={cardInner}>
                 <div style={{ fontSize: 12, color: C.muted, fontFamily: "ui-monospace, monospace", marginBottom: 4 }}>
-                  Session {jobMeta[seg.job_id] ?? "?"}{seg.start_ms !== null ? ` · ${fmtTime(seg.start_ms)}` : ""}
+                  Session {(seg.job_id ? jobMeta[seg.job_id] : null) ?? "?"}{seg.start_ms !== null ? ` · ${fmtTime(seg.start_ms)}` : ""}
                 </div>
                 <div style={{ fontSize: 13, color: C.text }}>{"\u201c"}{snippet(seg.text)}{"\u201d"}</div>
               </div>
