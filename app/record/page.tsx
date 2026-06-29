@@ -2,11 +2,12 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import WranglerNav from "@/components/wrangler-nav";
+import PageShell from "@/components/page-shell";
+import { SAX } from "@/lib/theme";
 
 const C = {
-  bg: "#1B1426", surface: "#251B33", surface2: "#2F2340", line: "#3D2F52",
-  text: "#F4EEFA", muted: "#A597BD", sun: "#F4C430", sunSoft: "#FFD75E", plum: "#9B7BD4", warn: "#E07A5F", good: "#5DBE9A",
+  bg: SAX.ink, surface: SAX.slateBg, surface2: "rgba(11,7,18,0.6)", line: SAX.line,
+  text: SAX.text, muted: SAX.muted, sun: SAX.sun, sunSoft: "#FFD75E", plum: SAX.plum, warn: SAX.warn, good: SAX.good,
 };
 
 type RosterEntry = { character_id: string; name: string };
@@ -184,7 +185,7 @@ export default function RecordPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `wrangler-${name.replace(/\s+/g, "-").toLowerCase()}-${new Date().toISOString().slice(0, 10)}.${ext}`;
+    a.download = `six-axes-${name.replace(/\s+/g, "-").toLowerCase()}-${new Date().toISOString().slice(0, 10)}.${ext}`;
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 4000);
   }
@@ -200,13 +201,11 @@ export default function RecordPage() {
   const bigBtn = (bg: string, fg: string) => ({ width: "100%", background: bg, color: fg, border: "none", borderRadius: 12, padding: "15px 18px", fontSize: 16, fontWeight: 700, cursor: "pointer" } as const);
 
   return (
-    <div style={{ minHeight: "100vh", background: C.bg, color: C.text, fontFamily: "ui-sans-serif, system-ui, sans-serif" }}>
-      <div style={{ maxWidth: 920, margin: "0 auto", padding: "0 20px 50px" }}>
-        <WranglerNav />
+    <PageShell width={920}>
         <div style={card}>
           <div style={{ textAlign: "center", fontFamily: "'Iowan Old Style', Georgia, serif", fontSize: 25, fontWeight: 700 }}>Record your side</div>
           <div style={{ textAlign: "center", fontFamily: "ui-monospace, monospace", fontSize: 11, letterSpacing: "0.22em", color: C.muted, marginTop: 6 }}>
-            {campaignName ? campaignName.toUpperCase() : "WRANGLER"}
+            {campaignName ? campaignName.toUpperCase() : "SIX AXES"}
           </div>
           <div style={{ height: 3, borderRadius: 3, background: `linear-gradient(90deg, ${C.sun}, ${C.plum})`, margin: "18px 0 22px" }} />
 
@@ -233,7 +232,7 @@ export default function RecordPage() {
               </div>
 
               {phase === "idle" && (
-                <button type="button" onClick={startRecording} style={bigBtn(C.warn, "#1B1426")}>● Start recording</button>
+                <button type="button" onClick={startRecording} style={bigBtn(C.warn, SAX.inkDeep)}>● Start recording</button>
               )}
 
               {phase === "recording" && (
@@ -246,7 +245,7 @@ export default function RecordPage() {
                   <div style={{ background: "rgba(224,122,95,0.12)", border: `1px solid ${C.warn}`, borderRadius: 10, padding: "10px 12px", fontSize: 12.5, color: C.sunSoft, marginBottom: 16, lineHeight: 1.5 }}>
                     Keep this tab open and your screen awake. Backgrounding the tab can pause recording.
                   </div>
-                  <button type="button" onClick={stopRecording} style={bigBtn(C.sun, "#1B1426")}>■ Stop and save</button>
+                  <button type="button" onClick={stopRecording} style={bigBtn(C.sun, SAX.inkDeep)}>■ Stop and save</button>
                   <style>{"@keyframes wpulse{0%,100%{opacity:1}50%{opacity:0.25}}"}</style>
                 </div>
               )}
@@ -261,7 +260,7 @@ export default function RecordPage() {
                     )}
                   </div>
                   {phase === "recorded" && openSession && (
-                    <button type="button" onClick={uploadRecording} style={{ ...bigBtn(C.good, "#1B1426"), marginBottom: 10 }}>Upload to GM</button>
+                    <button type="button" onClick={uploadRecording} style={{ ...bigBtn(C.good, SAX.inkDeep), marginBottom: 10 }}>Upload to GM</button>
                   )}
                   <button type="button" onClick={downloadRecording} style={{ ...bigBtn("transparent", C.text), border: `1px solid ${C.line}`, marginBottom: 10 }}>Download backup</button>
                   <button type="button" onClick={reset} style={{ ...bigBtn("transparent", C.muted), border: "none", padding: "8px" }}>Record again</button>
@@ -276,7 +275,6 @@ export default function RecordPage() {
             </>
           )}
         </div>
-      </div>
-    </div>
+    </PageShell>
   );
 }
