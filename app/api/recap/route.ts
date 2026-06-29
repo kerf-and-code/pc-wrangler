@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
-export const runtime = "nodejs";
 export const maxDuration = 60;
 
 // Match this to whatever model string your extraction route already uses.
