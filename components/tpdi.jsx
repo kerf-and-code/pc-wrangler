@@ -5,7 +5,8 @@ import {
   Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer,
 } from "recharts";
 import { createClient } from "@/lib/supabase/client";
-import WranglerNav from "@/components/wrangler-nav";
+import PageShell from "@/components/page-shell";
+import { SAX } from "@/lib/theme";
 
 /*
   TPDI — Player Disposition Inventory (cold-start prior)
@@ -19,18 +20,18 @@ import WranglerNav from "@/components/wrangler-nav";
 */
 
 const C = {
-  ink: "#1B1426",
-  ink2: "#15101E",
-  panel: "#251B33",
-  line: "#3D2F52",
-  vellum: "#F4EEFA",
-  vellumInk: "#221C2E",
-  vellumLine: "#3D2F52",
-  brass: "#F4C430",
-  brassDim: "#B89230",
-  muted: "#A597BD",
-  agree: "#5DBE9A",
-  disagree: "#E07A5F",
+  ink: SAX.inkDeep,
+  ink2: "rgba(11,7,18,0.55)",
+  panel: SAX.panelBg,
+  line: SAX.line,
+  vellum: SAX.text,
+  vellumInk: SAX.parchInk,
+  vellumLine: SAX.parchLine,
+  brass: SAX.brass,
+  brassDim: SAX.brassDim,
+  muted: SAX.muted,
+  agree: SAX.good,
+  disagree: SAX.warn,
 };
 
 const AXES = {
@@ -288,7 +289,7 @@ export default function TPDI() {
 
   // ---------------- render ----------------
   return (
-    <div style={{ background: C.ink, color: C.vellum, minHeight: "100%", fontFamily: "ui-sans-serif, system-ui, sans-serif" }}>
+    <PageShell width={720}>
       <style>{`
         @keyframes tpdi-spin { to { transform: rotate(360deg); } }
         @keyframes tpdi-fade { from { opacity: 0; transform: translateY(6px);} to {opacity:1; transform:none;} }
@@ -298,11 +299,7 @@ export default function TPDI() {
         .tpdi-mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; }
       `}</style>
 
-      <div className="px-5 py-8" style={{ maxWidth: 720, margin: "0 auto" }}>
-
-        <WranglerNav />
-
-        {/* eyebrow */}
+      {/* eyebrow */}
         <div className="tpdi-mono" style={{ fontSize: 11, letterSpacing: "0.22em", color: C.brass, textTransform: "uppercase", marginBottom: 22 }}>
           Player Disposition Inventory
         </div>
@@ -381,7 +378,7 @@ export default function TPDI() {
 
             <div key={current.id} className="tpdi-fade" ref={liveRef} aria-live="polite">
               {/* statement card on vellum */}
-              <div style={{ background: C.vellum, color: C.vellumInk, borderRadius: 14, padding: "30px 26px",
+              <div style={{ background: SAX.parch, color: C.vellumInk, borderRadius: 14, padding: "30px 26px",
                 border: `1px solid ${C.vellumLine}`, minHeight: 150, display: "flex", alignItems: "center" }}>
                 <p className="tpdi-serif" style={{ fontSize: 23, lineHeight: 1.34, fontWeight: 500, margin: 0 }}>
                   {current.text}
@@ -530,7 +527,6 @@ export default function TPDI() {
             </div>
           </div>
         )}
-      </div>
-    </div>
+    </PageShell>
   );
 }
