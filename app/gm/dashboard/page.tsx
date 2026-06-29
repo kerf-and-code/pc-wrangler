@@ -2,35 +2,23 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
-import WranglerNav from "@/components/wrangler-nav";
+import PageShell from "@/components/page-shell";
+import { SAX } from "@/lib/theme";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
-// plum + sunflower palette (chart colors need real hex, not CSS vars)
+// recharts needs real hex/rgba, not CSS vars; mapped onto the cellar theme.
 const T = {
-  bg: "#1B1426", surface: "#251B33", surface2: "#2F2340", line: "#3D2F52",
-  text: "#F4EEFA", muted: "#A597BD", sun: "#F4C430", sunSoft: "#FFD75E",
-  plum: "#9B7BD4", warn: "#E07A5F", good: "#5DBE9A",
+  bg: SAX.inkDeep, surface: SAX.slateBg, surface2: "rgba(36,27,52,0.92)", line: SAX.line,
+  text: SAX.text, muted: SAX.muted, sun: SAX.sun, sunSoft: "#FFD75E",
+  plum: SAX.plum, warn: SAX.warn, good: SAX.good,
 };
 
 const CSS = `
-.wg-root{--bg:#1B1426;--surface:#251B33;--surface2:#2F2340;--line:#3D2F52;
-  --text:#F4EEFA;--muted:#A597BD;--sun:#F4C430;--sunSoft:#FFD75E;--plum:#9B7BD4;--warn:#E07A5F;--good:#5DBE9A;
-  background:var(--bg);color:var(--text);min-height:100vh;
-  font-family:ui-sans-serif,system-ui,-apple-system,sans-serif;}
+.wg-scope{--bg:${SAX.inkDeep};--surface:${SAX.slateBg};--surface2:rgba(36,27,52,0.92);--line:${SAX.line};
+  --text:${SAX.text};--muted:${SAX.muted};--sun:${SAX.sun};--sunSoft:#FFD75E;--plum:${SAX.plum};--warn:${SAX.warn};--good:${SAX.good};
+  color:var(--text);font-family:ui-sans-serif,system-ui,-apple-system,sans-serif;}
 .wg-serif{font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;}
 .wg-mono{font-family:ui-monospace,"SF Mono",Menlo,monospace;}
-.wg-wrap{max-width:980px;margin:0 auto;padding:22px 20px 80px;}
-
-.wg-nav{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;
-  padding-bottom:18px;border-bottom:1px solid var(--line);margin-bottom:26px;}
-.wg-brand{display:flex;align-items:baseline;gap:12px;}
-.wg-mark{font-family:"Iowan Old Style",Palatino,Georgia,serif;font-size:25px;font-weight:600;letter-spacing:-0.01em;color:var(--text);}
-.wg-tag{font-family:ui-monospace,Menlo,monospace;font-size:10.5px;letter-spacing:0.22em;text-transform:uppercase;color:var(--muted);}
-.wg-links{display:flex;gap:4px;flex-wrap:wrap;}
-.wg-navlink{font-size:14px;color:var(--muted);text-decoration:none;padding:7px 14px;border-radius:999px;
-  transition:color .15s,background .15s;}
-.wg-navlink:hover{color:var(--text);background:var(--surface);}
-.wg-navlink.active{color:var(--bg);background:var(--sun);font-weight:600;}
 
 .wg-camprow{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:22px;}
 .wg-eyebrow{font-family:ui-monospace,Menlo,monospace;font-size:10.5px;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);}
@@ -83,8 +71,8 @@ const CSS = `
 .wg-sel{background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:9px;padding:8px 11px;font-size:13.5px;}
 .wg-empty{color:var(--muted);font-size:14px;line-height:1.6;}
 
-.wg-root a:focus-visible,.wg-root button:focus-visible,.wg-root select:focus-visible{outline:2px solid var(--sun);outline-offset:2px;}
-@media(prefers-reduced-motion:reduce){.wg-root *{transition:none!important;}}
+.wg-scope a:focus-visible,.wg-scope button:focus-visible,.wg-scope select:focus-visible{outline:2px solid var(--sun);outline-offset:2px;}
+@media(prefers-reduced-motion:reduce){.wg-scope *{transition:none!important;}}
 `;
 
 export default function Dashboard() {
@@ -213,20 +201,20 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="wg-root"><style>{CSS}</style>
-        <div className="wg-wrap"><p style={{ color: T.muted }}>Loading...</p></div>
-      </div>
+      <PageShell width={980}>
+        <div className="wg-scope"><style>{CSS}</style>
+          <p style={{ color: T.muted }}>Loading...</p>
+        </div>
+      </PageShell>
     );
   }
 
   const spotEven = spotlightRows.length ? 1 / spotlightRows.length : 0;
 
   return (
-    <div className="wg-root">
-      <style>{CSS}</style>
-      <div className="wg-wrap">
-
-        <WranglerNav />
+    <PageShell width={980}>
+      <div className="wg-scope">
+        <style>{CSS}</style>
 
         {err && <div className="wg-card wg-err">{err}</div>}
 
@@ -396,6 +384,6 @@ export default function Dashboard() {
           </>
         )}
       </div>
-    </div>
+    </PageShell>
   );
 }
