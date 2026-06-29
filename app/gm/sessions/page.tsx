@@ -2,11 +2,12 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
-import WranglerNav from "@/components/wrangler-nav";
+import PageShell from "@/components/page-shell";
+import { SAX } from "@/lib/theme";
 
 const C = {
-  ink: "#1B1426", panel: "#251B33", line: "#3D2F52", vellum: "#F4EEFA",
-  muted: "#A597BD", brass: "#F4C430", brassDim: "#B89230", accent: "#9B7BD4", warn: "#E07A5F",
+  ink: SAX.inkDeep, panel: SAX.slateBg, line: SAX.line, vellum: SAX.text,
+  muted: SAX.muted, brass: SAX.brass, brassDim: SAX.brassDim, accent: SAX.plum, warn: SAX.warn,
 };
 const AXIS_COLOR: Record<string, string> = { N: "#B7615A", T: "#C8A24B", O: "#4E8077", S: "#CE8A42", E: "#6C76B0", I: "#9A93B0" };
 const AXIS_NAME: Record<string, string> = { N: "Character", T: "Encounter", O: "System", S: "Table", E: "World", I: "Presence" };
@@ -399,9 +400,9 @@ export default function SessionWorkspace() {
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ background: C.ink, color: C.vellum, minHeight: "100vh", fontFamily: "ui-sans-serif, system-ui, sans-serif" }}>
+    <PageShell width={880}>
       <style>{`.mono{font-family:ui-monospace,"SF Mono",Menlo,monospace;}`}</style>
-      <div style={{ maxWidth: 880, margin: "0 auto", padding: "32px 20px" }}><WranglerNav />{children}</div>
-    </div>
+      {children}
+    </PageShell>
   );
 }
