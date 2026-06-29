@@ -2,11 +2,12 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import WranglerNav from "@/components/wrangler-nav";
+import PageShell from "@/components/page-shell";
+import { SAX, surfaces, ui } from "@/lib/theme";
 
 const C = {
-  bg: "#1B1426", surface: "#251B33", surface2: "#2F2340", line: "#3D2F52",
-  text: "#F4EEFA", muted: "#A597BD", sun: "#F4C430", plum: "#9B7BD4", warn: "#E07A5F", good: "#5DBE9A",
+  bg: SAX.ink, surface: SAX.slateBg, surface2: "rgba(11,7,18,0.6)", line: SAX.line,
+  text: SAX.text, muted: SAX.muted, sun: SAX.sun, plum: SAX.plum, warn: SAX.warn, good: SAX.good,
 };
 
 type Campaign = { id: string; name: string };
@@ -80,17 +81,14 @@ export default function RosterPage() {
   const respLabel = (r: Resp): string => r.player_name?.trim() || `Anonymous · ${new Date(r.created_at).toLocaleDateString()}`;
   const boundCount = chars.filter((c) => respFor(c.id)).length;
 
-  const box = { background: C.surface, border: `1px solid ${C.line}`, borderRadius: 14, padding: 20, marginBottom: 18 } as const;
+  const box = { ...surfaces.slate, padding: 20, marginBottom: 18 } as const;
 
   return (
-    <div style={{ minHeight: "100vh", background: C.bg, color: C.text, fontFamily: "ui-sans-serif, system-ui, sans-serif" }}>
-      <div style={{ maxWidth: 820, margin: "0 auto", padding: "0 20px 60px" }}>
-        <WranglerNav />
-
-        <h1 style={{ fontFamily: "'Iowan Old Style', Georgia, serif", fontSize: 28, margin: "8px 0 4px" }}>Roster &amp; identity</h1>
-        <p style={{ color: C.muted, fontSize: 14, margin: "0 0 20px" }}>
-          Send each player their personal invite link below: opening it ties their inventory to that character from the start. Manual binding stays here as a fallback for anyone who took the inventory before joining.
-        </p>
+    <PageShell width={820}>
+      <h1 style={{ ...ui.h1, fontSize: 28, margin: "4px 0 4px" }}>Roster &amp; identity</h1>
+      <p style={{ color: C.muted, fontSize: 14, margin: "0 0 20px" }}>
+        Send each player their personal invite link below: opening it ties their inventory to that character from the start. Manual binding stays here as a fallback for anyone who took the inventory before joining.
+      </p>
 
         <div style={box}>
           <label style={{ fontSize: 12, color: C.muted, fontFamily: "ui-monospace, monospace", letterSpacing: "0.1em" }}>CAMPAIGN</label>
@@ -166,7 +164,6 @@ export default function RosterPage() {
             </div>
           </>
         )}
-      </div>
-    </div>
+    </PageShell>
   );
 }
