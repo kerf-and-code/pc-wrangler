@@ -75,6 +75,13 @@ const CSS = `
 @media(prefers-reduced-motion:reduce){.wg-scope *{transition:none!important;}}
 `;
 
+function evennessWord(cv: number | null): { word: string; color: string } {
+  if (cv == null) return { word: "\u2014", color: T.muted };
+  if (cv < 0.3) return { word: "Even", color: T.good };
+  if (cv < 0.6) return { word: "A bit uneven", color: T.sun };
+  return { word: "Lopsided", color: T.warn };
+}
+
 export default function Dashboard() {
   const supabase = useMemo(() => createClient(), []);
   const [loading, setLoading] = useState(true);
@@ -88,6 +95,7 @@ export default function Dashboard() {
   const [arcs, setArcs] = useState<any[]>([]);
   const [loot, setLoot] = useState<any[]>([]);
   const [selectedSession, setSelectedSession] = useState<string | null>(null);
+  const [advanced, setAdvanced] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -178,9 +186,9 @@ export default function Dashboard() {
       const first = equityTrend[0].cv || 0;
       const last = equityTrend[equityTrend.length - 1].cv || 0;
       if (last - first > 0.15)
-        alerts.push({ level: "warn", text: `The table is getting less even over time (dispersion ${Number(first).toFixed(2)} to ${Number(last).toFixed(2)}).` });
+        alerts.push({ level: "warn", text: "The table is getting less even over time." });
       else if (first - last > 0.15)
-        alerts.push({ level: "good", text: `The table is evening out over time (dispersion ${Number(first).toFixed(2)} to ${Number(last).toFixed(2)}).` });
+        alerts.push({ level: "good", text: "The table is evening out over time." });
     }
     const stale = arcs.filter((a) => a.stale);
     if (stale.length) {
@@ -210,6 +218,7 @@ export default function Dashboard() {
   }
 
   const spotEven = spotlightRows.length ? 1 / spotlightRows.length : 0;
+  const ev = evennessWord(kpis.lastCv);
 
   return (
     <PageShell width={980}>
@@ -226,6 +235,11 @@ export default function Dashboard() {
               <button key={c.id} className={`wg-pill${campaign === c.id ? " on" : ""}`} onClick={() => setCampaign(c.id)}>{c.name}</button>
             ))}
           </div>
+          {campaign && (
+            <button className="wg-pill" onClick={() => setAdvanced((a) => !a)}>
+              {advanced ? "Hide the numbers" : "Show the numbers"}
+            </button>
+          )}
           {campaign && <a className="wg-btn" href="/gm/sessions">Log a session</a>}
         </div>
 
@@ -255,16 +269,16 @@ export default function Dashboard() {
             {/* KPI strip */}
             <div className="wg-kpis">
               <div className="wg-kpi">
-                <div className="wg-kpi-l">Spotlight evenness</div>
-                <div className="wg-kpi-n">
-                  {kpis.lastCv == null ? "--" : Number(kpis.lastCv).toFixed(2)}
+                <div className="wg-kpi-l">Spotlight balance</div>
+                <div className="wg-kpi-n" style={{ fontFamily: "inherit", fontSize: 22, color: ev.color }}>
+                  {ev.word}
                   {kpis.lastCv != null && kpis.prevCv != null && (
-                    <span style={{ fontSize: 15, color: kpis.lastCv > kpis.prevCv ? T.warn : T.good }}>
+                    <span style={{ fontSize: 14, color: kpis.lastCv > kpis.prevCv ? T.warn : T.good }}>
                       {kpis.lastCv > kpis.prevCv ? "\u25B2" : "\u25BC"}
                     </span>
                   )}
                 </div>
-                <div className="wg-kpi-sub">latest session · lower is even</div>
+                <div className="wg-kpi-sub">latest session{advanced && kpis.lastCv != null ? ` \u00b7 CV ${Number(kpis.lastCv).toFixed(2)}` : ""}</div>
               </div>
               <div className="wg-kpi">
                 <div className="wg-kpi-l">Stale arcs</div>
@@ -287,7 +301,7 @@ export default function Dashboard() {
             <section className="wg-card">
               <div className="wg-card-h">
                 <span className="wg-card-t">Spotlight evenness over time</span>
-                <span className="wg-card-s">lower is more even</span>
+                <span className="wg-card-s">{advanced ? "coefficient of variation" : "rising means more lopsided"}</span>
               </div>
               {equityTrend.length === 0 ? (
                 <p className="wg-empty">No session data yet. <a className="wg-link" href="/gm/sessions">Log events</a> across a couple of sessions to draw this.</p>
@@ -297,9 +311,9 @@ export default function Dashboard() {
                     <LineChart data={equityTrend} margin={{ top: 8, right: 16, bottom: 4, left: -18 }}>
                       <CartesianGrid stroke={T.line} strokeDasharray="3 3" />
                       <XAxis dataKey="session" stroke={T.muted} tick={{ fill: T.muted, fontSize: 12 }} />
-                      <YAxis stroke={T.muted} tick={{ fill: T.muted, fontSize: 12 }} />
+                      {advanced ? <YAxis stroke={T.muted} tick={{ fill: T.muted, fontSize: 12 }} /> : <YAxis hide />}
                       <Tooltip contentStyle={{ background: T.surface2, border: `1px solid ${T.line}`, borderRadius: 9, color: T.text }} labelStyle={{ color: T.muted }} />
-                      <Line type="monotone" dataKey="cv" stroke={T.sun} strokeWidth={2.5} dot={{ fill: T.sun, r: 3 }} activeDot={{ r: 5, fill: T.sunSoft }} name="dispersion" />
+                      <Line type="monotone" dataKey="cv" stroke={T.sun} strokeWidth={2.5} dot={{ fill: T.sun, r: 3 }} activeDot={{ r: 5, fill: T.sunSoft }} name="spotlight gap" />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
