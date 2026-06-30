@@ -40,6 +40,7 @@ const GROUPS: Group[] = [
 
 const PLAYER: Leaf[] = [
   { href: "/play", label: "Inventory" },
+  { href: "/schedule", label: "Schedule" },
   { href: "/recaps", label: "Recaps" },
   { href: "/vibe", label: "Check-in" },
   { href: "/chat", label: "Chat" },

@@ -21,6 +21,13 @@ const CAT_LABEL: Record<string, string> = { opportunity: "Opportunities", respon
 // Test default for the recipients field; clear or change per campaign.
 const DEFAULT_RECIPIENTS = "terry.mickail@gmail.com";
 
+// Convert a stored ISO timestamp to a value for <input type="datetime-local"> in local time.
+function toLocalInput(iso: string): string {
+  const d = new Date(iso);
+  const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+  return local.toISOString().slice(0, 16);
+}
+
 export default function SessionWorkspace() {
   const supabase = useMemo(() => createClient(), []);
   const [userId, setUserId] = useState<string | null>(null);
@@ -35,6 +42,9 @@ export default function SessionWorkspace() {
   const [recapMsg, setRecapMsg] = useState<string | null>(null);
   const [recipients, setRecipients] = useState("");
   const [recapSending, setRecapSending] = useState(false);
+  const [schedDraft, setSchedDraft] = useState("");
+  const [schedSaving, setSchedSaving] = useState(false);
+  const [schedMsg, setSchedMsg] = useState<string | null>(null);
 
   const [campaigns, setCampaigns] = useState<any[]>([]);
   const [eventTypes, setEventTypes] = useState<any[]>([]);
@@ -76,7 +86,7 @@ export default function SessionWorkspace() {
     const [{ data: chars }, { data: sess }, { data: arcRows }] = await Promise.all([
       supabase.from("characters").select("id,name,class,subclass,kind,active")
         .eq("campaign_id", campaignId).eq("active", true).order("kind").order("name"),
-      supabase.from("sessions").select("id,session_number,status,capture_modality,consent_recorded,notes,recap,created_at")
+      supabase.from("sessions").select("id,session_number,status,capture_modality,consent_recorded,notes,recap,scheduled_at,created_at")
         .eq("campaign_id", campaignId).order("session_number", { ascending: false, nullsFirst: false }),
       supabase.from("arcs").select("id,title,status,character_id,last_touched_session_id")
         .eq("campaign_id", campaignId).order("created_at", { ascending: true }),
@@ -106,7 +116,9 @@ export default function SessionWorkspace() {
   useEffect(() => {
     const s = sessions.find((x) => x.id === session);
     setRecap(s?.recap || "");
+    setSchedDraft(s?.scheduled_at ? toLocalInput(s.scheduled_at) : "");
     setRecapMsg(null);
+    setSchedMsg(null);
   }, [session, sessions]);
 
   // load saved recipient list for the selected campaign
@@ -203,6 +215,19 @@ export default function SessionWorkspace() {
       setRecapMsg("Could not send recap. Try again.");
     }
     setRecapSending(false);
+  }
+
+  async function saveSchedule() {
+    if (!session || schedSaving) return;
+    setSchedSaving(true); setSchedMsg(null);
+    const iso = schedDraft ? new Date(schedDraft).toISOString() : null;
+    const { error } = await supabase.from("sessions").update({ scheduled_at: iso }).eq("id", session);
+    if (error) setSchedMsg(error.message);
+    else {
+      setSessions((arr) => arr.map((s) => (s.id === session ? { ...s, scheduled_at: iso } : s)));
+      setSchedMsg(iso ? "Time saved." : "Time cleared.");
+    }
+    setSchedSaving(false);
   }
 
   function pickType(key: string) {
@@ -386,6 +411,27 @@ export default function SessionWorkspace() {
                   {recapSending ? "Sending..." : "Send to players"}
                 </button>
               </div>
+            </div>
+          </div>
+
+          {/* schedule */}
+          <div style={box}>
+            <div style={{ fontSize: 13, color: C.muted, marginBottom: 10 }}>Next session time</div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+              <input
+                type="datetime-local"
+                value={schedDraft}
+                onChange={(e) => setSchedDraft(e.target.value)}
+                style={{ ...inputStyle, colorScheme: "dark" }}
+              />
+              <button style={btn} onClick={saveSchedule} disabled={schedSaving}>
+                {schedSaving ? "Saving..." : "Save time"}
+              </button>
+              {schedDraft && <button style={btnGhost} onClick={() => setSchedDraft("")}>Clear</button>}
+              {schedMsg && <span style={{ fontSize: 12, color: C.muted }}>{schedMsg}</span>}
+            </div>
+            <div style={{ fontSize: 11, color: C.muted, marginTop: 8 }}>
+              Players RSVP to this at the share link. A reminder emails those who said yes the day before.
             </div>
           </div>
 
