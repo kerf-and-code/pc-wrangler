@@ -15,6 +15,7 @@ type Group = { label: string; href: string; children?: Leaf[] };
 
 const GROUPS: Group[] = [
   { label: "Table", href: "/gm", children: [
+    { href: "/gm/start", label: "Start here" },
     { href: "/gm", label: "Workspace" },
     { href: "/gm/roster", label: "Roster" },
   ] },
