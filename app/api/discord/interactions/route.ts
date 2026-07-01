@@ -13,7 +13,14 @@ const UPDATE_MESSAGE = 7;
 const EPHEMERAL = 64;
 // Component types
 const ACTION_ROW = 1;
+const BUTTON = 2;
 const STRING_SELECT = 3;
+// Button styles
+const STYLE_SUCCESS = 3;
+const STYLE_SECONDARY = 2;
+const STYLE_DANGER = 4;
+
+const BRASS = 0xc8a24b;
 
 // Discord permission bits
 const ADMINISTRATOR = BigInt(1) << BigInt(3);
@@ -75,6 +82,16 @@ function channelId(interaction: Interaction): string | null {
   return interaction.channel_id ?? interaction.channel?.id ?? null;
 }
 
+function isManager(interaction: Interaction): boolean {
+  let perms = BigInt(0);
+  try { perms = BigInt(interaction.member?.permissions ?? "0"); } catch { perms = BigInt(0); }
+  return (perms & ADMINISTRATOR) !== BigInt(0) || (perms & MANAGE_GUILD) !== BigInt(0);
+}
+
+function optionValue(interaction: Interaction, name: string): string {
+  return String(interaction.data?.options?.find((o) => o.name === name)?.value ?? "").trim();
+}
+
 export async function POST(request: Request) {
   const rawBody = await request.text();
   const signature = request.headers.get("x-signature-ed25519");
@@ -99,16 +116,33 @@ export async function POST(request: Request) {
     const name = interaction.data?.name;
     if (name === "setup") return await handleSetup(interaction);
     if (name === "claim") return await handleClaim(interaction);
+    if (name === "session") return await handleSession(interaction);
     return ephemeral("Unknown command.");
   }
 
   if (interaction.type === MESSAGE_COMPONENT) {
     const cid = interaction.data?.custom_id ?? "";
     if (cid.startsWith("claim:")) return await handleClaimSelect(interaction);
+    if (cid.startsWith("rsvp:")) return await handleRsvpButton(interaction);
     return ephemeral("Unknown action.");
   }
 
   return NextResponse.json({ type: PONG });
+}
+
+// Resolve the campaign for a command: explicit share code, else the linked channel.
+async function resolveCampaign(interaction: Interaction, sb: ReturnType<typeof serviceClient>) {
+  const code = optionValue(interaction, "code");
+  const chan = channelId(interaction);
+  if (code) {
+    const { data } = await sb.from("campaigns").select("id, name").eq("share_code", code).single();
+    return data;
+  }
+  if (chan) {
+    const { data } = await sb.from("campaigns").select("id, name").eq("discord_channel_id", chan).single();
+    return data;
+  }
+  return null;
 }
 
 async function handleSetup(interaction: Interaction) {
@@ -116,15 +150,11 @@ async function handleSetup(interaction: Interaction) {
   if (!guildId) {
     return ephemeral("Run /setup inside the server channel where you want recaps posted.");
   }
-
-  let perms = BigInt(0);
-  try { perms = BigInt(interaction.member?.permissions ?? "0"); } catch { perms = BigInt(0); }
-  const isAdmin = (perms & ADMINISTRATOR) !== BigInt(0) || (perms & MANAGE_GUILD) !== BigInt(0);
-  if (!isAdmin) {
+  if (!isManager(interaction)) {
     return ephemeral("You need the Manage Server permission to link recaps to this channel.");
   }
 
-  const code = String(interaction.data?.options?.find((o) => o.name === "code")?.value ?? "").trim();
+  const code = optionValue(interaction, "code");
   if (!code) {
     return ephemeral("Usage: /setup code:<your campaign share code>");
   }
@@ -136,10 +166,7 @@ async function handleSetup(interaction: Interaction) {
 
   const sb = serviceClient();
   const { data: campaign, error } = await sb
-    .from("campaigns")
-    .select("id, name")
-    .eq("share_code", code)
-    .single();
+    .from("campaigns").select("id, name").eq("share_code", code).single();
   if (error || !campaign) {
     return ephemeral("No campaign found for that share code. Double-check the code from your app.");
   }
@@ -156,18 +183,8 @@ async function handleSetup(interaction: Interaction) {
 }
 
 async function handleClaim(interaction: Interaction) {
-  const code = String(interaction.data?.options?.find((o) => o.name === "code")?.value ?? "").trim();
-  const chan = channelId(interaction);
   const sb = serviceClient();
-
-  let campaign: { id: string; name: string } | null = null;
-  if (code) {
-    const { data } = await sb.from("campaigns").select("id, name").eq("share_code", code).single();
-    campaign = data;
-  } else if (chan) {
-    const { data } = await sb.from("campaigns").select("id, name").eq("discord_channel_id", chan).single();
-    campaign = data;
-  }
+  const campaign = await resolveCampaign(interaction, sb);
   if (!campaign) {
     return ephemeral("Run /claim in your campaign's channel, or add code:<your share code>.");
   }
@@ -229,7 +246,6 @@ async function handleClaimSelect(interaction: Interaction) {
     return updateMessage(`"${character.name}" is already linked to someone else. Ask your GM if that's wrong.`);
   }
 
-  // Move this user's link to the chosen character: clear it from any other character first.
   await sb.from("characters").update({ discord_user_id: null })
     .eq("campaign_id", campaignId).eq("discord_user_id", userId).neq("id", characterId);
 
@@ -240,4 +256,115 @@ async function handleClaimSelect(interaction: Interaction) {
   }
 
   return updateMessage(`Linked. You're playing "${character.name}". Recaps and voice will attribute to you.`);
+}
+
+async function handleSession(interaction: Interaction) {
+  if (!interaction.guild_id) {
+    return ephemeral("Run /session in your campaign's channel.");
+  }
+  if (!isManager(interaction)) {
+    return ephemeral("You need the Manage Server permission to post the session RSVP.");
+  }
+
+  const sb = serviceClient();
+  const campaign = await resolveCampaign(interaction, sb);
+  if (!campaign) {
+    return ephemeral("Run /session in your campaign's channel, or add code:<your share code>.");
+  }
+
+  const { data: sess } = await sb
+    .from("sessions")
+    .select("id, session_number, scheduled_at")
+    .eq("campaign_id", campaign.id)
+    .not("scheduled_at", "is", null)
+    .gte("scheduled_at", new Date().toISOString())
+    .order("scheduled_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (!sess || !sess.scheduled_at) {
+    return ephemeral("No upcoming session is scheduled. Set a time in the app first.");
+  }
+
+  const unix = Math.floor(new Date(sess.scheduled_at).getTime() / 1000);
+  const heading = sess.session_number != null ? `Session ${sess.session_number}` : "Next session";
+  const title = `${campaign.name}: ${heading}`.slice(0, 256);
+
+  return NextResponse.json({
+    type: CHANNEL_MESSAGE_WITH_SOURCE,
+    data: {
+      embeds: [
+        {
+          title,
+          description: `When: <t:${unix}:F> (<t:${unix}:R>)\n\nTap below to RSVP.`,
+          color: BRASS,
+        },
+      ],
+      components: [
+        {
+          type: ACTION_ROW,
+          components: [
+            { type: BUTTON, style: STYLE_SUCCESS, label: "Going", custom_id: `rsvp:${sess.id}:going` },
+            { type: BUTTON, style: STYLE_SECONDARY, label: "Maybe", custom_id: `rsvp:${sess.id}:maybe` },
+            { type: BUTTON, style: STYLE_DANGER, label: "Can't", custom_id: `rsvp:${sess.id}:declined` },
+          ],
+        },
+      ],
+    },
+  });
+}
+
+async function handleRsvpButton(interaction: Interaction) {
+  const cid = interaction.data?.custom_id ?? "";
+  const parts = cid.split(":");
+  const sessionId = parts[1] ?? "";
+  const status = parts[2] ?? "";
+  const userId = discordUserId(interaction);
+  const valid = status === "going" || status === "maybe" || status === "declined";
+  if (!sessionId || !valid || !userId) {
+    return ephemeral("Something went wrong with that RSVP. Try again.");
+  }
+
+  const sb = serviceClient();
+  const { data: session } = await sb
+    .from("sessions").select("id, campaign_id").eq("id", sessionId).maybeSingle();
+  if (!session) {
+    return ephemeral("That session no longer exists.");
+  }
+
+  const { data: character } = await sb
+    .from("characters")
+    .select("id, name, profile_id")
+    .eq("campaign_id", session.campaign_id)
+    .eq("discord_user_id", userId)
+    .eq("kind", "pc")
+    .eq("active", true)
+    .order("created_at")
+    .limit(1)
+    .maybeSingle();
+  if (!character) {
+    return ephemeral("Link your character first with /claim in this channel, then tap again.");
+  }
+
+  const { data: existing } = await sb
+    .from("attendance")
+    .select("id")
+    .eq("session_id", sessionId)
+    .eq("character_id", character.id)
+    .maybeSingle();
+
+  if (existing) {
+    await sb.from("attendance")
+      .update({ status, campaign_id: session.campaign_id }).eq("id", existing.id);
+  } else {
+    await sb.from("attendance").insert({
+      campaign_id: session.campaign_id,
+      session_id: sessionId,
+      profile_id: character.profile_id,
+      status,
+      character_id: character.id,
+    });
+  }
+
+  const label = status === "going" ? "Going" : status === "maybe" ? "Maybe" : "Can't make it";
+  return ephemeral(`Got it, you're marked **${label}** as ${character.name}.`);
 }

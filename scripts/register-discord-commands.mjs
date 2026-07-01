@@ -17,30 +17,35 @@ if (!APP_ID || !TOKEN) {
   process.exit(1);
 }
 
+const CODE_OPTION_REQUIRED = {
+  name: "code",
+  description: "Your campaign share code from the app.",
+  type: 3, // STRING
+  required: true,
+};
+
+const CODE_OPTION_OPTIONAL = {
+  name: "code",
+  description: "Campaign share code (optional if run in the campaign's channel).",
+  type: 3, // STRING
+  required: false,
+};
+
 const commands = [
   {
     name: "setup",
     description: "Link this channel to your Six Axes campaign so recaps post here.",
-    options: [
-      {
-        name: "code",
-        description: "Your campaign share code from the app.",
-        type: 3, // STRING
-        required: true,
-      },
-    ],
+    options: [CODE_OPTION_REQUIRED],
   },
   {
     name: "claim",
     description: "Link your Discord account to your character in this campaign.",
-    options: [
-      {
-        name: "code",
-        description: "Campaign share code (optional if run in the campaign's channel).",
-        type: 3, // STRING
-        required: false,
-      },
-    ],
+    options: [CODE_OPTION_OPTIONAL],
+  },
+  {
+    name: "session",
+    description: "Post the next scheduled session with RSVP buttons.",
+    options: [CODE_OPTION_OPTIONAL],
   },
 ];
 
