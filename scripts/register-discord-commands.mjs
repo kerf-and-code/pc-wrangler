@@ -1,10 +1,12 @@
-// One-time registration of Six Axes slash commands with Discord.
+// One-time (re-runnable) registration of Six Axes slash commands with Discord.
 //
 // Run from the repo root with env vars set:
 //   DISCORD_APP_ID=...  DISCORD_BOT_TOKEN=...  node scripts/register-discord-commands.mjs
 //
 // For instant registration to a single test server (global takes up to ~1h to
 // propagate), also set DISCORD_TEST_GUILD_ID=<your server id>.
+//
+// This PUTs the full command set, so re-running it updates/replaces cleanly.
 
 const APP_ID = process.env.DISCORD_APP_ID;
 const TOKEN = process.env.DISCORD_BOT_TOKEN;
@@ -25,6 +27,18 @@ const commands = [
         description: "Your campaign share code from the app.",
         type: 3, // STRING
         required: true,
+      },
+    ],
+  },
+  {
+    name: "claim",
+    description: "Link your Discord account to your character in this campaign.",
+    options: [
+      {
+        name: "code",
+        description: "Campaign share code (optional if run in the campaign's channel).",
+        type: 3, // STRING
+        required: false,
       },
     ],
   },
