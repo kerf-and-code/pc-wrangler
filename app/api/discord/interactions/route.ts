@@ -117,6 +117,8 @@ export async function POST(request: Request) {
     if (name === "setup") return await handleSetup(interaction);
     if (name === "claim") return await handleClaim(interaction);
     if (name === "session") return await handleSession(interaction);
+    if (name === "record") return await handleRecord(interaction);
+    if (name === "stop") return await handleStop(interaction);
     return ephemeral("Unknown command.");
   }
 
@@ -367,4 +369,87 @@ async function handleRsvpButton(interaction: Interaction) {
 
   const label = status === "going" ? "Going" : status === "maybe" ? "Maybe" : "Can't make it";
   return ephemeral(`Got it, you're marked **${label}** as ${character.name}.`);
+}
+
+async function handleRecord(interaction: Interaction) {
+  if (!interaction.guild_id) {
+    return ephemeral("Run /record in your campaign's channel while you're in a voice channel.");
+  }
+  if (!isManager(interaction)) {
+    return ephemeral("You need the Manage Server permission to start recording.");
+  }
+
+  const sb = serviceClient();
+  const campaign = await resolveCampaign(interaction, sb);
+  if (!campaign) {
+    return ephemeral("Run /record in your campaign's channel, or add code:<your share code>.");
+  }
+
+  // Don't double-start.
+  const { data: existing } = await sb
+    .from("capture_control")
+    .select("id")
+    .eq("campaign_id", campaign.id)
+    .in("status", ["requested", "active"])
+    .limit(1)
+    .maybeSingle();
+  if (existing) {
+    return ephemeral("A recording is already requested or running for this campaign. Use /stop first.");
+  }
+
+  // Best-effort current session: the latest one not yet ended.
+  const { data: sess } = await sb
+    .from("sessions")
+    .select("id")
+    .eq("campaign_id", campaign.id)
+    .is("ended_at", null)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const { error } = await sb.from("capture_control").insert({
+    campaign_id: campaign.id,
+    session_id: sess?.id ?? null,
+    guild_id: interaction.guild_id,
+    requested_by_discord_id: discordUserId(interaction),
+    status: "requested",
+  });
+  if (error) {
+    return ephemeral("Could not start the recording request. Try again in a moment.");
+  }
+
+  return ephemeral("Recording requested. The bot will join your voice channel shortly. Use /stop when you're done.");
+}
+
+async function handleStop(interaction: Interaction) {
+  if (!interaction.guild_id) {
+    return ephemeral("Run /stop in your campaign's channel.");
+  }
+  if (!isManager(interaction)) {
+    return ephemeral("You need the Manage Server permission to stop recording.");
+  }
+
+  const sb = serviceClient();
+  const campaign = await resolveCampaign(interaction, sb);
+  if (!campaign) {
+    return ephemeral("Run /stop in your campaign's channel, or add code:<your share code>.");
+  }
+
+  const { data: active } = await sb
+    .from("capture_control")
+    .select("id")
+    .eq("campaign_id", campaign.id)
+    .in("status", ["requested", "active"])
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (!active) {
+    return ephemeral("Nothing is recording for this campaign right now.");
+  }
+
+  await sb.from("capture_control")
+    .update({ status: "stopping", updated_at: new Date().toISOString() })
+    .eq("id", active.id);
+
+  return ephemeral("Stopping the recording. The bot will finish up and process the audio.");
 }

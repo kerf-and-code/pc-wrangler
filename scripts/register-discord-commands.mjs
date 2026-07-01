@@ -17,14 +17,16 @@ if (!APP_ID || !TOKEN) {
   process.exit(1);
 }
 
-const CODE_OPTION_REQUIRED = {
+// Discord permission bitfield for Manage Server, as a string.
+const MANAGE_GUILD = "32";
+
+const CODE_REQUIRED = {
   name: "code",
   description: "Your campaign share code from the app.",
   type: 3, // STRING
   required: true,
 };
-
-const CODE_OPTION_OPTIONAL = {
+const CODE_OPTIONAL = {
   name: "code",
   description: "Campaign share code (optional if run in the campaign's channel).",
   type: 3, // STRING
@@ -35,17 +37,32 @@ const commands = [
   {
     name: "setup",
     description: "Link this channel to your Six Axes campaign so recaps post here.",
-    options: [CODE_OPTION_REQUIRED],
+    options: [CODE_REQUIRED],
+    default_member_permissions: MANAGE_GUILD,
   },
   {
     name: "claim",
     description: "Link your Discord account to your character in this campaign.",
-    options: [CODE_OPTION_OPTIONAL],
+    options: [CODE_OPTIONAL],
+    // no permission gate: players use this
   },
   {
     name: "session",
     description: "Post the next scheduled session with RSVP buttons.",
-    options: [CODE_OPTION_OPTIONAL],
+    options: [CODE_OPTIONAL],
+    default_member_permissions: MANAGE_GUILD,
+  },
+  {
+    name: "record",
+    description: "Have the bot join your voice channel and record the session.",
+    options: [CODE_OPTIONAL],
+    default_member_permissions: MANAGE_GUILD,
+  },
+  {
+    name: "stop",
+    description: "Stop the current recording and process the audio.",
+    options: [CODE_OPTIONAL],
+    default_member_permissions: MANAGE_GUILD,
   },
 ];
 
