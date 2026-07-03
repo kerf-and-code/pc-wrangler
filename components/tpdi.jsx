@@ -175,6 +175,7 @@ export default function TPDI() {
   const [customLine, setCustomLine] = useState("");
   const [customVeil, setCustomVeil] = useState("");
   const [safetyNote, setSafetyNote] = useState("");
+  const [saveError, setSaveError] = useState(null);
   const liveRef = useRef(null);
 
   const reduce = useMemo(
@@ -245,14 +246,29 @@ export default function TPDI() {
       item_order: order.map((it) => it.id),
     };
     let error;
+    let savedData;
     if (existing && existing.id) {
-      ({ error } = await supabase.from("tpdi_responses").update(row).eq("id", existing.id));
+      const res = await supabase.from("tpdi_responses").update(row).eq("id", existing.id).select("id, safety");
+      error = res.error; savedData = res.data;
     } else {
-      ({ error } = await supabase.from("tpdi_responses").insert(row));
+      const res = await supabase.from("tpdi_responses").insert(row).select("id, safety");
+      error = res.error; savedData = res.data;
     }
     setSaving(false);
-    if (error) console.error("save failed:", error.message);
-    else { setSaved(true); setExisting({ id: existing && existing.id, scores: result, created_at: new Date().toISOString() }); }
+    console.log("tpdi save:", { path: existing && existing.id ? "update" : "insert", error, savedData });
+    if (error) {
+      setSaveError(error.message || "Save failed.");
+    } else if (!savedData || savedData.length === 0) {
+      // No error but nothing written back = the row filter matched nothing
+      // (e.g. an update against a row this user can't write). Fall back to insert.
+      const res = await supabase.from("tpdi_responses").insert(row).select("id, safety");
+      console.log("tpdi save fallback insert:", { error: res.error, data: res.data });
+      if (res.error) { setSaveError(res.error.message || "Save failed."); }
+      else { setSaveError(null); setSaved(true); setExisting({ id: res.data?.[0]?.id, scores: result, created_at: new Date().toISOString() }); }
+    } else {
+      setSaveError(null); setSaved(true);
+      setExisting({ id: savedData[0].id, scores: result, created_at: new Date().toISOString() });
+    }
   }
 
   function record(val) {
@@ -532,6 +548,11 @@ export default function TPDI() {
                 {saved ? "Your profile and safety notes are saved." : "This saves your profile and safety notes."}
               </span>
             </div>
+            {saveError && (
+              <div style={{ marginTop: 12, background: "rgba(120,40,40,0.25)", border: `1px solid ${C.warn}`, borderRadius: 8, padding: "10px 12px", color: C.vellum, fontSize: 13 }}>
+                Save error: {saveError}
+              </div>
+            )}
           </div>
         )}
 
