@@ -5,8 +5,17 @@
 
 import React from "react";
 import PageShell from "@/components/page-shell";
-import { HELP, HelpBlock } from "@/lib/help-content.mjs";
+import { HELP as HELP_RAW } from "@/lib/help-content.mjs";
 import { SAX } from "@/lib/theme";
+
+type HelpBlock =
+  | { kind: "p"; text: string }
+  | { kind: "steps"; items: string[] }
+  | { kind: "sub"; title: string; text: string };
+type HelpSection = { id: string; title: string; blocks: HelpBlock[] };
+type HelpDoc = { title: string; subtitle: string; sections: HelpSection[] };
+
+const HELP = HELP_RAW as unknown as HelpDoc;
 
 const C = {
   surface: SAX.slateBg, surface2: "rgba(11,7,18,0.6)", line: SAX.line,
