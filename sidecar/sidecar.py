@@ -420,7 +420,8 @@ class Sidecar(discord.Client):
             rec.cleanup()
             return
 
-        # Attribute speakers -> characters; build one continuous ogg per mapped speaker.
+        # Attribute speakers -> a player character or the GM narrator; build one
+        # continuous ogg per mapped speaker.
         job_id = await self.create_job(http, rec.campaign_id, rec.session_id)
         if not job_id:
             await self.patch_status(http, rec.rid, "error", error="could not create capture job")
@@ -431,7 +432,12 @@ class Sidecar(discord.Client):
         unmapped = 0
         for uid, chunks in rec.speaker_chunks.items():
             char_id = await self.resolve_character(http, rec.campaign_id, uid)
+            gm_id = None
             if not char_id:
+                # Not an active PC: is this the GM narrator? Character attribution
+                # wins if a speaker is somehow both (rare); revisit only if it bites.
+                gm_id = await self.resolve_gm_identity(http, rec.campaign_id, uid)
+            if not char_id and not gm_id:
                 unmapped += 1
                 log.warning("  unmapped speaker discord_id=%s (%d chunk(s)); skipping.", uid, len(chunks))
                 continue
@@ -462,16 +468,19 @@ class Sidecar(discord.Client):
             elif not await concat_oggs(parts, final_path):
                 log.warning("  concat failed for speaker %s; skipping.", uid)
                 continue
-            storage_path = f"{rec.campaign_id}/{job_id}/{char_id}-{int(time.time() * 1000)}.ogg"
+            slot = char_id if char_id else f"gm-{gm_id}"
+            storage_path = f"{rec.campaign_id}/{job_id}/{slot}-{int(time.time() * 1000)}.ogg"
             with open(final_path, "rb") as f:
                 blob = f.read()
             if not await self.upload_blob(http, storage_path, blob, "audio/ogg"):
-                log.warning("  upload failed for character %s; skipping.", char_id)
+                log.warning("  upload failed for %s; skipping.", slot)
                 continue
-            if await self.insert_track(http, job_id, rec.campaign_id, char_id, storage_path, round(total_secs)):
+            if await self.insert_track(http, job_id, rec.campaign_id, storage_path, round(total_secs),
+                                       character_id=char_id, gm_identity_id=gm_id):
                 uploaded += 1
-                log.info("  uploaded track: character=%s %.0fs %d KB -> %s",
-                         char_id, total_secs, len(blob) // 1024, storage_path)
+                who = f"character={char_id}" if char_id else f"gm_identity={gm_id}"
+                log.info("  uploaded track: %s %.0fs %d KB -> %s",
+                         who, total_secs, len(blob) // 1024, storage_path)
 
         await self.patch_status(http, rec.rid, "done", capture_job_id=job_id, error=note)
         log.info("STOPPED: request %s -> job %s; %d track(s) uploaded, %d unmapped speaker(s), %d chunk(s).",
@@ -501,6 +510,30 @@ class Sidecar(discord.Client):
             return rows[0]["id"] if rows else None
         except Exception as e:
             log.warning("resolve_character(%s) failed: %r", discord_uid, e)
+            return None
+
+    async def resolve_gm_identity(self, http, campaign_id, discord_uid):
+        """A speaker who is not an active PC may be the GM narrator. Match their
+        Discord id against gm_identities so their stream is tagged for the GM
+        extractor instead of being dropped as unmapped."""
+        if not campaign_id or not discord_uid:
+            return None
+        try:
+            r = await http.get(
+                f"{REST}/gm_identities",
+                params={
+                    "campaign_id": f"eq.{campaign_id}",
+                    "discord_user_id": f"eq.{discord_uid}",
+                    "select": "id",
+                    "limit": "1",
+                },
+                headers=HEADERS,
+            )
+            r.raise_for_status()
+            rows = r.json()
+            return rows[0]["id"] if rows else None
+        except Exception as e:
+            log.warning("resolve_gm_identity(%s) failed: %r", discord_uid, e)
             return None
 
     async def create_job(self, http, campaign_id, session_id):
@@ -535,15 +568,21 @@ class Sidecar(discord.Client):
             log.warning("upload(%s) failed: %r", path, e)
             return False
 
-    async def insert_track(self, http, job_id, campaign_id, character_id, storage_path, duration):
+    async def insert_track(self, http, job_id, campaign_id, storage_path, duration,
+                           character_id=None, gm_identity_id=None):
         try:
             body = {
                 "job_id": job_id,
                 "campaign_id": campaign_id,
-                "character_id": character_id,
                 "storage_path": storage_path,
                 "status": "pending",
             }
+            # A track belongs to exactly one of: a player character, or the GM
+            # narrator identity. Send only the column that applies.
+            if character_id:
+                body["character_id"] = character_id
+            if gm_identity_id:
+                body["gm_identity_id"] = gm_identity_id
             if duration:
                 body["duration_seconds"] = duration
             r = await http.post(f"{REST}/audio_tracks", headers=WRITE_HEADERS, json=body)
