@@ -9,15 +9,16 @@ import { useEffect, useState } from "react";
 const BRASS = "#c8a24b";
 
 export default function TableTapCard({ shareCode }: { shareCode: string }) {
-  const [url, setUrl] = useState(`https://pc-wrangler.vercel.app/table/${shareCode}`);
+  const [origin, setOrigin] = useState("https://pc-wrangler.vercel.app");
+  const url = `${origin}/record?share=${shareCode}`;
   const [copied, setCopied] = useState(false);
   const [showSteps, setShowSteps] = useState(false);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      setUrl(`${window.location.origin}/table/${shareCode}`);
+      setOrigin(window.location.origin);
     }
-  }, [shareCode]);
+  }, []);
 
   const copy = async () => {
     try {
@@ -98,10 +99,10 @@ export default function TableTapCard({ shareCode }: { shareCode: string }) {
         <ol style={{ color: "#b7aed1", fontSize: 13, margin: "10px 0 0", paddingLeft: 20, lineHeight: 1.7 }}>
           <li>
             In the Beyond20 extension options, add{" "}
-            <code style={{ color: "#9fe0ae" }}>{url.split("/table/")[0]}/*</code> to Custom Domains and press Apply.
+            <code style={{ color: "#9fe0ae" }}>{origin}/*</code> to Custom Domains and press Apply.
           </li>
           <li>Enable D&amp;D Beyond digital dice in Beyond20 so captured numbers match what the table sees.</li>
-          <li>During sessions, open the Table Tap link and keep the tab in the background while you play.</li>
+          <li>During sessions, open your session link and keep the tab in the background while you play.</li>
         </ol>
       )}
     </section>

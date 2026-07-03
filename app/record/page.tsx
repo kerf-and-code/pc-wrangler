@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
+import TableTap from "@/components/table-tap";
 import { SAX } from "@/lib/theme";
 
 const C = {
@@ -294,6 +295,12 @@ export default function RecordPage() {
             </>
           )}
         </div>
+
+        {status === "ready" && share && (
+          <div style={{ marginTop: 18 }}>
+            <TableTap shareCode={share} />
+          </div>
+        )}
     </PageShell>
   );
 }
