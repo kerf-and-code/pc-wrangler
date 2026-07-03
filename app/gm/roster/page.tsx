@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
+import TableTapCard from "@/components/table-tap-card";
 import { SAX, surfaces, ui } from "@/lib/theme";
 
 const C = {
@@ -10,7 +11,7 @@ const C = {
   text: SAX.text, muted: SAX.muted, sun: SAX.sun, plum: SAX.plum, warn: SAX.warn, good: SAX.good,
 };
 
-type Campaign = { id: string; name: string };
+type Campaign = { id: string; name: string; share_code: string | null };
 type Char = { id: string; name: string; profile_id: string | null; invite_code: string | null };
 type Resp = { id: string; player_name: string | null; assigned_character_id: string | null; created_at: string };
 
@@ -37,7 +38,7 @@ export default function RosterPage() {
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase.from("campaigns").select("id, name").order("created_at", { ascending: true });
+      const { data } = await supabase.from("campaigns").select("id, name, share_code").order("created_at", { ascending: true });
       const list = (data as Campaign[]) || [];
       setCampaigns(list);
       if (list.length) setCampaignId(list[0].id);
@@ -148,6 +149,15 @@ export default function RosterPage() {
                 })}
               </div>
             )}
+
+            {(() => {
+              const shareCode = campaigns.find((c) => c.id === campaignId)?.share_code ?? null;
+              return shareCode ? (
+                <div style={{ marginBottom: 18 }}>
+                  <TableTapCard shareCode={shareCode} />
+                </div>
+              ) : null;
+            })()}
 
             <div style={box}>
               <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>Unbound inventories</div>
