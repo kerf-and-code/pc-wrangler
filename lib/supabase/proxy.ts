@@ -51,7 +51,8 @@ export async function updateSession(request: NextRequest) {
     !request.nextUrl.pathname.startsWith("/join") &&
     !request.nextUrl.pathname.startsWith("/api/transcribe") &&
     !request.nextUrl.pathname.startsWith("/api/discord") &&
-    !request.nextUrl.pathname.startsWith("/api/vtt")
+    !request.nextUrl.pathname.startsWith("/api/vtt") &&
+    !request.nextUrl.pathname.startsWith("/table")
   ) {
     // no user, potentially respond by redirecting the user to the login page
     const url = request.nextUrl.clone();
