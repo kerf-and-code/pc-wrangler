@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
   }
 
   // Resolve DDB character ids -> Six Axes characters in one query.
-  const ddbIds = Array.from(
+  const ddbIds: string[] = Array.from(
     new Set(
       events
         .map((e: any) => cleanString(e?.ddb_character_id, 64))
