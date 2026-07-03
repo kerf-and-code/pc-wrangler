@@ -178,17 +178,24 @@ function TableTapInner() {
   const [pending, setPending] = useState(0);
   const [skipped, setSkipped] = useState(0);
   const [unmatched, setUnmatched] = useState<string[]>([]);
+  const [charOptions, setCharOptions] = useState<{ id: string; name: string }[] | null>(null);
+  const [linkSel, setLinkSel] = useState<Record<string, string>>({});
+  const [linking, setLinking] = useState<string | null>(null);
   const [lastError, setLastError] = useState<string | null>(null);
   const [feed, setFeed] = useState<{ line: string; fidelity: string; at: string }[]>([]);
 
   const queueRef = useRef<TapEvent[]>([]);
   const flushingRef = useRef(false);
+  const actorNamesRef = useRef<Record<string, string>>({});
 
   const enqueue = useCallback((evts: TapEvent[]) => {
     if (evts.length === 0) return;
     const q = queueRef.current;
     for (const e of evts) {
       q.push(e);
+      if (e.ddb_character_id && e.actor_name) {
+        actorNamesRef.current[e.ddb_character_id] = e.actor_name;
+      }
       const total = e.rolls && "total" in e.rolls ? ` = ${e.rolls.total}` : "";
       const line = `${e.actor_name ?? "Unknown"} ${e.event_type}${e.name ? `: ${e.name}` : ""}${total}`;
       setFeed((f) => [{ line, fidelity: e.fidelity, at: new Date().toLocaleTimeString() }, ...f].slice(0, 25));
@@ -299,6 +306,58 @@ function TableTapInner() {
     if (pending >= 10) void flush();
   }, [pending, flush]);
 
+  useEffect(() => {
+    if (unmatched.length === 0 || charOptions !== null) return;
+    let active = true;
+    (async () => {
+      try {
+        const res = await fetch(`/api/vtt/link?share_code=${encodeURIComponent(code)}`);
+        const data = await res.json().catch(() => ({}));
+        if (!active) return;
+        if (res.ok && Array.isArray(data.characters)) {
+          setCharOptions(
+            data.characters
+              .filter((c: any) => c && c.linked === false)
+              .map((c: any) => ({ id: String(c.id), name: String(c.name) }))
+          );
+        } else {
+          setCharOptions([]);
+        }
+      } catch {
+        if (active) setCharOptions([]);
+      }
+    })();
+    return () => { active = false; };
+  }, [unmatched, charOptions, code]);
+
+  const linkCharacter = async (ddbId: string) => {
+    const characterId = linkSel[ddbId];
+    if (!characterId || linking) return;
+    setLinking(ddbId);
+    try {
+      const res = await fetch("/api/vtt/link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ share_code: code, ddb_character_id: ddbId, character_id: characterId }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.linked) {
+        setUnmatched((prev) => prev.filter((id) => id !== ddbId));
+        setCharOptions((prev) => (prev ?? []).filter((c) => c.id !== characterId));
+        const actor = actorNamesRef.current[ddbId] ?? ddbId;
+        const extra = data.backfilled > 0 ? ` (${data.backfilled} earlier roll${data.backfilled === 1 ? "" : "s"} attributed)` : "";
+        setFeed((f) => [{ line: `Linked ${actor} to ${data.character_name}${extra}`, fidelity: "canonical", at: new Date().toLocaleTimeString() }, ...f].slice(0, 25));
+        setLastError(null);
+      } else {
+        setLastError(typeof data.error === "string" ? data.error : "Linking failed. Try again.");
+      }
+    } catch {
+      setLastError("Network error while linking. Try again.");
+    } finally {
+      setLinking(null);
+    }
+  };
+
   const pill = (label: string, ok: boolean | null) => (
     <span
       style={{
@@ -357,9 +416,43 @@ function TableTapInner() {
       )}
 
       {unmatched.length > 0 && (
-        <div style={{ background: "#221c31", border: "1px solid #37304a", borderRadius: 10, padding: 12, fontSize: 13, marginBottom: 12, color: "#b7aed1" }}>
-          Rolls received from unlinked D&D Beyond character id{unmatched.length > 1 ? "s" : ""}:{" "}
-          {unmatched.join(", ")}. Your GM can link them to campaign characters in Six Axes.
+        <div style={{ background: "#221c31", border: `1px solid ${BRASS}`, borderRadius: 10, padding: 14, fontSize: 13, marginBottom: 12 }}>
+          <div style={{ color: BRASS, fontWeight: 700, marginBottom: 8 }}>Link your character</div>
+          {unmatched.map((ddbId) => (
+            <div key={ddbId} style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 8 }}>
+              <span style={{ color: "#e8e2f0" }}>
+                {actorNamesRef.current[ddbId] ?? "Unknown"}{" "}
+                <span style={{ color: "#776d90", fontSize: 12 }}>(D&amp;D Beyond {ddbId})</span> is
+              </span>
+              <select
+                value={linkSel[ddbId] ?? ""}
+                onChange={(e: any) => setLinkSel((s) => ({ ...s, [ddbId]: e.target.value }))}
+                style={{ background: "#1a1526", color: "#e8e2f0", border: "1px solid #37304a", borderRadius: 8, padding: "6px 8px", fontSize: 13 }}
+              >
+                <option value="">Choose a character...</option>
+                {(charOptions ?? []).map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+              <button
+                onClick={() => void linkCharacter(ddbId)}
+                disabled={!linkSel[ddbId] || linking === ddbId}
+                style={{
+                  background: linkSel[ddbId] ? BRASS : "#2a2438",
+                  color: linkSel[ddbId] ? "#1a1626" : "#776d90",
+                  border: 0, borderRadius: 8, padding: "6px 14px", fontSize: 13, fontWeight: 700,
+                  cursor: linkSel[ddbId] ? "pointer" : "default",
+                }}
+              >
+                {linking === ddbId ? "Linking..." : "Link"}
+              </button>
+            </div>
+          ))}
+          {charOptions !== null && charOptions.length === 0 && (
+            <div style={{ color: "#9a8fb0" }}>
+              No unlinked characters available. Ask your GM to add your character in Six Axes, then roll again.
+            </div>
+          )}
         </div>
       )}
 
