@@ -7,7 +7,7 @@
 // /api/vtt/ingest. Fidelity: events rendered locally from a formula (rendered:
 // "fallback") are marked unverified; baked digital-dice results are canonical.
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 
 const BRASS = "#c8a24b";
@@ -155,6 +155,20 @@ function normalizeRenderedRoll(payload: any): TapEvent[] {
 }
 
 export default function TableTapPage() {
+  return (
+    <Suspense
+      fallback={
+        <main style={{ minHeight: "100vh", background: "#16121f", color: "#9a8fb0", fontFamily: "system-ui, sans-serif", padding: 24 }}>
+          Loading Table Tap...
+        </main>
+      }
+    >
+      <TableTapInner />
+    </Suspense>
+  );
+}
+
+function TableTapInner() {
   const params = useParams();
   const code = String((params as any)?.code ?? "").toLowerCase();
 
