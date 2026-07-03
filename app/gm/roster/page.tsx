@@ -18,6 +18,8 @@ type Resp = { id: string; player_name: string | null; assigned_character_id: str
 export default function RosterPage() {
   const supabase = useMemo(() => createClient(), []);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [rotating, setRotating] = useState<boolean>(false);
+  const [rotateMsg, setRotateMsg] = useState<string | null>(null);
   const [campaignId, setCampaignId] = useState<string>("");
   const [chars, setChars] = useState<Char[]>([]);
   const [responses, setResponses] = useState<Resp[]>([]);
@@ -152,11 +154,46 @@ export default function RosterPage() {
 
             {(() => {
               const shareCode = campaigns.find((c) => c.id === campaignId)?.share_code ?? null;
-              return shareCode ? (
+              if (!shareCode) return null;
+              const rotate = async () => {
+                if (rotating) return;
+                if (!window.confirm("Regenerate the session link? The old link stops working immediately, and everyone will need the new one.")) return;
+                setRotating(true);
+                setRotateMsg(null);
+                try {
+                  const res = await fetch("/api/campaign/rotate-share", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ campaign_id: campaignId }),
+                  });
+                  const data = await res.json().catch(() => ({}));
+                  if (res.ok && data.share_code) {
+                    setCampaigns((prev) => prev.map((c) => (c.id === campaignId ? { ...c, share_code: data.share_code } : c)));
+                    setRotateMsg("New link generated. Share it with your players.");
+                  } else {
+                    setRotateMsg(typeof data.error === "string" ? data.error : "Could not regenerate the link.");
+                  }
+                } catch {
+                  setRotateMsg("Network error. Try again.");
+                } finally {
+                  setRotating(false);
+                }
+              };
+              return (
                 <div style={{ marginBottom: 18 }}>
                   <TableTapCard shareCode={shareCode} />
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 8, flexWrap: "wrap" }}>
+                    <button type="button" onClick={rotate} disabled={rotating}
+                      style={{ background: "transparent", color: C.warn, border: `1px solid ${C.line}`, borderRadius: 8, padding: "5px 12px", fontSize: 12, fontWeight: 600, cursor: rotating ? "default" : "pointer" }}>
+                      {rotating ? "Regenerating..." : "Regenerate session link"}
+                    </button>
+                    {rotateMsg && <span style={{ fontSize: 12, color: C.muted }}>{rotateMsg}</span>}
+                  </div>
+                  <div style={{ fontSize: 11.5, color: C.muted, marginTop: 6, maxWidth: 520, lineHeight: 1.5 }}>
+                    Use this if a link leaked or a player left the table. The old link stops working right away.
+                  </div>
                 </div>
-              ) : null;
+              );
             })()}
 
             <div style={box}>
