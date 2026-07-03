@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import TableTapCard from "@/components/table-tap-card";
+import BoundariesCard from "@/components/boundaries-card";
 import { SAX, surfaces, ui } from "@/lib/theme";
 
 const C = {
@@ -195,6 +196,12 @@ export default function RosterPage() {
                 </div>
               );
             })()}
+
+            {campaignId && (
+              <div style={{ marginBottom: 18 }}>
+                <BoundariesCard campaignId={campaignId} />
+              </div>
+            )}
 
             <div style={box}>
               <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>Unbound inventories</div>
