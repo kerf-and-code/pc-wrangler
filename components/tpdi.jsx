@@ -521,11 +521,16 @@ export default function TPDI() {
             </div>
 
             <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-              <button onClick={() => setPhase("results")} className="tpdi-foc"
-                style={{ background: C.brass, border: "none", color: "#1a1206", borderRadius: 10, padding: "11px 22px", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>
-                Continue to results
+              <button
+                onClick={async () => { await saveProfile(); setPhase("results"); }}
+                disabled={saving || !userId}
+                className="tpdi-foc"
+                style={{ background: C.brass, border: "none", color: "#1a1206", borderRadius: 10, padding: "11px 22px", fontSize: 14, fontWeight: 700, cursor: saving ? "default" : "pointer", opacity: saving ? 0.7 : 1 }}>
+                {saving ? "Saving..." : saved ? "Saved \u2014 see results" : "Save & continue to results"}
               </button>
-              <span style={{ color: C.muted, fontSize: 12.5 }}>Saved with your profile at the end.</span>
+              <span style={{ color: C.muted, fontSize: 12.5 }}>
+                {saved ? "Your profile and safety notes are saved." : "This saves your profile and safety notes."}
+              </span>
             </div>
           </div>
         )}
