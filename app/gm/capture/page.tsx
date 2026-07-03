@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
+import GmIdentityCard from "@/components/gm-identity-card";
 import { SAX, surfaces, ui } from "@/lib/theme";
 
 const C = {
@@ -191,6 +192,7 @@ export default function CapturePage() {
 
   const presentChars = chars.filter((c) => PRESENT.includes(att[c.id] || ""));
   const missing = presentChars.filter((c) => !consents[c.id]);
+
   const trackChars = new Set(tracks.map((t) => t.character_id));
   const isDraft = !job || job.status === "draft";
 
@@ -219,6 +221,9 @@ export default function CapturePage() {
             {sessions.map((s) => (<option key={s.id} value={s.id}>Session {s.session_number ?? "?"} ({s.status})</option>))}
           </select>
         </div>
+
+        {/* narrator (GM) voice link — campaign-scoped, so it shows once a campaign is picked */}
+        <GmIdentityCard campaignId={campaignId} />
 
         {selectedSession && (
           <>
