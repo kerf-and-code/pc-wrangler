@@ -38,6 +38,7 @@ const GROUPS: Group[] = [
   ] },
   { label: "Power", href: "/gm/power" },
   { label: "Inventory", href: "/play" },
+  { label: "Help", href: "/gm/help" },
 ];
 
 const PLAYER: Leaf[] = [
