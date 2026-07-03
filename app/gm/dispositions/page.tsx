@@ -16,9 +16,18 @@ const C = {
 
 const AXES = ["N", "T", "O", "S", "E", "I"] as const;
 type Axis = typeof AXES[number];
+// Player-facing TAVERN labels, aligned with the TPDI inventory (components/tpdi.jsx).
+// Internal keys stay N/T/O/S/E/I (CESTWP); the disposition model is unchanged.
 const AXIS_LABEL: Record<Axis, string> = {
+  N: "Voice", T: "Tactics", O: "Arcana",
+  S: "Rapport", E: "Exploration", I: "Nerve",
+};
+const AXIS_SUB: Record<Axis, string> = {
   N: "The Character", T: "The Encounter", O: "The System",
   S: "The Table", E: "The World", I: "Presence",
+};
+const AXIS_TAVERN_LETTER: Record<Axis, string> = {
+  N: "V", T: "T", O: "A", S: "R", E: "E", I: "N",
 };
 const AXIS_COLOR: Record<Axis, string> = {
   N: "#B7615A", T: "#C8A24B", O: "#4E8077", S: "#CE8A42", E: "#6C76B0", I: "#9A93B0",
@@ -96,7 +105,7 @@ function Radar({ d }: { d: Built }) {
           <g key={ax}>
             <line x1={CEN} y1={CEN} x2={sx} y2={sy} stroke={C.line} strokeWidth={0.7} opacity={0.5} />
             <text x={lx} y={ly} fill={AXIS_COLOR[ax]} fontSize={13} fontWeight={700}
-              textAnchor="middle" dominantBaseline="middle" fontFamily="ui-monospace, monospace">{ax}</text>
+              textAnchor="middle" dominantBaseline="middle" fontFamily="ui-monospace, monospace">{AXIS_TAVERN_LETTER[ax]}</text>
           </g>
         );
       })}
@@ -206,7 +215,7 @@ export default function DispositionsPage() {
         <div>
           <span style={swatch(C.sun)} /><span style={{ fontSize: 13 }}>Behavior (posterior)</span>
         </div>
-        <div style={{ color: C.muted, fontSize: 12.5 }}>N The Character · T The Encounter · O The System · S The Table · E The World · I Presence</div>
+        <div style={{ color: C.muted, fontSize: 12.5 }}>T Tactics · A Arcana · V Voice · E Exploration · R Rapport · N Nerve</div>
       </div>
 
       <div style={box}>
@@ -245,6 +254,7 @@ export default function DispositionsPage() {
                       : (<>Behavior credibly differs from self-report on {divs.map((x, k) => (
                           <span key={x.ax}>
                             <span style={{ color: AXIS_COLOR[x.ax], fontWeight: 700 }}>{AXIS_LABEL[x.ax]}</span>
+                            <span style={{ color: C.muted }}> ({AXIS_SUB[x.ax].replace("The ", "")})</span>
                             <span> ({x.dir === "above" ? "more" : "less"} than reported)</span>
                             {k < divs.length - 1 ? ", " : "."}
                           </span>

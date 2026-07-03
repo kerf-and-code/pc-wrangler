@@ -34,15 +34,38 @@ const C = {
   disagree: SAX.warn,
 };
 
+// Internal keys stay N/T/O/S/E/I (CESTWP) so scoring and the disposition model
+// are untouched. `tavern` is the player-facing label layer: the axes spell TAVERN,
+// the tavern being where you meet your characters.
 const AXES = {
-  N: { key: "N", name: "The Character", facet: "Narrative & immersion", color: "#B7615A" },
-  T: { key: "T", name: "The Encounter", facet: "Tactical play", color: "#C8A24B" },
-  O: { key: "O", name: "The System", facet: "Optimization & mastery", color: "#4E8077" },
-  S: { key: "S", name: "The Table", facet: "Social & cohesion", color: "#CE8A42" },
-  E: { key: "E", name: "The World", facet: "Exploration & discovery", color: "#6C76B0" },
-  I: { key: "I", name: "Presence", facet: "Engagement intensity", color: "#C8A24B" },
+  N: { key: "N", name: "The Character", tavern: "V", tavernName: "Voice", facet: "Narrative & immersion", color: "#B7615A" },
+  T: { key: "T", name: "The Encounter", tavern: "T", tavernName: "Tactics", facet: "Tactical play", color: "#C8A24B" },
+  O: { key: "O", name: "The System", tavern: "A", tavernName: "Arcana", facet: "Optimization & mastery", color: "#4E8077" },
+  S: { key: "S", name: "The Table", tavern: "R", tavernName: "Rapport", facet: "Social & cohesion", color: "#CE8A42" },
+  E: { key: "E", name: "The World", tavern: "E", tavernName: "Exploration", facet: "Exploration & discovery", color: "#6C76B0" },
+  I: { key: "I", name: "Presence", tavern: "N", tavernName: "Nerve", facet: "Engagement intensity", color: "#C8A24B" },
 };
+// TAVERN reading order for display (T-A-V-E-R-N -> internal keys).
+const TAVERN_ORDER = ["T", "O", "N", "E", "S", "I"];
 const FLAVOR = ["N", "T", "O", "S", "E"];
+
+// Suggested lines (hard no, never at the table) and veils (allowed but faded to
+// black, kept off-screen) as boilerplate the player can accept, drop, or extend.
+const SAFETY_SUGGESTIONS = {
+  lines: [
+    "Harm to children",
+    "Sexual violence",
+    "Graphic torture",
+    "Animal cruelty",
+    "Self-harm or suicide",
+  ],
+  veils: [
+    "On-screen romance / intimacy",
+    "Detailed gore",
+    "Bigotry aimed at the party",
+    "Spiders / swarms",
+  ],
+};
 
 const ITEMS = [
   { id: "n1", axis: "N", reverse: false, text: "I enjoy speaking and acting in my character's voice during play." },
@@ -142,11 +165,16 @@ function Astrolabe({ size = 320, spin = false, axes = true }) {
 }
 
 export default function TPDI() {
-  const [phase, setPhase] = useState("intro"); // intro | quiz | results
+  const [phase, setPhase] = useState("intro"); // intro | quiz | safety | results
   const [order, setOrder] = useState(ITEMS);
   useEffect(() => { setOrder(shuffled(ITEMS)); }, []);
   const [idx, setIdx] = useState(0);
   const [answers, setAnswers] = useState({}); // id -> 1..5 or "NB"
+  const [lines, setLines] = useState(() => [...SAFETY_SUGGESTIONS.lines]);
+  const [veils, setVeils] = useState(() => [...SAFETY_SUGGESTIONS.veils]);
+  const [customLine, setCustomLine] = useState("");
+  const [customVeil, setCustomVeil] = useState("");
+  const [safetyNote, setSafetyNote] = useState("");
   const liveRef = useRef(null);
 
   const reduce = useMemo(
@@ -213,6 +241,7 @@ export default function TPDI() {
       instrument_version: "tpdi-v1.0-draft",
       answers,
       scores: result,
+      safety: { lines, veils, note: safetyNote.trim() || null },
       item_order: order.map((it) => it.id),
     };
     let error;
@@ -229,7 +258,7 @@ export default function TPDI() {
   function record(val) {
     setAnswers((a) => ({ ...a, [current.id]: val }));
     if (idx < order.length - 1) setIdx(idx + 1);
-    else setPhase("results");
+    else setPhase("safety");
   }
 
   function back() {
@@ -282,7 +311,7 @@ export default function TPDI() {
   const shown = viewSaved && existing ? existing.scores : result;
 
   const radarData = FLAVOR.map((k) => ({
-    axis: AXES[k].name.replace("The ", ""),
+    axis: AXES[k].tavernName,
     value: shown.axisMean[k] === null ? 0 : shown.axisMean[k],
     full: 5,
   }));
@@ -430,6 +459,77 @@ export default function TPDI() {
           </div>
         )}
 
+        {/* ---------- SAFETY (lines & veils) ---------- */}
+        {phase === "safety" && (
+          <div className="tpdi-fade">
+            <h2 className="tpdi-serif" style={{ fontSize: 30, fontWeight: 600, margin: "4px 0 6px" }}>
+              Your table safety
+            </h2>
+            <p style={{ color: C.muted, fontSize: 14.5, lineHeight: 1.6, maxWidth: 560, marginBottom: 18 }}>
+              Before you sit down: a <strong style={{ color: C.vellum }}>line</strong> is a hard no that never
+              appears at the table; a <strong style={{ color: C.vellum }}>veil</strong> can happen in the story
+              but fades to black, off screen. These are suggestions, keep what fits, remove what doesn&apos;t,
+              and add your own. Your GM sees the table&apos;s combined list, never who said what.
+            </p>
+
+            {[
+              { title: "Lines", subtitle: "hard no, never at the table", items: lines, setItems: setLines, custom: customLine, setCustom: setCustomLine, accent: C.brass },
+              { title: "Veils", subtitle: "allowed, but off screen", items: veils, setItems: setVeils, custom: customVeil, setCustom: setCustomVeil, accent: "#6C76B0" },
+            ].map((grp) => (
+              <div key={grp.title} style={{ background: C.panel, border: `1px solid ${C.line}`, borderRadius: 14, padding: "18px 20px", marginBottom: 14 }}>
+                <div className="tpdi-mono" style={{ fontSize: 11, letterSpacing: "0.18em", color: grp.accent, textTransform: "uppercase", marginBottom: 3 }}>
+                  {grp.title}
+                </div>
+                <div style={{ color: C.muted, fontSize: 12.5, marginBottom: 12 }}>{grp.subtitle}</div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
+                  {grp.items.map((item) => (
+                    <span key={item} style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 13, background: "rgba(11,7,18,0.5)", border: `1px solid ${C.line}`, borderRadius: 999, padding: "6px 8px 6px 13px" }}>
+                      {item}
+                      <button onClick={() => grp.setItems((xs) => xs.filter((x) => x !== item))} aria-label={`Remove ${item}`}
+                        style={{ background: "none", border: "none", color: C.muted, cursor: "pointer", fontSize: 15, lineHeight: 1, padding: "0 4px" }}>
+                        &times;
+                      </button>
+                    </span>
+                  ))}
+                  {grp.items.length === 0 && <span style={{ color: C.line, fontSize: 13 }}>None kept.</span>}
+                </div>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <input value={grp.custom} onChange={(e) => grp.setCustom(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && grp.custom.trim()) {
+                        grp.setItems((xs) => Array.from(new Set([...xs, grp.custom.trim()])));
+                        grp.setCustom("");
+                      }
+                    }}
+                    placeholder={`Add a ${grp.title.slice(0, -1).toLowerCase()}...`}
+                    style={{ flex: 1, background: "rgba(11,7,18,0.6)", border: `1px solid ${C.line}`, borderRadius: 8, padding: "8px 11px", color: C.vellum, fontSize: 13 }} />
+                  <button onClick={() => { if (grp.custom.trim()) { grp.setItems((xs) => Array.from(new Set([...xs, grp.custom.trim()]))); grp.setCustom(""); } }}
+                    className="tpdi-foc" style={{ background: "none", border: `1px solid ${C.line}`, color: C.vellum, borderRadius: 8, padding: "8px 14px", fontSize: 13, cursor: "pointer" }}>
+                    Add
+                  </button>
+                </div>
+              </div>
+            ))}
+
+            <div style={{ background: C.panel, border: `1px solid ${C.line}`, borderRadius: 14, padding: "18px 20px", marginBottom: 16 }}>
+              <div className="tpdi-mono" style={{ fontSize: 11, letterSpacing: "0.18em", color: C.muted, textTransform: "uppercase", marginBottom: 10 }}>
+                Anything else for your GM (optional)
+              </div>
+              <textarea value={safetyNote} onChange={(e) => setSafetyNote(e.target.value)} rows={2}
+                placeholder="A content note, an ask, a heads-up..."
+                style={{ width: "100%", background: "rgba(11,7,18,0.6)", border: `1px solid ${C.line}`, borderRadius: 8, padding: "10px 12px", color: C.vellum, fontSize: 13.5, resize: "vertical" }} />
+            </div>
+
+            <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+              <button onClick={() => setPhase("results")} className="tpdi-foc"
+                style={{ background: C.brass, border: "none", color: "#1a1206", borderRadius: 10, padding: "11px 22px", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>
+                Continue to results
+              </button>
+              <span style={{ color: C.muted, fontSize: 12.5 }}>Saved with your profile at the end.</span>
+            </div>
+          </div>
+        )}
+
         {/* ---------- RESULTS ---------- */}
         {phase === "results" && (
           <div className="tpdi-fade">
@@ -470,8 +570,8 @@ export default function TPDI() {
                   <div key={w.key} style={{ marginBottom: 12 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 5 }}>
                       <span style={{ fontSize: 15 }}>
-                        <span className="tpdi-serif" style={{ color: ax.color, fontWeight: 600 }}>{ax.name}</span>
-                        <span style={{ color: C.muted, fontSize: 12.5 }}>{"  "}&middot; {ax.facet}</span>
+                        <span className="tpdi-serif" style={{ color: ax.color, fontWeight: 600 }}>{ax.tavernName}</span>
+                        <span style={{ color: C.muted, fontSize: 12.5 }}>{"  "}&middot; {ax.name.replace("The ", "")} &middot; {ax.facet}</span>
                       </span>
                       <span className="tpdi-mono" style={{ fontSize: 13, color: "#D8D0C0" }}>{Math.round(w.w * 100)}%</span>
                     </div>
