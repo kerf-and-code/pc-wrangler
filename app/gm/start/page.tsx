@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
+import TableTapCard from "@/components/table-tap-card";
 import { SAX } from "@/lib/theme";
 
 const C = {
@@ -17,12 +18,13 @@ const C = {
   good: SAX.good,
 };
 
-type Step = { key: string; label: string; desc: string; href: string; cta: string; done: boolean };
+type Step = { key: string; label: string; desc: string; href: string; cta: string; done: boolean; optional?: boolean };
 
 export default function GettingStartedPage() {
   const supabase = useMemo(() => createClient(), []);
   const [status, setStatus] = useState<"loading" | "ready" | "signin">("loading");
-  const [flags, setFlags] = useState({ campaign: false, pc: false, session: false, recap: false, schedule: false });
+  const [shareCode, setShareCode] = useState<string | null>(null);
+  const [flags, setFlags] = useState({ campaign: false, pc: false, session: false, recap: false, schedule: false, tap: false });
 
   useEffect(() => {
     let active = true;
@@ -30,20 +32,23 @@ export default function GettingStartedPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { if (active) setStatus("signin"); return; }
 
-      const [{ data: camps }, { data: pcs }, { data: sess }] = await Promise.all([
-        supabase.from("campaigns").select("id").limit(1),
+      const [{ data: camps }, { data: pcs }, { data: sess }, { data: taps }] = await Promise.all([
+        supabase.from("campaigns").select("id, share_code").limit(1),
         supabase.from("characters").select("id").eq("kind", "pc").limit(1),
         supabase.from("sessions").select("id, notes, recap, scheduled_at"),
+        supabase.from("vtt_events").select("id").limit(1),
       ]);
       if (!active) return;
 
       const sessions = sess || [];
+      setShareCode((camps || [])[0]?.share_code ?? null);
       setFlags({
         campaign: (camps || []).length > 0,
         pc: (pcs || []).length > 0,
         session: sessions.some((s: any) => (s.notes && s.notes.trim()) || s.recap),
         recap: sessions.some((s: any) => s.recap && s.recap.trim()),
         schedule: sessions.some((s: any) => s.scheduled_at),
+        tap: (taps || []).length > 0,
       });
       setStatus("ready");
     })();
@@ -56,10 +61,11 @@ export default function GettingStartedPage() {
     { key: "session", label: "Log your last session", desc: "Paste a few notes about what happened. No recording or transcription needed.", href: "/gm/sessions", cta: "Log a session", done: flags.session },
     { key: "recap", label: "Generate and share a recap", desc: "Turn those notes into a 'previously on...' your players can read or get by email.", href: "/gm/sessions", cta: "Write a recap", done: flags.recap },
     { key: "schedule", label: "Schedule your next session", desc: "Set a time so players can RSVP and get a reminder the day before.", href: "/gm/sessions", cta: "Set a time", done: flags.schedule },
+    { key: "tap", label: "Capture table rolls (optional)", desc: "Players who use Beyond20 with D&D Beyond and Roll20 can keep the Table Tap open during sessions. Their attacks, saves, damage, and HP changes flow into recaps and analytics automatically.", href: "", cta: "", done: flags.tap, optional: true },
   ];
 
   const doneCount = steps.filter((s) => s.done).length;
-  const allDone = doneCount === steps.length;
+  const allDone = steps.every((s) => s.done || s.optional);
   const firstOpen = steps.find((s) => !s.done)?.key;
 
   const card = { background: C.surface, border: `1px solid ${C.line}`, borderRadius: 14, padding: "18px 20px", marginBottom: 12 } as const;
@@ -73,7 +79,7 @@ export default function GettingStartedPage() {
         Run your first session
       </h1>
       <p style={{ color: C.muted, fontSize: 15, lineHeight: 1.6, margin: "0 0 22px", maxWidth: 600 }}>
-        Five steps from empty to a shareable recap and a scheduled next game. You can do it all from your notes, no recording required.
+        Six steps from empty to a shareable recap, a scheduled next game, and live roll capture. The last one is optional, and you can do it all from your notes, no recording required.
       </p>
 
       {status === "loading" && <p style={{ color: C.muted, fontSize: 14 }}>Loading…</p>}
@@ -109,7 +115,12 @@ export default function GettingStartedPage() {
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 15, fontWeight: 600, color: s.done ? C.muted : C.text }}>{s.label}</div>
                   <div style={{ fontSize: 13.5, color: C.muted, lineHeight: 1.5, marginTop: 3 }}>{s.desc}</div>
-                  {!s.done && (
+                  {!s.done && s.key === "tap" && shareCode && (
+                    <div style={{ marginTop: 12 }}>
+                      <TableTapCard shareCode={shareCode} />
+                    </div>
+                  )}
+                  {!s.done && s.key !== "tap" && (
                     <a href={s.href} style={{ display: "inline-block", marginTop: 12, background: isOpen ? C.brass : "transparent", color: isOpen ? SAX.inkDeep : C.text,
                       border: isOpen ? "none" : `1px solid ${C.line}`, borderRadius: 9, padding: "8px 16px", fontSize: 13.5, fontWeight: 600, textDecoration: "none" }}>
                       {s.cta}
