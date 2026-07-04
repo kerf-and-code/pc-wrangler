@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
+import { useMomentPlayer, MomentButton } from "@/components/moment-player";
 import { SAX, surfaces, ui } from "@/lib/theme";
 
 const C = {
@@ -46,6 +47,16 @@ type Link = {
   target_id: string;
   relation: string | null;
 };
+type Sess = { id: string; session_number: number | null };
+type GmBeat = {
+  id: string; kind: string; summary: string; quote: string | null;
+  session_id: string | null; t_start_seconds: number | null; audio_track_id: string | null; created_at: string;
+};
+
+const NPC_BEAT_KINDS = ["npc_introduced", "npc_voice", "npc_action", "npc_departed"];
+const BEAT_LABEL: Record<string, string> = {
+  npc_introduced: "Introduced", npc_voice: "Spoke", npc_action: "Acted", npc_departed: "Departed",
+};
 
 type Mode =
   | { what: "entry"; type: string; id: string | null }
@@ -88,6 +99,9 @@ export default function CodexPage() {
   const [saving, setSaving] = useState<boolean>(false);
   const [linkPick, setLinkPick] = useState<string>("");
   const [linkRel, setLinkRel] = useState<string>("");
+  const [sessions, setSessions] = useState<Sess[]>([]);
+  const [beats, setBeats] = useState<GmBeat[]>([]);
+  const player = useMomentPlayer();
 
   // ---- lookups ----
   const labelOf = (type: string, id: string): string => {
@@ -112,14 +126,16 @@ export default function CodexPage() {
   }, [supabase]);
 
   async function reload(cid: string) {
-    const [{ data: e }, { data: c }, { data: l }] = await Promise.all([
+    const [{ data: e }, { data: c }, { data: l }, { data: ss }] = await Promise.all([
       supabase.from("entries").select("id, type, title, body, visibility, tags").eq("campaign_id", cid).order("title"),
       supabase.from("characters").select("id, name, kind, description, visibility, tags, class, subclass").eq("campaign_id", cid).order("name"),
       supabase.from("entity_links").select("id, source_type, source_id, target_type, target_id, relation").eq("campaign_id", cid),
+      supabase.from("sessions").select("id, session_number").eq("campaign_id", cid),
     ]);
     setEntries((e as Entry[]) || []);
     setChars((c as Char[]) || []);
     setLinks((l as Link[]) || []);
+    setSessions((ss as Sess[]) || []);
   }
 
   useEffect(() => {
@@ -195,6 +211,32 @@ export default function CodexPage() {
   const curType = mode && mode.what === "entry" ? "entry" : "character";
   const curId = mode ? mode.id : null;
   const myLinks = links.filter((l) => (l.source_type === curType && l.source_id === curId) || (l.target_type === curType && l.target_id === curId));
+
+  // ---- NPC "from play" enrichment ----
+  const curChar = mode && mode.what === "character" && mode.id ? chars.find((c) => c.id === mode.id) || null : null;
+  const isNpc = !!curChar && curChar.kind === "npc";
+  const sessNo = (sid: string | null): string => {
+    if (!sid) return "";
+    const s = sessions.find((x) => x.id === sid);
+    return s && s.session_number !== null ? `S${s.session_number}` : "";
+  };
+
+  async function loadNpcBeats(charId: string) {
+    const { data } = await supabase
+      .from("gm_events")
+      .select("id, kind, summary, quote, session_id, t_start_seconds, audio_track_id, created_at")
+      .eq("campaign_id", campaignId)
+      .eq("npc_id", charId)
+      .in("kind", NPC_BEAT_KINDS)
+      .order("created_at", { ascending: false });
+    setBeats((data as GmBeat[]) || []);
+  }
+
+  useEffect(() => {
+    if (isNpc && mode?.id && campaignId) loadNpcBeats(mode.id);
+    else setBeats([]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode?.id, isNpc, campaignId]);
 
   async function addLink() {
     if (!mode || !mode.id || !linkPick || !campaignId) return;
@@ -388,6 +430,41 @@ export default function CodexPage() {
                 ) : (
                   <div style={{ borderTop: `1px solid ${C.line}`, paddingTop: 14, fontSize: 12, color: C.muted }}>
                     Save first, then you can add connections.
+                  </div>
+                )}
+
+                {/* From play: read-only accretion from GM narration. This is also
+                    the seam for a future "draft description from these beats" button. */}
+                {isNpc && mode.id && (
+                  <div style={{ borderTop: `1px solid ${C.line}`, paddingTop: 16, marginTop: 16 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>From play</div>
+                    <div style={{ fontSize: 12, color: C.muted, marginBottom: 12 }}>
+                      What your GM narration said about {form.name || "this NPC"}, newest first. Approved on Review; nothing here overwrites your description.
+                    </div>
+                    {player.error && <p style={{ color: C.warn, fontSize: 12.5, marginBottom: 10 }}>{player.error}</p>}
+                    {beats.length === 0 ? (
+                      <p style={{ color: C.muted, fontSize: 13 }}>
+                        No narrated beats yet. Approve npc events for this character on Review (use Accept + create NPC) and they gather here.
+                      </p>
+                    ) : (
+                      <div style={{ display: "grid", gap: 8 }}>
+                        {beats.map((b) => (
+                          <div key={b.id} style={{ background: C.surface2, border: `1px solid ${C.line}`, borderRadius: 8, padding: "10px 12px" }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                              <span style={{ fontSize: 11, color: C.plum, fontFamily: "ui-monospace, monospace", letterSpacing: "0.04em" }}>
+                                {BEAT_LABEL[b.kind] || b.kind}{sessNo(b.session_id) ? ` · ${sessNo(b.session_id)}` : ""}
+                              </span>
+                              {b.audio_track_id && (
+                                <MomentButton active={player.activeId === b.id} loading={player.loadingId === b.id} tStart={b.t_start_seconds}
+                                  onClick={() => player.play(b.id, b.audio_track_id, b.t_start_seconds)} />
+                              )}
+                            </div>
+                            <div style={{ fontSize: 13.5, color: C.text, marginTop: 6, lineHeight: 1.5 }}>{b.summary}</div>
+                            {b.quote && <div style={{ fontSize: 12.5, color: C.muted, marginTop: 6, fontStyle: "italic" }}>{"\u201c"}{b.quote}{"\u201d"}</div>}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
               </>
