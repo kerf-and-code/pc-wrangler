@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
-import { SAX } from "@/lib/theme";
+import { SAX, AXES, type AxisKey } from "@/lib/theme";
 
 // Palette mapped onto the shared cellar theme.
 const C = {
@@ -24,8 +24,6 @@ const LABEL: Record<string, string> = {
 const CORE_CLASSES = ["Artificer","Barbarian","Bard","Cleric","Druid","Fighter","Monk","Paladin","Ranger","Rogue","Sorcerer","Warlock","Wizard"];
 // Fallback coverage profile for "Other" / unrecognized classes.
 const GENERAL_PROFILE = ["melee","single_target","utility"];
-
-const AXIS_LABEL: Record<string, string> = { N: "Character", T: "Encounter", O: "System", S: "Table", E: "World", I: "Presence" };
 
 const CORE_SPECIES = [
   "Aarakocra","Aasimar","Aeormaton","Air Genasi","Astral Elf","Autognome","Bugbear","Centaur",
@@ -414,7 +412,7 @@ export default function GMWorkspace() {
             ) : (
               dispositions.filter((d) => d.campaign_id === selected).map((d) => {
                 const leanings = (d.scores?.weights || []).slice(0, 2)
-                  .map((w: any) => `${AXIS_LABEL[w.key] || w.key} ${Math.round((w.w || 0) * 100)}%`).join(", ");
+                  .map((w: any) => `${AXES[w.key as AxisKey]?.tavernName || w.key} ${Math.round((w.w || 0) * 100)}%`).join(", ");
                 return (
                   <div key={d.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: `1px solid ${C.line}`, gap: 10 }}>
                     <div style={{ fontSize: 13, minWidth: 0 }}>
