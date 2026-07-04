@@ -145,16 +145,6 @@ export default function GMWorkspace() {
     } catch (e) { /* clipboard unavailable */ }
   }
 
-  async function assignDisposition(responseId: string, characterId: string) {
-    if (!selected) return;
-    setErr(null);
-    const { error } = await supabase.from("tpdi_responses")
-      .update({ assigned_character_id: characterId || null, campaign_id: selected })
-      .eq("id", responseId);
-    if (error) setErr(error.message);
-    else setDispositions((ds) => ds.map((d) => (d.id === responseId ? { ...d, assigned_character_id: characterId || null, campaign_id: selected } : d)));
-  }
-
   // Pull an existing (unassigned) inventory into this campaign so it can be assigned.
   async function importInventory(responseId: string) {
     if (!selected || !responseId) return;
@@ -403,6 +393,7 @@ export default function GMWorkspace() {
           <div style={box}>
             <div style={{ fontSize: 13, color: C.muted, marginBottom: 12 }}>
               Player dispositions <span style={{ color: C.line }}>· in this campaign</span>
+              <span style={{ display: "block", marginTop: 4, fontSize: 12 }}>Bind players to characters on the Roster.</span>
             </div>
             {dispositions.filter((d) => d.campaign_id === selected).length === 0 ? (
               <p style={{ color: C.muted, fontSize: 13, lineHeight: 1.5 }}>
@@ -419,11 +410,11 @@ export default function GMWorkspace() {
                       <span style={{ fontWeight: 600 }}>{d.player_name || "Unnamed"}</span>
                       {leanings && <span style={{ color: C.muted }}>{"  "}· {leanings}</span>}
                     </div>
-                    <select style={{ ...inputStyle, maxWidth: 170 }} value={d.assigned_character_id || ""}
-                      onChange={(e) => assignDisposition(d.id, e.target.value)}>
-                      <option value="">— assign to —</option>
-                      {characters.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                    </select>
+                    <span style={{ fontSize: 12.5, color: C.muted, whiteSpace: "nowrap" }}>
+                      {d.assigned_character_id
+                        ? <>bound to <span style={{ color: C.vellum, fontWeight: 600 }}>{characters.find((c) => c.id === d.assigned_character_id)?.name || "a character"}</span></>
+                        : "not bound"}
+                    </span>
                   </div>
                 );
               })
