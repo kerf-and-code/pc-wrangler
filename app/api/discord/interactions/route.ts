@@ -116,6 +116,7 @@ export async function POST(request: Request) {
     const name = interaction.data?.name;
     if (name === "setup") return await handleSetup(interaction);
     if (name === "claim") return await handleClaim(interaction);
+    if (name === "unclaim") return await handleUnclaim(interaction);
     if (name === "session") return await handleSession(interaction);
     if (name === "record") return await handleRecord(interaction);
     if (name === "stop") return await handleStop(interaction);
@@ -259,6 +260,43 @@ async function handleClaimSelect(interaction: Interaction) {
   }
 
   return updateMessage(`Linked. You're playing "${character.name}". Recaps and voice will attribute to you.`);
+}
+
+async function handleUnclaim(interaction: Interaction) {
+  const sb = serviceClient();
+  const campaign = await resolveCampaign(interaction, sb);
+  if (!campaign) {
+    return ephemeral("Run /unclaim in your campaign's channel, or add code:<your share code>.");
+  }
+
+  const userId = discordUserId(interaction);
+  if (!userId) {
+    return ephemeral("Could not read your Discord account. Try again.");
+  }
+
+  // One character per user per campaign is enforced at claim time, but match on
+  // discord_user_id so this always frees whatever the caller is linked to.
+  const { data: claimed } = await sb
+    .from("characters")
+    .select("id, name")
+    .eq("campaign_id", campaign.id)
+    .eq("discord_user_id", userId);
+  if (!claimed || !claimed.length) {
+    return ephemeral(`You don't have a character linked in "${campaign.name}". Nothing to unclaim.`);
+  }
+
+  const { error: upErr } = await sb
+    .from("characters")
+    .update({ discord_user_id: null })
+    .eq("campaign_id", campaign.id)
+    .eq("discord_user_id", userId);
+  if (upErr) {
+    return ephemeral("Could not unlink you right now. Try again in a moment.");
+  }
+
+  const names = claimed.map((c: { id: string; name: string | null }) => c.name || "Unnamed").join(", ");
+  const it = claimed.length > 1 ? "them" : "it";
+  return ephemeral(`Unlinked you from ${names}. Anyone can /claim ${it} now.`);
 }
 
 async function handleSession(interaction: Interaction) {

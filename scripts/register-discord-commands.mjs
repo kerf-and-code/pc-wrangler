@@ -47,6 +47,12 @@ const commands = [
     // no permission gate: players use this
   },
   {
+    name: "unclaim",
+    description: "Unlink your Discord account from your character in this campaign.",
+    options: [CODE_OPTIONAL],
+    // no permission gate: players use this
+  },
+  {
     name: "session",
     description: "Post the next scheduled session with RSVP buttons.",
     options: [CODE_OPTIONAL],
