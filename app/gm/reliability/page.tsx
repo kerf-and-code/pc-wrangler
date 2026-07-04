@@ -3,20 +3,11 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
-import { SAX, surfaces, ui } from "@/lib/theme";
+import { SAX, surfaces, ui, AXES, type AxisKey } from "@/lib/theme";
 
 const C = {
   bg: SAX.ink, surface: SAX.slateBg, surface2: "rgba(11,7,18,0.6)", line: SAX.line,
   text: SAX.text, muted: SAX.muted, sun: SAX.sun, plum: SAX.plum, warn: SAX.warn, good: SAX.good,
-};
-
-const AXIS: Record<string, { label: string; color: string }> = {
-  N: { label: "Character", color: "#B7615A" },
-  T: { label: "Encounter", color: "#C8A24B" },
-  O: { label: "System", color: "#4E8077" },
-  S: { label: "Table", color: "#CE8A42" },
-  E: { label: "World", color: "#6C76B0" },
-  I: { label: "Presence", color: "#9A93B0" },
 };
 
 type Campaign = { id: string; name: string };
@@ -280,7 +271,7 @@ export default function ReliabilityPage() {
 
             <div style={box}>
               <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 16 }}>Accept rate by axis</div>
-              <div style={{ display: "grid", gap: 12 }}>{stats.byAxis.map((g) => (<Row key={g.k} label={AXIS[g.k]?.label || g.k} chip={AXIS[g.k]?.color} n={g.n} rate={g.rate} />))}</div>
+              <div style={{ display: "grid", gap: 12 }}>{stats.byAxis.map((g) => (<Row key={g.k} label={AXES[g.k as AxisKey]?.tavernName || g.k} chip={AXES[g.k as AxisKey]?.color} n={g.n} rate={g.rate} />))}</div>
             </div>
 
             <div style={box}>
