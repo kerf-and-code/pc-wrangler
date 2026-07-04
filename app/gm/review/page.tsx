@@ -213,6 +213,7 @@ export default function ReviewPage() {
     if (!job) return;
     setBusy(true); setRecapMsg(null);
     await supabase.from("capture_jobs").update({ status: "done" }).eq("id", job.id);
+    let note = "";
     // Auto-draft the recap for this session if one isn't written yet. Best-effort:
     // the job is done regardless of whether the draft succeeds.
     if (job.session_id) {
@@ -223,12 +224,25 @@ export default function ReviewPage() {
           body: JSON.stringify({ sessionId: job.session_id, overwrite: false }),
         });
         const out = await res.json().catch(() => ({}));
-        if (res.ok) setRecapMsg(out.skipped ? "A recap draft already exists for this session." : "Recap drafted. You can edit and send it from your recaps.");
-        else setRecapMsg("Marked done. The recap draft didn't generate; you can create it later.");
+        if (res.ok) note = out.skipped ? "A recap draft already exists for this session." : "Recap drafted. Edit and send it from the Session Log.";
+        else note = "Marked done. The recap draft didn't generate; you can create it on the Session Log.";
       } catch {
-        setRecapMsg("Marked done. The recap draft didn't generate; you can create it later.");
+        note = "Marked done. The recap draft didn't generate; you can create it on the Session Log.";
       }
     }
+    // Refresh the disposition model for the campaign. The route guards against
+    // stacking (a fit already running is reused), so this is safe to fire each time.
+    if (campaignId) {
+      try {
+        await fetch("/api/dispositions/run", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ campaignId }),
+        });
+        note = note ? `${note} Dispositions are refreshing.` : "Dispositions are refreshing.";
+      } catch { /* best-effort; a fit can still be run later */ }
+    }
+    setRecapMsg(note || null);
     setBusy(false);
     loadJobs(campaignId);
   }
