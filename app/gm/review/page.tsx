@@ -18,6 +18,12 @@ type Prop = {
   character: { name: string } | null;
   segment: { text: string; start_ms: number | null } | null;
 };
+type GmProp = {
+  id: string; kind: string; summary: string; detail: string | null; quote: string | null;
+  npc_name: string | null; location_name: string | null; target_character_id: string | null;
+  confidence: number | null; t_start_seconds: number | null; status: string;
+};
+type GmKind = { kind: string; category: string; label: string; sort: number };
 
 const fmtTime = (ms: number | null): string => {
   if (ms === null || ms === undefined) return "";
@@ -40,19 +46,29 @@ export default function ReviewPage() {
   const [busy, setBusy] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
+  // GM narration tab
+  const [tab, setTab] = useState<"player" | "gm">("player");
+  const [gmProps, setGmProps] = useState<GmProp[]>([]);
+  const [gmKinds, setGmKinds] = useState<GmKind[]>([]);
+  const [gmCounts, setGmCounts] = useState<{ approved: number; rejected: number }>({ approved: 0, rejected: 0 });
+  const [showMeta, setShowMeta] = useState<boolean>(false);
+  const [edits, setEdits] = useState<Record<string, { summary?: string; kind?: string }>>({});
+
   const job = jobs.find((j) => j.id === jobId) || null;
 
   useEffect(() => {
     (async () => {
-      const [{ data: camps }, { data: ets }] = await Promise.all([
+      const [{ data: camps }, { data: ets }, { data: gks }] = await Promise.all([
         supabase.from("campaigns").select("id, name").order("created_at", { ascending: true }),
         supabase.from("event_types").select("key, label"),
+        supabase.from("gm_event_kinds").select("kind, category, label, sort").order("sort", { ascending: true }),
       ]);
       const list = (camps as Campaign[]) || [];
       setCampaigns(list);
       const lab: Record<string, string> = {};
       ((ets as { key: string; label: string }[]) || []).forEach((e) => { lab[e.key] = e.label; });
       setLabels(lab);
+      setGmKinds((gks as GmKind[]) || []);
       if (list.length) setCampaignId(list[0].id);
     })();
   }, [supabase]);
@@ -85,7 +101,28 @@ export default function ReviewPage() {
     });
   }
 
-  useEffect(() => { if (jobId) loadProps(jobId); else { setProps([]); setCounts({ accepted: 0, rejected: 0 }); } }, [jobId]); // eslint-disable-line react-hooks/exhaustive-deps
+  async function loadGmProps(jid: string) {
+    const { data } = await supabase
+      .from("gm_proposed_events")
+      .select("id, kind, summary, detail, quote, npc_name, location_name, target_character_id, confidence, t_start_seconds, status")
+      .eq("job_id", jid)
+      .order("created_at", { ascending: true });
+    const all = (data as GmProp[]) || [];
+    setGmProps(all.filter((p) => p.status === "proposed"));
+    setGmCounts({
+      approved: all.filter((p) => p.status === "approved").length,
+      rejected: all.filter((p) => p.status === "rejected").length,
+    });
+  }
+
+  useEffect(() => {
+    if (jobId) { loadProps(jobId); loadGmProps(jobId); }
+    else {
+      setProps([]); setGmProps([]);
+      setCounts({ accepted: 0, rejected: 0 }); setGmCounts({ approved: 0, rejected: 0 });
+    }
+    setEdits({});
+  }, [jobId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function runExtraction() {
     if (!jobId) return;
@@ -113,6 +150,7 @@ export default function ReviewPage() {
     setGmProposed(gmCount);
     setRunning(false);
     await loadProps(jobId);
+    await loadGmProps(jobId);
     await loadJobs(campaignId);
   }
 
@@ -144,8 +182,33 @@ export default function ReviewPage() {
     loadJobs(campaignId);
   }
 
+  const setEdit = (id: string, patch: { summary?: string; kind?: string }) =>
+    setEdits((prev) => ({ ...prev, [id]: { ...prev[id], ...patch } }));
+
+  async function reviewGm(p: GmProp, action: "approve" | "reject", createNpc = false) {
+    setBusy(true); setError(null);
+    const e = edits[p.id];
+    const payload: Record<string, unknown> = { action, id: p.id };
+    if (action === "approve") {
+      payload.summary = e?.summary ?? p.summary;
+      payload.kind = e?.kind ?? p.kind;
+      if (createNpc) { payload.createNpc = true; payload.npcName = p.npc_name || ""; }
+    }
+    const res = await fetch("/api/gm-review", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+    const out = await res.json().catch(() => ({}));
+    if (!res.ok) setError(out.error || "Could not update the event.");
+    else {
+      setGmProps((prev) => prev.filter((x) => x.id !== p.id));
+      setGmCounts((c) => ({ approved: c.approved + (action === "approve" ? 1 : 0), rejected: c.rejected + (action === "reject" ? 1 : 0) }));
+    }
+    setBusy(false);
+  }
+
+  const gmView = gmProps.filter((p) => showMeta || p.kind !== "meta");
+
   const box = { ...surfaces.slate, padding: 20, marginBottom: 18 } as const;
   const btn = (bg: string, fg: string) => ({ background: bg, color: fg, border: "none", borderRadius: 9, padding: "9px 16px", fontWeight: 700, fontSize: 13, cursor: "pointer" } as const);
+  const tabBtn = (on: boolean) => ({ background: on ? C.plum : "transparent", color: on ? SAX.inkDeep : C.muted, border: `1px solid ${on ? C.plum : C.line}`, borderRadius: 9, padding: "8px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer" } as const);
 
   return (
     <PageShell width={900}>
@@ -171,22 +234,17 @@ export default function ReviewPage() {
 
         {job && (
           <>
+            {/* job-level: extraction + status, shared by both tabs */}
             <div style={box}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-                <div style={{ fontSize: 14, color: C.muted }}>
-                  <span style={{ color: C.good, fontWeight: 700 }}>{counts.accepted}</span> accepted ·{" "}
-                  <span style={{ color: C.warn, fontWeight: 700 }}>{counts.rejected}</span> rejected ·{" "}
-                  <span style={{ color: C.sun, fontWeight: 700 }}>{props.length}</span> awaiting review
+                <div style={{ fontSize: 13, color: C.muted }}>
+                  Session {job.session?.session_number ?? "?"} · <span style={{ fontFamily: "ui-monospace, monospace" }}>{job.status}</span>
                 </div>
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  {job.status === "extracting" && (
-                    <button type="button" onClick={runExtraction} disabled={running} style={{ ...btn(C.plum, SAX.inkDeep), opacity: running ? 0.7 : 1 }}>
-                      {running ? "Extracting…" : "Run extraction"}
-                    </button>
-                  )}
-                  {props.length > 0 && <button type="button" onClick={acceptAll} disabled={busy} style={{ ...btn(C.good, SAX.inkDeep), opacity: busy ? 0.7 : 1 }}>Accept all</button>}
-                  {job.status === "review" && props.length === 0 && <button type="button" onClick={markDone} style={btn(C.sun, SAX.inkDeep)}>Mark done</button>}
-                </div>
+                {job.status === "extracting" && (
+                  <button type="button" onClick={runExtraction} disabled={running} style={{ ...btn(C.plum, SAX.inkDeep), opacity: running ? 0.7 : 1 }}>
+                    {running ? "Extracting…" : "Run extraction"}
+                  </button>
+                )}
               </div>
               {running && progress && (
                 <div style={{ marginTop: 14 }}>
@@ -199,48 +257,142 @@ export default function ReviewPage() {
               {error && <p style={{ color: C.warn, fontSize: 13, marginTop: 12 }}>{error}</p>}
               {gmProposed !== null && (
                 <p style={{ color: C.muted, fontSize: 12.5, marginTop: 10 }}>
-                  {gmProposed} GM narration event{gmProposed === 1 ? "" : "s"} captured to the GM queue. The GM review UI arrives in the next build.
+                  {gmProposed} GM narration event{gmProposed === 1 ? "" : "s"} captured. Review them in the GM narration tab.
                 </p>
               )}
             </div>
 
-            {props.length === 0 ? (
-              <div style={{ ...box, color: C.muted, fontSize: 14 }}>
-                {job.status === "extracting" ? "Run extraction to generate proposed events from the transcript." : "Nothing left to review for this job."}
-              </div>
-            ) : (
-              <div style={{ display: "grid", gap: 12 }}>
-                {props.map((p) => {
-                  const ax = p.axis ? AXES[p.axis as AxisKey] : null;
-                  const conf = p.confidence !== null ? Math.round((p.confidence || 0) * 100) : null;
-                  return (
-                    <div key={p.id} style={box}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                          <span style={{ fontSize: 15, fontWeight: 700 }}>{p.character?.name || "GM / Narrator"}</span>
-                          <span style={{ fontSize: 13, color: C.muted }}>{labels[p.event_type] || p.event_type}</span>
-                          {ax && <span style={{ fontSize: 11, fontWeight: 700, color: SAX.inkDeep, background: ax.color, padding: "2px 8px", borderRadius: 999 }}>{ax.tavernName}</span>}
-                          {p.frame && <span style={{ fontSize: 11, color: C.muted, fontFamily: "ui-monospace, monospace" }}>{p.frame}</span>}
-                        </div>
-                        {conf !== null && <span style={{ fontSize: 13, fontWeight: 700, color: conf >= 70 ? C.good : conf >= 40 ? C.sun : C.warn }}>{conf}%</span>}
-                      </div>
+            {/* tab switcher */}
+            <div style={{ display: "flex", gap: 8, marginBottom: 18 }}>
+              <button type="button" onClick={() => setTab("player")} style={tabBtn(tab === "player")}>Player events ({props.length})</button>
+              <button type="button" onClick={() => setTab("gm")} style={tabBtn(tab === "gm")}>GM narration ({gmView.length})</button>
+            </div>
 
-                      {p.segment?.text && (
-                        <div style={{ marginTop: 10, padding: "10px 12px", background: C.surface2, border: `1px solid ${C.line}`, borderRadius: 9, fontSize: 13, color: C.text }}>
-                          <span style={{ color: C.muted, fontFamily: "ui-monospace, monospace", fontSize: 11, marginRight: 8 }}>{fmtTime(p.segment.start_ms)}</span>
-                          {"\u201c"}{p.segment.text}{"\u201d"}
-                        </div>
-                      )}
-                      {p.rationale && <div style={{ fontSize: 12.5, color: C.muted, marginTop: 8, fontStyle: "italic" }}>{p.rationale}</div>}
-
-                      <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
-                        <button type="button" onClick={() => review(p.id, true)} disabled={busy} style={btn(C.good, SAX.inkDeep)}>Accept</button>
-                        <button type="button" onClick={() => review(p.id, false)} disabled={busy} style={{ background: "transparent", color: C.warn, border: `1px solid ${C.line}`, borderRadius: 9, padding: "9px 16px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Reject</button>
-                      </div>
+            {tab === "player" ? (
+              <>
+                <div style={box}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                    <div style={{ fontSize: 14, color: C.muted }}>
+                      <span style={{ color: C.good, fontWeight: 700 }}>{counts.accepted}</span> accepted ·{" "}
+                      <span style={{ color: C.warn, fontWeight: 700 }}>{counts.rejected}</span> rejected ·{" "}
+                      <span style={{ color: C.sun, fontWeight: 700 }}>{props.length}</span> awaiting review
                     </div>
-                  );
-                })}
-              </div>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                      {props.length > 0 && <button type="button" onClick={acceptAll} disabled={busy} style={{ ...btn(C.good, SAX.inkDeep), opacity: busy ? 0.7 : 1 }}>Accept all</button>}
+                      {job.status === "review" && props.length === 0 && <button type="button" onClick={markDone} style={btn(C.sun, SAX.inkDeep)}>Mark done</button>}
+                    </div>
+                  </div>
+                </div>
+
+                {props.length === 0 ? (
+                  <div style={{ ...box, color: C.muted, fontSize: 14 }}>
+                    {job.status === "extracting" ? "Run extraction to generate proposed events from the transcript." : "Nothing left to review for this job."}
+                  </div>
+                ) : (
+                  <div style={{ display: "grid", gap: 12 }}>
+                    {props.map((p) => {
+                      const ax = p.axis ? AXES[p.axis as AxisKey] : null;
+                      const conf = p.confidence !== null ? Math.round((p.confidence || 0) * 100) : null;
+                      return (
+                        <div key={p.id} style={box}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                              <span style={{ fontSize: 15, fontWeight: 700 }}>{p.character?.name || "GM / Narrator"}</span>
+                              <span style={{ fontSize: 13, color: C.muted }}>{labels[p.event_type] || p.event_type}</span>
+                              {ax && <span style={{ fontSize: 11, fontWeight: 700, color: SAX.inkDeep, background: ax.color, padding: "2px 8px", borderRadius: 999 }}>{ax.tavernName}</span>}
+                              {p.frame && <span style={{ fontSize: 11, color: C.muted, fontFamily: "ui-monospace, monospace" }}>{p.frame}</span>}
+                            </div>
+                            {conf !== null && <span style={{ fontSize: 13, fontWeight: 700, color: conf >= 70 ? C.good : conf >= 40 ? C.sun : C.warn }}>{conf}%</span>}
+                          </div>
+
+                          {p.segment?.text && (
+                            <div style={{ marginTop: 10, padding: "10px 12px", background: C.surface2, border: `1px solid ${C.line}`, borderRadius: 9, fontSize: 13, color: C.text }}>
+                              <span style={{ color: C.muted, fontFamily: "ui-monospace, monospace", fontSize: 11, marginRight: 8 }}>{fmtTime(p.segment.start_ms)}</span>
+                              {"\u201c"}{p.segment.text}{"\u201d"}
+                            </div>
+                          )}
+                          {p.rationale && <div style={{ fontSize: 12.5, color: C.muted, marginTop: 8, fontStyle: "italic" }}>{p.rationale}</div>}
+
+                          <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
+                            <button type="button" onClick={() => review(p.id, true)} disabled={busy} style={btn(C.good, SAX.inkDeep)}>Accept</button>
+                            <button type="button" onClick={() => review(p.id, false)} disabled={busy} style={{ background: "transparent", color: C.warn, border: `1px solid ${C.line}`, borderRadius: 9, padding: "9px 16px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Reject</button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                <div style={box}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                    <div style={{ fontSize: 14, color: C.muted }}>
+                      <span style={{ color: C.good, fontWeight: 700 }}>{gmCounts.approved}</span> approved ·{" "}
+                      <span style={{ color: C.warn, fontWeight: 700 }}>{gmCounts.rejected}</span> rejected ·{" "}
+                      <span style={{ color: C.sun, fontWeight: 700 }}>{gmView.length}</span> awaiting review
+                    </div>
+                    <label style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 12.5, color: C.muted, cursor: "pointer" }}>
+                      <input type="checkbox" checked={showMeta} onChange={(e) => setShowMeta(e.target.checked)} style={{ width: 15, height: 15, accentColor: C.plum, cursor: "pointer" }} />
+                      Show table-talk
+                    </label>
+                  </div>
+                </div>
+
+                {gmView.length === 0 ? (
+                  <div style={{ ...box, color: C.muted, fontSize: 14 }}>
+                    {job.status === "extracting" ? "Run extraction to generate GM narration events." : "No GM narration events awaiting review."}
+                  </div>
+                ) : (
+                  <div style={{ display: "grid", gap: 12 }}>
+                    {gmView.map((p) => {
+                      const eKind = edits[p.id]?.kind ?? p.kind;
+                      const eSummary = edits[p.id]?.summary ?? p.summary;
+                      const isNpc = eKind.startsWith("npc_");
+                      const conf = p.confidence !== null ? Math.round((p.confidence || 0) * 100) : null;
+                      return (
+                        <div key={p.id} style={box}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                            <select value={eKind} onChange={(ev) => setEdit(p.id, { kind: ev.target.value })}
+                              style={{ background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: 8, padding: "6px 10px", fontSize: 12.5 }}>
+                              {gmKinds.map((k) => (<option key={k.kind} value={k.kind}>{k.label}</option>))}
+                            </select>
+                            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                              {p.t_start_seconds !== null && <span style={{ color: C.muted, fontFamily: "ui-monospace, monospace", fontSize: 11 }}>{fmtTime(Math.round((p.t_start_seconds || 0) * 1000))}</span>}
+                              {conf !== null && <span style={{ fontSize: 13, fontWeight: 700, color: conf >= 70 ? C.good : conf >= 40 ? C.sun : C.warn }}>{conf}%</span>}
+                            </div>
+                          </div>
+
+                          <textarea value={eSummary} onChange={(ev) => setEdit(p.id, { summary: ev.target.value })} rows={2}
+                            style={{ display: "block", width: "100%", marginTop: 10, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: 9, padding: "9px 11px", fontSize: 14, resize: "vertical", fontFamily: "inherit", boxSizing: "border-box" }} />
+
+                          {(p.npc_name || p.location_name) && (
+                            <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginTop: 10 }}>
+                              {p.npc_name && <span style={{ fontSize: 12, color: C.muted }}>NPC: <span style={{ color: C.text }}>{p.npc_name}</span></span>}
+                              {p.location_name && <span style={{ fontSize: 12, color: C.muted }}>Place: <span style={{ color: C.text }}>{p.location_name}</span></span>}
+                            </div>
+                          )}
+
+                          {p.quote && (
+                            <div style={{ marginTop: 10, padding: "10px 12px", background: C.surface2, border: `1px solid ${C.line}`, borderRadius: 9, fontSize: 13, color: C.text, fontStyle: "italic" }}>
+                              {"\u201c"}{p.quote}{"\u201d"}
+                            </div>
+                          )}
+                          {p.detail && <div style={{ fontSize: 12.5, color: C.muted, marginTop: 8 }}>{p.detail}</div>}
+
+                          <div style={{ display: "flex", gap: 8, marginTop: 14, flexWrap: "wrap" }}>
+                            <button type="button" onClick={() => reviewGm(p, "approve")} disabled={busy} style={btn(C.good, SAX.inkDeep)}>Accept</button>
+                            {isNpc && p.npc_name && (
+                              <button type="button" onClick={() => reviewGm(p, "approve", true)} disabled={busy} style={btn(C.sun, SAX.inkDeep)}>Accept + create NPC</button>
+                            )}
+                            <button type="button" onClick={() => reviewGm(p, "reject")} disabled={busy} style={{ background: "transparent", color: C.warn, border: `1px solid ${C.line}`, borderRadius: 9, padding: "9px 16px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Reject</button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </>
             )}
           </>
         )}
