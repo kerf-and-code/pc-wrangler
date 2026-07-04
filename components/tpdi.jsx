@@ -6,7 +6,7 @@ import {
 } from "recharts";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
-import { SAX } from "@/lib/theme";
+import { SAX, AXES } from "@/lib/theme";
 
 /*
   TPDI — Player Disposition Inventory (cold-start prior)
@@ -34,19 +34,10 @@ const C = {
   disagree: SAX.warn,
 };
 
-// Internal keys stay N/T/O/S/E/I (CESTWP) so scoring and the disposition model
-// are untouched. `tavern` is the player-facing label layer: the axes spell TAVERN,
-// the tavern being where you meet your characters.
-const AXES = {
-  N: { key: "N", name: "The Character", tavern: "V", tavernName: "Voice", facet: "Narrative & immersion", color: "#B7615A" },
-  T: { key: "T", name: "The Encounter", tavern: "T", tavernName: "Tactics", facet: "Tactical play", color: "#C8A24B" },
-  O: { key: "O", name: "The System", tavern: "A", tavernName: "Arcana", facet: "Optimization & mastery", color: "#4E8077" },
-  S: { key: "S", name: "The Table", tavern: "R", tavernName: "Rapport", facet: "Social & cohesion", color: "#CE8A42" },
-  E: { key: "E", name: "The World", tavern: "E", tavernName: "Exploration", facet: "Exploration & discovery", color: "#6C76B0" },
-  I: { key: "I", name: "Presence", tavern: "N", tavernName: "Nerve", facet: "Engagement intensity", color: "#C8A24B" },
-};
-// TAVERN reading order for display (T-A-V-E-R-N -> internal keys).
-const TAVERN_ORDER = ["T", "O", "N", "E", "S", "I"];
+// AXES and TAVERN_ORDER now live in lib/theme.ts as the single source of truth
+// for axis labels and colors (internal keys stay N/T/O/S/E/I so scoring and the
+// disposition model are untouched). FLAVOR stays here because it is scoring logic
+// (which axes are ipsatized), not presentation.
 const FLAVOR = ["N", "T", "O", "S", "E"];
 
 // Suggested lines (hard no, never at the table) and veils (allowed but faded to

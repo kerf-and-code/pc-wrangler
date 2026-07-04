@@ -3,20 +3,11 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
-import { SAX, surfaces, ui } from "@/lib/theme";
+import { SAX, surfaces, ui, AXES, type AxisKey } from "@/lib/theme";
 
 const C = {
   bg: SAX.ink, surface: SAX.slateBg, surface2: "rgba(11,7,18,0.6)", line: SAX.line,
   text: SAX.text, muted: SAX.muted, sun: SAX.sun, plum: SAX.plum, warn: SAX.warn, good: SAX.good,
-};
-
-const AXIS: Record<string, { label: string; color: string }> = {
-  N: { label: "Character", color: "#B7615A" },
-  T: { label: "Encounter", color: "#C8A24B" },
-  O: { label: "System", color: "#4E8077" },
-  S: { label: "Table", color: "#CE8A42" },
-  E: { label: "World", color: "#6C76B0" },
-  I: { label: "Presence", color: "#9A93B0" },
 };
 
 type Campaign = { id: string; name: string };
@@ -220,7 +211,7 @@ export default function ReviewPage() {
             ) : (
               <div style={{ display: "grid", gap: 12 }}>
                 {props.map((p) => {
-                  const ax = p.axis ? AXIS[p.axis] : null;
+                  const ax = p.axis ? AXES[p.axis as AxisKey] : null;
                   const conf = p.confidence !== null ? Math.round((p.confidence || 0) * 100) : null;
                   return (
                     <div key={p.id} style={box}>
@@ -228,7 +219,7 @@ export default function ReviewPage() {
                         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                           <span style={{ fontSize: 15, fontWeight: 700 }}>{p.character?.name || "GM / Narrator"}</span>
                           <span style={{ fontSize: 13, color: C.muted }}>{labels[p.event_type] || p.event_type}</span>
-                          {ax && <span style={{ fontSize: 11, fontWeight: 700, color: SAX.inkDeep, background: ax.color, padding: "2px 8px", borderRadius: 999 }}>{ax.label}</span>}
+                          {ax && <span style={{ fontSize: 11, fontWeight: 700, color: SAX.inkDeep, background: ax.color, padding: "2px 8px", borderRadius: 999 }}>{ax.tavernName}</span>}
                           {p.frame && <span style={{ fontSize: 11, color: C.muted, fontFamily: "ui-monospace, monospace" }}>{p.frame}</span>}
                         </div>
                         {conf !== null && <span style={{ fontSize: 13, fontWeight: 700, color: conf >= 70 ? C.good : conf >= 40 ? C.sun : C.warn }}>{conf}%</span>}

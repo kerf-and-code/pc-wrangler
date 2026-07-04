@@ -37,6 +37,33 @@ export const SAX = {
   mono: "ui-monospace, SFMono-Regular, Menlo, monospace",
 } as const;
 
+export type AxisKey = "N" | "T" | "O" | "S" | "E" | "I";
+
+export type AxisDescriptor = {
+  key: AxisKey;
+  name: string;        // analytical name, e.g. "The Character"
+  tavern: string;      // TAVERN letter, e.g. "V"
+  tavernName: string;  // display name, e.g. "Voice"
+  facet: string;       // short descriptor
+  color: string;
+};
+
+/* The six axes: single source of truth for labels and colors. Internal keys stay
+   N/T/O/S/E/I so scoring and the disposition model are untouched; `tavernName` is
+   the display layer (the axes spell TAVERN, the tavern being where you meet your
+   characters). Colors come from SAX.axis so a hue is defined in exactly one place. */
+export const AXES: Record<AxisKey, AxisDescriptor> = {
+  N: { key: "N", name: "The Character", tavern: "V", tavernName: "Voice", facet: "Narrative & immersion", color: SAX.axis.N },
+  T: { key: "T", name: "The Encounter", tavern: "T", tavernName: "Tactics", facet: "Tactical play", color: SAX.axis.T },
+  O: { key: "O", name: "The System", tavern: "A", tavernName: "Arcana", facet: "Optimization & mastery", color: SAX.axis.O },
+  S: { key: "S", name: "The Table", tavern: "R", tavernName: "Rapport", facet: "Social & cohesion", color: SAX.axis.S },
+  E: { key: "E", name: "The World", tavern: "E", tavernName: "Exploration", facet: "Exploration & discovery", color: SAX.axis.E },
+  I: { key: "I", name: "Presence", tavern: "N", tavernName: "Nerve", facet: "Engagement intensity", color: SAX.axis.I },
+};
+
+/* TAVERN reading order: T-A-V-E-R-N maps to these internal keys. */
+export const TAVERN_ORDER: AxisKey[] = ["T", "O", "N", "E", "S", "I"];
+
 /* full-page stone background: the wall image, darkened, with a faint warm
    lamp glow toward the top so the center reads as lit. */
 export function stoneBackground(url = "/wall-2.png"): CSSProperties {
