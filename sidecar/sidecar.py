@@ -431,12 +431,12 @@ class Sidecar(discord.Client):
         uploaded = 0
         unmapped = 0
         for uid, chunks in rec.speaker_chunks.items():
-            char_id = await self.resolve_character(http, rec.campaign_id, uid)
-            gm_id = None
-            if not char_id:
-                # Not an active PC: is this the GM narrator? Character attribution
-                # wins if a speaker is somehow both (rare); revisit only if it bites.
-                gm_id = await self.resolve_gm_identity(http, rec.campaign_id, uid)
+            # Resolve the GM narrator first: linking a Discord id as narrator is a
+            # deliberate, owner-gated act, so it wins over a (possibly stale) PC
+            # claim on the same id. A speaker who never linked as narrator misses
+            # here and falls through to character attribution.
+            gm_id = await self.resolve_gm_identity(http, rec.campaign_id, uid)
+            char_id = None if gm_id else await self.resolve_character(http, rec.campaign_id, uid)
             if not char_id and not gm_id:
                 unmapped += 1
                 log.warning("  unmapped speaker discord_id=%s (%d chunk(s)); skipping.", uid, len(chunks))
