@@ -27,6 +27,7 @@ const GROUPS: Group[] = [
   ] },
   { label: "Story", href: "/gm/codex", children: [
     { href: "/gm/codex", label: "Codex" },
+    { href: "/gm/prep", label: "Prep" },
     { href: "/gm/timeline", label: "Timeline" },
     { href: "/gm/search", label: "Search" },
   ] },
