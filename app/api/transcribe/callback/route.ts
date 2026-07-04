@@ -25,8 +25,9 @@ type Admin = ReturnType<typeof createAdminClient>;
 // Decide the job's fate once every track has resolved. A track that transcribed
 // but produced no speech is "done", not an error, so a quiet player never sinks
 // the session. The job only errors when there is genuinely nothing to review,
-// and then it records why.
-async function finalizeJob(admin: Admin, jobId: string) {
+// and then it records why. Returns the status it set, or undefined if still
+// waiting on other tracks.
+async function finalizeJob(admin: Admin, jobId: string): Promise<string | undefined> {
   const { data: tracks } = await admin
     .from("audio_tracks")
     .select("status")
@@ -34,7 +35,7 @@ async function finalizeJob(admin: Admin, jobId: string) {
   const all = (tracks as { status: string }[]) || [];
 
   // still waiting on at least one track — let that track's callback finalize.
-  if (all.some((t) => t.status === "pending" || t.status === "transcribing")) return;
+  if (all.some((t) => t.status === "pending" || t.status === "transcribing")) return undefined;
 
   const { count } = await admin
     .from("transcript_segments")
@@ -58,6 +59,17 @@ async function finalizeJob(admin: Admin, jobId: string) {
   }
 
   await admin.from("capture_jobs").update({ status, error }).eq("id", jobId);
+  return status;
+}
+
+// Best-effort server-side extraction head start. If it doesn't complete, the
+// Review page's auto-start finishes the job.
+function kickExtraction(req: NextRequest, jobId: string) {
+  const secret = process.env.TRANSCRIBE_CALLBACK_SECRET;
+  if (!secret) return;
+  const base = process.env.TRANSCRIBE_CALLBACK_BASE || req.nextUrl.origin;
+  const url = `${base}/api/extract/run?job=${encodeURIComponent(jobId)}&k=${encodeURIComponent(secret)}`;
+  void fetch(url, { method: "POST" }).catch(() => {});
 }
 
 export async function POST(req: NextRequest) {
@@ -81,7 +93,8 @@ export async function POST(req: NextRequest) {
   // retry; the failure is captured in the track + job state, not the HTTP code.
   async function failTrack(): Promise<NextResponse> {
     await admin.from("audio_tracks").update({ status: "error" }).eq("id", t.id);
-    await finalizeJob(admin, t.job_id);
+    const status = await finalizeJob(admin, t.job_id);
+    if (status === "extracting") kickExtraction(req, t.job_id);
     return NextResponse.json({ ok: true });
   }
 
@@ -131,7 +144,8 @@ export async function POST(req: NextRequest) {
   // Empty-but-valid (no speech) is "done", not an error. Only real failures above
   // mark a track error.
   await admin.from("audio_tracks").update({ status: "done" }).eq("id", t.id);
-  await finalizeJob(admin, t.job_id);
+  const status = await finalizeJob(admin, t.job_id);
+  if (status === "extracting") kickExtraction(req, t.job_id);
 
   return NextResponse.json({ ok: true });
 }

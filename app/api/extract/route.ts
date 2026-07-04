@@ -26,19 +26,25 @@ export async function POST(req: NextRequest) {
   if (!jobId) return NextResponse.json({ error: "Missing jobId" }, { status: 400 });
   const jid: string = jobId;
 
-  // Authorize via RLS: only the campaign GM can read this job row.
-  const supa = await createClient();
-  const { data: job } = await supa
-    .from("capture_jobs")
-    .select("id, campaign_id, session_id, status, extract_cursor, gm_extract_cursor")
-    .eq("id", jid)
-    .single();
-  if (!job) return NextResponse.json({ error: "Not found or not permitted" }, { status: 403 });
-
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return NextResponse.json({ error: "Server is missing the extraction API key." }, { status: 500 });
 
   const admin = createAdminClient();
+
+  // Browsers authorize via RLS; a trusted server-side caller (the extraction
+  // orchestrator) passes the callback secret and reads the job with admin.
+  const k = req.nextUrl.searchParams.get("k");
+  const trusted = !!k && k === process.env.TRANSCRIBE_CALLBACK_SECRET;
+  const jobSel = "id, campaign_id, session_id, status, extract_cursor, gm_extract_cursor";
+  let jobData: unknown = null;
+  if (trusted) {
+    jobData = (await admin.from("capture_jobs").select(jobSel).eq("id", jid).single()).data;
+  } else {
+    const supa = await createClient();
+    jobData = (await supa.from("capture_jobs").select(jobSel).eq("id", jid).single()).data;
+  }
+  if (!jobData) return NextResponse.json({ error: "Not found or not permitted" }, { status: 403 });
+  const job = jobData as { campaign_id: string; session_id: string; extract_cursor: number | null; gm_extract_cursor: number | null };
 
   // GM narration lives on the narrator's track(s) and is handled by the GM
   // extractor. The player extractor excludes those segments so GM speech never
