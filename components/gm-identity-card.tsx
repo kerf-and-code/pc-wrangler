@@ -138,7 +138,7 @@ export default function GmIdentityCard({ campaignId }: { campaignId: string }) {
         </span>
       </div>
       <div style={{ color: C.muted, fontSize: 13, marginBottom: 14 }}>
-        Link your Discord ID so your own voice is captured as GM narration rather than as a player. Your stream is routed to the GM extractor (lore, NPCs, rulings, plot hooks) instead of the disposition model.
+        Running /record links whoever starts the recording as narrator automatically, so your voice is captured as GM narration, not as a player. Use this card to set a different narrator, or on the upload path where there is no /record. The narrator&apos;s stream is routed to the GM extractor (lore, NPCs, rulings, plot hooks) instead of the disposition model.
       </div>
 
       <label style={{ fontSize: 12, color: C.muted, fontFamily: "ui-monospace, monospace", letterSpacing: "0.1em" }}>DISCORD USER ID</label>

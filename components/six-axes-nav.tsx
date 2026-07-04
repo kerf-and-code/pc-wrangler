@@ -6,7 +6,7 @@ import { SAX } from "@/lib/theme";
 import LogoutButton from "@/components/logout-button";
 
 /* Six Axes — top navigation.
-   GM side is grouped into five sections plus standalone Inventory.
+   GM side is grouped into five sections plus standalone Profile.
    The active group reveals its sub-tabs on a second row. Player side (opened via
    a ?share link) stays flat. */
 
@@ -37,12 +37,12 @@ const GROUPS: Group[] = [
     { href: "/gm/dashboard", label: "Dashboard" },
     { href: "/gm/mechanics", label: "Mechanics" },
   ] },
-  { label: "Inventory", href: "/play" },
+  { label: "Profile", href: "/play" },
   { label: "Help", href: "/gm/help" },
 ];
 
 const PLAYER: Leaf[] = [
-  { href: "/play", label: "Inventory" },
+  { href: "/play", label: "Profile" },
   { href: "/schedule", label: "Schedule" },
   { href: "/recaps", label: "Recaps" },
   { href: "/vibe", label: "Check-in" },
