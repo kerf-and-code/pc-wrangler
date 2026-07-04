@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { useMomentPlayer, MomentButton } from "@/components/moment-player";
@@ -55,7 +55,9 @@ export default function ReviewPage() {
   const [gmCounts, setGmCounts] = useState<{ approved: number; rejected: number }>({ approved: 0, rejected: 0 });
   const [showMeta, setShowMeta] = useState<boolean>(false);
   const [edits, setEdits] = useState<Record<string, { summary?: string; kind?: string }>>({});
+  const [threshold, setThreshold] = useState<number>(80);
   const gmPlayer = useMomentPlayer();
+  const autoStarted = useRef<Set<string>>(new Set());
 
   const job = jobs.find((j) => j.id === jobId) || null;
 
@@ -127,6 +129,18 @@ export default function ReviewPage() {
     setEdits({});
   }, [jobId]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Kick extraction off automatically the first time a job is opened while it is
+  // still extracting, so there's no button to hunt for and events just start
+  // appearing. Guarded per job id so a failed run doesn't retry-storm; the Retry
+  // control covers the error case.
+  useEffect(() => {
+    if (jobId && job?.status === "extracting" && !running && !autoStarted.current.has(jobId)) {
+      autoStarted.current.add(jobId);
+      runExtraction();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [jobId, job?.status, running]);
+
   async function runExtraction() {
     if (!jobId) return;
     setRunning(true); setError(null); setProgress(null); setGmProposed(null);
@@ -168,15 +182,30 @@ export default function ReviewPage() {
     setBusy(false);
   }
 
-  async function acceptAll() {
+  async function acceptAbove() {
     setBusy(true); setError(null);
-    const ids = props.map((p) => p.id);
-    for (const id of ids) {
-      const { error: e } = await supabase.rpc("review_proposed_event", { p_id: id, p_accept: true });
+    const targets = props.filter((p) => Math.round((p.confidence || 0) * 100) >= threshold);
+    for (const p of targets) {
+      const { error: e } = await supabase.rpc("review_proposed_event", { p_id: p.id, p_accept: true });
       if (e) { setError(e.message); break; }
     }
     setBusy(false);
     await loadProps(jobId);
+  }
+
+  // Bulk-accept GM beats above the threshold, but skip npc_* kinds so the
+  // create-NPC decision stays a per-row choice (bulk accept can't create NPCs).
+  async function acceptGmAbove() {
+    setBusy(true); setError(null);
+    const targets = gmProps.filter((p) => !p.kind.startsWith("npc_") && Math.round((p.confidence || 0) * 100) >= threshold);
+    for (const p of targets) {
+      const e = edits[p.id];
+      const payload = { action: "approve", id: p.id, summary: e?.summary ?? p.summary, kind: e?.kind ?? p.kind };
+      const res = await fetch("/api/gm-review", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      if (!res.ok) { const out = await res.json().catch(() => ({})); setError(out.error || "Bulk approve failed."); break; }
+    }
+    setBusy(false);
+    await loadGmProps(jobId);
   }
 
   async function markDone() {
@@ -208,10 +237,22 @@ export default function ReviewPage() {
   }
 
   const gmView = gmProps.filter((p) => showMeta || p.kind !== "meta");
+  const playerEligible = props.filter((p) => Math.round((p.confidence || 0) * 100) >= threshold).length;
+  const gmEligible = gmView.filter((p) => !p.kind.startsWith("npc_") && Math.round((p.confidence || 0) * 100) >= threshold).length;
+  const threshLabel = threshold === 0 ? "all" : `\u2265 ${threshold}%`;
 
   const box = { ...surfaces.slate, padding: 20, marginBottom: 18 } as const;
   const btn = (bg: string, fg: string) => ({ background: bg, color: fg, border: "none", borderRadius: 9, padding: "9px 16px", fontWeight: 700, fontSize: 13, cursor: "pointer" } as const);
   const tabBtn = (on: boolean) => ({ background: on ? C.plum : "transparent", color: on ? SAX.inkDeep : C.muted, border: `1px solid ${on ? C.plum : C.line}`, borderRadius: 9, padding: "8px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer" } as const);
+  const thresholdSelect = (
+    <select value={threshold} onChange={(e) => setThreshold(Number(e.target.value))}
+      style={{ background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: 8, padding: "8px 10px", fontSize: 12.5 }}>
+      <option value={90}>{"\u2265 90%"}</option>
+      <option value={80}>{"\u2265 80%"}</option>
+      <option value={70}>{"\u2265 70%"}</option>
+      <option value={0}>All</option>
+    </select>
+  );
 
   return (
     <PageShell width={900}>
@@ -244,9 +285,11 @@ export default function ReviewPage() {
                   Session {job.session?.session_number ?? "?"} · <span style={{ fontFamily: "ui-monospace, monospace" }}>{job.status}</span>
                 </div>
                 {job.status === "extracting" && (
-                  <button type="button" onClick={runExtraction} disabled={running} style={{ ...btn(C.plum, SAX.inkDeep), opacity: running ? 0.7 : 1 }}>
-                    {running ? "Extracting…" : "Run extraction"}
-                  </button>
+                  !running && error ? (
+                    <button type="button" onClick={runExtraction} style={btn(C.plum, SAX.inkDeep)}>Retry extraction</button>
+                  ) : (
+                    <span style={{ fontSize: 13, color: C.plum, fontWeight: 700 }}>Extracting…</span>
+                  )
                 )}
               </div>
               {running && progress && (
@@ -280,8 +323,16 @@ export default function ReviewPage() {
                       <span style={{ color: C.warn, fontWeight: 700 }}>{counts.rejected}</span> rejected ·{" "}
                       <span style={{ color: C.sun, fontWeight: 700 }}>{props.length}</span> awaiting review
                     </div>
-                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                      {props.length > 0 && <button type="button" onClick={acceptAll} disabled={busy} style={{ ...btn(C.good, SAX.inkDeep), opacity: busy ? 0.7 : 1 }}>Accept all</button>}
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+                      {props.length > 0 && (
+                        <>
+                          {thresholdSelect}
+                          <button type="button" onClick={acceptAbove} disabled={busy || playerEligible === 0}
+                            style={{ ...btn(C.good, SAX.inkDeep), opacity: busy || playerEligible === 0 ? 0.55 : 1, cursor: busy || playerEligible === 0 ? "default" : "pointer" }}>
+                            Accept {playerEligible} {threshLabel}
+                          </button>
+                        </>
+                      )}
                       {job.status === "review" && props.length === 0 && <button type="button" onClick={markDone} style={btn(C.sun, SAX.inkDeep)}>Mark done</button>}
                     </div>
                   </div>
@@ -289,7 +340,7 @@ export default function ReviewPage() {
 
                 {props.length === 0 ? (
                   <div style={{ ...box, color: C.muted, fontSize: 14 }}>
-                    {job.status === "extracting" ? "Run extraction to generate proposed events from the transcript." : "Nothing left to review for this job."}
+                    {job.status === "extracting" ? "Extracting… proposed events will appear here as they're found." : "Nothing left to review for this job."}
                   </div>
                 ) : (
                   <div style={{ display: "grid", gap: 12 }}>
@@ -335,10 +386,22 @@ export default function ReviewPage() {
                       <span style={{ color: C.warn, fontWeight: 700 }}>{gmCounts.rejected}</span> rejected ·{" "}
                       <span style={{ color: C.sun, fontWeight: 700 }}>{gmView.length}</span> awaiting review
                     </div>
-                    <label style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 12.5, color: C.muted, cursor: "pointer" }}>
-                      <input type="checkbox" checked={showMeta} onChange={(e) => setShowMeta(e.target.checked)} style={{ width: 15, height: 15, accentColor: C.plum, cursor: "pointer" }} />
-                      Show table-talk
-                    </label>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                      {gmView.length > 0 && (
+                        <>
+                          {thresholdSelect}
+                          <button type="button" onClick={acceptGmAbove} disabled={busy || gmEligible === 0}
+                            title="NPC beats are skipped so you can create them individually"
+                            style={{ ...btn(C.good, SAX.inkDeep), opacity: busy || gmEligible === 0 ? 0.55 : 1, cursor: busy || gmEligible === 0 ? "default" : "pointer" }}>
+                            Accept {gmEligible} non-NPC {threshLabel}
+                          </button>
+                        </>
+                      )}
+                      <label style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 12.5, color: C.muted, cursor: "pointer" }}>
+                        <input type="checkbox" checked={showMeta} onChange={(e) => setShowMeta(e.target.checked)} style={{ width: 15, height: 15, accentColor: C.plum, cursor: "pointer" }} />
+                        Show table-talk
+                      </label>
+                    </div>
                   </div>
                 </div>
 
@@ -346,7 +409,7 @@ export default function ReviewPage() {
 
                 {gmView.length === 0 ? (
                   <div style={{ ...box, color: C.muted, fontSize: 14 }}>
-                    {job.status === "extracting" ? "Run extraction to generate GM narration events." : "No GM narration events awaiting review."}
+                    {job.status === "extracting" ? "Extracting… GM narration will appear here." : "No GM narration events awaiting review."}
                   </div>
                 ) : (
                   <div style={{ display: "grid", gap: 12 }}>
