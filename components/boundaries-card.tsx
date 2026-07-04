@@ -35,17 +35,27 @@ function pool(rows: SafetyRow[], key: "lines" | "veils"): { item: string; count:
 export default function BoundariesCard({ campaignId }: { campaignId: string }) {
   const supabase = useMemo(() => createClient(), []);
   const [rows, setRows] = useState<SafetyRow[] | null>(null);
+  const [rosterCount, setRosterCount] = useState<number | null>(null);
 
   useEffect(() => {
     if (!campaignId) return;
     let active = true;
     (async () => {
-      const { data } = await supabase
-        .from("tpdi_responses")
-        .select("player_name, safety")
-        .eq("campaign_id", campaignId);
+      const [{ data }, { count }] = await Promise.all([
+        supabase
+          .from("tpdi_responses")
+          .select("player_name, safety")
+          .eq("campaign_id", campaignId),
+        supabase
+          .from("characters")
+          .select("id", { count: "exact", head: true })
+          .eq("campaign_id", campaignId)
+          .eq("kind", "pc")
+          .eq("active", true),
+      ]);
       if (!active) return;
       setRows(((data as SafetyRow[]) || []).filter((r) => r.safety));
+      setRosterCount(count ?? null);
     })();
     return () => { active = false; };
   }, [campaignId, supabase]);
@@ -54,6 +64,18 @@ export default function BoundariesCard({ campaignId }: { campaignId: string }) {
   const veils = rows ? pool(rows, "veils") : [];
   const notes = (rows ?? []).filter((r) => r.safety?.note && r.safety.note.trim());
   const responded = rows?.length ?? 0;
+
+  // Roster completeness only: WHO has submitted, kept separate from the pooled
+  // (anonymous) lines and veils. Names come from the free-text player_name, so
+  // this is a "responded" list, not an attribution of any specific boundary.
+  const responders = useMemo(() => {
+    const names = new Set<string>();
+    (rows ?? []).forEach((r) => {
+      const n = (r.player_name || "").trim();
+      if (n) names.add(n);
+    });
+    return Array.from(names).sort((a, b) => a.localeCompare(b));
+  }, [rows]);
 
   const chip = (item: string, count: number, accent: string) => (
     <span key={item} style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 13, background: C.surface2, border: `1px solid ${accent}55`, borderRadius: 999, padding: "6px 12px" }}>
@@ -80,6 +102,22 @@ export default function BoundariesCard({ campaignId }: { campaignId: string }) {
         </div>
       ) : (
         <>
+          {responders.length > 0 && (
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ fontFamily: "ui-monospace, monospace", fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", color: C.muted, marginBottom: 6 }}>
+                Responded
+                <span style={{ marginLeft: 8, color: SAX.good, fontWeight: 700 }}>
+                  {responders.length}{rosterCount ? ` / ${rosterCount}` : ""}
+                </span>
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {responders.map((n) => (
+                  <span key={n} style={{ fontSize: 12.5, color: C.text, background: C.surface2, border: `1px solid ${SAX.good}55`, borderRadius: 999, padding: "4px 10px" }}>{n}</span>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div style={{ marginBottom: 14 }}>
             <div style={{ fontFamily: "ui-monospace, monospace", fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", color: C.warn, marginBottom: 3 }}>Lines</div>
             <div style={{ fontSize: 12, color: C.muted, marginBottom: 8 }}>hard no, never at the table</div>
