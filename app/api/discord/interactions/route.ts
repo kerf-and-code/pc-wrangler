@@ -456,36 +456,68 @@ async function handleRecord(interaction: Interaction) {
     }
   }
 
-  // A recording needs a session to attach audio and consent to. Reuse the open
-  // session if there is one; otherwise open the next one automatically so the GM
-  // never has to pre-create it in the app.
-  let sess = (await sb
-    .from("sessions")
-    .select("id, session_number")
-    .eq("campaign_id", campaign.id)
-    .is("ended_at", null)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle()).data as { id: string; session_number: number | null } | null;
+  // Pick the session to record into. An explicit session:<n> records into that
+  // exact session (reused if it exists, opened if it doesn't), which is how you
+  // recover from a false start without inflating the count. With no option, reuse
+  // the open session if there is one, else open the next number automatically.
+  const sessionOpt = optionValue(interaction, "session");
+  let sess: { id: string; session_number: number | null } | null = null;
 
-  if (!sess) {
-    const { data: last } = await sb
+  if (sessionOpt) {
+    const n = parseInt(sessionOpt, 10);
+    if (!Number.isFinite(n) || n < 1) {
+      return ephemeral("Session must be a positive number, like session:2.");
+    }
+    const { data: found } = await sb
       .from("sessions")
-      .select("session_number")
+      .select("id, session_number")
       .eq("campaign_id", campaign.id)
-      .order("session_number", { ascending: false })
+      .eq("session_number", n)
+      .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
-    const nextNo = ((last as { session_number: number | null } | null)?.session_number ?? 0) + 1;
-    const { data: created, error: sErr } = await sb
-      .from("sessions")
-      .insert({ campaign_id: campaign.id, session_number: nextNo, started_at: new Date().toISOString() })
-      .select("id, session_number")
-      .single();
-    if (sErr || !created) {
-      return ephemeral("Could not open a session automatically. Start one in the app, then run /record again.");
+    if (found) {
+      sess = found as { id: string; session_number: number | null };
+    } else {
+      const { data: created, error: sErr } = await sb
+        .from("sessions")
+        .insert({ campaign_id: campaign.id, session_number: n, started_at: new Date().toISOString() })
+        .select("id, session_number")
+        .single();
+      if (sErr || !created) {
+        return ephemeral(`Could not open session ${n}. Try again, or start it in the app.`);
+      }
+      sess = created as { id: string; session_number: number | null };
     }
-    sess = created as { id: string; session_number: number | null };
+  } else {
+    sess = (await sb
+      .from("sessions")
+      .select("id, session_number")
+      .eq("campaign_id", campaign.id)
+      .is("ended_at", null)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle()).data as { id: string; session_number: number | null } | null;
+
+    if (!sess) {
+      const { data: last } = await sb
+        .from("sessions")
+        .select("session_number")
+        .eq("campaign_id", campaign.id)
+        .order("session_number", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      const nextNo = ((last as { session_number: number | null } | null)?.session_number ?? 0) + 1;
+      const { data: created, error: sErr } = await sb
+        .from("sessions")
+        .insert({ campaign_id: campaign.id, session_number: nextNo, started_at: new Date().toISOString() })
+        .select("id, session_number")
+        .single();
+      if (sErr || !created) {
+        return ephemeral("Could not open a session automatically. Start one in the app, then run /record again.");
+      }
+      sess = created as { id: string; session_number: number | null };
+    }
   }
 
   const { error } = await sb.from("capture_control").insert({

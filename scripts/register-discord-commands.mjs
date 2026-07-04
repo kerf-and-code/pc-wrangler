@@ -32,6 +32,13 @@ const CODE_OPTIONAL = {
   type: 3, // STRING
   required: false,
 };
+const SESSION_OPTIONAL = {
+  name: "session",
+  description: "Session number to record into (defaults to the open one, or a new one).",
+  type: 4, // INTEGER
+  required: false,
+  min_value: 1,
+};
 
 const commands = [
   {
@@ -61,7 +68,7 @@ const commands = [
   {
     name: "record",
     description: "Have the bot join your voice channel and record the session.",
-    options: [CODE_OPTIONAL],
+    options: [CODE_OPTIONAL, SESSION_OPTIONAL],
     default_member_permissions: MANAGE_GUILD,
   },
   {
