@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import BoundariesCard from "@/components/boundaries-card";
+import { useMomentPlayer, MomentButton } from "@/components/moment-player";
 import { SAX, surfaces, ui } from "@/lib/theme";
 
 const C = {
@@ -17,6 +18,7 @@ type GmEvent = {
   id: string; session_id: string | null; kind: string; summary: string;
   npc_name: string | null; location_name: string | null;
   thread_status: string | null; t_start_seconds: number | null; created_at: string;
+  audio_track_id: string | null;
 };
 
 const THREAD_GROUPS: { kind: string; label: string; blurb: string }[] = [
@@ -43,6 +45,7 @@ export default function PrepPage() {
   const [recent, setRecent] = useState<GmEvent[]>([]);
   const [busyId, setBusyId] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
+  const player = useMomentPlayer();
 
   useEffect(() => {
     (async () => {
@@ -54,7 +57,7 @@ export default function PrepPage() {
   }, [supabase]);
 
   async function load(cid: string) {
-    const cols = "id, session_id, kind, summary, npc_name, location_name, thread_status, t_start_seconds, created_at";
+    const cols = "id, session_id, kind, summary, npc_name, location_name, thread_status, t_start_seconds, created_at, audio_track_id";
     const [{ data: ss }, { data: th }, { data: rc }] = await Promise.all([
       supabase.from("sessions").select("id, session_number").eq("campaign_id", cid),
       supabase.from("gm_events").select(cols).eq("campaign_id", cid).eq("thread_status", "open").order("created_at", { ascending: false }),
@@ -136,6 +139,8 @@ export default function PrepPage() {
         </select>
       </div>
 
+      {player.error && <p style={{ color: C.warn, fontSize: 12.5, margin: "10px 0 0" }}>{player.error}</p>}
+
       {sectionTitle("Open threads", "framing, hooks, and quests you approved that are still dangling. Resolve when paid off, drop when abandoned.")}
       {error && <p style={{ color: C.warn, fontSize: 13, marginBottom: 10 }}>{error}</p>}
       {threadsEmpty ? (
@@ -154,8 +159,14 @@ export default function PrepPage() {
                   <div key={t.id} style={box}>
                     <div style={{ fontSize: 14, color: C.text, lineHeight: 1.5 }}>{t.summary}</div>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap", marginTop: 10 }}>
-                      <span style={{ fontSize: 11.5, color: C.muted, fontFamily: "ui-monospace, monospace" }}>
-                        {sessNo(t.session_id)}{t.t_start_seconds !== null ? ` · ${fmtClock(t.t_start_seconds)}` : ""}
+                      <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span style={{ fontSize: 11.5, color: C.muted, fontFamily: "ui-monospace, monospace" }}>{sessNo(t.session_id)}</span>
+                        {t.audio_track_id ? (
+                          <MomentButton active={player.activeId === t.id} loading={player.loadingId === t.id} tStart={t.t_start_seconds}
+                            onClick={() => player.play(t.id, t.audio_track_id, t.t_start_seconds)} />
+                        ) : (t.t_start_seconds !== null && (
+                          <span style={{ fontSize: 11.5, color: C.muted, fontFamily: "ui-monospace, monospace" }}>{fmtClock(t.t_start_seconds)}</span>
+                        ))}
                       </span>
                       <div style={{ display: "flex", gap: 8 }}>
                         <button type="button" onClick={() => setThread(t.id, "resolved")} disabled={busyId === t.id}
@@ -204,7 +215,11 @@ export default function PrepPage() {
             {beats.map((b) => (
               <div key={b.id} style={{ display: "flex", gap: 10, alignItems: "baseline", fontSize: 13.5, lineHeight: 1.5 }}>
                 <span style={{ width: 6, height: 6, borderRadius: 6, background: C.sun, flexShrink: 0, transform: "translateY(4px)" }} />
-                <span style={{ color: C.text }}>{b.summary}</span>
+                <span style={{ color: C.text, flex: 1 }}>{b.summary}</span>
+                {b.audio_track_id && (
+                  <MomentButton active={player.activeId === b.id} loading={player.loadingId === b.id} tStart={b.t_start_seconds}
+                    onClick={() => player.play(b.id, b.audio_track_id, b.t_start_seconds)} />
+                )}
               </div>
             ))}
           </div>

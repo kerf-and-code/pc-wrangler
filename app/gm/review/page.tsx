@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
+import { useMomentPlayer, MomentButton } from "@/components/moment-player";
 import { SAX, surfaces, ui, AXES, type AxisKey } from "@/lib/theme";
 
 const C = {
@@ -22,6 +23,7 @@ type GmProp = {
   id: string; kind: string; summary: string; detail: string | null; quote: string | null;
   npc_name: string | null; location_name: string | null; target_character_id: string | null;
   confidence: number | null; t_start_seconds: number | null; status: string;
+  audio_track_id: string | null;
 };
 type GmKind = { kind: string; category: string; label: string; sort: number };
 
@@ -53,6 +55,7 @@ export default function ReviewPage() {
   const [gmCounts, setGmCounts] = useState<{ approved: number; rejected: number }>({ approved: 0, rejected: 0 });
   const [showMeta, setShowMeta] = useState<boolean>(false);
   const [edits, setEdits] = useState<Record<string, { summary?: string; kind?: string }>>({});
+  const gmPlayer = useMomentPlayer();
 
   const job = jobs.find((j) => j.id === jobId) || null;
 
@@ -104,7 +107,7 @@ export default function ReviewPage() {
   async function loadGmProps(jid: string) {
     const { data } = await supabase
       .from("gm_proposed_events")
-      .select("id, kind, summary, detail, quote, npc_name, location_name, target_character_id, confidence, t_start_seconds, status")
+      .select("id, kind, summary, detail, quote, npc_name, location_name, target_character_id, confidence, t_start_seconds, status, audio_track_id")
       .eq("job_id", jid)
       .order("created_at", { ascending: true });
     const all = (data as GmProp[]) || [];
@@ -339,6 +342,8 @@ export default function ReviewPage() {
                   </div>
                 </div>
 
+                {gmPlayer.error && <p style={{ color: C.warn, fontSize: 12.5, marginBottom: 10 }}>{gmPlayer.error}</p>}
+
                 {gmView.length === 0 ? (
                   <div style={{ ...box, color: C.muted, fontSize: 14 }}>
                     {job.status === "extracting" ? "Run extraction to generate GM narration events." : "No GM narration events awaiting review."}
@@ -358,7 +363,12 @@ export default function ReviewPage() {
                               {gmKinds.map((k) => (<option key={k.kind} value={k.kind}>{k.label}</option>))}
                             </select>
                             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                              {p.t_start_seconds !== null && <span style={{ color: C.muted, fontFamily: "ui-monospace, monospace", fontSize: 11 }}>{fmtTime(Math.round((p.t_start_seconds || 0) * 1000))}</span>}
+                              {p.audio_track_id ? (
+                                <MomentButton active={gmPlayer.activeId === p.id} loading={gmPlayer.loadingId === p.id} tStart={p.t_start_seconds}
+                                  onClick={() => gmPlayer.play(p.id, p.audio_track_id, p.t_start_seconds)} />
+                              ) : (p.t_start_seconds !== null && (
+                                <span style={{ color: C.muted, fontFamily: "ui-monospace, monospace", fontSize: 11 }}>{fmtTime(Math.round((p.t_start_seconds || 0) * 1000))}</span>
+                              ))}
                               {conf !== null && <span style={{ fontSize: 13, fontWeight: 700, color: conf >= 70 ? C.good : conf >= 40 ? C.sun : C.warn }}>{conf}%</span>}
                             </div>
                           </div>
