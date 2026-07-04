@@ -327,7 +327,7 @@ export default function CapturePage() {
                     ) : (
                       <>
                         <span style={{ fontSize: 13, color: C.muted }}>
-                          Queued. The transcription worker (slice 4c) will pick this up, transcribe each track, and surface proposed events for review.
+                          Queued. Each track is being transcribed; when that finishes, proposed events appear on the Review page automatically.
                         </span>
                         <button type="button" onClick={() => setJobStatus("draft")} style={{ background: "transparent", color: C.plum, border: `1px solid ${C.line}`, borderRadius: 8, padding: "8px 14px", fontSize: 12, cursor: "pointer" }}>Back to draft</button>
                       </>

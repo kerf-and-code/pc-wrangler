@@ -187,7 +187,7 @@ export default function ReliabilityPage() {
     <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
       <div style={{ width: 150, fontSize: 13, display: "flex", alignItems: "center", gap: 7 }}>
         {chip && <span style={{ width: 9, height: 9, borderRadius: 9, background: chip, flexShrink: 0 }} />}
-        <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label}</span>
+        <span title={label} style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label}</span>
       </div>
       <Bar rate={rate} />
       <div style={{ width: 78, textAlign: "right", fontSize: 13 }}>

@@ -459,7 +459,7 @@ export default function TPDI() {
                 </button>
               </div>
 
-              <div className="tpdi-mono" style={{ fontSize: 11, color: C.line, textAlign: "center", marginTop: 18 }}>
+              <div className="tpdi-mono" style={{ fontSize: 11, color: C.muted, textAlign: "center", marginTop: 18 }}>
                 tip: keys 1&ndash;5 to answer, 0 to skip
               </div>
             </div>
