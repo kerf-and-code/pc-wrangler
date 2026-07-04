@@ -6,15 +6,18 @@ import { createClient } from "@supabase/supabase-js";
 const PING = 1;
 const APPLICATION_COMMAND = 2;
 const MESSAGE_COMPONENT = 3;
+const MODAL_SUBMIT = 5;
 // Discord response (callback) types
 const PONG = 1;
 const CHANNEL_MESSAGE_WITH_SOURCE = 4;
 const UPDATE_MESSAGE = 7;
+const MODAL = 9;
 const EPHEMERAL = 64;
 // Component types
 const ACTION_ROW = 1;
 const BUTTON = 2;
 const STRING_SELECT = 3;
+const TEXT_INPUT = 4;
 // Button styles
 const STYLE_SUCCESS = 3;
 const STYLE_SECONDARY = 2;
@@ -30,11 +33,14 @@ const MANAGE_GUILD = BigInt(1) << BigInt(5);
 const DER_PREFIX = Buffer.from("302a300506032b6570032100", "hex");
 
 interface InteractionOption { name: string; value?: unknown }
+interface ModalComponent { type?: number; custom_id?: string; value?: string }
+interface ModalRow { type?: number; components?: ModalComponent[] }
 interface InteractionData {
   name?: string;
   options?: InteractionOption[];
   custom_id?: string;
   values?: string[];
+  components?: ModalRow[];
 }
 interface Interaction {
   type: number;
@@ -92,6 +98,31 @@ function optionValue(interaction: Interaction, name: string): string {
   return String(interaction.data?.options?.find((o) => o.name === name)?.value ?? "").trim();
 }
 
+function modalValue(interaction: Interaction, fieldId: string): string {
+  for (const row of interaction.data?.components ?? []) {
+    for (const comp of row.components ?? []) {
+      if (comp.custom_id === fieldId) return String(comp.value ?? "").trim();
+    }
+  }
+  return "";
+}
+
+// A modal that collects a new character's name (and optional class) so a player
+// can add themselves when they aren't on the roster yet.
+function claimModal(campaignId: string) {
+  return NextResponse.json({
+    type: MODAL,
+    data: {
+      custom_id: `claimnew:${campaignId}`,
+      title: "Add your character",
+      components: [
+        { type: ACTION_ROW, components: [{ type: TEXT_INPUT, custom_id: "name", label: "Character name", style: 1, required: true, max_length: 80 }] },
+        { type: ACTION_ROW, components: [{ type: TEXT_INPUT, custom_id: "class", label: "Class (optional)", style: 1, required: false, max_length: 60 }] },
+      ],
+    },
+  });
+}
+
 export async function POST(request: Request) {
   const rawBody = await request.text();
   const signature = request.headers.get("x-signature-ed25519");
@@ -129,6 +160,12 @@ export async function POST(request: Request) {
     if (cid.startsWith("rsvp:")) return await handleRsvpButton(interaction);
     if (cid.startsWith("consent:")) return await handleConsentButton(interaction);
     return ephemeral("Unknown action.");
+  }
+
+  if (interaction.type === MODAL_SUBMIT) {
+    const cid = interaction.data?.custom_id ?? "";
+    if (cid.startsWith("claimnew:")) return await handleClaimModal(interaction);
+    return ephemeral("Unknown submission.");
   }
 
   return NextResponse.json({ type: PONG });
@@ -200,15 +237,17 @@ async function handleClaim(interaction: Interaction) {
     .eq("kind", "pc")
     .eq("active", true)
     .order("name")
-    .limit(25);
+    .limit(24);
+  // No roster yet: let the player add their own character straight away.
   if (!roster || !roster.length) {
-    return ephemeral("No player characters in this campaign yet. Ask your GM to add the roster.");
+    return claimModal(campaign.id);
   }
 
   const options = roster.map((c: { id: string; name: string | null }) => ({
     label: (c.name || "Unnamed").slice(0, 100),
     value: c.id,
   }));
+  options.push({ label: "My character isn't listed\u2026", value: "__new__" });
 
   return NextResponse.json({
     type: CHANNEL_MESSAGE_WITH_SOURCE,
@@ -232,6 +271,9 @@ async function handleClaimSelect(interaction: Interaction) {
   const campaignId = cid.startsWith("claim:") ? cid.slice("claim:".length) : "";
   const characterId = interaction.data?.values?.[0] ?? "";
   const userId = discordUserId(interaction);
+  if (characterId === "__new__") {
+    return campaignId ? claimModal(campaignId) : updateMessage("Something went wrong. Try /claim again.");
+  }
   if (!campaignId || !characterId || !userId) {
     return updateMessage("Something went wrong reading your selection. Try /claim again.");
   }
@@ -260,6 +302,45 @@ async function handleClaimSelect(interaction: Interaction) {
   }
 
   return updateMessage(`Linked. You're playing "${character.name}". Recaps and voice will attribute to you.`);
+}
+
+async function handleClaimModal(interaction: Interaction) {
+  const cid = interaction.data?.custom_id ?? "";
+  const campaignId = cid.startsWith("claimnew:") ? cid.slice("claimnew:".length) : "";
+  const userId = discordUserId(interaction);
+  const name = modalValue(interaction, "name");
+  const klass = modalValue(interaction, "class");
+  if (!campaignId || !userId) {
+    return ephemeral("Something went wrong. Try /claim again.");
+  }
+  if (!name) {
+    return ephemeral("A character name is required. Run /claim and try again.");
+  }
+
+  const sb = serviceClient();
+  const { data: campaign } = await sb.from("campaigns").select("id, name").eq("id", campaignId).maybeSingle();
+  if (!campaign) {
+    return ephemeral("That campaign no longer exists.");
+  }
+
+  // One character per user per campaign: drop any existing claim first.
+  await sb.from("characters").update({ discord_user_id: null })
+    .eq("campaign_id", campaignId).eq("discord_user_id", userId);
+
+  const { data: created, error } = await sb.from("characters").insert({
+    campaign_id: campaignId,
+    kind: "pc",
+    name,
+    class: klass || null,
+    active: true,
+    visibility: "player",
+    discord_user_id: userId,
+  }).select("id, name").single();
+  if (error || !created) {
+    return ephemeral("Could not add your character. Ask your GM to add you to the roster.");
+  }
+
+  return ephemeral(`Added and linked. You're playing "${created.name}". Recaps and voice will attribute to you.`);
 }
 
 async function handleUnclaim(interaction: Interaction) {
