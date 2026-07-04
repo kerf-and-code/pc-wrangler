@@ -68,7 +68,7 @@ export default function HelpPage() {
       ))}
 
       <p style={{ color: C.muted, fontSize: 13, lineHeight: 1.6 }}>
-        Want this outside the app? The same guide ships as a markdown file (docs/six-axes-guide.md) you can paste into Discord or send to a new GM.
+        Bringing a new GM on board? Send them to this page, or copy any section above to share.
       </p>
     </PageShell>
   );
