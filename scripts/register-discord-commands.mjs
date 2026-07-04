@@ -68,13 +68,12 @@ const commands = [
   {
     name: "record",
     description: "Have the bot join your voice channel and record the session.",
-    options: [CODE_OPTIONAL, SESSION_OPTIONAL],
+    options: [SESSION_OPTIONAL],
     default_member_permissions: MANAGE_GUILD,
   },
   {
     name: "stop",
     description: "Stop the current recording and process the audio.",
-    options: [CODE_OPTIONAL],
     default_member_permissions: MANAGE_GUILD,
   },
 ];
