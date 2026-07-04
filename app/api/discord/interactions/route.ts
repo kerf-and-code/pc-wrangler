@@ -425,35 +425,74 @@ async function handleRecord(interaction: Interaction) {
   }
 
   // Don't double-start.
-  const { data: existing } = await sb
+  const { data: running } = await sb
     .from("capture_control")
     .select("id")
     .eq("campaign_id", campaign.id)
     .in("status", ["requested", "active"])
     .limit(1)
     .maybeSingle();
-  if (existing) {
+  if (running) {
     return ephemeral("A recording is already requested or running for this campaign. Use /stop first.");
   }
 
-  // A recording needs a session to attach audio and consent to.
-  const { data: sess } = await sb
+  // Auto-link the requester as the campaign narrator, so their own voice is
+  // captured as GM narration with no separate setup step. Fills in only if they
+  // haven't already linked (via a prior /record or the Narrator voice card).
+  const requesterId = discordUserId(interaction);
+  if (requesterId) {
+    const { data: gm } = await sb
+      .from("gm_identities")
+      .select("id")
+      .eq("campaign_id", campaign.id)
+      .eq("discord_user_id", requesterId)
+      .maybeSingle();
+    if (!gm) {
+      await sb.from("gm_identities").insert({
+        campaign_id: campaign.id,
+        discord_user_id: requesterId,
+        display_name: "the GM",
+      });
+    }
+  }
+
+  // A recording needs a session to attach audio and consent to. Reuse the open
+  // session if there is one; otherwise open the next one automatically so the GM
+  // never has to pre-create it in the app.
+  let sess = (await sb
     .from("sessions")
     .select("id, session_number")
     .eq("campaign_id", campaign.id)
     .is("ended_at", null)
     .order("created_at", { ascending: false })
     .limit(1)
-    .maybeSingle();
+    .maybeSingle()).data as { id: string; session_number: number | null } | null;
+
   if (!sess) {
-    return ephemeral("No open session to record. Start a session in the app first, then run /record.");
+    const { data: last } = await sb
+      .from("sessions")
+      .select("session_number")
+      .eq("campaign_id", campaign.id)
+      .order("session_number", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const nextNo = ((last as { session_number: number | null } | null)?.session_number ?? 0) + 1;
+    const { data: created, error: sErr } = await sb
+      .from("sessions")
+      .insert({ campaign_id: campaign.id, session_number: nextNo, started_at: new Date().toISOString() })
+      .select("id, session_number")
+      .single();
+    if (sErr || !created) {
+      return ephemeral("Could not open a session automatically. Start one in the app, then run /record again.");
+    }
+    sess = created as { id: string; session_number: number | null };
   }
 
   const { error } = await sb.from("capture_control").insert({
     campaign_id: campaign.id,
     session_id: sess.id,
     guild_id: interaction.guild_id,
-    requested_by_discord_id: discordUserId(interaction),
+    requested_by_discord_id: requesterId,
     status: "requested",
   });
   if (error) {

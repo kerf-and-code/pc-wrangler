@@ -91,17 +91,26 @@ export async function POST(req: NextRequest) {
     .maybeSingle();
   const existing = existingRow as { id: string } | null;
 
-  // Respect unique(campaign_id, discord_user_id): block if another narrator on
-  // this campaign already claims this Discord id.
+  // Respect unique(campaign_id, discord_user_id). A row with no profile_id is an
+  // auto-linked narrator (created by /record); adopt it for this GM rather than
+  // blocking. A row owned by a different profile is a genuine clash.
   const { data: clashRow } = await admin
     .from("gm_identities")
-    .select("id")
+    .select("id, profile_id")
     .eq("campaign_id", campaignId)
     .eq("discord_user_id", discordUserId)
     .maybeSingle();
-  const clash = clashRow as { id: string } | null;
+  const clash = clashRow as { id: string; profile_id: string | null } | null;
   if (clash && clash.id !== existing?.id) {
-    return NextResponse.json({ error: "That Discord ID is already linked to another narrator on this campaign." }, { status: 409 });
+    if (clash.profile_id && clash.profile_id !== userId) {
+      return NextResponse.json({ error: "That Discord ID is already linked to another narrator on this campaign." }, { status: 409 });
+    }
+    const { error: adoptErr } = await admin
+      .from("gm_identities")
+      .update({ profile_id: userId, display_name: displayName || null })
+      .eq("id", clash.id);
+    if (adoptErr) return NextResponse.json({ error: adoptErr.message }, { status: 500 });
+    return NextResponse.json({ ok: true });
   }
 
   if (existing) {
