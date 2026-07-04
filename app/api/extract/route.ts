@@ -15,7 +15,7 @@ S = The Table (social & group cohesion)
 E = The World (exploration & discovery)
 I = Presence (engagement, attention, investment)`;
 
-type Seg = { id: string; character_id: string | null; start_ms: number | null; end_ms: number | null; text: string };
+type Seg = { id: string; track_id: string | null; character_id: string | null; start_ms: number | null; end_ms: number | null; text: string };
 type Etype = { key: string; label: string; category: string; default_axis: string | null; default_frame: string | null; default_target: string | null };
 type Char = { id: string; name: string; kind: string };
 type Proposal = { line?: number; character?: string | null; event_type?: string; axis?: string | null; frame?: string | null; target?: string | null; confidence?: number; rationale?: string };
@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
   const supa = await createClient();
   const { data: job } = await supa
     .from("capture_jobs")
-    .select("id, campaign_id, session_id, status, extract_cursor")
+    .select("id, campaign_id, session_id, status, extract_cursor, gm_extract_cursor")
     .eq("id", jid)
     .single();
   if (!job) return NextResponse.json({ error: "Not found or not permitted" }, { status: 403 });
@@ -40,17 +40,36 @@ export async function POST(req: NextRequest) {
 
   const admin = createAdminClient();
 
+  // GM narration lives on the narrator's track(s) and is handled by the GM
+  // extractor. The player extractor excludes those segments so GM speech never
+  // lands as a null-attributed player event.
+  const { data: gmTracks } = await admin
+    .from("audio_tracks")
+    .select("id")
+    .eq("job_id", jid)
+    .not("gm_identity_id", "is", null);
+  const gmTrackIds = new Set(((gmTracks as { id: string }[]) || []).map((t) => t.id));
+
   const { data: segData } = await admin
     .from("transcript_segments")
-    .select("id, character_id, start_ms, end_ms, text")
+    .select("id, track_id, character_id, start_ms, end_ms, text")
     .eq("job_id", jid)
     .order("start_ms", { ascending: true });
-  const segments = (segData as Seg[]) || [];
+  const allSegs = (segData as Seg[]) || [];
+  const segments = allSegs.filter((s) => !(s.track_id !== null && gmTrackIds.has(s.track_id)));
+  const gmTotal = allSegs.length - segments.length;
   const total = segments.length;
   const cursor: number = job.extract_cursor || 0;
 
+  // The job flips to "review" only when BOTH extractors have finished their
+  // portion; the GM side is done when its cursor has caught its segment count.
+  const gmCursor: number = job.gm_extract_cursor || 0;
+  const gmDone = gmCursor >= gmTotal;
+
   if (total === 0 || cursor >= total) {
-    await admin.from("capture_jobs").update({ status: "review" }).eq("id", jid);
+    await admin.from("capture_jobs")
+      .update({ extract_cursor: total, status: gmDone ? "review" : "extracting" })
+      .eq("id", jid);
     return NextResponse.json({ done: true, processed: total, total, proposed: 0 });
   }
 
@@ -138,8 +157,9 @@ Return a JSON array. Return [] if nothing in this window is clearly an event.`;
   if (rows.length) await admin.from("proposed_events").insert(rows);
 
   const nextCursor = Math.min(cursor + WINDOW, total);
-  const done = nextCursor >= total;
-  await admin.from("capture_jobs").update({ extract_cursor: nextCursor, status: done ? "review" : "extracting" }).eq("id", jid);
+  const playerDone = nextCursor >= total;
+  const status = playerDone && gmDone ? "review" : "extracting";
+  await admin.from("capture_jobs").update({ extract_cursor: nextCursor, status }).eq("id", jid);
 
-  return NextResponse.json({ done, processed: nextCursor, total, proposed: rows.length });
+  return NextResponse.json({ done: playerDone, processed: nextCursor, total, proposed: rows.length });
 }

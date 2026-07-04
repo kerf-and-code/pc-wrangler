@@ -45,6 +45,7 @@ export default function ReviewPage() {
   const [counts, setCounts] = useState<{ accepted: number; rejected: number }>({ accepted: 0, rejected: 0 });
   const [running, setRunning] = useState<boolean>(false);
   const [progress, setProgress] = useState<{ processed: number; total: number } | null>(null);
+  const [gmProposed, setGmProposed] = useState<number | null>(null);
   const [busy, setBusy] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -97,15 +98,28 @@ export default function ReviewPage() {
 
   async function runExtraction() {
     if (!jobId) return;
-    setRunning(true); setError(null); setProgress(null);
+    setRunning(true); setError(null); setProgress(null); setGmProposed(null);
+    // Player extractor first, then the GM extractor. The job flips to "review"
+    // only once both have finished their portion (the routes coordinate that).
     let done = false;
     while (!done) {
       const res = await fetch("/api/extract", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ jobId }) });
       const out = await res.json().catch(() => ({}));
-      if (!res.ok) { setError(out.error || "Extraction failed."); break; }
+      if (!res.ok) { setError(out.error || "Extraction failed."); setRunning(false); return; }
       setProgress({ processed: out.processed, total: out.total });
       done = Boolean(out.done);
     }
+    let gmDone = false;
+    let gmCount = 0;
+    while (!gmDone) {
+      const res = await fetch("/api/extract-gm", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ jobId }) });
+      const out = await res.json().catch(() => ({}));
+      if (!res.ok) { setError(out.error || "GM extraction failed."); break; }
+      if (Number(out.total) > 0) setProgress({ processed: out.processed, total: out.total });
+      gmCount += Number(out.proposed || 0);
+      gmDone = Boolean(out.done);
+    }
+    setGmProposed(gmCount);
     setRunning(false);
     await loadProps(jobId);
     await loadJobs(campaignId);
@@ -192,6 +206,11 @@ export default function ReviewPage() {
                 </div>
               )}
               {error && <p style={{ color: C.warn, fontSize: 13, marginTop: 12 }}>{error}</p>}
+              {gmProposed !== null && (
+                <p style={{ color: C.muted, fontSize: 12.5, marginTop: 10 }}>
+                  {gmProposed} GM narration event{gmProposed === 1 ? "" : "s"} captured to the GM queue. The GM review UI arrives in the next build.
+                </p>
+              )}
             </div>
 
             {props.length === 0 ? (
