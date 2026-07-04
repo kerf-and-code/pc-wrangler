@@ -472,6 +472,9 @@ export default function SessionWorkspace() {
               <div style={{ fontSize: 13, color: C.muted }}>Log an event</div>
               <button style={btnGhost} onClick={completeSession}>Mark session complete</button>
             </div>
+            <p style={{ fontSize: 12.5, color: C.muted, lineHeight: 1.5, margin: "0 0 12px" }}>
+              The by-hand path. If you record over Discord, events fill in automatically, approve them on the Review page instead of logging here.
+            </p>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
               <select style={inputStyle} value={entry.characterId}
                 onChange={(e) => setEntry({ ...entry, characterId: e.target.value })}>

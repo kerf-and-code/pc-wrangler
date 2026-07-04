@@ -24,7 +24,7 @@ export default function GettingStartedPage() {
   const supabase = useMemo(() => createClient(), []);
   const [status, setStatus] = useState<"loading" | "ready" | "signin">("loading");
   const [shareCode, setShareCode] = useState<string | null>(null);
-  const [flags, setFlags] = useState({ campaign: false, pc: false, session: false, recap: false, schedule: false, tap: false });
+  const [flags, setFlags] = useState({ campaign: false, players: false, discord: false, record: false, review: false, schedule: false, tap: false });
 
   useEffect(() => {
     let active = true;
@@ -32,21 +32,25 @@ export default function GettingStartedPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { if (active) setStatus("signin"); return; }
 
-      const [{ data: camps }, { data: pcs }, { data: sess }, { data: taps }] = await Promise.all([
-        supabase.from("campaigns").select("id, share_code").limit(1),
+      const [{ data: camps }, { data: pcs }, { data: sess }, { data: jobs }, { data: evs }, { data: taps }] = await Promise.all([
+        supabase.from("campaigns").select("id, share_code, discord_channel_id").limit(1),
         supabase.from("characters").select("id").eq("kind", "pc").limit(1),
         supabase.from("sessions").select("id, notes, recap, scheduled_at"),
+        supabase.from("capture_jobs").select("id").limit(1),
+        supabase.from("events").select("id").limit(1),
         supabase.from("vtt_events").select("id").limit(1),
       ]);
       if (!active) return;
 
       const sessions = sess || [];
-      setShareCode((camps || [])[0]?.share_code ?? null);
+      const camp0 = (camps || [])[0] as { share_code?: string; discord_channel_id?: string | null } | undefined;
+      setShareCode(camp0?.share_code ?? null);
       setFlags({
         campaign: (camps || []).length > 0,
-        pc: (pcs || []).length > 0,
-        session: sessions.some((s: any) => (s.notes && s.notes.trim()) || s.recap),
-        recap: sessions.some((s: any) => s.recap && s.recap.trim()),
+        players: (pcs || []).length > 0,
+        discord: Boolean(camp0?.discord_channel_id),
+        record: (jobs || []).length > 0 || sessions.some((s: any) => s.notes && s.notes.trim()),
+        review: (evs || []).length > 0 || sessions.some((s: any) => s.recap && s.recap.trim()),
         schedule: sessions.some((s: any) => s.scheduled_at),
         tap: (taps || []).length > 0,
       });
@@ -57,9 +61,10 @@ export default function GettingStartedPage() {
 
   const steps: Step[] = [
     { key: "campaign", label: "Create your campaign", desc: "Name your table and pick the system. This is the home for everything else.", href: "/gm", cta: "Open the workspace", done: flags.campaign },
-    { key: "pc", label: "Add your players' characters", desc: "A name per player is enough to start. You can flesh them out later.", href: "/gm/roster", cta: "Open the roster", done: flags.pc },
-    { key: "session", label: "Log your last session", desc: "Paste a few notes about what happened. No recording or transcription needed.", href: "/gm/sessions", cta: "Log a session", done: flags.session },
-    { key: "recap", label: "Generate and share a recap", desc: "Turn those notes into a 'previously on...' your players can read or get by email.", href: "/gm/sessions", cta: "Write a recap", done: flags.recap },
+    { key: "players", label: "Get your players in", desc: "Send each player their invite link from the Roster. They take the quick inventory and claim their character, and can add it themselves if it isn't listed yet.", href: "/gm/roster", cta: "Open the roster", done: flags.players },
+    { key: "discord", label: "Connect Discord", desc: "Invite the Six Axes bot, run /setup in your channel, and have players /claim once. This is what lets the bot record your table and post recaps.", href: "/gm/help", cta: "See the setup steps", done: flags.discord },
+    { key: "record", label: "Record a session", desc: "Run /record when play starts and /stop when you wrap; the bot captures each voice on its own track. No Discord? Log the session by hand on the Session Log instead.", href: "/gm/capture", cta: "Open Capture", done: flags.record },
+    { key: "review", label: "Review the events", desc: "Approve or reject what the extractor proposes from the transcript. When you mark it done, a player recap is drafted for you and the disposition read refreshes.", href: "/gm/review", cta: "Open Review", done: flags.review },
     { key: "schedule", label: "Schedule your next session", desc: "Set a time so players can RSVP and get a reminder the day before.", href: "/gm/sessions", cta: "Set a time", done: flags.schedule },
     { key: "tap", label: "Capture table rolls (optional)", desc: "Players who use Beyond20 with D&D Beyond and Roll20 can keep the Table Tap open during sessions. Their attacks, saves, damage, and HP changes flow into recaps and analytics automatically.", href: "", cta: "", done: flags.tap, optional: true },
   ];
@@ -79,7 +84,7 @@ export default function GettingStartedPage() {
         Run your first session
       </h1>
       <p style={{ color: C.muted, fontSize: 15, lineHeight: 1.6, margin: "0 0 22px", maxWidth: 600 }}>
-        Six steps from empty to a shareable recap, a scheduled next game, and live roll capture. The last one is optional, and you can do it all from your notes, no recording required.
+        From an empty account to a captured, reviewed session with a recap your players actually read. It runs on your Discord voice chat, or entirely from your notes if you would rather not record. The last step is optional.
       </p>
 
       {status === "loading" && <p style={{ color: C.muted, fontSize: 14 }}>Loading…</p>}
@@ -98,7 +103,7 @@ export default function GettingStartedPage() {
             <div style={{ ...card, borderColor: C.good, background: "rgba(93,190,154,0.08)" }}>
               <div style={{ fontSize: 15, fontWeight: 700, color: C.good }}>You're all set.</div>
               <div style={{ fontSize: 13.5, color: C.muted, marginTop: 4, lineHeight: 1.5 }}>
-                Your table is up and running. From here, the dashboard shows table health, and the analytics get richer the more you log.
+                Your table is up and running. From here, the dashboard shows table health, and the analytics get richer the more you play.
               </div>
             </div>
           )}
