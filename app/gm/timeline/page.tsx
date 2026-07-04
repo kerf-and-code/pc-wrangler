@@ -106,8 +106,11 @@ export default function TimelinePage() {
   return (
     <PageShell width={820}>
       <h1 style={{ ...ui.h1, fontSize: 28, margin: "4px 0 4px" }}>Timeline</h1>
-      <p style={{ color: C.muted, fontSize: 14, margin: "0 0 18px" }}>
-        The campaign session by session: threads opened and advanced, loot handed out. Filter to one PC to trace their arc.
+      <p style={{ color: C.muted, fontSize: 14, margin: "0 0 6px" }}>
+        The campaign session by session: arcs opened and advanced, loot handed out. Filter to one PC to follow their arc.
+      </p>
+      <p style={{ color: C.muted, fontSize: 12.5, margin: "0 0 18px" }}>
+        Loose ends captured from your narration (framing, hooks, quests) live on the <a href="/gm/prep" style={{ color: C.plum, textDecoration: "none", borderBottom: `1px solid ${C.plum}` }}>Prep sheet</a>.
       </p>
 
         <div style={{ ...box, marginBottom: 18 }}>
@@ -145,7 +148,7 @@ export default function TimelinePage() {
                     )}
                     {opened.map((a) => (
                       <Row key={a.id} color={C.plum}>
-                        Opened thread <strong>{a.title}</strong>{a.character_id ? <span style={{ color: C.muted }}> · {nameOf(a.character_id)}</span> : null}
+                        Opened arc <strong>{a.title}</strong>{a.character_id ? <span style={{ color: C.muted }}> · {nameOf(a.character_id)}</span> : null}
                       </Row>
                     ))}
                     {touched.map((a) => (

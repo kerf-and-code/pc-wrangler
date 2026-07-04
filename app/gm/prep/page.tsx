@@ -141,7 +141,10 @@ export default function PrepPage() {
 
       {player.error && <p style={{ color: C.warn, fontSize: 12.5, margin: "10px 0 0" }}>{player.error}</p>}
 
-      {sectionTitle("Open threads", "framing, hooks, and quests you approved that are still dangling. Resolve when paid off, drop when abandoned.")}
+      {sectionTitle("Open threads", "Framing, hooks, and quests captured from your narration that are still dangling. Resolve when paid off, drop when abandoned.")}
+      <p style={{ color: C.muted, fontSize: 12.5, margin: "-4px 0 12px" }}>
+        Deliberate campaign arcs you track by hand live on the <a href="/gm/timeline" style={{ color: C.plum, textDecoration: "none", borderBottom: `1px solid ${C.plum}` }}>Timeline</a>.
+      </p>
       {error && <p style={{ color: C.warn, fontSize: 13, marginBottom: 10 }}>{error}</p>}
       {threadsEmpty ? (
         empty("No open threads. Approve GM framing, hooks, or quest updates on the Review page and they gather here.")
