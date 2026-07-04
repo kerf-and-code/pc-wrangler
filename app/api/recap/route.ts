@@ -1,61 +1,17 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { buildRecap } from "@/lib/recap/build";
 
 export const maxDuration = 60;
 
-// Match this to whatever model string your extraction route already uses.
-const RECAP_MODEL = "claude-sonnet-4-6";
-
-// Transcript handling thresholds (characters).
-const SHORT_LIMIT = 16000;   // below this, feed the transcript directly
-const CHUNK_SIZE = 14000;    // size of each chunk when summarizing a long transcript
-const MAX_CHUNKS = 12;       // safety cap on number of chunks
-const SEGMENT_LIMIT = 4000;  // safety cap on transcript rows pulled
-
-const AXIS_NAME: Record<string, string> = {
-  N: "Character", T: "Encounter", O: "System", S: "Table", E: "World", I: "Presence",
-};
-
-const SYSTEM = `You write short "previously on..." recaps for a tabletop RPG group, addressed to the players.
-Rules:
-- Ground every statement in the provided notes, events, and transcript beats. Do NOT invent characters, outcomes, locations, or plot beats that are not supported by the input.
-- If the input is sparse, write a short recap rather than padding it with invention.
-- Engaging, neutral fantasy-narrative voice. Refer to player characters by name.
-- 2 to 4 short paragraphs of flowing prose. No headers, no bullet points, no lists.
-- Do not address the GM or mention "events," "logs," "transcripts," or the tool. Just tell the story of what happened.`;
-
-const CHUNK_SYSTEM = `You are condensing one slice of a longer tabletop RPG session transcript into terse factual beats.
-List what happened in this slice: decisions, actions, discoveries, combat outcomes, loot, NPC interactions, location changes.
-Use the character/speaker names exactly as given. Do not invent anything not present in the text.
-Output a short plain list of beats, one per line, no preamble and no commentary.`;
-
-async function callClaude(apiKey: string, system: string, user: string, maxTokens: number): Promise<string> {
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
-      "content-type": "application/json",
-    },
-    body: JSON.stringify({
-      model: RECAP_MODEL,
-      max_tokens: maxTokens,
-      system,
-      messages: [{ role: "user", content: user }],
-    }),
-  });
-  if (!res.ok) throw new Error("model error");
-  const data = await res.json();
-  return (data.content || [])
-    .filter((b: any) => b.type === "text")
-    .map((b: any) => b.text)
-    .join("\n")
-    .trim();
-}
-
 export async function POST(request: Request) {
   try {
-    const { sessionId } = await request.json().catch(() => ({}));
+    const body = await request.json().catch(() => ({}));
+    const sessionId = body?.sessionId;
+    // Manual generate overwrites (default). The Mark-done auto-draft passes
+    // overwrite:false so it never clobbers an existing draft or the GM's edits.
+    const overwrite = body?.overwrite !== false;
     if (!sessionId) {
       return NextResponse.json({ error: "Missing sessionId." }, { status: 400 });
     }
@@ -66,163 +22,34 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Please sign in." }, { status: 401 });
     }
 
-    // RLS ensures the user can only read their own session here.
+    // RLS confirms the caller owns this session and gives us the current draft.
     const { data: session, error: sErr } = await supabase
       .from("sessions")
-      .select("id, campaign_id, session_number, notes")
+      .select("id, recap")
       .eq("id", sessionId)
       .single();
     if (sErr || !session) {
       return NextResponse.json({ error: "Session not found." }, { status: 404 });
     }
 
-    const campaignId = session.campaign_id;
-    const [
-      { data: campaign },
-      { data: characters },
-      { data: eventTypes },
-      { data: events },
-      { data: loot },
-      { data: touches },
-      { data: jobs },
-    ] = await Promise.all([
-      supabase.from("campaigns").select("name, system").eq("id", campaignId).single(),
-      supabase.from("characters").select("id, name, kind").eq("campaign_id", campaignId),
-      supabase.from("event_types").select("key, label"),
-      supabase.from("events")
-        .select("event_type, axis, payload, character_id, created_at")
-        .eq("session_id", sessionId).order("created_at", { ascending: true }),
-      supabase.from("loot_grants")
-        .select("item_name, rarity, character_id")
-        .eq("session_id", sessionId),
-      supabase.from("arc_touches")
-        .select("arc_id, arcs(title)")
-        .eq("session_id", sessionId),
-      supabase.from("capture_jobs")
-        .select("id, error")
-        .eq("session_id", sessionId),
-    ]);
-
-    const nameOf = (id: string | null) =>
-      (id && characters?.find((c: any) => c.id === id)?.name) || "the party";
-    const speakerOf = (id: string | null) =>
-      (id && characters?.find((c: any) => c.id === id)?.name) || "Speaker";
-    const typeLabel = (k: string) =>
-      eventTypes?.find((t: any) => t.key === k)?.label || k;
-
-    // ---- structured context ----
-    const parts: string[] = [];
-    parts.push(`Campaign: ${campaign?.name || "Untitled"}${campaign?.system ? ` (${campaign.system})` : ""}`);
-    if (session.session_number != null) parts.push(`Session number: ${session.session_number}`);
-
-    if (session.notes && session.notes.trim()) {
-      parts.push(`\nGM notes for this session:\n${session.notes.trim()}`);
+    if (!overwrite && session.recap && session.recap.trim()) {
+      return NextResponse.json({ recap: session.recap, skipped: true });
     }
 
-    if (events && events.length) {
-      const lines = events.map((ev: any) => {
-        const who = nameOf(ev.character_id);
-        const axis = ev.axis ? `[${AXIS_NAME[ev.axis] || ev.axis}] ` : "";
-        const note = ev.payload?.note ? ` — ${ev.payload.note}` : "";
-        return `- ${axis}${who}: ${typeLabel(ev.event_type)}${note}`;
-      });
-      parts.push(`\nLogged events (in order):\n${lines.join("\n")}`);
+    const result = await buildRecap(supabase, sessionId);
+    if (!result.ok) {
+      return NextResponse.json({ error: result.error }, { status: result.status });
     }
 
-    if (loot && loot.length) {
-      const lines = loot.map((l: any) =>
-        `- ${l.item_name}${l.rarity ? ` (${l.rarity})` : ""} to ${nameOf(l.character_id)}`);
-      parts.push(`\nLoot gained:\n${lines.join("\n")}`);
+    // Persist the draft. Ownership was confirmed by the RLS read above; the admin
+    // write avoids depending on a sessions UPDATE policy.
+    const admin = createAdminClient();
+    const { error: wErr } = await admin.from("sessions").update({ recap: result.recap }).eq("id", sessionId);
+    if (wErr) {
+      return NextResponse.json({ error: "Could not save the recap draft." }, { status: 500 });
     }
 
-    if (touches && touches.length) {
-      const titles = touches
-        .map((t: any) => (Array.isArray(t.arcs) ? t.arcs[0]?.title : t.arcs?.title))
-        .filter(Boolean);
-      if (titles.length) parts.push(`\nStory threads advanced: ${titles.join(", ")}`);
-    }
-
-    // ---- transcript context (two-pass for long sessions) ----
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) {
-      return NextResponse.json({ error: "Recap service is not configured." }, { status: 500 });
-    }
-
-    let hasTranscript = false;
-    const jobIds = (jobs || []).filter((j: any) => !j.error).map((j: any) => j.id);
-    if (jobIds.length) {
-      const { data: segs } = await supabase
-        .from("transcript_segments")
-        .select("text, start_ms, character_id")
-        .in("job_id", jobIds)
-        .order("start_ms", { ascending: true })
-        .limit(SEGMENT_LIMIT);
-
-      const lines = (segs || [])
-        .filter((s: any) => s.text && s.text.trim())
-        .map((s: any) => `${speakerOf(s.character_id)}: ${s.text.trim()}`);
-
-      if (lines.length) {
-        hasTranscript = true;
-        const transcriptText = lines.join("\n");
-
-        let beats = "";
-        try {
-          if (transcriptText.length <= SHORT_LIMIT) {
-            beats = transcriptText;
-          } else {
-            // chunk on line boundaries
-            const chunks: string[] = [];
-            let cur = "";
-            for (const ln of lines) {
-              if (cur && cur.length + ln.length + 1 > CHUNK_SIZE) { chunks.push(cur); cur = ""; }
-              cur += (cur ? "\n" : "") + ln;
-            }
-            if (cur) chunks.push(cur);
-
-            const capped = chunks.slice(0, MAX_CHUNKS);
-            const summaries = await Promise.all(
-              capped.map((chunk, i) =>
-                callClaude(apiKey, CHUNK_SYSTEM, `Part ${i + 1} of ${capped.length}:\n\n${chunk}`, 600)),
-            );
-            beats = summaries.join("\n");
-            if (chunks.length > MAX_CHUNKS) beats += "\n(Transcript truncated for length.)";
-          }
-        } catch {
-          // if summarizing fails, fall back to a truncated raw transcript
-          beats = transcriptText.slice(0, SHORT_LIMIT) + "\n(Transcript truncated.)";
-        }
-
-        if (beats.trim()) parts.push(`\nFrom the session transcript:\n${beats.trim()}`);
-      }
-    }
-
-    const hasContent =
-      (session.notes && session.notes.trim()) ||
-      (events && events.length) ||
-      (loot && loot.length) ||
-      hasTranscript;
-    if (!hasContent) {
-      return NextResponse.json(
-        { error: "Nothing to summarize yet. Add session notes, log a few events, or capture a transcript first." },
-        { status: 422 },
-      );
-    }
-
-    const context = parts.join("\n");
-
-    let recap = "";
-    try {
-      recap = await callClaude(apiKey, SYSTEM, context, 1024);
-    } catch {
-      return NextResponse.json({ error: "The recap model returned an error. Try again." }, { status: 502 });
-    }
-
-    if (!recap) {
-      return NextResponse.json({ error: "The recap came back empty. Try again." }, { status: 502 });
-    }
-
-    return NextResponse.json({ recap });
+    return NextResponse.json({ recap: result.recap });
   } catch {
     return NextResponse.json({ error: "Could not generate recap." }, { status: 500 });
   }

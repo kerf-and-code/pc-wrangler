@@ -12,7 +12,7 @@ const C = {
 };
 
 type Campaign = { id: string; name: string };
-type JobRow = { id: string; status: string; extract_cursor: number; session: { session_number: number | null } | null };
+type JobRow = { id: string; status: string; extract_cursor: number; session_id: string; session: { session_number: number | null } | null };
 type Prop = {
   id: string; event_type: string; axis: string | null; frame: string | null; target: string | null;
   confidence: number | null; rationale: string | null; status: string;
@@ -56,6 +56,7 @@ export default function ReviewPage() {
   const [showMeta, setShowMeta] = useState<boolean>(false);
   const [edits, setEdits] = useState<Record<string, { summary?: string; kind?: string }>>({});
   const [threshold, setThreshold] = useState<number>(80);
+  const [recapMsg, setRecapMsg] = useState<string | null>(null);
   const gmPlayer = useMomentPlayer();
   const autoStarted = useRef<Set<string>>(new Set());
 
@@ -81,7 +82,7 @@ export default function ReviewPage() {
   async function loadJobs(cid: string) {
     const { data } = await supabase
       .from("capture_jobs")
-      .select("id, status, extract_cursor, session:sessions(session_number)")
+      .select("id, status, extract_cursor, session_id, session:sessions(session_number)")
       .eq("campaign_id", cid)
       .in("status", ["extracting", "review", "done"])
       .order("created_at", { ascending: false });
@@ -210,7 +211,25 @@ export default function ReviewPage() {
 
   async function markDone() {
     if (!job) return;
+    setBusy(true); setRecapMsg(null);
     await supabase.from("capture_jobs").update({ status: "done" }).eq("id", job.id);
+    // Auto-draft the recap for this session if one isn't written yet. Best-effort:
+    // the job is done regardless of whether the draft succeeds.
+    if (job.session_id) {
+      try {
+        const res = await fetch("/api/recap", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sessionId: job.session_id, overwrite: false }),
+        });
+        const out = await res.json().catch(() => ({}));
+        if (res.ok) setRecapMsg(out.skipped ? "A recap draft already exists for this session." : "Recap drafted. You can edit and send it from your recaps.");
+        else setRecapMsg("Marked done. The recap draft didn't generate; you can create it later.");
+      } catch {
+        setRecapMsg("Marked done. The recap draft didn't generate; you can create it later.");
+      }
+    }
+    setBusy(false);
     loadJobs(campaignId);
   }
 
@@ -306,6 +325,7 @@ export default function ReviewPage() {
                   {gmProposed} GM narration event{gmProposed === 1 ? "" : "s"} captured. Review them in the GM narration tab.
                 </p>
               )}
+              {recapMsg && <p style={{ color: C.good, fontSize: 12.5, marginTop: 10 }}>{recapMsg}</p>}
             </div>
 
             {/* tab switcher */}
