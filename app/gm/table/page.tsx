@@ -58,18 +58,14 @@ export default function CheckInPage() {
   const [campaignId, setCampaignId] = useState<string>("");
   const [sessions, setSessions] = useState<Sess[]>([]);
   const [chars, setChars] = useState<Char[]>([]);
-  const [nameMap, setNameMap] = useState<Record<string, string>>({});
   const [selected, setSelected] = useState<Sess | null>(null);
   const [att, setAtt] = useState<Record<string, string>>({});
   const [vibes, setVibes] = useState<Vibe[]>([]);
   const [copied, setCopied] = useState<boolean>(false);
-  const [recapDraft, setRecapDraft] = useState<string>("");
   const [processing, setProcessing] = useState<boolean>(false);
-  const [recapSaving, setRecapSaving] = useState<boolean>(false);
   const [chatReads, setChatReads] = useState<ChatRead[]>([]);
 
   const campaign = campaigns.find((c) => c.id === campaignId) || null;
-  const nameOf = (id: string | null): string => (id ? nameMap[id] || "" : "");
 
   useEffect(() => {
     (async () => {
@@ -89,18 +85,14 @@ export default function CheckInPage() {
     if (!campaignId) return;
     let active = true;
     (async () => {
-      const [{ data: sess }, { data: ch }, { data: all }] = await Promise.all([
+      const [{ data: sess }, { data: ch }] = await Promise.all([
         supabase.from("sessions").select("id, session_number, status, recap").eq("campaign_id", campaignId).order("session_number", { ascending: false }),
         supabase.from("characters").select("id, name, class").eq("campaign_id", campaignId).eq("kind", "pc").order("name", { ascending: true }),
-        supabase.from("characters").select("id, name").eq("campaign_id", campaignId),
       ]);
       if (!active) return;
       const sList = (sess as Sess[]) || [];
       setSessions(sList);
       setChars((ch as Char[]) || []);
-      const nm: Record<string, string> = {};
-      ((all as { id: string; name: string }[]) || []).forEach((c) => { nm[c.id] = c.name; });
-      setNameMap(nm);
       setSelected(sList.length ? sList[0] : null);
       loadChat(campaignId);
     })();
@@ -109,10 +101,9 @@ export default function CheckInPage() {
 
   useEffect(() => {
     if (!selected) {
-      setAtt({}); setVibes([]); setRecapDraft("");
+      setAtt({}); setVibes([]);
       return;
     }
-    setRecapDraft(selected.recap || "");
     let active = true;
     (async () => {
       const [{ data: aRows }, { data: vRows }] = await Promise.all([
@@ -148,64 +139,12 @@ export default function CheckInPage() {
     patchSession({ ...selected, status: "live" });
   }
 
-  async function buildRecap(s: Sess): Promise<string> {
-    const lines: string[] = [`# Session ${s.session_number ?? "?"} recap`];
-    const { data: spot } = await supabase.from("v_session_spotlight").select("character_name, share").eq("session_id", s.id).order("share", { ascending: false });
-    const sp = (spot as { character_name: string | null; share: number | null }[]) || [];
-    if (sp.length) lines.push("", "Spotlight: " + sp.map((r) => `${r.character_name ?? "?"} ${Math.round((r.share ?? 0) * 100)}%`).join(", ") + ".");
-
-    const { data: opened } = await supabase.from("arcs").select("title").eq("opened_session_id", s.id);
-    const op = ((opened as { title: string }[]) || []).map((a) => a.title);
-    const { data: tch } = await supabase.from("arc_touches").select("arc_id").eq("session_id", s.id);
-    const tIds = ((tch as { arc_id: string }[]) || []).map((t) => t.arc_id);
-    let touched: string[] = [];
-    if (tIds.length) {
-      const { data: ta } = await supabase.from("arcs").select("title").in("id", tIds);
-      touched = ((ta as { title: string }[]) || []).map((a) => a.title);
-    }
-    if (op.length || touched.length) {
-      const parts: string[] = [];
-      if (op.length) parts.push("opened " + op.map((t) => `\u201c${t}\u201d`).join(", "));
-      if (touched.length) parts.push("advanced " + touched.map((t) => `\u201c${t}\u201d`).join(", "));
-      lines.push("", "Threads: " + parts.join("; ") + ".");
-    }
-
-    const { data: lt } = await supabase.from("loot_grants").select("item_name, est_value, character_id").eq("session_id", s.id);
-    const loot = (lt as { item_name: string; est_value: number | null; character_id: string | null }[]) || [];
-    if (loot.length) lines.push("", "Loot: " + loot.map((g) => `${g.item_name}${g.character_id ? " \u2192 " + (nameOf(g.character_id) || "?") : ""}${g.est_value ? ` (${g.est_value} gp)` : ""}`).join("; ") + ".");
-
-    const present = Object.values(att).filter((v) => v === "present").length;
-    const absent = Object.values(att).filter((v) => v === "absent").length;
-    if (present || absent) lines.push("", `Attendance: ${present} present, ${absent} absent.`);
-
-    if (vibes.length) {
-      const sats = vibes.map((v) => v.satisfaction).filter((x): x is number => x !== null);
-      const avg = sats.length ? (sats.reduce((a, b) => a + b, 0) / sats.length).toFixed(1) : null;
-      const more = vibes.filter((v) => v.spotlight_feeling === "wanted_more").length;
-      const ok = vibes.filter((v) => v.spotlight_feeling === "about_right").length;
-      const less = vibes.filter((v) => v.spotlight_feeling === "wanted_less").length;
-      lines.push("", `Player check-ins: ${vibes.length} in${avg ? `, avg ${avg}/5` : ""}. Spotlight feel: ${more} wanted more, ${ok} about right, ${less} wanted less.`);
-    }
-    return lines.join("\n");
-  }
-
   async function processSession() {
     if (!selected) return;
     setProcessing(true);
-    const text = await buildRecap(selected);
-    await supabase.from("sessions").update({ status: "processed", processed_at: new Date().toISOString(), recap: text }).eq("id", selected.id);
-    const next = { ...selected, status: "processed", recap: text };
-    patchSession(next);
-    setRecapDraft(text);
+    await supabase.from("sessions").update({ status: "processed", processed_at: new Date().toISOString() }).eq("id", selected.id);
+    patchSession({ ...selected, status: "processed" });
     setProcessing(false);
-  }
-
-  async function saveRecap() {
-    if (!selected) return;
-    setRecapSaving(true);
-    await supabase.from("sessions").update({ recap: recapDraft }).eq("id", selected.id);
-    patchSession({ ...selected, recap: recapDraft });
-    setRecapSaving(false);
   }
 
   function portalLink(): string {
@@ -230,7 +169,7 @@ export default function CheckInPage() {
     <PageShell width={920}>
       <h1 style={{ ...ui.h1, fontSize: 28, margin: "4px 0 4px" }}>Run the session</h1>
       <p style={{ color: C.muted, fontSize: 14, margin: "0 0 20px" }}>
-        Go live when play starts (chat hides), mark attendance, then process to write the recap and open player check-in.
+        Go live when play starts (chat hides), mark attendance, then process to open player check-in.
       </p>
 
         {/* campaign + portal link */}
@@ -295,7 +234,7 @@ export default function CheckInPage() {
                 </div>
               </div>
               <div style={{ fontSize: 12, color: C.muted, marginTop: 10 }}>
-                Processing writes the recap below from this session’s spotlight, threads, loot, attendance, and check-ins, and makes it the session players check in on.
+                Processing marks the session done and opens it for player check-in. The recap is drafted on Review and edited or sent from the Session Log.
               </div>
             </div>
 
@@ -326,19 +265,6 @@ export default function CheckInPage() {
                   </div>
                 ))}
               </div>
-            </div>
-
-            {/* recap */}
-            <div style={box}>
-              <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>Recap</div>
-              <div style={{ color: C.muted, fontSize: 13, marginBottom: 12 }}>
-                {recapDraft ? "Auto-drafted from the session. Edit freely, then save." : "Process the session to generate a draft, or write one yourself."}
-              </div>
-              <textarea value={recapDraft} onChange={(e) => setRecapDraft(e.target.value)} rows={8} placeholder="No recap yet."
-                style={{ width: "100%", boxSizing: "border-box", background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: 9, padding: "10px 12px", fontSize: 14, fontFamily: "inherit", resize: "vertical", marginBottom: 10 }} />
-              <button type="button" onClick={saveRecap} disabled={recapSaving} style={{ ...btn(C.sun, SAX.inkDeep), opacity: recapSaving ? 0.7 : 1 }}>
-                {recapSaving ? "Saving…" : "Save recap"}
-              </button>
             </div>
 
             {/* vibe results */}
