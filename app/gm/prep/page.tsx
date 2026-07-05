@@ -36,6 +36,17 @@ const fmtClock = (secs: number | null): string => {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 };
 
+type PlanItem = {
+  id: string; title: string; note: string | null; kind: string; difficulty: string | null;
+  linked_event_id: string | null; linked_character_id: string | null; position: number; done: boolean;
+};
+type NpcChar = { id: string; name: string };
+
+const PLAN_KINDS: { v: string; l: string }[] = [
+  { v: "scene", l: "Scene" }, { v: "encounter", l: "Encounter" }, { v: "social", l: "Social" }, { v: "reveal", l: "Reveal" }, { v: "other", l: "Other" },
+];
+const PLAN_DIFFS = ["easy", "medium", "hard", "deadly"];
+
 export default function PrepPage() {
   const supabase = useMemo(() => createClient(), []);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
@@ -45,6 +56,14 @@ export default function PrepPage() {
   const [recent, setRecent] = useState<GmEvent[]>([]);
   const [busyId, setBusyId] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
+  const [plan, setPlan] = useState<PlanItem[]>([]);
+  const [npcChars, setNpcChars] = useState<NpcChar[]>([]);
+  const [pTitle, setPTitle] = useState("");
+  const [pKind, setPKind] = useState("scene");
+  const [pDiff, setPDiff] = useState("");
+  const [pLink, setPLink] = useState("");
+  const [pNote, setPNote] = useState("");
+  const [pBusy, setPBusy] = useState(false);
   const player = useMomentPlayer();
 
   useEffect(() => {
@@ -58,14 +77,18 @@ export default function PrepPage() {
 
   async function load(cid: string) {
     const cols = "id, session_id, kind, summary, npc_name, location_name, thread_status, t_start_seconds, created_at, audio_track_id";
-    const [{ data: ss }, { data: th }, { data: rc }] = await Promise.all([
+    const [{ data: ss }, { data: th }, { data: rc }, { data: pl }, { data: nc }] = await Promise.all([
       supabase.from("sessions").select("id, session_number").eq("campaign_id", cid),
       supabase.from("gm_events").select(cols).eq("campaign_id", cid).eq("thread_status", "open").order("created_at", { ascending: false }),
       supabase.from("gm_events").select(cols).eq("campaign_id", cid).order("created_at", { ascending: false }).limit(150),
+      supabase.from("session_plan_items").select("id, title, note, kind, difficulty, linked_event_id, linked_character_id, position, done").eq("campaign_id", cid).order("position", { ascending: true }),
+      supabase.from("characters").select("id, name").eq("campaign_id", cid).eq("kind", "npc").order("name"),
     ]);
     setSessions((ss as Sess[]) || []);
     setThreads((th as GmEvent[]) || []);
     setRecent((rc as GmEvent[]) || []);
+    setPlan((pl as PlanItem[]) || []);
+    setNpcChars((nc as NpcChar[]) || []);
   }
 
   useEffect(() => { if (campaignId) load(campaignId); }, [campaignId]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -83,6 +106,49 @@ export default function PrepPage() {
     if (!res.ok) setError(out.error || "Could not update the thread.");
     else setThreads((prev) => prev.filter((t) => t.id !== id));
     setBusyId("");
+  }
+
+  async function addPlanItem() {
+    if (!campaignId || !pTitle.trim()) return;
+    setPBusy(true); setError(null);
+    const pos = plan.length ? Math.max(...plan.map((p) => p.position)) + 1 : 0;
+    const linked_event_id = pLink.startsWith("t:") ? pLink.slice(2) : null;
+    const linked_character_id = pLink.startsWith("n:") ? pLink.slice(2) : null;
+    const { data, error: e } = await supabase.from("session_plan_items").insert({
+      campaign_id: campaignId, title: pTitle.trim(), note: pNote.trim() || null, kind: pKind,
+      difficulty: pKind === "encounter" && pDiff ? pDiff : null, linked_event_id, linked_character_id, position: pos, done: false,
+    }).select("id, title, note, kind, difficulty, linked_event_id, linked_character_id, position, done").single();
+    if (e) setError(e.message);
+    else if (data) { setPlan((arr) => [...arr, data as PlanItem]); setPTitle(""); setPNote(""); setPLink(""); setPDiff(""); setPKind("scene"); }
+    setPBusy(false);
+  }
+
+  async function removePlanItem(id: string) {
+    await supabase.from("session_plan_items").delete().eq("id", id);
+    setPlan((arr) => arr.filter((p) => p.id !== id));
+  }
+
+  async function togglePlanDone(id: string, done: boolean) {
+    await supabase.from("session_plan_items").update({ done }).eq("id", id);
+    setPlan((arr) => arr.map((p) => (p.id === id ? { ...p, done } : p)));
+  }
+
+  async function movePlan(id: string, dir: -1 | 1) {
+    const idx = plan.findIndex((p) => p.id === id);
+    const j = idx + dir;
+    if (idx < 0 || j < 0 || j >= plan.length) return;
+    const a = plan[idx], b = plan[j];
+    await Promise.all([
+      supabase.from("session_plan_items").update({ position: b.position }).eq("id", a.id),
+      supabase.from("session_plan_items").update({ position: a.position }).eq("id", b.id),
+    ]);
+    setPlan((arr) => arr.map((p) => (p.id === a.id ? { ...p, position: b.position } : p.id === b.id ? { ...p, position: a.position } : p)).sort((x, y) => x.position - y.position));
+  }
+
+  const planLinkLabel = (item: PlanItem): string | null => {
+    if (item.linked_event_id) { const t = threads.find((x) => x.id === item.linked_event_id) || recent.find((x) => x.id === item.linked_event_id); return t ? `Thread: ${t.summary}` : "Thread"; }
+    if (item.linked_character_id) { const n = npcChars.find((x) => x.id === item.linked_character_id); return n ? `NPC: ${n.name}` : "NPC"; }
+    return null;
   }
 
   // NPCs in play: dedupe recent npc_* events by name, keeping the latest.
@@ -122,6 +188,7 @@ export default function PrepPage() {
     </div>
   );
   const empty = (t: string) => <div style={{ ...box, color: C.muted, fontSize: 13.5 }}>{t}</div>;
+  const miniBtn = (disabled: boolean) => ({ background: "none", border: `1px solid ${C.line}`, color: disabled ? C.line : C.muted, borderRadius: 6, cursor: disabled ? "default" : "pointer", fontSize: 12, padding: "2px 7px" } as const);
 
   const threadsEmpty = threads.length === 0;
 
@@ -140,6 +207,77 @@ export default function PrepPage() {
       </div>
 
       {player.error && <p style={{ color: C.warn, fontSize: 12.5, margin: "10px 0 0" }}>{player.error}</p>}
+
+      {sectionTitle("Plan the next session", "Jot the scenes and encounters you mean to run, link them to open threads or NPCs, and tick them off as you prep.")}
+      <div style={box}>
+        <div style={{ display: "grid", gap: 8, marginBottom: plan.length ? 14 : 0 }}>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <input placeholder={"What happens\u2026"} value={pTitle} onChange={(e) => setPTitle(e.target.value)} style={{ ...input, flex: "1 1 220px" }} />
+            <select value={pKind} onChange={(e) => setPKind(e.target.value)} style={{ ...input, width: "auto", flex: "0 0 auto" }}>
+              {PLAN_KINDS.map((k) => <option key={k.v} value={k.v}>{k.l}</option>)}
+            </select>
+            {pKind === "encounter" && (
+              <select value={pDiff} onChange={(e) => setPDiff(e.target.value)} style={{ ...input, width: "auto", flex: "0 0 auto" }}>
+                <option value="">difficulty</option>
+                {PLAN_DIFFS.map((d) => <option key={d} value={d}>{d}</option>)}
+              </select>
+            )}
+          </div>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <select value={pLink} onChange={(e) => setPLink(e.target.value)} style={{ ...input, flex: "1 1 200px" }}>
+              <option value="">{"Link to\u2026 (optional)"}</option>
+              {threads.length > 0 && (
+                <optgroup label="Open threads">
+                  {threads.map((t) => <option key={t.id} value={`t:${t.id}`}>{(t.summary || "thread").slice(0, 60)}</option>)}
+                </optgroup>
+              )}
+              {npcChars.length > 0 && (
+                <optgroup label="NPCs">
+                  {npcChars.map((n) => <option key={n.id} value={`n:${n.id}`}>{n.name}</option>)}
+                </optgroup>
+              )}
+            </select>
+            <button type="button" onClick={addPlanItem} disabled={pBusy || !pTitle.trim()}
+              style={{ background: C.sun, color: SAX.inkDeep, border: "none", borderRadius: 9, padding: "0 20px", fontSize: 14, fontWeight: 700, cursor: pBusy || !pTitle.trim() ? "default" : "pointer", opacity: pBusy || !pTitle.trim() ? 0.6 : 1 }}>
+              Add
+            </button>
+          </div>
+          <input placeholder="Notes (optional)" value={pNote} onChange={(e) => setPNote(e.target.value)} style={input} />
+        </div>
+
+        {plan.length === 0 ? (
+          <p style={{ color: C.muted, fontSize: 13, margin: 0 }}>Nothing planned yet. Add a scene or encounter above.</p>
+        ) : (
+          <div style={{ display: "grid", gap: 8 }}>
+            {plan.map((p, i) => {
+              const link = planLinkLabel(p);
+              return (
+                <div key={p.id} style={{ background: C.surface2, border: `1px solid ${C.line}`, borderRadius: 9, padding: "10px 12px", opacity: p.done ? 0.55 : 1 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                        <span style={{ fontFamily: "ui-monospace, monospace", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.06em", color: C.plum }}>{p.kind}</span>
+                        {p.difficulty && <span style={{ fontFamily: "ui-monospace, monospace", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.06em", color: C.warn }}>{p.difficulty}</span>}
+                        <span style={{ fontSize: 14, color: C.text, fontWeight: 600, textDecoration: p.done ? "line-through" : "none" }}>{p.title}</span>
+                      </div>
+                      {link && <div style={{ fontSize: 12, color: C.muted, marginTop: 3 }}>{link}</div>}
+                      {p.note && <div style={{ fontSize: 12.5, color: C.muted, marginTop: 4, lineHeight: 1.5 }}>{p.note}</div>}
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
+                      <button type="button" title="Move up" onClick={() => movePlan(p.id, -1)} disabled={i === 0} style={miniBtn(i === 0)}>{"\u2191"}</button>
+                      <button type="button" title="Move down" onClick={() => movePlan(p.id, 1)} disabled={i === plan.length - 1} style={miniBtn(i === plan.length - 1)}>{"\u2193"}</button>
+                      <label title="Done" style={{ display: "flex", alignItems: "center", cursor: "pointer", marginLeft: 4 }}>
+                        <input type="checkbox" checked={p.done} onChange={(e) => togglePlanDone(p.id, e.target.checked)} />
+                      </label>
+                      <button type="button" title="Remove" onClick={() => removePlanItem(p.id)} style={{ background: "none", border: "none", color: C.muted, cursor: "pointer", fontSize: 15, padding: "2px 6px" }}>{"\u00d7"}</button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
 
       {sectionTitle("Open threads", "Framing, hooks, and quests captured from your narration that are still dangling. Resolve when paid off, drop when abandoned.")}
       <p style={{ color: C.muted, fontSize: 12.5, margin: "-4px 0 12px" }}>
