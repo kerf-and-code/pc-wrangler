@@ -5,10 +5,11 @@ import { usePathname } from "next/navigation";
 import { SAX } from "@/lib/theme";
 import LogoutButton from "@/components/logout-button";
 
-/* Six Axes — top navigation.
-   GM side is grouped into five sections plus standalone Profile.
-   The active group reveals its sub-tabs on a second row. Player side (opened via
-   a ?share link) stays flat. */
+/* Six Axes — navigation.
+   Wide screens (>=1024px): a left sidebar. Logo, an account popup (Help + Sign
+   out), then the groups stacked, the active group expands its children beneath
+   it. Narrow screens: the original top bar (groups row + sub-row). The player
+   portal (opened via a ?share link) stays flat in both. One shell, no drift. */
 
 type Leaf = { href: string; label: string };
 type Group = { label: string; href: string; children?: Leaf[] };
@@ -41,6 +42,9 @@ const GROUPS: Group[] = [
   { label: "Help", href: "/gm/help" },
 ];
 
+// Sidebar omits Help (it lives in the account popup).
+const SIDE_GROUPS = GROUPS.filter((g) => g.label !== "Help");
+
 const PLAYER: Leaf[] = [
   { href: "/play", label: "Profile" },
   { href: "/schedule", label: "Schedule" },
@@ -72,7 +76,40 @@ const NAV_CSS = `
   transition:color .15s,border-color .15s,background .15s;}
 .sax-slink:hover{color:${SAX.text};border-color:${SAX.brassDim};}
 .sax-slink.on{color:${SAX.brass};border-color:${SAX.brass};background:rgba(200,162,75,0.08);}
-.sax-nav a:focus-visible{outline:2px solid ${SAX.brass};outline-offset:2px;}
+.sax-nav a:focus-visible,.sax-side a:focus-visible,.sax-side summary:focus-visible{outline:2px solid ${SAX.brass};outline-offset:2px;}
+
+/* sidebar (hidden until wide) */
+.sax-side{display:none;}
+.sax-side .sax-word{font-size:20px;}
+.sax-vnav{display:flex;flex-direction:column;gap:2px;margin-top:4px;}
+.sax-vgroup{display:flex;flex-direction:column;}
+.sax-vlink{font-size:14.5px;color:${SAX.muted};text-decoration:none;padding:9px 12px;border-radius:9px;
+  transition:color .15s,background .15s;}
+.sax-vlink:hover{color:${SAX.text};background:rgba(255,255,255,0.05);}
+.sax-vlink.on{color:${SAX.inkDeep};background:${SAX.brass};font-weight:600;}
+.sax-vsub{display:flex;flex-direction:column;gap:1px;margin:2px 0 8px 12px;padding-left:9px;border-left:1px solid ${SAX.line};}
+.sax-vslink{font-family:${SAX.mono};font-size:11px;letter-spacing:0.06em;text-transform:uppercase;
+  color:${SAX.muted};text-decoration:none;padding:6px 10px;border-radius:6px;transition:color .15s;}
+.sax-vslink:hover{color:${SAX.text};}
+.sax-vslink.on{color:${SAX.brass};}
+.sax-acct{position:relative;}
+.sax-acct>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:9px;}
+.sax-acct>summary::-webkit-details-marker{display:none;}
+.sax-acct>summary:hover{background:rgba(255,255,255,0.05);}
+.sax-avatar{width:26px;height:26px;border-radius:50%;background:${SAX.slateBg};border:1px solid ${SAX.line};
+  display:flex;align-items:center;justify-content:center;color:${SAX.brass};font-size:12px;flex-shrink:0;}
+.sax-acct-label{font-size:13.5px;color:${SAX.muted};}
+.sax-acct-menu{position:absolute;left:6px;right:6px;top:100%;margin-top:4px;background:${SAX.inkDeep};
+  border:1px solid ${SAX.line};border-radius:10px;padding:6px;z-index:20;display:flex;flex-direction:column;gap:2px;
+  box-shadow:0 14px 30px rgba(0,0,0,0.55);}
+.sax-acct-item{font-size:13.5px;color:${SAX.muted};text-decoration:none;padding:8px 10px;border-radius:7px;}
+.sax-acct-item:hover{background:rgba(255,255,255,0.05);color:${SAX.text};}
+
+@media (min-width:1024px){
+  .sax-nav{display:none;}
+  .sax-side{display:flex;flex-direction:column;gap:16px;position:fixed;left:0;top:0;bottom:0;width:220px;
+    padding:22px 14px;overflow-y:auto;background:rgba(6,3,10,0.82);border-right:1px solid ${SAX.line};z-index:10;}
+}
 `;
 
 export default function SixAxesNav() {
@@ -88,58 +125,102 @@ export default function SixAxesNav() {
     }
   }, []);
 
-  // player portal: flat
+  const brand = (href: string) => (
+    <a className="sax-brand" href={href}>
+      <img className="sax-mark" src="/astrolabe.png" alt="" />
+      <span><span className="sax-word">Six Axes</span><span className="sax-tag">run the table</span></span>
+    </a>
+  );
+
+  // player portal: flat, sidebar + topbar both list the same leaves
   if (share.on) {
+    const home = `/play${share.qs}`;
     return (
-      <header className="sax-nav">
+      <>
         <style>{NAV_CSS}</style>
-        <div className="sax-top">
-          <a className="sax-brand" href={`/play${share.qs}`}>
-            <img className="sax-mark" src="/astrolabe.png" alt="" />
-            <span><span className="sax-word">Six Axes</span><span className="sax-tag">run the table</span></span>
-          </a>
-          <nav className="sax-grp">
+        <aside className="sax-side">
+          {brand(home)}
+          <nav className="sax-vnav">
             {PLAYER.map((l) => (
-              <a key={l.href} className={`sax-glink${pathname === l.href ? " on" : ""}`} href={`${l.href}${share.qs}`}>
-                {l.label}
-              </a>
+              <a key={l.href} className={`sax-vlink${pathname === l.href ? " on" : ""}`} href={`${l.href}${share.qs}`}>{l.label}</a>
             ))}
           </nav>
-        </div>
-      </header>
+        </aside>
+        <header className="sax-nav">
+          <div className="sax-top">
+            {brand(home)}
+            <nav className="sax-grp">
+              {PLAYER.map((l) => (
+                <a key={l.href} className={`sax-glink${pathname === l.href ? " on" : ""}`} href={`${l.href}${share.qs}`}>{l.label}</a>
+              ))}
+            </nav>
+          </div>
+        </header>
+      </>
     );
   }
 
   const active = GROUPS.find((g) => hrefs(g).includes(pathname));
 
   return (
-    <header className="sax-nav">
+    <>
       <style>{NAV_CSS}</style>
-      <div className="sax-top">
-        <a className="sax-brand" href="/">
-          <img className="sax-mark" src="/astrolabe.png" alt="" />
-          <span><span className="sax-word">Six Axes</span><span className="sax-tag">run the table</span></span>
-        </a>
-        <div className="sax-right">
-          <nav className="sax-grp">
-            {GROUPS.map((g) => {
-              const on = active?.label === g.label;
-              return (
-                <a key={g.label} className={`sax-glink${on ? " on" : ""}`} href={g.href}>{g.label}</a>
-              );
-            })}
-          </nav>
-          <LogoutButton />
-        </div>
-      </div>
 
-      {active?.children && (
-        <nav className="sax-sub">
-          {active.children.map((c) => (
-            <a key={c.href} className={`sax-slink${pathname === c.href ? " on" : ""}`} href={c.href}>{c.label}</a>
-          ))}
+      {/* wide: left sidebar */}
+      <aside className="sax-side">
+        {brand("/")}
+        <details className="sax-acct">
+          <summary aria-label="Account menu">
+            <span className="sax-avatar" aria-hidden="true">{"\u25C6"}</span>
+            <span className="sax-acct-label">Account</span>
+          </summary>
+          <div className="sax-acct-menu">
+            <a className="sax-acct-item" href="/gm/help">Help</a>
+            <div className="sax-acct-item"><LogoutButton /></div>
+          </div>
+        </details>
+        <nav className="sax-vnav">
+          {SIDE_GROUPS.map((g) => {
+            const on = active?.label === g.label;
+            return (
+              <div key={g.label} className="sax-vgroup">
+                <a className={`sax-vlink${on ? " on" : ""}`} href={g.href}>{g.label}</a>
+                {on && g.children && (
+                  <div className="sax-vsub">
+                    {g.children.map((c) => (
+                      <a key={c.href} className={`sax-vslink${pathname === c.href ? " on" : ""}`} href={c.href}>{c.label}</a>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </nav>
-      )}
-    </header>
+      </aside>
+
+      {/* narrow: original top bar */}
+      <header className="sax-nav">
+        <div className="sax-top">
+          {brand("/")}
+          <div className="sax-right">
+            <nav className="sax-grp">
+              {GROUPS.map((g) => {
+                const on = active?.label === g.label;
+                return <a key={g.label} className={`sax-glink${on ? " on" : ""}`} href={g.href}>{g.label}</a>;
+              })}
+            </nav>
+            <LogoutButton />
+          </div>
+        </div>
+
+        {active?.children && (
+          <nav className="sax-sub">
+            {active.children.map((c) => (
+              <a key={c.href} className={`sax-slink${pathname === c.href ? " on" : ""}`} href={c.href}>{c.label}</a>
+            ))}
+          </nav>
+        )}
+      </header>
+    </>
   );
 }

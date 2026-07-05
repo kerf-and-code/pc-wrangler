@@ -27,11 +27,14 @@ export default function PageShell({
           .sax-pulse{animation:saxPulse 0.5s ease-out 3;}
         }
         @keyframes saxPulse{0%{transform:scale(1)}40%{transform:scale(1.1)}100%{transform:scale(1)}}
+        @media (min-width:1024px){ .sax-shell{ padding-left:232px; } }
       `}</style>
       <div className="sax-vignette" />
-      <div style={{ position: "relative", zIndex: 1, maxWidth: width, margin: "0 auto", padding: "28px 20px 64px" }}>
-        <SixAxesNav />
-        {children}
+      <div className="sax-shell" style={{ position: "relative", zIndex: 1 }}>
+        <div style={{ maxWidth: width, margin: "0 auto", padding: "28px 20px 64px" }}>
+          <SixAxesNav />
+          {children}
+        </div>
       </div>
     </div>
   );
