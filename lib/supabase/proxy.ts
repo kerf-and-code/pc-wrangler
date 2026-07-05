@@ -49,6 +49,7 @@ export async function updateSession(request: NextRequest) {
     !request.nextUrl.pathname.startsWith("/chat") &&
     !request.nextUrl.pathname.startsWith("/record") &&
     !request.nextUrl.pathname.startsWith("/join") &&
+    !request.nextUrl.pathname.startsWith("/lore") &&
     !request.nextUrl.pathname.startsWith("/api/transcribe") &&
     !request.nextUrl.pathname.startsWith("/api/extract") &&
     !request.nextUrl.pathname.startsWith("/api/discord") &&
