@@ -86,6 +86,8 @@ const blankForm = {
   tags: "",
 };
 
+type EntryReveal = { id: string; target_type: string; target_id: string; revealed_to_character_id: string };
+
 export default function CodexPage() {
   const supabase = useMemo(() => createClient(), []);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
@@ -101,6 +103,8 @@ export default function CodexPage() {
   const [linkRel, setLinkRel] = useState<string>("");
   const [sessions, setSessions] = useState<Sess[]>([]);
   const [beats, setBeats] = useState<GmBeat[]>([]);
+  const [reveals, setReveals] = useState<EntryReveal[]>([]);
+  const [revealPick, setRevealPick] = useState<string>("");
   const player = useMomentPlayer();
 
   // ---- lookups ----
@@ -126,16 +130,18 @@ export default function CodexPage() {
   }, [supabase]);
 
   async function reload(cid: string) {
-    const [{ data: e }, { data: c }, { data: l }, { data: ss }] = await Promise.all([
+    const [{ data: e }, { data: c }, { data: l }, { data: ss }, { data: rv }] = await Promise.all([
       supabase.from("entries").select("id, type, title, body, visibility, tags").eq("campaign_id", cid).order("title"),
       supabase.from("characters").select("id, name, kind, description, visibility, tags, class, subclass").eq("campaign_id", cid).order("name"),
       supabase.from("entity_links").select("id, source_type, source_id, target_type, target_id, relation").eq("campaign_id", cid),
       supabase.from("sessions").select("id, session_number").eq("campaign_id", cid),
+      supabase.from("entry_reveals").select("id, target_type, target_id, revealed_to_character_id").eq("campaign_id", cid),
     ]);
     setEntries((e as Entry[]) || []);
     setChars((c as Char[]) || []);
     setLinks((l as Link[]) || []);
     setSessions((ss as Sess[]) || []);
+    setReveals((rv as EntryReveal[]) || []);
   }
 
   useEffect(() => {
@@ -258,6 +264,20 @@ export default function CodexPage() {
   async function removeLink(id: string) {
     await supabase.from("entity_links").delete().eq("id", id);
     await reload(campaignId);
+  }
+
+  async function revealTo(pcId: string) {
+    if (!pcId || !mode?.id) return;
+    const target_type = mode.what === "entry" ? "entry" : "character";
+    const { data, error } = await supabase.from("entry_reveals")
+      .insert({ campaign_id: campaignId, target_type, target_id: mode.id, revealed_to_character_id: pcId })
+      .select("id, target_type, target_id, revealed_to_character_id").single();
+    if (!error && data) { setReveals((arr) => [...arr, data as EntryReveal]); setRevealPick(""); }
+  }
+
+  async function revokeReveal(id: string) {
+    await supabase.from("entry_reveals").delete().eq("id", id);
+    setReveals((arr) => arr.filter((r) => r.id !== id));
   }
 
   // ---- list for active tab ----
@@ -432,6 +452,45 @@ export default function CodexPage() {
                     Save first, then you can add connections.
                   </div>
                 )}
+
+                {/* reveal to specific players */}
+                {mode.id && (mode.what === "entry" || isNpc) && (() => {
+                  const curTargetType = mode.what === "entry" ? "entry" : "character";
+                  const curReveals = reveals.filter((r) => r.target_type === curTargetType && r.target_id === mode.id);
+                  return (
+                    <div style={{ borderTop: `1px solid ${C.line}`, paddingTop: 16, marginTop: 16 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>Revealed to</div>
+                      <div style={{ fontSize: 12, color: C.muted, marginBottom: 12 }}>
+                        Show this to specific players when the story earns it, even while it stays a secret to everyone else. Party-visible items already reach the whole table.
+                      </div>
+                      {curReveals.length > 0 && (
+                        <div style={{ display: "grid", gap: 6, marginBottom: 12 }}>
+                          {curReveals.map((r) => {
+                            const pc = chars.find((c) => c.id === r.revealed_to_character_id);
+                            return (
+                              <div key={r.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, background: C.surface2, border: `1px solid ${C.line}`, borderRadius: 8, padding: "7px 10px" }}>
+                                <span style={{ fontSize: 13 }}>{pc ? pc.name : "a player"}</span>
+                                <button type="button" onClick={() => revokeReveal(r.id)} style={{ background: "transparent", color: C.muted, border: "none", cursor: "pointer", fontSize: 16, lineHeight: 1 }}>×</button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                        <select value={revealPick} onChange={(e) => setRevealPick(e.target.value)} style={{ ...input, flex: "2 1 200px" }}>
+                          <option value="">Reveal to…</option>
+                          {chars.filter((c) => c.kind === "pc" && !curReveals.some((r) => r.revealed_to_character_id === c.id)).map((c) => (
+                            <option key={c.id} value={c.id}>{c.name}</option>
+                          ))}
+                        </select>
+                        <button type="button" onClick={() => revealTo(revealPick)} disabled={!revealPick}
+                          style={{ background: C.sun, color: SAX.inkDeep, border: "none", borderRadius: 9, padding: "10px 16px", fontWeight: 700, fontSize: 13, cursor: revealPick ? "pointer" : "default", opacity: revealPick ? 1 : 0.6 }}>
+                          Reveal
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {/* From play: read-only accretion from GM narration. This is also
                     the seam for a future "draft description from these beats" button. */}
