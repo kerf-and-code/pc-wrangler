@@ -1,4 +1,8 @@
+"use client";
+
+import React, { useState } from "react";
 import PageShell from "@/components/page-shell";
+import EnterSplash from "@/components/enter-splash";
 import { SAX, surfaces, ui } from "@/lib/theme";
 
 const SURFACES = [
@@ -9,6 +13,12 @@ const SURFACES = [
 ];
 
 export default function Home() {
+  // Pull the breaker to enter, then the landing menu is revealed. Swap this for
+  // a router.push("/gm") in onEnter if you'd rather drop straight into the app.
+  const [entered, setEntered] = useState(false);
+
+  if (!entered) return <EnterSplash onEnter={() => setEntered(true)} />;
+
   return (
     <PageShell width={720}>
       <h1 style={{ ...ui.h1, fontSize: 38, lineHeight: 1.1, margin: "8px 0 12px", maxWidth: 560 }}>
