@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createPublicKey, verify as edVerify } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
+import { buildPollMessage } from "@/lib/schedule/poll-message";
 
 // Discord interaction types
 const PING = 1;
@@ -159,6 +160,7 @@ export async function POST(request: Request) {
     if (cid.startsWith("claim:")) return await handleClaimSelect(interaction);
     if (cid.startsWith("rsvp:")) return await handleRsvpButton(interaction);
     if (cid.startsWith("consent:")) return await handleConsentButton(interaction);
+    if (cid.startsWith("sched:")) return await handleSchedButton(interaction);
     return ephemeral("Unknown action.");
   }
 
@@ -489,6 +491,59 @@ async function handleRsvpButton(interaction: Interaction) {
 
   const label = status === "going" ? "Going" : status === "maybe" ? "Maybe" : "Can't make it";
   return ephemeral(`Got it, you're marked **${label}** as ${character.name}.`);
+}
+
+// Scheduling poll: a player toggled their availability for a slot. Flip it and
+// re-render the message with fresh tallies. custom_id = sched:<pollId>:<slotIdx>.
+async function handleSchedButton(interaction: Interaction) {
+  const cid = interaction.data?.custom_id ?? "";
+  const [, pollId, slotRaw] = cid.split(":");
+  const slotIdx = parseInt(slotRaw ?? "", 10);
+  const userId = discordUserId(interaction);
+  if (!pollId || !Number.isFinite(slotIdx) || !userId) return updateMessage("Something went wrong.");
+
+  const sb = serviceClient();
+  const { data: pollRow } = await sb
+    .from("session_polls")
+    .select("id, campaign_id, slots, status")
+    .eq("id", pollId)
+    .maybeSingle();
+  const poll = pollRow as { id: string; campaign_id: string; slots: string[]; status: string } | null;
+  if (!poll) return updateMessage("This poll no longer exists.");
+  if (poll.status !== "open") return updateMessage("This poll is closed.");
+
+  const { data: chRow } = await sb
+    .from("characters")
+    .select("id")
+    .eq("campaign_id", poll.campaign_id)
+    .eq("discord_user_id", userId)
+    .maybeSingle();
+  const characterId = (chRow as { id: string } | null)?.id ?? null;
+
+  const { data: existingRow } = await sb
+    .from("poll_responses")
+    .select("id, available")
+    .eq("poll_id", pollId)
+    .eq("discord_user_id", userId)
+    .maybeSingle();
+  const existing = existingRow as { id: string; available: number[] } | null;
+  const set = new Set<number>(existing?.available || []);
+  if (set.has(slotIdx)) set.delete(slotIdx);
+  else set.add(slotIdx);
+  const available = Array.from(set).sort((a, b) => a - b);
+
+  if (existing) {
+    await sb.from("poll_responses").update({ available, character_id: characterId, updated_at: new Date().toISOString() }).eq("id", existing.id);
+  } else {
+    await sb.from("poll_responses").insert({ poll_id: pollId, discord_user_id: userId, character_id: characterId, available });
+  }
+
+  const { data: allResp } = await sb.from("poll_responses").select("available").eq("poll_id", pollId);
+  const responses = (allResp as { available: number[] }[]) || [];
+  const counts = (poll.slots || []).map((_, i) => responses.filter((r) => (r.available || []).includes(i)).length);
+
+  const message = buildPollMessage(pollId, poll.slots, counts);
+  return NextResponse.json({ type: UPDATE_MESSAGE, data: message });
 }
 
 async function handleRecord(interaction: Interaction) {

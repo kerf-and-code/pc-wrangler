@@ -45,6 +45,10 @@ export default function SessionWorkspace() {
   const [schedDraft, setSchedDraft] = useState("");
   const [schedSaving, setSchedSaving] = useState(false);
   const [schedMsg, setSchedMsg] = useState<string | null>(null);
+  const [pollSlots, setPollSlots] = useState<string[]>([""]);
+  const [pollRecurring, setPollRecurring] = useState(false);
+  const [pollBusy, setPollBusy] = useState(false);
+  const [pollMsg, setPollMsg] = useState<string | null>(null);
   const [rsvps, setRsvps] = useState<{ status: string; display_name: string | null; character_name: string | null }[]>([]);
 
   const [campaigns, setCampaigns] = useState<any[]>([]);
@@ -242,6 +246,26 @@ export default function SessionWorkspace() {
     setSchedSaving(false);
   }
 
+  async function postPoll() {
+    if (!campaign || pollBusy) return;
+    const slots = pollSlots.filter((s) => s).map((s) => new Date(s).toISOString());
+    if (slots.length === 0) { setPollMsg("Add at least one time slot."); return; }
+    setPollBusy(true); setPollMsg(null);
+    try {
+      const res = await fetch("/api/schedule/poll", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ campaignId: campaign, slots, recurring: pollRecurring }),
+      });
+      const out = await res.json().catch(() => ({}));
+      if (res.ok) { setPollMsg("Poll posted to Discord. Players can respond there."); setPollSlots([""]); setPollRecurring(false); }
+      else setPollMsg(out.error || "Could not post the poll.");
+    } catch {
+      setPollMsg("Could not post the poll.");
+    }
+    setPollBusy(false);
+  }
+
   function pickType(key: string) {
     const t = eventTypes.find((x) => x.key === key);
     setEntry((e) => ({
@@ -423,6 +447,39 @@ export default function SessionWorkspace() {
                   {recapSending ? "Sending..." : "Send to players"}
                 </button>
               </div>
+            </div>
+          </div>
+
+          {/* propose times (poll) */}
+          <div style={box}>
+            <div style={{ fontSize: 13, color: C.muted, marginBottom: 10 }}>Propose times {"\u00b7"} poll your table on Discord</div>
+            <div style={{ display: "grid", gap: 8 }}>
+              {pollSlots.map((s, i) => (
+                <div key={i} style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  <input type="datetime-local" value={s}
+                    onChange={(e) => setPollSlots((arr) => arr.map((x, j) => (j === i ? e.target.value : x)))}
+                    style={{ ...inputStyle, colorScheme: "dark" }} />
+                  {pollSlots.length > 1 && (
+                    <button style={btnGhost} onClick={() => setPollSlots((arr) => arr.filter((_, j) => j !== i))}>Remove</button>
+                  )}
+                </div>
+              ))}
+            </div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", marginTop: 10 }}>
+              {pollSlots.length < 5 && (
+                <button style={btnGhost} onClick={() => setPollSlots((arr) => [...arr, ""])}>Add a slot</button>
+              )}
+              <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: C.muted, cursor: "pointer" }}>
+                <input type="checkbox" checked={pollRecurring} onChange={(e) => setPollRecurring(e.target.checked)} />
+                Make recurring (weekly)
+              </label>
+              <button style={btn} onClick={postPoll} disabled={pollBusy}>
+                {pollBusy ? "Posting\u2026" : "Post poll to Discord"}
+              </button>
+              {pollMsg && <span style={{ fontSize: 12, color: C.muted }}>{pollMsg}</span>}
+            </div>
+            <div style={{ fontSize: 11, color: C.muted, marginTop: 8 }}>
+              Players tap the times they can make in Discord. You&apos;ll pick the winner here (coming next).
             </div>
           </div>
 
