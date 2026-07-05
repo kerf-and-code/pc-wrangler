@@ -10,7 +10,7 @@ const C = {
   muted: SAX.muted, brass: SAX.brass, brassDim: SAX.brassDim, accent: SAX.plum, warn: SAX.warn,
 };
 const AXIS_COLOR: Record<string, string> = { N: "#B7615A", T: "#C8A24B", O: "#4E8077", S: "#CE8A42", E: "#6C76B0", I: "#9A93B0" };
-const AXIS_NAME: Record<string, string> = { N: "Character", T: "Encounter", O: "System", S: "Table", E: "World", I: "Presence" };
+const AXIS_NAME: Record<string, string> = { N: "Voice", T: "Tactics", O: "Arcana", S: "Rapport", E: "Exploration", I: "Nerve" };
 
 const box = { background: C.panel, border: `1px solid ${C.line}`, borderRadius: 12, padding: 18, marginBottom: 16 };
 const inputStyle = { background: C.ink, color: C.vellum, border: `1px solid ${C.line}`, borderRadius: 8, padding: "9px 11px", fontSize: 14 };
@@ -27,6 +27,10 @@ function toLocalInput(iso: string): string {
   const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
   return local.toISOString().slice(0, 16);
 }
+
+type ActivePoll = { id: string; slots: string[]; recurring: boolean; status: string };
+type PollResp = { character_id: string | null; discord_user_id: string | null; available: number[] };
+type RecurRule = { interval?: string; anchor?: string } | null;
 
 export default function SessionWorkspace() {
   const supabase = useMemo(() => createClient(), []);
@@ -49,6 +53,12 @@ export default function SessionWorkspace() {
   const [pollRecurring, setPollRecurring] = useState(false);
   const [pollBusy, setPollBusy] = useState(false);
   const [pollMsg, setPollMsg] = useState<string | null>(null);
+  const [activePoll, setActivePoll] = useState<ActivePoll | null>(null);
+  const [pollResp, setPollResp] = useState<PollResp[]>([]);
+  const [pollNames, setPollNames] = useState<Record<string, string>>({});
+  const [recurRule, setRecurRule] = useState<RecurRule>(null);
+  const [confirmBusy, setConfirmBusy] = useState(false);
+  const [confirmMsg, setConfirmMsg] = useState<string | null>(null);
   const [rsvps, setRsvps] = useState<{ status: string; display_name: string | null; character_name: string | null }[]>([]);
 
   const [campaigns, setCampaigns] = useState<any[]>([]);
@@ -102,6 +112,15 @@ export default function SessionWorkspace() {
   }, [supabase]);
 
   useEffect(() => { if (campaign) loadCampaignData(campaign); }, [campaign, loadCampaignData]);
+
+  useEffect(() => {
+    if (!campaign) { setActivePoll(null); setPollResp([]); setRecurRule(null); return; }
+    (async () => {
+      const rule = await loadPoll(campaign);
+      await ensureRecurrence(campaign, rule);
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [campaign]);
 
   const loadEvents = useCallback(async (sessionId: string) => {
     const [{ data: evs }, { data: lootRows }] = await Promise.all([
@@ -264,6 +283,71 @@ export default function SessionWorkspace() {
       setPollMsg("Could not post the poll.");
     }
     setPollBusy(false);
+  }
+
+  async function loadPoll(cid: string): Promise<RecurRule> {
+    const [{ data: polls }, { data: chs }, { data: camp }] = await Promise.all([
+      supabase.from("session_polls").select("id, slots, recurring, status").eq("campaign_id", cid).eq("status", "open").order("created_at", { ascending: false }).limit(1),
+      supabase.from("characters").select("id, name").eq("campaign_id", cid),
+      supabase.from("campaigns").select("recur_rule").eq("id", cid).maybeSingle(),
+    ]);
+    const nm: Record<string, string> = {};
+    ((chs as { id: string; name: string }[]) || []).forEach((c) => { nm[c.id] = c.name; });
+    setPollNames(nm);
+    const rule = ((camp as { recur_rule: RecurRule } | null)?.recur_rule) ?? null;
+    setRecurRule(rule);
+    const poll = ((polls as ActivePoll[]) || [])[0] || null;
+    setActivePoll(poll);
+    if (poll) {
+      const { data: resp } = await supabase.from("poll_responses").select("character_id, discord_user_id, available").eq("poll_id", poll.id);
+      setPollResp((resp as PollResp[]) || []);
+    } else {
+      setPollResp([]);
+    }
+    return rule;
+  }
+
+  // Rolling weekly recurrence: if a rule is set and nothing is scheduled ahead,
+  // create the next occurrence. Guarded, so it only fills a gap, never stacks.
+  async function ensureRecurrence(cid: string, rule: RecurRule) {
+    if (!rule?.anchor) return;
+    const anchor = new Date(rule.anchor).getTime();
+    if (!Number.isFinite(anchor)) return;
+    const { data: rows } = await supabase.from("sessions").select("id, session_number, scheduled_at").eq("campaign_id", cid);
+    const list = (rows as { id: string; session_number: number | null; scheduled_at: string | null }[]) || [];
+    const hasFuture = list.some((s) => s.scheduled_at && new Date(s.scheduled_at).getTime() > Date.now());
+    if (hasFuture) return;
+    let t = anchor;
+    const week = 7 * 24 * 3600 * 1000;
+    while (t <= Date.now()) t += week;
+    const nextNum = list.reduce((m, s) => Math.max(m, s.session_number || 0), 0) + 1;
+    const { data } = await supabase.from("sessions")
+      .insert({ campaign_id: cid, session_number: nextNum, status: "scheduled", scheduled_at: new Date(t).toISOString() })
+      .select("id,session_number,status,capture_modality,consent_recorded,notes,recap,scheduled_at,created_at").single();
+    if (data) setSessions((s) => [data, ...s]);
+  }
+
+  async function confirmSlot(i: number) {
+    if (!activePoll || confirmBusy) return;
+    setConfirmBusy(true); setConfirmMsg(null);
+    try {
+      const res = await fetch("/api/schedule/confirm", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pollId: activePoll.id, slotIdx: i }),
+      });
+      const out = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setConfirmMsg("Locked in. The next session is scheduled.");
+        setActivePoll(null); setPollResp([]);
+        if (campaign) loadCampaignData(campaign);
+      } else {
+        setConfirmMsg(out.error || "Could not confirm.");
+      }
+    } catch {
+      setConfirmMsg("Could not confirm.");
+    }
+    setConfirmBusy(false);
   }
 
   function pickType(key: string) {
@@ -479,9 +563,33 @@ export default function SessionWorkspace() {
               {pollMsg && <span style={{ fontSize: 12, color: C.muted }}>{pollMsg}</span>}
             </div>
             <div style={{ fontSize: 11, color: C.muted, marginTop: 8 }}>
-              Players tap the times they can make in Discord. You&apos;ll pick the winner here (coming next).
+              Players tap the times they can make in Discord; their availability shows below.
             </div>
           </div>
+
+          {activePoll && (
+            <div style={box}>
+              <div style={{ fontSize: 13, color: C.muted, marginBottom: 10 }}>
+                Availability {"\u00b7"} pick a time to lock it in{activePoll.recurring ? " (recurring weekly)" : ""}
+              </div>
+              <div style={{ display: "grid", gap: 8 }}>
+                {activePoll.slots.map((iso, i) => {
+                  const yes = pollResp.filter((r) => (r.available || []).includes(i));
+                  const names = yes.map((r) => (r.character_id && pollNames[r.character_id]) || "a player");
+                  return (
+                    <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "9px 11px", background: C.ink, border: `1px solid ${C.line}`, borderRadius: 8 }}>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontSize: 14, color: C.vellum }}>{new Date(iso).toLocaleString([], { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</div>
+                        <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>{yes.length} available{names.length ? `: ${names.join(", ")}` : ""}</div>
+                      </div>
+                      <button style={btn} onClick={() => confirmSlot(i)} disabled={confirmBusy}>Confirm</button>
+                    </div>
+                  );
+                })}
+              </div>
+              {confirmMsg && <div style={{ fontSize: 12, color: C.muted, marginTop: 8 }}>{confirmMsg}</div>}
+            </div>
+          )}
 
           {/* schedule */}
           <div style={box}>
