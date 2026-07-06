@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { useParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { SAX } from "@/lib/theme";
@@ -21,14 +20,15 @@ type Content = {
 
 export default function CampaignJournalPage() {
   const supabase = useMemo(() => createClient(), []);
-  const params = useParams();
-  const share = (Array.isArray(params?.share) ? params.share[0] : params?.share) as string | undefined;
   const [content, setContent] = useState<Content | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "empty" | "invalid">("loading");
 
   useEffect(() => {
     let active = true;
     (async () => {
+      const parts = window.location.pathname.split("/").filter(Boolean);
+      const idx = parts.indexOf("journal");
+      const share = idx >= 0 ? parts[idx + 1] : undefined;
       if (!share) { if (active) setStatus("invalid"); return; }
       const { data } = await supabase.rpc("journal_for_share", { p_share: share });
       if (!active) return;
@@ -37,7 +37,7 @@ export default function CampaignJournalPage() {
       else setStatus("empty");
     })();
     return () => { active = false; };
-  }, [supabase, share]);
+  }, [supabase]);
 
   const eyebrow = { fontFamily: "ui-monospace, monospace", fontSize: 11, letterSpacing: "0.22em", textTransform: "uppercase" as const, color: C.muted };
   const sectionTitle = { fontFamily: "'Iowan Old Style', Georgia, serif", fontSize: 20, fontWeight: 700, color: C.text, margin: "32px 0 12px" };
