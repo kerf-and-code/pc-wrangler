@@ -59,6 +59,9 @@ export default function SessionWorkspace() {
   const [recurRule, setRecurRule] = useState<RecurRule>(null);
   const [confirmBusy, setConfirmBusy] = useState(false);
   const [confirmMsg, setConfirmMsg] = useState<string | null>(null);
+  const [journalBusy, setJournalBusy] = useState(false);
+  const [journalMsg, setJournalMsg] = useState<string | null>(null);
+  const [journalLink, setJournalLink] = useState<string | null>(null);
   const [rsvps, setRsvps] = useState<{ status: string; display_name: string | null; character_name: string | null }[]>([]);
 
   const [campaigns, setCampaigns] = useState<any[]>([]);
@@ -350,6 +353,24 @@ export default function SessionWorkspace() {
     setConfirmBusy(false);
   }
 
+  async function buildJournal() {
+    if (!campaign || journalBusy) return;
+    setJournalBusy(true); setJournalMsg(null);
+    try {
+      const res = await fetch("/api/journal/build", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ campaignId: campaign }) });
+      const out = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setJournalMsg(`Chronicle assembled from ${out.sessions} session${out.sessions === 1 ? "" : "s"}.`);
+        if (out.shareCode && typeof window !== "undefined") setJournalLink(`${window.location.origin}/journal/${out.shareCode}`);
+      } else {
+        setJournalMsg(out.error || "Could not build the journal.");
+      }
+    } catch {
+      setJournalMsg("Could not build the journal.");
+    }
+    setJournalBusy(false);
+  }
+
   function pickType(key: string) {
     const t = eventTypes.find((x) => x.key === key);
     setEntry((e) => ({
@@ -590,6 +611,23 @@ export default function SessionWorkspace() {
               {confirmMsg && <div style={{ fontSize: 12, color: C.muted, marginTop: 8 }}>{confirmMsg}</div>}
             </div>
           )}
+
+          {/* campaign journal */}
+          <div style={box}>
+            <div style={{ fontSize: 13, color: C.muted, marginBottom: 6 }}>Campaign journal {"\u00b7"} a shareable chronicle of the whole campaign</div>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+              <button style={btn} onClick={buildJournal} disabled={journalBusy}>
+                {journalBusy ? "Assembling\u2026" : "Build the journal"}
+              </button>
+              {journalMsg && <span style={{ fontSize: 12, color: C.muted }}>{journalMsg}</span>}
+            </div>
+            {journalLink && (
+              <div style={{ marginTop: 10, fontSize: 12.5 }}>
+                <span style={{ color: C.muted }}>Public link: </span>
+                <a href={journalLink} target="_blank" rel="noreferrer" style={{ color: C.brass, wordBreak: "break-all" }}>{journalLink}</a>
+              </div>
+            )}
+          </div>
 
           {/* schedule */}
           <div style={box}>
