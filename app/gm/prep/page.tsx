@@ -38,7 +38,7 @@ const fmtClock = (secs: number | null): string => {
 
 type PlanItem = {
   id: string; title: string; note: string | null; kind: string; difficulty: string | null;
-  linked_event_id: string | null; linked_character_id: string | null; position: number; done: boolean;
+  linked_event_id: string | null; linked_character_id: string | null; position: number; done: boolean; source: string;
 };
 type NpcChar = { id: string; name: string };
 
@@ -64,6 +64,8 @@ export default function PrepPage() {
   const [pLink, setPLink] = useState("");
   const [pNote, setPNote] = useState("");
   const [pBusy, setPBusy] = useState(false);
+  const [suggesting, setSuggesting] = useState(false);
+  const [suggestMsg, setSuggestMsg] = useState<string | null>(null);
   const player = useMomentPlayer();
 
   useEffect(() => {
@@ -81,7 +83,7 @@ export default function PrepPage() {
       supabase.from("sessions").select("id, session_number").eq("campaign_id", cid),
       supabase.from("gm_events").select(cols).eq("campaign_id", cid).eq("thread_status", "open").order("created_at", { ascending: false }),
       supabase.from("gm_events").select(cols).eq("campaign_id", cid).order("created_at", { ascending: false }).limit(150),
-      supabase.from("session_plan_items").select("id, title, note, kind, difficulty, linked_event_id, linked_character_id, position, done").eq("campaign_id", cid).order("position", { ascending: true }),
+      supabase.from("session_plan_items").select("id, title, note, kind, difficulty, linked_event_id, linked_character_id, position, done, source").eq("campaign_id", cid).order("position", { ascending: true }),
       supabase.from("characters").select("id, name").eq("campaign_id", cid).eq("kind", "npc").order("name"),
     ]);
     setSessions((ss as Sess[]) || []);
@@ -117,7 +119,7 @@ export default function PrepPage() {
     const { data, error: e } = await supabase.from("session_plan_items").insert({
       campaign_id: campaignId, title: pTitle.trim(), note: pNote.trim() || null, kind: pKind,
       difficulty: pKind === "encounter" && pDiff ? pDiff : null, linked_event_id, linked_character_id, position: pos, done: false,
-    }).select("id, title, note, kind, difficulty, linked_event_id, linked_character_id, position, done").single();
+    }).select("id, title, note, kind, difficulty, linked_event_id, linked_character_id, position, done, source").single();
     if (e) setError(e.message);
     else if (data) { setPlan((arr) => [...arr, data as PlanItem]); setPTitle(""); setPNote(""); setPLink(""); setPDiff(""); setPKind("scene"); }
     setPBusy(false);
@@ -143,6 +145,24 @@ export default function PrepPage() {
       supabase.from("session_plan_items").update({ position: a.position }).eq("id", b.id),
     ]);
     setPlan((arr) => arr.map((p) => (p.id === a.id ? { ...p, position: b.position } : p.id === b.id ? { ...p, position: a.position } : p)).sort((x, y) => x.position - y.position));
+  }
+
+  async function suggestPrep() {
+    if (!campaignId || suggesting) return;
+    setSuggesting(true); setSuggestMsg(null);
+    try {
+      const res = await fetch("/api/prep/suggest", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ campaignId }) });
+      const out = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setSuggestMsg(out.suggested > 0 ? `Added ${out.suggested} suggestion${out.suggested === 1 ? "" : "s"}.` : (out.reason || "Nothing to suggest yet."));
+        await load(campaignId);
+      } else {
+        setSuggestMsg(out.error || "Could not suggest prep.");
+      }
+    } catch {
+      setSuggestMsg("Could not suggest prep.");
+    }
+    setSuggesting(false);
   }
 
   const planLinkLabel = (item: PlanItem): string | null => {
@@ -209,6 +229,13 @@ export default function PrepPage() {
       {player.error && <p style={{ color: C.warn, fontSize: 12.5, margin: "10px 0 0" }}>{player.error}</p>}
 
       {sectionTitle("Plan the next session", "Jot the scenes and encounters you mean to run, link them to open threads or NPCs, and tick them off as you prep.")}
+      <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "-4px 0 10px", flexWrap: "wrap" }}>
+        <button type="button" onClick={suggestPrep} disabled={suggesting}
+          style={{ background: "transparent", color: C.plum, border: `1px solid ${C.plum}`, borderRadius: 999, padding: "6px 14px", fontSize: 12.5, cursor: suggesting ? "default" : "pointer", opacity: suggesting ? 0.6 : 1 }}>
+          {suggesting ? "Thinking\u2026" : "Suggest prep"}
+        </button>
+        {suggestMsg && <span style={{ fontSize: 12, color: C.muted }}>{suggestMsg}</span>}
+      </div>
       <div style={box}>
         <div style={{ display: "grid", gap: 8, marginBottom: plan.length ? 14 : 0 }}>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -257,6 +284,7 @@ export default function PrepPage() {
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                         <span style={{ fontFamily: "ui-monospace, monospace", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.06em", color: C.plum }}>{p.kind}</span>
+                        {p.source === "suggested" && <span style={{ fontFamily: "ui-monospace, monospace", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.06em", color: C.good }}>suggested</span>}
                         {p.difficulty && <span style={{ fontFamily: "ui-monospace, monospace", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.06em", color: C.warn }}>{p.difficulty}</span>}
                         <span style={{ fontSize: 14, color: C.text, fontWeight: 600, textDecoration: p.done ? "line-through" : "none" }}>{p.title}</span>
                       </div>
