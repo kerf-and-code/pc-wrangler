@@ -22,7 +22,7 @@ type Proposed = {
 };
 
 export async function POST(req: NextRequest) {
-  let body: { action?: string; id?: string; summary?: string; kind?: string; createNpc?: boolean; npcName?: string };
+  let body: { action?: string; id?: string; summary?: string; kind?: string; createNpc?: boolean; npcName?: string; createLocation?: boolean; locationName?: string };
   try {
     body = (await req.json()) as typeof body;
   } catch {
@@ -103,6 +103,33 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // Optional one-click place: the same "Codex fills itself" step for locations.
+  // gm_events have no location FK, so this stands up a Codex entry (type
+  // 'location'), deduped by title, seeded with the beat's detail.
+  let locationId: string | null = null;
+  const locationName = (body.locationName || prop.location_name || "").trim();
+  if (body.createLocation && locationName) {
+    const { data: existingLoc } = await admin
+      .from("entries")
+      .select("id")
+      .eq("campaign_id", prop.campaign_id)
+      .eq("type", "location")
+      .ilike("title", locationName)
+      .maybeSingle();
+    if (existingLoc) {
+      locationId = (existingLoc as { id: string }).id;
+    } else {
+      const seed = (prop.detail || prop.summary || "").toString().slice(0, 2000);
+      const { data: createdLoc, error: lErr } = await admin
+        .from("entries")
+        .insert({ campaign_id: prop.campaign_id, type: "location", title: locationName, body: seed || null, visibility: "player" })
+        .select("id")
+        .single();
+      if (lErr) return NextResponse.json({ error: `Could not create place: ${lErr.message}` }, { status: 500 });
+      locationId = (createdLoc as { id: string }).id;
+    }
+  }
+
   const threadStatus = OPEN_THREAD_KINDS.has(finalKind) ? "open" : "n/a";
 
   const { error: insErr } = await admin.from("gm_events").insert({
@@ -129,5 +156,5 @@ export async function POST(req: NextRequest) {
     .eq("id", id);
   if (upErr) return NextResponse.json({ error: upErr.message }, { status: 500 });
 
-  return NextResponse.json({ ok: true, npcId });
+  return NextResponse.json({ ok: true, npcId, locationId });
 }

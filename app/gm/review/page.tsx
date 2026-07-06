@@ -250,7 +250,7 @@ export default function ReviewPage() {
   const setEdit = (id: string, patch: { summary?: string; kind?: string }) =>
     setEdits((prev) => ({ ...prev, [id]: { ...prev[id], ...patch } }));
 
-  async function reviewGm(p: GmProp, action: "approve" | "reject", createNpc = false) {
+  async function reviewGm(p: GmProp, action: "approve" | "reject", createNpc = false, createLocation = false) {
     setBusy(true); setError(null);
     const e = edits[p.id];
     const payload: Record<string, unknown> = { action, id: p.id };
@@ -258,6 +258,7 @@ export default function ReviewPage() {
       payload.summary = e?.summary ?? p.summary;
       payload.kind = e?.kind ?? p.kind;
       if (createNpc) { payload.createNpc = true; payload.npcName = p.npc_name || ""; }
+      if (createLocation) { payload.createLocation = true; payload.locationName = p.location_name || ""; }
     }
     const res = await fetch("/api/gm-review", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
     const out = await res.json().catch(() => ({}));
@@ -491,6 +492,9 @@ export default function ReviewPage() {
                             <button type="button" onClick={() => reviewGm(p, "approve")} disabled={busy} style={btn(C.good, SAX.inkDeep)}>Accept</button>
                             {isNpc && p.npc_name && (
                               <button type="button" onClick={() => reviewGm(p, "approve", true)} disabled={busy} style={btn(C.sun, SAX.inkDeep)}>Accept + create NPC</button>
+                            )}
+                            {p.location_name && (
+                              <button type="button" onClick={() => reviewGm(p, "approve", false, true)} disabled={busy} style={btn(C.plum, SAX.inkDeep)}>Accept + create place</button>
                             )}
                             <button type="button" onClick={() => reviewGm(p, "reject")} disabled={busy} style={{ background: "transparent", color: C.warn, border: `1px solid ${C.line}`, borderRadius: 9, padding: "9px 16px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Reject</button>
                           </div>
