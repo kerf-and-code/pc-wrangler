@@ -21,7 +21,7 @@ type Prop = {
 };
 type GmProp = {
   id: string; kind: string; summary: string; detail: string | null; quote: string | null;
-  npc_name: string | null; location_name: string | null; target_character_id: string | null;
+  npc_name: string | null; location_name: string | null; faction_name: string | null; target_character_id: string | null;
   confidence: number | null; t_start_seconds: number | null; status: string;
   audio_track_id: string | null;
 };
@@ -110,7 +110,7 @@ export default function ReviewPage() {
   async function loadGmProps(jid: string) {
     const { data } = await supabase
       .from("gm_proposed_events")
-      .select("id, kind, summary, detail, quote, npc_name, location_name, target_character_id, confidence, t_start_seconds, status, audio_track_id")
+      .select("id, kind, summary, detail, quote, npc_name, location_name, faction_name, target_character_id, confidence, t_start_seconds, status, audio_track_id")
       .eq("job_id", jid)
       .order("created_at", { ascending: true });
     const all = (data as GmProp[]) || [];
@@ -250,7 +250,7 @@ export default function ReviewPage() {
   const setEdit = (id: string, patch: { summary?: string; kind?: string }) =>
     setEdits((prev) => ({ ...prev, [id]: { ...prev[id], ...patch } }));
 
-  async function reviewGm(p: GmProp, action: "approve" | "reject", createNpc = false, createLocation = false) {
+  async function reviewGm(p: GmProp, action: "approve" | "reject", createNpc = false, createLocation = false, createFaction = false) {
     setBusy(true); setError(null);
     const e = edits[p.id];
     const payload: Record<string, unknown> = { action, id: p.id };
@@ -259,6 +259,7 @@ export default function ReviewPage() {
       payload.kind = e?.kind ?? p.kind;
       if (createNpc) { payload.createNpc = true; payload.npcName = p.npc_name || ""; }
       if (createLocation) { payload.createLocation = true; payload.locationName = p.location_name || ""; }
+      if (createFaction) { payload.createFaction = true; payload.factionName = p.faction_name || ""; }
     }
     const res = await fetch("/api/gm-review", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
     const out = await res.json().catch(() => ({}));
@@ -474,10 +475,11 @@ export default function ReviewPage() {
                           <textarea value={eSummary} onChange={(ev) => setEdit(p.id, { summary: ev.target.value })} rows={2}
                             style={{ display: "block", width: "100%", marginTop: 10, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: 9, padding: "9px 11px", fontSize: 14, resize: "vertical", fontFamily: "inherit", boxSizing: "border-box" }} />
 
-                          {(p.npc_name || p.location_name) && (
+                          {(p.npc_name || p.location_name || p.faction_name) && (
                             <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginTop: 10 }}>
                               {p.npc_name && <span style={{ fontSize: 12, color: C.muted }}>NPC: <span style={{ color: C.text }}>{p.npc_name}</span></span>}
                               {p.location_name && <span style={{ fontSize: 12, color: C.muted }}>Place: <span style={{ color: C.text }}>{p.location_name}</span></span>}
+                              {p.faction_name && <span style={{ fontSize: 12, color: C.muted }}>Faction: <span style={{ color: C.text }}>{p.faction_name}</span></span>}
                             </div>
                           )}
 
@@ -495,6 +497,9 @@ export default function ReviewPage() {
                             )}
                             {p.location_name && (
                               <button type="button" onClick={() => reviewGm(p, "approve", false, true)} disabled={busy} style={btn(C.plum, SAX.inkDeep)}>Accept + create place</button>
+                            )}
+                            {p.faction_name && (
+                              <button type="button" onClick={() => reviewGm(p, "approve", false, false, true)} disabled={busy} style={btn(C.plum, SAX.inkDeep)}>Accept + create faction</button>
                             )}
                             <button type="button" onClick={() => reviewGm(p, "reject")} disabled={busy} style={{ background: "transparent", color: C.warn, border: `1px solid ${C.line}`, borderRadius: 9, padding: "9px 16px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Reject</button>
                           </div>

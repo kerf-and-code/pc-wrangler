@@ -15,6 +15,7 @@ type Proposed = {
   quote: string | null;
   npc_name: string | null;
   location_name: string | null;
+  faction_name: string | null;
   target_character_id: string | null;
   audio_track_id: string | null;
   t_start_seconds: number | null;
@@ -22,7 +23,7 @@ type Proposed = {
 };
 
 export async function POST(req: NextRequest) {
-  let body: { action?: string; id?: string; summary?: string; kind?: string; createNpc?: boolean; npcName?: string; createLocation?: boolean; locationName?: string };
+  let body: { action?: string; id?: string; summary?: string; kind?: string; createNpc?: boolean; npcName?: string; createLocation?: boolean; locationName?: string; createFaction?: boolean; factionName?: string };
   try {
     body = (await req.json()) as typeof body;
   } catch {
@@ -44,7 +45,7 @@ export async function POST(req: NextRequest) {
 
   const { data: propRow } = await admin
     .from("gm_proposed_events")
-    .select("id, campaign_id, session_id, kind, summary, detail, quote, npc_name, location_name, target_character_id, audio_track_id, t_start_seconds, status")
+    .select("id, campaign_id, session_id, kind, summary, detail, quote, npc_name, location_name, faction_name, target_character_id, audio_track_id, t_start_seconds, status")
     .eq("id", id)
     .maybeSingle();
   const prop = propRow as Proposed | null;
@@ -130,6 +131,32 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // Optional one-click faction: a Codex 'lore' entry tagged 'faction', deduped
+  // by title. The same self-filling Codex step for organizations.
+  let factionId: string | null = null;
+  const factionName = (body.factionName || prop.faction_name || "").trim();
+  if (body.createFaction && factionName) {
+    const { data: existingFac } = await admin
+      .from("entries")
+      .select("id")
+      .eq("campaign_id", prop.campaign_id)
+      .eq("type", "lore")
+      .ilike("title", factionName)
+      .maybeSingle();
+    if (existingFac) {
+      factionId = (existingFac as { id: string }).id;
+    } else {
+      const seed = (prop.detail || prop.summary || "").toString().slice(0, 2000);
+      const { data: createdFac, error: fErr } = await admin
+        .from("entries")
+        .insert({ campaign_id: prop.campaign_id, type: "lore", title: factionName, body: seed || null, visibility: "player", tags: ["faction"] })
+        .select("id")
+        .single();
+      if (fErr) return NextResponse.json({ error: `Could not create faction: ${fErr.message}` }, { status: 500 });
+      factionId = (createdFac as { id: string }).id;
+    }
+  }
+
   const threadStatus = OPEN_THREAD_KINDS.has(finalKind) ? "open" : "n/a";
 
   const { error: insErr } = await admin.from("gm_events").insert({
@@ -142,6 +169,7 @@ export async function POST(req: NextRequest) {
     npc_id: npcId,
     npc_name: npcName || prop.npc_name,
     location_name: prop.location_name,
+    faction_name: prop.faction_name,
     target_character_id: prop.target_character_id,
     thread_status: threadStatus,
     audio_track_id: prop.audio_track_id,
@@ -156,5 +184,5 @@ export async function POST(req: NextRequest) {
     .eq("id", id);
   if (upErr) return NextResponse.json({ error: upErr.message }, { status: 500 });
 
-  return NextResponse.json({ ok: true, npcId, locationId });
+  return NextResponse.json({ ok: true, npcId, locationId, factionId });
 }

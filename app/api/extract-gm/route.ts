@@ -18,6 +18,7 @@ type Proposal = {
   quote?: string | null;
   npc_name?: string | null;
   location_name?: string | null;
+  faction_name?: string | null;
   target?: string | null;
   confidence?: number;
 };
@@ -109,8 +110,8 @@ TRANSCRIPT WINDOW (each line is "[index] text", all spoken by the GM):
 ${transcriptText}
 
 TASK: Tag the clear GM events in this window. For each, return an object:
-{"line": <the [index] it is based on>, "kind": <one kind from the list>, "summary": <one concise sentence describing the event>, "detail": <fuller text, or null>, "quote": <the GM's actual words if worth preserving verbatim, or null>, "npc_name": <for npc_* kinds, the NPC's name, else null>, "location_name": <a named place if one is introduced or described, else null>, "target": <for an event aimed at a PC, that PC's name from the list, else null>, "confidence": <0.0-1.0>}
-Keep summary tight and factual. Return a JSON array. Return [] if nothing in this window is clearly a GM event.`;
+{"line": <the [index] it is based on>, "kind": <one kind from the list>, "summary": <one concise sentence describing the event>, "detail": <fuller text, or null>, "quote": <the GM's actual words if worth preserving verbatim, or null>, "npc_name": <for npc_* kinds, the NPC's name, else null>, "location_name": <a named place if one is introduced or described, else null>, "faction_name": <a named faction, organization, guild, cult, house, or group if one is introduced or referenced, else null>, "target": <for an event aimed at a PC, that PC's name from the list, else null>, "confidence": <0.0-1.0>}
+Keep summary tight and factual. Only fill location_name/faction_name when a proper name is actually given. Return a JSON array. Return [] if nothing in this window is clearly a GM event.`;
 
   let proposals: Proposal[] = [];
   try {
@@ -152,6 +153,7 @@ Keep summary tight and factual. Return a JSON array. Return [] if nothing in thi
         quote: p.quote ? p.quote.toString().slice(0, 2000) : null,
         npc_name: p.npc_name ? p.npc_name.toString().slice(0, 200) : null,
         location_name: p.location_name ? p.location_name.toString().slice(0, 200) : null,
+        faction_name: p.faction_name ? p.faction_name.toString().slice(0, 200) : null,
         target_character_id: targetId,
         audio_track_id: seg?.track_id ?? null,
         t_start_seconds: seg && seg.start_ms !== null ? seg.start_ms / 1000 : null,
