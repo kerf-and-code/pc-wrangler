@@ -42,6 +42,10 @@ const inputStyle = { background: C.ink, color: C.vellum, border: `1px solid ${C.
 const btn = { background: C.brass, color: C.ink, border: "none", borderRadius: 9, padding: "10px 18px", fontSize: 14, fontWeight: 600, cursor: "pointer" };
 const btnGhost = { background: "none", color: C.brass, border: `1px solid ${C.brassDim}`, borderRadius: 9, padding: "9px 16px", fontSize: 13, cursor: "pointer" };
 
+// Bot invite: scopes for slash commands + permissions the bot needs (view/send/
+// embed/read-history + connect/speak/voice-activity for /record).
+const DISCORD_INVITE = "https://discord.com/oauth2/authorize?client_id=1521013496349855907&scope=bot+applications.commands&permissions=3164160";
+
 export default function GMWorkspace() {
   const supabase = useMemo(() => createClient(), []);
   const [userId, setUserId] = useState<string | null>(null);
@@ -137,9 +141,9 @@ export default function GMWorkspace() {
     if (error) setErr(error.message); else if (selected) await loadCharacters(selected);
   }
 
-  function copyInvite(code: string) {
+  function copySetup(code: string) {
     try {
-      navigator.clipboard.writeText(`${window.location.origin}/play?share=${code}`);
+      navigator.clipboard.writeText(`/setup code:${code}`);
       setCopied(code);
       setTimeout(() => setCopied(null), 1500);
     } catch (e) { /* clipboard unavailable */ }
@@ -266,9 +270,10 @@ export default function GMWorkspace() {
           return sc ? (
             <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${C.line}`, display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
               {sc.share_code && <>
-                <span style={{ fontSize: 12.5, color: C.muted }}>Player invite link:</span>
-                <code style={{ fontSize: 12.5, color: C.vellum, background: C.ink, border: `1px solid ${C.line}`, borderRadius: 7, padding: "5px 9px" }}>/play?share={sc.share_code}</code>
-                <button style={btnGhost} onClick={() => copyInvite(sc.share_code)}>{copied === sc.share_code ? "Copied" : "Copy link"}</button>
+                <span style={{ fontSize: 12.5, color: C.muted }}>Campaign code:</span>
+                <code style={{ fontSize: 12.5, color: C.vellum, background: C.ink, border: `1px solid ${C.line}`, borderRadius: 7, padding: "5px 9px" }}>{sc.share_code}</code>
+                <a href={DISCORD_INVITE} target="_blank" rel="noreferrer" style={{ ...btnGhost, textDecoration: "none", display: "inline-block" }}>Invite bot</a>
+                <button style={btnGhost} onClick={() => copySetup(sc.share_code)}>{copied === sc.share_code ? "Copied" : "Copy /setup command"}</button>
               </>}
               <button onClick={() => deleteCampaign(sc.id)}
                 style={{ marginLeft: "auto", background: "none", border: `1px solid ${C.line}`, color: C.muted, borderRadius: 9, padding: "9px 14px", fontSize: 12.5, cursor: "pointer" }}>
