@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
 import { SAX } from "@/lib/theme";
 import LogoutButton from "@/components/logout-button";
 
@@ -117,11 +116,12 @@ const NAV_CSS = `
 `;
 
 export default function SixAxesNav() {
-  const pathname = usePathname() || "";
+  const [pathname, setPathname] = useState<string>("");
   const [share, setShare] = useState<{ on: boolean; qs: string }>({ on: false, qs: "" });
 
   useEffect(() => {
     try {
+      setPathname(window.location.pathname);
       const sp = new URLSearchParams(window.location.search);
       if (sp.has("share")) setShare({ on: true, qs: window.location.search });
     } catch {
