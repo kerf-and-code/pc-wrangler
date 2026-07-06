@@ -11,7 +11,17 @@ export async function GET(request: Request) {
   if (code) {
     const supabase = await createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (!error) return NextResponse.redirect(`${origin}${next}`);
+    if (!error) {
+      let dest = next;
+      // First-time GMs (no campaigns yet) land on the getting-started checklist
+      // instead of the workspace. Only override the default target, never an
+      // explicit ?next= (e.g. a page they were bounced from before signing in).
+      if (next === "/gm") {
+        const { count } = await supabase.from("campaigns").select("id", { count: "exact", head: true });
+        if (!count) dest = "/gm/start";
+      }
+      return NextResponse.redirect(`${origin}${dest}`);
+    }
   }
 
   // code missing or exchange failed
