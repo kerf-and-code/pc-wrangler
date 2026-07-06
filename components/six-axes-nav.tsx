@@ -51,6 +51,7 @@ const PLAYER: Leaf[] = [
   { href: "/schedule", label: "Schedule" },
   { href: "/recaps", label: "Recaps" },
   { href: "/lore", label: "Lore" },
+  { href: "/map", label: "Map" },
   { href: "/vibe", label: "Check-in" },
   { href: "/chat", label: "Chat" },
   { href: "/record", label: "Record" },
