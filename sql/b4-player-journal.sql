@@ -34,9 +34,9 @@ begin
   -- their beats: events they were part of + GM beats aimed at them, in order
   select coalesce(jsonb_agg(to_jsonb(b) order by b.n nulls last), '[]'::jsonb) into v_beats
   from (
-    -- the player's own logged beats (events has no summary; use event_type + payload note)
+    -- the player's own logged beats (events has no summary; use payload.rationale + event_type)
     select s.session_number as n,
-           coalesce(nullif(e.payload->>'note',''), e.event_type) as summary,
+           coalesce(nullif(e.payload->>'rationale',''), e.event_type) as summary,
            e.event_type as kind,
            'you'::text as who
     from public.events e
