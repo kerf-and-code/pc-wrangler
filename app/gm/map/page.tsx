@@ -200,8 +200,7 @@ export default function MapPage() {
                 <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 12 }}>Pin</div>
                 <label style={{ fontSize: 11, color: C.muted }}>Label</label>
                 <input value={sel.label || ""}
-                  onChange={(e) => setPins((arr) => arr.map((p) => (p.id === sel.id ? { ...p, label: e.target.value } : p)))}
-                  onBlur={(e) => supabase.from("map_pins").update({ label: e.target.value }).eq("id", sel.id)}
+                  onChange={(e) => updatePin(sel.id, { label: e.target.value })}
                   placeholder="Ravenhollow" style={sel2} />
 
                 <label style={{ fontSize: 11, color: C.muted, display: "block", marginTop: 12 }}>Links to</label>
