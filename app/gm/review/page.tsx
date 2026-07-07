@@ -43,6 +43,7 @@ export default function ReviewPage() {
   const [props, setProps] = useState<Prop[]>([]);
   const [counts, setCounts] = useState<{ accepted: number; rejected: number }>({ accepted: 0, rejected: 0 });
   const [running, setRunning] = useState<boolean>(false);
+  const [createSel, setCreateSel] = useState<Record<string, Record<string, boolean>>>({});
   const [progress, setProgress] = useState<{ processed: number; total: number } | null>(null);
   const [gmProposed, setGmProposed] = useState<number | null>(null);
   const [busy, setBusy] = useState<boolean>(false);
@@ -250,16 +251,19 @@ export default function ReviewPage() {
   const setEdit = (id: string, patch: { summary?: string; kind?: string }) =>
     setEdits((prev) => ({ ...prev, [id]: { ...prev[id], ...patch } }));
 
-  async function reviewGm(p: GmProp, action: "approve" | "reject", createNpc = false, createLocation = false, createFaction = false) {
+  async function reviewGm(p: GmProp, action: "approve" | "reject", creates?: Record<string, boolean>) {
     setBusy(true); setError(null);
     const e = edits[p.id];
     const payload: Record<string, unknown> = { action, id: p.id };
     if (action === "approve") {
       payload.summary = e?.summary ?? p.summary;
       payload.kind = e?.kind ?? p.kind;
-      if (createNpc) { payload.createNpc = true; payload.npcName = p.npc_name || ""; }
-      if (createLocation) { payload.createLocation = true; payload.locationName = p.location_name || ""; }
-      if (createFaction) { payload.createFaction = true; payload.factionName = p.faction_name || ""; }
+      const c = creates || {};
+      if (c.npc && p.npc_name) { payload.createNpc = true; payload.npcName = p.npc_name; }
+      if (c.location && p.location_name) { payload.createLocation = true; payload.locationName = p.location_name; }
+      if (c.faction && p.faction_name) { payload.createFaction = true; payload.factionName = p.faction_name; }
+      if (c.item) payload.createItem = true;
+      if (c.lore) payload.createLore = true;
     }
     const res = await fetch("/api/gm-review", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
     const out = await res.json().catch(() => ({}));
@@ -270,6 +274,25 @@ export default function ReviewPage() {
     }
     setBusy(false);
   }
+
+  // Which createable entities a beat identifies, and per-beat selection (default all on).
+  function availEntities(p: GmProp): { k: string; label: string }[] {
+    const a: { k: string; label: string }[] = [];
+    if (p.npc_name) a.push({ k: "npc", label: `NPC: ${p.npc_name}` });
+    if (p.location_name) a.push({ k: "location", label: `Place: ${p.location_name}` });
+    if (p.faction_name) a.push({ k: "faction", label: `Faction: ${p.faction_name}` });
+    if (p.kind === "item_introduced") a.push({ k: "item", label: "Item" });
+    if (p.kind === "lore") a.push({ k: "lore", label: "Lore" });
+    return a;
+  }
+  const isSel = (p: GmProp, k: string) => createSel[p.id]?.[k] !== false;
+  const toggleSel = (p: GmProp, k: string) =>
+    setCreateSel((prev) => ({ ...prev, [p.id]: { ...(prev[p.id] || {}), [k]: !(prev[p.id]?.[k] !== false) } }));
+  const selObj = (p: GmProp): Record<string, boolean> => {
+    const o: Record<string, boolean> = {};
+    for (const { k } of availEntities(p)) o[k] = isSel(p, k);
+    return o;
+  };
 
   const gmView = gmProps.filter((p) => showMeta || p.kind !== "meta");
   const playerEligible = props.filter((p) => Math.round((p.confidence || 0) * 100) >= threshold).length;
@@ -452,7 +475,6 @@ export default function ReviewPage() {
                     {gmView.map((p) => {
                       const eKind = edits[p.id]?.kind ?? p.kind;
                       const eSummary = edits[p.id]?.summary ?? p.summary;
-                      const isNpc = eKind.startsWith("npc_");
                       const conf = p.confidence !== null ? Math.round((p.confidence || 0) * 100) : null;
                       return (
                         <div key={p.id} style={box}>
@@ -475,11 +497,15 @@ export default function ReviewPage() {
                           <textarea value={eSummary} onChange={(ev) => setEdit(p.id, { summary: ev.target.value })} rows={2}
                             style={{ display: "block", width: "100%", marginTop: 10, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: 9, padding: "9px 11px", fontSize: 14, resize: "vertical", fontFamily: "inherit", boxSizing: "border-box" }} />
 
-                          {(p.npc_name || p.location_name || p.faction_name) && (
-                            <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginTop: 10 }}>
-                              {p.npc_name && <span style={{ fontSize: 12, color: C.muted }}>NPC: <span style={{ color: C.text }}>{p.npc_name}</span></span>}
-                              {p.location_name && <span style={{ fontSize: 12, color: C.muted }}>Place: <span style={{ color: C.text }}>{p.location_name}</span></span>}
-                              {p.faction_name && <span style={{ fontSize: 12, color: C.muted }}>Faction: <span style={{ color: C.text }}>{p.faction_name}</span></span>}
+                          {availEntities(p).length > 0 && (
+                            <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginTop: 10, alignItems: "center" }}>
+                              <span style={{ fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: "0.05em" }}>Create &amp; link:</span>
+                              {availEntities(p).map(({ k, label }) => (
+                                <label key={k} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: C.text, cursor: "pointer" }}>
+                                  <input type="checkbox" checked={isSel(p, k)} onChange={() => toggleSel(p, k)} />
+                                  {label}
+                                </label>
+                              ))}
                             </div>
                           )}
 
@@ -491,15 +517,13 @@ export default function ReviewPage() {
                           {p.detail && <div style={{ fontSize: 12.5, color: C.muted, marginTop: 8 }}>{p.detail}</div>}
 
                           <div style={{ display: "flex", gap: 8, marginTop: 14, flexWrap: "wrap" }}>
-                            <button type="button" onClick={() => reviewGm(p, "approve")} disabled={busy} style={btn(C.good, SAX.inkDeep)}>Accept</button>
-                            {isNpc && p.npc_name && (
-                              <button type="button" onClick={() => reviewGm(p, "approve", true)} disabled={busy} style={btn(C.sun, SAX.inkDeep)}>Accept + create NPC</button>
-                            )}
-                            {p.location_name && (
-                              <button type="button" onClick={() => reviewGm(p, "approve", false, true)} disabled={busy} style={btn(C.plum, SAX.inkDeep)}>Accept + create place</button>
-                            )}
-                            {p.faction_name && (
-                              <button type="button" onClick={() => reviewGm(p, "approve", false, false, true)} disabled={busy} style={btn(C.plum, SAX.inkDeep)}>Accept + create faction</button>
+                            {availEntities(p).length > 0 ? (
+                              <>
+                                <button type="button" onClick={() => reviewGm(p, "approve", selObj(p))} disabled={busy} style={btn(C.sun, SAX.inkDeep)}>Accept &amp; create</button>
+                                <button type="button" onClick={() => reviewGm(p, "approve")} disabled={busy} style={btn(C.good, SAX.inkDeep)}>Accept only</button>
+                              </>
+                            ) : (
+                              <button type="button" onClick={() => reviewGm(p, "approve")} disabled={busy} style={btn(C.good, SAX.inkDeep)}>Accept</button>
                             )}
                             <button type="button" onClick={() => reviewGm(p, "reject")} disabled={busy} style={{ background: "transparent", color: C.warn, border: `1px solid ${C.line}`, borderRadius: 9, padding: "9px 16px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Reject</button>
                           </div>

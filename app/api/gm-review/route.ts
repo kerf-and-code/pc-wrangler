@@ -5,6 +5,31 @@ import { createAdminClient } from "@/lib/supabase/admin";
 // Kinds that are born as open threads so the prep sheet can find dangling ones.
 const OPEN_THREAD_KINDS = new Set(["framing", "hook", "quest_update"]);
 
+// Short title for an item/lore entry created from a beat's summary.
+function deriveTitle(summary: string): string {
+  const first = (summary || "").split(/[.!?]/)[0].trim();
+  return first.slice(0, 120);
+}
+
+// Sensible relation + direction for a link between two created entities.
+function relationFor(a: string, b: string): { srcKind: string; relation: string } {
+  const key = [a, b].sort().join("+");
+  const map: Record<string, { src: string; rel: string }> = {
+    "faction+npc": { src: "npc", rel: "member of" },
+    "location+npc": { src: "npc", rel: "at" },
+    "item+npc": { src: "npc", rel: "carries" },
+    "lore+npc": { src: "lore", rel: "concerns" },
+    "faction+location": { src: "location", rel: "held by" },
+    "item+location": { src: "item", rel: "found at" },
+    "location+lore": { src: "lore", rel: "concerns" },
+    "faction+item": { src: "item", rel: "tied to" },
+    "faction+lore": { src: "lore", rel: "concerns" },
+    "item+lore": { src: "lore", rel: "concerns" },
+  };
+  const m = map[key];
+  return m ? { srcKind: m.src, relation: m.rel } : { srcKind: a, relation: "linked" };
+}
+
 type Proposed = {
   id: string;
   campaign_id: string;
@@ -23,7 +48,7 @@ type Proposed = {
 };
 
 export async function POST(req: NextRequest) {
-  let body: { action?: string; id?: string; summary?: string; kind?: string; createNpc?: boolean; npcName?: string; createLocation?: boolean; locationName?: string; createFaction?: boolean; factionName?: string };
+  let body: { action?: string; id?: string; summary?: string; kind?: string; createNpc?: boolean; npcName?: string; createLocation?: boolean; locationName?: string; createFaction?: boolean; factionName?: string; createItem?: boolean; createLore?: boolean };
   try {
     body = (await req.json()) as typeof body;
   } catch {
@@ -159,6 +184,40 @@ export async function POST(req: NextRequest) {
 
   const threadStatus = OPEN_THREAD_KINDS.has(finalKind) ? "open" : "n/a";
 
+  // Optional item / lore entries, titled from the beat's summary (GM can rename).
+  let itemId: string | null = null;
+  if (body.createItem) {
+    const title = deriveTitle(finalSummary);
+    if (title) {
+      const { data: ex } = await admin.from("entries").select("id").eq("campaign_id", prop.campaign_id).eq("type", "lore").ilike("title", title).maybeSingle();
+      if (ex) itemId = (ex as { id: string }).id;
+      else {
+        const { data: cr, error: e } = await admin.from("entries")
+          .insert({ campaign_id: prop.campaign_id, type: "lore", title, body: (prop.detail || prop.summary || "").toString().slice(0, 2000) || null, visibility: "player", tags: ["item"] })
+          .select("id").single();
+        if (e) return NextResponse.json({ error: `Could not create item: ${e.message}` }, { status: 500 });
+        itemId = (cr as { id: string }).id;
+      }
+    }
+  }
+
+  let loreId: string | null = null;
+  if (body.createLore) {
+    const title = deriveTitle(finalSummary);
+    if (title) {
+      const { data: ex } = await admin.from("entries").select("id").eq("campaign_id", prop.campaign_id).eq("type", "lore").ilike("title", title).maybeSingle();
+      if (ex) loreId = (ex as { id: string }).id;
+      else {
+        const { data: cr, error: e } = await admin.from("entries")
+          .insert({ campaign_id: prop.campaign_id, type: "lore", title, body: (prop.detail || prop.summary || "").toString().slice(0, 2000) || null, visibility: "player" })
+          .select("id").single();
+        if (e) return NextResponse.json({ error: `Could not create lore: ${e.message}` }, { status: 500 });
+        loreId = (cr as { id: string }).id;
+      }
+    }
+  }
+
+
   const { error: insErr } = await admin.from("gm_events").insert({
     campaign_id: prop.campaign_id,
     session_id: prop.session_id,
@@ -184,5 +243,36 @@ export async function POST(req: NextRequest) {
     .eq("id", id);
   if (upErr) return NextResponse.json({ error: upErr.message }, { status: 500 });
 
-  return NextResponse.json({ ok: true, npcId, locationId, factionId });
+  // Cross-link everything created from this one beat, so search and the
+  // Connections panel surface the whole cluster from any single entry point.
+  const nodes: { et: "character" | "entry"; id: string; kind: string }[] = [];
+  if (npcId) nodes.push({ et: "character", id: npcId, kind: "npc" });
+  if (locationId) nodes.push({ et: "entry", id: locationId, kind: "location" });
+  if (factionId) nodes.push({ et: "entry", id: factionId, kind: "faction" });
+  if (itemId) nodes.push({ et: "entry", id: itemId, kind: "item" });
+  if (loreId) nodes.push({ et: "entry", id: loreId, kind: "lore" });
+
+  let linksMade = 0;
+  for (let i = 0; i < nodes.length; i++) {
+    for (let j = i + 1; j < nodes.length; j++) {
+      const a = nodes[i], b = nodes[j];
+      const rel = relationFor(a.kind, b.kind);
+      const src = rel.srcKind === a.kind ? a : b;
+      const tgt = src === a ? b : a;
+      const { data: ex } = await admin.from("entity_links").select("id")
+        .eq("campaign_id", prop.campaign_id)
+        .or(`and(source_id.eq.${src.id},target_id.eq.${tgt.id}),and(source_id.eq.${tgt.id},target_id.eq.${src.id})`)
+        .limit(1);
+      if (ex && (ex as { id: string }[]).length) continue;
+      const { error: lErr } = await admin.from("entity_links").insert({
+        campaign_id: prop.campaign_id,
+        source_type: src.et, source_id: src.id,
+        target_type: tgt.et, target_id: tgt.id,
+        relation: rel.relation,
+      });
+      if (!lErr) linksMade += 1;
+    }
+  }
+
+  return NextResponse.json({ ok: true, npcId, locationId, factionId, itemId, loreId, linksMade });
 }
