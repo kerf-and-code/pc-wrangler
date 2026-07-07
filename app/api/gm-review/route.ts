@@ -148,7 +148,7 @@ export async function POST(req: NextRequest) {
       const seed = (prop.detail || prop.summary || "").toString().slice(0, 2000);
       const { data: createdLoc, error: lErr } = await admin
         .from("entries")
-        .insert({ campaign_id: prop.campaign_id, type: "location", title: locationName, body: seed || null, visibility: "player" })
+        .insert({ campaign_id: prop.campaign_id, created_by: user.id, type: "location", title: locationName, body: seed || null, visibility: "player" })
         .select("id")
         .single();
       if (lErr) return NextResponse.json({ error: `Could not create place: ${lErr.message}` }, { status: 500 });
@@ -174,7 +174,7 @@ export async function POST(req: NextRequest) {
       const seed = (prop.detail || prop.summary || "").toString().slice(0, 2000);
       const { data: createdFac, error: fErr } = await admin
         .from("entries")
-        .insert({ campaign_id: prop.campaign_id, type: "lore", title: factionName, body: seed || null, visibility: "player", tags: ["faction"] })
+        .insert({ campaign_id: prop.campaign_id, created_by: user.id, type: "lore", title: factionName, body: seed || null, visibility: "player", tags: ["faction"] })
         .select("id")
         .single();
       if (fErr) return NextResponse.json({ error: `Could not create faction: ${fErr.message}` }, { status: 500 });
@@ -193,7 +193,7 @@ export async function POST(req: NextRequest) {
       if (ex) itemId = (ex as { id: string }).id;
       else {
         const { data: cr, error: e } = await admin.from("entries")
-          .insert({ campaign_id: prop.campaign_id, type: "lore", title, body: (prop.detail || prop.summary || "").toString().slice(0, 2000) || null, visibility: "player", tags: ["item"] })
+          .insert({ campaign_id: prop.campaign_id, created_by: user.id, type: "lore", title, body: (prop.detail || prop.summary || "").toString().slice(0, 2000) || null, visibility: "player", tags: ["item"] })
           .select("id").single();
         if (e) return NextResponse.json({ error: `Could not create item: ${e.message}` }, { status: 500 });
         itemId = (cr as { id: string }).id;
@@ -209,7 +209,7 @@ export async function POST(req: NextRequest) {
       if (ex) loreId = (ex as { id: string }).id;
       else {
         const { data: cr, error: e } = await admin.from("entries")
-          .insert({ campaign_id: prop.campaign_id, type: "lore", title, body: (prop.detail || prop.summary || "").toString().slice(0, 2000) || null, visibility: "player" })
+          .insert({ campaign_id: prop.campaign_id, created_by: user.id, type: "lore", title, body: (prop.detail || prop.summary || "").toString().slice(0, 2000) || null, visibility: "player" })
           .select("id").single();
         if (e) return NextResponse.json({ error: `Could not create lore: ${e.message}` }, { status: 500 });
         loreId = (cr as { id: string }).id;
