@@ -23,7 +23,7 @@ export default function PlayerJournalPage() {
   const supabase = useMemo(() => createClient(), []);
   const [journal, setJournal] = useState<Journal | null>(null);
   const [lore, setLore] = useState<LoreItem[]>([]);
-  const [status, setStatus] = useState<"loading" | "ready" | "unclaimed" | "invalid">("loading");
+  const [status, setStatus] = useState<"loading" | "ready" | "unclaimed" | "invalid" | "error">("loading");
 
   useEffect(() => {
     let active = true;
@@ -37,13 +37,14 @@ export default function PlayerJournalPage() {
         if (error) { if (active) setStatus("invalid"); return; }
       }
 
-      const [{ data: j }, { data: l }] = await Promise.all([
+      const [{ data: j, error: jErr }, { data: l }] = await Promise.all([
         supabase.rpc("player_journal", { p_share: share }),
         supabase.rpc("codex_for_player", { p_share: share }),
       ]);
       if (!active) return;
-      const jj = (j as Journal | null) || null;
       setLore((l as LoreItem[]) || []);
+      if (jErr) { setStatus("error"); return; }
+      const jj = (j as Journal | null) || null;
       if (!jj || !jj.character) { setStatus("unclaimed"); return; }
       setJournal(jj);
       setStatus("ready");
@@ -72,6 +73,7 @@ export default function PlayerJournalPage() {
 
         {status === "loading" && <p style={{ textAlign: "center", color: C.muted, fontSize: 14 }}>Loading&hellip;</p>}
         {status === "invalid" && <p style={{ textAlign: "center", color: C.muted, fontSize: 14 }}>This link looks broken. Ask your GM for your invite link.</p>}
+        {status === "error" && <p style={{ textAlign: "center", color: C.muted, fontSize: 14, lineHeight: 1.6 }}>Something went wrong loading your journal. Please refresh to try again.</p>}
         {status === "unclaimed" && (
           <p style={{ textAlign: "center", color: C.muted, fontSize: 14, lineHeight: 1.6 }}>
             Claim your character with the personal invite link your GM sent, and your story will gather here.
