@@ -42,7 +42,6 @@ export default function RecordPage() {
   const [bytes, setBytes] = useState<number>(0);
   const [blob, setBlob] = useState<Blob | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [consented, setConsented] = useState<boolean>(false);
 
   const mrRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -117,17 +116,8 @@ export default function RecordPage() {
   async function startRecording() {
     setError(null);
     if (!charId) { setError("Pick your character first."); return; }
-    if (!consented) { setError("Check the consent box before recording."); return; }
-    if (share) {
-      const { error: cErr } = await supabase.rpc("record_consent_for_share", {
-        code: share,
-        p_session_number: openSession ? sessionNumber : null,
-        p_character_id: charId,
-        p_consented: true,
-        p_method: "in_app_checkbox",
-      });
-      if (cErr) { setError("Could not record your consent. Try again."); return; }
-    }
+    // Consent is captured once, when the player claims their character (blanket,
+    // campaign-wide, opt-out via the GM per session). No record-time checkbox.
     let stream: MediaStream;
     try {
       stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -245,14 +235,8 @@ export default function RecordPage() {
               </div>
 
               {phase === "idle" && (
-                <>
-                  <label style={{ display: "flex", gap: 10, alignItems: "flex-start", fontSize: 13, color: C.muted, lineHeight: 1.5, marginBottom: 14, cursor: "pointer" }}>
-                    <input type="checkbox" checked={consented} onChange={(e) => setConsented(e.target.checked)} style={{ marginTop: 3, flexShrink: 0 }} />
-                    <span>I agree to have my voice recorded for this session. It is processed to help my GM with recaps and table analytics, and I can ask my GM to delete it. <a href="/ai-recording" target="_blank" rel="noreferrer" style={{ color: C.sun }}>Details</a>.</span>
-                  </label>
-                  <button type="button" onClick={startRecording} disabled={!consented || !charId}
-                    style={{ ...bigBtn(C.warn, SAX.inkDeep), opacity: (!consented || !charId) ? 0.5 : 1, cursor: (!consented || !charId) ? "default" : "pointer" }}>● Start recording</button>
-                </>
+                <button type="button" onClick={startRecording} disabled={!charId}
+                  style={{ ...bigBtn(C.warn, SAX.inkDeep), opacity: !charId ? 0.5 : 1, cursor: !charId ? "default" : "pointer" }}>● Start recording</button>
               )}
 
               {phase === "recording" && (

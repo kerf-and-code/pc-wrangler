@@ -32,13 +32,27 @@ export async function POST(req: NextRequest) {
   }
 
   const admin = createAdminClient();
+
+  // Per-session opt-out: characters the GM excluded from THIS session. Their
+  // audio must never be transcribed, so we drop their tracks before submitting.
+  const { data: outs } = await admin
+    .from("recording_consents")
+    .select("character_id")
+    .eq("session_id", job.session_id)
+    .eq("consented", false);
+  const optedOut = new Set(
+    ((outs as { character_id: string | null }[]) || [])
+      .map((o) => o.character_id)
+      .filter((v): v is string => v !== null)
+  );
+
   const { data: tracks } = await admin
     .from("audio_tracks")
-    .select("id, storage_path, status")
+    .select("id, character_id, storage_path, status")
     .eq("job_id", jobId);
 
-  const todo = ((tracks as { id: string; storage_path: string | null; status: string }[]) || [])
-    .filter((t) => t.storage_path && t.status !== "done");
+  const todo = ((tracks as { id: string; character_id: string | null; storage_path: string | null; status: string }[]) || [])
+    .filter((t) => t.storage_path && t.status !== "done" && !(t.character_id && optedOut.has(t.character_id)));
   if (todo.length === 0) return NextResponse.json({ error: "No tracks to transcribe." }, { status: 409 });
 
   const base = process.env.TRANSCRIBE_CALLBACK_BASE || req.nextUrl.origin;

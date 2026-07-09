@@ -56,14 +56,29 @@ export async function POST(req: NextRequest) {
     .not("gm_identity_id", "is", null);
   const gmTrackIds = new Set(((gmTracks as { id: string }[]) || []).map((t) => t.id));
 
+  // Per-session opt-out: exclude opted-out characters' segments from extraction
+  // (defense in depth; primary exclusion is upstream at transcription).
+  const { data: outs } = await admin
+    .from("recording_consents")
+    .select("character_id")
+    .eq("session_id", job.session_id)
+    .eq("consented", false);
+  const optedOut = new Set(
+    ((outs as { character_id: string | null }[]) || [])
+      .map((o) => o.character_id)
+      .filter((v): v is string => v !== null)
+  );
+
   const { data: segData } = await admin
     .from("transcript_segments")
     .select("id, track_id, character_id, start_ms, end_ms, text")
     .eq("job_id", jid)
     .order("start_ms", { ascending: true });
   const allSegs = (segData as Seg[]) || [];
-  const segments = allSegs.filter((s) => !(s.track_id !== null && gmTrackIds.has(s.track_id)));
-  const gmTotal = allSegs.length - segments.length;
+  // GM segments (for the gm-done accounting) vs the player segments we extract.
+  const nonGm = allSegs.filter((s) => !(s.track_id !== null && gmTrackIds.has(s.track_id)));
+  const gmTotal = allSegs.length - nonGm.length;
+  const segments = nonGm.filter((s) => !(s.character_id && optedOut.has(s.character_id)));
   const total = segments.length;
   const cursor: number = job.extract_cursor || 0;
 

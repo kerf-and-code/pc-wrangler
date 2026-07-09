@@ -303,7 +303,24 @@ async function handleClaimSelect(interaction: Interaction) {
     return updateMessage("Could not save your link. Try again in a moment.");
   }
 
-  return updateMessage(`Linked. You're playing "${character.name}". Recaps and voice will attribute to you.`);
+  return NextResponse.json({
+    type: UPDATE_MESSAGE,
+    data: {
+      content:
+        `Linked \u2014 you're playing "${character.name}". Recaps and voice will attribute to you.\n\n` +
+        "One thing before you play: this campaign records its sessions so your GM can build recaps and table analytics. " +
+        "Tap **I consent** to agree to be recorded for this campaign. You can opt out any time by asking your GM, " +
+        "and they can exclude you from any session or delete your recordings.",
+      components: [
+        {
+          type: ACTION_ROW,
+          components: [
+            { type: BUTTON, style: STYLE_SUCCESS, label: "I consent", custom_id: `consent:${campaignId}` },
+          ],
+        },
+      ],
+    },
+  });
 }
 
 async function handleClaimModal(interaction: Interaction) {
@@ -675,18 +692,10 @@ async function handleRecord(interaction: Interaction) {
         {
           title: `Recording ${heading} \u2014 ${campaign.name}`.slice(0, 256),
           description:
-            "Six Axes will capture each speaker's audio to help your GM build recaps and table analytics. " +
-            "Tap **I consent** to log your agreement to be recorded. If you don't consent, please leave the voice " +
-            "channel. You can ask your GM to delete the recording at any time.",
+            "Six Axes is capturing each speaker's audio to help your GM build recaps and table analytics. " +
+            "Consent is handled when players claim their character; anyone who has opted out is excluded from this session. " +
+            "Ask your GM to change opt-outs or to delete a recording at any time.",
           color: BRASS,
-        },
-      ],
-      components: [
-        {
-          type: ACTION_ROW,
-          components: [
-            { type: BUTTON, style: STYLE_SUCCESS, label: "I consent", custom_id: `consent:${sess.id}` },
-          ],
         },
       ],
     },
@@ -728,23 +737,17 @@ async function handleStop(interaction: Interaction) {
 
 async function handleConsentButton(interaction: Interaction) {
   const cid = interaction.data?.custom_id ?? "";
-  const sessionId = cid.startsWith("consent:") ? cid.slice("consent:".length) : "";
+  const campaignId = cid.startsWith("consent:") ? cid.slice("consent:".length) : "";
   const userId = discordUserId(interaction);
-  if (!sessionId || !userId) {
+  if (!campaignId || !userId) {
     return ephemeral("Something went wrong logging your consent. Try again.");
   }
 
   const sb = serviceClient();
-  const { data: session } = await sb
-    .from("sessions").select("id, campaign_id").eq("id", sessionId).maybeSingle();
-  if (!session) {
-    return ephemeral("That session no longer exists.");
-  }
-
   const { data: character } = await sb
     .from("characters")
     .select("id, name, profile_id")
-    .eq("campaign_id", session.campaign_id)
+    .eq("campaign_id", campaignId)
     .eq("discord_user_id", userId)
     .eq("kind", "pc")
     .eq("active", true)
@@ -755,32 +758,30 @@ async function handleConsentButton(interaction: Interaction) {
     return ephemeral("Link your character first with /claim, then tap I consent.");
   }
 
+  // Standing (blanket) consent for the whole campaign: session_id is null.
+  // Per-session exclusion is the GM's opt-out, not a player action.
   const { data: existing } = await sb
     .from("recording_consents")
     .select("id")
-    .eq("session_id", sessionId)
+    .eq("campaign_id", campaignId)
+    .is("session_id", null)
     .eq("character_id", character.id)
     .maybeSingle();
 
   if (existing) {
     await sb.from("recording_consents")
-      .update({
-        consented: true,
-        method: "discord_button",
-        profile_id: character.profile_id,
-        campaign_id: session.campaign_id,
-      })
+      .update({ consented: true, method: "discord_claim", profile_id: character.profile_id })
       .eq("id", existing.id);
   } else {
     await sb.from("recording_consents").insert({
-      campaign_id: session.campaign_id,
-      session_id: sessionId,
+      campaign_id: campaignId,
+      session_id: null,
       character_id: character.id,
       profile_id: character.profile_id,
       consented: true,
-      method: "discord_button",
+      method: "discord_claim",
     });
   }
 
-  return ephemeral(`Thanks, ${character.name}. Your consent to be recorded is logged.`);
+  return ephemeral(`Thanks, ${character.name}. You consent to be recorded for this campaign. You can opt out any time through your GM.`);
 }

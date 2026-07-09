@@ -46,7 +46,8 @@ export default function CapturePage() {
   const [sessions, setSessions] = useState<Sess[]>([]);
   const [sessionId, setSessionId] = useState<string>("");
   const [chars, setChars] = useState<Char[]>([]);
-  const [consents, setConsents] = useState<Record<string, boolean>>({});
+  const [blanket, setBlanket] = useState<Record<string, boolean>>({});
+  const [optout, setOptout] = useState<Record<string, boolean>>({});
   const [att, setAtt] = useState<Record<string, string>>({});
   const [consentOk, setConsentOk] = useState<boolean>(false);
   const [job, setJob] = useState<Job | null>(null);
@@ -94,18 +95,22 @@ export default function CapturePage() {
   }
 
   useEffect(() => {
-    if (!sessionId) { setConsents({}); setAtt({}); setJob(null); setTracks([]); setConsentOk(false); return; }
+    if (!sessionId) { setBlanket({}); setOptout({}); setAtt({}); setJob(null); setTracks([]); setConsentOk(false); return; }
     let active = true;
     (async () => {
-      const [{ data: cons }, { data: aRows }, { data: jobs }] = await Promise.all([
-        supabase.from("recording_consents").select("character_id, consented").eq("session_id", sessionId),
+      const [{ data: bl }, { data: oo }, { data: aRows }, { data: jobs }] = await Promise.all([
+        supabase.from("recording_consents").select("character_id").eq("campaign_id", campaignId).is("session_id", null).eq("consented", true),
+        supabase.from("recording_consents").select("character_id").eq("session_id", sessionId).eq("consented", false),
         supabase.from("attendance").select("character_id, status").eq("session_id", sessionId),
         supabase.from("capture_jobs").select("id, status, source").eq("session_id", sessionId).order("created_at", { ascending: false }).limit(1),
       ]);
       if (!active) return;
-      const cmap: Record<string, boolean> = {};
-      ((cons as { character_id: string | null; consented: boolean }[]) || []).forEach((r) => { if (r.character_id) cmap[r.character_id] = r.consented; });
-      setConsents(cmap);
+      const bmap: Record<string, boolean> = {};
+      ((bl as { character_id: string | null }[]) || []).forEach((r) => { if (r.character_id) bmap[r.character_id] = true; });
+      setBlanket(bmap);
+      const omap: Record<string, boolean> = {};
+      ((oo as { character_id: string | null }[]) || []).forEach((r) => { if (r.character_id) omap[r.character_id] = true; });
+      setOptout(omap);
       const amap: Record<string, string> = {};
       ((aRows as { character_id: string | null; status: string }[]) || []).forEach((r) => { if (r.character_id) amap[r.character_id] = r.status; });
       setAtt(amap);
@@ -117,13 +122,18 @@ export default function CapturePage() {
     return () => { active = false; };
   }, [sessionId, supabase]);
 
-  async function toggleConsent(charId: string, value: boolean) {
+  async function toggleOptOut(charId: string, out: boolean) {
     if (!sessionId || !campaignId) return;
-    setConsents((p) => ({ ...p, [charId]: value }));
-    await supabase.from("recording_consents").upsert(
-      { session_id: sessionId, campaign_id: campaignId, character_id: charId, consented: value, method: "verbal_at_table" },
-      { onConflict: "session_id,character_id" },
-    );
+    setOptout((p) => ({ ...p, [charId]: out }));
+    if (out) {
+      await supabase.from("recording_consents").upsert(
+        { session_id: sessionId, campaign_id: campaignId, character_id: charId, consented: false, method: "gm_optout" },
+        { onConflict: "session_id,character_id" },
+      );
+    } else {
+      await supabase.from("recording_consents").delete()
+        .eq("session_id", sessionId).eq("character_id", charId).eq("consented", false);
+    }
     loadGate(sessionId);
   }
 
@@ -191,7 +201,7 @@ export default function CapturePage() {
   }
 
   const presentChars = chars.filter((c) => PRESENT.includes(att[c.id] || ""));
-  const missing = presentChars.filter((c) => !consents[c.id]);
+  const missing = presentChars.filter((c) => !blanket[c.id] && !optout[c.id]);
 
   const trackChars = new Set(tracks.map((t) => t.character_id));
   const isDraft = !job || job.status === "draft";
@@ -230,31 +240,35 @@ export default function CapturePage() {
             {/* consent */}
             <div style={box}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 4 }}>
-                <div style={{ fontSize: 16, fontWeight: 700 }}>Consent to record</div>
+                <div style={{ fontSize: 16, fontWeight: 700 }}>Recording this session</div>
                 <span style={{ fontSize: 12, fontWeight: 700, color: consentOk ? C.good : C.warn, fontFamily: "ui-monospace, monospace", letterSpacing: "0.04em" }}>
                   {consentOk ? "CONSENT ON FILE" : "NOT CLEARED"}
                 </span>
               </div>
               <div style={{ color: C.muted, fontSize: 13, marginBottom: 14 }}>
-                Check each player who gave verbal consent at the table. The gate clears once every present player is checked.
+                Consent is captured when players claim their character. Opt a player out to exclude just them from this session; the gate clears once every present player is either consented or opted out.
               </div>
               {chars.length === 0 && <p style={{ color: C.muted, fontSize: 13 }}>No player characters in the roster yet.</p>}
               <div style={{ display: "grid", gap: 8 }}>
                 {chars.map((ch) => {
                   const present = PRESENT.includes(att[ch.id] || "");
-                  const on = Boolean(consents[ch.id]);
+                  const consented = Boolean(blanket[ch.id]);
+                  const out = Boolean(optout[ch.id]);
                   return (
-                    <label key={ch.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", background: C.surface2, border: `1px solid ${on ? C.good : C.line}`, borderRadius: 10, cursor: "pointer" }}>
-                      <input type="checkbox" checked={on} onChange={(e) => toggleConsent(ch.id, e.target.checked)}
-                        style={{ width: 18, height: 18, accentColor: C.good, cursor: "pointer" }} />
+                    <label key={ch.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", background: C.surface2, border: `1px solid ${out ? C.warn : consented ? C.good : C.line}`, borderRadius: 10, cursor: "pointer" }}>
+                      <input type="checkbox" checked={out} onChange={(e) => toggleOptOut(ch.id, e.target.checked)}
+                        style={{ width: 18, height: 18, accentColor: C.warn, cursor: "pointer" }} />
                       <span style={{ flex: 1, fontSize: 14, fontWeight: 600 }}>{ch.name}{ch.class ? <span style={{ color: C.muted, fontWeight: 400 }}> · {ch.class}</span> : null}</span>
+                      {out ? <span style={{ fontSize: 11, color: C.warn, fontFamily: "ui-monospace, monospace" }}>OPTED OUT</span>
+                        : consented ? <span style={{ fontSize: 11, color: C.good, fontFamily: "ui-monospace, monospace" }}>CONSENTED</span>
+                        : <span style={{ fontSize: 11, color: C.muted, fontFamily: "ui-monospace, monospace" }}>NO CONSENT</span>}
                       {present && <span style={{ fontSize: 11, color: C.plum, fontFamily: "ui-monospace, monospace" }}>PRESENT</span>}
                     </label>
                   );
                 })}
               </div>
               {!consentOk && presentChars.length > 0 && missing.length > 0 && (
-                <p style={{ color: C.warn, fontSize: 12.5, marginTop: 12 }}>Waiting on: {missing.map((c) => c.name).join(", ")}.</p>
+                <p style={{ color: C.warn, fontSize: 12.5, marginTop: 12 }}>Not consented, opt them out to proceed, or have them claim &amp; consent: {missing.map((c) => c.name).join(", ")}.</p>
               )}
               {!consentOk && presentChars.length === 0 && (
                 <p style={{ color: C.muted, fontSize: 12.5, marginTop: 12 }}>Mark attendance on the Check-in page so the gate knows who needs to consent.</p>
