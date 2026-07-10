@@ -2,15 +2,29 @@
 // relay and POSTs them to the ingest endpoint. Runs with host_permissions, so
 // the cross-origin POST to pc-wrangler is not CORS-blocked.
 //
-// Contract: page-hook.js (MAIN world) normalizes Beyond20 rolls into the exact
-// shape /api/vtt/ingest expects, matching components/table-tap.tsx. content.js
-// (isolated) relays them here as:
-//   { type: "six-axes-events", events: [ ...normalized events ] }
-// This worker only attaches the share code and ships the batch. It does NOT
-// normalize, because the server does not either.
+// It also records any unmatched DDB character ids the server reports (rolls that
+// came in for a character not yet linked), paired with the actor name from the
+// batch, into chrome.storage.local under "unmatched". The popup reads that to
+// offer a self-link picker.
 
 const INGEST = "https://pc-wrangler.vercel.app/api/vtt/ingest";
 const MAX_EVENTS_PER_BATCH = 50; // server rejects larger batches with 400
+
+function recordUnmatched(batch, unmatchedIds) {
+  if (!Array.isArray(unmatchedIds) || unmatchedIds.length === 0) return;
+  const nameById = {};
+  for (const e of batch) {
+    if (e && e.ddb_character_id && e.actor_name) nameById[e.ddb_character_id] = e.actor_name;
+  }
+  chrome.storage.local.get(["unmatched"], (st) => {
+    const map = (st && st.unmatched) || {};
+    for (const id of unmatchedIds) {
+      if (!id) continue;
+      map[id] = nameById[id] || map[id] || null;
+    }
+    chrome.storage.local.set({ unmatched: map });
+  });
+}
 
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (!msg || msg.type !== "six-axes-events") return;
@@ -37,7 +51,8 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       });
       let data = null;
       try { data = await res.json(); } catch { data = null; }
-      // Logged so you can watch it in the service-worker console during section 8.
+      if (res.ok && data) recordUnmatched(batch, data.unmatched_ddb_ids);
+      // Logged so you can watch it in the service-worker console during testing.
       console.log("[Six Axes] ingest", res.status, data);
       sendResponse({ ok: res.ok, status: res.status, data });
     } catch (e) {

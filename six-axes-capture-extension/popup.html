@@ -1,0 +1,42 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <style>
+    body { width: 300px; margin: 0; padding: 16px; font-family: system-ui, sans-serif; background: #1B1426; color: #F4EEFA; }
+    h1 { font-size: 16px; margin: 0 0 4px; }
+    p { font-size: 12.5px; color: #A597BD; line-height: 1.5; margin: 6px 0 12px; }
+    label { font-size: 11px; color: #A597BD; letter-spacing: 0.06em; }
+    input { width: 100%; box-sizing: border-box; margin-top: 6px; padding: 10px; border-radius: 8px;
+      border: 1px solid #3D2F52; background: rgba(11,7,18,0.55); color: #F4EEFA; font-family: ui-monospace, monospace; }
+    button { width: 100%; margin-top: 10px; padding: 11px; border: none; border-radius: 8px;
+      background: #F4C430; color: #1a1206; font-weight: 700; font-size: 14px; cursor: pointer; }
+    .status { font-size: 12px; margin-top: 10px; min-height: 16px; }
+
+    .link-section { margin-top: 16px; border-top: 1px solid #3D2F52; padding-top: 14px; display: none; }
+    .link-section h2 { font-size: 13px; margin: 0 0 8px; color: #F4C430; }
+    .link-row { border: 1px solid #3D2F52; border-radius: 8px; padding: 10px; margin-bottom: 8px; background: rgba(11,7,18,0.35); }
+    .link-who { font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+    .link-select { width: 100%; box-sizing: border-box; padding: 8px; border-radius: 8px;
+      border: 1px solid #3D2F52; background: rgba(11,7,18,0.55); color: #F4EEFA; font-size: 13px; }
+    .link-btn { width: 100%; margin-top: 8px; padding: 8px; font-size: 13px; }
+    .link-status { font-size: 12px; margin-top: 4px; min-height: 15px; color: #A597BD; }
+  </style>
+</head>
+<body>
+  <h1>Six Axes Capture</h1>
+  <p>Paste your table's campaign code (your GM has it). Rolls you make on D&amp;D Beyond will flow to Six Axes while a session is open.</p>
+  <label for="code">CAMPAIGN CODE</label>
+  <input id="code" placeholder="e.g. 2930a13916" autocomplete="off" />
+  <button id="save">Save</button>
+  <div class="status" id="status"></div>
+
+  <div class="link-section" id="link-section">
+    <h2>Link your character</h2>
+    <div id="link-rows"></div>
+    <div class="link-status" id="link-status"></div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
