@@ -1,0 +1,30 @@
+{
+  "manifest_version": 3,
+  "name": "Six Axes Capture",
+  "version": "0.1.0",
+  "description": "Sends your D&D Beyond rolls to your Six Axes table, no VTT tab or custom-domain setup required. Requires the Beyond20 extension.",
+  "permissions": ["storage"],
+  "host_permissions": [
+    "https://*.dndbeyond.com/*",
+    "https://pc-wrangler.vercel.app/*"
+  ],
+  "background": { "service_worker": "background.js" },
+  "content_scripts": [
+    {
+      "matches": ["https://*.dndbeyond.com/*"],
+      "js": ["page-hook.js"],
+      "run_at": "document_idle",
+      "world": "MAIN"
+    },
+    {
+      "matches": ["https://*.dndbeyond.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle",
+      "world": "ISOLATED"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Six Axes Capture"
+  }
+}
