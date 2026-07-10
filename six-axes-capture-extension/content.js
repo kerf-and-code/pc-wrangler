@@ -1,10 +1,27 @@
-// Runs in the ISOLATED world on D&D Beyond pages. It cannot read Beyond20's
-// event detail directly (that is why page-hook.js runs in the MAIN world), so
-// its only job is to receive already-normalized events from page-hook.js via
-// window.postMessage and forward them to the service worker, which POSTs them
-// to the Six Axes ingest endpoint.
+// Runs in the ISOLATED world on D&D Beyond pages. Two jobs:
+//
+// 1. Inject page-hook.js into the page's MAIN world by adding a script tag that
+//    points at the packaged file. The isolated world cannot read Beyond20's
+//    CustomEvent.detail, but a script running in the page's own world can. This
+//    replaces the manifest "world": "MAIN" approach, which needs Chrome 111+ and
+//    was not injecting.
+//
+// 2. Relay: receive the normalized events page-hook.js sends via
+//    window.postMessage and forward them to the service worker, which POSTs to
+//    the Six Axes ingest endpoint.
 
 (function () {
+  // --- Job 1: inject the page hook into the main world ---
+  try {
+    var s = document.createElement("script");
+    s.src = chrome.runtime.getURL("page-hook.js");
+    s.onload = function () { s.remove(); };
+    (document.head || document.documentElement).appendChild(s);
+  } catch (e) {
+    console.log("[Six Axes] failed to inject page hook", String(e));
+  }
+
+  // --- Job 2: relay normalized events from the hook to the worker ---
   window.addEventListener("message", function (event) {
     // Only trust messages from this same page, tagged by our hook.
     if (event.source !== window) return;

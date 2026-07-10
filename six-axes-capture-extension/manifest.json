@@ -12,15 +12,14 @@
   "content_scripts": [
     {
       "matches": ["https://*.dndbeyond.com/*"],
-      "js": ["page-hook.js"],
-      "run_at": "document_idle",
-      "world": "MAIN"
-    },
-    {
-      "matches": ["https://*.dndbeyond.com/*"],
       "js": ["content.js"],
-      "run_at": "document_idle",
-      "world": "ISOLATED"
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["page-hook.js"],
+      "matches": ["https://*.dndbeyond.com/*"]
     }
   ],
   "action": {
