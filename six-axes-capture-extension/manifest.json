@@ -14,6 +14,11 @@
       "matches": ["https://*.dndbeyond.com/*"],
       "js": ["content.js"],
       "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://pc-wrangler.vercel.app/x/*"],
+      "js": ["link-capture.js"],
+      "run_at": "document_idle"
     }
   ],
   "web_accessible_resources": [
