@@ -9,27 +9,29 @@
 //
 // Transcripts and extracted events are deliberately NOT deleted. The analysis
 // survives; the raw voices do not. That is the design.
+//
+// Note: no `export const dynamic`. This project runs with cacheComponents ON,
+// which forbids that route segment config. Route handlers are dynamic by
+// default, so it was never needed.
 
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 const BUCKET = "session-audio";
 const BATCH = 100;
 
-export async function GET(req: Request) {
-  // Vercel cron sends this header. Reject anything else.
-  const auth = req.headers.get("authorization");
-  const secret = process.env.CRON_SECRET;
-  if (!secret || auth !== `Bearer ${secret}`) {
+export async function GET(request: Request) {
+  // Vercel Cron sends Authorization: Bearer <CRON_SECRET> when CRON_SECRET is set.
+  const auth = request.headers.get("authorization");
+  if (!process.env.CRON_SECRET || auth !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  const supabase = createAdminClient();
+  const admin = createAdminClient();
 
-  const { data: due, error: dueErr } = await supabase
+  const { data: due, error: dueErr } = await admin
     .from("v_audio_due_for_purge")
     .select("track_id, storage_path, campaign_id, created_at")
     .limit(BATCH);
@@ -45,21 +47,21 @@ export async function GET(req: Request) {
   const failures: Array<{ track_id: string; reason: string }> = [];
 
   for (const row of due) {
-    const path = row.storage_path as string;
     const trackId = row.track_id as string;
+    const path = row.storage_path as string;
 
     // 1. Delete the object.
-    const { error: rmErr } = await supabase.storage.from(BUCKET).remove([path]);
+    const { error: rmErr } = await admin.storage.from(BUCKET).remove([path]);
     if (rmErr) {
       failures.push({ track_id: trackId, reason: `storage: ${rmErr.message}` });
       continue;
     }
 
     // 2. Only now mark it purged.
-    const { error: markErr } = await supabase.rpc("mark_audio_purged", { p_track_id: trackId });
+    const { error: markErr } = await admin.rpc("mark_audio_purged", { p_track_id: trackId });
     if (markErr) {
-      // The object is gone but the row is not marked. It will be retried next
-      // run; the storage remove of an already-absent object is a no-op, so the
+      // The object is gone but the row is not marked. It stays due and will be
+      // retried next run; removing an already-absent object is a no-op, so the
       // retry converges. Surface it anyway.
       failures.push({ track_id: trackId, reason: `mark: ${markErr.message}` });
       continue;
