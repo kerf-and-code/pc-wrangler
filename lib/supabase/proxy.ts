@@ -58,6 +58,7 @@ export async function updateSession(request: NextRequest) {
     !request.nextUrl.pathname.startsWith("/api/extract") &&
     !request.nextUrl.pathname.startsWith("/api/discord") &&
     !request.nextUrl.pathname.startsWith("/api/vtt") &&
+    !request.nextUrl.pathname.startsWith("/api/cron") &&
     !request.nextUrl.pathname.startsWith("/table")
   ) {
     // no user, potentially respond by redirecting the user to the login page
