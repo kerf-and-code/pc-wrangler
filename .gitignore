@@ -40,3 +40,24 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# secrets and local credentials (these have leaked before, keep them out)
+.Renviron
+**/.Renviron
+*.b64
+gcp-sa-key*.json
+
+# R noise
+.Rhistory
+.RData
+.Rproj.user/
+**/.Rhistory
+**/.RData
+
+# local spikes and capture debris
+dave_spike_spyder.py
+beyond20/
+captures/
+
+# supabase local state
+supabase/.temp/

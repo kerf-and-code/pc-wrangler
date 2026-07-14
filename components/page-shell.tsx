@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { Suspense } from "react";
 import { SAX, stoneBackground } from "@/lib/theme";
 import SixAxesNav from "@/components/six-axes-nav";
 
@@ -32,7 +32,7 @@ export default function PageShell({
       <div className="sax-vignette" />
       <div className="sax-shell" style={{ position: "relative", zIndex: 1 }}>
         <div style={{ maxWidth: width, margin: "0 auto", padding: "28px 20px 64px" }}>
-          <SixAxesNav />
+          <Suspense fallback={null}><SixAxesNav /></Suspense>
           {children}
         </div>
       </div>

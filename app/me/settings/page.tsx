@@ -34,6 +34,13 @@ export default function MySettingsPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Data rights. The privacy policy has promised these in production for some time
+  // and they did not exist. They do now.
+  const [exporting, setExporting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [confirmText, setConfirmText] = useState("");
+  const [showDelete, setShowDelete] = useState(false);
+  const [rightsError, setRightsError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -68,6 +75,47 @@ export default function MySettingsPage() {
     setSaving(false);
     if (e) { setError("Could not save your name. Try again."); return; }
     setSaved(true);
+  }
+
+  async function exportData() {
+    setExporting(true); setRightsError(null);
+    try {
+      const res = await fetch("/api/me/export");
+      if (!res.ok) throw new Error();
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `six-axes-my-data-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      setRightsError("Could not build your export. Try again.");
+    }
+    setExporting(false);
+  }
+
+  async function deleteAccount() {
+    setDeleting(true); setRightsError(null);
+    try {
+      const res = await fetch("/api/me/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirm: "DELETE" }),
+      });
+      const out = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setRightsError(out.error || "Could not delete your account.");
+        setDeleting(false);
+        return;
+      }
+      // Nothing left to sign in to.
+      await supabase.auth.signOut();
+      window.location.href = "/";
+    } catch {
+      setRightsError("Could not delete your account. Try again.");
+      setDeleting(false);
+    }
   }
 
   return (
@@ -137,6 +185,75 @@ export default function MySettingsPage() {
                 excluded from that session onward.
               </p>
             </Card>
+
+            <Card>
+              <Label>Your data</Label>
+              <p style={{ color: C.muted, fontSize: 13.5, lineHeight: 1.6, margin: "0 0 12px" }}>
+                Take everything we hold about you: your characters, your self-reports and
+                how they changed over time, your dispositions, your threads, your check-ins,
+                and your transcribed words. One JSON file, nothing withheld.
+              </p>
+              <button type="button" onClick={exportData} disabled={exporting} style={btn("transparent", C.text, C.line)}>
+                {exporting ? "Building your export..." : "Export my data"}
+              </button>
+            </Card>
+
+            <Card>
+              <Label>Delete your account</Label>
+              <p style={{ color: C.muted, fontSize: 13.5, lineHeight: 1.6, margin: "0 0 12px" }}>
+                Deletes everything that is <em>about you</em>: your recordings, your
+                transcribed words, your self-reports, your dispositions, your threads,
+                your check-ins, your chat.
+              </p>
+              <p style={{ color: C.muted, fontSize: 13.5, lineHeight: 1.6, margin: "0 0 14px" }}>
+                Your <strong style={{ color: C.text }}>characters stay in their campaigns</strong>,
+                unlinked from you. The story your table told together is theirs as well as
+                yours, and your leaving should not detonate it. Everything connecting those
+                characters to <em>you</em> is severed.
+              </p>
+
+              {!showDelete ? (
+                <button type="button" onClick={() => setShowDelete(true)} style={btn("transparent", C.warn, C.warn)}>
+                  Delete my account
+                </button>
+              ) : (
+                <div style={{ borderTop: `1px solid ${C.line}`, paddingTop: 14 }}>
+                  <p style={{ color: C.warn, fontSize: 13, margin: "0 0 10px", lineHeight: 1.55 }}>
+                    This cannot be undone. Type <strong>DELETE</strong> to confirm.
+                  </p>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    <input
+                      value={confirmText}
+                      onChange={(e) => setConfirmText(e.target.value)}
+                      placeholder="DELETE"
+                      style={{
+                        flex: "0 1 140px", background: SAX.panelBg, color: C.text,
+                        border: `1px solid ${C.line}`, borderRadius: 8, padding: "9px 12px",
+                        fontSize: 14, fontFamily: SAX.mono, letterSpacing: "0.1em",
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={deleteAccount}
+                      disabled={deleting || confirmText !== "DELETE"}
+                      style={{
+                        ...btn(confirmText === "DELETE" ? C.warn : "transparent",
+                               confirmText === "DELETE" ? SAX.inkDeep : C.muted),
+                        border: `1px solid ${confirmText === "DELETE" ? C.warn : C.line}`,
+                        cursor: confirmText === "DELETE" && !deleting ? "pointer" : "default",
+                      }}
+                    >
+                      {deleting ? "Deleting..." : "Delete forever"}
+                    </button>
+                    <button type="button" onClick={() => { setShowDelete(false); setConfirmText(""); }} style={btn("transparent", C.muted, C.line)}>
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {rightsError && <p style={{ color: C.warn, fontSize: 13, margin: "12px 0 0", lineHeight: 1.55 }}>{rightsError}</p>}
+            </Card>
           </>
         )}
       </div>
@@ -166,9 +283,9 @@ function Label({ children }: { children: React.ReactNode }) {
   );
 }
 
-function btn(bg: string, fg: string): React.CSSProperties {
+function btn(bg: string, fg: string, border?: string): React.CSSProperties {
   return {
-    background: bg, color: fg, border: `1px solid ${bg}`, borderRadius: 8,
+    background: bg, color: fg, border: `1px solid ${border ?? bg}`, borderRadius: 8,
     padding: "9px 16px", fontSize: 13, fontWeight: 700,
     fontFamily: SAX.mono, letterSpacing: "0.04em", cursor: "pointer",
   };
