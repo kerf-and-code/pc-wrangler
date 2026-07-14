@@ -58,6 +58,9 @@ export default function ReviewPage() {
   const [edits, setEdits] = useState<Record<string, { summary?: string; kind?: string }>>({});
   const [threshold, setThreshold] = useState<number>(80);
   const [recapMsg, setRecapMsg] = useState<string | null>(null);
+  // Undecided proposals left on this job, as counted by the server (not by the
+  // filtered lists on this page). null means not yet known.
+  const [remaining, setRemaining] = useState<number | null>(null);
   const gmPlayer = useMomentPlayer();
   const autoStarted = useRef<Set<string>>(new Set());
 
@@ -123,12 +126,22 @@ export default function ReviewPage() {
   }
 
   useEffect(() => {
-    if (jobId) { loadProps(jobId); loadGmProps(jobId); }
-    else {
+    if (jobId) {
+      loadProps(jobId);
+      loadGmProps(jobId);
+      // Seed the server-side undecided count on load. This does two things: it
+      // populates the escape-hatch button for a GM who arrives at a part-reviewed
+      // job, and it finalizes a job whose last proposal was decided in a previous
+      // visit (for example if the tab was closed mid-review before the auto-call
+      // could land). Safe to call: it is idempotent and no-ops unless complete.
+      finalize(false);
+    } else {
       setProps([]); setGmProps([]);
       setCounts({ accepted: 0, rejected: 0 }); setGmCounts({ approved: 0, rejected: 0 });
+      setRemaining(null);
     }
     setEdits({});
+    setRecapMsg(null);
   }, [jobId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Kick extraction off automatically the first time a job is opened while it is
@@ -180,6 +193,7 @@ export default function ReviewPage() {
     else {
       setProps((prev) => prev.filter((p) => p.id !== id));
       setCounts((c) => ({ accepted: c.accepted + (accept ? 1 : 0), rejected: c.rejected + (accept ? 0 : 1) }));
+      await finalize(false);
     }
     setBusy(false);
   }
@@ -193,6 +207,7 @@ export default function ReviewPage() {
     }
     setBusy(false);
     await loadProps(jobId);
+    await finalize(false);
   }
 
   // Bulk-accept GM beats above the threshold, but skip npc_* kinds so the
@@ -208,44 +223,60 @@ export default function ReviewPage() {
     }
     setBusy(false);
     await loadGmProps(jobId);
+    await finalize(false);
   }
 
-  async function markDone() {
+  // Finalize the review job. Server-side, in /api/review/finalize:
+  // the job flips to done, the recap auto-drafts, and the disposition fit kicks.
+  //
+  // Called speculatively after EVERY decision (see review, reviewGm, acceptAbove,
+  // acceptGmAbove). It no-ops until the last proposal is decided, so the normal
+  // path finalizes itself with zero extra clicks.
+  //
+  // The route counts undecided rows in the DATABASE across both proposed_events
+  // and gm_proposed_events. It never trusts this page's filtered lists, because a
+  // queue can render empty mid-review.
+  //
+  // force=true is the escape hatch for a GM who deliberately leaves rows undecided.
+  async function finalize(force: boolean) {
     if (!job) return;
-    setBusy(true); setRecapMsg(null);
-    await supabase.from("capture_jobs").update({ status: "done" }).eq("id", job.id);
-    let note = "";
-    // Auto-draft the recap for this session if one isn't written yet. Best-effort:
-    // the job is done regardless of whether the draft succeeds.
-    if (job.session_id) {
-      try {
-        const res = await fetch("/api/recap", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ sessionId: job.session_id, overwrite: false }),
-        });
-        const out = await res.json().catch(() => ({}));
-        if (res.ok) note = out.skipped ? "A recap draft already exists for this session." : "Recap drafted. Edit and send it from the Session Log.";
-        else note = "Marked done. The recap draft didn't generate; you can create it on the Session Log.";
-      } catch {
-        note = "Marked done. The recap draft didn't generate; you can create it on the Session Log.";
+    if (force) { setBusy(true); setRecapMsg(null); }
+    try {
+      const res = await fetch("/api/review/finalize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jobId: job.id, force }),
+      });
+      const out = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        if (force) setError(out.error || "Could not finish the review.");
+        return;
       }
+
+      // Not finalized yet: proposals remain. Track how many, so the escape-hatch
+      // button can show an honest count.
+      if (out.finalized !== true) {
+        setRemaining(typeof out.remaining === "number" ? out.remaining : null);
+        return;
+      }
+
+      setRemaining(0);
+
+      let note = out.recapSkipped
+        ? "A recap draft already exists for this session."
+        : out.recapDrafted
+          ? "Review complete. Recap drafted, edit and send it from the Session Log."
+          : "Review complete. The recap draft did not generate; you can create it on the Session Log.";
+      if (out.dispositionsRunning) note = `${note} Dispositions are refreshing.`;
+      setRecapMsg(note);
+
+      loadJobs(campaignId);
+    } catch {
+      if (force) setError("Could not finish the review.");
+    } finally {
+      if (force) setBusy(false);
     }
-    // Refresh the disposition model for the campaign. The route guards against
-    // stacking (a fit already running is reused), so this is safe to fire each time.
-    if (campaignId) {
-      try {
-        await fetch("/api/dispositions/run", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ campaignId }),
-        });
-        note = note ? `${note} Dispositions are refreshing.` : "Dispositions are refreshing.";
-      } catch { /* best-effort; a fit can still be run later */ }
-    }
-    setRecapMsg(note || null);
-    setBusy(false);
-    loadJobs(campaignId);
   }
 
   const setEdit = (id: string, patch: { summary?: string; kind?: string }) =>
@@ -271,6 +302,7 @@ export default function ReviewPage() {
     else {
       setGmProps((prev) => prev.filter((x) => x.id !== p.id));
       setGmCounts((c) => ({ approved: c.approved + (action === "approve" ? 1 : 0), rejected: c.rejected + (action === "reject" ? 1 : 0) }));
+      await finalize(false);
     }
     setBusy(false);
   }
@@ -392,7 +424,11 @@ export default function ReviewPage() {
                           </button>
                         </>
                       )}
-                      {job.status === "review" && props.length === 0 && <button type="button" onClick={markDone} style={btn(C.sun, SAX.inkDeep)}>Mark done</button>}
+                      {job.status === "review" && remaining !== null && remaining > 0 && (
+                        <button type="button" onClick={() => finalize(true)} style={btn(C.sun, SAX.inkDeep)}>
+                          {`Finish review (leave ${remaining} undecided)`}
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
