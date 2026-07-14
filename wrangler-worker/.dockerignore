@@ -1,0 +1,25 @@
+# Keep build noise out of the image.
+#
+# NOTE: this file must be named `.dockerignore` (WITH the leading dot). The copy in
+# the repo was named `dockerignore`, so Docker never read it and every build has been
+# shipping whatever else happened to be in the folder. Harmless while the folder is
+# clean, but it is doing nothing.
+#
+# Rename on save:  wrangler-worker/.dockerignore
+
+# R noise
+.Rhistory
+.RData
+.Rproj.user/
+.Renviron
+
+# Local fit artifacts. `disposition` (or disposition.exe) is the compiled Stan binary:
+# it MUST NOT be copied in, because the Dockerfile compiles the model itself and a
+# stale binary from another architecture would either be ignored or break the build.
+disposition
+disposition.exe
+disposition_posteriors.csv
+*.csv
+
+# Docs
+README*.md
