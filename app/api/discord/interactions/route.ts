@@ -225,6 +225,18 @@ async function handleSetup(interaction: Interaction) {
   return ephemeral(`Linked. Recaps for "${campaign.name}" will now post in this channel.`);
 }
 
+
+// Absolute base for links we put in Discord messages. Mirrors the pattern in
+// app/api/transcribe/callback/route.ts. Discord renders a bare path as plain text, so
+// the disclosure link has to be absolute or it is not a link at all.
+function siteBase(): string {
+  return (
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    process.env.TRANSCRIBE_CALLBACK_BASE ||
+    "https://pc-wrangler.vercel.app"
+  ).replace(/\/$/, "");
+}
+
 async function handleClaim(interaction: Interaction) {
   const sb = serviceClient();
   const campaign = await resolveCampaign(interaction, sb);
@@ -308,9 +320,15 @@ async function handleClaimSelect(interaction: Interaction) {
     data: {
       content:
         `Linked \u2014 you're playing "${character.name}". Recaps and voice will attribute to you.\n\n` +
-        "One thing before you play: this campaign records its sessions so your GM can build recaps and table analytics. " +
-        "Tap **I consent** to agree to be recorded for this campaign. You can opt out any time by asking your GM, " +
-        "and they can exclude you from any session or delete your recordings.",
+        "One thing before you play: this campaign records its sessions so your GM can build recaps and table analytics.\n\n" +
+        // The 60-day deletion is the strongest thing we can tell someone whose voice we
+        // are about to record, and it was nowhere near the moment they actually consent.
+        // Consent given without the material facts is not informed consent, it is a
+        // button press.
+        "\u2022 Your audio is **deleted automatically 60 days after recording**. The transcript stays; the recording does not.\n" +
+        "\u2022 You can opt out any time by asking your GM, and they can exclude you from any session.\n" +
+        `\u2022 Full details: ${siteBase()}/ai-recording\n\n` +
+        "Tap **I consent** to agree to be recorded for this campaign.",
       components: [
         {
           type: ACTION_ROW,

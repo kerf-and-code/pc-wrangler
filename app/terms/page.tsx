@@ -10,7 +10,7 @@ export default function TermsOfServicePage() {
   return (
     <LegalPage>
       <h1>Terms of Service</h1>
-      <p className="meta">Effective date: [DATE]</p>
+      <p className="meta">Effective date: July 14, 2026</p>
 
       <p>
         These Terms govern your use of Six Axes, operated by Kerf and Code, LLC (&ldquo;we,&rdquo; &ldquo;us&rdquo;). By
@@ -28,7 +28,7 @@ export default function TermsOfServicePage() {
       <p>You&rsquo;re responsible for your account credentials and for activity under your account. Sign-in may be handled by a third-party provider (for example Discord or Google) subject to their terms. Notify us promptly of any unauthorized use.</p>
 
       <h2>4. Your content and the license you grant us</h2>
-      <p>You keep ownership of the content you create or upload (campaign notes, audio, characters, messages, and so on). To run the service, you grant us a worldwide, non-exclusive, royalty-free license to host, store, process, transcribe, analyze, display, and transmit your content <strong>solely to provide and improve Six Axes for you and your table</strong>. This license ends when you delete the content or your account, except for residual copies in backups purged on our normal cycle. You&rsquo;re responsible for having the rights to the content you upload.</p>
+      <p>You keep ownership of the content you create or upload (campaign notes, audio, characters, messages, and so on). To run the service, you grant us a worldwide, non-exclusive, royalty-free license to host, store, process, transcribe, analyze, display, and transmit your content <strong>solely to provide and improve Six Axes for you and your table</strong>. This license ends when you delete the content or your account, except for residual copies in backups, which are purged on a rolling 7-day cycle. You&rsquo;re responsible for having the rights to the content you upload.</p>
 
       <h2>5. Acceptable use</h2>
       <p>You agree not to: use Six Axes for anything illegal; upload content you don&rsquo;t have the rights to; record anyone without the consent required by law; harass, abuse, or harm others; upload malware or attempt to breach or overload the service; scrape or reverse-engineer it except as the law allows; or resell the service without our permission.</p>
@@ -43,7 +43,7 @@ export default function TermsOfServicePage() {
       <p>Six Axes integrates with third parties (for example Discord, and virtual tabletops). Your use of those is governed by their terms, and their availability is outside our control. Six Axes is <strong>not affiliated with, endorsed by, or sponsored by Wizards of the Coast or any virtual-tabletop provider.</strong> You&rsquo;re responsible for using game content consistent with the rights you hold and applicable content policies.</p>
 
       <h2>9. Payments and subscriptions</h2>
-      <p>Paid plans are billed through Stripe on the cycle shown at purchase and renew automatically until cancelled. You can cancel anytime, effective at the end of the current period. Fees are [non-refundable except where required by law / your refund policy]. Usage-metered features (such as transcription minutes or model runs) are subject to the limits shown in-app. We may change pricing with prior notice for future periods.</p>
+      <p>Six Axes is currently free to use. There are no paid plans and we do not collect payment information. If we introduce paid plans, the pricing, billing cycle, renewal terms, and refund policy will be presented to you at the point of purchase, and you will not be charged for anything you have not agreed to. Usage-metered features (such as transcription minutes or model runs) are subject to the limits shown in-app, and we may change those limits with notice.</p>
 
       <h2>10. Intellectual property</h2>
       <p>We own Six Axes itself, our software, design, and trademarks. These Terms don&rsquo;t grant you rights in them beyond using the service. If you send us feedback or suggestions, you grant us a perpetual, royalty-free license to use them without obligation to you.</p>
@@ -55,19 +55,19 @@ export default function TermsOfServicePage() {
       <p>Six Axes is provided &ldquo;as is&rdquo; and &ldquo;as available,&rdquo; without warranties of any kind, express or implied, including merchantability, fitness for a particular purpose, and non-infringement. We don&rsquo;t warrant that the service will be uninterrupted, error-free, or that AI output will be accurate.</p>
 
       <h2>13. Limitation of liability</h2>
-      <p>To the fullest extent permitted by law, we will not be liable for indirect, incidental, special, consequential, or punitive damages, or for lost data, profits, or goodwill. Our total liability for any claim relating to the service is limited to the greater of the amount you paid us in the 12 months before the claim or [USD AMOUNT, e.g. $100]. Some jurisdictions don&rsquo;t allow these limits, so they may not fully apply to you.</p>
+      <p>To the fullest extent permitted by law, we will not be liable for indirect, incidental, special, consequential, or punitive damages, or for lost data, profits, or goodwill. Our total liability for any claim relating to the service is limited to the greater of the amount you paid us in the 12 months before the claim or one hundred US dollars ($100). Some jurisdictions don&rsquo;t allow these limits, so they may not fully apply to you.</p>
 
       <h2>14. Indemnification</h2>
       <p>You agree to indemnify and hold us harmless from claims arising out of your content, your recordings, your use of the service, or your violation of these Terms or the law.</p>
 
       <h2>15. Governing law and disputes</h2>
-      <p>These Terms are governed by the laws of the State of Washington, without regard to conflict-of-laws rules. The state and federal courts located in [COUNTY] County, Washington have exclusive jurisdiction over disputes, except where applicable law provides otherwise.</p>
+      <p>These Terms are governed by the laws of the State of Washington, without regard to conflict-of-laws rules. The state and federal courts located in King County, Washington have exclusive jurisdiction over disputes, except where applicable law provides otherwise.</p>
 
       <h2>16. Changes to these Terms</h2>
-      <p>We may update these Terms and will post the new effective date. Material changes will be communicated by [email / in-app notice]. Continued use after changes means you accept them.</p>
+      <p>We may update these Terms and will post the new effective date. Material changes will be communicated by email to account holders and by notice in the app. Continued use after changes means you accept them.</p>
 
       <h2>17. Contact</h2>
-      <p>[LEGAL/SUPPORT CONTACT EMAIL], Kerf and Code, LLC, [MAILING ADDRESS].</p>
+      <p>kncadmin@kerfandcode.com &middot; Kerf and Code, LLC &middot; 739 N 95th St Apt 103, Seattle, WA 98103.</p>
     </LegalPage>
   );
 }

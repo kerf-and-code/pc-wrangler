@@ -100,7 +100,7 @@ export default function PrivacyPolicyPage() {
       <p>We operate in the United States and process data there. If you access Six Axes from outside the US, you consent to that transfer and processing, subject to the protections described here.</p>
 
       <h2>Changes</h2>
-      <p>We will update this policy as the product evolves and post the new effective date. Material changes will be communicated by [email / in-app notice].</p>
+      <p>We will update this policy as the product evolves and post the new effective date. Material changes will be communicated by email to account holders and by notice in the app.</p>
 
       <h2>Contact</h2>
       <p>Questions or requests: kncadmin@kerfandcode.com, Kerf and Code, LLC, 739 N 95th St Apt 103, Seattle, WA 98103.</p>
