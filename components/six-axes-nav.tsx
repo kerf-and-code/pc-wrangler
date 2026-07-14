@@ -57,6 +57,16 @@ const PLAYER: Leaf[] = [
   { href: "/record", label: "Record" },
 ];
 
+// The account-based dossier. These are NOT share-scoped: they span every campaign
+// the player has a character in, so they carry no ?share= and must not be given one.
+const DOSSIER: Leaf[] = [
+  { href: "/me/campaigns", label: "Campaigns" },
+  { href: "/me/characters", label: "Characters" },
+  { href: "/me/threads", label: "Threads" },
+  { href: "/me/codex", label: "Codex" },
+  { href: "/me/settings", label: "Settings" },
+];
+
 const hrefs = (g: Group) => (g.children ? g.children.map((c) => c.href) : [g.href]);
 
 const NAV_CSS = `
@@ -136,27 +146,54 @@ export default function SixAxesNav() {
     </a>
   );
 
+  // The dossier pages are account-based (no share code), so `share.on` is false on
+  // them. Without this check they would fall through to the GM navigation.
+  const onDossier = pathname.startsWith("/me/");
+
   // player portal: flat, sidebar + topbar both list the same leaves
-  if (share.on) {
-    const home = `/play${share.qs}`;
+  if (share.on || onDossier) {
+    // Home is the campaign profile when we have a share code, otherwise the
+    // cross-campaign dossier.
+    const home = share.on ? `/play${share.qs}` : "/me/campaigns";
+
+    // Share-scoped leaves only make sense when we actually have a share code, so
+    // they are hidden on the dossier rather than rendered as dead links.
+    const leaves: Leaf[] = share.on ? PLAYER : [];
+
+    const link = (l: Leaf, cls: string) => (
+      <a
+        key={l.href}
+        className={`${cls}${pathname === l.href ? " on" : ""}`}
+        href={`${l.href}${share.qs}`}
+      >
+        {l.label}
+      </a>
+    );
+
+    // DOSSIER links carry NO share query string: they span every campaign, so
+    // pinning them to one would be wrong.
+    const dlink = (l: Leaf, cls: string) => (
+      <a key={l.href} className={`${cls}${pathname === l.href ? " on" : ""}`} href={l.href}>
+        {l.label}
+      </a>
+    );
+
     return (
       <>
         <style>{NAV_CSS}</style>
         <aside className="sax-side">
           {brand(home)}
           <nav className="sax-vnav">
-            {PLAYER.map((l) => (
-              <a key={l.href} className={`sax-vlink${pathname === l.href ? " on" : ""}`} href={`${l.href}${share.qs}`}>{l.label}</a>
-            ))}
+            {leaves.map((l) => link(l, "sax-vlink"))}
+            {DOSSIER.map((l) => dlink(l, "sax-vlink"))}
           </nav>
         </aside>
         <header className="sax-nav">
           <div className="sax-top">
             {brand(home)}
             <nav className="sax-grp">
-              {PLAYER.map((l) => (
-                <a key={l.href} className={`sax-glink${pathname === l.href ? " on" : ""}`} href={`${l.href}${share.qs}`}>{l.label}</a>
-              ))}
+              {leaves.map((l) => link(l, "sax-glink"))}
+              {DOSSIER.map((l) => dlink(l, "sax-glink"))}
             </nav>
           </div>
         </header>
