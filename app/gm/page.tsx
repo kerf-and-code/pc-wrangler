@@ -73,8 +73,14 @@ export default function GMWorkspace() {
   // character's subclass could never be corrected: the only route was to delete and
   // re-add, which mints a new character_id and orphans every event, disposition, and
   // journal entry attached to the old one. That is why 8 level-3+ PCs have no
-  // subclass and are invisible to the Tactics axis. The data was not dirty because
+  // subclass and contribute nothing to party coverage. The data was not dirty because
   // GMs were careless; it was dirty because the app made care impossible.
+  //
+  // CORRECTION, and it matters: an earlier version of this comment claimed subclass fed
+  // the TACTICS AXIS of the disposition model. IT DOES NOT. class_capabilities is read
+  // by this page and by the encounter balancer, and by nothing else. It never touches
+  // the R/Stan fit or any analytics view. The catalog work is still worth doing, but the
+  // stakes are a GM planning tool, not a measure.
   const [editId, setEditId] = useState<string | null>(null);
   const [editChar, setEditChar] = useState({ class: "", subclass: "", level: "", species: "", species_variant: "" });
   const [busy, setBusy] = useState(false);
@@ -259,9 +265,9 @@ export default function GMWorkspace() {
   }, [variants, speciesList, newChar.species, enabledPartners, edition]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Subclasses cascade from the chosen class, as before, but now from a constrained
-  // select rather than a free-text datalist. This is the one that feeds
-  // class_capabilities -> coverage -> the Tactics axis, so a typo here silently
-  // erased a character from the model. It can no longer be typed.
+  // select rather than a free-text datalist. Subclass feeds class_capabilities, which
+  // drives the party-coverage panel below and the encounter balancer's "what this party
+  // cannot do". A typo silently erased a character from both. It can no longer be typed.
   // The edit row needs its own cascades, driven by the row being edited rather than
   // by newChar.
   const editVariantOptions = useMemo(() => {
@@ -279,21 +285,21 @@ export default function GMWorkspace() {
       .sort();
   }, [caps, editChar.class, enabledPartners]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Which characters are invisible to the Tactics axis? A subclass that matches no
-  // class_capabilities row contributes no capabilities, so the character adds
-  // nothing to party coverage. Level 1-2 having no subclass is CORRECT and is not
-  // flagged; level 3+ is a real gap and the GM should see it.
+  // Which characters contribute nothing to party coverage? A subclass that matches no
+  // class_capabilities row has no capabilities attached, so the character is absent from
+  // the coverage panel and from the encounter balancer's capability check. Level 1-2
+  // having no subclass is CORRECT and is not flagged; level 3+ is a real gap.
   const knownSubclasses = useMemo(
     () => new Set(caps.filter((r: any) => r.subclass).map((r: any) => r.subclass as string)),
     [caps],
   );
-  const tacticsGap = (ch: any): string | null => {
+  const coverageGap = (ch: any): string | null => {
     if (!ch.class) return "no class recorded";
     if (!ch.subclass) {
       if (ch.level == null) return "no level or subclass recorded";
-      return ch.level >= 3 ? "no subclass: invisible to Tactics" : null;
+      return ch.level >= 3 ? "no subclass: not counted in party coverage" : null;
     }
-    if (!knownSubclasses.has(ch.subclass)) return `subclass "${ch.subclass}" is not in the catalog: invisible to Tactics`;
+    if (!knownSubclasses.has(ch.subclass)) return `subclass "${ch.subclass}" is not in the catalog: not counted in party coverage`;
     return null;
   };
 
@@ -439,7 +445,7 @@ export default function GMWorkspace() {
             )}
             {characters.length === 0 && <p style={{ color: C.muted, fontSize: 13 }}>No characters yet.</p>}
             {characters.map((ch) => {
-              const gap = tacticsGap(ch);
+              const gap = coverageGap(ch);
               const editing = editId === ch.id;
 
               return (
@@ -466,9 +472,10 @@ export default function GMWorkspace() {
                   </div>
 
                   {/* The gap warning. This character contributes NOTHING to party
-                      coverage, and therefore nothing to the Tactics axis. It was
-                      previously invisible: the model quietly skipped them and said
-                      nothing. Now the GM can see it, and fix it in place. */}
+                      party coverage, so they are missing from the coverage panel and
+                      from the encounter balancer's capability check. Previously there
+                      was no way to see it, AND no way to fix it: the roster had no edit
+                      path at all. Now there is both. */}
                   {gap && !editing && (
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 5 }}>
                       <span style={{
@@ -541,7 +548,7 @@ export default function GMWorkspace() {
                 type anything, and the app would accept it. That is how 12 of 52 PCs
                 ended up with a subclass the catalog has never heard of, which means
                 no capability rows, which means they contribute NOTHING to coverage
-                and are invisible to the Tactics axis. A select cannot be typed into.
+                and contribute nothing to party coverage. A select cannot be typed into.
 
                 Species now cascades into a variant (subrace or lineage). That
                 dimension simply did not exist before, which is why High Elf could

@@ -22,10 +22,18 @@
 -- So: one missing dimension, three symptoms.
 --
 -- THE QUIETER PROBLEM. Because these are free-text fields, `species` and `subclass`
--- accept anything typed. `subclass` joins class_capabilities to produce party
--- coverage, which feeds the TACTICS AXIS. A typo silently drops a character's
--- capability profile and nothing errors. The disposition model is currently being
--- fit on unnormalized strings.
+-- accept anything typed. `subclass` joins class_capabilities to produce party coverage,
+-- which drives the GM's party-composition panel and the encounter balancer's "what this
+-- party cannot do" check. A typo silently drops a character's capability profile and
+-- nothing errors.
+--
+-- CORRECTION. An earlier version of this comment claimed that chain reached the TACTICS
+-- AXIS of the disposition model. IT DOES NOT. class_capabilities is read by exactly two
+-- surfaces (the GM workspace and the encounter balancer) and by nothing else. It never
+-- touches the R/Stan fit or any analytics view. The catalog work still stands on its own
+-- merits (High Elf was unselectable, Vulpin was missing, and the roster had no edit path
+-- at all), but the stakes are a GM planning tool, not a measure. Believe the code, not
+-- the comment that was here before.
 --
 -- EDITION HANDLING (decision 6: standardize on 2024, keep 2014 available).
 -- 2014 and 2024 model variants differently: 2014 has SUBRACES chosen at creation;
@@ -165,8 +173,10 @@ grant select, insert, update, delete on public.classes          to service_role;
 -- 6. THE AUDIT: how dirty is the existing data?
 -- ---------------------------------------------------------------------------
 -- Every character whose species, class, or subclass does not match the catalog.
--- These are the rows whose capability profile is silently dropped from coverage,
--- and therefore from the Tactics axis. Run this before trusting any fit.
+-- These are the rows whose capability profile is silently dropped from party coverage,
+-- so they are absent from the GM's composition panel and from the encounter balancer's
+-- capability check. They do NOT affect the disposition model, which never reads this
+-- table.
 create or replace view public.v_character_catalog_audit
 with (security_invoker = true) as
 select
@@ -193,6 +203,6 @@ from public.characters ch
 where ch.kind = 'pc';
 
 comment on view public.v_character_catalog_audit is
-  'Characters whose species/class/subclass do not match the catalog. no_capabilities = true means this character is invisible to coverage, and therefore to the Tactics axis.';
+  'Characters whose species/class/subclass do not match the catalog. no_capabilities = true means this character contributes nothing to party coverage (the GM workspace panel and the encounter balancer). It does NOT affect the disposition model, which never reads class_capabilities.';
 
 grant select on public.v_character_catalog_audit to authenticated, service_role;
