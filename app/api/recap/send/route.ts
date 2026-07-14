@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { postRecapToDiscord } from "@/lib/discord/post";
 
 export const maxDuration = 30;
 
@@ -75,12 +74,12 @@ export async function POST(request: Request) {
     const { data: campaign } = await supabase
       .from("campaigns").select("name, discord_channel_id").eq("id", session.campaign_id).single();
     const campaignName = campaign?.name || "Your campaign";
-    const discordChannelId = campaign?.discord_channel_id || null;
 
-    // Need at least one destination: emails, or a linked Discord channel.
-    if (!emails.length && !discordChannelId) {
+    // Email-only route: require at least one valid email. Discord posting has its
+    // own button (/api/recap/post-discord).
+    if (!emails.length) {
       return NextResponse.json(
-        { error: "Add at least one valid email, or run /setup in Discord to post recaps there." },
+        { error: "Add at least one valid email address." },
         { status: 400 },
       );
     }
@@ -122,14 +121,9 @@ export async function POST(request: Request) {
       failed = results.filter((r) => !r.ok).map((r) => r.to);
     }
 
-    let discordPosted = false;
-    if (discordChannelId) {
-      discordPosted = await postRecapToDiscord(
-        discordChannelId, campaignName, session.session_number, session.recap,
-      );
-    }
-
-    return NextResponse.json({ sent, failed, discordPosted });
+    // Discord posting is a separate action (see /api/recap/post-discord), so this
+    // route no longer side-posts to Discord. Email only.
+    return NextResponse.json({ sent, failed });
   } catch {
     return NextResponse.json({ error: "Could not send recap." }, { status: 500 });
   }
