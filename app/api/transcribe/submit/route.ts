@@ -32,7 +32,12 @@ export async function POST(req: NextRequest) {
 
   const admin = createAdminClient();
 
-  let job: { id: string; campaign_id: string; session_id: string } | null = null;
+  // A NAMED type, not `typeof job`. Inside the assignment, `typeof job` resolves to the
+  // NARROWED type at that point, which after `let job: T | null = null` is just `null`.
+  // Casting to it throws the real shape away, and `job` then narrows to `never` past the
+  // null check. Which is exactly what the build was telling us.
+  type Job = { id: string; campaign_id: string; session_id: string };
+  let job: Job | null = null;
 
   if (isCron) {
     const { data } = await admin
@@ -40,7 +45,7 @@ export async function POST(req: NextRequest) {
       .select("id, campaign_id, session_id")
       .eq("id", jobId)
       .single();
-    job = data as typeof job;
+    job = (data as Job | null) ?? null;
   } else {
     // Authorize via RLS: only the campaign GM can read this job row.
     const supa = await createClient();
@@ -49,7 +54,7 @@ export async function POST(req: NextRequest) {
       .select("id, campaign_id, session_id")
       .eq("id", jobId)
       .single();
-    job = data as typeof job;
+    job = (data as Job | null) ?? null;
   }
   if (!job) return NextResponse.json({ error: "Not found or not permitted" }, { status: 403 });
 
