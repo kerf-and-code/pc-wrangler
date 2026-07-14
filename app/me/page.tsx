@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { SAX } from "@/lib/theme";
+import { UpgradeAccount } from "@/components/upgrade-account";
 
 const C = { surface: SAX.slateBg, line: SAX.line, text: SAX.text, muted: SAX.muted, sun: SAX.sun, plum: SAX.plum, good: SAX.good };
 
@@ -70,6 +71,10 @@ export default function PlayerJournalPage() {
         </div>
         <div style={{ ...eyebrow, textAlign: "center", marginBottom: 18 }}>YOUR STORY SO FAR</div>
         <div style={{ height: 3, borderRadius: 3, background: `linear-gradient(90deg, ${C.sun}, ${C.plum})`, marginBottom: 24 }} />
+
+        {/* Guest to durable account. Renders nothing for a player who already has
+            an account, so it needs no gate here. Lands back on /me when done. */}
+        <UpgradeAccount variant="card" next="/me" />
 
         {status === "loading" && <p style={{ textAlign: "center", color: C.muted, fontSize: 14 }}>Loading&hellip;</p>}
         {status === "invalid" && <p style={{ textAlign: "center", color: C.muted, fontSize: 14 }}>This link looks broken. Ask your GM for your invite link.</p>}

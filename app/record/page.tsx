@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
+import { UpgradeAccount } from "@/components/upgrade-account";
 import TableTap from "@/components/table-tap";
 import { SAX } from "@/lib/theme";
 
@@ -217,6 +218,16 @@ export default function RecordPage() {
 
           {status === "ready" && (
             <>
+              {/* Session-start upgrade prompt. Renders nothing for a player who
+                  already has a durable account. Dismissal is keyed to this
+                  campaign + session, so "Not now" holds for this session and the
+                  prompt returns next time rather than being silenced forever. */}
+              <UpgradeAccount
+                variant="nag"
+                sessionId={share ? `${share}-${sessionNumber ?? "pending"}` : null}
+                next={share ? `/record?share=${share}` : "/me"}
+              />
+
               <p style={{ color: C.muted, fontSize: 13, lineHeight: 1.6, marginTop: 0 }}>
                 This records only your microphone, as a backup track for your GM. Best with headphones on a call so it captures just your voice.
               </p>
