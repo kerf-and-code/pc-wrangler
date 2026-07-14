@@ -47,6 +47,7 @@ export default function SessionWorkspace() {
   const [recipients, setRecipients] = useState("");
   const [recapSending, setRecapSending] = useState(false);
   const [recapPosting, setRecapPosting] = useState(false);
+  const [sessionDeleting, setSessionDeleting] = useState(false);
   const [schedDraft, setSchedDraft] = useState("");
   const [schedSaving, setSchedSaving] = useState(false);
   const [schedMsg, setSchedMsg] = useState<string | null>(null);
@@ -198,6 +199,35 @@ export default function SessionWorkspace() {
     const { error } = await supabase.from("sessions")
       .update({ status: "completed", ended_at: new Date().toISOString() }).eq("id", session);
     if (error) setErr(error.message); else if (campaign) loadCampaignData(campaign);
+  }
+
+  async function deleteSession() {
+    if (!session || sessionDeleting) return;
+    const cur = sessions.find((s) => s.id === session);
+    const label = cur?.session_number != null ? `Session ${cur.session_number}` : "this session";
+    const okToDelete = window.confirm(
+      `Delete ${label}? This cannot be undone. Only empty sessions can be removed; anything with a recording, logged events, or a saved recap is refused.`,
+    );
+    if (!okToDelete) return;
+    setSessionDeleting(true); setErr(null);
+    try {
+      const res = await fetch("/api/session/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId: session }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setErr(data.error || "Could not delete session.");
+      } else {
+        const remaining = sessions.filter((s) => s.id !== session);
+        setSessions(remaining);
+        setSession(remaining[0]?.id ?? null);
+      }
+    } catch {
+      setErr("Could not delete session. Try again.");
+    }
+    setSessionDeleting(false);
   }
 
   async function generateRecap() {
@@ -529,6 +559,24 @@ export default function SessionWorkspace() {
                 </button>
               ))}
             </div>
+            {(() => {
+              const cur = sessions.find((s) => s.id === session);
+              if (!cur || (cur.recap && cur.recap.trim())) return null;
+              return (
+                <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginBottom: 14 }}>
+                  <button
+                    onClick={deleteSession}
+                    disabled={sessionDeleting}
+                    style={{ background: "none", color: C.warn, border: `1px solid ${C.warn}`, borderRadius: 8, padding: "7px 14px", fontSize: 12, cursor: sessionDeleting ? "default" : "pointer", opacity: sessionDeleting ? 0.6 : 1 }}
+                  >
+                    {sessionDeleting ? "Deleting..." : `Delete session #${cur.session_number ?? "?"}`}
+                  </button>
+                  <span style={{ fontSize: 11.5, color: C.muted }}>
+                    Removes an empty session created by mistake. Refused once anything has been recorded or logged.
+                  </span>
+                </div>
+              );
+            })()}
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
               <select style={inputStyle} value={newSession.modality}
                 onChange={(e) => setNewSession({ ...newSession, modality: e.target.value })}>
