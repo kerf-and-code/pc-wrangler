@@ -83,7 +83,32 @@ function multiplier2014(monsterCount: number, partySize: number): number {
   return MULT_LADDER[Math.max(0, Math.min(MULT_LADDER.length - 1, i))];
 }
 
-type Char = { id: string; name: string; level: number | null; class: string | null };
+// 2014 DMG "Adventuring Day XP": roughly how much a character can absorb between
+// long rests. NONE of the competing calculators do this, and it is the question that
+// actually decides whether a fight is dangerous: this encounter is fine, but it is
+// your fourth one today and the cleric is dry.
+//
+// The 2024 DMG dropped the table but kept the guidance (6-8 medium-ish encounters per
+// day). The 2014 numbers remain the best available proxy, so they are used for both
+// methods and labelled as such rather than silently attributed to 2024.
+const ADVENTURING_DAY: Record<number, number> = {
+  1: 300, 2: 600, 3: 1200, 4: 1700, 5: 3500, 6: 4000, 7: 5000, 8: 6000,
+  9: 7500, 10: 9000, 11: 10500, 12: 11500, 13: 13500, 14: 15000, 15: 18000,
+  16: 20000, 17: 25000, 18: 27000, 19: 30000, 20: 40000,
+};
+
+// The 12 capability tags on class_capabilities. What a party can actually DO.
+const CAP_LABEL: Record<string, string> = {
+  single_target: "single-target damage", aoe: "area damage", melee: "melee",
+  ranged: "ranged", tank: "a front line", control: "crowd control",
+  support: "support", healing: "healing", utility: "utility",
+  face: "a face", stealth: "stealth", detect_magic: "magic detection",
+};
+// The gaps that actually change how dangerous a fight is. Missing "face" does not
+// make an ogre hit harder; missing healing very much does.
+const COMBAT_CRITICAL = ["healing", "ranged", "tank", "control", "aoe"];
+
+type Char = { id: string; name: string; level: number | null; class: string | null; subclass: string | null };
 type Foe = { id: string; name: string; cr: string; count: number };
 type Method = "2024" | "2014";
 
@@ -99,6 +124,11 @@ export default function EncountersPage() {
   const [method, setMethod] = useState<Method>("2024");
   const [foes, setFoes] = useState<Foe[]>([{ id: uid(), name: "", cr: "1", count: 1 }]);
   const [loading, setLoading] = useState(true);
+  // What this party can DO. Deterministic, straight from class_capabilities: no model,
+  // no inference. "This party has no healing" is a fact, and it moves a fight's real
+  // difficulty further than any multiplier on this page.
+  const [caps, setCaps] = useState<Array<{ class: string; subclass: string | null; capabilities: string[] }>>([]);
+  const [savedMsg, setSavedMsg] = useState<string | null>(null);
 
   // "The module assumes N characters of level L." This is the thing you actually
   // wanted: a published encounter is written for a party that is not yours.
@@ -108,9 +138,13 @@ export default function EncountersPage() {
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase.from("campaigns").select("id, name").order("created_at", { ascending: false });
+      const [{ data }, { data: cp }] = await Promise.all([
+        supabase.from("campaigns").select("id, name").order("created_at", { ascending: false }),
+        supabase.from("class_capabilities").select("class, subclass, capabilities"),
+      ]);
       const list = (data as Array<{ id: string; name: string }>) || [];
       setCampaigns(list);
+      setCaps((cp as Array<{ class: string; subclass: string | null; capabilities: string[] }>) || []);
       if (list.length) setCampaignId(list[0].id);
       setLoading(false);
     })();
@@ -119,7 +153,7 @@ export default function EncountersPage() {
   const loadChars = useCallback(async (cid: string) => {
     const { data } = await supabase
       .from("characters")
-      .select("id, name, level, class")
+      .select("id, name, level, class, subclass")
       .eq("campaign_id", cid).eq("kind", "pc").eq("active", true)
       .order("name");
     const list = (data as Char[]) || [];
@@ -181,6 +215,40 @@ export default function EncountersPage() {
     };
   }, [budget, effectiveXp]);
 
+  // ---- what this party CAN DO ---------------------------------------------
+  // The union of every present character's class baseline and subclass capabilities.
+  // This is the thing no other calculator can tell you, because no other calculator
+  // knows your party.
+  const coverage = useMemo(() => {
+    if (caps.length === 0 || levelled.length === 0) return null;
+    const index = new Map<string, string[]>();
+    for (const r of caps) {
+      index.set(r.subclass ? `${r.class}|${r.subclass}` : r.class, r.capabilities || []);
+    }
+    const have = new Set<string>();
+    const unknown: string[] = [];
+    for (const c of levelled) {
+      const base = c.class ? index.get(c.class) : undefined;
+      const sub  = c.class && c.subclass ? index.get(`${c.class}|${c.subclass}`) : undefined;
+      if (!base && !sub) { unknown.push(c.name); continue; }
+      for (const b of [...(base || []), ...(sub || [])]) have.add(b);
+    }
+    const missing = COMBAT_CRITICAL.filter((b) => !have.has(b));
+    return { have: [...have].sort(), missing, unknown };
+  }, [caps, levelled]);
+
+  // XP to award after the fight. Always RAW xp, never adjusted: the multiplier is a
+  // difficulty device, not an experience award. Several calculators get this right and
+  // it is worth being explicit, because getting it wrong inflates every level-up.
+  const xpPerPlayer = levelled.length > 0 ? Math.floor(rawXp / levelled.length) : 0;
+
+  // How much of the day this fight eats.
+  const dayBudget = useMemo(
+    () => levelled.reduce((n, c) => n + (ADVENTURING_DAY[c.level as number] ?? 0), 0),
+    [levelled],
+  );
+  const dayShare = dayBudget > 0 ? effectiveXp / dayBudget : 0;
+
   // ---- module scaling ------------------------------------------------------
   // The published encounter was written for a party that is not yours. This says by
   // how much, in the same units the method uses, so you can cut a monster or add one.
@@ -211,6 +279,37 @@ export default function EncountersPage() {
       delta: targetRaw - rawXp,
     };
   }, [modOn, modSize, modLevel, budget, levelled.length, method, verdict, rawXp]);
+
+  // Drop the encounter straight into tonight's plan. session_plan_items already has a
+  // `difficulty` column that nothing was writing to.
+  async function saveToPlan() {
+    if (!campaignId || !verdict) return;
+    setSavedMsg(null);
+    const named = foes.filter((f) => f.name.trim() || f.count > 0);
+    const title = named.length
+      ? named.map((f) => `${f.count}x ${f.name.trim() || `CR ${f.cr}`}`).join(", ")
+      : "Encounter";
+    const note = [
+      `${method === "2024" ? "2024 XP budget" : "2014 thresholds"}: ${verdict.label}.`,
+      method === "2014"
+        ? `${rawXp.toLocaleString()} xp x${mult} = ${effectiveXp.toLocaleString()} adjusted.`
+        : `${rawXp.toLocaleString()} xp.`,
+      `${levelled.length} characters. ${xpPerPlayer.toLocaleString()} xp each.`,
+      coverage && coverage.missing.length
+        ? `Party has no ${coverage.missing.map((m) => CAP_LABEL[m] ?? m).join(", ")}.`
+        : "",
+    ].filter(Boolean).join(" ");
+
+    const { error } = await supabase.from("session_plan_items").insert({
+      campaign_id: campaignId,
+      title: title.slice(0, 180),
+      note,
+      kind: "encounter",
+      difficulty: verdict.label,
+      source: "gm",
+    });
+    setSavedMsg(error ? "Could not save to the plan." : "Added to your session plan.");
+  }
 
   // ---- rendering -----------------------------------------------------------
   const box: React.CSSProperties = {
@@ -409,12 +508,126 @@ export default function EncountersPage() {
             </span>
           </div>
 
+          {/* The gauge. A "Hard" one xp over the line is a different fight from a
+              "Hard" that is nearly Deadly, and a label alone hides that. */}
+          <div style={{ margin: "4px 0 14px" }}>
+            <div style={{ position: "relative", height: 10, background: "rgba(255,255,255,0.05)", borderRadius: 6, overflow: "hidden" }}>
+              {(() => {
+                const t = budget.tiers as number[];
+                const top = t[t.length - 1] * 1.5; // headroom above the top tier
+                const pct = (v: number) => Math.min(100, (v / top) * 100);
+                return (
+                  <>
+                    {t.map((v, i) => (
+                      <div key={i} style={{
+                        position: "absolute", left: `${pct(v)}%`, top: 0, bottom: 0,
+                        width: 1, background: C.line,
+                      }} />
+                    ))}
+                    <div style={{
+                      position: "absolute", left: 0, top: 0, bottom: 0,
+                      width: `${pct(effectiveXp)}%`, background: verdict.tone, opacity: 0.55,
+                    }} />
+                  </>
+                );
+              })()}
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 5 }}>
+              {(budget.tiers as number[]).map((v, i) => (
+                <span key={i} style={{ fontFamily: SAX.mono, fontSize: 10, color: C.muted, letterSpacing: "0.06em" }}>
+                  {budget.labels[i]} {v.toLocaleString()}
+                </span>
+              ))}
+            </div>
+          </div>
+
           {method === "2014" && (
-            <p style={{ color: C.muted, fontSize: 12.5, lineHeight: 1.6, margin: 0 }}>
+            <p style={{ color: C.muted, fontSize: 12.5, lineHeight: 1.6, margin: "0 0 12px" }}>
               {monsterCount} monster{monsterCount === 1 ? "" : "s"} against {levelled.length} character
               {levelled.length === 1 ? "" : "s"} gives a &times;{mult} multiplier.
               {levelled.length > 0 && levelled.length < 3 && " Your party is small, so the multiplier steps up a rung."}
               {levelled.length > 5 && " Your party is large, so the multiplier steps down a rung."}
+            </p>
+          )}
+
+          <div style={{ display: "flex", gap: 22, flexWrap: "wrap", paddingTop: 12, borderTop: `1px solid ${C.line}` }}>
+            <div>
+              <div style={{ fontFamily: SAX.mono, fontSize: 10.5, color: C.muted, letterSpacing: "0.1em", textTransform: "uppercase" }}>
+                XP each
+              </div>
+              <div style={{ fontFamily: SAX.mono, fontSize: 16, color: C.text, fontWeight: 700 }}>
+                {xpPerPlayer.toLocaleString()}
+              </div>
+              <div style={{ fontSize: 10.5, color: C.muted, marginTop: 2 }}>
+                raw, not adjusted
+              </div>
+            </div>
+            {dayBudget > 0 && (
+              <div>
+                <div style={{ fontFamily: SAX.mono, fontSize: 10.5, color: C.muted, letterSpacing: "0.1em", textTransform: "uppercase" }}>
+                  Of today
+                </div>
+                <div style={{
+                  fontFamily: SAX.mono, fontSize: 16, fontWeight: 700,
+                  color: dayShare > 0.5 ? C.warn : dayShare > 0.3 ? C.brass : C.text,
+                }}>
+                  {Math.round(dayShare * 100)}%
+                </div>
+                <div style={{ fontSize: 10.5, color: C.muted, marginTop: 2 }}>
+                  of a full adventuring day
+                </div>
+              </div>
+            )}
+            <div style={{ marginLeft: "auto", alignSelf: "flex-end" }}>
+              <button type="button" onClick={saveToPlan} style={{
+                background: "transparent", color: C.text, border: `1px solid ${C.line}`,
+                borderRadius: 8, padding: "7px 14px", fontSize: 12.5, fontWeight: 700,
+                fontFamily: SAX.mono, cursor: "pointer",
+              }}>
+                Add to session plan
+              </button>
+              {savedMsg && (
+                <div style={{ color: savedMsg.startsWith("Could") ? C.warn : C.good, fontSize: 11.5, marginTop: 6, textAlign: "right" }}>
+                  {savedMsg}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* WHAT THIS PARTY CANNOT DO.
+          No other encounter calculator can show you this, because no other calculator
+          knows your party. It is not a model and not a guess: it is a join against
+          class_capabilities. "This party has no healing" moves a fight's real danger
+          further than any multiplier on this page. */}
+      {coverage && (coverage.missing.length > 0 || coverage.unknown.length > 0) && effectiveXp > 0 && (
+        <div style={{ ...box, borderColor: coverage.missing.length ? C.warn : C.line }}>
+          <div style={eyebrow}>What this party cannot do</div>
+
+          {coverage.missing.length > 0 && (
+            <>
+              <p style={{ color: C.text, fontSize: 14, lineHeight: 1.65, margin: "0 0 8px" }}>
+                No <strong style={{ color: C.warn }}>
+                  {coverage.missing.map((m) => CAP_LABEL[m] ?? m).join(", ")}
+                </strong>.
+              </p>
+              <p style={{ color: C.muted, fontSize: 12.5, lineHeight: 1.6, margin: 0 }}>
+                The XP tables assume a party that can do all the usual things. They do not
+                know that yours cannot.
+                {coverage.missing.includes("healing") && " With no healing, a character who drops stays down."}
+                {coverage.missing.includes("ranged") && " With no ranged option, a flying or entrenched enemy is far worse than its CR suggests."}
+                {coverage.missing.includes("tank") && " With no front line, whatever the monsters want to reach, they will reach."}
+                {" "}Treat the verdict above as optimistic.
+              </p>
+            </>
+          )}
+
+          {coverage.unknown.length > 0 && (
+            <p style={{ color: C.muted, fontSize: 12.5, lineHeight: 1.6, margin: coverage.missing.length ? "12px 0 0" : 0 }}>
+              {coverage.unknown.join(", ")} {coverage.unknown.length === 1 ? "has" : "have"} no
+              recorded class or subclass, so {coverage.unknown.length === 1 ? "its" : "their"} capabilities
+              are unknown and not counted here. Set them on the Workspace roster.
             </p>
           )}
         </div>
