@@ -64,6 +64,9 @@ const DOSSIER: Leaf[] = [
   { href: "/me/characters", label: "Characters" },
   { href: "/me/threads", label: "Threads" },
   { href: "/me/codex", label: "Codex" },
+  // The PLAYER-scope inventory: filled in as yourself, not as a character. It is the
+  // anchor of the player latent, so it lives with the person, not with a campaign.
+  { href: "/me/profile", label: "Your profile" },
   { href: "/me/settings", label: "Settings" },
 ];
 

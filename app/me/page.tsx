@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { SAX } from "@/lib/theme";
 import { UpgradeAccount } from "@/components/upgrade-account";
+import { PlayerDisposition } from "@/components/player-disposition";
 
 const C = { surface: SAX.slateBg, line: SAX.line, text: SAX.text, muted: SAX.muted, sun: SAX.sun, plum: SAX.plum, good: SAX.good };
 
@@ -24,6 +25,7 @@ export default function PlayerJournalPage() {
   const supabase = useMemo(() => createClient(), []);
   const [journal, setJournal] = useState<Journal | null>(null);
   const [lore, setLore] = useState<LoreItem[]>([]);
+  const [profileId, setProfileId] = useState<string | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "unclaimed" | "invalid" | "error">("loading");
 
   useEffect(() => {
@@ -37,6 +39,8 @@ export default function PlayerJournalPage() {
         const { error } = await supabase.auth.signInAnonymously();
         if (error) { if (active) setStatus("invalid"); return; }
       }
+      const { data: { user: me } } = await supabase.auth.getUser();
+      if (active && me) setProfileId(me.id);
 
       const [{ data: j, error: jErr }, { data: l }] = await Promise.all([
         supabase.rpc("player_journal", { p_share: share }),
@@ -87,7 +91,15 @@ export default function PlayerJournalPage() {
 
         {status === "ready" && journal && (
           <>
-            {/* how you actually play — the posterior */}
+            {/* The PLAYER-level view. Renders nothing at all unless a GM has shared
+                it: the RLS policy on player-scope dispositions requires a
+                disposition_reveals row, so an un-revealed player's query simply comes
+                back empty. There is no "locked" state to tease them with, because
+                being told a thing about yourself exists but is being withheld is
+                worse than not knowing it is there. */}
+            {profileId && <PlayerDisposition profileId={profileId} mode="player" />}
+
+            {/* how you actually play — the character posterior */}
             <div style={sectionTitle}>How you actually play</div>
             {hasPost ? (
               <div style={card}>

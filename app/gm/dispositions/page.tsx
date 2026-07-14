@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
+import { PlayerDisposition } from "@/components/player-disposition";
 import { SAX, surfaces, ui } from "@/lib/theme";
 
 /* Palette mapped onto the shared cellar theme. The radar reads on a dark slate
@@ -148,6 +149,10 @@ export default function DispositionsPage() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [campaignId, setCampaignId] = useState<string>("");
   const [rows, setRows] = useState<Built[]>([]);
+  // The people behind the characters. A player-level disposition belongs to a PERSON,
+  // not to a campaign, so these rows are fetched by profile and carry no campaign_id.
+  // Names come from profiles_public (never the base table, which is self-only now).
+  const [players, setPlayers] = useState<Array<{ profile_id: string; name: string | null }>>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
@@ -163,11 +168,25 @@ export default function DispositionsPage() {
     if (!campaignId) return;
     (async () => {
       setLoading(true);
-      const [{ data: ch }, { data: dp }, { data: tp }] = await Promise.all([
+      const [{ data: ch }, { data: dp }, { data: tp }, { data: owned }] = await Promise.all([
         supabase.from("characters").select("id, name").eq("campaign_id", campaignId).eq("kind", "pc").order("name", { ascending: true }),
         supabase.from("dispositions").select("character_id, axis_scores, weights, as_of, model_version").eq("campaign_id", campaignId).eq("source", "posterior").order("as_of", { ascending: false }),
         supabase.from("tpdi_responses").select("assigned_character_id, answers").eq("campaign_id", campaignId).not("assigned_character_id", "is", null),
+        supabase.from("characters").select("profile_id").eq("campaign_id", campaignId).eq("kind", "pc").not("profile_id", "is", null),
       ]);
+
+      // Distinct owners of the PCs in this campaign, with their display names.
+      const ownerIds = [...new Set(((owned as Array<{ profile_id: string }>) || []).map((o) => o.profile_id))];
+      if (ownerIds.length) {
+        const { data: profs } = await supabase
+          .from("profiles_public")
+          .select("id, display_name")
+          .in("id", ownerIds);
+        const nameOf = new Map(((profs as Array<{ id: string; display_name: string | null }>) || []).map((p) => [p.id, p.display_name]));
+        setPlayers(ownerIds.map((id) => ({ profile_id: id, name: nameOf.get(id) ?? null })));
+      } else {
+        setPlayers([]);
+      }
 
       const chars = (ch as Char[]) || [];
       const posts = (dp as Disp[]) || [];
@@ -264,6 +283,31 @@ export default function DispositionsPage() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* PLAYER-LEVEL dispositions. A claim about the PERSON rather than the
+          character, so it is gated: the GM opens it, and the player still has to
+          look. The character posteriors above stay open, as they always have been. */}
+      {!loading && players.length > 0 && (
+        <div style={{ marginTop: 34 }}>
+          <div style={{ fontFamily: "'Iowan Old Style', Georgia, serif", fontSize: 20, fontWeight: 700, color: C.vellum, marginBottom: 6 }}>
+            The players behind them
+          </div>
+          <p style={{ color: C.muted, fontSize: 13, lineHeight: 1.6, margin: "0 0 16px", maxWidth: 620 }}>
+            How each person tends to play across every character they have, pooled. This is
+            about the player, not the mask, which is why they do not see it unless you share
+            it. Sharing is reversible and they still choose whether to look.
+          </p>
+          {players.map((p) => (
+            <PlayerDisposition
+              key={p.profile_id}
+              profileId={p.profile_id}
+              mode="gm"
+              playerName={p.name}
+              campaignId={campaignId}
+            />
+          ))}
         </div>
       )}
 
