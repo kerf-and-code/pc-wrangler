@@ -291,7 +291,7 @@ export default function DispositionsPage() {
           look. The character posteriors above stay open, as they always have been. */}
       {!loading && players.length > 0 && (
         <div style={{ marginTop: 34 }}>
-          <div style={{ fontFamily: "'Iowan Old Style', Georgia, serif", fontSize: 20, fontWeight: 700, color: C.vellum, marginBottom: 6 }}>
+          <div style={{ fontFamily: "'Iowan Old Style', Georgia, serif", fontSize: 20, fontWeight: 700, color: C.text, marginBottom: 6 }}>
             The players behind them
           </div>
           <p style={{ color: C.muted, fontSize: 13, lineHeight: 1.6, margin: "0 0 16px", maxWidth: 620 }}>
