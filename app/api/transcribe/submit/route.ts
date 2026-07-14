@@ -12,26 +12,67 @@ export async function POST(req: NextRequest) {
   }
   if (!jobId) return NextResponse.json({ error: "Missing jobId" }, { status: 400 });
 
-  // Authorize via RLS: only the campaign GM can read this job row.
-  const supa = await createClient();
-  const { data: job } = await supa
-    .from("capture_jobs")
-    .select("id, campaign_id, session_id")
-    .eq("id", jobId)
-    .single();
+  // TWO CALLERS NOW.
+  //
+  //  1. A GM, from the Capture page. Authorized through RLS: they can only read a job
+  //     row for a campaign they run. Unchanged.
+  //
+  //  2. The auto-transcribe cron (/api/cron/advance-jobs), which closes the last manual
+  //     gap in the /stop chain. A cron has no cookie, so RLS would return nothing and
+  //     this route would 403 forever. It presents CRON_SECRET instead and reads the job
+  //     with the admin client.
+  //
+  // THE CONSENT GATE SURVIVES BOTH PATHS. That is the entire reason this is written as
+  // an auth branch rather than a bypass: automation may skip the GM's cookie, but it
+  // does not get to skip consent. session_consent_ok is a pure function of the session,
+  // so it evaluates identically from either client.
+  const cronSecret = process.env.CRON_SECRET;
+  const auth = req.headers.get("authorization");
+  const isCron = Boolean(cronSecret) && auth === `Bearer ${cronSecret}`;
+
+  const admin = createAdminClient();
+
+  let job: { id: string; campaign_id: string; session_id: string } | null = null;
+
+  if (isCron) {
+    const { data } = await admin
+      .from("capture_jobs")
+      .select("id, campaign_id, session_id")
+      .eq("id", jobId)
+      .single();
+    job = data as typeof job;
+  } else {
+    // Authorize via RLS: only the campaign GM can read this job row.
+    const supa = await createClient();
+    const { data } = await supa
+      .from("capture_jobs")
+      .select("id, campaign_id, session_id")
+      .eq("id", jobId)
+      .single();
+    job = data as typeof job;
+  }
   if (!job) return NextResponse.json({ error: "Not found or not permitted" }, { status: 403 });
 
-  // Hard consent gate, server-side. A forced status flip can't get past this.
-  const { data: ok } = await supa.rpc("session_consent_ok", { p_session: job.session_id });
-  if (!ok) return NextResponse.json({ error: "Consent is not cleared for this session." }, { status: 409 });
+  // Hard consent gate, server-side, for BOTH callers. A forced status flip cannot get
+  // past this, and neither can the cron.
+  const { data: ok } = await admin.rpc("session_consent_ok", { p_session: job.session_id });
+  if (!ok) {
+    // Park the job rather than letting the cron retry it every minute forever. The GM
+    // sees 'blocked_consent' on the Capture page, which is the actual problem: somebody
+    // at that table has not consented and has not been opted out.
+    await admin
+      .from("capture_jobs")
+      .update({ status: "blocked_consent", error: "Consent is not cleared for this session." })
+      .eq("id", jobId)
+      .eq("status", "draft");
+    return NextResponse.json({ error: "Consent is not cleared for this session." }, { status: 409 });
+  }
 
   const dgKey = process.env.DEEPGRAM_API_KEY;
   const secret = process.env.TRANSCRIBE_CALLBACK_SECRET;
   if (!dgKey || !secret) {
     return NextResponse.json({ error: "Server is missing transcription configuration." }, { status: 500 });
   }
-
-  const admin = createAdminClient();
 
   // Per-session opt-out: characters the GM excluded from THIS session. Their
   // audio must never be transcribed, so we drop their tracks before submitting.

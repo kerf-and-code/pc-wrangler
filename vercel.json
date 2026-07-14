@@ -1,6 +1,7 @@
 {
   "crons": [
     { "path": "/api/cron/session-reminders", "schedule": "0 14 * * *" },
-    { "path": "/api/cron/audio-retention", "schedule": "0 9 * * *" }
+    { "path": "/api/cron/audio-retention", "schedule": "0 9 * * *" },
+    { "path": "/api/cron/advance-jobs", "schedule": "* * * * *" }
   ]
 }

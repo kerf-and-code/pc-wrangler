@@ -46,7 +46,6 @@ export default function SessionWorkspace() {
   const [recapMsg, setRecapMsg] = useState<string | null>(null);
   const [recipients, setRecipients] = useState("");
   const [recapSending, setRecapSending] = useState(false);
-  const [recapPosting, setRecapPosting] = useState(false);
   const [schedDraft, setSchedDraft] = useState("");
   const [schedSaving, setSchedSaving] = useState(false);
   const [schedMsg, setSchedMsg] = useState<string | null>(null);
@@ -175,7 +174,16 @@ export default function SessionWorkspace() {
     setBusy(true); setErr(null);
     const nextNum = (sessions[0]?.session_number || 0) + 1;
     const { data, error } = await supabase.from("sessions").insert({
-      campaign_id: campaign, session_number: nextNum, status: "scheduled",
+      campaign_id: campaign, session_number: nextNum,
+      // LIVE, not scheduled. This creation path already sets started_at to NOW, which
+      // means "we are playing, right now" -- there was never a moment between creating
+      // it here and it being underway. The old flow made you create it and then go
+      // find a separate "go live" button on the Table page.
+      //
+      // The OTHER creation path (schedule/confirm, from an RSVP poll) creates a FUTURE
+      // session with scheduled_at and no started_at. That one stays 'scheduled', which
+      // is why this change is safe: the two paths mean different things and always did.
+      status: "live",
       capture_modality: newSession.modality, consent_recorded: newSession.consent,
       notes: newSession.notes.trim() || null, started_at: new Date().toISOString(),
     }).select().single();
@@ -254,30 +262,6 @@ export default function SessionWorkspace() {
       setRecapMsg("Could not send recap. Try again.");
     }
     setRecapSending(false);
-  }
-
-  async function postToDiscord() {
-    if (!session || recapPosting) return;
-    setRecapPosting(true); setRecapMsg(null);
-    // Save the current text first so we post exactly what is shown (GM edits included).
-    const { error: saveErr } = await supabase.from("sessions")
-      .update({ recap: recap.trim() || null }).eq("id", session);
-    if (saveErr) { setRecapMsg(saveErr.message); setRecapPosting(false); return; }
-    setSessions((arr) => arr.map((s) => (s.id === session ? { ...s, recap: recap.trim() || null } : s)));
-
-    try {
-      const res = await fetch("/api/recap/post-discord", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionId: session }),
-      });
-      const data = await res.json();
-      if (!res.ok) setRecapMsg(data.error || "Could not post to Discord.");
-      else setRecapMsg("Posted to your Discord channel.");
-    } catch {
-      setRecapMsg("Could not post to Discord. Try again.");
-    }
-    setRecapPosting(false);
   }
 
   async function saveSchedule() {
@@ -560,9 +544,6 @@ export default function SessionWorkspace() {
                 {recapSaving ? "Saving..." : "Save recap"}
               </button>
               <button style={btnGhost} onClick={copyRecap} disabled={!recap.trim()}>Copy</button>
-              <button style={btn} onClick={postToDiscord} disabled={recapPosting || !recap.trim()}>
-                {recapPosting ? "Posting..." : "Post to Discord"}
-              </button>
               {recapMsg && <span style={{ fontSize: 12, color: C.muted }}>{recapMsg}</span>}
             </div>
             <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${C.line}` }}>
