@@ -69,6 +69,14 @@ export default function GMWorkspace() {
   // forms
   const [newCampaign, setNewCampaign] = useState({ name: "", system: "5e" });
   const [newChar, setNewChar] = useState({ name: "", class: "", subclass: "", level: "", species: "", species_variant: "" });
+  // Inline roster editing. Until now the roster offered ONLY add and remove, so a
+  // character's subclass could never be corrected: the only route was to delete and
+  // re-add, which mints a new character_id and orphans every event, disposition, and
+  // journal entry attached to the old one. That is why 8 level-3+ PCs have no
+  // subclass and are invisible to the Tactics axis. The data was not dirty because
+  // GMs were careless; it was dirty because the app made care impossible.
+  const [editId, setEditId] = useState<string | null>(null);
+  const [editChar, setEditChar] = useState({ class: "", subclass: "", level: "", species: "", species_variant: "" });
   const [busy, setBusy] = useState(false);
 
   // ---- initial load ----
@@ -110,7 +118,7 @@ export default function GMWorkspace() {
   const loadCharacters = useCallback(async (campaignId: string) => {
     const { data, error } = await supabase
       .from("characters")
-      .select("id,name,class,subclass,level,species,active")
+      .select("id,name,class,subclass,level,species,species_variant,active")
       .eq("campaign_id", campaignId).eq("kind", "pc").eq("active", true)
       .order("created_at", { ascending: true });
     if (error) setErr(error.message);
@@ -154,6 +162,32 @@ export default function GMWorkspace() {
     });
     if (error) setErr(error.message);
     else { setNewChar({ name: "", class: "", subclass: "", level: "", species: "", species_variant: "" }); if (selected) await loadCharacters(selected); }
+    setBusy(false);
+  }
+
+  function startEdit(ch: any) {
+    setEditId(ch.id);
+    setEditChar({
+      class: ch.class || "",
+      subclass: ch.subclass || "",
+      level: ch.level != null ? String(ch.level) : "",
+      species: ch.species || "",
+      species_variant: ch.species_variant || "",
+    });
+  }
+
+  async function saveEdit() {
+    if (!editId || busy) return;
+    setBusy(true); setErr(null);
+    const { error } = await supabase.from("characters").update({
+      class: editChar.class || null,
+      subclass: editChar.subclass || null,
+      level: editChar.level ? Number(editChar.level) : null,
+      species: editChar.species || null,
+      species_variant: editChar.species_variant || null,
+    }).eq("id", editId);
+    if (error) setErr(error.message);
+    else { setEditId(null); if (selected) await loadCharacters(selected); }
     setBusy(false);
   }
 
@@ -228,6 +262,41 @@ export default function GMWorkspace() {
   // select rather than a free-text datalist. This is the one that feeds
   // class_capabilities -> coverage -> the Tactics axis, so a typo here silently
   // erased a character from the model. It can no longer be typed.
+  // The edit row needs its own cascades, driven by the row being edited rather than
+  // by newChar.
+  const editVariantOptions = useMemo(() => {
+    const sp = speciesList.find((x) => x.name === editChar.species);
+    if (!sp) return [];
+    return variants.filter((v) => v.species_id === sp.id && partnerOn(v.partner) && editionOn(v.edition));
+  }, [variants, speciesList, editChar.species, enabledPartners, edition]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const editSubclassOptions = useMemo(() => {
+    const seen = new Set<string>();
+    return caps
+      .filter((r: any) => r.subclass && partnerOn(r.partner) && (!editChar.class || r.class === editChar.class))
+      .filter((r: any) => (seen.has(r.subclass) ? false : (seen.add(r.subclass), true)))
+      .map((r: any) => r.subclass as string)
+      .sort();
+  }, [caps, editChar.class, enabledPartners]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Which characters are invisible to the Tactics axis? A subclass that matches no
+  // class_capabilities row contributes no capabilities, so the character adds
+  // nothing to party coverage. Level 1-2 having no subclass is CORRECT and is not
+  // flagged; level 3+ is a real gap and the GM should see it.
+  const knownSubclasses = useMemo(
+    () => new Set(caps.filter((r: any) => r.subclass).map((r: any) => r.subclass as string)),
+    [caps],
+  );
+  const tacticsGap = (ch: any): string | null => {
+    if (!ch.class) return "no class recorded";
+    if (!ch.subclass) {
+      if (ch.level == null) return "no level or subclass recorded";
+      return ch.level >= 3 ? "no subclass: invisible to Tactics" : null;
+    }
+    if (!knownSubclasses.has(ch.subclass)) return `subclass "${ch.subclass}" is not in the catalog: invisible to Tactics`;
+    return null;
+  };
+
   const subclassOptions = useMemo(() => {
     const seen = new Set<string>();
     return caps
@@ -369,17 +438,101 @@ export default function GMWorkspace() {
               </div>
             )}
             {characters.length === 0 && <p style={{ color: C.muted, fontSize: 13 }}>No characters yet.</p>}
-            {characters.map((ch) => (
-              <div key={ch.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: `1px solid ${C.line}` }}>
-                <div>
-                  <span style={{ fontWeight: 600 }}>{ch.name}</span>
-                  <span style={{ color: C.muted, fontSize: 13 }}>
-                    {"  "}{ch.species ? ch.species + " " : ""}{ch.class}{ch.subclass ? ` (${ch.subclass})` : ""}{ch.level ? ` · lvl ${ch.level}` : ""}
-                  </span>
+            {characters.map((ch) => {
+              const gap = tacticsGap(ch);
+              const editing = editId === ch.id;
+
+              return (
+                <div key={ch.id} style={{ padding: "8px 0", borderBottom: `1px solid ${C.line}` }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+                    <div>
+                      <span style={{ fontWeight: 600 }}>{ch.name}</span>
+                      <span style={{ color: C.muted, fontSize: 13 }}>
+                        {"  "}
+                        {ch.species ? ch.species + " " : ""}
+                        {ch.species_variant ? `(${ch.species_variant}) ` : ""}
+                        {ch.class}
+                        {ch.subclass ? ` (${ch.subclass})` : ""}
+                        {ch.level ? ` · lvl ${ch.level}` : ""}
+                      </span>
+                    </div>
+                    <div style={{ display: "flex", gap: 10, flexShrink: 0 }}>
+                      <button onClick={() => (editing ? setEditId(null) : startEdit(ch))}
+                        style={{ background: "none", border: "none", color: editing ? C.brass : C.muted, cursor: "pointer", fontSize: 12 }}>
+                        {editing ? "cancel" : "edit"}
+                      </button>
+                      <button onClick={() => removeCharacter(ch.id)} style={{ background: "none", border: "none", color: C.muted, cursor: "pointer", fontSize: 12 }}>remove</button>
+                    </div>
+                  </div>
+
+                  {/* The gap warning. This character contributes NOTHING to party
+                      coverage, and therefore nothing to the Tactics axis. It was
+                      previously invisible: the model quietly skipped them and said
+                      nothing. Now the GM can see it, and fix it in place. */}
+                  {gap && !editing && (
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 5 }}>
+                      <span style={{
+                        background: "rgba(224,122,95,0.14)", color: C.missing,
+                        border: `1px solid ${C.missing}`, borderRadius: 999,
+                        padding: "2px 9px", fontSize: 11, fontFamily: "ui-monospace, monospace",
+                      }}>
+                        {gap}
+                      </span>
+                      <button onClick={() => startEdit(ch)}
+                        style={{ background: "none", border: "none", color: C.brass, cursor: "pointer", fontSize: 11.5, textDecoration: "underline" }}>
+                        fix
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Inline edit. Same constrained selects as the add row, so a
+                      correction cannot reintroduce free text. Editing in place keeps
+                      character_id intact, which is the whole point: delete-and-re-add
+                      would orphan every event and disposition tied to this character. */}
+                  {editing && (
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10, alignItems: "center" }}>
+                      <select style={{ ...inputStyle, maxWidth: 140 }} value={editChar.class}
+                        onChange={(e) => setEditChar({ ...editChar, class: e.target.value, subclass: "" })}>
+                        <option value="">Class</option>
+                        {classOptions.map((c) => <option key={c.id} value={c.name}>{c.name}</option>)}
+                      </select>
+
+                      <select style={{ ...inputStyle, maxWidth: 200 }} value={editChar.subclass}
+                        onChange={(e) => setEditChar({ ...editChar, subclass: e.target.value })}
+                        disabled={!editChar.class}>
+                        <option value="">{editChar.class ? "Subclass" : "Pick a class first"}</option>
+                        {editSubclassOptions.map((sc) => <option key={sc} value={sc}>{sc}</option>)}
+                      </select>
+
+                      <input style={{ ...inputStyle, maxWidth: 70 }} placeholder="Lvl" type="number"
+                        value={editChar.level} onChange={(e) => setEditChar({ ...editChar, level: e.target.value })} />
+
+                      <select style={{ ...inputStyle, maxWidth: 150 }} value={editChar.species}
+                        onChange={(e) => setEditChar({ ...editChar, species: e.target.value, species_variant: "" })}>
+                        <option value="">Species</option>
+                        {speciesOptions.map((sp) => (
+                          <option key={sp.id} value={sp.name}>{sp.name}{sp.partnered ? ` (${sp.partner})` : ""}</option>
+                        ))}
+                      </select>
+
+                      {editVariantOptions.length > 0 && (
+                        <select style={{ ...inputStyle, maxWidth: 180 }} value={editChar.species_variant}
+                          onChange={(e) => setEditChar({ ...editChar, species_variant: e.target.value })}>
+                          <option value="">
+                            {editVariantOptions.some((v) => v.variant_kind === "lineage") ? "Lineage" : "Subrace"}
+                          </option>
+                          {editVariantOptions.map((v) => (
+                            <option key={v.id} value={v.name}>{v.name}{v.partnered ? ` (${v.partner})` : ""}</option>
+                          ))}
+                        </select>
+                      )}
+
+                      <button style={btn} onClick={saveEdit} disabled={busy}>Save</button>
+                    </div>
+                  )}
                 </div>
-                <button onClick={() => removeCharacter(ch.id)} style={{ background: "none", border: "none", color: C.muted, cursor: "pointer", fontSize: 12 }}>remove</button>
-              </div>
-            ))}
+              );
+            })}
 
             {/* add character.
 
