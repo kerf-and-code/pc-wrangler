@@ -155,7 +155,13 @@ function Astrolabe({ size = 320, spin = false, axes = true }) {
   );
 }
 
-export default function TPDI() {
+// scope="character" (default): filled in AS A CHARACTER, bound to the PC you claim in
+//   this campaign. This is what /play has always done.
+// scope="player": filled in AS YOURSELF, across every character you will ever play.
+//   This is the ANCHOR of the two-level disposition model: the prior the player
+//   latent is centered on, and the thing your behavior is later compared against.
+export default function TPDI({ scope = "character" }) {
+  const isPlayerScope = scope === "player";
   const [phase, setPhase] = useState("intro"); // intro | quiz | safety | results
   const [order, setOrder] = useState(ITEMS);
   useEffect(() => { setOrder(shuffled(ITEMS)); }, []);
@@ -199,9 +205,14 @@ export default function TPDI() {
       if (!active || !user) return;
       setUserId(user.id);
       // read-back: most recent profile for this respondent (RLS restricts to own rows)
+      // MUST be scope-filtered. The old query took the most recent row for this user
+      // with no filter, so a player-scope submission would find the CHARACTER row and
+      // the save path would then overwrite it. The anchor of the model and the
+      // character's own self-report would destroy each other, silently.
       const { data: rows, error } = await supabase
         .from("tpdi_responses")
-        .select("id, scores, created_at, campaign_id")
+        .select("id, scores, created_at, campaign_id, scope")
+        .eq("scope", scope)
         .order("created_at", { ascending: false })
         .limit(1);
       if (active && !error && rows && rows.length) setExisting(rows[0]);
@@ -229,24 +240,34 @@ export default function TPDI() {
     const row = {
       respondent_id: userId,
       player_name: playerName.trim() || null,
-      campaign_id: joinCampaign ? joinCampaign.id : null,
+      // A player-scope response is about the PERSON and belongs to no campaign. The
+      // database trigger enforces this too, but sending the right thing is better
+      // than being corrected by a constraint.
+      campaign_id: isPlayerScope ? null : (joinCampaign ? joinCampaign.id : null),
+      scope,
       instrument_version: "tpdi-v1.0-draft",
       answers,
       scores: result,
       safety: { lines, veils, note: safetyNote.trim() || null },
       item_order: order.map((it) => it.id),
     };
-    let error;
-    let savedData;
-    if (existing && existing.id) {
-      const res = await supabase.from("tpdi_responses").update(row).eq("id", existing.id).select("id, safety");
-      error = res.error; savedData = res.data;
-    } else {
-      const res = await supabase.from("tpdi_responses").insert(row).select("id, safety");
-      error = res.error; savedData = res.data;
-    }
+
+    // ALWAYS INSERT. NEVER UPDATE.
+    //
+    // This used to update the most recent row in place, which meant re-taking the
+    // inventory DESTROYED the previous one. The design calls for a versioned SERIES
+    // of self-perception snapshots, not a single point that gets overwritten: the
+    // interesting question is whether self-perception drifts toward behavior over
+    // time, and you cannot ask that of one row.
+    //
+    // created_at + instrument_version make each submission a dated snapshot. The fit
+    // reads the latest per scope (distinct on ... order by created_at desc), so
+    // appending is not just harmless, it is what the model expects.
+    const res = await supabase.from("tpdi_responses").insert(row).select("id, safety");
+    const error = res.error;
+    const savedData = res.data;
     setSaving(false);
-    console.log("tpdi save:", { path: existing && existing.id ? "update" : "insert", error, savedData });
+    console.log("tpdi save:", { path: "insert", scope, error, savedData });
     if (error) {
       setSaveError(error.message || "Save failed.");
     } else if (!savedData || savedData.length === 0) {
