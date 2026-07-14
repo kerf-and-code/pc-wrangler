@@ -472,9 +472,12 @@ export default function GMWorkspace() {
                   type="button"
                   onClick={() => setEdition(e)}
                   style={{
-                    background: edition === e ? C.sun : "transparent",
-                    color: edition === e ? "#1B1426" : C.muted,
-                    border: `1px solid ${edition === e ? C.sun : C.line}`,
+                    // This page has its own palette (ink/panel/line/vellum/muted/
+                    // brass/brassDim/have/missing). There is no `sun` here; brass is
+                    // the accent.
+                    background: edition === e ? C.brass : "transparent",
+                    color: edition === e ? C.ink : C.muted,
+                    border: `1px solid ${edition === e ? C.brass : C.line}`,
                     borderRadius: 999, padding: "3px 11px", fontSize: 11.5,
                     fontFamily: "ui-monospace, monospace", cursor: "pointer", fontWeight: 700,
                   }}
