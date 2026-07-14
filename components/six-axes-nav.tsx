@@ -45,30 +45,59 @@ const GROUPS: Group[] = [
 // Sidebar omits Help (it lives in the account popup).
 const SIDE_GROUPS = GROUPS.filter((g) => g.label !== "Help");
 
-const PLAYER: Leaf[] = [
-  { href: "/play", label: "Profile" },
-  { href: "/schedule", label: "Schedule" },
-  { href: "/recaps", label: "Recaps" },
-  { href: "/lore", label: "Lore" },
-  { href: "/map", label: "Map" },
-  { href: "/me", label: "Journal" },
-  { href: "/vibe", label: "Check-in" },
-  { href: "/chat", label: "Chat" },
-  { href: "/record", label: "Record" },
-];
+// The player navigation, grouped.
+//
+// It used to be a FLAT list of nine share-scoped links. Then the account-based
+// dossier added six more, and a player looking at a sidebar of fifteen undifferentiated
+// items has to read all fifteen every time. Grouped, the same surface is three choices.
+//
+// TWO KINDS OF LINK, AND THE DISTINCTION IS LOAD-BEARING:
+//
+//   SHARE-SCOPED  (?share=<code>) belong to ONE campaign. Meaningless without a share
+//                 code, so they are hidden when there is not one.
+//   ACCOUNT-SCOPED (/me/*) span EVERY campaign you play in. They must never carry a
+//                 ?share=, because pinning a cross-campaign page to one campaign is
+//                 simply wrong.
+//
+// Mixing those two was the bug in the screenshots: on a dossier page the share-scoped
+// links vanished entirely, because they had nothing to point at.
+type PGroup = { label: string; href: string; scoped: boolean; children: Leaf[] };
 
-// The account-based dossier. These are NOT share-scoped: they span every campaign
-// the player has a character in, so they carry no ?share= and must not be given one.
-const DOSSIER: Leaf[] = [
-  { href: "/me/campaigns", label: "Campaigns" },
-  { href: "/me/characters", label: "Characters" },
-  { href: "/me/threads", label: "Threads" },
-  { href: "/me/codex", label: "Codex" },
-  // The PLAYER-scope inventory: filled in as yourself, not as a character. It is the
-  // anchor of the player latent, so it lives with the person, not with a campaign.
-  { href: "/me/profile", label: "Your profile" },
-  { href: "/me/settings", label: "Settings" },
-];
+// "This table": everything about the ONE campaign you arrived through.
+const PLAYER_TABLE: PGroup = {
+  label: "This table", href: "/play", scoped: true,
+  children: [
+    { href: "/play", label: "Inventory" },
+    { href: "/me", label: "Journal" },
+    { href: "/recaps", label: "Recaps" },
+    { href: "/lore", label: "Lore" },
+    { href: "/map", label: "Map" },
+    { href: "/chat", label: "Chat" },
+  ],
+};
+
+// "Session": the things you do around a game actually happening.
+const PLAYER_SESSION: PGroup = {
+  label: "Session", href: "/schedule", scoped: true,
+  children: [
+    { href: "/schedule", label: "Schedule" },
+    { href: "/record", label: "Record" },
+    { href: "/vibe", label: "Check-in" },
+  ],
+};
+
+// "You": the account-based dossier. Spans every campaign. Never share-scoped.
+const PLAYER_YOU: PGroup = {
+  label: "You", href: "/me/campaigns", scoped: false,
+  children: [
+    { href: "/me/campaigns", label: "Campaigns" },
+    { href: "/me/characters", label: "Characters" },
+    { href: "/me/threads", label: "Threads" },
+    { href: "/me/codex", label: "Codex" },
+    { href: "/me/profile", label: "Your profile" },
+    { href: "/me/settings", label: "Settings" },
+  ],
+};
 
 const hrefs = (g: Group) => (g.children ? g.children.map((c) => c.href) : [g.href]);
 
@@ -149,56 +178,103 @@ export default function SixAxesNav() {
     </a>
   );
 
-  // The dossier pages are account-based (no share code), so `share.on` is false on
-  // them. Without this check they would fall through to the GM navigation.
-  const onDossier = pathname.startsWith("/me/");
+  // ---- PLAYER NAVIGATION -----------------------------------------------------
+  //
+  // Shown when we have a share code (arrived through a campaign link) OR when we are
+  // on an account-scoped dossier page. The second condition is the fix for the bug in
+  // the screenshots: /me/* pages carry no ?share=, so without it a player on
+  // /me/characters was shown the GM navigation.
+  const onDossier = pathname.startsWith("/me");
+  const isPlayer  = share.on || onDossier;
 
-  // player portal: flat, sidebar + topbar both list the same leaves
-  if (share.on || onDossier) {
-    // Home is the campaign profile when we have a share code, otherwise the
-    // cross-campaign dossier.
+  if (isPlayer) {
+    // A share-scoped group is meaningless without a share code, so it is hidden rather
+    // than rendered as a set of dead links. "You" is always available: it is the
+    // account, and the account exists regardless of which door you came in through.
+    const groups: PGroup[] = share.on
+      ? [PLAYER_TABLE, PLAYER_SESSION, PLAYER_YOU]
+      : [PLAYER_YOU];
+
+    // Share-scoped links carry the ?share=. Account-scoped ones MUST NOT: they span
+    // every campaign, and pinning them to one would be wrong.
+    const hrefFor = (g: PGroup, l: Leaf) => (g.scoped ? `${l.href}${share.qs}` : l.href);
+
+    const activeP =
+      groups.find((g) => g.children.some((c) => c.href === pathname)) ??
+      (onDossier ? PLAYER_YOU : groups[0]);
+
     const home = share.on ? `/play${share.qs}` : "/me/campaigns";
-
-    // Share-scoped leaves only make sense when we actually have a share code, so
-    // they are hidden on the dossier rather than rendered as dead links.
-    const leaves: Leaf[] = share.on ? PLAYER : [];
-
-    const link = (l: Leaf, cls: string) => (
-      <a
-        key={l.href}
-        className={`${cls}${pathname === l.href ? " on" : ""}`}
-        href={`${l.href}${share.qs}`}
-      >
-        {l.label}
-      </a>
-    );
-
-    // DOSSIER links carry NO share query string: they span every campaign, so
-    // pinning them to one would be wrong.
-    const dlink = (l: Leaf, cls: string) => (
-      <a key={l.href} className={`${cls}${pathname === l.href ? " on" : ""}`} href={l.href}>
-        {l.label}
-      </a>
-    );
 
     return (
       <>
         <style>{NAV_CSS}</style>
+
+        {/* wide: left sidebar, grouped with the active group expanded */}
         <aside className="sax-side">
           {brand(home)}
           <nav className="sax-vnav">
-            {leaves.map((l) => link(l, "sax-vlink"))}
-            {DOSSIER.map((l) => dlink(l, "sax-vlink"))}
+            {groups.map((g) => {
+              const on = activeP?.label === g.label;
+              return (
+                <div key={g.label} className="sax-vgroup">
+                  <a
+                    className={`sax-vlink${on ? " on" : ""}`}
+                    href={g.scoped ? `${g.href}${share.qs}` : g.href}
+                  >
+                    {g.label}
+                  </a>
+                  {on && (
+                    <div className="sax-vsub">
+                      {g.children.map((c) => (
+                        <a
+                          key={c.href}
+                          className={`sax-vslink${pathname === c.href ? " on" : ""}`}
+                          href={hrefFor(g, c)}
+                        >
+                          {c.label}
+                        </a>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </nav>
         </aside>
+
+        {/* narrow: top bar with a sub-row for the active group */}
         <header className="sax-nav">
           <div className="sax-top">
             {brand(home)}
             <nav className="sax-grp">
-              {leaves.map((l) => link(l, "sax-glink"))}
-              {DOSSIER.map((l) => dlink(l, "sax-glink"))}
+              {groups.map((g) => {
+                const on = activeP?.label === g.label;
+                return (
+                  <a
+                    key={g.label}
+                    className={`sax-glink${on ? " on" : ""}`}
+                    href={g.scoped ? `${g.href}${share.qs}` : g.href}
+                  >
+                    {g.label}
+                  </a>
+                );
+              })}
             </nav>
           </div>
+
+          {activeP && (
+            <nav className="sax-sub">
+              {activeP.children.map((c) => (
+                <a
+                  key={c.href}
+                  className={`sax-slink${pathname === c.href ? " on" : ""}`}
+                  href={hrefFor(activeP, c)}
+                >
+                  {c.label}
+                </a>
+              ))}
+            </nav>
+          )}
         </header>
       </>
     );
