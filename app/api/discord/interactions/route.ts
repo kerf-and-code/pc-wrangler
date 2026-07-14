@@ -630,7 +630,8 @@ async function handleRecord(interaction: Interaction) {
   // Pick the session to record into. An explicit session:<n> records into that
   // exact session (reused if it exists, opened if it doesn't), which is how you
   // recover from a false start without inflating the count. With no option, reuse
-  // the open session if there is one, else open the next number automatically.
+  // the session that is actually underway if there is one, else open the next
+  // number automatically.
   const sessionOpt = optionValue(interaction, "session");
   let sess: { id: string; session_number: number | null } | null = null;
 
@@ -652,7 +653,15 @@ async function handleRecord(interaction: Interaction) {
     } else {
       const { data: created, error: sErr } = await sb
         .from("sessions")
-        .insert({ campaign_id: campaign.id, session_number: n, started_at: new Date().toISOString() })
+        .insert({
+          campaign_id: campaign.id,
+          session_number: n,
+          started_at: new Date().toISOString(),
+          // LIVE, not the 'scheduled' default. /record means it is being played right
+          // now. chat_locked() only closes party chat when a session reads 'live', so
+          // 'scheduled' left table-talk open through every recorded game.
+          status: "live",
+        })
         .select("id, session_number")
         .single();
       if (sErr || !created) {
@@ -661,12 +670,22 @@ async function handleRecord(interaction: Interaction) {
       sess = created as { id: string; session_number: number | null };
     }
   } else {
+    // Reuse a session that is ACTUALLY UNDERWAY, not merely one that has not ended.
+    //
+    // The old check was `ended_at is null` alone. A session scheduled for NEXT FRIDAY
+    // also has ended_at null: it simply has not happened yet. So an impromptu game on
+    // Tuesday would have recorded straight into next Friday's session, and with
+    // recurring scheduling queueing several, `order by created_at desc` would pick the
+    // most recently CREATED one, which need not even be the nearest.
+    //
+    // A session genuinely in progress has started_at set and ended_at null.
     sess = (await sb
       .from("sessions")
       .select("id, session_number")
       .eq("campaign_id", campaign.id)
+      .not("started_at", "is", null)
       .is("ended_at", null)
-      .order("created_at", { ascending: false })
+      .order("started_at", { ascending: false })
       .limit(1)
       .maybeSingle()).data as { id: string; session_number: number | null } | null;
 
@@ -681,7 +700,12 @@ async function handleRecord(interaction: Interaction) {
       const nextNo = ((last as { session_number: number | null } | null)?.session_number ?? 0) + 1;
       const { data: created, error: sErr } = await sb
         .from("sessions")
-        .insert({ campaign_id: campaign.id, session_number: nextNo, started_at: new Date().toISOString() })
+        .insert({
+          campaign_id: campaign.id,
+          session_number: nextNo,
+          started_at: new Date().toISOString(),
+          status: "live",   // see the note above: /record means it is being played now
+        })
         .select("id, session_number")
         .single();
       if (sErr || !created) {
@@ -690,6 +714,15 @@ async function handleRecord(interaction: Interaction) {
       sess = created as { id: string; session_number: number | null };
     }
   }
+
+  // If we reused a session sitting as 'scheduled' (confirmed from a poll, then started
+  // with /record rather than in the app), mark it live. It is being played, and
+  // chat_locked() depends on the status saying so.
+  await sb
+    .from("sessions")
+    .update({ status: "live" })
+    .eq("id", sess.id)
+    .in("status", ["scheduled"]);
 
   const { error } = await sb.from("capture_control").insert({
     campaign_id: campaign.id,
@@ -736,7 +769,7 @@ async function handleStop(interaction: Interaction) {
 
   const { data: active } = await sb
     .from("capture_control")
-    .select("id")
+    .select("id, session_id")
     .eq("campaign_id", campaign.id)
     .in("status", ["requested", "active"])
     .order("created_at", { ascending: false })
@@ -750,7 +783,29 @@ async function handleStop(interaction: Interaction) {
     .update({ status: "stopping", updated_at: new Date().toISOString() })
     .eq("id", active.id);
 
-  return ephemeral("Stopping the recording. The bot will finish up and process the audio.");
+  // CLOSE THE SESSION. /stop never did this, and nothing else did either: ended_at was
+  // set in exactly ONE place, a manual button on the Sessions page. A GM who ran /record
+  // and /stop and never went back to the app left the session OPEN FOREVER, with three
+  // consequences that each look like a different bug:
+  //
+  //   1. Next week's /record reused it. Session 2 recorded into session 1's row.
+  //   2. /api/vtt/ingest requires an open session, so a player idly rolling on D&D
+  //      Beyond on a Wednesday dropped dice into last Friday's game.
+  //   3. The whole auto-chain (transcribe, extract, review, recap) ran against a session
+  //      the database still believed was being played.
+  //
+  // "completed" rather than "processed": the game is over, the pipeline is not finished
+  // with it yet. The extractor moves it on from there.
+  const stoppedSession = (active as { id: string; session_id: string | null }).session_id;
+  if (stoppedSession) {
+    await sb
+      .from("sessions")
+      .update({ status: "completed", ended_at: new Date().toISOString() })
+      .eq("id", stoppedSession)
+      .is("ended_at", null);
+  }
+
+  return ephemeral("Stopping the recording. The bot will finish up, and transcription and extraction will run on their own.");
 }
 
 async function handleConsentButton(interaction: Interaction) {
