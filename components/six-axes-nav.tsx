@@ -158,15 +158,36 @@ const NAV_CSS = `
 }
 `;
 
+
+// Persist the last share code we saw, so the dossier can still link back to the table.
+//
+// Session-scoped on purpose (sessionStorage, not localStorage): a player who closes the
+// tab and comes back through a DIFFERENT campaign's link should not be silently routed
+// into the old one. Within a visit, it is exactly the continuity they expect.
+function rememberShare(code: string | null): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    if (code) {
+      window.sessionStorage.setItem("sixaxes.share", code);
+      return code;
+    }
+    return window.sessionStorage.getItem("sixaxes.share");
+  } catch {
+    // Storage blocked. Fall back to hiding the table groups, which is the old behavior
+    // and is at least not broken.
+    return null;
+  }
+}
+
 export default function SixAxesNav() {
   const [pathname, setPathname] = useState<string>("");
-  const [share, setShare] = useState<{ on: boolean; qs: string }>({ on: false, qs: "" });
+  const [share, setShare] = useState<{ on: boolean; qs: string; code: string | null }>({ on: false, qs: "", code: null });
 
   useEffect(() => {
     try {
       setPathname(window.location.pathname);
       const sp = new URLSearchParams(window.location.search);
-      if (sp.has("share")) setShare({ on: true, qs: window.location.search });
+      if (sp.has("share")) setShare({ on: true, qs: window.location.search, code: sp.get("share") });
     } catch {
       /* no window */
     }
@@ -189,22 +210,34 @@ export default function SixAxesNav() {
   const isPlayer  = share.on || onDossier;
 
   if (isPlayer) {
-    // A share-scoped group is meaningless without a share code, so it is hidden rather
-    // than rendered as a set of dead links. "You" is always available: it is the
-    // account, and the account exists regardless of which door you came in through.
-    const groups: PGroup[] = share.on
+    // REMEMBER THE SHARE CODE, do not hide the groups.
+    //
+    // The first cut hid "This table" and "Session" on the dossier, because those pages
+    // carry no ?share= and the links would have pointed nowhere. That was technically
+    // correct and practically useless: a player who clicked "You" lost their way back
+    // to their table and had to hit the browser back button.
+    //
+    // So: whenever we see a share code, we remember it. On a dossier page we read it
+    // back, and every group stays reachable. A player who has never opened a campaign
+    // link (no remembered code) still sees only "You", which is right, because they
+    // genuinely have no table to go back TO.
+    const remembered = rememberShare(share.on ? share.code : null);
+    const qs = share.qs || (remembered ? `?share=${remembered}` : "");
+    const haveTable = share.on || Boolean(remembered);
+
+    const groups: PGroup[] = haveTable
       ? [PLAYER_TABLE, PLAYER_SESSION, PLAYER_YOU]
       : [PLAYER_YOU];
 
     // Share-scoped links carry the ?share=. Account-scoped ones MUST NOT: they span
     // every campaign, and pinning them to one would be wrong.
-    const hrefFor = (g: PGroup, l: Leaf) => (g.scoped ? `${l.href}${share.qs}` : l.href);
+    const hrefFor = (g: PGroup, l: Leaf) => (g.scoped ? `${l.href}${qs}` : l.href);
 
     const activeP =
       groups.find((g) => g.children.some((c) => c.href === pathname)) ??
       (onDossier ? PLAYER_YOU : groups[0]);
 
-    const home = share.on ? `/play${share.qs}` : "/me/campaigns";
+    const home = haveTable ? `/play${qs}` : "/me/campaigns";
 
     return (
       <>
@@ -220,7 +253,7 @@ export default function SixAxesNav() {
                 <div key={g.label} className="sax-vgroup">
                   <a
                     className={`sax-vlink${on ? " on" : ""}`}
-                    href={g.scoped ? `${g.href}${share.qs}` : g.href}
+                    href={g.scoped ? `${g.href}${qs}` : g.href}
                   >
                     {g.label}
                   </a>
@@ -254,7 +287,7 @@ export default function SixAxesNav() {
                   <a
                     key={g.label}
                     className={`sax-glink${on ? " on" : ""}`}
-                    href={g.scoped ? `${g.href}${share.qs}` : g.href}
+                    href={g.scoped ? `${g.href}${qs}` : g.href}
                   >
                     {g.label}
                   </a>
