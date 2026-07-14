@@ -21,21 +21,17 @@ const LABEL: Record<string, string> = {
   stealth: "Stealth", support: "Support / buff",
 };
 
-const CORE_CLASSES = ["Artificer","Barbarian","Bard","Cleric","Druid","Fighter","Monk","Paladin","Ranger","Rogue","Sorcerer","Warlock","Wizard"];
 // Fallback coverage profile for "Other" / unrecognized classes.
 const GENERAL_PROFILE = ["melee","single_target","utility"];
 
-const CORE_SPECIES = [
-  "Aarakocra","Aasimar","Aeormaton","Air Genasi","Astral Elf","Autognome","Bugbear","Centaur",
-  "Changeling","Deep Gnome","Dhampir","Dragonborn","Duergar","Dwarf","Earth Genasi","Eladrin","Elf",
-  "Fairy","Firbolg","Fire Genasi","Genasi","Giff","Githyanki","Githzerai","Gnome","Goblin","Goliath",
-  "Grung","Hadozee","Half-Elf","Half-Orc","Halfling","Harengon","Hexblood","Hobgoblin","Human",
-  "Kalashtar","Kender","Kenku","Khoravar","Kobold","Leonin","Lizardfolk","Loxodon",
-  "Minotaur","Orc","Owlin","Plasmoid","Reborn","Satyr","Sea Elf","Shadar-kai","Shifter",
-  "Simic Hybrid","Tabaxi","Thri-kreen","Tiefling","Tortle","Triton","Vedalken","Verdan","Warforged",
-  "Water Genasi","Yuan-ti",
-];
-const PARTNERED_SPECIES = ["Lotusden Halfling","Pallid Elf"]; // Critical Role
+// CORE_SPECIES and PARTNERED_SPECIES used to live here as hardcoded arrays. They
+// are gone. Species, species variants, and classes now come from the database
+// (species, species_variants, classes), which is what makes Vulpin, High Elf, and
+// every other variant selectable, and what stops free text reaching the model.
+//
+// PARTNERED_SPECIES held ["Lotusden Halfling", "Pallid Elf"]. Neither is a species.
+// Both are SUBRACES, misfiled because there was nowhere else to put them. They are
+// now variants of Halfling and Elf.
 
 const box = { background: C.panel, border: `1px solid ${C.line}`, borderRadius: 12, padding: 18 };
 const inputStyle = { background: C.ink, color: C.vellum, border: `1px solid ${C.line}`, borderRadius: 8, padding: "9px 11px", fontSize: 14, width: "100%" };
@@ -46,6 +42,10 @@ const btnGhost = { background: "none", color: C.brass, border: `1px solid ${C.br
 // embed/read-history + connect/speak/voice-activity for /record).
 const DISCORD_INVITE = "https://discord.com/oauth2/authorize?client_id=1521013496349855907&scope=bot+applications.commands&permissions=3164160";
 
+type SpeciesRow = { id: string; name: string; source: string; partnered: boolean; partner: string | null; edition: string; sort: number };
+type VariantRow = { id: string; species_id: string; name: string; variant_kind: string; source: string; partnered: boolean; partner: string | null; edition: string; sort: number };
+type ClassRow   = { id: string; name: string; source: string; partnered: boolean; partner: string | null; edition: string; sort: number };
+
 export default function GMWorkspace() {
   const supabase = useMemo(() => createClient(), []);
   const [userId, setUserId] = useState<string | null>(null);
@@ -53,7 +53,13 @@ export default function GMWorkspace() {
   const [err, setErr] = useState<string | null>(null);
 
   const [campaigns, setCampaigns] = useState<any[]>([]);
-  const [caps, setCaps] = useState<any[]>([]); // class_capabilities rows
+  const [caps, setCaps] = useState<any[]>([]); // class_capabilities rows (subclass catalog)
+  const [speciesList, setSpeciesList] = useState<SpeciesRow[]>([]);
+  const [variants, setVariants] = useState<VariantRow[]>([]);
+  const [classList, setClassList] = useState<ClassRow[]>([]);
+  // 2024 is the default (decision 6). Flipping to 2014 swaps subraces in for
+  // lineages; "both" shows everything, which is what a mixed table actually needs.
+  const [edition, setEdition] = useState<"2024" | "2014" | "both">("2024");
   const [selected, setSelected] = useState<string | null>(null); // campaign id
   const [characters, setCharacters] = useState<any[]>([]);
   const [dispositions, setDispositions] = useState<any[]>([]);
@@ -62,7 +68,7 @@ export default function GMWorkspace() {
 
   // forms
   const [newCampaign, setNewCampaign] = useState({ name: "", system: "5e" });
-  const [newChar, setNewChar] = useState({ name: "", class: "", subclass: "", level: "", species: "" });
+  const [newChar, setNewChar] = useState({ name: "", class: "", subclass: "", level: "", species: "", species_variant: "" });
   const [busy, setBusy] = useState(false);
 
   // ---- initial load ----
@@ -73,15 +79,28 @@ export default function GMWorkspace() {
       if (!user) { if (active) { setErr("Please sign in to use the GM workspace."); setLoading(false); } return; }
       if (!active) return;
       setUserId(user.id);
-      const [{ data: camps, error: e1 }, { data: capRows, error: e2 }, { data: dispRows }] = await Promise.all([
+      const [
+        { data: camps, error: e1 },
+        { data: capRows },
+        { data: spRows },
+        { data: varRows },
+        { data: clsRows },
+        { data: dispRows },
+      ] = await Promise.all([
         supabase.from("campaigns").select("id,name,system,gm_id,share_code").order("created_at", { ascending: false }),
         supabase.from("class_capabilities").select("class,subclass,capabilities,partnered,partner"),
+        supabase.from("species").select("id,name,source,partnered,partner,edition,sort").order("sort").order("name"),
+        supabase.from("species_variants").select("id,species_id,name,variant_kind,source,partnered,partner,edition,sort").order("sort").order("name"),
+        supabase.from("classes").select("id,name,source,partnered,partner,edition,sort").order("sort").order("name"),
         supabase.from("tpdi_responses").select("id,player_name,scores,assigned_character_id,respondent_id,campaign_id,created_at").not("player_name", "is", null).order("created_at", { ascending: false }),
       ]);
       if (!active) return;
       if (e1) setErr(e1.message);
       setCampaigns(camps || []);
       setCaps(capRows || []);
+      setSpeciesList((spRows as SpeciesRow[]) || []);
+      setVariants((varRows as VariantRow[]) || []);
+      setClassList((clsRows as ClassRow[]) || []);
       setDispositions(dispRows || []);
       setLoading(false);
     })();
@@ -126,12 +145,15 @@ export default function GMWorkspace() {
     const { error } = await supabase.from("characters").insert({
       campaign_id: selected, kind: "pc", profile_id: null,
       name: newChar.name.trim(), class: newChar.class,
-      subclass: newChar.subclass.trim() || null,
+      subclass: newChar.subclass || null,
       level: newChar.level ? Number(newChar.level) : null,
-      species: newChar.species.trim() || null,
+      species: newChar.species || null,
+      // The subrace / lineage. Values come from a constrained select, so no .trim()
+      // is needed: they cannot be typed, only chosen.
+      species_variant: newChar.species_variant || null,
     });
     if (error) setErr(error.message);
-    else { setNewChar({ name: "", class: "", subclass: "", level: "", species: "" }); if (selected) await loadCharacters(selected); }
+    else { setNewChar({ name: "", class: "", subclass: "", level: "", species: "", species_variant: "" }); if (selected) await loadCharacters(selected); }
     setBusy(false);
   }
 
@@ -172,11 +194,48 @@ export default function GMWorkspace() {
     () => [...new Set(caps.filter((r: any) => r.partner).map((r: any) => r.partner as string))].sort(),
     [caps]
   );
-  const partnerClasses = useMemo(
-    () => [...new Set(caps.filter((r: any) => r.partner && enabledPartners.has(r.partner) && !r.subclass).map((r: any) => r.class as string))].sort(),
-    [caps, enabledPartners]
-  );
   const partnerOn = (p: string | null | undefined) => !p || enabledPartners.has(p);
+
+  // Edition filter. A row tagged 'both' always shows; otherwise it must match the
+  // selected edition. "both" as a selection shows everything, which is what a table
+  // running a mix of 2014 and 2024 characters actually needs.
+  const editionOn = (e: string) => edition === "both" || e === "both" || e === edition;
+
+  // The option lists. Partner toggles gate species and variants exactly the way they
+  // already gate subclasses, which they never did before: species had no partner
+  // dimension at all, which is why Vulpin was unreachable.
+  const speciesOptions = useMemo(
+    () => speciesList.filter((sp) => partnerOn(sp.partner) && editionOn(sp.edition)),
+    [speciesList, enabledPartners, edition], // eslint-disable-line react-hooks/exhaustive-deps
+  );
+
+  const classOptions = useMemo(
+    () => classList.filter((c) => partnerOn(c.partner) && editionOn(c.edition)),
+    [classList, enabledPartners, edition], // eslint-disable-line react-hooks/exhaustive-deps
+  );
+
+  // Variants cascade from the chosen species. THIS is the dimension that did not
+  // exist: High Elf is an Elven variant, not a subclass and not a species.
+  const variantOptions = useMemo(() => {
+    const sp = speciesList.find((x) => x.name === newChar.species);
+    if (!sp) return [];
+    return variants.filter(
+      (v) => v.species_id === sp.id && partnerOn(v.partner) && editionOn(v.edition),
+    );
+  }, [variants, speciesList, newChar.species, enabledPartners, edition]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Subclasses cascade from the chosen class, as before, but now from a constrained
+  // select rather than a free-text datalist. This is the one that feeds
+  // class_capabilities -> coverage -> the Tactics axis, so a typo here silently
+  // erased a character from the model. It can no longer be typed.
+  const subclassOptions = useMemo(() => {
+    const seen = new Set<string>();
+    return caps
+      .filter((r: any) => r.subclass && partnerOn(r.partner) && (!newChar.class || r.class === newChar.class))
+      .filter((r: any) => (seen.has(r.subclass) ? false : (seen.add(r.subclass), true)))
+      .map((r: any) => r.subclass as string)
+      .sort();
+  }, [caps, newChar.class, enabledPartners]); // eslint-disable-line react-hooks/exhaustive-deps
   function togglePartner(p: string) {
     setEnabledPartners((prev) => {
       const next = new Set(prev);
@@ -322,35 +381,107 @@ export default function GMWorkspace() {
               </div>
             ))}
 
-            {/* add character */}
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 14 }}>
+            {/* add character.
+
+                Every picker below is a constrained <select>, not an <input list=>.
+                The old datalists were free-text fields with suggestions: you could
+                type anything, and the app would accept it. That is how 12 of 52 PCs
+                ended up with a subclass the catalog has never heard of, which means
+                no capability rows, which means they contribute NOTHING to coverage
+                and are invisible to the Tactics axis. A select cannot be typed into.
+
+                Species now cascades into a variant (subrace or lineage). That
+                dimension simply did not exist before, which is why High Elf could
+                not be selected and Vulpin could not be found. */}
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 14, alignItems: "center" }}>
               <input style={{ ...inputStyle, maxWidth: 150 }} placeholder="Name"
                 value={newChar.name} onChange={(e) => setNewChar({ ...newChar, name: e.target.value })} />
-              <input style={{ ...inputStyle, maxWidth: 150 }} value={newChar.class}
-                list="class-options" placeholder="Class (any)"
-                onChange={(e) => setNewChar({ ...newChar, class: e.target.value, subclass: "" })} />
-              <datalist id="class-options">
-                {[...CORE_CLASSES, ...partnerClasses, "Other"].map((c) => <option key={c} value={c} />)}
-              </datalist>
-              <input style={{ ...inputStyle, maxWidth: 180 }} value={newChar.subclass}
-                list="subclass-options" placeholder="Subclass (any, optional)"
-                onChange={(e) => setNewChar({ ...newChar, subclass: e.target.value })} />
-              <datalist id="subclass-options">
-                {caps
-                  .filter((r) => (!newChar.class || r.class === newChar.class) && r.subclass && partnerOn(r.partner))
-                  .map((r) => r.subclass)
-                  .sort()
-                  .map((s) => <option key={s} value={s} />)}
-              </datalist>
+
+              <select
+                style={{ ...inputStyle, maxWidth: 150 }}
+                value={newChar.class}
+                onChange={(e) => setNewChar({ ...newChar, class: e.target.value, subclass: "" })}
+              >
+                <option value="">Class</option>
+                {classOptions.map((c) => (
+                  <option key={c.id} value={c.name}>{c.name}</option>
+                ))}
+              </select>
+
+              <select
+                style={{ ...inputStyle, maxWidth: 200 }}
+                value={newChar.subclass}
+                onChange={(e) => setNewChar({ ...newChar, subclass: e.target.value })}
+                disabled={!newChar.class}
+                title={newChar.class ? "" : "Pick a class first"}
+              >
+                <option value="">{newChar.class ? "Subclass (optional)" : "Subclass"}</option>
+                {subclassOptions.map((sc) => (
+                  <option key={sc} value={sc}>{sc}</option>
+                ))}
+              </select>
+
               <input style={{ ...inputStyle, maxWidth: 70 }} placeholder="Lvl" type="number"
                 value={newChar.level} onChange={(e) => setNewChar({ ...newChar, level: e.target.value })} />
-              <input style={{ ...inputStyle, maxWidth: 150 }} value={newChar.species}
-                list="species-options" placeholder="Species (any, optional)"
-                onChange={(e) => setNewChar({ ...newChar, species: e.target.value })} />
-              <datalist id="species-options">
-                {[...CORE_SPECIES, ...(enabledPartners.has("Critical Role") ? PARTNERED_SPECIES : [])].map((sp) => <option key={sp} value={sp} />)}
-              </datalist>
+
+              <select
+                style={{ ...inputStyle, maxWidth: 160 }}
+                value={newChar.species}
+                onChange={(e) => setNewChar({ ...newChar, species: e.target.value, species_variant: "" })}
+              >
+                <option value="">Species (optional)</option>
+                {speciesOptions.map((sp) => (
+                  <option key={sp.id} value={sp.name}>
+                    {sp.name}{sp.partnered ? ` (${sp.partner})` : ""}
+                  </option>
+                ))}
+              </select>
+
+              {/* The missing dimension. Only shows when the chosen species HAS
+                  variants, so it stays out of the way for Orc or Warforged. */}
+              {variantOptions.length > 0 && (
+                <select
+                  style={{ ...inputStyle, maxWidth: 190 }}
+                  value={newChar.species_variant}
+                  onChange={(e) => setNewChar({ ...newChar, species_variant: e.target.value })}
+                >
+                  <option value="">
+                    {variantOptions.some((v) => v.variant_kind === "lineage") ? "Lineage" : "Subrace"} (optional)
+                  </option>
+                  {variantOptions.map((v) => (
+                    <option key={v.id} value={v.name}>
+                      {v.name}{v.partnered ? ` (${v.partner})` : ""}
+                    </option>
+                  ))}
+                </select>
+              )}
+
               <button style={btn} onClick={addCharacter} disabled={busy}>Add</button>
+            </div>
+
+            {/* Edition. 2024 is the default; 2014 is offered rather than dropped,
+                because tables run both and a character sheet does not care what we
+                standardised on. */}
+            <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 10 }}>
+              <span style={{ fontSize: 11.5, color: C.muted, fontFamily: "ui-monospace, monospace", letterSpacing: "0.1em", textTransform: "uppercase" }}>
+                Rules
+              </span>
+              {(["2024", "2014", "both"] as const).map((e) => (
+                <button
+                  key={e}
+                  type="button"
+                  onClick={() => setEdition(e)}
+                  style={{
+                    background: edition === e ? C.sun : "transparent",
+                    color: edition === e ? "#1B1426" : C.muted,
+                    border: `1px solid ${edition === e ? C.sun : C.line}`,
+                    borderRadius: 999, padding: "3px 11px", fontSize: 11.5,
+                    fontFamily: "ui-monospace, monospace", cursor: "pointer", fontWeight: 700,
+                  }}
+                >
+                  {e === "both" ? "Both" : e}
+                </button>
+              ))}
             </div>
           </div>
 
