@@ -43,6 +43,16 @@ export async function updateSession(request: NextRequest) {
   const user = data?.claims;
   if (
     !user &&
+    // Public legal pages. These MUST be reachable by a logged-out visitor: the Chrome
+    // Web Store reviewer opens /privacy with no session, and if it redirects to
+    // /auth/login the extension is rejected (violation "Purple Nickel": privacy policy
+    // not accessible). They are also linked from the Discord consent message, which
+    // players follow before they have any account.
+    !request.nextUrl.pathname.startsWith("/privacy") &&
+    !request.nextUrl.pathname.startsWith("/terms") &&
+    !request.nextUrl.pathname.startsWith("/ai-recording") &&
+    // The extension setup page: a player clicks it to link their campaign before login.
+    !request.nextUrl.pathname.startsWith("/x/") &&
     !request.nextUrl.pathname.startsWith("/auth") &&
     !request.nextUrl.pathname.startsWith("/play") &&
     !request.nextUrl.pathname.startsWith("/vibe") &&
