@@ -595,16 +595,24 @@ async function handleRecord(interaction: Interaction) {
     return ephemeral("Run /record in your campaign's channel, or add code:<your share code>.");
   }
 
-  // Don't double-start.
-  const { data: running } = await sb
+  // Don't double-start. Guard by GUILD, not campaign: one bot per guild can hold
+  // one voice channel, so at most one capture may be open per guild. A campaign
+  // scoped check let a second /record that resolved to a different campaign in the
+  // same guild start a competing recording (and, mid-reconnect, in whatever channel
+  // the requester happened to be sitting in). 'stopping' counts as open too, since
+  // the sidecar is still finalizing. Fail CLOSED if the check itself errors.
+  const { data: running, error: guardErr } = await sb
     .from("capture_control")
     .select("id")
-    .eq("campaign_id", campaign.id)
-    .in("status", ["requested", "active"])
+    .eq("guild_id", interaction.guild_id)
+    .in("status", ["requested", "active", "stopping"])
     .limit(1)
     .maybeSingle();
+  if (guardErr) {
+    return ephemeral("Could not verify the current recording state. Try again in a moment.");
+  }
   if (running) {
-    return ephemeral("A recording is already requested or running for this campaign. Use /stop first.");
+    return ephemeral("Six Axes is already recording in this server. Use /stop first, then /record.");
   }
 
   // Auto-link the requester as the campaign narrator, so their own voice is
@@ -732,6 +740,13 @@ async function handleRecord(interaction: Interaction) {
     status: "requested",
   });
   if (error) {
+    // 23505 = unique violation on capture_control_one_open_per_guild: another
+    // capture opened for this guild between the guard check above and this insert.
+    // The database is the final word, so treat the race as "already recording"
+    // rather than a generic failure.
+    if ((error as { code?: string }).code === "23505") {
+      return ephemeral("Six Axes is already recording in this server. Use /stop first, then /record.");
+    }
     return ephemeral("Could not start the recording request. Try again in a moment.");
   }
 

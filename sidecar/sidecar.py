@@ -189,6 +189,8 @@ class Recording:
         self.chunk_seconds: dict = {}
         self.flush_tasks: list = []
         self.reconnect_attempts = 0
+        self.notify_channel_id = None   # campaign's linked Discord text channel
+        self.notified_drop = False      # one drop notice per outage, cleared on reconnect
 
     def cleanup(self):
         shutil.rmtree(self.tmpdir, ignore_errors=True)
@@ -264,12 +266,34 @@ class Sidecar(discord.Client):
             # Recover a dropped voice connection (1006 etc.).
             if not rec.vc.is_connected():
                 log.warning("recording %s: voice connection lost; salvaging chunk and reconnecting.", rec.rid)
+                # Tell the GM once per outage, and explicitly ask them NOT to re-run
+                # /record. The bot comes back on its own; a manual restart during the
+                # gap is exactly what lands a recording in the wrong channel.
+                if not rec.notified_drop:
+                    rec.notified_drop = True
+                    await self.notify(
+                        rec.notify_channel_id,
+                        "\u26A0\uFE0F Six Axes lost its voice connection and is reconnecting. "
+                        "Please stay in the voice channel and do NOT run /record again; "
+                        "it will come back on its own.",
+                    )
                 await self.rotate_chunk(rec, restart=False)
-                if not await self.reconnect(rec):
+                if await self.reconnect(rec):
+                    rec.notified_drop = False
+                    await self.notify(
+                        rec.notify_channel_id,
+                        "\u2705 Six Axes reconnected and is recording again.",
+                    )
+                else:
                     rec.reconnect_attempts += 1
                     if rec.reconnect_attempts >= 5:
                         log.warning("recording %s: reconnect failed %d times; finalizing with what we have.",
                                     rec.rid, rec.reconnect_attempts)
+                        await self.notify(
+                            rec.notify_channel_id,
+                            "\u274C Six Axes could not reconnect after several tries and has finalized "
+                            "this recording with what it captured. Run /record to start a new segment.",
+                        )
                         await self.finalize(http, rec, note="connection lost; partial capture")
                 continue
             rec.reconnect_attempts = 0
@@ -314,9 +338,12 @@ class Sidecar(discord.Client):
             rec.cleanup()
             await self.patch_status(http, rid, "error", error=f"start_recording failed: {e}")
             return
+        rec.notify_channel_id = await self.get_notify_channel(http, rec.campaign_id)
         self.recordings[rid] = rec
         self.waiting_logged.discard(rid)
-        await self.patch_status(http, rid, "active")
+        # Persist the voice channel (Layer 2) so recovery and diagnostics never have
+        # to guess it from in-memory voice tracking.
+        await self.patch_status(http, rid, "active", channel_id=chan_id)
         log.info("RECORDING started: request %s in channel %s (session %s).", rid, chan_id, row.get("session_id"))
 
     async def rotate_chunk(self, rec: Recording, restart: bool):
@@ -592,12 +619,14 @@ class Sidecar(discord.Client):
             log.warning("insert_track failed: %r", e)
             return False
 
-    async def patch_status(self, http, rid, status, error=None, capture_job_id=None):
+    async def patch_status(self, http, rid, status, error=None, capture_job_id=None, channel_id=None):
         body = {"status": status, "updated_at": _now_iso()}
         if error is not None:
             body["error"] = str(error)[:500]
         if capture_job_id is not None:
             body["capture_job_id"] = capture_job_id
+        if channel_id is not None:
+            body["channel_id"] = channel_id
         try:
             r = await http.patch(
                 f"{REST}/capture_control",
@@ -608,6 +637,37 @@ class Sidecar(discord.Client):
             r.raise_for_status()
         except Exception as e:
             log.warning("patch %s -> %s failed: %r", rid, status, e)
+
+    async def get_notify_channel(self, http, campaign_id):
+        """The campaign's linked Discord text channel, where GM status notices go.
+        Returns None if the campaign has no linked channel, in which case notices
+        are simply skipped."""
+        if not campaign_id:
+            return None
+        try:
+            r = await http.get(
+                f"{REST}/campaigns",
+                params={"id": f"eq.{campaign_id}", "select": "discord_channel_id", "limit": "1"},
+                headers=HEADERS,
+            )
+            r.raise_for_status()
+            rows = r.json()
+            return rows[0].get("discord_channel_id") if rows else None
+        except Exception as e:
+            log.warning("get_notify_channel(%s) failed: %r", campaign_id, e)
+            return None
+
+    async def notify(self, channel_id, content):
+        """Post a GM-facing status notice to the campaign's Discord text channel.
+        Strictly best-effort: a failed notice (missing channel, missing Send
+        Messages permission, API hiccup) is logged and never affects the recording."""
+        if not channel_id:
+            return
+        try:
+            ch = self.get_channel(int(channel_id)) or await self.fetch_channel(int(channel_id))
+            await ch.send(content)
+        except Exception as e:
+            log.warning("notify to channel %s failed: %r", channel_id, e)
 
 
 def main():
