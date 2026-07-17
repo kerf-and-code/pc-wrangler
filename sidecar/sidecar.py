@@ -54,6 +54,10 @@ STOP_READ_DELAY_SECONDS = int(os.environ.get("STOP_READ_DELAY_SECONDS", "3"))
 FLUSH_SECONDS = int(os.environ.get("FLUSH_SECONDS", "300"))
 AUDIO_BUCKET = os.environ.get("AUDIO_BUCKET", "session-audio")
 OPUS_BITRATE = os.environ.get("OPUS_BITRATE", "32k")
+# Opt-in probe: when set, log RTCP Sender Reports (ssrc + NTP/RTP pair) so a test
+# recording can confirm whether Discord emits the reports needed for frame-exact
+# cross-speaker sync. Off in normal operation to keep logs quiet.
+RTCP_PROBE = bool(os.environ.get("RTCP_PROBE"))
 
 REST = f"{SUPABASE_URL}/rest/v1"
 STORAGE = f"{SUPABASE_URL}/storage/v1/object"
@@ -233,6 +237,30 @@ class TimelineSink(discord.sinks.WaveSink):
         self.stop_perf = None                   # set by rotate_chunk when the chunk closes
         self._expected: dict = {}               # user -> next expected RTP timestamp
         self._seen: set = set()                 # users already anchored with leading silence
+
+    # The event router registers listeners it finds in __sink_listeners__ as
+    # (lookup_key, method_name); it dispatches "rtcp_packet" to the "on_rtcp_packet"
+    # key and calls the method as handler(packet, guild). Registering here is safe:
+    # if the mechanism ever differs, the handler simply never fires, and listener
+    # exceptions are caught by the router rather than affecting the recording.
+    __sink_listeners__ = [("on_rtcp_packet", "on_rtcp_packet")]
+
+    def on_rtcp_packet(self, packet, guild):
+        # Probe only. Sender Reports (RTCP type 200) carry the NTP/RTP pair that would
+        # let us map every speaker's private RTP clock onto one shared wall clock, for
+        # frame-exact cross-speaker alignment. This logs them so a test recording can
+        # confirm Discord actually sends them; it changes nothing about capture.
+        if not RTCP_PROBE:
+            return
+        try:
+            if getattr(packet, "type", None) == 200:
+                info = getattr(packet, "info", None)
+                log.info("RTCP SR: ssrc=%s ntp_ts=%s rtp_ts=%s",
+                         getattr(packet, "ssrc", None),
+                         getattr(info, "ntp_ts", None),
+                         getattr(info, "rtp_ts", None))
+        except Exception as e:
+            log.warning("rtcp probe error: %r", e)
 
     def _silence(self, frames: int) -> bytes:
         n = max(0, min(int(frames), _MAX_SILENCE_FRAMES))
