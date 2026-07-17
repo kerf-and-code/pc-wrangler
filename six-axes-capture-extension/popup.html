@@ -13,6 +13,14 @@
       background: #F4C430; color: #1a1206; font-weight: 700; font-size: 14px; cursor: pointer; }
     .status { font-size: 12px; margin-top: 10px; min-height: 16px; }
 
+    .camps-section { margin-top: 16px; border-top: 1px solid #3D2F52; padding-top: 14px; display: none; }
+    .camps-section h2 { font-size: 13px; margin: 0 0 8px; color: #F4C430; }
+    .camp-row { display: flex; align-items: center; gap: 8px; border: 1px solid #3D2F52; border-radius: 8px;
+      padding: 8px 10px; margin-bottom: 6px; background: rgba(11,7,18,0.35); }
+    .camp-name { flex: 1; font-size: 12.5px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .camp-remove { width: auto; margin: 0; padding: 5px 10px; font-size: 11px; background: none;
+      color: #E07A5F; border: 1px solid #3D2F52; font-weight: 600; }
+
     .link-section { margin-top: 16px; border-top: 1px solid #3D2F52; padding-top: 14px; display: none; }
     .link-section h2 { font-size: 13px; margin: 0 0 8px; color: #F4C430; }
     .link-row { border: 1px solid #3D2F52; border-radius: 8px; padding: 10px; margin-bottom: 8px; background: rgba(11,7,18,0.35); }
@@ -25,11 +33,16 @@
 </head>
 <body>
   <h1>Six Axes Capture</h1>
-  <p>Paste your table's campaign code (your GM has it). Rolls you make on D&amp;D Beyond will flow to Six Axes while a session is open.</p>
-  <label for="code">CAMPAIGN CODE</label>
+  <p>Add each table's campaign code once (your GM has it). Rolls on D&amp;D Beyond flow to whichever of your tables has a session open, so switching tables needs no re-entry.</p>
+  <label for="code">ADD A CAMPAIGN CODE</label>
   <input id="code" placeholder="e.g. 2930a13916" autocomplete="off" />
-  <button id="save">Save</button>
+  <button id="save">Add campaign</button>
   <div class="status" id="status"></div>
+
+  <div class="camps-section" id="camps-section">
+    <h2>Your campaigns</h2>
+    <div id="camp-rows"></div>
+  </div>
 
   <div class="link-section" id="link-section">
     <h2>Link your character</h2>
