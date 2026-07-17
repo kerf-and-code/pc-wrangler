@@ -23,10 +23,10 @@ const CSS = `
 .wg-camprow{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:22px;}
 .wg-eyebrow{font-family:ui-monospace,Menlo,monospace;font-size:10.5px;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);}
 .wg-pills{display:flex;gap:8px;flex-wrap:wrap;flex:1;}
-.wg-pill{font-size:14px;background:none;color:var(--muted);border:1px solid var(--line);border-radius:999px;
+.wg-pill{font-size:14px;background:var(--surface);color:var(--text);border:1px solid var(--line);border-radius:999px;
   padding:8px 16px;cursor:pointer;transition:all .15s;}
-.wg-pill:hover{color:var(--text);border-color:var(--plum);}
-.wg-pill.on{background:var(--surface2);color:var(--text);border-color:var(--plum);}
+.wg-pill:hover{color:var(--text);border-color:var(--plum);background:var(--surface2);}
+.wg-pill.on{background:var(--surface2);color:var(--sun);border-color:var(--sun);font-weight:600;}
 
 .wg-btn{font-size:14px;font-weight:600;background:var(--sun);color:var(--bg);border:none;border-radius:10px;
   padding:10px 18px;cursor:pointer;text-decoration:none;display:inline-block;transition:background .15s,transform .15s;}
