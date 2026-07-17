@@ -8,8 +8,9 @@ const RECAP_MODEL = "claude-sonnet-4-6";
 
 const SHORT_LIMIT = 16000;   // below this, feed the transcript directly
 const CHUNK_SIZE = 14000;    // size of each chunk when summarizing a long transcript
-const MAX_CHUNKS = 12;       // safety cap on number of chunks
-const SEGMENT_LIMIT = 4000;  // safety cap on transcript rows pulled
+const MAX_CHUNKS = 60;        // hard safety ceiling; a 3 hour session is well under this
+const REDUCE_THRESHOLD = 24;  // beats spanning more than this many chunks get one reduce pass
+const SEGMENT_LIMIT = 20000; // pull the whole transcript; a heavy 3 hour session runs ~4000+ rows
 
 // TAVERN axis names (player-facing labels). Only used to flavor the model
 // context; the recap output never shows axis names.
@@ -174,6 +175,11 @@ export async function buildRecap(supabase: DbLike, sessionId: string): Promise<B
         if (transcriptText.length <= SHORT_LIMIT) {
           beats = transcriptText;
         } else {
+          // Split the WHOLE transcript into chunks. Do not truncate: dropping the
+          // tail is exactly what silently lost the back half of long sessions from
+          // the recap. Every chunk is summarized; if there are a great many, the
+          // beats get one reduce pass so the final context stays bounded without
+          // discarding any part of the session.
           const chunks: string[] = [];
           let cur = "";
           for (const ln of lines) {
@@ -182,16 +188,47 @@ export async function buildRecap(supabase: DbLike, sessionId: string): Promise<B
           }
           if (cur) chunks.push(cur);
 
-          const capped = chunks.slice(0, MAX_CHUNKS);
+          // MAX_CHUNKS is a runaway ceiling, not a content cap. Only an absurdly long
+          // session (6 hours plus) could reach it; if it does, we keep the earliest
+          // and latest chunks so both ends of the session survive, rather than the
+          // old behavior of keeping only the front.
+          let working = chunks;
+          if (chunks.length > MAX_CHUNKS) {
+            const head = Math.ceil(MAX_CHUNKS / 2);
+            const tail = MAX_CHUNKS - head;
+            working = [...chunks.slice(0, head), ...chunks.slice(chunks.length - tail)];
+          }
+
           const summaries = await Promise.all(
-            capped.map((chunk, i) =>
-              callClaude(apiKey, CHUNK_SYSTEM, `Part ${i + 1} of ${capped.length}:\n\n${chunk}`, 600)),
+            working.map((chunk, i) =>
+              callClaude(apiKey, CHUNK_SYSTEM, `Part ${i + 1} of ${working.length}:\n\n${chunk}`, 600)),
           );
-          beats = summaries.join("\n");
-          if (chunks.length > MAX_CHUNKS) beats += "\n(Transcript truncated for length.)";
+
+          // If the session produced a lot of chunks, the concatenated beats can get
+          // long. Reduce them once into a tighter set of beats so the final recap
+          // call sees the whole arc, still without dropping any stretch of time.
+          if (working.length > REDUCE_THRESHOLD) {
+            const joined = summaries.join("\n");
+            const reduced: string[] = [];
+            let acc = "";
+            for (const line of joined.split("\n")) {
+              if (acc && acc.length + line.length + 1 > CHUNK_SIZE) { reduced.push(acc); acc = ""; }
+              acc += (acc ? "\n" : "") + line;
+            }
+            if (acc) reduced.push(acc);
+            const reducedBeats = await Promise.all(
+              reduced.map((r, i) =>
+                callClaude(apiKey, CHUNK_SYSTEM, `Beats group ${i + 1} of ${reduced.length}:\n\n${r}`, 600)),
+            );
+            beats = reducedBeats.join("\n");
+          } else {
+            beats = summaries.join("\n");
+          }
         }
       } catch {
-        beats = transcriptText.slice(0, SHORT_LIMIT) + "\n(Transcript truncated.)";
+        // On a model error, fall back to the raw head of the transcript rather than
+        // failing the recap outright. This is a degraded path, not the normal one.
+        beats = transcriptText.slice(0, SHORT_LIMIT) + "\n(Partial transcript; summarization was unavailable.)";
       }
 
       if (beats.trim()) parts.push(`\nFrom the session transcript:\n${beats.trim()}`);
