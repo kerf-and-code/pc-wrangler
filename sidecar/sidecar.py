@@ -169,6 +169,116 @@ async def concat_oggs(paths: list, out_path: str) -> bool:
             pass
 
 
+# PCM shape that WaveSink writes, taken from the branch's OpusDecoder: 48 kHz,
+# 2 channels, 16-bit. One 48 kHz sample frame is CHANNELS * width = 4 bytes, and a
+# 20 ms Opus packet is 960 sample frames, which is also the RTP timestamp step.
+_PCM_RATE = 48000
+_PCM_FRAME_BYTES = 4          # 2 channels * 2 bytes
+_MAX_SILENCE_FRAMES = _PCM_RATE * 30   # never fabricate more than 30 s in one gap
+
+
+def _pad_wav_trailing(blob: bytes, target_seconds: float) -> bytes:
+    """Return a WAV extended with trailing silence to reach target_seconds. Never
+    truncates: if the audio is already longer, it is returned unchanged. Used so
+    every speaker's chunk fills the same wall-clock window and chunks line up when
+    concatenated across the session."""
+    try:
+        with io.BytesIO(blob) as bi, wave.open(bi, "rb") as w:
+            nch, sw, fr, nframes = w.getnchannels(), w.getsampwidth(), w.getframerate(), w.getnframes()
+            data = w.readframes(nframes)
+    except Exception:
+        return blob
+    target_frames = int(max(0.0, target_seconds) * fr)
+    if target_frames <= nframes:
+        return blob
+    pad = b"\x00" * ((target_frames - nframes) * nch * sw)
+    out = io.BytesIO()
+    with wave.open(out, "wb") as w:
+        w.setnchannels(nch)
+        w.setsampwidth(sw)
+        w.setframerate(fr)
+        w.writeframes(data + pad)
+    return out.getvalue()
+
+
+class TimelineSink(discord.sinks.WaveSink):
+    """A WaveSink that reconstructs real time.
+
+    Stock WaveSink writes only the PCM it receives, so a speaker's silences (before
+    their first word and between utterances) are dropped and every speaker collapses
+    to their own talk-time on a private clock. That is what made 3-hour sessions look
+    like 70 minutes and scrambled the transcript timeline.
+
+    This sink restores the silence so each speaker's chunk buffer spans the real
+    chunk window:
+
+      * Leading silence: perf_counter() at a speaker's first packet in the chunk,
+        minus the chunk start, positions them within the window. This is arrival
+        based, so it is accurate to the jitter-buffer depth, not frame-exact. RTP
+        timestamps are per-speaker (each SSRC has its own random base) and cannot
+        align speakers to one another, so arrival time is the only shared reference
+        available for intra-chunk position.
+      * Interior silence: the RTP timestamp gap between a speaker's own consecutive
+        packets is an exact 48 kHz sample count, so their internal timing is
+        reconstructed precisely.
+
+    Trailing silence to fill the window is added at flush (_pad_wav_trailing), once
+    the chunk's real duration is known. The chunk boundary itself is the shared clock
+    that keeps speakers aligned across the whole session.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.start_perf = time.perf_counter()   # chunk start, arrival clock
+        self.stop_perf = None                   # set by rotate_chunk when the chunk closes
+        self._expected: dict = {}               # user -> next expected RTP timestamp
+        self._seen: set = set()                 # users already anchored with leading silence
+
+    def _silence(self, frames: int) -> bytes:
+        n = max(0, min(int(frames), _MAX_SILENCE_FRAMES))
+        return b"\x00" * (n * _PCM_FRAME_BYTES)
+
+    def write(self, data, user):
+        # Extract PCM and the RTP timestamp without importing branch internals: a
+        # VoiceData exposes .pcm and .packet.timestamp; a raw bytes payload does not.
+        if hasattr(data, "pcm"):
+            pcm = data.pcm
+            pkt = getattr(data, "packet", None)
+            rtp = getattr(pkt, "timestamp", None) if pkt is not None else None
+        else:
+            pcm = data
+            rtp = None
+        if not pcm:
+            return
+
+        if user not in self.audio_data:
+            self.audio_data[user] = discord.sinks.core.AudioData(io.BytesIO())
+        buf = self.audio_data[user]
+        samples = len(pcm) // _PCM_FRAME_BYTES   # per-channel sample frames in this packet
+
+        if user not in self._seen:
+            # First packet from this speaker in this chunk: place them in the window.
+            self._seen.add(user)
+            lead = int(max(0.0, time.perf_counter() - self.start_perf) * _PCM_RATE)
+            if lead > 0:
+                buf.write(self._silence(lead))
+            buf.write(pcm)
+            if rtp is not None:
+                self._expected[user] = (rtp + samples) & 0xFFFFFFFF
+            return
+
+        if rtp is not None and user in self._expected:
+            gap = (rtp - self._expected[user]) & 0xFFFFFFFF   # unsigned 32-bit delta
+            # Only fabricate silence for a plausible gap. A huge delta is an SSRC
+            # reset or a wraparound, not real silence, so we do not invent it.
+            if 0 < gap <= _MAX_SILENCE_FRAMES:
+                buf.write(self._silence(gap))
+            buf.write(pcm)
+            self._expected[user] = (rtp + samples) & 0xFFFFFFFF
+        else:
+            buf.write(pcm)
+
+
 class Recording:
     """State for one capture_control request being recorded."""
 
@@ -326,7 +436,7 @@ class Sidecar(discord.Client):
             await self.patch_status(http, rid, "error", error=f"connect failed: {e}")
             return
         rec = Recording(rid, vc, chan_id, g, row.get("campaign_id"), row.get("session_id"))
-        rec.sink = discord.sinks.WaveSink()
+        rec.sink = TimelineSink()
         try:
             vc.start_recording(rec.sink, _after_record)
         except Exception as e:
@@ -351,12 +461,16 @@ class Sidecar(discord.Client):
         compress the finished sink in the background. Keeps memory to ~one chunk of PCM."""
         old_sink = rec.sink
         idx = rec.chunk_index
+        # Stamp the chunk's real close time on the same clock the sink started on, so
+        # flush knows the true wall-clock length of this chunk window.
+        if old_sink is not None and getattr(old_sink, "stop_perf", None) is None:
+            old_sink.stop_perf = time.perf_counter()
         try:
             rec.vc.stop_recording()
         except Exception as e:
             log.warning("recording %s: stop_recording during rotation raised: %r", rec.rid, e)
         if restart:
-            new_sink = discord.sinks.WaveSink()
+            new_sink = TimelineSink()
             try:
                 rec.vc.start_recording(new_sink, _after_record)
                 rec.sink = new_sink
@@ -378,7 +492,12 @@ class Sidecar(discord.Client):
         except Exception as e:
             log.warning("chunk %d: sink read failed: %r", idx, e)
             return
-        canonical = 0.0
+
+        # Read every speaker's reconstructed WAV first, so we know the longest one.
+        # The sink already inserted leading and interior silence; these blobs span
+        # from chunk start to each speaker's last packet.
+        blobs = {}
+        max_secs = 0.0
         for key, data in audio.items():
             try:
                 data.file.seek(0)
@@ -388,13 +507,27 @@ class Sidecar(discord.Client):
                 continue
             frames, rate = _wav_params(blob)
             secs = (frames / rate) if (frames and rate) else 0.0
-            canonical = max(canonical, secs)
             uid = str(getattr(key, "id", key))
+            blobs[uid] = (blob, secs)
+            max_secs = max(max_secs, secs)
+
+        # The chunk's real wall-clock length, from the sink's own start/stop stamps,
+        # never shorter than the longest reconstructed speaker. Every speaker (present
+        # or absent) is aligned to this one length, which is what keeps chunks lined
+        # up when they are concatenated across the whole session.
+        start_perf = getattr(sink, "start_perf", None)
+        stop_perf = getattr(sink, "stop_perf", None)
+        timed = (stop_perf - start_perf) if (start_perf is not None and stop_perf is not None) else 0.0
+        chunk_wall = max(timed, max_secs)
+
+        for uid, (blob, secs) in blobs.items():
+            padded = _pad_wav_trailing(blob, chunk_wall)
             out = os.path.join(rec.tmpdir, f"{uid}-{idx}.ogg")
-            if await encode_wav_to_ogg(blob, out):
-                rec.speaker_chunks.setdefault(uid, []).append((idx, out, secs))
-                log.info("  chunk %d: speaker %s %.1fs (%d KB wav -> ogg)", idx, uid, secs, len(blob) // 1024)
-        rec.chunk_seconds[idx] = canonical
+            if await encode_wav_to_ogg(padded, out):
+                rec.speaker_chunks.setdefault(uid, []).append((idx, out, chunk_wall))
+                log.info("  chunk %d: speaker %s %.1fs speech, padded to %.1fs (%d KB wav -> ogg)",
+                         idx, uid, secs, chunk_wall, len(padded) // 1024)
+        rec.chunk_seconds[idx] = chunk_wall
 
     async def reconnect(self, rec: Recording) -> bool:
         try:
@@ -406,7 +539,7 @@ class Sidecar(discord.Client):
             if channel is None:
                 return False
             rec.vc = await channel.connect(timeout=30.0, reconnect=False)
-            rec.sink = discord.sinks.WaveSink()
+            rec.sink = TimelineSink()
             rec.vc.start_recording(rec.sink, _after_record)
             rec.chunk_started_at = time.monotonic()
             log.info("recording %s: reconnected and resumed (chunk %d).", rec.rid, rec.chunk_index)
