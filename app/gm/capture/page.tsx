@@ -213,7 +213,7 @@ export default function CapturePage() {
     <PageShell width={860}>
       <h1 style={{ ...ui.h1, fontSize: 28, margin: "4px 0 4px" }}>Capture</h1>
       <p style={{ color: C.muted, fontSize: 14, margin: "0 0 20px" }}>
-        Record consent, upload one audio track per player, and queue the session for transcription. Nothing is processed until consent is on file.
+        When you record over Discord, run <code style={{ fontFamily: "ui-monospace, monospace", color: C.text }}>/record</code> to start and <code style={{ fontFamily: "ui-monospace, monospace", color: C.text }}>/stop</code> when you finish; the job, each player&apos;s track, and transcription all appear here on their own. Manual upload is the backup for tables that do not record over Discord. Nothing is processed until consent is on file.
       </p>
 
         {/* campaign + session */}
@@ -289,8 +289,16 @@ export default function CapturePage() {
 
               {!job && (
                 <div style={{ marginTop: 12 }}>
-                  <p style={{ color: C.muted, fontSize: 13, marginBottom: 12 }}>One job per recorded session. Create it, then upload each player&apos;s track.</p>
-                  <button type="button" onClick={createJob} style={btn(C.sun, SAX.inkDeep)}>Create capture job</button>
+                  <p style={{ color: C.muted, fontSize: 13, marginBottom: 10 }}>
+                    Recording over Discord? Run <code style={{ fontFamily: "ui-monospace, monospace", color: C.text }}>/record</code> to start and <code style={{ fontFamily: "ui-monospace, monospace", color: C.text }}>/stop</code> when you finish. The job and each player&apos;s track appear here on their own, and transcription starts automatically. You do not need to create anything by hand.
+                  </p>
+                  <details style={{ marginTop: 8 }}>
+                    <summary style={{ cursor: "pointer", fontSize: 13, color: C.muted, fontWeight: 600 }}>No Discord? Upload audio by hand (backup)</summary>
+                    <div style={{ marginTop: 12 }}>
+                      <p style={{ color: C.muted, fontSize: 13, marginBottom: 12 }}>One job per recorded session. Create it, then upload each player&apos;s track from your recorder.</p>
+                      <button type="button" onClick={createJob} style={btn(C.plum, SAX.inkDeep)}>Create capture job</button>
+                    </div>
+                  </details>
                 </div>
               )}
 
