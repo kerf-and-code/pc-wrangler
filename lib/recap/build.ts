@@ -31,8 +31,18 @@ List what happened in this slice: decisions, actions, discoveries, combat outcom
 Use the character/speaker names exactly as given. Do not invent anything not present in the text.
 Output a short plain list of beats, one per line, no preamble and no commentary.`;
 
+const COMPLETE_SYSTEM = `You write a thorough, complete recap of a tabletop RPG session, addressed to the players. Unlike a brief "previously on," this version is meant to leave nothing important out.
+Rules:
+- Ground every statement in the provided notes, events, and transcript beats. Do NOT invent characters, outcomes, locations, or plot beats that are not supported by the input.
+- Walk the session in chronological order. Cover every scene, decision, discovery, combat, negotiation, NPC interaction, piece of loot, and story thread the input supports. Do not skip beats to save space; completeness is the point.
+- Name every player character and NPC involved, and attribute actions and choices to whoever made them.
+- Engaging fantasy-narrative voice, flowing prose in paragraphs (a new paragraph per scene or beat as the story turns). No headers, no bullet points, no lists.
+- If the input genuinely lacks detail on something, do not pad it with invention; simply cover what is supported and move on.
+- Do not address the GM or mention "events," "logs," "transcripts," or the tool. Just tell the full story of what happened.`;
+
 type DbLike = { from: (table: string) => any };
 type BuildResult = { ok: true; recap: string } | { ok: false; error: string; status: number };
+type RecapMode = "brief" | "complete";
 
 async function callClaude(apiKey: string, system: string, user: string, maxTokens: number): Promise<string> {
   const res = await fetch("https://api.anthropic.com/v1/messages", {
@@ -58,7 +68,7 @@ async function callClaude(apiKey: string, system: string, user: string, maxToken
     .trim();
 }
 
-export async function buildRecap(supabase: DbLike, sessionId: string): Promise<BuildResult> {
+export async function buildRecap(supabase: DbLike, sessionId: string, mode: RecapMode = "brief"): Promise<BuildResult> {
   const { data: session, error: sErr } = await supabase
     .from("sessions")
     .select("id, campaign_id, session_number, notes")
@@ -247,9 +257,15 @@ export async function buildRecap(supabase: DbLike, sessionId: string): Promise<B
 
   const context = parts.join("\n");
 
+  // Brief is the short player-facing "previously on." Complete walks the whole
+  // session and needs far more room. Same model, same context; only the prompt and
+  // the length ceiling differ.
+  const system = mode === "complete" ? COMPLETE_SYSTEM : SYSTEM;
+  const maxTokens = mode === "complete" ? 3000 : 1024;
+
   let recap = "";
   try {
-    recap = await callClaude(apiKey, SYSTEM, context, 1024);
+    recap = await callClaude(apiKey, system, context, maxTokens);
   } catch {
     return { ok: false, error: "The recap model returned an error. Try again.", status: 502 };
   }

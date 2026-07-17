@@ -12,6 +12,8 @@ export async function POST(request: Request) {
     // Manual generate overwrites (default). The Mark-done auto-draft passes
     // overwrite:false so it never clobbers an existing draft or the GM's edits.
     const overwrite = body?.overwrite !== false;
+    // Recap length mode. Anything other than an explicit "complete" is brief.
+    const mode = body?.mode === "complete" ? "complete" : "brief";
     if (!sessionId) {
       return NextResponse.json({ error: "Missing sessionId." }, { status: 400 });
     }
@@ -36,7 +38,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ recap: session.recap, skipped: true });
     }
 
-    const result = await buildRecap(supabase, sessionId);
+    const result = await buildRecap(supabase, sessionId, mode);
     if (!result.ok) {
       return NextResponse.json({ error: result.error }, { status: result.status });
     }

@@ -41,6 +41,7 @@ export default function SessionWorkspace() {
 
   // recap (Phase 1 hero)
   const [recap, setRecap] = useState("");
+  const [recapMode, setRecapMode] = useState<"brief" | "complete">("brief");
   const [recapLoading, setRecapLoading] = useState(false);
   const [recapSaving, setRecapSaving] = useState(false);
   const [recapMsg, setRecapMsg] = useState<string | null>(null);
@@ -237,7 +238,7 @@ export default function SessionWorkspace() {
       const res = await fetch("/api/recap", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionId: session }),
+        body: JSON.stringify({ sessionId: session, mode: recapMode }),
       });
       const data = await res.json();
       if (!res.ok) setRecapMsg(data.error || "Could not generate recap.");
@@ -600,11 +601,26 @@ export default function SessionWorkspace() {
         <>
           {/* recap (Phase 1 hero) */}
           <div style={box}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6, gap: 10, flexWrap: "wrap" }}>
               <div style={{ fontSize: 13, color: C.muted }}>Session recap</div>
-              <button style={btnGhost} onClick={generateRecap} disabled={recapLoading}>
-                {recapLoading ? "Generating..." : recap ? "Regenerate" : "Generate recap"}
-              </button>
+              <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                <div style={{ display: "inline-flex", border: `1px solid ${C.line}`, borderRadius: 8, overflow: "hidden" }}>
+                  {(["brief", "complete"] as const).map((m) => (
+                    <button key={m} type="button" onClick={() => setRecapMode(m)}
+                      style={{ background: recapMode === m ? C.brass : "none", color: recapMode === m ? C.ink : C.muted, border: "none", padding: "6px 13px", fontSize: 12, fontWeight: 600, cursor: "pointer", textTransform: "capitalize" }}>
+                      {m}
+                    </button>
+                  ))}
+                </div>
+                <button style={btnGhost} onClick={generateRecap} disabled={recapLoading}>
+                  {recapLoading ? "Generating..." : recap ? "Regenerate" : "Generate recap"}
+                </button>
+              </div>
+            </div>
+            <div style={{ fontSize: 11.5, color: C.muted, marginBottom: 10, lineHeight: 1.5 }}>
+              {recapMode === "complete"
+                ? "Complete: a fuller, scene-by-scene account that leaves little out. Longer, and slower to generate."
+                : "Brief: a short \u201cpreviously on\u201d for players. Switch to Complete for a fuller account."}
             </div>
             <textarea
               value={recap}
