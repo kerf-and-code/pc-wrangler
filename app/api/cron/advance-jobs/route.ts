@@ -33,6 +33,21 @@ export const maxDuration = 60;
 // only ever picked up once. If a submit fails, the job stays 'draft' and the next run
 // retries it. If consent is not cleared, submit parks the job at 'blocked_consent' so it
 // stops being retried every minute and the GM sees the real reason on the Capture page.
+//
+// WHY THE SCAN STARTS FROM JOBS, NOT FROM capture_control.
+//
+// It used to read the OLDEST 20 capture_control rows and look up their jobs. That works
+// until the history of finished recordings passes 20, and then it silently stops working
+// forever: every past recording sorts ahead of the newest one, so a fresh job never enters
+// the window and never auto-transcribes. It failed exactly that way on 2026-07-18. Sorting
+// the other way only moves the blind spot, because then an older job that needs a retry
+// falls off the end instead.
+//
+// Scanning capture_jobs at 'draft' removes the blind spot rather than relocating it: that
+// set is bounded by outstanding WORK, not by accumulated history, and it is naturally
+// small. The capture_control lookup stays, but as a GUARD rather than the driver, which is
+// the role it was always right for: a 'done' row with a capture_job_id is the sidecar
+// saying every track is uploaded.
 export async function GET(request: Request) {
   const auth = request.headers.get("authorization");
   const secret = process.env.CRON_SECRET;
@@ -42,34 +57,53 @@ export async function GET(request: Request) {
 
   const admin = createAdminClient();
 
-  // Recordings the sidecar has finished with.
-  const { data: finished, error: cErr } = await admin
-    .from("capture_control")
-    .select("id, campaign_id, capture_job_id, updated_at")
-    .eq("status", "done")
-    .not("capture_job_id", "is", null)
-    .order("updated_at", { ascending: true })
-    .limit(20);
-
-  if (cErr) {
-    return NextResponse.json({ error: cErr.message, stage: "scan" }, { status: 500 });
-  }
-  if (!finished || finished.length === 0) {
-    return NextResponse.json({ ok: true, ready: 0, submitted: 0 });
-  }
-
-  const jobIds = [...new Set(finished.map((r) => r.capture_job_id as string))];
-
-  // Only jobs still waiting. Anything past 'draft' is already moving.
-  const { data: jobs } = await admin
+  // Jobs still waiting. Anything past 'draft' is already moving.
+  const { data: jobs, error: jErr } = await admin
     .from("capture_jobs")
     .select("id, campaign_id, session_id, status")
-    .in("id", jobIds)
-    .eq("status", "draft");
+    .eq("status", "draft")
+    .order("created_at", { ascending: false })
+    .limit(50);
+
+  if (jErr) {
+    return NextResponse.json({ error: jErr.message, stage: "scan" }, { status: 500 });
+  }
 
   const draft = (jobs as Array<{ id: string; session_id: string }>) || [];
   if (draft.length === 0) {
     return NextResponse.json({ ok: true, ready: 0, submitted: 0 });
+  }
+
+  // The guard: the sidecar must have FINISHED with this job. 'done' with a capture_job_id
+  // is the last thing finalize() writes, after every upload and every insert_track has
+  // returned, so it is the sidecar saying nothing more is coming. A job with no control row
+  // at all is a manual upload from the Capture page, which the GM submits by hand and this
+  // route deliberately leaves alone.
+  const { data: controls, error: cErr } = await admin
+    .from("capture_control")
+    .select("capture_job_id, status")
+    .in("capture_job_id", draft.map((j) => j.id))
+    .eq("status", "done");
+
+  if (cErr) {
+    return NextResponse.json({ error: cErr.message, stage: "control" }, { status: 500 });
+  }
+
+  const finalized = new Set(
+    ((controls as Array<{ capture_job_id: string | null }>) || [])
+      .map((c) => c.capture_job_id)
+      .filter((v): v is string => v !== null),
+  );
+
+  const finishedJobs = draft.filter((j) => finalized.has(j.id));
+  if (finishedJobs.length === 0) {
+    return NextResponse.json({
+      ok: true,
+      ready: 0,
+      submitted: 0,
+      // Draft jobs the sidecar has not finished with, or manual uploads awaiting the GM.
+      awaitingSidecar: draft.map((j) => j.id),
+    });
   }
 
   // A job with no uploaded audio has nothing to transcribe. Submitting it would flip it
@@ -77,7 +111,7 @@ export async function GET(request: Request) {
   const { data: tracks } = await admin
     .from("audio_tracks")
     .select("job_id, storage_path")
-    .in("job_id", draft.map((j) => j.id));
+    .in("job_id", finishedJobs.map((j) => j.id));
 
   const withAudio = new Set(
     ((tracks as Array<{ job_id: string; storage_path: string | null }>) || [])
@@ -85,7 +119,7 @@ export async function GET(request: Request) {
       .map((t) => t.job_id),
   );
 
-  const ready = draft.filter((j) => withAudio.has(j.id));
+  const ready = finishedJobs.filter((j) => withAudio.has(j.id));
 
   const base = new URL(request.url).origin;
   const results: Array<{ job: string; ok: boolean; detail?: string }> = [];
@@ -119,7 +153,10 @@ export async function GET(request: Request) {
     submitted: results.filter((r) => r.ok).length,
     // A job with no audio is not an error, but it should be visible rather than silently
     // skipped forever.
-    noAudio: draft.filter((j) => !withAudio.has(j.id)).map((j) => j.id),
+    noAudio: finishedJobs.filter((j) => !withAudio.has(j.id)).map((j) => j.id),
+    // Draft jobs the sidecar has not finished with yet, plus manual uploads that are
+    // waiting on the GM. Also not errors, also worth seeing.
+    awaitingSidecar: draft.filter((j) => !finalized.has(j.id)).map((j) => j.id),
     results,
   });
 }

@@ -2,6 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
+// This route hands one signed URL per track to Deepgram. Six tracks means six sequential
+// round trips, and the platform default cut the function off partway through: on
+// 2026-07-18 a six-speaker job submitted two tracks and left four sitting at 'pending'
+// with the job reporting success. Everything downstream then ran against a third of the
+// session. The other routes in the /stop chain already set this; this one did not.
+export const maxDuration = 60;
+
 export async function POST(req: NextRequest) {
   let jobId: string | undefined;
   try {
@@ -175,39 +182,80 @@ export async function POST(req: NextRequest) {
 
   const base = process.env.TRANSCRIBE_CALLBACK_BASE || req.nextUrl.origin;
   let submitted = 0;
+  const failures: Array<{ track: string; reason: string }> = [];
 
   for (const t of todo as { id: string; storage_path: string }[]) {
-    const { data: signed } = await admin.storage.from("session-audio").createSignedUrl(t.storage_path, 7200);
-    if (!signed?.signedUrl) continue;
+    // EVERY iteration is isolated. Previously an exception anywhere in here escaped the
+    // loop entirely (this handler has no outer try/catch around the submission), so one
+    // bad track silently abandoned every track after it, and the failure surfaced as a
+    // generic 500 with no record of which ones never went. A per-track catch means one
+    // failure costs one track.
+    try {
+      const { data: signed, error: sErr } = await admin.storage
+        .from("session-audio")
+        .createSignedUrl(t.storage_path, 7200);
 
-    const cb = `${base}/api/transcribe/callback?track=${t.id}&k=${encodeURIComponent(secret)}`;
-    const params = new URLSearchParams({
-      model: "nova-3",
-      smart_format: "true",
-      punctuate: "true",
-      utterances: "true",
-      callback: cb,
-    });
+      if (!signed?.signedUrl) {
+        // This used to be a bare `continue`: no log, no error, no trace. A track skipped
+        // here looked identical to one that was never in the job.
+        failures.push({ track: t.id, reason: sErr?.message ?? "could not sign the audio URL" });
+        continue;
+      }
 
-    const res = await fetch(`https://api.deepgram.com/v1/listen?${params.toString()}`, {
-      method: "POST",
-      headers: { Authorization: `Token ${dgKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ url: signed.signedUrl }),
-    });
+      const cb = `${base}/api/transcribe/callback?track=${t.id}&k=${encodeURIComponent(secret)}`;
+      const params = new URLSearchParams({
+        model: "nova-3",
+        smart_format: "true",
+        punctuate: "true",
+        utterances: "true",
+        callback: cb,
+      });
 
-    if (res.ok) {
-      submitted += 1;
-      await admin.from("audio_tracks").update({ status: "transcribing" }).eq("id", t.id);
+      const res = await fetch(`https://api.deepgram.com/v1/listen?${params.toString()}`, {
+        method: "POST",
+        headers: { Authorization: `Token ${dgKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ url: signed.signedUrl }),
+      });
+
+      if (res.ok) {
+        submitted += 1;
+        await admin.from("audio_tracks").update({ status: "transcribing" }).eq("id", t.id);
+      } else {
+        const detail = await res.text().catch(() => "");
+        failures.push({ track: t.id, reason: `deepgram ${res.status}${detail ? `: ${detail.slice(0, 200)}` : ""}` });
+      }
+    } catch (e) {
+      failures.push({ track: t.id, reason: e instanceof Error ? e.message : "submit threw" });
     }
   }
 
   if (submitted === 0) {
-    await admin.from("capture_jobs").update({ status: "error", error: "No tracks could be submitted." }).eq("id", jobId);
-    return NextResponse.json({ error: "No tracks could be submitted to Deepgram." }, { status: 502 });
+    await admin
+      .from("capture_jobs")
+      .update({ status: "error", error: `No tracks could be submitted. ${failures.map((f) => f.reason).join("; ")}`.slice(0, 500) })
+      .eq("id", jobId);
+    return NextResponse.json(
+      { error: "No tracks could be submitted to Deepgram.", failures },
+      { status: 502 },
+    );
   }
 
-  await admin.from("capture_jobs").update({ status: "transcribing", error: null }).eq("id", jobId);
-  // withheld is reported so a partial transcription is visible on the Capture page rather
-  // than looking like a complete one with fewer speakers than the GM remembers.
-  return NextResponse.json({ ok: true, submitted, withheld });
+  // A PARTIAL submission is not a success. The job still advances, because the tracks that
+  // did go need their callbacks handled, but the leftovers stay 'pending' so a re-run picks
+  // them up, and the count is recorded on the job so the Capture page shows the truth
+  // rather than a green status over a third of a session.
+  const leftBehind = todo.length - submitted;
+  await admin
+    .from("capture_jobs")
+    .update({
+      status: "transcribing",
+      error: leftBehind > 0
+        ? `${leftBehind} of ${todo.length} tracks did not submit. Press Transcribe again to retry them.`
+        : null,
+    })
+    .eq("id", jobId);
+
+  // withheld: dropped for consent, deliberately and permanently.
+  // leftBehind: failed to submit, retryable.
+  return NextResponse.json({ ok: true, submitted, withheld, leftBehind, failures });
 }
