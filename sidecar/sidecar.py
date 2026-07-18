@@ -24,7 +24,10 @@ Env:
   SUPABASE_SERVICE_ROLE_KEY
   POLL_SECONDS               (optional, default 4)
   STOP_READ_DELAY_SECONDS    (optional, default 3; wait after stop_recording before reading sink)
-  FLUSH_SECONDS              (optional, default 300; sink rotation interval)
+  FLUSH_SECONDS              (optional, default 60; sink rotation interval. This is a
+                             MEMORY control: TimelineSink writes dense PCM, so a chunk
+                             costs rate * 4 bytes * FLUSH_SECONDS per speaker. At 300 s
+                             that is 57.6 MB each, which OOM-killed a 1 GB machine.)
   AUDIO_BUCKET               (optional, default 'session-audio')
   OPUS_BITRATE               (optional, default '32k')
 """
@@ -51,7 +54,7 @@ SUPABASE_URL = os.environ["SUPABASE_URL"].rstrip("/")
 SERVICE_KEY = os.environ["SUPABASE_SERVICE_ROLE_KEY"]
 POLL_SECONDS = int(os.environ.get("POLL_SECONDS", "4"))
 STOP_READ_DELAY_SECONDS = int(os.environ.get("STOP_READ_DELAY_SECONDS", "3"))
-FLUSH_SECONDS = int(os.environ.get("FLUSH_SECONDS", "300"))
+FLUSH_SECONDS = int(os.environ.get("FLUSH_SECONDS", "60"))
 AUDIO_BUCKET = os.environ.get("AUDIO_BUCKET", "session-audio")
 OPUS_BITRATE = os.environ.get("OPUS_BITRATE", "32k")
 # Opt-in probe: when set, log RTCP Sender Reports (ssrc + NTP/RTP pair) so a test
@@ -97,26 +100,33 @@ async def _after_record(sink, *args):
     return
 
 
-def _wav_params(blob: bytes):
-    """(frames, rate) from a WAV blob, or (None, None)."""
-    try:
-        with wave.open(io.BytesIO(blob), "rb") as w:
-            return w.getnframes(), w.getframerate()
-    except Exception:
-        return None, None
+async def encode_wav_to_ogg(wav_path: str, out_path: str, pad_to_seconds: float = 0.0) -> bool:
+    """Compress a WAV chunk on disk to mono Opus .ogg via ffmpeg, optionally padding it
+    with trailing silence so it spans pad_to_seconds.
 
+    Reads from a FILE, not a stdin pipe, and pads inside ffmpeg rather than in Python.
+    The previous version took the whole WAV as bytes and was fed a blob that had already
+    been copied three times to add the padding, so one 300 s speaker chunk could cost
+    over 200 MB of resident memory at flush. Here nothing larger than ffmpeg's own
+    buffers is held.
 
-async def encode_wav_to_ogg(wav_blob: bytes, out_path: str) -> bool:
-    """Compress a WAV chunk to mono Opus .ogg via ffmpeg (stdin -> file)."""
+    Padding uses 'apad' (pad forever) plus '-t' (cut at an exact duration), which is the
+    robust idiom for 'make this exactly N seconds long'. Because pad_to_seconds is always
+    computed as at least the input's own length, this never truncates real audio.
+    """
     try:
-        proc = await asyncio.create_subprocess_exec(
+        args = [
             "ffmpeg", "-hide_banner", "-loglevel", "error",
-            "-i", "pipe:0", "-ac", "1", "-c:a", "libopus", "-b:a", OPUS_BITRATE,
-            "-f", "ogg", "-y", out_path,
-            stdin=asyncio.subprocess.PIPE,
+            "-i", wav_path, "-ac", "1",
+        ]
+        if pad_to_seconds and pad_to_seconds > 0:
+            args += ["-af", "apad", "-t", f"{pad_to_seconds:.3f}"]
+        args += ["-c:a", "libopus", "-b:a", OPUS_BITRATE, "-f", "ogg", "-y", out_path]
+        proc = await asyncio.create_subprocess_exec(
+            *args,
             stderr=asyncio.subprocess.PIPE,
         )
-        _, err = await proc.communicate(input=wav_blob)
+        _, err = await proc.communicate()
         if proc.returncode != 0:
             log.warning("ffmpeg chunk encode failed: %s", (err or b"").decode(errors="replace")[:300])
             return False
@@ -181,28 +191,17 @@ _PCM_FRAME_BYTES = 4          # 2 channels * 2 bytes
 _MAX_SILENCE_FRAMES = _PCM_RATE * 30   # never fabricate more than 30 s in one gap
 
 
-def _pad_wav_trailing(blob: bytes, target_seconds: float) -> bytes:
-    """Return a WAV extended with trailing silence to reach target_seconds. Never
-    truncates: if the audio is already longer, it is returned unchanged. Used so
-    every speaker's chunk fills the same wall-clock window and chunks line up when
-    concatenated across the session."""
+def _wav_seconds(path: str) -> float:
+    """Duration of a WAV on disk, read from its HEADER only. Never loads the samples,
+    which is the point: flush needs every speaker's length before it can decide the
+    chunk window, and reading frames to get it was one of the copies that OOMed the
+    machine."""
     try:
-        with io.BytesIO(blob) as bi, wave.open(bi, "rb") as w:
-            nch, sw, fr, nframes = w.getnchannels(), w.getsampwidth(), w.getframerate(), w.getnframes()
-            data = w.readframes(nframes)
+        with wave.open(path, "rb") as w:
+            frames, rate = w.getnframes(), w.getframerate()
+        return (frames / rate) if (frames and rate) else 0.0
     except Exception:
-        return blob
-    target_frames = int(max(0.0, target_seconds) * fr)
-    if target_frames <= nframes:
-        return blob
-    pad = b"\x00" * ((target_frames - nframes) * nch * sw)
-    out = io.BytesIO()
-    with wave.open(out, "wb") as w:
-        w.setnchannels(nch)
-        w.setsampwidth(sw)
-        w.setframerate(fr)
-        w.writeframes(data + pad)
-    return out.getvalue()
+        return 0.0
 
 
 class TimelineSink(discord.sinks.WaveSink):
@@ -226,7 +225,7 @@ class TimelineSink(discord.sinks.WaveSink):
         packets is an exact 48 kHz sample count, so their internal timing is
         reconstructed precisely.
 
-    Trailing silence to fill the window is added at flush (_pad_wav_trailing), once
+    Trailing silence to fill the window is added at flush by ffmpeg, once
     the chunk's real duration is known. The chunk boundary itself is the shared clock
     that keeps speakers aligned across the whole session.
     """
@@ -513,7 +512,20 @@ class Sidecar(discord.Client):
 
     async def flush_sink(self, rec: Recording, sink, idx: int):
         """Read a finished sink (direct read, after the proven delay) and encode each
-        speaker's chunk to .ogg on disk."""
+        speaker's chunk to .ogg on disk.
+
+        MEMORY. TimelineSink buffers are dense: every speaker holds
+        FLUSH_SECONDS * 48000 * 4 bytes whether they spoke or not. The old flush then
+        multiplied that, holding every speaker's blob at once (it needed them all before
+        it could pick the chunk window), making three more copies per speaker to pad, and
+        piping a fourth through ffmpeg's stdin, all while the replacement sink was already
+        filling. That is what exhausted a 1 GB machine mid-session.
+
+        This version never holds a whole track in Python. Pass one streams each speaker
+        out to a temp WAV and takes the duration from the header. The sink's buffers are
+        then released. Pass two encodes one file at a time, padding inside ffmpeg, and
+        deletes each staging WAV as it goes. Peak resident memory during flush is now
+        roughly the copy buffer, and the transient cost moved to disk."""
         await asyncio.sleep(STOP_READ_DELAY_SECONDS)
         try:
             audio = getattr(sink, "audio_data", {}) or {}
@@ -521,23 +533,32 @@ class Sidecar(discord.Client):
             log.warning("chunk %d: sink read failed: %r", idx, e)
             return
 
-        # Read every speaker's reconstructed WAV first, so we know the longest one.
-        # The sink already inserted leading and interior silence; these blobs span
-        # from chunk start to each speaker's last packet.
-        blobs = {}
+        # Pass 1: stage every speaker to disk and measure it from the header. The sink
+        # already inserted leading and interior silence, so each staged WAV spans from
+        # chunk start to that speaker's last packet.
+        staged = {}
         max_secs = 0.0
-        for key, data in audio.items():
+        for key, data in list(audio.items()):
+            uid = str(getattr(key, "id", key))
+            wav_path = os.path.join(rec.tmpdir, f"{uid}-{idx}.wav")
             try:
                 data.file.seek(0)
-                blob = data.file.read()
+                with open(wav_path, "wb") as fh:
+                    shutil.copyfileobj(data.file, fh, 1024 * 1024)
             except Exception as e:
-                log.warning("chunk %d: could not read track for %s: %r", idx, key, e)
+                log.warning("chunk %d: could not stage track for %s: %r", idx, uid, e)
                 continue
-            frames, rate = _wav_params(blob)
-            secs = (frames / rate) if (frames and rate) else 0.0
-            uid = str(getattr(key, "id", key))
-            blobs[uid] = (blob, secs)
+            secs = _wav_seconds(wav_path)
+            staged[uid] = (wav_path, secs)
             max_secs = max(max_secs, secs)
+
+        # Everything is on disk now, so drop the sink's buffers. This is the single
+        # biggest reclaim: without it the retired sink stays alive for the whole encode
+        # while the new sink is already growing beside it.
+        try:
+            audio.clear()
+        except Exception:
+            pass
 
         # The chunk's real wall-clock length, from the sink's own start/stop stamps,
         # never shorter than the longest reconstructed speaker. Every speaker (present
@@ -548,13 +569,25 @@ class Sidecar(discord.Client):
         timed = (stop_perf - start_perf) if (start_perf is not None and stop_perf is not None) else 0.0
         chunk_wall = max(timed, max_secs)
 
-        for uid, (blob, secs) in blobs.items():
-            padded = _pad_wav_trailing(blob, chunk_wall)
+        # Pass 2: one speaker at a time, staging WAV deleted as soon as it is encoded.
+        for uid, (wav_path, secs) in staged.items():
+            # chunk_wall is >= every speaker's own length by construction, so this max is
+            # defensive only. It preserves the old padder's contract: never truncate.
+            target = max(chunk_wall, secs)
+            try:
+                staged_kb = os.path.getsize(wav_path) // 1024
+            except Exception:
+                staged_kb = 0
             out = os.path.join(rec.tmpdir, f"{uid}-{idx}.ogg")
-            if await encode_wav_to_ogg(padded, out):
-                rec.speaker_chunks.setdefault(uid, []).append((idx, out, chunk_wall))
-                log.info("  chunk %d: speaker %s %.1fs speech, padded to %.1fs (%d KB wav -> ogg)",
-                         idx, uid, secs, chunk_wall, len(padded) // 1024)
+            ok = await encode_wav_to_ogg(wav_path, out, pad_to_seconds=target)
+            try:
+                os.remove(wav_path)
+            except Exception:
+                pass
+            if ok:
+                rec.speaker_chunks.setdefault(uid, []).append((idx, out, target))
+                log.info("  chunk %d: speaker %s %.1fs speech, padded to %.1fs (%d KB staged wav -> ogg)",
+                         idx, uid, secs, target, staged_kb)
         rec.chunk_seconds[idx] = chunk_wall
 
     async def reconnect(self, rec: Recording) -> bool:
