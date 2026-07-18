@@ -649,8 +649,30 @@ class Sidecar(discord.Client):
             rec.cleanup()
             return
 
+        # Per-speaker consent, resolved ONCE for the whole job.
+        #
+        # Consent is enforced HERE, at finalize, rather than downstream at transcription.
+        # The difference matters: a speaker who has not consented never has their audio
+        # uploaded at all, so it never reaches the session-audio bucket and there is
+        # nothing to retain, sign a URL for, or delete later. The temp files go with
+        # rec.cleanup() when this returns. That is the difference between "we do not
+        # transcribe your voice" and "we do not record your voice", and only the second
+        # one is true if the skip happens here.
+        #
+        # This replaces the old all-or-nothing model, where session_consent_ok blocked the
+        # ENTIRE job unless every attendee had consented. One un-consented player used to
+        # stop the whole table's transcription. Now each stream stands alone, which is
+        # possible because Discord gives one stream per microphone: skipping a speaker
+        # removes their voice, with no bleed from a shared room mic.
+        #
+        # Honest limit, worth remembering when writing anything user-facing: this removes
+        # the person's VOICE, not their presence. Other speakers naming or quoting them
+        # still land in consented streams.
+        consented, opted_out = await self.load_consent(http, rec.campaign_id, rec.session_id)
+
         uploaded = 0
         unmapped = 0
+        refused = 0
         for uid, chunks in rec.speaker_chunks.items():
             # Resolve the GM narrator first: linking a Discord id as narrator is a
             # deliberate, owner-gated act, so it wins over a (possibly stale) PC
@@ -661,6 +683,15 @@ class Sidecar(discord.Client):
             if not char_id and not gm_id:
                 unmapped += 1
                 log.warning("  unmapped speaker discord_id=%s (%d chunk(s)); skipping.", uid, len(chunks))
+                continue
+            # Consent gate. The GM narrator is exempt: running /record is itself the
+            # operator's act, and the GM identity is linked deliberately and owner-gated.
+            # A player character needs standing (campaign-wide) consent AND no opt-out for
+            # this specific session.
+            if char_id and (char_id not in consented or char_id in opted_out):
+                refused += 1
+                log.info("  speaker %s -> character %s has not consented; audio discarded, never uploaded.",
+                         uid, char_id)
                 continue
             chunks.sort(key=lambda c: c[0])
             have = {c[0] for c in chunks}
@@ -704,8 +735,9 @@ class Sidecar(discord.Client):
                          who, total_secs, len(blob) // 1024, storage_path)
 
         await self.patch_status(http, rec.rid, "done", capture_job_id=job_id, error=note)
-        log.info("STOPPED: request %s -> job %s; %d track(s) uploaded, %d unmapped speaker(s), %d chunk(s).",
-                 rec.rid, job_id, uploaded, unmapped, rec.chunk_index)
+        log.info("STOPPED: request %s -> job %s; %d track(s) uploaded, %d unmapped speaker(s), "
+                 "%d speaker(s) without consent, %d chunk(s).",
+                 rec.rid, job_id, uploaded, unmapped, refused, rec.chunk_index)
         rec.cleanup()
 
     # ------------------------------------------------------------ data helpers
@@ -732,6 +764,64 @@ class Sidecar(discord.Client):
         except Exception as e:
             log.warning("resolve_character(%s) failed: %r", discord_uid, e)
             return None
+
+    async def load_consent(self, http, campaign_id, session_id):
+        """(consented_character_ids, opted_out_character_ids) for this campaign/session.
+
+        Mirrors the two halves of the session_consent_ok SQL function exactly:
+
+          blanket  recording_consents rows with session_id NULL and consented true, which
+                   is the standing consent a player gives when they claim a character
+          optout   recording_consents rows for THIS session with consented false, which is
+                   the GM excluding someone from one game
+
+        Fetched once per job rather than per speaker. If either request fails we return
+        EMPTY sets, which means nothing is treated as consented and no audio is uploaded.
+        Failing closed is the only safe direction here: a transient error must never turn
+        into uploading someone who declined."""
+        consented: set = set()
+        opted_out: set = set()
+        if not campaign_id:
+            return consented, opted_out
+        try:
+            r = await http.get(
+                f"{REST}/recording_consents",
+                params={
+                    "campaign_id": f"eq.{campaign_id}",
+                    "session_id": "is.null",
+                    "consented": "is.true",
+                    "select": "character_id",
+                },
+                headers=HEADERS,
+            )
+            r.raise_for_status()
+            for row in r.json():
+                if row.get("character_id"):
+                    consented.add(row["character_id"])
+        except Exception as e:
+            log.warning("load_consent(blanket) failed, treating nobody as consented: %r", e)
+            return set(), set()
+        if session_id:
+            try:
+                r = await http.get(
+                    f"{REST}/recording_consents",
+                    params={
+                        "session_id": f"eq.{session_id}",
+                        "consented": "is.false",
+                        "select": "character_id",
+                    },
+                    headers=HEADERS,
+                )
+                r.raise_for_status()
+                for row in r.json():
+                    if row.get("character_id"):
+                        opted_out.add(row["character_id"])
+            except Exception as e:
+                log.warning("load_consent(optout) failed, treating nobody as consented: %r", e)
+                return set(), set()
+        log.info("consent: %d character(s) with standing consent, %d opted out of this session.",
+                 len(consented), len(opted_out))
+        return consented, opted_out
 
     async def resolve_gm_identity(self, http, campaign_id, discord_uid):
         """A speaker who is not an active PC may be the GM narrator. Match their
