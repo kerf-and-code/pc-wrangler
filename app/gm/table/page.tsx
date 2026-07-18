@@ -62,7 +62,6 @@ export default function CheckInPage() {
   const [att, setAtt] = useState<Record<string, string>>({});
   const [vibes, setVibes] = useState<Vibe[]>([]);
   const [copied, setCopied] = useState<boolean>(false);
-  const [processing, setProcessing] = useState<boolean>(false);
   const [chatReads, setChatReads] = useState<ChatRead[]>([]);
 
   const campaign = campaigns.find((c) => c.id === campaignId) || null;
@@ -128,25 +127,6 @@ export default function CheckInPage() {
     );
   }
 
-  function patchSession(next: Sess) {
-    setSelected(next);
-    setSessions((prev) => prev.map((s) => (s.id === next.id ? next : s)));
-  }
-
-  async function goLive() {
-    if (!selected) return;
-    await supabase.from("sessions").update({ status: "live" }).eq("id", selected.id);
-    patchSession({ ...selected, status: "live" });
-  }
-
-  async function processSession() {
-    if (!selected) return;
-    setProcessing(true);
-    await supabase.from("sessions").update({ status: "processed", processed_at: new Date().toISOString() }).eq("id", selected.id);
-    patchSession({ ...selected, status: "processed" });
-    setProcessing(false);
-  }
-
   function portalLink(): string {
     if (!campaign) return "";
     const origin = typeof window !== "undefined" ? window.location.origin : "";
@@ -169,7 +149,7 @@ export default function CheckInPage() {
     <PageShell width={920}>
       <h1 style={{ ...ui.h1, fontSize: 28, margin: "4px 0 4px" }}>Run the session</h1>
       <p style={{ color: C.muted, fontSize: 14, margin: "0 0 20px" }}>
-        Go live when play starts (chat hides), mark attendance, then process to open player check-in.
+        Mark who is at the table. Go live, end and process, and close are on the Session Log.
       </p>
 
         {/* campaign + portal link */}
@@ -213,28 +193,17 @@ export default function CheckInPage() {
 
         {selected && (
           <div style={{ display: "grid", gap: 18, gridTemplateColumns: "1fr", alignItems: "start" }}>
-            {/* lifecycle */}
+            {/* Session lifecycle (Go live, End and process, Close, Reopen) now lives on the
+                Session Log, where the rest of the session controls are. This page keeps
+                what it is actually for: attendance and the vibe check. */}
             <div style={box}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-                  <span style={{ width: 9, height: 9, borderRadius: 9, background: STATUS_TONE[selected.status] || C.muted }} />
-                  <span style={{ fontSize: 16, fontWeight: 700 }}>Session {selected.session_number ?? "?"}</span>
-                  <span style={{ fontSize: 12, color: STATUS_TONE[selected.status] || C.muted, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "ui-monospace, monospace" }}>{selected.status}</span>
-                </div>
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  {selected.status !== "live" && selected.status !== "processed" && (
-                    <button type="button" onClick={goLive} style={btn(C.warn, SAX.inkDeep)}>Go live</button>
-                  )}
-                  {selected.status === "live" && (
-                    <span style={{ fontSize: 12, color: C.warn, alignSelf: "center" }}>Live — chat is hidden</span>
-                  )}
-                  <button type="button" onClick={processSession} disabled={processing} style={{ ...btn(C.good, SAX.inkDeep), opacity: processing ? 0.7 : 1 }}>
-                    {processing ? "Processing…" : selected.status === "processed" ? "Re-process" : "End & process"}
-                  </button>
-                </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 9, flexWrap: "wrap" }}>
+                <span style={{ width: 9, height: 9, borderRadius: 9, background: STATUS_TONE[selected.status] || C.muted }} />
+                <span style={{ fontSize: 16, fontWeight: 700 }}>Session {selected.session_number ?? "?"}</span>
+                <span style={{ fontSize: 12, color: STATUS_TONE[selected.status] || C.muted, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "ui-monospace, monospace" }}>{selected.status}</span>
               </div>
               <div style={{ fontSize: 12, color: C.muted, marginTop: 10 }}>
-                Processing marks the session done and opens it for player check-in. The recap is drafted on Review and edited or sent from the Session Log.
+                Status only. Go live, end and process, close, and reopen are on the Session Log.
               </div>
             </div>
 

@@ -9,6 +9,9 @@ const C = {
   ink: SAX.inkDeep, panel: SAX.slateBg, line: SAX.line, vellum: SAX.text,
   muted: SAX.muted, brass: SAX.brass, brassDim: SAX.brassDim, accent: SAX.plum, warn: SAX.warn,
 };
+const STATUS_TONE: Record<string, string> = {
+  scheduled: "#A597BD", live: "#E07A5F", completed: "#9B7BD4", processed: "#5DBE9A", cancelled: "#A597BD",
+};
 const AXIS_COLOR: Record<string, string> = { N: "#B7615A", T: "#C8A24B", O: "#4E8077", S: "#CE8A42", E: "#6C76B0", I: "#9A93B0" };
 const AXIS_NAME: Record<string, string> = { N: "Voice", T: "Tactics", O: "Arcana", S: "Rapport", E: "Exploration", I: "Nerve" };
 
@@ -49,6 +52,9 @@ export default function SessionWorkspace() {
   const [recapSending, setRecapSending] = useState(false);
   const [recapPosting, setRecapPosting] = useState(false);
   const [sessionDeleting, setSessionDeleting] = useState(false);
+  const [sessionClosing, setSessionClosing] = useState(false);
+  const [sessionReopening, setSessionReopening] = useState(false);
+  const [lifecycleMsg, setLifecycleMsg] = useState<string | null>(null);
   const [schedDraft, setSchedDraft] = useState("");
   const [schedSaving, setSchedSaving] = useState(false);
   const [schedMsg, setSchedMsg] = useState<string | null>(null);
@@ -107,7 +113,7 @@ export default function SessionWorkspace() {
     const [{ data: chars }, { data: sess }, { data: arcRows }] = await Promise.all([
       supabase.from("characters").select("id,name,class,subclass,kind,active")
         .eq("campaign_id", campaignId).eq("active", true).order("kind").order("name"),
-      supabase.from("sessions").select("id,session_number,status,capture_modality,consent_recorded,notes,recap,scheduled_at,created_at")
+      supabase.from("sessions").select("id,session_number,status,capture_modality,consent_recorded,notes,recap,scheduled_at,created_at,started_at,ended_at")
         .eq("campaign_id", campaignId).order("session_number", { ascending: false, nullsFirst: false }),
       supabase.from("arcs").select("id,title,status,character_id,last_touched_session_id")
         .eq("campaign_id", campaignId).order("created_at", { ascending: true }),
@@ -195,11 +201,119 @@ export default function SessionWorkspace() {
     setBusy(false);
   }
 
-  async function completeSession() {
-    if (!session) return;
-    const { error } = await supabase.from("sessions")
-      .update({ status: "completed", ended_at: new Date().toISOString() }).eq("id", session);
-    if (error) setErr(error.message); else if (campaign) loadCampaignData(campaign);
+  // Closing goes through /api/session/close rather than updating the row directly. The
+  // route holds two things a client-side update cannot: it refuses to close while the
+  // sidecar still holds an open capture_control row (closing under a live recording
+  // strands it), and it always moves status and ended_at TOGETHER. That pairing is an
+  // invariant, because chat_locked() reads status = 'live' while /api/vtt/ingest reads
+  // ended_at IS NULL, so setting one without the other either leaves party chat locked
+  // after the game or keeps accepting idle dice rolls into a finished session.
+  //
+  // The 409 branch is the crashed-sidecar case: that capture row will never reach 'done'
+  // on its own, so the GM is offered a forced close, which also retires the orphan row
+  // and releases the guild lock that would otherwise block every future /record.
+  async function closeSession(force = false, process = false) {
+    if (!session || sessionClosing) return;
+    setSessionClosing(true); setErr(null); setLifecycleMsg(null);
+    try {
+      const res = await fetch("/api/session/close", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId: session, force, process }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.status === 409 && data?.recording && !force) {
+        const goAhead = window.confirm(
+          "Six Axes still has an open recording for this session (" + String(data.captureStatus) + ").\n\n" +
+          "Run /stop in Discord first if the game is still going.\n\n" +
+          "If the bot crashed and will never finish, close anyway? That also clears the " +
+          "stuck recording so /record works again.",
+        );
+        setSessionClosing(false);
+        if (goAhead) await closeSession(true, process);
+        return;
+      }
+      if (!res.ok) {
+        setErr(data?.error || "Could not close session.");
+      } else {
+        const what = data?.processed ? "Session ended and processed" : "Session closed";
+        setLifecycleMsg(
+          data?.alreadyClosed
+            ? "Session was already closed."
+            : data?.orphanCleared
+              ? what + ", and the stuck recording was cleared."
+              : what + ".",
+        );
+        if (campaign) await loadCampaignData(campaign);
+      }
+    } catch {
+      setErr("Could not close session. Try again.");
+    }
+    setSessionClosing(false);
+  }
+
+  // Go live is the same operation as reopen: make this the campaign's one underway
+  // session. It shares the route so it also gets the started_at stamp and the
+  // one-underway-session guard.
+  async function goLive() {
+    if (!session || sessionReopening) return;
+    setSessionReopening(true); setErr(null); setLifecycleMsg(null);
+    try {
+      const res = await fetch("/api/session/reopen", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId: session }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) setErr(data?.error || "Could not go live.");
+      else {
+        setLifecycleMsg("Session is live. Party chat is hidden and table rolls land here.");
+        if (campaign) await loadCampaignData(campaign);
+      }
+    } catch {
+      setErr("Could not go live. Try again.");
+    }
+    setSessionReopening(false);
+  }
+
+  // End and process: close the session AND open it for player check-in, in one guarded
+  // write so status, ended_at, and processed_at can never disagree.
+  async function endAndProcess() {
+    await closeSession(false, true);
+  }
+
+  // Reopen makes a closed session live again, so the table can record more into it
+  // instead of splitting one evening across two session numbers. The route refuses if
+  // another session in the campaign is still open, because ingest resolves a campaign's
+  // session by taking the most recently started one with ended_at IS NULL: a second open
+  // session silently steals the incoming rolls with nothing on screen to reveal it.
+  async function reopenSession() {
+    if (!session || sessionReopening) return;
+    const cur = sessions.find((s) => s.id === session);
+    const label = cur?.session_number != null ? "Session " + String(cur.session_number) : "this session";
+    if (!window.confirm("Reopen " + label + " and make it live again? Recording can continue into it.")) return;
+    setSessionReopening(true); setErr(null); setLifecycleMsg(null);
+    try {
+      const res = await fetch("/api/session/reopen", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId: session }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setErr(data?.error || "Could not reopen session.");
+      } else {
+        setLifecycleMsg(
+          data?.pipelineHadRun
+            ? "Session reopened and live. It had already been processed, so regenerate the recap after the next recording."
+            : "Session reopened and live.",
+        );
+        if (campaign) await loadCampaignData(campaign);
+      }
+    } catch {
+      setErr("Could not reopen session. Try again.");
+    }
+    setSessionReopening(false);
   }
 
   async function deleteSession() {
@@ -391,7 +505,7 @@ export default function SessionWorkspace() {
     const nextNum = list.reduce((m, s) => Math.max(m, s.session_number || 0), 0) + 1;
     const { data } = await supabase.from("sessions")
       .insert({ campaign_id: cid, session_number: nextNum, status: "scheduled", scheduled_at: new Date(t).toISOString() })
-      .select("id,session_number,status,capture_modality,consent_recorded,notes,recap,scheduled_at,created_at").single();
+      .select("id,session_number,status,capture_modality,consent_recorded,notes,recap,scheduled_at,created_at,started_at,ended_at").single();
     if (data) setSessions((s) => [data, ...s]);
   }
 
@@ -562,19 +676,84 @@ export default function SessionWorkspace() {
             </div>
             {(() => {
               const cur = sessions.find((s) => s.id === session);
-              if (!cur || (cur.recap && cur.recap.trim())) return null;
+              if (!cur) return null;
+              // The old block bailed out entirely once a recap existed. That was the right
+              // gate for DELETE, but it would have hidden Close and Reopen exactly when a
+              // GM needs them, since a recap means the session has been played. The gate
+              // now applies only to Delete.
+              const isOpen = !cur.ended_at;
+              const hasRecap = Boolean(cur.recap && String(cur.recap).trim());
+              const canDelete = !hasRecap;
+              const canReopen = !isOpen && cur.status !== "cancelled";
+              // Go live is for a session that is open but not yet marked live, which is
+              // the scheduled-then-played case. A session already live does not need it.
+              const canGoLive = isOpen && cur.status !== "live";
               return (
-                <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginBottom: 14 }}>
-                  <button
-                    onClick={deleteSession}
-                    disabled={sessionDeleting}
-                    style={{ background: "none", color: C.warn, border: `1px solid ${C.warn}`, borderRadius: 8, padding: "7px 14px", fontSize: 12, cursor: sessionDeleting ? "default" : "pointer", opacity: sessionDeleting ? 0.6 : 1 }}
-                  >
-                    {sessionDeleting ? "Deleting..." : `Delete session #${cur.session_number ?? "?"}`}
-                  </button>
-                  <span style={{ fontSize: 11.5, color: C.muted }}>
-                    Removes an empty session created by mistake. Refused once anything has been recorded or logged.
-                  </span>
+                <div style={{ marginBottom: 14 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 9, flexWrap: "wrap", marginBottom: 10 }}>
+                    <span style={{ width: 9, height: 9, borderRadius: 9, background: STATUS_TONE[cur.status] || C.muted }} />
+                    <span style={{ fontSize: 15, fontWeight: 700, color: C.vellum }}>Session {cur.session_number ?? "?"}</span>
+                    <span style={{ fontSize: 11.5, color: STATUS_TONE[cur.status] || C.muted, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "ui-monospace, monospace" }}>{cur.status}</span>
+                    {cur.status === "live" && (
+                      <span style={{ fontSize: 11.5, color: C.warn }}>Live, party chat is hidden</span>
+                    )}
+                  </div>
+                  <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+                    {canGoLive && (
+                      <button
+                        onClick={goLive}
+                        disabled={sessionReopening}
+                        style={{ background: "none", color: C.warn, border: `1px solid ${C.warn}`, borderRadius: 8, padding: "7px 14px", fontSize: 12, cursor: sessionReopening ? "default" : "pointer", opacity: sessionReopening ? 0.6 : 1 }}
+                      >
+                        {sessionReopening ? "Going live..." : "Go live"}
+                      </button>
+                    )}
+                    {isOpen && (
+                      <button
+                        onClick={endAndProcess}
+                        disabled={sessionClosing}
+                        style={{ background: "none", color: C.accent, border: `1px solid ${C.accent}`, borderRadius: 8, padding: "7px 14px", fontSize: 12, cursor: sessionClosing ? "default" : "pointer", opacity: sessionClosing ? 0.6 : 1 }}
+                      >
+                        {sessionClosing ? "Working..." : "End and process"}
+                      </button>
+                    )}
+                    {isOpen && (
+                      <button
+                        onClick={() => closeSession(false)}
+                        disabled={sessionClosing}
+                        style={{ background: "none", color: C.brass, border: `1px solid ${C.brassDim}`, borderRadius: 8, padding: "7px 14px", fontSize: 12, cursor: sessionClosing ? "default" : "pointer", opacity: sessionClosing ? 0.6 : 1 }}
+                      >
+                        {sessionClosing ? "Closing..." : `Close session #${cur.session_number ?? "?"}`}
+                      </button>
+                    )}
+                    {canReopen && (
+                      <button
+                        onClick={reopenSession}
+                        disabled={sessionReopening}
+                        style={{ background: "none", color: C.accent, border: `1px solid ${C.accent}`, borderRadius: 8, padding: "7px 14px", fontSize: 12, cursor: sessionReopening ? "default" : "pointer", opacity: sessionReopening ? 0.6 : 1 }}
+                      >
+                        {sessionReopening ? "Reopening..." : `Reopen session #${cur.session_number ?? "?"}`}
+                      </button>
+                    )}
+                    {canDelete && (
+                      <button
+                        onClick={deleteSession}
+                        disabled={sessionDeleting}
+                        style={{ background: "none", color: C.warn, border: `1px solid ${C.warn}`, borderRadius: 8, padding: "7px 14px", fontSize: 12, cursor: sessionDeleting ? "default" : "pointer", opacity: sessionDeleting ? 0.6 : 1 }}
+                      >
+                        {sessionDeleting ? "Deleting..." : `Delete session #${cur.session_number ?? "?"}`}
+                      </button>
+                    )}
+                  </div>
+                  <div style={{ fontSize: 11.5, color: C.muted, marginTop: 8, lineHeight: 1.5 }}>
+                    {isOpen
+                      ? "This session is OPEN: party chat stays locked and D&D Beyond rolls land here. End and process closes it and opens player check-in. Close ends it without processing."
+                      : "This session is closed. Reopen it to record more into the same session rather than starting a new number."}
+                    {canDelete && " Delete removes an empty session created by mistake, and is refused once anything has been recorded or logged."}
+                  </div>
+                  {lifecycleMsg && (
+                    <div style={{ fontSize: 12, color: C.brass, marginTop: 6 }}>{lifecycleMsg}</div>
+                  )}
                 </div>
               );
             })()}
@@ -772,9 +951,8 @@ export default function SessionWorkspace() {
 
           {/* event logger */}
           <div style={box}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+            <div style={{ marginBottom: 12 }}>
               <div style={{ fontSize: 13, color: C.muted }}>Log an event</div>
-              <button style={btnGhost} onClick={completeSession}>Mark session complete</button>
             </div>
             <p style={{ fontSize: 12.5, color: C.muted, lineHeight: 1.5, margin: "0 0 12px" }}>
               The by-hand path. If you record over Discord, events fill in automatically, approve them on the Review page instead of logging here.
