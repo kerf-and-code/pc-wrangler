@@ -11,7 +11,7 @@ export default function PrivacyPolicyPage() {
     <LegalPage>
       <h1>Privacy Policy</h1>
       <p className="meta">Effective date: July 14, 2026</p>
-      <p className="meta">Last updated: July 14, 2026</p>
+      <p className="meta">Last updated: July 18, 2026</p>
 
       <p>
         Six Axes (&ldquo;Six Axes,&rdquo; &ldquo;we,&rdquo; &ldquo;us&rdquo;) is operated by Kerf and Code, LLC,
@@ -29,14 +29,14 @@ export default function PrivacyPolicyPage() {
         <li>We collect the campaign data you create, optional session audio and the transcripts and analytics derived from it, and the inputs players give us (a play-style inventory, post-session check-ins, party chat).</li>
         <li>We <strong>never sell your data</strong> and we <strong>do not run ads</strong>.</li>
         <li>We use third-party services to run the product (database, hosting, transcription, AI, payments). They process your data on our behalf and, under their commercial terms, <strong>do not use it to train their own models</strong>.</li>
-        <li>Audio is <strong>only recorded with consent</strong>, and the GM is responsible for getting consent from everyone at the table.</li>
+        <li>Audio is <strong>only recorded with consent</strong>, and consent is <strong>per person</strong>: if you decline, your voice is never recorded, and the rest of your table can still record theirs. The GM is responsible for obtaining consent at their table.</li>
         <li>You can export or delete your data yourself, from Settings.</li>
       </ul>
 
       <h2>Information we collect</h2>
       <p><strong>Account and identity.</strong> If you create an account or sign in, we collect your email and display name, and the basic profile your sign-in provider shares (for example, your Discord user ID and avatar, or your Google profile). Players who join only through a share link may be assigned a temporary identifier without a full account.</p>
       <p><strong>Campaign content you create.</strong> Campaigns, characters, rosters, codex notes, lore, locations, story threads, loot, sessions, attendance, and similar records you enter.</p>
-      <p><strong>Session audio (optional).</strong> Audio you or your players upload or record for a session, including per-speaker tracks captured through our recorder or, where you enable it, a Discord voice channel. Audio is processed only with consent (see &ldquo;Recording and consent&rdquo;).</p>
+      <p><strong>Session audio (optional).</strong> Audio you or your players upload or record for a session, including per-speaker tracks captured through our recorder or, where you enable it, a Discord voice channel. Audio is processed only with consent (see &ldquo;Recording and consent&rdquo;). A speaker who has not consented is dropped before upload, so we never receive or store their audio at all.</p>
       <p><strong>Derived data.</strong> Transcripts produced from session audio, the structured events our AI proposes from those transcripts and that the GM accepts, session recaps, and the analytics computed from this (engagement, spotlight balance, dispositions, and so on).</p>
       <p><strong>Player inputs.</strong> Responses to the Player Disposition Inventory, post-session check-ins (a satisfaction rating, a spotlight question, and an optional note), and party chat messages.</p>
       <p><strong>Payment information.</strong> If you subscribe, our payment processor (Stripe) handles your card details. We receive confirmation and limited billing metadata; <strong>we do not store full card numbers.</strong></p>
@@ -61,6 +61,7 @@ export default function PrivacyPolicyPage() {
         <tbody>
           <tr><td>Supabase</td><td>Database, authentication, and file (audio) storage</td></tr>
           <tr><td>Vercel</td><td>Application hosting</td></tr>
+          <tr><td>Fly.io</td><td>Hosting for the Discord voice recorder, which receives and processes session audio</td></tr>
           <tr><td>Deepgram</td><td>Speech-to-text transcription of session audio</td></tr>
           <tr><td>Anthropic (Claude)</td><td>AI extraction of events from transcripts and recap drafting</td></tr>
           <tr><td>Google Cloud</td><td>Statistical computation for disposition modeling</td></tr>
@@ -72,7 +73,9 @@ export default function PrivacyPolicyPage() {
       <p>Most providers process and store data in the United States. Our AI providers (Deepgram, Anthropic) process your content to perform the service and, under their commercial terms, <strong>do not use it to train their models</strong>. The table above is our current sub-processor list. If it changes, we will update it here.</p>
 
       <h2>Recording and consent</h2>
-      <p>Session audio is processed only after consent is recorded. When recording is active there is a clear, visible indicator, and any participant may decline. <strong>The GM is responsible for obtaining consent from everyone at the table and for complying with the recording laws that apply where their players are</strong>, including jurisdictions that require all parties to consent. We store consent records so it is clear who agreed. You can stop a recording and request deletion of audio at any time. Take particular care recording minors (see &ldquo;Children&rsquo;s privacy&rdquo;).</p>
+      <p><strong>Consent is per person, not per table.</strong> When a session is recorded over Discord, each speaker is captured as a separate stream. If you have not given consent, or your GM has excluded you from a particular session, your stream is discarded when the recording ends: it is never uploaded to us, never transcribed, and never used in recaps, statistics, or any analytics. One person declining does not stop the rest of the table from recording.</p>
+      <p><strong>What declining does not do.</strong> It removes your voice, not your presence. Other people at the table who did consent may still say your name, quote you, or describe what your character did, and those references will appear in their transcripts and in any recap or analytics built from them. If you want no record of your participation at all, talk to your GM about not recording that session.</p>
+      <p>While the Discord recorder is running, the Six Axes bot is visibly present in the voice channel, and the GM can end the recording at any time with the <code>/stop</code> command. <strong>The GM is responsible for obtaining consent from everyone at the table and for complying with the recording laws that apply where their players are</strong>, including jurisdictions that require all parties to consent. We store consent records so it is clear who agreed. You can request deletion of audio at any time. Take particular care recording minors (see &ldquo;Children&rsquo;s privacy&rdquo;).</p>
 
       <h2>How your group sees your data</h2>
       <p>Six Axes is collaborative, so some data is shared <strong>within your table</strong> by design:</p>
