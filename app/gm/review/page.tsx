@@ -97,13 +97,33 @@ export default function ReviewPage() {
 
   useEffect(() => { if (campaignId) loadJobs(campaignId); }, [campaignId]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // PAGED. PostgREST caps an unbounded select at db-max-rows, 1000 here, so a job with
+  // more than 1000 proposals would render a queue that silently omits the rest.
+  //
+  // That is worse than a display bug. /api/review/finalize only fires when zero rows remain
+  // at status 'proposed', counted in the DATABASE. If the page cannot show a proposal, the
+  // GM cannot decide it, the count never reaches zero, and the job sits in review forever
+  // with no recap and no way forward from the UI.
+  //
+  // confidence is not unique, so the id tiebreak is what stops rows shuffling between pages
+  // and being skipped or shown twice.
   async function loadProps(jid: string) {
-    const { data } = await supabase
-      .from("proposed_events")
-      .select("id, event_type, axis, frame, target, confidence, rationale, status, character:characters(name), segment:transcript_segments(text, start_ms)")
-      .eq("job_id", jid)
-      .order("confidence", { ascending: false });
-    const all = (data as unknown as Prop[]) || [];
+    const PAGE = 1000;
+    const all: Prop[] = [];
+    for (let page = 0; page < 50; page++) {
+      const from = page * PAGE;
+      const { data, error } = await supabase
+        .from("proposed_events")
+        .select("id, event_type, axis, frame, target, confidence, rationale, status, character:characters(name), segment:transcript_segments(text, start_ms)")
+        .eq("job_id", jid)
+        .order("confidence", { ascending: false })
+        .order("id", { ascending: true })
+        .range(from, from + PAGE - 1);
+      if (error) break;
+      const rows = (data as unknown as Prop[]) || [];
+      all.push(...rows);
+      if (rows.length < PAGE) break;
+    }
     setProps(all.filter((p) => p.status === "proposed"));
     setCounts({
       accepted: all.filter((p) => p.status === "accepted").length,
@@ -111,13 +131,25 @@ export default function ReviewPage() {
     });
   }
 
+  // Paged for the same reason as loadProps above: an undecidable proposal the page cannot
+  // render still counts against finalize.
   async function loadGmProps(jid: string) {
-    const { data } = await supabase
-      .from("gm_proposed_events")
-      .select("id, kind, summary, detail, quote, npc_name, location_name, faction_name, target_character_id, confidence, t_start_seconds, status, audio_track_id")
-      .eq("job_id", jid)
-      .order("created_at", { ascending: true });
-    const all = (data as GmProp[]) || [];
+    const PAGE = 1000;
+    const all: GmProp[] = [];
+    for (let page = 0; page < 50; page++) {
+      const from = page * PAGE;
+      const { data, error } = await supabase
+        .from("gm_proposed_events")
+        .select("id, kind, summary, detail, quote, npc_name, location_name, faction_name, target_character_id, confidence, t_start_seconds, status, audio_track_id")
+        .eq("job_id", jid)
+        .order("created_at", { ascending: true })
+        .order("id", { ascending: true })
+        .range(from, from + PAGE - 1);
+      if (error) break;
+      const rows = (data as GmProp[]) || [];
+      all.push(...rows);
+      if (rows.length < PAGE) break;
+    }
     setGmProps(all.filter((p) => p.status === "proposed"));
     setGmCounts({
       approved: all.filter((p) => p.status === "approved").length,

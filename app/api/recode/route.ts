@@ -21,6 +21,47 @@ type Etype = { key: string; label: string; category: string; default_axis: strin
 type Char = { id: string; name: string; kind: string };
 type Proposal = { line?: number; character?: string | null; event_type?: string; axis?: string | null; confidence?: number };
 
+// PostgREST enforces db-max-rows SERVER side, so an unbounded select returns a PREFIX of
+// the rows and every count taken from it is wrong. This project's cap is 1000, proved by
+// the extract routes: they ran with no limit and got exactly 1000 of 3146 segments, then
+// correctly reported themselves finished against that truncated total.
+//
+// recode has the same cursor-against-total shape, so it had the same failure: recode_cursor
+// would reach a total of 1000 and declare the job done with two thirds of the session never
+// recoded, and nothing anywhere would report a problem.
+//
+// The select list is a literal on purpose. supabase-js infers the row type from it, and a
+// dynamic string degrades to GenericStringError[], which will not cast to Seg[].
+async function fetchAllSegments(
+  admin: ReturnType<typeof createAdminClient>,
+  jid: string,
+): Promise<Seg[]> {
+  const PAGE = 1000;
+  const MAX_PAGES = 100;
+  const out: Seg[] = [];
+  for (let page = 0; page < MAX_PAGES; page++) {
+    const from = page * PAGE;
+    const { data, error } = await admin
+      .from("transcript_segments")
+      .select("id, character_id, start_ms, end_ms, text")
+      .eq("job_id", jid)
+      // start_ms is not unique, so without the id tiebreak rows can shuffle between pages
+      // and end up skipped or repeated.
+      .order("start_ms", { ascending: true })
+      .order("id", { ascending: true })
+      .range(from, from + PAGE - 1);
+    if (error) {
+      // Fail loud. Returning what was collected so far would be a prefix that looks
+      // complete, which is the exact bug this function exists to remove.
+      throw new Error(`transcript_segments page ${page} failed: ${error.message}`);
+    }
+    const rows = (data as Seg[]) || [];
+    out.push(...rows);
+    if (rows.length < PAGE) return out;
+  }
+  throw new Error(`transcript_segments exceeded ${MAX_PAGES} pages for job ${jid}`);
+}
+
 export async function POST(req: NextRequest) {
   let jobId: string | undefined;
   try { const b = await req.json(); jobId = b?.jobId; } catch { /* guard below */ }
@@ -40,12 +81,7 @@ export async function POST(req: NextRequest) {
 
   const admin = createAdminClient();
 
-  const { data: segData } = await admin
-    .from("transcript_segments")
-    .select("id, character_id, start_ms, end_ms, text")
-    .eq("job_id", jid)
-    .order("start_ms", { ascending: true });
-  const segments = (segData as Seg[]) || [];
+  const segments = await fetchAllSegments(admin, jid);
   const total = segments.length;
   const cursor: number = job.recode_cursor || 0;
 
