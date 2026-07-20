@@ -55,6 +55,10 @@ SERVICE_KEY = os.environ["SUPABASE_SERVICE_ROLE_KEY"]
 POLL_SECONDS = int(os.environ.get("POLL_SECONDS", "4"))
 STOP_READ_DELAY_SECONDS = int(os.environ.get("STOP_READ_DELAY_SECONDS", "3"))
 FLUSH_SECONDS = int(os.environ.get("FLUSH_SECONDS", "60"))
+# When an audio_tracks row cannot be created, keep the uploaded file (1) or delete it
+# (0, default). Keeping it preserves the audio for manual recovery but leaves an object
+# the retention cron cannot see, because retention iterates audio_tracks.
+KEEP_ORPHANED_AUDIO = os.environ.get("KEEP_ORPHANED_AUDIO", "0") == "1"
 AUDIO_BUCKET = os.environ.get("AUDIO_BUCKET", "session-audio")
 OPUS_BITRATE = os.environ.get("OPUS_BITRATE", "32k")
 # Opt-in probe: when set, log RTCP Sender Reports (ssrc + NTP/RTP pair) so a test
@@ -155,24 +159,78 @@ async def make_silence_ogg(seconds: float, out_path: str) -> bool:
         return False
 
 
+async def _run_concat(list_path: str, out_path: str, copy: bool) -> bool:
+    """One ffmpeg concat pass. copy=True stream-copies, copy=False re-encodes."""
+    codec = ["-c", "copy"] if copy else ["-c:a", "libopus", "-b:a", OPUS_BITRATE]
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            "ffmpeg", "-hide_banner", "-loglevel", "error",
+            "-f", "concat", "-safe", "0", "-i", list_path,
+            *codec, "-f", "ogg", "-y", out_path,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        _, err = await proc.communicate()
+        if proc.returncode != 0:
+            log.info("concat (%s) failed: %s",
+                     "copy" if copy else "re-encode",
+                     (err or b"").decode(errors="replace")[:300])
+            return False
+        return True
+    except Exception as e:
+        log.info("concat (%s) error: %r", "copy" if copy else "re-encode", e)
+        return False
+
+
 async def concat_oggs(paths: list, out_path: str) -> bool:
-    """Concatenate ogg chunks into one continuous ogg (re-encode for a clean single stream)."""
+    """Concatenate ogg chunks into one continuous ogg.
+
+    STREAM COPY FIRST, re-encode only as a fallback.
+
+    Every chunk here was written by encode_wav_to_ogg with identical parameters (same
+    codec, same bitrate, same channel count), which is exactly the condition under which
+    the concat demuxer can stitch them with -c copy: it moves the existing packets and
+    never decodes a sample.
+
+    The old version always re-encoded. On a 2h34m seven-speaker session at 60-second
+    chunks that meant decoding and re-encoding 147 files per speaker, which took about 35
+    minutes EACH and 3.5 hours in total on a shared-cpu-1x, while the capture_control row
+    sat at 'stopping' and held the guild lock the whole time. Stream copy does the same
+    job in seconds.
+
+    The fallback matters: a malformed or truncated chunk can make the demuxer refuse, and
+    re-encoding is more tolerant. Degrading to slow is much better than losing a session.
+
+    A copy that "succeeds" but silently truncates would be worse than a failure, so the
+    output is size-checked against the sum of its inputs before being accepted. Stream
+    copy preserves the audio payload almost exactly, so anything under 90 percent means
+    parts went missing and we re-encode instead. This deliberately avoids ffprobe, which
+    is not guaranteed to be present in the image."""
     list_path = out_path + ".txt"
     try:
         with open(list_path, "w") as f:
             for p in paths:
                 f.write(f"file '{p}'\n")
-        proc = await asyncio.create_subprocess_exec(
-            "ffmpeg", "-hide_banner", "-loglevel", "error",
-            "-f", "concat", "-safe", "0", "-i", list_path,
-            "-c:a", "libopus", "-b:a", OPUS_BITRATE, "-f", "ogg", "-y", out_path,
-            stderr=asyncio.subprocess.PIPE,
-        )
-        _, err = await proc.communicate()
-        if proc.returncode != 0:
-            log.warning("ffmpeg concat failed: %s", (err or b"").decode(errors="replace")[:300])
-            return False
-        return True
+
+        expected = 0
+        for p in paths:
+            try:
+                expected += os.path.getsize(p)
+            except Exception:
+                pass
+
+        if await _run_concat(list_path, out_path, copy=True):
+            try:
+                produced = os.path.getsize(out_path)
+            except Exception:
+                produced = 0
+            if expected == 0 or produced >= expected * 0.9:
+                log.info("concat: stream copied %d part(s), %d KB", len(paths), produced // 1024)
+                return True
+            log.warning("concat: stream copy produced %d KB from %d KB of parts; re-encoding instead.",
+                        produced // 1024, expected // 1024)
+
+        log.info("concat: falling back to re-encode for %d part(s)", len(paths))
+        return await _run_concat(list_path, out_path, copy=False)
     except Exception as e:
         log.warning("ffmpeg concat error: %r", e)
         return False
@@ -673,6 +731,8 @@ class Sidecar(discord.Client):
         uploaded = 0
         unmapped = 0
         refused = 0
+        orphaned = 0
+        failed = 0
         for uid, chunks in rec.speaker_chunks.items():
             # Resolve the GM narrator first: linking a Discord id as narrator is a
             # deliberate, owner-gated act, so it wins over a (possibly stale) PC
@@ -718,14 +778,23 @@ class Sidecar(discord.Client):
             if len(parts) == 1:
                 shutil.copyfile(parts[0], final_path)
             elif not await concat_oggs(parts, final_path):
-                log.warning("  concat failed for speaker %s; skipping.", uid)
+                # A speaker lost here used to vanish silently: warned once, skipped, and
+                # counted nowhere in the stop summary. On 2026-07-20 that cost a player's
+                # entire track and it took a day to notice, because the summary said
+                # "6 uploaded" and nothing said seven had been recorded.
+                failed += 1
+                log.error("  LOST SPEAKER: concat failed for %s (%d chunk(s), character=%s, gm=%s); "
+                          "their audio for this session is gone.",
+                          uid, len(chunks), char_id, gm_id)
                 continue
             slot = char_id if char_id else f"gm-{gm_id}"
             storage_path = f"{rec.campaign_id}/{job_id}/{slot}-{int(time.time() * 1000)}.ogg"
             with open(final_path, "rb") as f:
                 blob = f.read()
             if not await self.upload_blob(http, storage_path, blob, "audio/ogg"):
-                log.warning("  upload failed for %s; skipping.", slot)
+                failed += 1
+                log.error("  LOST SPEAKER: upload failed for %s (%s); their audio for this "
+                          "session is gone.", slot, storage_path)
                 continue
             if await self.insert_track(http, job_id, rec.campaign_id, storage_path, round(total_secs),
                                        character_id=char_id, gm_identity_id=gm_id):
@@ -733,11 +802,38 @@ class Sidecar(discord.Client):
                 who = f"character={char_id}" if char_id else f"gm_identity={gm_id}"
                 log.info("  uploaded track: %s %.0fs %d KB -> %s",
                          who, total_secs, len(blob) // 1024, storage_path)
+            else:
+                # The row could not be created after retries, so this file is unreachable:
+                # nothing will transcribe it, and the retention cron cannot see it to
+                # delete it at 60 days. Leaving it would quietly break the deletion promise
+                # on the privacy page, so by default it is removed.
+                #
+                # Set KEEP_ORPHANED_AUDIO=1 to keep the file instead, which trades that
+                # promise for the chance to reattach the audio by hand. The storage path is
+                # logged either way so the object can be found.
+                orphaned += 1
+                if KEEP_ORPHANED_AUDIO:
+                    log.error("  ORPHANED AUDIO: no audio_tracks row for %s. File KEPT and is "
+                              "invisible to retention; attach it by hand or delete it.", storage_path)
+                else:
+                    deleted = await self.delete_blob(http, storage_path)
+                    log.error("  ORPHANED AUDIO: no audio_tracks row for %s. File %s.",
+                              storage_path, "deleted" if deleted else "COULD NOT BE DELETED")
 
         await self.patch_status(http, rec.rid, "done", capture_job_id=job_id, error=note)
-        log.info("STOPPED: request %s -> job %s; %d track(s) uploaded, %d unmapped speaker(s), "
-                 "%d speaker(s) without consent, %d chunk(s).",
-                 rec.rid, job_id, uploaded, unmapped, refused, rec.chunk_index)
+        # Every speaker the sink heard is accounted for in exactly one bucket, so the
+        # numbers add up to the headcount at the table. If uploaded is less than the number
+        # of people who were there and every other counter is zero, something is wrong that
+        # this line does not yet name.
+        heard = len(rec.speaker_chunks)
+        log.info("STOPPED: request %s -> job %s; %d speaker(s) heard: %d uploaded, %d unmapped, "
+                 "%d without consent, %d LOST to concat/upload failure, %d orphaned upload(s), "
+                 "%d chunk(s).",
+                 rec.rid, job_id, heard, uploaded, unmapped, refused, failed, orphaned,
+                 rec.chunk_index)
+        if failed or orphaned:
+            log.error("STOPPED WITH LOSSES: %d speaker(s) recorded but not delivered for job %s.",
+                      failed + orphaned, job_id)
         rec.cleanup()
 
     # ------------------------------------------------------------ data helpers
@@ -880,27 +976,74 @@ class Sidecar(discord.Client):
             return False
 
     async def insert_track(self, http, job_id, campaign_id, storage_path, duration,
-                           character_id=None, gm_identity_id=None):
+                           character_id=None, gm_identity_id=None, attempts=4):
+        """Create the audio_tracks row for an uploaded file. Retries with backoff.
+
+        This row is not bookkeeping, it is the only handle anything downstream has on the
+        audio: /api/transcribe/submit reads audio_tracks to find what to send to Deepgram,
+        and the retention cron iterates audio_tracks to delete files at 60 days. A file in
+        the bucket with no row is therefore both untranscribable AND invisible to
+        retention, which turns a transient database blip into an indefinite retention of
+        someone's voice.
+
+        It happened on 2026-07-20: one insert failed, the warning went unnoticed, and the
+        file sat in the bucket unreferenced until it was found by hand.
+
+        Retries are only for TRANSIENT failures. A 4xx other than timeout, conflict, or
+        rate-limit means the row will never be accepted (a bad foreign key, a constraint
+        violation) and retrying just delays the inevitable, so those break out
+        immediately."""
+        body = {
+            "job_id": job_id,
+            "campaign_id": campaign_id,
+            "storage_path": storage_path,
+            "status": "pending",
+        }
+        # A track belongs to exactly one of: a player character, or the GM
+        # narrator identity. Send only the column that applies.
+        if character_id:
+            body["character_id"] = character_id
+        if gm_identity_id:
+            body["gm_identity_id"] = gm_identity_id
+        if duration:
+            body["duration_seconds"] = duration
+
+        delay = 1.0
+        for attempt in range(1, attempts + 1):
+            try:
+                r = await http.post(f"{REST}/audio_tracks", headers=WRITE_HEADERS, json=body)
+                r.raise_for_status()
+                if attempt > 1:
+                    log.info("insert_track succeeded on attempt %d for %s", attempt, storage_path)
+                return True
+            except Exception as e:
+                status = getattr(getattr(e, "response", None), "status_code", None)
+                permanent = status is not None and 400 <= status < 500 and status not in (408, 409, 425, 429)
+                detail = ""
+                try:
+                    detail = e.response.text[:200]
+                except Exception:
+                    pass
+                log.warning("insert_track attempt %d/%d failed (status=%s): %r %s",
+                            attempt, attempts, status, e, detail)
+                if permanent:
+                    log.error("insert_track: %s is a permanent rejection, not retrying.", status)
+                    return False
+                if attempt < attempts:
+                    await asyncio.sleep(delay)
+                    delay *= 2
+        log.error("insert_track FAILED after %d attempts for %s", attempts, storage_path)
+        return False
+
+    async def delete_blob(self, http, path):
+        """Remove an uploaded object. Used when its audio_tracks row could not be created,
+        so the file does not linger in the bucket where retention cannot see it."""
         try:
-            body = {
-                "job_id": job_id,
-                "campaign_id": campaign_id,
-                "storage_path": storage_path,
-                "status": "pending",
-            }
-            # A track belongs to exactly one of: a player character, or the GM
-            # narrator identity. Send only the column that applies.
-            if character_id:
-                body["character_id"] = character_id
-            if gm_identity_id:
-                body["gm_identity_id"] = gm_identity_id
-            if duration:
-                body["duration_seconds"] = duration
-            r = await http.post(f"{REST}/audio_tracks", headers=WRITE_HEADERS, json=body)
+            r = await http.delete(f"{STORAGE}/{AUDIO_BUCKET}/{path}", headers=HEADERS)
             r.raise_for_status()
             return True
         except Exception as e:
-            log.warning("insert_track failed: %r", e)
+            log.warning("delete(%s) failed: %r", path, e)
             return False
 
     async def patch_status(self, http, rid, status, error=None, capture_job_id=None, channel_id=None):
