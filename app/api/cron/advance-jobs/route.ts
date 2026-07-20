@@ -71,6 +71,13 @@ export async function GET(request: Request) {
 
   const draft = (jobs as Array<{ id: string; session_id: string }>) || [];
   if (draft.length === 0) {
+    // Vercel logs the status code, NOT the response body, so a route that only returns
+    // JSON is invisible in the dashboard: every run reads 200 with no detail. On
+    // 2026-07-20 a job sat unsubmitted overnight while this cron ran 750 times, and the
+    // logs could not say whether it had been seen and skipped or never seen at all.
+    // These console.log lines are the difference between one line in the dashboard and
+    // an afternoon of guessing.
+    console.log("[advance-jobs] no draft jobs");
     return NextResponse.json({ ok: true, ready: 0, submitted: 0 });
   }
 
@@ -97,6 +104,14 @@ export async function GET(request: Request) {
 
   const finishedJobs = draft.filter((j) => finalized.has(j.id));
   if (finishedJobs.length === 0) {
+    // Draft jobs exist but none has a finished capture_control row. Either the sidecar is
+    // still finalizing, or these are manual uploads awaiting the GM. Naming the ids here
+    // is what distinguishes "seen and correctly skipped" from "never seen".
+    console.log(
+      "[advance-jobs] %d draft job(s), none finalized by the sidecar: %s",
+      draft.length,
+      draft.map((j) => j.id).join(", "),
+    );
     return NextResponse.json({
       ok: true,
       ready: 0,
@@ -120,6 +135,13 @@ export async function GET(request: Request) {
   );
 
   const ready = finishedJobs.filter((j) => withAudio.has(j.id));
+  console.log(
+    "[advance-jobs] draft=%d finalized=%d withAudio=%d ready=%s",
+    draft.length,
+    finishedJobs.length,
+    ready.length,
+    ready.map((j) => j.id).join(", ") || "(none)",
+  );
 
   const base = new URL(request.url).origin;
   const results: Array<{ job: string; ok: boolean; detail?: string }> = [];
