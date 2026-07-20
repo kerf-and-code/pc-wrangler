@@ -240,6 +240,24 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // A track that could not be submitted must NOT be left at 'pending'.
+  //
+  // finalizeJob() in /api/transcribe/callback returns early while any track is still
+  // 'pending' or 'transcribing', and it only ever runs from a Deepgram callback. A track
+  // that never reached Deepgram will never get a callback, so a single stuck 'pending' row
+  // strands the whole job at 'transcribing' permanently: extraction never runs, and a
+  // session's worth of good transcripts sits unused with nothing retrying it.
+  //
+  // Marking it 'error' resolves it as far as finalizeJob is concerned, so the job advances
+  // on the tracks that did work. It does NOT block a retry: the pending filter above keeps
+  // anything that is not 'done', so pressing Transcribe again picks these up.
+  if (failures.length > 0) {
+    await admin
+      .from("audio_tracks")
+      .update({ status: "error" })
+      .in("id", failures.map((f) => f.track));
+  }
+
   // A PARTIAL submission is not a success. The job still advances, because the tracks that
   // did go need their callbacks handled, but the leftovers stay 'pending' so a re-run picks
   // them up, and the count is recorded on the job so the Capture page shows the truth

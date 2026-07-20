@@ -107,8 +107,50 @@ export async function POST(request: Request) {
 
     const remaining = (playerLeft ?? 0) + (gmLeft ?? 0);
 
+    // ZERO PROPOSALS IS NOT A COMPLETED REVIEW.
+    //
+    // The inference above is "no rows remain proposed, so every decision has been made".
+    // A job that produced NO proposals at all satisfies that trivially, and on 2026-07-20
+    // exactly that happened: extraction ran against zero transcripts, proposed nothing, the
+    // job reached 'review', and this route finalized it to 'done' and drafted a recap from
+    // an empty session. No human ever saw it, and nothing anywhere reported a problem.
+    //
+    // "Nothing to decide" and "everything decided" are not the same state, so the total
+    // count is checked separately from the undecided count. force still gets through, for
+    // the genuine case of a session with no proposable events.
+    const { count: playerTotal, error: ptErr } = await admin
+      .from("proposed_events")
+      .select("id", { count: "exact", head: true })
+      .eq("job_id", jobId);
+
+    const { count: gmTotal, error: gtErr } = await admin
+      .from("gm_proposed_events")
+      .select("id", { count: "exact", head: true })
+      .eq("job_id", jobId);
+
+    if (ptErr || gtErr) {
+      return NextResponse.json(
+        { error: (ptErr || gtErr)?.message ?? "Could not count proposals." },
+        { status: 500 },
+      );
+    }
+
+    const total = (playerTotal ?? 0) + (gmTotal ?? 0);
+
+    if (total === 0 && !force) {
+      return NextResponse.json({
+        ok: true,
+        finalized: false,
+        noProposals: true,
+        remaining: 0,
+        error:
+          "Extraction produced no proposals for this session, so there is nothing to review. " +
+          "Check that the tracks transcribed before finalizing.",
+      });
+    }
+
     if (remaining > 0 && !force) {
-      return NextResponse.json({ ok: true, finalized: false, remaining });
+      return NextResponse.json({ ok: true, finalized: false, remaining, total });
     }
 
     // Finalize.
@@ -167,8 +209,9 @@ export async function POST(request: Request) {
     return NextResponse.json({
       ok: true,
       finalized: true,
-      forced: force && remaining > 0,
+      forced: force && (remaining > 0 || total === 0),
       remaining,
+      total,
       recapDrafted,
       recapSkipped,
       dispositionsRunning,

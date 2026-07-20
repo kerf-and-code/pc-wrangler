@@ -57,6 +57,55 @@ export async function GET(request: Request) {
 
   const admin = createAdminClient();
 
+  // SWEEP: jobs stranded at 'transcribing'.
+  //
+  // finalizeJob() lives in the Deepgram callback and only runs when a callback arrives. If
+  // the last callback for a job fires while another track is still 'pending' (because it
+  // never reached Deepgram), nothing will ever re-evaluate that job. It sits at
+  // 'transcribing' forever, and no amount of pressing Transcribe helps, because that route
+  // submits tracks rather than advancing jobs.
+  //
+  // This sweep is the safety net: any job at 'transcribing' whose tracks have ALL resolved
+  // gets the same decision finalizeJob would have made. The logic is deliberately kept in
+  // step with the canonical copy in /api/transcribe/callback: segments present means
+  // proceed to extraction, no segments at all means the recording produced nothing.
+  const { data: stalledJobs } = await admin
+    .from("capture_jobs")
+    .select("id")
+    .eq("status", "transcribing")
+    .order("created_at", { ascending: false })
+    .limit(20);
+
+  const swept: Array<{ job: string; status: string }> = [];
+  for (const sj of (stalledJobs as Array<{ id: string }>) || []) {
+    const { data: trk } = await admin
+      .from("audio_tracks")
+      .select("status")
+      .eq("job_id", sj.id);
+    const trackRows = (trk as Array<{ status: string }>) || [];
+    if (trackRows.length === 0) continue;
+    if (trackRows.some((t) => t.status === "pending" || t.status === "transcribing")) continue;
+
+    const { count } = await admin
+      .from("transcript_segments")
+      .select("*", { count: "exact", head: true })
+      .eq("job_id", sj.id);
+
+    const nextStatus = (count || 0) > 0 ? "extracting" : "error";
+    const nextError = nextStatus === "error"
+      ? "No speech detected in any track. Check mic levels and re-record."
+      : null;
+
+    await admin
+      .from("capture_jobs")
+      .update({ status: nextStatus, error: nextError })
+      .eq("id", sj.id)
+      .eq("status", "transcribing");
+
+    console.log("[advance-jobs] swept stranded job %s -> %s (%d segments)", sj.id, nextStatus, count || 0);
+    swept.push({ job: sj.id, status: nextStatus });
+  }
+
   // Jobs still waiting. Anything past 'draft' is already moving.
   const { data: jobs, error: jErr } = await admin
     .from("capture_jobs")
@@ -77,8 +126,8 @@ export async function GET(request: Request) {
     // logs could not say whether it had been seen and skipped or never seen at all.
     // These console.log lines are the difference between one line in the dashboard and
     // an afternoon of guessing.
-    console.log("[advance-jobs] no draft jobs");
-    return NextResponse.json({ ok: true, ready: 0, submitted: 0 });
+    console.log("[advance-jobs] no draft jobs (swept %d stranded)", swept.length);
+    return NextResponse.json({ ok: true, ready: 0, submitted: 0, swept });
   }
 
   // The guard: the sidecar must have FINISHED with this job. 'done' with a capture_job_id
