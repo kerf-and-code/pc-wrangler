@@ -53,6 +53,23 @@ TOKEN = os.environ["DISCORD_BOT_TOKEN"]
 SUPABASE_URL = os.environ["SUPABASE_URL"].rstrip("/")
 SERVICE_KEY = os.environ["SUPABASE_SERVICE_ROLE_KEY"]
 POLL_SECONDS = int(os.environ.get("POLL_SECONDS", "4"))
+# How long to keep trying to get a dropped voice connection back before giving up and
+# finalizing what was captured. This was a bare count of 5 attempts, which at a 4 second
+# poll is about 20 seconds of grace: short enough that an ordinary Discord blip could end
+# a recording. A deadline is also the honest unit, since attempts only happen as often as
+# the poll and the two drift apart under load.
+RECONNECT_GRACE_SECONDS = int(os.environ.get("RECONNECT_GRACE_SECONDS", "40"))
+# How often to stamp heartbeat_at on rows this process is holding. Every tick would be
+# needlessly chatty; a minute is far tighter than any consumer of the value needs.
+HEARTBEAT_TICKS = int(os.environ.get("HEARTBEAT_TICKS", "15"))
+# A row whose heartbeat is older than this is treated as abandoned by boot reconciliation.
+# Comfortably longer than HEARTBEAT_TICKS * POLL_SECONDS so a slow tick, a long flush, or a
+# gateway resume is never mistaken for a dead process.
+ORPHAN_STALE_SECONDS = int(os.environ.get("ORPHAN_STALE_SECONDS", "300"))
+# Identifies which process owns a recording. Fly sets FLY_MACHINE_ID; the pid fallback is
+# only for local runs. This is what keeps two machines from both claiming the same row:
+# `fly scale show` reports COUNT 2 for this app, so it is not hypothetical.
+OWNER_ID = os.environ.get("FLY_MACHINE_ID") or os.environ.get("FLY_ALLOC_ID") or f"pid-{os.getpid()}"
 STOP_READ_DELAY_SECONDS = int(os.environ.get("STOP_READ_DELAY_SECONDS", "3"))
 FLUSH_SECONDS = int(os.environ.get("FLUSH_SECONDS", "60"))
 # When an audio_tracks row cannot be created, keep the uploaded file (1) or delete it
@@ -384,6 +401,9 @@ class Recording:
         self.chunk_seconds: dict = {}
         self.flush_tasks: list = []
         self.reconnect_attempts = 0
+        # Monotonic start of the CURRENT outage, or None while connected. The grace period
+        # is measured from here rather than counted in attempts.
+        self.dropped_at = None
         self.notify_channel_id = None   # campaign's linked Discord text channel
         self.notified_drop = False      # one drop notice per outage, cleared on reconnect
 
@@ -426,6 +446,13 @@ class Sidecar(discord.Client):
         log.info("Poller started (every %ss, chunk rotation every %ss).", POLL_SECONDS, FLUSH_SECONDS)
         ticks = 0
         async with httpx.AsyncClient(timeout=60) as http:
+            # Recovery runs INSIDE the poller, not in on_ready: it needs voice_locations
+            # seeded and a live http client, and on_ready fires again on every gateway
+            # resume, which would otherwise start a second pass mid-session.
+            try:
+                await self.reconcile_orphans(http)
+            except Exception as e:
+                log.warning("reconcile: unexpected failure, continuing without recovery: %r", e)
             while not self.is_closed():
                 try:
                     r = await http.get(
@@ -441,12 +468,175 @@ class Sidecar(discord.Client):
                             log.warning("row %s error: %r", row.get("id"), e)
                     await self.maintain_recordings(http)
                     ticks += 1
+                    if ticks % HEARTBEAT_TICKS == 0:
+                        await self.heartbeat(http)
                     if ticks % 15 == 0:
                         log.info("poll alive: tick %d, %d active recording(s), tracking %d voice location(s)",
                                  ticks, len(self.recordings), len(self.voice_locations))
                 except Exception as e:
                     log.warning("poll error: %r", e)
                 await asyncio.sleep(POLL_SECONDS)
+
+    async def heartbeat(self, http):
+        """Stamp heartbeat_at and owner on every row this process is actively holding.
+
+        An 'active' row used to be ambiguous: it meant either "a healthy recording is in
+        progress" or "a process died holding this", and nothing in the schema could tell
+        them apart. updated_at only moves on state TRANSITIONS, so a three-hour recording
+        and a row orphaned three hours ago looked identical. /record then refused with
+        "already recording" and the guild stayed locked until someone ran SQL by hand.
+
+        A fresh heartbeat is a live process saying it still owns this. That is what
+        /api/discord/interactions reads before adopting a row, and what reconcile_orphans
+        below reads before claiming one."""
+        now = _now_iso()
+        for rec in list(self.recordings.values()):
+            try:
+                r = await http.patch(
+                    f"{REST}/capture_control",
+                    params={"id": f"eq.{rec.rid}"},
+                    headers=WRITE_HEADERS,
+                    json={"heartbeat_at": now, "owner": OWNER_ID},
+                )
+                r.raise_for_status()
+            except Exception as e:
+                # Never fatal. A missed beat only risks a later process treating this row as
+                # abandoned, and ORPHAN_STALE_SECONDS is wide enough to absorb several.
+                log.warning("heartbeat failed for %s: %r", rec.rid, e)
+
+    async def reconcile_orphans(self, http):
+        """On boot, deal with recordings this app was holding when the last process died.
+
+        THE FAILURE THIS EXISTS FOR. On 2026-07-18 Fly OOM-killed the machine mid-session.
+        It restarted in seven seconds and reconnected to Discord cleanly, but every
+        Recording lived in self.recordings, in memory, so it came back holding nothing. The
+        control row stayed 'active' forever, maintain_recordings had no recording to
+        maintain, and capture_control_one_open_per_guild (a UNIQUE index over exactly the
+        open statuses) blocked every subsequent /record in that guild.
+
+        The in-process reconnect handler could never have covered this. There was no
+        process left to run it.
+
+        WHAT THIS CANNOT DO. Audio captured before the crash is gone. Chunks live in a
+        tempfile directory on the machine's filesystem and a restart takes them with it.
+        Rejoining resumes capture from now; it does not recover the earlier part, and the
+        GM is told that outright rather than left to infer it from a short recap."""
+        try:
+            cutoff = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(seconds=ORPHAN_STALE_SECONDS)
+            cutoff_iso = cutoff.isoformat()
+            r = await http.get(
+                f"{REST}/capture_control",
+                params={"status": "in.(active,stopping)", "select": "*"},
+                headers=HEADERS,
+            )
+            r.raise_for_status()
+            rows = r.json()
+        except Exception as e:
+            log.warning("reconcile: could not read capture_control: %r", e)
+            return
+
+        if not rows:
+            log.info("reconcile: no open recordings to recover.")
+            return
+
+        for row in rows:
+            rid = row.get("id")
+            status = row.get("status")
+            beat = row.get("heartbeat_at") or row.get("updated_at")
+
+            # Claim it, but ONLY if it is still stale at the moment of writing. Two machines
+            # boot from the same image and poll the same table, so the claim has to be the
+            # thing that decides ownership, not the read that preceded it. An empty response
+            # means another process got there first.
+            try:
+                c = await http.patch(
+                    f"{REST}/capture_control",
+                    params={
+                        "id": f"eq.{rid}",
+                        "or": f"(heartbeat_at.is.null,heartbeat_at.lt.{cutoff_iso})",
+                    },
+                    headers=RETURN_HEADERS,
+                    json={"owner": OWNER_ID, "heartbeat_at": _now_iso()},
+                )
+                c.raise_for_status()
+                claimed = c.json()
+            except Exception as e:
+                log.warning("reconcile: claim failed for %s: %r", rid, e)
+                continue
+
+            if not claimed:
+                log.info("reconcile: %s is held by another process (heartbeat %s); leaving it alone.", rid, beat)
+                continue
+
+            notify_channel = await self.get_notify_channel(http, row.get("campaign_id"))
+
+            # A stale 'stopping' row means the process died DURING finalize. The chunks went
+            # with it, so there is nothing to resume and nothing to upload. Retire the row so
+            # the guild lock releases and /record works again.
+            if status == "stopping":
+                log.error("reconcile: %s died during finalize; its audio is gone. Retiring the row.", rid)
+                await self.patch_status(http, rid, "done", error="process died during finalize; audio lost")
+                await self.notify(
+                    notify_channel,
+                    "\u274C Six Axes restarted while it was processing the last recording, and that "
+                    "audio could not be saved. The session is still open, so you can /record again.",
+                )
+                continue
+
+            chan_id = row.get("channel_id")
+            channel = self.get_channel(int(chan_id)) if chan_id else None
+            members = list(getattr(channel, "members", [])) if channel else []
+            humans = [m for m in members if not getattr(m, "bot", False)]
+
+            if not channel or not humans:
+                log.warning("reconcile: %s cannot resume (channel=%s, %d human member(s)); retiring the row.",
+                            rid, chan_id, len(humans))
+                await self.patch_status(http, rid, "done",
+                                        error="process restarted; voice channel empty on recovery")
+                await self.notify(
+                    notify_channel,
+                    "\u274C Six Axes restarted and the voice channel was empty, so it stopped recording. "
+                    "The session is still open: run /record to pick it back up.",
+                )
+                continue
+
+            try:
+                vc = await channel.connect(timeout=30.0, reconnect=False)
+            except Exception as e:
+                log.warning("reconcile: %s rejoin failed: %r", rid, e)
+                await self.patch_status(http, rid, "done", error=f"process restarted; rejoin failed: {e}")
+                await self.notify(
+                    notify_channel,
+                    "\u274C Six Axes restarted and could not rejoin the voice channel. "
+                    "The session is still open: run /record to pick it back up.",
+                )
+                continue
+
+            rec = Recording(rid, vc, str(chan_id), str(row.get("guild_id")),
+                            row.get("campaign_id"), row.get("session_id"))
+            rec.sink = TimelineSink()
+            try:
+                vc.start_recording(rec.sink, _after_record)
+            except Exception as e:
+                log.warning("reconcile: %s start_recording failed: %r", rid, e)
+                try:
+                    await vc.disconnect()
+                except Exception:
+                    pass
+                rec.cleanup()
+                await self.patch_status(http, rid, "done",
+                                        error=f"process restarted; start_recording failed: {e}")
+                continue
+
+            rec.notify_channel_id = notify_channel
+            self.recordings[rid] = rec
+            log.info("RECOVERED: request %s rejoined channel %s (session %s). Audio from before the "
+                     "restart is lost.", rid, chan_id, row.get("session_id"))
+            await self.notify(
+                notify_channel,
+                "\u26A0\uFE0F Six Axes restarted and has rejoined the voice channel. Recording has "
+                "resumed, but anything said during the restart was not captured.",
+            )
 
     async def handle_control_row(self, http, row):
         status = row.get("status")
@@ -475,15 +665,19 @@ class Sidecar(discord.Client):
                 await self.rotate_chunk(rec, restart=False)
                 if await self.reconnect(rec):
                     rec.notified_drop = False
+                    rec.dropped_at = None
                     await self.notify(
                         rec.notify_channel_id,
                         "\u2705 Six Axes reconnected and is recording again.",
                     )
                 else:
                     rec.reconnect_attempts += 1
-                    if rec.reconnect_attempts >= 5:
-                        log.warning("recording %s: reconnect failed %d times; finalizing with what we have.",
-                                    rec.rid, rec.reconnect_attempts)
+                    if rec.dropped_at is None:
+                        rec.dropped_at = time.monotonic()
+                    outage = time.monotonic() - rec.dropped_at
+                    if outage >= RECONNECT_GRACE_SECONDS:
+                        log.warning("recording %s: reconnect failed for %.0fs (%d attempts); finalizing with what we have.",
+                                    rec.rid, outage, rec.reconnect_attempts)
                         await self.notify(
                             rec.notify_channel_id,
                             "\u274C Six Axes could not reconnect after several tries and has finalized "
@@ -492,6 +686,7 @@ class Sidecar(discord.Client):
                         await self.finalize(http, rec, note="connection lost; partial capture")
                 continue
             rec.reconnect_attempts = 0
+            rec.dropped_at = None
             # Rotate the sink on schedule to bound memory.
             if time.monotonic() - rec.chunk_started_at >= FLUSH_SECONDS:
                 await self.rotate_chunk(rec, restart=True)
