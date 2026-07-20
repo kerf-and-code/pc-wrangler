@@ -61,3 +61,10 @@ captures/
 
 # supabase local state
 supabase/.temp/
+
+# --- Six Axes: build artifacts and local scratch ---
+filetree.txt
+*.lnk
+wrangler-disposition/*.exe
+wrangler-disposition/disposition_posteriors.csv
+six-axes-capture-extension/*.zip
