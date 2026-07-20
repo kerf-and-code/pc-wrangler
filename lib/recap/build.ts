@@ -10,7 +10,20 @@ const SHORT_LIMIT = 16000;   // below this, feed the transcript directly
 const CHUNK_SIZE = 14000;    // size of each chunk when summarizing a long transcript
 const MAX_CHUNKS = 60;        // hard safety ceiling; a 3 hour session is well under this
 const REDUCE_THRESHOLD = 24;  // beats spanning more than this many chunks get one reduce pass
-const SEGMENT_LIMIT = 20000; // pull the whole transcript; a heavy 3 hour session runs ~4000+ rows
+// Rows fetched per request. This is NOT a total: fetchAllSegments pages until the
+// transcript is exhausted.
+//
+// It replaces a single .limit(20000) that was written to "pull the whole transcript" and
+// silently did not. PostgREST enforces db-max-rows SERVER side, so a client limit can only
+// ask for FEWER rows than the cap, never more. This project's cap is 1000, proved by the
+// extract routes: they ran with no limit at all and got back exactly 1000 of 3146
+// segments. A .limit(20000) against a 1000-row cap returns 1000 and reports success.
+//
+// The consequence was invisible in the worst way. Recaps were built from the first 1000
+// segments, roughly the first hour of a two and a half hour session, and read as a
+// slightly thin recap rather than as a bug. Regenerating produced the same abbreviated
+// result every time, because the input was the same truncated third.
+const SEGMENT_PAGE = 1000;
 
 // TAVERN axis names (player-facing labels). Only used to flavor the model
 // context; the recap output never shows axis names.
@@ -66,6 +79,39 @@ async function callClaude(apiKey: string, system: string, user: string, maxToken
     .map((b: any) => b.text)
     .join("\n")
     .trim();
+}
+
+// Every transcript segment for these jobs, in order, regardless of the server row cap.
+//
+// Two details that matter:
+//
+//   stable ordering  start_ms is not unique, so rows can shuffle between pages and end up
+//                    skipped or repeated. The id tiebreak makes the order total. id is
+//                    selected purely for that; nothing downstream reads it.
+//   partial is worse than none  a failed page throws rather than returning what it
+//                    collected. Silently returning a prefix that looks complete is the
+//                    exact bug being fixed here, and reintroducing it one level down would
+//                    be harder to find than the original.
+async function fetchAllSegments(supabase: DbLike, jobIds: string[]): Promise<any[]> {
+  const MAX_PAGES = 100; // 100k segments, far beyond any real session
+  const out: any[] = [];
+  for (let page = 0; page < MAX_PAGES; page++) {
+    const from = page * SEGMENT_PAGE;
+    const { data, error } = await supabase
+      .from("transcript_segments")
+      .select("id, text, start_ms, character_id")
+      .in("job_id", jobIds)
+      .order("start_ms", { ascending: true })
+      .order("id", { ascending: true })
+      .range(from, from + SEGMENT_PAGE - 1);
+    if (error) {
+      throw new Error(`transcript_segments page ${page} failed: ${error.message}`);
+    }
+    const rows = (data || []) as any[];
+    out.push(...rows);
+    if (rows.length < SEGMENT_PAGE) return out;
+  }
+  throw new Error(`transcript_segments exceeded ${MAX_PAGES} pages`);
 }
 
 export async function buildRecap(supabase: DbLike, sessionId: string, mode: RecapMode = "brief"): Promise<BuildResult> {
@@ -165,12 +211,7 @@ export async function buildRecap(supabase: DbLike, sessionId: string, mode: Reca
   let hasTranscript = false;
   const jobIds = (jobs || []).filter((j: any) => !j.error).map((j: any) => j.id);
   if (jobIds.length) {
-    const { data: segs } = await supabase
-      .from("transcript_segments")
-      .select("text, start_ms, character_id")
-      .in("job_id", jobIds)
-      .order("start_ms", { ascending: true })
-      .limit(SEGMENT_LIMIT);
+    const segs = await fetchAllSegments(supabase, jobIds);
 
     const lines = (segs || [])
       .filter((s: any) => s.text && s.text.trim())
