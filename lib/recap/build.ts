@@ -92,7 +92,21 @@ async function callClaude(apiKey: string, system: string, user: string, maxToken
 //                    collected. Silently returning a prefix that looks complete is the
 //                    exact bug being fixed here, and reintroducing it one level down would
 //                    be harder to find than the original.
-async function fetchAllSegments(supabase: DbLike, jobIds: string[]): Promise<any[]> {
+type SegFetch = { ok: true; segs: any[] } | { ok: false; error: string };
+
+// A range whose start is at or past the end of the result set is not an error in the sense
+// that matters here, it just means there are no more rows. PostgREST answers it with 416
+// and PGRST103 rather than an empty list, so the loop has to recognise that and stop
+// instead of treating it as a failure. It bites exactly when the row count is a multiple of
+// the page size, which is the one case where the loop cannot tell it has finished from the
+// size of the previous page.
+function isRangePastEnd(error: any): boolean {
+  const code = String(error?.code ?? "");
+  const msg = String(error?.message ?? "").toLowerCase();
+  return code === "PGRST103" || msg.includes("range not satisfiable") || msg.includes("out of bounds");
+}
+
+async function fetchAllSegments(supabase: DbLike, jobIds: string[]): Promise<SegFetch> {
   const MAX_PAGES = 100; // 100k segments, far beyond any real session
   const out: any[] = [];
   for (let page = 0; page < MAX_PAGES; page++) {
@@ -104,14 +118,25 @@ async function fetchAllSegments(supabase: DbLike, jobIds: string[]): Promise<any
       .order("start_ms", { ascending: true })
       .order("id", { ascending: true })
       .range(from, from + SEGMENT_PAGE - 1);
+
     if (error) {
-      throw new Error(`transcript_segments page ${page} failed: ${error.message}`);
+      if (page > 0 && isRangePastEnd(error)) return { ok: true, segs: out };
+      // RETURNED, not thrown. The previous version threw, which escaped buildRecap's
+      // result type entirely and surfaced in the caller's catch-all as "Could not generate
+      // recap. Try again." A specific database failure rendered as a generic retry prompt
+      // is the exact pattern this project keeps getting bitten by, and it is worse here
+      // than elsewhere because the GM's only feedback is that one sentence.
+      return {
+        ok: false,
+        error: `Could not read the transcript (page ${page}, rows ${from}-${from + SEGMENT_PAGE - 1}): ${error.message ?? "unknown error"}`,
+      };
     }
+
     const rows = (data || []) as any[];
     out.push(...rows);
-    if (rows.length < SEGMENT_PAGE) return out;
+    if (rows.length < SEGMENT_PAGE) return { ok: true, segs: out };
   }
-  throw new Error(`transcript_segments exceeded ${MAX_PAGES} pages`);
+  return { ok: false, error: `Transcript exceeded ${MAX_PAGES} pages, which should not happen.` };
 }
 
 export async function buildRecap(supabase: DbLike, sessionId: string, mode: RecapMode = "brief"): Promise<BuildResult> {
@@ -211,7 +236,12 @@ export async function buildRecap(supabase: DbLike, sessionId: string, mode: Reca
   let hasTranscript = false;
   const jobIds = (jobs || []).filter((j: any) => !j.error).map((j: any) => j.id);
   if (jobIds.length) {
-    const segs = await fetchAllSegments(supabase, jobIds);
+    const fetched = await fetchAllSegments(supabase, jobIds);
+    // Surfaced rather than swallowed. A recap silently built without its transcript reads
+    // as a thin recap, which is indistinguishable from a quiet session and is how the
+    // truncation went unnoticed for weeks.
+    if (!fetched.ok) return { ok: false, error: fetched.error, status: 500 };
+    const segs = fetched.segs;
 
     const lines = (segs || [])
       .filter((s: any) => s.text && s.text.trim())
