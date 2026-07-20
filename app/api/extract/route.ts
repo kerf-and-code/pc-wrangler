@@ -20,6 +20,50 @@ type Etype = { key: string; label: string; category: string; default_axis: strin
 type Char = { id: string; name: string; kind: string };
 type Proposal = { line?: number; character?: string | null; event_type?: string; axis?: string | null; frame?: string | null; target?: string | null; confidence?: number; rationale?: string };
 
+// PostgREST caps an unbounded select at its configured row limit, 1000 by default. A
+// session's transcript is routinely larger than that, so a plain select silently returns
+// a PREFIX of the segments and every count derived from it is wrong.
+//
+// That is not hypothetical. On the 2026-07-19 pilot this query returned exactly 1000 of
+// 3146 segments: 622 player and 378 GM. Both extractors reached those totals, both
+// correctly declared themselves finished, and the job correctly advanced to review. The
+// accounting was sound; it was measuring the first 1000 rows, which ends at minute 60 of
+// a 155 minute session. The GM reviewed a third of a game believing it was all of it.
+//
+// Paging fixes it, with two details that matter:
+//
+//   stable ordering  start_ms alone is not unique, so rows can shuffle between pages and
+//                    be skipped or repeated. The id tiebreak makes the order total.
+//   fail loud        a failed page must NOT return what was collected so far. Partial
+//                    data that looks complete is exactly the bug being fixed here, so an
+//                    error throws rather than degrading quietly.
+async function fetchAllSegments(
+  admin: ReturnType<typeof createAdminClient>,
+  jid: string,
+  columns: string,
+): Promise<Seg[]> {
+  const PAGE = 1000;
+  const MAX_PAGES = 100; // 100k segments, far beyond any real session
+  const out: Seg[] = [];
+  for (let page = 0; page < MAX_PAGES; page++) {
+    const from = page * PAGE;
+    const { data, error } = await admin
+      .from("transcript_segments")
+      .select(columns)
+      .eq("job_id", jid)
+      .order("start_ms", { ascending: true })
+      .order("id", { ascending: true })
+      .range(from, from + PAGE - 1);
+    if (error) {
+      throw new Error(`transcript_segments page ${page} failed: ${error.message}`);
+    }
+    const rows = (data as Seg[]) || [];
+    out.push(...rows);
+    if (rows.length < PAGE) return out;
+  }
+  throw new Error(`transcript_segments exceeded ${MAX_PAGES} pages for job ${jid}`);
+}
+
 export async function POST(req: NextRequest) {
   let jobId: string | undefined;
   try { const b = await req.json(); jobId = b?.jobId; } catch { /* missing-jobId guard below */ }
@@ -69,12 +113,7 @@ export async function POST(req: NextRequest) {
       .filter((v): v is string => v !== null)
   );
 
-  const { data: segData } = await admin
-    .from("transcript_segments")
-    .select("id, track_id, character_id, start_ms, end_ms, text")
-    .eq("job_id", jid)
-    .order("start_ms", { ascending: true });
-  const allSegs = (segData as Seg[]) || [];
+  const allSegs = await fetchAllSegments(admin, jid, "id, track_id, character_id, start_ms, end_ms, text");
   // GM segments (for the gm-done accounting) vs the player segments we extract.
   const nonGm = allSegs.filter((s) => !(s.track_id !== null && gmTrackIds.has(s.track_id)));
   const gmTotal = allSegs.length - nonGm.length;
