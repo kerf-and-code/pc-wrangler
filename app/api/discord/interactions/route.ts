@@ -731,16 +731,59 @@ async function handleRecord(interaction: Interaction) {
   // the sidecar is still finalizing. Fail CLOSED if the check itself errors.
   const { data: running, error: guardErr } = await sb
     .from("capture_control")
-    .select("id")
+    .select("id, status, session_id, heartbeat_at, updated_at")
     .eq("guild_id", interaction.guild_id)
     .in("status", ["requested", "active", "stopping"])
+    .order("updated_at", { ascending: false })
     .limit(1)
     .maybeSingle();
   if (guardErr) {
     return ephemeral("Could not verify the current recording state. Try again in a moment.");
   }
+
+  // ADOPT AN ORPHANED ROW RATHER THAN REFUSING.
+  //
+  // The guard above is right when a recording is genuinely in progress, and a trap when it
+  // is not. If the sidecar dies holding a row (OOM, a Fly restart, a crash mid-finalize)
+  // the row stays 'active' forever with no process behind it, and capture_control_one_open
+  // _per_guild is a UNIQUE index over exactly these three statuses. So the GM is locked out
+  // of /record at the DATABASE level, and the message tells them to run /stop, which under
+  // the new lifecycle no longer closes anything. That is how a table loses the second half
+  // of a game.
+  //
+  // heartbeat_at is what separates the two cases: the sidecar writes it every poll tick for
+  // rows it is holding, so a fresh heartbeat means a live process owns this and a stale one
+  // means nobody does. Falls back to updated_at while the sidecar half of this is still in
+  // flight, which is correct-but-blunt: updated_at only moves on state TRANSITIONS, so a
+  // healthy long recording looks stale by that measure. The window is therefore generous.
+  const STALE_MS = 15 * 60 * 1000;
   if (running) {
-    return ephemeral("Six Axes is already recording in this server. Use /stop first, then /record.");
+    const row = running as {
+      id: string; status: string; session_id: string | null;
+      heartbeat_at: string | null; updated_at: string | null;
+    };
+    const beat = row.heartbeat_at ?? row.updated_at;
+    const ageMs = beat ? Date.now() - new Date(beat).getTime() : Number.POSITIVE_INFINITY;
+
+    if (ageMs < STALE_MS) {
+      return ephemeral("Six Axes is already recording in this server. Use /stop first, then /record.");
+    }
+
+    // Orphan. Retire it so the unique index frees up, then fall through and open a fresh
+    // request. Retiring rather than reusing keeps the audit trail honest: the dead capture
+    // is visibly abandoned, not silently rewritten.
+    const { error: adoptErr } = await sb
+      .from("capture_control")
+      .update({
+        status: "done",
+        error: "orphaned: no sidecar heartbeat, adopted by a later /record",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", row.id)
+      .in("status", ["requested", "active", "stopping"]);
+    if (adoptErr) {
+      return ephemeral("A previous recording is stuck and could not be cleared. Try again in a moment.");
+    }
   }
 
   // Auto-link the requester as the campaign narrator, so their own voice is
@@ -926,29 +969,28 @@ async function handleStop(interaction: Interaction) {
     .update({ status: "stopping", updated_at: new Date().toISOString() })
     .eq("id", active.id);
 
-  // CLOSE THE SESSION. /stop never did this, and nothing else did either: ended_at was
-  // set in exactly ONE place, a manual button on the Sessions page. A GM who ran /record
-  // and /stop and never went back to the app left the session OPEN FOREVER, with three
-  // consequences that each look like a different bug:
+  // /stop ENDS THE RECORDING. IT NO LONGER CLOSES THE SESSION.
   //
-  //   1. Next week's /record reused it. Session 2 recorded into session 1's row.
-  //   2. /api/vtt/ingest requires an open session, so a player idly rolling on D&D
-  //      Beyond on a Wednesday dropped dice into last Friday's game.
-  //   3. The whole auto-chain (transcribe, extract, review, recap) ran against a session
-  //      the database still believed was being played.
+  // It used to do both, which was right while a stop always meant the game was over. It is
+  // wrong once the bot can lose its voice connection mid-game: the GM runs /stop, /record,
+  // and expects to carry on in the SAME session. Closing here made that impossible, because
+  // /record only reuses a session with ended_at null, so the second /record opened a new
+  // session number and split one evening across two rows and two recaps.
   //
-  // "completed" rather than "processed": the game is over, the pipeline is not finished
-  // with it yet. The extractor moves it on from there.
-  const stoppedSession = (active as { id: string; session_id: string | null }).session_id;
-  if (stoppedSession) {
-    await sb
-      .from("sessions")
-      .update({ status: "completed", ended_at: new Date().toISOString() })
-      .eq("id", stoppedSession)
-      .is("ended_at", null);
-  }
-
-  return ephemeral("Stopping the recording. The bot will finish up, and transcription and extraction will run on their own.");
+  // Closing is now an explicit GM act on the Session Log, through /api/session/close, which
+  // moves status and ended_at together and refuses while a recording is still open.
+  //
+  // THE COST, STATED PLAINLY. This reopens the three failure modes closing here was added
+  // to fix: next week's /record reusing an unclosed session, idle D&D Beyond rolls landing
+  // in a finished game through /api/vtt/ingest, and the pipeline running against a session
+  // the database still calls live. All three now depend on the GM remembering to close,
+  // which is why the reminder below is part of the change rather than decoration.
+  return ephemeral(
+    "Stopping the recording. Transcription and extraction will run on their own.\n\n" +
+    "The session stays OPEN, so you can /record again to add more to it. " +
+    "When the game is finished, close it on the Session Log: while it is open, party chat " +
+    "stays hidden and D&D Beyond rolls keep landing in this session.",
+  );
 }
 
 async function handleConsentButton(interaction: Interaction) {

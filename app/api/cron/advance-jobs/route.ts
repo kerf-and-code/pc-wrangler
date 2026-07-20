@@ -106,6 +106,38 @@ export async function GET(request: Request) {
     swept.push({ job: sj.id, status: nextStatus });
   }
 
+  // SWEEP: extraction that never started.
+  //
+  // /api/extract/run is fired best-effort by the transcribe callback and chains itself
+  // until both cursors reach their totals. If that FIRST kick never lands (the callback
+  // failed, or a human moved a job to 'extracting' by hand) the job sits there with both
+  // cursors at zero and nothing running, and the only way out is a GM opening the Review
+  // page.
+  //
+  // Deliberately conservative: only jobs where BOTH cursors are still 0. A job partway
+  // through extraction has a chain in flight, and kicking it again would run two passes
+  // against the same cursor and propose the same events twice. Cursor-at-zero is the one
+  // state where a second kick is provably safe.
+  const { data: idleExtract } = await admin
+    .from("capture_jobs")
+    .select("id, extract_cursor, gm_extract_cursor")
+    .eq("status", "extracting")
+    .order("created_at", { ascending: false })
+    .limit(10);
+
+  const kicked: string[] = [];
+  const extractSecret = process.env.TRANSCRIBE_CALLBACK_SECRET;
+  if (extractSecret) {
+    const origin = new URL(request.url).origin;
+    for (const ej of (idleExtract as Array<{ id: string; extract_cursor: number | null; gm_extract_cursor: number | null }>) || []) {
+      if ((ej.extract_cursor || 0) !== 0 || (ej.gm_extract_cursor || 0) !== 0) continue;
+      const url = `${origin}/api/extract/run?job=${encodeURIComponent(ej.id)}&k=${encodeURIComponent(extractSecret)}`;
+      void fetch(url, { method: "POST" }).catch(() => {});
+      console.log("[advance-jobs] kicked idle extraction for job %s", ej.id);
+      kicked.push(ej.id);
+    }
+  }
+
   // Jobs still waiting. Anything past 'draft' is already moving.
   const { data: jobs, error: jErr } = await admin
     .from("capture_jobs")
@@ -126,8 +158,9 @@ export async function GET(request: Request) {
     // logs could not say whether it had been seen and skipped or never seen at all.
     // These console.log lines are the difference between one line in the dashboard and
     // an afternoon of guessing.
-    console.log("[advance-jobs] no draft jobs (swept %d stranded)", swept.length);
-    return NextResponse.json({ ok: true, ready: 0, submitted: 0, swept });
+    console.log("[advance-jobs] no draft jobs (swept %d stranded, kicked %d idle extraction)",
+      swept.length, kicked.length);
+    return NextResponse.json({ ok: true, ready: 0, submitted: 0, swept, kicked });
   }
 
   // The guard: the sidecar must have FINISHED with this job. 'done' with a capture_job_id
