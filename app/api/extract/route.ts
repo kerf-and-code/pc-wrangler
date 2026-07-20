@@ -37,10 +37,13 @@ type Proposal = { line?: number; character?: string | null; event_type?: string;
 //   fail loud        a failed page must NOT return what was collected so far. Partial
 //                    data that looks complete is exactly the bug being fixed here, so an
 //                    error throws rather than degrading quietly.
+//
+// The select list is written out in full rather than passed in as a parameter: supabase-js
+// parses a literal to infer the row type, and a dynamic string degrades to
+// GenericStringError[], which will not cast to Seg[] and fails the build.
 async function fetchAllSegments(
   admin: ReturnType<typeof createAdminClient>,
   jid: string,
-  columns: string,
 ): Promise<Seg[]> {
   const PAGE = 1000;
   const MAX_PAGES = 100; // 100k segments, far beyond any real session
@@ -49,7 +52,7 @@ async function fetchAllSegments(
     const from = page * PAGE;
     const { data, error } = await admin
       .from("transcript_segments")
-      .select(columns)
+      .select("id, track_id, character_id, start_ms, end_ms, text")
       .eq("job_id", jid)
       .order("start_ms", { ascending: true })
       .order("id", { ascending: true })
@@ -113,7 +116,7 @@ export async function POST(req: NextRequest) {
       .filter((v): v is string => v !== null)
   );
 
-  const allSegs = await fetchAllSegments(admin, jid, "id, track_id, character_id, start_ms, end_ms, text");
+  const allSegs = await fetchAllSegments(admin, jid);
   // GM segments (for the gm-done accounting) vs the player segments we extract.
   const nonGm = allSegs.filter((s) => !(s.track_id !== null && gmTrackIds.has(s.track_id)));
   const gmTotal = allSegs.length - nonGm.length;
