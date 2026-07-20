@@ -149,6 +149,7 @@ export async function POST(request: Request) {
     if (name === "setup") return await handleSetup(interaction);
     if (name === "claim") return await handleClaim(interaction);
     if (name === "unclaim") return await handleUnclaim(interaction);
+    if (name === "retire") return await handleRetire(interaction);
     if (name === "session") return await handleSession(interaction);
     if (name === "record") return await handleRecord(interaction);
     if (name === "stop") return await handleStop(interaction);
@@ -158,6 +159,7 @@ export async function POST(request: Request) {
   if (interaction.type === MESSAGE_COMPONENT) {
     const cid = interaction.data?.custom_id ?? "";
     if (cid.startsWith("claim:")) return await handleClaimSelect(interaction);
+    if (cid.startsWith("retire:")) return await handleRetireSelect(interaction);
     if (cid.startsWith("rsvp:")) return await handleRsvpButton(interaction);
     if (cid.startsWith("consent:")) return await handleConsentButton(interaction);
     if (cid.startsWith("sched:")) return await handleSchedButton(interaction);
@@ -415,6 +417,132 @@ async function handleUnclaim(interaction: Interaction) {
   const names = claimed.map((c: { id: string; name: string | null }) => c.name || "Unnamed").join(", ");
   const it = claimed.length > 1 ? "them" : "it";
   return ephemeral(`Unlinked you from ${names}. Anyone can /claim ${it} now.`);
+}
+
+// GM only: take a character off the active roster.
+//
+// WHY THIS IS NOT /unclaim
+//
+// /unclaim is a PLAYER action and clears discord_user_id: it frees the character so
+// someone else can claim it, while the character itself stays in the campaign. When a
+// player leaves the group that is not enough, because the character remains active and
+// keeps appearing in the /claim picker, on the roster, and in any consent or attendance
+// check. And a player who has already left will never run /unclaim themselves, which is
+// the whole reason this exists.
+//
+// WHAT IT CHANGES, AND WHAT IT DELIBERATELY DOES NOT
+//
+//   active = false            removes them from the roster and every picker
+//   discord_user_id = null    frees the Discord link, same as /unclaim
+//
+//   profile_id                LEFT ALONE. That is the web-account link, and clearing it
+//                             would orphan the character's contribution to player-level
+//                             pooling in the disposition model. Retiring a character
+//                             should not rewrite the history of the sessions they played.
+//   recording_consents        LEFT ALONE. Consent was given for audio already recorded,
+//                             and leaving the group does not retroactively withdraw it.
+//                             A player who wants their audio deleted is making a deletion
+//                             request, which is a different thing.
+//
+// REVERSIBLE. Setting active back to true restores them; the player then re-runs /claim.
+async function handleRetire(interaction: Interaction) {
+  if (!interaction.guild_id) {
+    return ephemeral("Run /retire in your campaign's channel.");
+  }
+  // default_member_permissions gates this in Discord's UI, but a server admin can
+  // override that per-command, so the permission is checked here too.
+  if (!isManager(interaction)) {
+    return ephemeral("Only the GM can retire a character. You need the Manage Server permission.");
+  }
+
+  const sb = serviceClient();
+  const campaign = await resolveCampaign(interaction, sb);
+  if (!campaign) {
+    return ephemeral("Run /retire in your campaign's channel, or add code:<your share code>.");
+  }
+
+  // Discord select menus allow at most 25 options.
+  const { data: roster } = await sb
+    .from("characters")
+    .select("id, name")
+    .eq("campaign_id", campaign.id)
+    .eq("kind", "pc")
+    .eq("active", true)
+    .order("name")
+    .limit(25);
+
+  if (!roster || !roster.length) {
+    return ephemeral(`No active characters in "${campaign.name}" to retire.`);
+  }
+
+  const options = roster.map((c: { id: string; name: string | null }) => ({
+    label: (c.name || "Unnamed").slice(0, 100),
+    value: c.id,
+  }));
+
+  return NextResponse.json({
+    type: CHANNEL_MESSAGE_WITH_SOURCE,
+    data: {
+      flags: EPHEMERAL,
+      content: `Which character should leave "${campaign.name}"? They stop appearing on the roster and in /claim. Their past sessions, transcripts, and recaps are untouched.`,
+      components: [
+        {
+          type: ACTION_ROW,
+          components: [
+            { type: STRING_SELECT, custom_id: `retire:${campaign.id}`, placeholder: "Pick a character to retire", options },
+          ],
+        },
+      ],
+    },
+  });
+}
+
+async function handleRetireSelect(interaction: Interaction) {
+  // A component callback is a SEPARATE request and can be replayed, so the permission
+  // check runs again here rather than being trusted from the command that opened the menu.
+  if (!isManager(interaction)) {
+    return updateMessage("Only the GM can retire a character.");
+  }
+
+  const cid = interaction.data?.custom_id ?? "";
+  const campaignId = cid.startsWith("retire:") ? cid.slice("retire:".length) : "";
+  const characterId = interaction.data?.values?.[0] ?? "";
+  if (!campaignId || !characterId) {
+    return updateMessage("Something went wrong reading your selection. Try /retire again.");
+  }
+
+  const sb = serviceClient();
+
+  // Scoped to the campaign from the custom_id, so a replayed interaction cannot retire a
+  // character belonging to some other campaign.
+  const { data: character } = await sb
+    .from("characters")
+    .select("id, name, active")
+    .eq("id", characterId)
+    .eq("campaign_id", campaignId)
+    .single();
+
+  if (!character) {
+    return updateMessage("That character is no longer in this campaign.");
+  }
+  if (!character.active) {
+    return updateMessage(`${character.name || "That character"} is already retired.`);
+  }
+
+  const { error: upErr } = await sb
+    .from("characters")
+    .update({ active: false, discord_user_id: null })
+    .eq("id", characterId)
+    .eq("campaign_id", campaignId);
+
+  if (upErr) {
+    return updateMessage("Could not retire them right now. Try again in a moment.");
+  }
+
+  return updateMessage(
+    `${character.name || "That character"} has left the campaign. They are off the roster and out of /claim, ` +
+    "and their recorded sessions are unchanged. Reactivate them from the app if they come back.",
+  );
 }
 
 async function handleSession(interaction: Interaction) {

@@ -60,6 +60,12 @@ const commands = [
     // no permission gate: players use this
   },
   {
+    name: "retire",
+    description: "GM only: remove a character from this campaign's active roster.",
+    options: [CODE_OPTIONAL],
+    default_member_permissions: MANAGE_GUILD,
+  },
+  {
     name: "session",
     description: "Post the next scheduled session with RSVP buttons.",
     options: [CODE_OPTIONAL],
