@@ -753,19 +753,31 @@ async function handleRecord(interaction: Interaction) {
   //
   // heartbeat_at is what separates the two cases: the sidecar writes it every poll tick for
   // rows it is holding, so a fresh heartbeat means a live process owns this and a stale one
-  // means nobody does. Falls back to updated_at while the sidecar half of this is still in
-  // flight, which is correct-but-blunt: updated_at only moves on state TRANSITIONS, so a
-  // healthy long recording looks stale by that measure. The window is therefore generous.
-  const STALE_MS = 15 * 60 * 1000;
+  // means nobody does.
+  //
+  // THE WINDOW. The sidecar beats every ~60 seconds (HEARTBEAT_TICKS * POLL_SECONDS), so
+  // three minutes is three missed beats: long enough to ride out a slow tick, a long
+  // flush, or a gateway resume, short enough that a GM whose bot just died is not locked
+  // out for a quarter of an hour. This was 15 minutes only because nothing wrote
+  // heartbeat_at yet and it had to fall back to updated_at, which moves solely on state
+  // TRANSITIONS and therefore makes a healthy three-hour recording look ancient.
+  //
+  // The fallback still exists for rows written before the heartbeat shipped, and it is
+  // still blunt in exactly that way. A row with NO heartbeat but a recent updated_at is
+  // treated as live, which errs toward refusing rather than stealing a live recording.
+  const STALE_MS = 3 * 60 * 1000;
+  const LEGACY_STALE_MS = 15 * 60 * 1000;
   if (running) {
     const row = running as {
       id: string; status: string; session_id: string | null;
       heartbeat_at: string | null; updated_at: string | null;
     };
+    const hasBeat = Boolean(row.heartbeat_at);
     const beat = row.heartbeat_at ?? row.updated_at;
     const ageMs = beat ? Date.now() - new Date(beat).getTime() : Number.POSITIVE_INFINITY;
+    const staleAfter = hasBeat ? STALE_MS : LEGACY_STALE_MS;
 
-    if (ageMs < STALE_MS) {
+    if (ageMs < staleAfter) {
       return ephemeral("Six Axes is already recording in this server. Use /stop first, then /record.");
     }
 

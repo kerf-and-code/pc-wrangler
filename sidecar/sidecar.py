@@ -470,6 +470,18 @@ class Sidecar(discord.Client):
                     ticks += 1
                     if ticks % HEARTBEAT_TICKS == 0:
                         await self.heartbeat(http)
+                        # Reconcile on a SCHEDULE, not only at boot. Running it once was
+                        # not enough: on 2026-07-20 a restart came back 27.7 seconds after
+                        # the dying process's last heartbeat, the claim correctly declined
+                        # a beat that fresh, and because nothing ever looked again the row
+                        # stayed 'active' with no owner. capture_control_one_open_per_guild
+                        # then locked the guild out of /record permanently.
+                        #
+                        # A miss is now temporary: the next sweep a minute later sees a beat
+                        # that has aged past the threshold and claims it. The claim is a
+                        # conditional write, so repeating it costs one query and can never
+                        # take a row out from under a live process.
+                        await self.reconcile_orphans(http)
                     if ticks % 15 == 0:
                         log.info("poll alive: tick %d, %d active recording(s), tracking %d voice location(s)",
                                  ticks, len(self.recordings), len(self.voice_locations))
@@ -505,7 +517,11 @@ class Sidecar(discord.Client):
                 log.warning("heartbeat failed for %s: %r", rec.rid, e)
 
     async def reconcile_orphans(self, http):
-        """On boot, deal with recordings this app was holding when the last process died.
+        """Deal with recordings this app was holding when a previous process died.
+
+        Runs at poller start AND on every heartbeat sweep. Boot-only was not enough: a
+        restart that completes faster than ORPHAN_STALE_SECONDS finds its own last
+        heartbeat still fresh, correctly declines to claim it, and then never looks again.
 
         THE FAILURE THIS EXISTS FOR. On 2026-07-18 Fly OOM-killed the machine mid-session.
         It restarted in seven seconds and reconnected to Discord cleanly, but every
@@ -544,6 +560,12 @@ class Sidecar(discord.Client):
             status = row.get("status")
             beat = row.get("heartbeat_at") or row.get("updated_at")
 
+            # Rows this process is already recording. Their heartbeat is fresh by
+            # definition, so the claim below would decline anyway, but skipping first keeps
+            # the periodic sweep quiet and avoids a pointless write every minute.
+            if rid in self.recordings:
+                continue
+
             # Claim it, but ONLY if it is still stale at the moment of writing. Two machines
             # boot from the same image and poll the same table, so the claim has to be the
             # thing that decides ownership, not the read that preceded it. An empty response
@@ -565,7 +587,21 @@ class Sidecar(discord.Client):
                 continue
 
             if not claimed:
-                log.info("reconcile: %s is held by another process (heartbeat %s); leaving it alone.", rid, beat)
+                # The heartbeat was newer than the cutoff at the moment of writing. Usually
+                # that means another machine is recording this. It can ALSO mean a process
+                # died seconds ago and its last beat has not aged out yet, which is why the
+                # sweep now repeats: the next pass will find it stale and claim it. The old
+                # wording asserted a second process, which was actively misleading during
+                # the 2026-07-20 restart test.
+                age = "unknown"
+                try:
+                    if beat:
+                        parsed = datetime.datetime.fromisoformat(beat.replace("Z", "+00:00"))
+                        age = f"{(datetime.datetime.now(datetime.timezone.utc) - parsed).total_seconds():.0f}s"
+                except Exception:
+                    pass
+                log.info("reconcile: %s has a heartbeat %s old, newer than the %ds cutoff; "
+                         "leaving it for now.", rid, age, ORPHAN_STALE_SECONDS)
                 continue
 
             notify_channel = await self.get_notify_channel(http, row.get("campaign_id"))
