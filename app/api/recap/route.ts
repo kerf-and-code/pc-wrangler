@@ -21,8 +21,11 @@ export async function POST(request: Request) {
     // Manual generate overwrites (default). The Mark-done auto-draft passes
     // overwrite:false so it never clobbers an existing draft or the GM's edits.
     const overwrite = body?.overwrite !== false;
-    // Recap length mode. Anything other than an explicit "complete" is brief.
-    const mode = body?.mode === "complete" ? "complete" : "brief";
+    // Recap length mode. complete is the default: it is the full player-facing recap the
+    // GM shares out. A caller must ask for "brief" explicitly to get the short "previously
+    // on" version. The Mark-done auto-draft can still pass mode:"brief" if a lighter draft
+    // is wanted there.
+    const mode = body?.mode === "brief" ? "brief" : "complete";
     if (!sessionId) {
       return NextResponse.json({ error: "Missing sessionId." }, { status: 400 });
     }

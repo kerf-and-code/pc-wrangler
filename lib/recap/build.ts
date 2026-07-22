@@ -8,6 +8,10 @@ const RECAP_MODEL = "claude-sonnet-4-6";
 
 const SHORT_LIMIT = 16000;   // below this, feed the transcript directly
 const CHUNK_SIZE = 14000;    // size of each chunk when summarizing a long transcript
+const CHUNK_TOKENS = 1000;   // per-slice beat budget. Was 600, which GUILLOTINED a busy
+                             // slice: the model's beat list was cut off mid-output and the
+                             // tail of that slice's events vanished before the final recap
+                             // ever saw them. A combat-heavy 14k slice needs more than 600.
 const MAX_CHUNKS = 60;        // hard safety ceiling; a 3 hour session is well under this
 const REDUCE_THRESHOLD = 24;  // beats spanning more than this many chunks get one reduce pass
 // Rows fetched per request. This is NOT a total: fetchAllSegments pages until the
@@ -39,15 +43,16 @@ Rules:
 - 2 to 4 short paragraphs of flowing prose. No headers, no bullet points, no lists.
 - Do not address the GM or mention "events," "logs," "transcripts," or the tool. Just tell the story of what happened.`;
 
-const CHUNK_SYSTEM = `You are condensing one slice of a longer tabletop RPG session transcript into terse factual beats.
-List what happened in this slice: decisions, actions, discoveries, combat outcomes, loot, NPC interactions, location changes.
+const CHUNK_SYSTEM = `You are extracting the factual beats from one slice of a longer tabletop RPG session transcript.
+Capture EVERY distinct thing that happens in this slice: decisions, actions, discoveries, combat outcomes, loot, NPC interactions, negotiations, revelations, and location changes. Compress the WORDING, never the content: it is fine for a beat to be terse, it is not fine to omit an event because the slice is busy.
 Use the character/speaker names exactly as given. Do not invent anything not present in the text.
-Output a short plain list of beats, one per line, no preamble and no commentary.`;
+Output a plain list of beats, one per line, in the order they occur, no preamble and no commentary.`;
 
 const COMPLETE_SYSTEM = `You write a thorough, complete recap of a tabletop RPG session, addressed to the players. Unlike a brief "previously on," this version is meant to leave nothing important out.
 Rules:
 - Ground every statement in the provided notes, events, and transcript beats. Do NOT invent characters, outcomes, locations, or plot beats that are not supported by the input.
 - Walk the session in chronological order. Cover every scene, decision, discovery, combat, negotiation, NPC interaction, piece of loot, and story thread the input supports. Do not skip beats to save space; completeness is the point.
+- The beats are given in time order and span the WHOLE session from start to finish. Budget your length across the entire arc: a recap that is detailed early and then thin or abrupt near the end has failed. The final scenes matter as much as the opening ones, so make sure the session's ending is covered in full.
 - Name every player character and NPC involved, and attribute actions and choices to whoever made them.
 - Engaging fantasy-narrative voice, flowing prose in paragraphs (a new paragraph per scene or beat as the story turns). No headers, no bullet points, no lists.
 - If the input genuinely lacks detail on something, do not pad it with invention; simply cover what is supported and move on.
@@ -139,7 +144,7 @@ async function fetchAllSegments(supabase: DbLike, jobIds: string[]): Promise<Seg
   return { ok: false, error: `Transcript exceeded ${MAX_PAGES} pages, which should not happen.` };
 }
 
-export async function buildRecap(supabase: DbLike, sessionId: string, mode: RecapMode = "brief"): Promise<BuildResult> {
+export async function buildRecap(supabase: DbLike, sessionId: string, mode: RecapMode = "complete"): Promise<BuildResult> {
   const { data: session, error: sErr } = await supabase
     .from("sessions")
     .select("id, campaign_id, session_number, notes")
@@ -282,7 +287,7 @@ export async function buildRecap(supabase: DbLike, sessionId: string, mode: Reca
 
           const summaries = await Promise.all(
             working.map((chunk, i) =>
-              callClaude(apiKey, CHUNK_SYSTEM, `Part ${i + 1} of ${working.length}:\n\n${chunk}`, 600)),
+              callClaude(apiKey, CHUNK_SYSTEM, `Part ${i + 1} of ${working.length}:\n\n${chunk}`, CHUNK_TOKENS)),
           );
 
           // If the session produced a lot of chunks, the concatenated beats can get
@@ -299,7 +304,7 @@ export async function buildRecap(supabase: DbLike, sessionId: string, mode: Reca
             if (acc) reduced.push(acc);
             const reducedBeats = await Promise.all(
               reduced.map((r, i) =>
-                callClaude(apiKey, CHUNK_SYSTEM, `Beats group ${i + 1} of ${reduced.length}:\n\n${r}`, 600)),
+                callClaude(apiKey, CHUNK_SYSTEM, `Beats group ${i + 1} of ${reduced.length}:\n\n${r}`, CHUNK_TOKENS)),
             );
             beats = reducedBeats.join("\n");
           } else {
@@ -332,7 +337,12 @@ export async function buildRecap(supabase: DbLike, sessionId: string, mode: Reca
   // session and needs far more room. Same model, same context; only the prompt and
   // the length ceiling differ.
   const system = mode === "complete" ? COMPLETE_SYSTEM : SYSTEM;
-  const maxTokens = mode === "complete" ? 3000 : 1024;
+  // complete is the version the GM shares with players, so it needs room for a whole
+  // session. 3000 tokens (~2200 words) forced uniform compression on a 2.5-hour game no
+  // matter how the prompt was worded, which is what read as "arbitrarily leaving things
+  // out." 8000 (~6000 words) lets a full session breathe. brief stays a short "previously
+  // on" and keeps its tight ceiling.
+  const maxTokens = mode === "complete" ? 8000 : 1024;
 
   let recap = "";
   try {
