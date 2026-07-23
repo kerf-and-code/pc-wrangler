@@ -59,16 +59,49 @@ const BEAT_LABEL: Record<string, string> = {
 };
 
 type Mode =
-  | { what: "entry"; type: string; id: string | null }
+  // tag is the reserved tag of the tab this was opened from, or null. It rides along so a
+  // faction created on the Factions tab is guaranteed to come back as a faction, even if
+  // the GM edits the tags field on the way through.
+  | { what: "entry"; type: string; tag?: string | null; id: string | null }
   | { what: "character"; id: string | null };
 
-const TABS: { key: string; label: string }[] = [
-  { key: "note", label: "Notes" },
-  { key: "location", label: "Locations" },
-  { key: "lore", label: "Lore" },
+// A tab is no longer the same thing as an entry type.
+//
+// Factions and items are both stored as type 'lore' with a reserved tag, because that is
+// what /api/gm-review creates when the GM accepts a beat that names one. Giving them a
+// type of their own would split the data in half: the Codex would write type='faction'
+// rows that the review route, the backfill, and every existing entry would never match.
+//
+// So each tab declares the type it reads and, optionally, the tag that narrows it. The
+// Lore tab declares no tag and therefore shows only entries carrying NEITHER reserved
+// tag, which keeps every entry in exactly one tab instead of factions appearing twice.
+//
+// NPCs and PCs have no type at all: those tabs read characters, not entries.
+const TABS: { key: string; label: string; type?: string; tag?: string }[] = [
+  { key: "note", label: "Notes", type: "note" },
+  { key: "location", label: "Locations", type: "location" },
+  { key: "faction", label: "Factions", type: "lore", tag: "faction" },
+  { key: "item", label: "Items", type: "lore", tag: "item" },
+  { key: "lore", label: "Lore", type: "lore" },
   { key: "npc", label: "NPCs" },
   { key: "pc", label: "PCs" },
 ];
+
+// Tags that promote a lore entry into its own tab. Anything here is excluded from Lore.
+// Add a tag to a tab above and to this set together, or the entry will show in both.
+const RESERVED_TAGS = new Set(TABS.map((t) => t.tag).filter((t): t is string => !!t));
+
+function tabDef(key: string) {
+  return TABS.find((t) => t.key === key);
+}
+
+function matchesTab(e: { type: string; tags: string[] | null }, key: string): boolean {
+  const d = tabDef(key);
+  if (!d?.type || e.type !== d.type) return false;
+  const tags = e.tags || [];
+  if (d.tag) return tags.includes(d.tag);
+  return !tags.some((t) => RESERVED_TAGS.has(t));
+}
 
 const VIS: { v: string; l: string }[] = [
   { v: "common", l: "Common knowledge" },
@@ -153,7 +186,7 @@ export default function CodexPage() {
 
   // ---- open / new ----
   function openEntry(e: Entry) {
-    setMode({ what: "entry", type: e.type, id: e.id });
+    setMode({ what: "entry", type: e.type, tag: tabDef(tab)?.tag ?? null, id: e.id });
     setForm({ title: e.title, body: e.body || "", name: "", description: "", visibility: e.visibility, tags: (e.tags || []).join(", ") });
   }
   function openChar(c: Char) {
@@ -166,8 +199,11 @@ export default function CodexPage() {
       setMode({ what: "character", id: null });
       setForm({ ...blankForm, visibility: "player" });
     } else {
-      setMode({ what: "entry", type: tab, id: null });
-      setForm({ ...blankForm, visibility: tab === "note" ? "gm" : "player" });
+      const d = tabDef(tab);
+      setMode({ what: "entry", type: d?.type || tab, tag: d?.tag ?? null, id: null });
+      // Seed the tags field with the tab's reserved tag so the GM can see why the entry
+      // will land where it does, and can add their own alongside it.
+      setForm({ ...blankForm, visibility: tab === "note" ? "gm" : "player", tags: d?.tag || "" });
     }
   }
 
@@ -182,13 +218,17 @@ export default function CodexPage() {
     const tags = parseTags(form.tags);
     if (mode.what === "entry") {
       if (!form.title.trim()) { setSaving(false); return; }
+      // Re-apply the tab's reserved tag if it was edited away. Without this, clearing the
+      // tags field on a faction silently demotes it to plain lore and it vanishes from the
+      // tab it was created in, which reads as data loss rather than a tag change.
+      const entryTags = mode.tag && !tags.includes(mode.tag) ? [...tags, mode.tag] : tags;
       if (mode.id) {
-        await supabase.from("entries").update({ title: form.title.trim(), body: form.body, visibility: form.visibility, tags }).eq("id", mode.id);
+        await supabase.from("entries").update({ title: form.title.trim(), body: form.body, visibility: form.visibility, tags: entryTags }).eq("id", mode.id);
       } else {
         const { data } = await supabase.from("entries")
-          .insert({ campaign_id: campaignId, type: mode.type, title: form.title.trim(), body: form.body, visibility: form.visibility, tags })
+          .insert({ campaign_id: campaignId, type: mode.type, title: form.title.trim(), body: form.body, visibility: form.visibility, tags: entryTags })
           .select("id, type, title, body, visibility, tags").single();
-        if (data) setMode({ what: "entry", type: (data as Entry).type, id: (data as Entry).id });
+        if (data) setMode({ what: "entry", type: (data as Entry).type, tag: mode.tag ?? null, id: (data as Entry).id });
       }
     } else {
       if (mode.id) {
@@ -283,7 +323,7 @@ export default function CodexPage() {
   // ---- list for active tab ----
   const listItems = tab === "pc" || tab === "npc"
     ? chars.filter((c) => c.kind === tab)
-    : entries.filter((e) => e.type === tab);
+    : entries.filter((e) => matchesTab(e, tab));
 
   const box = { ...surfaces.slate, padding: 18 } as const;
   const input = {
@@ -385,7 +425,7 @@ export default function CodexPage() {
                   </div>
                   <div style={{ flex: "1 1 160px" }}>
                     <label style={{ fontSize: 11, color: C.muted }}>Tags (comma-separated)</label>
-                    <input value={form.tags} onChange={(e) => setForm({ ...form, tags: e.target.value })} placeholder="forest, faction, hook" style={{ ...input, marginTop: 4 }} />
+                    <input value={form.tags} onChange={(e) => setForm({ ...form, tags: e.target.value })} placeholder="forest, ruin, hook" style={{ ...input, marginTop: 4 }} />
                   </div>
                 </div>
 
