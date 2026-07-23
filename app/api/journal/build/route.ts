@@ -3,6 +3,11 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { buildJournal } from "@/lib/journal/build";
 
+// One model call, but now with an 8000-token chronicle over a whole campaign's recaps,
+// which is comfortably past the platform default. The recap route needed the same change
+// for the same reason and reported the timeout as a generic "could not generate".
+export const maxDuration = 300;
+
 // POST /api/journal/build  { campaignId }
 // Assembles the campaign journal and stores it, returning the public share code.
 export async function POST(req: NextRequest) {
@@ -34,5 +39,10 @@ export async function POST(req: NextRequest) {
   const { data: camp } = await admin.from("campaigns").select("share_code").eq("id", campaignId).maybeSingle();
   const shareCode = (camp as { share_code: string | null } | null)?.share_code || null;
 
-  return NextResponse.json({ ok: true, shareCode, sessions: result.content.sessions });
+  return NextResponse.json({
+    ok: true,
+    shareCode,
+    sessions: result.content.sessions,
+    trimmedSessions: result.content.trimmed_sessions,
+  });
 }
