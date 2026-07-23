@@ -116,18 +116,22 @@ export default function ReliabilityPage() {
   // picture. A reliability page that is itself unreliable is worse than no page.
   //
   // Crowned Calamity already has 6767 transcript segments, so this is not hypothetical.
+  //
+  // apply is typed loosely on purpose. supabase-js builders are generic over the schema and
+  // the row shape, and select() returns a FILTER builder rather than the query builder
+  // from() gives you, so threading the real types through a helper like this costs more
+  // than it proves. The callers only ever add plain filters.
+  /* eslint-disable @typescript-eslint/no-explicit-any */
   async function pageAll<T>(
     table: string,
     columns: string,
-    apply: (q: ReturnType<ReturnType<typeof createClient>["from"]>) => unknown,
+    apply: (q: any) => any,
   ): Promise<T[]> {
     const PAGE = 1000;
     const out: T[] = [];
     for (let page = 0; page < 100; page++) {
       const from = page * PAGE;
-      const q = supabase.from(table).select(columns);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (apply(q as any) as any)
+      const { data, error } = await apply(supabase.from(table).select(columns))
         .order("id", { ascending: true })
         .range(from, from + PAGE - 1);
       if (error) break;
@@ -137,6 +141,7 @@ export default function ReliabilityPage() {
     }
     return out;
   }
+  /* eslint-enable @typescript-eslint/no-explicit-any */
 
   useEffect(() => {
     if (!campaignId) return;
@@ -147,7 +152,7 @@ export default function ReliabilityPage() {
         pageAll<PE>(
           "proposed_events",
           "id, status, event_type, axis, confidence, extractor_version",
-          (q) => (q as { eq: (c: string, v: string) => unknown }).eq("campaign_id", campaignId),
+          (q) => q.eq("campaign_id", campaignId),
         ),
         supabase.from("capture_jobs").select("id, status, session:sessions(session_number)").eq("campaign_id", campaignId).in("status", ["review", "done"]).order("created_at", { ascending: false }),
       ]);
@@ -173,12 +178,12 @@ export default function ReliabilityPage() {
       pageAll<CodeRow>(
         "proposed_events",
         "id, segment_id, event_type, confidence",
-        (q) => (q as { eq: (c: string, v: string) => unknown }).eq("job_id", jid),
+        (q) => q.eq("job_id", jid),
       ),
       pageAll<CodeRow>(
         "recodings",
         "id, segment_id, event_type, confidence",
-        (q) => (q as { eq: (c: string, v: string) => unknown }).eq("job_id", jid),
+        (q) => q.eq("job_id", jid),
       ),
     ]);
     setSegN(count ?? 0);
