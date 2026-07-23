@@ -44,12 +44,25 @@ export async function POST(request: Request) {
 
     const { data: campaign } = await supabase
       .from("campaigns")
-      .select("name, discord_channel_id")
+      .select("name, discord_channel_id, share_code")
       .eq("id", session.campaign_id)
       .single();
 
     const campaignName = campaign?.name || "Your campaign";
     const discordChannelId = campaign?.discord_channel_id || null;
+
+    // The share code is how a player reaches their own character without an account yet.
+    // Origin comes from the request so this works in preview deployments and locally
+    // without another environment variable to keep in sync.
+    //
+    // CONFIRM THE PATH before relying on this: the repo has app/join, app/table/[code] and
+    // app/x/[code], and only one of them is the front door for a player arriving cold with
+    // a share code. Set RECAP_JOIN_PATH to override without editing this file.
+    const shareCode = (campaign as { share_code?: string | null } | null)?.share_code || null;
+    const joinPath = process.env.RECAP_JOIN_PATH || "/table";
+    const joinUrl = shareCode
+      ? `${new URL(request.url).origin}${joinPath}/${encodeURIComponent(shareCode)}`
+      : null;
 
     if (!discordChannelId) {
       return NextResponse.json(
@@ -63,6 +76,7 @@ export async function POST(request: Request) {
       campaignName,
       session.session_number,
       session.recap,
+      joinUrl,
     );
 
     if (!posted) {
@@ -72,7 +86,9 @@ export async function POST(request: Request) {
       );
     }
 
-    return NextResponse.json({ discordPosted: true });
+    // claimLinkIncluded is reported so a campaign with no share code is visible as such
+    // rather than quietly posting a recap with no way back to the site.
+    return NextResponse.json({ discordPosted: true, claimLinkIncluded: Boolean(joinUrl) });
   } catch {
     return NextResponse.json({ error: "Could not post recap to Discord." }, { status: 500 });
   }
