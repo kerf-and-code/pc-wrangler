@@ -42,6 +42,12 @@ export default function MapPage() {
   const [entries, setEntries] = useState<Ent[]>([]);
   const [chars, setChars] = useState<Ch[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
+  // The place waiting to be put somewhere. While this is set the next map click creates a
+  // pin already labelled and linked, instead of the usual blank one.
+  const [placing, setPlacing] = useState<Ent | null>(null);
+  // location entry id -> how many narration beats named it. Used only to order the tray,
+  // so the places the table actually spends time in float to the top.
+  const [mentions, setMentions] = useState<Record<string, number>>({});
   const [mapName, setMapName] = useState<string>("");
   const [uploading, setUploading] = useState<boolean>(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -58,22 +64,49 @@ export default function MapPage() {
   useEffect(() => {
     if (!campaignId) return;
     (async () => {
-      const [{ data: m }, { data: e }, { data: c }] = await Promise.all([
+      // Paged. gm_events grows with every session forever, and an unbounded select would
+      // stop at PostgREST's 1000-row cap without saying so, which here would quietly
+      // mis-order the tray rather than fail.
+      const loadMentions = async (): Promise<Record<string, number>> => {
+        const PAGE = 1000;
+        const counts: Record<string, number> = {};
+        for (let page = 0; page < 50; page++) {
+          const from = page * PAGE;
+          const { data, error } = await supabase
+            .from("gm_events")
+            .select("location_id")
+            .eq("campaign_id", campaignId)
+            .not("location_id", "is", null)
+            .order("id", { ascending: true })
+            .range(from, from + PAGE - 1);
+          if (error) break;
+          const rows = (data as { location_id: string | null }[]) || [];
+          for (const r of rows) if (r.location_id) counts[r.location_id] = (counts[r.location_id] || 0) + 1;
+          if (rows.length < PAGE) break;
+        }
+        return counts;
+      };
+
+      const [{ data: m }, { data: e }, { data: c }, mn] = await Promise.all([
         supabase.from("maps").select("id, name, image_path, visibility").eq("campaign_id", campaignId).order("created_at"),
         supabase.from("entries").select("id, title, type").eq("campaign_id", campaignId).order("title"),
         supabase.from("characters").select("id, name, kind").eq("campaign_id", campaignId).order("name"),
+        loadMentions(),
       ]);
       const ml = (m as MapRow[]) || [];
       setMaps(ml);
       setEntries((e as Ent[]) || []);
       setChars((c as Ch[]) || []);
+      setMentions(mn);
       setActiveMap(ml[0] || null);
       setSelected(null);
+      setPlacing(null);
     })();
   }, [campaignId, supabase]);
 
   useEffect(() => {
     if (!activeMap) { setPins([]); return; }
+    setPlacing(null);
     (async () => {
       const { data } = await supabase.from("map_pins").select("id, x, y, label, linked_type, linked_id, visibility").eq("map_id", activeMap.id);
       setPins((data as Pin[]) || []);
@@ -107,10 +140,18 @@ export default function MapPage() {
     });
   }
 
-  async function addPin(x: number, y: number) {
+  // link is set when the pin comes from the tray: the entry is known before the click, so
+  // the pin is born labelled and linked rather than blank and waiting for two more edits.
+  async function addPin(x: number, y: number, link?: Ent) {
     if (!activeMap) return;
     const { data, error } = await supabase.from("map_pins")
-      .insert({ map_id: activeMap.id, campaign_id: campaignId, x, y, label: "", visibility: "player" })
+      .insert({
+        map_id: activeMap.id, campaign_id: campaignId, x, y,
+        label: link ? link.title : "",
+        linked_type: link ? "entry" : null,
+        linked_id: link ? link.id : null,
+        visibility: "player",
+      })
       .select("id, x, y, label, linked_type, linked_id, visibility").single();
     if (!error && data) { setPins((arr) => [...arr, data as Pin]); setSelected((data as Pin).id); }
   }
@@ -130,10 +171,27 @@ export default function MapPage() {
     const rect = ev.currentTarget.getBoundingClientRect();
     const x = Math.max(0, Math.min(1, (ev.clientX - rect.left) / rect.width));
     const y = Math.max(0, Math.min(1, (ev.clientY - rect.top) / rect.height));
+    if (placing) {
+      const p = placing;
+      setPlacing(null);
+      addPin(x, y, p);
+      return;
+    }
     addPin(x, y);
   }
 
   const sel = pins.find((p) => p.id === selected) || null;
+
+  // Places the sessions named that have no pin on THIS map. Scoped per map on purpose: a
+  // place can legitimately belong to both a world map and a city map, so a pin elsewhere
+  // should not hide it here.
+  //
+  // Ordered by how often the table has been there, then alphabetically. A GM opening a new
+  // map wants the Toll-Bridge they visited seven times before the inn they passed once.
+  const unpinned = entries
+    .filter((e) => e.type === "location")
+    .filter((e) => !pins.some((p) => p.linked_type === "entry" && p.linked_id === e.id))
+    .sort((a, b) => (mentions[b.id] || 0) - (mentions[a.id] || 0) || a.title.localeCompare(b.title));
 
   const eyebrow = { fontFamily: "ui-monospace, monospace", fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase" as const, color: C.muted, marginBottom: 6 };
   const box = { background: C.surface, border: `1px solid ${C.line}`, borderRadius: 14, padding: "16px 18px", marginBottom: 14 } as const;
@@ -145,7 +203,7 @@ export default function MapPage() {
       <div style={eyebrow}>Story</div>
       <h1 style={{ fontFamily: "'Iowan Old Style', Georgia, serif", fontSize: 30, fontWeight: 700, margin: "0 0 8px" }}>Map</h1>
       <p style={{ color: C.muted, fontSize: 14.5, lineHeight: 1.6, margin: "0 0 18px", maxWidth: 620 }}>
-        Your campaign map. Upload the world, drop pins, and link each to a place, NPC, or piece of lore. Click the map to add a pin; players see only the pins you make party-visible.
+        Your campaign map. Upload the world, drop pins, and link each to a place, NPC, or piece of lore. Places your sessions have named show up below ready to be placed. Click the map to add a pin; players see only the pins you make party-visible.
       </p>
 
       <div style={{ ...box, display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
@@ -232,6 +290,44 @@ export default function MapPage() {
             ) : (
               <div style={{ ...box, color: C.muted, fontSize: 13, lineHeight: 1.6 }}>
                 Click the map to drop a pin, or click an existing pin to edit it. Pins are colored by who can see them: gold for the party, red for GM secrets.
+              </div>
+            )}
+
+            {unpinned.length > 0 && (
+              <div style={box}>
+                <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>
+                  Not on this map yet
+                </div>
+                <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.55, marginBottom: 10 }}>
+                  Places your sessions named. Pick one, then click the map: the pin arrives
+                  already labelled and linked to its Codex entry. The number is how many times
+                  it has come up in play.
+                </div>
+                {placing && (
+                  <div style={{ fontSize: 12.5, color: C.sun, marginBottom: 10, lineHeight: 1.5 }}>
+                    Click the map to place <strong>{placing.title}</strong>.{" "}
+                    <button type="button" onClick={() => setPlacing(null)}
+                      style={{ background: "none", border: "none", color: C.muted, textDecoration: "underline", cursor: "pointer", padding: 0, fontSize: 12.5 }}>
+                      cancel
+                    </button>
+                  </div>
+                )}
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  {unpinned.map((e) => {
+                    const on = placing?.id === e.id;
+                    const n = mentions[e.id] || 0;
+                    return (
+                      <button key={e.id} type="button" onClick={() => setPlacing(on ? null : e)}
+                        style={{
+                          background: on ? C.sun : "transparent", color: on ? SAX.inkDeep : C.text,
+                          border: `1px solid ${on ? C.sun : C.line}`, borderRadius: 999,
+                          padding: "5px 11px", fontSize: 12.5, cursor: "pointer",
+                        }}>
+                        {e.title}{n > 0 ? ` (${n})` : ""}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             )}
           </div>
