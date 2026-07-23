@@ -5,6 +5,30 @@ import { createAdminClient } from "@/lib/supabase/admin";
 // Kinds that are born as open threads so the prep sheet can find dangling ones.
 const OPEN_THREAD_KINDS = new Set(["framing", "hook", "quest_update"]);
 
+// Role nouns the extractor reports in the npc_name slot as if they were characters.
+// Left unchecked they become permanent campaign NPCs: "Innkeeper" with 10 mentions,
+// "Merchant" with 7, plus Enemy, Orc and brigand, all sitting in the roster and in the
+// /retire dropdown forever. They are roles, not people.
+//
+// This blocks AUTOMATIC creation only. A GM who genuinely wants an NPC called Innkeeper
+// can still tick the box, because an explicit true always wins below.
+const GENERIC_NAMES = new Set([
+  "npc", "enemy", "enemies", "guard", "guards", "bandit", "bandits", "brigand", "brigands",
+  "merchant", "innkeeper", "barkeep", "bartender", "shopkeeper", "orc", "orcs", "goblin",
+  "goblins", "soldier", "soldiers", "villager", "villagers", "commoner", "priest", "guard captain",
+  "stranger", "man", "woman", "boy", "girl", "child", "someone", "unknown", "narrator", "gm", "dm",
+]);
+
+// A name has to appear at least this many times in the campaign before it is created
+// automatically. The 2026-07-22 backfill preview showed why this works: every mangled
+// transcription had exactly ONE mention while the real name had six or more.
+// "Candlefeet" 1 against "Candlekeep" 6. "Ashmole" 1 against "The Ashmoor" 6. Mention
+// count separates them without any fuzzy matching at all.
+//
+// A genuinely new entity mentioned once still reaches the Codex the moment it is
+// mentioned a second time, or immediately if the GM ticks the box.
+const AUTO_CREATE_MIN_MENTIONS = 2;
+
 // Short title for an item/lore entry created from a beat's summary.
 function deriveTitle(summary: string): string {
   const first = (summary || "").split(/[.!?]/)[0].trim();
@@ -28,6 +52,42 @@ function relationFor(a: string, b: string): { srcKind: string; relation: string 
   };
   const m = map[key];
   return m ? { srcKind: m.src, relation: m.rel } : { srcKind: a, relation: "linked" };
+}
+
+// Should this entity be created? THREE-STATE on purpose.
+//
+//   true       the GM ticked the box. Always create, no filtering. Their call.
+//   false      the GM unticked it. Never create.
+//   undefined  nobody said. Decide from the data.
+//
+// The undefined case is what makes bulk accept work. It sends no flags, so before this it
+// created nothing at all: 26 mentions of "The Ashen Circle" across two sessions produced
+// no Codex entry because the only path that creates entities was the per-row button.
+// Now an unspecified flag means "use judgement" rather than "no".
+async function decideCreate(
+  admin: ReturnType<typeof createAdminClient>,
+  campaignId: string,
+  column: "npc_name" | "location_name" | "faction_name",
+  name: string,
+  explicit: boolean | undefined,
+): Promise<boolean> {
+  if (explicit === true) return true;
+  if (explicit === false) return false;
+  if (!name) return false;
+  if (GENERIC_NAMES.has(name.trim().toLowerCase())) return false;
+
+  // head:true returns a count and no rows, so this is not subject to the 1000-row cap
+  // that truncated extraction and the recap earlier this month.
+  const { count, error } = await admin
+    .from("gm_proposed_events")
+    .select("id", { count: "exact", head: true })
+    .eq("campaign_id", campaignId)
+    .ilike(column, name.trim());
+
+  // On a failed count, do not create. A missing Codex entry is recoverable by the
+  // backfill; a wrong one has to be found and merged by hand.
+  if (error) return false;
+  return (count || 0) >= AUTO_CREATE_MIN_MENTIONS;
 }
 
 type Proposed = {
@@ -108,7 +168,7 @@ export async function POST(req: NextRequest) {
   // insensitive) or create one, then link it. This is the Codex-fills-itself step.
   let npcId: string | null = null;
   const npcName = (body.npcName || prop.npc_name || "").trim();
-  if (body.createNpc && npcName) {
+  if (await decideCreate(admin, prop.campaign_id, "npc_name", npcName, body.createNpc)) {
     const { data: existing } = await admin
       .from("characters")
       .select("id")
@@ -134,7 +194,7 @@ export async function POST(req: NextRequest) {
   // 'location'), deduped by title, seeded with the beat's detail.
   let locationId: string | null = null;
   const locationName = (body.locationName || prop.location_name || "").trim();
-  if (body.createLocation && locationName) {
+  if (await decideCreate(admin, prop.campaign_id, "location_name", locationName, body.createLocation)) {
     const { data: existingLoc } = await admin
       .from("entries")
       .select("id")
@@ -160,7 +220,7 @@ export async function POST(req: NextRequest) {
   // by title. The same self-filling Codex step for organizations.
   let factionId: string | null = null;
   const factionName = (body.factionName || prop.faction_name || "").trim();
-  if (body.createFaction && factionName) {
+  if (await decideCreate(admin, prop.campaign_id, "faction_name", factionName, body.createFaction)) {
     const { data: existingFac } = await admin
       .from("entries")
       .select("id")
@@ -227,7 +287,12 @@ export async function POST(req: NextRequest) {
     quote: prop.quote,
     npc_id: npcId,
     npc_name: npcName || prop.npc_name,
+    // The name strings stay alongside the ids on purpose. They are what the entity was
+    // called at the moment it was said, they survive a Codex rename, and they are what
+    // makes the backfill re-runnable against rows created before p8-entity-fks.
+    location_id: locationId,
     location_name: prop.location_name,
+    faction_id: factionId,
     faction_name: prop.faction_name,
     target_character_id: prop.target_character_id,
     thread_status: threadStatus,
@@ -239,7 +304,14 @@ export async function POST(req: NextRequest) {
 
   const { error: upErr } = await admin
     .from("gm_proposed_events")
-    .update({ status: "approved", kind: finalKind, summary: finalSummary, npc_id: npcId })
+    .update({
+      status: "approved",
+      kind: finalKind,
+      summary: finalSummary,
+      npc_id: npcId,
+      location_id: locationId,
+      faction_id: factionId,
+    })
     .eq("id", id);
   if (upErr) return NextResponse.json({ error: upErr.message }, { status: 500 });
 

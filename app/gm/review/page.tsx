@@ -242,8 +242,21 @@ export default function ReviewPage() {
     await finalize(false);
   }
 
-  // Bulk-accept GM beats above the threshold, but skip npc_* kinds so the
-  // create-NPC decision stays a per-row choice (bulk accept can't create NPCs).
+  // Bulk-accept GM beats above the threshold. npc_* kinds are still skipped so an NPC is
+  // never created without the GM seeing the row.
+  //
+  // WHAT CHANGED, AND WHY IT MATTERED
+  //
+  // This used to send no create flags at all, so bulk accept approved the beat and created
+  // nothing. Since it is the fast path most GMs actually use, every place and faction the
+  // extractor found was quietly discarded: on 2026-07-22 the Codex had 8 of 19 locations
+  // and 0 of 5 factions, and "The Ashen Circle" had 26 mentions across two sessions with
+  // no entry anywhere.
+  //
+  // It still sends no flags, but /api/gm-review now reads an ABSENT flag as "decide from
+  // the data" rather than "no". It skips generic role nouns and requires a name to appear
+  // at least twice in the campaign, which is what separates a real place from a one-off
+  // mis-transcription. Ticking a box on a row still overrides that outright.
   async function acceptGmAbove() {
     setBusy(true); setError(null);
     const targets = gmProps.filter((p) => !p.kind.startsWith("npc_") && Math.round((p.confidence || 0) * 100) >= threshold);
@@ -321,12 +334,18 @@ export default function ReviewPage() {
     if (action === "approve") {
       payload.summary = e?.summary ?? p.summary;
       payload.kind = e?.kind ?? p.kind;
-      const c = creates || {};
-      if (c.npc && p.npc_name) { payload.createNpc = true; payload.npcName = p.npc_name; }
-      if (c.location && p.location_name) { payload.createLocation = true; payload.locationName = p.location_name; }
-      if (c.faction && p.faction_name) { payload.createFaction = true; payload.factionName = p.faction_name; }
-      if (c.item) payload.createItem = true;
-      if (c.lore) payload.createLore = true;
+      // Forward each flag as given, INCLUDING false. The route reads three states now:
+      // true creates, false refuses, and absent means decide from the data. Only send a
+      // flag when the caller expressed an opinion, so bulk accept (which passes no creates
+      // object at all) still lands in the decide-from-data case.
+      const c = creates;
+      if (c) {
+        if (p.npc_name) { payload.createNpc = c.npc === true; payload.npcName = p.npc_name; }
+        if (p.location_name) { payload.createLocation = c.location === true; payload.locationName = p.location_name; }
+        if (p.faction_name) { payload.createFaction = c.faction === true; payload.factionName = p.faction_name; }
+        payload.createItem = c.item === true;
+        payload.createLore = c.lore === true;
+      }
     }
     const res = await fetch("/api/gm-review", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
     const out = await res.json().catch(() => ({}));
@@ -355,6 +374,13 @@ export default function ReviewPage() {
   const selObj = (p: GmProp): Record<string, boolean> => {
     const o: Record<string, boolean> = {};
     for (const { k } of availEntities(p)) o[k] = isSel(p, k);
+    return o;
+  };
+  // Every createable entity on this beat, explicitly off. Backs "Accept only", where the
+  // GM has looked at the row and declined, which is different from not having asked.
+  const noneObj = (p: GmProp): Record<string, boolean> => {
+    const o: Record<string, boolean> = {};
+    for (const { k } of availEntities(p)) o[k] = false;
     return o;
   };
 
@@ -588,7 +614,11 @@ export default function ReviewPage() {
                             {availEntities(p).length > 0 ? (
                               <>
                                 <button type="button" onClick={() => reviewGm(p, "approve", selObj(p))} disabled={busy} style={btn(C.sun, SAX.inkDeep)}>Accept &amp; create</button>
-                                <button type="button" onClick={() => reviewGm(p, "approve")} disabled={busy} style={btn(C.good, SAX.inkDeep)}>Accept only</button>
+                                {/* "Accept only" must send an explicit false for every entity on this beat.
+                                    An absent flag now means "decide from the data", which is right for bulk
+                                    accept and wrong here: the GM looking at this row and choosing the other
+                                    button is saying no. */}
+                                <button type="button" onClick={() => reviewGm(p, "approve", noneObj(p))} disabled={busy} style={btn(C.good, SAX.inkDeep)}>Accept only</button>
                               </>
                             ) : (
                               <button type="button" onClick={() => reviewGm(p, "approve")} disabled={busy} style={btn(C.good, SAX.inkDeep)}>Accept</button>
