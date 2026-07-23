@@ -20,7 +20,9 @@ const VIS: { v: string; l: string }[] = [
 const BUCKET = "campaign-maps";
 
 type Campaign = { id: string; name: string };
-type MapRow = { id: string; name: string; image_path: string; visibility: string };
+// linked_entry_id is the place this map IS, not a place shown on it. A site map of the
+// waystation names the waystation here, which is why that place never appears as a pin.
+type MapRow = { id: string; name: string; image_path: string; visibility: string; linked_entry_id: string | null };
 type Pin = { id: string; x: number; y: number; label: string | null; linked_type: string | null; linked_id: string | null; visibility: string };
 type Ent = { id: string; title: string; type: string };
 type Ch = { id: string; name: string; kind: string };
@@ -88,7 +90,7 @@ export default function MapPage() {
       };
 
       const [{ data: m }, { data: e }, { data: c }, mn] = await Promise.all([
-        supabase.from("maps").select("id, name, image_path, visibility").eq("campaign_id", campaignId).order("created_at"),
+        supabase.from("maps").select("id, name, image_path, visibility, linked_entry_id").eq("campaign_id", campaignId).order("created_at"),
         supabase.from("entries").select("id, title, type").eq("campaign_id", campaignId).order("title"),
         supabase.from("characters").select("id, name, kind").eq("campaign_id", campaignId).order("name"),
         loadMentions(),
@@ -125,10 +127,20 @@ export default function MapPage() {
     if (upErr) { setUploading(false); return; }
     const { data, error } = await supabase.from("maps")
       .insert({ campaign_id: campaignId, name: mapName.trim() || "Map", image_path: path, visibility: "player" })
-      .select("id, name, image_path, visibility").single();
+      .select("id, name, image_path, visibility, linked_entry_id").single();
     if (!error && data) { setMaps((arr) => [...arr, data as MapRow]); setActiveMap(data as MapRow); setMapName(""); }
     if (fileRef.current) fileRef.current.value = "";
     setUploading(false);
+  }
+
+  // Point this map at the place it depicts, or clear it. Kept separate from pin editing
+  // because it is a property of the map, not of anything on it.
+  async function setMapPlace(entryId: string | null) {
+    if (!activeMap) return;
+    const next = { ...activeMap, linked_entry_id: entryId };
+    setActiveMap(next);
+    setMaps((arr) => arr.map((m) => (m.id === next.id ? next : m)));
+    await supabase.from("maps").update({ linked_entry_id: entryId }).eq("id", next.id);
   }
 
   async function deleteMap(id: string) {
@@ -188,8 +200,11 @@ export default function MapPage() {
   //
   // Ordered by how often the table has been there, then alphabetically. A GM opening a new
   // map wants the Toll-Bridge they visited seven times before the inn they passed once.
-  const unpinned = entries
-    .filter((e) => e.type === "location")
+  const locations = entries.filter((e) => e.type === "location");
+  const unpinned = locations
+    // The place this map depicts is excluded: pinning Hollowmere onto the Hollowmere map
+    // would be a pin pointing at the thing it sits on.
+    .filter((e) => e.id !== activeMap?.linked_entry_id)
     .filter((e) => !pins.some((p) => p.linked_type === "entry" && p.linked_id === e.id))
     .sort((a, b) => (mentions[b.id] || 0) - (mentions[a.id] || 0) || a.title.localeCompare(b.title));
 
@@ -203,7 +218,7 @@ export default function MapPage() {
       <div style={eyebrow}>Story</div>
       <h1 style={{ fontFamily: "'Iowan Old Style', Georgia, serif", fontSize: 30, fontWeight: 700, margin: "0 0 8px" }}>Map</h1>
       <p style={{ color: C.muted, fontSize: 14.5, lineHeight: 1.6, margin: "0 0 18px", maxWidth: 620 }}>
-        Your campaign map. Upload the world, drop pins, and link each to a place, NPC, or piece of lore. Places your sessions have named show up below ready to be placed. Click the map to add a pin; players see only the pins you make party-visible.
+        Your campaign map. Upload the world, drop pins, and link each to a place, NPC, or piece of lore. If a map IS somewhere, say so above and it stops asking you to pin it to itself. Places your sessions have named show up below ready to be placed. Click the map to add a pin; players see only the pins you make party-visible.
       </p>
 
       <div style={{ ...box, display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
@@ -224,6 +239,17 @@ export default function MapPage() {
         <input ref={fileRef} type="file" accept="image/*" onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadMap(f); }}
           style={{ fontSize: 13, color: C.muted }} disabled={uploading || !campaignId} />
         {uploading && <span style={{ fontSize: 12, color: C.muted }}>Uploading…</span>}
+        {activeMap && (
+          <select value={activeMap.linked_entry_id || ""}
+            onChange={(e) => setMapPlace(e.target.value || null)}
+            title="The place this map depicts"
+            style={{ ...input, width: "auto", flex: "1 1 200px" }}>
+            <option value="">This map is not a place</option>
+            {locations.map((e) => (
+              <option key={e.id} value={e.id}>Map of {e.title}</option>
+            ))}
+          </select>
+        )}
         {activeMap && (
           <button type="button" onClick={() => deleteMap(activeMap.id)}
             style={{ marginLeft: "auto", background: "transparent", color: C.warn, border: `1px solid ${C.line}`, borderRadius: 8, padding: "7px 14px", fontSize: 12.5, cursor: "pointer" }}>
