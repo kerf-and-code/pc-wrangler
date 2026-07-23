@@ -60,6 +60,11 @@ const commands = [
     // no permission gate: players use this
   },
   {
+    name: "mypage",
+    description: "Get your personal link to open your character on the web.",
+    options: [CODE_OPTIONAL],
+  },
+  {
     name: "retire",
     description: "GM only: remove a character from this campaign's active roster.",
     options: [CODE_OPTIONAL],

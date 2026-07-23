@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createPublicKey, verify as edVerify } from "node:crypto";
+import { createPublicKey, verify as edVerify, randomBytes } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 import { buildPollMessage } from "@/lib/schedule/poll-message";
 
@@ -149,6 +149,7 @@ export async function POST(request: Request) {
     if (name === "setup") return await handleSetup(interaction);
     if (name === "claim") return await handleClaim(interaction);
     if (name === "unclaim") return await handleUnclaim(interaction);
+    if (name === "mypage") return await handleMypage(interaction);
     if (name === "retire") return await handleRetire(interaction);
     if (name === "session") return await handleSession(interaction);
     if (name === "record") return await handleRecord(interaction);
@@ -380,6 +381,100 @@ async function handleClaimModal(interaction: Interaction) {
   }
 
   return ephemeral(`Added and linked. You're playing "${created.name}". Recaps and voice will attribute to you.`);
+}
+
+// Hand a player the personal link that turns their Discord claim into a web account.
+//
+// WHY THIS IS A COMMAND AND NOT A LINK IN THE RECAP
+//
+// 25 of 53 active player characters are linked in Discord with no web account. They are at
+// the table every week and cannot open a single page. The obvious fix, a claim link at the
+// end of the recap the bot already posts, cannot work: claim_character_invite matches on
+// characters.invite_code, which is PER CHARACTER, so one message to seven players would
+// need seven different links.
+//
+// The bot already knows which Discord account is which character. So the link belongs in
+// an ephemeral reply to the person who asked, and the channel-wide recap just points here.
+//
+// The reply is ephemeral for a second reason: an invite code binds the character to
+// whoever opens it. Posting one publicly would let anyone in the server take someone
+// else's character, and claim_character_invite would happily accept the first arrival.
+async function handleMypage(interaction: Interaction) {
+  const sb = serviceClient();
+  const campaign = await resolveCampaign(interaction, sb);
+  if (!campaign) {
+    return ephemeral("Run /mypage in your campaign's channel, or add code:<your share code>.");
+  }
+
+  const userId = discordUserId(interaction);
+  if (!userId) {
+    return ephemeral("Could not read your Discord account. Try again.");
+  }
+
+  const { data: rows } = await sb
+    .from("characters")
+    .select("id, name, invite_code, profile_id")
+    .eq("campaign_id", campaign.id)
+    .eq("discord_user_id", userId)
+    .eq("kind", "pc")
+    .limit(1);
+
+  const ch = (rows as { id: string; name: string | null; invite_code: string | null; profile_id: string | null }[] | null)?.[0];
+  if (!ch) {
+    return ephemeral(
+      `You don't have a character linked in "${campaign.name}" yet. Run /claim to pick one, then /mypage.`,
+    );
+  }
+
+  const base = siteBase();
+
+  // Only needed for the already-claimed reply. resolveCampaign selects id and name, and
+  // widening a helper eight other handlers depend on for one caller is not worth it.
+  const { data: camp } = await sb.from("campaigns").select("share_code").eq("id", campaign.id).single();
+  const share = (camp as { share_code: string | null } | null)?.share_code || null;
+
+  if (ch.profile_id) {
+    return ephemeral(
+      share
+        ? `You are already set up. Your table: ${base}/play?share=${encodeURIComponent(share)}`
+        : `You are already set up. Sign in at ${base} to open your table.`,
+    );
+  }
+
+  let code = ch.invite_code;
+  if (!code) {
+    // Characters created before invite codes existed, or through a path that never set
+    // one, would otherwise be permanently unclaimable. Generating on demand fixes that
+    // without a migration or a backfill.
+    //
+    // The `is("invite_code", null)` guard means two rapid calls cannot both write, and the
+    // re-read afterwards returns whichever one actually landed rather than the value this
+    // call happened to generate.
+    await sb
+      .from("characters")
+      .update({ invite_code: randomBytes(6).toString("hex") })
+      .eq("id", ch.id)
+      .is("invite_code", null);
+
+    const { data: after } = await sb
+      .from("characters")
+      .select("invite_code")
+      .eq("id", ch.id)
+      .single();
+    code = (after as { invite_code: string | null } | null)?.invite_code ?? null;
+
+    if (!code) {
+      return ephemeral("Could not create your link right now. Try again in a moment.");
+    }
+  }
+
+  return ephemeral(
+    `**${ch.name || "Your character"}**\n` +
+    `${base}/join?c=${encodeURIComponent(code)}\n\n` +
+    "This link is yours alone: it binds this character to whoever opens it, so do not " +
+    "share it. Once you are in you can read the full session transcript, your own moments, " +
+    "and the party codex.",
+  );
 }
 
 async function handleUnclaim(interaction: Interaction) {
