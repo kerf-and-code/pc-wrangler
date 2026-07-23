@@ -26,6 +26,13 @@ type MapRow = { id: string; name: string; image_path: string; visibility: string
 type Pin = { id: string; x: number; y: number; label: string | null; linked_type: string | null; linked_id: string | null; visibility: string };
 type Ent = { id: string; title: string; type: string };
 type Ch = { id: string; name: string; kind: string };
+type Sess = { id: string; session_number: number | null };
+// One narration beat that named a place. t_start_seconds is what puts the stops of a
+// session in the order they were actually visited rather than alphabetically.
+type LocEv = { session_id: string | null; location_id: string; t_start_seconds: number | null };
+// Where a place lives, campaign-wide. Used to tell "pinned on the map you are looking at"
+// from "pinned on a different map", which are very different answers to "can I draw this".
+type PlacedPin = { map_id: string; linked_id: string };
 
 function pinColor(vis: string): string {
   if (vis === "gm") return C.warn;
@@ -47,9 +54,12 @@ export default function MapPage() {
   // The place waiting to be put somewhere. While this is set the next map click creates a
   // pin already labelled and linked, instead of the usual blank one.
   const [placing, setPlacing] = useState<Ent | null>(null);
-  // location entry id -> how many narration beats named it. Used only to order the tray,
-  // so the places the table actually spends time in float to the top.
-  const [mentions, setMentions] = useState<Record<string, number>>({});
+  // Every beat that named a place, for the whole campaign. Drives both the tray ordering
+  // and the trace, so they can never disagree about what happened.
+  const [locEvents, setLocEvents] = useState<LocEv[]>([]);
+  const [sessions, setSessions] = useState<Sess[]>([]);
+  const [placedPins, setPlacedPins] = useState<PlacedPin[]>([]);
+  const [traceSession, setTraceSession] = useState<string>("");
   const [mapName, setMapName] = useState<string>("");
   const [uploading, setUploading] = useState<boolean>(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -68,41 +78,48 @@ export default function MapPage() {
     (async () => {
       // Paged. gm_events grows with every session forever, and an unbounded select would
       // stop at PostgREST's 1000-row cap without saying so, which here would quietly
-      // mis-order the tray rather than fail.
-      const loadMentions = async (): Promise<Record<string, number>> => {
+      // truncate a campaign's history rather than fail.
+      const loadLocEvents = async (): Promise<LocEv[]> => {
         const PAGE = 1000;
-        const counts: Record<string, number> = {};
+        const out: LocEv[] = [];
         for (let page = 0; page < 50; page++) {
           const from = page * PAGE;
           const { data, error } = await supabase
             .from("gm_events")
-            .select("location_id")
+            .select("session_id, location_id, t_start_seconds")
             .eq("campaign_id", campaignId)
             .not("location_id", "is", null)
             .order("id", { ascending: true })
             .range(from, from + PAGE - 1);
           if (error) break;
-          const rows = (data as { location_id: string | null }[]) || [];
-          for (const r of rows) if (r.location_id) counts[r.location_id] = (counts[r.location_id] || 0) + 1;
+          const rows = (data as LocEv[]) || [];
+          out.push(...rows);
           if (rows.length < PAGE) break;
         }
-        return counts;
+        return out;
       };
 
-      const [{ data: m }, { data: e }, { data: c }, mn] = await Promise.all([
+      const [{ data: m }, { data: e }, { data: c }, { data: ss }, { data: pp }, ev] = await Promise.all([
         supabase.from("maps").select("id, name, image_path, visibility, linked_entry_id").eq("campaign_id", campaignId).order("created_at"),
         supabase.from("entries").select("id, title, type").eq("campaign_id", campaignId).order("title"),
         supabase.from("characters").select("id, name, kind").eq("campaign_id", campaignId).order("name"),
-        loadMentions(),
+        supabase.from("sessions").select("id, session_number").eq("campaign_id", campaignId).order("session_number", { ascending: true }),
+        // Campaign-wide, not per map. A stop pinned on another map is not drawable here but
+        // it is still placed, and saying so beats reporting it as nowhere.
+        supabase.from("map_pins").select("map_id, linked_id").eq("campaign_id", campaignId).eq("linked_type", "entry"),
+        loadLocEvents(),
       ]);
       const ml = (m as MapRow[]) || [];
       setMaps(ml);
       setEntries((e as Ent[]) || []);
       setChars((c as Ch[]) || []);
-      setMentions(mn);
+      setSessions((ss as Sess[]) || []);
+      setPlacedPins(((pp as PlacedPin[]) || []).filter((x) => x.linked_id));
+      setLocEvents(ev);
       setActiveMap(ml[0] || null);
       setSelected(null);
       setPlacing(null);
+      setTraceSession("");
     })();
   }, [campaignId, supabase]);
 
@@ -194,6 +211,65 @@ export default function MapPage() {
 
   const sel = pins.find((p) => p.id === selected) || null;
 
+  const mentions = useMemo(() => {
+    const c: Record<string, number> = {};
+    for (const e of locEvents) c[e.location_id] = (c[e.location_id] || 0) + 1;
+    return c;
+  }, [locEvents]);
+
+  // The route for the chosen session: each place once, in the order it first came up.
+  //
+  // Every stop resolves one of four ways, and the difference matters because only the
+  // first can be drawn:
+  //   pin      pinned on the map currently open, so it has coordinates here
+  //   map      a map in its own right (p10), so the stop opens rather than draws
+  //   elsewhere pinned, but on a different map
+  //   nowhere  not placed at all
+  const trace = useMemo(() => {
+    if (!traceSession) return [];
+    const first = new Map<string, number>();
+    for (const e of locEvents) {
+      if (e.session_id !== traceSession) continue;
+      const t = e.t_start_seconds ?? Number.MAX_SAFE_INTEGER;
+      const cur = first.get(e.location_id);
+      if (cur === undefined || t < cur) first.set(e.location_id, t);
+    }
+    return Array.from(first.entries())
+      .sort((a, b) => a[1] - b[1])
+      .map(([id]) => {
+        const title = entries.find((x) => x.id === id)?.title || "(unknown place)";
+        const pin = pins.find((p) => p.linked_type === "entry" && p.linked_id === id) || null;
+        const ownMap = maps.find((m) => m.linked_entry_id === id) || null;
+        const other = placedPins.find((pp) => pp.linked_id === id && pp.map_id !== activeMap?.id);
+        const otherMap = other ? maps.find((m) => m.id === other.map_id) || null : null;
+        return { id, title, pin, ownMap, otherMap };
+      });
+  }, [traceSession, locEvents, entries, pins, maps, placedPins, activeMap]);
+
+  // Runs of CONSECUTIVE stops pinned on this map.
+  //
+  // The line is drawn per run rather than across every pinned stop, because skipping a gap
+  // asserts a journey that did not happen. Session 2 goes Toll-Bridge, Ashmoor, Hollowmere,
+  // old hill-fort, and Hollowmere is a map rather than a pin here. Joining Ashmoor straight
+  // to the hill-fort would draw a leg the party never took, which is worse than drawing
+  // nothing: a map that quietly invents a route is harder to distrust than one with a gap
+  // in it.
+  //
+  // idx is the stop's position in the WHOLE route, not in the drawable subset, so the badge
+  // on the map and the number in the list underneath always agree.
+  const runs = useMemo(() => {
+    const out: { idx: number; pin: Pin }[][] = [];
+    let cur: { idx: number; pin: Pin }[] = [];
+    trace.forEach((t, i) => {
+      if (t.pin) cur.push({ idx: i + 1, pin: t.pin });
+      else if (cur.length) { out.push(cur); cur = []; }
+    });
+    if (cur.length) out.push(cur);
+    return out;
+  }, [trace]);
+
+  const pinnedStops = runs.flat();
+
   // Places the sessions named that have no pin on THIS map. Scoped per map on purpose: a
   // place can legitimately belong to both a world map and a city map, so a pin elsewhere
   // should not hide it here.
@@ -266,6 +342,30 @@ export default function MapPage() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={publicUrl(activeMap.image_path)} alt={activeMap.name} onClick={onImageClick}
               style={{ maxWidth: "100%", display: "block", cursor: "crosshair", borderRadius: 10, border: `1px solid ${C.line}` }} />
+            {runs.some((r) => r.length >= 2) && (
+              // viewBox 0..100 with preserveAspectRatio none lines the SVG up exactly with
+              // the percentage-positioned pins, whatever the image's aspect ratio.
+              // non-scaling-stroke stops that same stretch from distorting the line.
+              <svg viewBox="0 0 100 100" preserveAspectRatio="none"
+                style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none" }}>
+                {runs.filter((r) => r.length >= 2).map((r) => (
+                  <polyline key={`run-${r[0].idx}`}
+                    points={r.map((sx) => `${sx.pin.x * 100},${sx.pin.y * 100}`).join(" ")}
+                    fill="none" stroke={C.sun} strokeWidth={2} strokeDasharray="6 4"
+                    strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+                ))}
+              </svg>
+            )}
+            {pinnedStops.map((sx) => (
+              <span key={`ord-${sx.idx}`}
+                style={{
+                  position: "absolute", left: `${sx.pin.x * 100}%`, top: `${sx.pin.y * 100}%`,
+                  transform: "translate(-50%, -160%)", pointerEvents: "none",
+                  background: C.sun, color: SAX.inkDeep, borderRadius: 999,
+                  fontSize: 11, fontWeight: 700, lineHeight: 1, padding: "3px 6px",
+                  boxShadow: "0 2px 6px rgba(0,0,0,0.5)",
+                }}>{sx.idx}</span>
+            ))}
             {pins.map((p) => (
               <button key={p.id} type="button" title={p.label || "pin"}
                 onClick={(ev) => { ev.stopPropagation(); setSelected(p.id); }}
@@ -316,6 +416,56 @@ export default function MapPage() {
             ) : (
               <div style={{ ...box, color: C.muted, fontSize: 13, lineHeight: 1.6 }}>
                 Click the map to drop a pin, or click an existing pin to edit it. Pins are colored by who can see them: gold for the party, red for GM secrets.
+              </div>
+            )}
+
+            {sessions.length > 0 && (
+              <div style={box}>
+                <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>Session trace</div>
+                <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.55, marginBottom: 10 }}>
+                  Where a session went, in the order it came up in play. Stops pinned on this
+                  map are numbered and joined by a line. The line breaks wherever a stop is
+                  somewhere else, rather than drawing a leg the party never travelled.
+                </div>
+                <select value={traceSession} onChange={(e) => setTraceSession(e.target.value)} style={sel2}>
+                  <option value="">No trace</option>
+                  {sessions.map((ss) => (
+                    <option key={ss.id} value={ss.id}>Session {ss.session_number ?? "?"}</option>
+                  ))}
+                </select>
+
+                {traceSession && trace.length === 0 && (
+                  <div style={{ fontSize: 12.5, color: C.muted, marginTop: 10, lineHeight: 1.5 }}>
+                    No places were named in that session.
+                  </div>
+                )}
+
+                {trace.length > 0 && (
+                  <ol style={{ margin: "12px 0 0", paddingLeft: 18, fontSize: 12.5, lineHeight: 1.7 }}>
+                    {trace.map((t) => (
+                      <li key={t.id} style={{ color: t.pin ? C.text : C.muted }}>
+                        {t.title}{" "}
+                        {t.pin ? (
+                          <span style={{ color: C.sun }}>on this map</span>
+                        ) : t.ownMap ? (
+                          <button type="button"
+                            onClick={() => { setActiveMap(t.ownMap as MapRow); setSelected(null); }}
+                            style={{ background: "none", border: "none", color: C.plum, textDecoration: "underline", cursor: "pointer", padding: 0, fontSize: 12.5 }}>
+                            open its map
+                          </button>
+                        ) : t.otherMap ? (
+                          <button type="button"
+                            onClick={() => { setActiveMap(t.otherMap as MapRow); setSelected(null); }}
+                            style={{ background: "none", border: "none", color: C.plum, textDecoration: "underline", cursor: "pointer", padding: 0, fontSize: 12.5 }}>
+                            on {t.otherMap.name}
+                          </button>
+                        ) : (
+                          <span style={{ color: C.warn }}>not on any map</span>
+                        )}
+                      </li>
+                    ))}
+                  </ol>
+                )}
               </div>
             )}
 
