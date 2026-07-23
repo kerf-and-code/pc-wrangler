@@ -19,6 +19,62 @@ const pct = (x: number): string => `${Math.round(x * 100)}%`;
 const rateColor = (r: number): string => (r >= 0.7 ? "#5DBE9A" : r >= 0.4 ? "#F4C430" : "#E07A5F");
 const kappaLabel = (k: number): string =>
   k < 0 ? "poor" : k < 0.2 ? "slight" : k < 0.4 ? "fair" : k < 0.6 ? "moderate" : k < 0.8 ? "substantial" : "almost perfect";
+// Kappa is not a percentage and should not be coloured like one. 0.6 is the conventional
+// floor for "substantial", which is where these numbers start being safe to build on.
+const kappaColor = (k: number): string => (k >= 0.6 ? "#5DBE9A" : k >= 0.4 ? "#F4C430" : "#E07A5F");
+
+type Agreement = {
+  ready: boolean; needRecode: boolean;
+  N: number; flaggedA: number; flaggedB: number; flaggedBoth: number; flaggedEither: number;
+  prevalence: number;
+  detectPo: number; detectKappa: number;
+  classN: number; classAgree: number; classPo: number; classKappa: number;
+  cats: string[]; M: number[][];
+};
+
+// Plain language for a GM, not a methods section. Every line is about what the number
+// means for their session rather than what it is.
+//
+// The interpretation is generated rather than left to the reader on purpose: a GM reading
+// "kappa 0.41" has no way to know whether to trust the spotlight chart, and guessing wrong
+// in either direction is worse than not showing the number at all.
+function readAgreement(a: Agreement): { headline: string; points: string[] } {
+  const points: string[] = [];
+
+  if (a.detectKappa >= 0.6) {
+    points.push("It picks out the same moments from one run to the next, so the review queue you see is close to the one you would get on a re-run.");
+  } else if (a.detectKappa >= 0.4) {
+    points.push("It is only moderately consistent about which lines are worth flagging. A second pass would surface a noticeably different queue, so treat counts per session as approximate rather than exact.");
+  } else {
+    points.push("It is inconsistent about which lines contain anything at all. A second pass would flag substantially different moments, so per-session counts are not yet dependable on their own.");
+  }
+
+  if (a.classN === 0) {
+    points.push("The two passes never flagged the same line, so there is nothing to compare on the question of what kind of moment it was.");
+  } else if (a.classKappa >= 0.6) {
+    points.push("When both passes flag the same moment they usually agree on what kind it was, so the axis and spotlight breakdowns rest on solid ground.");
+  } else if (a.classKappa >= 0.4) {
+    points.push("When both passes flag the same moment they often disagree about what kind it was. Totals per character hold up better than the breakdown by axis.");
+  } else {
+    points.push("Even when both passes flag the same moment they rarely agree on what kind it was. Read the axis labels as suggestions and lean on your own review decisions.");
+  }
+
+  if (a.classN > 0 && a.classN < 20) {
+    points.push(`Only ${a.classN} moment${a.classN === 1 ? " was" : "s were"} flagged by both passes, so the second figure is a rough indication rather than a measurement. Record a longer session to firm it up.`);
+  }
+
+  if (a.prevalence < 0.05) {
+    points.push(`Only ${pct(a.prevalence)} of lines were flagged by either pass. When events are this rare, the first figure swings a lot on a handful of lines.`);
+  }
+
+  const worst = Math.min(a.detectKappa, a.classN > 0 ? a.classKappa : 1);
+  const headline =
+    worst >= 0.6 ? "The extractor is reproducing itself well. Numbers built on these events are safe to act on."
+    : worst >= 0.4 ? "The extractor is reasonably reproducible, with room to improve. Use the totals with some caution and your own review as the final word."
+    : "The extractor is not yet reproducing itself reliably. Your review decisions are the trustworthy part; the automatic numbers are a starting point.";
+
+  return { headline, points };
+}
 
 export default function ReliabilityPage() {
   const supabase = useMemo(() => createClient(), []);
@@ -53,17 +109,50 @@ export default function ReliabilityPage() {
     })();
   }, [supabase]);
 
+  // Every query on this page reads a table that grows with play, and every number shown
+  // is computed from ALL the rows rather than a sample. An unbounded select silently stops
+  // at PostgREST's 1000-row cap, so a large campaign would have its accept rate,
+  // calibration and kappa computed from a prefix and report them as if they were the whole
+  // picture. A reliability page that is itself unreliable is worse than no page.
+  //
+  // Crowned Calamity already has 6767 transcript segments, so this is not hypothetical.
+  async function pageAll<T>(
+    table: string,
+    columns: string,
+    apply: (q: ReturnType<ReturnType<typeof createClient>["from"]>) => unknown,
+  ): Promise<T[]> {
+    const PAGE = 1000;
+    const out: T[] = [];
+    for (let page = 0; page < 100; page++) {
+      const from = page * PAGE;
+      const q = supabase.from(table).select(columns);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (apply(q as any) as any)
+        .order("id", { ascending: true })
+        .range(from, from + PAGE - 1);
+      if (error) break;
+      const rows = (data as T[]) || [];
+      out.push(...rows);
+      if (rows.length < PAGE) break;
+    }
+    return out;
+  }
+
   useEffect(() => {
     if (!campaignId) return;
     let active = true;
     setLoading(true);
     (async () => {
-      const [{ data: pe }, { data: jb }] = await Promise.all([
-        supabase.from("proposed_events").select("status, event_type, axis, confidence, extractor_version").eq("campaign_id", campaignId),
+      const [pe, { data: jb }] = await Promise.all([
+        pageAll<PE>(
+          "proposed_events",
+          "id, status, event_type, axis, confidence, extractor_version",
+          (q) => (q as { eq: (c: string, v: string) => unknown }).eq("campaign_id", campaignId),
+        ),
         supabase.from("capture_jobs").select("id, status, session:sessions(session_number)").eq("campaign_id", campaignId).in("status", ["review", "done"]).order("created_at", { ascending: false }),
       ]);
       if (!active) return;
-      setRows((pe as PE[]) || []);
+      setRows(pe);
       const jlist = (jb as unknown as JobRow[]) || [];
       setJobs(jlist);
       setJobId(jlist.length ? jlist[0].id : "");
@@ -74,10 +163,23 @@ export default function ReliabilityPage() {
 
   async function loadCodings(jid: string) {
     setAgreeErr(null);
-    const [{ count }, { data: aRows }, { data: bRows }] = await Promise.all([
+    // head:true returns a count and no rows, so the segment total is not subject to the cap.
+    // The two coding passes very much are: a busy session can propose more than 1000 events
+    // on its own, and a truncated pass would look like an extractor that simply stopped
+    // finding things, which reads as poor recall rather than a missing page.
+    type CodeRow = { segment_id: string | null; event_type: string | null; confidence: number | null };
+    const [{ count }, aRows, bRows] = await Promise.all([
       supabase.from("transcript_segments").select("*", { count: "exact", head: true }).eq("job_id", jid),
-      supabase.from("proposed_events").select("segment_id, event_type, confidence").eq("job_id", jid),
-      supabase.from("recodings").select("segment_id, event_type, confidence").eq("job_id", jid),
+      pageAll<CodeRow>(
+        "proposed_events",
+        "id, segment_id, event_type, confidence",
+        (q) => (q as { eq: (c: string, v: string) => unknown }).eq("job_id", jid),
+      ),
+      pageAll<CodeRow>(
+        "recodings",
+        "id, segment_id, event_type, confidence",
+        (q) => (q as { eq: (c: string, v: string) => unknown }).eq("job_id", jid),
+      ),
     ]);
     setSegN(count ?? 0);
     const build = (data: { segment_id: string | null; event_type: string | null; confidence: number | null }[] | null): Record<string, string> => {
@@ -90,8 +192,8 @@ export default function ReliabilityPage() {
       });
       return map;
     };
-    setCodingA(build(aRows as { segment_id: string | null; event_type: string | null; confidence: number | null }[]));
-    setCodingB(build(bRows as { segment_id: string | null; event_type: string | null; confidence: number | null }[]));
+    setCodingA(build(aRows));
+    setCodingB(build(bRows));
   }
 
   useEffect(() => {
@@ -143,14 +245,80 @@ export default function ReliabilityPage() {
     };
   }, [rows]);
 
-  const agree = useMemo(() => {
-    const empty = { ready: false, needRecode: false, N: 0, po: 0, kappa: 0, flaggedN: 0, flaggedAgree: 0, cats: [] as string[], M: [] as number[][] };
+  // TWO QUESTIONS, NOT ONE.
+  //
+  // The previous version reported a single kappa over every transcript segment with
+  // "none" as a category. On a real session that is dominated by the cell where both
+  // passes agree nothing happened: 3146 segments with roughly 250 ever flagged puts about
+  // 92 percent of the matrix in one corner, so the headline number was mostly a measure of
+  // agreement about silence.
+  //
+  // Splitting it separates two failure modes that need different fixes:
+  //
+  //   detection       over ALL segments, binary. Do the passes flag the same lines? The
+  //                   rare-positive skew is legitimate here, because that IS the question.
+  //   classification  over the intersection only. Given both flagged a line, do they agree
+  //                   what kind of moment it was? No "none" category, so nothing is
+  //                   inflated by empty segments.
+  //
+  // An extractor unsure what counts as an event is a different problem from one that
+  // agrees something happened but not what, and the old single number could not tell them
+  // apart.
+  const agree = useMemo<Agreement>(() => {
+    const empty: Agreement = {
+      ready: false, needRecode: false,
+      N: 0, flaggedA: 0, flaggedB: 0, flaggedBoth: 0, flaggedEither: 0, prevalence: 0,
+      detectPo: 0, detectKappa: 0,
+      classN: 0, classAgree: 0, classPo: 0, classKappa: 0,
+      cats: [], M: [],
+    };
     if (segN === null || segN === 0) return empty;
     if (Object.keys(codingB).length === 0) return { ...empty, needRecode: true };
+
     const N = segN;
     const aKeys = Object.keys(codingA);
     const bKeys = Object.keys(codingB);
     const U = new Set([...aKeys, ...bKeys]);
+
+    // ---- detection: a 2x2 over every segment ----
+    const both = aKeys.filter((k) => codingB[k] !== undefined).length;
+    const aOnly = aKeys.length - both;
+    const bOnly = bKeys.length - both;
+    const neither = N - U.size;
+    const detectPo = (both + neither) / N;
+    const detectPe =
+      ((both + aOnly) / N) * ((both + bOnly) / N) +
+      ((bOnly + neither) / N) * ((aOnly + neither) / N);
+    const detectKappa = detectPe >= 1 ? 1 : (detectPo - detectPe) / (1 - detectPe);
+
+    // ---- classification: types, over the intersection only ----
+    const shared = aKeys.filter((k) => codingB[k] !== undefined);
+    const classN = shared.length;
+    const classTypes = new Set<string>();
+    shared.forEach((k) => { classTypes.add(codingA[k]); classTypes.add(codingB[k]); });
+    const cTypes = Array.from(classTypes);
+    const cIdx: Record<string, number> = {};
+    cTypes.forEach((t, i) => { cIdx[t] = i; });
+    const cM: number[][] = cTypes.map(() => cTypes.map(() => 0));
+    let classAgree = 0;
+    shared.forEach((k) => {
+      const a = codingA[k];
+      const b = codingB[k];
+      cM[cIdx[a]][cIdx[b]] += 1;
+      if (a === b) classAgree += 1;
+    });
+    const classPo = classN ? classAgree / classN : 0;
+    let classPe = 0;
+    if (classN) {
+      for (let i = 0; i < cTypes.length; i++) {
+        const r = cM[i].reduce((sm, v) => sm + v, 0);
+        const c = cM.reduce((sm, row) => sm + row[i], 0);
+        classPe += (r / classN) * (c / classN);
+      }
+    }
+    const classKappa = !classN || classPe >= 1 ? (classPo === 1 ? 1 : 0) : (classPo - classPe) / (1 - classPe);
+
+    // ---- the full matrix is kept for anyone who wants to look ----
     const typeSet = new Set<string>();
     aKeys.forEach((k) => typeSet.add(codingA[k]));
     bKeys.forEach((k) => typeSet.add(codingB[k]));
@@ -158,22 +326,19 @@ export default function ReliabilityPage() {
     const idx: Record<string, number> = {};
     cats.forEach((c, i) => { idx[c] = i; });
     const M: number[][] = cats.map(() => cats.map(() => 0));
-    let agreeU = 0;
     U.forEach((seg) => {
-      const a = codingA[seg] || "none";
-      const b = codingB[seg] || "none";
-      M[idx[a]][idx[b]] += 1;
-      if (a === b) agreeU += 1;
+      M[idx[codingA[seg] || "none"]][idx[codingB[seg] || "none"]] += 1;
     });
-    const noneNone = N - U.size;
-    M[0][0] += noneNone;
-    const rowSum = cats.map((_, i) => M[i].reduce((s, v) => s + v, 0));
-    const colSum = cats.map((_, j) => cats.reduce((s, _2, i) => s + M[i][j], 0));
-    const po = (agreeU + noneNone) / N;
-    let pe = 0;
-    for (let i = 0; i < cats.length; i++) pe += (rowSum[i] / N) * (colSum[i] / N);
-    const kappa = pe >= 1 ? 1 : (po - pe) / (1 - pe);
-    return { ready: true, needRecode: false, N, po, kappa, flaggedN: U.size, flaggedAgree: agreeU, cats, M };
+    M[0][0] += neither;
+
+    return {
+      ready: true, needRecode: false,
+      N, flaggedA: aKeys.length, flaggedB: bKeys.length, flaggedBoth: both,
+      flaggedEither: U.size, prevalence: U.size / N,
+      detectPo, detectKappa,
+      classN, classAgree, classPo, classKappa,
+      cats, M,
+    };
   }, [segN, codingA, codingB, labels]);
 
   const box = { ...surfaces.slate, padding: 20, marginBottom: 18 } as const;
@@ -286,7 +451,7 @@ export default function ReliabilityPage() {
         <div style={box}>
           <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>Inter-version agreement (double-coding)</div>
           <div style={{ color: C.muted, fontSize: 12.5, marginBottom: 14 }}>
-            Runs the extractor a second, independent time over the same transcript and measures how reproducible the coding is, with Cohen&apos;s kappa over per-segment labels.
+            Runs the extractor a second, independent time over the same transcript and asks two separate questions: does it pick out the same moments, and does it call them the same thing. Both are Cohen&apos;s kappa, which is agreement corrected for what you would get by chance, so 0 means no better than guessing and 1 means identical.
           </div>
 
           {jobs.length === 0 ? (
@@ -320,20 +485,41 @@ export default function ReliabilityPage() {
 
               {agree.ready && (
                 <>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12, marginBottom: 16 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12, marginBottom: 14 }}>
                     <div style={{ background: C.surface2, border: `1px solid ${C.line}`, borderRadius: 10, padding: 14, textAlign: "center" }}>
-                      <div style={{ fontSize: 30, fontWeight: 800, color: rateColor(Math.max(0, agree.kappa)) }}>{agree.kappa.toFixed(2)}</div>
-                      <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>Cohen&apos;s kappa ({kappaLabel(agree.kappa)})</div>
+                      <div style={{ fontSize: 30, fontWeight: 800, color: kappaColor(agree.detectKappa) }}>{agree.detectKappa.toFixed(2)}</div>
+                      <div style={{ fontSize: 12.5, fontWeight: 700, marginTop: 4 }}>Spots the same moments</div>
+                      <div style={{ fontSize: 11.5, color: C.muted, marginTop: 2 }}>{kappaLabel(agree.detectKappa)} · {agree.N} lines</div>
                     </div>
                     <div style={{ background: C.surface2, border: `1px solid ${C.line}`, borderRadius: 10, padding: 14, textAlign: "center" }}>
-                      <div style={{ fontSize: 30, fontWeight: 800 }}>{pct(agree.po)}</div>
-                      <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>raw agreement, all {agree.N} lines</div>
+                      <div style={{ fontSize: 30, fontWeight: 800, color: agree.classN ? kappaColor(agree.classKappa) : C.muted }}>
+                        {agree.classN ? agree.classKappa.toFixed(2) : "n/a"}
+                      </div>
+                      <div style={{ fontSize: 12.5, fontWeight: 700, marginTop: 4 }}>Calls them the same thing</div>
+                      <div style={{ fontSize: 11.5, color: C.muted, marginTop: 2 }}>
+                        {agree.classN ? `${kappaLabel(agree.classKappa)} · ${agree.classN} shared` : "no shared moments"}
+                      </div>
                     </div>
                     <div style={{ background: C.surface2, border: `1px solid ${C.line}`, borderRadius: 10, padding: 14, textAlign: "center" }}>
-                      <div style={{ fontSize: 30, fontWeight: 800 }}>{agree.flaggedN ? pct(agree.flaggedAgree / agree.flaggedN) : "—"}</div>
-                      <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>agreement on flagged ({agree.flaggedN})</div>
+                      <div style={{ fontSize: 30, fontWeight: 800 }}>{pct(agree.prevalence)}</div>
+                      <div style={{ fontSize: 12.5, fontWeight: 700, marginTop: 4 }}>Of the session is eventful</div>
+                      <div style={{ fontSize: 11.5, color: C.muted, marginTop: 2 }}>{agree.flaggedEither} of {agree.N} lines flagged</div>
                     </div>
                   </div>
+
+                  {/* The reading. A GM should not have to know what kappa is to know whether
+                      to trust the spotlight chart. */}
+                  {(() => {
+                    const r = readAgreement(agree);
+                    return (
+                      <div style={{ background: C.surface2, border: `1px solid ${C.line}`, borderRadius: 10, padding: "14px 16px", marginBottom: 16 }}>
+                        <div style={{ fontSize: 13.5, fontWeight: 700, marginBottom: 8 }}>{r.headline}</div>
+                        <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12.5, lineHeight: 1.65, color: C.muted }}>
+                          {r.points.map((t, i) => (<li key={i}>{t}</li>))}
+                        </ul>
+                      </div>
+                    );
+                  })()}
 
                   <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>Confusion matrix (rows = pass A, columns = pass B)</div>
                   <div style={{ fontSize: 12, color: C.muted, marginBottom: 10 }}>
