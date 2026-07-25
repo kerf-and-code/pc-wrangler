@@ -55,10 +55,18 @@ export async function GET(request: Request) {
         // is exactly one, so the common case is a clean one-click landing.
         try {
           const { data: claimed } = await supabase.rpc("claim_by_discord");
-          const rows = (claimed as { campaign_share_code: string | null }[] | null) || [];
-          const shares = Array.from(new Set(rows.map((r) => r.campaign_share_code).filter(Boolean)));
-          if (shares.length === 1 && next === "/me") {
+          const rows = (claimed as { out_share_code: string | null }[] | null) || [];
+          const shares = Array.from(new Set(rows.map((r) => r.out_share_code).filter(Boolean)));
+          // One campaign: drop them straight at that table. Several: send them to their
+          // campaign list, NOT a bare /me, which expects a share code and renders "this
+          // link looks broken" without one. Zero: /me, which shows the claim-your-character
+          // state. The old check compared next to "/me" exactly, but next carries a query
+          // string (/me?claimed=1), so it never matched and even single-campaign players
+          // fell through to the broken landing.
+          if (shares.length === 1) {
             dest = `/play?share=${encodeURIComponent(shares[0] as string)}`;
+          } else if (shares.length > 1) {
+            dest = "/me/campaigns";
           }
         } catch {
           // Silent: they are signed in, /me will show whatever resolved.
