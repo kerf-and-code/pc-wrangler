@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createPublicKey, verify as edVerify, randomBytes } from "node:crypto";
+import { createPublicKey, verify as edVerify } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 import { buildPollMessage } from "@/lib/schedule/poll-message";
 
@@ -411,15 +411,18 @@ async function handleMypage(interaction: Interaction) {
     return ephemeral("Could not read your Discord account. Try again.");
   }
 
+  // Does this Discord account have a character here at all? If not, /claim comes first.
+  // We do not need the invite_code anymore: the web claim binds by discord_user_id, so the
+  // one link works for every character this player has, in this campaign and any other.
   const { data: rows } = await sb
     .from("characters")
-    .select("id, name, invite_code, profile_id")
+    .select("name, profile_id")
     .eq("campaign_id", campaign.id)
     .eq("discord_user_id", userId)
     .eq("kind", "pc")
     .limit(1);
 
-  const ch = (rows as { id: string; name: string | null; invite_code: string | null; profile_id: string | null }[] | null)?.[0];
+  const ch = (rows as { name: string | null; profile_id: string | null }[] | null)?.[0];
   if (!ch) {
     return ephemeral(
       `You don't have a character linked in "${campaign.name}" yet. Run /claim to pick one, then /mypage.`,
@@ -428,52 +431,15 @@ async function handleMypage(interaction: Interaction) {
 
   const base = siteBase();
 
-  // Only needed for the already-claimed reply. resolveCampaign selects id and name, and
-  // widening a helper eight other handlers depend on for one caller is not worth it.
-  const { data: camp } = await sb.from("campaigns").select("share_code").eq("id", campaign.id).single();
-  const share = (camp as { share_code: string | null } | null)?.share_code || null;
-
-  if (ch.profile_id) {
-    return ephemeral(
-      share
-        ? `You are already set up. Your table: ${base}/play?share=${encodeURIComponent(share)}`
-        : `You are already set up. Sign in at ${base} to open your table.`,
-    );
-  }
-
-  let code = ch.invite_code;
-  if (!code) {
-    // Characters created before invite codes existed, or through a path that never set
-    // one, would otherwise be permanently unclaimable. Generating on demand fixes that
-    // without a migration or a backfill.
-    //
-    // The `is("invite_code", null)` guard means two rapid calls cannot both write, and the
-    // re-read afterwards returns whichever one actually landed rather than the value this
-    // call happened to generate.
-    await sb
-      .from("characters")
-      .update({ invite_code: randomBytes(6).toString("hex") })
-      .eq("id", ch.id)
-      .is("invite_code", null);
-
-    const { data: after } = await sb
-      .from("characters")
-      .select("invite_code")
-      .eq("id", ch.id)
-      .single();
-    code = (after as { invite_code: string | null } | null)?.invite_code ?? null;
-
-    if (!code) {
-      return ephemeral("Could not create your link right now. Try again in a moment.");
-    }
-  }
-
+  // One link, always the same, for everyone: sign in with Discord and every character on
+  // this Discord account binds itself. No per-character code, nothing that can be opened by
+  // the wrong person, nothing that strands a character on a throwaway login. The Discord
+  // account they already play on IS the account.
   return ephemeral(
-    `**${ch.name || "Your character"}**\n` +
-    `${base}/join?c=${encodeURIComponent(code)}\n\n` +
-    "This link is yours alone: it binds this character to whoever opens it, so do not " +
-    "share it. Once you are in you can read the full session transcript, your own moments, " +
-    "and the party codex.",
+    "Open your table on the web \u2014 sign in with this same Discord account and your " +
+    "character, journal, and the party codex are all there:\n" +
+    `${base}/claim\n\n` +
+    "Because it signs in with Discord, it works on any device and there is nothing to lose.",
   );
 }
 

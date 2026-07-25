@@ -3,7 +3,11 @@
 import React, { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
-export default function DiscordButton({ next }: { next?: string }) {
+// claim=true routes the OAuth return through /auth/callback?claim=1, which runs
+// claim_by_discord to bind every character on this Discord account. Without it the callback
+// treats the sign-in as a plain login (GM going to /gm). The claim page sets it; the GM
+// login button does not.
+export default function DiscordButton({ next, claim }: { next?: string; claim?: boolean }) {
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -11,7 +15,11 @@ export default function DiscordButton({ next }: { next?: string }) {
     setLoading(true);
     setErr(null);
     const supabase = createClient();
-    const redirectTo = `${window.location.origin}/auth/callback${next ? `?next=${encodeURIComponent(next)}` : ""}`;
+    const params = new URLSearchParams();
+    if (next) params.set("next", next);
+    if (claim) params.set("claim", "1");
+    const qs = params.toString();
+    const redirectTo = `${window.location.origin}/auth/callback${qs ? `?${qs}` : ""}`;
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "discord",
       options: { redirectTo, scopes: "identify email" },
