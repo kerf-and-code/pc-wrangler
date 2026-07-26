@@ -1,0 +1,1892 @@
+[
+  {
+    "class": "Apothecary",
+    "subclass": "Alienist",
+    "partnered": true,
+    "partner": "Drakkenheim",
+    "source": "Sebastian Crowe's Guide to Drakkenheim",
+    "role": "Controller / Support",
+    "description": "Wields psychic powers; unsettles minds.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Apothecary",
+    "subclass": "Chemist",
+    "partnered": true,
+    "partner": "Drakkenheim",
+    "source": "Sebastian Crowe's Guide to Drakkenheim",
+    "role": "Blaster",
+    "description": "Specialist in damage-dealing elemental spells.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Apothecary",
+    "subclass": "Exorcist",
+    "partnered": true,
+    "partner": "Drakkenheim",
+    "source": "Sebastian Crowe's Guide to Drakkenheim",
+    "role": "Striker / Support",
+    "description": "Repels fiends, undead, and mind-preying horrors.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Apothecary",
+    "subclass": "Mutagenist",
+    "partnered": true,
+    "partner": "Drakkenheim",
+    "source": "Sebastian Crowe's Guide to Drakkenheim",
+    "role": "Tank / Striker",
+    "description": "Alchemical serums transform the body for raw power.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Apothecary",
+    "subclass": "Pathogenist",
+    "partnered": true,
+    "partner": "Drakkenheim",
+    "source": "Sebastian Crowe's Guide to Drakkenheim",
+    "role": "Controller",
+    "description": "Weaponizes disease against enemies.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Apothecary",
+    "subclass": "Reanimator",
+    "partnered": true,
+    "partner": "Drakkenheim",
+    "source": "Sebastian Crowe's Guide to Drakkenheim",
+    "role": "Summoner",
+    "description": "Reanimates a corpse-wrought creature to fight.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Artificer",
+    "subclass": "Alchemist",
+    "partnered": false,
+    "partner": null,
+    "source": "TCoE / Eberron",
+    "role": "Support / Healer",
+    "description": "Brews elixirs; boosts healing and spell damage. A supportive potion-maker.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Artificer",
+    "subclass": "Armorer",
+    "partnered": false,
+    "partner": null,
+    "source": "Tasha's (TCoE)",
+    "role": "Tank / Striker",
+    "description": "Wears Arcane Armor: Guardian (durable frontline) or Infiltrator (stealthy ranged).",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Artificer",
+    "subclass": "Artillerist",
+    "partnered": false,
+    "partner": null,
+    "source": "TCoE / Eberron",
+    "role": "Blaster / Controller",
+    "description": "Commands an Eldritch Cannon for area damage, force, or protection.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Artificer",
+    "subclass": "Battle Smith",
+    "partnered": false,
+    "partner": null,
+    "source": "TCoE / Eberron",
+    "role": "Striker / Summoner",
+    "description": "Fights beside a Steel Defender; makes INT-based weapon attacks.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Barbarian",
+    "subclass": "Path of Booming Magnificence",
+    "partnered": true,
+    "partner": "Kobold Press",
+    "source": "Tome of Heroes",
+    "role": "Striker / Controller",
+    "description": "Roars a ferocious, thunderous challenge at enemies.",
+    "coverage": "Sample"
+  },
+  {
+    "class": "Barbarian",
+    "subclass": "Path of Hellfire",
+    "partnered": true,
+    "partner": "Kobold Press",
+    "source": "Tome of Heroes",
+    "role": "Striker / Blaster",
+    "description": "Infernal fury wreathed in hellfire.",
+    "coverage": "Sample"
+  },
+  {
+    "class": "Barbarian",
+    "subclass": "Path of Wild Magic",
+    "partnered": false,
+    "partner": null,
+    "source": "Tasha's (TCoE)",
+    "role": "Striker / Support",
+    "description": "Rage triggers random magical effects; some benefit allies.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Barbarian",
+    "subclass": "Path of the Ancestral Guardian",
+    "partnered": false,
+    "partner": null,
+    "source": "Xanathar's (XGtE)",
+    "role": "Tank / Defender",
+    "description": "Ancestral spirits punish foes that ignore you; shields allies from harm.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Barbarian",
+    "subclass": "Path of the Battlerager",
+    "partnered": false,
+    "partner": null,
+    "source": "Sword Coast (SCAG)",
+    "role": "Tank / Striker",
+    "description": "Spiked armor deals damage on grapple and charge (dwarves).",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Barbarian",
+    "subclass": "Path of the Beast",
+    "partnered": false,
+    "partner": null,
+    "source": "Tasha's (TCoE)",
+    "role": "Striker",
+    "description": "Grows natural weapons (claws, tail, bite) that change each rage.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Barbarian",
+    "subclass": "Path of the Berserker",
+    "partnered": false,
+    "partner": null,
+    "source": "PHB 2014 / 2024",
+    "role": "Striker",
+    "description": "Frenzied melee with bonus attacks. Simple, aggressive, high damage.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Barbarian",
+    "subclass": "Path of the Dragon",
+    "partnered": true,
+    "partner": "Kobold Press",
+    "source": "Tome of Heroes",
+    "role": "Striker / Blaster",
+    "description": "One of 70+ subclasses; draconic might and elemental breath.",
+    "coverage": "Sample"
+  },
+  {
+    "class": "Barbarian",
+    "subclass": "Path of the Fractured",
+    "partnered": true,
+    "partner": "Grim Hollow",
+    "source": "Grim Hollow: Player's Guide",
+    "role": "Striker / Controller",
+    "description": "One of 40 dark-fantasy subclasses; grows stronger as it breaks.",
+    "coverage": "Sample"
+  },
+  {
+    "class": "Barbarian",
+    "subclass": "Path of the Giant",
+    "partnered": false,
+    "partner": null,
+    "source": "Bigby's (BGG)",
+    "role": "Striker / Controller",
+    "description": "Grows to Large, hurls boulders, channels elemental giant might.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Barbarian",
+    "subclass": "Path of the Haze Rager",
+    "partnered": true,
+    "partner": "Drakkenheim",
+    "source": "Sebastian Crowe's Guide to Drakkenheim",
+    "role": "Tank / Striker",
+    "description": "Channels Haze energy; shapes fear and madness, resists mutation.",
+    "coverage": "Sample"
+  },
+  {
+    "class": "Barbarian",
+    "subclass": "Path of the Juggernaut",
+    "partnered": true,
+    "partner": "Critical Role",
+    "source": "Tal'Dorei Reborn",
+    "role": "Tank / Striker",
+    "description": "Unstoppable forward momentum; shoves, knocks prone, and repositions foes.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Barbarian",
+    "subclass": "Path of the Muscle Wizard",
+    "partnered": true,
+    "partner": "Mage Hand Press",
+    "source": "Valda's Spire of Secrets",
+    "role": "Striker",
+    "description": "Barbarian who insists he's a wizard. Ends in 'I Cast Fist!'",
+    "coverage": "Sample"
+  },
+  {
+    "class": "Barbarian",
+    "subclass": "Path of the Old Gods",
+    "partnered": true,
+    "partner": "Drakkenheim",
+    "source": "Sebastian Crowe's Guide to Drakkenheim",
+    "role": "Striker",
+    "description": "Champion of the old gods with inhuman, tearing strength.",
+    "coverage": "Sample"
+  },
+  {
+    "class": "Barbarian",
+    "subclass": "Path of the Primal Spirit",
+    "partnered": true,
+    "partner": "Grim Hollow",
+    "source": "Grim Hollow: Player's Guide",
+    "role": "Striker / Summoner",
+    "description": "Channels a bound primal spirit of Etharis.",
+    "coverage": "Sample"
+  },
+  {
+    "class": "Barbarian",
+    "subclass": "Path of the Storm Herald",
+    "partnered": false,
+    "partner": null,
+    "source": "Xanathar's (XGtE)",
+    "role": "Striker / Controller",
+    "description": "Radiates a damaging elemental aura (desert / sea / tundra).",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Barbarian",
+    "subclass": "Path of the Totem Warrior / Wild Heart",
+    "partnered": false,
+    "partner": null,
+    "source": "PHB 2014 (2024: Wild Heart)",
+    "role": "Tank / Support",
+    "description": "Animal spirit boons (Bear = resistance tank, Eagle = mobility, Wolf = team).",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Barbarian",
+    "subclass": "Path of the World Tree",
+    "partnered": false,
+    "partner": null,
+    "source": "PHB 2024",
+    "role": "Tank / Support",
+    "description": "Yggdrasil branches grant temp HP and teleport allies to safety.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Barbarian",
+    "subclass": "Path of the Wrathful Dead",
+    "partnered": true,
+    "partner": "Grim Hollow",
+    "source": "Grim Hollow: Player's Guide",
+    "role": "Tank / Striker",
+    "description": "Death-touched rage; endures beyond mortal limits.",
+    "coverage": "Sample"
+  },
+  {
+    "class": "Barbarian",
+    "subclass": "Path of the Zealot",
+    "partnered": false,
+    "partner": null,
+    "source": "XGtE / PHB 2024",
+    "role": "Striker",
+    "description": "Divine fury: bonus radiant/necrotic damage and cheap resurrection.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Bard",
+    "subclass": "College of Creation",
+    "partnered": false,
+    "partner": null,
+    "source": "Tasha's (TCoE)",
+    "role": "Summoner / Support",
+    "description": "Song of Creation animates objects and a helpful Dancing Item.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Bard",
+    "subclass": "College of Dance",
+    "partnered": false,
+    "partner": null,
+    "source": "PHB 2024",
+    "role": "Skirmisher / Support",
+    "description": "Agile, defensive movement-based bard; dodges and repositions.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Bard",
+    "subclass": "College of Doomspeakers",
+    "partnered": true,
+    "partner": "Drakkenheim",
+    "source": "Sebastian Crowe's Guide to Drakkenheim",
+    "role": "Controller / Face",
+    "description": "A doomsday prophet; features focused on terrifying foes.",
+    "coverage": "Sample"
+  },
+  {
+    "class": "Bard",
+    "subclass": "College of Eloquence",
+    "partnered": false,
+    "partner": null,
+    "source": "Tasha's (TCoE)",
+    "role": "Face / Support",
+    "description": "Unbeatable persuasion; never-wasted Bardic Inspiration.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Bard",
+    "subclass": "College of Glamour",
+    "partnered": false,
+    "partner": null,
+    "source": "Xanathar's (XGtE)",
+    "role": "Controller / Support",
+    "description": "Fey enchantment: enthralls foes and rallies allies with temp HP.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Bard",
+    "subclass": "College of Lore",
+    "partnered": false,
+    "partner": null,
+    "source": "PHB 2014 / 2024",
+    "role": "Support / Controller",
+    "description": "Cutting Words debuffs; extra skills and off-list spells. Versatile.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Bard",
+    "subclass": "College of Requiems",
+    "partnered": true,
+    "partner": "Grim Hollow",
+    "source": "Grim Hollow: Player's Guide",
+    "role": "Support / Controller",
+    "description": "Songs for the dead; sombre, hymn-driven battlefield control.",
+    "coverage": "Sample"
+  },
+  {
+    "class": "Bard",
+    "subclass": "College of Spirits",
+    "partnered": false,
+    "partner": null,
+    "source": "Van Richten's (VRGtR)",
+    "role": "Support / Controller",
+    "description": "Tales from the Dead deliver random spooky, useful effects.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Bard",
+    "subclass": "College of Swords",
+    "partnered": false,
+    "partner": null,
+    "source": "Xanathar's (XGtE)",
+    "role": "Striker / Gish",
+    "description": "Blade Flourishes turn performance into melee damage. Dashing duelist.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Bard",
+    "subclass": "College of Tragedy",
+    "partnered": true,
+    "partner": "Critical Role",
+    "source": "Tal'Dorei Reborn",
+    "role": "Controller / Support",
+    "description": "Weaves misfortune; converts others' failures into escalating power.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Bard",
+    "subclass": "College of Valor",
+    "partnered": false,
+    "partner": null,
+    "source": "PHB 2014 / 2024",
+    "role": "Gish / Support",
+    "description": "Combat bard: buffs allies with Inspiration and fights in melee.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Bard",
+    "subclass": "College of Whispers",
+    "partnered": false,
+    "partner": null,
+    "source": "Xanathar's (XGtE)",
+    "role": "Face / Striker",
+    "description": "Psychic blades, fear, and stealing a slain foe's identity. Sinister.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Beastheart",
+    "subclass": "Companion Bond (Monstrous Companion)",
+    "partnered": true,
+    "partner": "MCDM",
+    "source": "Beastheart & Monstrous Companions",
+    "role": "Summoner / Striker",
+    "description": "Bonds with a monster; the companion type IS the subclass (Ferocity system).",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Blood Hunter",
+    "subclass": "Order of the Ghostslayer",
+    "partnered": true,
+    "partner": "Critical Role",
+    "source": "Blood Hunter (D&D Beyond)",
+    "role": "Striker",
+    "description": "Anti-undead specialist; amplified Crimson Rite and extra crit damage.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Blood Hunter",
+    "subclass": "Order of the Lycan",
+    "partnered": true,
+    "partner": "Critical Role",
+    "source": "Blood Hunter (D&D Beyond)",
+    "role": "Tank / Striker",
+    "description": "Controlled werewolf transformation with claws and regeneration.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Blood Hunter",
+    "subclass": "Order of the Mutant",
+    "partnered": true,
+    "partner": "Critical Role",
+    "source": "Blood Hunter (D&D Beyond)",
+    "role": "Striker / Skirmisher",
+    "description": "Brews alchemical mutagens to tailor the hunter each day.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Blood Hunter",
+    "subclass": "Order of the Profane Soul",
+    "partnered": true,
+    "partner": "Critical Role",
+    "source": "Blood Hunter (D&D Beyond)",
+    "role": "Gish",
+    "description": "Blends blood magic with warlock spellcasting and a pact.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Cleric",
+    "subclass": "Arcana Domain",
+    "partnered": false,
+    "partner": null,
+    "source": "Sword Coast (SCAG)",
+    "role": "Blaster / Utility",
+    "description": "Wizardly cleric with arcane cantrips and anti-magic.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Cleric",
+    "subclass": "Black Powder Domain",
+    "partnered": true,
+    "partner": "Kobold Press",
+    "source": "Tome of Heroes",
+    "role": "Blaster / Support",
+    "description": "Firearm-flavored domain using the Gunpowder exploding-dice property.",
+    "coverage": "Sample"
+  },
+  {
+    "class": "Cleric",
+    "subclass": "Blood Domain",
+    "partnered": true,
+    "partner": "Critical Role",
+    "source": "Tal'Dorei Reborn",
+    "role": "Striker / Controller",
+    "description": "Hemocraft cleric; bends blood and curses the wounded (self-sacrifice).",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Cleric",
+    "subclass": "Death Domain",
+    "partnered": false,
+    "partner": null,
+    "source": "DMG",
+    "role": "Blaster",
+    "description": "Necrotic specialist; extra necrotic damage on cantrips.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Cleric",
+    "subclass": "Forge Domain",
+    "partnered": false,
+    "partner": null,
+    "source": "Xanathar's (XGtE)",
+    "role": "Tank / Support",
+    "description": "Crafts and blesses armor and weapons; very durable.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Cleric",
+    "subclass": "Grave Domain",
+    "partnered": false,
+    "partner": null,
+    "source": "Xanathar's (XGtE)",
+    "role": "Healer / Controller",
+    "description": "Punishes wounded foes; efficient healing and cheating death.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Cleric",
+    "subclass": "Knowledge Domain",
+    "partnered": false,
+    "partner": null,
+    "source": "PHB 2014",
+    "role": "Utility / Support",
+    "description": "Skills, languages, and mind-reading. The scholar-cleric.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Cleric",
+    "subclass": "Life Domain",
+    "partnered": false,
+    "partner": null,
+    "source": "PHB 2014 / 2024",
+    "role": "Healer",
+    "description": "The premier healing domain; maximizes restoration spells.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Cleric",
+    "subclass": "Light Domain",
+    "partnered": false,
+    "partner": null,
+    "source": "PHB 2014 / 2024",
+    "role": "Blaster / Controller",
+    "description": "Radiant fire damage and Warding Flare defensive reactions.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Cleric",
+    "subclass": "Moon Domain",
+    "partnered": true,
+    "partner": "Critical Role",
+    "source": "Tal'Dorei Reborn",
+    "role": "Support / Controller",
+    "description": "Cycles lunar phases for buffs and battlefield control. Well-balanced.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Cleric",
+    "subclass": "Nature Domain",
+    "partnered": false,
+    "partner": null,
+    "source": "PHB 2014",
+    "role": "Support / Controller",
+    "description": "Druid-flavored cleric: charms beasts, some armor and control.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Cleric",
+    "subclass": "Order Domain",
+    "partnered": false,
+    "partner": null,
+    "source": "TCoE / Ravnica",
+    "role": "Support / Controller",
+    "description": "Commands an ally to strike; charm and lockdown magic.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Cleric",
+    "subclass": "Peace Domain",
+    "partnered": false,
+    "partner": null,
+    "source": "Tasha's (TCoE)",
+    "role": "Support / Healer",
+    "description": "Emboldening Bond links allies for shared defense. Top-tier support.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Cleric",
+    "subclass": "Purification Domain",
+    "partnered": true,
+    "partner": "Grim Hollow",
+    "source": "Grim Hollow: Player's Guide",
+    "role": "Healer / Striker",
+    "description": "Burns out rot and disease, whatever the cost.",
+    "coverage": "Sample"
+  },
+  {
+    "class": "Cleric",
+    "subclass": "Tempest Domain",
+    "partnered": false,
+    "partner": null,
+    "source": "PHB 2014",
+    "role": "Blaster",
+    "description": "Thunder and lightning; maximize damage with Channel Divinity.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Cleric",
+    "subclass": "Trickery Domain",
+    "partnered": false,
+    "partner": null,
+    "source": "PHB 2014 / 2024",
+    "role": "Skirmisher / Support",
+    "description": "Illusions, a duplicate, and blessings of stealth.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Cleric",
+    "subclass": "Twilight Domain",
+    "partnered": false,
+    "partner": null,
+    "source": "Tasha's (TCoE)",
+    "role": "Support / Tank",
+    "description": "Twilight Sanctuary aura grants darkvision and temp HP. Elite protector.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Cleric",
+    "subclass": "War Domain",
+    "partnered": false,
+    "partner": null,
+    "source": "PHB 2014 / 2024",
+    "role": "Striker / Gish",
+    "description": "Bonus attacks and combat buffs. The front-line cleric.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Druid",
+    "subclass": "Circle of Bees",
+    "partnered": true,
+    "partner": "Kobold Press",
+    "source": "Tome of Heroes",
+    "role": "Controller / Support",
+    "description": "Two things: bees and teamwork. Swarms and coordinated tactics.",
+    "coverage": "Sample"
+  },
+  {
+    "class": "Druid",
+    "subclass": "Circle of Contamination",
+    "partnered": true,
+    "partner": "Drakkenheim",
+    "source": "Sebastian Crowe's Guide to Drakkenheim",
+    "role": "Controller / Striker",
+    "description": "A fallen druid corrupted by Delerium.",
+    "coverage": "Sample"
+  },
+  {
+    "class": "Druid",
+    "subclass": "Circle of Dreams",
+    "partnered": false,
+    "partner": null,
+    "source": "Xanathar's (XGtE)",
+    "role": "Healer / Support",
+    "description": "Fey hearth of healing and short-range teleportation. Nurturing.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Druid",
+    "subclass": "Circle of Spores",
+    "partnered": false,
+    "partner": null,
+    "source": "TCoE / Ravnica",
+    "role": "Striker / Controller",
+    "description": "Necrotic Halo of Spores; raises fungal zombies.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Druid",
+    "subclass": "Circle of Stars",
+    "partnered": false,
+    "partner": null,
+    "source": "Tasha's (TCoE)",
+    "role": "Blaster / Support",
+    "description": "Starry Form flips between ranged damage, healing, and utility.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Druid",
+    "subclass": "Circle of Wildfire",
+    "partnered": false,
+    "partner": null,
+    "source": "Tasha's (TCoE)",
+    "role": "Blaster / Healer",
+    "description": "Bonds a wildfire spirit for fiery damage and healing bursts.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Druid",
+    "subclass": "Circle of the Blighted",
+    "partnered": true,
+    "partner": "Critical Role",
+    "source": "Tal'Dorei Reborn",
+    "role": "Controller / Summoner",
+    "description": "Draws on blight and undeath; necrotic and spectral effects.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Druid",
+    "subclass": "Circle of the Land",
+    "partnered": false,
+    "partner": null,
+    "source": "PHB 2014 / 2024",
+    "role": "Controller / Support",
+    "description": "Bonus spells keyed to terrain; the caster-focused druid.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Druid",
+    "subclass": "Circle of the Moon",
+    "partnered": false,
+    "partner": null,
+    "source": "PHB 2014 / 2024",
+    "role": "Tank / Striker",
+    "description": "Powerful, high-HP Wild Shape combat forms.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Druid",
+    "subclass": "Circle of the Sea",
+    "partnered": false,
+    "partner": null,
+    "source": "PHB 2024",
+    "role": "Controller / Blaster",
+    "description": "Aura of wind and water buffets nearby enemies.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Druid",
+    "subclass": "Circle of the Shepherd",
+    "partnered": false,
+    "partner": null,
+    "source": "Xanathar's (XGtE)",
+    "role": "Summoner / Support",
+    "description": "Spirit totems buff summoned creatures and allies.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Fighter",
+    "subclass": "Arcane Archer",
+    "partnered": false,
+    "partner": null,
+    "source": "Xanathar's (XGtE)",
+    "role": "Striker / Controller",
+    "description": "Magical Arcane Shots add damage and control to the bow.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Fighter",
+    "subclass": "Battle Master",
+    "partnered": false,
+    "partner": null,
+    "source": "PHB 2014 / 2024",
+    "role": "Striker / Controller",
+    "description": "Superiority-dice maneuvers for damage and control. Tactical.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Fighter",
+    "subclass": "Cavalier",
+    "partnered": false,
+    "partner": null,
+    "source": "Xanathar's (XGtE)",
+    "role": "Tank / Defender",
+    "description": "Marks and locks down foes; excels mounted.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Fighter",
+    "subclass": "Champion",
+    "partnered": false,
+    "partner": null,
+    "source": "PHB 2014 / 2024",
+    "role": "Striker / Tank",
+    "description": "Improved critical range; simple, durable, reliable damage.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Fighter",
+    "subclass": "Commander",
+    "partnered": true,
+    "partner": "Drakkenheim",
+    "source": "Sebastian Crowe's Guide to Drakkenheim",
+    "role": "Support",
+    "description": "Battlefield leader who directs and empowers allies.",
+    "coverage": "Sample"
+  },
+  {
+    "class": "Fighter",
+    "subclass": "Dungeoneer",
+    "partnered": true,
+    "partner": "Mage Hand Press",
+    "source": "Valda's Spire of Secrets",
+    "role": "Utility / Skirmisher",
+    "description": "Delving specialist; sniffs out danger and kicks down doors.",
+    "coverage": "Sample"
+  },
+  {
+    "class": "Fighter",
+    "subclass": "Echo Knight",
+    "partnered": false,
+    "partner": null,
+    "source": "Wildemount (EGtW) - Critical Role origin",
+    "role": "Striker / Skirmisher",
+    "description": "Summons a spectral echo to attack from and swap places with.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Fighter",
+    "subclass": "Eldritch Knight",
+    "partnered": false,
+    "partner": null,
+    "source": "PHB 2014 / 2024",
+    "role": "Gish",
+    "description": "Fighter with abjuration and evocation magic; bonded weapons.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Fighter",
+    "subclass": "Psi Warrior",
+    "partnered": false,
+    "partner": null,
+    "source": "Tasha's (TCoE)",
+    "role": "Gish / Controller",
+    "description": "Psionic energy for force damage, defense, and movement.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Fighter",
+    "subclass": "Purple Dragon Knight (Banneret)",
+    "partnered": false,
+    "partner": null,
+    "source": "Sword Coast (SCAG)",
+    "role": "Support",
+    "description": "Rallies and buffs allies; a light warlord.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Fighter",
+    "subclass": "Rune Knight",
+    "partnered": false,
+    "partner": null,
+    "source": "Tasha's (TCoE)",
+    "role": "Tank / Striker",
+    "description": "Giant runes grant boons and let you grow to Large.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Fighter",
+    "subclass": "Samurai",
+    "partnered": false,
+    "partner": null,
+    "source": "Xanathar's (XGtE)",
+    "role": "Striker",
+    "description": "Fighting Spirit grants advantage and temp HP. Relentless.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Gunslinger",
+    "subclass": "(7+ subclasses)",
+    "partnered": true,
+    "partner": "Mage Hand Press",
+    "source": "Valda's Spire of Secrets",
+    "role": "Striker / Blaster",
+    "description": "Firearms specialist base class with grit and trick shots.",
+    "coverage": "Sample"
+  },
+  {
+    "class": "Illrigger",
+    "subclass": "Architect of Ruin",
+    "partnered": true,
+    "partner": "MCDM",
+    "source": "The Illrigger",
+    "role": "Gish / Blaster",
+    "description": "Adds Eldritch-Knight-style infernal spellcasting to the martial base.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Illrigger",
+    "subclass": "Fiendbound Marauder",
+    "partnered": true,
+    "partner": "MCDM",
+    "source": "The Illrigger",
+    "role": "Striker",
+    "description": "Mobile duelist; hooks and drags foes across the field.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Illrigger",
+    "subclass": "Hellspeaker",
+    "partnered": true,
+    "partner": "MCDM",
+    "source": "The Illrigger",
+    "role": "Controller / Face",
+    "description": "Charm, the Charmed condition, and social dominance.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Illrigger",
+    "subclass": "Painkiller",
+    "partnered": true,
+    "partner": "MCDM",
+    "source": "The Illrigger",
+    "role": "Tank / Support",
+    "description": "Heavy armor; commands allies to strike and endures brutal punishment.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Illrigger",
+    "subclass": "Shadowmaster",
+    "partnered": true,
+    "partner": "MCDM",
+    "source": "The Illrigger",
+    "role": "Striker / Skirmisher",
+    "description": "Stealthy assassin with brimstone teleport strikes.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Investigator",
+    "subclass": "(7+ subclasses)",
+    "partnered": true,
+    "partner": "Mage Hand Press",
+    "source": "Valda's Spire of Secrets",
+    "role": "Utility / Face",
+    "description": "Deduction, skills, and mystery-solving base class.",
+    "coverage": "Sample"
+  },
+  {
+    "class": "Monk",
+    "subclass": "Pugilist",
+    "partnered": true,
+    "partner": "Kobold Press",
+    "source": "Tome of Heroes",
+    "role": "Striker / Tank",
+    "description": "Bare-knuckle brawler path.",
+    "coverage": "Sample"
+  },
+  {
+    "class": "Monk",
+    "subclass": "Warrior of the Elements",
+    "partnered": false,
+    "partner": null,
+    "source": "PHB 2024",
+    "role": "Blaster / Controller",
+    "description": "Reworked elemental monk with reach and area effects.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Monk",
+    "subclass": "Way of Mercy",
+    "partnered": false,
+    "partner": null,
+    "source": "Tasha's (TCoE)",
+    "role": "Healer / Striker",
+    "description": "Hands that heal allies or deal extra necrotic. A medic-assassin.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Monk",
+    "subclass": "Way of Shadow",
+    "partnered": false,
+    "partner": null,
+    "source": "PHB 2014 / 2024",
+    "role": "Skirmisher / Face",
+    "description": "Stealth, darkness, and shadow teleportation. The ninja.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Monk",
+    "subclass": "Way of the Arcane Hand",
+    "partnered": true,
+    "partner": "Drakkenheim",
+    "source": "Sebastian Crowe's Guide to Drakkenheim",
+    "role": "Gish / Striker",
+    "description": "Magic-wielding monk blending ki and spellcraft.",
+    "coverage": "Sample"
+  },
+  {
+    "class": "Monk",
+    "subclass": "Way of the Ascendant Dragon",
+    "partnered": false,
+    "partner": null,
+    "source": "Fizban's (FToD)",
+    "role": "Blaster / Support",
+    "description": "Draconic elemental breath and a protective aura.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Monk",
+    "subclass": "Way of the Astral Self",
+    "partnered": false,
+    "partner": null,
+    "source": "Tasha's (TCoE)",
+    "role": "Striker / Tank",
+    "description": "Manifests spectral arms and body; WIS-based reach attacks.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Monk",
+    "subclass": "Way of the Cobalt Soul",
+    "partnered": true,
+    "partner": "Critical Role",
+    "source": "Tal'Dorei Reborn",
+    "role": "Skirmisher / Face",
+    "description": "Extracts knowledge by striking; the studious library-monk.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Monk",
+    "subclass": "Way of the Drunken Master",
+    "partnered": false,
+    "partner": null,
+    "source": "Xanathar's (XGtE)",
+    "role": "Skirmisher",
+    "description": "Evasive, unpredictable movement; hard to pin down.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Monk",
+    "subclass": "Way of the Four Elements",
+    "partnered": false,
+    "partner": null,
+    "source": "PHB 2014",
+    "role": "Blaster / Controller",
+    "description": "Spends ki on elemental 'spells' for ranged effects.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Monk",
+    "subclass": "Way of the Kensei",
+    "partnered": false,
+    "partner": null,
+    "source": "Xanathar's (XGtE)",
+    "role": "Striker",
+    "description": "Weapon-focused monk with ranged shots and agile defense.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Monk",
+    "subclass": "Way of the Long Death",
+    "partnered": false,
+    "partner": null,
+    "source": "Sword Coast (SCAG)",
+    "role": "Tank / Striker",
+    "description": "Feeds on nearby death for temp HP; frightens foes.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Monk",
+    "subclass": "Way of the Open Hand",
+    "partnered": false,
+    "partner": null,
+    "source": "PHB 2014 / 2024",
+    "role": "Striker / Controller",
+    "description": "Flurry can push, trip, or deny reactions. The classic martial artist.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Monk",
+    "subclass": "Way of the Sun Soul",
+    "partnered": false,
+    "partner": null,
+    "source": "Xanathar's (XGtE)",
+    "role": "Blaster",
+    "description": "Ranged radiant bolts and burst attacks.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Monk",
+    "subclass": "Way of the Unerring Arrow",
+    "partnered": true,
+    "partner": "Kobold Press",
+    "source": "Tome of Heroes",
+    "role": "Striker",
+    "description": "Ranged ki-infused archery monk.",
+    "coverage": "Sample"
+  },
+  {
+    "class": "Monster Hunter",
+    "subclass": "Carver Guild",
+    "partnered": true,
+    "partner": "Grim Hollow",
+    "source": "Grim Hollow: Player's Guide",
+    "role": "Tank / Striker",
+    "description": "Heavy-armor bruiser who challenges the toughest foes in melee.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Monster Hunter",
+    "subclass": "Devourer Guild",
+    "partnered": true,
+    "partner": "Grim Hollow",
+    "source": "Grim Hollow: Player's Guide",
+    "role": "Striker",
+    "description": "Consumes slain foes to gain terrifying mutations.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Monster Hunter",
+    "subclass": "Occultist Guild",
+    "partnered": true,
+    "partner": "Grim Hollow",
+    "source": "Grim Hollow: Player's Guide",
+    "role": "Blaster / Controller",
+    "description": "Arcane power to strike monsters and the mages behind them.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Monster Hunter",
+    "subclass": "Trapper Guild",
+    "partnered": true,
+    "partner": "Grim Hollow",
+    "source": "Grim Hollow: Player's Guide",
+    "role": "Controller / Utility",
+    "description": "Patient gadgeteer; leverages traps to stay ahead of prey.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Paladin",
+    "subclass": "Oath of Conquest",
+    "partnered": false,
+    "partner": null,
+    "source": "Xanathar's (XGtE)",
+    "role": "Striker / Controller",
+    "description": "Fear and dominance; punishes frightened enemies.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Paladin",
+    "subclass": "Oath of Devotion",
+    "partnered": false,
+    "partner": null,
+    "source": "PHB 2014 / 2024",
+    "role": "Striker / Support",
+    "description": "Holy warrior; Sacred Weapon smites and protective auras.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Paladin",
+    "subclass": "Oath of Glory",
+    "partnered": false,
+    "partner": null,
+    "source": "TCoE / Theros",
+    "role": "Support / Striker",
+    "description": "Athletic champion; buffs party speed and mobility.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Paladin",
+    "subclass": "Oath of Hexes",
+    "partnered": true,
+    "partner": "Drakkenheim",
+    "source": "Sebastian Crowe's Guide to Drakkenheim",
+    "role": "Striker / Controller",
+    "description": "Witch-sworn paladin who curses sworn enemies.",
+    "coverage": "Sample"
+  },
+  {
+    "class": "Paladin",
+    "subclass": "Oath of Pestilence",
+    "partnered": true,
+    "partner": "Grim Hollow",
+    "source": "Grim Hollow: Player's Guide",
+    "role": "Striker / Controller",
+    "description": "A plague-ridden oath; spreads sickness to enemies.",
+    "coverage": "Sample"
+  },
+  {
+    "class": "Paladin",
+    "subclass": "Oath of Redemption",
+    "partnered": false,
+    "partner": null,
+    "source": "Xanathar's (XGtE)",
+    "role": "Tank / Support",
+    "description": "Pacifist protector; redirects and absorbs incoming harm.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Paladin",
+    "subclass": "Oath of Vengeance",
+    "partnered": false,
+    "partner": null,
+    "source": "PHB 2014 / 2024",
+    "role": "Striker",
+    "description": "Focused single-target hunter with huge burst damage.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Paladin",
+    "subclass": "Oath of the Ancients",
+    "partnered": false,
+    "partner": null,
+    "source": "PHB 2014 / 2024",
+    "role": "Tank / Support",
+    "description": "Fey-touched; resistance auras and great durability.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Paladin",
+    "subclass": "Oath of the Crown",
+    "partnered": false,
+    "partner": null,
+    "source": "Sword Coast (SCAG)",
+    "role": "Tank / Support",
+    "description": "Champion of the realm; binds foes to attack you.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Paladin",
+    "subclass": "Oath of the Open Sea",
+    "partnered": true,
+    "partner": "Critical Role",
+    "source": "Tal'Dorei Reborn",
+    "role": "Striker / Support",
+    "description": "Freedom of the seas; a bit of everything - AoE, mobility, control.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Paladin",
+    "subclass": "Oath of the Watchers",
+    "partnered": false,
+    "partner": null,
+    "source": "Tasha's (TCoE)",
+    "role": "Striker / Controller",
+    "description": "Hunts aberrations and casters; anti-magic tools.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Paladin",
+    "subclass": "Oathbreaker",
+    "partnered": false,
+    "partner": null,
+    "source": "DMG",
+    "role": "Striker / Summoner",
+    "description": "Fallen paladin; commands undead under an aura of hate.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Pugilist",
+    "subclass": "(bare-knuckle martial class)",
+    "partnered": true,
+    "partner": "Sterling Vermin",
+    "source": "Sterling Vermin / Tome of Heroes",
+    "role": "Striker / Tank",
+    "description": "Grit-fueled unarmed brawler; a signature Sterling Vermin creation.",
+    "coverage": "Sample"
+  },
+  {
+    "class": "Ranger",
+    "subclass": "Beast Master",
+    "partnered": false,
+    "partner": null,
+    "source": "PHB 2014 / 2024",
+    "role": "Summoner / Striker",
+    "description": "Fights alongside a loyal animal companion.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Ranger",
+    "subclass": "Drakewarden",
+    "partnered": false,
+    "partner": null,
+    "source": "Fizban's (FToD)",
+    "role": "Summoner / Striker",
+    "description": "Raises a drake companion; rideable at high level.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Ranger",
+    "subclass": "Fey Wanderer",
+    "partnered": false,
+    "partner": null,
+    "source": "Tasha's (TCoE)",
+    "role": "Striker / Face",
+    "description": "Fey charm, extra psychic damage, and social skills.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Ranger",
+    "subclass": "Gloom Stalker",
+    "partnered": false,
+    "partner": null,
+    "source": "Xanathar's (XGtE)",
+    "role": "Striker / Skirmisher",
+    "description": "Ambush king: massive first-round burst and darkvision.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Ranger",
+    "subclass": "Horizon Walker",
+    "partnered": false,
+    "partner": null,
+    "source": "Xanathar's (XGtE)",
+    "role": "Striker / Skirmisher",
+    "description": "Planar warrior; force damage and short teleports.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Ranger",
+    "subclass": "Hunter",
+    "partnered": false,
+    "partner": null,
+    "source": "PHB 2014 / 2024",
+    "role": "Striker / Controller",
+    "description": "Flexible combat picks tuned for single foes or hordes.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Ranger",
+    "subclass": "Monster Slayer",
+    "partnered": false,
+    "partner": null,
+    "source": "Xanathar's (XGtE)",
+    "role": "Striker",
+    "description": "Marks a foe to exploit; strong against casters.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Ranger",
+    "subclass": "Swarmkeeper",
+    "partnered": false,
+    "partner": null,
+    "source": "Tasha's (TCoE)",
+    "role": "Controller / Striker",
+    "description": "A magical swarm harries foes and moves the ranger.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Ranger",
+    "subclass": "Urban Tracker",
+    "partnered": true,
+    "partner": "Drakkenheim",
+    "source": "Sebastian Crowe's Guide to Drakkenheim",
+    "role": "Skirmisher / Utility",
+    "description": "City-bound ranger who rains death from the rooftops.",
+    "coverage": "Sample"
+  },
+  {
+    "class": "Ranger",
+    "subclass": "Vermin Lord",
+    "partnered": true,
+    "partner": "Grim Hollow",
+    "source": "Grim Hollow: Player's Guide",
+    "role": "Controller / Summoner",
+    "description": "Commands diseased rats and swarms for the greater good.",
+    "coverage": "Sample"
+  },
+  {
+    "class": "Rogue",
+    "subclass": "Arcane Trickster",
+    "partnered": false,
+    "partner": null,
+    "source": "PHB 2014 / 2024",
+    "role": "Gish / Controller",
+    "description": "Enchantment and illusion magic plus Mage Hand trickery.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Rogue",
+    "subclass": "Assassin",
+    "partnered": false,
+    "partner": null,
+    "source": "PHB 2014 / 2024",
+    "role": "Striker",
+    "description": "Devastating surprise-round burst; disguises and poisons.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Rogue",
+    "subclass": "Inquisitive",
+    "partnered": false,
+    "partner": null,
+    "source": "Xanathar's (XGtE)",
+    "role": "Striker / Utility",
+    "description": "Reads tells for reliable Sneak Attack and insight.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Rogue",
+    "subclass": "Mastermind",
+    "partnered": false,
+    "partner": null,
+    "source": "Xanathar's (XGtE)",
+    "role": "Face / Support",
+    "description": "Help action at range; intrigue, tactics, and forgery.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Rogue",
+    "subclass": "Phantom",
+    "partnered": false,
+    "partner": null,
+    "source": "Tasha's (TCoE)",
+    "role": "Striker / Utility",
+    "description": "Death-touched; borrows skills and drops spectral tokens.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Rogue",
+    "subclass": "Scout",
+    "partnered": false,
+    "partner": null,
+    "source": "Xanathar's (XGtE)",
+    "role": "Skirmisher",
+    "description": "Mobile skirmisher; free reactive movement and survival.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Rogue",
+    "subclass": "Smuggler",
+    "partnered": true,
+    "partner": "Drakkenheim",
+    "source": "Sebastian Crowe's Guide to Drakkenheim",
+    "role": "Skirmisher / Face",
+    "description": "Secures the next big score; slippery and connected.",
+    "coverage": "Sample"
+  },
+  {
+    "class": "Rogue",
+    "subclass": "Soulknife",
+    "partnered": false,
+    "partner": null,
+    "source": "Tasha's (TCoE)",
+    "role": "Striker / Utility",
+    "description": "Psychic blades and psionic dice; stealthy and self-sufficient.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Rogue",
+    "subclass": "Soulspy",
+    "partnered": true,
+    "partner": "Kobold Press",
+    "source": "Tome of Heroes",
+    "role": "Utility / Controller",
+    "description": "Espionage rogue who reads and tracks foes.",
+    "coverage": "Sample"
+  },
+  {
+    "class": "Rogue",
+    "subclass": "Swashbuckler",
+    "partnered": false,
+    "partner": null,
+    "source": "Xanathar's (XGtE)",
+    "role": "Skirmisher / Striker",
+    "description": "Mobile duelist; lands Sneak Attack solo, no ally needed.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Rogue",
+    "subclass": "Thief",
+    "partnered": false,
+    "partner": null,
+    "source": "PHB 2014 / 2024",
+    "role": "Skirmisher / Utility",
+    "description": "Fast Hands and climbing; uses items as a bonus action.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Rogue",
+    "subclass": "Webslinger (arachnid archetype)",
+    "partnered": true,
+    "partner": "Mage Hand Press",
+    "source": "Valda's Spire of Secrets",
+    "role": "Skirmisher",
+    "description": "A 'legally-distinct Spider-Man' rogue with webslinging mobility.",
+    "coverage": "Sample"
+  },
+  {
+    "class": "Sorcerer",
+    "subclass": "Aberrant Mind",
+    "partnered": false,
+    "partner": null,
+    "source": "Tasha's (TCoE)",
+    "role": "Controller / Blaster",
+    "description": "Psionic spells cast cheaply and subtly.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Sorcerer",
+    "subclass": "Clockwork Soul",
+    "partnered": false,
+    "partner": null,
+    "source": "Tasha's (TCoE)",
+    "role": "Support / Controller",
+    "description": "Order magic wards allies and cancels advantage/disadvantage.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Sorcerer",
+    "subclass": "Delerium Soul",
+    "partnered": true,
+    "partner": "Drakkenheim",
+    "source": "Sebastian Crowe's Guide to Drakkenheim",
+    "role": "Blaster / Controller",
+    "description": "Contaminated magic and mutation-fueled sorcery.",
+    "coverage": "Sample"
+  },
+  {
+    "class": "Sorcerer",
+    "subclass": "Divine Soul",
+    "partnered": false,
+    "partner": null,
+    "source": "Xanathar's (XGtE)",
+    "role": "Blaster / Healer",
+    "description": "Borrows the cleric list; a flexible offense/support caster.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Sorcerer",
+    "subclass": "Draconic Bloodline",
+    "partnered": false,
+    "partner": null,
+    "source": "PHB 2014 / 2024",
+    "role": "Blaster / Tank",
+    "description": "Draconic resilience (natural AC/HP) and elemental spells.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Sorcerer",
+    "subclass": "Lunar Sorcery",
+    "partnered": false,
+    "partner": null,
+    "source": "Dragonlance (DSotDQ)",
+    "role": "Blaster / Support",
+    "description": "Shifts lunar phases to swap between spell suites.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Sorcerer",
+    "subclass": "Runechild",
+    "partnered": true,
+    "partner": "Critical Role",
+    "source": "Tal'Dorei Reborn",
+    "role": "Support / Blaster",
+    "description": "Body-glowing runes charged by sorcery points (scales at higher levels).",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Sorcerer",
+    "subclass": "Shadow Magic",
+    "partnered": false,
+    "partner": null,
+    "source": "Xanathar's (XGtE)",
+    "role": "Controller / Striker",
+    "description": "Darkness, a Hound of Ill Omen, and cheating death.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Sorcerer",
+    "subclass": "Storm Sorcery",
+    "partnered": false,
+    "partner": null,
+    "source": "Xanathar's (XGtE)",
+    "role": "Blaster / Skirmisher",
+    "description": "Flight and wind mobility with thunder and lightning.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Sorcerer",
+    "subclass": "Wild Magic",
+    "partnered": false,
+    "partner": null,
+    "source": "PHB 2014 / 2024",
+    "role": "Blaster",
+    "description": "Chaotic surges; high-variance power and Tides of Chaos.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Thaumaturge",
+    "subclass": "(6 subclasses / mystic customs)",
+    "partnered": true,
+    "partner": "Sterling Vermin",
+    "source": "The Thaumaturge",
+    "role": "Controller / Support",
+    "description": "Flexible occult caster who picks spell schools; Tapestry magic.",
+    "coverage": "Sample"
+  },
+  {
+    "class": "The Talent",
+    "subclass": "Psionic Specializations (Chronopath, Pyrokinetic, and others)",
+    "partnered": true,
+    "partner": "MCDM",
+    "source": "The Talent and Psionics",
+    "role": "Controller / Blaster",
+    "description": "Psionic 'powers' with a Strain system; specializations include time and fire.",
+    "coverage": "Sample"
+  },
+  {
+    "class": "Warden",
+    "subclass": "(7+ subclasses)",
+    "partnered": true,
+    "partner": "Mage Hand Press",
+    "source": "Valda's Spire of Secrets",
+    "role": "Tank / Defender",
+    "description": "Dedicated protector with Guardian Tactics and Interrupt. A true tank class.",
+    "coverage": "Sample"
+  },
+  {
+    "class": "Warlock",
+    "subclass": "Future You (Patron)",
+    "partnered": true,
+    "partner": "Mage Hand Press",
+    "source": "Valda's Spire of Secrets",
+    "role": "Support / Controller",
+    "description": "Your future self is the patron; foresight-flavored support.",
+    "coverage": "Sample"
+  },
+  {
+    "class": "Warlock",
+    "subclass": "The Archfey",
+    "partnered": false,
+    "partner": null,
+    "source": "PHB 2014 / 2024",
+    "role": "Controller",
+    "description": "Fey charm, fear, teleportation, and misdirection.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Warlock",
+    "subclass": "The Celestial",
+    "partnered": false,
+    "partner": null,
+    "source": "Tasha's (TCoE)",
+    "role": "Healer / Blaster",
+    "description": "Radiant damage plus a pool of light healing.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Warlock",
+    "subclass": "The Fathomless",
+    "partnered": false,
+    "partner": null,
+    "source": "Tasha's (TCoE)",
+    "role": "Striker / Controller",
+    "description": "A tentacle strikes for you; deep-sea magic.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Warlock",
+    "subclass": "The Fiend",
+    "partnered": false,
+    "partner": null,
+    "source": "PHB 2014 / 2024",
+    "role": "Blaster",
+    "description": "Fire damage and temp HP on kills. Aggressive.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Warlock",
+    "subclass": "The Genie",
+    "partnered": false,
+    "partner": null,
+    "source": "Tasha's (TCoE)",
+    "role": "Blaster / Utility",
+    "description": "Elemental damage and a personal vessel sanctuary.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Warlock",
+    "subclass": "The Great Old One",
+    "partnered": false,
+    "partner": null,
+    "source": "PHB 2014 / 2024",
+    "role": "Controller / Face",
+    "description": "Telepathy and psychic domination of minds.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Warlock",
+    "subclass": "The Hexblade",
+    "partnered": false,
+    "partner": null,
+    "source": "Xanathar's (XGtE)",
+    "role": "Striker / Gish",
+    "description": "CHA-based weapon attacks; the definitive melee warlock.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Warlock",
+    "subclass": "The Undead",
+    "partnered": false,
+    "partner": null,
+    "source": "Van Richten's (VRGtR)",
+    "role": "Controller / Striker",
+    "description": "Horror patron; frighten foes and deal necrotic.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Warlock",
+    "subclass": "The Undying",
+    "partnered": false,
+    "partner": null,
+    "source": "Sword Coast (SCAG)",
+    "role": "Support / Utility",
+    "description": "Deathless endurance and self-healing.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Warmage",
+    "subclass": "(7+ subclasses)",
+    "partnered": true,
+    "partner": "Mage Hand Press",
+    "source": "Valda's Spire of Secrets",
+    "role": "Blaster",
+    "description": "Battle-caster dealing guaranteed minimum cantrip damage.",
+    "coverage": "Sample"
+  },
+  {
+    "class": "Witch",
+    "subclass": "(7+ subclasses / covens)",
+    "partnered": true,
+    "partner": "Mage Hand Press",
+    "source": "Valda's Spire of Secrets",
+    "role": "Controller / Support",
+    "description": "New hex-based caster; one of 10 new base classes, each with 7+ subclasses.",
+    "coverage": "Sample"
+  },
+  {
+    "class": "Wizard",
+    "subclass": "Bladesinging",
+    "partnered": false,
+    "partner": null,
+    "source": "TCoE / Sword Coast",
+    "role": "Gish",
+    "description": "Elf sword-mage; mobile, defensive melee spellcaster.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Wizard",
+    "subclass": "Chronurgy Magic",
+    "partnered": false,
+    "partner": null,
+    "source": "Wildemount (EGtW) - Critical Role origin",
+    "role": "Controller / Support",
+    "description": "Dunamancy of time: manipulate initiative, saves, and slots.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Wizard",
+    "subclass": "Graviturgy Magic",
+    "partnered": false,
+    "partner": null,
+    "source": "Wildemount (EGtW) - Critical Role origin",
+    "role": "Controller",
+    "description": "Dunamancy of gravity: move, slow, and crush foes.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Wizard",
+    "subclass": "Order of Scribes",
+    "partnered": false,
+    "partner": null,
+    "source": "Tasha's (TCoE)",
+    "role": "Blaster / Utility",
+    "description": "A sentient spellbook; swap damage types, awaken it.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Wizard",
+    "subclass": "School of Abjuration",
+    "partnered": false,
+    "partner": null,
+    "source": "PHB 2014 / 2024",
+    "role": "Tank / Support",
+    "description": "Arcane Ward soaks damage; wards and dispels. Protective.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Wizard",
+    "subclass": "School of Black Powder",
+    "partnered": true,
+    "partner": "Kobold Press",
+    "source": "Tome of Heroes",
+    "role": "Blaster",
+    "description": "Arcane gunsmith wizard; fuses magic with firearms.",
+    "coverage": "Sample"
+  },
+  {
+    "class": "Wizard",
+    "subclass": "School of Blood Magic",
+    "partnered": true,
+    "partner": "Critical Role",
+    "source": "Tal'Dorei Reborn",
+    "role": "Controller / Striker",
+    "description": "Hemocraft wizardry; sacrifice hit points for potent effects.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Wizard",
+    "subclass": "School of Conjuration",
+    "partnered": false,
+    "partner": null,
+    "source": "PHB 2014",
+    "role": "Summoner / Controller",
+    "description": "Summons creatures and conjures useful objects.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Wizard",
+    "subclass": "School of Divination",
+    "partnered": false,
+    "partner": null,
+    "source": "PHB 2014 / 2024",
+    "role": "Utility / Controller",
+    "description": "Portent replaces enemy or ally rolls; foresight.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Wizard",
+    "subclass": "School of Enchantment",
+    "partnered": false,
+    "partner": null,
+    "source": "PHB 2014",
+    "role": "Controller / Face",
+    "description": "Charms, hypnosis, and instant domination.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Wizard",
+    "subclass": "School of Evocation",
+    "partnered": false,
+    "partner": null,
+    "source": "PHB 2014 / 2024",
+    "role": "Blaster",
+    "description": "Sculpt Spells shapes AoE around allies. The classic blaster.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Wizard",
+    "subclass": "School of Illusion",
+    "partnered": false,
+    "partner": null,
+    "source": "PHB 2014 / 2024",
+    "role": "Controller / Utility",
+    "description": "Flexible, deceptive illusions you can reshape.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Wizard",
+    "subclass": "School of Necromancy",
+    "partnered": false,
+    "partner": null,
+    "source": "PHB 2014",
+    "role": "Summoner / Blaster",
+    "description": "Raises and buffs undead armies; necrotic magic.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Wizard",
+    "subclass": "School of Transmutation",
+    "partnered": false,
+    "partner": null,
+    "source": "PHB 2014",
+    "role": "Utility / Support",
+    "description": "Reshapes matter; crafts a Transmuter's Stone.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Wizard",
+    "subclass": "War Magic",
+    "partnered": false,
+    "partner": null,
+    "source": "Xanathar's (XGtE)",
+    "role": "Blaster / Tank",
+    "description": "Balances evocation offense with arcane self-defense.",
+    "coverage": "Complete"
+  }
+]
