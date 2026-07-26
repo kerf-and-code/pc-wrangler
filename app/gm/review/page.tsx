@@ -57,6 +57,10 @@ export default function ReviewPage() {
   const [showMeta, setShowMeta] = useState<boolean>(false);
   const [edits, setEdits] = useState<Record<string, { summary?: string; kind?: string }>>({});
   const [threshold, setThreshold] = useState<number>(80);
+  // Category grouping for the GM queue: which category groups are expanded, and whether a
+  // bulk accept should also create+link the entities a beat identifies (NPC, place, etc).
+  const [openCats, setOpenCats] = useState<Record<string, boolean>>({});
+  const [bulkCreates, setBulkCreates] = useState<boolean>(true);
   const [recapMsg, setRecapMsg] = useState<string | null>(null);
   // Undecided proposals left on this job, as counted by the server (not by the
   // filtered lists on this page). null means not yet known.
@@ -242,29 +246,45 @@ export default function ReviewPage() {
     await finalize(false);
   }
 
-  // Bulk-accept GM beats above the threshold. npc_* kinds are still skipped so an NPC is
-  // never created without the GM seeing the row.
-  //
-  // WHAT CHANGED, AND WHY IT MATTERED
-  //
-  // This used to send no create flags at all, so bulk accept approved the beat and created
-  // nothing. Since it is the fast path most GMs actually use, every place and faction the
-  // extractor found was quietly discarded: on 2026-07-22 the Codex had 8 of 19 locations
-  // and 0 of 5 factions, and "The Ashen Circle" had 26 mentions across two sessions with
-  // no entry anywhere.
-  //
-  // It still sends no flags, but /api/gm-review now reads an ABSENT flag as "decide from
-  // the data" rather than "no". It skips generic role nouns and requires a name to appear
-  // at least twice in the campaign, which is what separates a real place from a one-off
-  // mis-transcription. Ticking a box on a row still overrides that outright.
-  async function acceptGmAbove() {
+
+  // Approve one GM beat via the same route reviewGm uses, honouring per-beat summary/kind
+  // edits. When createEntities is true, the beat's identified entities (NPC, place, faction,
+  // item, lore) are created and linked; the route dedupes by name, so re-accepting an
+  // existing entity just links it rather than duplicating. Returns the error text or null.
+  async function approveBeat(p: GmProp, createEntities: boolean): Promise<string | null> {
+    const e = edits[p.id];
+    const payload: Record<string, unknown> = {
+      action: "approve", id: p.id, summary: e?.summary ?? p.summary, kind: e?.kind ?? p.kind,
+    };
+    if (createEntities) {
+      if (p.npc_name) { payload.createNpc = true; payload.npcName = p.npc_name; }
+      if (p.location_name) { payload.createLocation = true; payload.locationName = p.location_name; }
+      if (p.faction_name) { payload.createFaction = true; payload.factionName = p.faction_name; }
+      if ((e?.kind ?? p.kind) === "item_introduced") payload.createItem = true;
+      if ((e?.kind ?? p.kind) === "lore") payload.createLore = true;
+    }
+    const res = await fetch("/api/gm-review", {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload),
+    });
+    if (!res.ok) { const out = await res.json().catch(() => ({})); return out.error || "Bulk approve failed."; }
+    return null;
+  }
+
+  // Accept a set of GM beats in sequence, then reload + finalize once. Used by both the
+  // top-level "Accept all" and the per-category accept buttons. createEntities follows the
+  // toggle. Stops on the first error so a failure is visible rather than silent.
+  async function acceptGmSet(targets: GmProp[], createEntities: boolean) {
+    if (targets.length === 0) return;
     setBusy(true); setError(null);
-    const targets = gmProps.filter((p) => !p.kind.startsWith("npc_") && Math.round((p.confidence || 0) * 100) >= threshold);
+    let approved = 0;
     for (const p of targets) {
-      const e = edits[p.id];
-      const payload = { action: "approve", id: p.id, summary: e?.summary ?? p.summary, kind: e?.kind ?? p.kind };
-      const res = await fetch("/api/gm-review", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-      if (!res.ok) { const out = await res.json().catch(() => ({})); setError(out.error || "Bulk approve failed."); break; }
+      const err = await approveBeat(p, createEntities);
+      if (err) { setError(err); break; }
+      approved += 1;
+    }
+    if (approved > 0) {
+      setGmProps((prev) => prev.filter((x) => !targets.slice(0, approved).some((t) => t.id === x.id)));
+      setGmCounts((c) => ({ ...c, approved: c.approved + approved }));
     }
     setBusy(false);
     await loadGmProps(jobId);
@@ -275,7 +295,7 @@ export default function ReviewPage() {
   // the job flips to done, the recap auto-drafts, and the disposition fit kicks.
   //
   // Called speculatively after EVERY decision (see review, reviewGm, acceptAbove,
-  // acceptGmAbove). It no-ops until the last proposal is decided, so the normal
+  // acceptGmSet). It no-ops until the last proposal is decided, so the normal
   // path finalizes itself with zero extra clicks.
   //
   // The route counts undecided rows in the DATABASE across both proposed_events
@@ -334,18 +354,12 @@ export default function ReviewPage() {
     if (action === "approve") {
       payload.summary = e?.summary ?? p.summary;
       payload.kind = e?.kind ?? p.kind;
-      // Forward each flag as given, INCLUDING false. The route reads three states now:
-      // true creates, false refuses, and absent means decide from the data. Only send a
-      // flag when the caller expressed an opinion, so bulk accept (which passes no creates
-      // object at all) still lands in the decide-from-data case.
-      const c = creates;
-      if (c) {
-        if (p.npc_name) { payload.createNpc = c.npc === true; payload.npcName = p.npc_name; }
-        if (p.location_name) { payload.createLocation = c.location === true; payload.locationName = p.location_name; }
-        if (p.faction_name) { payload.createFaction = c.faction === true; payload.factionName = p.faction_name; }
-        payload.createItem = c.item === true;
-        payload.createLore = c.lore === true;
-      }
+      const c = creates || {};
+      if (c.npc && p.npc_name) { payload.createNpc = true; payload.npcName = p.npc_name; }
+      if (c.location && p.location_name) { payload.createLocation = true; payload.locationName = p.location_name; }
+      if (c.faction && p.faction_name) { payload.createFaction = true; payload.factionName = p.faction_name; }
+      if (c.item) payload.createItem = true;
+      if (c.lore) payload.createLore = true;
     }
     const res = await fetch("/api/gm-review", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
     const out = await res.json().catch(() => ({}));
@@ -376,17 +390,25 @@ export default function ReviewPage() {
     for (const { k } of availEntities(p)) o[k] = isSel(p, k);
     return o;
   };
-  // Every createable entity on this beat, explicitly off. Backs "Accept only", where the
-  // GM has looked at the row and declined, which is different from not having asked.
-  const noneObj = (p: GmProp): Record<string, boolean> => {
-    const o: Record<string, boolean> = {};
-    for (const { k } of availEntities(p)) o[k] = false;
-    return o;
-  };
 
   const gmView = gmProps.filter((p) => showMeta || p.kind !== "meta");
   const playerEligible = props.filter((p) => Math.round((p.confidence || 0) * 100) >= threshold).length;
-  const gmEligible = gmView.filter((p) => !p.kind.startsWith("npc_") && Math.round((p.confidence || 0) * 100) >= threshold).length;
+
+  // Group the GM queue by the category each kind belongs to (from gm_event_kinds). This
+  // lets the GM scan and clear a whole category at once, or expand one to review row by row.
+  const catOf = (kind: string): string => gmKinds.find((k) => k.kind === kind)?.category || "other";
+  const catSort = (cat: string): number => {
+    const ks = gmKinds.filter((k) => k.category === cat);
+    return ks.length ? Math.min(...ks.map((k) => k.sort)) : 999;
+  };
+  const gmGroups: { category: string; rows: GmProp[] }[] = (() => {
+    const by: Record<string, GmProp[]> = {};
+    for (const p of gmView) { const c = catOf(p.kind); (by[c] ||= []).push(p); }
+    return Object.entries(by)
+      .map(([category, rows]) => ({ category, rows }))
+      .sort((a, b) => catSort(a.category) - catSort(b.category));
+  })();
+  const catLabel = (cat: string): string => cat.charAt(0).toUpperCase() + cat.slice(1);
   const threshLabel = threshold === 0 ? "all" : `\u2265 ${threshold}%`;
 
   const box = { ...surfaces.slate, padding: 20, marginBottom: 18 } as const;
@@ -542,11 +564,15 @@ export default function ReviewPage() {
                     <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
                       {gmView.length > 0 && (
                         <>
-                          {thresholdSelect}
-                          <button type="button" onClick={acceptGmAbove} disabled={busy || gmEligible === 0}
-                            title="NPC beats are skipped so you can create them individually"
-                            style={{ ...btn(C.good, SAX.inkDeep), opacity: busy || gmEligible === 0 ? 0.55 : 1, cursor: busy || gmEligible === 0 ? "default" : "pointer" }}>
-                            Accept {gmEligible} non-NPC {threshLabel}
+                          <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12.5, color: C.text, cursor: "pointer" }}
+                            title="When on, accepting also creates and links the NPCs, places, factions, items, and lore each beat names. Existing entities are matched by name, not duplicated.">
+                            <input type="checkbox" checked={bulkCreates} onChange={(e) => setBulkCreates(e.target.checked)} style={{ width: 15, height: 15, accentColor: C.sun, cursor: "pointer" }} />
+                            Create entities
+                          </label>
+                          <button type="button" onClick={() => acceptGmSet(gmView, bulkCreates)} disabled={busy}
+                            title={bulkCreates ? "Accept every beat below and create the entities they name" : "Accept every beat below without creating entities"}
+                            style={{ ...btn(C.sun, SAX.inkDeep), opacity: busy ? 0.55 : 1, cursor: busy ? "default" : "pointer" }}>
+                            Accept all {gmView.length}
                           </button>
                         </>
                       )}
@@ -566,7 +592,24 @@ export default function ReviewPage() {
                   </div>
                 ) : (
                   <div style={{ display: "grid", gap: 12 }}>
-                    {gmView.map((p) => {
+                    {gmGroups.map(({ category, rows }) => {
+                      const open = openCats[category] === true;
+                      return (
+                      <div key={category} style={{ display: "grid", gap: 12 }}>
+                        <div style={{ ...box, marginBottom: 0, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap", cursor: "pointer" }}
+                          onClick={() => setOpenCats((prev) => ({ ...prev, [category]: !open }))}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                            <span style={{ fontSize: 12, color: C.muted, width: 12, display: "inline-block" }}>{open ? "\u25be" : "\u25b8"}</span>
+                            <span style={{ fontSize: 15, fontWeight: 700 }}>{catLabel(category)}</span>
+                            <span style={{ fontSize: 12, fontWeight: 700, color: SAX.inkDeep, background: C.sun, padding: "2px 9px", borderRadius: 999 }}>{rows.length}</span>
+                          </div>
+                          <button type="button" onClick={(ev) => { ev.stopPropagation(); acceptGmSet(rows, bulkCreates); }} disabled={busy}
+                            title={bulkCreates ? `Accept all ${rows.length} in ${catLabel(category)} and create the entities they name` : `Accept all ${rows.length} in ${catLabel(category)} without creating entities`}
+                            style={{ ...btn(C.good, SAX.inkDeep), opacity: busy ? 0.55 : 1, cursor: busy ? "default" : "pointer" }}>
+                            Accept {rows.length}
+                          </button>
+                        </div>
+                        {open && rows.map((p) => {
                       const eKind = edits[p.id]?.kind ?? p.kind;
                       const eSummary = edits[p.id]?.summary ?? p.summary;
                       const conf = p.confidence !== null ? Math.round((p.confidence || 0) * 100) : null;
@@ -614,11 +657,7 @@ export default function ReviewPage() {
                             {availEntities(p).length > 0 ? (
                               <>
                                 <button type="button" onClick={() => reviewGm(p, "approve", selObj(p))} disabled={busy} style={btn(C.sun, SAX.inkDeep)}>Accept &amp; create</button>
-                                {/* "Accept only" must send an explicit false for every entity on this beat.
-                                    An absent flag now means "decide from the data", which is right for bulk
-                                    accept and wrong here: the GM looking at this row and choosing the other
-                                    button is saying no. */}
-                                <button type="button" onClick={() => reviewGm(p, "approve", noneObj(p))} disabled={busy} style={btn(C.good, SAX.inkDeep)}>Accept only</button>
+                                <button type="button" onClick={() => reviewGm(p, "approve")} disabled={busy} style={btn(C.good, SAX.inkDeep)}>Accept only</button>
                               </>
                             ) : (
                               <button type="button" onClick={() => reviewGm(p, "approve")} disabled={busy} style={btn(C.good, SAX.inkDeep)}>Accept</button>
@@ -626,6 +665,9 @@ export default function ReviewPage() {
                             <button type="button" onClick={() => reviewGm(p, "reject")} disabled={busy} style={{ background: "transparent", color: C.warn, border: `1px solid ${C.line}`, borderRadius: 9, padding: "9px 16px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Reject</button>
                           </div>
                         </div>
+                      );
+                        })}
+                      </div>
                       );
                     })}
                   </div>
