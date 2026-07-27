@@ -46,7 +46,8 @@ import {
   saveToLibrary, updateLibrary, saveCharacterToLibrary, type LibraryDenorm,
 } from "@/lib/pc-library";
 import {
-  describeItem, describeBackground, describeSpecies, describeSkill, describeFeat, type Described,
+  describeItem, describeBackground, describeSpecies, describeSkill, describeFeat,
+  traitList, type TraitEntry, type Described,
   type ItemRecord, type BackgroundRecord, type SpeciesMechRecord,
 } from "@/lib/descriptions";
 import {
@@ -268,7 +269,7 @@ function ForgeInner() {
     const backgrounds = loadSrd("backgrounds", srdMode) as unknown as BackgroundRecord[];
     const equipment = loadSrd("equipment", srdMode) as unknown as ItemRecord[];
     const magic = loadSrd("magic-items", srdMode) as unknown as ItemRecord[];
-    const speciesData = loadSrd("species", srdMode) as unknown as { species: SpeciesMechRecord[]; variants: unknown[] };
+    const speciesData = loadSrd("species", srdMode) as unknown as { species: SpeciesMechRecord[]; variants: SpeciesVariantRec[] };
     // loadSrd may hand back a bare array or a wrapped shape depending on the domain; normalize to
     // an array so an unexpected wrapper doesn't silently yield no progression.
     const rawClasses = loadSrd("classes", srdMode) as unknown;
@@ -283,6 +284,10 @@ function ForgeInner() {
     }
     const speciesByName: Record<string, SpeciesMechRecord> = {};
     (speciesData.species || []).forEach((s) => { speciesByName[s.name] = s; });
+    // Variant/lineage records that carry trait data (only the SRD subraces do; catalog variants are
+    // name-only). Keyed by variant name for the features section.
+    const variantByName: Record<string, SpeciesVariantRec> = {};
+    (speciesData.variants || []).forEach((v) => { if (v?.name) variantByName[v.name] = v; });
     const bgByName: Record<string, BackgroundRecord> = {};
     backgrounds.forEach((b) => { bgByName[b.name] = b; });
     const classByName: Record<string, ClassRecord> = {};
@@ -296,7 +301,7 @@ function ForgeInner() {
     const itemByName: Record<string, ItemRecord> = {};
     equipment.forEach((e) => { if (!itemByName[e.name]) itemByName[e.name] = e; });
     magic.forEach((m) => { if (!itemByName[m.name]) itemByName[m.name] = m; });
-    return { backgrounds, equipment, magic, speciesByName, bgByName, classByName, itemByName, featList, featByName };
+    return { backgrounds, equipment, magic, speciesByName, variantByName, bgByName, classByName, itemByName, featList, featByName };
   }, [srdMode]);
 
   // Description of the currently selected species / background, for the Identity panel.
@@ -320,6 +325,24 @@ function ForgeInner() {
     () => epicProgression(DEFAULT_EPIC, build.level),
     [build.level],
   );
+
+  // The feats and epic boons the character has actually chosen, resolved from epicChoices into
+  // display entries (name + level + description) for the Features section. Skips pure ability-score
+  // improvements (those aren't feats); keeps anything flagged isFeat with a name.
+  const chosenFeats = useMemo(() => {
+    const out: { level: number; name: string; desc?: string; category?: string }[] = [];
+    const ec = build.epicChoices || {};
+    for (const key of Object.keys(ec).map(Number).sort((a, b) => a - b)) {
+      for (const ch of ec[key] || []) {
+        if (!ch?.isFeat || !ch.name) continue;
+        const f = srd.featByName[ch.name];
+        // Level key 1000+ is an epic-boon slot; recover the real level for display.
+        const level = key >= 1000 ? key - 1000 : key;
+        out.push({ level, name: ch.name, desc: f?.description || ch.desc, category: f?.category });
+      }
+    }
+    return out;
+  }, [build.epicChoices, srd.featByName]);
 
   // The ASI levels the character has reached, each of which grants an ability-score increase or a
   // feat. Standard 4/8/12/16/19 plus any class-specific extras (e.g. Fighter 6/14) plus epic ASIs
@@ -597,6 +620,16 @@ function ForgeInner() {
               />
 
               <SheetPanel sheet={sheet} name={name || "Character"} />
+
+              {build.meta.species && (
+                <FeaturesPanel
+                  species={build.meta.species} speciesRec={srd.speciesByName[build.meta.species]}
+                  variantName={speciesVariant} variantRec={srd.variantByName[speciesVariant]}
+                  background={build.meta.background} backgroundRec={srd.bgByName[build.meta.background]}
+                  className={build.meta.className} classRec={srd.classByName[build.meta.className]}
+                  level={build.level} chosenFeats={chosenFeats}
+                />
+              )}
 
               <div style={{ display: "flex", gap: 12, alignItems: "center", justifyContent: "flex-end", flexWrap: "wrap" }}>
                 <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 12, color:
@@ -1248,6 +1281,129 @@ function firstFixedAmount(asi: FeatAsi): number {
   return 0;
 }
 
+// A consolidated read-only reference: everything this character HAS, gathered from the sources that
+// otherwise show scattered across the Identity and picker panels. Species + lineage traits,
+// background, the class features gained (a compact roster, the full per-level view lives in the
+// progression panel), and the feats/boons chosen. Honest about data gaps: non-SRD catalog species
+// and most lineages carry only a name, so those show the name with a note rather than fake traits.
+function FeaturesPanel({
+  species, speciesRec, variantName, variantRec, background, backgroundRec,
+  className, classRec, level, chosenFeats,
+}: {
+  species: string; speciesRec: SpeciesMechRecord | undefined;
+  variantName: string; variantRec: SpeciesVariantRec | undefined;
+  background: string; backgroundRec: BackgroundRecord | undefined;
+  className: string; classRec: ClassRecord | undefined;
+  level: number;
+  chosenFeats: { level: number; name: string; desc?: string; category?: string }[];
+}) {
+  const speciesTraits = traitList(speciesRec?.traits);
+  const variantTraits = traitList(variantRec?.traits);
+  const bgDesc = describeBackground(backgroundRec);
+  // Class features the character has gained, as a compact "level: names" roster.
+  const classFeatures = (classRec?.features_by_level || [])
+    .filter((f) => f.level <= level)
+    .reduce<Record<number, string[]>>((acc, f) => {
+      (acc[f.level] = acc[f.level] || []).push(f.name); return acc;
+    }, {});
+  const classFeatureLevels = Object.keys(classFeatures).map(Number).sort((a, b) => a - b);
+
+  return (
+    <div style={stonePanel()}>
+      <PanelTitle hint="Everything this character has: species and lineage traits, background, class features, and the feats and boons you've taken.">
+        Features &amp; traits
+      </PanelTitle>
+
+      {/* Species */}
+      <FeatureGroup label={species || "Species"}>
+        {speciesTraits.length > 0
+          ? speciesTraits.map((t, i) => <TraitItem key={i} trait={t} />)
+          : <MutedNote>Traits for this species aren&rsquo;t modeled yet, only its name is on the sheet.</MutedNote>}
+      </FeatureGroup>
+
+      {/* Lineage / subrace */}
+      {variantName && (
+        <FeatureGroup label={`${variantName}${variantRec?.variant_kind ? ` (${variantRec.variant_kind})` : ""}`}>
+          {variantTraits.length > 0
+            ? variantTraits.map((t, i) => <TraitItem key={i} trait={t} />)
+            : <MutedNote>This lineage&rsquo;s benefits aren&rsquo;t in the ruleset data yet, only its name is recorded.</MutedNote>}
+        </FeatureGroup>
+      )}
+
+      {/* Background */}
+      {background && (
+        <FeatureGroup label={background}>
+          {bgDesc ? <TraitItem trait={{ name: "", desc: [bgDesc.lead, bgDesc.body].filter(Boolean).join(" — ") }} />
+                  : <MutedNote>Background recorded.</MutedNote>}
+        </FeatureGroup>
+      )}
+
+      {/* Class features gained */}
+      {className && classFeatureLevels.length > 0 && (
+        <FeatureGroup label={`${className} features`}>
+          <div style={{ display: "grid", gap: 4 }}>
+            {classFeatureLevels.map((lv) => (
+              <div key={lv} style={{ display: "flex", gap: 10, fontSize: 13.5 }}>
+                <span style={{ fontFamily: FORGE_FONTS.mono, color: STONE.brassHi, minWidth: 26 }}>L{lv}</span>
+                <span style={{ color: STONE.ink }}>{classFeatures[lv].join(", ")}</span>
+              </div>
+            ))}
+          </div>
+          <MutedNote>Full descriptions are in the progression panel above.</MutedNote>
+        </FeatureGroup>
+      )}
+
+      {/* Feats & boons chosen */}
+      {chosenFeats.length > 0 && (
+        <FeatureGroup label="Feats & boons">
+          {chosenFeats.map((f, i) => (
+            <div key={`${f.name}-${i}`} style={{ marginBottom: 8 }}>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
+                <span style={{ fontFamily: FORGE_FONTS.body, fontSize: 15, color: STONE.ink }}>{f.name}</span>
+                <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 11, color: STONE.inkFaint }}>L{f.level}</span>
+                {f.category && f.category !== "Feat" && <span style={stoneChip("moss")}>{f.category}</span>}
+              </div>
+              {f.desc && (
+                <p style={{ fontFamily: FORGE_FONTS.body, fontSize: 13, color: STONE.inkDim, lineHeight: 1.5, margin: "3px 0 0" }}>
+                  {f.desc}
+                </p>
+              )}
+            </div>
+          ))}
+        </FeatureGroup>
+      )}
+    </div>
+  );
+}
+
+// A labeled group within the Features panel.
+function FeatureGroup({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div style={{ marginBottom: 16 }}>
+      <div style={{ ...forgeLabel, color: SAX.brass, marginBottom: 8 }}>{label}</div>
+      <div style={{ borderLeft: `2px solid ${STONE.mortar}`, paddingLeft: 12 }}>{children}</div>
+    </div>
+  );
+}
+
+// One trait: bold name (if any) then description.
+function TraitItem({ trait }: { trait: TraitEntry }) {
+  return (
+    <p style={{ fontFamily: FORGE_FONTS.body, fontSize: 13.5, color: STONE.inkDim, lineHeight: 1.55, margin: "0 0 6px" }}>
+      {trait.name && <span style={{ color: STONE.ink, fontWeight: 600 }}>{trait.name}. </span>}
+      {trait.desc}
+    </p>
+  );
+}
+
+function MutedNote({ children }: { children: React.ReactNode }) {
+  return (
+    <p style={{ fontFamily: FORGE_FONTS.body, fontSize: 12.5, color: STONE.inkFaint, fontStyle: "italic", margin: "4px 0 0" }}>
+      {children}
+    </p>
+  );
+}
+
 function GearPanel({ build, gearIndex, gearTypes, ctx, itemByName, onAdd, onRemove, onMod, onVariant }: {
   build: Build; gearIndex: GearOption[]; gearTypes: string[];
   ctx: ReturnType<typeof buildRulesContext>;
@@ -1463,6 +1619,9 @@ function Picking({ stable }: { stable: StableRow[] }) {
 // ---------------------------------------------------------------------------
 
 type GearOption = { name: string; type: string; magic: boolean };
+
+// A species variant/lineage record. Only SRD subraces carry traits; catalog variants are name-only.
+type SpeciesVariantRec = { name: string; variant_kind?: string; ability_bonuses?: string; traits?: unknown };
 
 // A feat as loaded from the SRD feats JSON (matches descriptions.ts FeatRecord). `asi` is a
 // structured ability-score increase parsed from the feat: {str:1} fixed, {any:N} player picks any,

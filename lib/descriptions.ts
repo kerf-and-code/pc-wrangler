@@ -193,3 +193,30 @@ export function describeSkill(key: string, ability?: string): Described | null {
   if (!text) return null;
   return { lead: ability ? ability.toUpperCase() : "Skill", body: text };
 }
+
+// A single named trait, for the Features section (species/lineage break down into these).
+export type TraitEntry = { name: string; desc: string };
+
+// Extract individual named traits from a species/variant traits field (array of {name,desc}, or a
+// string that becomes one unnamed entry). Returns [] when there's nothing usable.
+export function traitList(traits: unknown): TraitEntry[] {
+  if (!traits) return [];
+  if (typeof traits === "string") {
+    const t = clean(traits);
+    return t ? [{ name: "", desc: t }] : [];
+  }
+  if (Array.isArray(traits)) {
+    const out: TraitEntry[] = [];
+    for (const t of traits) {
+      if (typeof t === "string") {
+        const c = clean(t); if (c) out.push({ name: "", desc: c });
+      } else if (t && typeof t === "object") {
+        const name = clean((t as { name?: string }).name);
+        const desc = clean((t as { desc?: string }).desc);
+        if (name || desc) out.push({ name, desc });
+      }
+    }
+    return out;
+  }
+  return [];
+}
