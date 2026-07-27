@@ -1150,19 +1150,35 @@ function FeatEditor({ choice, featList, onChoose }: {
   const fixedAbility = asi ? fixedAsiAbility(asi) : null;   // e.g. {str:1} -> "str"
 
   // The ability currently chosen for a variable increase (stored in choice.mods).
-  const chosenAbility = choice.mods ? (Object.keys(choice.mods)[0] as Ability | undefined) : undefined;
+  const chosenAbility = choice.mods
+    ? (ABILITIES.find((a) => typeof choice.mods?.[a] === "number") as Ability | undefined)
+    : undefined;
+
+  // Non-ASI structured effects (Tough's hpPerLevel, speed feats) go into mods too, so the engine
+  // applies them retroactively. They live alongside any ability increase.
+  const featEffectMods = (f: FeatOption | undefined): Record<string, number> => {
+    const e = f?.effects; if (!e) return {};
+    const m: Record<string, number> = {};
+    if (e.hpPerLevel) m.hpPerLevel = e.hpPerLevel;
+    if (e.speed) m.speed = e.speed;
+    if (e.ac) m.ac = e.ac;
+    if (e.initiative) m.initiative = e.initiative;
+    return m;
+  };
 
   const pickFeat = (name: string) => {
     const f = featList.find((x) => x.name === name);
-    const next: EpicChoiceInput = { name, isFeat: true, desc: f?.description || "", mods: {} };
-    // Apply a FIXED increase immediately; leave variable ones for the ability selector.
+    const next: EpicChoiceInput = { name, isFeat: true, desc: f?.description || "", mods: { ...featEffectMods(f) } };
+    // Apply a FIXED ability increase immediately; leave variable ones for the ability selector.
     const fa = f?.asi ? fixedAsiAbility(f.asi) : null;
     const amt = f?.asi ? (f.asi.amount || f.asi.any || firstFixedAmount(f.asi)) : 0;
-    if (fa && amt) next.mods = { [fa]: amt };
+    if (fa && amt) next.mods = { ...next.mods, [fa]: amt };
     onChoose(next);
   };
   const pickAbility = (a: Ability) => {
-    onChoose({ ...choice, mods: asiAmount ? { [a]: asiAmount } : {} });
+    // Keep the feat's structured effects; set the chosen ability's increase.
+    const base = featEffectMods(picked);
+    onChoose({ ...choice, mods: asiAmount ? { ...base, [a]: asiAmount } : base });
   };
 
   return (
@@ -1201,8 +1217,19 @@ function FeatEditor({ choice, featList, onChoose }: {
         </p>
       ) : null}
 
+      {picked?.effects ? (
+        <p style={{ color: SAX.good, fontSize: 12, marginTop: 6, fontFamily: FORGE_FONTS.mono }}>
+          {[
+            picked.effects.hpPerLevel ? `+${picked.effects.hpPerLevel} HP per level` : null,
+            picked.effects.speed ? `+${picked.effects.speed} ft speed` : null,
+            picked.effects.ac ? `+${picked.effects.ac} AC` : null,
+            picked.effects.initiative ? `+${picked.effects.initiative} initiative` : null,
+          ].filter(Boolean).join("  ·  ")} applied
+        </p>
+      ) : null}
+
       {desc && <div style={{ marginTop: 8 }}><DescBlock desc={desc} compact /></div>}
-      {picked && !asi && (
+      {picked && !asi && !picked.effects && (
         <p style={{ color: STONE.inkFaint, fontSize: 12, marginTop: 6, fontStyle: "italic" }}>
           Recorded on your sheet. This feat&rsquo;s other effects are noted here for reference.
         </p>
@@ -1446,7 +1473,11 @@ type FeatAsi = {
   str?: number; dex?: number; con?: number; int?: number; wis?: number; cha?: number;
   any?: number; choice?: string[]; amount?: number;
 };
-type FeatOption = { name: string; category?: string; prerequisite?: string; description?: string; asi?: FeatAsi };
+// Structured non-ASI feat effects the engine can apply retroactively: hpPerLevel (Tough adds 2 HP
+// per level), speed (Mobile/Speedy add feet). These flow through the same mods object as the ASI,
+// which the engine reads as em.hpPerLevel / em.speed.
+type FeatEffects = { hpPerLevel?: number; speed?: number; ac?: number; initiative?: number };
+type FeatOption = { name: string; category?: string; prerequisite?: string; description?: string; asi?: FeatAsi; effects?: FeatEffects };
 
 // What the picker writes into build.epicChoices[level]. It's an EpicChoice the engine already
 // reads (name + mods, where mods like { str: 2 } raise ability scores), plus two UI-only fields:
