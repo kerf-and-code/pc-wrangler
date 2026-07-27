@@ -576,10 +576,10 @@ function ForgeInner() {
                 />
               )}
 
-              {build.meta.className && asiLevels.length > 0 && (
+              {build.meta.className && (asiLevels.length > 0 || build.level >= 19) && (
                 <FeatsPanel
                   asiLevels={asiLevels} choices={build.epicChoices || {}}
-                  featList={srd.featList} onChoose={setLevelChoice}
+                  featList={srd.featList} level={build.level} onChoose={setLevelChoice}
                 />
               )}
 
@@ -967,15 +967,22 @@ function FeatureLine({ name, desc, asi }: { name: string; desc: string; asi?: bo
 // build.epicChoices[level], which the engine reads: ability mods raise the score, a feat's name
 // shows on the sheet (and any structured mods it carries apply). Feats without machine-readable
 // effects still record and display, they just don't move numbers until that effect is authored.
-function FeatsPanel({ asiLevels, choices, featList, onChoose }: {
+function FeatsPanel({ asiLevels, choices, featList, level, onChoose }: {
   asiLevels: number[];
   choices: Record<number, EpicChoiceInput[]>;
   featList: FeatOption[];
+  level: number;
   onChoose: (level: number, choice: EpicChoiceInput | null) => void;
 }) {
+  // Epic Boon opportunities: level 19 (the class Epic Boon feature) plus the epic-feat levels
+  // 21/25/29. Each takes an Epic Boon feat (a distinct pool from ordinary feats). Keyed above the
+  // level-1000 offset so an epic-boon choice at level 19 never collides with an ASI at 19.
+  const EPIC_BOON_LEVELS = [19, 21, 25, 29].filter((l) => l <= level);
+  const epicBoons = useMemo(() => featList.filter((f) => f.category === "Epic Boon"), [featList]);
+
   return (
     <div style={stonePanel()}>
-      <PanelTitle hint="At each of these levels you take an ability score increase or a feat. Ability increases flow into the sheet; feats record here and apply where their effect is known.">
+      <PanelTitle hint="At each of these levels you take an ability score increase or a feat. Ability increases flow into the sheet; a feat with a known bonus applies its increase too.">
         Ability increases &amp; feats
       </PanelTitle>
       <div style={{ display: "grid", gap: 14 }}>
@@ -984,6 +991,41 @@ function FeatsPanel({ asiLevels, choices, featList, onChoose }: {
             onChoose={(c) => onChoose(level, c)} />
         ))}
       </div>
+
+      {EPIC_BOON_LEVELS.length > 0 && (
+        <>
+          <div style={{ ...forgeLabel, marginTop: 22, marginBottom: 10, color: SAX.brass }}>Epic Boons</div>
+          <div style={{ display: "grid", gap: 14 }}>
+            {EPIC_BOON_LEVELS.map((lvl) => (
+              <BoonSlot key={`boon-${lvl}`} level={lvl} choice={choices[1000 + lvl]?.[0]}
+                boons={epicBoons} onChoose={(c) => onChoose(1000 + lvl, c)} />
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// An epic-boon slot: choose an Epic Boon feat (level 19+). Uses the same FeatEditor, restricted to
+// the boon pool. Stored at level key 1000+level so it doesn't collide with the ASI at the same
+// level; the engine reads all epicChoices keys regardless of the offset.
+function BoonSlot({ level, choice, boons, onChoose }: {
+  level: number; choice: EpicChoiceInput | undefined; boons: FeatOption[];
+  onChoose: (choice: EpicChoiceInput | null) => void;
+}) {
+  return (
+    <div style={{ borderLeft: `2px solid ${STONE.mortar}`, paddingLeft: 14 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+        <span style={{ fontFamily: FORGE_FONTS.display, fontSize: 16, color: STONE.brassHi }}>Level {level}</span>
+        <span style={stoneChip("brass")}>epic boon</span>
+        <span style={{ flex: 1 }} />
+        {choice && (
+          <button className="forge-btn is-ghost" style={{ ...stoneButton("ghost"), padding: "5px 12px", fontSize: 12 }}
+            onClick={() => onChoose(null)}>Clear</button>
+        )}
+      </div>
+      <FeatEditor choice={choice || { name: "", isFeat: true, desc: "" }} featList={boons} onChoose={onChoose} />
     </div>
   );
 }
@@ -1078,27 +1120,85 @@ function FeatEditor({ choice, featList, onChoose }: {
 }) {
   const picked = featList.find((f) => f.name === choice.name);
   const desc = picked ? describeFeat(picked) : null;
+  const asi = picked?.asi;
+
+  // Which abilities the feat's increase can go to, and by how much.
+  const asiAbilities: Ability[] | null = !asi ? null
+    : Array.isArray(asi.choice) ? (asi.choice as Ability[])
+    : (asi.any ? [...ABILITIES] : null);   // {any} -> any ability; fixed handled below
+  const asiAmount = asi ? (asi.amount || asi.any || firstFixedAmount(asi)) : 0;
+  const fixedAbility = asi ? fixedAsiAbility(asi) : null;   // e.g. {str:1} -> "str"
+
+  // The ability currently chosen for a variable increase (stored in choice.mods).
+  const chosenAbility = choice.mods ? (Object.keys(choice.mods)[0] as Ability | undefined) : undefined;
+
+  const pickFeat = (name: string) => {
+    const f = featList.find((x) => x.name === name);
+    const next: EpicChoiceInput = { name, isFeat: true, desc: f?.description || "", mods: {} };
+    // Apply a FIXED increase immediately; leave variable ones for the ability selector.
+    const fa = f?.asi ? fixedAsiAbility(f.asi) : null;
+    const amt = f?.asi ? (f.asi.amount || f.asi.any || firstFixedAmount(f.asi)) : 0;
+    if (fa && amt) next.mods = { [fa]: amt };
+    onChoose(next);
+  };
+  const pickAbility = (a: Ability) => {
+    onChoose({ ...choice, mods: asiAmount ? { [a]: asiAmount } : {} });
+  };
+
   return (
     <div>
       <div style={{ position: "relative" }}>
-        <select value={choice.name || ""} style={stoneField()}
-          onChange={(e) => {
-            const f = featList.find((x) => x.name === e.target.value);
-            onChoose({ ...choice, name: e.target.value, isFeat: true, desc: f?.description || "" });
-          }}>
+        <select value={choice.name || ""} style={stoneField()} onChange={(e) => pickFeat(e.target.value)}>
           <option value="" style={OPTION_STYLE}>Choose a feat</option>
-          {featList.map((f) => <option key={f.name} value={f.name} style={OPTION_STYLE}>{f.name}</option>)}
+          {featList.map((f) => (
+            <option key={f.name} value={f.name} style={OPTION_STYLE}>
+              {f.name}{f.category && f.category !== "Feat" ? ` · ${f.category}` : ""}
+            </option>
+          ))}
         </select>
         <span style={{ position: "absolute", right: 14, top: 14, fontSize: 9, color: SAX.brass, pointerEvents: "none" }}>▼</span>
       </div>
+
+      {/* Ability selector for feats whose increase is player's choice ({any} or {choice:[...]}). */}
+      {picked && asiAbilities && asiAmount ? (
+        <div style={{ marginTop: 8 }}>
+          <label style={forgeLabel}>+{asiAmount} to</label>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            {asiAbilities.map((a) => (
+              <button key={a} onClick={() => pickAbility(a)}
+                className={`forge-btn ${chosenAbility === a ? "is-primary" : "is-ghost"}`}
+                style={{ ...stoneButton(chosenAbility === a ? "primary" : "ghost"), padding: "5px 12px", fontSize: 12 }}>
+                {a.toUpperCase()}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {picked && fixedAbility && asiAmount ? (
+        <p style={{ color: SAX.good, fontSize: 12, marginTop: 8, fontFamily: FORGE_FONTS.mono }}>
+          +{asiAmount} {fixedAbility.toUpperCase()} applied
+        </p>
+      ) : null}
+
       {desc && <div style={{ marginTop: 8 }}><DescBlock desc={desc} compact /></div>}
-      {picked && (
+      {picked && !asi && (
         <p style={{ color: STONE.inkFaint, fontSize: 12, marginTop: 6, fontStyle: "italic" }}>
-          Recorded on your sheet. Feats with a known ability bonus apply automatically; others are noted for reference.
+          Recorded on your sheet. This feat&rsquo;s other effects are noted here for reference.
         </p>
       )}
     </div>
   );
+}
+
+// Helpers for reading the parsed feat asi shape.
+function fixedAsiAbility(asi: FeatAsi): Ability | null {
+  for (const a of ABILITIES) if (typeof asi[a] === "number") return a;
+  return null;
+}
+function firstFixedAmount(asi: FeatAsi): number {
+  for (const a of ABILITIES) if (typeof asi[a] === "number") return asi[a] as number;
+  return 0;
 }
 
 function GearPanel({ build, gearIndex, gearTypes, ctx, itemByName, onAdd, onRemove, onMod, onVariant }: {
@@ -1317,8 +1417,16 @@ function Picking({ stable }: { stable: StableRow[] }) {
 
 type GearOption = { name: string; type: string; magic: boolean };
 
-// A feat as loaded from the SRD feats JSON (matches descriptions.ts FeatRecord).
-type FeatOption = { name: string; category?: string; prerequisite?: string; description?: string };
+// A feat as loaded from the SRD feats JSON (matches descriptions.ts FeatRecord). `asi` is a
+// structured ability-score increase parsed from the feat: {str:1} fixed, {any:N} player picks any,
+// or {choice:[...], amount:N} player picks from a set. Applied into the choice's mods so it moves
+// the sheet. Per-ability keys are numbers; the reserved keys any/choice/amount describe variable
+// increases.
+type FeatAsi = {
+  str?: number; dex?: number; con?: number; int?: number; wis?: number; cha?: number;
+  any?: number; choice?: string[]; amount?: number;
+};
+type FeatOption = { name: string; category?: string; prerequisite?: string; description?: string; asi?: FeatAsi };
 
 // What the picker writes into build.epicChoices[level]. It's an EpicChoice the engine already
 // reads (name + mods, where mods like { str: 2 } raise ability scores), plus two UI-only fields:
