@@ -94,6 +94,7 @@ const PLAYER_YOU: PGroup = {
   children: [
     { href: "/me/campaigns", label: "Campaigns" },
     { href: "/me/characters", label: "Characters" },
+    { href: "/me/library", label: "Library" },
     { href: "/me/threads", label: "Threads" },
     { href: "/me/codex", label: "Codex" },
     { href: "/me/profile", label: "Your profile" },

@@ -46,6 +46,10 @@ import {
   saveToLibrary, updateLibrary, saveCharacterToLibrary, type LibraryDenorm,
 } from "@/lib/pc-library";
 import {
+  describeItem, describeBackground, describeSpecies, type Described,
+  type ItemRecord, type BackgroundRecord, type SpeciesMechRecord,
+} from "@/lib/descriptions";
+import {
   deriveSheet, epicAdvancement, ABILITIES, SKILLS,
   type Ability, type Build,
 } from "@/lib/srd/derive-sheet";
@@ -102,8 +106,6 @@ type StableRow = {
 };
 
 type Mode = "character" | "library" | "new";
-
-type NameRow = { name: string };
 
 // Map an ability abbreviation from the SRD ("STR", "CON") to the engine's lowercase key.
 const ABBR_TO_KEY: Record<string, Ability> = {
@@ -255,17 +257,34 @@ function ForgeInner() {
     };
   }
 
-  // --- SRD lists still needed: gear + backgrounds (no catalog table) + rules context. ---
+  // --- SRD lists still needed: gear + backgrounds (no catalog table) + rules context. Full records
+  // (not just names) so descriptions can be composed. ---
   const srdMode = edition;
   const srd = useMemo(() => {
-    const backgrounds = loadSrd("backgrounds", srdMode) as unknown as NameRow[];
-    const equipment = loadSrd("equipment", srdMode) as unknown as EquipRow[];
-    const magic = loadSrd("magic-items", srdMode) as unknown as MagicRow[];
-    const speciesData = loadSrd("species", srdMode) as unknown as { species: SpeciesMechRow[]; variants: unknown[] };
-    const speciesByName: Record<string, SpeciesMechRow> = {};
+    const backgrounds = loadSrd("backgrounds", srdMode) as unknown as BackgroundRecord[];
+    const equipment = loadSrd("equipment", srdMode) as unknown as ItemRecord[];
+    const magic = loadSrd("magic-items", srdMode) as unknown as ItemRecord[];
+    const speciesData = loadSrd("species", srdMode) as unknown as { species: SpeciesMechRecord[]; variants: unknown[] };
+    const speciesByName: Record<string, SpeciesMechRecord> = {};
     (speciesData.species || []).forEach((s) => { speciesByName[s.name] = s; });
-    return { backgrounds, equipment, magic, speciesByName };
+    const bgByName: Record<string, BackgroundRecord> = {};
+    backgrounds.forEach((b) => { bgByName[b.name] = b; });
+    // One item lookup for descriptions (mundane + magic, first wins on a both-mode name collision).
+    const itemByName: Record<string, ItemRecord> = {};
+    equipment.forEach((e) => { if (!itemByName[e.name]) itemByName[e.name] = e; });
+    magic.forEach((m) => { if (!itemByName[m.name]) itemByName[m.name] = m; });
+    return { backgrounds, equipment, magic, speciesByName, bgByName, itemByName };
   }, [srdMode]);
+
+  // Description of the currently selected species / background, for the Identity panel.
+  const speciesDesc = useMemo<Described | null>(
+    () => describeSpecies(srd.speciesByName[build.meta.species]),
+    [srd.speciesByName, build.meta.species],
+  );
+  const backgroundDesc = useMemo<Described | null>(
+    () => describeBackground(srd.bgByName[build.meta.background]),
+    [srd.bgByName, build.meta.background],
+  );
 
   const ctx = useMemo(() => buildRulesContext(edition === "2014" ? "2014" : "2024"), [edition]);
 
@@ -485,6 +504,7 @@ function ForgeInner() {
                 partners={partners} enabledPartners={enabledPartners} onTogglePartner={togglePartner}
                 speciesOpts={speciesOpts} classOpts={classOpts} variantOpts={variantOpts}
                 subclassOpts={subclassOpts} backgroundOpts={srd.backgrounds.map((b) => b.name)}
+                speciesDesc={speciesDesc} backgroundDesc={backgroundDesc}
                 catalogReady={!!catalog} epic={epic}
                 onSpecies={setSpecies} onVariant={setVariant} onBackground={setBackground}
                 onClassName={setClassName} onSubclass={setSubclass} onLevel={setLevel}
@@ -494,6 +514,7 @@ function ForgeInner() {
 
               <GearPanel
                 build={build} gearIndex={gearIndex} gearTypes={gearTypes} ctx={ctx}
+                itemByName={srd.itemByName}
                 onAdd={addItem} onRemove={removeItem} onMod={setItemMod} onVariant={setItemVariant}
               />
 
@@ -583,6 +604,38 @@ function PanelTitle({ children, hint }: { children: React.ReactNode; hint?: stri
   );
 }
 
+// A description block: the composed "lead" line always shows; longer prose (body) reveals on click.
+// Used for species, background, and gear so a picker explains what a choice actually does.
+function DescBlock({ title, desc, compact }: { title?: string; desc: Described; compact?: boolean }) {
+  const [open, setOpen] = useState(false);
+  const hasBody = !!desc.body;
+  return (
+    <div style={{
+      padding: compact ? "8px 12px" : "10px 14px", borderRadius: 4,
+      background: "linear-gradient(180deg, rgba(14,11,8,0.5), rgba(40,36,30,0.4))",
+      boxShadow: "inset 0 1px 0 rgba(255,230,190,0.05), inset 0 0 0 1px rgba(0,0,0,0.3)",
+    }}>
+      {title && (
+        <div style={{ fontFamily: FORGE_FONTS.display, fontSize: 14, color: STONE.brassHi, marginBottom: 3 }}>{title}</div>
+      )}
+      <div style={{ fontFamily: FORGE_FONTS.mono, fontSize: 12.5, color: STONE.inkDim, lineHeight: 1.5 }}>{desc.lead}</div>
+      {hasBody && open && (
+        <p style={{ fontFamily: FORGE_FONTS.body, fontSize: 14, color: STONE.ink, lineHeight: 1.55, marginTop: 8 }}>
+          {desc.body}
+        </p>
+      )}
+      {hasBody && (
+        <button onClick={() => setOpen((v) => !v)}
+          style={{ marginTop: 6, background: "none", border: "none", cursor: "pointer",
+            fontFamily: FORGE_FONTS.mono, fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase",
+            color: SAX.brass, padding: 0 }}>
+          {open ? "Hide details −" : "Details +"}
+        </button>
+      )}
+    </div>
+  );
+}
+
 // A carved dropdown (stoneField + a brass chevron).
 function Field({ label, value, onChange, options, placeholder, disabled }: {
   label: string; value: string; onChange: (v: string) => void;
@@ -607,6 +660,7 @@ function IdentityPanel(props: {
   partners: string[]; enabledPartners: Set<string>; onTogglePartner: (p: string) => void;
   speciesOpts: { name: string }[]; classOpts: { name: string }[];
   variantOpts: { name: string; variant_kind: string }[]; subclassOpts: string[]; backgroundOpts: string[];
+  speciesDesc: Described | null; backgroundDesc: Described | null;
   catalogReady: boolean;
   epic: { abilityCap: number; asiCount: number; epicFeatCount: number };
   onSpecies: (v: string) => void; onVariant: (v: string) => void; onBackground: (v: string) => void;
@@ -614,7 +668,8 @@ function IdentityPanel(props: {
 }) {
   const {
     build, speciesVariant, edition, onEdition, partners, enabledPartners, onTogglePartner,
-    speciesOpts, classOpts, variantOpts, subclassOpts, backgroundOpts, catalogReady, epic,
+    speciesOpts, classOpts, variantOpts, subclassOpts, backgroundOpts, speciesDesc, backgroundDesc,
+    catalogReady, epic,
     onSpecies, onVariant, onBackground, onClassName, onSubclass, onLevel,
   } = props;
 
@@ -682,6 +737,18 @@ function IdentityPanel(props: {
           onChange={onBackground} options={backgroundOpts} />
       </div>
 
+      {/* Descriptions of the current species / background, so the pickers explain themselves. */}
+      {(speciesDesc || backgroundDesc) && (
+        <div style={{ marginTop: 4, marginBottom: 8, display: "grid", gap: 10 }}>
+          {speciesDesc && build.meta.species && (
+            <DescBlock title={build.meta.species} desc={speciesDesc} />
+          )}
+          {backgroundDesc && build.meta.background && (
+            <DescBlock title={build.meta.background} desc={backgroundDesc} />
+          )}
+        </div>
+      )}
+
       <div style={{ marginTop: 6 }}>
         <label style={forgeLabel}>Level</label>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -738,9 +805,10 @@ function AbilitiesPanel({ build, cap, sheet, onAbility }: {
   );
 }
 
-function GearPanel({ build, gearIndex, gearTypes, ctx, onAdd, onRemove, onMod, onVariant }: {
+function GearPanel({ build, gearIndex, gearTypes, ctx, itemByName, onAdd, onRemove, onMod, onVariant }: {
   build: Build; gearIndex: GearOption[]; gearTypes: string[];
   ctx: ReturnType<typeof buildRulesContext>;
+  itemByName: Record<string, ItemRecord>;
   onAdd: (n: string) => void; onRemove: (i: number) => void;
   onMod: (i: number, mod: number) => void; onVariant: (i: number, v: string) => void;
 }) {
@@ -795,31 +863,35 @@ function GearPanel({ build, gearIndex, gearTypes, ctx, onAdd, onRemove, onMod, o
         const def = ctx.items[e.n];
         const variantSpec = ctx.itemVariants[e.n];
         const canMod = def && (def.kind === "Armor" || def.kind === "Weapon");
+        const desc = describeItem(itemByName[e.n]);
         return (
-          <div key={`${e.n}-${i}`} style={{ display: "flex", gap: 10, alignItems: "center",
-            padding: "8px 0", borderBottom: `1px solid ${STONE.mortar}` }}>
-            <span style={{ flex: 1, fontFamily: FORGE_FONTS.body, fontSize: 16, color: STONE.ink }}>
-              {e.n}
-              {def?.sub ? <span style={{ color: STONE.inkFaint, fontSize: 13 }}> · {def.sub}</span> : null}
-            </span>
+          <div key={`${e.n}-${i}`} style={{ padding: "10px 0", borderBottom: `1px solid ${STONE.mortar}` }}>
+            <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+              <span style={{ flex: 1, fontFamily: FORGE_FONTS.body, fontSize: 16, color: STONE.ink }}>
+                {e.n}
+                {def?.sub ? <span style={{ color: STONE.inkFaint, fontSize: 13 }}> · {def.sub}</span> : null}
+              </span>
 
-            {variantSpec && (
-              <select value={e.variant || ""} onChange={(ev) => onVariant(i, ev.target.value)}
-                style={{ ...stoneField(), width: 150, padding: "6px 10px", fontSize: 13 }}>
-                <option value="" style={OPTION_STYLE}>{variantSpec.options[0] ? "Choose variant" : ""}</option>
-                {variantSpec.options.map((o) => <option key={o.name} value={o.name} style={OPTION_STYLE}>{o.name}</option>)}
-              </select>
-            )}
+              {variantSpec && (
+                <select value={e.variant || ""} onChange={(ev) => onVariant(i, ev.target.value)}
+                  style={{ ...stoneField(), width: 150, padding: "6px 10px", fontSize: 13 }}>
+                  <option value="" style={OPTION_STYLE}>{variantSpec.options[0] ? "Choose variant" : ""}</option>
+                  {variantSpec.options.map((o) => <option key={o.name} value={o.name} style={OPTION_STYLE}>{o.name}</option>)}
+                </select>
+              )}
 
-            {canMod && (
-              <select value={e.mod || 0} onChange={(ev) => onMod(i, parseInt(ev.target.value, 10))}
-                style={{ ...stoneField(), width: 74, padding: "6px 10px", fontSize: 13 }}>
-                {[0, 1, 2, 3].map((n) => <option key={n} value={n} style={OPTION_STYLE}>{n ? `+${n}` : "±0"}</option>)}
-              </select>
-            )}
+              {canMod && (
+                <select value={e.mod || 0} onChange={(ev) => onMod(i, parseInt(ev.target.value, 10))}
+                  style={{ ...stoneField(), width: 74, padding: "6px 10px", fontSize: 13 }}>
+                  {[0, 1, 2, 3].map((n) => <option key={n} value={n} style={OPTION_STYLE}>{n ? `+${n}` : "±0"}</option>)}
+                </select>
+              )}
 
-            <button className="forge-btn is-ghost" style={{ ...stoneButton("ghost"), padding: "6px 12px", fontSize: 12 }}
-              onClick={() => onRemove(i)}>Remove</button>
+              <button className="forge-btn is-ghost" style={{ ...stoneButton("ghost"), padding: "6px 12px", fontSize: 12 }}
+                onClick={() => onRemove(i)}>Remove</button>
+            </div>
+
+            {desc && <div style={{ marginTop: 8 }}><DescBlock desc={desc} compact /></div>}
           </div>
         );
       })}
@@ -919,9 +991,6 @@ function Picking({ stable }: { stable: StableRow[] }) {
 // Small helpers + local types
 // ---------------------------------------------------------------------------
 
-type EquipRow = { name: string; category?: string };
-type MagicRow = { name: string; category?: string; rarity?: string };
-type SpeciesMechRow = { name: string; ability_bonuses?: string };
 type GearOption = { name: string; type: string; magic: boolean };
 
 const fmtMod = (n: number): string => (n >= 0 ? `+${n}` : `${n}`);
