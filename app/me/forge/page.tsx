@@ -3,26 +3,31 @@
 // app/me/forge/page.tsx
 //
 // The Forge — the player-side PC character-sheet creator. Identity (catalog-driven pickers),
-// ability scores, gear (the part that makes items change the derived stats), and a live sheet
-// computed by deriveSheet on every edit. Wired to characters.build.
+// ability scores, gear, and a live sheet computed by deriveSheet on every edit.
 //
-// DATA PATH. The stable (app/me/characters) lists a player's characters via the my_characters RPC.
-// The Forge opens ONE of them with ?c=<character_id>, reads its build jsonb + denormalized columns
-// straight from the characters table, and writes build back with an update. No new table: the
-// sheet IS characters.build. If ?c is absent the page lists the stable so the player can pick one.
+// THREE MODES, ONE FORGE:
+//   ?c=<character_id>   — a campaign character, backed by a `characters` row.
+//   ?lib=<library_id>   — a saved/sandbox build, backed by a `pc_library` row.
+//   (neither)           — a NEW build, backed by nothing yet; the first save creates a pc_library
+//                         row and the page switches itself into ?lib mode so autosave has a target.
 //
-// CONTENT SOURCE. The species / variant / class / subclass pickers read from the populated Supabase
-// CATALOG tables via lib/catalog (61 species, 75 variants, 14 classes, 316 subclasses), scoped by a
-// 2024/2014/both edition toggle and player-toggled partner chips — the same helper and filters the
-// GM workspace uses, so the two never drift. The SRD JSON stays the MECHANICS source the derivation
-// engine reads (ability bonuses, traits) and the source for gear + backgrounds (which have no
-// catalog table yet). A partnered species the engine doesn't model saves and shows its name fine;
-// its unique traits just won't compute until modeled.
+// SAVE MODEL (both modes behave the same):
+//   - Autosave: ~1s after the last edit, the current build is written to whichever row backs the
+//     mode (characters update for ?c, pc_library update for ?lib). A brand-new build's first
+//     autosave INSERTS a pc_library row, captures its id, and flips the URL to ?lib=<id> so the
+//     next autosave updates instead of duplicating (guarded by a creating flag against races).
+//   - Save & Continue: force an immediate write, stay on the page.
+//   - Save & Exit: force a write, then go to /me/library.
+//   A small status line ("Saved" / "Saving…" / "Unsaved") keeps autosave visible.
+//
+// CONTENT SOURCE. Species / variant / class / subclass come from the Supabase CATALOG via
+// lib/catalog (scoped by a 2024/2014/both toggle + player partner chips); backgrounds + gear stay
+// on the SRD JSON, which is also the mechanics source the engine reads.
 //
 // AESTHETIC. The locked dungeon design language from lib/forge-theme.
 
-import React, { Suspense, useCallback, useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { SAX } from "@/lib/theme";
 import SixAxesNav from "@/components/six-axes-nav";
@@ -37,6 +42,9 @@ import {
   loadCatalog, partnerList, speciesOptions, classOptions, variantOptions, subclassOptions,
   type Catalog, type Edition,
 } from "@/lib/catalog";
+import {
+  saveToLibrary, updateLibrary, type LibraryDenorm,
+} from "@/lib/pc-library";
 import {
   deriveSheet, epicAdvancement, ABILITIES, SKILLS,
   type Ability, type Build,
@@ -60,7 +68,7 @@ function emptyBuild(): Build {
 }
 
 // The stored build may be partial or from an older shape; fill any gaps so deriveSheet never reads
-// undefined. This is the one place that reconciles characters.build with the engine's Build.
+// undefined. This is the one place that reconciles a stored build with the engine's Build.
 function normalizeBuild(raw: unknown): Build {
   const b = (raw && typeof raw === "object" ? raw : {}) as Partial<Build>;
   const e = emptyBuild();
@@ -82,13 +90,18 @@ type CharRow = {
   species_variant: string | null; level: number | null; alignment: string | null; campaign_id: string;
 };
 
+type LibRow = {
+  id: string; name: string; build: unknown;
+  species: string | null; class: string | null; subclass: string | null;
+  species_variant: string | null; level: number | null; portrait_url: string | null;
+};
+
 type StableRow = {
   character_id: string; name: string; campaign_id: string; campaign_name: string;
   species: string | null; class: string | null; level: number | null; kind: string;
 };
 
-// The species_variant is carried alongside the Build (it lives in its own characters column, not in
-// build.meta), so the page tracks it in a small piece of state next to the build.
+type Mode = "character" | "library" | "new";
 
 type NameRow = { name: string };
 
@@ -111,13 +124,23 @@ function parseAbilityBonuses(s: string | undefined | null): Partial<Record<Abili
   return out;
 }
 
+// The denorm columns both characters and pc_library carry, pulled off the current build + name.
+function denormOf(build: Build, speciesVariant: string): LibraryDenorm {
+  return {
+    species: build.meta.species || null,
+    class: build.meta.className || null,
+    subclass: build.meta.subclass || null,
+    species_variant: speciesVariant || null,
+    level: build.level,
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
 
 // The default export wraps the working component in a Suspense boundary, because ForgeInner calls
-// useSearchParams() (to read ?c=<id>), which Next.js requires be inside <Suspense> so the route can
-// prerender instead of being forced fully dynamic.
+// useSearchParams(), which Next.js requires be inside <Suspense> so the route can prerender.
 export default function ForgePage() {
   return (
     <Suspense fallback={null}>
@@ -128,33 +151,65 @@ export default function ForgePage() {
 
 function ForgeInner() {
   const supabase = createClient();
+  const router = useRouter();
   const params = useSearchParams();
   const charId = params.get("c");
+  const libIdParam = params.get("lib");
+
+  // Which backing store the current session edits. Derived from the URL on load; a NEW build flips
+  // to library once its first save creates a pc_library row.
+  const [mode, setMode] = useState<Mode>(charId ? "character" : libIdParam ? "library" : "new");
+  const [libId, setLibId] = useState<string | null>(libIdParam);
 
   const [stable, setStable] = useState<StableRow[]>([]);
   const [row, setRow] = useState<CharRow | null>(null);
   const [build, setBuild] = useState<Build>(emptyBuild());
+  const [name, setName] = useState<string>("");
   const [speciesVariant, setSpeciesVariant] = useState<string>("");
   const [status, setStatus] = useState<"loading" | "ready" | "picking" | "error" | "signedout">("loading");
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
 
-  // Catalog + its scoping controls. Edition defaults to 2024; partnered content is OFF until the
-  // player toggles a partner chip.
+  // Catalog + its scoping controls.
   const [catalog, setCatalog] = useState<Catalog | null>(null);
   const [edition, setEdition] = useState<Edition>("2024");
   const [enabledPartners, setEnabledPartners] = useState<Set<string>>(new Set());
 
-  // Load: the catalog always, plus either the chosen character (?c) or the stable to pick from.
+  // A brand-new build has no ?c and no ?lib: it's immediately editable (no fetch needed). A ?c or
+  // ?lib load fetches that row. Either way the catalog loads up front.
   useEffect(() => {
     let active = true;
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { if (active) setStatus("signedout"); return; }
 
-      // Catalog is needed whether we're picking or editing; load it up front and don't block the
-      // character load on it.
       loadCatalog(supabase).then((c) => { if (active) setCatalog(c); }).catch(() => { /* pickers degrade to empty */ });
 
+      // NEW build: nothing to fetch, start from a fresh sheet.
+      if (mode === "new") {
+        if (!active) return;
+        setName("New character");
+        setStatus("ready");
+        return;
+      }
+
+      // LIBRARY build.
+      if (mode === "library" && libIdParam) {
+        const { data, error } = await supabase
+          .from("pc_library")
+          .select("id, name, build, species, class, subclass, species_variant, level, portrait_url")
+          .eq("id", libIdParam)
+          .single();
+        if (!active) return;
+        if (error || !data) { setStatus("error"); return; }
+        const r = data as LibRow;
+        setBuild(seedFromDenorm(normalizeBuild(r.build), r));
+        setName(r.name || "");
+        setSpeciesVariant(r.species_variant || "");
+        setStatus("ready");
+        return;
+      }
+
+      // No ?c means we're picking from the stable.
       if (!charId) {
         const { data, error } = await supabase.rpc("my_characters");
         if (!active) return;
@@ -164,6 +219,7 @@ function ForgeInner() {
         return;
       }
 
+      // CAMPAIGN character.
       const { data, error } = await supabase
         .from("characters")
         .select("id, name, build, species, class, subclass, species_variant, level, alignment, campaign_id")
@@ -173,16 +229,20 @@ function ForgeInner() {
       if (error || !data) { setStatus("error"); return; }
       const r = data as CharRow;
       setRow(r);
-      setBuild(seedFromRow(normalizeBuild(r.build), r));
+      setBuild(seedFromDenorm(normalizeBuild(r.build), r));
+      setName(r.name || "");
       setSpeciesVariant(r.species_variant || "");
       setStatus("ready");
     })();
     return () => { active = false; };
-  }, [supabase, charId]);
+  }, [supabase, charId, libIdParam, mode]);
 
-  // Seed build.meta / level from the denormalized columns when the jsonb is empty (a character
-  // claimed at the table has species/class set but may never have been opened in the Forge).
-  function seedFromRow(b: Build, r: CharRow): Build {
+  // Seed build.meta / level from the denormalized columns when the stored jsonb is empty (a
+  // character claimed at the table has species/class set but may never have been opened here).
+  function seedFromDenorm(
+    b: Build,
+    r: { species: string | null; class: string | null; subclass: string | null; level: number | null },
+  ): Build {
     return {
       ...b,
       level: b.level || r.level || 1,
@@ -195,35 +255,28 @@ function ForgeInner() {
     };
   }
 
-  // --- SRD lists still needed: gear + backgrounds (no catalog table for these) + rules context.
-  // Gear and backgrounds follow the same edition selection as the catalog (2024/2014/both). ---
-  const srdMode = edition; // loadSrd takes the same "2024" | "2014" | "both" modes
+  // --- SRD lists still needed: gear + backgrounds (no catalog table) + rules context. ---
+  const srdMode = edition;
   const srd = useMemo(() => {
     const backgrounds = loadSrd("backgrounds", srdMode) as unknown as NameRow[];
     const equipment = loadSrd("equipment", srdMode) as unknown as EquipRow[];
     const magic = loadSrd("magic-items", srdMode) as unknown as MagicRow[];
-    // Species JSON (both editions) is the MECHANICS lookup for ability bonuses, keyed by name.
     const speciesData = loadSrd("species", srdMode) as unknown as { species: SpeciesMechRow[]; variants: unknown[] };
     const speciesByName: Record<string, SpeciesMechRow> = {};
     (speciesData.species || []).forEach((s) => { speciesByName[s.name] = s; });
     return { backgrounds, equipment, magic, speciesByName };
   }, [srdMode]);
 
-  // deriveSheet reads mechanics for the base ruleset. "both" isn't a valid single ruleset for the
-  // engine, so fall back to 2024's mechanics tables in that mode (the pickable list is still the
-  // union; only the mechanics lookup narrows).
   const ctx = useMemo(() => buildRulesContext(edition === "2014" ? "2014" : "2024"), [edition]);
 
-  // Apply the chosen species' ability bonuses (2014 species carry "CON +2" etc.; 2024 carry none)
-  // into build.featMods, which the engine adds to the base scores. Recomputed whenever species or
-  // edition changes. This keeps the engine generic and the parsing here.
+  // Apply the chosen species' ability bonuses (2014 carry "CON +2"; 2024 carry none) into
+  // build.featMods, which the engine adds to the base scores.
   const buildForDerive = useMemo<Build>(() => {
     const mech = srd.speciesByName[build.meta.species];
     const bonus = parseAbilityBonuses(mech?.ability_bonuses);
     return { ...build, featMods: { ...(build.featMods || {}), ...bonus } };
   }, [build, srd.speciesByName]);
 
-  // The live sheet: recomputed on every build change. This is the whole point.
   const sheet = useMemo(() => {
     try { return deriveSheet(buildForDerive, ctx); } catch { return null; }
   }, [buildForDerive, ctx]);
@@ -249,12 +302,11 @@ function ForgeInner() {
     [catalog, build.meta.className, enabledPartners],
   );
 
-  // --- gear catalog (mundane + magic) with type + search, from the SRD ---
+  // --- gear catalog (mundane + magic) with type + search ---
   const gearIndex = useMemo(() => {
     const rows: GearOption[] = [];
     srd.equipment.forEach((e) => rows.push({ name: e.name, type: e.category || "Gear", magic: false }));
     srd.magic.forEach((m) => rows.push({ name: m.name, type: m.category || "Wondrous", magic: true }));
-    // de-dupe by name (both-edition unions can repeat)
     const seen = new Set<string>();
     return rows.filter((r) => (seen.has(r.name) ? false : (seen.add(r.name), true)))
       .sort((a, b) => a.name.localeCompare(b.name));
@@ -264,33 +316,30 @@ function ForgeInner() {
     [gearIndex],
   );
 
-  // --- mutations (all go through setBuild so the sheet re-derives) ---
+  // --- mutations (all go through setBuild so the sheet re-derives, and mark unsaved) ---
   const patch = useCallback((fn: (b: Build) => Build) => {
     setBuild((prev) => fn(structuredCloneSafe(prev)));
     setSaveState("idle");
   }, []);
 
-  const setSpecies = (v: string) =>
-    patch((b) => { b.meta.species = v; return b; });   // variant is separate state, reset below
+  const setSpecies = (v: string) => patch((b) => { b.meta.species = v; return b; });
   const setVariant = (v: string) => { setSpeciesVariant(v); setSaveState("idle"); };
   const setBackground = (v: string) => patch((b) => { b.meta.background = v; return b; });
-  const setClassName = (v: string) =>
-    patch((b) => { b.meta.className = v; b.meta.subclass = ""; return b; });
+  const setClassName = (v: string) => patch((b) => { b.meta.className = v; b.meta.subclass = ""; return b; });
   const setSubclass = (v: string) => patch((b) => { b.meta.subclass = v; return b; });
-  const setLevel = (v: number) =>
-    patch((b) => { b.level = Math.max(1, Math.min(30, v || 1)); return b; });
+  const setLevel = (v: number) => patch((b) => { b.level = Math.max(1, Math.min(30, v || 1)); return b; });
   const setAbility = (a: Ability, v: number) =>
     patch((b) => { b.abilities[a] = Math.max(1, Math.min(epic.abilityCap, v || 10)); return b; });
-  const addItem = (name: string) =>
-    patch((b) => { if (name) b.gear.items = [...b.gear.items, { n: name }]; return b; });
+  const addItem = (nm: string) =>
+    patch((b) => { if (nm) b.gear.items = [...b.gear.items, { n: nm }]; return b; });
   const removeItem = (i: number) =>
     patch((b) => { b.gear.items = b.gear.items.filter((_, idx) => idx !== i); return b; });
   const setItemMod = (i: number, mod: number) =>
     patch((b) => { b.gear.items = b.gear.items.map((e, idx) => idx === i ? { ...e, mod } : e); return b; });
   const setItemVariant = (i: number, variant: string) =>
     patch((b) => { b.gear.items = b.gear.items.map((e, idx) => idx === i ? { ...e, variant } : e); return b; });
+  const editName = (v: string) => { setName(v); setSaveState("idle"); };
 
-  // When the species changes, a previously chosen variant may no longer belong to it; clear it.
   useEffect(() => {
     if (!speciesVariant) return;
     if (!variantOpts.some((v) => v.name === speciesVariant)) setSpeciesVariant("");
@@ -305,23 +354,73 @@ function ForgeInner() {
     setSaveState("idle");
   };
 
-  // --- save: write build + the denormalized columns the roster/encounter read (now incl. variant) ---
-  const save = useCallback(async () => {
-    if (!row) return;
+  // --- the write. One function for both stores; used by autosave and the explicit buttons. Returns
+  // the id it wrote (needed when a NEW build's first save creates the pc_library row). A creating
+  // ref guards against a double-insert when autosave and a button race on a brand-new build. ---
+  const creating = useRef(false);
+  const persist = useCallback(async (): Promise<boolean> => {
     setSaveState("saving");
-    const { error } = await supabase
-      .from("characters")
-      .update({
-        build: build as unknown as Record<string, unknown>,
-        species: build.meta.species || null,
-        class: build.meta.className || null,
-        subclass: build.meta.subclass || null,
-        species_variant: speciesVariant || null,
-        level: build.level,
-      })
-      .eq("id", row.id);
-    setSaveState(error ? "error" : "saved");
-  }, [supabase, row, build, speciesVariant]);
+    try {
+      if (mode === "character") {
+        if (!row) return false;
+        const { error } = await supabase
+          .from("characters")
+          .update({
+            build: build as unknown as Record<string, unknown>,
+            name: name || row.name,
+            species: build.meta.species || null,
+            class: build.meta.className || null,
+            subclass: build.meta.subclass || null,
+            species_variant: speciesVariant || null,
+            level: build.level,
+          })
+          .eq("id", row.id);
+        if (error) throw error;
+        setSaveState("saved");
+        return true;
+      }
+
+      // library or new -> pc_library
+      const denorm = denormOf(build, speciesVariant);
+      if (mode === "new" && !libId) {
+        if (creating.current) return false;    // an insert is already in flight
+        creating.current = true;
+        const newId = await saveToLibrary(supabase, name || "New character", build, denorm);
+        creating.current = false;
+        setLibId(newId);
+        setMode("library");
+        // Reflect the new id in the URL so a refresh keeps editing the same build, without a reload.
+        router.replace(`/me/forge?lib=${newId}`);
+        setSaveState("saved");
+        return true;
+      }
+      if (libId) {
+        await updateLibrary(supabase, libId, name || "New character", build, denorm);
+        setSaveState("saved");
+        return true;
+      }
+      return false;
+    } catch {
+      creating.current = false;
+      setSaveState("error");
+      return false;
+    }
+  }, [supabase, router, mode, row, libId, build, name, speciesVariant]);
+
+  // Autosave: debounce ~1s after the last change. Only runs once loaded and when there are unsaved
+  // edits (saveState "idle"). Skips while picking / signed out / errored.
+  useEffect(() => {
+    if (status !== "ready") return;
+    if (saveState !== "idle") return;
+    const t = setTimeout(() => { void persist(); }, 1000);
+    return () => clearTimeout(t);
+  }, [status, saveState, persist]);
+
+  const saveAndContinue = useCallback(async () => { await persist(); }, [persist]);
+  const saveAndExit = useCallback(async () => {
+    const ok = await persist();
+    if (ok) router.push("/me/library");
+  }, [persist, router]);
 
   // ---------------------------------------------------------------------------
   // Render
@@ -331,6 +430,8 @@ function ForgeInner() {
     position: "relative", minHeight: "100dvh", color: STONE.ink,
     fontFamily: FORGE_FONTS.body, ...forgeBackground(),
   };
+
+  const editable = status === "ready" && !!sheet;
 
   return (
     <div style={shellStyle}>
@@ -348,8 +449,20 @@ function ForgeInner() {
 
           {status === "picking" && <Picking stable={stable} />}
 
-          {status === "ready" && sheet && (
+          {editable && (
             <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 20 }}>
+              {/* Name (editable for every mode; it's the character's name). */}
+              <div style={stonePanel()}>
+                <label style={forgeLabel}>Character name</label>
+                <input value={name} onChange={(e) => editName(e.target.value)} placeholder="Name your character"
+                  style={{ ...stoneField(), cursor: "text", fontFamily: FORGE_FONTS.display, fontSize: 20 }} />
+                {mode !== "character" && (
+                  <p style={{ color: STONE.inkFaint, fontSize: 13, marginTop: 8 }}>
+                    This is a saved build in your library. Changes autosave; use “Play in campaign” from your library to bring it to a table.
+                  </p>
+                )}
+              </div>
+
               <IdentityPanel
                 build={build} speciesVariant={speciesVariant}
                 edition={edition} onEdition={setEdition}
@@ -368,18 +481,21 @@ function ForgeInner() {
                 onAdd={addItem} onRemove={removeItem} onMod={setItemMod} onVariant={setItemVariant}
               />
 
-              <SheetPanel sheet={sheet} name={row?.name || "Character"} />
+              <SheetPanel sheet={sheet} name={name || "Character"} />
 
-              <div style={{ display: "flex", gap: 14, alignItems: "center", justifyContent: "flex-end" }}>
+              <div style={{ display: "flex", gap: 12, alignItems: "center", justifyContent: "flex-end", flexWrap: "wrap" }}>
                 <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 12, color:
                   saveState === "saved" ? SAX.good : saveState === "error" ? SAX.warn : STONE.inkFaint }}>
                   {saveState === "saving" ? "Saving to the anvil…"
                     : saveState === "saved" ? "Saved"
-                    : saveState === "error" ? "Save failed. Try again."
+                    : saveState === "error" ? "Save failed. Retrying on next change."
                     : "Unsaved changes"}
                 </span>
-                <button className="forge-btn is-primary" style={stoneButton("primary")} onClick={save}>
-                  Save character
+                <button className="forge-btn is-ghost" style={stoneButton("ghost")} onClick={saveAndExit}>
+                  Save &amp; exit
+                </button>
+                <button className="forge-btn is-primary" style={stoneButton("primary")} onClick={saveAndContinue}>
+                  Save &amp; continue
                 </button>
               </div>
             </div>
@@ -389,10 +505,6 @@ function ForgeInner() {
     </div>
   );
 }
-
-// ---------------------------------------------------------------------------
-// Pieces
-// ---------------------------------------------------------------------------
 
 function FontsAndCss() {
   return (
