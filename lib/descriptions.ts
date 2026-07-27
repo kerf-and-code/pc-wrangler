@@ -49,13 +49,13 @@ export type BackgroundRecord = {
 
 export type FeatRecord = { name: string; prerequisite?: string; description?: string };
 
-export type SpeciesMechRecord = { name: string; ability_bonuses?: string; traits?: string; description?: string };
+export type SpeciesMechRecord = { name: string; ability_bonuses?: string; traits?: unknown; description?: string };
 
 // A description is a short lead line (composed facts) plus optional longer prose. The UI can show
 // the lead always and reveal `body` on expand.
 export type Described = { lead: string; body?: string };
 
-const clean = (s?: string | null): string => (s || "").replace(/\s+/g, " ").trim();
+const clean = (s?: unknown): string => (typeof s === "string" ? s : "").replace(/\s+/g, " ").trim();
 
 // ---- items (weapons, armor, gear, magic) --------------------------------------------------------
 
@@ -135,10 +135,33 @@ function composeBackgroundLead(rec: BackgroundRecord): string {
 export function describeSpecies(rec: SpeciesMechRecord | undefined): Described | null {
   if (!rec) return null;
   const bits: string[] = [];
-  if (rec.ability_bonuses) bits.push(rec.ability_bonuses);
+  if (typeof rec.ability_bonuses === "string" && rec.ability_bonuses) bits.push(rec.ability_bonuses);
   const lead = bits.join(" · ") || "Species";
-  const body = clean(rec.traits || rec.description || "") || undefined;
+  // traits may be a plain string (2014-style) OR an array of { name, desc } (2024 species JSON).
+  // Compose the array into readable prose; fall back to a string description if present.
+  const body = traitsToText(rec.traits) || (typeof rec.description === "string" ? clean(rec.description) : "") || undefined;
   return { lead, body };
+}
+
+// Normalize a species/feature traits field (string, or array of {name, desc}) into one string.
+function traitsToText(traits: unknown): string {
+  if (!traits) return "";
+  if (typeof traits === "string") return clean(traits);
+  if (Array.isArray(traits)) {
+    return traits
+      .map((t) => {
+        if (typeof t === "string") return clean(t);
+        if (t && typeof t === "object") {
+          const name = clean((t as { name?: string }).name);
+          const desc = clean((t as { desc?: string }).desc);
+          return name && desc ? `${name}: ${desc}` : (name || desc);
+        }
+        return "";
+      })
+      .filter(Boolean)
+      .join("  ·  ");
+  }
+  return "";
 }
 
 // ---- skills (not in the SRD JSON as rows; a small static table of the standard 18) ---------------
