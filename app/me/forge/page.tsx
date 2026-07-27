@@ -40,13 +40,13 @@ import { loadSrd } from "@/lib/srd/srd";
 import { buildRulesContext } from "@/lib/srd/rules-context";
 import {
   loadCatalog, partnerList, speciesOptions, classOptions, variantOptions, subclassOptions,
-  type Catalog, type Edition,
+  subclassRoles, type Catalog, type Edition,
 } from "@/lib/catalog";
 import {
   saveToLibrary, updateLibrary, saveCharacterToLibrary, type LibraryDenorm,
 } from "@/lib/pc-library";
 import {
-  describeItem, describeBackground, describeSpecies, type Described,
+  describeItem, describeBackground, describeSpecies, describeSkill, type Described,
   type ItemRecord, type BackgroundRecord, type SpeciesMechRecord,
 } from "@/lib/descriptions";
 import {
@@ -320,6 +320,12 @@ function ForgeInner() {
     () => (catalog ? subclassOptions(catalog, build.meta.className, enabledPartners) : []),
     [catalog, build.meta.className, enabledPartners],
   );
+  // Tactical role tags for the chosen subclass (from the catalog; these describe how it PLAYS, not
+  // its rules — the catalog has no prose). Shown as role chips, labeled as such.
+  const subclassRoleTags = useMemo(
+    () => (catalog ? subclassRoles(catalog, build.meta.className, build.meta.subclass) : []),
+    [catalog, build.meta.className, build.meta.subclass],
+  );
 
   // --- gear catalog (mundane + magic) with type + search ---
   const gearIndex = useMemo(() => {
@@ -504,7 +510,7 @@ function ForgeInner() {
                 partners={partners} enabledPartners={enabledPartners} onTogglePartner={togglePartner}
                 speciesOpts={speciesOpts} classOpts={classOpts} variantOpts={variantOpts}
                 subclassOpts={subclassOpts} backgroundOpts={srd.backgrounds.map((b) => b.name)}
-                speciesDesc={speciesDesc} backgroundDesc={backgroundDesc}
+                speciesDesc={speciesDesc} backgroundDesc={backgroundDesc} subclassRoleTags={subclassRoleTags}
                 catalogReady={!!catalog} epic={epic}
                 onSpecies={setSpecies} onVariant={setVariant} onBackground={setBackground}
                 onClassName={setClassName} onSubclass={setSubclass} onLevel={setLevel}
@@ -660,7 +666,7 @@ function IdentityPanel(props: {
   partners: string[]; enabledPartners: Set<string>; onTogglePartner: (p: string) => void;
   speciesOpts: { name: string }[]; classOpts: { name: string }[];
   variantOpts: { name: string; variant_kind: string }[]; subclassOpts: string[]; backgroundOpts: string[];
-  speciesDesc: Described | null; backgroundDesc: Described | null;
+  speciesDesc: Described | null; backgroundDesc: Described | null; subclassRoleTags: string[];
   catalogReady: boolean;
   epic: { abilityCap: number; asiCount: number; epicFeatCount: number };
   onSpecies: (v: string) => void; onVariant: (v: string) => void; onBackground: (v: string) => void;
@@ -669,7 +675,7 @@ function IdentityPanel(props: {
   const {
     build, speciesVariant, edition, onEdition, partners, enabledPartners, onTogglePartner,
     speciesOpts, classOpts, variantOpts, subclassOpts, backgroundOpts, speciesDesc, backgroundDesc,
-    catalogReady, epic,
+    subclassRoleTags, catalogReady, epic,
     onSpecies, onVariant, onBackground, onClassName, onSubclass, onLevel,
   } = props;
 
@@ -902,6 +908,8 @@ function GearPanel({ build, gearIndex, gearTypes, ctx, itemByName, onAdd, onRemo
 function SheetPanel({ sheet, name }: {
   sheet: NonNullable<ReturnType<typeof deriveSheet>>; name: string;
 }) {
+  const [showSkillText, setShowSkillText] = useState(false);
+  const trained = SKILLS.filter(([k]) => sheet.skills[k]?.rank > 0);
   const tiles: [string, string, string?][] = [
     ["Armor", String(sheet.ac), sheet.acFormula ? "unarmored" : "with armor"],
     ["Hit points", String(sheet.hpMax)],
@@ -949,17 +957,43 @@ function SheetPanel({ sheet, name }: {
       )}
 
       <div style={{ marginTop: 14 }}>
-        <div style={forgeLabel}>Trained skills</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={forgeLabel}>Trained skills</div>
+          {trained.length > 0 && (
+            <button onClick={() => setShowSkillText((v) => !v)}
+              style={{ background: "none", border: "none", cursor: "pointer",
+                fontFamily: FORGE_FONTS.mono, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase",
+                color: SAX.brass, padding: 0, marginBottom: 7 }}>
+              {showSkillText ? "hide −" : "what do these do? +"}
+            </button>
+          )}
+        </div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-          {SKILLS.filter(([k]) => sheet.skills[k]?.rank > 0).map(([k, label]) => (
+          {trained.map(([k, label]) => (
             <span key={k} style={stoneChip("brass")}>
               {label} {fmtMod(sheet.skills[k].val)}{sheet.skills[k].rank === 2 ? " ⋆" : ""}
             </span>
           ))}
-          {SKILLS.every(([k]) => (sheet.skills[k]?.rank || 0) === 0) && (
+          {trained.length === 0 && (
             <span style={{ color: STONE.inkFaint, fontSize: 13 }}>No trained skills yet.</span>
           )}
         </div>
+
+        {showSkillText && trained.length > 0 && (
+          <div style={{ display: "grid", gap: 6, marginTop: 10 }}>
+            {trained.map(([k, label, ability]) => {
+              const d = describeSkill(k, ability);
+              if (!d) return null;
+              return (
+                <div key={k} style={{ fontSize: 13.5, lineHeight: 1.5, color: STONE.inkDim }}>
+                  <span style={{ color: STONE.brassHi, fontFamily: FORGE_FONTS.display }}>{label}</span>
+                  <span style={{ color: STONE.inkFaint }}> ({ability.toUpperCase()}) </span>
+                  {d.body}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
