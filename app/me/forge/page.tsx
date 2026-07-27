@@ -50,6 +50,7 @@ import {
   traitList, type TraitEntry, type Described,
   type ItemRecord, type BackgroundRecord, type SpeciesMechRecord,
 } from "@/lib/descriptions";
+import { CharacterSheetPrint, type PrintTrait, type PrintFeature } from "@/components/character-sheet-print";
 import {
   classProgression, asiLevelsUpTo, epicProgression,
   type ClassRecord, type LevelGroup,
@@ -343,6 +344,22 @@ function ForgeInner() {
     }
     return out;
   }, [build.epicChoices, srd.featByName]);
+
+  // Class features gained, grouped by level, for the printable sheet's compact roster.
+  const classFeatureGroups = useMemo(() => {
+    const rec = srd.classByName[build.meta.className];
+    const byLevel: Record<number, string[]> = {};
+    (rec?.features_by_level || []).forEach((f) => {
+      if (f.level <= build.level) (byLevel[f.level] = byLevel[f.level] || []).push(f.name);
+    });
+    return Object.keys(byLevel).map(Number).sort((a, b) => a - b).map((lv) => ({ level: lv, names: byLevel[lv] }));
+  }, [srd.classByName, build.meta.className, build.level]);
+
+  // Trigger the browser's print dialog (user chooses "Save as PDF"). The print stylesheet in the
+  // sheet component hides the editor and reveals the clean sheet.
+  const downloadPdf = useCallback(() => {
+    if (typeof window !== "undefined") window.print();
+  }, []);
 
   // The ASI levels the character has reached, each of which grants an ability-score increase or a
   // feat. Standard 4/8/12/16/19 plus any class-specific extras (e.g. Fighter 6/14) plus epic ASIs
@@ -648,6 +665,11 @@ function ForgeInner() {
                       : "Save to library"}
                   </button>
                 )}
+                {sheet && (
+                  <button className="forge-btn is-ghost" style={stoneButton("ghost")} onClick={downloadPdf}>
+                    Download PDF
+                  </button>
+                )}
                 <button className="forge-btn is-ghost" style={stoneButton("ghost")} onClick={saveAndExit}>
                   Save &amp; exit
                 </button>
@@ -655,6 +677,23 @@ function ForgeInner() {
                   Save &amp; continue
                 </button>
               </div>
+
+              {sheet && (
+                <CharacterSheetPrint
+                  name={name || "Character"}
+                  species={build.meta.species} variantName={speciesVariant}
+                  className={build.meta.className} subclass={build.meta.subclass}
+                  background={build.meta.background} level={build.level}
+                  sheet={sheet}
+                  speciesTraits={traitList(srd.speciesByName[build.meta.species]?.traits) as PrintTrait[]}
+                  variantTraits={traitList(srd.variantByName[speciesVariant]?.traits) as PrintTrait[]}
+                  classFeatures={classFeatureGroups}
+                  feats={chosenFeats as PrintFeature[]}
+                  gear={(build.gear?.items || []).map((e) => ({
+                    name: e.n + (e.mod ? ` +${e.mod}` : "") + (e.variant ? ` (${e.variant})` : ""),
+                  }))}
+                />
+              )}
             </div>
           )}
         </div>
