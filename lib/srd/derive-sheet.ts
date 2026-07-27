@@ -347,6 +347,14 @@ export function deriveSheet(build: Build, ctx: RulesContext): DerivedSheet {  co
   // flows into every derived number with no rebuild.
   const liveAb = {} as Record<Ability, number>;
   ABILITIES.forEach((a) => { liveAb[a] = build.abilities[a]; });
+  // Species and feat/background ability-score bonuses raise the BASE score (a +2 racial adds to
+  // your stat), applied before gear so a gear "set" can still override a low result. In 2024 the
+  // species table carries no ability mods (they moved to backgrounds), so this is a no-op there;
+  // in 2014 the species table supplies "STR +2" etc., and featMods carries background bonuses.
+  const abMods = ctx.species[build.meta.species]?.mods || {};
+  const featAbMods = build.featMods || {};
+  ABILITIES.forEach((a) => { if (abMods[a]) liveAb[a] += abMods[a] as number; });
+  ABILITIES.forEach((a) => { if (featAbMods[a]) liveAb[a] += featAbMods[a] as number; });
   const geff = gearAbilityEffects(build.gear?.items || [], ctx);
   ABILITIES.forEach((a) => { if (geff.bump[a]) liveAb[a] += geff.bump[a] as number; });
   ABILITIES.forEach((a) => { const s = geff.set[a]; if (s !== undefined && liveAb[a] < s) liveAb[a] = s; });

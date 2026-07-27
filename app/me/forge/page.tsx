@@ -2,23 +2,29 @@
 
 // app/me/forge/page.tsx
 //
-// The Forge — the player-side PC character-sheet creator. Core slice: identity pickers, ability
-// scores, gear (the part that makes items change the derived stats), and a live sheet computed by
-// deriveSheet on every edit. Wired to characters.build.
+// The Forge — the player-side PC character-sheet creator. Identity (catalog-driven pickers),
+// ability scores, gear (the part that makes items change the derived stats), and a live sheet
+// computed by deriveSheet on every edit. Wired to characters.build.
 //
 // DATA PATH. The stable (app/me/characters) lists a player's characters via the my_characters RPC.
 // The Forge opens ONE of them with ?c=<character_id>, reads its build jsonb + denormalized columns
-// straight from the characters table, and writes build back with an update (the existing
-// "owner or gm edits character" UPDATE policy already permits the owner). No new table: the sheet
-// IS characters.build. If ?c is absent the page lists the stable so the player can pick one.
+// straight from the characters table, and writes build back with an update. No new table: the
+// sheet IS characters.build. If ?c is absent the page lists the stable so the player can pick one.
 //
-// AESTHETIC. Uses the locked dungeon design language from lib/forge-theme: the wall background,
-// translucent carved-stone panels, depth buttons, recessed stat tiles. Cinzel for display.
+// CONTENT SOURCE. The species / variant / class / subclass pickers read from the populated Supabase
+// CATALOG tables via lib/catalog (61 species, 75 variants, 14 classes, 316 subclasses), scoped by a
+// 2024/2014/both edition toggle and player-toggled partner chips — the same helper and filters the
+// GM workspace uses, so the two never drift. The SRD JSON stays the MECHANICS source the derivation
+// engine reads (ability bonuses, traits) and the source for gear + backgrounds (which have no
+// catalog table yet). A partnered species the engine doesn't model saves and shows its name fine;
+// its unique traits just won't compute until modeled.
+//
+// AESTHETIC. The locked dungeon design language from lib/forge-theme.
 
 import React, { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { SAX, stoneBackground } from "@/lib/theme";
+import { SAX } from "@/lib/theme";
 import SixAxesNav from "@/components/six-axes-nav";
 import {
   STONE, FORGE_FONTS, forgeBackground, forgeVignette, stonePanel, stoneButton,
@@ -28,12 +34,16 @@ import {
 import { loadSrd } from "@/lib/srd/srd";
 import { buildRulesContext } from "@/lib/srd/rules-context";
 import {
+  loadCatalog, partnerList, speciesOptions, classOptions, variantOptions, subclassOptions,
+  type Catalog, type Edition,
+} from "@/lib/catalog";
+import {
   deriveSheet, epicAdvancement, ABILITIES, SKILLS,
-  type Ability, type Build, type Ruleset, type GearEntry,
+  type Ability, type Build,
 } from "@/lib/srd/derive-sheet";
 
 // ---------------------------------------------------------------------------
-// A fresh build: sensible level-1 defaults the player edits from.
+// Build defaults + normalization
 // ---------------------------------------------------------------------------
 
 function emptyBuild(): Build {
@@ -49,8 +59,8 @@ function emptyBuild(): Build {
   };
 }
 
-// The stored build may be partial or from an older shape; fill any gaps so deriveSheet never
-// reads undefined. This is the one place that reconciles characters.build with the engine's Build.
+// The stored build may be partial or from an older shape; fill any gaps so deriveSheet never reads
+// undefined. This is the one place that reconciles characters.build with the engine's Build.
 function normalizeBuild(raw: unknown): Build {
   const b = (raw && typeof raw === "object" ? raw : {}) as Partial<Build>;
   const e = emptyBuild();
@@ -69,7 +79,7 @@ function normalizeBuild(raw: unknown): Build {
 type CharRow = {
   id: string; name: string; build: unknown;
   species: string | null; class: string | null; subclass: string | null;
-  level: number | null; alignment: string | null; campaign_id: string;
+  species_variant: string | null; level: number | null; alignment: string | null; campaign_id: string;
 };
 
 type StableRow = {
@@ -77,20 +87,37 @@ type StableRow = {
   species: string | null; class: string | null; level: number | null; kind: string;
 };
 
-const RULESET: Ruleset = "2024"; // core slice fixes the ruleset; a toggle comes in the next pass
+// The species_variant is carried alongside the Build (it lives in its own characters column, not in
+// build.meta), so the page tracks it in a small piece of state next to the build.
 
-// SRD option lists, loaded once for the current ruleset.
 type NameRow = { name: string };
-type SpeciesData = { species: NameRow[]; variants: unknown[] };
-type SubclassRow = { class: string; subclass: string };
+
+// Map an ability abbreviation from the SRD ("STR", "CON") to the engine's lowercase key.
+const ABBR_TO_KEY: Record<string, Ability> = {
+  STR: "str", DEX: "dex", CON: "con", INT: "int", WIS: "wis", CHA: "cha",
+};
+
+// Parse a 2014 species ability_bonuses string ("STR +2, CHA +1") into { str: 2, cha: 1 }.
+// Returns {} for 2024 species (which carry none) or an unrecognized shape.
+function parseAbilityBonuses(s: string | undefined | null): Partial<Record<Ability, number>> {
+  const out: Partial<Record<Ability, number>> = {};
+  if (!s) return out;
+  for (const part of s.split(",")) {
+    const m = part.trim().match(/^([A-Za-z]{3})\s*\+?(-?\d+)$/);
+    if (!m) continue;
+    const key = ABBR_TO_KEY[m[1].toUpperCase()];
+    if (key) out[key] = (out[key] || 0) + parseInt(m[2], 10);
+  }
+  return out;
+}
 
 // ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
 
-// The default export wraps the working component in a Suspense boundary, because ForgeInner
-// calls useSearchParams() (to read ?c=<id>), which Next.js requires be inside <Suspense> so the
-// route can prerender instead of being forced fully dynamic.
+// The default export wraps the working component in a Suspense boundary, because ForgeInner calls
+// useSearchParams() (to read ?c=<id>), which Next.js requires be inside <Suspense> so the route can
+// prerender instead of being forced fully dynamic.
 export default function ForgePage() {
   return (
     <Suspense fallback={null}>
@@ -107,15 +134,26 @@ function ForgeInner() {
   const [stable, setStable] = useState<StableRow[]>([]);
   const [row, setRow] = useState<CharRow | null>(null);
   const [build, setBuild] = useState<Build>(emptyBuild());
+  const [speciesVariant, setSpeciesVariant] = useState<string>("");
   const [status, setStatus] = useState<"loading" | "ready" | "picking" | "error" | "signedout">("loading");
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
 
-  // Load: either the chosen character (?c) or the stable to pick from.
+  // Catalog + its scoping controls. Edition defaults to 2024; partnered content is OFF until the
+  // player toggles a partner chip.
+  const [catalog, setCatalog] = useState<Catalog | null>(null);
+  const [edition, setEdition] = useState<Edition>("2024");
+  const [enabledPartners, setEnabledPartners] = useState<Set<string>>(new Set());
+
+  // Load: the catalog always, plus either the chosen character (?c) or the stable to pick from.
   useEffect(() => {
     let active = true;
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { if (active) setStatus("signedout"); return; }
+
+      // Catalog is needed whether we're picking or editing; load it up front and don't block the
+      // character load on it.
+      loadCatalog(supabase).then((c) => { if (active) setCatalog(c); }).catch(() => { /* pickers degrade to empty */ });
 
       if (!charId) {
         const { data, error } = await supabase.rpc("my_characters");
@@ -128,7 +166,7 @@ function ForgeInner() {
 
       const { data, error } = await supabase
         .from("characters")
-        .select("id, name, build, species, class, subclass, level, alignment, campaign_id")
+        .select("id, name, build, species, class, subclass, species_variant, level, alignment, campaign_id")
         .eq("id", charId)
         .single();
       if (!active) return;
@@ -136,6 +174,7 @@ function ForgeInner() {
       const r = data as CharRow;
       setRow(r);
       setBuild(seedFromRow(normalizeBuild(r.build), r));
+      setSpeciesVariant(r.species_variant || "");
       setStatus("ready");
     })();
     return () => { active = false; };
@@ -156,39 +195,74 @@ function ForgeInner() {
     };
   }
 
-  // --- SRD option lists + rules context (memoized on ruleset) ---
+  // --- SRD lists still needed: gear + backgrounds (no catalog table for these) + rules context.
+  // Gear and backgrounds follow the same edition selection as the catalog (2024/2014/both). ---
+  const srdMode = edition; // loadSrd takes the same "2024" | "2014" | "both" modes
   const srd = useMemo(() => {
-    const species = loadSrd("species", RULESET) as unknown as SpeciesData;
-    const classes = loadSrd("classes", RULESET) as unknown as NameRow[];
-    const backgrounds = loadSrd("backgrounds", RULESET) as unknown as NameRow[];
-    const subclasses = loadSrd("subclasses", RULESET) as unknown as SubclassRow[];
-    const equipment = loadSrd("equipment", RULESET) as unknown as NameRow[];
-    const magic = loadSrd("magic-items", RULESET) as unknown as NameRow[];
-    return { species, classes, backgrounds, subclasses, equipment, magic };
-  }, []);
+    const backgrounds = loadSrd("backgrounds", srdMode) as unknown as NameRow[];
+    const equipment = loadSrd("equipment", srdMode) as unknown as EquipRow[];
+    const magic = loadSrd("magic-items", srdMode) as unknown as MagicRow[];
+    // Species JSON (both editions) is the MECHANICS lookup for ability bonuses, keyed by name.
+    const speciesData = loadSrd("species", srdMode) as unknown as { species: SpeciesMechRow[]; variants: unknown[] };
+    const speciesByName: Record<string, SpeciesMechRow> = {};
+    (speciesData.species || []).forEach((s) => { speciesByName[s.name] = s; });
+    return { backgrounds, equipment, magic, speciesByName };
+  }, [srdMode]);
 
-  const ctx = useMemo(() => buildRulesContext(RULESET), []);
+  // deriveSheet reads mechanics for the base ruleset. "both" isn't a valid single ruleset for the
+  // engine, so fall back to 2024's mechanics tables in that mode (the pickable list is still the
+  // union; only the mechanics lookup narrows).
+  const ctx = useMemo(() => buildRulesContext(edition === "2014" ? "2014" : "2024"), [edition]);
+
+  // Apply the chosen species' ability bonuses (2014 species carry "CON +2" etc.; 2024 carry none)
+  // into build.featMods, which the engine adds to the base scores. Recomputed whenever species or
+  // edition changes. This keeps the engine generic and the parsing here.
+  const buildForDerive = useMemo<Build>(() => {
+    const mech = srd.speciesByName[build.meta.species];
+    const bonus = parseAbilityBonuses(mech?.ability_bonuses);
+    return { ...build, featMods: { ...(build.featMods || {}), ...bonus } };
+  }, [build, srd.speciesByName]);
 
   // The live sheet: recomputed on every build change. This is the whole point.
   const sheet = useMemo(() => {
-    try { return deriveSheet(build, ctx); } catch { return null; }
-  }, [build, ctx]);
+    try { return deriveSheet(buildForDerive, ctx); } catch { return null; }
+  }, [buildForDerive, ctx]);
 
   const epic = useMemo(() => epicAdvancement(build.level), [build.level]);
 
-  // Subclasses filtered to the chosen class.
-  const classSubclasses = useMemo(
-    () => srd.subclasses.filter((s) => s.class === build.meta.className).map((s) => s.subclass),
-    [srd.subclasses, build.meta.className],
+  // --- catalog-derived option lists ---
+  const partners = useMemo(() => (catalog ? partnerList(catalog) : []), [catalog]);
+  const speciesOpts = useMemo(
+    () => (catalog ? speciesOptions(catalog, enabledPartners, edition) : []),
+    [catalog, enabledPartners, edition],
+  );
+  const classOpts = useMemo(
+    () => (catalog ? classOptions(catalog, enabledPartners, edition) : []),
+    [catalog, enabledPartners, edition],
+  );
+  const variantOpts = useMemo(
+    () => (catalog ? variantOptions(catalog, build.meta.species, enabledPartners, edition) : []),
+    [catalog, build.meta.species, enabledPartners, edition],
+  );
+  const subclassOpts = useMemo(
+    () => (catalog ? subclassOptions(catalog, build.meta.className, enabledPartners) : []),
+    [catalog, build.meta.className, enabledPartners],
   );
 
-  // Every item the player can add (mundane gear + magic items), by name.
-  const itemNames = useMemo(() => {
-    const names = new Set<string>();
-    srd.equipment.forEach((e) => names.add(e.name));
-    srd.magic.forEach((m) => names.add(m.name));
-    return Array.from(names).sort();
+  // --- gear catalog (mundane + magic) with type + search, from the SRD ---
+  const gearIndex = useMemo(() => {
+    const rows: GearOption[] = [];
+    srd.equipment.forEach((e) => rows.push({ name: e.name, type: e.category || "Gear", magic: false }));
+    srd.magic.forEach((m) => rows.push({ name: m.name, type: m.category || "Wondrous", magic: true }));
+    // de-dupe by name (both-edition unions can repeat)
+    const seen = new Set<string>();
+    return rows.filter((r) => (seen.has(r.name) ? false : (seen.add(r.name), true)))
+      .sort((a, b) => a.name.localeCompare(b.name));
   }, [srd.equipment, srd.magic]);
+  const gearTypes = useMemo(
+    () => Array.from(new Set(gearIndex.map((g) => g.type))).sort(),
+    [gearIndex],
+  );
 
   // --- mutations (all go through setBuild so the sheet re-derives) ---
   const patch = useCallback((fn: (b: Build) => Build) => {
@@ -196,8 +270,13 @@ function ForgeInner() {
     setSaveState("idle");
   }, []);
 
-  const setMeta = (k: keyof Build["meta"], v: string) =>
-    patch((b) => { b.meta[k] = v; if (k === "className") b.meta.subclass = ""; return b; });
+  const setSpecies = (v: string) =>
+    patch((b) => { b.meta.species = v; return b; });   // variant is separate state, reset below
+  const setVariant = (v: string) => { setSpeciesVariant(v); setSaveState("idle"); };
+  const setBackground = (v: string) => patch((b) => { b.meta.background = v; return b; });
+  const setClassName = (v: string) =>
+    patch((b) => { b.meta.className = v; b.meta.subclass = ""; return b; });
+  const setSubclass = (v: string) => patch((b) => { b.meta.subclass = v; return b; });
   const setLevel = (v: number) =>
     patch((b) => { b.level = Math.max(1, Math.min(30, v || 1)); return b; });
   const setAbility = (a: Ability, v: number) =>
@@ -211,7 +290,22 @@ function ForgeInner() {
   const setItemVariant = (i: number, variant: string) =>
     patch((b) => { b.gear.items = b.gear.items.map((e, idx) => idx === i ? { ...e, variant } : e); return b; });
 
-  // --- save: write build + the denormalized columns the roster/encounter read ---
+  // When the species changes, a previously chosen variant may no longer belong to it; clear it.
+  useEffect(() => {
+    if (!speciesVariant) return;
+    if (!variantOpts.some((v) => v.name === speciesVariant)) setSpeciesVariant("");
+  }, [variantOpts, speciesVariant]);
+
+  const togglePartner = (p: string) => {
+    setEnabledPartners((prev) => {
+      const next = new Set(prev);
+      if (next.has(p)) next.delete(p); else next.add(p);
+      return next;
+    });
+    setSaveState("idle");
+  };
+
+  // --- save: write build + the denormalized columns the roster/encounter read (now incl. variant) ---
   const save = useCallback(async () => {
     if (!row) return;
     setSaveState("saving");
@@ -222,11 +316,12 @@ function ForgeInner() {
         species: build.meta.species || null,
         class: build.meta.className || null,
         subclass: build.meta.subclass || null,
+        species_variant: speciesVariant || null,
         level: build.level,
       })
       .eq("id", row.id);
     setSaveState(error ? "error" : "saved");
-  }, [supabase, row, build]);
+  }, [supabase, row, build, speciesVariant]);
 
   // ---------------------------------------------------------------------------
   // Render
@@ -251,25 +346,29 @@ function ForgeInner() {
           {status === "signedout" && <Muted>Sign in to open the Forge.</Muted>}
           {status === "error" && <Muted>That character could not be loaded. Head back to your stable and try again.</Muted>}
 
-          {status === "picking" && (
-            <Picking stable={stable} />
-          )}
+          {status === "picking" && <Picking stable={stable} />}
 
           {status === "ready" && sheet && (
             <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 20 }}>
               <IdentityPanel
-                build={build} srd={srd} classSubclasses={classSubclasses}
-                epic={epic} onMeta={setMeta} onLevel={setLevel}
+                build={build} speciesVariant={speciesVariant}
+                edition={edition} onEdition={setEdition}
+                partners={partners} enabledPartners={enabledPartners} onTogglePartner={togglePartner}
+                speciesOpts={speciesOpts} classOpts={classOpts} variantOpts={variantOpts}
+                subclassOpts={subclassOpts} backgroundOpts={srd.backgrounds.map((b) => b.name)}
+                catalogReady={!!catalog} epic={epic}
+                onSpecies={setSpecies} onVariant={setVariant} onBackground={setBackground}
+                onClassName={setClassName} onSubclass={setSubclass} onLevel={setLevel}
               />
 
               <AbilitiesPanel build={build} cap={epic.abilityCap} sheet={sheet} onAbility={setAbility} />
 
               <GearPanel
-                build={build} itemNames={itemNames} ctx={ctx}
+                build={build} gearIndex={gearIndex} gearTypes={gearTypes} ctx={ctx}
                 onAdd={addItem} onRemove={removeItem} onMod={setItemMod} onVariant={setItemVariant}
               />
 
-              <SheetPanel build={build} sheet={sheet} epic={epic} name={row?.name || "Character"} />
+              <SheetPanel sheet={sheet} name={row?.name || "Character"} />
 
               <div style={{ display: "flex", gap: 14, alignItems: "center", justifyContent: "flex-end" }}>
                 <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 12, color:
@@ -348,41 +447,104 @@ function PanelTitle({ children, hint }: { children: React.ReactNode; hint?: stri
 }
 
 // A carved dropdown (stoneField + a brass chevron).
-function Field({ label, value, onChange, options, placeholder }: {
+function Field({ label, value, onChange, options, placeholder, disabled }: {
   label: string; value: string; onChange: (v: string) => void;
-  options: string[]; placeholder?: string;
+  options: string[]; placeholder?: string; disabled?: boolean;
 }) {
   return (
     <div style={{ marginBottom: 16, position: "relative" }}>
       <label style={forgeLabel}>{label}</label>
-      <select value={value} onChange={(e) => onChange(e.target.value)} style={stoneField()}>
-        <option value="">{placeholder || `Choose ${label.toLowerCase()}`}</option>
-        {options.map((o) => <option key={o} value={o}>{o}</option>)}
+      <select value={value} onChange={(e) => onChange(e.target.value)} disabled={disabled}
+        style={{ ...stoneField(), opacity: disabled ? 0.5 : 1 }}>
+        <option value="" style={OPTION_STYLE}>{placeholder || `Choose ${label.toLowerCase()}`}</option>
+        {options.map((o) => <option key={o} value={o} style={OPTION_STYLE}>{o}</option>)}
       </select>
       <span style={{ position: "absolute", right: 14, bottom: 14, fontSize: 9, color: SAX.brass, pointerEvents: "none" }}>▼</span>
     </div>
   );
 }
 
-function IdentityPanel({ build, srd, classSubclasses, epic, onMeta, onLevel }: {
-  build: Build; srd: ReturnType<typeof useSrdShape>; classSubclasses: string[];
+function IdentityPanel(props: {
+  build: Build; speciesVariant: string;
+  edition: Edition; onEdition: (e: Edition) => void;
+  partners: string[]; enabledPartners: Set<string>; onTogglePartner: (p: string) => void;
+  speciesOpts: { name: string }[]; classOpts: { name: string }[];
+  variantOpts: { name: string; variant_kind: string }[]; subclassOpts: string[]; backgroundOpts: string[];
+  catalogReady: boolean;
   epic: { abilityCap: number; asiCount: number; epicFeatCount: number };
-  onMeta: (k: keyof Build["meta"], v: string) => void; onLevel: (v: number) => void;
+  onSpecies: (v: string) => void; onVariant: (v: string) => void; onBackground: (v: string) => void;
+  onClassName: (v: string) => void; onSubclass: (v: string) => void; onLevel: (v: number) => void;
 }) {
+  const {
+    build, speciesVariant, edition, onEdition, partners, enabledPartners, onTogglePartner,
+    speciesOpts, classOpts, variantOpts, subclassOpts, backgroundOpts, catalogReady, epic,
+    onSpecies, onVariant, onBackground, onClassName, onSubclass, onLevel,
+  } = props;
+
   return (
     <div style={stonePanel()}>
-      <PanelTitle hint="Who this character is. Levels 1 to 30; past 20 unlocks epic advancement.">Identity</PanelTitle>
+      <PanelTitle hint="Who this character is. Content comes from your campaign catalog; toggle partners to widen it.">Identity</PanelTitle>
+
+      {/* Ruleset toggle */}
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+        <span style={{ ...forgeLabel, marginBottom: 0 }}>Rules</span>
+        {(["2024", "2014", "both"] as Edition[]).map((e) => {
+          const on = edition === e;
+          return (
+            <button key={e} className={`forge-btn ${on ? "is-primary" : "is-ghost"}`}
+              style={{ ...stoneButton(on ? "primary" : "ghost"), padding: "6px 14px", fontSize: 12 }}
+              onClick={() => onEdition(e)}>
+              {e === "both" ? "Both" : e}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Partner chips */}
+      {partners.length > 0 && (
+        <div style={{ marginBottom: 18 }}>
+          <label style={forgeLabel}>Partnered content (off by default)</label>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            {partners.map((p) => {
+              const on = enabledPartners.has(p);
+              return (
+                <button key={p} onClick={() => onTogglePartner(p)}
+                  style={{
+                    ...stoneChip(on ? "brass" : "moss"),
+                    cursor: "pointer", border: "none",
+                    opacity: on ? 1 : 0.62,
+                    color: on ? STONE.brassHi : STONE.inkDim,
+                  }}>
+                  {on ? "◆" : "◇"} {p}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {!catalogReady && (
+        <p style={{ color: STONE.inkFaint, fontSize: 13, marginBottom: 12 }}>Loading the catalog&hellip;</p>
+      )}
+
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
         <Field label="Species" value={build.meta.species}
-          onChange={(v) => onMeta("species", v)} options={srd.species.species.map((s) => s.name)} />
-        <Field label="Background" value={build.meta.background}
-          onChange={(v) => onMeta("background", v)} options={srd.backgrounds.map((b) => b.name)} />
+          onChange={onSpecies} options={speciesOpts.map((s) => s.name)} />
+        <Field label={variantOpts[0]?.variant_kind === "lineage" ? "Lineage" : "Subrace"}
+          value={speciesVariant} onChange={onVariant}
+          options={variantOpts.map((v) => v.name)}
+          placeholder={variantOpts.length ? "Choose one" : "None for this species"}
+          disabled={variantOpts.length === 0} />
         <Field label="Class" value={build.meta.className}
-          onChange={(v) => onMeta("className", v)} options={srd.classes.map((c) => c.name)} />
+          onChange={onClassName} options={classOpts.map((c) => c.name)} />
         <Field label="Subclass" value={build.meta.subclass}
-          onChange={(v) => onMeta("subclass", v)} options={classSubclasses}
-          placeholder={build.meta.className ? "Choose subclass" : "Choose a class first"} />
+          onChange={onSubclass} options={subclassOpts}
+          placeholder={build.meta.className ? "Choose subclass" : "Choose a class first"}
+          disabled={!build.meta.className} />
+        <Field label="Background" value={build.meta.background}
+          onChange={onBackground} options={backgroundOpts} />
       </div>
+
       <div style={{ marginTop: 6 }}>
         <label style={forgeLabel}>Level</label>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -413,7 +575,7 @@ function AbilitiesPanel({ build, cap, sheet, onAbility }: {
 }) {
   return (
     <div style={stonePanel()}>
-      <PanelTitle hint="Base scores. Gear can raise or set these — the effective value shows below each.">Ability scores</PanelTitle>
+      <PanelTitle hint="Base scores. Species, background, and gear can raise these — the effective value shows below each.">Ability scores</PanelTitle>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(110px,1fr))", gap: 14 }}>
         {ABILITIES.map((a) => {
           const eff = sheet.abilities[a];
@@ -439,23 +601,49 @@ function AbilitiesPanel({ build, cap, sheet, onAbility }: {
   );
 }
 
-function GearPanel({ build, itemNames, ctx, onAdd, onRemove, onMod, onVariant }: {
-  build: Build; itemNames: string[];
+function GearPanel({ build, gearIndex, gearTypes, ctx, onAdd, onRemove, onMod, onVariant }: {
+  build: Build; gearIndex: GearOption[]; gearTypes: string[];
   ctx: ReturnType<typeof buildRulesContext>;
   onAdd: (n: string) => void; onRemove: (i: number) => void;
   onMod: (i: number, mod: number) => void; onVariant: (i: number, v: string) => void;
 }) {
   const [pick, setPick] = useState("");
+  const [query, setQuery] = useState("");
+  const [typeFilter, setTypeFilter] = useState("");
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return gearIndex.filter((g) =>
+      (!typeFilter || g.type === typeFilter) && (!q || g.name.toLowerCase().includes(q)),
+    );
+  }, [gearIndex, query, typeFilter]);
+
   return (
     <div style={stonePanel()}>
       <PanelTitle hint="Equip gear and it flows into the sheet — armor sets AC, a belt can set a score, a +1 weapon adjusts attacks.">Gear</PanelTitle>
 
+      {/* Search + type filter */}
+      <div style={{ display: "flex", gap: 12, marginBottom: 12, flexWrap: "wrap" }}>
+        <div style={{ flex: "2 1 220px" }}>
+          <label style={forgeLabel}>Search</label>
+          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Filter by name…"
+            style={{ ...stoneField(), cursor: "text" }} />
+        </div>
+        <div style={{ flex: "1 1 150px", position: "relative" }}>
+          <label style={forgeLabel}>Type</label>
+          <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} style={stoneField()}>
+            <option value="" style={OPTION_STYLE}>All types</option>
+            {gearTypes.map((t) => <option key={t} value={t} style={OPTION_STYLE}>{t}</option>)}
+          </select>
+        </div>
+      </div>
+
       <div style={{ display: "flex", gap: 12, alignItems: "flex-end", marginBottom: 16 }}>
         <div style={{ flex: 1, position: "relative" }}>
-          <label style={forgeLabel}>Add item</label>
+          <label style={forgeLabel}>Add item ({filtered.length})</label>
           <select value={pick} onChange={(e) => setPick(e.target.value)} style={stoneField()}>
-            <option value="">Choose an item</option>
-            {itemNames.map((n) => <option key={n} value={n}>{n}</option>)}
+            <option value="" style={OPTION_STYLE}>Choose an item</option>
+            {filtered.map((g) => <option key={g.name} value={g.name} style={OPTION_STYLE}>{g.name}  ·  {g.type}</option>)}
           </select>
         </div>
         <button className="forge-btn" style={stoneButton("stone")}
@@ -481,15 +669,15 @@ function GearPanel({ build, itemNames, ctx, onAdd, onRemove, onMod, onVariant }:
             {variantSpec && (
               <select value={e.variant || ""} onChange={(ev) => onVariant(i, ev.target.value)}
                 style={{ ...stoneField(), width: 150, padding: "6px 10px", fontSize: 13 }}>
-                <option value="">{variantSpec.options[0] ? "Choose variant" : ""}</option>
-                {variantSpec.options.map((o) => <option key={o.name} value={o.name}>{o.name}</option>)}
+                <option value="" style={OPTION_STYLE}>{variantSpec.options[0] ? "Choose variant" : ""}</option>
+                {variantSpec.options.map((o) => <option key={o.name} value={o.name} style={OPTION_STYLE}>{o.name}</option>)}
               </select>
             )}
 
             {canMod && (
               <select value={e.mod || 0} onChange={(ev) => onMod(i, parseInt(ev.target.value, 10))}
                 style={{ ...stoneField(), width: 74, padding: "6px 10px", fontSize: 13 }}>
-                {[0, 1, 2, 3].map((n) => <option key={n} value={n}>{n ? `+${n}` : "±0"}</option>)}
+                {[0, 1, 2, 3].map((n) => <option key={n} value={n} style={OPTION_STYLE}>{n ? `+${n}` : "±0"}</option>)}
               </select>
             )}
 
@@ -502,9 +690,8 @@ function GearPanel({ build, itemNames, ctx, onAdd, onRemove, onMod, onVariant }:
   );
 }
 
-function SheetPanel({ build, sheet, epic, name }: {
-  build: Build; sheet: NonNullable<ReturnType<typeof deriveSheet>>;
-  epic: { abilityCap: number }; name: string;
+function SheetPanel({ sheet, name }: {
+  sheet: NonNullable<ReturnType<typeof deriveSheet>>; name: string;
 }) {
   const tiles: [string, string, string?][] = [
     ["Armor", String(sheet.ac), sheet.acFormula ? "unarmored" : "with armor"],
@@ -534,7 +721,6 @@ function SheetPanel({ build, sheet, epic, name }: {
         ))}
       </div>
 
-      {/* Saves */}
       <div style={{ marginTop: 18 }}>
         <div style={forgeLabel}>Saving throws</div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
@@ -544,7 +730,6 @@ function SheetPanel({ build, sheet, epic, name }: {
         </div>
       </div>
 
-      {/* Resistances, if any */}
       {sheet.resist.length > 0 && (
         <div style={{ marginTop: 14 }}>
           <div style={forgeLabel}>Resistances</div>
@@ -554,13 +739,12 @@ function SheetPanel({ build, sheet, epic, name }: {
         </div>
       )}
 
-      {/* Skills the character is trained in */}
       <div style={{ marginTop: 14 }}>
         <div style={forgeLabel}>Trained skills</div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-          {SKILLS.filter(([k]) => sheet.skills[k]?.rank > 0).map(([k, name]) => (
+          {SKILLS.filter(([k]) => sheet.skills[k]?.rank > 0).map(([k, label]) => (
             <span key={k} style={stoneChip("brass")}>
-              {name} {fmtMod(sheet.skills[k].val)}{sheet.skills[k].rank === 2 ? " ⋆" : ""}
+              {label} {fmtMod(sheet.skills[k].val)}{sheet.skills[k].rank === 2 ? " ⋆" : ""}
             </span>
           ))}
           {SKILLS.every(([k]) => (sheet.skills[k]?.rank || 0) === 0) && (
@@ -595,25 +779,23 @@ function Picking({ stable }: { stable: StableRow[] }) {
 }
 
 // ---------------------------------------------------------------------------
-// Small helpers
+// Small helpers + local types
 // ---------------------------------------------------------------------------
 
+type EquipRow = { name: string; category?: string };
+type MagicRow = { name: string; category?: string; rarity?: string };
+type SpeciesMechRow = { name: string; ability_bonuses?: string };
+type GearOption = { name: string; type: string; magic: boolean };
+
 const fmtMod = (n: number): string => (n >= 0 ? `+${n}` : `${n}`);
+
+// The open dropdown list is drawn by the browser, not the page, so it ignores stoneField()'s dark
+// styling and defaults to light-on-light (the low-contrast bug). Styling each <option> explicitly
+// with a dark stone background and bright ink text fixes the contrast in the popup.
+const OPTION_STYLE: React.CSSProperties = { background: "#1a1611", color: "#f0e6d0" };
 
 // structuredClone is available in modern browsers; fall back to JSON for older ones.
 function structuredCloneSafe<T>(v: T): T {
   if (typeof structuredClone === "function") return structuredClone(v);
   return JSON.parse(JSON.stringify(v)) as T;
-}
-
-// A tiny type alias so IdentityPanel's prop can name the srd shape without repeating it.
-function useSrdShape() {
-  return {
-    species: { species: [] as { name: string }[], variants: [] as unknown[] },
-    classes: [] as { name: string }[],
-    backgrounds: [] as { name: string }[],
-    subclasses: [] as { class: string; subclass: string }[],
-    equipment: [] as { name: string }[],
-    magic: [] as { name: string }[],
-  };
 }
