@@ -57,8 +57,27 @@ export const RULES_DATA = rulesData as unknown as RulesData;
 // movement). Built from the SRD equipment + magic-item JSON per ruleset.
 // ---------------------------------------------------------------------------
 
-type EquipRow = { name: string; category?: string; weapon_category?: string; armor_category?: string };
+type EquipRow = { name: string; category?: string; weapon_category?: string; armor_category?: string; armor_class?: string };
 type MagicRow = { name: string; category?: string; rarity?: string };
+
+// Parse an armor_class string ("15 + Dex modifier (max 2)", "16", "18", "11 + Dex modifier") into a
+// base AC number and a Dex cap. Dex cap: null = add full DEX (Light armor), a number = cap DEX at
+// that value (Medium = 2), 0 = no DEX (Heavy). Falls back to category when the string is terse.
+function parseArmorClass(acStr: string | undefined, category: string | undefined): { baseAC: number | null; dexCap: number | null } {
+  const cat = (category || "").toLowerCase();
+  const byCategory: number | null = cat === "heavy" ? 0 : cat === "medium" ? 2 : null; // light/shield => null (full/na)
+  if (!acStr) return { baseAC: null, dexCap: byCategory };
+  const baseMatch = acStr.match(/^\s*(\d+)/);
+  const baseAC = baseMatch ? parseInt(baseMatch[1], 10) : null;
+  // Explicit "(max N)" wins; else "+ Dex" with no max means full DEX (Light); else no Dex mention
+  // means the category rule (Heavy = 0). Trust the category for Medium/Heavy over the string.
+  const maxMatch = acStr.match(/max\s+(\d+)/i);
+  let dexCap: number | null;
+  if (maxMatch) dexCap = parseInt(maxMatch[1], 10);
+  else if (/dex/i.test(acStr)) dexCap = byCategory !== null ? byCategory : null; // "+ Dex modifier" with no max
+  else dexCap = byCategory !== null ? byCategory : 0; // a bare number with no Dex mention = Heavy (no Dex)
+  return { baseAC, dexCap };
+}
 
 function itemsFromEquipment(rows: EquipRow[]): Record<string, ItemDef> {
   const out: Record<string, ItemDef> = {};
@@ -67,7 +86,13 @@ function itemsFromEquipment(rows: EquipRow[]): Record<string, ItemDef> {
       out[r.name] = { kind: "Weapon", sub: r.weapon_category, rarity: "mundane" };
     } else if (r.armor_category) {
       // armor_category is Light | Medium | Heavy | Shield; the engine keys on Heavy and Shield.
-      out[r.name] = { kind: "Armor", sub: r.armor_category, rarity: "mundane" };
+      // Shields contribute via their flat +2 (handled as a magic-style bonus), not a base AC.
+      if (r.armor_category === "Shield") {
+        out[r.name] = { kind: "Armor", sub: "Shield", rarity: "mundane" };
+      } else {
+        const { baseAC, dexCap } = parseArmorClass(r.armor_class, r.armor_category);
+        out[r.name] = { kind: "Armor", sub: r.armor_category, rarity: "mundane", baseAC: baseAC ?? undefined, dexCap };
+      }
     }
   }
   return out;

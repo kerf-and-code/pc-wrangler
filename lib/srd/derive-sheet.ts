@@ -113,7 +113,7 @@ export type ClassRule = {
 export type SpeciesRule = { speed?: number; mods?: Record<string, number>; resist?: string[] };
 export type SubclassRule = { casting?: CastRule | null };
 export type CastRule = { ability: Ability };
-export type ItemDef = { kind: string; sub?: string; rarity?: string };
+export type ItemDef = { kind: string; sub?: string; rarity?: string; baseAC?: number; dexCap?: number | null };
 
 // The pluggable epic (21-30) progression table. DEFAULT_EPIC below now carries the OFFICIAL
 // Epic Legacy Core Rulebook (2CGaming, v1.0) progression, verified from the player-version
@@ -249,14 +249,21 @@ const UNARMORED_AC: Record<Ruleset, {
   },
 };
 
-function wornArmorKinds(build: Build, ctx: RulesContext): { body: string | null; shield: boolean; heavy: boolean } {
-  const out = { body: null as string | null, shield: false, heavy: false };
+function wornArmorKinds(build: Build, ctx: RulesContext): {
+  body: string | null; shield: boolean; heavy: boolean; baseAC: number | null; dexCap: number | null;
+} {
+  const out = { body: null as string | null, shield: false, heavy: false,
+    baseAC: null as number | null, dexCap: null as number | null };
   for (const e of build.gear?.items || []) {
     const it = ctx.items[gearName(e)];
     if (!it || it.kind !== "Armor") continue;
     if (it.sub === "Shield") { out.shield = true; continue; }
     out.body = it.sub || "worn";
     if (it.sub === "Heavy") out.heavy = true;
+    // The last body armor wins (you wear one). Carry its base AC and Dex cap so the AC calc can use
+    // them: Light armor adds full Dex (cap null), Medium caps Dex at +2, Heavy adds no Dex (cap 0).
+    if (typeof it.baseAC === "number") out.baseAC = it.baseAC;
+    out.dexCap = it.dexCap === undefined ? out.dexCap : it.dexCap;
   }
   return out;
 }
@@ -402,13 +409,24 @@ export function deriveSheet(build: Build, ctx: RulesContext): DerivedSheet {  co
 
   // Class features that set base AC while unarmored replace armorBase and can add a second
   // ability modifier on top of DEX.
+  const worn = wornArmorKinds(build, ctx);
   const udRule = unarmoredACRule(build, ctx);
-  const acBase = udRule ? udRule.base : build.armorBase;
+  // Base AC priority: an unarmored-defense class feature, else the worn body armor's own base AC,
+  // else the stored armorBase (10 by default). This is what makes Half Plate's 15 (etc.) actually
+  // set the floor instead of only the magic +N applying.
+  const acBase = udRule ? udRule.base
+    : (worn.body && typeof worn.baseAC === "number" ? worn.baseAC : build.armorBase);
   const acAbil = udRule && udRule.add ? m[udRule.add] : 0;
+  // DEX contribution respects the armor's cap: Light armor + unarmored add full DEX (cap null);
+  // Medium caps at +2; Heavy adds none (cap 0). Unarmored-defense features add full DEX.
+  const dexCap = udRule ? null : (worn.body ? worn.dexCap : null);
+  const dexToAc = dexCap === null || dexCap === undefined ? m.dex : Math.min(m.dex, dexCap);
   const acFormula = udRule
     ? `${udRule.label}: ${udRule.base} plus DEX${udRule.add ? ` plus ${udRule.add.toUpperCase()}` : ""}`
     : "";
-  const ac = acBase + m.dex + acAbil + build.armorMisc + (em.ac || 0) + gearAcBonus;
+  // A shield adds a flat +2 to AC (5e), stacking on armor or unarmored defense.
+  const shieldBonus = worn.shield ? 2 : 0;
+  const ac = acBase + dexToAc + acAbil + build.armorMisc + (em.ac || 0) + gearAcBonus + shieldBonus;
 
   const cls = ctx.classes[build.meta.className] || {};
   const hd = cls.hitDie || 8;
@@ -464,7 +482,7 @@ export function deriveSheet(build: Build, ctx: RulesContext): DerivedSheet {  co
 
   // Speed: species base plus class movement features (Monk unarmored, Barbarian fast).
   let speed = (ctx.species[build.meta.species]?.speed || 30) + (em.speed || 0);
-  const wa = wornArmorKinds(build, ctx);
+  const wa = worn;
   let speedLabel = "";
   if (build.meta.className === "Monk" && !wa.body && !wa.shield && build.armorBase <= 10) {
     const cs = stepValue(MONK_MOVE, build.level);
