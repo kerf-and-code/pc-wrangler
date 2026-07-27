@@ -118,3 +118,23 @@ export function subclassOptions(
     .map((r) => r.subclass as string)
     .sort();
 }
+
+// The tactical ROLE tags for a subclass (e.g. ["tank","support"]), from class_capabilities. These
+// are what the encounter balancer uses — they describe how the subclass plays, not its rules text
+// (the catalog carries no prose). Returns [] when the subclass isn't found or has no tags. The UI
+// must present these AS role tags, not as a rules description.
+export function subclassRoles(cat: Catalog, className: string, subclassName: string): string[] {
+  if (!subclassName) return [];
+  const row = cat.caps.find((r) => r.class === className && r.subclass === subclassName);
+  if (!row) return [];
+  const cap = row.capabilities;
+  // capabilities is a jsonb array of strings; be defensive about shape.
+  if (Array.isArray(cap)) return cap.filter((x): x is string => typeof x === "string");
+  if (typeof cap === "string") {
+    try {
+      const parsed = JSON.parse(cap);
+      return Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === "string") : [];
+    } catch { return []; }
+  }
+  return [];
+}

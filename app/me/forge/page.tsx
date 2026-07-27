@@ -755,6 +755,20 @@ function IdentityPanel(props: {
         </div>
       )}
 
+      {/* Subclass tactical role, from the catalog. Labeled as ROLE, not a rules description — the
+          catalog has no prose, so we surface what it truthfully has: how the subclass plays. */}
+      {build.meta.subclass && subclassRoleTags.length > 0 && (
+        <div style={{ marginBottom: 8, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+          <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 11, letterSpacing: "0.12em",
+            textTransform: "uppercase", color: STONE.inkFaint }}>
+            {build.meta.subclass} plays as
+          </span>
+          {subclassRoleTags.map((t) => (
+            <span key={t} style={stoneChip("moss")}>{t.replace(/_/g, " ")}</span>
+          ))}
+        </div>
+      )}
+
       <div style={{ marginTop: 6 }}>
         <label style={forgeLabel}>Level</label>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
