@@ -50,10 +50,11 @@ import {
   type ItemRecord, type BackgroundRecord, type SpeciesMechRecord,
 } from "@/lib/descriptions";
 import {
-  classProgression, isAsiLevel, asiLevelsUpTo, type ClassRecord, type LevelGroup,
+  classProgression, asiLevelsUpTo, epicProgression,
+  type ClassRecord, type LevelGroup,
 } from "@/lib/class-progression";
 import {
-  deriveSheet, epicAdvancement, ABILITIES, SKILLS,
+  deriveSheet, epicAdvancement, ABILITIES, SKILLS, DEFAULT_EPIC,
   type Ability, type Build, type EpicChoice,
 } from "@/lib/srd/derive-sheet";
 
@@ -314,6 +315,12 @@ function ForgeInner() {
     [srd.classByName, build.meta.className, build.level],
   );
 
+  // Epic-tier (21-30) progression rows, from the real epic table. Empty at level 20 or below.
+  const epicRows = useMemo<LevelGroup[]>(
+    () => epicProgression(DEFAULT_EPIC, build.level),
+    [build.level],
+  );
+
   // The ASI levels the character has reached, each of which grants an ability-score increase or a
   // feat. Standard 4/8/12/16/19 plus any class-specific extras (e.g. Fighter 6/14) plus epic ASIs
   // (21/23/25/27/29, from the Epic Legacy table baked into the engine's DEFAULT_EPIC).
@@ -568,10 +575,10 @@ function ForgeInner() {
 
               <AbilitiesPanel build={build} cap={epic.abilityCap} sheet={sheet} onAbility={setAbility} />
 
-              {build.meta.className && progression.length > 0 && (
+              {build.meta.className && (progression.length > 0 || epicRows.length > 0) && (
                 <ClassProgressionPanel
                   className={build.meta.className} level={build.level}
-                  progression={progression}
+                  progression={progression} epicRows={epicRows}
                   classRec={srd.classByName[build.meta.className]}
                 />
               )}
@@ -893,8 +900,8 @@ function AbilitiesPanel({ build, cap, sheet, onAbility }: {
 // Shows what the class grants at each level, up to the character's current level. Each level is a
 // row; features reveal their description on tap. ASI levels are flagged (the picker that lets you
 // spend them is a separate, later build).
-function ClassProgressionPanel({ className, level, progression, classRec }: {
-  className: string; level: number; progression: LevelGroup[];
+function ClassProgressionPanel({ className, level, progression, epicRows, classRec }: {
+  className: string; level: number; progression: LevelGroup[]; epicRows: LevelGroup[];
   classRec: ClassRecord | undefined;
 }) {
   const meta = [
@@ -902,6 +909,20 @@ function ClassProgressionPanel({ className, level, progression, classRec }: {
     classRec?.primary_ability ? `Primary: ${classRec.primary_ability}` : null,
     classRec?.saving_throws ? `Saves: ${classRec.saving_throws}` : null,
   ].filter(Boolean).join("  ·  ");
+
+  const renderRow = (grp: LevelGroup) => (
+    <div key={grp.level} style={{ display: "grid", gridTemplateColumns: "44px 1fr", gap: 12, alignItems: "start" }}>
+      <div style={{ fontFamily: FORGE_FONTS.display, fontSize: 18, color: STONE.brassHi, textAlign: "right", paddingTop: 2 }}>
+        {grp.level}
+      </div>
+      <div style={{ display: "grid", gap: 6, borderLeft: `1px solid ${STONE.mortar}`, paddingLeft: 12 }}>
+        {grp.features.map((f, i) => (
+          <FeatureLine key={`${f.name}-${i}`} name={f.name} desc={f.desc}
+            asi={/ability score improvement/i.test(f.name)} />
+        ))}
+      </div>
+    </div>
+  );
 
   return (
     <div style={stonePanel()}>
@@ -914,23 +935,22 @@ function ClassProgressionPanel({ className, level, progression, classRec }: {
       )}
 
       <div style={{ display: "grid", gap: 10 }}>
-        {progression.map((grp) => (
-          <div key={grp.level} style={{ display: "grid", gridTemplateColumns: "44px 1fr", gap: 12, alignItems: "start" }}>
-            <div style={{
-              fontFamily: FORGE_FONTS.display, fontSize: 18, color: STONE.brassHi, textAlign: "right",
-              paddingTop: 2,
-            }}>
-              {grp.level}
-            </div>
-            <div style={{ display: "grid", gap: 6, borderLeft: `1px solid ${STONE.mortar}`, paddingLeft: 12 }}>
-              {grp.features.map((f, i) => (
-                <FeatureLine key={`${f.name}-${i}`} name={f.name} desc={f.desc}
-                  asi={isAsiLevel(classRec, grp.level) && /ability score improvement/i.test(f.name)} />
-              ))}
-            </div>
-          </div>
-        ))}
+        {progression.map(renderRow)}
       </div>
+
+      {epicRows.length > 0 && (
+        <>
+          <div style={{ ...forgeLabel, marginTop: 20, marginBottom: 10, color: SAX.brass }}>
+            Epic tiers (21-30)
+          </div>
+          <p style={{ color: STONE.inkFaint, fontSize: 12.5, lineHeight: 1.5, marginBottom: 12 }}>
+            Published class tables end at 20. Past that, advancement comes from the epic framework, higher proficiency, ability increases, and epic boons, rather than new class features.
+          </p>
+          <div style={{ display: "grid", gap: 10 }}>
+            {epicRows.map(renderRow)}
+          </div>
+        </>
+      )}
     </div>
   );
 }

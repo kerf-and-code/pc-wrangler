@@ -73,3 +73,50 @@ export function asiLevelsUpTo(cls: ClassRecord | undefined, maxLevel: number): n
   });
   return [...levels].sort((a, b) => a - b);
 }
+
+// The epic table shape this module reads (a subset of the engine's EpicTable). Passing the real
+// DEFAULT_EPIC keeps the epic rows sourced from actual data, not invented numbers.
+export type EpicInfo = {
+  pbByLevel?: Record<number, number>;
+  asiLevels?: number[];
+  epicFeatLevels?: number[];
+  abilityCap?: number;
+};
+
+// Published class tables stop at level 20; levels 21-30 are the Epic Legacy extension, which grants
+// advancement through the epic framework (higher proficiency, ability increases, epic boons, a
+// raised ability cap) rather than per-level class features. This builds progression rows for the
+// epic tier from the real epic table so the panel shows what each epic level actually grants,
+// instead of appearing empty past 20.
+//
+// Tiers follow Epic Legacy: 21-25 Epic, 26-29 Legendary, 30 the Finale. Only levels up to maxLevel
+// are returned, and only when maxLevel > 20.
+export function epicProgression(epic: EpicInfo | undefined, maxLevel: number): LevelGroup[] {
+  if (!epic || maxLevel <= 20) return [];
+  const asi = new Set(epic.asiLevels || []);
+  const feats = new Set(epic.epicFeatLevels || []);
+  const pb = epic.pbByLevel || {};
+  const groups: LevelGroup[] = [];
+
+  for (let level = 21; level <= Math.min(maxLevel, 30); level++) {
+    const features: { name: string; desc: string }[] = [];
+
+    // Tier openers.
+    if (level === 21) features.push({
+      name: "Epic tier",
+      desc: `You cross into epic play. Your proficiency bonus, ability ceiling (now ${epic.abilityCap || 30}), and power scale beyond the mortal tiers.`,
+    });
+    if (level === 26) features.push({ name: "Legendary tier", desc: "Your deeds pass into legend; the world reshapes around your presence." });
+    if (level === 30) features.push({ name: "Finale", desc: "The pinnacle of epic advancement, the capstone of a legendary career." });
+
+    // Proficiency bonus increases (only note the level it changes).
+    if (pb[level] && pb[level] !== pb[level - 1]) {
+      features.push({ name: `Proficiency bonus +${pb[level]}`, desc: `Your proficiency bonus rises to +${pb[level]}.` });
+    }
+    if (asi.has(level)) features.push({ name: "Ability Score Improvement", desc: "Increase your ability scores or take a feat (chosen below)." });
+    if (feats.has(level)) features.push({ name: "Epic Boon", desc: "You gain an Epic Boon of your choice (chosen below)." });
+
+    if (features.length) groups.push({ level, features });
+  }
+  return groups;
+}
