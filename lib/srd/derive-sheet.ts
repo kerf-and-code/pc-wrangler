@@ -163,9 +163,31 @@ function gearMod(e: GearEntry | string): number {
   return typeof e === "object" && e?.mod ? e.mod : 0;
 }
 
+// Some catalogs serve giant-strength items under their FULL name ("Belt of Storm Giant Strength")
+// while the effect table keys the base variant item ("Belt of Giant Strength") with a lineage
+// dropdown. Resolve a full name to {base, lineage} so either form matches the same effect. Returns
+// null when the name isn't a giant-strength item, leaving normal lookup untouched.
+const GIANT_LINEAGES = ["Hill", "Frost", "Stone", "Fire", "Cloud", "Storm"];
+function resolveGiantStrength(nm: string): { base: string; lineage: string } | null {
+  // "Belt of Storm Giant Strength" / "Potion of Fire Giant Strength"
+  const m = nm.match(/^(Belt|Potion) of (Hill|Frost|Stone|Fire|Cloud|Storm) Giant Strength$/);
+  if (m) return { base: `${m[1]} of Giant Strength`, lineage: `${m[2]} giant` };
+  return null;
+}
+
 // The effect a gear entry contributes, resolving a variant choice if the item needs one.
 function gearEffectOf(e: GearEntry, ctx: RulesContext): ItemEffect | null {
   const nm = gearName(e);
+
+  // Fully-named giant-strength item: map to the base variant + its lineage, ignoring any need for a
+  // separate variant pick (the lineage is in the name).
+  const giant = resolveGiantStrength(nm);
+  if (giant) {
+    const varSpec = ctx.itemVariants[giant.base];
+    const opt = varSpec?.options.find((o) => o.name === giant.lineage);
+    if (opt) return opt.effect;
+  }
+
   const varSpec = ctx.itemVariants[nm];
   if (varSpec) {
     const chosen = e?.variant;
