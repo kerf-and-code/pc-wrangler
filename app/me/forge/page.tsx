@@ -43,7 +43,7 @@ import {
   type Catalog, type Edition,
 } from "@/lib/catalog";
 import {
-  saveToLibrary, updateLibrary, type LibraryDenorm,
+  saveToLibrary, updateLibrary, saveCharacterToLibrary, type LibraryDenorm,
 } from "@/lib/pc-library";
 import {
   deriveSheet, epicAdvancement, ABILITIES, SKILLS,
@@ -422,6 +422,22 @@ function ForgeInner() {
     if (ok) router.push("/me/library");
   }, [persist, router]);
 
+  // Copy a played campaign character up into the library (so it can be re-launched into other
+  // campaigns later). Only meaningful in character mode. Persists any pending edits first so the
+  // library copy captures the latest, then snapshots the saved characters row.
+  const [copied, setCopied] = useState<"idle" | "copying" | "done" | "error">("idle");
+  const saveToLibraryFromCharacter = useCallback(async () => {
+    if (mode !== "character" || !row) return;
+    setCopied("copying");
+    try {
+      await persist();                                  // flush edits to the characters row first
+      await saveCharacterToLibrary(supabase, row.id);   // then snapshot it into pc_library
+      setCopied("done");
+    } catch {
+      setCopied("error");
+    }
+  }, [supabase, mode, row, persist]);
+
   // ---------------------------------------------------------------------------
   // Render
   // ---------------------------------------------------------------------------
@@ -491,6 +507,15 @@ function ForgeInner() {
                     : saveState === "error" ? "Save failed. Retrying on next change."
                     : "Unsaved changes"}
                 </span>
+                {mode === "character" && (
+                  <button className="forge-btn is-ghost" style={stoneButton("ghost")}
+                    disabled={copied === "copying"} onClick={saveToLibraryFromCharacter}>
+                    {copied === "copying" ? "Saving to library…"
+                      : copied === "done" ? "Saved to library ✓"
+                      : copied === "error" ? "Copy failed — retry"
+                      : "Save to library"}
+                  </button>
+                )}
                 <button className="forge-btn is-ghost" style={stoneButton("ghost")} onClick={saveAndExit}>
                   Save &amp; exit
                 </button>
