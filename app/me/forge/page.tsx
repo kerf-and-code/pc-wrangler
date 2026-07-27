@@ -50,6 +50,9 @@ import {
   type ItemRecord, type BackgroundRecord, type SpeciesMechRecord,
 } from "@/lib/descriptions";
 import {
+  classProgression, isAsiLevel, type ClassRecord, type LevelGroup,
+} from "@/lib/class-progression";
+import {
   deriveSheet, epicAdvancement, ABILITIES, SKILLS,
   type Ability, type Build,
 } from "@/lib/srd/derive-sheet";
@@ -265,15 +268,29 @@ function ForgeInner() {
     const equipment = loadSrd("equipment", srdMode) as unknown as ItemRecord[];
     const magic = loadSrd("magic-items", srdMode) as unknown as ItemRecord[];
     const speciesData = loadSrd("species", srdMode) as unknown as { species: SpeciesMechRecord[]; variants: unknown[] };
+    // loadSrd may hand back a bare array or a wrapped shape depending on the domain; normalize to
+    // an array so an unexpected wrapper doesn't silently yield no progression.
+    const rawClasses = loadSrd("classes", srdMode) as unknown;
+    const classes: ClassRecord[] = Array.isArray(rawClasses)
+      ? (rawClasses as ClassRecord[])
+      : (((rawClasses as { classes?: ClassRecord[]; default?: ClassRecord[] })?.classes
+          || (rawClasses as { default?: ClassRecord[] })?.default || []) as ClassRecord[]);
+    if (typeof window !== "undefined") {
+      // TEMP diagnostic: confirm the loader is serving classes with features_by_level.
+      console.log("[forge] classes loaded:", classes.length,
+        "sample:", classes[0]?.name, "features:", classes[0]?.features_by_level?.length);
+    }
     const speciesByName: Record<string, SpeciesMechRecord> = {};
     (speciesData.species || []).forEach((s) => { speciesByName[s.name] = s; });
     const bgByName: Record<string, BackgroundRecord> = {};
     backgrounds.forEach((b) => { bgByName[b.name] = b; });
+    const classByName: Record<string, ClassRecord> = {};
+    classes.forEach((c) => { if (c?.name && !classByName[c.name]) classByName[c.name] = c; });
     // One item lookup for descriptions (mundane + magic, first wins on a both-mode name collision).
     const itemByName: Record<string, ItemRecord> = {};
     equipment.forEach((e) => { if (!itemByName[e.name]) itemByName[e.name] = e; });
     magic.forEach((m) => { if (!itemByName[m.name]) itemByName[m.name] = m; });
-    return { backgrounds, equipment, magic, speciesByName, bgByName, itemByName };
+    return { backgrounds, equipment, magic, speciesByName, bgByName, classByName, itemByName };
   }, [srdMode]);
 
   // Description of the currently selected species / background, for the Identity panel.
@@ -284,6 +301,12 @@ function ForgeInner() {
   const backgroundDesc = useMemo<Described | null>(
     () => describeBackground(srd.bgByName[build.meta.background]),
     [srd.bgByName, build.meta.background],
+  );
+
+  // Per-level class progression up to the character's current level, for the progression panel.
+  const progression = useMemo<LevelGroup[]>(
+    () => classProgression(srd.classByName[build.meta.className], build.level),
+    [srd.classByName, build.meta.className, build.level],
   );
 
   const ctx = useMemo(() => buildRulesContext(edition === "2014" ? "2014" : "2024"), [edition]);
@@ -517,6 +540,14 @@ function ForgeInner() {
               />
 
               <AbilitiesPanel build={build} cap={epic.abilityCap} sheet={sheet} onAbility={setAbility} />
+
+              {build.meta.className && progression.length > 0 && (
+                <ClassProgressionPanel
+                  className={build.meta.className} level={build.level}
+                  progression={progression}
+                  classRec={srd.classByName[build.meta.className]}
+                />
+              )}
 
               <GearPanel
                 build={build} gearIndex={gearIndex} gearTypes={gearTypes} ctx={ctx}
@@ -821,6 +852,78 @@ function AbilitiesPanel({ build, cap, sheet, onAbility }: {
           );
         })}
       </div>
+    </div>
+  );
+}
+
+// Shows what the class grants at each level, up to the character's current level. Each level is a
+// row; features reveal their description on tap. ASI levels are flagged (the picker that lets you
+// spend them is a separate, later build).
+function ClassProgressionPanel({ className, level, progression, classRec }: {
+  className: string; level: number; progression: LevelGroup[];
+  classRec: ClassRecord | undefined;
+}) {
+  const meta = [
+    classRec?.hit_die ? `Hit die d${String(classRec.hit_die).replace(/^d/i, "")}` : null,
+    classRec?.primary_ability ? `Primary: ${classRec.primary_ability}` : null,
+    classRec?.saving_throws ? `Saves: ${classRec.saving_throws}` : null,
+  ].filter(Boolean).join("  ·  ");
+
+  return (
+    <div style={stonePanel()}>
+      <PanelTitle hint={`Everything ${className} grants through level ${level}. Tap a feature to read it.`}>
+        {className} progression
+      </PanelTitle>
+
+      {meta && (
+        <div style={{ fontFamily: FORGE_FONTS.mono, fontSize: 12, color: STONE.inkDim, marginBottom: 14 }}>{meta}</div>
+      )}
+
+      <div style={{ display: "grid", gap: 10 }}>
+        {progression.map((grp) => (
+          <div key={grp.level} style={{ display: "grid", gridTemplateColumns: "44px 1fr", gap: 12, alignItems: "start" }}>
+            <div style={{
+              fontFamily: FORGE_FONTS.display, fontSize: 18, color: STONE.brassHi, textAlign: "right",
+              paddingTop: 2,
+            }}>
+              {grp.level}
+            </div>
+            <div style={{ display: "grid", gap: 6, borderLeft: `1px solid ${STONE.mortar}`, paddingLeft: 12 }}>
+              {grp.features.map((f, i) => (
+                <FeatureLine key={`${f.name}-${i}`} name={f.name} desc={f.desc}
+                  asi={isAsiLevel(classRec, grp.level) && /ability score improvement/i.test(f.name)} />
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// One class feature: name always shows; description reveals on tap. ASI features get a brass tag
+// (a hint that this level carries an ability-or-feat choice, which the picker will handle later).
+function FeatureLine({ name, desc, asi }: { name: string; desc: string; asi?: boolean }) {
+  const [open, setOpen] = useState(false);
+  const hasDesc = !!desc;
+  return (
+    <div>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
+        <button onClick={() => hasDesc && setOpen((v) => !v)}
+          style={{
+            background: "none", border: "none", padding: 0, textAlign: "left",
+            cursor: hasDesc ? "pointer" : "default",
+            fontFamily: FORGE_FONTS.body, fontSize: 15.5, color: STONE.ink,
+          }}>
+          {name}{hasDesc ? <span style={{ color: SAX.brass, fontSize: 11, marginLeft: 6 }}>{open ? "−" : "+"}</span> : null}
+        </button>
+        {asi && <span style={stoneChip("brass")}>ability or feat</span>}
+      </div>
+      {open && hasDesc && (
+        <p style={{ fontFamily: FORGE_FONTS.body, fontSize: 13.5, color: STONE.inkDim, lineHeight: 1.55, margin: "5px 0 2px" }}>
+          {desc}
+        </p>
+      )}
     </div>
   );
 }
