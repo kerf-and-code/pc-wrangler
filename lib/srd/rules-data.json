@@ -1,0 +1,1572 @@
+{
+  "ITEM_EFFECTS": {
+    "Amulet of Health": {
+      "type": "setScore",
+      "abil": "con",
+      "value": 19
+    },
+    "Gauntlets of Ogre Power": {
+      "type": "setScore",
+      "abil": "str",
+      "value": 19
+    },
+    "Headband of Intellect": {
+      "type": "setScore",
+      "abil": "int",
+      "value": 19
+    },
+    "Thunderous Greatclub": {
+      "type": "setScore",
+      "abil": "str",
+      "value": 20
+    },
+    "Belt of Dwarvenkind": {
+      "type": "bumpScore",
+      "abil": "con",
+      "value": 2,
+      "cap": 27
+    },
+    "Manual of Bodily Health": {
+      "type": "bumpScore",
+      "abil": "con",
+      "value": 2,
+      "cap": 27
+    },
+    "Manual of Quickness of Action": {
+      "type": "bumpScore",
+      "abil": "dex",
+      "value": 2,
+      "cap": 27
+    },
+    "Tome of Clear Thought": {
+      "type": "bumpScore",
+      "abil": "int",
+      "value": 2,
+      "cap": 27
+    },
+    "Tome of Leadership and Influence": {
+      "type": "bumpScore",
+      "abil": "cha",
+      "value": 2,
+      "cap": 27
+    },
+    "Tome of Understanding": {
+      "type": "bumpScore",
+      "abil": "wis",
+      "value": 2,
+      "cap": 27
+    }
+  },
+  "ITEM_VARIANTS": {
+    "Belt of Giant Strength": {
+      "label": "Giant lineage",
+      "options": [
+        {
+          "name": "Hill giant",
+          "effect": {
+            "type": "setScore",
+            "abil": "str",
+            "value": 21
+          }
+        },
+        {
+          "name": "Frost giant",
+          "effect": {
+            "type": "setScore",
+            "abil": "str",
+            "value": 23
+          }
+        },
+        {
+          "name": "Stone giant",
+          "effect": {
+            "type": "setScore",
+            "abil": "str",
+            "value": 23
+          }
+        },
+        {
+          "name": "Fire giant",
+          "effect": {
+            "type": "setScore",
+            "abil": "str",
+            "value": 25
+          }
+        },
+        {
+          "name": "Cloud giant",
+          "effect": {
+            "type": "setScore",
+            "abil": "str",
+            "value": 27
+          }
+        },
+        {
+          "name": "Storm giant",
+          "effect": {
+            "type": "setScore",
+            "abil": "str",
+            "value": 29
+          }
+        }
+      ]
+    },
+    "Potion of Giant Strength": {
+      "label": "Giant lineage",
+      "options": [
+        {
+          "name": "Hill giant",
+          "effect": {
+            "type": "setScore",
+            "abil": "str",
+            "value": 21
+          }
+        },
+        {
+          "name": "Frost giant",
+          "effect": {
+            "type": "setScore",
+            "abil": "str",
+            "value": 23
+          }
+        },
+        {
+          "name": "Stone giant",
+          "effect": {
+            "type": "setScore",
+            "abil": "str",
+            "value": 23
+          }
+        },
+        {
+          "name": "Fire giant",
+          "effect": {
+            "type": "setScore",
+            "abil": "str",
+            "value": 25
+          }
+        },
+        {
+          "name": "Cloud giant",
+          "effect": {
+            "type": "setScore",
+            "abil": "str",
+            "value": 27
+          }
+        },
+        {
+          "name": "Storm giant",
+          "effect": {
+            "type": "setScore",
+            "abil": "str",
+            "value": 29
+          }
+        }
+      ]
+    },
+    "Ioun Stone": {
+      "label": "Stone type",
+      "options": [
+        {
+          "name": "Strength (+2 STR)",
+          "effect": {
+            "type": "bumpScore",
+            "abil": "str",
+            "value": 2,
+            "cap": 20
+          }
+        },
+        {
+          "name": "Dexterity (+2 DEX)",
+          "effect": {
+            "type": "bumpScore",
+            "abil": "dex",
+            "value": 2,
+            "cap": 20
+          }
+        },
+        {
+          "name": "Constitution (+2 CON)",
+          "effect": {
+            "type": "bumpScore",
+            "abil": "con",
+            "value": 2,
+            "cap": 20
+          }
+        },
+        {
+          "name": "Intellect (+2 INT)",
+          "effect": {
+            "type": "bumpScore",
+            "abil": "int",
+            "value": 2,
+            "cap": 20
+          }
+        },
+        {
+          "name": "Insight (+2 WIS)",
+          "effect": {
+            "type": "bumpScore",
+            "abil": "wis",
+            "value": 2,
+            "cap": 20
+          }
+        },
+        {
+          "name": "Leadership (+2 CHA)",
+          "effect": {
+            "type": "bumpScore",
+            "abil": "cha",
+            "value": 2,
+            "cap": 20
+          }
+        },
+        {
+          "name": "Awareness (no ability change)",
+          "effect": null
+        },
+        {
+          "name": "Protection (no ability change)",
+          "effect": null
+        },
+        {
+          "name": "Reserve (no ability change)",
+          "effect": null
+        },
+        {
+          "name": "Regeneration (no ability change)",
+          "effect": null
+        },
+        {
+          "name": "Absorption (no ability change)",
+          "effect": null
+        },
+        {
+          "name": "Agility (no ability change)",
+          "effect": null
+        },
+        {
+          "name": "Fortitude (no ability change)",
+          "effect": null
+        },
+        {
+          "name": "Greater Absorption (no ability change)",
+          "effect": null
+        },
+        {
+          "name": "Mastery (no ability change)",
+          "effect": null
+        },
+        {
+          "name": "Sustenance (no ability change)",
+          "effect": null
+        }
+      ]
+    }
+  },
+  "SPECIES": {
+    "Aasimar": {
+      "src": "PHB 2024",
+      "size": "Medium or Small",
+      "speed": 30,
+      "darkvision": 60,
+      "traits": [
+        [
+          "Celestial Resistance",
+          "Resistance to necrotic and radiant damage."
+        ],
+        [
+          "Healing Hands",
+          "Heal a number of d4s equal to your Proficiency Bonus, once per Long Rest."
+        ],
+        [
+          "Light Bearer",
+          "You know the Light cantrip, cast with Charisma."
+        ],
+        [
+          "Celestial Revelation",
+          "At level 3, a transformation you choose."
+        ]
+      ],
+      "resist": [
+        "necrotic",
+        "radiant"
+      ],
+      "grantCantrips": [
+        "Light"
+      ]
+    },
+    "Dragonborn": {
+      "src": "PHB 2024",
+      "size": "Medium",
+      "speed": 30,
+      "darkvision": 60,
+      "choose": {
+        "key": "ancestry",
+        "label": "Draconic ancestry",
+        "from": [
+          "Black (acid)",
+          "Blue (lightning)",
+          "Brass (fire)",
+          "Bronze (lightning)",
+          "Copper (acid)",
+          "Gold (fire)",
+          "Green (poison)",
+          "Red (fire)",
+          "Silver (cold)",
+          "White (cold)"
+        ]
+      },
+      "traits": [
+        [
+          "Breath Weapon",
+          "Replace one attack with a 15 ft cone or 30 ft line, damage of your ancestry type, DEX save."
+        ],
+        [
+          "Damage Resistance",
+          "Resistance to your ancestry's damage type."
+        ],
+        [
+          "Draconic Flight",
+          "At level 5, a temporary fly speed."
+        ]
+      ]
+    },
+    "Dwarf": {
+      "src": "PHB 2024",
+      "size": "Medium",
+      "speed": 30,
+      "darkvision": 120,
+      "traits": [
+        [
+          "Dwarven Resilience",
+          "Resistance to poison and Advantage on saves against the Poisoned condition."
+        ],
+        [
+          "Dwarven Toughness",
+          "Your hit point maximum increases by 1 per level."
+        ],
+        [
+          "Stonecunning",
+          "Bonus Action Tremorsense 60 ft on stone, Proficiency Bonus times per Long Rest."
+        ]
+      ],
+      "resist": [
+        "poison"
+      ],
+      "advAgainst": [
+        "poisoned"
+      ],
+      "mods": {
+        "hpPerLevel": 1
+      }
+    },
+    "Elf": {
+      "src": "PHB 2024",
+      "size": "Medium",
+      "speed": 30,
+      "darkvision": 60,
+      "choose": {
+        "key": "lineage",
+        "label": "Elven lineage",
+        "from": [
+          "Drow",
+          "High Elf",
+          "Wood Elf"
+        ]
+      },
+      "traits": [
+        [
+          "Fey Ancestry",
+          "Advantage on saves against the Charmed condition."
+        ],
+        [
+          "Keen Senses",
+          "Proficiency in Insight, Perception, or Survival."
+        ],
+        [
+          "Trance",
+          "A Long Rest takes 4 hours, spent in a meditative trance."
+        ]
+      ],
+      "skillPick": {
+        "n": 1,
+        "from": [
+          "insight",
+          "perception",
+          "survival"
+        ]
+      }
+    },
+    "Gnome": {
+      "src": "PHB 2024",
+      "size": "Small",
+      "speed": 30,
+      "darkvision": 60,
+      "choose": {
+        "key": "lineage",
+        "label": "Gnomish lineage",
+        "from": [
+          "Forest Gnome",
+          "Rock Gnome"
+        ]
+      },
+      "traits": [
+        [
+          "Gnomish Cunning",
+          "Advantage on Intelligence, Wisdom, and Charisma saving throws."
+        ]
+      ]
+    },
+    "Goliath": {
+      "src": "PHB 2024",
+      "size": "Medium",
+      "speed": 35,
+      "choose": {
+        "key": "ancestry",
+        "label": "Giant ancestry",
+        "from": [
+          "Cloud's Jaunt",
+          "Fire's Burn",
+          "Frost's Chill",
+          "Hill's Tumble",
+          "Stone's Endurance",
+          "Storm's Thunder"
+        ]
+      },
+      "traits": [
+        [
+          "Giant Ancestry",
+          "A supernatural boon from your chosen giant lineage."
+        ],
+        [
+          "Large Form",
+          "At level 5, become Large for a minute once per Long Rest."
+        ],
+        [
+          "Powerful Build",
+          "Advantage on saves against being Grappled, and you count as one size larger for carrying."
+        ]
+      ]
+    },
+    "Halfling": {
+      "src": "PHB 2024",
+      "size": "Small",
+      "speed": 30,
+      "traits": [
+        [
+          "Brave",
+          "Advantage on saves against the Frightened condition."
+        ],
+        [
+          "Halfling Nimbleness",
+          "Move through the space of any creature larger than you."
+        ],
+        [
+          "Luck",
+          "When you roll a 1 on a d20 test, reroll and use the new roll."
+        ],
+        [
+          "Naturally Stealthy",
+          "Hide behind a creature at least one size larger."
+        ]
+      ],
+      "advAgainst": [
+        "frightened"
+      ]
+    },
+    "Human": {
+      "src": "PHB 2024",
+      "size": "Medium or Small",
+      "speed": 30,
+      "traits": [
+        [
+          "Resourceful",
+          "Heroic Inspiration whenever you finish a Long Rest."
+        ],
+        [
+          "Skillful",
+          "Proficiency in one skill of your choice."
+        ],
+        [
+          "Versatile",
+          "An Origin feat of your choice."
+        ]
+      ],
+      "skillPick": {
+        "n": 1,
+        "from": "any"
+      },
+      "bonusOriginFeat": true
+    },
+    "Orc": {
+      "src": "PHB 2024",
+      "size": "Medium",
+      "speed": 30,
+      "darkvision": 120,
+      "traits": [
+        [
+          "Adrenaline Rush",
+          "Bonus Action Dash plus temporary hit points, Proficiency Bonus times per rest."
+        ],
+        [
+          "Relentless Endurance",
+          "Drop to 1 hit point instead of 0, once per Long Rest."
+        ]
+      ]
+    },
+    "Tiefling": {
+      "src": "PHB 2024",
+      "size": "Medium or Small",
+      "speed": 30,
+      "darkvision": 60,
+      "choose": {
+        "key": "legacy",
+        "label": "Fiendish legacy",
+        "from": [
+          "Abyssal",
+          "Chthonic",
+          "Infernal"
+        ]
+      },
+      "traits": [
+        [
+          "Fiendish Legacy",
+          "Resistance and spells set by your chosen legacy."
+        ],
+        [
+          "Otherworldly Presence",
+          "You know the Thaumaturgy cantrip."
+        ]
+      ],
+      "grantCantrips": [
+        "Thaumaturgy"
+      ]
+    },
+    "Warforged": {
+      "src": "Eberron: Forge of the Artificer",
+      "size": "Medium",
+      "speed": 30,
+      "traits": [
+        [
+          "Construct Resilience",
+          "Resistance to poison, Advantage on saves against the Poisoned condition, and no need to eat, drink, or breathe."
+        ],
+        [
+          "Integrated Protection",
+          "Plus 1 Armor Class."
+        ],
+        [
+          "Sentry's Rest",
+          "A Long Rest takes 6 hours, spent inert but conscious."
+        ],
+        [
+          "Specialized Design",
+          "One skill proficiency and one tool proficiency."
+        ]
+      ],
+      "resist": [
+        "poison"
+      ],
+      "advAgainst": [
+        "poisoned"
+      ],
+      "acBonus": 1,
+      "skillPick": {
+        "n": 1,
+        "from": "any"
+      }
+    }
+  },
+  "BACKGROUNDS": {
+    "Acolyte": {
+      "abils": [
+        "int",
+        "wis",
+        "cha"
+      ],
+      "skills": [
+        "insight",
+        "religion"
+      ],
+      "tool": "Calligrapher's Supplies",
+      "feat": "Magic Initiate"
+    },
+    "Artisan": {
+      "abils": [
+        "str",
+        "dex",
+        "int"
+      ],
+      "skills": [
+        "investigation",
+        "persuasion"
+      ],
+      "tool": "Artisan's Tools",
+      "feat": "Crafter"
+    },
+    "Charlatan": {
+      "abils": [
+        "dex",
+        "con",
+        "cha"
+      ],
+      "skills": [
+        "deception",
+        "sleight"
+      ],
+      "tool": "Forgery Kit",
+      "feat": "Skilled"
+    },
+    "Criminal": {
+      "abils": [
+        "dex",
+        "con",
+        "int"
+      ],
+      "skills": [
+        "sleight",
+        "stealth"
+      ],
+      "tool": "Thieves' Tools",
+      "feat": "Alert"
+    },
+    "Entertainer": {
+      "abils": [
+        "str",
+        "dex",
+        "cha"
+      ],
+      "skills": [
+        "acrobatics",
+        "performance"
+      ],
+      "tool": "Musical Instrument",
+      "feat": "Musician"
+    },
+    "Farmer": {
+      "abils": [
+        "str",
+        "con",
+        "wis"
+      ],
+      "skills": [
+        "animal",
+        "nature"
+      ],
+      "tool": "Carpenter's Tools",
+      "feat": "Tough"
+    },
+    "Guard": {
+      "abils": [
+        "str",
+        "int",
+        "wis"
+      ],
+      "skills": [
+        "athletics",
+        "perception"
+      ],
+      "tool": "Gaming Set",
+      "feat": "Alert"
+    },
+    "Guide": {
+      "abils": [
+        "dex",
+        "con",
+        "wis"
+      ],
+      "skills": [
+        "stealth",
+        "survival"
+      ],
+      "tool": "Cartographer's Tools",
+      "feat": "Magic Initiate"
+    },
+    "Hermit": {
+      "abils": [
+        "con",
+        "wis",
+        "cha"
+      ],
+      "skills": [
+        "medicine",
+        "religion"
+      ],
+      "tool": "Herbalism Kit",
+      "feat": "Healer"
+    },
+    "Merchant": {
+      "abils": [
+        "con",
+        "int",
+        "cha"
+      ],
+      "skills": [
+        "animal",
+        "persuasion"
+      ],
+      "tool": "Navigator's Tools",
+      "feat": "Lucky"
+    },
+    "Noble": {
+      "abils": [
+        "str",
+        "int",
+        "cha"
+      ],
+      "skills": [
+        "history",
+        "persuasion"
+      ],
+      "tool": "Gaming Set",
+      "feat": "Skilled"
+    },
+    "Sage": {
+      "abils": [
+        "con",
+        "int",
+        "wis"
+      ],
+      "skills": [
+        "arcana",
+        "history"
+      ],
+      "tool": "Calligrapher's Supplies",
+      "feat": "Magic Initiate"
+    },
+    "Sailor": {
+      "abils": [
+        "str",
+        "dex",
+        "wis"
+      ],
+      "skills": [
+        "acrobatics",
+        "perception"
+      ],
+      "tool": "Navigator's Tools",
+      "feat": "Tavern Brawler"
+    },
+    "Scribe": {
+      "abils": [
+        "dex",
+        "int",
+        "wis"
+      ],
+      "skills": [
+        "investigation",
+        "perception"
+      ],
+      "tool": "Calligrapher's Supplies",
+      "feat": "Skilled"
+    },
+    "Soldier": {
+      "abils": [
+        "str",
+        "dex",
+        "con"
+      ],
+      "skills": [
+        "athletics",
+        "intimidation"
+      ],
+      "tool": "Gaming Set",
+      "feat": "Savage Attacker"
+    },
+    "Wayfarer": {
+      "abils": [
+        "dex",
+        "wis",
+        "cha"
+      ],
+      "skills": [
+        "insight",
+        "stealth"
+      ],
+      "tool": "Thieves' Tools",
+      "feat": "Lucky"
+    }
+  },
+  "CLASSES": {
+    "Barbarian": {
+      "hitDie": 12,
+      "primary": [
+        "str"
+      ],
+      "saves": [
+        "str",
+        "con"
+      ],
+      "skillCount": 2,
+      "skills": [
+        "animal",
+        "athletics",
+        "intimidation",
+        "nature",
+        "perception",
+        "survival"
+      ],
+      "armor": "Light and medium armor, shields",
+      "weapons": "Simple and martial weapons",
+      "subclasses": [
+        "Path of the Berserker",
+        "Path of the Wild Heart",
+        "Path of the World Tree",
+        "Path of the Zealot"
+      ],
+      "features": {
+        "1": [
+          [
+            "Rage",
+            "Bonus Action. Damage resistance, damage bonus, Advantage on STR checks and saves."
+          ],
+          [
+            "Unarmored Defense",
+            "AC 10 plus DEX plus CON with no armor."
+          ],
+          [
+            "Weapon Mastery",
+            "Mastery properties of two weapons."
+          ]
+        ],
+        "2": [
+          [
+            "Danger Sense",
+            "Advantage on DEX saves against effects you can see."
+          ],
+          [
+            "Reckless Attack",
+            "Advantage on STR attacks, and attacks against you have Advantage."
+          ]
+        ]
+      }
+    },
+    "Bard": {
+      "hitDie": 8,
+      "primary": [
+        "cha"
+      ],
+      "saves": [
+        "dex",
+        "cha"
+      ],
+      "skillCount": 3,
+      "skills": "any",
+      "armor": "Light armor",
+      "weapons": "Simple weapons",
+      "casting": {
+        "type": "full",
+        "ability": "cha",
+        "list": "bard"
+      },
+      "subclasses": [
+        "College of Dance",
+        "College of Glamour",
+        "College of Lore",
+        "College of Valor"
+      ],
+      "features": {
+        "1": [
+          [
+            "Bardic Inspiration",
+            "Bonus Action. Give an ally a d6 to add to a d20 test or damage roll."
+          ],
+          [
+            "Spellcasting",
+            "Charisma-based, from the bard list."
+          ]
+        ],
+        "2": [
+          [
+            "Expertise",
+            "Two skill proficiencies become Expertise."
+          ],
+          [
+            "Jack of All Trades",
+            "Half your Proficiency Bonus on checks you are not proficient in."
+          ]
+        ]
+      }
+    },
+    "Cleric": {
+      "hitDie": 8,
+      "primary": [
+        "wis"
+      ],
+      "saves": [
+        "wis",
+        "cha"
+      ],
+      "skillCount": 2,
+      "skills": [
+        "history",
+        "insight",
+        "medicine",
+        "persuasion",
+        "religion"
+      ],
+      "armor": "Light and medium armor, shields",
+      "weapons": "Simple weapons",
+      "casting": {
+        "type": "full",
+        "ability": "wis",
+        "list": "cleric"
+      },
+      "subclasses": [
+        "Life Domain",
+        "Light Domain",
+        "Trickery Domain",
+        "War Domain"
+      ],
+      "features": {
+        "1": [
+          [
+            "Spellcasting",
+            "Wisdom-based, prepared from the cleric list."
+          ],
+          [
+            "Divine Order",
+            "Protector or Thaumaturge."
+          ]
+        ],
+        "2": [
+          [
+            "Channel Divinity",
+            "Divine Spark or Turn Undead, twice per rest."
+          ]
+        ]
+      }
+    },
+    "Druid": {
+      "hitDie": 8,
+      "primary": [
+        "wis"
+      ],
+      "saves": [
+        "int",
+        "wis"
+      ],
+      "skillCount": 2,
+      "skills": [
+        "arcana",
+        "animal",
+        "insight",
+        "medicine",
+        "nature",
+        "perception",
+        "religion",
+        "survival"
+      ],
+      "armor": "Light armor, shields",
+      "weapons": "Simple weapons",
+      "casting": {
+        "type": "full",
+        "ability": "wis",
+        "list": "druid"
+      },
+      "subclasses": [
+        "Circle of the Land",
+        "Circle of the Moon",
+        "Circle of the Sea",
+        "Circle of the Stars"
+      ],
+      "features": {
+        "1": [
+          [
+            "Spellcasting",
+            "Wisdom-based, prepared from the druid list."
+          ],
+          [
+            "Druidic",
+            "A secret language, and you know the Speak with Animals spell."
+          ],
+          [
+            "Primal Order",
+            "Magician or Warden."
+          ]
+        ],
+        "2": [
+          [
+            "Wild Shape",
+            "Bonus Action. Take a beast form, twice per rest."
+          ],
+          [
+            "Wild Companion",
+            "Spend a Wild Shape use to cast Find Familiar."
+          ]
+        ]
+      }
+    },
+    "Fighter": {
+      "hitDie": 10,
+      "primary": [
+        "str",
+        "dex"
+      ],
+      "saves": [
+        "str",
+        "con"
+      ],
+      "skillCount": 2,
+      "skills": [
+        "acrobatics",
+        "animal",
+        "athletics",
+        "history",
+        "insight",
+        "intimidation",
+        "perception",
+        "persuasion",
+        "survival"
+      ],
+      "armor": "All armor, shields",
+      "weapons": "Simple and martial weapons",
+      "subclasses": [
+        "Battle Master",
+        "Champion",
+        "Eldritch Knight",
+        "Psi Warrior"
+      ],
+      "features": {
+        "1": [
+          [
+            "Fighting Style",
+            "A combat specialty feat."
+          ],
+          [
+            "Second Wind",
+            "Bonus Action. Regain 1d10 plus your level, twice per rest."
+          ],
+          [
+            "Weapon Mastery",
+            "Mastery properties of three weapons."
+          ]
+        ],
+        "2": [
+          [
+            "Action Surge",
+            "One extra action, once per rest."
+          ],
+          [
+            "Tactical Mind",
+            "Spend a Second Wind use to add 1d10 to a failed ability check."
+          ]
+        ]
+      }
+    },
+    "Monk": {
+      "hitDie": 8,
+      "primary": [
+        "dex",
+        "wis"
+      ],
+      "saves": [
+        "str",
+        "dex"
+      ],
+      "skillCount": 2,
+      "skills": [
+        "acrobatics",
+        "athletics",
+        "history",
+        "insight",
+        "religion",
+        "stealth"
+      ],
+      "armor": "None",
+      "weapons": "Simple weapons and martial weapons with the Light property",
+      "subclasses": [
+        "Warrior of Mercy",
+        "Warrior of Shadow",
+        "Warrior of the Elements",
+        "Warrior of the Open Hand"
+      ],
+      "features": {
+        "1": [
+          [
+            "Martial Arts",
+            "Unarmed strikes use DEX, deal 1d6, and give a Bonus Action strike."
+          ],
+          [
+            "Unarmored Defense",
+            "AC 10 plus DEX plus WIS with no armor or shield."
+          ]
+        ],
+        "2": [
+          [
+            "Monk's Focus",
+            "Focus Points equal to your level, for Flurry, Patient Defense, and Step of the Wind."
+          ],
+          [
+            "Unarmored Movement",
+            "Plus 10 ft speed with no armor."
+          ],
+          [
+            "Uncanny Metabolism",
+            "Once per Long Rest, restore all Focus Points on Initiative."
+          ]
+        ]
+      }
+    },
+    "Paladin": {
+      "hitDie": 10,
+      "primary": [
+        "str",
+        "cha"
+      ],
+      "saves": [
+        "wis",
+        "cha"
+      ],
+      "skillCount": 2,
+      "skills": [
+        "athletics",
+        "insight",
+        "intimidation",
+        "medicine",
+        "persuasion",
+        "religion"
+      ],
+      "armor": "All armor, shields",
+      "weapons": "Simple and martial weapons",
+      "casting": {
+        "type": "half",
+        "ability": "cha",
+        "list": "paladin"
+      },
+      "subclasses": [
+        "Oath of Devotion",
+        "Oath of Glory",
+        "Oath of the Ancients",
+        "Oath of Vengeance"
+      ],
+      "features": {
+        "1": [
+          [
+            "Lay On Hands",
+            "A pool of healing equal to five times your level."
+          ],
+          [
+            "Spellcasting",
+            "Charisma-based, prepared from the paladin list."
+          ],
+          [
+            "Weapon Mastery",
+            "Mastery properties of two weapons."
+          ]
+        ],
+        "2": [
+          [
+            "Fighting Style",
+            "A combat specialty feat."
+          ],
+          [
+            "Paladin's Smite",
+            "Divine Smite always prepared, free once per Long Rest."
+          ]
+        ]
+      }
+    },
+    "Ranger": {
+      "hitDie": 10,
+      "primary": [
+        "dex",
+        "wis"
+      ],
+      "saves": [
+        "str",
+        "dex"
+      ],
+      "skillCount": 3,
+      "skills": [
+        "animal",
+        "athletics",
+        "insight",
+        "investigation",
+        "nature",
+        "perception",
+        "stealth",
+        "survival"
+      ],
+      "armor": "Light and medium armor, shields",
+      "weapons": "Simple and martial weapons",
+      "casting": {
+        "type": "half",
+        "ability": "wis",
+        "list": "ranger"
+      },
+      "subclasses": [
+        "Beast Master",
+        "Fey Wanderer",
+        "Gloom Stalker",
+        "Hunter"
+      ],
+      "features": {
+        "1": [
+          [
+            "Spellcasting",
+            "Wisdom-based, prepared from the ranger list."
+          ],
+          [
+            "Favored Enemy",
+            "Hunter's Mark always prepared, free a number of times per Long Rest."
+          ],
+          [
+            "Weapon Mastery",
+            "Mastery properties of two weapons."
+          ]
+        ],
+        "2": [
+          [
+            "Deft Explorer",
+            "Expertise in one skill, and two extra languages."
+          ],
+          [
+            "Fighting Style",
+            "A combat specialty feat."
+          ]
+        ]
+      }
+    },
+    "Rogue": {
+      "hitDie": 8,
+      "primary": [
+        "dex"
+      ],
+      "saves": [
+        "dex",
+        "int"
+      ],
+      "skillCount": 4,
+      "skills": [
+        "acrobatics",
+        "athletics",
+        "deception",
+        "insight",
+        "intimidation",
+        "investigation",
+        "perception",
+        "performance",
+        "persuasion",
+        "sleight",
+        "stealth"
+      ],
+      "armor": "Light armor",
+      "weapons": "Simple weapons, plus martial weapons with Finesse or Light",
+      "tool": "Thieves' Tools",
+      "subclasses": [
+        "Arcane Trickster",
+        "Assassin",
+        "Soulknife",
+        "Thief"
+      ],
+      "expertiseAt": {
+        "1": 2,
+        "6": 2
+      },
+      "saveProfAt": {
+        "15": [
+          "wis",
+          "cha"
+        ]
+      },
+      "sneakAttack": true,
+      "cunningStrikeCap": 2,
+      "features": {
+        "1": [
+          [
+            "Expertise",
+            "Two skill proficiencies become Expertise."
+          ],
+          [
+            "Sneak Attack",
+            "Extra damage once per turn with Advantage or an ally adjacent."
+          ],
+          [
+            "Thieves' Cant",
+            "A secret mix of dialect, jargon, and code."
+          ],
+          [
+            "Weapon Mastery",
+            "Mastery properties of two weapons."
+          ]
+        ],
+        "2": [
+          [
+            "Cunning Action",
+            "Bonus Action Dash, Disengage, or Hide."
+          ]
+        ]
+      }
+    },
+    "Sorcerer": {
+      "hitDie": 6,
+      "primary": [
+        "cha"
+      ],
+      "saves": [
+        "con",
+        "cha"
+      ],
+      "skillCount": 2,
+      "skills": [
+        "arcana",
+        "deception",
+        "insight",
+        "intimidation",
+        "persuasion",
+        "religion"
+      ],
+      "armor": "None",
+      "weapons": "Simple weapons",
+      "casting": {
+        "type": "full",
+        "ability": "cha",
+        "list": "wizard"
+      },
+      "subclasses": [
+        "Aberrant Sorcery",
+        "Clockwork Sorcery",
+        "Draconic Sorcery",
+        "Wild Magic Sorcery"
+      ],
+      "features": {
+        "1": [
+          [
+            "Spellcasting",
+            "Charisma-based, from the sorcerer list."
+          ],
+          [
+            "Innate Sorcery",
+            "Bonus Action. Plus 1 spell save DC and Advantage on spell attacks for a minute."
+          ]
+        ],
+        "2": [
+          [
+            "Font of Magic",
+            "Sorcery Points equal to your level."
+          ],
+          [
+            "Metamagic",
+            "Two Metamagic options."
+          ]
+        ]
+      }
+    },
+    "Warlock": {
+      "hitDie": 8,
+      "primary": [
+        "cha"
+      ],
+      "saves": [
+        "wis",
+        "cha"
+      ],
+      "skillCount": 2,
+      "skills": [
+        "arcana",
+        "deception",
+        "history",
+        "intimidation",
+        "investigation",
+        "nature",
+        "religion"
+      ],
+      "armor": "Light armor",
+      "weapons": "Simple weapons",
+      "casting": {
+        "type": "pact",
+        "ability": "cha",
+        "list": "wizard"
+      },
+      "subclasses": [
+        "Archfey Patron",
+        "Celestial Patron",
+        "Fiend Patron",
+        "Great Old One Patron"
+      ],
+      "features": {
+        "1": [
+          [
+            "Eldritch Invocations",
+            "Invocations you can swap on a level up."
+          ],
+          [
+            "Pact Magic",
+            "Charisma-based slots that all recharge on a Short Rest."
+          ]
+        ],
+        "2": [
+          [
+            "Magical Cunning",
+            "Restore your Pact Magic slots once per Long Rest."
+          ]
+        ]
+      }
+    },
+    "Wizard": {
+      "hitDie": 6,
+      "primary": [
+        "int"
+      ],
+      "saves": [
+        "int",
+        "wis"
+      ],
+      "skillCount": 2,
+      "skills": [
+        "arcana",
+        "history",
+        "insight",
+        "investigation",
+        "medicine",
+        "nature",
+        "religion"
+      ],
+      "armor": "None",
+      "weapons": "Simple weapons",
+      "casting": {
+        "type": "full",
+        "ability": "int",
+        "list": "wizard"
+      },
+      "subclasses": [
+        "Abjurer",
+        "Diviner",
+        "Evoker",
+        "Illusionist"
+      ],
+      "features": {
+        "1": [
+          [
+            "Spellcasting",
+            "Intelligence-based, prepared from your spellbook."
+          ],
+          [
+            "Ritual Adept",
+            "Cast any ritual spell in your spellbook without a slot."
+          ],
+          [
+            "Arcane Recovery",
+            "Recover expended slots on a Short Rest, once per day."
+          ]
+        ],
+        "2": [
+          [
+            "Scholar",
+            "Expertise in one Arcana, History, Investigation, Medicine, Nature, or Religion."
+          ]
+        ]
+      }
+    }
+  },
+  "SUBCLASS_RULES": {
+    "Arcane Trickster": {
+      "casting": {
+        "type": "third",
+        "ability": "int",
+        "list": "wizard",
+        "schools": [
+          "Ill",
+          "Enc"
+        ],
+        "schoolNote": "Arcane Trickster spells must come from the Illusion or Enchantment school, apart from a fixed number of free picks.",
+        "freeByLevel": {
+          "3": 1,
+          "8": 2,
+          "14": 3,
+          "20": 4
+        },
+        "locked": [
+          "Mage Hand"
+        ],
+        "lockedNote": "Mage Hand Legerdemain grants it. It cannot be swapped out."
+      },
+      "features": [
+        [
+          "Magical Ambush",
+          "Invisible when you cast means the target has disadvantage on its save."
+        ],
+        [
+          "Spell Thief",
+          "Reaction. Negate a spell and steal it for 8 hours, once per Long Rest."
+        ]
+      ]
+    },
+    "Eldritch Knight": {
+      "casting": {
+        "type": "third",
+        "ability": "int",
+        "list": "wizard",
+        "schools": [
+          "Abj",
+          "Evo"
+        ],
+        "schoolNote": "Eldritch Knight spells must come from the Abjuration or Evocation school, apart from a fixed number of free picks.",
+        "freeByLevel": {
+          "3": 1,
+          "8": 2,
+          "14": 3,
+          "20": 4
+        }
+      },
+      "features": [
+        [
+          "War Bond",
+          "Bond weapons so they cannot be disarmed and can be summoned."
+        ]
+      ]
+    },
+    "Illusionist": {
+      "casting": {
+        "type": "full",
+        "ability": "int",
+        "list": "wizard"
+      },
+      "features": [
+        [
+          "Improved Illusions",
+          "Illusion spells need no verbal component and reach further."
+        ]
+      ]
+    },
+    "Evoker": {
+      "casting": {
+        "type": "full",
+        "ability": "int",
+        "list": "wizard"
+      },
+      "features": [
+        [
+          "Potent Cantrip",
+          "Targets take half damage from your cantrips on a successful save."
+        ]
+      ]
+    },
+    "Thief": {
+      "features": [
+        [
+          "Fast Hands",
+          "Use Sleight of Hand or Thieves' Tools as a Bonus Action."
+        ]
+      ]
+    },
+    "Assassin": {
+      "features": [
+        [
+          "Assassinate",
+          "Advantage against creatures that have not taken a turn, and bonus damage."
+        ]
+      ]
+    },
+    "Soulknife": {
+      "features": [
+        [
+          "Psionic Power",
+          "Psionic Energy dice fuel Psi-Bolstered Knack and Psychic Whispers."
+        ]
+      ]
+    }
+  }
+}
