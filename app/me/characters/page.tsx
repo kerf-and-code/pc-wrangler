@@ -64,6 +64,17 @@ export default function MyCharactersPage() {
 
         <UpgradeAccount variant="card" next="/me/characters" />
 
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, margin: "4px 0 18px", flexWrap: "wrap" }}>
+          <span style={{ color: SAX.muted, fontSize: 13 }}>Tap a character to open it in the Forge.</span>
+          <a href="/me/forge" style={{
+            textDecoration: "none", fontFamily: SAX.mono, fontSize: 12, letterSpacing: "0.1em",
+            textTransform: "uppercase", color: SAX.inkDeep, background: SAX.brass,
+            borderRadius: 999, padding: "9px 18px", fontWeight: 600,
+          }}>
+            + New character
+          </a>
+        </div>
+
         {status === "loading" && <Muted>Loading&hellip;</Muted>}
         {status === "error" && <Muted>Something went wrong loading your characters. Please refresh.</Muted>}
         {status === "empty" && (
@@ -83,9 +94,11 @@ export default function MyCharactersPage() {
             </div>
 
             {group.chars.map((c) => (
-              <div
+              <a
                 key={c.character_id}
+                href={`/me/forge?c=${c.character_id}`}
                 style={{
+                  display: "block", textDecoration: "none",
                   background: C.surface, border: `1px solid ${C.line}`,
                   borderRadius: 12, padding: "14px 18px", marginBottom: 10,
                   opacity: c.active ? 1 : 0.55,
@@ -110,7 +123,7 @@ export default function MyCharactersPage() {
                     c.alignment,
                   ].filter(Boolean).join(" · ") || "No details recorded yet."}
                 </div>
-              </div>
+              </a>
             ))}
           </div>
         ))}
