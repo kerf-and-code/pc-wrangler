@@ -54,7 +54,7 @@ import {
 } from "@/lib/class-progression";
 import {
   deriveSheet, epicAdvancement, ABILITIES, SKILLS,
-  type Ability, type Build,
+  type Ability, type Build, type EpicChoice,
 } from "@/lib/srd/derive-sheet";
 
 // ---------------------------------------------------------------------------
@@ -969,7 +969,7 @@ function FeatureLine({ name, desc, asi }: { name: string; desc: string; asi?: bo
 // effects still record and display, they just don't move numbers until that effect is authored.
 function FeatsPanel({ asiLevels, choices, featList, level, onChoose }: {
   asiLevels: number[];
-  choices: Record<number, EpicChoiceInput[]>;
+  choices: Record<number, EpicChoice[]>;
   featList: FeatOption[];
   level: number;
   onChoose: (level: number, choice: EpicChoiceInput | null) => void;
@@ -1433,8 +1433,8 @@ type FeatOption = { name: string; category?: string; prerequisite?: string; desc
 // isFeat (which editor to show) and desc (the feat's text to display). The engine ignores the extra
 // fields; the ability mods in `mods` are what actually move the sheet.
 type EpicChoiceInput = {
-  name: string;
-  isFeat: boolean;
+  name?: string;
+  isFeat?: boolean;
   desc?: string;
   mods?: Record<string, number>;
 };
