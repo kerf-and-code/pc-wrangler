@@ -15,9 +15,10 @@ import { createClient } from "@/lib/supabase/client";
 import { loadSrd } from "@/lib/srd/srd";
 import {
   blankStatBlock, statBlockFromMonster,
-  createStatBlock, getStatBlock, updateStatBlock, listStatBlocks,
+  createStatBlock, getStatBlock, updateStatBlock, listStatBlocks, updateStatBlockPortrait,
   type StatBlockDoc, type StatBlockRow, type NamedEntry,
 } from "@/lib/stat-blocks";
+import { PortraitUploader } from "@/components/portrait-uploader";
 import {
   STONE, FORGE_FONTS, stonePanel, stoneButton, stoneField,
   forgeBackground, forgeVignette, forgeLabel, FORGE_BUTTON_CSS,
@@ -71,6 +72,7 @@ function StatBlockInner() {
   const [name, setName] = useState("");
   const [block, setBlock] = useState<StatBlockDoc>(blankStatBlock);
   const [rowId, setRowId] = useState<string | null>(null);
+  const [portraitUrl, setPortraitUrl] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const creatingRef = useRef(false);
 
@@ -95,6 +97,10 @@ function StatBlockInner() {
           setName(row.name);
           setBlock({ ...blankStatBlock(), ...row.block });
           setRowId(row.id);
+          if (row.portrait_path) {
+            const { data } = supabase.storage.from("campaign-maps").getPublicUrl(row.portrait_path);
+            setPortraitUrl(data.publicUrl);
+          }
           setStatus("ready");
         } else {
           setStatus("picker");
@@ -200,6 +206,20 @@ function StatBlockInner() {
             style={{ ...stoneField(), fontFamily: FORGE_FONTS.display, fontSize: 22, flex: 1, minWidth: 240 }}
           />
           <SrdToggle mode={srdMode} onMode={setSrdMode} />
+        </div>
+
+        <div style={stonePanel()}>
+          <PortraitUploader
+            label="Creature portrait"
+            basePath={rowId ? `statblocks/${rowId}` : null}
+            currentUrl={portraitUrl}
+            notReadyHint="Name and save the creature first, then add a portrait."
+            onUploaded={(url, path) => {
+              setPortraitUrl(url);
+              if (rowId) void updateStatBlockPortrait(supabase, rowId, path);
+            }}
+            textColor={STONE.ink} mutedColor={STONE.inkDim}
+          />
         </div>
 
         <IdentityBlock block={block} onPatch={patch} onCr={setCr} />
@@ -454,7 +474,7 @@ function Shell({ children }: { children: React.ReactNode }) {
     <div style={{ minHeight: "100vh", ...forgeBackground() }}>
       <style>{FORGE_BUTTON_CSS}</style>
       <SixAxesNav />
-      <div style={forgeVignette()} />
+      <div style={forgeVignette} />
       <div style={{ position: "relative", padding: "28px 20px 80px" }}>{children}</div>
     </div>
   );
