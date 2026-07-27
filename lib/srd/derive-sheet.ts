@@ -79,6 +79,7 @@ export type EpicChoice = {
   bonusKnown?: number;
   optionId?: string;
   grantKind?: string;
+  isFeat?: boolean;   // UI tag (Forge picker): distinguishes a feat pick from an ASI. Engine ignores it.
 };
 
 // Item-effect tables (from the forge's ITEM_EFFECTS / ITEM_VARIANTS). A gear item can bump a
@@ -377,9 +378,16 @@ export function deriveSheet(build: Build, ctx: RulesContext): DerivedSheet {  co
   const featAbMods = build.featMods || {};
   ABILITIES.forEach((a) => { if (abMods[a]) liveAb[a] += abMods[a] as number; });
   ABILITIES.forEach((a) => { if (featAbMods[a]) liveAb[a] += featAbMods[a] as number; });
+  // Ability-score increases and feat bonuses chosen at ASI levels (standard 4/8/12/16/19 and epic
+  // 21-30) accumulate into em.mods via epicAgg; apply their per-ability values to the base score
+  // too, so an ASI or an ability-raising feat actually moves the stat.
+  ABILITIES.forEach((a) => { if (em[a]) liveAb[a] += em[a] as number; });
   const geff = gearAbilityEffects(build.gear?.items || [], ctx);
   ABILITIES.forEach((a) => { if (geff.bump[a]) liveAb[a] += geff.bump[a] as number; });
   ABILITIES.forEach((a) => { const s = geff.set[a]; if (s !== undefined && liveAb[a] < s) liveAb[a] = s; });
+  // Cap after everything: no ability exceeds the epic ceiling (30 by default).
+  const abilityCap = epic.abilityCap || 30;
+  ABILITIES.forEach((a) => { if (liveAb[a] > abilityCap) liveAb[a] = abilityCap; });
   const m = {} as Record<Ability, number>;
   ABILITIES.forEach((a) => { m[a] = abilityMod(liveAb[a]); });
 

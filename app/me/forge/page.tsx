@@ -46,11 +46,11 @@ import {
   saveToLibrary, updateLibrary, saveCharacterToLibrary, type LibraryDenorm,
 } from "@/lib/pc-library";
 import {
-  describeItem, describeBackground, describeSpecies, describeSkill, type Described,
+  describeItem, describeBackground, describeSpecies, describeSkill, describeFeat, type Described,
   type ItemRecord, type BackgroundRecord, type SpeciesMechRecord,
 } from "@/lib/descriptions";
 import {
-  classProgression, isAsiLevel, type ClassRecord, type LevelGroup,
+  classProgression, isAsiLevel, asiLevelsUpTo, type ClassRecord, type LevelGroup,
 } from "@/lib/class-progression";
 import {
   deriveSheet, epicAdvancement, ABILITIES, SKILLS,
@@ -286,11 +286,16 @@ function ForgeInner() {
     backgrounds.forEach((b) => { bgByName[b.name] = b; });
     const classByName: Record<string, ClassRecord> = {};
     classes.forEach((c) => { if (c?.name && !classByName[c.name]) classByName[c.name] = c; });
+    // Feats for the ASI/feat picker: a name-sorted list plus a by-name lookup for descriptions.
+    const feats = loadSrd("feats", srdMode) as unknown as FeatOption[];
+    const featList = [...(feats || [])].sort((a, b) => a.name.localeCompare(b.name));
+    const featByName: Record<string, FeatOption> = {};
+    featList.forEach((f) => { if (!featByName[f.name]) featByName[f.name] = f; });
     // One item lookup for descriptions (mundane + magic, first wins on a both-mode name collision).
     const itemByName: Record<string, ItemRecord> = {};
     equipment.forEach((e) => { if (!itemByName[e.name]) itemByName[e.name] = e; });
     magic.forEach((m) => { if (!itemByName[m.name]) itemByName[m.name] = m; });
-    return { backgrounds, equipment, magic, speciesByName, bgByName, classByName, itemByName };
+    return { backgrounds, equipment, magic, speciesByName, bgByName, classByName, itemByName, featList, featByName };
   }, [srdMode]);
 
   // Description of the currently selected species / background, for the Identity panel.
@@ -308,6 +313,16 @@ function ForgeInner() {
     () => classProgression(srd.classByName[build.meta.className], build.level),
     [srd.classByName, build.meta.className, build.level],
   );
+
+  // The ASI levels the character has reached, each of which grants an ability-score increase or a
+  // feat. Standard 4/8/12/16/19 plus any class-specific extras (e.g. Fighter 6/14) plus epic ASIs
+  // (21/23/25/27/29, from the Epic Legacy table baked into the engine's DEFAULT_EPIC).
+  const EPIC_ASI_LEVELS = [21, 23, 25, 27, 29];
+  const asiLevels = useMemo<number[]>(() => {
+    const base = asiLevelsUpTo(srd.classByName[build.meta.className], build.level);
+    const epicAsi = EPIC_ASI_LEVELS.filter((l) => l <= build.level);
+    return [...new Set([...base, ...epicAsi])].sort((a, b) => a - b);
+  }, [srd.classByName, build.meta.className, build.level]);
 
   const ctx = useMemo(() => buildRulesContext(edition === "2014" ? "2014" : "2024"), [edition]);
 
@@ -387,6 +402,18 @@ function ForgeInner() {
   const setItemVariant = (i: number, variant: string) =>
     patch((b) => { b.gear.items = b.gear.items.map((e, idx) => idx === i ? { ...e, variant } : e); return b; });
   const editName = (v: string) => { setName(v); setSaveState("idle"); };
+
+  // Record the choice made at an ASI level into build.epicChoices[level]. An ASI writes ability
+  // mods the engine applies to the scores; a feat writes its name/desc (plus structured mods if the
+  // feat carries any). One choice per level, so this replaces whatever was there.
+  const setLevelChoice = (level: number, choice: EpicChoiceInput | null) =>
+    patch((b) => {
+      const next = { ...(b.epicChoices || {}) };
+      if (choice === null) delete next[level];
+      else next[level] = [choice];
+      b.epicChoices = next;
+      return b;
+    });
 
   useEffect(() => {
     if (!speciesVariant) return;
@@ -546,6 +573,13 @@ function ForgeInner() {
                   className={build.meta.className} level={build.level}
                   progression={progression}
                   classRec={srd.classByName[build.meta.className]}
+                />
+              )}
+
+              {build.meta.className && asiLevels.length > 0 && (
+                <FeatsPanel
+                  asiLevels={asiLevels} choices={build.epicChoices || {}}
+                  featList={srd.featList} onChoose={setLevelChoice}
                 />
               )}
 
@@ -928,6 +962,145 @@ function FeatureLine({ name, desc, asi }: { name: string; desc: string; asi?: bo
   );
 }
 
+// The ASI / feat picker. One slot per ASI level the character has reached. Each slot lets the
+// player take an ability-score increase (+2 to one, or +1 to two) OR a feat. The choice writes into
+// build.epicChoices[level], which the engine reads: ability mods raise the score, a feat's name
+// shows on the sheet (and any structured mods it carries apply). Feats without machine-readable
+// effects still record and display, they just don't move numbers until that effect is authored.
+function FeatsPanel({ asiLevels, choices, featList, onChoose }: {
+  asiLevels: number[];
+  choices: Record<number, EpicChoiceInput[]>;
+  featList: FeatOption[];
+  onChoose: (level: number, choice: EpicChoiceInput | null) => void;
+}) {
+  return (
+    <div style={stonePanel()}>
+      <PanelTitle hint="At each of these levels you take an ability score increase or a feat. Ability increases flow into the sheet; feats record here and apply where their effect is known.">
+        Ability increases &amp; feats
+      </PanelTitle>
+      <div style={{ display: "grid", gap: 14 }}>
+        {asiLevels.map((level) => (
+          <AsiSlot key={level} level={level} choice={choices[level]?.[0]} featList={featList}
+            onChoose={(c) => onChoose(level, c)} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// One ASI level's choice: a mode toggle (Ability / Feat / clear) plus the matching picker.
+function AsiSlot({ level, choice, featList, onChoose }: {
+  level: number; choice: EpicChoiceInput | undefined; featList: FeatOption[];
+  onChoose: (choice: EpicChoiceInput | null) => void;
+}) {
+  const mode: "none" | "asi" | "feat" =
+    !choice ? "none" : choice.isFeat ? "feat" : "asi";
+
+  return (
+    <div style={{ borderLeft: `2px solid ${STONE.mortar}`, paddingLeft: 14 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8, flexWrap: "wrap" }}>
+        <span style={{ fontFamily: FORGE_FONTS.display, fontSize: 16, color: STONE.brassHi }}>Level {level}</span>
+        {level >= 21 && <span style={stoneChip("brass")}>epic</span>}
+        <span style={{ flex: 1 }} />
+        {(["asi", "feat"] as const).map((m) => (
+          <button key={m} className={`forge-btn ${mode === m ? "is-primary" : "is-ghost"}`}
+            style={{ ...stoneButton(mode === m ? "primary" : "ghost"), padding: "5px 12px", fontSize: 12 }}
+            onClick={() => {
+              if (m === "asi") onChoose({ name: "Ability Score Improvement", isFeat: false, mods: {} });
+              else onChoose({ name: "", isFeat: true, desc: "" });
+            }}>
+            {m === "asi" ? "Ability +" : "Feat"}
+          </button>
+        ))}
+        {mode !== "none" && (
+          <button className="forge-btn is-ghost" style={{ ...stoneButton("ghost"), padding: "5px 12px", fontSize: 12 }}
+            onClick={() => onChoose(null)}>Clear</button>
+        )}
+      </div>
+
+      {mode === "asi" && <AsiEditor choice={choice as EpicChoiceInput} onChoose={onChoose} />}
+      {mode === "feat" && <FeatEditor choice={choice as EpicChoiceInput} featList={featList} onChoose={onChoose} />}
+      {mode === "none" && (
+        <p style={{ color: STONE.inkFaint, fontSize: 13 }}>Choose an ability increase or a feat.</p>
+      )}
+    </div>
+  );
+}
+
+// Ability-score-increase editor: +2 to one ability, or +1 to two. Writes the mods the engine adds
+// to the scores.
+function AsiEditor({ choice, onChoose }: {
+  choice: EpicChoiceInput; onChoose: (c: EpicChoiceInput) => void;
+}) {
+  const mods = choice.mods || {};
+  const total = ABILITIES.reduce((n, a) => n + (mods[a] || 0), 0);
+  const set = (a: Ability, v: number) => {
+    const next = { ...mods };
+    if (v <= 0) delete next[a]; else next[a] = v;
+    onChoose({ ...choice, name: "Ability Score Improvement", isFeat: false, mods: next });
+  };
+  return (
+    <div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(88px,1fr))", gap: 8 }}>
+        {ABILITIES.map((a) => {
+          const cur = mods[a] || 0;
+          // A given ability can take +1 or +2; total across all abilities must be <= 2.
+          const canPlus = total < 2 || cur > 0;
+          return (
+            <div key={a} style={{ ...statTile(), padding: "8px 6px" }}>
+              <div style={{ fontFamily: FORGE_FONTS.mono, fontSize: 10, letterSpacing: "0.2em",
+                textTransform: "uppercase", color: STONE.inkFaint, marginBottom: 5 }}>{a}</div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                <button className="forge-btn is-ghost" style={{ ...stoneButton("ghost"), padding: "2px 9px" }}
+                  onClick={() => set(a, cur - 1)} disabled={cur <= 0}>−</button>
+                <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 16, color: cur ? STONE.brassHi : STONE.inkFaint, minWidth: 20 }}>
+                  {cur ? `+${cur}` : "—"}
+                </span>
+                <button className="forge-btn is-ghost" style={{ ...stoneButton("ghost"), padding: "2px 9px" }}
+                  onClick={() => set(a, cur + 1)} disabled={!canPlus || cur >= 2}>+</button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <p style={{ color: total === 2 ? SAX.good : STONE.inkFaint, fontSize: 12, marginTop: 8, fontFamily: FORGE_FONTS.mono }}>
+        {total}/2 points assigned{total === 2 ? " ✓" : ""}
+      </p>
+    </div>
+  );
+}
+
+// Feat editor: pick a feat, see its prerequisite + description. Records the feat by name; a note is
+// shown because most feats' mechanical effects aren't structured data yet, so they display but
+// don't auto-modify the sheet.
+function FeatEditor({ choice, featList, onChoose }: {
+  choice: EpicChoiceInput; featList: FeatOption[]; onChoose: (c: EpicChoiceInput) => void;
+}) {
+  const picked = featList.find((f) => f.name === choice.name);
+  const desc = picked ? describeFeat(picked) : null;
+  return (
+    <div>
+      <div style={{ position: "relative" }}>
+        <select value={choice.name || ""} style={stoneField()}
+          onChange={(e) => {
+            const f = featList.find((x) => x.name === e.target.value);
+            onChoose({ ...choice, name: e.target.value, isFeat: true, desc: f?.description || "" });
+          }}>
+          <option value="" style={OPTION_STYLE}>Choose a feat</option>
+          {featList.map((f) => <option key={f.name} value={f.name} style={OPTION_STYLE}>{f.name}</option>)}
+        </select>
+        <span style={{ position: "absolute", right: 14, top: 14, fontSize: 9, color: SAX.brass, pointerEvents: "none" }}>▼</span>
+      </div>
+      {desc && <div style={{ marginTop: 8 }}><DescBlock desc={desc} compact /></div>}
+      {picked && (
+        <p style={{ color: STONE.inkFaint, fontSize: 12, marginTop: 6, fontStyle: "italic" }}>
+          Recorded on your sheet. Feats with a known ability bonus apply automatically; others are noted for reference.
+        </p>
+      )}
+    </div>
+  );
+}
+
 function GearPanel({ build, gearIndex, gearTypes, ctx, itemByName, onAdd, onRemove, onMod, onVariant }: {
   build: Build; gearIndex: GearOption[]; gearTypes: string[];
   ctx: ReturnType<typeof buildRulesContext>;
@@ -1143,6 +1316,20 @@ function Picking({ stable }: { stable: StableRow[] }) {
 // ---------------------------------------------------------------------------
 
 type GearOption = { name: string; type: string; magic: boolean };
+
+// A feat as loaded from the SRD feats JSON (matches descriptions.ts FeatRecord).
+type FeatOption = { name: string; category?: string; prerequisite?: string; description?: string };
+
+// What the picker writes into build.epicChoices[level]. It's an EpicChoice the engine already
+// reads (name + mods, where mods like { str: 2 } raise ability scores), plus two UI-only fields:
+// isFeat (which editor to show) and desc (the feat's text to display). The engine ignores the extra
+// fields; the ability mods in `mods` are what actually move the sheet.
+type EpicChoiceInput = {
+  name: string;
+  isFeat: boolean;
+  desc?: string;
+  mods?: Record<string, number>;
+};
 
 const fmtMod = (n: number): string => (n >= 0 ? `+${n}` : `${n}`);
 
