@@ -51,6 +51,7 @@ import {
   type ItemRecord, type BackgroundRecord, type SpeciesMechRecord,
 } from "@/lib/descriptions";
 import { CharacterSheetPrint, type PrintTrait, type PrintFeature } from "@/components/character-sheet-print";
+import { PortraitUploader } from "@/components/portrait-uploader";
 import {
   classProgression, asiLevelsUpTo, epicProgression,
   type ClassRecord, type LevelGroup,
@@ -98,6 +99,7 @@ type CharRow = {
   id: string; name: string; build: unknown;
   species: string | null; class: string | null; subclass: string | null;
   species_variant: string | null; level: number | null; alignment: string | null; campaign_id: string;
+  portrait_url: string | null;
 };
 
 type LibRow = {
@@ -174,6 +176,7 @@ function ForgeInner() {
   const [build, setBuild] = useState<Build>(emptyBuild());
   const [name, setName] = useState<string>("");
   const [speciesVariant, setSpeciesVariant] = useState<string>("");
+  const [portraitUrl, setPortraitUrl] = useState<string | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "picking" | "error" | "signedout">("loading");
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
 
@@ -230,7 +233,7 @@ function ForgeInner() {
       // CAMPAIGN character.
       const { data, error } = await supabase
         .from("characters")
-        .select("id, name, build, species, class, subclass, species_variant, level, alignment, campaign_id")
+        .select("id, name, build, species, class, subclass, species_variant, level, alignment, campaign_id, portrait_url")
         .eq("id", charId)
         .single();
       if (!active) return;
@@ -240,6 +243,10 @@ function ForgeInner() {
       setBuild(seedFromDenorm(normalizeBuild(r.build), r));
       setName(r.name || "");
       setSpeciesVariant(r.species_variant || "");
+      if (r.portrait_url) {
+        const { data: pu } = supabase.storage.from("campaign-maps").getPublicUrl(r.portrait_url);
+        setPortraitUrl(pu.publicUrl);
+      }
       setStatus("ready");
     })();
     return () => { active = false; };
@@ -597,6 +604,25 @@ function ForgeInner() {
                 {mode !== "character" && (
                   <p style={{ color: STONE.inkFaint, fontSize: 13, marginTop: 8 }}>
                     This is a saved build in your library. Changes autosave; use “Play in campaign” from your library to bring it to a table.
+                  </p>
+                )}
+                {mode === "character" && row && (
+                  <div style={{ marginTop: 14 }}>
+                    <PortraitUploader
+                      label="Character portrait"
+                      basePath={`${row.campaign_id}/portraits/${row.id}`}
+                      currentUrl={portraitUrl}
+                      onUploaded={(url, path) => {
+                        setPortraitUrl(url);
+                        void supabase.from("characters").update({ portrait_url: path }).eq("id", row.id);
+                      }}
+                      textColor={STONE.ink} mutedColor={STONE.inkDim}
+                    />
+                  </div>
+                )}
+                {mode !== "character" && (
+                  <p style={{ color: STONE.inkFaint, fontSize: 12, marginTop: 6, fontStyle: "italic" }}>
+                    Add a portrait once this build is playing in a campaign.
                   </p>
                 )}
               </div>

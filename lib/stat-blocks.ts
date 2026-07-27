@@ -147,6 +147,12 @@ export async function deleteStatBlock(sb: SupabaseClient, id: string): Promise<v
   if (error) throw error;
 }
 
+// Persist the uploaded portrait path (object path in the campaign-maps bucket) on a stat block.
+export async function updateStatBlockPortrait(sb: SupabaseClient, id: string, portraitPath: string): Promise<void> {
+  const { error } = await sb.from("stat_blocks").update({ portrait_path: portraitPath }).eq("id", id);
+  if (error) throw error;
+}
+
 // A blank stat block for start-from-scratch authoring. Sensible defaults; the GM fills the rest.
 export function blankStatBlock(): StatBlockDoc {
   return {

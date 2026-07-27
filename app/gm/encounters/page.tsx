@@ -4,6 +4,8 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { SAX } from "@/lib/theme";
+import { loadSrd } from "@/lib/srd/srd";
+import { listStatBlocks, type StatBlockRow } from "@/lib/stat-blocks";
 
 const C = {
   ink: SAX.inkDeep, panel: SAX.slateBg, line: SAX.line, text: SAX.text,
@@ -111,6 +113,9 @@ const COMBAT_CRITICAL = ["healing", "ranged", "tank", "control", "aoe"];
 type Char = { id: string; name: string; level: number | null; class: string | null; subclass: string | null };
 type Foe = { id: string; name: string; cr: string; count: number };
 type Method = "2024" | "2014";
+// A pickable monster from either source: the GM's own saved stat blocks or the SRD library.
+type MonsterSource = { name: string; cr: string; origin: "mine" | "srd" };
+type SrdMode = "2024" | "2014" | "both";
 
 let seq = 0;
 const uid = () => `f${++seq}`;
@@ -130,6 +135,13 @@ export default function EncountersPage() {
   const [caps, setCaps] = useState<Array<{ class: string; subclass: string | null; capabilities: string[] }>>([]);
   const [savedMsg, setSavedMsg] = useState<string | null>(null);
 
+  // Monster sources for the picker: the GM's own saved stat blocks (from the stat-block builder)
+  // and the SRD monster library. Both feed the same Foe model, so the whole calc downstream is
+  // unchanged, this only replaces hand-typing a name and CR.
+  const [statBlocks, setStatBlocks] = useState<StatBlockRow[]>([]);
+  const [srdMode, setSrdMode] = useState<SrdMode>("2014");
+  const [pickerOpen, setPickerOpen] = useState(false);
+
   // "The module assumes N characters of level L." This is the thing you actually
   // wanted: a published encounter is written for a party that is not yours.
   const [modOn, setModOn] = useState(false);
@@ -138,13 +150,15 @@ export default function EncountersPage() {
 
   useEffect(() => {
     (async () => {
-      const [{ data }, { data: cp }] = await Promise.all([
+      const [{ data }, { data: cp }, blocks] = await Promise.all([
         supabase.from("campaigns").select("id, name").order("created_at", { ascending: false }),
         supabase.from("class_capabilities").select("class, subclass, capabilities"),
+        listStatBlocks(supabase).catch(() => [] as StatBlockRow[]),
       ]);
       const list = (data as Array<{ id: string; name: string }>) || [];
       setCampaigns(list);
       setCaps((cp as Array<{ class: string; subclass: string | null; capabilities: string[] }>) || []);
+      setStatBlocks(blocks);
       if (list.length) setCampaignId(list[0].id);
       setLoading(false);
     })();
@@ -236,6 +250,31 @@ export default function EncountersPage() {
     const missing = COMBAT_CRITICAL.filter((b) => !have.has(b));
     return { have: [...have].sort(), missing, unknown };
   }, [caps, levelled]);
+
+  // The pickable monster catalog: the GM's saved stat blocks first (their own creations, CR already
+  // denormalized), then the SRD library for the chosen ruleset. Only entries with a usable CR are
+  // offered, since the whole calc keys on CR.
+  const monsterCatalog = useMemo<MonsterSource[]>(() => {
+    const mine: MonsterSource[] = statBlocks
+      .filter((b) => b.cr && CR_XP[b.cr] != null)
+      .map((b) => ({ name: b.name, cr: b.cr as string, origin: "mine" }));
+    const srd = (loadSrd("monsters", srdMode) as unknown as Array<{ name: string; cr?: string | number }>)
+      .map((m) => ({ name: m.name, cr: String(m.cr ?? ""), origin: "srd" as const }))
+      .filter((m) => m.cr && CR_XP[m.cr] != null);
+    return [...mine, ...srd];
+  }, [statBlocks, srdMode]);
+
+  // Append a monster from the catalog as a new foe row (or bump its count if already present at the
+  // same CR). Everything downstream reads Foe, so no other change is needed.
+  const addFoeFromCatalog = useCallback((m: MonsterSource) => {
+    setFoes((fs) => {
+      const existing = fs.find((f) => f.name === m.name && f.cr === m.cr);
+      if (existing) return fs.map((f) => f === existing ? { ...f, count: f.count + 1 } : f);
+      // Drop a single empty placeholder row if that's all there is.
+      const seeded = fs.length === 1 && !fs[0].name.trim() ? [] : fs;
+      return [...seeded, { id: uid(), name: m.name, cr: m.cr, count: 1 }];
+    });
+  }, []);
 
   // XP to award after the fight. Always RAW xp, never adjusted: the multiplier is a
   // difficulty device, not an experience award. Several calculators get this right and
@@ -478,17 +517,39 @@ export default function EncountersPage() {
             </button>
           </div>
         ))}
-        <button
-          type="button"
-          onClick={() => setFoes((fs) => [...fs, { id: uid(), name: "", cr: "1", count: 1 }])}
-          style={{
-            background: "transparent", color: C.text, border: `1px solid ${C.line}`,
-            borderRadius: 8, padding: "7px 14px", fontSize: 12.5, fontWeight: 700,
-            fontFamily: SAX.mono, cursor: "pointer", marginTop: 4,
-          }}
-        >
-          Add monster
-        </button>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 4 }}>
+          <button
+            type="button"
+            onClick={() => setFoes((fs) => [...fs, { id: uid(), name: "", cr: "1", count: 1 }])}
+            style={{
+              background: "transparent", color: C.text, border: `1px solid ${C.line}`,
+              borderRadius: 8, padding: "7px 14px", fontSize: 12.5, fontWeight: 700,
+              fontFamily: SAX.mono, cursor: "pointer",
+            }}
+          >
+            Add monster
+          </button>
+          <button
+            type="button"
+            onClick={() => setPickerOpen((v) => !v)}
+            style={{
+              background: pickerOpen ? C.brass : "transparent", color: pickerOpen ? C.ink : C.text,
+              border: `1px solid ${pickerOpen ? C.brass : C.line}`,
+              borderRadius: 8, padding: "7px 14px", fontSize: 12.5, fontWeight: 700,
+              fontFamily: SAX.mono, cursor: "pointer",
+            }}
+          >
+            Import from library
+          </button>
+        </div>
+
+        {pickerOpen && (
+          <MonsterPicker
+            catalog={monsterCatalog} srdMode={srdMode} onSrdMode={setSrdMode}
+            hasOwn={statBlocks.length > 0} onAdd={addFoeFromCatalog}
+            C={C} inputStyle={inputStyle}
+          />
+        )}
       </div>
 
       {/* verdict */}
@@ -714,5 +775,88 @@ export default function EncountersPage() {
         table on this page.
       </p>
     </PageShell>
+  );
+}
+
+// The monster import picker: search across the GM's own stat blocks and the SRD library, click to
+// add. The GM's creations are grouped first and labelled, since those are the point, this is where
+// "import current monsters AND allow the GM to create their own" both land in the same place.
+function MonsterPicker({ catalog, srdMode, onSrdMode, hasOwn, onAdd, C, inputStyle }: {
+  catalog: MonsterSource[];
+  srdMode: SrdMode;
+  onSrdMode: (m: SrdMode) => void;
+  hasOwn: boolean;
+  onAdd: (m: MonsterSource) => void;
+  C: Record<string, string>;
+  inputStyle: React.CSSProperties;
+}) {
+  const [q, setQ] = useState("");
+  const filtered = useMemo(() => {
+    const s = q.trim().toLowerCase();
+    const base = s ? catalog.filter((m) => m.name.toLowerCase().includes(s)) : catalog;
+    // Keep the GM's own creations at the top, then cap the SRD list so the panel stays usable.
+    const mine = base.filter((m) => m.origin === "mine");
+    const srd = base.filter((m) => m.origin === "srd").slice(0, s ? 40 : 40);
+    return [...mine, ...srd];
+  }, [q, catalog]);
+
+  return (
+    <div style={{
+      marginTop: 12, border: `1px solid ${C.line}`, borderRadius: 10, padding: 12,
+      background: "rgba(255,255,255,0.02)",
+    }}>
+      <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 10 }}>
+        <input
+          value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search monsters…"
+          style={{ ...inputStyle, flex: "1 1 200px" }}
+        />
+        <div style={{ display: "flex", gap: 4 }}>
+          {(["2024", "2014", "both"] as const).map((m) => (
+            <button
+              key={m} type="button" onClick={() => onSrdMode(m)}
+              style={{
+                background: srdMode === m ? C.brass : "transparent", color: srdMode === m ? C.ink : C.muted,
+                border: `1px solid ${srdMode === m ? C.brass : C.line}`, borderRadius: 999,
+                padding: "5px 11px", fontSize: 11.5, fontFamily: SAX.mono, fontWeight: 700, cursor: "pointer",
+              }}
+            >
+              {m === "both" ? "Both" : m}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {hasOwn && (
+        <p style={{ color: C.muted, fontSize: 11.5, margin: "0 0 8px" }}>
+          Your own stat blocks are listed first. The rest are SRD monsters for the chosen ruleset.
+        </p>
+      )}
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(190px, 1fr))", gap: 6, maxHeight: 280, overflowY: "auto" }}>
+        {filtered.map((m, i) => (
+          <button
+            key={`${m.origin}-${m.name}-${i}`} type="button" onClick={() => onAdd(m)}
+            style={{
+              display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8,
+              background: "transparent", color: C.text, border: `1px solid ${C.line}`,
+              borderRadius: 8, padding: "7px 10px", fontSize: 13, cursor: "pointer", textAlign: "left",
+            }}
+          >
+            <span style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
+              {m.origin === "mine" && (
+                <span style={{ fontSize: 9, fontFamily: SAX.mono, color: C.brass, border: `1px solid ${C.brass}`, borderRadius: 4, padding: "1px 4px", flexShrink: 0 }}>
+                  yours
+                </span>
+              )}
+              <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.name}</span>
+            </span>
+            <span style={{ fontFamily: SAX.mono, fontSize: 11, color: C.muted, flexShrink: 0 }}>CR {m.cr}</span>
+          </button>
+        ))}
+        {filtered.length === 0 && (
+          <p style={{ color: C.muted, fontSize: 12.5, gridColumn: "1 / -1", margin: 0 }}>No monsters match.</p>
+        )}
+      </div>
+    </div>
   );
 }
