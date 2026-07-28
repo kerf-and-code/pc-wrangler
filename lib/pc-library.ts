@@ -121,12 +121,71 @@ export async function listMyCampaigns(supabase: SupabaseClient): Promise<Campaig
     .map((c) => ({ campaign_id: c.campaign_id, campaign_name: c.campaign_name }));
 }
 
+// PHASE 1 of "Bobert across campaigns": find or create the persistent CHARACTER IDENTITY for a
+// library build, so every instance launched from that build links to the same "Bobert." Binding is
+// automatic by shared library build — the identity is keyed on (profile_id, source_library_id), so
+// a second launch of the same build reuses the first launch's identity rather than creating a
+// duplicate. Returns the identity id, or null if we couldn't resolve one (in which case the launch
+// still proceeds unlinked — identity linkage is additive and must never block getting a character
+// to the table).
+//
+// This does NOT change disposition estimation. It only records which instances are the same
+// character, so the data is ready when the three-level estimator (instance theta -> identity beta
+// -> player phi) is built later.
+export async function resolveIdentityForBuild(
+  supabase: SupabaseClient,
+  userId: string,
+  lib: LibraryRow,
+): Promise<string | null> {
+  try {
+    // Reuse the existing identity for this (player, build) if there is one.
+    const { data: existing } = await supabase
+      .from("character_identities")
+      .select("id")
+      .eq("profile_id", userId)
+      .eq("source_library_id", lib.id)
+      .maybeSingle();
+    if (existing) return (existing as { id: string }).id;
+
+    // Otherwise create it, seeded with the build's fixed attributes (constant across instances).
+    const { data: created, error } = await supabase
+      .from("character_identities")
+      .insert({
+        profile_id: userId,
+        source_library_id: lib.id,
+        name: lib.name || "Unnamed character",
+        species: lib.species ?? null,
+        class: lib.class ?? null,
+        subclass: lib.subclass ?? null,
+        species_variant: lib.species_variant ?? null,
+      })
+      .select("id")
+      .single();
+    if (error) {
+      // A concurrent launch may have created it between our read and insert (unique index on
+      // (profile_id, source_library_id)). Re-read and use that one.
+      const { data: raced } = await supabase
+        .from("character_identities")
+        .select("id")
+        .eq("profile_id", userId)
+        .eq("source_library_id", lib.id)
+        .maybeSingle();
+      return raced ? (raced as { id: string }).id : null;
+    }
+    return (created as { id: string }).id;
+  } catch {
+    return null;
+  }
+}
+
 // Launch a library build into a campaign as a FRESH character (a copy). Returns the new character
 // id so the caller can route straight to /me/forge?c=<id>. The insert relies on the existing
 // "owner or gm adds character" policy: profile_id must be the caller and they must already be a
 // member of the campaign — both are true here for a player launching their own build.
 //
-// This does NOT touch any other instance of the same build: launching into B leaves A alone.
+// This does NOT touch any other instance of the same build: launching into B leaves A alone. It
+// DOES link the new instance to the build's persistent character identity (find-or-create), so the
+// same Bobert launched into several campaigns shares one identity for later cross-campaign pooling.
 export async function instantiateToCampaign(
   supabase: SupabaseClient,
   lib: LibraryRow,
@@ -134,6 +193,11 @@ export async function instantiateToCampaign(
 ): Promise<string> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Sign in to add a character.");
+
+  // Resolve the identity first so we can stamp it on the new instance. Never blocks the launch: a
+  // null identity just means the instance starts unlinked (it can be linked later).
+  const identityId = await resolveIdentityForBuild(supabase, user.id, lib);
+
   const { data, error } = await supabase
     .from("characters")
     .insert({
@@ -148,6 +212,7 @@ export async function instantiateToCampaign(
       species_variant: lib.species_variant ?? null,
       level: lib.level ?? null,
       portrait_url: lib.portrait_url ?? null,
+      identity_id: identityId,
       // kind, active, tags, visibility, invite_code, timestamps all take their column defaults.
     })
     .select("id")
