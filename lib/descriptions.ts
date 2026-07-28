@@ -57,6 +57,30 @@ export type Described = { lead: string; body?: string };
 
 const clean = (s?: unknown): string => (typeof s === "string" ? s : "").replace(/\s+/g, " ").trim();
 
+// ---- weapon mastery effects ---------------------------------------------------------------------
+//
+// The SRD weapon data carries only the mastery NAME (e.g. "Topple"); it never says what the mastery
+// does. This static table supplies the mechanical effect for each of the nine 2024 masteries so the
+// Forge can explain the property instead of just naming it. Text is a concise statement of the
+// rule's effect (numbers, saves, conditions), not flavor.
+export const WEAPON_MASTERY: Record<string, string> = {
+  Cleave: "On hitting a creature with a melee attack, make one more attack against a second creature within 5 feet and within reach. The extra attack rolls damage without your ability modifier (unless it's negative).",
+  Graze: "On a miss, the target still takes damage equal to the ability modifier used for the attack roll.",
+  Nick: "When you make the extra attack from the Light property, you can make it as part of the Attack action instead of as a Bonus Action (so it no longer costs your Bonus Action).",
+  Push: "On a hit, you can push the target up to 10 feet straight away from you if it is Large or smaller. No save.",
+  Sap: "On a hit, the target has Disadvantage on its next attack roll before the start of your next turn.",
+  Slow: "On a hit that deals damage, reduce the target's Speed by 10 feet until the start of your next turn (doesn't stack beyond 10 feet).",
+  Topple: "On a hit, the target makes a Constitution save (DC 8 + your ability modifier + Proficiency Bonus) or falls Prone.",
+  Vex: "On a hit that deals damage, you have Advantage on your next attack roll against any target before the end of your next turn.",
+};
+
+// Look up a mastery's effect text by name, tolerant of case/spacing.
+export function masteryEffect(name?: string): string | null {
+  if (!name) return null;
+  const key = Object.keys(WEAPON_MASTERY).find((k) => k.toLowerCase() === name.trim().toLowerCase());
+  return key ? WEAPON_MASTERY[key] : null;
+}
+
 // ---- items (weapons, armor, gear, magic) --------------------------------------------------------
 
 export function describeItem(rec: ItemRecord | undefined): Described | null {
@@ -79,7 +103,13 @@ export function describeItem(rec: ItemRecord | undefined): Described | null {
     if (rec.mastery) bits.push(`Mastery: ${rec.mastery}`);
     if (rec.properties?.length) bits.push(rec.properties.join(", "));
     const lead = bits.join(" · ") || "Weapon";
-    return { lead, body: rec.description ? clean(rec.description) : undefined };
+    // Body: the item's own prose if any, plus the mastery effect so the property is explained.
+    const effect = masteryEffect(rec.mastery);
+    const bodyParts = [
+      rec.description ? clean(rec.description) : "",
+      effect ? `Mastery — ${rec.mastery}: ${effect}` : "",
+    ].filter(Boolean);
+    return { lead, body: bodyParts.length ? bodyParts.join("\n\n") : undefined };
   }
 
   // 2024 armor: compose.
