@@ -404,6 +404,17 @@ def parse_attacks(p: Page) -> List[Dict[str, Any]]:
     return attacks
 
 
+# Every feature head on every sheet ends with a source citation: a bullet, then a book code, then an
+# optional page number ("Fighting Style • PHB-2024 91", "Rakish Audacity • SCAG", "Creature Type •
+# EFotA 38", "Elven Accuracy • XGtE 74"). All 118 heads across the three sheets match this shape and
+# none contains more than one bullet, so matching a SINGLE trailing token plus optional page is both
+# sufficient and tight enough not to eat a real multi-word name segment.
+# This replaced a hardcoded book allowlist (PHB|BR|SCAG|XGE|TCE|DMG), which silently left the suffix
+# glued to the name for any book not on it: the rogue's nine Eberron traits and, because the list had
+# "XGE" where the sheet writes "XGtE", the wizard's Elven Accuracy.
+FEATURE_SOURCE = re.compile(r"\s*[\u2022\u00b7]\s*([A-Za-z][A-Za-z0-9-]*(?:\s+\d+)?)\s*$")
+
+
 def _column_lines(p: Page, x0: float, x1: float, y_bucket: float = 3.0,
                   y_max: Optional[float] = None) -> List[str]:
     """Reading-order lines for a single column band [x0, x1), optionally cut off below y_max."""
@@ -441,6 +452,7 @@ def parse_features(pages: List[Page]) -> List[Dict[str, str]]:
         for cx0, cx1 in COLUMNS:
             lines = _column_lines(p, cx0, cx1, y_max=foot.y0)
             cur_name: Optional[str] = None
+            cur_src: Optional[str] = None
             cur_body: List[str] = []
             for ln in lines:
                 s = ln.strip()
@@ -455,15 +467,18 @@ def parse_features(pages: List[Page]) -> List[Dict[str, str]]:
                 m = re.match(r"^\*\s+(.*)", s)
                 if m:
                     if cur_name:
-                        feats.append({"name": cur_name, "desc": " ".join(cur_body).strip()})
-                    head = re.sub(r"\s*[•·]\s*(PHB|BR|SCAG|XGE|TCE|DMG)[-\d ]*.*$", "", m.group(1)).strip()
-                    cur_name, cur_body = head, []
+                        feats.append({"name": cur_name, "source": cur_src,
+                                      "desc": " ".join(cur_body).strip()})
+                    sm = FEATURE_SOURCE.search(m.group(1))
+                    head = FEATURE_SOURCE.sub("", m.group(1)).strip()
+                    cur_name, cur_src, cur_body = head, (sm.group(1) if sm else None), []
                 elif re.match(r"^\|\s+", s):
                     cur_body.append(re.sub(r"^\|\s+", "", s))
                 elif cur_name and s and not re.match(r"^===|FEATURES|TRAITS|EQUIPMENT|ADDITIONAL", s, re.I):
                     cur_body.append(s)
             if cur_name:
-                feats.append({"name": cur_name, "desc": " ".join(cur_body).strip()})
+                feats.append({"name": cur_name, "source": cur_src,
+                              "desc": " ".join(cur_body).strip()})
     seen = set()
     uniq: List[Dict[str, str]] = []
     for f in feats:
