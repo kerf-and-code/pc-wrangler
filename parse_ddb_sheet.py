@@ -539,9 +539,24 @@ def parse_equipment(pages: List[Page]) -> List[Dict[str, Any]]:
         if not eq:
             continue
         region = [w for w in p.words if w.cy < eq.cy - 4 and w.cy > eq.cy - 260]
-        # The currency ledger (CP/SP/EP/GP/PP + amounts) sits in a narrow far-left column. Exclude it
-        # by dropping currency tokens and any word in that narrow left strip (x < 40).
-        for xlo, xhi in [(40, 300), (300, 612)]:
+        # D&D Beyond uses TWO equipment layouts and they do NOT share column positions. Measured on
+        # every equipment page of every sheet:
+        #   main EQUIPMENT page (carries the currency ledger and ATTUNED MAGIC ITEMS)
+        #     currency labels x0 ~22, currency AMOUNTS x0 ~52-71, carry-weight values x0 ~52-71
+        #     left  NAME x0 ~114 | QTY x0 ~274 | WEIGHT x0 ~307 (values end by x ~333)
+        #     right NAME x0 ~350 | QTY x0 ~511 | WEIGHT x0 ~545
+        #   ADDITIONAL EQUIPMENT pages (no currency ledger; columns sit ~50pt further left)
+        #     left  NAME x0 ~40  | QTY x0 ~236 | WEIGHT x0 ~270 (values end by x ~292)
+        #     right NAME x0 ~315 | QTY x0 ~511 | WEIGHT x0 ~545
+        # One band pair cannot serve both: bands tuned to the main page chop the front off every
+        # name on the additional pages, and bands tuned to the additional pages let the currency
+        # amounts into the main page's left column. The left band must start after the far-left
+        # strip (main page only) and the split must fall in the gutter between the LEFT table's
+        # weight values and the RIGHT table's names, which sits at ~340 on the main page and ~295
+        # on the additional pages.
+        additional = any(w.text == "ADDITIONAL" for w in p.words)
+        bands = [(0, 295), (295, 612)] if additional else [(100, 345), (345, 612)]
+        for xlo, xhi in bands:
             col = [w for w in region if xlo <= w.cx < xhi and w.text not in CURRENCY]
             by_y: Dict[int, List[Word]] = {}
             for w in col:
