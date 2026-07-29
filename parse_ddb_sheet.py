@@ -509,7 +509,8 @@ def parse_spells(pages: List[Page]) -> Dict[str, Any]:
     atk = page.first("ATTACK", exact=False)
     spells["attack_bonus"] = _wt(page.value_above(atk, max_dy=40)) if atk else None
 
-    header = next((w for w in page.words if w.text == "NAME" and w.cy < 400), None)
+    # Anchor on the spell table's own NAME header (x0 ~58), not any NAME elsewhere on the page.
+    header = next((w for w in page.words if w.text == "NAME" and w.x0 < 100 and w.cy > 100), None)
     if header:
         rows: Dict[int, List[Word]] = {}
         for w in page.words:
@@ -517,16 +518,30 @@ def parse_spells(pages: List[Page]) -> Dict[str, Any]:
                 rows.setdefault(round(w.cy / 4), []).append(w)
         for _, ws in sorted(rows.items()):
             ws.sort(key=lambda w: w.x0)
-            # Name is the left column only. The prepared checkbox is a lone 'O' before the name; drop
-            # it. Stop the name before the SOURCE column (which holds the class/book, x >= ~200).
-            body = [w for w in ws if not (w.text == "O" and w.x0 < 60)]
-            name = " ".join(w.text for w in body if w.x1 < 200).strip()
-            detail = " ".join(w.text for w in body if w.x0 >= 200).strip()
-            # Skip section headers and footer/legal rows.
+            # Measured column geometry, identical on all three sheets:
+            #   PREP marker x0 ~31 | NAME x0 42-88 (ends by x1 ~112) | SOURCE x0 151-208
+            #   (ends by x1 ~229) | SAVE/ATK x0 234+ | TIME x0 260 | RANGE/COMP/DURATION/REF beyond.
+            # Two clean gutters: 112-151 and 229-234, so split on x0 at 148 and 230. The old cut at
+            # 200 sat INSIDE the source column, so every source landed in the name ("Booming Blade
+            # Wizard", "Mage Hand Telekinetic") and multi-word sources straddled the line, leaving
+            # fragments like "Prepared)" at the head of the detail.
+            body = [w for w in ws if w.x0 >= 42]
+            # The PREP column carries TWO markers, not one: "O" for a preparable spell and "P" for
+            # always-prepared. Filtering only "O" left "P" glued to the front of the name.
+            prepared = any(w.text == "P" for w in ws if w.x0 < 42)
+            name = " ".join(w.text for w in body if w.x0 < 148).strip()
+            source = " ".join(w.text for w in body if 148 <= w.x0 < 230).strip()
+            detail = " ".join(w.text for w in body if w.x0 >= 230).strip()
+            # Skip section headers ("=== 1st LEVEL ==="), the cantrip banner, and the legal footer.
             if (not name or name.startswith("===") or "CANTRIP" in name.upper()
                     or "AT WILL" in name.upper() or name.startswith("TM ") or "©" in name):
                 continue
-            spells["list"].append({"name": name, "detail": detail or None})
+            spells["list"].append({
+                "name": name,
+                "source": source or None,
+                "always_prepared": prepared,
+                "detail": detail or None,
+            })
     return spells
 
 
