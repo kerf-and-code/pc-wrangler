@@ -444,7 +444,15 @@ def parse_features(pages: List[Page]) -> List[Dict[str, str]]:
             cur_body: List[str] = []
             for ln in lines:
                 s = ln.strip()
-                m = re.match(r"^[*•]\s+(.*)", s)
+                # Only "*" starts a feature. The "*" markers sit at exactly the three column left
+                # edges (x0 38.1 / 220.6 / 402.0) on every page; a line-start bullet is a SUB-option
+                # of the current feature, indented ~7.7pt further in. Treating the two alike promoted
+                # every sub-option to a top-level feature with a sentence-fragment name (the rogue's
+                # Cunning Strike and Devious Strikes options: "Poison (Cost: 1d6). You add a toxin to
+                # your strike,"). Across the three sheets there are 42/47/29 "*" lines and only the
+                # rogue has bullet-start lines, 6 of them, all sub-options, so line-start bullets are
+                # an unambiguous signal. The bullet is kept in the body text to preserve the list.
+                m = re.match(r"^\*\s+(.*)", s)
                 if m:
                     if cur_name:
                         feats.append({"name": cur_name, "desc": " ".join(cur_body).strip()})
