@@ -96,6 +96,7 @@ const PLAYER_YOU: PGroup = {
     { href: "/me/campaigns", label: "Campaigns" },
     { href: "/me/characters", label: "Characters" },
     { href: "/me/library", label: "Library" },
+    { href: "/me/import", label: "Import from D&D Beyond" },
     { href: "/me/threads", label: "Threads" },
     { href: "/me/codex", label: "Codex" },
     { href: "/me/profile", label: "Your profile" },

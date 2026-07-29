@@ -60,6 +60,7 @@ import {
   deriveSheet, epicAdvancement, ABILITIES, SKILLS, DEFAULT_EPIC,
   type Ability, type Build, type EpicChoice,
 } from "@/lib/srd/derive-sheet";
+import { hasPrintedAbilities, suppressItemEffects } from "@/lib/ddb-import";
 
 // ---------------------------------------------------------------------------
 // Build defaults + normalization
@@ -380,6 +381,22 @@ function ForgeInner() {
 
   const ctx = useMemo(() => buildRulesContext(edition === "2014" ? "2014" : "2024"), [edition]);
 
+  // A character imported from a D&D Beyond sheet carries the scores D&D Beyond PRINTS, which
+  // already include every item bonus. Build.abilities is otherwise "base before gear" and the engine
+  // adds ITEM_EFFECTS on top, so deriving an import through the plain context applies those items
+  // TWICE (the Rogue test sheet carries Manual of Bodily Health AND Manual of Quickness of Action,
+  // both in that table).
+  //
+  // Suppression is a DERIVATION concern only, so it gets its own context rather than replacing
+  // `ctx`: GearPanel reads ctx.items / ctx.itemVariants to render item metadata and the variant
+  // picker, and must keep seeing the full tables or imported characters would lose their variant
+  // dropdowns. Everything else about an import derives normally.
+  const printedAbilities = hasPrintedAbilities(build);
+  const deriveCtx = useMemo(
+    () => (printedAbilities ? suppressItemEffects(ctx) : ctx),
+    [ctx, printedAbilities],
+  );
+
   // Apply the chosen species' ability bonuses (2014 carry "CON +2"; 2024 carry none) into
   // build.featMods, which the engine adds to the base scores.
   const buildForDerive = useMemo<Build>(() => {
@@ -389,8 +406,8 @@ function ForgeInner() {
   }, [build, srd.speciesByName]);
 
   const sheet = useMemo(() => {
-    try { return deriveSheet(buildForDerive, ctx); } catch { return null; }
-  }, [buildForDerive, ctx]);
+    try { return deriveSheet(buildForDerive, deriveCtx); } catch { return null; }
+  }, [buildForDerive, deriveCtx]);
 
   const epic = useMemo(() => epicAdvancement(build.level), [build.level]);
 
