@@ -404,11 +404,12 @@ def parse_attacks(p: Page) -> List[Dict[str, Any]]:
     return attacks
 
 
-def _column_lines(p: Page, x0: float, x1: float, y_bucket: float = 3.0) -> List[str]:
-    """Reading-order lines for a single column band [x0, x1)."""
+def _column_lines(p: Page, x0: float, x1: float, y_bucket: float = 3.0,
+                  y_max: Optional[float] = None) -> List[str]:
+    """Reading-order lines for a single column band [x0, x1), optionally cut off below y_max."""
     by_y: Dict[int, List[Word]] = {}
     for w in p.words:
-        if x0 <= w.cx < x1:
+        if x0 <= w.cx < x1 and (y_max is None or w.cy < y_max):
             by_y.setdefault(round(w.cy / y_bucket), []).append(w)
     return [" ".join(x.text for x in sorted(ws, key=lambda w: w.x0)) for _, ws in sorted(by_y.items())]
 
@@ -418,14 +419,27 @@ def parse_features(pages: List[Page]) -> List[Dict[str, str]]:
     full-width lines splices columns together, so we parse each column band separately and in order
     (col1 top-to-bottom, then col2, then col3). A feature starts with '* <Name>' and its body is the
     following non-marker / '|'-marker lines until the next feature."""
-    COLUMNS = [(0, 200), (200, 390), (390, 700)]
+    # Measured column geometry, identical on every features page of every sheet. The three column
+    # left edges (the "*" bullet markers) sit at x0 38.1 / 220.6 / 402.0, and content spans
+    #   col1 cx  39.4-205.2 | col2 cx 221.9-387.3 | col3 cx 403.3-569.3
+    # leaving gutters at 205.2-221.9 and 387.3-403.3. The old col1/col2 boundary of 200 sat INSIDE
+    # col1's content, so the tail words of col1 lines were being appended to col2.
+    COLUMNS = [(0, 213), (213, 395), (395, 700)]
     feats: List[Dict[str, str]] = []
     for p in pages:
-        page_text = " ".join(w.text for w in p.words).upper()
-        if "FEATURES" not in page_text and "TRAITS" not in page_text:
+        # The features box is bounded BELOW by its own centred footer label, "FEATURES & TRAITS" or
+        # "ADDITIONAL FEATURES & TRAITS", at y0 ~485 on every features page. Anchor on the FEATURES
+        # token FOLLOWED BY "&": the only other FEATURES tokens on these pages are in-box section
+        # headers followed by "===", and the bio page carries no FEATURES token at all. So this one
+        # anchor both selects the feature pages and supplies the cutoff.
+        # Testing merely for the words "FEATURES"/"TRAITS" anywhere on the page matched the BIO page
+        # too, via "PERSONALITY TRAITS", and reading each column to the bottom of the page appended
+        # the EQUIPMENT table and the legal footer to whichever feature was last in that column.
+        foot = p.first_followed_by("FEATURES", "&")
+        if not foot:
             continue
         for cx0, cx1 in COLUMNS:
-            lines = _column_lines(p, cx0, cx1)
+            lines = _column_lines(p, cx0, cx1, y_max=foot.y0)
             cur_name: Optional[str] = None
             cur_body: List[str] = []
             for ln in lines:
@@ -609,7 +623,7 @@ def parse_sheet(pdf_path: str) -> Dict[str, Any]:
         "combat": parse_combat(p1),
         "proficiencies": parse_proficiencies(p1),
         "attacks": parse_attacks(p1),
-        "features": parse_features(pages[1:4] if len(pages) > 1 else []),
+        "features": parse_features(pages[1:] if len(pages) > 1 else []),
         "bio": parse_bio(pages),
         "spells": parse_spells(pages),
         "equipment": parse_equipment(pages[1:4] if len(pages) > 1 else []),
