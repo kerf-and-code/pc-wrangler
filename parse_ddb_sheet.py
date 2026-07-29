@@ -557,7 +557,7 @@ def parse_bio(pages: List[Page]) -> Dict[str, Any]:
 
 
 def parse_spells(pages: List[Page]) -> Dict[str, Any]:
-    spells: Dict[str, Any] = {"save_dc": None, "attack_bonus": None, "list": []}
+    spells: Dict[str, Any] = {"save_dc": None, "attack_bonus": None, "slots": {}, "list": []}
     page = next((p for p in pages if any(w.text == "SPELLS" for w in p.words)), None)
     if not page:
         return spells
@@ -569,6 +569,7 @@ def parse_spells(pages: List[Page]) -> Dict[str, Any]:
 
     # Anchor on the spell table's own NAME header (x0 ~58), not any NAME elsewhere on the page.
     header = next((w for w in page.words if w.text == "NAME" and w.x0 < 100 and w.cy > 100), None)
+    cur_level: Optional[int] = None
     if header:
         rows: Dict[int, List[Word]] = {}
         for w in page.words:
@@ -590,14 +591,45 @@ def parse_spells(pages: List[Page]) -> Dict[str, Any]:
             name = " ".join(w.text for w in body if w.x0 < 148).strip()
             source = " ".join(w.text for w in body if 148 <= w.x0 < 230).strip()
             detail = " ".join(w.text for w in body if w.x0 >= 230).strip()
-            # Skip section headers ("=== 1st LEVEL ==="), the cantrip banner, and the legal footer.
-            if (not name or name.startswith("===") or "CANTRIP" in name.upper()
-                    or "AT WILL" in name.upper() or name.startswith("TM ") or "©" in name):
+
+            # A "=== 1st LEVEL === 4 Slots OOOO" row is a SECTION HEADER, not a spell: it carries the
+            # level every following row belongs to, and the slot count for that level. These used to
+            # be discarded with the rest of the "===" rows, which left every spell level-less.
+            # Shape (name column / source column):
+            #   "=== CANTRIPS ==="   / "(At Will)"        -> level 0, no slots
+            #   "=== 1st LEVEL ==="  / "4 Slots OOOO"     -> level 1, 4 slots
+            #   "=== 7th LEVEL ==="  / ""                 -> level 7, no slots (item-granted, and a
+            #                                                Rogue 20 correctly has no 7th slots)
+            hm = re.match(r"^===\s*(.+?)\s*===$", name)
+            if hm:
+                label = hm.group(1).upper()
+                if "CANTRIP" in label:
+                    cur_level = 0
+                else:
+                    lm = re.match(r"(\d+)", label)
+                    cur_level = int(lm.group(1)) if lm else None
+                sm = re.search(r"(\d+)\s+Slots", source)
+                if sm and cur_level:
+                    spells["slots"][str(cur_level)] = int(sm.group(1))
                 continue
+
+            # Remaining junk: the legal footer, and any stray banner row.
+            if (not name or name.startswith("===") or "AT WILL" in name.upper()
+                    or name.startswith("TM ") or "©" in name):
+                continue
+
+            # "[R]" is D&D Beyond's ritual marker, not part of the spell name. Leaving it in blocked
+            # the name from matching the SRD spell list (Find Familiar, Detect Magic, Identify).
+            ritual = bool(re.search(r"\s*\[R\]\s*$", name))
+            if ritual:
+                name = re.sub(r"\s*\[R\]\s*$", "", name).strip()
+
             spells["list"].append({
                 "name": name,
+                "level": cur_level,
                 "source": source or None,
                 "always_prepared": prepared,
+                "ritual": ritual,
                 "detail": detail or None,
             })
     return spells
@@ -606,6 +638,7 @@ def parse_spells(pages: List[Page]) -> Dict[str, Any]:
 def parse_equipment(pages: List[Page]) -> List[Dict[str, Any]]:
     items: List[Dict[str, Any]] = []
     seen = set()
+    attuned: set = set()
     CURRENCY = {"CP", "SP", "EP", "GP", "PP"}
     for p in pages:
         eq = p.first("EQUIPMENT", exact=False)
@@ -653,6 +686,31 @@ def parse_equipment(pages: List[Page]) -> List[Dict[str, Any]]:
                     if key not in seen:
                         seen.add(key)
                         items.append({"name": name, "detail": " ".join(detail_parts).strip() or None})
+
+        # The ATTUNED MAGIC ITEMS box is a second, small table in the right band, headed at y0 ~695
+        # and running down to the EQUIPMENT footer. 5e caps attunement at three, so which items are
+        # attuned is a real constraint worth carrying. Its rows are ALSO listed in the main table, so
+        # collect the names here and flag the matching items afterwards rather than appending them:
+        # the name-dedupe keeps whichever row it saw first, and that is usually the main-table one.
+        at = p.first_followed_by("ATTUNED", "MAGIC")
+        if at:
+            rows_at: Dict[int, List[Word]] = {}
+            for w in p.words:
+                if at.cy + 4 < w.cy < eq.cy - 4 and w.cx >= 345:
+                    rows_at.setdefault(round(w.cy / 5), []).append(w)
+            for _, ws in sorted(rows_at.items()):
+                ws.sort(key=lambda w: w.x0)
+                parts = []
+                for w in ws:
+                    if re.fullmatch(r"\d+", w.text):
+                        break
+                    parts.append(w.text)
+                nm = " ".join(parts).strip()
+                if len(nm) > 1:
+                    attuned.add(nm.lower())
+
+    for it in items:
+        it["attuned"] = it["name"].lower() in attuned
     return items
 
 
