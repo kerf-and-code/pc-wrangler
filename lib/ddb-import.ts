@@ -36,6 +36,9 @@ import type { Ability, Build, GearEntry, RulesContext } from "./srd/derive-sheet
 export type DdbClass = { class: string; level: number };
 
 export type DdbSheet = {
+  /** Present on the FIELD path: D&D Beyond states save proficiency outright. Absent on the
+   *  coordinate path, where it has to be inferred from the modifiers. */
+  save_prof?: Ability[];
   identity: {
     name: string | null;
     class_level_raw: string | null;
@@ -335,7 +338,15 @@ export function ddbToBuild(sheet: DdbSheet, ctx: ImportContext): ImportResult {
   for (const a of ABILITIES) abilities[a] = Number(sheet.abilities[a] ?? 10);
 
   const pb = sheet.combat.proficiency_bonus ?? 0;
-  const inferred = inferSaves(sheet.abilities, sheet.saves, pb);
+  // Prefer what the sheet STATES. The field path reads <Abil>Prof directly, so no arithmetic is
+  // needed; inferSaves stays for the coordinate path, which only has the modifiers. The two were
+  // cross-checked against each other on all three test sheets and agreed exactly, so this is a
+  // simplification rather than a behaviour change. The flat all-saves bonus still has to be
+  // inferred either way, since nothing on the sheet names it.
+  const inferredSaves = inferSaves(sheet.abilities, sheet.saves, pb);
+  const inferred = sheet.save_prof && sheet.save_prof.length
+    ? { saveProf: sheet.save_prof, saveBonusAll: inferredSaves.saveBonusAll }
+    : inferredSaves;
   if (inferred.saveBonusAll) {
     notes.push(`Detected a flat +${inferred.saveBonusAll} to all saving throws and carried it as saveBonusAll.`);
   }
