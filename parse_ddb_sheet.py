@@ -1,0 +1,624 @@
+#!/usr/bin/env python3
+"""
+parse_ddb_sheet.py - Parse a D&D Beyond character-sheet PDF export into the Six Axes build shape.
+
+COORDINATE-BASED. D&D Beyond exports every character with the SAME fixed template (PDFsharp), so we
+parse by anchoring on constant field LABELS and reading each value by its SPATIAL relationship to its
+label (the number inside the AC box, the modifier left of PROFICIENCY BONUS, etc.). Word coordinates
+come from `pdftotext -bbox`, whose x/y model matches what pdf.js page.getTextContent() gives in the
+browser - so this logic ports to in-app upload with minimal change.
+
+Nothing is lossy: the full parse (including multiclass) is preserved so later parity passes can
+promote parked data. Optional sections (spells for non-casters, maneuvers) degrade to empty rather
+than erroring.
+
+Requires Poppler's pdftotext + pdfinfo on PATH.
+
+Usage:
+    python parse_ddb_sheet.py <sheet.pdf>
+    python parse_ddb_sheet.py <sheet.pdf> --out x.json
+"""
+
+from __future__ import annotations
+import html as html_lib
+import json
+import re
+import subprocess
+import sys
+from dataclasses import dataclass, field
+from typing import Any, Dict, List, Optional
+
+
+@dataclass
+class Word:
+    text: str
+    x0: float
+    y0: float
+    x1: float
+    y1: float
+
+    @property
+    def cx(self) -> float:
+        return (self.x0 + self.x1) / 2
+
+    @property
+    def cy(self) -> float:
+        return (self.y0 + self.y1) / 2
+
+
+@dataclass
+class Page:
+    words: List[Word] = field(default_factory=list)
+
+    def find(self, text: str, exact: bool = True, ci: bool = False) -> List[Word]:
+        """Case-SENSITIVE by default. D&D Beyond uses casing to separate a field LABEL from the same
+        word in body prose (the 'SPEED' box label vs 'speed' in a feature description, 'SAVING
+        THROWS' vs 'a saving throw'). Case-folding here made label resolution depend on pdftotext
+        emission order, which silently picked the wrong occurrence on some sheets and not others.
+        Pass ci=True only where a case-fold match is genuinely wanted."""
+        if ci:
+            t = text.lower()
+            if exact:
+                return [w for w in self.words if w.text.lower() == t]
+            return [w for w in self.words if t in w.text.lower()]
+        if exact:
+            return [w for w in self.words if w.text == text]
+        return [w for w in self.words if text in w.text]
+
+    def first(self, text: str, exact: bool = True, ci: bool = False) -> Optional[Word]:
+        hits = self.find(text, exact, ci)
+        return hits[0] if hits else None
+
+    def in_column_above(self, text: str, anchor: Optional[Word], x_tol: float = 45,
+                        max_dy: float = 200) -> Optional[Word]:
+        """The case-exact occurrence of `text` sitting in `anchor`'s x-column and above it, nearest
+        first. Binds a row label to its OWN box, so an identical word elsewhere on the page (body
+        prose, another box's header) cannot win on emission order. `anchor` is that box's footer
+        label, e.g. SAVING for the saving-throw rows or SKILLS for the skill rows."""
+        if anchor is None:
+            return self.first(text)
+        best, bestd = None, 1e9
+        for w in self.words:
+            if w.text != text or abs(w.x0 - anchor.x0) > x_tol:
+                continue
+            d = anchor.y0 - w.y0
+            if 0 < d < max_dy and d < bestd:
+                best, bestd = w, d
+        return best
+
+    def first_followed_by(self, text: str, nxt: str, max_gap: float = 40,
+                          y_tol: float = 4) -> Optional[Word]:
+        """The occurrence of `text` whose immediate right-hand neighbour on the same line is `nxt`.
+        Disambiguates a token that repeats in identical casing: page 1 carries THREE 'HIT' tokens
+        (HIT POINTS, HIT DICE, and the attacks-table column header), so casing cannot separate them
+        but the following word can."""
+        for w in self.words:
+            if w.text != text:
+                continue
+            for u in self.words:
+                if u.text == nxt and abs(u.y0 - w.y0) < y_tol and 0 <= u.x0 - w.x1 < max_gap:
+                    return w
+        return None
+
+    def in_region(self, x0: float, y0: float, x1: float, y1: float) -> List[Word]:
+        got = [w for w in self.words if x0 <= w.cx <= x1 and y0 <= w.cy <= y1]
+        return sorted(got, key=lambda w: (round(w.cy / 3), w.cx))
+
+    def value_above(self, label: Optional[Word], max_dy: float = 30, x_tol: float = 45) -> Optional[Word]:
+        if not label:
+            return None
+        best, bestd = None, 1e9
+        for w in self.words:
+            if w.y1 <= label.y0 and abs(w.cx - label.cx) < x_tol:
+                d = label.y0 - w.y1
+                if d < bestd and d < max_dy:
+                    best, bestd = w, d
+        return best
+
+    def value_left(self, label: Optional[Word], max_dx: float = 90, y_tol: float = 12) -> Optional[Word]:
+        if not label:
+            return None
+        best, bestd = None, 1e9
+        for w in self.words:
+            if w.x1 <= label.x0 and abs(w.cy - label.cy) < y_tol:
+                d = label.x0 - w.x1
+                if d < bestd and d < max_dx:
+                    best, bestd = w, d
+        return best
+
+    def lines(self, y_bucket: float = 3.0) -> List[str]:
+        by_y: Dict[int, List[Word]] = {}
+        for w in self.words:
+            by_y.setdefault(round(w.cy / y_bucket), []).append(w)
+        return [" ".join(x.text for x in sorted(ws, key=lambda w: w.x0)) for _, ws in sorted(by_y.items())]
+
+
+def load_pages(pdf_path: str) -> List[Page]:
+    info = subprocess.run(["pdfinfo", pdf_path], capture_output=True, text=True)
+    n = 1
+    for line in info.stdout.splitlines():
+        if line.startswith("Pages:"):
+            n = int(line.split(":")[1].strip())
+            break
+    pages: List[Page] = []
+    for p in range(1, n + 1):
+        out = subprocess.run(
+            ["pdftotext", "-bbox", "-f", str(p), "-l", str(p), pdf_path, "-"],
+            capture_output=True, text=True,
+        ).stdout
+        words: List[Word] = []
+        for m in re.finditer(
+            r'<word xMin="([\d.]+)" yMin="([\d.]+)" xMax="([\d.]+)" yMax="([\d.]+)">(.*?)</word>',
+            out,
+        ):
+            words.append(Word(html_lib.unescape(m[5]), float(m[1]), float(m[2]), float(m[3]), float(m[4])))
+        pages.append(Page(words))
+    return pages
+
+
+ABILITIES = ["Strength", "Dexterity", "Constitution", "Intelligence", "Wisdom", "Charisma"]
+ABBR = {a: a[:3].lower() for a in ABILITIES}
+SKILL_NAMES = [
+    "Acrobatics", "Animal Handling", "Arcana", "Athletics", "Deception", "History",
+    "Insight", "Intimidation", "Investigation", "Medicine", "Nature", "Perception",
+    "Performance", "Persuasion", "Religion", "Sleight of Hand", "Stealth", "Survival",
+]
+
+
+def _int(s: Optional[str]) -> Optional[int]:
+    if not s:
+        return None
+    m = re.search(r"-?\d+", s)
+    return int(m.group()) if m else None
+
+
+def _signed(s: Optional[str]) -> Optional[int]:
+    if not s:
+        return None
+    s = s.strip()
+    return int(s) if re.fullmatch(r"[+-]?\d+", s) else None
+
+
+def _wt(w: Optional[Word]) -> Optional[str]:
+    return w.text if w else None
+
+
+def _row_above(p: Page, label: Optional[Word], dy: float = 11, band: float = 7,
+               xlo: float = -30, xhi: float = 120) -> Optional[str]:
+    if not label:
+        return None
+    row = [w for w in p.words if abs(w.cy - (label.cy - dy)) < band
+           and w.x0 >= label.x0 + xlo and w.x0 <= label.x1 + xhi]
+    return " ".join(w.text for w in sorted(row, key=lambda w: w.x0)).strip() or None
+
+
+def parse_identity(p: Page) -> Dict[str, Any]:
+    name = None
+    nlbl = p.first("CHARACTER", exact=False)
+    if nlbl:
+        # Name is the line above the CHARACTER NAME label, left-aligned near it.
+        row = [w for w in p.words if nlbl.cy - 35 < w.cy < nlbl.cy - 8 and w.x0 < nlbl.x1 + 60]
+        name = " ".join(w.text for w in sorted(row, key=lambda w: w.x0)).strip() or None
+
+    class_level = None
+    cll = p.first("LEVEL")
+    if cll:
+        maybe = _row_above(p, cll, xlo=-60, xhi=90)
+        if maybe and re.search(r"\d", maybe):
+            class_level = maybe
+
+    # Each identity field sits in its own x-column; match the value row within a NARROW window around
+    # the label's x so adjacent columns don't bleed in.
+    def col_value(label_text: str, width: float = 55) -> Optional[str]:
+        lbl = p.first(label_text)
+        if not lbl:
+            return None
+        row = [w for w in p.words if abs(w.cy - (lbl.cy - 11)) < 7 and lbl.x0 - 8 <= w.x0 <= lbl.x0 + width]
+        return " ".join(w.text for w in sorted(row, key=lambda w: w.x0)).strip() or None
+
+    species = col_value("SPECIES", width=60)
+    background = col_value("BACKGROUND", width=60)
+    player = col_value("PLAYER", width=90)
+    xp = col_value("EXPERIENCE", width=70)
+
+    classes: List[Dict[str, Any]] = []
+    if class_level:
+        for part in class_level.split("/"):
+            m = re.match(r"\s*(.+?)\s+(\d+)\s*$", part.strip())
+            if m:
+                classes.append({"class": m.group(1).strip(), "level": int(m.group(2))})
+    return {
+        "name": name,
+        "class_level_raw": class_level,
+        "classes": classes,
+        "primary_class": classes[0]["class"] if classes else None,
+        "total_level": sum(c["level"] for c in classes) if classes else None,
+        "species": species,
+        "background": background,
+        "player_name": player,
+        "experience": xp,
+    }
+
+
+def parse_abilities(p: Page) -> Dict[str, Optional[int]]:
+    scores: Dict[str, Optional[int]] = {}
+    for ab in ABILITIES:
+        # The ability box headers run down the LEFT edge (x < 75). Other occurrences of the same
+        # word (e.g. in the saving-throw modifiers area) are further right, so constrain the column.
+        hdr = next((w for w in p.words if w.text == ab.upper() and w.x0 < 75), None)
+        score = None
+        if hdr:
+            cands = [w for w in p.words
+                     if abs(w.cx - hdr.cx) < 35 and w.y0 > hdr.y1 and w.y0 - hdr.y1 < 30
+                     and re.fullmatch(r"\d{1,2}", w.text)]
+            cands.sort(key=lambda w: w.y0)
+            if cands:
+                score = int(cands[0].text)
+        scores[ABBR[ab]] = score
+    return scores
+
+
+def parse_saves(p: Page) -> Dict[str, Optional[int]]:
+    # Anchor every row label to the SAVING THROWS box footer. Two decoys otherwise win on emission
+    # order: the all-caps ability-box header down the left edge (x0 ~41), and Title-case ability
+    # words in the ACTIONS prose on the right (x0 ~407 on the rogue). Box footer sits at x0 ~125
+    # with the six rows ~73-140pt above it.
+    box = p.first("SAVING")
+    saves: Dict[str, Optional[int]] = {}
+    for ab in ABILITIES:
+        lbl = p.in_column_above(ab, box, x_tol=45, max_dy=200)
+        saves[ABBR[ab]] = _signed(_wt(p.value_left(lbl, max_dx=40))) if lbl else None
+    return saves
+
+
+def parse_skills(p: Page) -> List[Dict[str, Any]]:
+    out: List[Dict[str, Any]] = []
+    # Same anchoring as saves: bind each row label to the SKILLS box footer (x0 ~140), otherwise a
+    # skill word in body prose can win on emission order (the wizard's Bladesong text carries
+    # "Acrobatics" at x0 ~363, against the real row at x0 ~131). Rows span ~63-292pt above the
+    # footer, so the y-window is wider here than for saves.
+    box = p.first("SKILLS")
+    for name in SKILL_NAMES:
+        first = name.split()[0]
+        lbl = p.in_column_above(first, box, x_tol=45, max_dy=320)
+        modifier = tier = None
+        if lbl:
+            modw = p.value_left(lbl, max_dx=30)
+            modifier = _signed(_wt(modw))
+            if modw:
+                mark = p.value_left(modw, max_dx=20)
+                if mark and mark.text in ("P", "E"):
+                    tier = "expertise" if mark.text == "E" else "proficient"
+        out.append({"skill": name, "modifier": modifier, "prof": tier})
+    return out
+
+
+def parse_combat(p: Page) -> Dict[str, Any]:
+    # AC box: the ARMOR label and CLASS label that share the same x-column (~347), with the number
+    # between them. Other ARMOR/CLASS tokens (proficiencies header, CLASS & LEVEL) are in different
+    # columns and are excluded by the column match.
+    ac = None
+    armors = [w for w in p.words if w.text == "ARMOR"]
+    classes = [w for w in p.words if w.text == "CLASS"]
+    for a in armors:
+        cl = next((c for c in classes if abs(c.cx - a.cx) < 25 and c.y0 > a.y0 and c.y0 - a.y1 < 60), None)
+        if cl:
+            band = [w for w in p.words if a.y1 <= w.cy <= cl.y0 and abs(w.cx - a.cx) < 30
+                    and re.fullmatch(r"\d{1,2}", w.text)]
+            if band:
+                ac = int(band[0].text)
+                break
+
+    init_lbl = p.first("INITIATIVE")
+    initiative = _signed(_wt(p.value_above(init_lbl, max_dy=40))) if init_lbl else None
+    prof = _signed(_wt(p.value_left(p.first("PROFICIENCY"))))
+
+    max_hp = None
+    mh = p.first("Max")
+    if mh:
+        c = [w for w in p.words if abs(w.cx - mh.cx) < 40 and 0 < w.y0 - mh.y1 < 30 and re.fullmatch(r"\d+", w.text)]
+        max_hp = int(c[0].text) if c else None
+
+    # Page 1 has three identically-cased "HIT" tokens: HIT POINTS (x ~480), HIT DICE (x ~443) and
+    # the attacks-table column header (x ~341). Casing cannot separate them, so key on the word that
+    # FOLLOWS. Taking the first "HIT" in emission order read the attacks header on the rogue and
+    # returned ACTIONS prose ("After you use it, your Speed") as the hit dice.
+    hit_dice = None
+    hd = p.first_followed_by("HIT", "DICE")
+    if hd:
+        band = [w for w in p.words if hd.y0 - 40 < w.cy < hd.y0 and abs(w.cx - hd.cx) < 45
+                and w.text != "Total"]
+        hit_dice = " ".join(w.text for w in sorted(band, key=lambda w: w.x0)).strip() or None
+
+    speed = None
+    sp = p.first("SPEED")
+    if sp:
+        # Speed value sits ~30pt above the SPEED label in the same box, spanning its width.
+        band = [w for w in p.words if sp.y0 - 38 < w.cy < sp.y0 - 4 and abs(w.cx - sp.cx) < 90]
+        speed = " ".join(w.text for w in sorted(band, key=lambda w: w.x0)).strip() or None
+
+    # Passives live in the SENSES box on the LEFT edge (x < 110), value left of each label. Constrain
+    # to that column so skill modifiers (which also sit left of similarly-named things) don't leak in.
+    def passive(kind: str) -> Optional[int]:
+        lbl = next((w for w in p.words if w.text == kind and w.x0 < 130), None)
+        if not lbl:
+            return None
+        c = [w for w in p.words if w.x1 <= lbl.x0 and abs(w.cy - lbl.cy) < 10 and w.x0 < 80
+             and re.fullmatch(r"\d+", w.text)]
+        return int(c[0].text) if c else None
+
+    return {
+        "armor_class": ac,
+        "initiative": initiative,
+        "proficiency_bonus": prof,
+        "speed": speed,
+        "max_hp": max_hp,
+        "hit_dice": hit_dice,
+        "passive_perception": passive("PERCEPTION"),
+        "passive_insight": passive("INSIGHT"),
+        "passive_investigation": passive("INVESTIGATION"),
+    }
+
+
+def parse_proficiencies(p: Page) -> Dict[str, str]:
+    # The proficiencies & training box is the right-hand column (x > 405). Restrict to that region so
+    # the dense middle columns (skills, saves) don't bleed into the block text.
+    region = [w for w in p.words if w.x0 > 405 and w.cy < 425]
+    full = " ".join(w.text for w in sorted(region, key=lambda w: (round(w.cy / 3), w.cx)))
+    out: Dict[str, str] = {}
+    order = ["ARMOR", "WEAPONS", "TOOLS", "LANGUAGES"]
+    for i, header in enumerate(order):
+        nxt = order[i + 1] if i + 1 < len(order) else None
+        if nxt:
+            m = re.search(rf"=== {header} ===\s+(.*?)\s+=== {nxt} ===", full)
+        else:
+            m = re.search(rf"=== {header} ===\s+(.*?)(?:\s+PROFICIENCIES|\s*$)", full)
+        if m:
+            out[header.lower()] = re.sub(r"\s+", " ", m.group(1)).strip()
+    return out
+
+
+def parse_attacks(p: Page) -> List[Dict[str, Any]]:
+    # The weapon-attacks table sits in the lower-middle of page 1. Its NAME header is the one in the
+    # center column (x ~200-260), below the skills/senses region. Pick the NAME token in that band.
+    tbl = next((w for w in p.words if w.text == "NAME" and 190 < w.x0 < 270 and w.cy > 550), None)
+    if not tbl:
+        return []
+    # Rows are between the header and the "WEAPON ATTACKS & CANTRIPS" footer label.
+    footer = next((w for w in p.words if w.text == "WEAPON" and w.cy > tbl.cy), None)
+    y_end = footer.cy if footer else tbl.cy + 200
+    rows: Dict[int, List[Word]] = {}
+    for w in p.words:
+        if tbl.cy + 6 < w.cy < y_end - 4 and w.x0 > 200:
+            rows.setdefault(round(w.cy / 5), []).append(w)
+    attacks: List[Dict[str, Any]] = []
+    for _, ws in sorted(rows.items()):
+        ws.sort(key=lambda w: w.x0)
+        # Columns (verified): NAME <340, HIT ~344, DAMAGE ~380-445, NOTES >445.
+        name = " ".join(w.text for w in ws if w.x0 < 335).strip()
+        hit = " ".join(w.text for w in ws if 335 <= w.x0 < 375).strip()
+        dmg = " ".join(w.text for w in ws if 375 <= w.x0 < 445).strip()
+        notes = " ".join(w.text for w in ws if w.x0 >= 445).strip()
+        if name and name.upper() != "NAME":
+            attacks.append({"name": name, "hit": hit or None, "damage": dmg or None, "notes": notes or None})
+    return attacks
+
+
+def _column_lines(p: Page, x0: float, x1: float, y_bucket: float = 3.0) -> List[str]:
+    """Reading-order lines for a single column band [x0, x1)."""
+    by_y: Dict[int, List[Word]] = {}
+    for w in p.words:
+        if x0 <= w.cx < x1:
+            by_y.setdefault(round(w.cy / y_bucket), []).append(w)
+    return [" ".join(x.text for x in sorted(ws, key=lambda w: w.x0)) for _, ws in sorted(by_y.items())]
+
+
+def parse_features(pages: List[Page]) -> List[Dict[str, str]]:
+    """Every feature/trait across the FEATURES & TRAITS pages. These pages are THREE columns; reading
+    full-width lines splices columns together, so we parse each column band separately and in order
+    (col1 top-to-bottom, then col2, then col3). A feature starts with '* <Name>' and its body is the
+    following non-marker / '|'-marker lines until the next feature."""
+    COLUMNS = [(0, 200), (200, 390), (390, 700)]
+    feats: List[Dict[str, str]] = []
+    for p in pages:
+        page_text = " ".join(w.text for w in p.words).upper()
+        if "FEATURES" not in page_text and "TRAITS" not in page_text:
+            continue
+        for cx0, cx1 in COLUMNS:
+            lines = _column_lines(p, cx0, cx1)
+            cur_name: Optional[str] = None
+            cur_body: List[str] = []
+            for ln in lines:
+                s = ln.strip()
+                m = re.match(r"^[*•]\s+(.*)", s)
+                if m:
+                    if cur_name:
+                        feats.append({"name": cur_name, "desc": " ".join(cur_body).strip()})
+                    head = re.sub(r"\s*[•·]\s*(PHB|BR|SCAG|XGE|TCE|DMG)[-\d ]*.*$", "", m.group(1)).strip()
+                    cur_name, cur_body = head, []
+                elif re.match(r"^\|\s+", s):
+                    cur_body.append(re.sub(r"^\|\s+", "", s))
+                elif cur_name and s and not re.match(r"^===|FEATURES|TRAITS|EQUIPMENT|ADDITIONAL", s, re.I):
+                    cur_body.append(s)
+            if cur_name:
+                feats.append({"name": cur_name, "desc": " ".join(cur_body).strip()})
+    seen = set()
+    uniq: List[Dict[str, str]] = []
+    for f in feats:
+        key = f["name"].lower()
+        if key and key not in seen and len(f["name"]) > 1:
+            seen.add(key)
+            uniq.append(f)
+    return uniq
+
+
+def parse_bio(pages: List[Page]) -> Dict[str, Any]:
+    bio: Dict[str, Any] = {}
+    page = next((p for p in pages if p.first("BACKSTORY", exact=False)), None)
+    if not page:
+        return bio
+
+    def above(label_text: str, dy: float = 12, band: float = 8, max_dx: float = 42) -> Optional[str]:
+        lbl = page.first(label_text, exact=False)
+        if not lbl:
+            return None
+        # Narrow x-window so the adjacent column's value doesn't bleed in. The value is left-aligned
+        # with its label, so take words starting at/after the label's left edge within the column.
+        row = [w for w in page.words if abs(w.cy - (lbl.cy - dy)) < band
+               and lbl.x0 - 6 <= w.x0 <= lbl.x0 + max_dx]
+        return " ".join(w.text for w in sorted(row, key=lambda w: w.x0)).strip() or None
+
+    for label, key in [("GENDER", "gender"), ("AGE", "age"), ("SIZE", "size"), ("HEIGHT", "height"),
+                       ("WEIGHT", "weight"), ("ALIGNMENT", "alignment"), ("FAITH", "faith"),
+                       ("SKIN", "skin"), ("EYES", "eyes"), ("HAIR", "hair")]:
+        bio[key] = above(label)
+
+    def block(label_text: str) -> Optional[str]:
+        lbl = page.first(label_text, exact=False)
+        if not lbl:
+            return None
+        band = [w for w in page.words if lbl.cy - 70 < w.cy < lbl.cy - 6 and abs(w.cx - lbl.cx) < 130]
+        return " ".join(w.text for w in sorted(band, key=lambda w: (round(w.cy / 3), w.cx))).strip() or None
+
+    bio["personality"] = block("PERSONALITY")
+    bio["ideals"] = block("IDEALS")
+    bio["bonds"] = block("BONDS")
+    bio["flaws"] = block("FLAWS")
+
+    def column(label_text: str) -> Optional[str]:
+        lbl = page.first(label_text, exact=False)
+        if not lbl:
+            return None
+        band = [w for w in page.words if lbl.cy - 320 < w.cy < lbl.cy - 6 and abs(w.cx - lbl.cx) < 150]
+        return " ".join(w.text for w in sorted(band, key=lambda w: (round(w.cy / 3), w.cx))).strip() or None
+
+    bio["backstory"] = column("BACKSTORY")
+    bio["appearance"] = column("APPEARANCE")
+    bio["allies_organizations"] = column("ALLIES")
+    return bio
+
+
+def parse_spells(pages: List[Page]) -> Dict[str, Any]:
+    spells: Dict[str, Any] = {"save_dc": None, "attack_bonus": None, "list": []}
+    page = next((p for p in pages if any(w.text == "SPELLS" for w in p.words)), None)
+    if not page:
+        return spells
+
+    dc = page.first("SAVE DC", exact=False)
+    spells["save_dc"] = _int(_wt(page.value_above(dc, max_dy=40))) if dc else None
+    atk = page.first("ATTACK", exact=False)
+    spells["attack_bonus"] = _wt(page.value_above(atk, max_dy=40)) if atk else None
+
+    header = next((w for w in page.words if w.text == "NAME" and w.cy < 400), None)
+    if header:
+        rows: Dict[int, List[Word]] = {}
+        for w in page.words:
+            if w.cy > header.cy + 6 and w.text != "SPELLS":
+                rows.setdefault(round(w.cy / 4), []).append(w)
+        for _, ws in sorted(rows.items()):
+            ws.sort(key=lambda w: w.x0)
+            # Name is the left column only. The prepared checkbox is a lone 'O' before the name; drop
+            # it. Stop the name before the SOURCE column (which holds the class/book, x >= ~200).
+            body = [w for w in ws if not (w.text == "O" and w.x0 < 60)]
+            name = " ".join(w.text for w in body if w.x1 < 200).strip()
+            detail = " ".join(w.text for w in body if w.x0 >= 200).strip()
+            # Skip section headers and footer/legal rows.
+            if (not name or name.startswith("===") or "CANTRIP" in name.upper()
+                    or "AT WILL" in name.upper() or name.startswith("TM ") or "©" in name):
+                continue
+            spells["list"].append({"name": name, "detail": detail or None})
+    return spells
+
+
+def parse_equipment(pages: List[Page]) -> List[Dict[str, Any]]:
+    items: List[Dict[str, Any]] = []
+    seen = set()
+    CURRENCY = {"CP", "SP", "EP", "GP", "PP"}
+    for p in pages:
+        eq = p.first("EQUIPMENT", exact=False)
+        if not eq:
+            continue
+        region = [w for w in p.words if w.cy < eq.cy - 4 and w.cy > eq.cy - 260]
+        # The currency ledger (CP/SP/EP/GP/PP + amounts) sits in a narrow far-left column. Exclude it
+        # by dropping currency tokens and any word in that narrow left strip (x < 40).
+        for xlo, xhi in [(40, 300), (300, 612)]:
+            col = [w for w in region if xlo <= w.cx < xhi and w.text not in CURRENCY]
+            by_y: Dict[int, List[Word]] = {}
+            for w in col:
+                by_y.setdefault(round(w.cy / 5), []).append(w)
+            for _, ws in sorted(by_y.items()):
+                ws.sort(key=lambda w: w.x0)
+                name_parts, detail_parts, hit_num = [], [], False
+                for w in ws:
+                    if not hit_num and re.fullmatch(r"\d+", w.text):
+                        hit_num = True
+                    (detail_parts if hit_num else name_parts).append(w.text)
+                name = " ".join(name_parts).strip()
+                up = name.upper()
+                # Real inventory rows have a quantity number (hit_num). The carry-weight stat box
+                # (WEIGHT CARRIED / ENCUMBERED / "152.3 lb.") has no qty, so require hit_num to drop it.
+                if (name and hit_num and up not in ("NAME", "EQUIPMENT", "ADDITIONAL EQUIPMENT",
+                        "NAME QTY", "ATTUNED MAGIC ITEMS", "QTY", "WEIGHT", "WEIGHT CARRIED",
+                        "ENCUMBERED", "PUSH/DRAG/LIFT") and len(name) > 1
+                        and not name.startswith("===") and "©" not in name and not up.startswith("TM ")):
+                    key = name.lower()
+                    if key not in seen:
+                        seen.add(key)
+                        items.append({"name": name, "detail": " ".join(detail_parts).strip() or None})
+    return items
+
+
+def parse_sheet(pdf_path: str) -> Dict[str, Any]:
+    pages = load_pages(pdf_path)
+    p1 = pages[0] if pages else Page()
+    return {
+        "identity": parse_identity(p1),
+        "abilities": parse_abilities(p1),
+        "saves": parse_saves(p1),
+        "skills": parse_skills(p1),
+        "combat": parse_combat(p1),
+        "proficiencies": parse_proficiencies(p1),
+        "attacks": parse_attacks(p1),
+        "features": parse_features(pages[1:4] if len(pages) > 1 else []),
+        "bio": parse_bio(pages),
+        "spells": parse_spells(pages),
+        "equipment": parse_equipment(pages[1:4] if len(pages) > 1 else []),
+        "_meta": {"pages": len(pages), "source": "dndbeyond_pdf"},
+    }
+
+
+def _fix_mojibake(obj: Any) -> Any:
+    """Repair the common UTF-8-as-Latin1 mojibake (â€¢ -> •, â€™ -> ') that appears when the text is
+    mis-decoded on some Windows setups. Applied to every string in the parsed tree."""
+    if isinstance(obj, str):
+        if "Ã" in obj or "â€" in obj:
+            try:
+                return obj.encode("latin-1").decode("utf-8")
+            except (UnicodeEncodeError, UnicodeDecodeError):
+                return obj
+        return obj
+    if isinstance(obj, list):
+        return [_fix_mojibake(x) for x in obj]
+    if isinstance(obj, dict):
+        return {k: _fix_mojibake(v) for k, v in obj.items()}
+    return obj
+
+
+def main() -> int:
+    if len(sys.argv) < 2:
+        print("usage: python parse_ddb_sheet.py <sheet.pdf> [--out out.json]", file=sys.stderr)
+        return 2
+    parsed = _fix_mojibake(parse_sheet(sys.argv[1]))
+    if "--out" in sys.argv:
+        out = sys.argv[sys.argv.index("--out") + 1]
+        with open(out, "w", encoding="utf-8") as fh:
+            json.dump(parsed, fh, ensure_ascii=False, indent=2)
+        print(f"wrote {out}")
+    else:
+        # ensure_ascii=True here so a mis-configured console can't mangle the bytes on stdout.
+        print(json.dumps(parsed, ensure_ascii=True, indent=2))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
