@@ -416,27 +416,46 @@ FEATURE_SOURCE = re.compile(r"\s*[\u2022\u00b7]\s*([A-Za-z][A-Za-z0-9-]*(?:\s+\d
 
 
 def _column_lines(p: Page, x0: float, x1: float, y_bucket: float = 3.0,
-                  y_max: Optional[float] = None) -> List[str]:
-    """Reading-order lines for a single column band [x0, x1), optionally cut off below y_max."""
+                  y_min: Optional[float] = None, y_max: Optional[float] = None) -> List[str]:
+    """Reading-order lines for a single column band [x0, x1), optionally clipped to y_min..y_max."""
     by_y: Dict[int, List[Word]] = {}
     for w in p.words:
-        if x0 <= w.cx < x1 and (y_max is None or w.cy < y_max):
-            by_y.setdefault(round(w.cy / y_bucket), []).append(w)
+        if not (x0 <= w.cx < x1):
+            continue
+        if (y_min is not None and w.cy <= y_min) or (y_max is not None and w.cy >= y_max):
+            continue
+        by_y.setdefault(round(w.cy / y_bucket), []).append(w)
     return [" ".join(x.text for x in sorted(ws, key=lambda w: w.x0)) for _, ws in sorted(by_y.items())]
 
 
 def parse_features(pages: List[Page]) -> List[Dict[str, str]]:
     """Every feature/trait across the FEATURES & TRAITS pages. These pages are THREE columns; reading
-    full-width lines splices columns together, so we parse each column band separately and in order
-    (col1 top-to-bottom, then col2, then col3). A feature starts with '* <Name>' and its body is the
-    following non-marker / '|'-marker lines until the next feature."""
+    full-width lines splices columns together, so we read each column band separately and stitch them
+    into ONE reading-order stream (page N col1, col2, col3, then page N+1...) before parsing. A
+    feature starts with '* <Name>' and its body is the following non-marker / '|'-marker lines until
+    the next feature, WHICHEVER column or page those lines fall in."""
     # Measured column geometry, identical on every features page of every sheet. The three column
     # left edges (the "*" bullet markers) sit at x0 38.1 / 220.6 / 402.0, and content spans
     #   col1 cx  39.4-205.2 | col2 cx 221.9-387.3 | col3 cx 403.3-569.3
     # leaving gutters at 205.2-221.9 and 387.3-403.3. The old col1/col2 boundary of 200 sat INSIDE
     # col1's content, so the tail words of col1 lines were being appended to col2.
     COLUMNS = [(0, 213), (213, 395), (395, 700)]
-    feats: List[Dict[str, str]] = []
+    # The character header block (name, class & level, species, background, player, XP) repeats at
+    # the top of EVERY page and spans the full width, so its words fall into all three column bands.
+    # It has to be excluded or the stitched stream feeds "Fighter 9 / Rogue 3 CLASS & LEVEL Variant
+    # Human SPECIES" into the body of whichever feature was still open at the column break. Measured
+    # across every features page of every sheet: the header block ends at cy 93.2 and feature content
+    # starts at cy 141.8, so this bound has ~24pt of clearance on each side.
+    HEADER_BOTTOM = 118.0
+
+    # One continuous stream in reading order. Running the state machine per COLUMN (resetting and
+    # flushing at each column end) silently dropped the body of any feature whose text carried over a
+    # column or page break: the head was emitted with an empty desc and the continuation lines at the
+    # top of the next column were orphaned, since they have no "*" to reopen them. Across the three
+    # sheets that cost 5 features their entire description, including two that carry over a PAGE
+    # break (the fighter's Defensive Duelist, the rogue's level-12 ASI), so the stream must span
+    # pages and not merely columns.
+    stream: List[str] = []
     for p in pages:
         # The features box is bounded BELOW by its own centred footer label, "FEATURES & TRAITS" or
         # "ADDITIONAL FEATURES & TRAITS", at y0 ~485 on every features page. Anchor on the FEATURES
@@ -450,35 +469,37 @@ def parse_features(pages: List[Page]) -> List[Dict[str, str]]:
         if not foot:
             continue
         for cx0, cx1 in COLUMNS:
-            lines = _column_lines(p, cx0, cx1, y_max=foot.y0)
-            cur_name: Optional[str] = None
-            cur_src: Optional[str] = None
-            cur_body: List[str] = []
-            for ln in lines:
-                s = ln.strip()
-                # Only "*" starts a feature. The "*" markers sit at exactly the three column left
-                # edges (x0 38.1 / 220.6 / 402.0) on every page; a line-start bullet is a SUB-option
-                # of the current feature, indented ~7.7pt further in. Treating the two alike promoted
-                # every sub-option to a top-level feature with a sentence-fragment name (the rogue's
-                # Cunning Strike and Devious Strikes options: "Poison (Cost: 1d6). You add a toxin to
-                # your strike,"). Across the three sheets there are 42/47/29 "*" lines and only the
-                # rogue has bullet-start lines, 6 of them, all sub-options, so line-start bullets are
-                # an unambiguous signal. The bullet is kept in the body text to preserve the list.
-                m = re.match(r"^\*\s+(.*)", s)
-                if m:
-                    if cur_name:
-                        feats.append({"name": cur_name, "source": cur_src,
-                                      "desc": " ".join(cur_body).strip()})
-                    sm = FEATURE_SOURCE.search(m.group(1))
-                    head = FEATURE_SOURCE.sub("", m.group(1)).strip()
-                    cur_name, cur_src, cur_body = head, (sm.group(1) if sm else None), []
-                elif re.match(r"^\|\s+", s):
-                    cur_body.append(re.sub(r"^\|\s+", "", s))
-                elif cur_name and s and not re.match(r"^===|FEATURES|TRAITS|EQUIPMENT|ADDITIONAL", s, re.I):
-                    cur_body.append(s)
+            stream.extend(_column_lines(p, cx0, cx1, y_min=HEADER_BOTTOM, y_max=foot.y0))
+
+    feats: List[Dict[str, str]] = []
+    cur_name: Optional[str] = None
+    cur_src: Optional[str] = None
+    cur_body: List[str] = []
+    for ln in stream:
+        s = ln.strip()
+        # Only "*" starts a feature. The "*" markers sit at exactly the three column left
+        # edges (x0 38.1 / 220.6 / 402.0) on every page; a line-start bullet is a SUB-option
+        # of the current feature, indented ~7.7pt further in. Treating the two alike promoted
+        # every sub-option to a top-level feature with a sentence-fragment name (the rogue's
+        # Cunning Strike and Devious Strikes options: "Poison (Cost: 1d6). You add a toxin to
+        # your strike,"). Across the three sheets there are 42/47/29 "*" lines and only the
+        # rogue has bullet-start lines, 6 of them, all sub-options, so line-start bullets are
+        # an unambiguous signal. The bullet is kept in the body text to preserve the list.
+        m = re.match(r"^\*\s+(.*)", s)
+        if m:
             if cur_name:
                 feats.append({"name": cur_name, "source": cur_src,
                               "desc": " ".join(cur_body).strip()})
+            sm = FEATURE_SOURCE.search(m.group(1))
+            head = FEATURE_SOURCE.sub("", m.group(1)).strip()
+            cur_name, cur_src, cur_body = head, (sm.group(1) if sm else None), []
+        elif re.match(r"^\|\s+", s):
+            cur_body.append(re.sub(r"^\|\s+", "", s))
+        elif cur_name and s and not re.match(r"^===|FEATURES|TRAITS|EQUIPMENT|ADDITIONAL", s, re.I):
+            cur_body.append(s)
+    if cur_name:
+        feats.append({"name": cur_name, "source": cur_src, "desc": " ".join(cur_body).strip()})
+
     seen = set()
     uniq: List[Dict[str, str]] = []
     for f in feats:
