@@ -500,21 +500,68 @@ class Sidecar(discord.Client):
 
         A fresh heartbeat is a live process saying it still owns this. That is what
         /api/discord/interactions reads before adopting a row, and what reconcile_orphans
-        below reads before claiming one."""
+        below reads before claiming one.
+
+        THE BEAT ALSO GUARDS AGAINST DESYNC. The write is filtered to the OPEN statuses and
+        asks for the row back, so an empty response means the row this process is recording
+        is no longer open: something outside the sidecar closed it. That is not hypothetical.
+        On 2026-07-30 a GM used "close it anyway" on the Session Log while a recording was
+        healthy and beating. app/api/session/close force-patches the row straight to 'done',
+        skipping 'stopping' entirely, and 'stopping' is the ONLY status that makes poll_loop
+        call do_stop. poll_loop selects in.(requested,stopping) and reconcile_orphans selects
+        in.(active,stopping), so a 'done' row is invisible to both and nothing ever asked this
+        process to stop. The Recording stayed in self.recordings for hours, still rotating
+        chunks, still reconnecting, still recording whoever walked into the channel, while
+        /stop told the table "nothing is recording" because /stop reads the database. Three
+        hours of audio existed only as loose chunks on an ephemeral disk with no job and no
+        audio_tracks rows, and was recovered by hand.
+
+        Finalizing here rather than just dropping the recorder is deliberate: the audio is
+        real and the concat -> insert_track -> create_job path is what turns it into
+        something the pipeline can see. finalize() stamps capture_job_id on the way out, so
+        the row that was force-closed without one becomes visible to advance-jobs.
+
+        This inherits finalize's blocking behaviour: a long concat holds the poll loop, the
+        same way do_stop already does. That is unchanged here and worth fixing separately."""
         now = _now_iso()
         for rec in list(self.recordings.values()):
             try:
                 r = await http.patch(
                     f"{REST}/capture_control",
-                    params={"id": f"eq.{rec.rid}"},
-                    headers=WRITE_HEADERS,
+                    params={
+                        "id": f"eq.{rec.rid}",
+                        "status": "in.(requested,active,stopping)",
+                    },
+                    headers=RETURN_HEADERS,
                     json={"heartbeat_at": now, "owner": OWNER_ID},
                 )
                 r.raise_for_status()
+                still_open = r.json()
             except Exception as e:
                 # Never fatal. A missed beat only risks a later process treating this row as
                 # abandoned, and ORPHAN_STALE_SECONDS is wide enough to absorb several.
+                # Bail on THIS row only: a failed request says nothing about the row's status,
+                # so it must not be read as "closed elsewhere".
                 log.warning("heartbeat failed for %s: %r", rec.rid, e)
+                continue
+
+            if still_open:
+                continue
+
+            # Another path may already be finalizing this one. finalize() pops from
+            # self.recordings as its first statement, so if the entry is gone, or no longer
+            # this object, the stop is already in hand and calling it again would double up.
+            if self.recordings.get(rec.rid) is not rec:
+                continue
+
+            log.error("recording %s: capture_control row is no longer open (closed outside the "
+                      "sidecar) but this process is still recording it. Finalizing now.", rec.rid)
+            await self.notify(
+                rec.notify_channel_id,
+                "\u26A0\uFE0F This session was closed while Six Axes was still recording. "
+                "It has finished up and saved what it captured.",
+            )
+            await self.finalize(http, rec, note="session closed outside the sidecar; finalized by heartbeat guard")
 
     async def reconcile_orphans(self, http):
         """Deal with recordings this app was holding when a previous process died.
