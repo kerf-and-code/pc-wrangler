@@ -26,6 +26,13 @@ export const STONE = {
   brassDeep: "#6e4e26",
   moss: "#6f7d55",     // age and damp, the green of old stone
   blood: "#8a3324",    // dried-blood warning red
+  // Text-safe values of moss and blood. The base tones are surface colours: against the panel
+  // face they measure 3.38 and 1.84, both under the 4.5 needed for readable text, and `warn` is
+  // used as a text colour in 46 places across the app. These are the same hues lifted in
+  // lightness until they clear it (5.92 and 5.07), so status text stays legible without
+  // importing a colour from outside the palette.
+  mossLit: "#9aa880",
+  bloodLit: "#d97d6d",
   ink: "#e8dcc4",      // parchment text on stone
   inkDim: "#a99e86",   // weathered secondary
   inkFaint: "#8a8069", // hints and captions
@@ -244,3 +251,73 @@ export const forgeBoss: CSSProperties = {
   background: `linear-gradient(135deg, ${STONE.brassHi}, ${STONE.brassDeep})`,
   boxShadow: `0 0 0 2px ${STONE.mortar}, 0 0 12px rgba(184,135,74,0.6)`,
 };
+
+
+// ---------------------------------------------------------------------------
+// C — the compatibility palette
+//
+// Thirty-four pages each declare their own `const C = { ... }` built from SAX, then reference it
+// ~1,100 times as C.surface, C.line, C.muted and so on. Those references are indirection that
+// already exists, so the cheapest possible way to bring every page onto the dungeon palette is to
+// change what C MEANS rather than touch a single line of JSX.
+//
+// A page migrates by deleting its local declaration and importing this one. Nothing else changes.
+//
+// The keys are the UNION of every key those 34 pages use, including the outliers (brass, panel,
+// vellum, field, accent, have, missing), so the same import works everywhere and no page needs a
+// bespoke mapping.
+//
+// WATCH THE NAME COLLISION ON `ink`. Pages use C.ink to mean the DARKEST surface — it is what they
+// set as text colour on top of a bright brass button (`background: C.brass, color: C.ink`). That is
+// the opposite of STONE.ink, which is the pale parchment used for body text. C.ink maps to
+// STONE.mortar deliberately. Do not "fix" it to STONE.ink.
+//
+// Accents were chosen by measuring contrast against the panel face rather than by eye:
+//   sun  #C8A24B 6.23   base brass, the primary action
+//   plum #e2b878 8.11   bright brass, interactive: links, secondary buttons, active tabs, progress
+//   good #9aa880 5.92   moss, lifted for text
+//   warn #d97d6d 5.07   blood, lifted for text
+// All four clear AA. The tradeoff accepted here is that sun and plum are two VALUES of one hue
+// rather than two hues: the dungeon palette carries brass, moss and blood and nothing else, so
+// primary and secondary now read as a hierarchy instead of as different colours.
+// ---------------------------------------------------------------------------
+
+export const C = {
+  // Surfaces, darkest to lightest.
+  bg: STONE.mortar,
+  ink: STONE.mortar,        // page-local meaning: darkest, text-on-brass. NOT STONE.ink.
+  inkDeep: STONE.mortar,
+  surface2: STONE.shadow,
+  panel2: STONE.shadow,
+  field: STONE.shadow,
+  surface: STONE.face,
+  panel: STONE.face,
+  line: STONE.hi,
+
+  // Type.
+  text: STONE.ink,
+  vellum: STONE.ink,
+  muted: STONE.inkDim,
+
+  // Accents.
+  sun: SAX.brass,
+  brass: SAX.brass,
+  brassDim: STONE.brassDeep,
+  sunSoft: STONE.brassHi,
+  plum: STONE.brassHi,
+  accent: STONE.brassHi,
+  good: STONE.mossLit,
+  have: STONE.mossLit,
+  warn: STONE.bloodLit,
+  missing: STONE.bloodLit,
+} as const;
+
+// The six axes keep their own colours. They are DATA ENCODING, not chrome: the same hue means the
+// same axis in every chart, chip and readout, and it is the product's visual identity. Restyling
+// them to fit the stone palette would break that language everywhere at once for no gain.
+export const AXIS_COLOR = {
+  N: "#B7615A", T: "#C8A24B", O: "#4E8077", S: "#CE8A42", E: "#6C76B0", I: "#9A93B0",
+} as const;
+export const AXIS_NAME = {
+  N: "Voice", T: "Tactics", O: "Arcana", S: "Rapport", E: "Exploration", I: "Nerve",
+} as const;

@@ -1,13 +1,23 @@
 "use client";
 
 import React, { Suspense } from "react";
-import { SAX, stoneBackground } from "@/lib/theme";
+import { SAX } from "@/lib/theme";
+import { forgeBackground, FORGE_FONTS, STONE } from "@/lib/forge-theme";
 import SixAxesNav from "@/components/six-axes-nav";
 
 /* PageShell — the cellar frame every page sits in.
    Paints the stone wall, drops a warm vignette over the edges, mounts the nav,
    and centers the content. Pass `bg="/wall.png"` on the Power Room for the big
-   single image; everything else uses the default further-back wall. */
+   single image; everything else uses the default further-back wall.
+
+   The wall is now painted with forgeBackground() rather than stoneBackground(). Both draw the SAME
+   /wall-2.png; they differed only in the wash laid over it — stoneBackground tinted it cool and
+   purple to sit with the SAX palette, forgeBackground tints it warm to sit with the dungeon one.
+   Since the Forge, the stat-block builder and the PC library already use the warm frame, this is
+   what makes the rest of the app share a room with them rather than merely resemble one.
+
+   Body type moves to the Forge stack for the same reason, and text/link colour to STONE so the
+   default a page inherits is already on-palette before it sets anything of its own. */
 
 export default function PageShell({
   children,
@@ -19,7 +29,7 @@ export default function PageShell({
   width?: number;
 }) {
   return (
-    <div style={{ position: "relative", minHeight: "100dvh", color: SAX.text, fontFamily: SAX.serif, ...stoneBackground(bg) }}>
+    <div style={{ position: "relative", minHeight: "100dvh", color: STONE.ink, fontFamily: FORGE_FONTS.body, ...forgeBackground(bg) }}>
       <style>{`
         .sax-vignette{position:fixed;inset:0;pointer-events:none;z-index:0;
           background:radial-gradient(ellipse 78% 62% at 50% 38%, transparent 42%, rgba(6,3,10,0.55) 100%);}
@@ -28,6 +38,11 @@ export default function PageShell({
         }
         @keyframes saxPulse{0%{transform:scale(1)}40%{transform:scale(1.1)}100%{transform:scale(1)}}
         @media (min-width:1024px){ .sax-shell{ padding-left:232px; } }
+        /* Links inherit the interactive brass rather than the browser default. Element selectors
+           only, so any page setting its own colour inline still wins — this is a floor, not an
+           override. */
+        .sax-shell a{ color:${STONE.brassHi}; }
+        .sax-shell a:hover{ color:${SAX.brass}; }
       `}</style>
       <div className="sax-vignette" />
       <div className="sax-shell" style={{ position: "relative", zIndex: 1 }}>
