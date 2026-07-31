@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { SAX, surfaces, ui } from "@/lib/theme";
-import { C } from "@/lib/forge-theme";
+import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 
 type Campaign = { id: string; name: string; share_code: string };
 type Sess = { id: string; session_number: number | null; status: string; recap: string | null };
@@ -130,7 +130,7 @@ export default function CheckInPage() {
   }
 
   const box = { ...surfaces.slate, padding: 20 } as const;
-  const btn = (bg: string, fg: string) => ({ background: bg, color: fg, border: "none", borderRadius: 9, padding: "10px 18px", fontWeight: 700, fontSize: 13, cursor: "pointer" } as const);
+  const btn = (bg: string, fg: string) => ({ background: bg, color: fg, border: "none", borderRadius: FORGE_RADIUS, padding: "10px 18px", fontWeight: 700, fontSize: 13, cursor: "pointer" } as const);
 
   return (
     <PageShell width={920}>
@@ -143,7 +143,7 @@ export default function CheckInPage() {
         <div style={{ ...box, marginBottom: 18 }}>
           <label style={{ fontSize: 12, color: C.muted, fontFamily: "ui-monospace, monospace", letterSpacing: "0.1em" }}>CAMPAIGN</label>
           <select value={campaignId} onChange={(e) => setCampaignId(e.target.value)}
-            style={{ display: "block", width: "100%", marginTop: 6, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: 9, padding: "10px 12px", fontSize: 15 }}>
+            style={{ display: "block", width: "100%", marginTop: 6, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "10px 12px", fontSize: 15 }}>
             {campaigns.length === 0 && <option value="">No campaigns yet</option>}
             {campaigns.map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}
           </select>
@@ -152,7 +152,7 @@ export default function CheckInPage() {
             One link for your players: Inventory, Check-in, and Chat. Check-in auto-shows the latest processed session.
           </div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            <input readOnly value={portalLink()} style={{ flex: 1, minWidth: 220, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: 9, padding: "10px 12px", fontSize: 13, fontFamily: "ui-monospace, monospace" }} />
+            <input readOnly value={portalLink()} style={{ flex: 1, minWidth: 220, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "10px 12px", fontSize: 13, fontFamily: "ui-monospace, monospace" }} />
             <button type="button" onClick={copyLink} style={btn(C.sun, SAX.inkDeep)}>{copied ? "Copied" : "Copy"}</button>
           </div>
 
@@ -164,7 +164,7 @@ export default function CheckInPage() {
                   const on = selected && selected.id === s.id;
                   return (
                     <button key={s.id} type="button" onClick={() => setSelected(s)}
-                      style={{ padding: "8px 14px", borderRadius: 8, border: `1px solid ${on ? C.sun : C.line}`, background: on ? C.sun : C.surface2, color: on ? SAX.inkDeep : C.text, fontWeight: 600, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", gap: 7 }}>
+                      style={{ padding: "8px 14px", borderRadius: FORGE_RADIUS, border: `1px solid ${on ? C.sun : C.line}`, background: on ? C.sun : C.surface2, color: on ? SAX.inkDeep : C.text, fontWeight: 600, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", gap: 7 }}>
                       <span style={{ width: 7, height: 7, borderRadius: 7, background: STATUS_TONE[s.status] || C.muted }} />
                       Session {s.session_number ?? "?"}
                     </button>
@@ -185,7 +185,7 @@ export default function CheckInPage() {
                 what it is actually for: attendance and the vibe check. */}
             <div style={box}>
               <div style={{ display: "flex", alignItems: "center", gap: 9, flexWrap: "wrap" }}>
-                <span style={{ width: 9, height: 9, borderRadius: 9, background: STATUS_TONE[selected.status] || C.muted }} />
+                <span style={{ width: 9, height: 9, borderRadius: FORGE_RADIUS, background: STATUS_TONE[selected.status] || C.muted }} />
                 <span style={{ fontSize: 16, fontWeight: 700 }}>Session {selected.session_number ?? "?"}</span>
                 <span style={{ fontSize: 12, color: STATUS_TONE[selected.status] || C.muted, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "ui-monospace, monospace" }}>{selected.status}</span>
               </div>
@@ -201,7 +201,7 @@ export default function CheckInPage() {
               {chars.length === 0 && <p style={{ color: C.muted, fontSize: 13 }}>No player characters in the roster yet.</p>}
               <div style={{ display: "grid", gap: 10 }}>
                 {chars.map((ch) => (
-                  <div key={ch.id} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 10, padding: "10px 12px", background: C.surface2, border: `1px solid ${C.line}`, borderRadius: 10 }}>
+                  <div key={ch.id} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 10, padding: "10px 12px", background: C.surface2, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS }}>
                     <div>
                       <div style={{ fontSize: 14, fontWeight: 600 }}>{ch.name}</div>
                       {ch.class && <div style={{ fontSize: 12, color: C.muted }}>{ch.class}</div>}
@@ -231,7 +231,7 @@ export default function CheckInPage() {
               ) : (
                 <div style={{ display: "grid", gap: 10, marginTop: 12 }}>
                   {vibes.map((v) => (
-                    <div key={v.id} style={{ padding: "12px 14px", background: C.surface2, border: `1px solid ${C.line}`, borderRadius: 10 }}>
+                    <div key={v.id} style={{ padding: "12px 14px", background: C.surface2, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10 }}>
                         <span style={{ fontSize: 14, fontWeight: 600 }}>{v.player_name || "Anonymous player"}</span>
                         {v.satisfaction !== null && <span style={{ color: C.sun, fontSize: 13, fontWeight: 700 }}>{v.satisfaction}/5</span>}
@@ -251,7 +251,7 @@ export default function CheckInPage() {
           <div style={{ ...box, marginTop: 18 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
               <div style={{ fontSize: 16, fontWeight: 700 }}>Player chat {chatReads.length > 0 ? `(${chatReads.length})` : ""}</div>
-              <button type="button" onClick={() => loadChat(campaignId)} style={{ background: "transparent", color: C.plum, border: `1px solid ${C.line}`, borderRadius: 8, padding: "6px 12px", fontSize: 12, cursor: "pointer" }}>Refresh</button>
+              <button type="button" onClick={() => loadChat(campaignId)} style={{ background: "transparent", color: C.plum, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "6px 12px", fontSize: 12, cursor: "pointer" }}>Refresh</button>
             </div>
             <div style={{ fontSize: 12, color: C.muted, margin: "6px 0 12px" }}>
               You only see what players choose to share, the messages inside time windows they grant you. Everything else stays private.
@@ -261,7 +261,7 @@ export default function CheckInPage() {
             ) : (
               <div style={{ display: "grid", gap: 8 }}>
                 {chatReads.map((m, i) => (
-                  <div key={i} style={{ background: C.surface2, border: `1px solid ${C.line}`, borderRadius: 9, padding: "9px 12px" }}>
+                  <div key={i} style={{ background: C.surface2, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "9px 12px" }}>
                     <div style={{ fontSize: 12, color: C.muted, marginBottom: 2 }}>
                       {m.display_name || "Player"} · {new Date(m.created_at).toLocaleString()}
                     </div>

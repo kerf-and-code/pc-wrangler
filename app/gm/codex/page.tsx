@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { useMomentPlayer, MomentButton } from "@/components/moment-player";
 import { SAX, surfaces, ui } from "@/lib/theme";
-import { C } from "@/lib/forge-theme";
+import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 
 type Campaign = { id: string; name: string };
 type Entry = {
@@ -315,7 +315,7 @@ export default function CodexPage() {
   const box = { ...surfaces.slate, padding: 18 } as const;
   const input = {
     width: "100%", boxSizing: "border-box" as const, background: C.surface2, color: C.text,
-    border: `1px solid ${C.line}`, borderRadius: 9, padding: "10px 12px", fontSize: 14, outline: "none",
+    border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "10px 12px", fontSize: 14, outline: "none",
   };
 
   return (
@@ -336,7 +336,7 @@ export default function CodexPage() {
               const on = tab === t.key;
               return (
                 <button key={t.key} type="button" onClick={() => { setTab(t.key); setMode(null); }}
-                  style={{ padding: "8px 14px", borderRadius: 8, border: `1px solid ${on ? C.sun : C.line}`,
+                  style={{ padding: "8px 14px", borderRadius: FORGE_RADIUS, border: `1px solid ${on ? C.sun : C.line}`,
                     background: on ? C.sun : C.surface2, color: on ? SAX.inkDeep : C.text, fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
                   {t.label}
                 </button>
@@ -372,7 +372,7 @@ export default function CodexPage() {
                 return (
                   <button key={it.id} type="button"
                     onClick={() => isChar ? openChar(it as Char) : openEntry(it as Entry)}
-                    style={{ textAlign: "left", padding: "9px 11px", borderRadius: 8,
+                    style={{ textAlign: "left", padding: "9px 11px", borderRadius: FORGE_RADIUS,
                       border: `1px solid ${active ? C.plum : C.line}`,
                       background: active ? "rgba(155,123,212,0.14)" : C.surface2, color: C.text, cursor: "pointer" }}>
                     <div style={{ fontSize: 13.5, fontWeight: 600 }}>{label}</div>
@@ -418,12 +418,12 @@ export default function CodexPage() {
 
                 <div style={{ display: "flex", gap: 8, marginBottom: 18 }}>
                   <button type="button" onClick={save} disabled={saving}
-                    style={{ background: `linear-gradient(90deg, ${C.sun}, ${C.sunSoft})`, color: SAX.inkDeep, border: "none", borderRadius: 9, padding: "10px 20px", fontWeight: 700, fontSize: 14, cursor: saving ? "default" : "pointer", opacity: saving ? 0.7 : 1 }}>
+                    style={{ background: `linear-gradient(90deg, ${C.sun}, ${C.sunSoft})`, color: SAX.inkDeep, border: "none", borderRadius: FORGE_RADIUS, padding: "10px 20px", fontWeight: 700, fontSize: 14, cursor: saving ? "default" : "pointer", opacity: saving ? 0.7 : 1 }}>
                     {saving ? "Saving…" : "Save"}
                   </button>
                   {mode.id && (
                     <button type="button" onClick={remove}
-                      style={{ background: "transparent", color: C.warn, border: `1px solid ${C.line}`, borderRadius: 9, padding: "10px 16px", fontSize: 13, cursor: "pointer" }}>
+                      style={{ background: "transparent", color: C.warn, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "10px 16px", fontSize: 13, cursor: "pointer" }}>
                       Delete
                     </button>
                   )}
@@ -443,7 +443,7 @@ export default function CodexPage() {
                           const oType = otherIsSource ? l.source_type : l.target_type;
                           const oId = otherIsSource ? l.source_id : l.target_id;
                           return (
-                            <div key={l.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, background: C.surface2, border: `1px solid ${C.line}`, borderRadius: 8, padding: "7px 10px" }}>
+                            <div key={l.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, background: C.surface2, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "7px 10px" }}>
                               <span style={{ fontSize: 13 }}>
                                 {labelOf(oType, oId)}
                                 {l.relation && <span style={{ color: C.muted }}> · {l.relation}</span>}
@@ -469,7 +469,7 @@ export default function CodexPage() {
                       </select>
                       <input value={linkRel} onChange={(e) => setLinkRel(e.target.value)} placeholder="relation (optional)" style={{ ...input, flex: "1 1 140px" }} />
                       <button type="button" onClick={addLink} disabled={!linkPick}
-                        style={{ background: C.plum, color: SAX.inkDeep, border: "none", borderRadius: 9, padding: "10px 16px", fontWeight: 700, fontSize: 13, cursor: linkPick ? "pointer" : "default", opacity: linkPick ? 1 : 0.6 }}>
+                        style={{ background: C.plum, color: SAX.inkDeep, border: "none", borderRadius: FORGE_RADIUS, padding: "10px 16px", fontWeight: 700, fontSize: 13, cursor: linkPick ? "pointer" : "default", opacity: linkPick ? 1 : 0.6 }}>
                         Link
                       </button>
                     </div>
@@ -495,7 +495,7 @@ export default function CodexPage() {
                           {curReveals.map((r) => {
                             const pc = chars.find((c) => c.id === r.revealed_to_character_id);
                             return (
-                              <div key={r.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, background: C.surface2, border: `1px solid ${C.line}`, borderRadius: 8, padding: "7px 10px" }}>
+                              <div key={r.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, background: C.surface2, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "7px 10px" }}>
                                 <span style={{ fontSize: 13 }}>{pc ? pc.name : "a player"}</span>
                                 <button type="button" onClick={() => revokeReveal(r.id)} style={{ background: "transparent", color: C.muted, border: "none", cursor: "pointer", fontSize: 16, lineHeight: 1 }}>×</button>
                               </div>
@@ -511,7 +511,7 @@ export default function CodexPage() {
                           ))}
                         </select>
                         <button type="button" onClick={() => revealTo(revealPick)} disabled={!revealPick}
-                          style={{ background: C.sun, color: SAX.inkDeep, border: "none", borderRadius: 9, padding: "10px 16px", fontWeight: 700, fontSize: 13, cursor: revealPick ? "pointer" : "default", opacity: revealPick ? 1 : 0.6 }}>
+                          style={{ background: C.sun, color: SAX.inkDeep, border: "none", borderRadius: FORGE_RADIUS, padding: "10px 16px", fontWeight: 700, fontSize: 13, cursor: revealPick ? "pointer" : "default", opacity: revealPick ? 1 : 0.6 }}>
                           Reveal
                         </button>
                       </div>
@@ -535,7 +535,7 @@ export default function CodexPage() {
                     ) : (
                       <div style={{ display: "grid", gap: 8 }}>
                         {beats.map((b) => (
-                          <div key={b.id} style={{ background: C.surface2, border: `1px solid ${C.line}`, borderRadius: 8, padding: "10px 12px" }}>
+                          <div key={b.id} style={{ background: C.surface2, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "10px 12px" }}>
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                               <span style={{ fontSize: 11, color: C.plum, fontFamily: "ui-monospace, monospace", letterSpacing: "0.04em" }}>
                                 {BEAT_LABEL[b.kind] || b.kind}{sessNo(b.session_id) ? ` · ${sessNo(b.session_id)}` : ""}

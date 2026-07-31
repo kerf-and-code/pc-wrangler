@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { SAX, surfaces, stoneBackground } from "@/lib/theme";
-import { C } from "@/lib/forge-theme";
+import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 
 /* Login lives outside PageShell (no nav), but uses the shared cellar theme:
    the stone wall background, a brass-edged panel, and brass controls. */
@@ -76,7 +76,7 @@ export default function LoginPage() {
           ...surfaces.panel,
           width: "100%",
           maxWidth: 420,
-          borderRadius: 16,
+          borderRadius: FORGE_RADIUS,
           padding: "40px 32px",
         }}
       >
@@ -151,7 +151,7 @@ export default function LoginPage() {
             background: "#fff",
             color: "#1f1f1f",
             border: "none",
-            borderRadius: 10,
+            borderRadius: FORGE_RADIUS,
             padding: "12px 16px",
             fontSize: 15,
             fontWeight: 600,
@@ -180,7 +180,7 @@ export default function LoginPage() {
             background: "#5865F2",
             color: "#fff",
             border: "none",
-            borderRadius: 10,
+            borderRadius: FORGE_RADIUS,
             padding: "12px 16px",
             fontSize: 15,
             fontWeight: 600,
@@ -210,7 +210,7 @@ export default function LoginPage() {
             style={{
               background: C.panel2,
               border: `1px solid ${C.line}`,
-              borderRadius: 10,
+              borderRadius: FORGE_RADIUS,
               padding: "18px 16px",
               textAlign: "center",
             }}
@@ -234,7 +234,7 @@ export default function LoginPage() {
                 boxSizing: "border-box",
                 background: C.field,
                 border: `1px solid ${C.line}`,
-                borderRadius: 10,
+                borderRadius: FORGE_RADIUS,
                 padding: "12px 14px",
                 color: C.text,
                 fontSize: 15,
@@ -251,7 +251,7 @@ export default function LoginPage() {
                 background: `linear-gradient(90deg, ${C.brass}, ${C.sun})`,
                 color: C.inkDeep,
                 border: "none",
-                borderRadius: 10,
+                borderRadius: FORGE_RADIUS,
                 padding: "12px 16px",
                 fontSize: 15,
                 fontWeight: 700,

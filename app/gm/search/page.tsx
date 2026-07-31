@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { surfaces, ui } from "@/lib/theme";
-import { C } from "@/lib/forge-theme";
+import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 
 type Campaign = { id: string; name: string };
 type Entry = { id: string; type: string; title: string; body: string | null; visibility: string; tags: string[] };
@@ -173,8 +173,8 @@ export default function SearchPage() {
 
   const pcs = chars.filter((c) => c.kind === "pc");
   const box = { ...surfaces.slate, padding: 18 } as const;
-  const input = { width: "100%", boxSizing: "border-box" as const, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: 9, padding: "11px 13px", fontSize: 15, outline: "none" };
-  const cardInner = { background: C.surface2, border: `1px solid ${C.line}`, borderRadius: 10, padding: "11px 13px" } as const;
+  const input = { width: "100%", boxSizing: "border-box" as const, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "11px 13px", fontSize: 15, outline: "none" };
+  const cardInner = { background: C.surface2, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "11px 13px" } as const;
   const sectionLabel = { fontSize: 12, color: C.muted, fontFamily: "ui-monospace, monospace", letterSpacing: "0.1em", marginBottom: 10 } as const;
 
   const Chips = ({ items }: { items: string[] }) =>

@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { SAX } from "@/lib/theme";
-import { C } from "@/lib/forge-theme";
+import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 
 const BUCKET = "campaign-maps";
 
@@ -94,7 +94,7 @@ export default function PlayerMapPage() {
             <div style={{ position: "relative", display: "inline-block", maxWidth: "100%", lineHeight: 0 }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={publicUrl(active.image_path)} alt={active.name}
-                style={{ maxWidth: "100%", display: "block", borderRadius: 10, border: `1px solid ${C.line}` }} />
+                style={{ maxWidth: "100%", display: "block", borderRadius: FORGE_RADIUS, border: `1px solid ${C.line}` }} />
               {active.pins.map((p) => (
                 <button key={p.id} type="button" title={p.label || p.linked_title || "pin"}
                   onClick={() => setSelectedPin((cur) => (cur === p.id ? null : p.id))}
@@ -108,7 +108,7 @@ export default function PlayerMapPage() {
             </div>
 
             {sel && (sel.label || sel.linked_title) && (
-              <div style={{ marginTop: 14, background: C.surface, border: `1px solid ${C.line}`, borderRadius: 12, padding: "14px 18px", textAlign: "left" }}>
+              <div style={{ marginTop: 14, background: C.surface, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "14px 18px", textAlign: "left" }}>
                 <div style={{ fontSize: 16, fontWeight: 700, color: C.text }}>{sel.label || sel.linked_title}</div>
                 {sel.linked_title && sel.label && sel.linked_title !== sel.label && (
                   <div style={{ fontSize: 13, color: C.muted, marginTop: 4 }}>{sel.linked_title}</div>

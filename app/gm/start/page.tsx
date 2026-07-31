@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import TableTapCard from "@/components/table-tap-card";
 import { SAX } from "@/lib/theme";
-import { C } from "@/lib/forge-theme";
+import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 
 type Step = { key: string; label: string; desc: string; href: string; cta: string; done: boolean; optional?: boolean };
 
@@ -62,7 +62,7 @@ export default function GettingStartedPage() {
   const allDone = steps.every((s) => s.done || s.optional);
   const firstOpen = steps.find((s) => !s.done)?.key;
 
-  const card = { background: C.surface, border: `1px solid ${C.line}`, borderRadius: 14, padding: "18px 20px", marginBottom: 12 } as const;
+  const card = { background: C.surface, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "18px 20px", marginBottom: 12 } as const;
 
   return (
     <PageShell width={760}>
@@ -101,7 +101,7 @@ export default function GettingStartedPage() {
             const isOpen = s.key === firstOpen;
             return (
               <div key={s.key} style={{ ...card, borderColor: isOpen ? C.brass : C.line, display: "flex", gap: 14, alignItems: "flex-start" }}>
-                <div style={{ flexShrink: 0, width: 26, height: 26, borderRadius: 26, marginTop: 1, display: "flex", alignItems: "center", justifyContent: "center",
+                <div style={{ flexShrink: 0, width: 26, height: 26, borderRadius: FORGE_RADIUS, marginTop: 1, display: "flex", alignItems: "center", justifyContent: "center",
                   background: s.done ? C.good : "transparent", border: s.done ? "none" : `1.5px solid ${isOpen ? C.brass : C.line}`,
                   color: s.done ? SAX.inkDeep : C.muted, fontSize: 13, fontWeight: 700 }}>
                   {s.done ? "\u2713" : i + 1}
@@ -116,7 +116,7 @@ export default function GettingStartedPage() {
                   )}
                   {!s.done && s.key !== "tap" && (
                     <a href={s.href} style={{ display: "inline-block", marginTop: 12, background: isOpen ? C.brass : "transparent", color: isOpen ? SAX.inkDeep : C.text,
-                      border: isOpen ? "none" : `1px solid ${C.line}`, borderRadius: 9, padding: "8px 16px", fontSize: 13.5, fontWeight: 600, textDecoration: "none" }}>
+                      border: isOpen ? "none" : `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "8px 16px", fontSize: 13.5, fontWeight: 600, textDecoration: "none" }}>
                       {s.cta}
                     </a>
                   )}

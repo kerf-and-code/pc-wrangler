@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { SAX } from "@/lib/theme";
-import { C } from "@/lib/forge-theme";
+import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 
 const SPOTLIGHT: { value: string; label: string; hint: string }[] = [
   { value: "wanted_more", label: "Wanted more", hint: "I was in the background" },
@@ -84,7 +84,7 @@ export default function VibeCheckPage() {
     else setSubmitted(true);
   }
 
-  const card = { width: "100%", maxWidth: 460, margin: "0 auto", background: C.surface, border: `1px solid ${C.line}`, borderRadius: 16, padding: "32px 28px" } as const;
+  const card = { width: "100%", maxWidth: 460, margin: "0 auto", background: C.surface, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "32px 28px" } as const;
 
   return (
     <PageShell width={920}>
@@ -113,7 +113,7 @@ export default function VibeCheckPage() {
             <div style={{ textAlign: "center", padding: "10px 0" }}>
               <div style={{ fontSize: 17, fontWeight: 600, marginBottom: 8, color: C.good }}>Thanks{playerName.trim() ? `, ${playerName.trim()}` : ""}!</div>
               <div style={{ color: C.muted, fontSize: 14, lineHeight: 1.6 }}>Your check-in is saved. You can change an answer and submit again.</div>
-              <button type="button" onClick={() => setSubmitted(false)} style={{ marginTop: 18, background: "transparent", color: C.plum, border: `1px solid ${C.line}`, borderRadius: 8, padding: "8px 16px", fontSize: 13, cursor: "pointer" }}>Edit my answers</button>
+              <button type="button" onClick={() => setSubmitted(false)} style={{ marginTop: 18, background: "transparent", color: C.plum, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "8px 16px", fontSize: 13, cursor: "pointer" }}>Edit my answers</button>
             </div>
           )}
 
@@ -125,7 +125,7 @@ export default function VibeCheckPage() {
                   const on = satisfaction === n;
                   return (
                     <button key={n} type="button" onClick={() => setSatisfaction(n)}
-                      style={{ flex: 1, padding: "12px 0", borderRadius: 9, border: `1px solid ${on ? C.sun : C.line}`, background: on ? C.sun : C.surface2, color: on ? SAX.inkDeep : C.text, fontSize: 16, fontWeight: 700, cursor: "pointer" }}>{n}</button>
+                      style={{ flex: 1, padding: "12px 0", borderRadius: FORGE_RADIUS, border: `1px solid ${on ? C.sun : C.line}`, background: on ? C.sun : C.surface2, color: on ? SAX.inkDeep : C.text, fontSize: 16, fontWeight: 700, cursor: "pointer" }}>{n}</button>
                   );
                 })}
               </div>
@@ -140,7 +140,7 @@ export default function VibeCheckPage() {
                   const on = spotlight === opt.value;
                   return (
                     <button key={opt.value} type="button" onClick={() => setSpotlight(opt.value)}
-                      style={{ textAlign: "left", padding: "12px 14px", borderRadius: 9, border: `1px solid ${on ? C.plum : C.line}`, background: on ? "rgba(155,123,212,0.16)" : C.surface2, color: C.text, cursor: "pointer" }}>
+                      style={{ textAlign: "left", padding: "12px 14px", borderRadius: FORGE_RADIUS, border: `1px solid ${on ? C.plum : C.line}`, background: on ? "rgba(155,123,212,0.16)" : C.surface2, color: C.text, cursor: "pointer" }}>
                       <div style={{ fontSize: 14, fontWeight: 600 }}>{opt.label}</div>
                       <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>{opt.hint}</div>
                     </button>
@@ -149,12 +149,12 @@ export default function VibeCheckPage() {
               </div>
 
               <textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="Anything you want the GM to know? (optional)" rows={3}
-                style={{ width: "100%", boxSizing: "border-box", background: C.surface2, border: `1px solid ${C.line}`, borderRadius: 9, padding: "10px 12px", color: C.text, fontSize: 14, outline: "none", resize: "vertical", marginBottom: 14, fontFamily: "inherit" }} />
+                style={{ width: "100%", boxSizing: "border-box", background: C.surface2, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "10px 12px", color: C.text, fontSize: 14, outline: "none", resize: "vertical", marginBottom: 14, fontFamily: "inherit" }} />
               <input value={playerName} onChange={(e) => setPlayerName(e.target.value)} placeholder="Your name (so the GM knows who)"
-                style={{ width: "100%", boxSizing: "border-box", background: C.surface2, border: `1px solid ${C.line}`, borderRadius: 9, padding: "10px 12px", color: C.text, fontSize: 14, outline: "none", marginBottom: 18 }} />
+                style={{ width: "100%", boxSizing: "border-box", background: C.surface2, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "10px 12px", color: C.text, fontSize: 14, outline: "none", marginBottom: 18 }} />
 
               <button type="button" onClick={submit} disabled={submitting}
-                style={{ width: "100%", background: `linear-gradient(90deg, ${C.sun}, ${C.sunSoft})`, color: SAX.inkDeep, border: "none", borderRadius: 10, padding: "13px 16px", fontSize: 15, fontWeight: 700, letterSpacing: "0.02em", cursor: submitting ? "default" : "pointer", opacity: submitting ? 0.7 : 1 }}>
+                style={{ width: "100%", background: `linear-gradient(90deg, ${C.sun}, ${C.sunSoft})`, color: SAX.inkDeep, border: "none", borderRadius: FORGE_RADIUS, padding: "13px 16px", fontSize: 15, fontWeight: 700, letterSpacing: "0.02em", cursor: submitting ? "default" : "pointer", opacity: submitting ? 0.7 : 1 }}>
                 {submitting ? "Saving…" : "Submit check-in"}
               </button>
               {error && <p style={{ color: C.warn, fontSize: 13, textAlign: "center", marginTop: 14 }}>{error}</p>}

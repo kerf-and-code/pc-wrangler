@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
-import { C } from "@/lib/forge-theme";
+import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 
 type Item = { item_kind: string; item_type: string; id: string; title: string; body: string | null };
 
@@ -41,7 +41,7 @@ export default function PlayerLorePage() {
   }, [supabase]);
 
   const eyebrow = { fontFamily: "ui-monospace, monospace", fontSize: 11, letterSpacing: "0.22em", textTransform: "uppercase" as const, color: C.muted };
-  const card = { background: C.surface, border: `1px solid ${C.line}`, borderRadius: 12, padding: "16px 18px", marginBottom: 12, textAlign: "left" as const };
+  const card = { background: C.surface, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "16px 18px", marginBottom: 12, textAlign: "left" as const };
 
   return (
     <PageShell width={920}>

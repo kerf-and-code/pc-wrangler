@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { SAX } from "@/lib/theme";
-import { C } from "@/lib/forge-theme";
+import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 
 const VIS: { v: string; l: string }[] = [
   { v: "common", l: "Common knowledge" },
@@ -281,8 +281,8 @@ export default function MapPage() {
     .sort((a, b) => (mentions[b.id] || 0) - (mentions[a.id] || 0) || a.title.localeCompare(b.title));
 
   const eyebrow = { fontFamily: "ui-monospace, monospace", fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase" as const, color: C.muted, marginBottom: 6 };
-  const box = { background: C.surface, border: `1px solid ${C.line}`, borderRadius: 14, padding: "16px 18px", marginBottom: 14 } as const;
-  const input = { width: "100%", boxSizing: "border-box" as const, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: 9, padding: "9px 12px", fontSize: 14, outline: "none" };
+  const box = { background: C.surface, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "16px 18px", marginBottom: 14 } as const;
+  const input = { width: "100%", boxSizing: "border-box" as const, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "9px 12px", fontSize: 14, outline: "none" };
   const sel2 = { ...input, marginTop: 4 };
 
   return (
@@ -324,7 +324,7 @@ export default function MapPage() {
         )}
         {activeMap && (
           <button type="button" onClick={() => deleteMap(activeMap.id)}
-            style={{ marginLeft: "auto", background: "transparent", color: C.warn, border: `1px solid ${C.line}`, borderRadius: 8, padding: "7px 14px", fontSize: 12.5, cursor: "pointer" }}>
+            style={{ marginLeft: "auto", background: "transparent", color: C.warn, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "7px 14px", fontSize: 12.5, cursor: "pointer" }}>
             Delete this map
           </button>
         )}
@@ -337,7 +337,7 @@ export default function MapPage() {
           <div style={{ position: "relative", display: "inline-block", maxWidth: "100%", lineHeight: 0 }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={publicUrl(activeMap.image_path)} alt={activeMap.name} onClick={onImageClick}
-              style={{ maxWidth: "100%", display: "block", cursor: "crosshair", borderRadius: 10, border: `1px solid ${C.line}` }} />
+              style={{ maxWidth: "100%", display: "block", cursor: "crosshair", borderRadius: FORGE_RADIUS, border: `1px solid ${C.line}` }} />
             {runs.some((r) => r.length >= 2) && (
               // viewBox 0..100 with preserveAspectRatio none lines the SVG up exactly with
               // the percentage-positioned pins, whatever the image's aspect ratio.
@@ -405,7 +405,7 @@ export default function MapPage() {
                 </select>
 
                 <button type="button" onClick={() => removePin(sel.id)}
-                  style={{ marginTop: 16, background: "transparent", color: C.warn, border: `1px solid ${C.line}`, borderRadius: 9, padding: "8px 14px", fontSize: 13, cursor: "pointer" }}>
+                  style={{ marginTop: 16, background: "transparent", color: C.warn, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "8px 14px", fontSize: 13, cursor: "pointer" }}>
                   Remove pin
                 </button>
               </div>

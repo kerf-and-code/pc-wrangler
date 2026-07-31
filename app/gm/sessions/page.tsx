@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { SAX } from "@/lib/theme";
-import { C } from "@/lib/forge-theme";
+import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 
 const STATUS_TONE: Record<string, string> = {
   scheduled: "#A597BD", live: "#E07A5F", completed: "#9B7BD4", processed: "#5DBE9A", cancelled: "#A597BD",
@@ -12,10 +12,10 @@ const STATUS_TONE: Record<string, string> = {
 const AXIS_COLOR: Record<string, string> = { N: "#B7615A", T: "#C8A24B", O: "#4E8077", S: "#CE8A42", E: "#6C76B0", I: "#9A93B0" };
 const AXIS_NAME: Record<string, string> = { N: "Voice", T: "Tactics", O: "Arcana", S: "Rapport", E: "Exploration", I: "Nerve" };
 
-const box = { background: C.panel, border: `1px solid ${C.line}`, borderRadius: 12, padding: 18, marginBottom: 16 };
-const inputStyle = { background: C.ink, color: C.vellum, border: `1px solid ${C.line}`, borderRadius: 8, padding: "9px 11px", fontSize: 14 };
-const btn = { background: C.brass, color: C.ink, border: "none", borderRadius: 9, padding: "10px 18px", fontSize: 14, fontWeight: 600, cursor: "pointer" };
-const btnGhost = { background: "none", color: C.brass, border: `1px solid ${C.brassDim}`, borderRadius: 9, padding: "9px 16px", fontSize: 13, cursor: "pointer" };
+const box = { background: C.panel, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: 18, marginBottom: 16 };
+const inputStyle = { background: C.ink, color: C.vellum, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "9px 11px", fontSize: 14 };
+const btn = { background: C.brass, color: C.ink, border: "none", borderRadius: FORGE_RADIUS, padding: "10px 18px", fontSize: 14, fontWeight: 600, cursor: "pointer" };
+const btnGhost = { background: "none", color: C.brass, border: `1px solid ${C.brassDim}`, borderRadius: FORGE_RADIUS, padding: "9px 16px", fontSize: 13, cursor: "pointer" };
 const CAT_ORDER = ["opportunity", "response", "reward", "meta"];
 const CAT_LABEL: Record<string, string> = { opportunity: "Opportunities", response: "Responses", reward: "Rewards", meta: "Notes" };
 // Test default for the recipients field; clear or change per campaign.
@@ -688,7 +688,7 @@ export default function SessionWorkspace() {
               return (
                 <div style={{ marginBottom: 14 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 9, flexWrap: "wrap", marginBottom: 10 }}>
-                    <span style={{ width: 9, height: 9, borderRadius: 9, background: STATUS_TONE[cur.status] || C.muted }} />
+                    <span style={{ width: 9, height: 9, borderRadius: FORGE_RADIUS, background: STATUS_TONE[cur.status] || C.muted }} />
                     <span style={{ fontSize: 15, fontWeight: 700, color: C.vellum }}>Session {cur.session_number ?? "?"}</span>
                     <span style={{ fontSize: 11.5, color: STATUS_TONE[cur.status] || C.muted, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "ui-monospace, monospace" }}>{cur.status}</span>
                     {cur.status === "live" && (
@@ -700,7 +700,7 @@ export default function SessionWorkspace() {
                       <button
                         onClick={goLive}
                         disabled={sessionReopening}
-                        style={{ background: "none", color: C.warn, border: `1px solid ${C.warn}`, borderRadius: 8, padding: "7px 14px", fontSize: 12, cursor: sessionReopening ? "default" : "pointer", opacity: sessionReopening ? 0.6 : 1 }}
+                        style={{ background: "none", color: C.warn, border: `1px solid ${C.warn}`, borderRadius: FORGE_RADIUS, padding: "7px 14px", fontSize: 12, cursor: sessionReopening ? "default" : "pointer", opacity: sessionReopening ? 0.6 : 1 }}
                       >
                         {sessionReopening ? "Going live..." : "Go live"}
                       </button>
@@ -709,7 +709,7 @@ export default function SessionWorkspace() {
                       <button
                         onClick={endAndProcess}
                         disabled={sessionClosing}
-                        style={{ background: "none", color: C.accent, border: `1px solid ${C.accent}`, borderRadius: 8, padding: "7px 14px", fontSize: 12, cursor: sessionClosing ? "default" : "pointer", opacity: sessionClosing ? 0.6 : 1 }}
+                        style={{ background: "none", color: C.accent, border: `1px solid ${C.accent}`, borderRadius: FORGE_RADIUS, padding: "7px 14px", fontSize: 12, cursor: sessionClosing ? "default" : "pointer", opacity: sessionClosing ? 0.6 : 1 }}
                       >
                         {sessionClosing ? "Working..." : "End and process"}
                       </button>
@@ -718,7 +718,7 @@ export default function SessionWorkspace() {
                       <button
                         onClick={() => closeSession(false)}
                         disabled={sessionClosing}
-                        style={{ background: "none", color: C.brass, border: `1px solid ${C.brassDim}`, borderRadius: 8, padding: "7px 14px", fontSize: 12, cursor: sessionClosing ? "default" : "pointer", opacity: sessionClosing ? 0.6 : 1 }}
+                        style={{ background: "none", color: C.brass, border: `1px solid ${C.brassDim}`, borderRadius: FORGE_RADIUS, padding: "7px 14px", fontSize: 12, cursor: sessionClosing ? "default" : "pointer", opacity: sessionClosing ? 0.6 : 1 }}
                       >
                         {sessionClosing ? "Closing..." : `Close session #${cur.session_number ?? "?"}`}
                       </button>
@@ -727,7 +727,7 @@ export default function SessionWorkspace() {
                       <button
                         onClick={reopenSession}
                         disabled={sessionReopening}
-                        style={{ background: "none", color: C.accent, border: `1px solid ${C.accent}`, borderRadius: 8, padding: "7px 14px", fontSize: 12, cursor: sessionReopening ? "default" : "pointer", opacity: sessionReopening ? 0.6 : 1 }}
+                        style={{ background: "none", color: C.accent, border: `1px solid ${C.accent}`, borderRadius: FORGE_RADIUS, padding: "7px 14px", fontSize: 12, cursor: sessionReopening ? "default" : "pointer", opacity: sessionReopening ? 0.6 : 1 }}
                       >
                         {sessionReopening ? "Reopening..." : `Reopen session #${cur.session_number ?? "?"}`}
                       </button>
@@ -736,7 +736,7 @@ export default function SessionWorkspace() {
                       <button
                         onClick={deleteSession}
                         disabled={sessionDeleting}
-                        style={{ background: "none", color: C.warn, border: `1px solid ${C.warn}`, borderRadius: 8, padding: "7px 14px", fontSize: 12, cursor: sessionDeleting ? "default" : "pointer", opacity: sessionDeleting ? 0.6 : 1 }}
+                        style={{ background: "none", color: C.warn, border: `1px solid ${C.warn}`, borderRadius: FORGE_RADIUS, padding: "7px 14px", fontSize: 12, cursor: sessionDeleting ? "default" : "pointer", opacity: sessionDeleting ? 0.6 : 1 }}
                       >
                         {sessionDeleting ? "Deleting..." : `Delete session #${cur.session_number ?? "?"}`}
                       </button>
@@ -780,7 +780,7 @@ export default function SessionWorkspace() {
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6, gap: 10, flexWrap: "wrap" }}>
               <div style={{ fontSize: 13, color: C.muted }}>Session recap</div>
               <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-                <div style={{ display: "inline-flex", border: `1px solid ${C.line}`, borderRadius: 8, overflow: "hidden" }}>
+                <div style={{ display: "inline-flex", border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, overflow: "hidden" }}>
                   {(["brief", "complete"] as const).map((m) => (
                     <button key={m} type="button" onClick={() => setRecapMode(m)}
                       style={{ background: recapMode === m ? C.brass : "none", color: recapMode === m ? C.ink : C.muted, border: "none", padding: "6px 13px", fontSize: 12, fontWeight: 600, cursor: "pointer", textTransform: "capitalize" }}>
@@ -875,7 +875,7 @@ export default function SessionWorkspace() {
                   const yes = pollResp.filter((r) => (r.available || []).includes(i));
                   const names = yes.map((r) => (r.character_id && pollNames[r.character_id]) || "a player");
                   return (
-                    <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "9px 11px", background: C.ink, border: `1px solid ${C.line}`, borderRadius: 8 }}>
+                    <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "9px 11px", background: C.ink, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS }}>
                       <div style={{ minWidth: 0 }}>
                         <div style={{ fontSize: 14, color: C.vellum }}>{new Date(iso).toLocaleString([], { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</div>
                         <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>{yes.length} available{names.length ? `: ${names.join(", ")}` : ""}</div>
@@ -935,7 +935,7 @@ export default function SessionWorkspace() {
                 <div style={{ display: "grid", gap: 5 }}>
                   {rsvps.map((r, i) => (
                     <div key={i} style={{ fontSize: 13, display: "flex", gap: 8, alignItems: "center" }}>
-                      <span style={{ width: 8, height: 8, borderRadius: 8, flexShrink: 0,
+                      <span style={{ width: 8, height: 8, borderRadius: FORGE_RADIUS, flexShrink: 0,
                         background: r.status === "going" ? SAX.good : r.status === "maybe" ? C.brass : C.warn }} />
                       <span style={{ color: C.vellum }}>{r.display_name || "A player"}{r.character_name ? ` (${r.character_name})` : ""}</span>
                       <span style={{ color: C.muted, fontSize: 11 }}>{r.status}</span>

@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { UpgradeAccount } from "@/components/upgrade-account";
 import { PlayerDisposition } from "@/components/player-disposition";
-import { C } from "@/lib/forge-theme";
+import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 
 const AXES = ["N", "T", "O", "S", "E", "I"] as const;
 type Axis = typeof AXES[number];
@@ -57,7 +57,7 @@ export default function PlayerJournalPage() {
 
   const eyebrow = { fontFamily: "ui-monospace, monospace", fontSize: 11, letterSpacing: "0.22em", textTransform: "uppercase" as const, color: C.muted };
   const sectionTitle = { fontFamily: "'Iowan Old Style', Georgia, serif", fontSize: 20, fontWeight: 700, color: C.text, margin: "32px 0 12px" };
-  const card = { background: C.surface, border: `1px solid ${C.line}`, borderRadius: 12, padding: "14px 18px", marginBottom: 10 };
+  const card = { background: C.surface, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "14px 18px", marginBottom: 10 };
 
   const post = journal?.posterior || null;
   const hasPost = post && AXES.some((a) => typeof post[a] === "number");

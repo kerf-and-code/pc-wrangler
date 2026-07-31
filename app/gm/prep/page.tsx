@@ -6,7 +6,7 @@ import PageShell from "@/components/page-shell";
 import BoundariesCard from "@/components/boundaries-card";
 import { useMomentPlayer, MomentButton } from "@/components/moment-player";
 import { SAX, surfaces, ui } from "@/lib/theme";
-import { C } from "@/lib/forge-theme";
+import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 
 type Campaign = { id: string; name: string };
 type Sess = { id: string; session_number: number | null };
@@ -196,7 +196,7 @@ export default function PrepPage() {
   }, [recent, sessions]);
 
   const box = { ...surfaces.slate, padding: 18 } as const;
-  const input = { width: "100%", boxSizing: "border-box" as const, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: 9, padding: "11px 13px", fontSize: 15, outline: "none" };
+  const input = { width: "100%", boxSizing: "border-box" as const, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "11px 13px", fontSize: 15, outline: "none" };
   const sectionTitle = (t: string, sub: string) => (
     <div style={{ margin: "22px 0 10px" }}>
       <div style={{ fontSize: 18, fontWeight: 700, color: C.text }}>{t}</div>
@@ -261,7 +261,7 @@ export default function PrepPage() {
               )}
             </select>
             <button type="button" onClick={addPlanItem} disabled={pBusy || !pTitle.trim()}
-              style={{ background: C.sun, color: SAX.inkDeep, border: "none", borderRadius: 9, padding: "0 20px", fontSize: 14, fontWeight: 700, cursor: pBusy || !pTitle.trim() ? "default" : "pointer", opacity: pBusy || !pTitle.trim() ? 0.6 : 1 }}>
+              style={{ background: C.sun, color: SAX.inkDeep, border: "none", borderRadius: FORGE_RADIUS, padding: "0 20px", fontSize: 14, fontWeight: 700, cursor: pBusy || !pTitle.trim() ? "default" : "pointer", opacity: pBusy || !pTitle.trim() ? 0.6 : 1 }}>
               Add
             </button>
           </div>
@@ -275,7 +275,7 @@ export default function PrepPage() {
             {plan.map((p, i) => {
               const link = planLinkLabel(p);
               return (
-                <div key={p.id} style={{ background: C.surface2, border: `1px solid ${C.line}`, borderRadius: 9, padding: "10px 12px", opacity: p.done ? 0.55 : 1 }}>
+                <div key={p.id} style={{ background: C.surface2, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "10px 12px", opacity: p.done ? 0.55 : 1 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
@@ -335,11 +335,11 @@ export default function PrepPage() {
                       </span>
                       <div style={{ display: "flex", gap: 8 }}>
                         <button type="button" onClick={() => setThread(t.id, "resolved")} disabled={busyId === t.id}
-                          style={{ background: C.good, color: SAX.inkDeep, border: "none", borderRadius: 8, padding: "7px 14px", fontSize: 12.5, fontWeight: 700, cursor: "pointer", opacity: busyId === t.id ? 0.6 : 1 }}>
+                          style={{ background: C.good, color: SAX.inkDeep, border: "none", borderRadius: FORGE_RADIUS, padding: "7px 14px", fontSize: 12.5, fontWeight: 700, cursor: "pointer", opacity: busyId === t.id ? 0.6 : 1 }}>
                           Resolve
                         </button>
                         <button type="button" onClick={() => setThread(t.id, "dropped")} disabled={busyId === t.id}
-                          style={{ background: "transparent", color: C.muted, border: `1px solid ${C.line}`, borderRadius: 8, padding: "7px 14px", fontSize: 12.5, fontWeight: 600, cursor: "pointer" }}>
+                          style={{ background: "transparent", color: C.muted, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "7px 14px", fontSize: 12.5, fontWeight: 600, cursor: "pointer" }}>
                           Drop
                         </button>
                       </div>

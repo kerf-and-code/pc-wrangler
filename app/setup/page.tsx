@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { C } from "@/lib/forge-theme";
+import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 
 // Self-serve Beyond20 setup wizard. Browser-aware steps, one-tap copy of the
 // custom-domain URL, and a LIVE connection check: once the player adds the URL
@@ -87,7 +87,7 @@ export default function Beyond20Setup() {
   };
 
   const status = rolled ? "rolling" : loaded ? "connected" : "waiting";
-  const card = { background: C.surface, border: `1px solid ${C.line}`, borderRadius: 16, padding: "24px 22px" } as const;
+  const card = { background: C.surface, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "24px 22px" } as const;
 
   return (
     <div style={{ minHeight: "100dvh", background: C.bg, color: C.text, padding: "32px 20px",
@@ -102,7 +102,7 @@ export default function Beyond20Setup() {
         {/* Live status */}
         <div style={{ ...card, marginTop: 18, borderColor: status === "rolling" ? C.good : status === "connected" ? C.plum : C.line,
           display: "flex", alignItems: "center", gap: 12 }}>
-          <span style={{ width: 12, height: 12, borderRadius: 12, flex: "0 0 auto",
+          <span style={{ width: 12, height: 12, borderRadius: FORGE_RADIUS, flex: "0 0 auto",
             background: status === "rolling" ? C.good : status === "connected" ? C.sun : C.muted,
             boxShadow: status !== "waiting" ? `0 0 10px ${status === "rolling" ? C.good : C.sun}` : "none" }} />
           <div style={{ fontSize: 14.5 }}>
@@ -118,9 +118,9 @@ export default function Beyond20Setup() {
           <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
             <input readOnly value={url} onFocus={(e) => e.currentTarget.select()}
               style={{ flex: 1, minWidth: 220, background: C.surface2, color: C.text, border: `1px solid ${C.line}`,
-                borderRadius: 9, padding: "11px 12px", fontFamily: "ui-monospace, monospace", fontSize: 14 }} />
+                borderRadius: FORGE_RADIUS, padding: "11px 12px", fontFamily: "ui-monospace, monospace", fontSize: 14 }} />
             <button type="button" onClick={copy}
-              style={{ background: copied ? C.good : C.sun, color: "#1a1206", border: "none", borderRadius: 9,
+              style={{ background: copied ? C.good : C.sun, color: "#1a1206", border: "none", borderRadius: FORGE_RADIUS,
                 padding: "11px 18px", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>
               {copied ? "Copied ✓" : "Copy URL"}
             </button>
@@ -149,7 +149,7 @@ export default function Beyond20Setup() {
             <a href={`/record?share=${encodeURIComponent(share)}`}
               style={{ display: "inline-block", background: status === "waiting" ? "transparent" : C.good,
                 color: status === "waiting" ? C.muted : "#12210f", border: `1px solid ${status === "waiting" ? C.line : C.good}`,
-                borderRadius: 12, padding: "13px 22px", fontSize: 15, fontWeight: 700, textDecoration: "none" }}>
+                borderRadius: FORGE_RADIUS, padding: "13px 22px", fontSize: 15, fontWeight: 700, textDecoration: "none" }}>
               {status === "waiting" ? "Go to your table (set this up first)" : "Go to your table →"}
             </a>
           </div>

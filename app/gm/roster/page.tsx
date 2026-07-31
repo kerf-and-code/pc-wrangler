@@ -6,7 +6,7 @@ import PageShell from "@/components/page-shell";
 import TableTapCard from "@/components/table-tap-card";
 import BoundariesCard from "@/components/boundaries-card";
 import { surfaces, ui } from "@/lib/theme";
-import { C } from "@/lib/forge-theme";
+import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 
 type Campaign = { id: string; name: string; share_code: string | null };
 type Char = { id: string; name: string; profile_id: string | null; invite_code: string | null };
@@ -93,7 +93,7 @@ export default function RosterPage() {
         <div style={box}>
           <label style={{ fontSize: 12, color: C.muted, fontFamily: "ui-monospace, monospace", letterSpacing: "0.1em" }}>CAMPAIGN</label>
           <select value={campaignId} onChange={(e) => setCampaignId(e.target.value)}
-            style={{ display: "block", width: "100%", marginTop: 6, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: 9, padding: "10px 12px", fontSize: 15 }}>
+            style={{ display: "block", width: "100%", marginTop: 6, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "10px 12px", fontSize: 15 }}>
             {campaigns.length === 0 && <option value="">No campaigns yet</option>}
             {campaigns.map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}
           </select>
@@ -123,7 +123,7 @@ export default function RosterPage() {
                         <div style={{ fontSize: 15, fontWeight: 700 }}>{ch.name}</div>
                         <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>{counts[ch.id] || 0} events logged</div>
                         <button type="button" onClick={() => copyInvite(ch.invite_code)}
-                          style={{ marginTop: 8, background: "transparent", color: copied === ch.invite_code ? C.good : C.plum, border: `1px solid ${C.line}`, borderRadius: 8, padding: "5px 10px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+                          style={{ marginTop: 8, background: "transparent", color: copied === ch.invite_code ? C.good : C.plum, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "5px 10px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
                           {copied === ch.invite_code ? "Copied!" : "Copy player invite"}
                         </button>
                       </div>
@@ -136,7 +136,7 @@ export default function RosterPage() {
                         </div>
                       ) : unassigned.length > 0 ? (
                         <select defaultValue="" disabled={busy} onChange={(e) => { if (e.target.value) bind(e.target.value, ch.id); }}
-                          style={{ background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: 9, padding: "9px 12px", fontSize: 13, minWidth: 200 }}>
+                          style={{ background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "9px 12px", fontSize: 13, minWidth: 200 }}>
                           <option value="">Bind an inventory…</option>
                           {unassigned.map((u) => (<option key={u.id} value={u.id}>{respLabel(u)}</option>))}
                         </select>
@@ -181,7 +181,7 @@ export default function RosterPage() {
                   <TableTapCard shareCode={shareCode} />
                   <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 8, flexWrap: "wrap" }}>
                     <button type="button" onClick={rotate} disabled={rotating}
-                      style={{ background: "transparent", color: C.warn, border: `1px solid ${C.line}`, borderRadius: 8, padding: "5px 12px", fontSize: 12, fontWeight: 600, cursor: rotating ? "default" : "pointer" }}>
+                      style={{ background: "transparent", color: C.warn, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "5px 12px", fontSize: 12, fontWeight: 600, cursor: rotating ? "default" : "pointer" }}>
                       {rotating ? "Regenerating..." : "Regenerate session link"}
                     </button>
                     {rotateMsg && <span style={{ fontSize: 12, color: C.muted }}>{rotateMsg}</span>}

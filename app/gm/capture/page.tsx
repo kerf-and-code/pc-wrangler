@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import GmIdentityCard from "@/components/gm-identity-card";
 import { SAX, surfaces, ui } from "@/lib/theme";
-import { C } from "@/lib/forge-theme";
+import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 
 type Campaign = { id: string; name: string };
 type Sess = { id: string; session_number: number | null; status: string };
@@ -194,7 +194,7 @@ export default function CapturePage() {
   const isDraft = !job || job.status === "draft";
 
   const box = { ...surfaces.slate, padding: 20, marginBottom: 18 } as const;
-  const btn = (bg: string, fg: string) => ({ background: bg, color: fg, border: "none", borderRadius: 9, padding: "10px 18px", fontWeight: 700, fontSize: 13, cursor: "pointer" } as const);
+  const btn = (bg: string, fg: string) => ({ background: bg, color: fg, border: "none", borderRadius: FORGE_RADIUS, padding: "10px 18px", fontWeight: 700, fontSize: 13, cursor: "pointer" } as const);
 
   return (
     <PageShell width={860}>
@@ -207,13 +207,13 @@ export default function CapturePage() {
         <div style={box}>
           <label style={{ fontSize: 12, color: C.muted, fontFamily: "ui-monospace, monospace", letterSpacing: "0.1em" }}>CAMPAIGN</label>
           <select value={campaignId} onChange={(e) => setCampaignId(e.target.value)}
-            style={{ display: "block", width: "100%", marginTop: 6, marginBottom: 14, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: 9, padding: "10px 12px", fontSize: 15 }}>
+            style={{ display: "block", width: "100%", marginTop: 6, marginBottom: 14, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "10px 12px", fontSize: 15 }}>
             {campaigns.length === 0 && <option value="">No campaigns yet</option>}
             {campaigns.map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}
           </select>
           <label style={{ fontSize: 12, color: C.muted, fontFamily: "ui-monospace, monospace", letterSpacing: "0.1em" }}>SESSION</label>
           <select value={sessionId} onChange={(e) => setSessionId(e.target.value)}
-            style={{ display: "block", width: "100%", marginTop: 6, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: 9, padding: "10px 12px", fontSize: 15 }}>
+            style={{ display: "block", width: "100%", marginTop: 6, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "10px 12px", fontSize: 15 }}>
             {sessions.length === 0 && <option value="">No sessions yet</option>}
             {sessions.map((s) => (<option key={s.id} value={s.id}>Session {s.session_number ?? "?"} ({s.status})</option>))}
           </select>
@@ -242,7 +242,7 @@ export default function CapturePage() {
                   const consented = Boolean(blanket[ch.id]);
                   const out = Boolean(optout[ch.id]);
                   return (
-                    <label key={ch.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", background: C.surface2, border: `1px solid ${out ? C.warn : consented ? C.good : C.line}`, borderRadius: 10, cursor: "pointer" }}>
+                    <label key={ch.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", background: C.surface2, border: `1px solid ${out ? C.warn : consented ? C.good : C.line}`, borderRadius: FORGE_RADIUS, cursor: "pointer" }}>
                       <input type="checkbox" checked={out} onChange={(e) => toggleOptOut(ch.id, e.target.checked)}
                         style={{ width: 18, height: 18, accentColor: C.warn, cursor: "pointer" }} />
                       <span style={{ flex: 1, fontSize: 14, fontWeight: 600 }}>{ch.name}{ch.class ? <span style={{ color: C.muted, fontWeight: 400 }}> · {ch.class}</span> : null}</span>
@@ -268,7 +268,7 @@ export default function CapturePage() {
                 <div style={{ fontSize: 16, fontWeight: 700 }}>Audio tracks</div>
                 {job && (
                   <span style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 12, color: JOB_TONE[job.status] || C.muted, fontFamily: "ui-monospace, monospace", letterSpacing: "0.06em" }}>
-                    <span style={{ width: 8, height: 8, borderRadius: 8, background: JOB_TONE[job.status] || C.muted }} />
+                    <span style={{ width: 8, height: 8, borderRadius: FORGE_RADIUS, background: JOB_TONE[job.status] || C.muted }} />
                     {job.status.toUpperCase().replace("_", " ")}
                   </span>
                 )}
@@ -300,7 +300,7 @@ export default function CapturePage() {
                       const tk = tracks.find((t) => t.character_id === ch.id) || null;
                       const busy = Boolean(uploading[ch.id]);
                       return (
-                        <div key={ch.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap", padding: "10px 12px", background: C.surface2, border: `1px solid ${has ? C.good : C.line}`, borderRadius: 10 }}>
+                        <div key={ch.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap", padding: "10px 12px", background: C.surface2, border: `1px solid ${has ? C.good : C.line}`, borderRadius: FORGE_RADIUS }}>
                           <div style={{ fontSize: 14, fontWeight: 600 }}>{ch.name}</div>
                           {has && tk ? (
                             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -338,7 +338,7 @@ export default function CapturePage() {
                         <span style={{ fontSize: 13, color: C.muted }}>
                           Queued. Each track is being transcribed; when that finishes, proposed events appear on the Review page automatically.
                         </span>
-                        <button type="button" onClick={() => setJobStatus("draft")} style={{ background: "transparent", color: C.plum, border: `1px solid ${C.line}`, borderRadius: 8, padding: "8px 14px", fontSize: 12, cursor: "pointer" }}>Back to draft</button>
+                        <button type="button" onClick={() => setJobStatus("draft")} style={{ background: "transparent", color: C.plum, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "8px 14px", fontSize: 12, cursor: "pointer" }}>Back to draft</button>
                       </>
                     )}
                   </div>

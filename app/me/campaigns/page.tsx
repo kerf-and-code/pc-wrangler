@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { SAX } from "@/lib/theme";
 import { UpgradeAccount } from "@/components/upgrade-account";
-import { C } from "@/lib/forge-theme";
+import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 
 // Every campaign this player has a character in, across all of them.
 //
@@ -73,7 +73,7 @@ export default function MyCampaignsPage() {
             key={c.campaign_id}
             style={{
               background: C.surface, border: `1px solid ${C.line}`,
-              borderRadius: 12, padding: "16px 18px", marginBottom: 12,
+              borderRadius: FORGE_RADIUS, padding: "16px 18px", marginBottom: 12,
             }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12, flexWrap: "wrap" }}>
@@ -135,7 +135,7 @@ function A({ href, children }: { href: string; children: React.ReactNode }) {
       href={href}
       style={{
         background: "transparent", color: SAX.text,
-        border: `1px solid ${SAX.line}`, borderRadius: 8,
+        border: `1px solid ${SAX.line}`, borderRadius: FORGE_RADIUS,
         padding: "6px 12px", fontSize: 12.5, fontWeight: 700,
         fontFamily: SAX.mono, letterSpacing: "0.04em", textDecoration: "none",
       }}

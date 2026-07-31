@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { PlayerDisposition } from "@/components/player-disposition";
 import { SAX, surfaces, ui } from "@/lib/theme";
-import { C } from "@/lib/forge-theme";
+import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 
 /* Palette mapped onto the shared cellar theme. The radar reads on a dark slate
    panel, so the chart colors are unchanged; only the page frame and surfaces
@@ -236,7 +236,7 @@ export default function DispositionsPage() {
       <div style={box}>
         <label style={{ ...ui.label, fontSize: 12 }}>CAMPAIGN</label>
         <select value={campaignId} onChange={(e) => setCampaignId(e.target.value)}
-          style={{ display: "block", width: "100%", marginTop: 6, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: 9, padding: "10px 12px", fontSize: 15 }}>
+          style={{ display: "block", width: "100%", marginTop: 6, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "10px 12px", fontSize: 15 }}>
           {campaigns.length === 0 && <option value="">No campaigns yet</option>}
           {campaigns.map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}
         </select>

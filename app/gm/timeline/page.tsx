@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { surfaces, ui } from "@/lib/theme";
-import { C } from "@/lib/forge-theme";
+import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 
 type Campaign = { id: string; name: string };
 type Sess = { id: string; session_number: number | null; status: string; started_at: string | null; scheduled_at: string | null };
@@ -162,7 +162,7 @@ export default function TimelinePage() {
     .sort((a, b) => a.name.localeCompare(b.name));
 
   const box = { ...surfaces.slate, padding: 18 } as const;
-  const input = { width: "100%", boxSizing: "border-box" as const, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: 9, padding: "11px 13px", fontSize: 15, outline: "none" };
+  const input = { width: "100%", boxSizing: "border-box" as const, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "11px 13px", fontSize: 15, outline: "none" };
 
   // Entities render as chips rather than bulleted Rows on purpose: a busy session can name
   // a dozen of them, and a dozen more bullets would bury the arcs and loot underneath.
@@ -244,7 +244,7 @@ export default function TimelinePage() {
             <div style={{ display: "grid", gap: 14 }}>
               {nodes.map(({ s, opened, touched, grants, places, met, factions }) => (
                 <div key={s.id} style={{ position: "relative" }}>
-                  <div style={{ position: "absolute", left: -17, top: 18, width: 11, height: 11, borderRadius: 11, background: C.sun, border: `2px solid ${C.bg}` }} />
+                  <div style={{ position: "absolute", left: -17, top: 18, width: 11, height: 11, borderRadius: FORGE_RADIUS, background: C.sun, border: `2px solid ${C.bg}` }} />
                   <div style={box}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
                       <span style={{ fontSize: 16, fontWeight: 700 }}>Session {s.session_number ?? "?"}</span>

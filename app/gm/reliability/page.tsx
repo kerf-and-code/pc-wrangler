@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { SAX, surfaces, ui, AXES, type AxisKey } from "@/lib/theme";
-import { C } from "@/lib/forge-theme";
+import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 
 type Campaign = { id: string; name: string };
 type PE = { status: string; event_type: string; axis: string | null; confidence: number | null; extractor_version: string | null };
@@ -345,14 +345,14 @@ export default function ReliabilityPage() {
   const box = { ...surfaces.slate, padding: 20, marginBottom: 18 } as const;
 
   const Bar = ({ rate }: { rate: number }) => (
-    <div style={{ flex: 1, height: 8, background: C.surface2, borderRadius: 8, overflow: "hidden", minWidth: 60 }}>
+    <div style={{ flex: 1, height: 8, background: C.surface2, borderRadius: FORGE_RADIUS, overflow: "hidden", minWidth: 60 }}>
       <div style={{ height: "100%", width: pct(rate), background: rateColor(rate) }} />
     </div>
   );
   const Row = ({ label, chip, n, rate }: { label: string; chip?: string; n: number; rate: number }) => (
     <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
       <div style={{ width: 150, fontSize: 13, display: "flex", alignItems: "center", gap: 7 }}>
-        {chip && <span style={{ width: 9, height: 9, borderRadius: 9, background: chip, flexShrink: 0 }} />}
+        {chip && <span style={{ width: 9, height: 9, borderRadius: FORGE_RADIUS, background: chip, flexShrink: 0 }} />}
         <span title={label} style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label}</span>
       </div>
       <Bar rate={rate} />
@@ -373,7 +373,7 @@ export default function ReliabilityPage() {
         <div style={box}>
           <label style={{ fontSize: 12, color: C.muted, fontFamily: "ui-monospace, monospace", letterSpacing: "0.1em" }}>CAMPAIGN</label>
           <select value={campaignId} onChange={(e) => setCampaignId(e.target.value)}
-            style={{ display: "block", width: "100%", marginTop: 6, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: 9, padding: "10px 12px", fontSize: 15 }}>
+            style={{ display: "block", width: "100%", marginTop: 6, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "10px 12px", fontSize: 15 }}>
             {campaigns.length === 0 && <option value="">No campaigns yet</option>}
             {campaigns.map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}
           </select>
@@ -461,11 +461,11 @@ export default function ReliabilityPage() {
             <>
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center", marginBottom: 14 }}>
                 <select value={jobId} onChange={(e) => setJobId(e.target.value)}
-                  style={{ flex: 1, minWidth: 180, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: 9, padding: "10px 12px", fontSize: 14 }}>
+                  style={{ flex: 1, minWidth: 180, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "10px 12px", fontSize: 14 }}>
                   {jobs.map((j) => (<option key={j.id} value={j.id}>Session {j.session?.session_number ?? "?"} ({j.status})</option>))}
                 </select>
                 <button type="button" onClick={runRecode} disabled={recoding || !jobId}
-                  style={{ background: C.plum, color: SAX.inkDeep, border: "none", borderRadius: 9, padding: "10px 16px", fontWeight: 700, fontSize: 13, cursor: recoding ? "default" : "pointer", opacity: recoding ? 0.7 : 1 }}>
+                  style={{ background: C.plum, color: SAX.inkDeep, border: "none", borderRadius: FORGE_RADIUS, padding: "10px 16px", fontWeight: 700, fontSize: 13, cursor: recoding ? "default" : "pointer", opacity: recoding ? 0.7 : 1 }}>
                   {recoding ? "Coding…" : agree.needRecode ? "Run second coding" : "Re-run second coding"}
                 </button>
               </div>
@@ -487,12 +487,12 @@ export default function ReliabilityPage() {
               {agree.ready && (
                 <>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12, marginBottom: 14 }}>
-                    <div style={{ background: C.surface2, border: `1px solid ${C.line}`, borderRadius: 10, padding: 14, textAlign: "center" }}>
+                    <div style={{ background: C.surface2, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: 14, textAlign: "center" }}>
                       <div style={{ fontSize: 30, fontWeight: 800, color: kappaColor(agree.detectKappa) }}>{agree.detectKappa.toFixed(2)}</div>
                       <div style={{ fontSize: 12.5, fontWeight: 700, marginTop: 4 }}>Spots the same moments</div>
                       <div style={{ fontSize: 11.5, color: C.muted, marginTop: 2 }}>{kappaLabel(agree.detectKappa)} · {agree.N} lines</div>
                     </div>
-                    <div style={{ background: C.surface2, border: `1px solid ${C.line}`, borderRadius: 10, padding: 14, textAlign: "center" }}>
+                    <div style={{ background: C.surface2, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: 14, textAlign: "center" }}>
                       <div style={{ fontSize: 30, fontWeight: 800, color: agree.classN ? kappaColor(agree.classKappa) : C.muted }}>
                         {agree.classN ? agree.classKappa.toFixed(2) : "n/a"}
                       </div>
@@ -501,7 +501,7 @@ export default function ReliabilityPage() {
                         {agree.classN ? `${kappaLabel(agree.classKappa)} · ${agree.classN} shared` : "no shared moments"}
                       </div>
                     </div>
-                    <div style={{ background: C.surface2, border: `1px solid ${C.line}`, borderRadius: 10, padding: 14, textAlign: "center" }}>
+                    <div style={{ background: C.surface2, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: 14, textAlign: "center" }}>
                       <div style={{ fontSize: 30, fontWeight: 800 }}>{pct(agree.prevalence)}</div>
                       <div style={{ fontSize: 12.5, fontWeight: 700, marginTop: 4 }}>Of the session is eventful</div>
                       <div style={{ fontSize: 11.5, color: C.muted, marginTop: 2 }}>{agree.flaggedEither} of {agree.N} lines flagged</div>
@@ -513,7 +513,7 @@ export default function ReliabilityPage() {
                   {(() => {
                     const r = readAgreement(agree);
                     return (
-                      <div style={{ background: C.surface2, border: `1px solid ${C.line}`, borderRadius: 10, padding: "14px 16px", marginBottom: 16 }}>
+                      <div style={{ background: C.surface2, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "14px 16px", marginBottom: 16 }}>
                         <div style={{ fontSize: 13.5, fontWeight: 700, marginBottom: 8 }}>{r.headline}</div>
                         <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12.5, lineHeight: 1.65, color: C.muted }}>
                           {r.points.map((t, i) => (<li key={i}>{t}</li>))}

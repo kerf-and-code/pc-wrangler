@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { SAX, surfaces } from "@/lib/theme";
-import { C } from "@/lib/forge-theme";
+import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 
 type Msg = { id: string; author_profile: string; display_name: string | null; body: string; created_at: string };
 type Grant = { id: string; from_ts: string; to_ts: string };
@@ -101,7 +101,7 @@ export default function ChatPage() {
 
   const fmt = (iso: string): string => { try { return new Date(iso).toLocaleString(); } catch (e) { return iso; } };
   const box = { ...surfaces.slate, padding: 18 } as const;
-  const input = { boxSizing: "border-box" as const, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: 9, padding: "10px 12px", fontSize: 14, outline: "none" };
+  const input = { boxSizing: "border-box" as const, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "10px 12px", fontSize: 14, outline: "none" };
 
   return (
     <PageShell width={720}>
@@ -131,7 +131,7 @@ export default function ChatPage() {
                 {messages.map((m) => {
                   const mine = m.author_profile === uid;
                   return (
-                    <div key={m.id} style={{ alignSelf: mine ? "flex-end" : "flex-start", maxWidth: "80%", background: mine ? "rgba(244,196,48,0.14)" : C.surface2, border: `1px solid ${C.line}`, borderRadius: 11, padding: "8px 12px", marginLeft: mine ? "auto" : 0 }}>
+                    <div key={m.id} style={{ alignSelf: mine ? "flex-end" : "flex-start", maxWidth: "80%", background: mine ? "rgba(244,196,48,0.14)" : C.surface2, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "8px 12px", marginLeft: mine ? "auto" : 0 }}>
                       <div style={{ fontSize: 11, color: C.muted, marginBottom: 2 }}>{m.display_name || (mine ? "You" : "Player")} · {fmt(m.created_at)}</div>
                       <div style={{ fontSize: 14, lineHeight: 1.45 }}>{m.body}</div>
                     </div>
@@ -143,7 +143,7 @@ export default function ChatPage() {
               <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" style={{ ...input, width: "100%", marginBottom: 8 }} />
               <div style={{ display: "flex", gap: 8 }}>
                 <input value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") send(); }} placeholder="Message the party…" style={{ ...input, flex: 1 }} />
-                <button type="button" onClick={send} disabled={sending || !draft.trim()} style={{ background: C.sun, color: SAX.inkDeep, border: "none", borderRadius: 9, padding: "10px 18px", fontWeight: 700, fontSize: 14, cursor: sending || !draft.trim() ? "default" : "pointer", opacity: sending || !draft.trim() ? 0.6 : 1 }}>Send</button>
+                <button type="button" onClick={send} disabled={sending || !draft.trim()} style={{ background: C.sun, color: SAX.inkDeep, border: "none", borderRadius: FORGE_RADIUS, padding: "10px 18px", fontWeight: 700, fontSize: 14, cursor: sending || !draft.trim() ? "default" : "pointer", opacity: sending || !draft.trim() ? 0.6 : 1 }}>Send</button>
               </div>
             </div>
 
@@ -151,7 +151,7 @@ export default function ChatPage() {
             <div style={box}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
                 <div style={{ fontSize: 14, fontWeight: 700 }}>What the GM can see</div>
-                <button type="button" onClick={() => setShowGrant((v) => !v)} style={{ background: "transparent", color: C.plum, border: `1px solid ${C.line}`, borderRadius: 8, padding: "6px 12px", fontSize: 12, cursor: "pointer" }}>
+                <button type="button" onClick={() => setShowGrant((v) => !v)} style={{ background: "transparent", color: C.plum, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "6px 12px", fontSize: 12, cursor: "pointer" }}>
                   {showGrant ? "Cancel" : "Grant a window"}
                 </button>
               </div>
@@ -160,14 +160,14 @@ export default function ChatPage() {
               </div>
 
               {showGrant && (
-                <div style={{ display: "grid", gap: 8, marginBottom: 14, background: C.surface2, border: `1px solid ${C.line}`, borderRadius: 10, padding: 12 }}>
+                <div style={{ display: "grid", gap: 8, marginBottom: 14, background: C.surface2, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: 12 }}>
                   <label style={{ fontSize: 12, color: C.muted }}>From
                     <input type="datetime-local" value={gFrom} onChange={(e) => setGFrom(e.target.value)} style={{ ...input, width: "100%", marginTop: 4, colorScheme: "dark" }} />
                   </label>
                   <label style={{ fontSize: 12, color: C.muted }}>To
                     <input type="datetime-local" value={gTo} onChange={(e) => setGTo(e.target.value)} style={{ ...input, width: "100%", marginTop: 4, colorScheme: "dark" }} />
                   </label>
-                  <button type="button" onClick={grant} disabled={!gFrom || !gTo} style={{ background: C.good, color: SAX.inkDeep, border: "none", borderRadius: 9, padding: "9px 16px", fontWeight: 700, fontSize: 13, cursor: gFrom && gTo ? "pointer" : "default", opacity: gFrom && gTo ? 1 : 0.6, justifySelf: "start" }}>Grant this window</button>
+                  <button type="button" onClick={grant} disabled={!gFrom || !gTo} style={{ background: C.good, color: SAX.inkDeep, border: "none", borderRadius: FORGE_RADIUS, padding: "9px 16px", fontWeight: 700, fontSize: 13, cursor: gFrom && gTo ? "pointer" : "default", opacity: gFrom && gTo ? 1 : 0.6, justifySelf: "start" }}>Grant this window</button>
                 </div>
               )}
 
@@ -176,7 +176,7 @@ export default function ChatPage() {
               ) : (
                 <div style={{ display: "grid", gap: 8 }}>
                   {grants.map((g) => (
-                    <div key={g.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, background: C.surface2, border: `1px solid ${C.line}`, borderRadius: 9, padding: "8px 12px" }}>
+                    <div key={g.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, background: C.surface2, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "8px 12px" }}>
                       <span style={{ fontSize: 12.5 }}>{fmt(g.from_ts)} → {fmt(g.to_ts)}</span>
                       <button type="button" onClick={() => revoke(g.id)} style={{ background: "transparent", color: C.warn, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600 }}>Revoke</button>
                     </div>

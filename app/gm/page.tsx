@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { AXES, type AxisKey } from "@/lib/theme";
-import { C } from "@/lib/forge-theme";
+import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 
 // Palette mapped onto the shared cellar theme.
 
@@ -29,10 +29,10 @@ const GENERAL_PROFILE = ["melee","single_target","utility"];
 // Both are SUBRACES, misfiled because there was nowhere else to put them. They are
 // now variants of Halfling and Elf.
 
-const box = { background: C.panel, border: `1px solid ${C.line}`, borderRadius: 12, padding: 18 };
-const inputStyle = { background: C.ink, color: C.vellum, border: `1px solid ${C.line}`, borderRadius: 8, padding: "9px 11px", fontSize: 14, width: "100%" };
-const btn = { background: C.brass, color: C.ink, border: "none", borderRadius: 9, padding: "10px 18px", fontSize: 14, fontWeight: 600, cursor: "pointer" };
-const btnGhost = { background: "none", color: C.brass, border: `1px solid ${C.brassDim}`, borderRadius: 9, padding: "9px 16px", fontSize: 13, cursor: "pointer" };
+const box = { background: C.panel, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: 18 };
+const inputStyle = { background: C.ink, color: C.vellum, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "9px 11px", fontSize: 14, width: "100%" };
+const btn = { background: C.brass, color: C.ink, border: "none", borderRadius: FORGE_RADIUS, padding: "10px 18px", fontSize: 14, fontWeight: 600, cursor: "pointer" };
+const btnGhost = { background: "none", color: C.brass, border: `1px solid ${C.brassDim}`, borderRadius: FORGE_RADIUS, padding: "9px 16px", fontSize: 13, cursor: "pointer" };
 
 // Bot invite: scopes for slash commands + permissions the bot needs (view/send/
 // embed/read-history + connect/speak/voice-activity for /record).
@@ -406,7 +406,7 @@ export default function GMWorkspace() {
                 <button style={btnGhost} onClick={() => copySetup(sc.share_code)}>{copied === sc.share_code ? "Copied" : "Copy /setup command"}</button>
               </>}
               <button onClick={() => deleteCampaign(sc.id)}
-                style={{ marginLeft: "auto", background: "none", border: `1px solid ${C.line}`, color: C.muted, borderRadius: 9, padding: "9px 14px", fontSize: 12.5, cursor: "pointer" }}>
+                style={{ marginLeft: "auto", background: "none", border: `1px solid ${C.line}`, color: C.muted, borderRadius: FORGE_RADIUS, padding: "9px 14px", fontSize: 12.5, cursor: "pointer" }}>
                 Delete campaign
               </button>
             </div>

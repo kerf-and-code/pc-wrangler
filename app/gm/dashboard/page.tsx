@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { SAX } from "@/lib/theme";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { FORGE_RADIUS } from "@/lib/forge-theme";
 
 // recharts needs real hex/rgba, not CSS vars; mapped onto the cellar theme.
 const T = {
@@ -312,7 +313,7 @@ export default function Dashboard() {
                       <CartesianGrid stroke={T.line} strokeDasharray="3 3" />
                       <XAxis dataKey="session" stroke={T.muted} tick={{ fill: T.muted, fontSize: 12 }} />
                       {advanced ? <YAxis stroke={T.muted} tick={{ fill: T.muted, fontSize: 12 }} /> : <YAxis hide />}
-                      <Tooltip contentStyle={{ background: T.surface2, border: `1px solid ${T.line}`, borderRadius: 9, color: T.text }} labelStyle={{ color: T.muted }} />
+                      <Tooltip contentStyle={{ background: T.surface2, border: `1px solid ${T.line}`, borderRadius: FORGE_RADIUS, color: T.text }} labelStyle={{ color: T.muted }} />
                       <Line type="monotone" dataKey="cv" stroke={T.sun} strokeWidth={2.5} dot={{ fill: T.sun, r: 3 }} activeDot={{ r: 5, fill: T.sunSoft }} name="spotlight gap" />
                     </LineChart>
                   </ResponsiveContainer>

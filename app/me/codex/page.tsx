@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { SAX } from "@/lib/theme";
 import { Header } from "@/app/me/campaigns/page";
-import { C } from "@/lib/forge-theme";
+import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 
 // The shared canon, across every campaign the player is in.
 //
@@ -85,7 +85,7 @@ export default function MyCodexPage() {
                   key={it.id}
                   onClick={() => setOpenId(open ? null : it.id)}
                   style={{
-                    background: C.surface, border: `1px solid ${C.line}`, borderRadius: 12,
+                    background: C.surface, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS,
                     padding: "13px 16px", marginBottom: 9,
                     cursor: it.body ? "pointer" : "default",
                   }}

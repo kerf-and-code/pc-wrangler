@@ -7,7 +7,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
-import { C } from "@/lib/forge-theme";
+import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 
 type Campaign = { id: string; name: string };
 type Session = { id: string; session_number: number | null; created_at: string; scheduled_at: string | null };
@@ -183,8 +183,8 @@ export default function MechanicsPage() {
     return { rows, dist, distMax, d20Total, dmgTotal, canonical, total: events.length, typeCounts, dmgByType };
   }, [events, charNames]);
 
-  const box = { background: C.surface, border: `1px solid ${C.line}`, borderRadius: 14, padding: "16px 18px", marginBottom: 14 } as const;
-  const sel = { background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: 9, padding: "9px 12px", fontSize: 14 } as const;
+  const box = { background: C.surface, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "16px 18px", marginBottom: 14 } as const;
+  const sel = { background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "9px 12px", fontSize: 14 } as const;
   const sessionLabel = (s: Session) =>
     `Session ${s.session_number ?? "?"} ${"\u00b7"} ${new Date(s.scheduled_at ?? s.created_at).toLocaleDateString()}`;
 
@@ -225,7 +225,7 @@ export default function MechanicsPage() {
               { label: "damage dealt", value: String(stats.dmgTotal) },
               { label: "verified numbers", value: `${stats.total ? Math.round((stats.canonical / stats.total) * 100) : 0}%` },
             ].map((k) => (
-              <div key={k.label} style={{ background: C.surface, border: `1px solid ${C.line}`, borderRadius: 14, padding: "14px 16px" }}>
+              <div key={k.label} style={{ background: C.surface, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "14px 16px" }}>
                 <div style={{ fontSize: 22, fontWeight: 800, color: C.sun }}>{k.value}</div>
                 <div style={{ fontSize: 11, color: C.muted, fontFamily: "ui-monospace, monospace", letterSpacing: "0.08em", textTransform: "uppercase", marginTop: 2 }}>{k.label}</div>
               </div>

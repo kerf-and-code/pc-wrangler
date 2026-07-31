@@ -6,7 +6,7 @@ import PageShell from "@/components/page-shell";
 import { SAX } from "@/lib/theme";
 import { UpgradeAccount } from "@/components/upgrade-account";
 import { Header } from "@/app/me/campaigns/page";
-import { C } from "@/lib/forge-theme";
+import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 
 // Your account.
 //
@@ -145,7 +145,7 @@ export default function MySettingsPage() {
                   placeholder="Your name"
                   style={{
                     flex: "1 1 200px", background: SAX.panelBg, color: C.text,
-                    border: `1px solid ${C.line}`, borderRadius: 8, padding: "9px 12px", fontSize: 14,
+                    border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "9px 12px", fontSize: 14,
                   }}
                 />
                 <button type="button" onClick={saveName} disabled={saving} style={btn(C.sun, SAX.inkDeep)}>
@@ -227,7 +227,7 @@ export default function MySettingsPage() {
                       placeholder="DELETE"
                       style={{
                         flex: "0 1 140px", background: SAX.panelBg, color: C.text,
-                        border: `1px solid ${C.line}`, borderRadius: 8, padding: "9px 12px",
+                        border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "9px 12px",
                         fontSize: 14, fontFamily: SAX.mono, letterSpacing: "0.1em",
                       }}
                     />
@@ -264,7 +264,7 @@ function Card({ children }: { children: React.ReactNode }) {
   return (
     <div style={{
       background: SAX.slateBg, border: `1px solid ${SAX.line}`,
-      borderRadius: 12, padding: "16px 18px", marginBottom: 12,
+      borderRadius: FORGE_RADIUS, padding: "16px 18px", marginBottom: 12,
     }}>
       {children}
     </div>
@@ -284,7 +284,7 @@ function Label({ children }: { children: React.ReactNode }) {
 
 function btn(bg: string, fg: string, border?: string): React.CSSProperties {
   return {
-    background: bg, color: fg, border: `1px solid ${border ?? bg}`, borderRadius: 8,
+    background: bg, color: fg, border: `1px solid ${border ?? bg}`, borderRadius: FORGE_RADIUS,
     padding: "9px 16px", fontSize: 13, fontWeight: 700,
     fontFamily: SAX.mono, letterSpacing: "0.04em", cursor: "pointer",
   };

@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
-import { C } from "@/lib/forge-theme";
+import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 
 type Recap = { session_id: string; session_number: number | null; recap: string };
 
@@ -44,7 +44,7 @@ export default function PlayerRecapsPage() {
   };
 
   const recapCard = {
-    background: C.surface, border: `1px solid ${C.line}`, borderRadius: 14,
+    background: C.surface, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS,
     padding: "20px 24px", marginBottom: 16, textAlign: "left" as const,
   };
 

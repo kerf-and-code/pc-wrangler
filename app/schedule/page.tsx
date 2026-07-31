@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { SAX } from "@/lib/theme";
-import { C } from "@/lib/forge-theme";
+import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 
 type Sched = { session_id: string; session_number: number | null; scheduled_at: string; campaign_name: string };
 
@@ -72,7 +72,7 @@ export default function PlayerSchedulePage() {
     else setSaved(true);
   }
 
-  const card = { width: "100%", maxWidth: 460, margin: "0 auto", background: C.surface, border: `1px solid ${C.line}`, borderRadius: 16, padding: "32px 28px" } as const;
+  const card = { width: "100%", maxWidth: 460, margin: "0 auto", background: C.surface, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "32px 28px" } as const;
   const when = sched?.scheduled_at
     ? new Date(sched.scheduled_at).toLocaleString(undefined, { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })
     : "";
@@ -104,7 +104,7 @@ export default function PlayerSchedulePage() {
               Sign in with Discord to RSVP. We use it to know who&rsquo;s coming and to send you a reminder.
             </p>
             <button type="button" onClick={signInDiscord}
-              style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, background: "#5865F2", color: "#fff", border: "none", borderRadius: 10, padding: "12px 16px", fontSize: 15, fontWeight: 600, cursor: "pointer" }}>
+              style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, background: "#5865F2", color: "#fff", border: "none", borderRadius: FORGE_RADIUS, padding: "12px 16px", fontSize: 15, fontWeight: 600, cursor: "pointer" }}>
               <svg width="18" height="18" viewBox="0 0 127.14 96.36" fill="#fff" aria-hidden="true">
                 <path d="M107.7 8.07A105.15 105.15 0 0 0 81.47 0a72.06 72.06 0 0 0-3.36 6.83 97.68 97.68 0 0 0-29.11 0A72.37 72.37 0 0 0 45.64 0 105.89 105.89 0 0 0 19.39 8.09C2.79 32.65-1.71 56.6.54 80.21a105.73 105.73 0 0 0 32.17 16.15 77.7 77.7 0 0 0 6.89-11.11 68.42 68.42 0 0 1-10.85-5.18c.91-.66 1.8-1.34 2.66-2a75.57 75.57 0 0 0 64.32 0c.87.71 1.76 1.39 2.66 2a68.68 68.68 0 0 1-10.87 5.19 77 77 0 0 0 6.89 11.1 105.25 105.25 0 0 0 32.19-16.14c2.64-27.38-4.51-51.11-18.9-72.15ZM42.45 65.69C36.18 65.69 31 60 31 53s5-12.74 11.43-12.74S54 46 53.89 53s-5.05 12.69-11.44 12.69Zm42.24 0C78.41 65.69 73.25 60 73.25 53s5-12.74 11.44-12.74S96.23 46 96.12 53s-5.04 12.69-11.43 12.69Z" />
               </svg>
@@ -127,7 +127,7 @@ export default function PlayerSchedulePage() {
                 const on = choice === o.value;
                 return (
                   <button key={o.value} type="button" onClick={() => rsvp(o.value)} disabled={saving}
-                    style={{ padding: "13px 16px", borderRadius: 10, border: `1px solid ${on ? o.color : C.line}`, background: on ? "rgba(255,255,255,0.06)" : C.surface2, color: C.text, fontSize: 15, fontWeight: 600, cursor: saving ? "default" : "pointer", textAlign: "left" }}>
+                    style={{ padding: "13px 16px", borderRadius: FORGE_RADIUS, border: `1px solid ${on ? o.color : C.line}`, background: on ? "rgba(255,255,255,0.06)" : C.surface2, color: C.text, fontSize: 15, fontWeight: 600, cursor: saving ? "default" : "pointer", textAlign: "left" }}>
                     {o.label}
                   </button>
                 );

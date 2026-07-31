@@ -6,7 +6,7 @@ import PageShell from "@/components/page-shell";
 import { SAX } from "@/lib/theme";
 import { UpgradeAccount } from "@/components/upgrade-account";
 import { Header } from "@/app/me/campaigns/page";
-import { C } from "@/lib/forge-theme";
+import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 
 // The personal thread tracker: open threads, favors owed, grudges, hooks.
 //
@@ -117,7 +117,7 @@ export default function MyThreadsPage() {
         <UpgradeAccount variant="card" next="/me/threads" />
 
         {/* new thread */}
-        <div style={{ background: C.surface, border: `1px solid ${C.line}`, borderRadius: 12, padding: 16, marginBottom: 22 }}>
+        <div style={{ background: C.surface, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: 16, marginBottom: 22 }}>
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
@@ -196,7 +196,7 @@ function Row({
   const resolved = t.status !== "open";
   return (
     <div style={{
-      background: SAX.slateBg, border: `1px solid ${SAX.line}`, borderRadius: 12,
+      background: SAX.slateBg, border: `1px solid ${SAX.line}`, borderRadius: FORGE_RADIUS,
       padding: "13px 16px", marginBottom: 9, opacity: resolved ? 0.55 : 1,
     }}>
       <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "flex-start" }}>
@@ -244,14 +244,14 @@ function IconBtn({ onClick, title, children }: { onClick: () => void; title: str
 function input(): React.CSSProperties {
   return {
     width: "100%", background: SAX.panelBg, color: SAX.text,
-    border: `1px solid ${SAX.line}`, borderRadius: 8,
+    border: `1px solid ${SAX.line}`, borderRadius: FORGE_RADIUS,
     padding: "9px 12px", fontSize: 14, fontFamily: "inherit",
   };
 }
 
 function btn(bg: string, fg: string): React.CSSProperties {
   return {
-    background: bg, color: fg, border: `1px solid ${bg}`, borderRadius: 8,
+    background: bg, color: fg, border: `1px solid ${bg}`, borderRadius: FORGE_RADIUS,
     padding: "9px 16px", fontSize: 13, fontWeight: 700,
     fontFamily: SAX.mono, letterSpacing: "0.04em", cursor: "pointer",
   };

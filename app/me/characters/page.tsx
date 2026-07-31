@@ -6,7 +6,7 @@ import PageShell from "@/components/page-shell";
 import { SAX } from "@/lib/theme";
 import { UpgradeAccount } from "@/components/upgrade-account";
 import { Header } from "@/app/me/campaigns/page";
-import { C } from "@/lib/forge-theme";
+import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 
 // The stable: every character this person owns, across every campaign.
 //
@@ -99,7 +99,7 @@ export default function MyCharactersPage() {
                 style={{
                   display: "block", textDecoration: "none",
                   background: C.surface, border: `1px solid ${C.line}`,
-                  borderRadius: 12, padding: "14px 18px", marginBottom: 10,
+                  borderRadius: FORGE_RADIUS, padding: "14px 18px", marginBottom: 10,
                   opacity: c.active ? 1 : 0.55,
                 }}
               >

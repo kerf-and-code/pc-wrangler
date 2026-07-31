@@ -6,7 +6,7 @@ import PageShell from "@/components/page-shell";
 import { UpgradeAccount } from "@/components/upgrade-account";
 import TableTap from "@/components/table-tap";
 import { SAX } from "@/lib/theme";
-import { C } from "@/lib/forge-theme";
+import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 
 type RosterEntry = { character_id: string; name: string };
 type Phase = "idle" | "recording" | "recorded" | "uploading" | "uploaded";
@@ -197,8 +197,8 @@ export default function RecordPage() {
     try { window.localStorage.setItem("wrangler_record_character", id); } catch (e) { /* no storage */ }
   }
 
-  const card = { width: "100%", maxWidth: 480, margin: "0 auto", background: C.surface, border: `1px solid ${C.line}`, borderRadius: 16, padding: "28px 26px" } as const;
-  const bigBtn = (bg: string, fg: string) => ({ width: "100%", background: bg, color: fg, border: "none", borderRadius: 12, padding: "15px 18px", fontSize: 16, fontWeight: 700, cursor: "pointer" } as const);
+  const card = { width: "100%", maxWidth: 480, margin: "0 auto", background: C.surface, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "28px 26px" } as const;
+  const bigBtn = (bg: string, fg: string) => ({ width: "100%", background: bg, color: fg, border: "none", borderRadius: FORGE_RADIUS, padding: "15px 18px", fontSize: 16, fontWeight: 700, cursor: "pointer" } as const);
 
   return (
     <PageShell width={920}>
@@ -230,7 +230,7 @@ export default function RecordPage() {
 
               <label style={{ fontSize: 12, color: C.muted, fontFamily: "ui-monospace, monospace", letterSpacing: "0.1em" }}>YOUR CHARACTER</label>
               <select value={charId} onChange={(e) => chooseChar(e.target.value)} disabled={phase === "recording" || phase === "uploading"}
-                style={{ display: "block", width: "100%", marginTop: 6, marginBottom: 16, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: 9, padding: "11px 12px", fontSize: 15 }}>
+                style={{ display: "block", width: "100%", marginTop: 6, marginBottom: 16, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "11px 12px", fontSize: 15 }}>
                 <option value="">Pick your character…</option>
                 {roster.map((r) => (<option key={r.character_id} value={r.character_id}>{r.name}</option>))}
               </select>
@@ -249,11 +249,11 @@ export default function RecordPage() {
               {phase === "recording" && (
                 <div style={{ textAlign: "center" }}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 6 }}>
-                    <span style={{ width: 12, height: 12, borderRadius: 12, background: C.warn, animation: "wpulse 1.1s ease-in-out infinite" }} />
+                    <span style={{ width: 12, height: 12, borderRadius: FORGE_RADIUS, background: C.warn, animation: "wpulse 1.1s ease-in-out infinite" }} />
                     <span style={{ fontSize: 34, fontWeight: 800, fontVariantNumeric: "tabular-nums" }}>{fmt(elapsed)}</span>
                   </div>
                   <div style={{ fontSize: 12, color: C.muted, marginBottom: 18 }}>{fmtMB(bytes)} recorded</div>
-                  <div style={{ background: "rgba(224,122,95,0.12)", border: `1px solid ${C.warn}`, borderRadius: 10, padding: "10px 12px", fontSize: 12.5, color: C.sunSoft, marginBottom: 16, lineHeight: 1.5 }}>
+                  <div style={{ background: "rgba(224,122,95,0.12)", border: `1px solid ${C.warn}`, borderRadius: FORGE_RADIUS, padding: "10px 12px", fontSize: 12.5, color: C.sunSoft, marginBottom: 16, lineHeight: 1.5 }}>
                     Keep this tab open and your screen awake. Backgrounding the tab can pause recording.
                   </div>
                   <button type="button" onClick={stopRecording} style={bigBtn(C.sun, SAX.inkDeep)}>■ Stop and save</button>
