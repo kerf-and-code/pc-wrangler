@@ -2,7 +2,7 @@
 
 import React, { Suspense } from "react";
 import { SAX } from "@/lib/theme";
-import { forgeBackground, FORGE_FONTS, STONE } from "@/lib/forge-theme";
+import { forgeBackground, FORGE_FONTS, STONE, FORGE_BUTTON_CSS } from "@/lib/forge-theme";
 import SixAxesNav from "@/components/six-axes-nav";
 
 /* PageShell — the cellar frame every page sits in.
@@ -30,6 +30,7 @@ export default function PageShell({
 }) {
   return (
     <div style={{ position: "relative", minHeight: "100dvh", color: STONE.ink, fontFamily: FORGE_FONTS.body, ...forgeBackground(bg) }}>
+      <style>{FORGE_BUTTON_CSS}</style>
       <style>{`
         .sax-vignette{position:fixed;inset:0;pointer-events:none;z-index:0;
           background:radial-gradient(ellipse 78% 62% at 50% 38%, transparent 42%, rgba(6,3,10,0.55) 100%);}
@@ -43,6 +44,15 @@ export default function PageShell({
            override. */
         .sax-shell a{ color:${STONE.brassHi}; }
         .sax-shell a:hover{ color:${SAX.brass}; }
+        /* The PRESS on every button. :active cannot be expressed in an inline style, so the depth
+           the Monster Maker has could never reach the pages that style buttons inline. This is the
+           one case where the cascade is the right tool rather than a workaround.
+           It sets TRANSFORM only, deliberately: transform is not among the properties the pages set
+           inline, so this rule actually wins. box-shadow IS set inline on those buttons, so a
+           shadow rule here would silently lose and is not attempted. */
+        .sax-shell button:not(:disabled){ transition:transform 0.06s ease, box-shadow 0.06s ease, color 0.15s ease; }
+        .sax-shell button:not(:disabled):active{ transform:translateY(3px); }
+        .sax-shell button:focus-visible{ outline:2px solid ${SAX.brass}; outline-offset:3px; }
       `}</style>
       <div className="sax-vignette" />
       <div className="sax-shell" style={{ position: "relative", zIndex: 1 }}>

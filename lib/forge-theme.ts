@@ -12,31 +12,13 @@
 // texture — the weathering is the wall itself.
 
 import type { CSSProperties } from "react";
-import { SAX } from "./theme";
+import { SAX, STONE, FORGE_RADIUS } from "./theme";
 
-// Weathered-stone tones. These sit alongside SAX (which is plum-tinted); STONE is the warmer,
-// greyer rock the dungeon surfaces are carved from, tuned to read over the dark /wall-2.png.
-export const STONE = {
-  face: "#2b2620",     // the working stone surface
-  lit: "#3a342b",      // a raised edge catching torchlight (top-left bevel)
-  hi: "#4a4237",       // the brightest bevel
-  shadow: "#1a1611",   // recessed stone, sunk below the face
-  mortar: "#0c0a07",   // the dark seams between blocks
-  brassHi: "#e2b878",  // polished highlight on brass (SAX.brass is the base)
-  brassDeep: "#6e4e26",
-  moss: "#6f7d55",     // age and damp, the green of old stone
-  blood: "#8a3324",    // dried-blood warning red
-  // Text-safe values of moss and blood. The base tones are surface colours: against the panel
-  // face they measure 3.38 and 1.84, both under the 4.5 needed for readable text, and `warn` is
-  // used as a text colour in 46 places across the app. These are the same hues lifted in
-  // lightness until they clear it (5.92 and 5.07), so status text stays legible without
-  // importing a colour from outside the palette.
-  mossLit: "#9aa880",
-  bloodLit: "#d97d6d",
-  ink: "#e8dcc4",      // parchment text on stone
-  inkDim: "#a99e86",   // weathered secondary
-  inkFaint: "#8a8069", // hints and captions
-} as const;
+// STONE and FORGE_RADIUS moved into ./theme so the shared `surfaces` and `ui` there can use them
+// without importing this file (that direction would be a cycle). Re-exported so every existing
+// `import { STONE } from "@/lib/forge-theme"` keeps working untouched.
+export { STONE, FORGE_RADIUS };
+
 
 // Cinzel is the Forge display face (carved-inscription serif); load it in the page head. Body
 // stays on SAX.serif (Iowan Old Style), stat readouts on SAX.mono.
@@ -46,7 +28,6 @@ export const FORGE_FONTS = {
   mono: SAX.mono,
 } as const;
 
-export const FORGE_RADIUS = 4; // stone chips, it doesn't round
 
 // The page background: the dungeon tint (warm brass lamp glow + a LIGHT ink darkening, since the
 // wall is already dark) over the real /wall-2.png. Mirrors stoneBackground() but re-tinted for
