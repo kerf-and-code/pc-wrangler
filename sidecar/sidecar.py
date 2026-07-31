@@ -424,6 +424,12 @@ class Sidecar(discord.Client):
         for guild in self.guilds:
             for ch in guild.voice_channels:
                 for member in ch.members:
+                    # Skip bots, including this one. voice_locations answers "where is the
+                    # human who ran /record", so a bot in it is never useful, and counting
+                    # ourselves made the seed line actively misleading: after a deploy that
+                    # left a ghost connection, an empty channel still logged "Seeded 1".
+                    if member.bot:
+                        continue
                     self.voice_locations[(str(guild.id), str(member.id))] = str(ch.id)
         log.info("Seeded %d voice location(s).", len(self.voice_locations))
         if not self._started:
@@ -439,6 +445,40 @@ class Sidecar(discord.Client):
             self.voice_locations.pop(key, None)
             log.info("voice: user %s left voice", member.id)
 
+    async def drop_ghost_voice(self):
+        """Leave any voice channel this process is sitting in but is not recording into.
+
+        A deploy or a crash kills the process outright, so it never reaches vc.disconnect()
+        and never sends a voice-state-update with channel=None. Discord keeps the bot's
+        voice state, the replacement process starts with no VoiceClient and no idea it is
+        "in" anything, and the bot lingers in the channel looking like it is recording when
+        it is not. reconcile_orphans does not cover this: it reconciles the capture_control
+        ROW, and a ghost is a stale VOICE STATE with no row behind it at all.
+
+        RUNS ONCE, AT POLLER START, and deliberately not on the heartbeat sweep. try_start
+        connects to the channel BEFORE it puts the Recording into self.recordings, so a
+        periodic sweep could fire in that window and hang up on a recording that was just
+        starting. At poller start no try_start has run yet, so the window does not exist.
+
+        Ordered AFTER reconcile_orphans for the same reason in reverse: reconcile may
+        legitimately rejoin a channel to resume a recording, and that rejoin must not then
+        be undone by this."""
+        active_guilds = {rec.guild_id for rec in self.recordings.values()}
+        for guild in self.guilds:
+            me = guild.me
+            voice = getattr(me, "voice", None) if me is not None else None
+            channel = getattr(voice, "channel", None) if voice is not None else None
+            if channel is None:
+                continue
+            if str(guild.id) in active_guilds:
+                continue
+            log.warning("ghost sweep: still shown in voice channel %s of guild %s with no "
+                        "recording behind it; leaving.", channel.id, guild.id)
+            try:
+                await guild.change_voice_state(channel=None)
+            except Exception as e:
+                log.warning("ghost sweep: could not leave voice in guild %s: %r", guild.id, e)
+
     # ------------------------------------------------------------------ poll
 
     async def poll_loop(self):
@@ -453,6 +493,11 @@ class Sidecar(discord.Client):
                 await self.reconcile_orphans(http)
             except Exception as e:
                 log.warning("reconcile: unexpected failure, continuing without recovery: %r", e)
+            # After recovery, so a legitimate rejoin above is never undone.
+            try:
+                await self.drop_ghost_voice()
+            except Exception as e:
+                log.warning("ghost sweep: unexpected failure, continuing: %r", e)
             while not self.is_closed():
                 try:
                     r = await http.get(
