@@ -3,14 +3,10 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
-import { SAX, AXES, type AxisKey } from "@/lib/theme";
+import { AXES, type AxisKey } from "@/lib/theme";
+import { C } from "@/lib/forge-theme";
 
 // Palette mapped onto the shared cellar theme.
-const C = {
-  ink: SAX.inkDeep, panel: SAX.slateBg, line: SAX.line, vellum: SAX.text,
-  muted: SAX.muted, brass: SAX.brass, brassDim: SAX.brassDim,
-  have: SAX.good, missing: SAX.warn,
-};
 
 // Buckets the analyzer treats as the party's "core" coverage targets.
 const CORE = ["healing", "aoe", "single_target", "face", "control", "detect_magic", "utility", "tank", "ranged"];

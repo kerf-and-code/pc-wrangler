@@ -5,8 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { SAX } from "@/lib/theme";
 import { UpgradeAccount } from "@/components/upgrade-account";
-
-const C = { surface: SAX.slateBg, panel: SAX.panelBg, line: SAX.line, text: SAX.text, muted: SAX.muted, sun: SAX.sun, plum: SAX.plum, good: SAX.good };
+import { C } from "@/lib/forge-theme";
 
 // Every campaign this player has a character in, across all of them.
 //

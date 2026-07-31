@@ -6,8 +6,7 @@ import PageShell from "@/components/page-shell";
 import { SAX } from "@/lib/theme";
 import { UpgradeAccount } from "@/components/upgrade-account";
 import { Header } from "@/app/me/campaigns/page";
-
-const C = { surface: SAX.slateBg, line: SAX.line, text: SAX.text, muted: SAX.muted };
+import { C } from "@/lib/forge-theme";
 
 // The stable: every character this person owns, across every campaign.
 //

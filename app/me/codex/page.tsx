@@ -5,8 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { SAX } from "@/lib/theme";
 import { Header } from "@/app/me/campaigns/page";
-
-const C = { surface: SAX.slateBg, line: SAX.line, text: SAX.text, muted: SAX.muted };
+import { C } from "@/lib/forge-theme";
 
 // The shared canon, across every campaign the player is in.
 //

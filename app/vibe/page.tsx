@@ -4,20 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { SAX } from "@/lib/theme";
-
-const C = {
-  bg: SAX.ink,
-  surface: SAX.slateBg,
-  surface2: "rgba(11,7,18,0.6)",
-  line: SAX.line,
-  text: SAX.text,
-  muted: SAX.muted,
-  sun: SAX.sun,
-  sunSoft: "#FFD75E",
-  plum: SAX.plum,
-  warn: SAX.warn,
-  good: SAX.good,
-};
+import { C } from "@/lib/forge-theme";
 
 const SPOTLIGHT: { value: string; label: string; hint: string }[] = [
   { value: "wanted_more", label: "Wanted more", hint: "I was in the background" },

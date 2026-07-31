@@ -6,7 +6,7 @@
 import React from "react";
 import PageShell from "@/components/page-shell";
 import { HELP as HELP_RAW } from "@/lib/help-content.mjs";
-import { SAX } from "@/lib/theme";
+import { C } from "@/lib/forge-theme";
 
 type HelpBlock =
   | { kind: "p"; text: string }
@@ -16,11 +16,6 @@ type HelpSection = { id: string; title: string; blocks: HelpBlock[] };
 type HelpDoc = { title: string; subtitle: string; sections: HelpSection[] };
 
 const HELP = HELP_RAW as unknown as HelpDoc;
-
-const C = {
-  surface: SAX.slateBg, surface2: "rgba(11,7,18,0.6)", line: SAX.line,
-  text: SAX.text, muted: SAX.muted, brass: SAX.brass, sun: SAX.sun,
-};
 
 function Block({ b }: { b: HelpBlock }) {
   if (b.kind === "p") {

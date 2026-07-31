@@ -7,13 +7,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
-import { SAX } from "@/lib/theme";
-
-const C = {
-  surface: SAX.slateBg, surface2: "rgba(11,7,18,0.6)", line: SAX.line,
-  text: SAX.text, muted: SAX.muted, sun: SAX.sun, brass: SAX.brass,
-  plum: SAX.plum, warn: SAX.warn, good: SAX.good,
-};
+import { C } from "@/lib/forge-theme";
 
 type Campaign = { id: string; name: string };
 type Session = { id: string; session_number: number | null; created_at: string; scheduled_at: string | null };

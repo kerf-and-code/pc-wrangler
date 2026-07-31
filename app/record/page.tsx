@@ -6,11 +6,7 @@ import PageShell from "@/components/page-shell";
 import { UpgradeAccount } from "@/components/upgrade-account";
 import TableTap from "@/components/table-tap";
 import { SAX } from "@/lib/theme";
-
-const C = {
-  bg: SAX.ink, surface: SAX.slateBg, surface2: "rgba(11,7,18,0.6)", line: SAX.line,
-  text: SAX.text, muted: SAX.muted, sun: SAX.sun, sunSoft: "#FFD75E", plum: SAX.plum, warn: SAX.warn, good: SAX.good,
-};
+import { C } from "@/lib/forge-theme";
 
 type RosterEntry = { character_id: string; name: string };
 type Phase = "idle" | "recording" | "recorded" | "uploading" | "uploaded";

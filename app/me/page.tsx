@@ -3,11 +3,9 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
-import { SAX } from "@/lib/theme";
 import { UpgradeAccount } from "@/components/upgrade-account";
 import { PlayerDisposition } from "@/components/player-disposition";
-
-const C = { surface: SAX.slateBg, line: SAX.line, text: SAX.text, muted: SAX.muted, sun: SAX.sun, plum: SAX.plum, good: SAX.good };
+import { C } from "@/lib/forge-theme";
 
 const AXES = ["N", "T", "O", "S", "E", "I"] as const;
 type Axis = typeof AXES[number];

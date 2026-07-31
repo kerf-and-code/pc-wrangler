@@ -6,11 +6,7 @@ import PageShell from "@/components/page-shell";
 import { SAX } from "@/lib/theme";
 import { loadSrd } from "@/lib/srd/srd";
 import { listStatBlocks, type StatBlockRow } from "@/lib/stat-blocks";
-
-const C = {
-  ink: SAX.inkDeep, panel: SAX.slateBg, line: SAX.line, text: SAX.text,
-  muted: SAX.muted, brass: SAX.brass, good: SAX.good, warn: SAX.warn, plum: SAX.plum,
-};
+import { C } from "@/lib/forge-theme";
 
 // ============================================================================
 // THE TWO METHODS ARE GENUINELY DIFFERENT. THIS IS THE WHOLE POINT OF THE TOOL.

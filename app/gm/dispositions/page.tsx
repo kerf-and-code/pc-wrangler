@@ -5,15 +5,11 @@ import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { PlayerDisposition } from "@/components/player-disposition";
 import { SAX, surfaces, ui } from "@/lib/theme";
+import { C } from "@/lib/forge-theme";
 
 /* Palette mapped onto the shared cellar theme. The radar reads on a dark slate
    panel, so the chart colors are unchanged; only the page frame and surfaces
    moved to Six Axes. */
-const C = {
-  bg: SAX.ink, surface: SAX.slateBg, surface2: "rgba(11,7,18,0.7)", line: SAX.line,
-  text: SAX.text, muted: SAX.muted, sun: SAX.sun, sunSoft: "#FFD75E",
-  plum: SAX.plum, warn: SAX.warn, good: SAX.good,
-};
 
 const AXES = ["N", "T", "O", "S", "E", "I"] as const;
 type Axis = typeof AXES[number];

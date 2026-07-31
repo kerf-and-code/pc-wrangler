@@ -4,11 +4,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { SAX } from "@/lib/theme";
-
-const C = {
-  bg: SAX.ink, surface: SAX.slateBg, surface2: "rgba(11,7,18,0.6)", line: SAX.line,
-  text: SAX.text, muted: SAX.muted, sun: SAX.sun, plum: SAX.plum, good: SAX.good, warn: SAX.warn,
-};
+import { C } from "@/lib/forge-theme";
 
 const VIS: { v: string; l: string }[] = [
   { v: "common", l: "Common knowledge" },

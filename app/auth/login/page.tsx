@@ -3,21 +3,10 @@
 import React, { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { SAX, surfaces, stoneBackground } from "@/lib/theme";
+import { C } from "@/lib/forge-theme";
 
 /* Login lives outside PageShell (no nav), but uses the shared cellar theme:
    the stone wall background, a brass-edged panel, and brass controls. */
-const C = {
-  text: SAX.text,
-  muted: SAX.muted,
-  line: SAX.line,
-  brass: SAX.brass,
-  sun: SAX.sun,
-  plum: SAX.plum,
-  warn: SAX.warn,
-  inkDeep: SAX.inkDeep,
-  field: "rgba(11,7,18,0.55)",
-  panel2: "rgba(11,7,18,0.5)",
-};
 
 export default function LoginPage() {
   const [email, setEmail] = useState<string>("");

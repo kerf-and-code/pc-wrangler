@@ -5,11 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { useMomentPlayer, MomentButton } from "@/components/moment-player";
 import { SAX, surfaces, ui, AXES, type AxisKey } from "@/lib/theme";
-
-const C = {
-  bg: SAX.ink, surface: SAX.slateBg, surface2: "rgba(11,7,18,0.6)", line: SAX.line,
-  text: SAX.text, muted: SAX.muted, sun: SAX.sun, plum: SAX.plum, warn: SAX.warn, good: SAX.good,
-};
+import { C } from "@/lib/forge-theme";
 
 type Campaign = { id: string; name: string };
 type JobRow = { id: string; status: string; extract_cursor: number; session_id: string; session: { session_number: number | null } | null };

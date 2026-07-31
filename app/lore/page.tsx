@@ -3,11 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
-import { SAX } from "@/lib/theme";
-
-const C = {
-  surface: SAX.slateBg, line: SAX.line, text: SAX.text, muted: SAX.muted, sun: SAX.sun, plum: SAX.plum,
-};
+import { C } from "@/lib/forge-theme";
 
 type Item = { item_kind: string; item_type: string; id: string; title: string; body: string | null };
 

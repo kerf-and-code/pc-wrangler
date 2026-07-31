@@ -5,18 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import TableTapCard from "@/components/table-tap-card";
 import { SAX } from "@/lib/theme";
-
-const C = {
-  surface: SAX.slateBg,
-  surface2: "rgba(11,7,18,0.6)",
-  line: SAX.line,
-  text: SAX.text,
-  muted: SAX.muted,
-  sun: SAX.sun,
-  brass: SAX.brass,
-  plum: SAX.plum,
-  good: SAX.good,
-};
+import { C } from "@/lib/forge-theme";
 
 type Step = { key: string; label: string; desc: string; href: string; cta: string; done: boolean; optional?: boolean };
 

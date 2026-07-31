@@ -4,11 +4,8 @@ import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { SAX } from "@/lib/theme";
+import { C } from "@/lib/forge-theme";
 
-const C = {
-  ink: SAX.inkDeep, panel: SAX.slateBg, line: SAX.line, vellum: SAX.text,
-  muted: SAX.muted, brass: SAX.brass, brassDim: SAX.brassDim, accent: SAX.plum, warn: SAX.warn,
-};
 const STATUS_TONE: Record<string, string> = {
   scheduled: "#A597BD", live: "#E07A5F", completed: "#9B7BD4", processed: "#5DBE9A", cancelled: "#A597BD",
 };

@@ -5,20 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { useMomentPlayer, MomentButton } from "@/components/moment-player";
 import { SAX, surfaces, ui } from "@/lib/theme";
-
-const C = {
-  bg: SAX.ink,
-  surface: SAX.slateBg,
-  surface2: "rgba(11,7,18,0.6)",
-  line: SAX.line,
-  text: SAX.text,
-  muted: SAX.muted,
-  sun: SAX.sun,
-  sunSoft: "#FFD75E",
-  plum: "#9B7BD4",
-  warn: "#E07A5F",
-  good: "#5DBE9A",
-};
+import { C } from "@/lib/forge-theme";
 
 type Campaign = { id: string; name: string };
 type Entry = {

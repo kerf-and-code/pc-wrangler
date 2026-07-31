@@ -4,20 +4,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { SAX, surfaces } from "@/lib/theme";
-
-const C = {
-  bg: SAX.ink,
-  surface: SAX.slateBg,
-  surface2: "rgba(11,7,18,0.6)",
-  line: SAX.line,
-  text: SAX.text,
-  muted: SAX.muted,
-  sun: SAX.sun,
-  sunSoft: "#FFD75E",
-  plum: SAX.plum,
-  warn: SAX.warn,
-  good: SAX.good,
-};
+import { C } from "@/lib/forge-theme";
 
 type Msg = { id: string; author_profile: string; display_name: string | null; body: string; created_at: string };
 type Grant = { id: string; from_ts: string; to_ts: string };

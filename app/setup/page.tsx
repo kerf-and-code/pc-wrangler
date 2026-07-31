@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
+import { C } from "@/lib/forge-theme";
 
 // Self-serve Beyond20 setup wizard. Browser-aware steps, one-tap copy of the
 // custom-domain URL, and a LIVE connection check: once the player adds the URL
@@ -16,11 +17,6 @@ function detectBrowser(ua: string): Browser {
   if (/Chrome\//.test(ua)) return "chrome";
   return "other";
 }
-
-const C = {
-  bg: "#1B1426", surface: "#251B33", surface2: "rgba(11,7,18,0.55)", line: "#3D2F52",
-  text: "#F4EEFA", muted: "#A597BD", sun: "#F4C430", plum: "#9B7BD4", warn: "#E07A5F", good: "#8FBF8F",
-};
 
 export default function Beyond20Setup() {
   const [browser, setBrowser] = useState<Browser>("other");

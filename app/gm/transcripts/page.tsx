@@ -4,18 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { SAX, surfaces, ui } from "@/lib/theme";
-
-const C = {
-  bg: SAX.ink,
-  surface: SAX.slateBg,
-  surface2: "rgba(11,7,18,0.6)",
-  line: SAX.line,
-  text: SAX.text,
-  muted: SAX.muted,
-  sun: SAX.sun,
-  plum: SAX.plum,
-  warn: SAX.warn,
-};
+import { C } from "@/lib/forge-theme";
 
 type Campaign = { id: string; name: string };
 type Sess = { id: string; session_number: number | null; status: string };
