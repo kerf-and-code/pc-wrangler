@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { SAX } from "@/lib/theme";
+import { C } from "@/lib/forge-theme";
 
 export function LogoutButton() {
   const router = useRouter();
@@ -26,7 +27,7 @@ export function LogoutButton() {
       style={{
         background: "none",
         color: SAX.brass,
-        border: `1px solid ${SAX.brassDim}`,
+        border: `1px solid ${C.brassDim}`,
         borderRadius: 9,
         padding: "7px 14px",
         fontSize: 13,

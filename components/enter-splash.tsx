@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { SAX, stoneBackground } from "@/lib/theme";
 import LeverSwitch from "@/components/lever-switch";
+import { C } from "@/lib/forge-theme";
 
 /* EnterSplash — the "pull to enter the dungeon" moment. Full-screen over the big
    wall image; throw the breaker and it fades out, then calls onEnter (navigate
@@ -29,13 +30,13 @@ export default function EnterSplash({
       style={{
         position: "fixed", inset: 0, zIndex: 100,
         display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6,
-        color: SAX.text, ...stoneBackground("/wall.png"),
+        color: C.text, ...stoneBackground("/wall.png"),
         opacity: leaving ? 0 : 1, transition: "opacity 0.5s ease",
       }}
     >
       <div style={{ textAlign: "center", marginBottom: 6 }}>
-        <div style={{ fontFamily: SAX.serif, fontSize: 34, fontWeight: 700, color: SAX.text }}>{title}</div>
-        <div style={{ fontFamily: SAX.mono, fontSize: 11, letterSpacing: "0.28em", textTransform: "uppercase", color: SAX.muted, marginTop: 6 }}>
+        <div style={{ fontFamily: SAX.serif, fontSize: 34, fontWeight: 700, color: C.text }}>{title}</div>
+        <div style={{ fontFamily: SAX.mono, fontSize: 11, letterSpacing: "0.28em", textTransform: "uppercase", color: C.muted, marginTop: 6 }}>
           {tagline}
         </div>
       </div>

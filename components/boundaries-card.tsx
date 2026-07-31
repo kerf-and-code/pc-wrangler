@@ -7,12 +7,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { SAX } from "@/lib/theme";
-
-const C = {
-  surface: SAX.slateBg, surface2: "rgba(11,7,18,0.6)", line: SAX.line,
-  text: SAX.text, muted: SAX.muted, brass: SAX.brass, plum: "#6C76B0", warn: SAX.warn,
-};
+import { C } from "@/lib/forge-theme";
 
 type SafetyRow = { player_name: string | null; safety: { lines?: string[]; veils?: string[]; note?: string | null } | null };
 
@@ -106,13 +101,13 @@ export default function BoundariesCard({ campaignId }: { campaignId: string }) {
             <div style={{ marginBottom: 14 }}>
               <div style={{ fontFamily: "ui-monospace, monospace", fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", color: C.muted, marginBottom: 6 }}>
                 Responded
-                <span style={{ marginLeft: 8, color: SAX.good, fontWeight: 700 }}>
+                <span style={{ marginLeft: 8, color: C.good, fontWeight: 700 }}>
                   {responders.length}{rosterCount ? ` / ${rosterCount}` : ""}
                 </span>
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                 {responders.map((n) => (
-                  <span key={n} style={{ fontSize: 12.5, color: C.text, background: C.surface2, border: `1px solid ${SAX.good}55`, borderRadius: 999, padding: "4px 10px" }}>{n}</span>
+                  <span key={n} style={{ fontSize: 12.5, color: C.text, background: C.surface2, border: `1px solid ${C.good}55`, borderRadius: 999, padding: "4px 10px" }}>{n}</span>
                 ))}
               </div>
             </div>

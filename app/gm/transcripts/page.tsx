@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
-import { SAX, surfaces, ui } from "@/lib/theme";
+import { surfaces, ui } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 
 type Campaign = { id: string; name: string };
@@ -201,8 +201,8 @@ export default function TranscriptsPage() {
 
       {segments.length > 0 && (
         <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginBottom: 14 }}>
-          <button type="button" onClick={copyAll} style={btn(C.plum, SAX.inkDeep)}>{copied ? "Copied" : "Copy"}</button>
-          <button type="button" onClick={download} style={btn(C.plum, SAX.inkDeep)}>Download .txt</button>
+          <button type="button" onClick={copyAll} style={btn(C.plum, C.ink)}>{copied ? "Copied" : "Copy"}</button>
+          <button type="button" onClick={download} style={btn(C.plum, C.ink)}>Download .txt</button>
           <span style={{ fontSize: 12, color: C.muted }}>{shown.length} line{shown.length === 1 ? "" : "s"}{speaker ? " (filtered)" : ""}</span>
         </div>
       )}

@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { SAX as C } from "@/lib/theme";
+import { SAX } from "@/lib/theme";
+import { C } from "@/lib/forge-theme";
 
 // Upgrade a guest to a durable account.
 //
@@ -165,7 +166,7 @@ export function UpgradeAccount({
       <div
         style={{
           display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap",
-          background: C.slateBg, border: `1px solid ${C.line}`,
+          background: C.surface, border: `1px solid ${C.line}`,
           borderRadius: 10, padding: "10px 14px", marginBottom: 14,
         }}
       >
@@ -194,7 +195,7 @@ export function UpgradeAccount({
           style={{
             background: "transparent", border: "none", color: C.muted,
             fontSize: 12.5, cursor: "pointer", padding: "6px 4px",
-            fontFamily: C.mono, letterSpacing: "0.04em",
+            fontFamily: SAX.mono, letterSpacing: "0.04em",
           }}
         >
           Not now
@@ -210,19 +211,19 @@ export function UpgradeAccount({
   return (
     <section
       style={{
-        background: C.panelBg, border: `1px solid ${C.line}`,
+        background: C.surface, border: `1px solid ${C.line}`,
         borderRadius: 12, padding: 20, marginBottom: 18,
       }}
     >
       <p style={{
-        fontFamily: C.mono, fontSize: 11, letterSpacing: "0.22em",
+        fontFamily: SAX.mono, fontSize: 11, letterSpacing: "0.22em",
         textTransform: "uppercase", color: C.muted, margin: "0 0 8px",
       }}>
         Playing as a guest
       </p>
 
       <h2 style={{
-        fontFamily: C.serif, fontSize: 20, color: C.text, margin: "0 0 6px", fontWeight: 600,
+        fontFamily: SAX.serif, fontSize: 20, color: C.text, margin: "0 0 6px", fontWeight: 600,
       }}>
         {pitch}
       </h2>
@@ -265,7 +266,7 @@ export function UpgradeAccount({
               onChange={(e) => setEmail(e.target.value)}
               placeholder="or use your email"
               style={{
-                flex: "1 1 220px", background: C.slateBg, color: C.text,
+                flex: "1 1 220px", background: C.surface, color: C.text,
                 border: `1px solid ${C.line}`, borderRadius: 8,
                 padding: "9px 12px", fontSize: 14,
               }}
@@ -296,7 +297,7 @@ function btn(bg: string, fg: string, border?: string): React.CSSProperties {
     padding: "9px 15px",
     fontSize: 13,
     fontWeight: 700,
-    fontFamily: C.mono,
+    fontFamily: SAX.mono,
     letterSpacing: "0.04em",
     cursor: "pointer",
     whiteSpace: "nowrap",

@@ -1,18 +1,8 @@
 "use client";
 
 import React, { useCallback, useEffect, useState } from "react";
-import { SAX, surfaces } from "@/lib/theme";
-
-const C = {
-  surface2: "rgba(11,7,18,0.6)",
-  line: SAX.line,
-  text: SAX.text,
-  muted: SAX.muted,
-  sun: SAX.sun,
-  plum: SAX.plum,
-  warn: SAX.warn,
-  good: SAX.good,
-};
+import { surfaces } from "@/lib/theme";
+import { C } from "@/lib/forge-theme";
 
 type Identity = {
   id: string;
@@ -168,7 +158,7 @@ export default function GmIdentityCard({ campaignId }: { campaignId: string }) {
           disabled={saving || loading || !discordId}
           style={{
             background: C.sun,
-            color: SAX.inkDeep,
+            color: C.ink,
             border: "none",
             borderRadius: 9,
             padding: "10px 18px",

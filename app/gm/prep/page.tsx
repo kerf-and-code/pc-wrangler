@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import BoundariesCard from "@/components/boundaries-card";
 import { useMomentPlayer, MomentButton } from "@/components/moment-player";
-import { SAX, surfaces, ui } from "@/lib/theme";
+import { surfaces, ui } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 
 type Campaign = { id: string; name: string };
@@ -261,7 +261,7 @@ export default function PrepPage() {
               )}
             </select>
             <button type="button" onClick={addPlanItem} disabled={pBusy || !pTitle.trim()}
-              style={{ background: C.sun, color: SAX.inkDeep, border: "none", borderRadius: FORGE_RADIUS, padding: "0 20px", fontSize: 14, fontWeight: 700, cursor: pBusy || !pTitle.trim() ? "default" : "pointer", opacity: pBusy || !pTitle.trim() ? 0.6 : 1 }}>
+              style={{ background: C.sun, color: C.ink, border: "none", borderRadius: FORGE_RADIUS, padding: "0 20px", fontSize: 14, fontWeight: 700, cursor: pBusy || !pTitle.trim() ? "default" : "pointer", opacity: pBusy || !pTitle.trim() ? 0.6 : 1 }}>
               Add
             </button>
           </div>
@@ -335,7 +335,7 @@ export default function PrepPage() {
                       </span>
                       <div style={{ display: "flex", gap: 8 }}>
                         <button type="button" onClick={() => setThread(t.id, "resolved")} disabled={busyId === t.id}
-                          style={{ background: C.good, color: SAX.inkDeep, border: "none", borderRadius: FORGE_RADIUS, padding: "7px 14px", fontSize: 12.5, fontWeight: 700, cursor: "pointer", opacity: busyId === t.id ? 0.6 : 1 }}>
+                          style={{ background: C.good, color: C.ink, border: "none", borderRadius: FORGE_RADIUS, padding: "7px 14px", fontSize: 12.5, fontWeight: 700, cursor: "pointer", opacity: busyId === t.id ? 0.6 : 1 }}>
                           Resolve
                         </button>
                         <button type="button" onClick={() => setThread(t.id, "dropped")} disabled={busyId === t.id}

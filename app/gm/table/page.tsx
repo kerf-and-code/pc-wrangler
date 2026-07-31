@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
-import { SAX, surfaces, ui } from "@/lib/theme";
+import { surfaces, ui } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 
 type Campaign = { id: string; name: string; share_code: string };
@@ -153,7 +153,7 @@ export default function CheckInPage() {
           </div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             <input readOnly value={portalLink()} style={{ flex: 1, minWidth: 220, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "10px 12px", fontSize: 13, fontFamily: "ui-monospace, monospace" }} />
-            <button type="button" onClick={copyLink} style={btn(C.sun, SAX.inkDeep)}>{copied ? "Copied" : "Copy"}</button>
+            <button type="button" onClick={copyLink} style={btn(C.sun, C.ink)}>{copied ? "Copied" : "Copy"}</button>
           </div>
 
           {sessions.length > 0 && (
@@ -164,7 +164,7 @@ export default function CheckInPage() {
                   const on = selected && selected.id === s.id;
                   return (
                     <button key={s.id} type="button" onClick={() => setSelected(s)}
-                      style={{ padding: "8px 14px", borderRadius: FORGE_RADIUS, border: `1px solid ${on ? C.sun : C.line}`, background: on ? C.sun : C.surface2, color: on ? SAX.inkDeep : C.text, fontWeight: 600, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", gap: 7 }}>
+                      style={{ padding: "8px 14px", borderRadius: FORGE_RADIUS, border: `1px solid ${on ? C.sun : C.line}`, background: on ? C.sun : C.surface2, color: on ? C.ink : C.text, fontWeight: 600, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", gap: 7 }}>
                       <span style={{ width: 7, height: 7, borderRadius: 7, background: STATUS_TONE[s.status] || C.muted }} />
                       Session {s.session_number ?? "?"}
                     </button>
@@ -212,7 +212,7 @@ export default function CheckInPage() {
                         const tone = st.v === "absent" ? C.warn : st.v === "present" ? C.good : C.plum;
                         return (
                           <button key={st.v} type="button" onClick={() => mark(ch.id, st.v)}
-                            style={{ padding: "6px 10px", borderRadius: 7, border: `1px solid ${on ? tone : C.line}`, background: on ? tone : "transparent", color: on ? SAX.inkDeep : C.muted, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+                            style={{ padding: "6px 10px", borderRadius: 7, border: `1px solid ${on ? tone : C.line}`, background: on ? tone : "transparent", color: on ? C.ink : C.muted, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
                             {st.l}
                           </button>
                         );

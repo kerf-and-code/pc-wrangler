@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import GmIdentityCard from "@/components/gm-identity-card";
-import { SAX, surfaces, ui } from "@/lib/theme";
+import { surfaces, ui } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 
 type Campaign = { id: string; name: string };
@@ -283,7 +283,7 @@ export default function CapturePage() {
                     <summary style={{ cursor: "pointer", fontSize: 13, color: C.muted, fontWeight: 600 }}>No Discord? Upload audio by hand (backup)</summary>
                     <div style={{ marginTop: 12 }}>
                       <p style={{ color: C.muted, fontSize: 13, marginBottom: 12 }}>One job per recorded session. Create it, then upload each player&apos;s track from your recorder.</p>
-                      <button type="button" onClick={createJob} style={btn(C.plum, SAX.inkDeep)}>Create capture job</button>
+                      <button type="button" onClick={createJob} style={btn(C.plum, C.ink)}>Create capture job</button>
                     </div>
                   </details>
                 </div>
@@ -308,7 +308,7 @@ export default function CapturePage() {
                               {isDraft && <button type="button" onClick={() => removeTrack(tk)} style={{ background: "transparent", color: C.warn, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600 }}>Remove</button>}
                             </div>
                           ) : isDraft ? (
-                            <label style={{ ...btn(busy ? C.line : C.plum, SAX.inkDeep), opacity: busy ? 0.7 : 1, display: "inline-block" }}>
+                            <label style={{ ...btn(busy ? C.line : C.plum, C.ink), opacity: busy ? 0.7 : 1, display: "inline-block" }}>
                               {busy ? "Uploading…" : "Upload track"}
                               <input type="file" accept="audio/*" disabled={busy} style={{ display: "none" }}
                                 onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadTrack(ch.id, f); e.currentTarget.value = ""; }} />
@@ -327,7 +327,7 @@ export default function CapturePage() {
                     {isDraft ? (
                       <>
                         <button type="button" onClick={submitJob} disabled={!consentOk || tracks.length === 0 || queuing}
-                          style={{ ...btn(C.good, SAX.inkDeep), opacity: !consentOk || tracks.length === 0 || queuing ? 0.5 : 1, cursor: !consentOk || tracks.length === 0 ? "not-allowed" : "pointer" }}>
+                          style={{ ...btn(C.good, C.ink), opacity: !consentOk || tracks.length === 0 || queuing ? 0.5 : 1, cursor: !consentOk || tracks.length === 0 ? "not-allowed" : "pointer" }}>
                           {queuing ? "Queuing…" : "Queue for transcription"}
                         </button>
                         {!consentOk && <span style={{ fontSize: 12, color: C.warn }}>Consent not cleared yet.</span>}

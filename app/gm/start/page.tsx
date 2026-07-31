@@ -4,7 +4,6 @@ import React, { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import TableTapCard from "@/components/table-tap-card";
-import { SAX } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 
 type Step = { key: string; label: string; desc: string; href: string; cta: string; done: boolean; optional?: boolean };
@@ -103,7 +102,7 @@ export default function GettingStartedPage() {
               <div key={s.key} style={{ ...card, borderColor: isOpen ? C.brass : C.line, display: "flex", gap: 14, alignItems: "flex-start" }}>
                 <div style={{ flexShrink: 0, width: 26, height: 26, borderRadius: FORGE_RADIUS, marginTop: 1, display: "flex", alignItems: "center", justifyContent: "center",
                   background: s.done ? C.good : "transparent", border: s.done ? "none" : `1.5px solid ${isOpen ? C.brass : C.line}`,
-                  color: s.done ? SAX.inkDeep : C.muted, fontSize: 13, fontWeight: 700 }}>
+                  color: s.done ? C.ink : C.muted, fontSize: 13, fontWeight: 700 }}>
                   {s.done ? "\u2713" : i + 1}
                 </div>
                 <div style={{ flex: 1 }}>
@@ -115,7 +114,7 @@ export default function GettingStartedPage() {
                     </div>
                   )}
                   {!s.done && s.key !== "tap" && (
-                    <a href={s.href} style={{ display: "inline-block", marginTop: 12, background: isOpen ? C.brass : "transparent", color: isOpen ? SAX.inkDeep : C.text,
+                    <a href={s.href} style={{ display: "inline-block", marginTop: 12, background: isOpen ? C.brass : "transparent", color: isOpen ? C.ink : C.text,
                       border: isOpen ? "none" : `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "8px 16px", fontSize: 13.5, fontWeight: 600, textDecoration: "none" }}>
                       {s.cta}
                     </a>

@@ -5,7 +5,6 @@ import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { UpgradeAccount } from "@/components/upgrade-account";
 import TableTap from "@/components/table-tap";
-import { SAX } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 
 type RosterEntry = { character_id: string; name: string };
@@ -243,7 +242,7 @@ export default function RecordPage() {
 
               {phase === "idle" && (
                 <button type="button" onClick={startRecording} disabled={!charId}
-                  style={{ ...bigBtn(C.warn, SAX.inkDeep), opacity: !charId ? 0.5 : 1, cursor: !charId ? "default" : "pointer" }}>● Start recording</button>
+                  style={{ ...bigBtn(C.warn, C.ink), opacity: !charId ? 0.5 : 1, cursor: !charId ? "default" : "pointer" }}>● Start recording</button>
               )}
 
               {phase === "recording" && (
@@ -256,7 +255,7 @@ export default function RecordPage() {
                   <div style={{ background: "rgba(224,122,95,0.12)", border: `1px solid ${C.warn}`, borderRadius: FORGE_RADIUS, padding: "10px 12px", fontSize: 12.5, color: C.sunSoft, marginBottom: 16, lineHeight: 1.5 }}>
                     Keep this tab open and your screen awake. Backgrounding the tab can pause recording.
                   </div>
-                  <button type="button" onClick={stopRecording} style={bigBtn(C.sun, SAX.inkDeep)}>■ Stop and save</button>
+                  <button type="button" onClick={stopRecording} style={bigBtn(C.sun, C.ink)}>■ Stop and save</button>
                   <style>{"@keyframes wpulse{0%,100%{opacity:1}50%{opacity:0.25}}"}</style>
                 </div>
               )}
@@ -271,7 +270,7 @@ export default function RecordPage() {
                     )}
                   </div>
                   {phase === "recorded" && openSession && (
-                    <button type="button" onClick={uploadRecording} style={{ ...bigBtn(C.good, SAX.inkDeep), marginBottom: 10 }}>Upload to GM</button>
+                    <button type="button" onClick={uploadRecording} style={{ ...bigBtn(C.good, C.ink), marginBottom: 10 }}>Upload to GM</button>
                   )}
                   <button type="button" onClick={downloadRecording} style={{ ...bigBtn("transparent", C.text), border: `1px solid ${C.line}`, marginBottom: 10 }}>Download backup</button>
                   <button type="button" onClick={reset} style={{ ...bigBtn("transparent", C.muted), border: "none", padding: "8px" }}>Record again</button>

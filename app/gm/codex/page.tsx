@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { useMomentPlayer, MomentButton } from "@/components/moment-player";
-import { SAX, surfaces, ui } from "@/lib/theme";
+import { surfaces, ui } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 
 type Campaign = { id: string; name: string };
@@ -337,7 +337,7 @@ export default function CodexPage() {
               return (
                 <button key={t.key} type="button" onClick={() => { setTab(t.key); setMode(null); }}
                   style={{ padding: "8px 14px", borderRadius: FORGE_RADIUS, border: `1px solid ${on ? C.sun : C.line}`,
-                    background: on ? C.sun : C.surface2, color: on ? SAX.inkDeep : C.text, fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
+                    background: on ? C.sun : C.surface2, color: on ? C.ink : C.text, fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
                   {t.label}
                 </button>
               );
@@ -353,7 +353,7 @@ export default function CodexPage() {
                 {TABS.find((t) => t.key === tab)?.label.toUpperCase()}
               </span>
               {tab !== "pc" && (
-                <button type="button" onClick={newItem} style={{ background: C.sun, color: SAX.inkDeep, border: "none", borderRadius: 7, padding: "5px 12px", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>
+                <button type="button" onClick={newItem} style={{ background: C.sun, color: C.ink, border: "none", borderRadius: 7, padding: "5px 12px", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>
                   + New
                 </button>
               )}
@@ -418,7 +418,7 @@ export default function CodexPage() {
 
                 <div style={{ display: "flex", gap: 8, marginBottom: 18 }}>
                   <button type="button" onClick={save} disabled={saving}
-                    style={{ background: `linear-gradient(90deg, ${C.sun}, ${C.sunSoft})`, color: SAX.inkDeep, border: "none", borderRadius: FORGE_RADIUS, padding: "10px 20px", fontWeight: 700, fontSize: 14, cursor: saving ? "default" : "pointer", opacity: saving ? 0.7 : 1 }}>
+                    style={{ background: `linear-gradient(90deg, ${C.sun}, ${C.sunSoft})`, color: C.ink, border: "none", borderRadius: FORGE_RADIUS, padding: "10px 20px", fontWeight: 700, fontSize: 14, cursor: saving ? "default" : "pointer", opacity: saving ? 0.7 : 1 }}>
                     {saving ? "Saving…" : "Save"}
                   </button>
                   {mode.id && (
@@ -469,7 +469,7 @@ export default function CodexPage() {
                       </select>
                       <input value={linkRel} onChange={(e) => setLinkRel(e.target.value)} placeholder="relation (optional)" style={{ ...input, flex: "1 1 140px" }} />
                       <button type="button" onClick={addLink} disabled={!linkPick}
-                        style={{ background: C.plum, color: SAX.inkDeep, border: "none", borderRadius: FORGE_RADIUS, padding: "10px 16px", fontWeight: 700, fontSize: 13, cursor: linkPick ? "pointer" : "default", opacity: linkPick ? 1 : 0.6 }}>
+                        style={{ background: C.plum, color: C.ink, border: "none", borderRadius: FORGE_RADIUS, padding: "10px 16px", fontWeight: 700, fontSize: 13, cursor: linkPick ? "pointer" : "default", opacity: linkPick ? 1 : 0.6 }}>
                         Link
                       </button>
                     </div>
@@ -511,7 +511,7 @@ export default function CodexPage() {
                           ))}
                         </select>
                         <button type="button" onClick={() => revealTo(revealPick)} disabled={!revealPick}
-                          style={{ background: C.sun, color: SAX.inkDeep, border: "none", borderRadius: FORGE_RADIUS, padding: "10px 16px", fontWeight: 700, fontSize: 13, cursor: revealPick ? "pointer" : "default", opacity: revealPick ? 1 : 0.6 }}>
+                          style={{ background: C.sun, color: C.ink, border: "none", borderRadius: FORGE_RADIUS, padding: "10px 16px", fontWeight: 700, fontSize: 13, cursor: revealPick ? "pointer" : "default", opacity: revealPick ? 1 : 0.6 }}>
                           Reveal
                         </button>
                       </div>

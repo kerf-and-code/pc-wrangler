@@ -3,7 +3,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
-import { SAX } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 
 const BUCKET = "campaign-maps";
@@ -84,7 +83,7 @@ export default function PlayerMapPage() {
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center", marginBottom: 16 }}>
                 {maps.map((m) => (
                   <button key={m.id} type="button" onClick={() => { setActiveId(m.id); setSelectedPin(null); }}
-                    style={{ background: activeId === m.id ? C.sun : "transparent", color: activeId === m.id ? SAX.inkDeep : C.text, border: `1px solid ${activeId === m.id ? C.sun : C.line}`, borderRadius: 999, padding: "6px 14px", fontSize: 13, cursor: "pointer" }}>
+                    style={{ background: activeId === m.id ? C.sun : "transparent", color: activeId === m.id ? C.ink : C.text, border: `1px solid ${activeId === m.id ? C.sun : C.line}`, borderRadius: 999, padding: "6px 14px", fontSize: 13, cursor: "pointer" }}>
                     {m.name}
                   </button>
                 ))}
@@ -101,7 +100,7 @@ export default function PlayerMapPage() {
                   style={{
                     position: "absolute", left: `${p.x * 100}%`, top: `${p.y * 100}%`, transform: "translate(-50%, -50%)",
                     width: selectedPin === p.id ? 20 : 15, height: selectedPin === p.id ? 20 : 15, borderRadius: "50%",
-                    background: C.sun, border: `2px solid ${selectedPin === p.id ? C.text : SAX.inkDeep}`,
+                    background: C.sun, border: `2px solid ${selectedPin === p.id ? C.text : C.ink}`,
                     boxShadow: "0 2px 6px rgba(0,0,0,0.5)", cursor: "pointer", padding: 0,
                   }} />
               ))}

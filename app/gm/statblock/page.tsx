@@ -19,11 +19,7 @@ import {
   type StatBlockDoc, type StatBlockRow, type NamedEntry,
 } from "@/lib/stat-blocks";
 import { PortraitUploader } from "@/components/portrait-uploader";
-import {
-  STONE, FORGE_FONTS, stonePanel, stoneButton, stoneField,
-  forgeBackground, forgeVignette, forgeLabel, FORGE_BUTTON_CSS,
-} from "@/lib/forge-theme";
-import { SAX } from "@/lib/theme";
+import { C, STONE, FORGE_FONTS, stonePanel, stoneButton, stoneField, forgeBackground, forgeVignette, forgeLabel, FORGE_BUTTON_CSS } from "@/lib/forge-theme";
 import SixAxesNav from "@/components/six-axes-nav";
 
 type SrdMode = "2024" | "2014" | "both";
@@ -250,7 +246,7 @@ function StatBlockInner() {
 
         <div style={{ display: "flex", gap: 12, alignItems: "center", justifyContent: "flex-end", flexWrap: "wrap" }}>
           <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 12, color:
-            saveState === "saved" ? SAX.good : saveState === "error" ? SAX.warn : STONE.inkFaint }}>
+            saveState === "saved" ? C.good : saveState === "error" ? C.warn : STONE.inkFaint }}>
             {saveState === "saving" ? "Saving…" : saveState === "saved" ? "Saved"
               : saveState === "error" ? "Save failed. Retrying on next change." : "Unsaved changes"}
           </span>

@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { SAX } from "@/lib/theme";
+import { C } from "@/lib/forge-theme";
 
 type Cached = { url: string; exp: number };
 
@@ -113,8 +114,8 @@ export function MomentButton({
         title="The recording was deleted under the 60-day retention policy. The transcript and the extracted events are still here."
         style={{
           display: "inline-flex", alignItems: "center", gap: 6,
-          background: "transparent", color: SAX.muted, opacity: 0.6,
-          border: `1px dashed ${SAX.line}`,
+          background: "transparent", color: C.muted, opacity: 0.6,
+          border: `1px dashed ${C.line}`,
           borderRadius: 999, padding: "4px 11px", fontSize: 11.5, fontWeight: 700,
           fontFamily: SAX.mono, letterSpacing: "0.04em", cursor: "default",
         }}
@@ -133,8 +134,8 @@ export function MomentButton({
       style={{
         display: "inline-flex", alignItems: "center", gap: 6,
         background: active ? SAX.brass : "transparent",
-        color: active ? SAX.inkDeep : SAX.muted,
-        border: `1px solid ${active ? SAX.brass : SAX.line}`,
+        color: active ? C.ink : C.muted,
+        border: `1px solid ${active ? SAX.brass : C.line}`,
         borderRadius: 999, padding: "4px 11px", fontSize: 11.5, fontWeight: 700,
         fontFamily: SAX.mono, cursor: loading ? "default" : "pointer", letterSpacing: "0.04em",
       }}

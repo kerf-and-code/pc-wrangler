@@ -3,7 +3,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
-import { SAX } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 
 const SPOTLIGHT: { value: string; label: string; hint: string }[] = [
@@ -125,7 +124,7 @@ export default function VibeCheckPage() {
                   const on = satisfaction === n;
                   return (
                     <button key={n} type="button" onClick={() => setSatisfaction(n)}
-                      style={{ flex: 1, padding: "12px 0", borderRadius: FORGE_RADIUS, border: `1px solid ${on ? C.sun : C.line}`, background: on ? C.sun : C.surface2, color: on ? SAX.inkDeep : C.text, fontSize: 16, fontWeight: 700, cursor: "pointer" }}>{n}</button>
+                      style={{ flex: 1, padding: "12px 0", borderRadius: FORGE_RADIUS, border: `1px solid ${on ? C.sun : C.line}`, background: on ? C.sun : C.surface2, color: on ? C.ink : C.text, fontSize: 16, fontWeight: 700, cursor: "pointer" }}>{n}</button>
                   );
                 })}
               </div>
@@ -154,7 +153,7 @@ export default function VibeCheckPage() {
                 style={{ width: "100%", boxSizing: "border-box", background: C.surface2, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "10px 12px", color: C.text, fontSize: 14, outline: "none", marginBottom: 18 }} />
 
               <button type="button" onClick={submit} disabled={submitting}
-                style={{ width: "100%", background: `linear-gradient(90deg, ${C.sun}, ${C.sunSoft})`, color: SAX.inkDeep, border: "none", borderRadius: FORGE_RADIUS, padding: "13px 16px", fontSize: 15, fontWeight: 700, letterSpacing: "0.02em", cursor: submitting ? "default" : "pointer", opacity: submitting ? 0.7 : 1 }}>
+                style={{ width: "100%", background: `linear-gradient(90deg, ${C.sun}, ${C.sunSoft})`, color: C.ink, border: "none", borderRadius: FORGE_RADIUS, padding: "13px 16px", fontSize: 15, fontWeight: 700, letterSpacing: "0.02em", cursor: submitting ? "default" : "pointer", opacity: submitting ? 0.7 : 1 }}>
                 {submitting ? "Saving…" : "Submit check-in"}
               </button>
               {error && <p style={{ color: C.warn, fontSize: 13, textAlign: "center", marginTop: 14 }}>{error}</p>}

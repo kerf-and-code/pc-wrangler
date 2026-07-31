@@ -31,11 +31,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { SAX } from "@/lib/theme";
 import SixAxesNav from "@/components/six-axes-nav";
-import {
-  STONE, FORGE_FONTS, forgeBackground, forgeVignette, stonePanel, stoneButton,
-  FORGE_BUTTON_CSS, statTile, stoneField, stoneChip, forgeHeading, forgePanelTitle,
-  forgeLabel, forgeRuleLine, forgeBoss,
-} from "@/lib/forge-theme";
+import { C, STONE, FORGE_FONTS, forgeBackground, forgeVignette, stonePanel, stoneButton, FORGE_BUTTON_CSS, statTile, stoneField, stoneChip, forgeHeading, forgePanelTitle, forgeLabel, forgeRuleLine, forgeBoss } from "@/lib/forge-theme";
 import { loadSrd } from "@/lib/srd/srd";
 import { buildRulesContext } from "@/lib/srd/rules-context";
 import {
@@ -693,7 +689,7 @@ function ForgeInner() {
 
               <div style={{ display: "flex", gap: 12, alignItems: "center", justifyContent: "flex-end", flexWrap: "wrap" }}>
                 <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 12, color:
-                  saveState === "saved" ? SAX.good : saveState === "error" ? SAX.warn : STONE.inkFaint }}>
+                  saveState === "saved" ? C.good : saveState === "error" ? C.warn : STONE.inkFaint }}>
                   {saveState === "saving" ? "Saving to the anvil…"
                     : saveState === "saved" ? "Saved"
                     : saveState === "error" ? "Save failed. Retrying on next change."
@@ -1240,7 +1236,7 @@ function AsiEditor({ choice, onChoose }: {
           );
         })}
       </div>
-      <p style={{ color: total === 2 ? SAX.good : STONE.inkFaint, fontSize: 12, marginTop: 8, fontFamily: FORGE_FONTS.mono }}>
+      <p style={{ color: total === 2 ? C.good : STONE.inkFaint, fontSize: 12, marginTop: 8, fontFamily: FORGE_FONTS.mono }}>
         {total}/2 points assigned{total === 2 ? " ✓" : ""}
       </p>
     </div>
@@ -1327,13 +1323,13 @@ function FeatEditor({ choice, featList, onChoose }: {
       ) : null}
 
       {picked && fixedAbility && asiAmount ? (
-        <p style={{ color: SAX.good, fontSize: 12, marginTop: 8, fontFamily: FORGE_FONTS.mono }}>
+        <p style={{ color: C.good, fontSize: 12, marginTop: 8, fontFamily: FORGE_FONTS.mono }}>
           +{asiAmount} {fixedAbility.toUpperCase()} applied
         </p>
       ) : null}
 
       {picked?.effects ? (
-        <p style={{ color: SAX.good, fontSize: 12, marginTop: 6, fontFamily: FORGE_FONTS.mono }}>
+        <p style={{ color: C.good, fontSize: 12, marginTop: 6, fontFamily: FORGE_FONTS.mono }}>
           {[
             picked.effects.hpPerLevel ? `+${picked.effects.hpPerLevel} HP per level` : null,
             picked.effects.speed ? `+${picked.effects.speed} ft speed` : null,

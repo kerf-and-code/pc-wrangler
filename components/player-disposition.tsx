@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { SAX } from "@/lib/theme";
+import { C } from "@/lib/forge-theme";
 
 // The PLAYER-level disposition: how a person tends to play, across every character
 // they have ever played. Distinct from the character posterior, which /me has shown
@@ -121,7 +122,7 @@ export function PlayerDisposition({
     return (
       <Card>
         <Eyebrow>{playerName || "This player"}</Eyebrow>
-        <p style={{ color: SAX.muted, fontSize: 13, margin: "6px 0 0", lineHeight: 1.6 }}>
+        <p style={{ color: C.muted, fontSize: 13, margin: "6px 0 0", lineHeight: 1.6 }}>
           No player-level fit yet. It appears after the next disposition run, once this
           person has played at least one recorded session.
         </p>
@@ -151,8 +152,8 @@ export function PlayerDisposition({
             disabled={busy}
             style={{
               background: revealed ? SAX.brass : "transparent",
-              color: revealed ? SAX.inkDeep : SAX.muted,
-              border: `1px solid ${revealed ? SAX.brass : SAX.line}`,
+              color: revealed ? C.ink : C.muted,
+              border: `1px solid ${revealed ? SAX.brass : C.line}`,
               borderRadius: 999, padding: "4px 12px", fontSize: 11.5, fontWeight: 700,
               fontFamily: SAX.mono, letterSpacing: "0.04em", cursor: busy ? "default" : "pointer",
             }}
@@ -162,7 +163,7 @@ export function PlayerDisposition({
         )}
       </div>
 
-      <p style={{ color: SAX.muted, fontSize: 12.5, lineHeight: 1.6, margin: "8px 0 14px" }}>
+      <p style={{ color: C.muted, fontSize: 12.5, lineHeight: 1.6, margin: "8px 0 14px" }}>
         {mode === "player"
           ? "Drawn from every character you have played, not from any one of them. This is the pattern underneath the masks."
           : "This person's tendency across every character they play, pooled. Distinct from any single character's posterior."}
@@ -170,8 +171,8 @@ export function PlayerDisposition({
 
       {thin && (
         <p style={{
-          color: SAX.warn, fontSize: 12, lineHeight: 1.55, margin: "0 0 14px",
-          background: "rgba(224,122,95,0.10)", border: `1px solid ${SAX.warn}`,
+          color: C.warn, fontSize: 12, lineHeight: 1.55, margin: "0 0 14px",
+          background: "rgba(224,122,95,0.10)", border: `1px solid ${C.warn}`,
           borderRadius: 8, padding: "8px 11px",
         }}>
           Based on {nChars === 1 ? "one character" : "no characters"} and no self-report,
@@ -188,8 +189,8 @@ export function PlayerDisposition({
         return (
           <div key={ax} style={{ marginBottom: 10 }}>
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 4 }}>
-              <span style={{ color: SAX.text }}>{TAVERN[ax]}</span>
-              <span style={{ fontFamily: SAX.mono, color: SAX.muted, fontSize: 12 }}>
+              <span style={{ color: C.text }}>{TAVERN[ax]}</span>
+              <span style={{ fontFamily: SAX.mono, color: C.muted, fontSize: 12 }}>
                 {typeof v === "number" ? Math.round(v * 100) : "\u2014"}
               </span>
             </div>
@@ -214,13 +215,13 @@ export function PlayerDisposition({
         );
       })}
 
-      <p style={{ color: SAX.muted, fontSize: 11, fontFamily: SAX.mono, margin: "12px 0 0", letterSpacing: "0.04em" }}>
+      <p style={{ color: C.muted, fontSize: 11, fontFamily: SAX.mono, margin: "12px 0 0", letterSpacing: "0.04em" }}>
         {nChars} character{nChars === 1 ? "" : "s"}
         {hasSelfReport ? " \u00B7 self-report on file" : " \u00B7 no self-report"}
         {" \u00B7 "}{new Date(disp.as_of).toLocaleDateString()}
       </p>
 
-      {error && <p style={{ color: SAX.warn, fontSize: 12.5, margin: "10px 0 0" }}>{error}</p>}
+      {error && <p style={{ color: C.warn, fontSize: 12.5, margin: "10px 0 0" }}>{error}</p>}
     </Card>
   );
 }
@@ -233,7 +234,7 @@ const sig = (x: number) => 1 / (1 + Math.exp(-x));
 function Card({ children }: { children: React.ReactNode }) {
   return (
     <div style={{
-      background: SAX.slateBg, border: `1px solid ${SAX.line}`,
+      background: C.surface, border: `1px solid ${C.line}`,
       borderRadius: 12, padding: "16px 18px", marginBottom: 12,
     }}>
       {children}
@@ -245,7 +246,7 @@ function Eyebrow({ children }: { children: React.ReactNode }) {
   return (
     <span style={{
       fontFamily: SAX.mono, fontSize: 11, letterSpacing: "0.2em",
-      textTransform: "uppercase", color: SAX.muted,
+      textTransform: "uppercase", color: C.muted,
     }}>
       {children}
     </span>

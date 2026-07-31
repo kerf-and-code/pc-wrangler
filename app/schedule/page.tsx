@@ -3,15 +3,14 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
-import { SAX } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 
 type Sched = { session_id: string; session_number: number | null; scheduled_at: string; campaign_name: string };
 
 const OPTIONS: { value: string; label: string; color: string }[] = [
-  { value: "going", label: "I'm in", color: SAX.good },
-  { value: "maybe", label: "Maybe", color: SAX.sun },
-  { value: "declined", label: "Can't make it", color: SAX.warn },
+  { value: "going", label: "I'm in", color: C.good },
+  { value: "maybe", label: "Maybe", color: C.sun },
+  { value: "declined", label: "Can't make it", color: C.warn },
 ];
 
 export default function PlayerSchedulePage() {

@@ -144,11 +144,11 @@ export default function MySettingsPage() {
                   onChange={(e) => { setName(e.target.value); setSaved(false); }}
                   placeholder="Your name"
                   style={{
-                    flex: "1 1 200px", background: SAX.panelBg, color: C.text,
+                    flex: "1 1 200px", background: C.surface, color: C.text,
                     border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "9px 12px", fontSize: 14,
                   }}
                 />
-                <button type="button" onClick={saveName} disabled={saving} style={btn(C.sun, SAX.inkDeep)}>
+                <button type="button" onClick={saveName} disabled={saving} style={btn(C.sun, C.ink)}>
                   {saving ? "Saving..." : "Save"}
                 </button>
               </div>
@@ -226,7 +226,7 @@ export default function MySettingsPage() {
                       onChange={(e) => setConfirmText(e.target.value)}
                       placeholder="DELETE"
                       style={{
-                        flex: "0 1 140px", background: SAX.panelBg, color: C.text,
+                        flex: "0 1 140px", background: C.surface, color: C.text,
                         border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "9px 12px",
                         fontSize: 14, fontFamily: SAX.mono, letterSpacing: "0.1em",
                       }}
@@ -237,7 +237,7 @@ export default function MySettingsPage() {
                       disabled={deleting || confirmText !== "DELETE"}
                       style={{
                         ...btn(confirmText === "DELETE" ? C.warn : "transparent",
-                               confirmText === "DELETE" ? SAX.inkDeep : C.muted),
+                               confirmText === "DELETE" ? C.ink : C.muted),
                         border: `1px solid ${confirmText === "DELETE" ? C.warn : C.line}`,
                         cursor: confirmText === "DELETE" && !deleting ? "pointer" : "default",
                       }}
@@ -263,7 +263,7 @@ export default function MySettingsPage() {
 function Card({ children }: { children: React.ReactNode }) {
   return (
     <div style={{
-      background: SAX.slateBg, border: `1px solid ${SAX.line}`,
+      background: C.surface, border: `1px solid ${C.line}`,
       borderRadius: FORGE_RADIUS, padding: "16px 18px", marginBottom: 12,
     }}>
       {children}
@@ -275,7 +275,7 @@ function Label({ children }: { children: React.ReactNode }) {
   return (
     <div style={{
       fontFamily: SAX.mono, fontSize: 11, letterSpacing: "0.18em",
-      textTransform: "uppercase", color: SAX.muted, marginBottom: 8,
+      textTransform: "uppercase", color: C.muted, marginBottom: 8,
     }}>
       {children}
     </div>
@@ -291,5 +291,5 @@ function btn(bg: string, fg: string, border?: string): React.CSSProperties {
 }
 
 function Muted({ children }: { children: React.ReactNode }) {
-  return <p style={{ textAlign: "center", color: SAX.muted, fontSize: 14, lineHeight: 1.65 }}>{children}</p>;
+  return <p style={{ textAlign: "center", color: C.muted, fontSize: 14, lineHeight: 1.65 }}>{children}</p>;
 }

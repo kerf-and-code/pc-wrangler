@@ -352,7 +352,7 @@ export default function EncountersPage() {
     padding: "16px 18px", marginBottom: 14,
   };
   const inputStyle: React.CSSProperties = {
-    background: SAX.panelBg, color: C.text, border: `1px solid ${C.line}`,
+    background: C.surface, color: C.text, border: `1px solid ${C.line}`,
     borderRadius: FORGE_RADIUS, padding: "8px 10px", fontSize: 14,
   };
   const eyebrow: React.CSSProperties = {

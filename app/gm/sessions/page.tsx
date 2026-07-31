@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
-import { SAX } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 
 const STATUS_TONE: Record<string, string> = {
@@ -936,7 +935,7 @@ export default function SessionWorkspace() {
                   {rsvps.map((r, i) => (
                     <div key={i} style={{ fontSize: 13, display: "flex", gap: 8, alignItems: "center" }}>
                       <span style={{ width: 8, height: 8, borderRadius: FORGE_RADIUS, flexShrink: 0,
-                        background: r.status === "going" ? SAX.good : r.status === "maybe" ? C.brass : C.warn }} />
+                        background: r.status === "going" ? C.good : r.status === "maybe" ? C.brass : C.warn }} />
                       <span style={{ color: C.vellum }}>{r.display_name || "A player"}{r.character_name ? ` (${r.character_name})` : ""}</span>
                       <span style={{ color: C.muted, fontSize: 11 }}>{r.status}</span>
                     </div>

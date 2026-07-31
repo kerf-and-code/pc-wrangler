@@ -64,10 +64,10 @@ export default function MyCharactersPage() {
         <UpgradeAccount variant="card" next="/me/characters" />
 
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, margin: "4px 0 18px", flexWrap: "wrap" }}>
-          <span style={{ color: SAX.muted, fontSize: 13 }}>Tap a character to open it in the Forge.</span>
+          <span style={{ color: C.muted, fontSize: 13 }}>Tap a character to open it in the Forge.</span>
           <a href="/me/forge" style={{
             textDecoration: "none", fontFamily: SAX.mono, fontSize: 12, letterSpacing: "0.1em",
-            textTransform: "uppercase", color: SAX.inkDeep, background: SAX.brass,
+            textTransform: "uppercase", color: C.ink, background: SAX.brass,
             borderRadius: 999, padding: "9px 18px", fontWeight: 600,
           }}>
             + New character
@@ -132,5 +132,5 @@ export default function MyCharactersPage() {
 }
 
 function Muted({ children }: { children: React.ReactNode }) {
-  return <p style={{ textAlign: "center", color: SAX.muted, fontSize: 14, lineHeight: 1.65 }}>{children}</p>;
+  return <p style={{ textAlign: "center", color: C.muted, fontSize: 14, lineHeight: 1.65 }}>{children}</p>;
 }

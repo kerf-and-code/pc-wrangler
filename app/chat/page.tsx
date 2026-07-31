@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
-import { SAX, surfaces } from "@/lib/theme";
+import { surfaces } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 
 type Msg = { id: string; author_profile: string; display_name: string | null; body: string; created_at: string };
@@ -143,7 +143,7 @@ export default function ChatPage() {
               <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" style={{ ...input, width: "100%", marginBottom: 8 }} />
               <div style={{ display: "flex", gap: 8 }}>
                 <input value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") send(); }} placeholder="Message the party…" style={{ ...input, flex: 1 }} />
-                <button type="button" onClick={send} disabled={sending || !draft.trim()} style={{ background: C.sun, color: SAX.inkDeep, border: "none", borderRadius: FORGE_RADIUS, padding: "10px 18px", fontWeight: 700, fontSize: 14, cursor: sending || !draft.trim() ? "default" : "pointer", opacity: sending || !draft.trim() ? 0.6 : 1 }}>Send</button>
+                <button type="button" onClick={send} disabled={sending || !draft.trim()} style={{ background: C.sun, color: C.ink, border: "none", borderRadius: FORGE_RADIUS, padding: "10px 18px", fontWeight: 700, fontSize: 14, cursor: sending || !draft.trim() ? "default" : "pointer", opacity: sending || !draft.trim() ? 0.6 : 1 }}>Send</button>
               </div>
             </div>
 
@@ -167,7 +167,7 @@ export default function ChatPage() {
                   <label style={{ fontSize: 12, color: C.muted }}>To
                     <input type="datetime-local" value={gTo} onChange={(e) => setGTo(e.target.value)} style={{ ...input, width: "100%", marginTop: 4, colorScheme: "dark" }} />
                   </label>
-                  <button type="button" onClick={grant} disabled={!gFrom || !gTo} style={{ background: C.good, color: SAX.inkDeep, border: "none", borderRadius: FORGE_RADIUS, padding: "9px 16px", fontWeight: 700, fontSize: 13, cursor: gFrom && gTo ? "pointer" : "default", opacity: gFrom && gTo ? 1 : 0.6, justifySelf: "start" }}>Grant this window</button>
+                  <button type="button" onClick={grant} disabled={!gFrom || !gTo} style={{ background: C.good, color: C.ink, border: "none", borderRadius: FORGE_RADIUS, padding: "9px 16px", fontWeight: 700, fontSize: 13, cursor: gFrom && gTo ? "pointer" : "default", opacity: gFrom && gTo ? 1 : 0.6, justifySelf: "start" }}>Grant this window</button>
                 </div>
               )}
 

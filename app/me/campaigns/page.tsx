@@ -112,21 +112,21 @@ export function Header({ title, sub }: { title: string; sub: string }) {
   return (
     <>
       <div style={{ textAlign: "center", marginBottom: 4 }}>
-        <span style={{ fontFamily: SAX.serif, fontSize: 26, fontWeight: 700, color: SAX.text }}>{title}</span>
+        <span style={{ fontFamily: SAX.serif, fontSize: 26, fontWeight: 700, color: C.text }}>{title}</span>
       </div>
       <div style={{
         fontFamily: SAX.mono, fontSize: 11, letterSpacing: "0.22em",
-        textTransform: "uppercase", color: SAX.muted, textAlign: "center", marginBottom: 18,
+        textTransform: "uppercase", color: C.muted, textAlign: "center", marginBottom: 18,
       }}>
         {sub}
       </div>
-      <div style={{ height: 3, borderRadius: 3, background: `linear-gradient(90deg, ${SAX.sun}, ${SAX.plum})`, marginBottom: 24 }} />
+      <div style={{ height: 3, borderRadius: 3, background: `linear-gradient(90deg, ${C.sun}, ${C.plum})`, marginBottom: 24 }} />
     </>
   );
 }
 
 function Muted({ children }: { children: React.ReactNode }) {
-  return <p style={{ textAlign: "center", color: SAX.muted, fontSize: 14, lineHeight: 1.65 }}>{children}</p>;
+  return <p style={{ textAlign: "center", color: C.muted, fontSize: 14, lineHeight: 1.65 }}>{children}</p>;
 }
 
 function A({ href, children }: { href: string; children: React.ReactNode }) {
@@ -134,8 +134,8 @@ function A({ href, children }: { href: string; children: React.ReactNode }) {
     <a
       href={href}
       style={{
-        background: "transparent", color: SAX.text,
-        border: `1px solid ${SAX.line}`, borderRadius: FORGE_RADIUS,
+        background: "transparent", color: C.text,
+        border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS,
         padding: "6px 12px", fontSize: 12.5, fontWeight: 700,
         fontFamily: SAX.mono, letterSpacing: "0.04em", textDecoration: "none",
       }}

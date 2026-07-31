@@ -3,7 +3,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
-import { SAX } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 
 const VIS: { v: string; l: string }[] = [
@@ -300,7 +299,7 @@ export default function MapPage() {
         </select>
         {maps.map((m) => (
           <button key={m.id} type="button" onClick={() => { setActiveMap(m); setSelected(null); }}
-            style={{ background: activeMap?.id === m.id ? C.sun : "transparent", color: activeMap?.id === m.id ? SAX.inkDeep : C.text, border: `1px solid ${activeMap?.id === m.id ? C.sun : C.line}`, borderRadius: 999, padding: "6px 14px", fontSize: 13, cursor: "pointer" }}>
+            style={{ background: activeMap?.id === m.id ? C.sun : "transparent", color: activeMap?.id === m.id ? C.ink : C.text, border: `1px solid ${activeMap?.id === m.id ? C.sun : C.line}`, borderRadius: 999, padding: "6px 14px", fontSize: 13, cursor: "pointer" }}>
             {m.name}
           </button>
         ))}
@@ -357,7 +356,7 @@ export default function MapPage() {
                 style={{
                   position: "absolute", left: `${sx.pin.x * 100}%`, top: `${sx.pin.y * 100}%`,
                   transform: "translate(-50%, -160%)", pointerEvents: "none",
-                  background: C.sun, color: SAX.inkDeep, borderRadius: 999,
+                  background: C.sun, color: C.ink, borderRadius: 999,
                   fontSize: 11, fontWeight: 700, lineHeight: 1, padding: "3px 6px",
                   boxShadow: "0 2px 6px rgba(0,0,0,0.5)",
                 }}>{sx.idx}</span>
@@ -368,7 +367,7 @@ export default function MapPage() {
                 style={{
                   position: "absolute", left: `${p.x * 100}%`, top: `${p.y * 100}%`, transform: "translate(-50%, -50%)",
                   width: selected === p.id ? 20 : 15, height: selected === p.id ? 20 : 15, borderRadius: "50%",
-                  background: pinColor(p.visibility), border: `2px solid ${selected === p.id ? C.text : SAX.inkDeep}`,
+                  background: pinColor(p.visibility), border: `2px solid ${selected === p.id ? C.text : C.ink}`,
                   boxShadow: "0 2px 6px rgba(0,0,0,0.5)", cursor: "pointer", padding: 0,
                 }} />
             ))}
@@ -491,7 +490,7 @@ export default function MapPage() {
                     return (
                       <button key={e.id} type="button" onClick={() => setPlacing(on ? null : e)}
                         style={{
-                          background: on ? C.sun : "transparent", color: on ? SAX.inkDeep : C.text,
+                          background: on ? C.sun : "transparent", color: on ? C.ink : C.text,
                           border: `1px solid ${on ? C.sun : C.line}`, borderRadius: 999,
                           padding: "5px 11px", fontSize: 12.5, cursor: "pointer",
                         }}>

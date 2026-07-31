@@ -3,20 +3,19 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
-import { SAX } from "@/lib/theme";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { FORGE_RADIUS } from "@/lib/forge-theme";
+import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 
 // recharts needs real hex/rgba, not CSS vars; mapped onto the cellar theme.
 const T = {
-  bg: SAX.inkDeep, surface: SAX.slateBg, surface2: "rgba(36,27,52,0.92)", line: SAX.line,
-  text: SAX.text, muted: SAX.muted, sun: SAX.sun, sunSoft: "#FFD75E",
-  plum: SAX.plum, warn: SAX.warn, good: SAX.good,
+  bg: C.ink, surface: C.surface, surface2: "rgba(36,27,52,0.92)", line: C.line,
+  text: C.text, muted: C.muted, sun: C.sun, sunSoft: "#FFD75E",
+  plum: C.plum, warn: C.warn, good: C.good,
 };
 
 const CSS = `
-.wg-scope{--bg:${SAX.inkDeep};--surface:${SAX.slateBg};--surface2:rgba(36,27,52,0.92);--line:${SAX.line};
-  --text:${SAX.text};--muted:${SAX.muted};--sun:${SAX.sun};--sunSoft:#FFD75E;--plum:${SAX.plum};--warn:${SAX.warn};--good:${SAX.good};
+.wg-scope{--bg:${C.ink};--surface:${C.surface};--surface2:rgba(36,27,52,0.92);--line:${C.line};
+  --text:${C.text};--muted:${C.muted};--sun:${C.sun};--sunSoft:#FFD75E;--plum:${C.plum};--warn:${C.warn};--good:${C.good};
   color:var(--text);font-family:ui-sans-serif,system-ui,-apple-system,sans-serif;}
 .wg-serif{font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;}
 .wg-mono{font-family:ui-monospace,"SF Mono",Menlo,monospace;}

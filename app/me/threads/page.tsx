@@ -143,7 +143,7 @@ export default function MyThreadsPage() {
                 </option>
               ))}
             </select>
-            <button type="button" onClick={add} disabled={busy || !title.trim()} style={btn(C.sun, SAX.inkDeep)}>
+            <button type="button" onClick={add} disabled={busy || !title.trim()} style={btn(C.sun, C.ink)}>
               {busy ? "Saving..." : "Add"}
             </button>
           </div>
@@ -196,23 +196,23 @@ function Row({
   const resolved = t.status !== "open";
   return (
     <div style={{
-      background: SAX.slateBg, border: `1px solid ${SAX.line}`, borderRadius: FORGE_RADIUS,
+      background: C.surface, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS,
       padding: "13px 16px", marginBottom: 9, opacity: resolved ? 0.55 : 1,
     }}>
       <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "flex-start" }}>
         <div style={{ flex: 1 }}>
           <span style={{
-            color: SAX.text, fontSize: 15, fontWeight: 600,
+            color: C.text, fontSize: 15, fontWeight: 600,
             textDecoration: resolved ? "line-through" : "none",
           }}>
             {t.title}
           </span>
           {t.detail && (
-            <div style={{ color: SAX.muted, fontSize: 13, marginTop: 4, lineHeight: 1.55 }}>{t.detail}</div>
+            <div style={{ color: C.muted, fontSize: 13, marginTop: 4, lineHeight: 1.55 }}>{t.detail}</div>
           )}
           <div style={{
             fontFamily: SAX.mono, fontSize: 10.5, letterSpacing: "0.1em",
-            textTransform: "uppercase", color: SAX.muted, marginTop: 7,
+            textTransform: "uppercase", color: C.muted, marginTop: 7,
           }}>
             {t.kind}{charName ? ` · ${charName}` : ""}
           </div>
@@ -232,7 +232,7 @@ function IconBtn({ onClick, title, children }: { onClick: () => void; title: str
     <button
       type="button" onClick={onClick} title={title}
       style={{
-        background: "transparent", border: `1px solid ${SAX.line}`, color: SAX.muted,
+        background: "transparent", border: `1px solid ${C.line}`, color: C.muted,
         borderRadius: 7, width: 28, height: 28, cursor: "pointer", fontSize: 13, lineHeight: 1,
       }}
     >
@@ -243,8 +243,8 @@ function IconBtn({ onClick, title, children }: { onClick: () => void; title: str
 
 function input(): React.CSSProperties {
   return {
-    width: "100%", background: SAX.panelBg, color: SAX.text,
-    border: `1px solid ${SAX.line}`, borderRadius: FORGE_RADIUS,
+    width: "100%", background: C.surface, color: C.text,
+    border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS,
     padding: "9px 12px", fontSize: 14, fontFamily: "inherit",
   };
 }
@@ -258,5 +258,5 @@ function btn(bg: string, fg: string): React.CSSProperties {
 }
 
 function Muted({ children }: { children: React.ReactNode }) {
-  return <p style={{ textAlign: "center", color: SAX.muted, fontSize: 14, lineHeight: 1.65 }}>{children}</p>;
+  return <p style={{ textAlign: "center", color: C.muted, fontSize: 14, lineHeight: 1.65 }}>{children}</p>;
 }

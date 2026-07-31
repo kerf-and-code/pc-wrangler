@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { useMomentPlayer, MomentButton } from "@/components/moment-player";
-import { SAX, surfaces, ui, AXES, type AxisKey } from "@/lib/theme";
+import { surfaces, ui, AXES, type AxisKey } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 
 type Campaign = { id: string; name: string };
@@ -409,7 +409,7 @@ export default function ReviewPage() {
 
   const box = { ...surfaces.slate, padding: 20, marginBottom: 18 } as const;
   const btn = (bg: string, fg: string) => ({ background: bg, color: fg, border: "none", borderRadius: FORGE_RADIUS, padding: "9px 16px", fontWeight: 700, fontSize: 13, cursor: "pointer" } as const);
-  const tabBtn = (on: boolean) => ({ background: on ? C.plum : "transparent", color: on ? SAX.inkDeep : C.muted, border: `1px solid ${on ? C.plum : C.line}`, borderRadius: FORGE_RADIUS, padding: "8px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer" } as const);
+  const tabBtn = (on: boolean) => ({ background: on ? C.plum : "transparent", color: on ? C.ink : C.muted, border: `1px solid ${on ? C.plum : C.line}`, borderRadius: FORGE_RADIUS, padding: "8px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer" } as const);
   const thresholdSelect = (
     <select value={threshold} onChange={(e) => setThreshold(Number(e.target.value))}
       style={{ background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "8px 10px", fontSize: 12.5 }}>
@@ -452,7 +452,7 @@ export default function ReviewPage() {
                 </div>
                 {job.status === "extracting" && (
                   !running && error ? (
-                    <button type="button" onClick={runExtraction} style={btn(C.plum, SAX.inkDeep)}>Retry extraction</button>
+                    <button type="button" onClick={runExtraction} style={btn(C.plum, C.ink)}>Retry extraction</button>
                   ) : (
                     <span style={{ fontSize: 13, color: C.plum, fontWeight: 700 }}>Extracting…</span>
                   )
@@ -495,13 +495,13 @@ export default function ReviewPage() {
                         <>
                           {thresholdSelect}
                           <button type="button" onClick={acceptAbove} disabled={busy || playerEligible === 0}
-                            style={{ ...btn(C.good, SAX.inkDeep), opacity: busy || playerEligible === 0 ? 0.55 : 1, cursor: busy || playerEligible === 0 ? "default" : "pointer" }}>
+                            style={{ ...btn(C.good, C.ink), opacity: busy || playerEligible === 0 ? 0.55 : 1, cursor: busy || playerEligible === 0 ? "default" : "pointer" }}>
                             Accept {playerEligible} {threshLabel}
                           </button>
                         </>
                       )}
                       {job.status === "review" && remaining !== null && remaining > 0 && (
-                        <button type="button" onClick={() => finalize(true)} style={btn(C.sun, SAX.inkDeep)}>
+                        <button type="button" onClick={() => finalize(true)} style={btn(C.sun, C.ink)}>
                           {`Finish review (leave ${remaining} undecided)`}
                         </button>
                       )}
@@ -524,7 +524,7 @@ export default function ReviewPage() {
                             <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                               <span style={{ fontSize: 15, fontWeight: 700 }}>{p.character?.name || "GM / Narrator"}</span>
                               <span style={{ fontSize: 13, color: C.muted }}>{labels[p.event_type] || p.event_type}</span>
-                              {ax && <span style={{ fontSize: 11, fontWeight: 700, color: SAX.inkDeep, background: ax.color, padding: "2px 8px", borderRadius: 999 }}>{ax.tavernName}</span>}
+                              {ax && <span style={{ fontSize: 11, fontWeight: 700, color: C.ink, background: ax.color, padding: "2px 8px", borderRadius: 999 }}>{ax.tavernName}</span>}
                               {p.frame && <span style={{ fontSize: 11, color: C.muted, fontFamily: "ui-monospace, monospace" }}>{p.frame}</span>}
                             </div>
                             {conf !== null && <span style={{ fontSize: 13, fontWeight: 700, color: conf >= 70 ? C.good : conf >= 40 ? C.sun : C.warn }}>{conf}%</span>}
@@ -539,7 +539,7 @@ export default function ReviewPage() {
                           {p.rationale && <div style={{ fontSize: 12.5, color: C.muted, marginTop: 8, fontStyle: "italic" }}>{p.rationale}</div>}
 
                           <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
-                            <button type="button" onClick={() => review(p.id, true)} disabled={busy} style={btn(C.good, SAX.inkDeep)}>Accept</button>
+                            <button type="button" onClick={() => review(p.id, true)} disabled={busy} style={btn(C.good, C.ink)}>Accept</button>
                             <button type="button" onClick={() => review(p.id, false)} disabled={busy} style={{ background: "transparent", color: C.warn, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "9px 16px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Reject</button>
                           </div>
                         </div>
@@ -567,7 +567,7 @@ export default function ReviewPage() {
                           </label>
                           <button type="button" onClick={() => acceptGmSet(gmView, bulkCreates)} disabled={busy}
                             title={bulkCreates ? "Accept every beat below and create the entities they name" : "Accept every beat below without creating entities"}
-                            style={{ ...btn(C.sun, SAX.inkDeep), opacity: busy ? 0.55 : 1, cursor: busy ? "default" : "pointer" }}>
+                            style={{ ...btn(C.sun, C.ink), opacity: busy ? 0.55 : 1, cursor: busy ? "default" : "pointer" }}>
                             Accept all {gmView.length}
                           </button>
                         </>
@@ -597,11 +597,11 @@ export default function ReviewPage() {
                           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                             <span style={{ fontSize: 12, color: C.muted, width: 12, display: "inline-block" }}>{open ? "\u25be" : "\u25b8"}</span>
                             <span style={{ fontSize: 15, fontWeight: 700 }}>{catLabel(category)}</span>
-                            <span style={{ fontSize: 12, fontWeight: 700, color: SAX.inkDeep, background: C.sun, padding: "2px 9px", borderRadius: 999 }}>{rows.length}</span>
+                            <span style={{ fontSize: 12, fontWeight: 700, color: C.ink, background: C.sun, padding: "2px 9px", borderRadius: 999 }}>{rows.length}</span>
                           </div>
                           <button type="button" onClick={(ev) => { ev.stopPropagation(); acceptGmSet(rows, bulkCreates); }} disabled={busy}
                             title={bulkCreates ? `Accept all ${rows.length} in ${catLabel(category)} and create the entities they name` : `Accept all ${rows.length} in ${catLabel(category)} without creating entities`}
-                            style={{ ...btn(C.good, SAX.inkDeep), opacity: busy ? 0.55 : 1, cursor: busy ? "default" : "pointer" }}>
+                            style={{ ...btn(C.good, C.ink), opacity: busy ? 0.55 : 1, cursor: busy ? "default" : "pointer" }}>
                             Accept {rows.length}
                           </button>
                         </div>
@@ -652,11 +652,11 @@ export default function ReviewPage() {
                           <div style={{ display: "flex", gap: 8, marginTop: 14, flexWrap: "wrap" }}>
                             {availEntities(p).length > 0 ? (
                               <>
-                                <button type="button" onClick={() => reviewGm(p, "approve", selObj(p))} disabled={busy} style={btn(C.sun, SAX.inkDeep)}>Accept &amp; create</button>
-                                <button type="button" onClick={() => reviewGm(p, "approve")} disabled={busy} style={btn(C.good, SAX.inkDeep)}>Accept only</button>
+                                <button type="button" onClick={() => reviewGm(p, "approve", selObj(p))} disabled={busy} style={btn(C.sun, C.ink)}>Accept &amp; create</button>
+                                <button type="button" onClick={() => reviewGm(p, "approve")} disabled={busy} style={btn(C.good, C.ink)}>Accept only</button>
                               </>
                             ) : (
-                              <button type="button" onClick={() => reviewGm(p, "approve")} disabled={busy} style={btn(C.good, SAX.inkDeep)}>Accept</button>
+                              <button type="button" onClick={() => reviewGm(p, "approve")} disabled={busy} style={btn(C.good, C.ink)}>Accept</button>
                             )}
                             <button type="button" onClick={() => reviewGm(p, "reject")} disabled={busy} style={{ background: "transparent", color: C.warn, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "9px 16px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Reject</button>
                           </div>

@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
-import { SAX, surfaces, ui, AXES, type AxisKey } from "@/lib/theme";
+import { surfaces, ui, AXES, type AxisKey } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 
 type Campaign = { id: string; name: string };
@@ -465,7 +465,7 @@ export default function ReliabilityPage() {
                   {jobs.map((j) => (<option key={j.id} value={j.id}>Session {j.session?.session_number ?? "?"} ({j.status})</option>))}
                 </select>
                 <button type="button" onClick={runRecode} disabled={recoding || !jobId}
-                  style={{ background: C.plum, color: SAX.inkDeep, border: "none", borderRadius: FORGE_RADIUS, padding: "10px 16px", fontWeight: 700, fontSize: 13, cursor: recoding ? "default" : "pointer", opacity: recoding ? 0.7 : 1 }}>
+                  style={{ background: C.plum, color: C.ink, border: "none", borderRadius: FORGE_RADIUS, padding: "10px 16px", fontWeight: 700, fontSize: 13, cursor: recoding ? "default" : "pointer", opacity: recoding ? 0.7 : 1 }}>
                   {recoding ? "Coding…" : agree.needRecode ? "Run second coding" : "Re-run second coding"}
                 </button>
               </div>
