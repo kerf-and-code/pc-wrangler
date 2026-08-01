@@ -3,8 +3,21 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
+import SchemaHealthCard from "@/components/schema-health-card";
 import TableTapCard from "@/components/table-tap-card";
-import { C, FORGE_RADIUS } from "@/lib/forge-theme";
+import { SAX } from "@/lib/theme";
+
+const C = {
+  surface: SAX.slateBg,
+  surface2: "rgba(11,7,18,0.6)",
+  line: SAX.line,
+  text: SAX.text,
+  muted: SAX.muted,
+  sun: SAX.sun,
+  brass: SAX.brass,
+  plum: SAX.plum,
+  good: SAX.good,
+};
 
 type Step = { key: string; label: string; desc: string; href: string; cta: string; done: boolean; optional?: boolean };
 
@@ -61,7 +74,7 @@ export default function GettingStartedPage() {
   const allDone = steps.every((s) => s.done || s.optional);
   const firstOpen = steps.find((s) => !s.done)?.key;
 
-  const card = { background: C.surface, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "18px 20px", marginBottom: 12 } as const;
+  const card = { background: C.surface, border: `1px solid ${C.line}`, borderRadius: 14, padding: "18px 20px", marginBottom: 12 } as const;
 
   return (
     <PageShell width={760}>
@@ -74,6 +87,11 @@ export default function GettingStartedPage() {
       <p style={{ color: C.muted, fontSize: 15, lineHeight: 1.6, margin: "0 0 22px", maxWidth: 600 }}>
         From an empty account to a captured, reviewed session with a recap your players actually read. It runs on your Discord voice chat, or entirely from your notes if you would rather not record. The last step is optional.
       </p>
+
+      {/* Renders nothing when every migration is applied. Sits ABOVE the checklist on purpose: a
+          step that says "upload a portrait" is worse than useless if the storage policy for it was
+          never run, so the reason has to be visible before the instruction. */}
+      <SchemaHealthCard />
 
       {status === "loading" && <p style={{ color: C.muted, fontSize: 14 }}>Loading…</p>}
       {status === "signin" && <p style={{ color: C.muted, fontSize: 14, lineHeight: 1.6 }}>Sign in to see your progress.</p>}
@@ -100,9 +118,9 @@ export default function GettingStartedPage() {
             const isOpen = s.key === firstOpen;
             return (
               <div key={s.key} style={{ ...card, borderColor: isOpen ? C.brass : C.line, display: "flex", gap: 14, alignItems: "flex-start" }}>
-                <div style={{ flexShrink: 0, width: 26, height: 26, borderRadius: FORGE_RADIUS, marginTop: 1, display: "flex", alignItems: "center", justifyContent: "center",
+                <div style={{ flexShrink: 0, width: 26, height: 26, borderRadius: 26, marginTop: 1, display: "flex", alignItems: "center", justifyContent: "center",
                   background: s.done ? C.good : "transparent", border: s.done ? "none" : `1.5px solid ${isOpen ? C.brass : C.line}`,
-                  color: s.done ? C.ink : C.muted, fontSize: 13, fontWeight: 700 }}>
+                  color: s.done ? SAX.inkDeep : C.muted, fontSize: 13, fontWeight: 700 }}>
                   {s.done ? "\u2713" : i + 1}
                 </div>
                 <div style={{ flex: 1 }}>
@@ -114,8 +132,8 @@ export default function GettingStartedPage() {
                     </div>
                   )}
                   {!s.done && s.key !== "tap" && (
-                    <a href={s.href} style={{ display: "inline-block", marginTop: 12, background: isOpen ? C.brass : "transparent", color: isOpen ? C.ink : C.text,
-                      border: isOpen ? "none" : `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "8px 16px", fontSize: 13.5, fontWeight: 600, textDecoration: "none" }}>
+                    <a href={s.href} style={{ display: "inline-block", marginTop: 12, background: isOpen ? C.brass : "transparent", color: isOpen ? SAX.inkDeep : C.text,
+                      border: isOpen ? "none" : `1px solid ${C.line}`, borderRadius: 9, padding: "8px 16px", fontSize: 13.5, fontWeight: 600, textDecoration: "none" }}>
                       {s.cta}
                     </a>
                   )}

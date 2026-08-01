@@ -1,0 +1,516 @@
+[
+  {
+    "name": "Battleaxe",
+    "category": "Weapon",
+    "weapon_category": "Martial",
+    "weapon_range": "Melee",
+    "damage": {
+      "dice": "1d8",
+      "type": "Slashing"
+    },
+    "weight": "4",
+    "cost": "10 GP",
+    "mastery": "Topple",
+    "properties": [
+      "Versatile (1d10)"
+    ]
+  },
+  {
+    "name": "Flail",
+    "category": "Weapon",
+    "weapon_category": "Martial",
+    "weapon_range": "Melee",
+    "damage": {
+      "dice": "1d8",
+      "type": "Bludgeoning"
+    },
+    "weight": "2",
+    "cost": "10 GP",
+    "mastery": "Sap",
+    "properties": []
+  },
+  {
+    "name": "Glaive",
+    "category": "Weapon",
+    "weapon_category": "Martial",
+    "weapon_range": "Melee",
+    "damage": {
+      "dice": "1d10",
+      "type": "Slashing"
+    },
+    "weight": "6",
+    "cost": "20 GP",
+    "mastery": "Graze",
+    "properties": [
+      "Heavy",
+      "Reach",
+      "Two-Handed"
+    ]
+  },
+  {
+    "name": "Greataxe",
+    "category": "Weapon",
+    "weapon_category": "Martial",
+    "weapon_range": "Melee",
+    "damage": {
+      "dice": "1d12",
+      "type": "Slashing"
+    },
+    "weight": "7",
+    "cost": "30 GP",
+    "mastery": "Cleave",
+    "properties": [
+      "Heavy",
+      "Two-Handed"
+    ]
+  },
+  {
+    "name": "Greatsword",
+    "category": "Weapon",
+    "weapon_category": "Martial",
+    "weapon_range": "Melee",
+    "damage": {
+      "dice": "2d6",
+      "type": "Slashing"
+    },
+    "weight": "6",
+    "cost": "50 GP",
+    "mastery": "Graze",
+    "properties": [
+      "Heavy",
+      "Two-Handed"
+    ]
+  },
+  {
+    "name": "Halberd",
+    "category": "Weapon",
+    "weapon_category": "Martial",
+    "weapon_range": "Melee",
+    "damage": {
+      "dice": "1d10",
+      "type": "Slashing"
+    },
+    "weight": "6",
+    "cost": "20 GP",
+    "mastery": "Cleave",
+    "properties": [
+      "Heavy",
+      "Reach",
+      "Two-Handed"
+    ]
+  },
+  {
+    "name": "Lance",
+    "category": "Weapon",
+    "weapon_category": "Martial",
+    "weapon_range": "Melee",
+    "damage": {
+      "dice": "1d10",
+      "type": "Piercing"
+    },
+    "weight": "6",
+    "cost": "10 GP",
+    "mastery": "Topple",
+    "properties": [
+      "Heavy",
+      "Reach",
+      "Two-Handed (unless mounted)"
+    ]
+  },
+  {
+    "name": "Longsword",
+    "category": "Weapon",
+    "weapon_category": "Martial",
+    "weapon_range": "Melee",
+    "damage": {
+      "dice": "1d8",
+      "type": "Slashing"
+    },
+    "weight": "3",
+    "cost": "15 GP",
+    "mastery": "Sap",
+    "properties": [
+      "Versatile (1d10)"
+    ]
+  },
+  {
+    "name": "Maul",
+    "category": "Weapon",
+    "weapon_category": "Martial",
+    "weapon_range": "Melee",
+    "damage": {
+      "dice": "2d6",
+      "type": "Bludgeoning"
+    },
+    "weight": "10",
+    "cost": "10 GP",
+    "mastery": "Topple",
+    "properties": [
+      "Heavy",
+      "Two-Handed"
+    ]
+  },
+  {
+    "name": "Morningstar",
+    "category": "Weapon",
+    "weapon_category": "Martial",
+    "weapon_range": "Melee",
+    "damage": {
+      "dice": "1d8",
+      "type": "Piercing"
+    },
+    "weight": "4",
+    "cost": "15 GP",
+    "mastery": "Sap",
+    "properties": []
+  },
+  {
+    "name": "Pike",
+    "category": "Weapon",
+    "weapon_category": "Martial",
+    "weapon_range": "Melee",
+    "damage": {
+      "dice": "1d10",
+      "type": "Piercing"
+    },
+    "weight": "18",
+    "cost": "5 GP",
+    "mastery": "Push",
+    "properties": [
+      "Heavy",
+      "Reach",
+      "Two-Handed"
+    ]
+  },
+  {
+    "name": "Rapier",
+    "category": "Weapon",
+    "weapon_category": "Martial",
+    "weapon_range": "Melee",
+    "damage": {
+      "dice": "1d8",
+      "type": "Piercing"
+    },
+    "weight": "2",
+    "cost": "25 GP",
+    "mastery": "Vex",
+    "properties": [
+      "Finesse"
+    ]
+  },
+  {
+    "name": "Scimitar",
+    "category": "Weapon",
+    "weapon_category": "Martial",
+    "weapon_range": "Melee",
+    "damage": {
+      "dice": "1d6",
+      "type": "Slashing"
+    },
+    "weight": "3",
+    "cost": "25 GP",
+    "mastery": "Nick",
+    "properties": [
+      "Finesse",
+      "Light"
+    ]
+  },
+  {
+    "name": "Shortsword",
+    "category": "Weapon",
+    "weapon_category": "Martial",
+    "weapon_range": "Melee",
+    "damage": {
+      "dice": "1d6",
+      "type": "Piercing"
+    },
+    "weight": "2",
+    "cost": "10 GP",
+    "mastery": "Vex",
+    "properties": [
+      "Finesse",
+      "Light"
+    ]
+  },
+  {
+    "name": "Trident",
+    "category": "Weapon",
+    "weapon_category": "Martial",
+    "weapon_range": "Melee",
+    "damage": {
+      "dice": "1d8",
+      "type": "Piercing"
+    },
+    "weight": "4",
+    "cost": "5 GP",
+    "mastery": "Topple",
+    "properties": [
+      "Thrown (Range 20/60)",
+      "Versatile (1d10)"
+    ]
+  },
+  {
+    "name": "War Pick",
+    "category": "Weapon",
+    "weapon_category": "Martial",
+    "weapon_range": "Melee",
+    "damage": {
+      "dice": "1d8",
+      "type": "Piercing"
+    },
+    "weight": "2",
+    "cost": "5 GP",
+    "mastery": "Sap",
+    "properties": [
+      "Versatile (1d10)"
+    ]
+  },
+  {
+    "name": "Warhammer",
+    "category": "Weapon",
+    "weapon_category": "Martial",
+    "weapon_range": "Melee",
+    "damage": {
+      "dice": "1d8",
+      "type": "Bludgeoning"
+    },
+    "weight": "5",
+    "cost": "15 GP",
+    "mastery": "Push",
+    "properties": [
+      "Versatile (1d10)"
+    ]
+  },
+  {
+    "name": "Whip",
+    "category": "Weapon",
+    "weapon_category": "Martial",
+    "weapon_range": "Melee",
+    "damage": {
+      "dice": "1d4",
+      "type": "Slashing"
+    },
+    "weight": "3",
+    "cost": "2 GP",
+    "mastery": "Slow",
+    "properties": [
+      "Finesse",
+      "Reach"
+    ]
+  },
+  {
+    "name": "Club",
+    "category": "Weapon",
+    "weapon_category": "Simple",
+    "weapon_range": "Melee",
+    "damage": {
+      "dice": "1d4",
+      "type": "Bludgeoning"
+    },
+    "weight": "2",
+    "cost": "1 SP",
+    "mastery": "Slow",
+    "properties": [
+      "Light"
+    ]
+  },
+  {
+    "name": "Dagger",
+    "category": "Weapon",
+    "weapon_category": "Simple",
+    "weapon_range": "Melee",
+    "damage": {
+      "dice": "1d4",
+      "type": "Piercing"
+    },
+    "weight": "1",
+    "cost": "2 GP",
+    "mastery": "Nick",
+    "properties": [
+      "Finesse",
+      "Light",
+      "Thrown (Range 20/60)"
+    ]
+  },
+  {
+    "name": "Greatclub",
+    "category": "Weapon",
+    "weapon_category": "Simple",
+    "weapon_range": "Melee",
+    "damage": {
+      "dice": "1d8",
+      "type": "Bludgeoning"
+    },
+    "weight": "10",
+    "cost": "2 SP",
+    "mastery": "Push",
+    "properties": [
+      "Two-Handed"
+    ]
+  },
+  {
+    "name": "Handaxe",
+    "category": "Weapon",
+    "weapon_category": "Simple",
+    "weapon_range": "Melee",
+    "damage": {
+      "dice": "1d6",
+      "type": "Slashing"
+    },
+    "weight": "2",
+    "cost": "5 GP",
+    "mastery": "Vex",
+    "properties": [
+      "Light",
+      "Thrown (Range 20/60)"
+    ]
+  },
+  {
+    "name": "Javelin",
+    "category": "Weapon",
+    "weapon_category": "Simple",
+    "weapon_range": "Melee",
+    "damage": {
+      "dice": "1d6",
+      "type": "Piercing"
+    },
+    "weight": "2",
+    "cost": "5 SP",
+    "mastery": "Slow",
+    "properties": [
+      "Thrown (Range 30/120)"
+    ]
+  },
+  {
+    "name": "Light Hammer",
+    "category": "Weapon",
+    "weapon_category": "Simple",
+    "weapon_range": "Melee",
+    "damage": {
+      "dice": "1d4",
+      "type": "Bludgeoning"
+    },
+    "weight": "2",
+    "cost": "2 GP",
+    "mastery": "Nick",
+    "properties": [
+      "Light",
+      "Thrown (Range 20/60)"
+    ]
+  },
+  {
+    "name": "Mace",
+    "category": "Weapon",
+    "weapon_category": "Simple",
+    "weapon_range": "Melee",
+    "damage": {
+      "dice": "1d6",
+      "type": "Bludgeoning"
+    },
+    "weight": "4",
+    "cost": "5 GP",
+    "mastery": "Sap",
+    "properties": []
+  },
+  {
+    "name": "Quarterstaff",
+    "category": "Weapon",
+    "weapon_category": "Simple",
+    "weapon_range": "Melee",
+    "damage": {
+      "dice": "1d6",
+      "type": "Bludgeoning"
+    },
+    "weight": "4",
+    "cost": "2 SP",
+    "mastery": "Topple",
+    "properties": [
+      "Versatile (1d8)"
+    ]
+  },
+  {
+    "name": "Sickle",
+    "category": "Weapon",
+    "weapon_category": "Simple",
+    "weapon_range": "Melee",
+    "damage": {
+      "dice": "1d4",
+      "type": "Slashing"
+    },
+    "weight": "2",
+    "cost": "1 GP",
+    "mastery": "Nick",
+    "properties": [
+      "Light"
+    ]
+  },
+  {
+    "name": "Spear",
+    "category": "Weapon",
+    "weapon_category": "Simple",
+    "weapon_range": "Melee",
+    "damage": {
+      "dice": "1d6",
+      "type": "Piercing"
+    },
+    "weight": "3",
+    "cost": "1 GP",
+    "mastery": "Sap",
+    "properties": [
+      "Thrown (Range 20/60)",
+      "Versatile (1d8)"
+    ]
+  },
+  {
+    "name": "Dart",
+    "category": "Weapon",
+    "weapon_category": "Simple",
+    "weapon_range": "Ranged",
+    "damage": {
+      "dice": "1d4",
+      "type": "Piercing"
+    },
+    "weight": "1/4",
+    "cost": "5 CP",
+    "mastery": "Vex",
+    "properties": [
+      "Finesse",
+      "Thrown (Range 20/60)"
+    ]
+  },
+  {
+    "name": "Light Crossbow",
+    "category": "Weapon",
+    "weapon_category": "Simple",
+    "weapon_range": "Ranged",
+    "damage": {
+      "dice": "1d8",
+      "type": "Piercing"
+    },
+    "weight": "5",
+    "cost": "25 GP",
+    "mastery": "Slow",
+    "properties": [
+      "Ammunition (Range 80/320; Bolt)",
+      "Loading",
+      "Two-Handed"
+    ]
+  },
+  {
+    "name": "Shortbow",
+    "category": "Weapon",
+    "weapon_category": "Simple",
+    "weapon_range": "Ranged",
+    "damage": {
+      "dice": "1d6",
+      "type": "Piercing"
+    },
+    "weight": "2",
+    "cost": "25 GP",
+    "mastery": "Vex",
+    "properties": [
+      "Ammunition (Range 80/320; Arrow)",
+      "Two-Handed"
+    ]
+  }
+]

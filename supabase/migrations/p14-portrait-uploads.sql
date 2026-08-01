@@ -12,6 +12,14 @@
 --   owner-scoped policies those cases need, nothing broader.
 --
 -- Idempotent (drop-then-create). Run by hand in the Supabase editor.
+--
+-- CORRECTED 2026-08-01. The first version of this file addressed the object's filename through
+-- storage.foldername(), which does NOT contain it: foldername() splits the path on '/' and returns
+-- every segment EXCEPT the last. So for  <campaign_id>/portraits/<character_id>.png  it returns
+-- {campaign_id, portraits} - only two elements - and the old policy's [3] lookup was always NULL.
+-- Both policies therefore evaluated to false and granted nothing. They would have been created
+-- without error and portrait uploads would have kept failing on RLS, which is the worst kind of
+-- migration: it looks applied and does nothing. The filename comes from storage.filename().
 -- Bucket 'campaign-maps' is already public-read, so no read policy is added here.
 -- ============================================================================
 
@@ -36,7 +44,7 @@ create policy "player writes own pc portrait"
     and (storage.foldername(name))[2] = 'portraits'
     and exists (
       select 1 from public.characters c
-      where c.id::text = split_part((storage.foldername(name))[3], '.', 1)
+      where c.id::text = split_part(storage.filename(name), '.', 1)
         and c.profile_id = auth.uid()
     )
   )
@@ -45,7 +53,7 @@ create policy "player writes own pc portrait"
     and (storage.foldername(name))[2] = 'portraits'
     and exists (
       select 1 from public.characters c
-      where c.id::text = split_part((storage.foldername(name))[3], '.', 1)
+      where c.id::text = split_part(storage.filename(name), '.', 1)
         and c.profile_id = auth.uid()
     )
   );
@@ -67,8 +75,7 @@ create policy "gm writes own statblock portrait"
     and 'statblocks' = any (storage.foldername(name))
     and exists (
       select 1 from public.stat_blocks s
-      where s.id::text = split_part(
-              (storage.foldername(name))[array_length(storage.foldername(name), 1)], '.', 1)
+      where s.id::text = split_part(storage.filename(name), '.', 1)
         and s.gm_id = auth.uid()
     )
   )
@@ -77,8 +84,7 @@ create policy "gm writes own statblock portrait"
     and 'statblocks' = any (storage.foldername(name))
     and exists (
       select 1 from public.stat_blocks s
-      where s.id::text = split_part(
-              (storage.foldername(name))[array_length(storage.foldername(name), 1)], '.', 1)
+      where s.id::text = split_part(storage.filename(name), '.', 1)
         and s.gm_id = auth.uid()
     )
   );
