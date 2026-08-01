@@ -59,6 +59,37 @@ as $$
     'storage.objects policy "gm writes own statblock portrait"',
     'p14-portrait-uploads.sql'
 
+  -- p17: the SECURITY DEFINER ownership helpers the portrait policies call. Checked SEPARATELY
+  -- from the policy names above, and the reason is worth recording: p14 created policies with
+  -- exactly those names whose predicates could never be satisfied, so a name check reported
+  -- "installed" while every upload failed. A check that asks whether a thing EXISTS is not the same
+  -- as asking whether it WORKS, and the cheapest way to close that gap here is to verify the pieces
+  -- the working version depends on rather than the label it shares with the broken one.
+  union all
+  select
+    'portrait_helpers',
+    'The portrait policies can actually see who owns what',
+    (select count(*) from pg_proc p
+      join pg_namespace n on n.oid = p.pronamespace
+     where n.nspname = 'public'
+       and p.proname in ('can_write_character_portrait', 'can_write_statblock_portrait')) = 2,
+    'functions public.can_write_character_portrait / can_write_statblock_portrait',
+    'p17-portrait-policy-definer.sql'
+
+  -- p18: the guard that stops a non-uuid first path segment raising inside the map policies. A
+  -- raising policy aborts the statement outright, so no other policy can grant around it.
+  union all
+  select
+    'map_path_guard',
+    'Uploads outside a campaign folder do not abort on a bad path',
+    exists (
+      select 1 from pg_proc p
+      join pg_namespace n on n.oid = p.pronamespace
+      where n.nspname = 'public' and p.proname = 'is_campaign_gm_segment'
+    ),
+    'function public.is_campaign_gm_segment',
+    'p18-map-policy-uuid-guard.sql'
+
   -- p13: the PC library. The project notes record this as applied, but the file is not in the repo,
   -- so the only way to know is to look.
   union all
