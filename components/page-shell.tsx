@@ -50,8 +50,32 @@ export default function PageShell({
            It sets TRANSFORM only, deliberately: transform is not among the properties the pages set
            inline, so this rule actually wins. box-shadow IS set inline on those buttons, so a
            shadow rule here would silently lose and is not attempted. */
-        .sax-shell button:not(:disabled){ transition:transform 0.06s ease, box-shadow 0.06s ease, color 0.15s ease; }
-        .sax-shell button:not(:disabled):active{ transform:translateY(3px); }
+        /* CARVED DEPTH ON EVERY BUTTON.
+           An earlier pass carved ui.btnPrimary/btnGhost in lib/theme and it changed nothing,
+           because NOTHING IN THE APP USES THEM: 38 files render buttons and all of them style
+           inline. That also means almost nothing sets box-shadow inline (6 references app-wide),
+           so unlike colour or radius, SHADOW is a property the cascade actually wins. This is the
+           only lever that reaches every button without editing 38 files.
+           Kept deliberately moderate rather than the full Forge lip: 12 of the app's buttons are
+           transparent ghosts and 15 are filled, and one rule has to read as carved on both. A page
+           wanting the full treatment uses stoneButton() and its inline shadow overrides this. */
+        .sax-shell button:not(:disabled){
+          box-shadow:
+            inset 0 1px 0 rgba(255,235,200,0.16),
+            inset 0 -2px 3px rgba(0,0,0,0.42),
+            inset 0 0 0 1px rgba(0,0,0,0.35),
+            0 3px 0 -1px rgba(23,19,13,0.9),
+            0 4px 6px rgba(0,0,0,0.45);
+          transition:transform 0.06s ease, box-shadow 0.06s ease, color 0.15s ease;
+        }
+        .sax-shell button:not(:disabled):hover{ filter:brightness(1.08); }
+        .sax-shell button:not(:disabled):active{
+          transform:translateY(2px);
+          box-shadow:
+            inset 0 1px 0 rgba(255,235,200,0.10),
+            inset 0 2px 6px rgba(0,0,0,0.55),
+            inset 0 0 0 1px rgba(0,0,0,0.45);
+        }
         .sax-shell button:focus-visible{ outline:2px solid ${SAX.brass}; outline-offset:3px; }
       `}</style>
       <div className="sax-vignette" />

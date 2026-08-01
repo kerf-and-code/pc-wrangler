@@ -97,7 +97,6 @@ const PLAYER_YOU: PGroup = {
     { href: "/me/campaigns", label: "Campaigns" },
     { href: "/me/characters", label: "Characters" },
     { href: "/me/library", label: "Library" },
-    { href: "/me/import", label: "Import from D&D Beyond" },
     { href: "/me/threads", label: "Threads" },
     { href: "/me/codex", label: "Codex" },
     { href: "/me/profile", label: "Your profile" },
@@ -159,7 +158,7 @@ const NAV_CSS = `
 @media (min-width:1024px){
   .sax-nav{display:none;}
   .sax-side{display:flex;flex-direction:column;gap:16px;position:fixed;left:0;top:0;bottom:0;width:220px;
-    padding:22px 14px;overflow-y:auto;background:rgba(6,3,10,0.82);border-right:1px solid ${C.line};z-index:10;}
+    padding:22px 14px;overflow-y:auto;background:rgba(14,11,8,0.86);border-right:1px solid ${C.line};z-index:10;}
 }
 `;
 
