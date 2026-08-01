@@ -50,6 +50,34 @@ export default function PageShell({
            It sets TRANSFORM only, deliberately: transform is not among the properties the pages set
            inline, so this rule actually wins. box-shadow IS set inline on those buttons, so a
            shadow rule here would silently lose and is not attempted. */
+        /* CARVED FORM FIELDS.
+           stoneField() in forge-theme is what makes the Forge's dropdowns read as cut INTO the
+           stone rather than pasted on: a top-dark vertical gradient with an inset shadow, so a
+           field looks pressed in where a button looks pushed out. Only three pages call it.
+           This reaches the other 116 fields with no page edits, and the cascade can win here
+           because exactly ONE <select> or <input> in the whole app sets a background inline.
+           appearance is deliberately NOT reset. The Forge pages draw their own dropdown arrow;
+           stripping the native one app-wide would leave 63 selects with no affordance at all.
+           color-scheme:dark is what stops the OPEN dropdown list rendering as a white panel,
+           which is the thing that most gives away a dark theme bolted onto native controls. */
+        .sax-shell select,
+        .sax-shell input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+        .sax-shell textarea{
+          color-scheme: dark;
+          color: ${STONE.ink};
+          border: none;
+          border-radius: 4px;
+          background: linear-gradient(180deg, rgba(14,11,8,0.82), rgba(40,36,30,0.82));
+          box-shadow:
+            inset 1px 1px 4px rgba(0,0,0,0.7),
+            inset 0 0 0 1px rgba(0,0,0,0.35),
+            inset -1px -1px 0 rgba(255,230,190,0.05);
+        }
+        .sax-shell select:focus-visible,
+        .sax-shell input:focus-visible,
+        .sax-shell textarea:focus-visible{ outline:2px solid ${SAX.brass}; outline-offset:2px; }
+        .sax-shell option{ background:${STONE.shadow}; color:${STONE.ink}; }
+
         /* CARVED DEPTH ON EVERY BUTTON.
            An earlier pass carved ui.btnPrimary/btnGhost in lib/theme and it changed nothing,
            because NOTHING IN THE APP USES THEM: 38 files render buttons and all of them style
