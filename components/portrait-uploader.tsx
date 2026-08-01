@@ -70,8 +70,26 @@ export function PortraitUploader({
       const url = `${data.publicUrl}?v=${Date.now()}`;
       setPreview(url);
       onUploaded(url, path);
-    } catch {
-      setError("Upload failed. You may not have permission to write here.");
+    } catch (err) {
+      // Surface what actually failed. This used to be a bare catch that replaced every error with
+      // "you may not have permission to write here", which is a GUESS: a missing bucket, an
+      // oversized payload, a network drop and a genuine RLS refusal all produced that same
+      // sentence. It sent a real debugging session chasing storage policies that turned out to be
+      // installed correctly. Storage errors carry a status and a message; show them.
+      const e = err as { message?: string; status?: number; statusCode?: string; error?: string };
+      const status = e?.status ?? (e?.statusCode ? Number(e.statusCode) : undefined);
+      const msg = e?.message || e?.error || "Unknown error.";
+      const hint =
+        status === 403 || /row-level security|policy|unauthor/i.test(msg)
+          ? " The storage policy for this path is not granting write access. Check /gm/start for an unapplied migration."
+          : status === 404 || /bucket/i.test(msg)
+            ? " The storage bucket was not found."
+            : status === 413 || /large|size/i.test(msg)
+              ? " The file was rejected as too large by the server."
+              : "";
+      setError(`Upload failed: ${msg}${status ? ` (${status})` : ""}.${hint}`);
+      // Keep the raw object in the console for anything the cases above do not cover.
+      console.error("portrait upload failed", err);
     } finally {
       setBusy(false);
     }
