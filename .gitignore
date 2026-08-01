@@ -68,3 +68,15 @@ filetree.txt
 wrangler-disposition/*.exe
 wrangler-disposition/disposition_posteriors.csv
 six-axes-capture-extension/*.zip
+
+# local working files, not project source
+*.zip
+*.tar.gz
+BobertFighter.pdf
+BobertRogue.pdf
+BobertWizard.pdf
+bobert*.json
+incident-logs.txt
+HANDOFF-*.md
+extracted/
+__pycache__/
