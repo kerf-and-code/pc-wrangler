@@ -124,7 +124,7 @@ export default function VibeCheckPage() {
                   const on = satisfaction === n;
                   return (
                     <button key={n} type="button" onClick={() => setSatisfaction(n)}
-                      style={{ flex: 1, padding: "12px 0", borderRadius: FORGE_RADIUS, border: `1px solid ${on ? C.sun : C.line}`, background: on ? C.sun : C.surface2, color: on ? C.ink : C.text, fontSize: 16, fontWeight: 700, cursor: "pointer" }}>{n}</button>
+                      style={{ flex: 1, padding: "12px 0", borderRadius: FORGE_RADIUS, border: `1px solid ${on ? C.sun : C.line}`, background: on ? C.sun : C.surface2, color: on ? C.ink : C.text, fontSize: 16, fontWeight: 700, cursor: "pointer", boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>{n}</button>
                   );
                 })}
               </div>
@@ -139,7 +139,7 @@ export default function VibeCheckPage() {
                   const on = spotlight === opt.value;
                   return (
                     <button key={opt.value} type="button" onClick={() => setSpotlight(opt.value)}
-                      style={{ textAlign: "left", padding: "12px 14px", borderRadius: FORGE_RADIUS, border: `1px solid ${on ? C.plum : C.line}`, background: on ? "rgba(155,123,212,0.16)" : C.surface2, color: C.text, cursor: "pointer" }}>
+                      style={{ textAlign: "left", padding: "12px 14px", borderRadius: FORGE_RADIUS, border: `1px solid ${on ? C.plum : C.line}`, background: on ? "rgba(155,123,212,0.16)" : C.surface2, color: C.text, cursor: "pointer", boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
                       <div style={{ fontSize: 14, fontWeight: 600 }}>{opt.label}</div>
                       <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>{opt.hint}</div>
                     </button>
@@ -148,9 +148,9 @@ export default function VibeCheckPage() {
               </div>
 
               <textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="Anything you want the GM to know? (optional)" rows={3}
-                style={{ width: "100%", boxSizing: "border-box", background: C.surface2, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "10px 12px", color: C.text, fontSize: 14, outline: "none", resize: "vertical", marginBottom: 14, fontFamily: "inherit" }} />
+                style={{ width: "100%", boxSizing: "border-box", background: C.surface2, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "10px 12px", color: C.text, fontSize: 14, outline: "none", resize: "vertical", marginBottom: 14, fontFamily: "inherit", boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }} />
               <input value={playerName} onChange={(e) => setPlayerName(e.target.value)} placeholder="Your name (so the GM knows who)"
-                style={{ width: "100%", boxSizing: "border-box", background: C.surface2, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "10px 12px", color: C.text, fontSize: 14, outline: "none", marginBottom: 18 }} />
+                style={{ width: "100%", boxSizing: "border-box", background: C.surface2, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "10px 12px", color: C.text, fontSize: 14, outline: "none", marginBottom: 18, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }} />
 
               <button type="button" onClick={submit} disabled={submitting}
                 style={{ width: "100%", background: `linear-gradient(90deg, ${C.sun}, ${C.sunSoft})`, color: C.ink, border: "none", borderRadius: FORGE_RADIUS, padding: "13px 16px", fontSize: 15, fontWeight: 700, letterSpacing: "0.02em", cursor: submitting ? "default" : "pointer", opacity: submitting ? 0.7 : 1 }}>

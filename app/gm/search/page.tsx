@@ -181,7 +181,7 @@ export default function SearchPage() {
     items.length === 0 ? null : (
       <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
         {items.map((t, i) => (
-          <span key={i} style={{ fontSize: 11, color: C.plum, background: "rgba(155,123,212,0.14)", border: `1px solid ${C.line}`, borderRadius: 999, padding: "2px 9px" }}>{t}</span>
+          <span key={i} style={{ fontSize: 11, color: C.plum, background: "rgba(155,123,212,0.14)", border: `1px solid ${C.line}`, borderRadius: 999, padding: "2px 9px", boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>{t}</span>
         ))}
       </div>
     );

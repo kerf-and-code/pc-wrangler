@@ -189,7 +189,7 @@ export default function GmIdentityCard({ campaignId }: { campaignId: string }) {
           <div style={{ fontSize: 12, color: C.muted, marginBottom: 8 }}>Other narrators linked on this campaign:</div>
           <div style={{ display: "grid", gap: 6 }}>
             {others.map((id) => (
-              <div key={id.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, background: C.surface2, border: `1px solid ${C.line}`, borderRadius: 8, padding: "7px 10px" }}>
+              <div key={id.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, background: C.surface2, border: `1px solid ${C.line}`, borderRadius: 8, padding: "7px 10px", boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
                 <span style={{ fontSize: 13 }}>
                   {id.display_name || "narrator"}
                   <span style={{ color: C.muted, fontFamily: "ui-monospace, monospace" }}> · {id.discord_user_id}</span>

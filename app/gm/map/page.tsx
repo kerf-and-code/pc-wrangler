@@ -299,7 +299,7 @@ export default function MapPage() {
         </select>
         {maps.map((m) => (
           <button key={m.id} type="button" onClick={() => { setActiveMap(m); setSelected(null); }}
-            style={{ background: activeMap?.id === m.id ? C.sun : "transparent", color: activeMap?.id === m.id ? C.ink : C.text, border: `1px solid ${activeMap?.id === m.id ? C.sun : C.line}`, borderRadius: 999, padding: "6px 14px", fontSize: 13, cursor: "pointer" }}>
+            style={{ background: activeMap?.id === m.id ? C.sun : "transparent", color: activeMap?.id === m.id ? C.ink : C.text, border: `1px solid ${activeMap?.id === m.id ? C.sun : C.line}`, borderRadius: 999, padding: "6px 14px", fontSize: 13, cursor: "pointer", boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
             {m.name}
           </button>
         ))}
@@ -492,8 +492,7 @@ export default function MapPage() {
                         style={{
                           background: on ? C.sun : "transparent", color: on ? C.ink : C.text,
                           border: `1px solid ${on ? C.sun : C.line}`, borderRadius: 999,
-                          padding: "5px 11px", fontSize: 12.5, cursor: "pointer",
-                        }}>
+                          padding: "5px 11px", fontSize: 12.5, cursor: "pointer", boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
                         {e.title}{n > 0 ? ` (${n})` : ""}
                       </button>
                     );

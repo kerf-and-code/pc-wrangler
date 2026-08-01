@@ -225,7 +225,7 @@ export default function MechanicsPage() {
               { label: "damage dealt", value: String(stats.dmgTotal) },
               { label: "verified numbers", value: `${stats.total ? Math.round((stats.canonical / stats.total) * 100) : 0}%` },
             ].map((k) => (
-              <div key={k.label} style={{ background: C.surface, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "14px 16px" }}>
+              <div key={k.label} style={{ background: C.surface, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "14px 16px", boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
                 <div style={{ fontSize: 22, fontWeight: 800, color: C.sun }}>{k.value}</div>
                 <div style={{ fontSize: 11, color: C.muted, fontFamily: "ui-monospace, monospace", letterSpacing: "0.08em", textTransform: "uppercase", marginTop: 2 }}>{k.label}</div>
               </div>
@@ -275,7 +275,7 @@ export default function MechanicsPage() {
               <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8 }}>Damage by type</div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                 {Object.entries(stats.dmgByType).sort((a, b) => b[1] - a[1]).map(([t, v]) => (
-                  <span key={t} style={{ fontSize: 13, background: C.surface2, border: `1px solid ${C.line}`, borderRadius: 999, padding: "6px 12px" }}>
+                  <span key={t} style={{ fontSize: 13, background: C.surface2, border: `1px solid ${C.line}`, borderRadius: 999, padding: "6px 12px", boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
                     {t}: <b style={{ color: C.sun }}>{v}</b>
                   </span>
                 ))}

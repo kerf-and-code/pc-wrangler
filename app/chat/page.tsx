@@ -131,7 +131,7 @@ export default function ChatPage() {
                 {messages.map((m) => {
                   const mine = m.author_profile === uid;
                   return (
-                    <div key={m.id} style={{ alignSelf: mine ? "flex-end" : "flex-start", maxWidth: "80%", background: mine ? "rgba(244,196,48,0.14)" : C.surface2, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "8px 12px", marginLeft: mine ? "auto" : 0 }}>
+                    <div key={m.id} style={{ alignSelf: mine ? "flex-end" : "flex-start", maxWidth: "80%", background: mine ? "rgba(244,196,48,0.14)" : C.surface2, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "8px 12px", marginLeft: mine ? "auto" : 0, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
                       <div style={{ fontSize: 11, color: C.muted, marginBottom: 2 }}>{m.display_name || (mine ? "You" : "Player")} · {fmt(m.created_at)}</div>
                       <div style={{ fontSize: 14, lineHeight: 1.45 }}>{m.body}</div>
                     </div>
@@ -160,7 +160,7 @@ export default function ChatPage() {
               </div>
 
               {showGrant && (
-                <div style={{ display: "grid", gap: 8, marginBottom: 14, background: C.surface2, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: 12 }}>
+                <div style={{ display: "grid", gap: 8, marginBottom: 14, background: C.surface2, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: 12, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
                   <label style={{ fontSize: 12, color: C.muted }}>From
                     <input type="datetime-local" value={gFrom} onChange={(e) => setGFrom(e.target.value)} style={{ ...input, width: "100%", marginTop: 4, colorScheme: "dark" }} />
                   </label>
@@ -176,7 +176,7 @@ export default function ChatPage() {
               ) : (
                 <div style={{ display: "grid", gap: 8 }}>
                   {grants.map((g) => (
-                    <div key={g.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, background: C.surface2, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "8px 12px" }}>
+                    <div key={g.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, background: C.surface2, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "8px 12px", boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
                       <span style={{ fontSize: 12.5 }}>{fmt(g.from_ts)} → {fmt(g.to_ts)}</span>
                       <button type="button" onClick={() => revoke(g.id)} style={{ background: "transparent", color: C.warn, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600 }}>Revoke</button>
                     </div>

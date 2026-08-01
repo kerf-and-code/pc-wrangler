@@ -93,7 +93,7 @@ export default function RosterPage() {
         <div style={box}>
           <label style={{ fontSize: 12, color: C.muted, fontFamily: "ui-monospace, monospace", letterSpacing: "0.1em" }}>CAMPAIGN</label>
           <select value={campaignId} onChange={(e) => setCampaignId(e.target.value)}
-            style={{ display: "block", width: "100%", marginTop: 6, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "10px 12px", fontSize: 15 }}>
+            style={{ display: "block", width: "100%", marginTop: 6, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "10px 12px", fontSize: 15, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
             {campaigns.length === 0 && <option value="">No campaigns yet</option>}
             {campaigns.map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}
           </select>
@@ -136,7 +136,7 @@ export default function RosterPage() {
                         </div>
                       ) : unassigned.length > 0 ? (
                         <select defaultValue="" disabled={busy} onChange={(e) => { if (e.target.value) bind(e.target.value, ch.id); }}
-                          style={{ background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "9px 12px", fontSize: 13, minWidth: 200 }}>
+                          style={{ background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "9px 12px", fontSize: 13, minWidth: 200, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
                           <option value="">Bind an inventory…</option>
                           {unassigned.map((u) => (<option key={u.id} value={u.id}>{respLabel(u)}</option>))}
                         </select>
@@ -207,7 +207,7 @@ export default function RosterPage() {
               ) : (
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                   {unassigned.map((u) => (
-                    <span key={u.id} style={{ fontSize: 13, background: C.surface2, border: `1px solid ${C.line}`, borderRadius: 999, padding: "6px 12px" }}>{respLabel(u)}</span>
+                    <span key={u.id} style={{ fontSize: 13, background: C.surface2, border: `1px solid ${C.line}`, borderRadius: 999, padding: "6px 12px", boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>{respLabel(u)}</span>
                   ))}
                 </div>
               )}

@@ -173,8 +173,7 @@ export function PlayerDisposition({
         <p style={{
           color: C.warn, fontSize: 12, lineHeight: 1.55, margin: "0 0 14px",
           background: "rgba(224,122,95,0.10)", border: `1px solid ${C.warn}`,
-          borderRadius: 8, padding: "8px 11px",
-        }}>
+          borderRadius: 8, padding: "8px 11px", boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
           Based on {nChars === 1 ? "one character" : "no characters"} and no self-report,
           so this is mostly the model&apos;s prior rather than evidence about this person.
           The intervals are wide for a reason. It sharpens as they play more characters.
@@ -235,8 +234,7 @@ function Card({ children }: { children: React.ReactNode }) {
   return (
     <div style={{
       background: C.surface, border: `1px solid ${C.line}`,
-      borderRadius: 12, padding: "16px 18px", marginBottom: 12,
-    }}>
+      borderRadius: 12, padding: "16px 18px", marginBottom: 12, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
       {children}
     </div>
   );

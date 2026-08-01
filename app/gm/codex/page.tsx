@@ -337,7 +337,7 @@ export default function CodexPage() {
               return (
                 <button key={t.key} type="button" onClick={() => { setTab(t.key); setMode(null); }}
                   style={{ padding: "8px 14px", borderRadius: FORGE_RADIUS, border: `1px solid ${on ? C.sun : C.line}`,
-                    background: on ? C.sun : C.surface2, color: on ? C.ink : C.text, fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
+                    background: on ? C.sun : C.surface2, color: on ? C.ink : C.text, fontWeight: 600, fontSize: 13, cursor: "pointer", boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
                   {t.label}
                 </button>
               );
@@ -374,7 +374,7 @@ export default function CodexPage() {
                     onClick={() => isChar ? openChar(it as Char) : openEntry(it as Entry)}
                     style={{ textAlign: "left", padding: "9px 11px", borderRadius: FORGE_RADIUS,
                       border: `1px solid ${active ? C.plum : C.line}`,
-                      background: active ? "rgba(155,123,212,0.14)" : C.surface2, color: C.text, cursor: "pointer" }}>
+                      background: active ? "rgba(155,123,212,0.14)" : C.surface2, color: C.text, cursor: "pointer", boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
                     <div style={{ fontSize: 13.5, fontWeight: 600 }}>{label}</div>
                     <div style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>{VIS.find((v) => v.v === vis)?.l || vis}</div>
                   </button>
@@ -443,7 +443,7 @@ export default function CodexPage() {
                           const oType = otherIsSource ? l.source_type : l.target_type;
                           const oId = otherIsSource ? l.source_id : l.target_id;
                           return (
-                            <div key={l.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, background: C.surface2, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "7px 10px" }}>
+                            <div key={l.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, background: C.surface2, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "7px 10px", boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
                               <span style={{ fontSize: 13 }}>
                                 {labelOf(oType, oId)}
                                 {l.relation && <span style={{ color: C.muted }}> · {l.relation}</span>}
@@ -495,7 +495,7 @@ export default function CodexPage() {
                           {curReveals.map((r) => {
                             const pc = chars.find((c) => c.id === r.revealed_to_character_id);
                             return (
-                              <div key={r.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, background: C.surface2, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "7px 10px" }}>
+                              <div key={r.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, background: C.surface2, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "7px 10px", boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
                                 <span style={{ fontSize: 13 }}>{pc ? pc.name : "a player"}</span>
                                 <button type="button" onClick={() => revokeReveal(r.id)} style={{ background: "transparent", color: C.muted, border: "none", cursor: "pointer", fontSize: 16, lineHeight: 1 }}>×</button>
                               </div>
@@ -535,7 +535,7 @@ export default function CodexPage() {
                     ) : (
                       <div style={{ display: "grid", gap: 8 }}>
                         {beats.map((b) => (
-                          <div key={b.id} style={{ background: C.surface2, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "10px 12px" }}>
+                          <div key={b.id} style={{ background: C.surface2, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "10px 12px", boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                               <span style={{ fontSize: 11, color: C.plum, fontFamily: "ui-monospace, monospace", letterSpacing: "0.04em" }}>
                                 {BEAT_LABEL[b.kind] || b.kind}{sessNo(b.session_id) ? ` · ${sessNo(b.session_id)}` : ""}

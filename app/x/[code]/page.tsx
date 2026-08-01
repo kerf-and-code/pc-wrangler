@@ -51,8 +51,7 @@ export default function LinkLandingPage({
           background: "#1e1730",
           border: "1px solid #3a2f52",
           borderRadius: FORGE_RADIUS,
-          padding: 28,
-        }}
+          padding: 28, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}
       >
         <h1 style={{ fontSize: 20, margin: "0 0 6px", color: "#f4c430" }}>
           Join your table on Six Axes
@@ -68,8 +67,7 @@ export default function LinkLandingPage({
             border: `1px solid ${saved ? "#2f7d4f" : "#3a2f52"}`,
             borderRadius: FORGE_RADIUS,
             padding: 16,
-            marginBottom: 20,
-          }}
+            marginBottom: 20, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}
         >
           {saved ? (
             <>

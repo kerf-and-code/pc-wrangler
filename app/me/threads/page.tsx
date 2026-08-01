@@ -117,7 +117,7 @@ export default function MyThreadsPage() {
         <UpgradeAccount variant="card" next="/me/threads" />
 
         {/* new thread */}
-        <div style={{ background: C.surface, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: 16, marginBottom: 22 }}>
+        <div style={{ background: C.surface, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: 16, marginBottom: 22, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
@@ -197,8 +197,7 @@ function Row({
   return (
     <div style={{
       background: C.surface, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS,
-      padding: "13px 16px", marginBottom: 9, opacity: resolved ? 0.55 : 1,
-    }}>
+      padding: "13px 16px", marginBottom: 9, opacity: resolved ? 0.55 : 1, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
       <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "flex-start" }}>
         <div style={{ flex: 1 }}>
           <span style={{

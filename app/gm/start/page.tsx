@@ -120,7 +120,7 @@ export default function GettingStartedPage() {
               <div key={s.key} style={{ ...card, borderColor: isOpen ? C.brass : C.line, display: "flex", gap: 14, alignItems: "flex-start" }}>
                 <div style={{ flexShrink: 0, width: 26, height: 26, borderRadius: 26, marginTop: 1, display: "flex", alignItems: "center", justifyContent: "center",
                   background: s.done ? C.good : "transparent", border: s.done ? "none" : `1.5px solid ${isOpen ? C.brass : C.line}`,
-                  color: s.done ? SAX.inkDeep : C.muted, fontSize: 13, fontWeight: 700 }}>
+                  color: s.done ? SAX.inkDeep : C.muted, fontSize: 13, fontWeight: 700, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
                   {s.done ? "\u2713" : i + 1}
                 </div>
                 <div style={{ flex: 1 }}>

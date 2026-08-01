@@ -167,8 +167,7 @@ export function UpgradeAccount({
         style={{
           display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap",
           background: C.surface, border: `1px solid ${C.line}`,
-          borderRadius: 10, padding: "10px 14px", marginBottom: 14,
-        }}
+          borderRadius: 10, padding: "10px 14px", marginBottom: 14, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}
       >
         <span style={{ color: C.text, fontSize: 13.5, flex: "1 1 260px", lineHeight: 1.45 }}>
           {pitch}
@@ -212,8 +211,7 @@ export function UpgradeAccount({
     <section
       style={{
         background: C.surface, border: `1px solid ${C.line}`,
-        borderRadius: 12, padding: 20, marginBottom: 18,
-      }}
+        borderRadius: 12, padding: 20, marginBottom: 18, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}
     >
       <p style={{
         fontFamily: SAX.mono, fontSize: 11, letterSpacing: "0.22em",
@@ -268,8 +266,7 @@ export function UpgradeAccount({
               style={{
                 flex: "1 1 220px", background: C.surface, color: C.text,
                 border: `1px solid ${C.line}`, borderRadius: 8,
-                padding: "9px 12px", fontSize: 14,
-              }}
+                padding: "9px 12px", fontSize: 14, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}
             />
             <button
               type="button"

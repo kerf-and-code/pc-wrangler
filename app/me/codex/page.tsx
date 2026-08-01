@@ -87,8 +87,7 @@ export default function MyCodexPage() {
                   style={{
                     background: C.surface, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS,
                     padding: "13px 16px", marginBottom: 9,
-                    cursor: it.body ? "pointer" : "default",
-                  }}
+                    cursor: it.body ? "pointer" : "default", boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}
                 >
                   <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "baseline" }}>
                     <span style={{ color: C.text, fontSize: 15, fontWeight: 600 }}>{it.title}</span>

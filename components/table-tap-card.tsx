@@ -46,8 +46,7 @@ export default function TableTapCard({ shareCode }: { shareCode: string }) {
         border: "1px solid #4a4237",
         borderRadius: 12,
         padding: 16,
-        color: "#e8dcc4",
-      }}
+        color: "#e8dcc4", boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}
     >
       <h2 style={{ color: BRASS, fontSize: 16, margin: "0 0 4px" }}>
         Capture rolls from D&amp;D Beyond
@@ -72,8 +71,7 @@ export default function TableTapCard({ shareCode }: { shareCode: string }) {
             color: "#9aa880",
             flex: 1,
             minWidth: 240,
-            overflowWrap: "anywhere",
-          }}
+            overflowWrap: "anywhere", boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}
         >
           {setupUrl}
         </code>
@@ -87,8 +85,7 @@ export default function TableTapCard({ shareCode }: { shareCode: string }) {
             padding: "8px 14px",
             fontSize: 13,
             fontWeight: 700,
-            cursor: "pointer",
-          }}
+            cursor: "pointer", boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}
         >
           {copied === "setup" ? "Copied" : "Copy player setup link"}
         </button>
@@ -154,8 +151,7 @@ export default function TableTapCard({ shareCode }: { shareCode: string }) {
                 color: "#9aa880",
                 flex: 1,
                 minWidth: 240,
-                overflowWrap: "anywhere",
-              }}
+                overflowWrap: "anywhere", boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}
             >
               {tabUrl}
             </code>

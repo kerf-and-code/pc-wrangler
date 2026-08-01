@@ -118,7 +118,7 @@ export default function Beyond20Setup() {
           <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
             <input readOnly value={url} onFocus={(e) => e.currentTarget.select()}
               style={{ flex: 1, minWidth: 220, background: C.surface2, color: C.text, border: `1px solid ${C.line}`,
-                borderRadius: FORGE_RADIUS, padding: "11px 12px", fontFamily: "ui-monospace, monospace", fontSize: 14 }} />
+                borderRadius: FORGE_RADIUS, padding: "11px 12px", fontFamily: "ui-monospace, monospace", fontSize: 14, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }} />
             <button type="button" onClick={copy}
               style={{ background: copied ? C.good : C.sun, color: "#1a1206", border: "none", borderRadius: FORGE_RADIUS,
                 padding: "11px 18px", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>

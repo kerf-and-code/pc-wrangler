@@ -242,7 +242,7 @@ export default function DispositionsPage() {
       <div style={box}>
         <label style={{ ...ui.label, fontSize: 12 }}>CAMPAIGN</label>
         <select value={campaignId} onChange={(e) => setCampaignId(e.target.value)}
-          style={{ display: "block", width: "100%", marginTop: 6, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "10px 12px", fontSize: 15 }}>
+          style={{ display: "block", width: "100%", marginTop: 6, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "10px 12px", fontSize: 15, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
           {campaigns.length === 0 && <option value="">No campaigns yet</option>}
           {campaigns.map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}
         </select>

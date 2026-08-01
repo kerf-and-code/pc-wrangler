@@ -73,14 +73,14 @@ export default function BoundariesCard({ campaignId }: { campaignId: string }) {
   }, [rows]);
 
   const chip = (item: string, count: number, accent: string) => (
-    <span key={item} style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 13, background: C.surface2, border: `1px solid ${accent}55`, borderRadius: 999, padding: "6px 12px" }}>
+    <span key={item} style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 13, background: C.surface2, border: `1px solid ${accent}55`, borderRadius: 999, padding: "6px 12px", boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
       {item}
       {count > 1 && <span style={{ fontSize: 11, color: C.muted, fontFamily: "ui-monospace, monospace" }}>x{count}</span>}
     </span>
   );
 
   return (
-    <section style={{ background: C.surface, border: `1px solid ${C.line}`, borderRadius: 12, padding: 16 }}>
+    <section style={{ background: C.surface, border: `1px solid ${C.line}`, borderRadius: 12, padding: 16, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
         <h2 style={{ color: C.brass, fontSize: 16, margin: 0 }}>Table boundaries</h2>
         <span style={{ fontSize: 12, color: C.muted }}>{responded} response{responded === 1 ? "" : "s"}</span>
@@ -107,7 +107,7 @@ export default function BoundariesCard({ campaignId }: { campaignId: string }) {
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                 {responders.map((n) => (
-                  <span key={n} style={{ fontSize: 12.5, color: C.text, background: C.surface2, border: `1px solid ${C.good}55`, borderRadius: 999, padding: "4px 10px" }}>{n}</span>
+                  <span key={n} style={{ fontSize: 12.5, color: C.text, background: C.surface2, border: `1px solid ${C.good}55`, borderRadius: 999, padding: "4px 10px", boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>{n}</span>
                 ))}
               </div>
             </div>

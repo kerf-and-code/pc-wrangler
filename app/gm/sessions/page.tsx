@@ -874,7 +874,7 @@ export default function SessionWorkspace() {
                   const yes = pollResp.filter((r) => (r.available || []).includes(i));
                   const names = yes.map((r) => (r.character_id && pollNames[r.character_id]) || "a player");
                   return (
-                    <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "9px 11px", background: C.ink, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS }}>
+                    <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "9px 11px", background: C.ink, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
                       <div style={{ minWidth: 0 }}>
                         <div style={{ fontSize: 14, color: C.vellum }}>{new Date(iso).toLocaleString([], { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</div>
                         <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>{yes.length} available{names.length ? `: ${names.join(", ")}` : ""}</div>

@@ -145,8 +145,7 @@ export default function MySettingsPage() {
                   placeholder="Your name"
                   style={{
                     flex: "1 1 200px", background: C.surface, color: C.text,
-                    border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "9px 12px", fontSize: 14,
-                  }}
+                    border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "9px 12px", fontSize: 14, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}
                 />
                 <button type="button" onClick={saveName} disabled={saving} style={btn(C.sun, C.ink)}>
                   {saving ? "Saving..." : "Save"}
@@ -228,8 +227,7 @@ export default function MySettingsPage() {
                       style={{
                         flex: "0 1 140px", background: C.surface, color: C.text,
                         border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "9px 12px",
-                        fontSize: 14, fontFamily: SAX.mono, letterSpacing: "0.1em",
-                      }}
+                        fontSize: 14, fontFamily: SAX.mono, letterSpacing: "0.1em", boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}
                     />
                     <button
                       type="button"
@@ -264,8 +262,7 @@ function Card({ children }: { children: React.ReactNode }) {
   return (
     <div style={{
       background: C.surface, border: `1px solid ${C.line}`,
-      borderRadius: FORGE_RADIUS, padding: "16px 18px", marginBottom: 12,
-    }}>
+      borderRadius: FORGE_RADIUS, padding: "16px 18px", marginBottom: 12, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
       {children}
     </div>
   );

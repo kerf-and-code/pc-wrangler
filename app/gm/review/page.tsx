@@ -412,7 +412,7 @@ export default function ReviewPage() {
   const tabBtn = (on: boolean) => ({ background: on ? C.plum : "transparent", color: on ? C.ink : C.muted, border: `1px solid ${on ? C.plum : C.line}`, borderRadius: FORGE_RADIUS, padding: "8px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer" } as const);
   const thresholdSelect = (
     <select value={threshold} onChange={(e) => setThreshold(Number(e.target.value))}
-      style={{ background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "8px 10px", fontSize: 12.5 }}>
+      style={{ background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "8px 10px", fontSize: 12.5, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
       <option value={90}>{"\u2265 90%"}</option>
       <option value={80}>{"\u2265 80%"}</option>
       <option value={70}>{"\u2265 70%"}</option>
@@ -430,13 +430,13 @@ export default function ReviewPage() {
         <div style={box}>
           <label style={{ fontSize: 12, color: C.muted, fontFamily: "ui-monospace, monospace", letterSpacing: "0.1em" }}>CAMPAIGN</label>
           <select value={campaignId} onChange={(e) => setCampaignId(e.target.value)}
-            style={{ display: "block", width: "100%", marginTop: 6, marginBottom: 14, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "10px 12px", fontSize: 15 }}>
+            style={{ display: "block", width: "100%", marginTop: 6, marginBottom: 14, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "10px 12px", fontSize: 15, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
             {campaigns.length === 0 && <option value="">No campaigns yet</option>}
             {campaigns.map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}
           </select>
           <label style={{ fontSize: 12, color: C.muted, fontFamily: "ui-monospace, monospace", letterSpacing: "0.1em" }}>CAPTURE JOB</label>
           <select value={jobId} onChange={(e) => setJobId(e.target.value)}
-            style={{ display: "block", width: "100%", marginTop: 6, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "10px 12px", fontSize: 15 }}>
+            style={{ display: "block", width: "100%", marginTop: 6, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "10px 12px", fontSize: 15, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
             {jobs.length === 0 && <option value="">No transcribed jobs yet</option>}
             {jobs.map((j) => (<option key={j.id} value={j.id}>Session {j.session?.session_number ?? "?"} ({j.status})</option>))}
           </select>
@@ -531,7 +531,7 @@ export default function ReviewPage() {
                           </div>
 
                           {p.segment?.text && (
-                            <div style={{ marginTop: 10, padding: "10px 12px", background: C.surface2, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, fontSize: 13, color: C.text }}>
+                            <div style={{ marginTop: 10, padding: "10px 12px", background: C.surface2, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, fontSize: 13, color: C.text, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
                               <span style={{ color: C.muted, fontFamily: "ui-monospace, monospace", fontSize: 11, marginRight: 8 }}>{fmtTime(p.segment.start_ms)}</span>
                               {"\u201c"}{p.segment.text}{"\u201d"}
                             </div>
@@ -613,7 +613,7 @@ export default function ReviewPage() {
                         <div key={p.id} style={box}>
                           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
                             <select value={eKind} onChange={(ev) => setEdit(p.id, { kind: ev.target.value })}
-                              style={{ background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "6px 10px", fontSize: 12.5 }}>
+                              style={{ background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "6px 10px", fontSize: 12.5, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
                               {gmKinds.map((k) => (<option key={k.kind} value={k.kind}>{k.label}</option>))}
                             </select>
                             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -628,7 +628,7 @@ export default function ReviewPage() {
                           </div>
 
                           <textarea value={eSummary} onChange={(ev) => setEdit(p.id, { summary: ev.target.value })} rows={2}
-                            style={{ display: "block", width: "100%", marginTop: 10, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "9px 11px", fontSize: 14, resize: "vertical", fontFamily: "inherit", boxSizing: "border-box" }} />
+                            style={{ display: "block", width: "100%", marginTop: 10, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "9px 11px", fontSize: 14, resize: "vertical", fontFamily: "inherit", boxSizing: "border-box", boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }} />
 
                           {availEntities(p).length > 0 && (
                             <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginTop: 10, alignItems: "center" }}>
@@ -643,7 +643,7 @@ export default function ReviewPage() {
                           )}
 
                           {p.quote && (
-                            <div style={{ marginTop: 10, padding: "10px 12px", background: C.surface2, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, fontSize: 13, color: C.text, fontStyle: "italic" }}>
+                            <div style={{ marginTop: 10, padding: "10px 12px", background: C.surface2, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, fontSize: 13, color: C.text, fontStyle: "italic", boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
                               {"\u201c"}{p.quote}{"\u201d"}
                             </div>
                           )}

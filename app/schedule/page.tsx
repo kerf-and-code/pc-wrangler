@@ -126,7 +126,7 @@ export default function PlayerSchedulePage() {
                 const on = choice === o.value;
                 return (
                   <button key={o.value} type="button" onClick={() => rsvp(o.value)} disabled={saving}
-                    style={{ padding: "13px 16px", borderRadius: FORGE_RADIUS, border: `1px solid ${on ? o.color : C.line}`, background: on ? "rgba(255,255,255,0.06)" : C.surface2, color: C.text, fontSize: 15, fontWeight: 600, cursor: saving ? "default" : "pointer", textAlign: "left" }}>
+                    style={{ padding: "13px 16px", borderRadius: FORGE_RADIUS, border: `1px solid ${on ? o.color : C.line}`, background: on ? "rgba(255,255,255,0.06)" : C.surface2, color: C.text, fontSize: 15, fontWeight: 600, cursor: saving ? "default" : "pointer", textAlign: "left", boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
                     {o.label}
                   </button>
                 );

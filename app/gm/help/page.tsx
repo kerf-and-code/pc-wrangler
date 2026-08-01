@@ -46,7 +46,7 @@ export default function HelpPage() {
       <h1 style={{ fontFamily: "'Iowan Old Style', Georgia, serif", fontSize: 30, fontWeight: 700, margin: "0 0 8px" }}>{HELP.title}</h1>
       <p style={{ color: C.muted, fontSize: 15, lineHeight: 1.6, margin: "0 0 20px", maxWidth: 640 }}>{HELP.subtitle}</p>
 
-      <nav style={{ background: C.surface, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "14px 18px", marginBottom: 22, display: "flex", flexWrap: "wrap", gap: 8 }}>
+      <nav style={{ background: C.surface, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "14px 18px", marginBottom: 22, display: "flex", flexWrap: "wrap", gap: 8, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
         {HELP.sections.map((s) => (
           <a key={s.id} href={`#${s.id}`}
             style={{ fontFamily: "ui-monospace, monospace", fontSize: 11.5, letterSpacing: "0.06em", textTransform: "uppercase", color: C.muted, textDecoration: "none", border: `1px solid ${C.line}`, borderRadius: 7, padding: "5px 11px" }}>
@@ -56,7 +56,7 @@ export default function HelpPage() {
       </nav>
 
       {HELP.sections.map((s) => (
-        <section key={s.id} id={s.id} style={{ background: C.surface, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "20px 22px", marginBottom: 16, scrollMarginTop: 16 }}>
+        <section key={s.id} id={s.id} style={{ background: C.surface, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "20px 22px", marginBottom: 16, scrollMarginTop: 16, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
           <h2 style={{ fontFamily: "'Iowan Old Style', Georgia, serif", fontSize: 21, fontWeight: 700, margin: "0 0 12px", color: C.sun }}>{s.title}</h2>
           {s.blocks.map((b, i) => (<Block key={i} b={b} />))}
         </section>

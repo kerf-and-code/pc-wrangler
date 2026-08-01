@@ -73,8 +73,7 @@ export default function MyCampaignsPage() {
             key={c.campaign_id}
             style={{
               background: C.surface, border: `1px solid ${C.line}`,
-              borderRadius: FORGE_RADIUS, padding: "16px 18px", marginBottom: 12,
-            }}
+              borderRadius: FORGE_RADIUS, padding: "16px 18px", marginBottom: 12, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12, flexWrap: "wrap" }}>
               <span style={{ fontFamily: SAX.serif, fontSize: 19, fontWeight: 700, color: C.text }}>

@@ -143,7 +143,7 @@ export default function CheckInPage() {
         <div style={{ ...box, marginBottom: 18 }}>
           <label style={{ fontSize: 12, color: C.muted, fontFamily: "ui-monospace, monospace", letterSpacing: "0.1em" }}>CAMPAIGN</label>
           <select value={campaignId} onChange={(e) => setCampaignId(e.target.value)}
-            style={{ display: "block", width: "100%", marginTop: 6, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "10px 12px", fontSize: 15 }}>
+            style={{ display: "block", width: "100%", marginTop: 6, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "10px 12px", fontSize: 15, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
             {campaigns.length === 0 && <option value="">No campaigns yet</option>}
             {campaigns.map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}
           </select>
@@ -152,7 +152,7 @@ export default function CheckInPage() {
             One link for your players: Inventory, Check-in, and Chat. Check-in auto-shows the latest processed session.
           </div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            <input readOnly value={portalLink()} style={{ flex: 1, minWidth: 220, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "10px 12px", fontSize: 13, fontFamily: "ui-monospace, monospace" }} />
+            <input readOnly value={portalLink()} style={{ flex: 1, minWidth: 220, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "10px 12px", fontSize: 13, fontFamily: "ui-monospace, monospace", boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }} />
             <button type="button" onClick={copyLink} style={btn(C.sun, C.ink)}>{copied ? "Copied" : "Copy"}</button>
           </div>
 
@@ -164,7 +164,7 @@ export default function CheckInPage() {
                   const on = selected && selected.id === s.id;
                   return (
                     <button key={s.id} type="button" onClick={() => setSelected(s)}
-                      style={{ padding: "8px 14px", borderRadius: FORGE_RADIUS, border: `1px solid ${on ? C.sun : C.line}`, background: on ? C.sun : C.surface2, color: on ? C.ink : C.text, fontWeight: 600, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", gap: 7 }}>
+                      style={{ padding: "8px 14px", borderRadius: FORGE_RADIUS, border: `1px solid ${on ? C.sun : C.line}`, background: on ? C.sun : C.surface2, color: on ? C.ink : C.text, fontWeight: 600, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", gap: 7, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
                       <span style={{ width: 7, height: 7, borderRadius: 7, background: STATUS_TONE[s.status] || C.muted }} />
                       Session {s.session_number ?? "?"}
                     </button>
@@ -201,7 +201,7 @@ export default function CheckInPage() {
               {chars.length === 0 && <p style={{ color: C.muted, fontSize: 13 }}>No player characters in the roster yet.</p>}
               <div style={{ display: "grid", gap: 10 }}>
                 {chars.map((ch) => (
-                  <div key={ch.id} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 10, padding: "10px 12px", background: C.surface2, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS }}>
+                  <div key={ch.id} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 10, padding: "10px 12px", background: C.surface2, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
                     <div>
                       <div style={{ fontSize: 14, fontWeight: 600 }}>{ch.name}</div>
                       {ch.class && <div style={{ fontSize: 12, color: C.muted }}>{ch.class}</div>}
@@ -212,7 +212,7 @@ export default function CheckInPage() {
                         const tone = st.v === "absent" ? C.warn : st.v === "present" ? C.good : C.plum;
                         return (
                           <button key={st.v} type="button" onClick={() => mark(ch.id, st.v)}
-                            style={{ padding: "6px 10px", borderRadius: 7, border: `1px solid ${on ? tone : C.line}`, background: on ? tone : "transparent", color: on ? C.ink : C.muted, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+                            style={{ padding: "6px 10px", borderRadius: 7, border: `1px solid ${on ? tone : C.line}`, background: on ? tone : "transparent", color: on ? C.ink : C.muted, fontSize: 12, fontWeight: 600, cursor: "pointer", boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
                             {st.l}
                           </button>
                         );
@@ -231,7 +231,7 @@ export default function CheckInPage() {
               ) : (
                 <div style={{ display: "grid", gap: 10, marginTop: 12 }}>
                   {vibes.map((v) => (
-                    <div key={v.id} style={{ padding: "12px 14px", background: C.surface2, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS }}>
+                    <div key={v.id} style={{ padding: "12px 14px", background: C.surface2, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10 }}>
                         <span style={{ fontSize: 14, fontWeight: 600 }}>{v.player_name || "Anonymous player"}</span>
                         {v.satisfaction !== null && <span style={{ color: C.sun, fontSize: 13, fontWeight: 700 }}>{v.satisfaction}/5</span>}
@@ -261,7 +261,7 @@ export default function CheckInPage() {
             ) : (
               <div style={{ display: "grid", gap: 8 }}>
                 {chatReads.map((m, i) => (
-                  <div key={i} style={{ background: C.surface2, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "9px 12px" }}>
+                  <div key={i} style={{ background: C.surface2, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "9px 12px", boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
                     <div style={{ fontSize: 12, color: C.muted, marginBottom: 2 }}>
                       {m.display_name || "Player"} · {new Date(m.created_at).toLocaleString()}
                     </div>

@@ -365,8 +365,7 @@ export default function TableTap({ shareCode }: { shareCode: string }) {
         borderRadius: 12,
         padding: 16,
         color: "#e8dcc4",
-        fontFamily: "system-ui, sans-serif",
-      }}
+        fontFamily: "system-ui, sans-serif", boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}
     >
       <h2 style={{ color: BRASS, fontSize: 17, margin: "0 0 4px" }}>Capture your D&D Beyond rolls</h2>
       <p style={{ color: "#a99e86", fontSize: 13.5, marginTop: 0 }}>
@@ -385,7 +384,7 @@ export default function TableTap({ shareCode }: { shareCode: string }) {
       </div>
 
       {b20 === "waiting" && (
-        <div style={{ background: "#221e18", border: "1px solid #4a4237", borderRadius: 10, padding: 14, fontSize: 14, marginBottom: 12 }}>
+        <div style={{ background: "#221e18", border: "1px solid #4a4237", borderRadius: 10, padding: 14, fontSize: 14, marginBottom: 12, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
           <b style={{ color: BRASS }}>One-time setup:</b> in Beyond20&apos;s options, add{" "}
           <code style={{ color: "#9aa880" }}>https://pc-wrangler.vercel.app/*</code> to Custom Domains and press
           Apply, then reload this page. For table-accurate numbers, also enable D&D Beyond digital dice.
@@ -393,13 +392,13 @@ export default function TableTap({ shareCode }: { shareCode: string }) {
       )}
 
       {lastError && (
-        <div style={{ background: "#2e1f18", border: "1px solid #6e3a2c", borderRadius: 10, padding: 12, fontSize: 14, marginBottom: 12, color: "#d97d6d" }}>
+        <div style={{ background: "#2e1f18", border: "1px solid #6e3a2c", borderRadius: 10, padding: 12, fontSize: 14, marginBottom: 12, color: "#d97d6d", boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
           {lastError}
         </div>
       )}
 
       {unmatched.length > 0 && (
-        <div style={{ background: "#221e18", border: `1px solid ${BRASS}`, borderRadius: 10, padding: 14, fontSize: 13, marginBottom: 12 }}>
+        <div style={{ background: "#221e18", border: `1px solid ${BRASS}`, borderRadius: 10, padding: 14, fontSize: 13, marginBottom: 12, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
           <div style={{ color: BRASS, fontWeight: 700, marginBottom: 8 }}>Link your character</div>
           {unmatched.map((ddbId) => (
             <div key={ddbId} style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 8 }}>
@@ -410,7 +409,7 @@ export default function TableTap({ shareCode }: { shareCode: string }) {
               <select
                 value={linkSel[ddbId] ?? ""}
                 onChange={(e: any) => setLinkSel((s) => ({ ...s, [ddbId]: e.target.value }))}
-                style={{ background: "#14110c", color: "#e8dcc4", border: "1px solid #4a4237", borderRadius: 8, padding: "6px 8px", fontSize: 13 }}
+                style={{ background: "#14110c", color: "#e8dcc4", border: "1px solid #4a4237", borderRadius: 8, padding: "6px 8px", fontSize: 13, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}
               >
                 <option value="">Choose a character...</option>
                 {(charOptions ?? []).map((c) => (
@@ -424,8 +423,7 @@ export default function TableTap({ shareCode }: { shareCode: string }) {
                   background: linkSel[ddbId] ? BRASS : "#2b2620",
                   color: linkSel[ddbId] ? "#14110c" : "#8a8069",
                   border: 0, borderRadius: 8, padding: "6px 14px", fontSize: 13, fontWeight: 700,
-                  cursor: linkSel[ddbId] ? "pointer" : "default",
-                }}
+                  cursor: linkSel[ddbId] ? "pointer" : "default", boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}
               >
                 {linking === ddbId ? "Linking..." : "Link"}
               </button>
@@ -452,8 +450,7 @@ export default function TableTap({ shareCode }: { shareCode: string }) {
               border: "1px solid #4a4237",
               borderRadius: 8,
               marginBottom: 6,
-              fontSize: 14,
-            }}
+              fontSize: 14, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}
           >
             <span
               title={f.fidelity}

@@ -384,8 +384,7 @@ export default function EncountersPage() {
                 color: method === m ? C.ink : C.muted,
                 border: `1px solid ${method === m ? C.brass : C.line}`,
                 borderRadius: 999, padding: "6px 14px", fontSize: 12.5, fontWeight: 700,
-                fontFamily: SAX.mono, cursor: "pointer",
-              }}
+                fontFamily: SAX.mono, cursor: "pointer", boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}
             >
               {m === "2024" ? "2024 DMG (XP budget)" : "2014 DMG (thresholds + multiplier)"}
             </button>
@@ -437,8 +436,7 @@ export default function EncountersPage() {
                   color: noLevel ? C.warn : on ? C.text : C.muted,
                   border: `1px solid ${noLevel ? C.warn : on ? C.brass : C.line}`,
                   borderRadius: 999, padding: "6px 13px", fontSize: 13,
-                  cursor: "pointer", opacity: on ? 1 : 0.5,
-                }}
+                  cursor: "pointer", opacity: on ? 1 : 0.5, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}
               >
                 {c.name}
                 <span style={{ fontFamily: SAX.mono, fontSize: 11, marginLeft: 7, color: C.muted }}>
@@ -532,8 +530,7 @@ export default function EncountersPage() {
               background: pickerOpen ? C.brass : "transparent", color: pickerOpen ? C.ink : C.text,
               border: `1px solid ${pickerOpen ? C.brass : C.line}`,
               borderRadius: FORGE_RADIUS, padding: "7px 14px", fontSize: 12.5, fontWeight: 700,
-              fontFamily: SAX.mono, cursor: "pointer",
-            }}
+              fontFamily: SAX.mono, cursor: "pointer", boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}
           >
             Import from library
           </button>
@@ -700,8 +697,7 @@ export default function EncountersPage() {
             style={{
               background: modOn ? C.brass : "transparent", color: modOn ? C.ink : C.muted,
               border: `1px solid ${modOn ? C.brass : C.line}`, borderRadius: 999,
-              padding: "4px 12px", fontSize: 11.5, fontFamily: SAX.mono, fontWeight: 700, cursor: "pointer",
-            }}
+              padding: "4px 12px", fontSize: 11.5, fontFamily: SAX.mono, fontWeight: 700, cursor: "pointer", boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}
           >
             {modOn ? "On" : "Off"}
           </button>
@@ -799,8 +795,7 @@ function MonsterPicker({ catalog, srdMode, onSrdMode, hasOwn, onAdd, C, inputSty
   return (
     <div style={{
       marginTop: 12, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: 12,
-      background: "rgba(255,255,255,0.02)",
-    }}>
+      background: "rgba(255,255,255,0.02)", boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
       <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 10 }}>
         <input
           value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search monsters…"
@@ -813,8 +808,7 @@ function MonsterPicker({ catalog, srdMode, onSrdMode, hasOwn, onAdd, C, inputSty
               style={{
                 background: srdMode === m ? C.brass : "transparent", color: srdMode === m ? C.ink : C.muted,
                 border: `1px solid ${srdMode === m ? C.brass : C.line}`, borderRadius: 999,
-                padding: "5px 11px", fontSize: 11.5, fontFamily: SAX.mono, fontWeight: 700, cursor: "pointer",
-              }}
+                padding: "5px 11px", fontSize: 11.5, fontFamily: SAX.mono, fontWeight: 700, cursor: "pointer", boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}
             >
               {m === "both" ? "Both" : m}
             </button>

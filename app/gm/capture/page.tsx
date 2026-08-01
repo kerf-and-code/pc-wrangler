@@ -207,13 +207,13 @@ export default function CapturePage() {
         <div style={box}>
           <label style={{ fontSize: 12, color: C.muted, fontFamily: "ui-monospace, monospace", letterSpacing: "0.1em" }}>CAMPAIGN</label>
           <select value={campaignId} onChange={(e) => setCampaignId(e.target.value)}
-            style={{ display: "block", width: "100%", marginTop: 6, marginBottom: 14, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "10px 12px", fontSize: 15 }}>
+            style={{ display: "block", width: "100%", marginTop: 6, marginBottom: 14, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "10px 12px", fontSize: 15, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
             {campaigns.length === 0 && <option value="">No campaigns yet</option>}
             {campaigns.map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}
           </select>
           <label style={{ fontSize: 12, color: C.muted, fontFamily: "ui-monospace, monospace", letterSpacing: "0.1em" }}>SESSION</label>
           <select value={sessionId} onChange={(e) => setSessionId(e.target.value)}
-            style={{ display: "block", width: "100%", marginTop: 6, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "10px 12px", fontSize: 15 }}>
+            style={{ display: "block", width: "100%", marginTop: 6, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "10px 12px", fontSize: 15, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
             {sessions.length === 0 && <option value="">No sessions yet</option>}
             {sessions.map((s) => (<option key={s.id} value={s.id}>Session {s.session_number ?? "?"} ({s.status})</option>))}
           </select>
@@ -242,7 +242,7 @@ export default function CapturePage() {
                   const consented = Boolean(blanket[ch.id]);
                   const out = Boolean(optout[ch.id]);
                   return (
-                    <label key={ch.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", background: C.surface2, border: `1px solid ${out ? C.warn : consented ? C.good : C.line}`, borderRadius: FORGE_RADIUS, cursor: "pointer" }}>
+                    <label key={ch.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", background: C.surface2, border: `1px solid ${out ? C.warn : consented ? C.good : C.line}`, borderRadius: FORGE_RADIUS, cursor: "pointer", boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
                       <input type="checkbox" checked={out} onChange={(e) => toggleOptOut(ch.id, e.target.checked)}
                         style={{ width: 18, height: 18, accentColor: C.warn, cursor: "pointer" }} />
                       <span style={{ flex: 1, fontSize: 14, fontWeight: 600 }}>{ch.name}{ch.class ? <span style={{ color: C.muted, fontWeight: 400 }}> · {ch.class}</span> : null}</span>
@@ -300,7 +300,7 @@ export default function CapturePage() {
                       const tk = tracks.find((t) => t.character_id === ch.id) || null;
                       const busy = Boolean(uploading[ch.id]);
                       return (
-                        <div key={ch.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap", padding: "10px 12px", background: C.surface2, border: `1px solid ${has ? C.good : C.line}`, borderRadius: FORGE_RADIUS }}>
+                        <div key={ch.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap", padding: "10px 12px", background: C.surface2, border: `1px solid ${has ? C.good : C.line}`, borderRadius: FORGE_RADIUS, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
                           <div style={{ fontSize: 14, fontWeight: 600 }}>{ch.name}</div>
                           {has && tk ? (
                             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>

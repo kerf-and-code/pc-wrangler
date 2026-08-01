@@ -169,8 +169,7 @@ export default function TimelinePage() {
   const Chip = ({ color, children }: { color: string; children: React.ReactNode }) => (
     <span style={{
       display: "inline-block", fontSize: 12, lineHeight: 1.4, padding: "2px 8px",
-      borderRadius: 999, border: `1px solid ${color}55`, background: `${color}14`, color,
-    }}>{children}</span>
+      borderRadius: 999, border: `1px solid ${color}55`, background: `${color}14`, color, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>{children}</span>
   );
   const ChipRow = ({ label, color, children }: { label: string; color: string; children: React.ReactNode }) => (
     <div style={{ display: "flex", gap: 6, alignItems: "baseline", flexWrap: "wrap", marginTop: 8 }}>

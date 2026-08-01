@@ -275,7 +275,7 @@ export default function PrepPage() {
             {plan.map((p, i) => {
               const link = planLinkLabel(p);
               return (
-                <div key={p.id} style={{ background: C.surface2, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "10px 12px", opacity: p.done ? 0.55 : 1 }}>
+                <div key={p.id} style={{ background: C.surface2, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "10px 12px", opacity: p.done ? 0.55 : 1, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>

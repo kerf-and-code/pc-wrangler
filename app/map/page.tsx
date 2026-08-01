@@ -83,7 +83,7 @@ export default function PlayerMapPage() {
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center", marginBottom: 16 }}>
                 {maps.map((m) => (
                   <button key={m.id} type="button" onClick={() => { setActiveId(m.id); setSelectedPin(null); }}
-                    style={{ background: activeId === m.id ? C.sun : "transparent", color: activeId === m.id ? C.ink : C.text, border: `1px solid ${activeId === m.id ? C.sun : C.line}`, borderRadius: 999, padding: "6px 14px", fontSize: 13, cursor: "pointer" }}>
+                    style={{ background: activeId === m.id ? C.sun : "transparent", color: activeId === m.id ? C.ink : C.text, border: `1px solid ${activeId === m.id ? C.sun : C.line}`, borderRadius: 999, padding: "6px 14px", fontSize: 13, cursor: "pointer", boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
                     {m.name}
                   </button>
                 ))}
@@ -107,7 +107,7 @@ export default function PlayerMapPage() {
             </div>
 
             {sel && (sel.label || sel.linked_title) && (
-              <div style={{ marginTop: 14, background: C.surface, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "14px 18px", textAlign: "left" }}>
+              <div style={{ marginTop: 14, background: C.surface, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "14px 18px", textAlign: "left", boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
                 <div style={{ fontSize: 16, fontWeight: 700, color: C.text }}>{sel.label || sel.linked_title}</div>
                 {sel.linked_title && sel.label && sel.linked_title !== sel.label && (
                   <div style={{ fontSize: 13, color: C.muted, marginTop: 4 }}>{sel.linked_title}</div>

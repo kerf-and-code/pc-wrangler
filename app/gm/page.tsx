@@ -401,7 +401,7 @@ export default function GMWorkspace() {
             <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${C.line}`, display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
               {sc.share_code && <>
                 <span style={{ fontSize: 12.5, color: C.muted }}>Campaign code:</span>
-                <code style={{ fontSize: 12.5, color: C.vellum, background: C.ink, border: `1px solid ${C.line}`, borderRadius: 7, padding: "5px 9px" }}>{sc.share_code}</code>
+                <code style={{ fontSize: 12.5, color: C.vellum, background: C.ink, border: `1px solid ${C.line}`, borderRadius: 7, padding: "5px 9px", boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>{sc.share_code}</code>
                 <a href={DISCORD_INVITE} target="_blank" rel="noreferrer" style={{ ...btnGhost, textDecoration: "none", display: "inline-block" }}>Invite bot</a>
                 <button style={btnGhost} onClick={() => copySetup(sc.share_code)}>{copied === sc.share_code ? "Copied" : "Copy /setup command"}</button>
               </>}
@@ -431,7 +431,7 @@ export default function GMWorkspace() {
                       <button key={p} onClick={() => togglePartner(p)}
                         style={{ background: on ? C.brass : "none", color: on ? C.ink : C.muted,
                           border: `1px solid ${on ? C.brass : C.line}`, borderRadius: 999, padding: "4px 11px",
-                          fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+                          fontSize: 12, fontWeight: 600, cursor: "pointer", boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
                         {p}
                       </button>
                     );
@@ -477,8 +477,7 @@ export default function GMWorkspace() {
                       <span style={{
                         background: "rgba(224,122,95,0.14)", color: C.missing,
                         border: `1px solid ${C.missing}`, borderRadius: 999,
-                        padding: "2px 9px", fontSize: 11, fontFamily: "ui-monospace, monospace",
-                      }}>
+                        padding: "2px 9px", fontSize: 11, fontFamily: "ui-monospace, monospace", boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
                         {gap}
                       </span>
                       <button onClick={() => startEdit(ch)}
@@ -635,8 +634,7 @@ export default function GMWorkspace() {
                     color: edition === e ? C.ink : C.muted,
                     border: `1px solid ${edition === e ? C.brass : C.line}`,
                     borderRadius: 999, padding: "3px 11px", fontSize: 11.5,
-                    fontFamily: "ui-monospace, monospace", cursor: "pointer", fontWeight: 700,
-                  }}
+                    fontFamily: "ui-monospace, monospace", cursor: "pointer", fontWeight: 700, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}
                 >
                   {e === "both" ? "Both" : e}
                 </button>
@@ -656,7 +654,7 @@ export default function GMWorkspace() {
                   <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                     {coverage.present.map((b) => (
                       <span key={b} title={(coverage.contributors[b] || []).join(", ")}
-                        style={{ background: "rgba(94,140,126,0.18)", color: C.have, border: `1px solid ${C.have}`, borderRadius: 999, padding: "4px 11px", fontSize: 12.5 }}>
+                        style={{ background: "rgba(94,140,126,0.18)", color: C.have, border: `1px solid ${C.have}`, borderRadius: 999, padding: "4px 11px", fontSize: 12.5, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
                         {LABEL[b] || b}
                       </span>
                     ))}
@@ -670,7 +668,7 @@ export default function GMWorkspace() {
                   ) : (
                     coverage.missing.map((b) => (
                       <div key={b} style={{ marginBottom: 9 }}>
-                        <span style={{ background: "rgba(168,73,62,0.16)", color: C.missing, border: `1px solid ${C.missing}`, borderRadius: 999, padding: "4px 11px", fontSize: 12.5 }}>
+                        <span style={{ background: "rgba(168,73,62,0.16)", color: C.missing, border: `1px solid ${C.missing}`, borderRadius: 999, padding: "4px 11px", fontSize: 12.5, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
                           {LABEL[b] || b}
                         </span>
                         <span style={{ color: C.muted, fontSize: 12.5 }}>
