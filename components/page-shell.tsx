@@ -59,7 +59,8 @@ export default function PageShell({
            Kept deliberately moderate rather than the full Forge lip: 12 of the app's buttons are
            transparent ghosts and 15 are filled, and one rule has to read as carved on both. A page
            wanting the full treatment uses stoneButton() and its inline shadow overrides this. */
-        .sax-shell button:not(:disabled){
+        .sax-shell button:not(:disabled),
+        .sax-shell a[style*="padding"]{
           box-shadow:
             inset 0 1px 0 rgba(255,235,200,0.16),
             inset 0 -2px 3px rgba(0,0,0,0.42),
@@ -68,7 +69,9 @@ export default function PageShell({
             0 4px 6px rgba(0,0,0,0.45);
           transition:transform 0.06s ease, box-shadow 0.06s ease, color 0.15s ease;
         }
+        .sax-shell a[style*="padding"]:hover,
         .sax-shell button:not(:disabled):hover{ filter:brightness(1.08); }
+        .sax-shell a[style*="padding"]:active,
         .sax-shell button:not(:disabled):active{
           transform:translateY(2px);
           box-shadow:

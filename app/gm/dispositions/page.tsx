@@ -5,7 +5,13 @@ import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { PlayerDisposition } from "@/components/player-disposition";
 import { SAX, surfaces, ui } from "@/lib/theme";
-import { C, FORGE_RADIUS } from "@/lib/forge-theme";
+import { C, STONE, FORGE_RADIUS } from "@/lib/forge-theme";
+
+// The self-report series. Kept OFF the chrome palette on purpose: prior and posterior encode
+// DATA, exactly like AXIS_COLOR, and the shared C.plum/C.sun are now two values of one gold,
+// which made the two polygons indistinguishable. Separated here by SATURATION - a desaturated
+// parchment for the dashed reference against saturated gold for the finding.
+const PRIOR = STONE.inkDim;
 
 /* Palette mapped onto the shared cellar theme. The radar reads on a dark slate
    panel, so the chart colors are unchanged; only the page frame and surfaces
@@ -115,8 +121,8 @@ function Radar({ d }: { d: Built }) {
       })}
       {/* prior polygon (self-report) */}
       {hasPrior && (
-        <polygon points={polygon(priorVals.map((v) => v ?? 0))} fill={C.plum} fillOpacity={0.12}
-          stroke={C.plum} strokeWidth={1.6} strokeOpacity={0.85} />
+        <polygon points={polygon(priorVals.map((v) => v ?? 0))} fill={PRIOR} fillOpacity={0.12}
+          stroke={PRIOR} strokeWidth={1.6} strokeOpacity={0.85} />
       )}
       {/* posterior polygon (behavior) */}
       {hasPost && (
@@ -225,7 +231,7 @@ export default function DispositionsPage() {
 
       <div style={{ ...box, display: "flex", alignItems: "center", gap: 18, flexWrap: "wrap" }}>
         <div>
-          <span style={swatch(C.plum)} /><span style={{ fontSize: 13 }}>Self-report (prior)</span>
+          <span style={swatch(PRIOR)} /><span style={{ fontSize: 13 }}>Self-report (prior)</span>
         </div>
         <div>
           <span style={swatch(C.sun)} /><span style={{ fontSize: 13 }}>Behavior (posterior)</span>

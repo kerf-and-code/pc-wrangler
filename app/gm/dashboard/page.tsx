@@ -8,14 +8,14 @@ import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 
 // recharts needs real hex/rgba, not CSS vars; mapped onto the cellar theme.
 const T = {
-  bg: C.ink, surface: C.surface, surface2: "rgba(36,27,52,0.92)", line: C.line,
-  text: C.text, muted: C.muted, sun: C.sun, sunSoft: "#FFD75E",
+  bg: C.ink, surface: C.surface, surface2: "rgba(31,27,21,0.92)", line: C.line,
+  text: C.text, muted: C.muted, sun: C.sun, sunSoft: "#e2b878",
   plum: C.plum, warn: C.warn, good: C.good,
 };
 
 const CSS = `
-.wg-scope{--bg:${C.ink};--surface:${C.surface};--surface2:rgba(36,27,52,0.92);--line:${C.line};
-  --text:${C.text};--muted:${C.muted};--sun:${C.sun};--sunSoft:#FFD75E;--plum:${C.plum};--warn:${C.warn};--good:${C.good};
+.wg-scope{--bg:${C.ink};--surface:${C.surface};--surface2:rgba(31,27,21,0.92);--line:${C.line};
+  --text:${C.text};--muted:${C.muted};--sun:${C.sun};--sunSoft:#e2b878;--plum:${C.plum};--warn:${C.warn};--good:${C.good};
   color:var(--text);font-family:ui-sans-serif,system-ui,-apple-system,sans-serif;}
 .wg-serif{font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;}
 .wg-mono{font-family:ui-monospace,"SF Mono",Menlo,monospace;}

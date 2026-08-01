@@ -42,34 +42,34 @@ export default function TableTapCard({ shareCode }: { shareCode: string }) {
   return (
     <section
       style={{
-        background: "#221c31",
-        border: "1px solid #37304a",
+        background: "#221e18",
+        border: "1px solid #4a4237",
         borderRadius: 12,
         padding: 16,
-        color: "#e8e2f0",
+        color: "#e8dcc4",
       }}
     >
       <h2 style={{ color: BRASS, fontSize: 16, margin: "0 0 4px" }}>
         Capture rolls from D&amp;D Beyond
       </h2>
-      <p style={{ color: "#9a8fb0", fontSize: 13, margin: "0 0 14px", lineHeight: 1.5 }}>
+      <p style={{ color: "#a99e86", fontSize: 13, margin: "0 0 14px", lineHeight: 1.5 }}>
         Send each player one link. They install the Six Axes Capture extension once,
         and their rolls flow to this table automatically while a session is open. No
         codes to type, no tab to keep open.
       </p>
 
-      <div style={{ fontSize: 11, letterSpacing: "0.08em", color: "#8a7fa8", marginBottom: 6 }}>
+      <div style={{ fontSize: 11, letterSpacing: "0.08em", color: "#a99e86", marginBottom: 6 }}>
         PLAYER SETUP LINK
       </div>
       <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
         <code
           style={{
-            background: "#1a1526",
-            border: "1px solid #37304a",
+            background: "#14110c",
+            border: "1px solid #4a4237",
             borderRadius: 8,
             padding: "8px 10px",
             fontSize: 13,
-            color: "#9fe0ae",
+            color: "#9aa880",
             flex: 1,
             minWidth: 240,
             overflowWrap: "anywhere",
@@ -81,7 +81,7 @@ export default function TableTapCard({ shareCode }: { shareCode: string }) {
           onClick={() => copy("setup", setupUrl)}
           style={{
             background: BRASS,
-            color: "#1a1626",
+            color: "#14110c",
             border: 0,
             borderRadius: 8,
             padding: "8px 14px",
@@ -93,18 +93,18 @@ export default function TableTapCard({ shareCode }: { shareCode: string }) {
           {copied === "setup" ? "Copied" : "Copy player setup link"}
         </button>
       </div>
-      <p style={{ color: "#8a7fa8", fontSize: 12, margin: "8px 0 0", lineHeight: 1.5 }}>
+      <p style={{ color: "#a99e86", fontSize: 12, margin: "8px 0 0", lineHeight: 1.5 }}>
         Opening this link saves the table code into the player&apos;s extension. They&apos;ll
         need{" "}
         {CAPTURE_STORE_URL ? (
-          <a href={CAPTURE_STORE_URL} target="_blank" rel="noreferrer" style={{ color: "#c9a6ff" }}>
+          <a href={CAPTURE_STORE_URL} target="_blank" rel="noreferrer" style={{ color: "#e2b878" }}>
             Six Axes Capture
           </a>
         ) : (
-          <span style={{ color: "#c9a6ff" }}>Six Axes Capture</span>
+          <span style={{ color: "#e2b878" }}>Six Axes Capture</span>
         )}{" "}
         and{" "}
-        <a href={BEYOND20_URL} target="_blank" rel="noreferrer" style={{ color: "#c9a6ff" }}>
+        <a href={BEYOND20_URL} target="_blank" rel="noreferrer" style={{ color: "#e2b878" }}>
           Beyond20
         </a>{" "}
         installed; the link walks them through it.
@@ -114,7 +114,7 @@ export default function TableTapCard({ shareCode }: { shareCode: string }) {
         onClick={() => setShowFallback((s) => !s)}
         style={{
           background: "transparent",
-          color: "#b7aed1",
+          color: "#a99e86",
           border: 0,
           padding: 0,
           marginTop: 14,
@@ -131,27 +131,27 @@ export default function TableTapCard({ shareCode }: { shareCode: string }) {
           style={{
             marginTop: 10,
             paddingTop: 12,
-            borderTop: "1px solid #37304a",
+            borderTop: "1px solid #4a4237",
           }}
         >
-          <p style={{ color: "#9a8fb0", fontSize: 13, margin: "0 0 10px", lineHeight: 1.5 }}>
+          <p style={{ color: "#a99e86", fontSize: 13, margin: "0 0 10px", lineHeight: 1.5 }}>
             A player can instead keep a capture tab open during the session. It works
             the same way, but they have to add a Beyond20 custom domain once and leave
             the tab running while they play.
           </p>
 
-          <div style={{ fontSize: 11, letterSpacing: "0.08em", color: "#8a7fa8", marginBottom: 6 }}>
+          <div style={{ fontSize: 11, letterSpacing: "0.08em", color: "#a99e86", marginBottom: 6 }}>
             CAPTURE TAB LINK
           </div>
           <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
             <code
               style={{
-                background: "#1a1526",
-                border: "1px solid #37304a",
+                background: "#14110c",
+                border: "1px solid #4a4237",
                 borderRadius: 8,
                 padding: "8px 10px",
                 fontSize: 13,
-                color: "#9fe0ae",
+                color: "#9aa880",
                 flex: 1,
                 minWidth: 240,
                 overflowWrap: "anywhere",
@@ -163,8 +163,8 @@ export default function TableTapCard({ shareCode }: { shareCode: string }) {
               onClick={() => copy("tab", tabUrl)}
               style={{
                 background: "transparent",
-                color: "#b7aed1",
-                border: "1px solid #37304a",
+                color: "#a99e86",
+                border: "1px solid #4a4237",
                 borderRadius: 8,
                 padding: "8px 14px",
                 fontSize: 13,
@@ -176,10 +176,10 @@ export default function TableTapCard({ shareCode }: { shareCode: string }) {
             </button>
           </div>
 
-          <ol style={{ color: "#b7aed1", fontSize: 13, margin: "10px 0 0", paddingLeft: 20, lineHeight: 1.7 }}>
+          <ol style={{ color: "#a99e86", fontSize: 13, margin: "10px 0 0", paddingLeft: 20, lineHeight: 1.7 }}>
             <li>
               In the Beyond20 extension options, add{" "}
-              <code style={{ color: "#9fe0ae" }}>{origin}/*</code> to Custom Domains and press Apply.
+              <code style={{ color: "#9aa880" }}>{origin}/*</code> to Custom Domains and press Apply.
             </li>
             <li>Enable D&amp;D Beyond digital dice in Beyond20 so captured numbers match what the table sees.</li>
             <li>Open the capture tab link above and keep it in the background while you play.</li>
