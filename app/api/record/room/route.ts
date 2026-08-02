@@ -79,12 +79,25 @@ async function start(
 
   const safeExt = typeof b.ext === "string" && /^[a-z0-9]{2,5}$/.test(b.ext) ? b.ext : "webm";
 
-  // Reuse the session's open draft job if there is one, so a break in play does not fragment a
-  // night into two sessions. The Discord path behaves the same way.
+  // The session is REQUIRED, not a fallback. The first version of this only asked for it when
+  // creating a job, and looked for an existing draft scoped to the CAMPAIGN alone. Emberwatch had a
+  // draft job left open on session 5 from three weeks earlier, so a recording made during session 6
+  // silently attached itself to session 5 - correct-looking, in the wrong place, and invisible
+  // until someone queried for it. A recording belongs to the session the GM is running, and nothing
+  // else should be able to decide otherwise.
+  if (!b.sessionId) {
+    return NextResponse.json({
+      error: "No session is open. Open one on the Session Log first, then start recording.",
+    }, { status: 409 });
+  }
+
+  // Reuse a draft job FOR THIS SESSION, so a break in play does not fragment one night into two.
+  // Scoped by session_id as well as campaign, which is the whole correction.
   const { data: existing } = await admin
     .from("capture_jobs")
-    .select("id, session_id")
+    .select("id")
     .eq("campaign_id", campaignId)
+    .eq("session_id", b.sessionId)
     .eq("status", "draft")
     .order("created_at", { ascending: false })
     .limit(1)
@@ -93,11 +106,6 @@ async function start(
   let jobId = existing?.id as string | undefined;
 
   if (!jobId) {
-    if (!b.sessionId) {
-      return NextResponse.json({
-        error: "No session is open. Open one on the Session Log first, then start recording.",
-      }, { status: 409 });
-    }
     const { data: created, error: jErr } = await admin
       .from("capture_jobs")
       .insert({
