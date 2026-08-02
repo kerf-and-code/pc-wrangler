@@ -30,7 +30,7 @@ import { SAX } from "@/lib/theme";
 
 type Phase = "idle" | "armed" | "recording" | "stopped" | "uploading" | "done" | "error";
 type Campaign = { id: string; name: string };
-type Session = { id: string; session_number: number | null };
+type Session = { id: string; session_number: number | null; ended_at: string | null };
 
 const DB = "six-axes-room-capture";
 const STORE = "chunks";
@@ -93,7 +93,8 @@ export default function RoomRecordPage() {
   const supabase = useMemo(() => createClient(), []);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [campaignId, setCampaignId] = useState("");
-  const [session, setSession] = useState<Session | null>(null);
+  const [sessions, setSessions] = useState<Session[]>([]);
+  const [sessionId, setSessionId] = useState("");
   const [consent, setConsent] = useState(false);
   const [phase, setPhase] = useState<Phase>("idle");
   const [elapsed, setElapsed] = useState(0);
@@ -119,16 +120,27 @@ export default function RoomRecordPage() {
     })();
   }, [supabase]);
 
+  // Recent sessions, not just the open one. The page used to auto-pick the newest open session and
+  // say nothing about it, which is a guess presented as a fact - and a campaign can easily carry
+  // several stale open drafts (Emberwatch had two, on sessions 3 and 5, weeks apart). Closed ones
+  // are listed too: a GM who wrapped the night and then realised the audio still needs attaching
+  // should not have to reopen a session to do it.
   useEffect(() => {
-    if (!campaignId) { setSession(null); return; }
+    if (!campaignId) { setSessions([]); setSessionId(""); return; }
     (async () => {
       const { data } = await supabase
-        .from("sessions").select("id, session_number")
-        .eq("campaign_id", campaignId).is("ended_at", null)
-        .order("session_number", { ascending: false }).limit(1).maybeSingle();
-      setSession((data as Session) ?? null);
+        .from("sessions").select("id, session_number, ended_at")
+        .eq("campaign_id", campaignId)
+        .order("session_number", { ascending: false }).limit(12);
+      const rows = (data as Session[]) ?? [];
+      setSessions(rows);
+      // Default to the newest OPEN session, which is right almost every time, and visibly so.
+      const open = rows.find((r) => !r.ended_at);
+      setSessionId(open?.id ?? rows[0]?.id ?? "");
     })();
   }, [campaignId, supabase]);
+
+  const session = sessions.find((s) => s.id === sessionId) ?? null;
 
   // A recording in progress must survive nothing except the tab closing, and the browser will not
   // let us prevent that silently. Warn, so a stray Cmd-W does not end the night.
@@ -157,7 +169,7 @@ export default function RoomRecordPage() {
       const res = await fetch("/api/record/room", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          action: "start", campaignId, sessionId: session?.id,
+          action: "start", campaignId, sessionId,
           consentAffirmed: true, ext: extFor(pickMime()),
         }),
       });
@@ -206,7 +218,7 @@ export default function RoomRecordPage() {
     } catch {
       setError("Could not open the microphone. Check the browser has permission.");
     }
-  }, [campaignId, consent, session]);
+  }, [campaignId, consent, sessionId]);
 
   const stopRecording = useCallback(() => {
     mrRef.current?.stop();
@@ -281,10 +293,24 @@ export default function RoomRecordPage() {
           <option value="">Pick a campaign</option>
           {campaigns.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
+      </Card>
+
+      <Card tone={session && session.ended_at ? "warn" : undefined}>
+        <Label>Session</Label>
+        <select value={sessionId} onChange={(e) => setSessionId(e.target.value)} disabled={busy || !campaignId} style={field}>
+          {sessions.length === 0 && <option value="">No sessions on this campaign yet</option>}
+          {sessions.map((s) => (
+            <option key={s.id} value={s.id}>
+              Session {s.session_number ?? "?"}{s.ended_at ? " (closed)" : " (open)"}
+            </option>
+          ))}
+        </select>
         <p style={{ ...body, marginTop: 8, marginBottom: 0 }}>
-          {!campaignId ? "\u00A0"
-            : session ? `Session ${session.session_number ?? ""} is open. This will record into it.`
-            : "No session is open. Open one on the Session Log first."}
+          {!campaignId ? "Pick a campaign first."
+            : !session ? "Open a session on the Session Log before recording."
+            : session.ended_at
+              ? `Session ${session.session_number ?? ""} is closed. The audio will still attach to it, but nothing else about the session reopens.`
+              : `This will record into session ${session.session_number ?? ""}.`}
         </p>
       </Card>
 
@@ -327,7 +353,7 @@ export default function RoomRecordPage() {
         </p>
 
         {phase !== "recording" && phase !== "uploading" && phase !== "done" && (
-          <button style={btn(true)} disabled={!consent || !campaignId || !session}
+          <button style={btn(true)} disabled={!consent || !campaignId || !sessionId}
             onClick={() => void startRecording()}>Start recording</button>
         )}
         {phase === "recording" && (
