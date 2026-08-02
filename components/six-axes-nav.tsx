@@ -23,6 +23,14 @@ const GROUPS: Group[] = [
   { label: "Play", href: "/gm/sessions", children: [
     { href: "/gm/sessions", label: "Sessions" },
     { href: "/gm/capture", label: "Capture" },
+    // The two capture paths sit together on purpose: Capture is the Discord route, Record in person
+    // is the one-microphone route, and a GM picks by how their table plays rather than by hunting
+    // through the menu. "Record in person" rather than "Record" because /record already exists on
+    // the player side, and a GM reading a nav should not have to work out which is which.
+    { href: "/gm/record", label: "Record in person" },
+    // Named for what it asks of you. "Speakers" reads like a settings page; this is a question the
+    // GM answers once per in-person recording.
+    { href: "/gm/speakers", label: "Who was speaking" },
     { href: "/gm/review", label: "Review" },
     { href: "/gm/transcripts", label: "Transcripts" },
     { href: "/gm/encounters", label: "Encounters" },
