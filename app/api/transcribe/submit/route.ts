@@ -43,13 +43,20 @@ export async function POST(req: NextRequest) {
   // NARROWED type at that point, which after `let job: T | null = null` is just `null`.
   // Casting to it throws the real shape away, and `job` then narrows to `never` past the
   // null check. Which is exactly what the build was telling us.
-  type Job = { id: string; campaign_id: string; session_id: string };
+  type Job = {
+  id: string;
+  campaign_id: string;
+  session_id: string;
+  // Stamped when a GM affirms that everyone in the room agreed, before an in-person recording
+  // starts. It is what stands in for per-speaker consent on a single mixed track.
+  room_consent_by?: string | null;
+};
   let job: Job | null = null;
 
   if (isCron) {
     const { data } = await admin
       .from("capture_jobs")
-      .select("id, campaign_id, session_id")
+      .select("id, campaign_id, session_id, room_consent_by")
       .eq("id", jobId)
       .single();
     job = (data as Job | null) ?? null;
@@ -58,7 +65,7 @@ export async function POST(req: NextRequest) {
     const supa = await createClient();
     const { data } = await supa
       .from("capture_jobs")
-      .select("id, campaign_id, session_id")
+      .select("id, campaign_id, session_id, room_consent_by")
       .eq("id", jobId)
       .single();
     job = (data as Job | null) ?? null;
@@ -134,7 +141,7 @@ export async function POST(req: NextRequest) {
 
   const { data: tracks } = await admin
     .from("audio_tracks")
-    .select("id, character_id, gm_identity_id, storage_path, status")
+    .select("id, character_id, gm_identity_id, storage_path, status, kind")
     .eq("job_id", jobId);
 
   type Track = {
@@ -143,6 +150,7 @@ export async function POST(req: NextRequest) {
     gm_identity_id: string | null;
     storage_path: string | null;
     status: string;
+    kind?: string | null;
   };
   const all = (tracks as Track[]) || [];
 
@@ -151,6 +159,14 @@ export async function POST(req: NextRequest) {
   // standing consent and no opt-out. A track attributed to NOBODY is not transcribed,
   // because there is no one whose consent could cover it.
   function allowed(t: Track): boolean {
+    // A ROOM track is one microphone holding the whole table, so there is no character_id to look
+    // up and the per-speaker rule cannot apply. Its consent was given at the ROOM level before
+    // recording started and is stamped on the job as room_consent_by. Without this branch a room
+    // track falls through to the "attributed to nobody" rule below, gets withheld, and - since it
+    // is usually the ONLY track in an in-person job - parks the job at blocked_consent, which is
+    // TERMINAL and needs a manual reset. The in-person path would dead-end on its first session,
+    // in the most confusing way available.
+    if (t.kind === "room") return Boolean(job?.room_consent_by);
     if (t.gm_identity_id) return true;
     if (!t.character_id) return false;
     return consented.has(t.character_id) && !optedOut.has(t.character_id);
@@ -184,7 +200,7 @@ export async function POST(req: NextRequest) {
   let submitted = 0;
   const failures: Array<{ track: string; reason: string }> = [];
 
-  for (const t of todo as { id: string; storage_path: string }[]) {
+  for (const t of todo as { id: string; storage_path: string; kind?: string | null }[]) {
     // EVERY iteration is isolated. Previously an exception anywhere in here escaped the
     // loop entirely (this handler has no outer try/catch around the submission), so one
     // bad track silently abandoned every track after it, and the failure surfaced as a
@@ -210,6 +226,15 @@ export async function POST(req: NextRequest) {
         utterances: "true",
         callback: cb,
       });
+
+      // Diarization splits one file into Speaker 0..N. It is switched on ONLY for room tracks, and
+      // that asymmetry is the whole point of the Discord design: there, every speaker already has
+      // their own file, so attribution is solved before the audio leaves the machine and asking
+      // Deepgram to guess at it again would add nothing but a chance to be wrong. In person there
+      // is one microphone and no such structure, so the labels are the only handle on who spoke.
+      // They are per-file and carry no meaning across recordings, which is why the mapping from
+      // label to character is stored on the track rather than treated as an identity.
+      if (t.kind === "room") params.set("diarize", "true");
 
       const res = await fetch(`https://api.deepgram.com/v1/listen?${params.toString()}`, {
         method: "POST",

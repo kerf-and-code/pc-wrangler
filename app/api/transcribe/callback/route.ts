@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-type DgUtterance = { start: number; end: number; transcript: string };
+// `speaker` appears only when the submission asked for diarization, which happens for room
+// recordings and not for Discord tracks. Optional for exactly that reason.
+type DgUtterance = { start: number; end: number; transcript: string; speaker?: number };
 type DgBody = {
   results?: {
     utterances?: DgUtterance[];
@@ -17,6 +19,8 @@ type SegmentRow = {
   start_ms: number;
   end_ms: number;
   text: string;
+  // Null on the Discord path, where the track already identifies the speaker.
+  speaker?: number | null;
 };
 type Track = { id: string; job_id: string; campaign_id: string; character_id: string | null };
 
@@ -119,6 +123,10 @@ export async function POST(req: NextRequest) {
         start_ms: Math.round((u.start || 0) * 1000),
         end_ms: Math.round((u.end || 0) * 1000),
         text: u.transcript.trim(),
+        // Carried through so a room recording can be attributed later. Dropping it here would be
+        // unrecoverable: the audio is already transcribed, and getting the labels back would mean
+        // paying for another pass over the whole file.
+        speaker: typeof u.speaker === "number" ? u.speaker : null,
       }));
   } else {
     const whole = body.results?.channels?.[0]?.alternatives?.[0]?.transcript?.trim();
