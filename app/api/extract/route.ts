@@ -15,7 +15,7 @@ S = The Table (social & group cohesion)
 E = The World (exploration & discovery)
 I = Presence (engagement, attention, investment)`;
 
-type Seg = { id: string; track_id: string | null; character_id: string | null; start_ms: number | null; end_ms: number | null; text: string };
+type Seg = { id: string; track_id: string | null; character_id: string | null; gm_identity_id: string | null; start_ms: number | null; end_ms: number | null; text: string };
 type Etype = { key: string; label: string; category: string; default_axis: string | null; default_frame: string | null; default_target: string | null };
 type Char = { id: string; name: string; kind: string };
 type Proposal = { line?: number; character?: string | null; event_type?: string; axis?: string | null; frame?: string | null; target?: string | null; confidence?: number; rationale?: string };
@@ -52,7 +52,7 @@ async function fetchAllSegments(
     const from = page * PAGE;
     const { data, error } = await admin
       .from("transcript_segments")
-      .select("id, track_id, character_id, start_ms, end_ms, text")
+      .select("id, track_id, character_id, gm_identity_id, start_ms, end_ms, text")
       .eq("job_id", jid)
       .order("start_ms", { ascending: true })
       .order("id", { ascending: true })
@@ -118,9 +118,31 @@ export async function POST(req: NextRequest) {
 
   const allSegs = await fetchAllSegments(admin, jid);
   // GM segments (for the gm-done accounting) vs the player segments we extract.
-  const nonGm = allSegs.filter((s) => !(s.track_id !== null && gmTrackIds.has(s.track_id)));
+  // Partitioning by TRACK alone was correct while every track was one person: Discord hands the
+  // sidecar a separate stream per speaker, so the track IS the identity. A room recording puts the
+  // whole table on one track, which that rule sends here wholesale - narration included - and the
+  // GM's speech would be extracted as player events and fed to the disposition model as player
+  // behaviour. So a segment now also has to survive its OWN attribution.
+  const nonGm = allSegs.filter((s) => {
+    if (s.track_id !== null && gmTrackIds.has(s.track_id)) return false;   // a GM track, as before
+    if (s.gm_identity_id) return false;                                     // GM narration on a room track
+    return true;
+  });
+
+  // A room segment nobody has claimed yet is DROPPED rather than extracted anonymously. The
+  // disposition model reads events per character, so an unattributed one either lands on nobody and
+  // does nothing, or lands on somebody and is a guess wearing the same confidence as a fact.
+  // Under-extracting is recoverable: map the speakers and re-run. Mis-extracting is not.
+  const attributable = nonGm.filter((s) => s.character_id !== null);
+  const unattributed = nonGm.length - attributable.length;
+  if (unattributed > 0) {
+    console.warn(
+      `extract: ${unattributed} segment(s) skipped with no speaker assigned. ` +
+      `Map them on /gm/speakers and re-run to include them.`,
+    );
+  }
   const gmTotal = allSegs.length - nonGm.length;
-  const segments = nonGm.filter((s) => !(s.character_id && optedOut.has(s.character_id)));
+  const segments = attributable.filter((s) => !(s.character_id && optedOut.has(s.character_id)));
   const total = segments.length;
   const cursor: number = job.extract_cursor || 0;
 

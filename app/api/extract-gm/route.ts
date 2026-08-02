@@ -7,7 +7,7 @@ const MODEL = "claude-sonnet-4-6";
 const EXTRACTOR_VERSION = "wrangler-gm-extract-v1+claude-sonnet-4-6";
 const WINDOW = 60; // GM transcript lines processed per call
 
-type Seg = { id: string; track_id: string | null; start_ms: number | null; end_ms: number | null; text: string };
+type Seg = { id: string; track_id: string | null; character_id: string | null; gm_identity_id: string | null; start_ms: number | null; end_ms: number | null; text: string };
 type Kind = { kind: string; category: string; label: string; feeds: string[] };
 type Char = { id: string; name: string; kind: string };
 type Proposal = {
@@ -55,7 +55,7 @@ async function fetchAllSegments(
     const from = page * PAGE;
     const { data, error } = await admin
       .from("transcript_segments")
-      .select("id, track_id, start_ms, end_ms, text")
+      .select("id, track_id, character_id, gm_identity_id, start_ms, end_ms, text")
       .eq("job_id", jid)
       .order("start_ms", { ascending: true })
       .order("id", { ascending: true })
@@ -105,8 +105,20 @@ export async function POST(req: NextRequest) {
   const gmTrackIds = new Set(((gmTracks as { id: string }[]) || []).map((t) => t.id));
 
   const allSegs = await fetchAllSegments(admin, jid);
-  const segments = allSegs.filter((s) => s.track_id !== null && gmTrackIds.has(s.track_id));
-  const playerTotal = allSegs.length - segments.length;
+  // A GM segment is one on a narrator TRACK (the Discord shape, where the track is the identity)
+  // or one on a room track that the GM mapped to themselves. Without the second clause an in-person
+  // session yields no GM narration at all: the room track has no gm_identity_id of its own, so
+  // every ruling, NPC voice and piece of lore the GM spoke would be invisible here and would land
+  // in the player extractor instead.
+  const segments = allSegs.filter((s) =>
+    (s.track_id !== null && gmTrackIds.has(s.track_id)) || Boolean(s.gm_identity_id));
+  // NOT simply "everything that is not mine". The player extractor now SKIPS room segments with no
+  // speaker assigned, so counting them here would set a target its cursor can never reach, and the
+  // job would sit at "extracting" forever waiting for a side that had already finished. Count only
+  // what the player extractor will actually process.
+  const playerTotal = allSegs.filter(
+    (s) => !((s.track_id !== null && gmTrackIds.has(s.track_id)) || s.gm_identity_id) && s.character_id !== null,
+  ).length;
   const total = segments.length;
   const cursor: number = job.gm_extract_cursor || 0;
 
