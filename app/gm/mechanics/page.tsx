@@ -7,7 +7,13 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
-import { C, FORGE_RADIUS } from "@/lib/forge-theme";
+import { SAX } from "@/lib/theme";
+
+const C = {
+  surface: SAX.slateBg, surface2: "rgba(11,7,18,0.6)", line: SAX.line,
+  text: SAX.text, muted: SAX.muted, sun: SAX.sun, brass: SAX.brass,
+  plum: SAX.plum, warn: SAX.warn, good: SAX.good,
+};
 
 type Campaign = { id: string; name: string };
 type Session = { id: string; session_number: number | null; created_at: string; scheduled_at: string | null };
@@ -24,6 +30,7 @@ type Rolls = {
 type VttEvent = {
   id: string;
   character_id: string | null;
+  source: string | null;
   actor_name: string | null;
   event_type: string;
   name: string | null;
@@ -123,7 +130,7 @@ export default function MechanicsPage() {
       setLoading(true);
       const { data } = await supabase
         .from("vtt_events")
-        .select("id, character_id, actor_name, event_type, name, rolls, state, fidelity, rolled_at, received_at")
+        .select("id, character_id, actor_name, event_type, name, rolls, state, fidelity, rolled_at, received_at, source")
         .eq("session_id", sessionId)
         .order("rolled_at", { ascending: true });
       setEvents((data as VttEvent[]) || []);
@@ -145,7 +152,15 @@ export default function MechanicsPage() {
       if (!per[key]) {
         per[key] = {
           key,
-          label: e.character_id ? (charNames[e.character_id] ?? "Character") : `${e.actor_name ?? "Unknown"} (unlinked)`,
+          // "(unlinked)" means a Beyond20 roll whose D&D Beyond id has not been matched to a
+          // character - a real problem the GM should fix. A monster or a GM roll from the built-in
+          // roller has no character BY DESIGN, so labelling it the same way reports a fault that
+          // does not exist and buries the row among ones that do.
+          label: e.character_id
+            ? (charNames[e.character_id] ?? "Character")
+            : e.source === "six_axes_roller"
+              ? (e.actor_name ?? "The GM")
+              : `${e.actor_name ?? "Unknown"} (unlinked)`,
           linked: Boolean(e.character_id),
           d20Count: 0, natSum: 0, natCount: 0, nat20s: 0, nat1s: 0, advantage: 0, damage: 0,
           hpSeries: [], maxHp: null,
@@ -183,8 +198,8 @@ export default function MechanicsPage() {
     return { rows, dist, distMax, d20Total, dmgTotal, canonical, total: events.length, typeCounts, dmgByType };
   }, [events, charNames]);
 
-  const box = { background: C.surface, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "16px 18px", marginBottom: 14 } as const;
-  const sel = { background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "9px 12px", fontSize: 14 } as const;
+  const box = { background: C.surface, border: `1px solid ${C.line}`, borderRadius: 14, padding: "16px 18px", marginBottom: 14 } as const;
+  const sel = { background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: 9, padding: "9px 12px", fontSize: 14 } as const;
   const sessionLabel = (s: Session) =>
     `Session ${s.session_number ?? "?"} ${"\u00b7"} ${new Date(s.scheduled_at ?? s.created_at).toLocaleDateString()}`;
 
@@ -225,7 +240,7 @@ export default function MechanicsPage() {
               { label: "damage dealt", value: String(stats.dmgTotal) },
               { label: "verified numbers", value: `${stats.total ? Math.round((stats.canonical / stats.total) * 100) : 0}%` },
             ].map((k) => (
-              <div key={k.label} style={{ background: C.surface, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "14px 16px", boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
+              <div key={k.label} style={{ background: C.surface, border: `1px solid ${C.line}`, borderRadius: 14, padding: "14px 16px" }}>
                 <div style={{ fontSize: 22, fontWeight: 800, color: C.sun }}>{k.value}</div>
                 <div style={{ fontSize: 11, color: C.muted, fontFamily: "ui-monospace, monospace", letterSpacing: "0.08em", textTransform: "uppercase", marginTop: 2 }}>{k.label}</div>
               </div>
@@ -275,7 +290,7 @@ export default function MechanicsPage() {
               <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8 }}>Damage by type</div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                 {Object.entries(stats.dmgByType).sort((a, b) => b[1] - a[1]).map(([t, v]) => (
-                  <span key={t} style={{ fontSize: 13, background: C.surface2, border: `1px solid ${C.line}`, borderRadius: 999, padding: "6px 12px", boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
+                  <span key={t} style={{ fontSize: 13, background: C.surface2, border: `1px solid ${C.line}`, borderRadius: 999, padding: "6px 12px" }}>
                     {t}: <b style={{ color: C.sun }}>{v}</b>
                   </span>
                 ))}

@@ -34,6 +34,26 @@ const EVENT_TYPE: Record<string, string> = {
   other: "other",
 };
 
+/** Beyond20 groups by die size: [{ faces: 20, results: [17] }, { faces: 6, results: [3, 5] }]. */
+function groupForBeyond20(dice: { sides: number; value: number; kept: boolean }[]) {
+  const by = new Map<number, number[]>();
+  // Only KEPT dice, so a 2d20kh1 reads as one d20 with the face that counted - which is exactly
+  // what advantage means and what the distribution should record.
+  for (const d of dice.filter((x) => x.kept)) {
+    const list = by.get(d.sides) ?? [];
+    list.push(d.value);
+    by.set(d.sides, list);
+  }
+  return [...by.entries()].map(([faces, results]) => ({ faces, results }));
+}
+
+/** Beyond20 uses a signed advantage flag. Derived from the keep rule the notation asked for. */
+function advantageFlag(notation: string): number {
+  if (/d20kh/i.test(notation)) return 1;
+  if (/d20kl/i.test(notation)) return -1;
+  return 0;
+}
+
 export async function POST(req: Request) {
   let b: {
     campaignId?: string; sessionId?: string; notation?: string;
@@ -72,17 +92,36 @@ export async function POST(req: Request) {
     // A monster has no character row, so it is named rather than linked. A player using a shared
     // roller does have one, and gets linked properly so their rolls reach their own analytics.
     character_id: b.characterId || null,
-    actor_name: b.actorName?.trim() || null,
+    // Falls back to "The GM" rather than null. Mechanics groups by character_id ?? actor_name, so
+    // a nameless roll landed under the key "unknown" and rendered as "Unknown (unlinked)" - which
+    // reads as a data fault, not as your own rolls, and gets scanned past.
+    actor_name: b.actorName?.trim() || (b.characterId ? null : "The GM"),
     ddb_character_id: null,
     source: "six_axes_roller",
     event_type: EVENT_TYPE[kind],
     name: b.label?.trim() || null,
+    // SHAPED LIKE BEYOND20, deliberately.
+    //
+    // The Mechanics page reads a d20 face as rolls.dice.find(g => g.faces === 20).results[0],
+    // because that is what Beyond20 sends. A roller emitting its own tidier shape - {sides, value} -
+    // wrote rows that Mechanics COUNTED but could not read: the roll incremented the d20 tally and
+    // contributed nothing to the distribution, the natural-20s or any average. Present and
+    // invisible, which is worse than absent.
+    //
+    // Conforming here rather than teaching Mechanics a second shape keeps one reader and one
+    // format. critical_success / critical_failure / advantage are read directly by that page too.
     rolls: {
       total: result.total,
+      dice: groupForBeyond20(result.dice),
+      critical_success: result.natural === 20,
+      critical_failure: result.natural === 1,
+      advantage: advantageFlag(b.notation ?? ""),
+      // Ours, kept alongside: the exact notation and which dice a keep rule dropped, so a roll can
+      // be reproduced and explained rather than only totalled.
       notation: result.notation,
-      dice: result.dice,
       modifier: result.modifier,
       natural: result.natural,
+      dropped: result.dice.filter((d) => !d.kept).map((d) => ({ faces: d.sides, value: d.value })),
       kind,
     },
     state: null,
