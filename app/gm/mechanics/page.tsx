@@ -7,13 +7,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
-import { SAX } from "@/lib/theme";
-
-const C = {
-  surface: SAX.slateBg, surface2: "rgba(11,7,18,0.6)", line: SAX.line,
-  text: SAX.text, muted: SAX.muted, sun: SAX.sun, brass: SAX.brass,
-  plum: SAX.plum, warn: SAX.warn, good: SAX.good,
-};
+import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 
 type Campaign = { id: string; name: string };
 type Session = { id: string; session_number: number | null; created_at: string; scheduled_at: string | null };
@@ -138,6 +132,8 @@ export default function MechanicsPage() {
     })();
   }, [sessionId, supabase]);
 
+  const [tab, setTab] = useState<"table" | "dice">("table");
+
   const stats = useMemo(() => {
     const per: Record<string, CharStats> = {};
     const dist: number[] = new Array(21).fill(0);
@@ -193,13 +189,48 @@ export default function MechanicsPage() {
       }
     }
 
+    // EVERY die, not just the d20.
+    //
+    // The page grew up around Beyond20, where a roll is always a character action and the d20 is
+    // the one that decides things - so d20 got a distribution and everything else got a tally. A GM
+    // roller makes arbitrary rolls first-class: 2d10 for a wild magic table, 4d6 down the line, a
+    // d100 for loot. Those had nowhere to be looked at.
+    //
+    // Recorded per die SIZE rather than per roll, because that is the unit a fairness question is
+    // asked about. "Is my d20 cursed" is answerable; "is my 2d6+3 cursed" is not.
+    const byDie: Record<number, { n: number; sum: number; faces: Record<number, number> }> = {};
+    for (const e of events) {
+      for (const g of e.rolls?.dice ?? []) {
+        const faces = Number(g?.faces);
+        if (!Number.isFinite(faces) || faces < 2) continue;
+        const b = byDie[faces] ?? { n: 0, sum: 0, faces: {} };
+        for (const v of g?.results ?? []) {
+          if (typeof v !== "number") continue;
+          b.n += 1; b.sum += v;
+          b.faces[v] = (b.faces[v] || 0) + 1;
+        }
+        byDie[faces] = b;
+      }
+    }
+    const dieRows = Object.entries(byDie).map(([k, v]) => {
+      const sides = Number(k);
+      const expected = (sides + 1) / 2;
+      const mean = v.n ? v.sum / v.n : 0;
+      // Standard error of the mean for a uniform die, so "is this high" has an answer rather than a
+      // vibe. sigma^2 of a fair d-sided die is (d^2 - 1) / 12.
+      const sigma = Math.sqrt((sides * sides - 1) / 12);
+      const se = v.n ? sigma / Math.sqrt(v.n) : 0;
+      const z = se ? (mean - expected) / se : 0;
+      return { sides, n: v.n, mean, expected, z, faces: v.faces };
+    }).sort((a, b) => b.n - a.n);
+
     const rows = Object.values(per).sort((a, b) => b.d20Count - a.d20Count || b.damage - a.damage);
     const distMax = Math.max(1, ...dist);
-    return { rows, dist, distMax, d20Total, dmgTotal, canonical, total: events.length, typeCounts, dmgByType };
+    return { rows, dist, distMax, d20Total, dmgTotal, canonical, total: events.length, typeCounts, dmgByType, dieRows };
   }, [events, charNames]);
 
-  const box = { background: C.surface, border: `1px solid ${C.line}`, borderRadius: 14, padding: "16px 18px", marginBottom: 14 } as const;
-  const sel = { background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: 9, padding: "9px 12px", fontSize: 14 } as const;
+  const box = { background: C.surface, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "16px 18px", marginBottom: 14 } as const;
+  const sel = { background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "9px 12px", fontSize: 14 } as const;
   const sessionLabel = (s: Session) =>
     `Session ${s.session_number ?? "?"} ${"\u00b7"} ${new Date(s.scheduled_at ?? s.created_at).toLocaleDateString()}`;
 
@@ -212,6 +243,19 @@ export default function MechanicsPage() {
       <p style={{ color: C.muted, fontSize: 14.5, lineHeight: 1.6, margin: "0 0 18px", maxWidth: 640 }}>
         Descriptive stats from rolls captured at the table: who rolled, how the dice treated them, damage dealt, and hit points over the session. Numbers marked unverified came from players without digital dice enabled.
       </p>
+
+      <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
+        {([["table", "The table"], ["dice", "The dice"]] as const).map(([k, label]) => (
+          <button key={k} onClick={() => setTab(k)} style={{
+            background: tab === k ? C.sun : "transparent",
+            color: tab === k ? "#241a0d" : C.text,
+            border: tab === k ? "none" : `1px solid ${C.line}`,
+            borderRadius: FORGE_RADIUS, padding: "8px 16px",
+            fontFamily: "ui-monospace, monospace", fontSize: 12,
+            letterSpacing: "0.08em", textTransform: "uppercase", cursor: "pointer",
+          }}>{label}</button>
+        ))}
+      </div>
 
       <div style={{ ...box, display: "flex", gap: 12, flexWrap: "wrap" }}>
         <select value={campaignId} onChange={(e: any) => setCampaignId(e.target.value)} style={sel}>
@@ -230,6 +274,94 @@ export default function MechanicsPage() {
         <div style={{ ...box, color: C.muted, fontSize: 14, lineHeight: 1.6 }}>
           No captured rolls for this session. Share your session link (Roster tab) and have players keep it open while they play with Beyond20.
         </div>
+      ) : tab === "dice" ? (
+        <>
+          <div style={{ ...box }}>
+            <div style={{ fontFamily: "ui-monospace, monospace", fontSize: 11, letterSpacing: "0.16em",
+              textTransform: "uppercase", color: C.muted, marginBottom: 8 }}>Every die rolled</div>
+            <p style={{ color: C.muted, fontSize: 13.5, lineHeight: 1.6, margin: "0 0 14px" }}>
+              One row per die SIZE, because that is the unit a fairness question has an answer for.
+              &ldquo;Is my d20 cursed&rdquo; is answerable; &ldquo;is my 2d6+3 cursed&rdquo; is not.
+            </p>
+            {stats.dieRows.length === 0 ? (
+              <p style={{ color: C.muted, fontSize: 14, margin: 0 }}>
+                No individual die faces recorded for this session yet.
+              </p>
+            ) : (
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13.5 }}>
+                <thead>
+                  <tr style={{ color: C.muted, textAlign: "left" }}>
+                    <th style={{ padding: "6px 10px" }}>Die</th>
+                    <th style={{ padding: "6px 10px" }}>Rolled</th>
+                    <th style={{ padding: "6px 10px" }}>Average</th>
+                    <th style={{ padding: "6px 10px" }}>Expected</th>
+                    <th style={{ padding: "6px 10px" }}>Reading</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {stats.dieRows.map((d) => {
+                    // Two standard errors is the usual "worth a second look" line. Below about 30
+                    // rolls the estimate is too noisy to say anything, and saying so is more honest
+                    // than printing a z-score that invites over-reading.
+                    const thin = d.n < 30;
+                    const off = Math.abs(d.z) >= 2;
+                    return (
+                      <tr key={d.sides} style={{ borderTop: `1px solid ${C.line}` }}>
+                        <td style={{ padding: "9px 10px", fontWeight: 600 }}>d{d.sides}</td>
+                        <td style={{ padding: "9px 10px" }}>{d.n}</td>
+                        <td style={{ padding: "9px 10px", color: !thin && off ? C.warn : C.text }}>
+                          {d.mean.toFixed(2)}
+                        </td>
+                        <td style={{ padding: "9px 10px", color: C.muted }}>{d.expected.toFixed(2)}</td>
+                        <td style={{ padding: "9px 10px", color: C.muted, fontSize: 12.5 }}>
+                          {thin
+                            ? "too few rolls to say"
+                            : off
+                              ? `running ${d.mean > d.expected ? "high" : "low"}, ${Math.abs(d.z).toFixed(1)} standard errors out`
+                              : "nothing unusual"}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
+            <p style={{ color: C.muted, fontSize: 12.5, lineHeight: 1.6, margin: "14px 0 0" }}>
+              Expected is the mean of a fair die, (sides + 1) / 2. The reading compares the observed
+              average against that, in standard errors. Over a campaign one die in twenty will drift
+              two errors out by chance alone, so treat a single flagged row as interesting rather
+              than as evidence.
+            </p>
+          </div>
+
+          {stats.dieRows.filter((d) => d.n >= 20).map((d) => {
+            const maxCount = Math.max(1, ...Object.values(d.faces));
+            return (
+              <div key={d.sides} style={box}>
+                <div style={{ fontFamily: "ui-monospace, monospace", fontSize: 11, letterSpacing: "0.16em",
+                  textTransform: "uppercase", color: C.muted, marginBottom: 10 }}>
+                  d{d.sides} faces {"\u00b7"} {d.n} rolls
+                </div>
+                <div style={{ display: "flex", alignItems: "flex-end", gap: 2, height: 90 }}>
+                  {Array.from({ length: d.sides }, (_, i) => i + 1).map((face) => {
+                    const n = d.faces[face] || 0;
+                    return (
+                      <div key={face} style={{ flex: 1, textAlign: "center" }} title={`${face}: ${n}`}>
+                        <div style={{
+                          height: Math.round((n / maxCount) * 70), background: C.plum,
+                          borderRadius: "2px 2px 0 0", minHeight: n ? 2 : 0,
+                        }} />
+                        {d.sides <= 20 && (
+                          <div style={{ fontSize: 9, color: C.muted, marginTop: 3 }}>{face}</div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </>
       ) : (
         <>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12, marginBottom: 14 }}>
@@ -240,7 +372,7 @@ export default function MechanicsPage() {
               { label: "damage dealt", value: String(stats.dmgTotal) },
               { label: "verified numbers", value: `${stats.total ? Math.round((stats.canonical / stats.total) * 100) : 0}%` },
             ].map((k) => (
-              <div key={k.label} style={{ background: C.surface, border: `1px solid ${C.line}`, borderRadius: 14, padding: "14px 16px" }}>
+              <div key={k.label} style={{ background: C.surface, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "14px 16px" }}>
                 <div style={{ fontSize: 22, fontWeight: 800, color: C.sun }}>{k.value}</div>
                 <div style={{ fontSize: 11, color: C.muted, fontFamily: "ui-monospace, monospace", letterSpacing: "0.08em", textTransform: "uppercase", marginTop: 2 }}>{k.label}</div>
               </div>
