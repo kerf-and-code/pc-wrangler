@@ -167,6 +167,10 @@ export async function POST(req: NextRequest) {
   // Optional one-click NPC: resolve an existing npc character by name (case
   // insensitive) or create one, then link it. This is the Codex-fills-itself step.
   let npcId: string | null = null;
+  // The beat's own text. Whoever this proposal is ABOUT gets it, and that is decided once here
+  // rather than independently by each create block below.
+  const seed = (prop.detail || prop.summary || "").toString().slice(0, 2000);
+
   const npcName = (body.npcName || prop.npc_name || "").trim();
   if (await decideCreate(admin, prop.campaign_id, "npc_name", npcName, body.createNpc)) {
     const { data: existing } = await admin
@@ -181,7 +185,12 @@ export async function POST(req: NextRequest) {
     } else {
       const { data: created, error: cErr } = await admin
         .from("characters")
-        .insert({ campaign_id: prop.campaign_id, kind: "npc", name: npcName, active: true })
+        // Seeded, which it never was: 109 NPCs across every campaign had been created with an
+        // empty description while the SAME beat text was written onto the location instead. A beat
+        // that names a person and a place is almost always describing the person - "a broad
+        // half-orc in a patched hauberk" ended up as the body of The Toll-Bridge - so the NPC takes
+        // the seed and the place, below, does not.
+        .insert({ campaign_id: prop.campaign_id, kind: "npc", name: npcName, description: seed || null, active: true })
         .select("id")
         .single();
       if (cErr) return NextResponse.json({ error: `Could not create NPC: ${cErr.message}` }, { status: 500 });
@@ -205,10 +214,14 @@ export async function POST(req: NextRequest) {
     if (existingLoc) {
       locationId = (existingLoc as { id: string }).id;
     } else {
-      const seed = (prop.detail || prop.summary || "").toString().slice(0, 2000);
+      // Only seeded when this beat did NOT also mint an NPC. When it did, the text is describing
+      // the person, and putting it here produced locations that read as character sheets. An empty
+      // place is honest and the GM can fill it in; a mislabelled one is worse than blank, and it
+      // is what a public codex would publish.
+      const locSeed = npcId ? "" : seed;
       const { data: createdLoc, error: lErr } = await admin
         .from("entries")
-        .insert({ campaign_id: prop.campaign_id, created_by: user.id, type: "location", title: locationName, body: seed || null, visibility: "player" })
+        .insert({ campaign_id: prop.campaign_id, created_by: user.id, type: "location", title: locationName, body: locSeed || null, visibility: "player" })
         .select("id")
         .single();
       if (lErr) return NextResponse.json({ error: `Could not create place: ${lErr.message}` }, { status: 500 });
@@ -231,7 +244,6 @@ export async function POST(req: NextRequest) {
     if (existingFac) {
       factionId = (existingFac as { id: string }).id;
     } else {
-      const seed = (prop.detail || prop.summary || "").toString().slice(0, 2000);
       const { data: createdFac, error: fErr } = await admin
         .from("entries")
         .insert({ campaign_id: prop.campaign_id, created_by: user.id, type: "lore", title: factionName, body: seed || null, visibility: "player", tags: ["faction"] })
