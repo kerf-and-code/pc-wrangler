@@ -80,3 +80,13 @@ incident-logs.txt
 HANDOFF-*.md
 extracted/
 __pycache__/
+
+# --- exceptions, and they have to come after the rules they override ---
+#
+# git applies the LAST matching pattern, so a negation placed above its rule does nothing. These sit
+# at the end of the file for that reason, not for tidiness.
+#
+# The Foundry module archive is a shipped deliverable, not scratch: public/foundry/six-axes.zip is
+# what the module manifest's download URL points at, and Foundry fetches it during an install. The
+# blanket *.zip above exists to keep repo-root working files out, and it caught this by accident.
+!public/foundry/*.zip
