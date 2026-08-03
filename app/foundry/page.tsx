@@ -99,7 +99,7 @@ export default function FoundryPage() {
         <section style={card}>
           <h2 style={h2}>Requirements</h2>
           <ul style={list}>
-            <li style={li}>Foundry VTT v12 or later. Verified against 13.351.</li>
+            <li style={li}>Foundry VTT v12 or later. Verified against 14.365.</li>
             <li style={li}>
               The dnd5e system for exact roll types. Other systems still send rolls; the app just
               has to guess from the flavour text what kind of roll it was, and labels anything it
