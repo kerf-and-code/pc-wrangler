@@ -24,6 +24,7 @@ import { SAX } from "@/lib/theme";
 type Campaign = {
   id: string; name: string;
   public_slug: string | null; public_published_at: string | null; public_blurb: string | null;
+  public_listed: boolean;
 };
 type Item = {
   key: string; kind: "entry" | "npc"; id: string;
@@ -40,6 +41,7 @@ export default function PublishPage() {
   const [campaignId, setCampaignId] = useState("");
   const [items, setItems] = useState<Item[]>([]);
   const [blurb, setBlurb] = useState("");
+  const [listed, setListed] = useState(false);
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
 
@@ -53,7 +55,7 @@ export default function PublishPage() {
       if (!user) return;
       const { data } = await supabase
         .from("campaigns")
-        .select("id, name, public_slug, public_published_at, public_blurb")
+        .select("id, name, public_slug, public_published_at, public_blurb, public_listed")
         .eq("gm_id", user.id).order("name");
       const rows = (data as Campaign[]) ?? [];
       setCampaigns(rows);
@@ -77,7 +79,9 @@ export default function PublishPage() {
 
   useEffect(() => {
     if (!campaignId) { setItems([]); setBlurb(""); return; }
-    setBlurb(campaigns.find((c) => c.id === campaignId)?.public_blurb ?? "");
+    const c = campaigns.find((x) => x.id === campaignId);
+    setBlurb(c?.public_blurb ?? "");
+    setListed(Boolean(c?.public_listed));
     void loadItems(campaignId);
   }, [campaignId, campaigns, loadItems]);
 
@@ -122,6 +126,14 @@ export default function PublishPage() {
       setNote("Everything is now private again.");
     } finally { setBusy(false); }
   }, [campaignId, supabase, loadItems]);
+
+  const setListing = useCallback(async (next: boolean) => {
+    if (!campaign) return;
+    setListed(next);
+    const { error } = await supabase.from("campaigns").update({ public_listed: next }).eq("id", campaign.id);
+    if (error) { setNote(`Could not change that: ${error.message}`); setListed(!next); return; }
+    setCampaigns((cs) => cs.map((c) => (c.id === campaign.id ? { ...c, public_listed: next } : c)));
+  }, [campaign, supabase]);
 
   const togglePublished = useCallback(async () => {
     if (!campaign) return;
@@ -191,6 +203,22 @@ export default function PublishPage() {
               {published
                 ? `${publicCount} item${publicCount === 1 ? "" : "s"} are readable at that address. Unpublishing hides the page immediately and keeps every choice below.`
                 : "Publishing creates a public web address. It is separate from your players' link, so sharing it never lets a reader claim a character."}
+            </p>
+          </Card>
+
+          <Card>
+            <Label>Being found</Label>
+            <label style={{ display: "flex", gap: 10, alignItems: "flex-start", cursor: "pointer", marginBottom: 10 }}>
+              <input type="checkbox" checked={listed} disabled={busy}
+                onChange={(e) => void setListing(e.target.checked)} style={{ marginTop: 3 }} />
+              <span style={{ color: C.text, fontSize: 14, lineHeight: 1.5 }}>
+                Let search engines index this page.
+              </span>
+            </label>
+            <p style={{ ...body, marginBottom: 0 }}>
+              {listed
+                ? "This campaign will appear in the site map and search results. Worth knowing: a page that has been indexed can linger in results and caches after you unpublish it, in a way a shared link does not."
+                : "Off by default. The page is still readable by anyone you give the link to and it just asks search engines to stay away, which stays reversible in a way indexing does not."}
             </p>
           </Card>
 
