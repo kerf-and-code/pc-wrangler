@@ -69,7 +69,33 @@ export async function updateSession(request: NextRequest) {
     !request.nextUrl.pathname.startsWith("/api/discord") &&
     !request.nextUrl.pathname.startsWith("/api/vtt") &&
     !request.nextUrl.pathname.startsWith("/api/cron") &&
-    !request.nextUrl.pathname.startsWith("/table")
+    !request.nextUrl.pathname.startsWith("/table") &&
+    // ---- everything below added 2026-08-03, after a 307 to /auth/login was traced back here ----
+    //
+    // THE LANDING PAGE. Exact match, because startsWith("/") would exempt the entire site. Without
+    // this, a logged-out visitor - which is every visitor arriving from a search result, a Reddit
+    // post or a published codex footer - is bounced to a login form for a product they have not
+    // signed up for. It went unnoticed because everyone testing it was already signed in.
+    request.nextUrl.pathname !== "/" &&
+    !request.nextUrl.pathname.startsWith("/enter") &&
+    //
+    // PUBLISHED CODEXES. The whole point of /c/ is that a stranger can read it with no account, and
+    // p23 already decides what a stranger may see. This middleware was silently overriding that:
+    // the read gate said "published and marked public", the redirect said "sign in first", and the
+    // redirect won.
+    !request.nextUrl.pathname.startsWith("/c/") &&
+    //
+    // THE FOUNDRY MODULE. Foundry fetches the manifest server-side with no session, gets the login
+    // page as HTML, and reports "Unexpected token '<'". The install page is public documentation.
+    !request.nextUrl.pathname.startsWith("/foundry") &&
+    //
+    // CRAWLER FILES. A robots.txt behind a login is worse than none: the crawler cannot read the
+    // rules and cannot reach the sitemap that lists the pages we want indexed.
+    request.nextUrl.pathname !== "/robots.txt" &&
+    request.nextUrl.pathname !== "/sitemap.xml" &&
+    !request.nextUrl.pathname.startsWith("/opengraph-image") &&
+    !request.nextUrl.pathname.startsWith("/twitter-image") &&
+    !request.nextUrl.pathname.startsWith("/icon")
   ) {
     // no user, potentially respond by redirecting the user to the login page
     const url = request.nextUrl.clone();
