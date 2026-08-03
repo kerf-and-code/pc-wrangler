@@ -23,6 +23,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import PageShell from "@/components/page-shell";
+import DicePicker from "@/components/dice-picker";
 import { createClient } from "@/lib/supabase/client";
 import { applyAdvantage, canHaveAdvantage, parseDice, DiceError } from "@/lib/dice";
 import { C, FORGE_RADIUS, STONE } from "@/lib/forge-theme";
@@ -46,7 +47,6 @@ const KINDS: { key: string; label: string }[] = [
   { key: "initiative", label: "Initiative" },
   { key: "other", label: "Other" },
 ];
-const QUICK = ["d20", "d100", "d4", "d6", "d8", "d10", "d12"];
 
 export default function RollerPage() {
   const supabase = useMemo(() => createClient(), []);
@@ -56,8 +56,7 @@ export default function RollerPage() {
   const [sessionId, setSessionId] = useState("");
   const [characters, setCharacters] = useState<Character[]>([]);
 
-  const [notation, setNotation] = useState("d20");
-  const [mod, setMod] = useState(0);
+  const [notation, setNotation] = useState("1d20");
   const [mode, setMode] = useState<"flat" | "adv" | "dis">("flat");
   const [kind, setKind] = useState("attack");
   const [actor, setActor] = useState("");
@@ -97,18 +96,17 @@ export default function RollerPage() {
 
   // The notation actually rolled, with the modifier folded in and advantage applied. Shown to the
   // GM before they roll, because a roller you cannot check is a roller you cannot trust.
-  const finalNotation = useMemo(() => {
-    const base = notation.trim() || "d20";
-    const withMod = mod ? `${base}${mod > 0 ? "+" : "-"}${Math.abs(mod)}` : base;
-    return applyAdvantage(withMod, mode);
-  }, [notation, mod, mode]);
+  const finalNotation = useMemo(
+    () => applyAdvantage(notation.trim() || "1d20", mode),
+    [notation, mode],
+  );
 
   const valid = useMemo(() => {
     try { parseDice(finalNotation); return null; }
     catch (e) { return e instanceof DiceError ? e.message : "Cannot read that roll."; }
   }, [finalNotation]);
 
-  const advMeaningful = canHaveAdvantage(mod ? `${notation}+${mod}` : notation);
+  const advMeaningful = canHaveAdvantage(notation);
 
   const doRoll = useCallback(async () => {
     setBusy(true); setError(null);
@@ -173,21 +171,17 @@ export default function RollerPage() {
 
       <Card>
         <Label>The roll</Label>
-        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
-          {QUICK.map((d) => (
-            <button key={d} onClick={() => setNotation(d)} style={chip(notation.trim() === d)}>{d}</button>
-          ))}
-        </div>
-        <input value={notation} onChange={(e) => setNotation(e.target.value)}
-          placeholder="2d4 + 2d8 + 1d20 + 16"
-          style={{ ...field, fontFamily: SAX.mono, marginBottom: 10 }} />
+        <DicePicker notation={notation} onChange={setNotation} />
 
-        <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginBottom: 10 }}>
-          <span style={{ ...body, margin: 0, fontSize: 13 }}>Modifier</span>
-          <button onClick={() => setMod((m) => m - 1)} style={chip(false)}>-</button>
-          <input type="number" value={mod} onChange={(e) => setMod(Number(e.target.value) || 0)}
-            style={{ ...field, width: 74, textAlign: "center", fontFamily: SAX.mono }} />
-          <button onClick={() => setMod((m) => m + 1)} style={chip(false)}>+</button>
+        <div style={{ marginTop: 12, marginBottom: 10 }}>
+          <Label>Or type it</Label>
+          <input value={notation} onChange={(e) => setNotation(e.target.value)}
+            placeholder="2d4 + 2d8 + 1d20 + 16"
+            style={{ ...field, fontFamily: SAX.mono }} />
+          <p style={{ ...body, marginTop: 6, marginBottom: 0, fontSize: 12.5 }}>
+            The tiles and this box edit the same roll, either way round. Type here for anything the
+            tiles cannot express, like 4d6kh3 to drop the lowest.
+          </p>
         </div>
 
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
