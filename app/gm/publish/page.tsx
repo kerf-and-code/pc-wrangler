@@ -42,6 +42,7 @@ export default function PublishPage() {
   const [items, setItems] = useState<Item[]>([]);
   const [blurb, setBlurb] = useState("");
   const [listed, setListed] = useState(false);
+  const [slugDraft, setSlugDraft] = useState("");
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
 
@@ -82,6 +83,7 @@ export default function PublishPage() {
     const c = campaigns.find((x) => x.id === campaignId);
     setBlurb(c?.public_blurb ?? "");
     setListed(Boolean(c?.public_listed));
+    setSlugDraft(c?.public_slug ?? "");
     void loadItems(campaignId);
   }, [campaignId, campaigns, loadItems]);
 
@@ -134,6 +136,24 @@ export default function PublishPage() {
     if (error) { setNote(`Could not change that: ${error.message}`); setListed(!next); return; }
     setCampaigns((cs) => cs.map((c) => (c.id === campaign.id ? { ...c, public_listed: next } : c)));
   }, [campaign, supabase]);
+
+  const saveSlug = useCallback(async () => {
+    if (!campaign) return;
+    setBusy(true); setNote(null);
+    try {
+      // The function does the validating. Mirroring its rules in the client would give two places
+      // to disagree, and the one that matters is the one that cannot be skipped - so the error text
+      // a GM sees is the database's own sentence, not a paraphrase of it.
+      const { data, error } = await supabase.rpc("set_public_slug", {
+        p_campaign: campaign.id, p_slug: slugDraft,
+      });
+      if (error) { setNote(error.message); return; }
+      const next = data as string;
+      setCampaigns((cs) => cs.map((c) => (c.id === campaign.id ? { ...c, public_slug: next } : c)));
+      setSlugDraft(next);
+      setNote("Address updated. The old one stops working immediately.");
+    } finally { setBusy(false); }
+  }, [campaign, slugDraft, supabase]);
 
   const togglePublished = useCallback(async () => {
     if (!campaign) return;
@@ -221,6 +241,25 @@ export default function PublishPage() {
                 : "Off by default. The page is still readable by anyone you give the link to and it just asks search engines to stay away, which stays reversible in a way indexing does not."}
             </p>
           </Card>
+
+          {published && listed && (
+            <Card>
+              <Label>Address</Label>
+              <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 10 }}>
+                <span style={{ fontFamily: SAX.mono, fontSize: 13, color: C.muted }}>/c/</span>
+                <input value={slugDraft} onChange={(e) => setSlugDraft(e.target.value)}
+                  placeholder="emberwatch" disabled={busy}
+                  style={{ ...field, flex: "1 1 200px", width: "auto", fontFamily: SAX.mono, fontSize: 14 }} />
+                <button onClick={() => void saveSlug()} disabled={busy || !slugDraft.trim()} style={btn(false)}>
+                  Save address
+                </button>
+              </div>
+              <p style={{ ...body, marginBottom: 0 }}>
+                Lowercase letters, numbers and hyphens. Changing it breaks the old link straight
+                away, so pick one before you share it widely.
+              </p>
+            </Card>
+          )}
 
           <Card>
             <Label>What appears</Label>
