@@ -1,0 +1,36 @@
+{
+  "id": "six-axes",
+  "title": "Six Axes",
+  "description": "Sends what your table rolls to Six Axes, so your recap, campaign wiki and encounter maths are built from what actually happened. Rolls only. No audio, no chat text, no character sheets.",
+  "version": "0.1.0",
+  "compatibility": {
+    "minimum": "12",
+    "verified": "13.351"
+  },
+  "authors": [
+    {
+      "name": "Kerf and Code",
+      "url": "https://www.six-axes.com"
+    }
+  ],
+  "url": "https://www.six-axes.com",
+  "manifest": "https://www.six-axes.com/foundry/module.json",
+  "download": "https://www.six-axes.com/foundry/six-axes.zip",
+  "readme": "https://www.six-axes.com/foundry",
+  "license": "https://www.six-axes.com/terms",
+  "esmodules": [
+    "six-axes.js"
+  ],
+  "relationships": {
+    "systems": [
+      {
+        "id": "dnd5e",
+        "type": "system",
+        "compatibility": {
+          "minimum": "3.0.0"
+        }
+      }
+    ]
+  },
+  "socket": false
+}
