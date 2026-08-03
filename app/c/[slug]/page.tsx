@@ -65,19 +65,24 @@ function anon() {
 
 async function load(slug: string) {
   const supabase = anon();
-  const [{ data: head }, { data: items }] = await Promise.all([
+  const [{ data: head }, { data: items }, { data: listed }] = await Promise.all([
     supabase.rpc("public_campaign", { p_slug: slug }),
     supabase.rpc("public_codex", { p_slug: slug }),
+    supabase.rpc("public_campaign_listing", { p_slug: slug }),
   ]);
   const campaign = Array.isArray(head) ? head[0] : head;
-  return { campaign: campaign ?? null, items: (items as Item[]) ?? [] };
+  return {
+    campaign: campaign ?? null,
+    items: (items as Item[]) ?? [],
+    listed: listed === true,
+  };
 }
 
 export async function generateMetadata(
   { params }: { params: Promise<{ slug: string }> },
 ): Promise<Metadata> {
   const { slug } = await params;
-  const { campaign } = await load(slug);
+  const { campaign, listed } = await load(slug);
   if (!campaign) return { title: "Campaign not found" };
   const title = `${campaign.name} — campaign codex`;
   const description =
@@ -88,6 +93,9 @@ export async function generateMetadata(
     description,
     openGraph: { title, description, type: "article" },
     twitter: { card: "summary", title, description },
+    // Readable by link, but the GM did not ask to be found. A crawler that follows the link anyway
+    // is asked not to keep it: unlike an unshared link, an indexed page outlives unpublishing.
+    robots: listed ? undefined : { index: false, follow: false },
   };
 }
 
