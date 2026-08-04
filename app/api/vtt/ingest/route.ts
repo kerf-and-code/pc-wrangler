@@ -67,8 +67,41 @@ function cleanTimestamp(v: unknown): string | null {
   return d.toISOString();
 }
 
+
+// ---------------------------------------------------------------------------- CORS
+//
+// The Foundry module is a WEB PAGE, so its fetch is cross-origin: a browser at
+// http://localhost:30000 calling https://www.six-axes.com. Without these headers the browser
+// refuses the request before it is ever sent, and the module reports a network failure that looks
+// like the server being down.
+//
+// The Chrome extension never needed this. Extensions bypass CORS through host_permissions, which
+// is why this endpoint has served Beyond20 happily for months without a single CORS header.
+//
+// WHY "*" IS THE RIGHT VALUE HERE, RATHER THAN A LAZY ONE
+//   CORS does not protect an endpoint; it protects a user's AMBIENT CREDENTIALS from being used by
+//   a page they did not intend. This endpoint reads no cookies and no session - it authenticates
+//   entirely on a share code carried in the body - so there is nothing ambient for another origin
+//   to borrow. Anyone who has the code can already post from anywhere, and anyone who does not
+//   gains nothing from being allowed to try.
+//
+//   Restricting the origin would also be futile in practice: every self-hosted Foundry is a
+//   different origin (localhost:30000, a LAN address, someone's own domain), so a list could never
+//   be complete and would fail for exactly the people it was meant to serve.
+const CORS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type",
+  "Access-Control-Max-Age": "86400",
+};
+
+/** Preflight. A POST carrying Content-Type: application/json always triggers one. */
+export async function OPTIONS() {
+  return new NextResponse(null, { status: 204, headers: CORS });
+}
+
 export async function GET() {
-  return NextResponse.json({ ok: true, expects: "POST { share_codes: [...], events: [...] }" });
+  return NextResponse.json({ ok: true, expects: "POST { share_codes: [...], events: [...] }" }, { headers: CORS });
 }
 
 export async function POST(request: NextRequest) {
@@ -76,7 +109,7 @@ export async function POST(request: NextRequest) {
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
+    return NextResponse.json({ error: "Invalid JSON body." }, { status: 400, headers: CORS });
   }
 
   // Accept plural share_codes (extension) or a single legacy share_code.
@@ -95,13 +128,13 @@ export async function POST(request: NextRequest) {
   if (codes.length === 0 || !events || events.length === 0) {
     return NextResponse.json(
       { error: "Expected { share_codes: [...], events: [...] } with at least one code and one event." },
-      { status: 400 }
+      { status: 400, headers: CORS }
     );
   }
   if (events.length > MAX_EVENTS_PER_BATCH) {
     return NextResponse.json(
       { error: `Batch too large. Send at most ${MAX_EVENTS_PER_BATCH} events per request.` },
-      { status: 400 }
+      { status: 400, headers: CORS }
     );
   }
 
@@ -114,7 +147,7 @@ export async function POST(request: NextRequest) {
     .in("share_code", codes);
   const campaigns = camps ?? [];
   if (campaigns.length === 0) {
-    return NextResponse.json({ error: "No campaign matched the codes provided." }, { status: 404 });
+    return NextResponse.json({ error: "No campaign matched the codes provided." }, { status: 404, headers: CORS });
   }
   const campaignIds = campaigns.map((c: any) => c.id);
 
@@ -137,7 +170,7 @@ export async function POST(request: NextRequest) {
   if (liveCampaignIds.length === 0) {
     return NextResponse.json(
       { error: "No open session in any of your campaigns. Start a session in the app, then send events." },
-      { status: 409 }
+      { status: 409, headers: CORS }
     );
   }
   const soleLive = liveCampaignIds.length === 1 ? liveCampaignIds[0] : null;
@@ -231,13 +264,13 @@ export async function POST(request: NextRequest) {
   if (rows.length === 0) {
     return NextResponse.json(
       { error: "No valid events could be routed.", skipped, unmatched_ddb_ids: Array.from(unmatched) },
-      { status: 400 }
+      { status: 400, headers: CORS }
     );
   }
 
   const { error } = await sb.from("vtt_events").insert(rows);
   if (error) {
-    return NextResponse.json({ error: "Insert failed. Try again." }, { status: 500 });
+    return NextResponse.json({ error: "Insert failed. Try again." }, { status: 500, headers: CORS });
   }
 
   return NextResponse.json({
@@ -245,5 +278,5 @@ export async function POST(request: NextRequest) {
     skipped,
     live_campaigns: liveCampaignIds.length,
     unmatched_ddb_ids: Array.from(unmatched),
-  });
+  }, { headers: CORS });
 }
