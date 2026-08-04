@@ -97,6 +97,22 @@ export default function FoundryPage() {
         </section>
 
         <section style={card}>
+          <h2 style={h2}>What about voice?</h2>
+          <p style={body}>
+            If your table talks over <strong>Discord</strong> while playing in Foundry, which most
+            do, you are already covered: invite the Six Axes bot to your server and it records each
+            player on their own track exactly as it would for a Discord-only game. This module
+            handles the rolls; the bot handles the voice. Nothing extra to set up beyond the two.
+          </p>
+          <p style={body}>
+            If you use Foundry&apos;s built-in audio instead, voice capture is not supported yet.
+            Foundry sends audio directly between players rather than through a server, so there is
+            no single stream for a bot to join. Say so if that is your setup and it moves up the
+            list.
+          </p>
+        </section>
+
+        <section style={card}>
           <h2 style={h2}>Requirements</h2>
           <ul style={list}>
             <li style={li}>Foundry VTT v12 or later. Verified against 14.365.</li>

@@ -35,6 +35,8 @@ const GROUPS: Group[] = [
     { href: "/gm/transcripts", label: "Transcripts" },
     { href: "/gm/encounters", label: "Encounters" },
     { href: "/gm/statblock", label: "Monster Maker" },
+    // After Monster Maker, because both are things you reach for mid-session with the screen up.
+    { href: "/gm/roll", label: "Roll" },
     { href: "/gm/table", label: "Check-in" },
   ] },
   { label: "Story", href: "/gm/codex", children: [
@@ -43,6 +45,10 @@ const GROUPS: Group[] = [
     { href: "/gm/timeline", label: "Timeline" },
     { href: "/gm/map", label: "Map" },
     { href: "/gm/search", label: "Search" },
+    // Last in Story, and after Search on purpose: publishing is what you do once the codex is worth
+    // showing, not while you are still building it. Sitting beside the codex rather than under
+    // Table also keeps the decision next to the thing being decided about.
+    { href: "/gm/publish", label: "Publish" },
   ] },
   { label: "Insight", href: "/gm/dispositions", children: [
     { href: "/gm/dispositions", label: "Dispositions" },
