@@ -52,10 +52,21 @@ type CharStats = {
   maxHp: number | null;
 };
 
-function natD20(r: Rolls | null): number | null {
-  const d = (r?.dice ?? []).find((g) => g.faces === 20);
-  const v = d?.results?.[0];
-  return typeof v === "number" ? v : null;
+// EVERY d20 face in the roll, not just the first.
+//
+// This used to return results[0], which was right while every roll arrived from Beyond20 carrying a
+// single d20: one attack, one die. The built-in roller can send twenty in one event, and the old
+// version counted that as one roll and put one face into the distribution - so a GM who rolled
+// forty d20s saw "2 d20 rolls" and an average taken from two of them.
+//
+// It also disagreed with the dice tab on the same page, which has always counted every result. Two
+// numbers on one screen describing the same rolls and not matching is worse than either being
+// wrong on its own.
+function allD20(r: Rolls | null): number[] {
+  return (r?.dice ?? [])
+    .filter((g) => g.faces === 20)
+    .flatMap((g) => (g.results ?? []).filter((v): v is number => typeof v === "number"))
+    .filter((v) => v >= 1 && v <= 20);
 }
 
 function Spark({ series, maxHp }: { series: { t: number; hp: number }[]; maxHp: number | null }) {
@@ -171,14 +182,23 @@ export default function MechanicsPage() {
       }
       const r = e.rolls;
       if (D20_TYPES.has(e.event_type) && r && r.discarded !== true) {
-        s.d20Count += 1;
-        d20Total += 1;
-        const nat = natD20(r);
-        if (nat !== null && nat >= 1 && nat <= 20) {
+        const faces = allD20(r);
+        // Count DICE, not events, so the header "d20s" means what it says.
+        s.d20Count += faces.length;
+        d20Total += faces.length;
+        for (const nat of faces) {
           s.natSum += nat; s.natCount += 1; dist[nat] += 1;
-          if (nat === 20 || r.critical_success === true) s.nat20s += 1;
-          if (nat === 1 || r.critical_failure === true) s.nat1s += 1;
+          if (nat === 20) s.nat20s += 1;
+          if (nat === 1) s.nat1s += 1;
         }
+        // The crit flags describe THE roll, not a die, so they only mean anything when the roll had
+        // exactly one d20 in it. On a twenty-dice roll there is no single result they could refer
+        // to, and honouring them would count one crit for a roll that contained several or none.
+        if (faces.length === 1) {
+          if (r.critical_success === true && faces[0] !== 20) s.nat20s += 1;
+          if (r.critical_failure === true && faces[0] !== 1) s.nat1s += 1;
+        }
+        // Advantage is a property of the roll either way.
         if ((r.advantage ?? 0) !== 0) s.advantage += 1;
       }
       if (e.event_type === "damage" && r && typeof r.total === "number") {
