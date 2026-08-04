@@ -64,6 +64,7 @@ export default function RollerPage() {
   const [label, setLabel] = useState("");
 
   const [log, setLog] = useState<Rolled[]>([]);
+  const [loadingLog, setLoadingLog] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -93,6 +94,58 @@ export default function RollerPage() {
       setCharacters((cs as Character[]) ?? []);
     })();
   }, [campaignId, supabase]);
+
+  // Rolls already saved for this session, read back from vtt_events.
+  //
+  // The page used to show only what you had rolled since opening it, which was honest but not
+  // useful: the rolls were always saved, the roller simply never asked. Coming back the next day to
+  // check what the boss actually rolled meant going to Mechanics, and Mechanics summarises rather
+  // than lists.
+  //
+  // The stored payload is the Beyond20 shape - [{faces, results}] plus a `dropped` list - because
+  // that is what Mechanics reads. Rebuilding the per-die display from it here keeps ONE stored
+  // format rather than saving a second copy shaped for this page.
+  const loadHistory = useCallback(async (cid: string, sid: string) => {
+    if (!cid || !sid) { setLog([]); return; }
+    setLoadingLog(true);
+    try {
+      const { data } = await supabase
+        .from("vtt_events")
+        .select("id, actor_name, character_id, name, rolls, rolled_at")
+        .eq("campaign_id", cid)
+        .eq("session_id", sid)
+        .eq("source", "six_axes_roller")
+        .order("rolled_at", { ascending: false })
+        .limit(60);
+
+      const rows = (data as {
+        id: string; actor_name: string | null; character_id: string | null;
+        name: string | null; rolled_at: string;
+        rolls: {
+          total?: number; notation?: string; natural?: 20 | 1 | null; kind?: string;
+          dice?: { faces: number; results: number[] }[];
+          dropped?: { faces: number; value: number }[];
+        } | null;
+      }[]) ?? [];
+
+      setLog(rows.map((r) => {
+        const kept = (r.rolls?.dice ?? []).flatMap((g) =>
+          (g.results ?? []).map((v) => ({ sides: g.faces, value: v, kept: true })));
+        const dropped = (r.rolls?.dropped ?? []).map((d) => ({ sides: d.faces, value: d.value, kept: false }));
+        return {
+          total: r.rolls?.total ?? 0,
+          notation: r.rolls?.notation ?? "",
+          natural: r.rolls?.natural ?? null,
+          dice: [...kept, ...dropped],
+          label: r.name ?? (KINDS.find((k) => k.key === r.rolls?.kind)?.label ?? ""),
+          actor: r.actor_name ?? "the GM",
+          at: new Date(r.rolled_at).getTime(),
+        };
+      }));
+    } finally { setLoadingLog(false); }
+  }, [supabase]);
+
+  useEffect(() => { void loadHistory(campaignId, sessionId); }, [campaignId, sessionId, loadHistory]);
 
   // The notation actually rolled, with the modifier folded in and advantage applied. Shown to the
   // GM before they roll, because a roller you cannot check is a roller you cannot trust.
@@ -127,7 +180,7 @@ export default function RollerPage() {
         label: label || KINDS.find((k) => k.key === kind)?.label || "",
         actor: characterId ? (characters.find((c) => c.id === characterId)?.name ?? "") : (actor || "the GM"),
         at: Date.now(),
-      }, ...l].slice(0, 30));
+      }, ...l].slice(0, 60));
     } finally { setBusy(false); }
   }, [campaignId, sessionId, finalNotation, kind, actor, characterId, label, characters]);
 
@@ -237,9 +290,13 @@ export default function RollerPage() {
 
       {error && <Card tone="warn"><p style={{ ...body, marginBottom: 0 }}>{error}</p></Card>}
 
+      {loadingLog && log.length === 0 && (
+        <Card><p style={{ ...body, marginBottom: 0 }}>Loading this session&apos;s rolls…</p></Card>
+      )}
+
       {log.length > 0 && (
         <Card>
-          <Label>This sitting</Label>
+          <Label>Rolled this session</Label>
           {log.map((r) => (
             <div key={r.at} style={{ padding: "9px 0", borderTop: `1px solid ${C.line}` }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10 }}>
@@ -260,8 +317,8 @@ export default function RollerPage() {
             </div>
           ))}
           <p style={{ ...body, marginTop: 10, marginBottom: 0, fontSize: 12.5 }}>
-            Dice in brackets were rolled and dropped by a keep rule. Every roll here is already
-            saved; this list is just what you have rolled since opening the page.
+            Dice in brackets were rolled and dropped by a keep rule. This is every roll saved
+            against this session, newest first, so it is still here tomorrow.
           </p>
         </Card>
       )}
