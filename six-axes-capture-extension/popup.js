@@ -1,4 +1,4 @@
-const BASE = "https://pc-wrangler.vercel.app";
+const BASE = "https://www.six-axes.com";
 const MAX_CODES = 20;
 
 const codeEl = document.getElementById("code");

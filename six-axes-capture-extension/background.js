@@ -9,7 +9,10 @@
 // chrome.storage.local under "unmatched". The popup reads that to offer a self-link
 // picker across all the player's campaigns.
 
-const INGEST = "https://pc-wrangler.vercel.app/api/vtt/ingest";
+// The canonical host. The old vercel.app address still resolves and redirects, but a redirect on
+// a cross-origin POST is not free: the browser re-issues it as a preflight against the new origin,
+// so pointing straight at the real host avoids a round trip on every batch.
+const INGEST = "https://www.six-axes.com/api/vtt/ingest";
 const MAX_EVENTS_PER_BATCH = 50; // server rejects larger batches with 400
 
 function recordUnmatched(batch, unmatchedIds) {

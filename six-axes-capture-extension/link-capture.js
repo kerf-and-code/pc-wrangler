@@ -1,4 +1,5 @@
-// Runs ONLY on https://pc-wrangler.vercel.app/x/<code>. Its single job: read the
+// Runs ONLY on the setup page: six-axes.com/x/<code>, or the older
+// pc-wrangler.vercel.app/x/<code> for links pinned before the domain move. Its single job: read the
 // campaign code from the URL and add it to the player's saved set of table codes in
 // chrome.storage.sync, so clicking a GM's setup link never requires pasting, and a
 // player in several campaigns accumulates all their codes instead of overwriting.

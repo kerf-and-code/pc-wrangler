@@ -1,35 +1,55 @@
 {
   "manifest_version": 3,
   "name": "Six Axes Capture",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Sends your D&D Beyond rolls to your Six Axes table, no VTT tab or custom-domain setup required. Requires the Beyond20 extension.",
   "icons": {
     "16": "icon-16.png",
     "48": "icon-48.png",
     "128": "icon-128.png"
   },
-  "permissions": ["storage"],
+  "permissions": [
+    "storage"
+  ],
   "host_permissions": [
     "https://*.dndbeyond.com/*",
+    "https://www.six-axes.com/*",
+    "https://six-axes.com/*",
     "https://pc-wrangler.vercel.app/*"
   ],
-  "background": { "service_worker": "background.js" },
+  "background": {
+    "service_worker": "background.js"
+  },
   "content_scripts": [
     {
-      "matches": ["https://*.dndbeyond.com/*"],
-      "js": ["content.js"],
+      "matches": [
+        "https://*.dndbeyond.com/*"
+      ],
+      "js": [
+        "content.js"
+      ],
       "run_at": "document_idle"
     },
     {
-      "matches": ["https://pc-wrangler.vercel.app/x/*"],
-      "js": ["link-capture.js"],
+      "matches": [
+        "https://www.six-axes.com/x/*",
+        "https://six-axes.com/x/*",
+        "https://pc-wrangler.vercel.app/x/*"
+      ],
+      "js": [
+        "link-capture.js"
+      ],
       "run_at": "document_idle"
     }
   ],
   "web_accessible_resources": [
     {
-      "resources": ["page-hook.js"],
-      "matches": ["https://*.dndbeyond.com/*"]
+      "resources": [
+        "page-hook.js"
+      ],
+      "matches": [
+        "https://*.dndbeyond.com/*"
+      ]
     }
   ],
   "action": {
