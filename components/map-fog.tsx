@@ -92,7 +92,7 @@ function paint(
 /* --------------------------------------------------------------- component */
 
 export default function MapFog({
-  mapId, campaignId, shareCode, editable = false, onError,
+  mapId, campaignId, shareCode, editable = false, onError, pollMs = 5000,
 }: {
   mapId: string;
   campaignId?: string;
@@ -100,6 +100,13 @@ export default function MapFog({
   shareCode?: string;
   editable?: boolean;
   onError?: (m: string) => void;
+  /**
+   * How often to re-read the fog when Realtime has not delivered anything. Lower is snappier and
+   * more expensive: at 1000ms, five players over a four-hour session make about 72,000 requests for
+   * something that changes maybe twenty times. 5000 is the default for that reason, and it stops
+   * mattering the moment Realtime works - see the backoff below.
+   */
+  pollMs?: number;
 }) {
   const supabase = useMemo(() => createClient(), []);
   const [cols, setCols] = useState(64);
@@ -108,6 +115,12 @@ export default function MapFog({
   // Distinct from `bits`, which is null both while loading AND for a map that simply has no fog.
   // Without this the cover below could never lift on an unfogged map.
   const [loaded, setLoaded] = useState(false);
+  // Set the first time a Realtime message lands. After that the poll is pure insurance and can slow
+  // right down, because updates are already arriving the instant they happen.
+  const realtimeWorks = useRef(false);
+  // What we last rendered. Comparing this before repainting means a poll that finds nothing new
+  // costs one small read and no re-render.
+  const lastStamp = useRef<string>("");
   const [brush, setBrush] = useState(3);
   const [erasing, setErasing] = useState(false);
   // Painting is OFF until asked for. The brush is a full-size layer over the image, so while it is
@@ -125,34 +138,47 @@ export default function MapFog({
   const count = cols * rows;
 
   /* ---- load ------------------------------------------------------------- */
+  const readFog = useCallback(async (): Promise<FogRow | null | "error"> => {
+    if (shareCode) {
+      const { data, error } = await supabase.rpc("map_fog_for_share", { p_share: shareCode });
+      if (error) return "error";
+      return ((data as FogRow[]) ?? []).find((r) => r.map_id === mapId) ?? null;
+    }
+    const { data, error } = await supabase
+      .from("map_fog").select("map_id, cols, rows, cells, updated_at").eq("map_id", mapId).maybeSingle();
+    if (error) return "error";
+    return (data as FogRow | null) ?? null;
+  }, [mapId, shareCode, supabase]);
+
+  const applyRow = useCallback((row: FogRow | null) => {
+    if (!row) { setBits(null); lastStamp.current = ""; return; }
+    if (row.updated_at === lastStamp.current) return;   // nothing changed, do not repaint
+    lastStamp.current = row.updated_at;
+    setCols(row.cols); setRows(row.rows);
+    setBits(decode(row.cells, row.cols * row.rows));
+  }, []);
+
+  // The first read goes through the same readFog/applyRow pair the poll uses, so both paths agree
+  // on what counts as a change and lastStamp is primed - otherwise the very first poll always
+  // repainted, having no idea what was already on screen.
   useEffect(() => {
     let live = true;
     (async () => {
-      if (shareCode) {
-        const { data, error } = await supabase.rpc("map_fog_for_share", { p_share: shareCode });
-        if (error) {
-          // Silence here is indistinguishable from "this map has no fog", which is the wrong thing
-          // to conclude from a missing function or a denied read.
-          onError?.(`Could not read the fog: ${error.message}`);
-          console.warn("map-fog: share read failed", error);
-        }
-        const row = ((data as FogRow[]) ?? []).find((r) => r.map_id === mapId);
-        if (!live) return;
-        if (row) { setCols(row.cols); setRows(row.rows); setBits(decode(row.cells, row.cols * row.rows)); }
-        else setBits(null);   // no row means this map simply is not fogged
+      const row = await readFog();
+      if (!live) return;
+      if (row === "error") {
+        // Silence here is indistinguishable from "this map has no fog", which is the wrong thing to
+        // conclude from a missing function or a denied read.
+        onError?.("Could not read the fog for this map.");
+        console.warn("map-fog: read failed");
         setLoaded(true);
         return;
       }
-      const { data } = await supabase
-        .from("map_fog").select("map_id, cols, rows, cells, updated_at").eq("map_id", mapId).maybeSingle();
-      if (!live) return;
-      const row = data as FogRow | null;
-      if (row) { setCols(row.cols); setRows(row.rows); setBits(decode(row.cells, row.cols * row.rows)); }
-      else setBits(null);
+      applyRow(row);
       setLoaded(true);
     })();
     return () => { live = false; };
-  }, [mapId, shareCode, supabase]);
+  }, [readFog, applyRow, onError]);
 
   /* ---- live updates for players ---------------------------------------- */
   useEffect(() => {
@@ -164,12 +190,48 @@ export default function MapFog({
         (payload) => {
           const row = payload.new as FogRow | null;
           if (!row?.cells && row?.cells !== "") return;
-          setCols(row.cols); setRows(row.rows);
-          setBits(decode(row.cells, row.cols * row.rows));
+          realtimeWorks.current = true;
+          applyRow(row);
         })
       .subscribe();
     return () => { void supabase.removeChannel(ch); };
-  }, [mapId, editable, supabase]);
+  }, [mapId, editable, supabase, applyRow]);
+
+  /* ---- polling, as a safety net ---------------------------------------- */
+  //
+  // Realtime should make this unnecessary: it pushes a change the moment the GM paints. But it has
+  // to be switched on per table in Supabase, and if it is not, the map silently never updates -
+  // which is indistinguishable from the feature being broken. So the player also asks.
+  //
+  // Two things keep the cost honest. It stops entirely while the tab is hidden, because a map left
+  // open in a background tab should not be asking anything. And once a Realtime message has landed
+  // it slows to a fifth of the rate, since at that point the poll is only insurance against a
+  // dropped socket rather than the mechanism.
+  useEffect(() => {
+    if (editable || pollMs <= 0) return;
+    let live = true;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
+    const tick = async () => {
+      if (!live) return;
+      if (typeof document === "undefined" || document.visibilityState === "visible") {
+        const row = await readFog();
+        if (!live) return;
+        if (row !== "error") applyRow(row);
+      }
+      const wait = realtimeWorks.current ? pollMs * 5 : pollMs;
+      timer = setTimeout(tick, wait);
+    };
+
+    timer = setTimeout(tick, pollMs);
+    const wake = () => { if (document.visibilityState === "visible") void tick(); };
+    document.addEventListener("visibilitychange", wake);
+    return () => {
+      live = false;
+      if (timer) clearTimeout(timer);
+      document.removeEventListener("visibilitychange", wake);
+    };
+  }, [editable, pollMs, readFog, applyRow]);
 
   /* ---- render ----------------------------------------------------------- */
   const redraw = useCallback(() => {
