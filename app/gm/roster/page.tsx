@@ -7,9 +7,10 @@ import TableTapCard from "@/components/table-tap-card";
 import BoundariesCard from "@/components/boundaries-card";
 import { surfaces, ui } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
+import CharacterSheetPeek, { type Build } from "@/components/character-sheet-peek";
 
 type Campaign = { id: string; name: string; share_code: string | null };
-type Char = { id: string; name: string; profile_id: string | null; invite_code: string | null };
+type Char = { id: string; name: string; profile_id: string | null; invite_code: string | null; build: Build };
 type Resp = { id: string; player_name: string | null; assigned_character_id: string | null; created_at: string };
 
 export default function RosterPage() {
@@ -25,6 +26,9 @@ export default function RosterPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [copied, setCopied] = useState<string>("");
+  // One sheet open at a time. Seven expanded rows is a wall, and the reason to open one is almost
+  // always to check a single thing about a single character.
+  const [openSheet, setOpenSheet] = useState<string | null>(null);
   const [origin, setOrigin] = useState<string>("");
   useEffect(() => { setOrigin(window.location.origin); }, []);
   const inviteLink = (code: string | null): string => code ? `${origin}/join?c=${code}` : "";
@@ -47,7 +51,7 @@ export default function RosterPage() {
   async function load(cid: string) {
     setLoading(true);
     const [{ data: ch }, { data: rs }, { data: ev }] = await Promise.all([
-      supabase.from("characters").select("id, name, profile_id, invite_code").eq("campaign_id", cid).eq("kind", "pc").order("name", { ascending: true }),
+      supabase.from("characters").select("id, name, profile_id, invite_code, build").eq("campaign_id", cid).eq("kind", "pc").order("name", { ascending: true }),
       supabase.from("tpdi_responses").select("id, player_name, assigned_character_id, created_at").eq("campaign_id", cid).order("created_at", { ascending: false }),
       supabase.from("events").select("character_id").eq("campaign_id", cid),
     ]);
@@ -126,6 +130,10 @@ export default function RosterPage() {
                           style={{ marginTop: 8, background: "transparent", color: copied === ch.invite_code ? C.good : C.plum, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "5px 10px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
                           {copied === ch.invite_code ? "Copied!" : "Copy player invite"}
                         </button>
+                        <button type="button" onClick={() => setOpenSheet((cur) => (cur === ch.id ? null : ch.id))}
+                          style={{ marginTop: 8, marginLeft: 8, background: "transparent", color: C.plum, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "5px 10px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+                          {openSheet === ch.id ? "Hide sheet" : "View sheet"}
+                        </button>
                       </div>
                       {r ? (
                         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -142,6 +150,9 @@ export default function RosterPage() {
                         </select>
                       ) : (
                         <span style={{ fontSize: 12.5, color: C.muted }}>no unbound inventories</span>
+                      )}
+                      {openSheet === ch.id && (
+                        <CharacterSheetPeek build={ch.build} characterId={ch.id} />
                       )}
                     </div>
                   );
