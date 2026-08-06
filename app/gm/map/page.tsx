@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
+import MapFog from "@/components/map-fog";
 
 const VIS: { v: string; l: string }[] = [
   { v: "common", l: "Common knowledge" },
@@ -337,6 +338,9 @@ export default function MapPage() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={publicUrl(activeMap.image_path)} alt={activeMap.name} onClick={onImageClick}
               style={{ maxWidth: "100%", display: "block", cursor: "crosshair", borderRadius: FORGE_RADIUS, border: `1px solid ${C.line}` }} />
+            {/* Another layer inside this relative wrapper, so it lines up with the pins and the
+                trace rather than fighting them. */}
+            <MapFog mapId={activeMap.id} campaignId={campaignId} editable />
             {runs.some((r) => r.length >= 2) && (
               // viewBox 0..100 with preserveAspectRatio none lines the SVG up exactly with
               // the percentage-positioned pins, whatever the image's aspect ratio.

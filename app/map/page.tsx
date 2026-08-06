@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
+import MapFog from "@/components/map-fog";
 
 const BUCKET = "campaign-maps";
 
@@ -21,12 +22,16 @@ export default function PlayerMapPage() {
   const [activeId, setActiveId] = useState<string>("");
   const [selectedPin, setSelectedPin] = useState<string | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "empty" | "invalid">("loading");
+  // Held at page level so the fog overlay can read through it. The effect below already reads the
+  // same value from the URL; this just keeps it where a child can be given it.
+  const [share, setShare] = useState("");
 
   useEffect(() => {
     let active = true;
     (async () => {
       const shareCode = new URLSearchParams(window.location.search).get("share");
       if (!shareCode) { if (active) setStatus("invalid"); return; }
+      if (active) setShare(shareCode);
 
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
@@ -94,6 +99,8 @@ export default function PlayerMapPage() {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={publicUrl(active.image_path)} alt={active.name}
                 style={{ maxWidth: "100%", display: "block", borderRadius: FORGE_RADIUS, border: `1px solid ${C.line}` }} />
+              {/* Read-only. Updates live over Realtime as the GM reveals. */}
+              <MapFog mapId={active.id} shareCode={share} />
               {active.pins.map((p) => (
                 <button key={p.id} type="button" title={p.label || p.linked_title || "pin"}
                   onClick={() => setSelectedPin((cur) => (cur === p.id ? null : p.id))}
