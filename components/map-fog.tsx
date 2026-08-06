@@ -105,8 +105,15 @@ export default function MapFog({
   const [cols, setCols] = useState(64);
   const [rows, setRows] = useState(48);
   const [bits, setBits] = useState<Uint8Array | null>(null);
+  // Distinct from `bits`, which is null both while loading AND for a map that simply has no fog.
+  // Without this the cover below could never lift on an unfogged map.
+  const [loaded, setLoaded] = useState(false);
   const [brush, setBrush] = useState(3);
   const [erasing, setErasing] = useState(false);
+  // Painting is OFF until asked for. The brush is a full-size layer over the image, so while it is
+  // live it swallows every click - including the one that places a pin. Two tools cannot both own
+  // the same surface, so the GM says which one is in hand.
+  const [painting, setPainting] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -122,11 +129,18 @@ export default function MapFog({
     let live = true;
     (async () => {
       if (shareCode) {
-        const { data } = await supabase.rpc("map_fog_for_share", { p_share: shareCode });
+        const { data, error } = await supabase.rpc("map_fog_for_share", { p_share: shareCode });
+        if (error) {
+          // Silence here is indistinguishable from "this map has no fog", which is the wrong thing
+          // to conclude from a missing function or a denied read.
+          onError?.(`Could not read the fog: ${error.message}`);
+          console.warn("map-fog: share read failed", error);
+        }
         const row = ((data as FogRow[]) ?? []).find((r) => r.map_id === mapId);
         if (!live) return;
         if (row) { setCols(row.cols); setRows(row.rows); setBits(decode(row.cells, row.cols * row.rows)); }
         else setBits(null);   // no row means this map simply is not fogged
+        setLoaded(true);
         return;
       }
       const { data } = await supabase
@@ -135,6 +149,7 @@ export default function MapFog({
       const row = data as FogRow | null;
       if (row) { setCols(row.cols); setRows(row.rows); setBits(decode(row.cells, row.cols * row.rows)); }
       else setBits(null);
+      setLoaded(true);
     })();
     return () => { live = false; };
   }, [mapId, shareCode, supabase]);
@@ -242,6 +257,20 @@ export default function MapFog({
   // does not have to fight the pin buttons underneath for the click.
   return (
     <>
+      {/* COVER THE MAP UNTIL THE FOG IS KNOWN.
+          The caller renders its <img> immediately while this component's read is still in flight,
+          so on every load and refresh there was a window where players saw the whole map before the
+          canvas painted over it. Fog that arrives a moment late is not fog. This blanks the image
+          until the answer is in, then lifts: on a fogged map the canvas has already taken over, and
+          on an unfogged one there was nothing to hide. Players only - a GM covering their own map
+          while it loads would just be in the way. */}
+      {!editable && !loaded && (
+        <div style={{
+          position: "absolute", inset: 0, background: "rgb(6,5,4)",
+          borderRadius: 4, pointerEvents: "none",
+        }} />
+      )}
+
       {bits && (
         <canvas
           ref={canvasRef}
@@ -254,7 +283,7 @@ export default function MapFog({
         />
       )}
 
-      {editable && bits && (
+      {editable && bits && painting && (
         <div
           ref={wrapRef}
           style={{ position: "absolute", inset: 0, cursor: erasing ? "cell" : "crosshair", touchAction: "none" }}
@@ -267,7 +296,9 @@ export default function MapFog({
 
       {/* Measured against the image even when the brush layer is absent, so the canvas can size
           itself before fog has been switched on. */}
-      {!editable && <div ref={wrapRef} style={{ position: "absolute", inset: 0, pointerEvents: "none" }} />}
+      {(!editable || !painting || !bits) && (
+        <div ref={wrapRef} style={{ position: "absolute", inset: 0, pointerEvents: "none" }} />
+      )}
 
       {editable && (
         <div style={{
@@ -280,9 +311,17 @@ export default function MapFog({
             <button onClick={enableFog} style={btn}>Add fog</button>
           ) : (
             <>
-              <button onClick={() => setErasing(false)} style={{ ...btn, opacity: erasing ? 0.5 : 1 }}>Reveal</button>
-              <button onClick={() => setErasing(true)} style={{ ...btn, opacity: erasing ? 1 : 0.5 }}>Hide</button>
-              <input type="range" min={1} max={10} value={brush} title="Brush size"
+              <button onClick={() => setPainting((v) => !v)}
+                title={painting ? "Back to placing pins" : "Paint fog instead of placing pins"}
+                style={{ ...btn, background: painting ? "rgba(200,162,75,0.9)" : "transparent",
+                         color: painting ? "#241a0d" : "#e8dcc4" }}>
+                {painting ? "Painting" : "Paint"}
+              </button>
+              <button onClick={() => setErasing(false)} disabled={!painting}
+                style={{ ...btn, opacity: !painting ? 0.35 : erasing ? 0.5 : 1 }}>Reveal</button>
+              <button onClick={() => setErasing(true)} disabled={!painting}
+                style={{ ...btn, opacity: !painting ? 0.35 : erasing ? 1 : 0.5 }}>Hide</button>
+              <input type="range" min={1} max={10} value={brush} title="Brush size" disabled={!painting}
                 onChange={(e) => setBrush(Number(e.target.value))} style={{ width: 74 }} />
               <button onClick={() => fill(true)} style={btn}>All</button>
               <button onClick={() => fill(false)} style={btn}>None</button>
