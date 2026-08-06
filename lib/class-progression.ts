@@ -1,3 +1,4 @@
+import { stripTableBleed } from "./strip-table-bleed";
 // lib/class-progression.ts
 //
 // Reads a class's per-level features from the SRD class data and returns them grouped by level, so
@@ -6,7 +7,7 @@
 // DATA NOTE: the 2024 class JSON was parsed from a PDF, and the FIRST feature entry of each class
 // carries the class's progression TABLE mashed into its description (OCR bleed: "Fighter Features
 // Level Proficiency Bonus ... 1 +2 Fighting Style ..."). Every other description is clean. We trim
-// that table tail at the reliable "<Class> Features Level" / " Features Level" marker so the view
+// that table out by density (see lib/strip-table-bleed) rather than by a header string, so the view
 // shows just the feature's own text.
 
 export type ClassFeature = { level: number; name: string; desc: string };
@@ -22,13 +23,13 @@ export type ClassRecord = {
 // A level's worth of features.
 export type LevelGroup = { level: number; features: { name: string; desc: string }[] };
 
-// Trim the OCR table dump that bleeds into the first feature's description. The table always starts
-// with "... Features Level Proficiency Bonus ...", so cut at " Features Level" if present.
+// The OCR table dump is stripped by lib/strip-table-bleed, which finds it by DENSITY rather than by
+// a literal header string. The old version here cut at " Features Level" - Fighter's and
+// Barbarian's header - and checked against the real data that caught two classes out of twelve,
+// leaving Druid, Bard, Cleric, Paladin and Wizard rendering their whole progression table as prose.
+// It also truncated, which threw away the real rules text that follows the table on Druid.
 function trimTableBleed(desc: string): string {
-  if (!desc) return "";
-  const idx = desc.indexOf(" Features Level");
-  const cut = idx >= 0 ? desc.slice(0, idx) : desc;
-  return cut.replace(/\s+/g, " ").trim();
+  return stripTableBleed(desc);
 }
 
 // Standard 2024 ASI levels (plus the class-specific extras like Fighter's 6/14 are represented as
