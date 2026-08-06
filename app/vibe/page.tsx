@@ -23,6 +23,7 @@ export default function VibeCheckPage() {
   const [spotlight, setSpotlight] = useState<string | null>(null);
   const [note, setNote] = useState<string>("");
   const [submitting, setSubmitting] = useState<boolean>(false);
+  const [anonymous, setAnonymous] = useState<boolean>(false);
   const [submitted, setSubmitted] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -73,10 +74,18 @@ export default function VibeCheckPage() {
     if (satisfaction === null && spotlight === null && !note.trim()) { setError("Pick at least one answer first."); return; }
     setSubmitting(true);
     setError(null);
-    try { window.localStorage.setItem("wrangler_player_name", playerName.trim()); } catch (e) { /* no window */ }
+    // Only remember the name on an attributed submission. Storing it during an anonymous one would
+    // leave it sitting in the browser ready to be attached next time without being asked again.
+    if (!anonymous) {
+      try { window.localStorage.setItem("wrangler_player_name", playerName.trim()); } catch (e) { /* no window */ }
+    }
     const { error: rpcErr } = await supabase.rpc("submit_vibe_check", {
       code, p_session_number: sessionNo, p_satisfaction: satisfaction, p_spotlight: spotlight,
-      p_note: note.trim() || null, p_player_name: playerName.trim() || null,
+      p_note: note.trim() || null,
+      // Not sent at all when anonymous. The function forces it null regardless, but a client that
+      // transmits a name it has promised not to use is still transmitting it.
+      p_player_name: anonymous ? null : (playerName.trim() || null),
+      p_anonymous: anonymous,
     });
     setSubmitting(false);
     if (rpcErr) setError(rpcErr.message);
@@ -110,9 +119,15 @@ export default function VibeCheckPage() {
 
           {status === "ready" && submitted && (
             <div style={{ textAlign: "center", padding: "10px 0" }}>
-              <div style={{ fontSize: 17, fontWeight: 600, marginBottom: 8, color: C.good }}>Thanks{playerName.trim() ? `, ${playerName.trim()}` : ""}!</div>
-              <div style={{ color: C.muted, fontSize: 14, lineHeight: 1.6 }}>Your check-in is saved. You can change an answer and submit again.</div>
-              <button type="button" onClick={() => setSubmitted(false)} style={{ marginTop: 18, background: "transparent", color: C.plum, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "8px 16px", fontSize: 13, cursor: "pointer" }}>Edit my answers</button>
+              <div style={{ fontSize: 17, fontWeight: 600, marginBottom: 8, color: C.good }}>Thanks{!anonymous && playerName.trim() ? `, ${playerName.trim()}` : ""}!</div>
+              <div style={{ color: C.muted, fontSize: 14, lineHeight: 1.6 }}>
+                {anonymous
+                  ? "Your check-in is saved, with nothing linking it to you. That also means it cannot be edited now."
+                  : "Your check-in is saved. You can change an answer and submit again."}
+              </div>
+              {!anonymous && (
+                <button type="button" onClick={() => setSubmitted(false)} style={{ marginTop: 18, background: "transparent", color: C.plum, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "8px 16px", fontSize: 13, cursor: "pointer" }}>Edit my answers</button>
+              )}
             </div>
           )}
 
@@ -149,8 +164,20 @@ export default function VibeCheckPage() {
 
               <textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="Anything you want the GM to know? (optional)" rows={3}
                 style={{ width: "100%", boxSizing: "border-box", background: C.surface2, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "10px 12px", color: C.text, fontSize: 14, outline: "none", resize: "vertical", marginBottom: 14, fontFamily: "inherit", boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }} />
-              <input value={playerName} onChange={(e) => setPlayerName(e.target.value)} placeholder="Your name (so the GM knows who)"
-                style={{ width: "100%", boxSizing: "border-box", background: C.surface2, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "10px 12px", color: C.text, fontSize: 14, outline: "none", marginBottom: 18, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }} />
+              {!anonymous && (
+                <input value={playerName} onChange={(e) => setPlayerName(e.target.value)} placeholder="Your name (so the GM knows who)"
+                  style={{ width: "100%", boxSizing: "border-box", background: C.surface2, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "10px 12px", color: C.text, fontSize: 14, outline: "none", marginBottom: 14, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }} />
+              )}
+
+              <label style={{ display: "flex", gap: 10, alignItems: "flex-start", cursor: "pointer", marginBottom: 10 }}>
+                <input type="checkbox" checked={anonymous} onChange={(e) => setAnonymous(e.target.checked)} style={{ marginTop: 3 }} />
+                <span style={{ fontSize: 13.5, color: C.text, lineHeight: 1.5 }}>Send this anonymously</span>
+              </label>
+              <p style={{ fontSize: 12.5, color: C.muted, lineHeight: 1.55, margin: "0 0 18px" }}>
+                {anonymous
+                  ? "Your name will not be attached and we will not record that it came from you. Two things worth knowing: you will not be able to edit it afterwards, because there is nothing linking it back to you to find. And at a small table your GM may still work out who wrote it from what it says."
+                  : "Your GM will see this with your name on it. You can change an answer and submit again."}
+              </p>
 
               <button type="button" onClick={submit} disabled={submitting}
                 style={{ width: "100%", background: `linear-gradient(90deg, ${C.sun}, ${C.sunSoft})`, color: C.ink, border: "none", borderRadius: FORGE_RADIUS, padding: "13px 16px", fontSize: 15, fontWeight: 700, letterSpacing: "0.02em", cursor: submitting ? "default" : "pointer", opacity: submitting ? 0.7 : 1 }}>
