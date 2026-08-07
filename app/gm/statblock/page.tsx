@@ -27,7 +27,9 @@ import { SAX } from "@/lib/theme";
 import SixAxesNav from "@/components/six-axes-nav";
 
 type SrdMode = "2024" | "2014" | "both";
-type MonsterRec = Record<string, unknown> & { name: string; cr?: string | number };
+// source_key is declared explicitly because the index signature types everything else as unknown,
+// and unknown cannot be rendered. It is what separates the three Aboleths.
+type MonsterRec = Record<string, unknown> & { name: string; cr?: string | number; source_key?: string };
 
 const ABILITIES: [keyof Pick<StatBlockDoc, "str" | "dex" | "con" | "int" | "wis" | "cha">, string][] = [
   ["str", "STR"], ["dex", "DEX"], ["con", "CON"], ["int", "INT"], ["wis", "WIS"], ["cha", "CHA"],
@@ -377,18 +379,55 @@ function EntryListPanel({ title, hint, entries, onChange, collapsedWhenEmpty }: 
 }
 
 // The landing/picker view: existing library, plus New and prefill-from-SRD.
+// CR sorts as a NUMBER, not a string. The data holds "0" through "30" alongside "1/8", "1/4" and
+// "1/2", so a plain string compare puts 1/2 after 30 and "10" before "2" - which would make a
+// range filter quietly wrong rather than obviously broken.
+const CR_ORDER = ["0", "1/8", "1/4", "1/2", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10",
+  "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25",
+  "26", "27", "28", "29", "30"];
+
+function crValue(cr: unknown): number {
+  const t = String(cr ?? "").trim();
+  if (t.includes("/")) {
+    const [a, b] = t.split("/").map(Number);
+    return b ? a / b : Number.NaN;
+  }
+  const n = Number(t);
+  return Number.isFinite(n) ? n : Number.NaN;
+}
+
+const MONSTER_TYPES = ["Aberration", "Beast", "Celestial", "Construct", "Dragon", "Elemental",
+  "Fey", "Fiend", "Giant", "Humanoid", "Monstrosity", "Ooze", "Plant", "Undead"];
+
 function PickerView({ rows, monsters, srdMode, onSrdMode, onNew, onEdit, onPrefill }: {
   rows: StatBlockRow[]; monsters: MonsterRec[]; srdMode: SrdMode; onSrdMode: (m: SrdMode) => void;
   onNew: () => void; onEdit: (id: string) => void; onPrefill: (name: string) => void;
 }) {
   const [q, setQ] = useState("");
+  const [type, setType] = useState<string>("");
+  const [crMin, setCrMin] = useState<string>("");
+  const [crMax, setCrMax] = useState<string>("");
+  const filtersOn = Boolean(type || crMin || crMax);
+
   // The FULL list, unsliced. An empty search used to show only the first 60 of 3,210, which made
   // the picker look like a short list with a search box rather than the whole bestiary.
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase();
-    if (!s) return monsters;
-    return monsters.filter((m) => m.name.toLowerCase().includes(s));
-  }, [q, monsters]);
+    const lo = crMin ? crValue(crMin) : Number.NEGATIVE_INFINITY;
+    const hi = crMax ? crValue(crMax) : Number.POSITIVE_INFINITY;
+    return monsters.filter((m) => {
+      if (s && !m.name.toLowerCase().includes(s)) return false;
+      if (type && String(m.type ?? "") !== type) return false;
+      if (crMin || crMax) {
+        const v = crValue(m.cr);
+        // A monster whose CR does not parse is EXCLUDED once a range is set, rather than let
+        // through. A range is a deliberate narrowing, and quietly including the ones we could not
+        // measure would put an unknown-difficulty creature in an encounter budget.
+        if (!Number.isFinite(v) || v < lo || v > hi) return false;
+      }
+      return true;
+    });
+  }, [q, monsters, type, crMin, crMax]);
 
   // Rendering 3,210 buttons at once is a visible stall on the first paint and makes the scroll
   // stutter afterwards, so the pane fills in as you reach the bottom. This is windowing rather than
@@ -402,7 +441,7 @@ function PickerView({ rows, monsters, srdMode, onSrdMode, onNew, onEdit, onPrefi
 
   // Back to the top of the list whenever the query changes, or a search would start part-way down
   // a previous result set.
-  useEffect(() => { setShown(PAGE); }, [q, srdMode]);
+  useEffect(() => { setShown(PAGE); }, [q, srdMode, type, crMin, crMax]);
 
   useEffect(() => {
     const el = sentinel.current;
@@ -451,11 +490,39 @@ function PickerView({ rows, monsters, srdMode, onSrdMode, onNew, onEdit, onPrefi
         </div>
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search monsters…"
           style={{ ...stoneField(), width: "100%", margin: "10px 0" }} />
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center", marginBottom: 8 }}>
+          <select value={type} onChange={(e) => setType(e.target.value)}
+            style={{ ...stoneField(), width: "auto", minWidth: 140, padding: "7px 10px", fontSize: 13 }}>
+            <option value="">Any type</option>
+            {MONSTER_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+          </select>
+
+          <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 11, color: STONE.inkFaint }}>CR</span>
+          <select value={crMin} onChange={(e) => setCrMin(e.target.value)}
+            style={{ ...stoneField(), width: "auto", minWidth: 76, padding: "7px 10px", fontSize: 13 }}>
+            <option value="">min</option>
+            {CR_ORDER.map((c) => <option key={c} value={c}>{c}</option>)}
+          </select>
+          <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 11, color: STONE.inkFaint }}>to</span>
+          <select value={crMax} onChange={(e) => setCrMax(e.target.value)}
+            style={{ ...stoneField(), width: "auto", minWidth: 76, padding: "7px 10px", fontSize: 13 }}>
+            <option value="">max</option>
+            {CR_ORDER.map((c) => <option key={c} value={c}>{c}</option>)}
+          </select>
+
+          {(filtersOn || q.trim()) && (
+            <button onClick={() => { setType(""); setCrMin(""); setCrMax(""); setQ(""); }}
+              style={{ ...stoneButton("stone"), padding: "7px 12px", fontSize: 12.5 }}>
+              Clear
+            </button>
+          )}
+        </div>
+
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline",
           fontFamily: FORGE_FONTS.mono, fontSize: 11, color: STONE.inkFaint, marginBottom: 6 }}>
           <span>
-            {q.trim()
-              ? `${filtered.length} matching “${q.trim()}”`
+            {q.trim() || filtersOn
+              ? `${filtered.length} of ${monsters.length}`
               : `${monsters.length} monsters`}
           </span>
           {filtered.length > visible.length && <span>showing {visible.length}, scroll for more</span>}
@@ -466,11 +533,26 @@ function PickerView({ rows, monsters, srdMode, onSrdMode, onNew, onEdit, onPrefi
           // list scrolls within itself the way a picker should.
           maxHeight: 420, overflowY: "auto", paddingRight: 4,
         }}>
-          {visible.map((m) => (
-            <button key={m.name} onClick={() => onPrefill(m.name)}
+          {visible.map((m, i) => (
+            // KEYED ON name + source + cr, NOT name alone. 641 names appear more than once across
+            // the 3,210 rows - three Aboleths, three Acolytes - because the same creature exists in
+            // several sourcebooks. Duplicate keys made React keep stale nodes, so typing a search
+            // updated the count and left the grid showing the unfiltered list. The index is in
+            // there too as a last resort: the data is a file we do not control, and a key that is
+            // "probably unique" is the same bug waiting for a new sourcebook.
+            <button key={`${m.name}::${m.source_key ?? ""}::${String(m.cr ?? "")}::${i}`}
+              onClick={() => onPrefill(m.name)}
               style={{ ...stoneButton("stone"), textAlign: "left", display: "flex", justifyContent: "space-between", gap: 8 }}>
-              <span style={{ fontSize: 13.5, color: STONE.ink }}>{m.name}</span>
-              <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 11, color: STONE.inkFaint }}>CR {String(m.cr ?? "?")}</span>
+              <span style={{ minWidth: 0 }}>
+                <span style={{ fontSize: 13.5, color: STONE.ink, display: "block" }}>{m.name}</span>
+                {m.source_key && (
+                  // Shown because three entries reading "Aboleth CR 10" are unpickable otherwise.
+                  <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 10, color: STONE.inkFaint }}>
+                    {m.source_key}
+                  </span>
+                )}
+              </span>
+              <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 11, color: STONE.inkFaint, flexShrink: 0 }}>CR {String(m.cr ?? "?")}</span>
             </button>
           ))}
           {/* Sits inside the scroll container so it enters view as the list is scrolled. */}
@@ -479,7 +561,7 @@ function PickerView({ rows, monsters, srdMode, onSrdMode, onNew, onEdit, onPrefi
         {monsters.length === 0 && <p style={{ color: STONE.inkFaint, fontSize: 13 }}>No monsters loaded for this ruleset.</p>}
         {monsters.length > 0 && filtered.length === 0 && (
           <p style={{ color: STONE.inkFaint, fontSize: 13, marginTop: 8 }}>
-            Nothing matches “{q.trim()}”. Try part of the name, or switch ruleset above.
+            Nothing matches. Widen the CR range, pick a different type, or switch ruleset above.
           </p>
         )}
       </div>
