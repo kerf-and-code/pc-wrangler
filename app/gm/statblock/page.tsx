@@ -19,7 +19,11 @@ import {
   type StatBlockDoc, type StatBlockRow, type NamedEntry,
 } from "@/lib/stat-blocks";
 import { PortraitUploader } from "@/components/portrait-uploader";
-import { C, STONE, FORGE_FONTS, stonePanel, stoneButton, stoneField, forgeBackground, forgeVignette, forgeLabel, FORGE_BUTTON_CSS } from "@/lib/forge-theme";
+import {
+  STONE, FORGE_FONTS, stonePanel, stoneButton, stoneField,
+  forgeBackground, forgeVignette, forgeLabel, FORGE_BUTTON_CSS,
+} from "@/lib/forge-theme";
+import { SAX } from "@/lib/theme";
 import SixAxesNav from "@/components/six-axes-nav";
 
 type SrdMode = "2024" | "2014" | "both";
@@ -246,7 +250,7 @@ function StatBlockInner() {
 
         <div style={{ display: "flex", gap: 12, alignItems: "center", justifyContent: "flex-end", flexWrap: "wrap" }}>
           <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 12, color:
-            saveState === "saved" ? C.good : saveState === "error" ? C.warn : STONE.inkFaint }}>
+            saveState === "saved" ? SAX.good : saveState === "error" ? SAX.warn : STONE.inkFaint }}>
             {saveState === "saving" ? "Saving…" : saveState === "saved" ? "Saved"
               : saveState === "error" ? "Save failed. Retrying on next change." : "Unsaved changes"}
           </span>
@@ -378,11 +382,41 @@ function PickerView({ rows, monsters, srdMode, onSrdMode, onNew, onEdit, onPrefi
   onNew: () => void; onEdit: (id: string) => void; onPrefill: (name: string) => void;
 }) {
   const [q, setQ] = useState("");
+  // The FULL list, unsliced. An empty search used to show only the first 60 of 3,210, which made
+  // the picker look like a short list with a search box rather than the whole bestiary.
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase();
-    if (!s) return monsters.slice(0, 60);
-    return monsters.filter((m) => m.name.toLowerCase().includes(s)).slice(0, 60);
+    if (!s) return monsters;
+    return monsters.filter((m) => m.name.toLowerCase().includes(s));
   }, [q, monsters]);
+
+  // Rendering 3,210 buttons at once is a visible stall on the first paint and makes the scroll
+  // stutter afterwards, so the pane fills in as you reach the bottom. This is windowing rather than
+  // a cap: every monster is reachable by scrolling, which is the thing the old slice prevented.
+  // Done with an IntersectionObserver rather than a scroll handler so it costs nothing while idle,
+  // and without a virtual-list library because the rows are fixed-height buttons and this is
+  // twenty lines.
+  const PAGE = 120;
+  const [shown, setShown] = useState(PAGE);
+  const sentinel = useRef<HTMLDivElement | null>(null);
+
+  // Back to the top of the list whenever the query changes, or a search would start part-way down
+  // a previous result set.
+  useEffect(() => { setShown(PAGE); }, [q, srdMode]);
+
+  useEffect(() => {
+    const el = sentinel.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver((entries) => {
+      if (entries.some((e) => e.isIntersecting)) {
+        setShown((n) => (n >= filtered.length ? n : n + PAGE));
+      }
+    }, { rootMargin: "200px" });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [filtered.length]);
+
+  const visible = filtered.slice(0, shown);
 
   return (
     <div style={{ display: "grid", gap: 20, maxWidth: 900, margin: "0 auto" }}>
@@ -417,16 +451,37 @@ function PickerView({ rows, monsters, srdMode, onSrdMode, onNew, onEdit, onPrefi
         </div>
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search monsters…"
           style={{ ...stoneField(), width: "100%", margin: "10px 0" }} />
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 6 }}>
-          {filtered.map((m) => (
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline",
+          fontFamily: FORGE_FONTS.mono, fontSize: 11, color: STONE.inkFaint, marginBottom: 6 }}>
+          <span>
+            {q.trim()
+              ? `${filtered.length} matching “${q.trim()}”`
+              : `${monsters.length} monsters`}
+          </span>
+          {filtered.length > visible.length && <span>showing {visible.length}, scroll for more</span>}
+        </div>
+        <div style={{
+          display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 6,
+          // A bounded pane rather than an endless page: the builder below stays reachable, and the
+          // list scrolls within itself the way a picker should.
+          maxHeight: 420, overflowY: "auto", paddingRight: 4,
+        }}>
+          {visible.map((m) => (
             <button key={m.name} onClick={() => onPrefill(m.name)}
               style={{ ...stoneButton("stone"), textAlign: "left", display: "flex", justifyContent: "space-between", gap: 8 }}>
               <span style={{ fontSize: 13.5, color: STONE.ink }}>{m.name}</span>
               <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 11, color: STONE.inkFaint }}>CR {String(m.cr ?? "?")}</span>
             </button>
           ))}
+          {/* Sits inside the scroll container so it enters view as the list is scrolled. */}
+          <div ref={sentinel} style={{ gridColumn: "1 / -1", height: 1 }} />
         </div>
         {monsters.length === 0 && <p style={{ color: STONE.inkFaint, fontSize: 13 }}>No monsters loaded for this ruleset.</p>}
+        {monsters.length > 0 && filtered.length === 0 && (
+          <p style={{ color: STONE.inkFaint, fontSize: 13, marginTop: 8 }}>
+            Nothing matches “{q.trim()}”. Try part of the name, or switch ruleset above.
+          </p>
+        )}
       </div>
     </div>
   );
