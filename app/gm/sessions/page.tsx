@@ -18,7 +18,7 @@ const btnGhost = { background: "none", color: C.brass, border: `1px solid ${C.br
 const CAT_ORDER = ["opportunity", "response", "reward", "meta"];
 const CAT_LABEL: Record<string, string> = { opportunity: "Opportunities", response: "Responses", reward: "Rewards", meta: "Notes" };
 // Test default for the recipients field; clear or change per campaign.
-const DEFAULT_RECIPIENTS = "terry.mickail@gmail.com";
+const DEFAULT_RECIPIENTS = "";
 
 // Convert a stored ISO timestamp to a value for <input type="datetime-local"> in local time.
 function toLocalInput(iso: string): string {
