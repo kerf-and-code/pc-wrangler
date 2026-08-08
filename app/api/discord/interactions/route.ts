@@ -995,6 +995,56 @@ async function handleRecord(interaction: Interaction) {
   }
 
   const heading = sess.session_number != null ? `Session ${sess.session_number}` : "this session";
+
+  // WHO IS ABOUT TO BE LEFT OUT, BY NAME, AT THE ONLY MOMENT IT CAN STILL BE FIXED.
+  //
+  // The reply below already said consent is handled at claim and that opted-out players are
+  // excluded. True, and useless: it reads as boilerplate, so a GM with a non-consenting player at
+  // the table learns nothing from it. On 2026-08-01 and again on 2026-08-08 a player was recorded
+  // out of two sessions this way, and nobody found out until the recaps were read.
+  //
+  // The audio of a player without consent is DISCARDED AS IT ARRIVES - the sidecar never uploads
+  // it - so this is not a warning that something might go wrong later. It is the last second in
+  // which the outcome is still changeable.
+  //
+  // FAILS OPEN. If the lookup errors we start the recording anyway and say nothing: consent is
+  // enforced downstream at finalize and again at submit, so a missing notice costs a GM some
+  // information, while a refused /record costs them the session.
+  let consentNote = "";
+  try {
+    const { data: pcs } = await sb
+      .from("characters")
+      .select("id, name")
+      .eq("campaign_id", campaign.id)
+      .eq("kind", "pc")
+      .eq("active", true);
+
+    const { data: ok } = await sb
+      .from("recording_consents")
+      .select("character_id")
+      .eq("campaign_id", campaign.id)
+      .is("session_id", null)
+      .eq("consented", true);
+
+    const consented = new Set(((ok as { character_id: string | null }[]) || [])
+      .map((r) => r.character_id).filter(Boolean));
+    const missing = ((pcs as { id: string; name: string }[]) || [])
+      .filter((c) => !consented.has(c.id))
+      .map((c) => c.name);
+
+    if (missing.length) {
+      const who = missing.length === 1
+        ? `${missing[0]} has`
+        : `${missing.slice(0, -1).join(", ")} and ${missing[missing.length - 1]} have`;
+      consentNote =
+        `\n\n**${who} not consented to recording.** Their audio will not be captured, ` +
+        "and it cannot be recovered afterwards. Everyone else is being recorded as normal. " +
+        "If that is not what you expect, run /stop, sort it out, and start again.";
+    }
+  } catch {
+    // Deliberately silent. See above.
+  }
+
   return NextResponse.json({
     type: CHANNEL_MESSAGE_WITH_SOURCE,
     data: {
@@ -1003,8 +1053,8 @@ async function handleRecord(interaction: Interaction) {
           title: `Recording ${heading} \u2014 ${campaign.name}`.slice(0, 256),
           description:
             "Six Axes is capturing each speaker's audio to help your GM build recaps and table analytics. " +
-            "Consent is handled when players claim their character; anyone who has opted out is excluded from this session. " +
-            "Ask your GM to change opt-outs or to delete a recording at any time.",
+            "Consent is handled when players claim their character, and anyone without it is never recorded at all. " +
+            "Ask your GM to change opt-outs or to delete a recording at any time." + consentNote,
           color: BRASS,
         },
       ],
