@@ -19,7 +19,17 @@
 //   dropdown under a trait that clearly asks for a decision is worse than no dropdown at all.
 //   Elven Lineage is exactly this case today: it points at a table that is not in its own desc.
 
-export type TraitOption = { name: string; detail?: string };
+export type TraitOption = {
+  name: string;
+  detail?: string;
+  /**
+   * The remaining table columns, in order. Elven Lineages and Fiendish Legacies are four-column
+   * tables - lineage, then the spell gained at levels 1, 3 and 5 - so the columns ARE the
+   * progression and joining them into one string threw that away. `detail` keeps the joined form
+   * for display; this keeps the structure for anything that needs to act on it.
+   */
+  columns?: string[];
+};
 
 /**
  * Markdown table rows. The data has them run together on one line with inconsistent spacing
@@ -47,8 +57,9 @@ function fromTable(desc: string): TraitOption[] {
     const name = cells[i];
     // The first column is the thing being chosen; the rest is what it grants.
     if (!/^[A-Za-z][A-Za-z' -]{1,28}$/.test(name)) continue;
-    const detail = cells.slice(i + 1, i + cols).filter(Boolean).join(" \u00b7 ");
-    out.push({ name, detail: detail || undefined });
+    const rest = cells.slice(i + 1, i + cols);
+    const detail = rest.filter(Boolean).join(" \u00b7 ");
+    out.push({ name, detail: detail || undefined, columns: rest });
   }
   return out;
 }
@@ -68,6 +79,28 @@ function fromBullets(desc: string): TraitOption[] {
 /** Does this trait ask the player to decide anything. */
 export function traitAsksAChoice(desc: string): boolean {
   return /\bchoose\b|\byour choice\b|\bone of the following\b/i.test(desc || "");
+}
+
+/**
+ * The spells a lineage-style option grants, keyed by the character level they arrive at.
+ *
+ * The table's header row names the levels ("Level 1 Benefit", "Level 3", "Level 5"), but headers
+ * are stripped before the rows are read, so the POSITION is used instead: 5e grants these at 1, 3
+ * and 5 without exception, and inventing a header parser for three fixed numbers would be more
+ * ways to be wrong, not fewer.
+ */
+export function lineageSpells(option: TraitOption | undefined): { level: number; spell: string }[] {
+  const cols = option?.columns || [];
+  const levels = [1, 3, 5];
+  const out: { level: number; spell: string }[] = [];
+  cols.slice(0, 3).forEach((raw, i) => {
+    const spell = (raw || "").trim();
+    // A cell that is not a spell name - a dash, a note, a sentence - is skipped rather than
+    // offered: a "spell" the catalog has never heard of is worse than a missing row.
+    if (!spell || spell.length > 40 || /^[-\u2014\u2013]$/.test(spell)) return;
+    out.push({ level: levels[i], spell });
+  });
+  return out;
 }
 
 export function traitOptions(desc: string): TraitOption[] {
