@@ -37,6 +37,7 @@ import { applyAdvantage } from "@/lib/dice";
 import { traitOptions, traitAsksAChoice } from "@/lib/species-choices";
 import { choicesFor, resolveChoice, choiceKey, type ClassChoice } from "@/lib/class-choices";
 import { classTable, classTableColumns } from "@/lib/class-table";
+import { choiceEffects, applyToBuild, type ChoiceEffects } from "@/lib/apply-choices";
 import { buildRulesContext } from "@/lib/srd/rules-context";
 import {
   loadCatalog, partnerList, speciesOptions, classOptions, variantOptions, subclassOptions,
@@ -472,10 +473,47 @@ function ForgeInner() {
   // picker, and must keep seeing the full tables or imported characters would lose their variant
   // dropdowns. Everything else about an import derives normally.
   const printedAbilities = hasPrintedAbilities(build);
-  const deriveCtx = useMemo(
-    () => (printedAbilities ? suppressItemEffects(ctx) : ctx),
-    [ctx, printedAbilities],
-  );
+  // Everything the player has chosen, turned into things the engine can read. Computed here rather
+  // than inside deriveSheet so the derivation stays one function with one input, and so a wrong
+  // rule in the mapping can only feed the engine badly, never corrupt it.
+  const effects: ChoiceEffects = useMemo(() => {
+    const traits = traitList(srd.speciesByName[build.meta.species]?.traits)
+      .concat(traitList(srd.variantByName[speciesVariant]?.traits));
+    const options: Record<string, { name: string; detail?: string }[]> = {};
+    for (const t of traits) options[t.name] = traitOptions(t.desc);
+
+    const expertiseKeys = choicesFor(build.meta.className || "", build.meta.subclass || "", build.level || 1)
+      .filter((c) => c.feature.toLowerCase().includes("expertise"))
+      .map(choiceKey);
+
+    return choiceEffects({
+      background: srd.bgByName[build.meta.background],
+      speciesTraits: traits,
+      speciesChoices: (build as Build & { speciesChoices?: Record<string, string> }).speciesChoices || {},
+      speciesOptions: options,
+      classChoices: (build as Build & { classChoices?: Record<string, string[]> }).classChoices || {},
+      expertiseKeys,
+    });
+  }, [build, speciesVariant, srd.speciesByName, srd.variantByName, srd.bgByName]);
+
+  const deriveCtx = useMemo(() => {
+    const base = printedAbilities ? suppressItemEffects(ctx) : ctx;
+    if (!effects.resist.length || !build.meta.species) return base;
+    // Resistances reach the sheet through the species entry in the rules context, so a chosen
+    // ancestry is patched onto a COPY of that entry rather than into the build. Copying matters:
+    // ctx is shared and long-lived, and mutating it would leak one character's dragon into the next.
+    const prev = base.species?.[build.meta.species] || {};
+    return {
+      ...base,
+      species: {
+        ...base.species,
+        [build.meta.species]: {
+          ...prev,
+          resist: [...(prev.resist || []), ...effects.resist.filter((r) => !(prev.resist || []).includes(r))],
+        },
+      },
+    };
+  }, [ctx, printedAbilities, effects.resist, build.meta.species]);
 
   // Apply the chosen species' ability bonuses (2014 carry "CON +2"; 2024 carry none) into
   // build.featMods, which the engine adds to the base scores.
@@ -488,8 +526,11 @@ function ForgeInner() {
     for (const src of [build.featMods || {}, build.bgAsi || {}, bonus]) {
       for (const [k, v] of Object.entries(src)) merged[k] = (merged[k] || 0) + Number(v || 0);
     }
-    return { ...build, featMods: merged };
-  }, [build, srd.speciesByName]);
+    // Granted skills and expertise fold in here, so the engine sees them as though the player had
+    // ticked them by hand - which is the point: a proficiency from a background is not a lesser
+    // proficiency.
+    return applyToBuild({ ...build, featMods: merged }, effects);
+  }, [build, srd.speciesByName, effects]);
 
   const sheet = useMemo(() => {
     try { return deriveSheet(buildForDerive, deriveCtx); } catch { return null; }
@@ -881,7 +922,7 @@ function ForgeInner() {
               <SheetPanel sheet={sheet} name={name || "Character"} />
 
               {tab === "finish" && (
-                <FinishPanel build={build} name={name} sheet={sheet} onTab={setTab} />
+                <FinishPanel build={build} name={name} sheet={sheet} onTab={setTab} effects={effects} />
               )}
 
               {tab === "roll" && (
@@ -990,8 +1031,9 @@ function TabBar({ tab, onTab, build }: { tab: TabKey; onTab: (t: TabKey) => void
   );
 }
 
-function FinishPanel({ build, name, sheet, onTab }: {
-  build: Build; name: string; sheet: NonNullable<ReturnType<typeof deriveSheet>>; onTab: (t: TabKey) => void;
+function FinishPanel({ build, name, sheet, onTab, effects }: {
+  build: Build; name: string; sheet: NonNullable<ReturnType<typeof deriveSheet>>;
+  onTab: (t: TabKey) => void; effects: ChoiceEffects;
 }) {
   // What is not done yet, said plainly, each one a way back to the tab that fixes it. The point is
   // that "am I finished" should be answerable without reading the whole sheet.
@@ -1037,6 +1079,27 @@ function FinishPanel({ build, name, sheet, onTab }: {
             ))}
           </div>
         </>
+      )}
+
+      {(effects.applied.length > 0 || effects.unapplied.length > 0) && (
+        <div style={{ marginTop: 16, paddingTop: 14, borderTop: `1px solid ${STONE.hi}` }}>
+          <div style={{ fontFamily: FORGE_FONTS.mono, fontSize: 11, letterSpacing: "0.14em",
+            textTransform: "uppercase", color: STONE.inkFaint, marginBottom: 8 }}>What your choices did</div>
+          {effects.applied.map((a) => (
+            <div key={a} style={{ fontSize: 13, color: C.good, lineHeight: 1.7 }}>&#10003; {a}</div>
+          ))}
+          {effects.unapplied.length > 0 && (
+            <>
+              <div style={{ fontSize: 13, color: STONE.inkDim, marginTop: 8, lineHeight: 1.6 }}>
+                Recorded, but the app cannot work out what they change yet, so they are not in your
+                numbers:
+              </div>
+              {effects.unapplied.map((u) => (
+                <div key={u} style={{ fontSize: 13, color: STONE.inkFaint, lineHeight: 1.7 }}>&middot; {u}</div>
+              ))}
+            </>
+          )}
+        </div>
       )}
 
       <div style={{ marginTop: 16, paddingTop: 14, borderTop: `1px solid ${STONE.hi}` }}>
@@ -1168,7 +1231,7 @@ function BackgroundPanel({ build, backgroundOpts, bgRec, desc, onBackground, onA
               a reminder. */}
           <div style={{ fontFamily: FORGE_FONTS.mono, fontSize: 11, letterSpacing: "0.14em",
             textTransform: "uppercase", color: STONE.inkFaint, marginBottom: 8 }}>
-            Also granted, not yet applied automatically
+            Also granted
           </div>
           <div style={{ display: "grid", gap: 5, fontSize: 13.5, color: STONE.ink }}>
             {bgRec?.feat && <span><strong>Feat:</strong> {bgRec.feat}</span>}
@@ -1177,7 +1240,8 @@ function BackgroundPanel({ build, backgroundOpts, bgRec, desc, onBackground, onA
             {bgRec?.equipment && <span><strong>Equipment:</strong> {bgRec.equipment}</span>}
           </div>
           <p style={{ color: STONE.inkFaint, fontSize: 12, marginTop: 8, marginBottom: 0, lineHeight: 1.55 }}>
-            Add the skills on the sheet and the gear on the Equipment tab for now.
+            The skills are applied to your sheet automatically. The feat and the gear are not: add
+            the equipment on the Equipment tab, and take the feat as one of your ASI picks.
           </p>
         </div>
       )}
@@ -1598,7 +1662,7 @@ function SpeciesPanel({
                       {picked && (
                         <p style={{ fontFamily: FORGE_FONTS.mono, fontSize: 11.5, color: STONE.inkFaint,
                           margin: "6px 0 0" }}>
-                          recorded on the sheet, not yet applied to your numbers
+                          see the Finish tab for what this changed
                         </p>
                       )}
                     </>
@@ -1766,8 +1830,8 @@ function ClassChoicesPanel({ build, sheet, weapons, spells, picks, onPick }: {
       </div>
 
       <p style={{ fontSize: 12, color: STONE.inkFaint, marginTop: 14, marginBottom: 0, lineHeight: 1.55 }}>
-        These are recorded on the sheet. Weapon mastery and expertise do not yet change your derived
-        numbers, so treat them as the record of your decision rather than as applied maths.
+        Expertise applies to your sheet as soon as you pick it. Weapon mastery is recorded but has
+        no effect the engine can compute yet, so it stays a note rather than a number.
       </p>
     </div>
   );
