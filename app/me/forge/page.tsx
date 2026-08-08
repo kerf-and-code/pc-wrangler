@@ -1021,6 +1021,21 @@ function ForgeInner() {
                 />
               )}
 
+              {/* Each additional class gets its OWN progression panel at its own level. One merged
+                  table would have to reconcile two classes' columns against two different levels,
+                  and the result reads as a single class that never existed. Two tables is honest
+                  and is also how the books present it. */}
+              {tab === "class" && ((build as Build & { multiclass?: { className: string; subclass?: string; level: number }[] })
+                .multiclass || []).map((c) => (
+                <ClassProgressionPanel key={c.className}
+                  className={c.className} level={c.level || 1}
+                  progression={classProgression(srd.classByName[c.className], c.level || 1)}
+                  epicRows={[]}
+                  classRec={srd.classByName[c.className]}
+                  structuredRec={srd.structuredByName[c.className]}
+                />
+              ))}
+
               {tab === "class" && !build.meta.className && (
                 <div style={stonePanel()}>
                   <PanelTitle>Class</PanelTitle>
@@ -1096,10 +1111,22 @@ function ForgeInner() {
                 <ResourcePanel
                   structuredRec={srd.structuredByName[build.meta.className]}
                   level={build.level || 1}
+                  // Each additional class brings its own pools at ITS level: a Fighter 5 / Monk 3
+                  // has Second Wind from the fighter table and Focus Points from the monk one, and
+                  // neither is visible from the other's row.
+                  extraClasses={((build as Build & { multiclass?: { className: string; level: number }[] })
+                    .multiclass || []).map((c) => ({
+                      rec: srd.structuredByName[c.className], level: c.level || 1,
+                    }))}
                   costed={[
                     // Automatic first: a monk's Flurry is not a decision they made, and burying it
                     // under the options they picked would read as though it were.
-                    ...actionsFor(build.meta.className || "", build.meta.subclass || "", build.level || 1)
+                    // Automatic actions from every class the character holds.
+                    ...[
+                      { cn: build.meta.className || "", sc: build.meta.subclass || "", lv: build.level || 1 },
+                      ...((build as Build & { multiclass?: { className: string; subclass?: string; level: number }[] })
+                        .multiclass || []).map((c) => ({ cn: c.className, sc: c.subclass || "", lv: c.level || 1 })),
+                    ].flatMap(({ cn, sc, lv }) => actionsFor(cn, sc, lv))
                       .map((a) => ({ name: a.name, summary: a.summary,
                         resource: a.cost.resource, amount: a.cost.amount })),
                     ...costedPicks(
@@ -2363,11 +2390,12 @@ function GrantedEquipmentPanel({ bgRec, coreTraits, catalog, owned, onAdd }: {
  *   asking: a tracker that silently refilled at the wrong moment is a tracker nobody can trust. The
  *   button is one tap and it is the player's call.
  */
-function ResourcePanel({ structuredRec, level, costed, extraPools, spent, onSpend, onRest, onSpentMap }: {
+function ResourcePanel({ structuredRec, level, costed, extraPools, extraClasses, spent, onSpend, onRest, onSpentMap }: {
   structuredRec?: unknown;
   level: number;
   costed: { name: string; summary: string; resource: string; amount: number }[];
   extraPools: Resource[];
+  extraClasses: { rec?: unknown; level: number }[];
   spent: Record<string, number>;
   onSpend: (key: string, n: number) => void;
   onRest: () => void;
@@ -2379,7 +2407,20 @@ function ResourcePanel({ structuredRec, level, costed, extraPools, spent, onSpen
   );
   // Species-granted pools sit alongside the class ones. Goliath's Giant Ancestry scales with
   // proficiency bonus rather than appearing in any column, so it can only arrive this way.
-  const pools = useMemo(() => [...resourcesFor(row), ...extraPools], [row, extraPools]);
+  const pools = useMemo(() => {
+    const out = [...resourcesFor(row)];
+    for (const c of extraClasses) {
+      const r = classTable(c.rec).find((x) => x.level === c.level);
+      for (const p of resourcesFor(r)) {
+        // A pool of the same name from two classes is ONE pool - a Cleric/Paladin has a single
+        // Channel Divinity, not two - and the larger maximum is the one that applies.
+        const at = out.findIndex((e) => e.key === p.key);
+        if (at >= 0) out[at] = out[at].max >= p.max ? out[at] : p;
+        else out.push(p);
+      }
+    }
+    return [...out, ...extraPools];
+  }, [row, extraClasses, extraPools]);
   const slots = useMemo(() => slotsFor(row), [row]);
 
   if (pools.length === 0 && slots.length === 0) return null;
