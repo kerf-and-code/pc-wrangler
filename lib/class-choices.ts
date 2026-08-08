@@ -20,7 +20,7 @@
 //   Anything not listed here falls back to prose, so growing this file is safe and leaving a gap is
 //   safe. Guessing is not.
 
-export type ChoiceKind = "skill" | "weapon" | "tool" | "spell" | "feat";
+export type ChoiceKind = "skill" | "weapon" | "tool" | "spell" | "feat" | "option";
 
 export type ClassChoice = {
   className: string;
@@ -38,6 +38,20 @@ export type ClassChoice = {
     proficientOnly?: boolean;
     /** Feat category, e.g. "Fighting Style". The feats catalog already carries these. */
     featCategory?: string;
+    /**
+     * A named list that exists nowhere in the data - Divine Order, Metamagic and friends. Held as
+     * NAME plus a one-line summary of what it does, in our own words: the names are facts and the
+     * summary is what a picker needs to be usable, but the rules text itself stays in the book.
+     * Anything longer than a line belongs on the class page, not in a dropdown.
+     */
+    named?: {
+      name: string;
+      summary: string;
+      /** Minimum character level. Options above the character's level are not offered at all. */
+      minLevel?: number;
+      /** Another option that must be taken first, by name. Shown, but not enforced. */
+      requires?: string;
+    }[];
     /** Spell level bounds, inclusive. 0 is a cantrip. */
     spellLevelMin?: number;
     spellLevelMax?: number;
@@ -58,6 +72,45 @@ export type ClassChoice = {
  * classes-2024-structured.json rather than recalled, and anything whose wording left room for
  * doubt was left out to fall back to prose.
  */
+/**
+ * The 2024 Eldritch Invocations. Names and prerequisites are facts about the rules; the summaries
+ * are one-line paraphrases written so the picker is usable. The rules text itself stays in the book.
+ *
+ * NOTE FOR ANYONE UPDATING THIS: it is the 2024 list, which differs substantially from 2014. The
+ * older list is NOT a fallback for a 2014 warlock - it is a different set with different names, and
+ * offering one for the other would be wrong rather than approximate.
+ */
+const INVOCATIONS_2024: NonNullable<ClassChoice["filter"]>["named"] = [
+  { name: "Agonizing Blast", summary: "Add Charisma to a damaging cantrip's damage", minLevel: 2 },
+  { name: "Armor of Shadows", summary: "Cast Mage Armor on yourself for free" },
+  { name: "Ascendant Step", summary: "Cast Levitate on yourself for free", minLevel: 5 },
+  { name: "Devil's Sight", summary: "See in dim light and darkness out to 120 feet", minLevel: 2 },
+  { name: "Devouring Blade", summary: "Thirsting Blade grants two extra attacks", minLevel: 12, requires: "Thirsting Blade" },
+  { name: "Eldritch Mind", summary: "Advantage on Constitution saves for Concentration" },
+  { name: "Eldritch Smite", summary: "Spend a slot for extra Force damage and knock Prone", minLevel: 5, requires: "Pact of the Blade" },
+  { name: "Eldritch Spear", summary: "A cantrip's range grows by 30 feet per Warlock level", minLevel: 2 },
+  { name: "Fiendish Vigor", summary: "Cast False Life on yourself free, always at maximum", minLevel: 2 },
+  { name: "Gaze of Two Minds", summary: "See through a willing creature's senses", minLevel: 5 },
+  { name: "Gift of the Depths", summary: "Breathe underwater and gain a Swim Speed", minLevel: 5 },
+  { name: "Gift of the Protectors", summary: "Named creatures drop to 1 HP instead of 0", minLevel: 9, requires: "Pact of the Tome" },
+  { name: "Investment of the Chain Master", summary: "Your familiar gains speed, attacks and your save DC", minLevel: 5, requires: "Pact of the Chain" },
+  { name: "Lessons of the First Ones", summary: "Gain an Origin feat of your choice", minLevel: 2 },
+  { name: "Lifedrinker", summary: "Extra damage on a pact weapon hit, and heal from a Hit Die", minLevel: 9, requires: "Pact of the Blade" },
+  { name: "Mask of Many Faces", summary: "Cast Disguise Self for free", minLevel: 2 },
+  { name: "Master of Myriad Forms", summary: "Cast Alter Self for free", minLevel: 5 },
+  { name: "Misty Visions", summary: "Cast Silent Image for free", minLevel: 2 },
+  { name: "One with Shadows", summary: "Cast Invisibility on yourself in dim light or darkness", minLevel: 5 },
+  { name: "Otherworldly Leap", summary: "Cast Jump on yourself for free", minLevel: 2 },
+  { name: "Pact of the Blade", summary: "Conjure a pact weapon and use Charisma to attack with it" },
+  { name: "Pact of the Chain", summary: "Find Familiar for free, with extra familiar forms" },
+  { name: "Pact of the Tome", summary: "Three cantrips and two ritual spells from any class" },
+  { name: "Repelling Blast", summary: "Push a target 10 feet on a cantrip attack hit", minLevel: 2 },
+  { name: "Thirsting Blade", summary: "Attack twice with your pact weapon", minLevel: 5, requires: "Pact of the Blade" },
+  { name: "Visions of Distant Realms", summary: "Cast Arcane Eye for free", minLevel: 9 },
+  { name: "Whispers of the Grave", summary: "Cast Speak with Dead for free", minLevel: 7 },
+  { name: "Witch Sight", summary: "Truesight out to 30 feet", minLevel: 15 },
+];
+
 export const CLASS_CHOICES: ClassChoice[] = [
   // --- resolvable from data already in lib/srd, no option list authored -----------------------
   // Fighting Style is a FEAT CATEGORY in feats-2024.json - twelve of them - so these three need no
@@ -89,6 +142,70 @@ export const CLASS_CHOICES: ClassChoice[] = [
     filter: { spellLevelMin: 2, spellLevelMax: 2 } },
   { className: "Wizard", level: 20, feature: "Signature Spells", choose: 2, kind: "spell",
     filter: { spellLevelMin: 3, spellLevelMax: 3 } },
+
+  // --- named lists, authored because they exist in no machine-readable source -----------------
+  {
+    className: "Cleric", level: 7, feature: "Blessed Strikes", choose: 1, kind: "option",
+    filter: { named: [
+      { name: "Divine Strike", summary: "Once a turn, +1d8 Necrotic or Radiant on a weapon hit" },
+      { name: "Potent Spellcasting", summary: "Add Wisdom to your Cleric cantrip damage" },
+    ] },
+  },
+  //
+  // 2024 only. Each is a short, closed list, and each summary is a one-line paraphrase written to
+  // make the picker usable rather than to reproduce the rules. The full text stays in the book.
+  {
+    className: "Cleric", level: 1, feature: "Divine Order", choose: 1, kind: "option",
+    filter: { named: [
+      { name: "Protector", summary: "Martial weapon proficiency and Heavy armor training" },
+      { name: "Thaumaturge", summary: "An extra cantrip, plus Wisdom to Arcana and Religion checks" },
+    ] },
+  },
+  {
+    className: "Druid", level: 1, feature: "Primal Order", choose: 1, kind: "option",
+    filter: { named: [
+      { name: "Magician", summary: "An extra cantrip, plus Wisdom to Arcana and Nature checks" },
+      { name: "Warden", summary: "Martial weapon proficiency and Medium armor training" },
+    ] },
+  },
+  {
+    className: "Druid", level: 7, feature: "Elemental Fury", choose: 1, kind: "option",
+    filter: { named: [
+      { name: "Potent Spellcasting", summary: "Add Wisdom to your Druid cantrip damage" },
+      { name: "Primal Strike", summary: "Once a turn, +1d8 elemental damage on a weapon or Beast form hit" },
+    ] },
+  },
+  // Sorcerer picks two here and two more at 10 and 17, so the same list appears three times with
+  // distinct keys rather than one entry with a growing count - a level 10 sorcerer choosing four at
+  // once would not know which two were the level 2 pair.
+  ...[2, 10, 17].map((lv) => ({
+    className: "Sorcerer", level: lv, feature: `Metamagic (level ${lv})`, choose: 2,
+    kind: "option" as const,
+    filter: { named: [
+      { name: "Careful Spell", summary: "1 point: chosen creatures auto-succeed and take no damage" },
+      { name: "Distant Spell", summary: "1 point: double the range, or Touch becomes 30 feet" },
+      { name: "Empowered Spell", summary: "1 point: reroll damage dice up to your Charisma modifier" },
+      { name: "Extended Spell", summary: "1 point: double the duration, up to 24 hours" },
+      { name: "Heightened Spell", summary: "2 points: the target has Disadvantage on its save" },
+      { name: "Quickened Spell", summary: "2 points: cast an action spell as a Bonus Action" },
+      { name: "Seeking Spell", summary: "1 point: reroll a missed spell attack" },
+      { name: "Subtle Spell", summary: "1 point: cast with no verbal, somatic or material components" },
+      { name: "Transmuted Spell", summary: "1 point: swap the damage type for another elemental one" },
+      { name: "Twinned Spell", summary: "1 point: cast at one level higher to reach a second creature" },
+    ] },
+  })),
+
+  // Eldritch Invocations, 2024. The warlock gains them in increments - one at level 1, two more at
+  // 2 and at 5, then one each at 7, 9, 12, 15 and 18 - so each grant is its own entry rather than
+  // one entry with a growing count. A level 18 warlock choosing ten at once would have no idea
+  // which were which, and the prerequisites only make sense against the level they were taken at.
+  ...([[1, 1], [2, 2], [5, 2], [7, 1], [9, 1], [12, 1], [15, 1], [18, 1]] as [number, number][])
+    .map(([lv, n]) => ({
+      className: "Warlock", level: lv, feature: `Eldritch Invocations (level ${lv})`,
+      choose: n, kind: "option" as const,
+      filter: { named: INVOCATIONS_2024 },
+      note: lv === 1 ? "You can swap one invocation whenever you gain a Warlock level." : undefined,
+    })),
 
   // --- the originals -------------------------------------------------------------------------
   {
@@ -152,6 +269,8 @@ export type ResolveInput = {
   /** Skill keys the character is already proficient in, for Expertise. */
   proficientSkills: string[];
   feats: { name: string; category?: string }[];
+  /** The character's level, so options with a prerequisite above it are not offered. */
+  characterLevel?: number;
 };
 
 /**
@@ -183,6 +302,18 @@ export function resolveChoice(choice: ClassChoice, data: ResolveInput): { value:
         return true;
       })
       .map((w) => ({ value: w.name, label: w.mastery ? `${w.name} (${w.mastery})` : w.name }));
+  }
+
+  if (choice.kind === "option") {
+    const lvl = data.characterLevel ?? 20;
+    return (f.named || [])
+      // Hidden rather than greyed. A level 2 Warlock scrolling past eight invocations they cannot
+      // take is reading a list that is mostly noise, and the level is not their decision to make.
+      .filter((o) => (o.minLevel ?? 1) <= lvl)
+      .map((o) => ({
+        value: o.name,
+        label: `${o.name} \u2014 ${o.summary}${o.requires ? ` (needs ${o.requires})` : ""}`,
+      }));
   }
 
   if (choice.kind === "feat") {

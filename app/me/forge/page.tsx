@@ -1860,13 +1860,15 @@ function ClassChoicesPanel({ build, sheet, weapons, spells, feats, picks, onPick
       .filter((w) => w.category === "Tools").map((t) => ({ name: t.name })),
     spells: spells.map((sp) => ({ name: sp.name, level: sp.level })),
     feats: feats.map((f) => ({ name: f.name, category: (f as { category?: string }).category })),
+    // Named options carry a minimum level, so the resolver needs to know the character's.
+    characterLevel: build.level || 1,
     // Expertise only offers skills the character already has, so this reads the DERIVED sheet
     // rather than build.skillProf - a skill granted by a background or species is just as
     // proficient as one picked by hand, and asking the raw build would miss those.
     proficientSkills: Object.entries(sheet?.skills || {})
       .filter(([, v]) => (v as { rank: number }).rank > 0)
       .map(([k]) => k),
-  }), [weapons, spells, feats, sheet]);
+  }), [weapons, spells, feats, sheet, build.level]);
 
   if (list.length === 0) {
     return (
