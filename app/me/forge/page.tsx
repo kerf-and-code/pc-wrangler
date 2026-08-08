@@ -674,6 +674,34 @@ function ForgeInner() {
     return b;
   });
 
+  type MC = { className: string; subclass?: string; level: number };
+  const addClass = (className: string) => patch((b) => {
+    const t = b as Build & { multiclass?: MC[] };
+    // The primary class lives in meta and must not be duplicated here, or its level would be
+    // counted twice in every total.
+    if (!className || className === b.meta.className) return b;
+    if ((t.multiclass || []).some((c) => c.className === className)) return b;
+    t.multiclass = [...(t.multiclass || []), { className, level: 1 }];
+    return b;
+  });
+  const setClassLevel = (className: string, level: number) => patch((b) => {
+    const t = b as Build & { multiclass?: MC[] };
+    t.multiclass = (t.multiclass || []).map((c) =>
+      c.className === className ? { ...c, level: Math.max(1, Math.min(20, level)) } : c);
+    return b;
+  });
+  const setClassSubclass = (className: string, subclass: string) => patch((b) => {
+    const t = b as Build & { multiclass?: MC[] };
+    t.multiclass = (t.multiclass || []).map((c) =>
+      c.className === className ? { ...c, subclass } : c);
+    return b;
+  });
+  const removeClass = (className: string) => patch((b) => {
+    const t = b as Build & { multiclass?: MC[] };
+    t.multiclass = (t.multiclass || []).filter((c) => c.className !== className);
+    return b;
+  });
+
   const setBgFeatAbility = (a: string) => patch((b) => {
     (b as Build & { bgFeatAbility?: string }).bgFeatAbility = a;
     return b;
@@ -998,6 +1026,16 @@ function ForgeInner() {
                   <PanelTitle>Class</PanelTitle>
                   <Muted>Pick a class on the Identity tab and its levels appear here.</Muted>
                 </div>
+              )}
+
+              {tab === "class" && (
+                <MulticlassPanel
+                  build={build} sheet={sheet}
+                  classOpts={classOpts.map((c) => c.name)}
+                  subclassFor={(cn) => (catalog ? subclassOptions(catalog, cn, enabledPartners) : [])}
+                  onAdd={addClass} onLevel={setClassLevel}
+                  onSubclass={setClassSubclass} onRemove={removeClass}
+                />
               )}
 
               {tab === "class" && build.meta.className && (
@@ -2456,6 +2494,123 @@ function ResourcePanel({ structuredRec, level, costed, extraPools, spent, onSpen
           A short rest returns what each feature actually recovers, not everything.
         </span>
       </div>
+    </div>
+  );
+}
+
+
+/**
+ * Additional classes beyond the first.
+ *
+ * WHY THE PRIMARY CLASS STAYS ON THE IDENTITY TAB
+ *   meta.className is what every existing character has and what most of the derivation reads. This
+ *   panel adds classes ALONGSIDE it rather than replacing it, so a single-class character is
+ *   untouched and a multiclass one is the primary plus a list. The alternative - one array of
+ *   classes - reads better and would have rewritten the meaning of build.level everywhere at once.
+ *
+ * WHAT IT DOES AND DOES NOT DERIVE YET
+ *   Proficiency bonus and hit points are correct across classes: the bonus comes from the TOTAL
+ *   level, and only the first class contributes a full hit die. What is NOT yet applied is the
+ *   second class's FEATURES - a Fighter 5 / Rogue 3 gets no Sneak Attack from this panel, and the
+ *   spell slot table for multiclass casters is untouched. Both are named below rather than left for
+ *   a player to discover, because a sheet that is quietly missing half a class is worse than one
+ *   that says so.
+ */
+function MulticlassPanel({ build, sheet, classOpts, subclassFor, onAdd, onLevel, onSubclass, onRemove }: {
+  build: Build;
+  sheet: NonNullable<ReturnType<typeof deriveSheet>> | null;
+  classOpts: string[];
+  subclassFor: (className: string) => string[];
+  onAdd: (className: string) => void;
+  onLevel: (className: string, level: number) => void;
+  onSubclass: (className: string, subclass: string) => void;
+  onRemove: (className: string) => void;
+}) {
+  const extra = ((build as Build & { multiclass?: { className: string; subclass?: string; level: number }[] })
+    .multiclass) || [];
+  const [picking, setPicking] = useState("");
+
+  if (!build.meta.className) {
+    return (
+      <div style={{ ...stonePanel(), marginBottom: 14 }}>
+        <PanelTitle>Classes</PanelTitle>
+        <Muted>Pick a class on the Identity tab first.</Muted>
+      </div>
+    );
+  }
+
+  const total = sheet?.totalLevel ?? build.level;
+
+  return (
+    <div style={{ ...stonePanel(), marginBottom: 14 }}>
+      <PanelTitle hint="A character can hold levels in more than one class.">Classes</PanelTitle>
+
+      <div style={{ display: "grid", gap: 8, marginBottom: 10 }}>
+        <div style={{ display: "flex", gap: 10, alignItems: "baseline", flexWrap: "wrap",
+          background: "rgba(200,162,75,0.10)", borderRadius: 4, padding: "9px 12px" }}>
+          <span style={{ fontSize: 14, color: C.sun }}>
+            {build.meta.className} {build.level}
+          </span>
+          {build.meta.subclass && (
+            <span style={{ fontSize: 12.5, color: STONE.inkDim }}>{build.meta.subclass}</span>
+          )}
+          <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 11, color: STONE.inkFaint,
+            marginLeft: "auto" }}>
+            first class &middot; set on Identity
+          </span>
+        </div>
+
+        {extra.map((c) => (
+          <div key={c.className} style={{ display: "flex", gap: 8, alignItems: "center",
+            flexWrap: "wrap", background: "rgba(0,0,0,0.24)", borderRadius: 4, padding: "9px 12px" }}>
+            <span style={{ fontSize: 14, color: STONE.ink, minWidth: 90 }}>{c.className}</span>
+            <label style={{ fontFamily: FORGE_FONTS.mono, fontSize: 11, color: STONE.inkFaint }}>
+              level
+              <input type="number" min={1} max={20} value={c.level}
+                onChange={(e) => onLevel(c.className, Number(e.target.value))}
+                style={{ ...stoneField(), width: 62, marginLeft: 6, padding: "5px 8px", fontSize: 13 }} />
+            </label>
+            <select value={c.subclass || ""} onChange={(e) => onSubclass(c.className, e.target.value)}
+              style={{ ...stoneField(), width: "auto", minWidth: 150, padding: "6px 9px", fontSize: 12.5 }}>
+              <option value="" style={OPTION_STYLE}>No subclass</option>
+              {subclassFor(c.className).map((sc) => (
+                <option key={sc} value={sc} style={OPTION_STYLE}>{sc}</option>
+              ))}
+            </select>
+            <button onClick={() => onRemove(c.className)}
+              style={{ ...stoneButton("ghost"), marginLeft: "auto", fontSize: 12, padding: "5px 10px",
+                color: C.warn }}>
+              Remove
+            </button>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+        <select value={picking} onChange={(e) => setPicking(e.target.value)}
+          style={{ ...stoneField(), width: "auto", minWidth: 180, padding: "8px 10px", fontSize: 13 }}>
+          <option value="" style={OPTION_STYLE}>Add another class&hellip;</option>
+          {classOpts
+            .filter((n) => n !== build.meta.className && !extra.some((c) => c.className === n))
+            .map((n) => <option key={n} value={n} style={OPTION_STYLE}>{n}</option>)}
+        </select>
+        <button className="forge-btn" disabled={!picking}
+          onClick={() => { onAdd(picking); setPicking(""); }}
+          style={{ ...stoneButton("primary"), fontSize: 12.5, opacity: picking ? 1 : 0.45 }}>
+          Add
+        </button>
+        <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 11.5, color: C.sun, marginLeft: "auto" }}>
+          character level {total}
+        </span>
+      </div>
+
+      {extra.length > 0 && (
+        <p style={{ fontSize: 12, color: STONE.inkFaint, margin: "12px 0 0", lineHeight: 1.55 }}>
+          Your proficiency bonus and hit points account for every class. Two things do not yet: the
+          features of your later classes, and the shared spell slot table casters use when
+          multiclassed. Both are on the list; until then, take those from the book.
+        </p>
+      )}
     </div>
   );
 }

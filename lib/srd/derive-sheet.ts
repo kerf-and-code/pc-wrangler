@@ -64,6 +64,20 @@ export type Build = {
    * rather than +3. They are merged additively at derive time instead.
    */
   bgAsi?: Record<string, number>;
+  /**
+   * Additional classes beyond the primary one in `meta`.
+   *
+   * DELIBERATELY ADDITIVE. meta.className and build.level stay the PRIMARY class and its level,
+   * so every existing character and every part of this file that reads them keeps working
+   * untouched. A single-class character has no `multiclass` key and derives exactly as before.
+   *
+   * The alternative - replacing meta with an array of classes - would have been cleaner on paper
+   * and would have rewritten the meaning of `build.level` in twelve places at once, several of
+   * which are subtly different: proficiency bonus wants the TOTAL, Sneak Attack wants the ROGUE
+   * level, and subclass availability wants the level in the class granting it. Conflating those is
+   * how a multiclass sheet ends up plausible and wrong.
+   */
+  multiclass?: { className: string; subclass?: string; level: number }[];
   gear: { budget?: string; items: GearEntry[]; attuned?: string[] };
   effects: string[];                       // active effect ids (conditions, buffs)
   epicChoices: Record<number, EpicChoice[]>; // per-level 21-30 boon/feat picks
@@ -343,6 +357,8 @@ function epicAgg(build: Build) {
 
 export type DerivedSheet = {
   proficiencyBonus: number;
+  /** Every class level added together. Equals build.level for a single-class character. */
+  totalLevel: number;
   abilities: Record<Ability, number>;      // effective scores (gear applied)
   mods: Record<Ability, number>;
   ac: number;
@@ -377,7 +393,11 @@ export function epicAdvancement(level: number, epic: EpicTable = DEFAULT_EPIC): 
 }
 
 export function deriveSheet(build: Build, ctx: RulesContext): DerivedSheet {  const epic = ctx.epic || DEFAULT_EPIC;
-  const P = proficiencyBonus(build.level, epic);
+  // TOTAL character level: every class added together. Proficiency bonus is the clearest case
+  // where the distinction bites - a Fighter 3 / Rogue 3 has the bonus of a level 6 character, not
+  // of two level 3 ones.
+  const totalLevel = build.level + (build.multiclass || []).reduce((n, c) => n + (c.level || 0), 0);
+  const P = proficiencyBonus(totalLevel, epic);
   const ep = epicAgg(build);
   const em = ep.mods;
 
@@ -449,7 +469,16 @@ export function deriveSheet(build: Build, ctx: RulesContext): DerivedSheet {  co
     const at = subclassLevel(build.meta.className, ctx.ruleset) || 3;
     if (build.level >= at) classHp = 3 + Math.max(0, build.level - at);
   }
-  const hpMax = hd + (build.level - 1) * avg + build.level * m.con + perLvl * build.level + classHp;
+  // Hit points across classes. The FIRST class gets its full hit die at level 1; every level after
+  // that, in any class, is an average roll of THAT class's die. Constitution applies per character
+  // level, which is why it multiplies the total rather than the primary.
+  const extraHp = (build.multiclass || []).reduce((n, c) => {
+    const cd = ctx.classes[c.className]?.hitDie || 8;
+    const cavg = epic.hitDieAvg || (Math.floor(cd / 2) + 1);
+    return n + (c.level || 0) * cavg;
+  }, 0);
+  const hpMax = hd + (build.level - 1) * avg + extraHp
+    + totalLevel * m.con + perLvl * totalLevel + classHp;
 
   // Saves: class proficiencies plus any earned at later levels plus epic grants.
   const lateSaves: Ability[] = [];
@@ -506,6 +535,7 @@ export function deriveSheet(build: Build, ctx: RulesContext): DerivedSheet {  co
 
   return {
     proficiencyBonus: P,
+    totalLevel,
     abilities: liveAb, mods: m,
     ac, acFormula, hpMax, saves, skills,
     isCaster, castAbil, spellDC, spellAttack,
