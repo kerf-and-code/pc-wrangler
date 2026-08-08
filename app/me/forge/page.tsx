@@ -34,9 +34,10 @@ import SixAxesNav from "@/components/six-axes-nav";
 import { C, STONE, FORGE_FONTS, forgeBackground, forgeVignette, stonePanel, stoneButton, FORGE_BUTTON_CSS, statTile, stoneField, stoneChip, forgeHeading, forgePanelTitle, forgeLabel, forgeRuleLine, forgeBoss } from "@/lib/forge-theme";
 import { loadSrd } from "@/lib/srd/srd";
 import { applyAdvantage } from "@/lib/dice";
-import { traitOptions, traitAsksAChoice } from "@/lib/species-choices";
+import { traitOptions, traitAsksAChoice, lineageSpells } from "@/lib/species-choices";
 import { choicesFor, resolveChoice, choiceKey, type ClassChoice } from "@/lib/class-choices";
 import { classTable, classTableColumns } from "@/lib/class-table";
+import { resourcesFor, slotsFor, remaining, type Resource } from "@/lib/resources";
 import { choiceEffects, applyToBuild, type ChoiceEffects } from "@/lib/apply-choices";
 import { parseCoreTraits } from "@/lib/core-traits";
 import {
@@ -485,6 +486,33 @@ function ForgeInner() {
   // Everything the player has chosen, turned into things the engine can read. Computed here rather
   // than inside deriveSheet so the derivation stays one function with one input, and so a wrong
   // rule in the mapping can only feed the engine badly, never corrupt it.
+  /**
+   * Spells a species lineage grants: Elven Lineage, Fiendish Legacy and the like.
+   *
+   * These are NOT class spells. The rules say you always have them prepared and can cast each once
+   * per Long Rest without a slot, which means two things the Spells tab has to respect: they arrive
+   * without being chosen, and they do NOT count against the prepared limit. Folding them into
+   * build.spells.known would break both - the player could delete them, and they would eat a slot
+   * in a cap that is not theirs to fill.
+   */
+  const grantedSpells = useMemo(() => {
+    const traits = traitList(srd.speciesByName[build.meta.species]?.traits)
+      .concat(traitList(srd.variantByName[speciesVariant]?.traits));
+    const picks = (build as Build & { speciesChoices?: Record<string, string> }).speciesChoices || {};
+    const out: { spell: string; from: string; level: number }[] = [];
+    for (const t of traits) {
+      const chosen = picks[t.name];
+      if (!chosen) continue;
+      const opt = traitOptions(t.desc).find((o) => o.name === chosen);
+      for (const g of lineageSpells(opt)) {
+        // Only what the character has actually reached. A level 1 elf does not have Misty Step
+        // pending; they have nothing, and listing it as theirs would be wrong rather than early.
+        if (g.level <= (build.level || 1)) out.push({ spell: g.spell, from: `${chosen} ${t.name}`, level: g.level });
+      }
+    }
+    return out;
+  }, [build, speciesVariant, srd.speciesByName, srd.variantByName]);
+
   const effects: ChoiceEffects = useMemo(() => {
     const traits = traitList(srd.speciesByName[build.meta.species]?.traits)
       .concat(traitList(srd.variantByName[speciesVariant]?.traits));
@@ -621,6 +649,20 @@ function ForgeInner() {
     return b;
   });
   const setBgAsi = (mods: Record<string, number>) => patch((b) => { b.bgAsi = mods; return b; });
+  // Spent counts, not remaining. See lib/resources: the maximum moves with level and a stored
+  // "remaining" silently becomes wrong the moment a character levels.
+  const setSpent = (key: string, n: number) => patch((b) => {
+    const t = b as Build & { spent?: Record<string, number> };
+    const next = { ...(t.spent || {}) };
+    if (n <= 0) delete next[key]; else next[key] = n;
+    t.spent = next;
+    return b;
+  });
+  const clearSpent = () => patch((b) => {
+    (b as Build & { spent?: Record<string, number> }).spent = {};
+    return b;
+  });
+
   const setBgFeatAbility = (a: string) => patch((b) => {
     (b as Build & { bgFeatAbility?: string }).bgFeatAbility = a;
     return b;
@@ -919,6 +961,7 @@ function ForgeInner() {
                 <SpellsPanel
                   build={build} spells={srd.spells} sheet={sheet}
                   structuredRec={srd.structuredByName[build.meta.className]}
+                  granted={grantedSpells}
                   onToggle={toggleSpell}
                   loadouts={(build as Build & { loadouts?: SpellLoadout[] }).loadouts || []}
                   onSaveLoadout={saveLoadout} onApplyLoadout={applyLoadout} onDeleteLoadout={deleteLoadout}
@@ -987,7 +1030,25 @@ function ForgeInner() {
               <SheetPanel sheet={sheet} name={name || "Character"} />
 
               {tab === "finish" && (
-                <FinishPanel build={build} name={name} sheet={sheet} onTab={setTab} effects={effects} />
+                <FinishPanel build={build} name={name} sheet={sheet} onTab={setTab}
+                  effects={{
+                    ...effects,
+                    // Lineage spells are an applied effect like any other, and Finish is where a
+                    // player checks what their choices actually did.
+                    applied: [
+                      ...effects.applied,
+                      ...grantedSpells.map((g) => `${g.spell} always prepared, from ${g.from}`),
+                    ],
+                  }} />
+              )}
+
+              {tab === "roll" && (
+                <ResourcePanel
+                  structuredRec={srd.structuredByName[build.meta.className]}
+                  level={build.level || 1}
+                  spent={(build as Build & { spent?: Record<string, number> }).spent || {}}
+                  onSpend={setSpent} onRest={clearSpent}
+                />
               )}
 
               {tab === "roll" && (
@@ -1386,10 +1447,11 @@ type SpellLoadout = { name: string; cantrips: string[]; known: string[] };
  *   and a player being told "you cannot prepare that" by a tool that is guessing is worse than no
  *   help at all. It COUNTS instead, and the count is the honest form of the same information.
  */
-function SpellsPanel({ build, spells, sheet, structuredRec, onToggle, loadouts, onSaveLoadout, onApplyLoadout, onDeleteLoadout }: {
+function SpellsPanel({ build, spells, sheet, structuredRec, granted, onToggle, loadouts, onSaveLoadout, onApplyLoadout, onDeleteLoadout }: {
   build: Build;
   spells: SpellRecord[];
   structuredRec?: unknown;
+  granted: { spell: string; from: string; level: number }[];
   sheet: NonNullable<ReturnType<typeof deriveSheet>> | null;
   onToggle: (name: string, cantrip: boolean) => void;
   loadouts: SpellLoadout[];
@@ -1465,6 +1527,27 @@ function SpellsPanel({ build, spells, sheet, structuredRec, onToggle, loadouts, 
           fontSize: 12, color: STONE.inkFaint, marginBottom: 12 }}>
           <span>spell attack {sheet.spellAttack >= 0 ? "+" : ""}{sheet.spellAttack}</span>
           <span>save DC {sheet.spellDC}</span>
+        </div>
+      )}
+
+      {granted.length > 0 && (
+        <div style={{ marginBottom: 14, paddingBottom: 14, borderBottom: `1px solid ${STONE.hi}` }}>
+          <label style={forgeLabel}>Always prepared</label>
+          <div style={{ display: "grid", gap: 5 }}>
+            {granted.map((g) => (
+              <div key={g.spell} style={{ display: "flex", gap: 10, alignItems: "baseline",
+                flexWrap: "wrap" }}>
+                <span style={{ fontSize: 13.5, color: C.sun }}>{g.spell}</span>
+                <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 11, color: STONE.inkFaint }}>
+                  from {g.from}, at level {g.level}
+                </span>
+              </div>
+            ))}
+          </div>
+          <p style={{ fontSize: 12, color: STONE.inkFaint, margin: "8px 0 0", lineHeight: 1.5 }}>
+            Free once per Long Rest, or with a spell slot of the right level. These do not count
+            against the numbers below, and there is nothing to pick or unpick.
+          </p>
         </div>
       )}
 
@@ -2188,6 +2271,112 @@ function GrantedEquipmentPanel({ bgRec, coreTraits, catalog, owned, onAdd }: {
             </div>
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+
+/**
+ * What this character can spend, and how much is left.
+ *
+ * WHY IT IS ON THE ROLL TAB
+ *   Everything else in the Forge is a decision made once. This is the one panel that changes DURING
+ *   a session, and it belongs beside the other thing a player touches mid-game rather than filed
+ *   with the reference material.
+ *
+ * IT STORES SPENT, NOT REMAINING
+ *   A barbarian levelling from 2 to 3 gains a rage. A stored "2 remaining" would quietly be wrong
+ *   from that moment; a stored "1 spent" stays true. The maximum is always read fresh from the
+ *   class table.
+ *
+ * NO AUTOMATIC RESET
+ *   The app does not know when your table takes a long rest, and guessing would be worse than
+ *   asking: a tracker that silently refilled at the wrong moment is a tracker nobody can trust. The
+ *   button is one tap and it is the player's call.
+ */
+function ResourcePanel({ structuredRec, level, spent, onSpend, onRest }: {
+  structuredRec?: unknown;
+  level: number;
+  spent: Record<string, number>;
+  onSpend: (key: string, n: number) => void;
+  onRest: () => void;
+}) {
+  const row = useMemo(
+    () => classTable(structuredRec).find((r) => r.level === level),
+    [structuredRec, level],
+  );
+  const pools = useMemo(() => resourcesFor(row), [row]);
+  const slots = useMemo(() => slotsFor(row), [row]);
+
+  if (pools.length === 0 && slots.length === 0) return null;
+
+  const anySpent = Object.values(spent).some((n) => n > 0);
+
+  const Track = ({ r }: { r: Resource }) => {
+    const left = remaining(r, spent);
+    const used = spent[r.key] || 0;
+    return (
+      <div style={{ background: "rgba(0,0,0,0.24)", borderRadius: 4, padding: "9px 11px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline",
+          gap: 8, marginBottom: 6 }}>
+          <span style={{ fontSize: 13, color: STONE.ink }}>{r.label}</span>
+          <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 12,
+            color: left === 0 ? C.warn : left < r.max ? C.sun : STONE.inkFaint }}>
+            {left} / {r.max}
+          </span>
+        </div>
+        {/* Pips rather than a number field: at these sizes - one to nine - a row of dots is read at
+            a glance and cannot be typed wrong mid-session. */}
+        <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+          {Array.from({ length: r.max }, (_, i) => {
+            const filled = i < left;
+            return (
+              <button key={i} aria-label={`${r.label} ${i + 1}`}
+                onClick={() => onSpend(r.key, filled ? used + 1 : r.max - i - 1)}
+                title={filled ? "Spend one" : "Give one back"}
+                style={{
+                  width: 18, height: 18, borderRadius: 9, cursor: "pointer", padding: 0,
+                  background: filled ? C.sun : "transparent",
+                  border: `1px solid ${filled ? C.sun : STONE.hi}`,
+                }} />
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div style={{ ...stonePanel(), marginBottom: 14 }}>
+      <PanelTitle hint="The only page here that changes during a session.">Resources</PanelTitle>
+
+      {pools.length > 0 && (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px,1fr))",
+          gap: 8, marginBottom: slots.length ? 14 : 0 }}>
+          {pools.map((r) => <Track key={r.key} r={r} />)}
+        </div>
+      )}
+
+      {slots.length > 0 && (
+        <>
+          <label style={forgeLabel}>Spell slots</label>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px,1fr))", gap: 8 }}>
+            {slots.map((r) => <Track key={r.key} r={r} />)}
+          </div>
+        </>
+      )}
+
+      <div style={{ display: "flex", gap: 10, alignItems: "center", marginTop: 14 }}>
+        <button className="forge-btn" onClick={onRest} disabled={!anySpent}
+          style={{ ...stoneButton(anySpent ? "primary" : "stone"), fontSize: 12.5,
+            opacity: anySpent ? 1 : 0.45 }}>
+          Long rest
+        </button>
+        <span style={{ fontSize: 12, color: STONE.inkFaint, lineHeight: 1.5 }}>
+          Everything back. Warlock slots and some features return on a short rest too, which the app
+          does not track separately &mdash; give those back by tapping the pips.
+        </span>
       </div>
     </div>
   );
