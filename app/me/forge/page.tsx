@@ -997,6 +997,10 @@ function ForgeInner() {
 
               {tab === "features" && build.meta.species && (
                 <FeaturesPanel
+                  coreTraits={((srd.structuredByName[build.meta.className] || {}) as { core_traits?: string }).core_traits || ""}
+                  masteries={Object.entries((build as Build & { classChoices?: Record<string, string[]> }).classChoices || {})
+                    .filter(([k]) => /Weapon Mastery/i.test(k))
+                    .flatMap(([, v]) => v)}
                   species={build.meta.species} speciesRec={srd.speciesByName[build.meta.species]}
                   variantName={speciesVariant} variantRec={srd.variantByName[speciesVariant]}
                   background={build.meta.background} backgroundRec={srd.bgByName[build.meta.background]}
@@ -3184,6 +3188,64 @@ function firstFixedAmount(asi: FeatAsi): number {
 // background, the class features gained (a compact roster, the full per-level view lives in the
 // progression panel), and the feats/boons chosen. Honest about data gaps: non-SRD catalog species
 // and most lineages carry only a name, so those show the name with a note rather than fake traits.
+
+/**
+ * What this character is trained with: weapons, armour, tools, saving throws, and any weapon
+ * masteries they have picked.
+ *
+ * DERIVED, NOT STORED
+ *   Every line here already exists somewhere - the class core-traits table, the background's tool
+ *   row, the Weapon Mastery picks in build.classChoices. Adding columns to hold a second copy would
+ *   mean two things to keep in step and a migration to write, for information that is a render away.
+ *
+ * IT SHOWS THE GRANT, NOT A COMPUTED TOTAL
+ *   "Simple weapons and Martial weapons that have the Finesse or Light property" is a rule, and
+ *   turning it into a checked list of forty weapon names would be a worse answer than the sentence.
+ *   Where the data IS a list - masteries, tools - it is shown as one.
+ */
+function ProficiencyBlock({ coreTraits, backgroundRec, masteries }: {
+  coreTraits: string;
+  backgroundRec: BackgroundRecord | undefined;
+  masteries: string[];
+}) {
+  const core = useMemo(() => parseCoreTraits(coreTraits), [coreTraits]);
+
+  const rows: { label: string; value: string }[] = [];
+  if (core.savingThrows) rows.push({ label: "Saving throws", value: core.savingThrows });
+  if (core.armor) rows.push({ label: "Armor training", value: core.armor });
+  if (core.weapons) rows.push({ label: "Weapons", value: core.weapons });
+
+  // Tools come from two places and are worth keeping apart: a player checking why they can pick a
+  // lock wants to know whether it was the class or the background.
+  if (core.tools) rows.push({ label: "Tools (class)", value: core.tools });
+  if (backgroundRec?.tool_proficiency) {
+    rows.push({ label: "Tools (background)", value: backgroundRec.tool_proficiency });
+  }
+  if (masteries.length) rows.push({ label: "Weapon mastery", value: masteries.join(", ") });
+
+  if (rows.length === 0) return null;
+
+  return (
+    <FeatureGroup label="Proficiencies">
+      <div style={{ display: "grid", gap: 6 }}>
+        {rows.map((r) => (
+          <div key={r.label} style={{ display: "flex", gap: 12, alignItems: "baseline" }}>
+            <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 10.5, letterSpacing: "0.1em",
+              textTransform: "uppercase", color: STONE.inkFaint, minWidth: 128, flexShrink: 0 }}>
+              {r.label}
+            </span>
+            <span style={{ fontSize: 13.5, color: STONE.ink, lineHeight: 1.55 }}>{r.value}</span>
+          </div>
+        ))}
+      </div>
+      <p style={{ fontSize: 11.5, color: STONE.inkFaint, margin: "10px 0 0", lineHeight: 1.5 }}>
+        Skill proficiencies are on the sheet below, where they carry their bonus. These are the ones
+        that have no number attached.
+      </p>
+    </FeatureGroup>
+  );
+}
+
 function FeaturesPanel({
   species, speciesRec, variantName, variantRec, background, backgroundRec,
   className, classRec, level, chosenFeats,
@@ -3194,6 +3256,8 @@ function FeaturesPanel({
   className: string; classRec: ClassRecord | undefined;
   level: number;
   chosenFeats: { level: number; name: string; desc?: string; category?: string }[];
+  coreTraits: string;
+  masteries: string[];
 }) {
   const speciesTraits = traitList(speciesRec?.traits);
   const variantTraits = traitList(variantRec?.traits);
@@ -3211,6 +3275,10 @@ function FeaturesPanel({
       <PanelTitle hint="Everything this character has: species and lineage traits, background, class features, and the feats and boons you've taken.">
         Features &amp; traits
       </PanelTitle>
+
+      {/* Proficiencies first: this is the reference block a player checks mid-session, and burying
+          it under three groups of prose means scrolling past everything they already know. */}
+      <ProficiencyBlock coreTraits={coreTraits} backgroundRec={backgroundRec} masteries={masteries} />
 
       {/* Species */}
       <FeatureGroup label={species || "Species"}>
