@@ -31,13 +31,20 @@ import classes2014 from "./classes-2014.json";
 import species2024 from "./species-2024.json";
 import species2014 from "./species-2014.json";
 import subclasses from "./subclasses.json";
+// The Open5e / 5e-bits fetch (fetch_srd.py). SEPARATE domains rather than replacing classes-*.json,
+// because the two hold different things: the originals carry the catalog fields the pickers filter
+// on (partnered, partner, source), and these carry the progression TABLE and clean per-level
+// feature text the originals never had. Swapping one for the other would trade a known gap for an
+// unknown one; reading both means each is used for what it is good at.
+import classesStructured2024 from "./classes-2024-structured.json";
+import classesStructured2014 from "./classes-2014-structured.json";
 
 export type Ruleset = "2024" | "2014" | "both";
 
 // Domains that are flat lists keyed on `name`.
 export type FlatDomain =
   | "spells" | "equipment" | "monsters" | "magic-items"
-  | "feats" | "backgrounds" | "classes";
+  | "feats" | "backgrounds" | "classes" | "classes-structured";
 
 // species has its own shape; subclasses is edition-agnostic.
 export type Domain = FlatDomain | "species" | "subclasses";
@@ -56,6 +63,10 @@ const FLAT: Record<FlatDomain, { "2024": Named[]; "2014": Named[] }> = {
   feats: { "2024": feats2024 as unknown as Named[], "2014": feats2014 as unknown as Named[] },
   backgrounds: { "2024": backgrounds2024 as unknown as Named[], "2014": backgrounds2014 as unknown as Named[] },
   classes: { "2024": classes2024 as unknown as Named[], "2014": classes2014 as unknown as Named[] },
+  "classes-structured": {
+    "2024": classesStructured2024 as unknown as Named[],
+    "2014": classesStructured2014 as unknown as Named[],
+  },
 };
 
 const SPECIES: { "2024": SpeciesFile; "2014": SpeciesFile } = {

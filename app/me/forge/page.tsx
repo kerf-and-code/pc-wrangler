@@ -36,6 +36,7 @@ import { loadSrd } from "@/lib/srd/srd";
 import { applyAdvantage } from "@/lib/dice";
 import { traitOptions, traitAsksAChoice } from "@/lib/species-choices";
 import { choicesFor, resolveChoice, choiceKey, type ClassChoice } from "@/lib/class-choices";
+import { classTable, classTableColumns } from "@/lib/class-table";
 import { buildRulesContext } from "@/lib/srd/rules-context";
 import {
   loadCatalog, partnerList, speciesOptions, classOptions, variantOptions, subclassOptions,
@@ -376,6 +377,12 @@ function ForgeInner() {
     // Feats for the ASI/feat picker: a name-sorted list plus a by-name lookup for descriptions.
     const feats = loadSrd("feats", srdMode) as unknown as FeatOption[];
     const spells = loadSrd("spells", srdMode) as unknown as SpellRecord[];
+    // The fetched progression data. Keyed by name so it can be looked up beside the catalog record;
+    // a class the fetch did not cover simply has no entry and the panel falls back to what it drew
+    // before, which is why this is additive rather than a replacement.
+    const structured = loadSrd("classes-structured", srdMode) as unknown as { name: string }[];
+    const structuredByName: Record<string, unknown> = {};
+    structured.forEach((c) => { structuredByName[c.name] = c; });
     const featList = [...(feats || [])].sort((a, b) => a.name.localeCompare(b.name));
     const featByName: Record<string, FeatOption> = {};
     featList.forEach((f) => { if (!featByName[f.name]) featByName[f.name] = f; });
@@ -383,7 +390,7 @@ function ForgeInner() {
     const itemByName: Record<string, ItemRecord> = {};
     equipment.forEach((e) => { if (!itemByName[e.name]) itemByName[e.name] = e; });
     magic.forEach((m) => { if (!itemByName[m.name]) itemByName[m.name] = m; });
-    return { backgrounds, equipment, magic, speciesByName, variantByName, bgByName, classByName, itemByName, featList, featByName, spells };
+    return { backgrounds, equipment, magic, speciesByName, variantByName, bgByName, classByName, itemByName, featList, featByName, spells, structuredByName };
   }, [srdMode]);
 
   // Description of the currently selected species / background, for the Identity panel.
@@ -833,6 +840,7 @@ function ForgeInner() {
                   className={build.meta.className} level={build.level}
                   progression={progression} epicRows={epicRows}
                   classRec={srd.classByName[build.meta.className]}
+                  structuredRec={srd.structuredByName[build.meta.className]}
                 />
               )}
 
@@ -1765,6 +1773,15 @@ function ClassChoicesPanel({ build, sheet, weapons, spells, picks, onPick }: {
   );
 }
 
+const thStyle: React.CSSProperties = {
+  fontFamily: FORGE_FONTS.mono, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase",
+  color: STONE.inkFaint, textAlign: "left", padding: "5px 10px 5px 0", whiteSpace: "nowrap",
+  borderBottom: `1px solid ${STONE.hi}`,
+};
+const tdStyle: React.CSSProperties = {
+  padding: "4px 10px 4px 0", whiteSpace: "nowrap", borderBottom: `1px solid rgba(255,235,200,0.05)`,
+};
+
 function FontsAndCss() {
   return (
     <>
@@ -2035,15 +2052,55 @@ function AbilitiesPanel({ build, cap, sheet, onAbility }: {
 // Shows what the class grants at each level, up to the character's current level. Each level is a
 // row; features reveal their description on tap. ASI levels are flagged (the picker that lets you
 // spend them is a separate, later build).
-function ClassProgressionPanel({ className, level, progression, epicRows, classRec }: {
+function ClassProgressionPanel({ className, level, progression, epicRows, classRec, structuredRec }: {
   className: string; level: number; progression: LevelGroup[]; epicRows: LevelGroup[];
   classRec: ClassRecord | undefined;
+  structuredRec?: unknown;
 }) {
+  // The progression table, from the fetched data. Absent for a class the fetch did not cover, and
+  // the panel simply does not draw it - the feature list below has always been the substance and
+  // this is the numbers beside it.
+  const table = useMemo(() => classTable(structuredRec), [structuredRec]);
+  const cols = useMemo(() => classTableColumns(table), [table]);
+  // Only up to the character's level. A level 3 Barbarian being shown rage counts for level 17 is
+  // not information, it is a wall to scroll past.
+  const shownRows = useMemo(() => table.filter((r) => r.level <= Math.max(1, level)), [table, level]);
+
   const meta = [
     classRec?.hit_die ? `Hit die d${String(classRec.hit_die).replace(/^d/i, "")}` : null,
     classRec?.primary_ability ? `Primary: ${classRec.primary_ability}` : null,
     classRec?.saving_throws ? `Saves: ${classRec.saving_throws}` : null,
   ].filter(Boolean).join("  ·  ");
+
+  const tableBlock = cols.length > 0 && shownRows.length > 0 ? (
+    <div style={{ marginBottom: 16, overflowX: "auto" }}>
+      <table style={{ borderCollapse: "collapse", fontSize: 12.5, minWidth: "100%" }}>
+        <thead>
+          <tr>
+            <th style={{ ...thStyle, textAlign: "right" }}>Lvl</th>
+            {cols.map((c) => <th key={c} style={thStyle}>{c}</th>)}
+          </tr>
+        </thead>
+        <tbody>
+          {shownRows.map((r) => {
+            const here = r.level === level;
+            return (
+              <tr key={r.level} style={{ background: here ? "rgba(200,162,75,0.12)" : undefined }}>
+                <td style={{ ...tdStyle, textAlign: "right", color: here ? C.sun : STONE.inkDim }}>
+                  {r.level}
+                </td>
+                {cols.map((c) => (
+                  <td key={c} style={{ ...tdStyle, color: here ? STONE.ink : STONE.inkDim }}>
+                    {r.columns[c] || "\u2014"}
+                  </td>
+                ))}
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  ) : null;
 
   const renderRow = (grp: LevelGroup) => (
     <div key={grp.level} style={{ display: "grid", gridTemplateColumns: "44px 1fr", gap: 12, alignItems: "start" }}>
@@ -2070,7 +2127,8 @@ function ClassProgressionPanel({ className, level, progression, epicRows, classR
       )}
 
       <div style={{ display: "grid", gap: 10 }}>
-        {progression.map(renderRow)}
+        {tableBlock}
+      {progression.map(renderRow)}
       </div>
 
       {epicRows.length > 0 && (
