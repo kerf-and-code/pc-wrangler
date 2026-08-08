@@ -418,8 +418,16 @@ def map_o5e_class(c: dict, all_rows: list) -> dict:
                                           for w in ("of your choice", "choose "))),
             })
 
+    # CORE_TRAITS_TABLE is where 2024 keeps the things every character of the class starts with:
+    # hit points, saving throws, SKILL PROFICIENCIES, weapon and armour training, starting
+    # equipment. The first pass dropped it as "not a feature you gain at a level", which was true
+    # and unhelpful - it is the level 1 grant, and without it no class hands out its own skills, so
+    # a Rogue reached Expertise with nothing to be expert in.
+    core = next((f for f in feats if (f.get("feature_type") or "") == "CORE_TRAITS_TABLE"), None)
+
     hp = c.get("hit_points") or {}
     return {
+        "core_traits": (core or {}).get("desc") or "",
         "name": c.get("name"),
         "key": key,
         "edition": "2024",

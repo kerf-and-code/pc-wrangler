@@ -1,5 +1,6 @@
 [
  {
+  "core_traits": "",
   "name": "Champion",
   "key": "srd-2024_champion",
   "edition": "2024",
@@ -71,6 +72,7 @@
   "class_table": []
  },
  {
+  "core_traits": "",
   "name": "Circle of the Land",
   "key": "srd-2024_circle-of-the-land",
   "edition": "2024",
@@ -132,6 +134,7 @@
   "class_table": []
  },
  {
+  "core_traits": "",
   "name": "College of Lore",
   "key": "srd-2024_college-of-lore",
   "edition": "2024",
@@ -183,6 +186,7 @@
   "class_table": []
  },
  {
+  "core_traits": "",
   "name": "Draconic Sorcery",
   "key": "srd-2024_draconic-sorcery",
   "edition": "2024",
@@ -244,6 +248,7 @@
   "class_table": []
  },
  {
+  "core_traits": "",
   "name": "Evoker",
   "key": "srd-2024_evoker",
   "edition": "2024",
@@ -305,6 +310,7 @@
   "class_table": []
  },
  {
+  "core_traits": "",
   "name": "Fiend Patron",
   "key": "srd-2024_fiend-patron",
   "edition": "2024",
@@ -366,6 +372,7 @@
   "class_table": []
  },
  {
+  "core_traits": "",
   "name": "Hunter",
   "key": "srd-2024_hunter",
   "edition": "2024",
@@ -427,6 +434,7 @@
   "class_table": []
  },
  {
+  "core_traits": "",
   "name": "Life Domain",
   "key": "srd-2024_life-domain",
   "edition": "2024",
@@ -483,6 +491,7 @@
   "class_table": []
  },
  {
+  "core_traits": "",
   "name": "Oath of Devotion",
   "key": "srd-2024_oath-of-devotion",
   "edition": "2024",
@@ -544,6 +553,7 @@
   "class_table": []
  },
  {
+  "core_traits": "",
   "name": "Path of the Berserker",
   "key": "srd-2024_path-of-the-berserker",
   "edition": "2024",
@@ -600,6 +610,7 @@
   "class_table": []
  },
  {
+  "core_traits": "",
   "name": "Thief",
   "key": "srd-2024_thief",
   "edition": "2024",
@@ -661,6 +672,7 @@
   "class_table": []
  },
  {
+  "core_traits": "",
   "name": "Warrior of the Open Hand",
   "key": "srd-2024_warrior-of-the-open-hand",
   "edition": "2024",

@@ -34,6 +34,13 @@ export type ChoiceInputs = {
   classChoices?: Record<string, string[]>;
   /** Which of those keys are expertise, so only those reach skillExpert. */
   expertiseKeys?: string[];
+  /**
+   * Keys whose picks are ordinary skill PROFICIENCIES - the level 1 class grant. Kept separate
+   * from expertise because they land in a different array and mean a different thing, and because
+   * expertise depends on proficiency existing first: fold these in the wrong order and a class
+   * would have expertise in a skill it is not trained in.
+   */
+  skillProfKeys?: string[];
 };
 
 export type ChoiceEffects = {
@@ -113,9 +120,16 @@ export function choiceEffects(input: ChoiceInputs): ChoiceEffects {
 
   // --- class choices -------------------------------------------------------------------------
   const expertise = new Set(input.expertiseKeys || []);
+  const profKeys = new Set(input.skillProfKeys || []);
   for (const [key, values] of Object.entries(input.classChoices || {})) {
     for (const v of values) {
-      if (expertise.has(key)) {
+      if (profKeys.has(key)) {
+        const sk = skillKey(v) ?? v;
+        if (!skillProf.includes(sk)) {
+          skillProf.push(sk);
+          applied.push(`${v} proficiency from your class`);
+        }
+      } else if (expertise.has(key)) {
         const sk = skillKey(v) ?? v;
         if (!skillExpert.includes(sk)) {
           skillExpert.push(sk);

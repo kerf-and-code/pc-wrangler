@@ -38,6 +38,7 @@ import { traitOptions, traitAsksAChoice } from "@/lib/species-choices";
 import { choicesFor, resolveChoice, choiceKey, type ClassChoice } from "@/lib/class-choices";
 import { classTable, classTableColumns } from "@/lib/class-table";
 import { choiceEffects, applyToBuild, type ChoiceEffects } from "@/lib/apply-choices";
+import { parseCoreTraits } from "@/lib/core-traits";
 import { buildRulesContext } from "@/lib/srd/rules-context";
 import {
   loadCatalog, partnerList, speciesOptions, classOptions, variantOptions, subclassOptions,
@@ -482,9 +483,17 @@ function ForgeInner() {
     const options: Record<string, { name: string; detail?: string }[]> = {};
     for (const t of traits) options[t.name] = traitOptions(t.desc);
 
-    const expertiseKeys = choicesFor(build.meta.className || "", build.meta.subclass || "", build.level || 1)
+    const cls = build.meta.className || "";
+    const expertiseKeys = choicesFor(cls, build.meta.subclass || "", build.level || 1)
       .filter((c) => c.feature.toLowerCase().includes("expertise"))
       .map(choiceKey);
+
+    // The level 1 skill grant is built here from the same shape ClassChoicesPanel uses, so both
+    // agree on the key. Deriving the key twice is unfortunate; deriving it two DIFFERENT ways would
+    // mean picks that save under one name and are read under another, which fails silently.
+    const skillProfKeys = cls
+      ? [choiceKey({ className: cls, level: 1, feature: "Skill Proficiencies", choose: 0, kind: "skill" })]
+      : [];
 
     return choiceEffects({
       background: srd.bgByName[build.meta.background],
@@ -493,6 +502,7 @@ function ForgeInner() {
       speciesOptions: options,
       classChoices: (build as Build & { classChoices?: Record<string, string[]> }).classChoices || {},
       expertiseKeys,
+      skillProfKeys,
     });
   }, [build, speciesVariant, srd.speciesByName, srd.variantByName, srd.bgByName]);
 
@@ -896,6 +906,7 @@ function ForgeInner() {
                 <ClassChoicesPanel
                   build={build} sheet={sheet}
                   weapons={srd.equipment} spells={srd.spells}
+                  structuredRec={srd.structuredByName[build.meta.className]}
                   picks={(build as Build & { classChoices?: Record<string, string[]> }).classChoices || {}}
                   onPick={setClassChoice}
                 />
@@ -1719,17 +1730,37 @@ function SpeciesPanel({
  *   says "2 of 2 chosen" rather than greying the rest out silently. A player who cannot see WHY an
  *   option stopped responding assumes the tool is broken; a count explains itself.
  */
-function ClassChoicesPanel({ build, sheet, weapons, spells, picks, onPick }: {
+function ClassChoicesPanel({ build, sheet, weapons, spells, picks, onPick, structuredRec }: {
   build: Build;
   sheet: NonNullable<ReturnType<typeof deriveSheet>> | null;
   weapons: ItemRecord[];
   spells: SpellRecord[];
   picks: Record<string, string[]>;
   onPick: (key: string, values: string[]) => void;
+  structuredRec?: unknown;
 }) {
+  // The level 1 skill grant, read out of the class's own core traits table rather than authored.
+  // This is what every class was missing: without it nobody had their own proficiencies, so
+  // Expertise had nothing to double and a background's two skills were the whole sheet.
+  const fromCore = useMemo<ClassChoice[]>(() => {
+    const core = parseCoreTraits(
+      ((structuredRec || {}) as { core_traits?: string }).core_traits || "",
+    );
+    if (!core.skills || !build.meta.className) return [];
+    return [{
+      className: build.meta.className, level: 1, feature: "Skill Proficiencies",
+      choose: core.skills.choose, kind: "skill",
+      filter: { options: core.skills.options },
+      note: "Chosen once at level 1.",
+    }];
+  }, [structuredRec, build.meta.className]);
+
   const list = useMemo(
-    () => choicesFor(build.meta.className || "", build.meta.subclass || "", build.level || 1),
-    [build.meta.className, build.meta.subclass, build.level],
+    () => [
+      ...fromCore,
+      ...choicesFor(build.meta.className || "", build.meta.subclass || "", build.level || 1),
+    ],
+    [fromCore, build.meta.className, build.meta.subclass, build.level],
   );
 
   const data = useMemo(() => ({

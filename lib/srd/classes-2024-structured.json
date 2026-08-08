@@ -1,5 +1,6 @@
 [
  {
+  "core_traits": "|||\n|---|---|\n|Primary Ability|Strength|\n|Hit Point Die|D12 per Barbarian level|\n|Saving Throw Proficiencies|Strength and Constitution|\n|Skill Proficiencies|Choose 2: Animal Handling, Athletics, Intimidation, Nature, Perception, or Survival|\n|Weapon Proficiencies|Simple and Martial weapons|\n|Armor Training|Light and Medium armor and Shields|\n|Starting Equipment|Choose A or B: (A) Greataxe, 4 Handaxes, Explorer's Pack, and 15 GP; or (B) 75 GP|",
   "name": "Barbarian",
   "key": "srd-2024_barbarian",
   "edition": "2024",
@@ -329,6 +330,7 @@
   ]
  },
  {
+  "core_traits": "|||\n|---|---|\n|Primary Ability|Charisma|\n|Hit Point Die|D8 per Bard level|\n|Saving Throw Proficiencies|Dexterity and Charisma|\n|Skill Proficiencies|Choose any 3 skills|\n|Weapon Proficiencies|Simple weapons|\n|Tool Proficiencies|Choose 3 Musical Instruments|\n|Armor Training|Light armor|\n|Starting Equipment|Choose A or B: (A) Leather Armor, 2 Daggers, Musical Instrument of your choice, Entertainer's Pack, and 19 GP; or (B) 90 GP|",
   "name": "Bard",
   "key": "srd-2024_bard",
   "edition": "2024",
@@ -750,6 +752,7 @@
   ]
  },
  {
+  "core_traits": "|||\n|---|---|\n|Primary Ability|Wisdom|\n|Hit Point Die|D8 per Cleric level|\n|Saving Throw Proficiencies|Wisdom and Charisma|\n|Skill Proficiencies|Choose 2: History, Insight, Medicine, Persuasion, or Religion|\n|Weapon Proficiencies|Simple weapons|\n|Armor Training|Light and Medium armor and Shields|\n|Starting Equipment|Choose A or B: (A) Chain Shirt, Shield, Mace, Holy Symbol, Priest's Pack, and 7 GP; or (B) 110 GP|",
   "name": "Cleric",
   "key": "srd-2024_cleric",
   "edition": "2024",
@@ -1175,6 +1178,7 @@
   ]
  },
  {
+  "core_traits": "|||\n|---|---|\n|Primary Ability|Wisdom|\n|Hit Point Die|D8 per Druid level|\n|Saving Throw Proficiencies|Intelligence and Wisdom|\n|Skill Proficiencies|Choose 2: Animal Handling, Arcana, Insight, Medicine, Na ture, Perception, Religion, or Survival|\n|Weapon Proficiencies|Simple weapons|\n|Tool Proficiencies|Herbalism Kit|\n|Armor Training|Light armor and Shields|\n|Starting Equipment|Choose A or B: (A) Leather Ar mor, Shield, Sickle, Druidic Focus (Quarterstaff), Explorer's Pack, Herbalism Kit, and 9 GP; or (B) 50 GP|",
   "name": "Druid",
   "key": "srd-2024_druid",
   "edition": "2024",
@@ -1610,6 +1614,7 @@
   ]
  },
  {
+  "core_traits": "|||\n|---|---|\n|Primary Ability|Strength or Dexterity|\n|Hit Point Die|D10 per Fighter level|\n|Saving Throw Proficiencies|Strength and Constitution|\n|Skill Proficiencies|Choose 2: Acrobatics, Animal Handling, Athletics, History, Insight, Intimidation, Persuasion, Perception, or Survival|\n|Weapon Proficiencies|Simple and Martial weapons|\n|Armor Training|Light, Medium, and Heavy armor and Shields|\n|Starting Equipment|Choose A, B, or C: (A) Chain Mail, Greatsword, Flail, 8 Javelins, Dungeoneer's Pack, and 4 GP; (B) Studded Leather Armor, Scimitar, Shortsword, Longbow, 20 Arrows, Quiver, Dungeoneer's Pack, and 11 GP; or (C) 155 GP|",
   "name": "Fighter",
   "key": "srd-2024_fighter",
   "edition": "2024",
@@ -1908,6 +1913,7 @@
   ]
  },
  {
+  "core_traits": "|||\n|---|---|\n|Primary Ability|Dexterity and Wisdom|\n|Hit Point Die|D8 per Monk level|\n|Saving Throw Proficiencies|Strength and Dexterity|\n|Skill Proficiencies|Choose 2: Acrobatics, Athletics, History, Insight, Religion, or Stealth|\n|Weapon Proficiencies|Simple weapons and Martial weapons that have the Light property|\n|Tool Proficiencies|Choose one type of Artisan's Tools or Musical Instrument|\n|Armor Training|None|\n|Starting Equipment|Choose A or B: (A) Spear, 5 Daggers, Artisan's Tools or Musical Instrument chosen for the tool proficiency above, Explorer's Pack, and 11 GP; or (B) 50 GP|",
   "name": "Monk",
   "key": "srd-2024_monk",
   "edition": "2024",
@@ -2250,6 +2256,7 @@
   ]
  },
  {
+  "core_traits": "|||\n|---|---|\n|Primary Ability|Strength and Charisma|\n|Hit Point Die|D10 per Paladin level|\n|Saving Throw Proficiencies|Wisdom and Charisma|\n|Skill Proficiencies|Choose 2: Athletics, Insight, Intimidation, Medicine, Persuasion, or Religion|\n|Weapon Proficiencies|Simple and Martial weapons|\n|Armor Training|Light, Medium, and Heavy armor and Shields|\n|Starting Equipment|Choose A or B: (A) Chain Mail, Shield, Longsword, 6 Javelins, Holy Symbol, Priest's Pack, and 9 GP; or (B) 150 GP|",
   "name": "Paladin",
   "key": "srd-2024_paladin",
   "edition": "2024",
@@ -2616,6 +2623,7 @@
   ]
  },
  {
+  "core_traits": "|||\n|---|---|\n|Primary Ability|Dexterity and Wisdom|\n|Hit Point Die|D10 per Ranger level|\n|Saving Throw Proficiencies|Strength and Dexterity|\n|Skill Proficiencies|Choose 3: Animal Handling, Athletics, Insight, Investigation, Nature, Perception, Stealth, or Survival|\n|Weapon Proficiencies|Simple and Martial weapons|\n|Armor Training|Light and Medium armor and Shields|\n|Starting Equipment|Choose A or B: (A) Studded Leather Armor, Scimitar, Shortsword, Longbow, 20 Ar rows, Quiver, Druidic Focus (sprig of mistletoe), Explorer's Pack, and 7 GP; or (B) 150 GP|",
   "name": "Ranger",
   "key": "srd-2024_ranger",
   "edition": "2024",
@@ -2994,6 +3002,7 @@
   ]
  },
  {
+  "core_traits": "|||\n|---|---|\n|Primary Ability|Dexterity|\n|Hit Point Die|D8 per Rogue level|\n|Saving Throw Proficiencies|Dexterity and Intelligence|\n|Skill Proficiencies|Choose 4: Acrobatics, Athletics, Deception, Insight, Intimidation, Investigation, Perception, Persuasion, Sleight of Hand, or Stealth|\n|Weapon Proficiencies|Simple weapons and Martial weapons that have the Finesse or Light property|\n|Tool Proficiencies|Thieves' Tools|\n|Armor Training|Light armor|\n|Starting Equipment|Choose A or B: (A) Leather Armor, 2 Daggers, Shortsword, Shortbow, 20 Arrows, Quiver, Thieves' Tools, Burglar's Pack, and 8 GP; or (B) 100 GP|",
   "name": "Rogue",
   "key": "srd-2024_rogue",
   "edition": "2024",
@@ -3261,6 +3270,7 @@
   ]
  },
  {
+  "core_traits": "|||\n|---|---|\n|Primary Ability|Charisma|\n|Hit Point Die|D6 per Sorcerer level|\n|Saving Throw Proficiencies|Constitution and Charisma|\n|Skill Proficiencies|Choose 2: Arcana, Deception, Insight, Intimidation, Persuasion, or Religion|\n|Weapon Proficiencies|Simple weapons|\n|Armor Training|None|\n|Starting Equipment|Choose A or B: (A) Spear, 2 Daggers, Arcane Focus (crystal), Dungeoneer's Pack, and 28 GP; or (B) 50 GP|",
   "name": "Sorcerer",
   "key": "srd-2024_sorcerer",
   "edition": "2024",
@@ -3681,6 +3691,7 @@
   ]
  },
  {
+  "core_traits": "|||\n|---|---|\n|Primary Ability|Charisma|\n|Hit Point Die|D8 per Warlock level|\n|Saving Throw Proficiencies|Wisdom and Charisma|\n|Skill Proficiencies|Choose 2: Arcana, Deception, History, Intimidation, Investigation, Nature, or Religion|\n|Weapon Proficiencies|Simple weapons|\n|Armor Training|Light armor|\n|Starting Equipment|Choose A or B: (A) Leather Armor, Sickle, 2 Daggers, Ar cane Focus (orb), Book (occult lore), Scholar's Pack, and 15 GP; or (B) 100 GP|",
   "name": "Warlock",
   "key": "srd-2024_warlock",
   "edition": "2024",
@@ -4007,6 +4018,7 @@
   ]
  },
  {
+  "core_traits": "|||\n|---|---|\n|Primary Ability|Intelligence|\n|Hit Point Die|D6 per Wizard level|\n|Saving Throw Proficiencies|Intelligence and Wisdom|\n|Skill Proficiencies|Choose 2: Arcana, History, In sight, Investigation, Medicine, Nature, or Religion|\n|Weapon Proficiencies|Simple weapons|\n|Armor Training|None|\n|Starting Equipment|Choose A or B: (A) 2 Daggers, Arcane Focus (Quarterstaff), Robe, Spellbook, Scholar's Pack, and 5 GP; or (B) 55 GP|",
   "name": "Wizard",
   "key": "srd-2024_wizard",
   "edition": "2024",

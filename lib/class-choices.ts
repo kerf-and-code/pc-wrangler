@@ -39,6 +39,13 @@ export type ClassChoice = {
     /** Spell level bounds, inclusive. 0 is a cantrip. */
     spellLevelMin?: number;
     spellLevelMax?: number;
+    /**
+     * An explicit option list, for choices whose set is stated in the data rather than derived from
+     * a filter - the level 1 skill grant reads its ten skills straight off the class's core traits
+     * table, and inventing a filter that happened to select those ten would be a worse description
+     * of the same fact.
+     */
+    options?: string[];
   };
   /** Shown under the picker. The rules text stays visible either way. */
   note?: string;
@@ -123,9 +130,13 @@ export function resolveChoice(choice: ClassChoice, data: ResolveInput): { value:
   const f = choice.filter || {};
 
   if (choice.kind === "skill") {
-    const pool = f.proficientOnly
+    let pool = f.proficientOnly
       ? data.skills.filter((s) => data.proficientSkills.includes(s.key))
       : data.skills;
+    if (f.options?.length) {
+      const want = f.options.map((o) => o.trim().toLowerCase());
+      pool = pool.filter((s) => want.includes(s.label.toLowerCase()));
+    }
     return pool.map((s) => ({ value: s.key, label: s.label }));
   }
 
