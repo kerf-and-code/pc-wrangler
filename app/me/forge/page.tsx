@@ -39,6 +39,12 @@ import { choicesFor, resolveChoice, choiceKey, type ClassChoice } from "@/lib/cl
 import { classTable, classTableColumns } from "@/lib/class-table";
 import { choiceEffects, applyToBuild, type ChoiceEffects } from "@/lib/apply-choices";
 import { parseCoreTraits } from "@/lib/core-traits";
+import {
+  STANDARD_ARRAY, POINT_BUDGET, POINT_MIN, POINT_MAX, pointsSpent, canRaise, canLower,
+  pointBuyReset, makePool, assign as poolAssign, unassign as poolUnassign, poolScores, poolComplete,
+  type PoolEntry, type GenMode, type AbilityKey,
+} from "@/lib/ability-gen";
+import { roll as rollDice } from "@/lib/dice";
 import { parseGranted, matchGranted, resolveCrossRefs } from "@/lib/granted-equipment";
 import { ABILITY_NAMES, backgroundAbilities, featAbilities, normalizeRarity, RARITY_ORDER, matches as textMatches } from "@/lib/picker-filters";
 import { buildRulesContext } from "@/lib/srd/rules-context";
@@ -613,6 +619,13 @@ function ForgeInner() {
   });
   const setBgAsi = (mods: Record<string, number>) => patch((b) => { b.bgAsi = mods; return b; });
 
+  // Several scores in one patch. Assigning an array touches up to six abilities at once, and six
+  // separate calls would fire six autosaves with each reading the build before the last one landed.
+  const setAbilities = (scores: Partial<Record<AbilityKey, number>>) => patch((b) => {
+    b.abilities = { ...b.abilities, ...scores } as Build["abilities"];
+    return b;
+  });
+
   const setClassChoice = (key: string, values: string[]) => patch((b) => {
     const t = b as Build & { classChoices?: Record<string, string[]> };
     t.classChoices = { ...(t.classChoices || {}), [key]: values };
@@ -903,7 +916,8 @@ function ForgeInner() {
               )}
 
               {tab === "abilities" && (
-                <AbilitiesPanel build={build} cap={epic.abilityCap} sheet={sheet} onAbility={setAbility} />
+                <AbilitiesPanel build={build} cap={epic.abilityCap} sheet={sheet}
+                  onAbility={setAbility} onMany={setAbilities} />
               )}
 
               {tab === "class" && build.meta.className && (progression.length > 0 || epicRows.length > 0) && (
@@ -2522,14 +2536,173 @@ function IdentityPanel(props: {
   );
 }
 
-function AbilitiesPanel({ build, cap, sheet, onAbility }: {
+
+/**
+ * How the six scores get decided: by hand, from the standard array, by point buy, or rolled.
+ *
+ * THREE MODELS, NOT ONE
+ *   Array and Roll hand you a POOL and ask where each value goes; every value is used exactly once.
+ *   Point buy gives a BUDGET with a non-linear cost curve and a ceiling of 15. Manual is neither.
+ *   The rules live in lib/ability-gen so this component only has to render them.
+ *
+ * IT WRITES THROUGH TO THE BUILD IMMEDIATELY
+ *   There is no "apply" step. A half-assigned array is a legitimate state to leave a character in,
+ *   and holding the scores hostage in local state until the pool is full would mean a refresh loses
+ *   them - which is exactly the kind of thing a builder should never do.
+ */
+function AbilityGenerator({ build, onAbility, onMany }: {
+  build: Build;
+  onAbility: (a: Ability, v: number) => void;
+  onMany: (scores: Partial<Record<AbilityKey, number>>) => void;
+}) {
+  const [mode, setMode] = useState<GenMode>("manual");
+  const [pool, setPool] = useState<PoolEntry[]>([]);
+  const [rolled, setRolled] = useState(false);
+
+  const scores = build.abilities as Partial<Record<AbilityKey, number>>;
+  const spent = pointsSpent(scores);
+  const left = POINT_BUDGET - spent;
+
+  const startArray = () => {
+    setMode("array"); setRolled(false);
+    setPool(makePool(STANDARD_ARRAY));
+  };
+
+  const rollNew = () => {
+    // 4d6 keep highest 3, six times, through the same crypto-backed roller the dice tab uses. A
+    // Math.random array would be the one set of numbers on the sheet that nobody could vouch for.
+    const vals = Array.from({ length: 6 }, () => rollDice("4d6kh3").total).sort((a, b) => b - a);
+    setMode("roll"); setRolled(true);
+    setPool(makePool(vals));
+  };
+
+  const place = (index: number, k: AbilityKey) => {
+    const next = poolAssign(pool, index, k);
+    setPool(next);
+    onMany(poolScores(next));
+  };
+
+  const lift = (index: number) => {
+    const freed = pool[index]?.assignedTo;
+    const next = poolUnassign(pool, index);
+    setPool(next);
+    // The ability it came off goes back to 8 rather than keeping a value it no longer has any claim
+    // to; leaving the old number sitting there reads as though it were still assigned.
+    if (freed) onAbility(freed as Ability, POINT_MIN);
+    onMany(poolScores(next));
+  };
+
+  const usingPool = mode === "array" || mode === "roll";
+
+  return (
+    <div style={{ marginBottom: 18, paddingBottom: 16, borderBottom: `1px solid ${STONE.hi}` }}>
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center", marginBottom: 10 }}>
+        <button className="forge-btn" onClick={() => setMode("manual")}
+          style={{ ...stoneButton(mode === "manual" ? "primary" : "stone"), fontSize: 12.5 }}>By hand</button>
+        <button className="forge-btn" onClick={startArray}
+          style={{ ...stoneButton(mode === "array" ? "primary" : "stone"), fontSize: 12.5 }}>Standard array</button>
+        <button className="forge-btn" onClick={() => { setMode("point"); onMany(pointBuyReset()); }}
+          style={{ ...stoneButton(mode === "point" ? "primary" : "stone"), fontSize: 12.5 }}>Point buy</button>
+        <button className="forge-btn" onClick={rollNew}
+          style={{ ...stoneButton(mode === "roll" ? "primary" : "stone"), fontSize: 12.5 }}>
+          {mode === "roll" && rolled ? "Roll again" : "Roll"}
+        </button>
+      </div>
+
+      {mode === "manual" && (
+        <p style={{ fontSize: 12.5, color: STONE.inkFaint, margin: 0, lineHeight: 1.55 }}>
+          Type whatever you like below. Nothing is checked, which is right for a character copied
+          from paper or handed to you by a GM.
+        </p>
+      )}
+
+      {mode === "point" && (
+        <div>
+          <div style={{ display: "flex", gap: 14, alignItems: "baseline", flexWrap: "wrap",
+            fontFamily: FORGE_FONTS.mono, fontSize: 12.5, marginBottom: 8 }}>
+            <span style={{ color: left === 0 ? C.good : left < 0 ? C.warn : C.sun }}>
+              {left} of {POINT_BUDGET} points left
+            </span>
+            <span style={{ color: STONE.inkFaint }}>each score {POINT_MIN} to {POINT_MAX}</span>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(104px,1fr))", gap: 6 }}>
+            {ABILITIES.map((a) => {
+              const k = a as AbilityKey;
+              const v = scores[k] ?? POINT_MIN;
+              return (
+                <div key={a} style={{ background: "rgba(0,0,0,0.24)", borderRadius: 4, padding: "8px 10px",
+                  display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6 }}>
+                  <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 11, color: STONE.inkFaint }}>
+                    {a.toUpperCase()}
+                  </span>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <button onClick={() => canLower(scores, k) && onAbility(a, v - 1)}
+                      disabled={!canLower(scores, k)}
+                      style={{ ...stoneButton("ghost"), padding: "2px 8px", fontSize: 14,
+                        opacity: canLower(scores, k) ? 1 : 0.3 }}>&minus;</button>
+                    <span style={{ fontSize: 16, color: STONE.ink, minWidth: 20, textAlign: "center" }}>{v}</span>
+                    <button onClick={() => canRaise(scores, k) && onAbility(a, v + 1)}
+                      disabled={!canRaise(scores, k)}
+                      title={!canRaise(scores, k) && v < POINT_MAX ? "Not enough points left" : undefined}
+                      style={{ ...stoneButton("ghost"), padding: "2px 8px", fontSize: 14,
+                        opacity: canRaise(scores, k) ? 1 : 0.3 }}>+</button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {usingPool && pool.length > 0 && (
+        <div>
+          <p style={{ fontSize: 12.5, color: STONE.inkFaint, margin: "0 0 8px", lineHeight: 1.55 }}>
+            {poolComplete(pool)
+              ? "All six placed. Tap a value to lift it off again."
+              : "Tap a value, then the ability it belongs to."}
+          </p>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            {pool.map((e, i) => (
+              <div key={`${e.value}-${i}`} style={{
+                background: e.assignedTo ? "rgba(200,162,75,0.16)" : "rgba(0,0,0,0.28)",
+                border: `1px solid ${e.assignedTo ? C.sun : STONE.hi}`,
+                borderRadius: 4, padding: "6px 9px", display: "flex", alignItems: "center", gap: 7,
+              }}>
+                <span style={{ fontSize: 16, color: e.assignedTo ? C.sun : STONE.ink }}>{e.value}</span>
+                {e.assignedTo ? (
+                  <button onClick={() => lift(i)}
+                    style={{ background: "transparent", border: "none", cursor: "pointer",
+                      color: STONE.inkFaint, fontSize: 11, fontFamily: FORGE_FONTS.mono }}>
+                    {e.assignedTo.toUpperCase()} &times;
+                  </button>
+                ) : (
+                  <select value="" onChange={(ev) => ev.target.value && place(i, ev.target.value as AbilityKey)}
+                    style={{ ...stoneField(), width: "auto", fontSize: 11.5, padding: "3px 6px" }}>
+                    <option value="">to&hellip;</option>
+                    {ABILITIES.map((a) => (
+                      <option key={a} value={a} style={OPTION_STYLE}>{a.toUpperCase()}</option>
+                    ))}
+                  </select>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AbilitiesPanel({ build, cap, sheet, onAbility, onMany }: {
   build: Build; cap: number;
   sheet: NonNullable<ReturnType<typeof deriveSheet>>;
   onAbility: (a: Ability, v: number) => void;
+  onMany: (scores: Partial<Record<AbilityKey, number>>) => void;
 }) {
   return (
     <div style={stonePanel()}>
       <PanelTitle hint="Base scores. Species, background, and gear can raise these — the effective value shows below each.">Ability scores</PanelTitle>
+      <AbilityGenerator build={build} onAbility={onAbility} onMany={onMany} />
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(110px,1fr))", gap: 14 }}>
         {ABILITIES.map((a) => {
           const eff = sheet.abilities[a];
