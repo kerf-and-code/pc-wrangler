@@ -924,7 +924,7 @@ function ForgeInner() {
               {tab === "class" && build.meta.className && (
                 <ClassChoicesPanel
                   build={build} sheet={sheet}
-                  weapons={srd.equipment} spells={srd.spells}
+                  weapons={srd.equipment} spells={srd.spells} feats={srd.featList}
                   structuredRec={srd.structuredByName[build.meta.className]}
                   picks={(build as Build & { classChoices?: Record<string, string[]> }).classChoices || {}}
                   onPick={setClassChoice}
@@ -1818,11 +1818,12 @@ function SpeciesPanel({
  *   says "2 of 2 chosen" rather than greying the rest out silently. A player who cannot see WHY an
  *   option stopped responding assumes the tool is broken; a count explains itself.
  */
-function ClassChoicesPanel({ build, sheet, weapons, spells, picks, onPick, structuredRec }: {
+function ClassChoicesPanel({ build, sheet, weapons, spells, feats, picks, onPick, structuredRec }: {
   build: Build;
   sheet: NonNullable<ReturnType<typeof deriveSheet>> | null;
   weapons: ItemRecord[];
   spells: SpellRecord[];
+  feats: FeatOption[];
   picks: Record<string, string[]>;
   onPick: (key: string, values: string[]) => void;
   structuredRec?: unknown;
@@ -1858,13 +1859,14 @@ function ClassChoicesPanel({ build, sheet, weapons, spells, picks, onPick, struc
     tools: (weapons as unknown as { name: string; category?: string }[])
       .filter((w) => w.category === "Tools").map((t) => ({ name: t.name })),
     spells: spells.map((sp) => ({ name: sp.name, level: sp.level })),
+    feats: feats.map((f) => ({ name: f.name, category: (f as { category?: string }).category })),
     // Expertise only offers skills the character already has, so this reads the DERIVED sheet
     // rather than build.skillProf - a skill granted by a background or species is just as
     // proficient as one picked by hand, and asking the raw build would miss those.
     proficientSkills: Object.entries(sheet?.skills || {})
       .filter(([, v]) => (v as { rank: number }).rank > 0)
       .map(([k]) => k),
-  }), [weapons, spells, sheet]);
+  }), [weapons, spells, feats, sheet]);
 
   if (list.length === 0) {
     return (

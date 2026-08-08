@@ -20,7 +20,7 @@
 //   Anything not listed here falls back to prose, so growing this file is safe and leaving a gap is
 //   safe. Guessing is not.
 
-export type ChoiceKind = "skill" | "weapon" | "tool" | "spell";
+export type ChoiceKind = "skill" | "weapon" | "tool" | "spell" | "feat";
 
 export type ClassChoice = {
   className: string;
@@ -36,6 +36,8 @@ export type ClassChoice = {
     weaponRange?: ("Melee" | "Ranged")[];
     /** Only skills the character is already proficient in - Expertise. */
     proficientOnly?: boolean;
+    /** Feat category, e.g. "Fighting Style". The feats catalog already carries these. */
+    featCategory?: string;
     /** Spell level bounds, inclusive. 0 is a cantrip. */
     spellLevelMin?: number;
     spellLevelMax?: number;
@@ -57,6 +59,38 @@ export type ClassChoice = {
  * doubt was left out to fall back to prose.
  */
 export const CLASS_CHOICES: ClassChoice[] = [
+  // --- resolvable from data already in lib/srd, no option list authored -----------------------
+  // Fighting Style is a FEAT CATEGORY in feats-2024.json - twelve of them - so these three need no
+  // list of their own. The class text says so outright: "you gain a Fighting Style feat of your
+  // choice (see Feats)".
+  { className: "Fighter", level: 1, feature: "Fighting Style", choose: 1, kind: "feat",
+    filter: { featCategory: "Fighting Style" } },
+  { className: "Paladin", level: 2, feature: "Fighting Style", choose: 1, kind: "feat",
+    filter: { featCategory: "Fighting Style" } },
+  { className: "Ranger", level: 2, feature: "Fighting Style", choose: 1, kind: "feat",
+    filter: { featCategory: "Fighting Style" } },
+
+  // The class text names its own six skills, so this is transcribed from the feature's own
+  // description rather than looked up anywhere.
+  { className: "Wizard", level: 2, feature: "Scholar", choose: 1, kind: "skill",
+    filter: { proficientOnly: true,
+      options: ["Arcana", "History", "Investigation", "Medicine", "Nature", "Religion"] },
+    note: "One you already have proficiency in." },
+
+  { className: "Ranger", level: 2, feature: "Deft Explorer", choose: 1, kind: "skill",
+    filter: { proficientOnly: true }, note: "Gains Expertise in the chosen skill." },
+
+  // Spell picks with a level band. The spell catalog does the rest.
+  { className: "Warlock", level: 11, feature: "Mystic Arcanum", choose: 1, kind: "spell",
+    filter: { spellLevelMin: 6, spellLevelMax: 6 } },
+  { className: "Wizard", level: 18, feature: "Spell Mastery (level 1)", choose: 1, kind: "spell",
+    filter: { spellLevelMin: 1, spellLevelMax: 1 } },
+  { className: "Wizard", level: 18, feature: "Spell Mastery (level 2)", choose: 1, kind: "spell",
+    filter: { spellLevelMin: 2, spellLevelMax: 2 } },
+  { className: "Wizard", level: 20, feature: "Signature Spells", choose: 2, kind: "spell",
+    filter: { spellLevelMin: 3, spellLevelMax: 3 } },
+
+  // --- the originals -------------------------------------------------------------------------
   {
     className: "Barbarian", level: 1, feature: "Weapon Mastery",
     choose: 2, kind: "weapon",
@@ -117,6 +151,7 @@ export type ResolveInput = {
   spells: { name: string; level: string }[];
   /** Skill keys the character is already proficient in, for Expertise. */
   proficientSkills: string[];
+  feats: { name: string; category?: string }[];
 };
 
 /**
@@ -148,6 +183,13 @@ export function resolveChoice(choice: ClassChoice, data: ResolveInput): { value:
         return true;
       })
       .map((w) => ({ value: w.name, label: w.mastery ? `${w.name} (${w.mastery})` : w.name }));
+  }
+
+  if (choice.kind === "feat") {
+    const want = f.featCategory?.toLowerCase();
+    return data.feats
+      .filter((ft) => !want || (ft.category || "").toLowerCase() === want)
+      .map((ft) => ({ value: ft.name, label: ft.name }));
   }
 
   if (choice.kind === "tool") {
