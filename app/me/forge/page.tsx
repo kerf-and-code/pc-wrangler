@@ -38,6 +38,7 @@ import { traitOptions, traitAsksAChoice, lineageSpells } from "@/lib/species-cho
 import { choicesFor, resolveChoice, choiceKey, costedPicks, actionsFor, type ClassChoice } from "@/lib/class-choices";
 import { classTable, classTableColumns } from "@/lib/class-table";
 import { resourcesFor, slotsFor, remaining, afterShortRest, speciesResources, type Resource } from "@/lib/resources";
+import { casterLevel, multiclassSlots, isMulticlassCaster, type CasterType } from "@/lib/multiclass-slots";
 import { subclassSpellsFor } from "@/lib/subclass-spells";
 import { choiceEffects, applyToBuild, type ChoiceEffects } from "@/lib/apply-choices";
 import { parseCoreTraits } from "@/lib/core-traits";
@@ -1118,6 +1119,22 @@ function ForgeInner() {
                     .multiclass || []).map((c) => ({
                       rec: srd.structuredByName[c.className], level: c.level || 1,
                     }))}
+                  // Slots for a multiclassed caster come from ONE combined table, not from each
+                  // class's own row. Computed here and handed down so the panel does not have to
+                  // know the rule, only which numbers to draw.
+                  mcSlots={(() => {
+                    const casterOf = (n: string): CasterType =>
+                      ((srd.structuredByName[n] as { caster_type?: string } | undefined)?.caster_type
+                        || "NONE") as CasterType;
+                    const all = [
+                      { casterType: casterOf(build.meta.className || ""), level: build.level || 1 },
+                      ...((build as Build & { multiclass?: { className: string; level: number }[] })
+                        .multiclass || []).map((c) => ({
+                          casterType: casterOf(c.className), level: c.level || 1,
+                        })),
+                    ];
+                    return isMulticlassCaster(all) ? multiclassSlots(casterLevel(all)) : [];
+                  })()}
                   costed={[
                     // Automatic first: a monk's Flurry is not a decision they made, and burying it
                     // under the options they picked would read as though it were.
@@ -2390,12 +2407,14 @@ function GrantedEquipmentPanel({ bgRec, coreTraits, catalog, owned, onAdd }: {
  *   asking: a tracker that silently refilled at the wrong moment is a tracker nobody can trust. The
  *   button is one tap and it is the player's call.
  */
-function ResourcePanel({ structuredRec, level, costed, extraPools, extraClasses, spent, onSpend, onRest, onSpentMap }: {
+function ResourcePanel({ structuredRec, level, costed, extraPools, extraClasses, mcSlots, spent, onSpend, onRest, onSpentMap }: {
   structuredRec?: unknown;
   level: number;
   costed: { name: string; summary: string; resource: string; amount: number }[];
   extraPools: Resource[];
   extraClasses: { rec?: unknown; level: number }[];
+  /** Combined slots, non-empty only when the character casts from more than one class. */
+  mcSlots: { level: number; slots: number }[];
   spent: Record<string, number>;
   onSpend: (key: string, n: number) => void;
   onRest: () => void;
@@ -2421,7 +2440,17 @@ function ResourcePanel({ structuredRec, level, costed, extraPools, extraClasses,
     }
     return [...out, ...extraPools];
   }, [row, extraClasses, extraPools]);
-  const slots = useMemo(() => slotsFor(row), [row]);
+  const slots = useMemo(() => {
+    // The combined table REPLACES the primary class's own slot row rather than adding to it. A
+    // Cleric 3 / Wizard 3 has one set of slots; showing both classes' rows as well would offer
+    // three times what the character actually has.
+    if (mcSlots.length) {
+      return mcSlots.map((r) => ({
+        key: `slot-${r.level}`, label: `Level ${r.level}`, max: r.slots, shortRest: "none" as const,
+      }));
+    }
+    return slotsFor(row);
+  }, [row, mcSlots]);
 
   if (pools.length === 0 && slots.length === 0) return null;
 
@@ -2479,7 +2508,9 @@ function ResourcePanel({ structuredRec, level, costed, extraPools, extraClasses,
 
       {slots.length > 0 && (
         <>
-          <label style={forgeLabel}>Spell slots</label>
+          <label style={forgeLabel}>
+            Spell slots{mcSlots.length ? " (combined across your caster classes)" : ""}
+          </label>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px,1fr))", gap: 8 }}>
             {slots.map((r) => <Track key={r.key} r={r} />)}
           </div>
