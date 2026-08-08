@@ -56,6 +56,14 @@ export type Build = {
   skillProf: string[];
   skillExpert: string[];
   featMods?: Record<string, number>;
+  /**
+   * The 2024 background ability-score assignment: the player's own +2/+1 or +1/+1/+1 across the
+   * three abilities that background offers. Stored SEPARATELY from featMods, which the Forge builds
+   * fresh from the species table on every derive - putting both in one bag would mean whichever was
+   * spread last silently won, so a species +2 CON and a background +1 CON would come out as +2
+   * rather than +3. They are merged additively at derive time instead.
+   */
+  bgAsi?: Record<string, number>;
   gear: { budget?: string; items: GearEntry[]; attuned?: string[] };
   effects: string[];                       // active effect ids (conditions, buffs)
   epicChoices: Record<number, EpicChoice[]>; // per-level 21-30 boon/feat picks

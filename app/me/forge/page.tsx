@@ -160,11 +160,15 @@ function denormOf(build: Build, speciesVariant: string): LibraryDenorm {
  * The `ready` predicate is not a gate either. It drives the mark beside each tab name and the list
  * on Finish, so "what have I not done" is answerable without reading the whole sheet.
  */
-type TabKey = "identity" | "class" | "abilities" | "equipment" | "features" | "finish";
+type TabKey = "identity" | "class" | "background" | "abilities" | "equipment" | "features" | "finish";
+
+const bgAsiTotal = (b: Build) =>
+  Object.values(b.bgAsi || {}).reduce((a, v) => a + Number(v || 0), 0);
 
 const TABS: { key: TabKey; label: string; ready: (b: Build) => boolean }[] = [
   { key: "identity",  label: "Identity",  ready: (b) => Boolean(b.meta.species && b.meta.className && b.meta.background) },
   { key: "class",     label: "Class",     ready: (b) => Boolean(b.meta.className) },
+  { key: "background", label: "Background", ready: (b) => Boolean(b.meta.background) && bgAsiTotal(b) > 0 },
   { key: "abilities", label: "Abilities", ready: (b) => Object.values(b.abilities || {}).some((v) => Number(v) > 0) },
   { key: "equipment", label: "Equipment", ready: (b) => Boolean((b.gear?.items || []).length) },
   { key: "features",  label: "Features",  ready: (b) => Boolean(b.meta.species) },
@@ -437,7 +441,13 @@ function ForgeInner() {
   const buildForDerive = useMemo<Build>(() => {
     const mech = srd.speciesByName[build.meta.species];
     const bonus = parseAbilityBonuses(mech?.ability_bonuses);
-    return { ...build, featMods: { ...(build.featMods || {}), ...bonus } };
+    // ADDITIVE, not spread. The old version overwrote, so a species +2 CON and a background +1 CON
+    // came out as +2. Nothing wrote a background bonus before, so the bug had never fired.
+    const merged: Record<string, number> = {};
+    for (const src of [build.featMods || {}, build.bgAsi || {}, bonus]) {
+      for (const [k, v] of Object.entries(src)) merged[k] = (merged[k] || 0) + Number(v || 0);
+    }
+    return { ...build, featMods: merged };
   }, [build, srd.speciesByName]);
 
   const sheet = useMemo(() => {
@@ -493,7 +503,15 @@ function ForgeInner() {
 
   const setSpecies = (v: string) => patch((b) => { b.meta.species = v; return b; });
   const setVariant = (v: string) => { setSpeciesVariant(v); setSaveState("idle"); };
-  const setBackground = (v: string) => patch((b) => { b.meta.background = v; return b; });
+  const setBackground = (v: string) => patch((b) => {
+    b.meta.background = v;
+    // A new background offers different abilities, so the old assignment is meaningless rather than
+    // merely stale. Clearing it is honest; carrying it over would silently apply a bonus the new
+    // background does not grant.
+    b.bgAsi = {};
+    return b;
+  });
+  const setBgAsi = (mods: Record<string, number>) => patch((b) => { b.bgAsi = mods; return b; });
   const setClassName = (v: string) => patch((b) => { b.meta.className = v; b.meta.subclass = ""; return b; });
   const setSubclass = (v: string) => patch((b) => { b.meta.subclass = v; return b; });
   const setLevel = (v: number) => patch((b) => { b.level = Math.max(1, Math.min(30, v || 1)); return b; });
@@ -693,6 +711,14 @@ function ForgeInner() {
                 onSpecies={setSpecies} onVariant={setVariant} onBackground={setBackground}
                 onClassName={setClassName} onSubclass={setSubclass} onLevel={setLevel}
               />
+              )}
+
+              {tab === "background" && (
+                <BackgroundPanel
+                  build={build} backgroundOpts={srd.backgrounds.map((b) => b.name)}
+                  bgRec={srd.bgByName[build.meta.background]} desc={backgroundDesc}
+                  onBackground={setBackground} onAsi={setBgAsi}
+                />
               )}
 
               {tab === "abilities" && (
@@ -899,6 +925,137 @@ function FinishPanel({ build, name, sheet, onTab }: {
           {build.meta.species && <span>{build.meta.species}</span>}
         </div>
       </div>
+    </div>
+  );
+}
+
+
+/**
+ * The 2024 background ability-score assignment, which had no UI at all until now.
+ *
+ * THE RULE
+ *   A 2024 background names three abilities and you either put +2 into one and +1 into another, or
+ *   +1 into all three. The data has carried those three abilities since backgrounds-2024.json was
+ *   parsed; nothing was ever applying them.
+ *
+ * WHY TWO BUTTONS RATHER THAN SIX SPINNERS
+ *   There are exactly two legal shapes. Offering free numeric entry would mean validating a rule the
+ *   player cannot see, and rejecting their input afterwards. Picking the shape first and then only
+ *   asking which ability gets the +2 makes an illegal assignment unreachable rather than caught.
+ */
+function BackgroundPanel({ build, backgroundOpts, bgRec, desc, onBackground, onAsi }: {
+  build: Build;
+  backgroundOpts: string[];
+  bgRec: { ability_scores?: string; feat?: string; skill_proficiencies?: string;
+           tool_proficiency?: string; equipment?: string } | undefined;
+  desc: Described | null;
+  onBackground: (v: string) => void;
+  onAsi: (mods: Record<string, number>) => void;
+}) {
+  const abilities = useMemo(() => {
+    const raw = bgRec?.ability_scores || "";
+    return raw.split(/[,;]/).map((t) => t.trim()).filter(Boolean)
+      .map((n) => ABBR_TO_KEY[n.slice(0, 3).toLowerCase()] || (n.slice(0, 3).toLowerCase() as Ability))
+      .filter((k, i, arr) => k && arr.indexOf(k) === i);
+  }, [bgRec]);
+
+  const current = build.bgAsi || {};
+  const total = Object.values(current).reduce((a, v) => a + Number(v || 0), 0);
+  const spread = total === 3 && Object.values(current).every((v) => Number(v) === 1);
+  const focused = total === 3 && Object.values(current).some((v) => Number(v) === 2);
+
+  const setSpread = () => onAsi(Object.fromEntries(abilities.map((a) => [a, 1])));
+  const setFocus = (two: Ability) => {
+    const rest = abilities.filter((a) => a !== two);
+    onAsi({ [two]: 2, ...(rest[0] ? { [rest[0]]: 1 } : {}) });
+  };
+
+  return (
+    <div style={stonePanel()}>
+      <PanelTitle hint="Where this character came from, and what it gave them.">Background</PanelTitle>
+
+      <Field label="Background" value={build.meta.background} onChange={onBackground}
+        options={backgroundOpts} placeholder="Choose a background" />
+
+      {desc && <DescBlock desc={desc} />}
+
+      {!build.meta.background && (
+        <Muted>Pick a background and its ability scores, feat and equipment appear here.</Muted>
+      )}
+
+      {build.meta.background && abilities.length === 0 && (
+        <Muted>
+          This background does not list ability scores. That is normal for a 2014 background, where
+          the bonuses came from your species instead.
+        </Muted>
+      )}
+
+      {abilities.length > 0 && (
+        <div style={{ marginTop: 16 }}>
+          <label style={forgeLabel}>Ability scores</label>
+          <p style={{ color: STONE.inkDim, fontSize: 13, margin: "0 0 10px", lineHeight: 1.6 }}>
+            {bgRec?.ability_scores} — put <strong>+2 into one and +1 into another</strong>, or{" "}
+            <strong>+1 into all three</strong>.
+          </p>
+
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
+            <button className="forge-btn" onClick={setSpread}
+              style={{ ...stoneButton(spread ? "primary" : "stone"), fontSize: 13 }}>
+              +1 to all three
+            </button>
+            {abilities.map((a) => (
+              <button key={a} className="forge-btn" onClick={() => setFocus(a)}
+                style={{ ...stoneButton(focused && Number(current[a]) === 2 ? "primary" : "stone"), fontSize: 13 }}>
+                +2 {a.toUpperCase()}
+              </button>
+            ))}
+          </div>
+
+          {focused && (
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+              <span style={{ fontSize: 13, color: STONE.inkDim }}>and +1 to</span>
+              {abilities.filter((a) => Number(current[a]) !== 2).map((a) => (
+                <button key={a} className="forge-btn"
+                  onClick={() => {
+                    const two = abilities.find((x) => Number(current[x]) === 2);
+                    onAsi(two ? { [two]: 2, [a]: 1 } : { [a]: 1 });
+                  }}
+                  style={{ ...stoneButton(Number(current[a]) === 1 ? "primary" : "stone"), fontSize: 13 }}>
+                  {a.toUpperCase()}
+                </button>
+              ))}
+            </div>
+          )}
+
+          <p style={{ fontFamily: FORGE_FONTS.mono, fontSize: 12, color: total === 3 ? C.good : STONE.inkFaint,
+            marginTop: 12, marginBottom: 0 }}>
+            {total === 0 ? "nothing assigned yet"
+              : total === 3 ? `applied: ${abilities.filter((a) => current[a]).map((a) => `${a.toUpperCase()} +${current[a]}`).join(", ")}`
+              : `${total} of 3 points assigned`}
+          </p>
+        </div>
+      )}
+
+      {(bgRec?.feat || bgRec?.skill_proficiencies || bgRec?.tool_proficiency || bgRec?.equipment) && (
+        <div style={{ marginTop: 18, paddingTop: 14, borderTop: `1px solid ${STONE.hi}` }}>
+          {/* Shown, not applied. The engine has no route for a granted feat or a tool proficiency
+              yet, and printing them as though they were live would be worse than printing them as
+              a reminder. */}
+          <div style={{ fontFamily: FORGE_FONTS.mono, fontSize: 11, letterSpacing: "0.14em",
+            textTransform: "uppercase", color: STONE.inkFaint, marginBottom: 8 }}>
+            Also granted, not yet applied automatically
+          </div>
+          <div style={{ display: "grid", gap: 5, fontSize: 13.5, color: STONE.ink }}>
+            {bgRec?.feat && <span><strong>Feat:</strong> {bgRec.feat}</span>}
+            {bgRec?.skill_proficiencies && <span><strong>Skills:</strong> {bgRec.skill_proficiencies}</span>}
+            {bgRec?.tool_proficiency && <span><strong>Tools:</strong> {bgRec.tool_proficiency}</span>}
+            {bgRec?.equipment && <span><strong>Equipment:</strong> {bgRec.equipment}</span>}
+          </div>
+          <p style={{ color: STONE.inkFaint, fontSize: 12, marginTop: 8, marginBottom: 0, lineHeight: 1.55 }}>
+            Add the skills on the sheet and the gear on the Equipment tab for now.
+          </p>
+        </div>
+      )}
     </div>
   );
 }
