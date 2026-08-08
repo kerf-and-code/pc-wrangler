@@ -35,6 +35,7 @@ import { C, STONE, FORGE_FONTS, forgeBackground, forgeVignette, stonePanel, ston
 import { loadSrd } from "@/lib/srd/srd";
 import { applyAdvantage } from "@/lib/dice";
 import { traitOptions, traitAsksAChoice } from "@/lib/species-choices";
+import { choicesFor, resolveChoice, choiceKey, type ClassChoice } from "@/lib/class-choices";
 import { buildRulesContext } from "@/lib/srd/rules-context";
 import {
   loadCatalog, partnerList, speciesOptions, classOptions, variantOptions, subclassOptions,
@@ -546,6 +547,12 @@ function ForgeInner() {
   });
   const setBgAsi = (mods: Record<string, number>) => patch((b) => { b.bgAsi = mods; return b; });
 
+  const setClassChoice = (key: string, values: string[]) => patch((b) => {
+    const t = b as Build & { classChoices?: Record<string, string[]> };
+    t.classChoices = { ...(t.classChoices || {}), [key]: values };
+    return b;
+  });
+
   const setSpeciesChoice = (trait: string, value: string) => patch((b) => {
     const t = b as Build & { speciesChoices?: Record<string, string> };
     t.speciesChoices = { ...(t.speciesChoices || {}), [trait]: value };
@@ -834,6 +841,15 @@ function ForgeInner() {
                   <PanelTitle>Class</PanelTitle>
                   <Muted>Pick a class on the Identity tab and its levels appear here.</Muted>
                 </div>
+              )}
+
+              {tab === "class" && build.meta.className && (
+                <ClassChoicesPanel
+                  build={build} sheet={sheet}
+                  weapons={srd.equipment} spells={srd.spells}
+                  picks={(build as Build & { classChoices?: Record<string, string[]> }).classChoices || {}}
+                  onPick={setClassChoice}
+                />
               )}
 
               {tab === "class" && build.meta.className && (asiLevels.length > 0 || build.level >= 19) && (
@@ -1613,6 +1629,138 @@ function SpeciesPanel({
           the SRD species carry full traits.
         </Muted>
       )}
+    </div>
+  );
+}
+
+
+/**
+ * The decisions this class asks for, as pickers rather than paragraphs.
+ *
+ * WHAT IT COVERS AND WHAT IT ADMITS
+ *   Only what lib/class-choices.ts lists, which is deliberately a short and certain set. Everything
+ *   else in the class still shows as rules text on the progression panel, exactly as before. A
+ *   feature the vocabulary does not know about is not broken here - it simply is not claimed.
+ *
+ * WHY THE COUNT IS SHOWN RATHER THAN ENFORCED BY DISABLING
+ *   Over-picking is caught (extra selections are refused once the limit is reached) but the panel
+ *   says "2 of 2 chosen" rather than greying the rest out silently. A player who cannot see WHY an
+ *   option stopped responding assumes the tool is broken; a count explains itself.
+ */
+function ClassChoicesPanel({ build, sheet, weapons, spells, picks, onPick }: {
+  build: Build;
+  sheet: NonNullable<ReturnType<typeof deriveSheet>> | null;
+  weapons: ItemRecord[];
+  spells: SpellRecord[];
+  picks: Record<string, string[]>;
+  onPick: (key: string, values: string[]) => void;
+}) {
+  const list = useMemo(
+    () => choicesFor(build.meta.className || "", build.meta.subclass || "", build.level || 1),
+    [build.meta.className, build.meta.subclass, build.level],
+  );
+
+  const data = useMemo(() => ({
+    skills: SKILLS.map(([key, label]) => ({ key, label })),
+    weapons: (weapons as unknown as { name: string; category?: string; weapon_category?: string;
+      weapon_range?: string; mastery?: string }[]).filter((w) => w.category === "Weapon"),
+    tools: (weapons as unknown as { name: string; category?: string }[])
+      .filter((w) => w.category === "Tools").map((t) => ({ name: t.name })),
+    spells: spells.map((sp) => ({ name: sp.name, level: sp.level })),
+    // Expertise only offers skills the character already has, so this reads the DERIVED sheet
+    // rather than build.skillProf - a skill granted by a background or species is just as
+    // proficient as one picked by hand, and asking the raw build would miss those.
+    proficientSkills: Object.entries(sheet?.skills || {})
+      .filter(([, v]) => (v as { rank: number }).rank > 0)
+      .map(([k]) => k),
+  }), [weapons, spells, sheet]);
+
+  if (list.length === 0) {
+    return (
+      <div style={stonePanel()}>
+        <PanelTitle>Choices</PanelTitle>
+        <Muted>
+          Nothing to pick here for {build.meta.className || "this class"} at level {build.level}.
+          Features that ask you to choose still appear as rules text on the progression below.
+        </Muted>
+      </div>
+    );
+  }
+
+  return (
+    <div style={stonePanel()}>
+      <PanelTitle hint="Options resolved from the app's own weapon, skill and spell lists.">
+        Choices
+      </PanelTitle>
+
+      <div style={{ display: "grid", gap: 14 }}>
+        {list.map((c: ClassChoice) => {
+          const key = choiceKey(c);
+          const chosen = picks[key] || [];
+          const options = resolveChoice(c, data);
+          const full = chosen.length >= c.choose;
+
+          const toggle = (v: string) => {
+            if (chosen.includes(v)) onPick(key, chosen.filter((x) => x !== v));
+            else if (!full) onPick(key, [...chosen, v]);
+          };
+
+          return (
+            <div key={key} style={{ background: "rgba(0,0,0,0.24)", borderRadius: 4, padding: "12px 14px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline",
+                gap: 10, flexWrap: "wrap", marginBottom: 8 }}>
+                <span style={{ fontSize: 14, color: STONE.ink }}>
+                  {c.feature}
+                  <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 11, color: STONE.inkFaint, marginLeft: 8 }}>
+                    level {c.level}
+                  </span>
+                </span>
+                <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 11.5,
+                  color: full ? C.good : STONE.inkFaint }}>
+                  {chosen.length} of {c.choose} chosen
+                </span>
+              </div>
+
+              {options.length === 0 ? (
+                <p style={{ fontSize: 12.5, color: STONE.inkFaint, margin: 0, lineHeight: 1.55 }}>
+                  {c.filter?.proficientOnly
+                    ? "Nothing to choose from yet: expertise doubles a proficiency you already have, and this character has none."
+                    : "No options matched. Read the rules text on the progression below."}
+                </p>
+              ) : (
+                <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
+                  {options.map((o) => {
+                    const on = chosen.includes(o.value);
+                    return (
+                      <button key={o.value} onClick={() => toggle(o.value)}
+                        title={!on && full ? `Already chosen ${c.choose}. Deselect one first.` : undefined}
+                        style={{
+                          ...stoneButton(on ? "primary" : "stone"),
+                          fontSize: 12.5, padding: "6px 11px",
+                          opacity: !on && full ? 0.4 : 1,
+                          cursor: !on && full ? "not-allowed" : "pointer",
+                        }}>
+                        {o.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {c.note && (
+                <p style={{ fontSize: 12, color: STONE.inkFaint, margin: "8px 0 0", lineHeight: 1.5 }}>
+                  {c.note}
+                </p>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      <p style={{ fontSize: 12, color: STONE.inkFaint, marginTop: 14, marginBottom: 0, lineHeight: 1.55 }}>
+        These are recorded on the sheet. Weapon mastery and expertise do not yet change your derived
+        numbers, so treat them as the record of your decision rather than as applied maths.
+      </p>
     </div>
   );
 }
