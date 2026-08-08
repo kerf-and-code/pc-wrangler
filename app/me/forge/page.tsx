@@ -503,8 +503,11 @@ function ForgeInner() {
       ? [choiceKey({ className: cls, level: 1, feature: "Skill Proficiencies", choose: 0, kind: "skill" })]
       : [];
 
+    const bgRec = srd.bgByName[build.meta.background];
     return choiceEffects({
-      background: srd.bgByName[build.meta.background],
+      background: bgRec,
+      grantedFeat: bgRec?.feat ? srd.featByName[bgRec.feat] : undefined,
+      grantedFeatAbility: (build as Build & { bgFeatAbility?: string }).bgFeatAbility,
       speciesTraits: traits,
       speciesChoices: (build as Build & { speciesChoices?: Record<string, string> }).speciesChoices || {},
       speciesOptions: options,
@@ -512,7 +515,7 @@ function ForgeInner() {
       expertiseKeys,
       skillProfKeys,
     });
-  }, [build, speciesVariant, srd.speciesByName, srd.variantByName, srd.bgByName]);
+  }, [build, speciesVariant, srd.speciesByName, srd.variantByName, srd.bgByName, srd.featByName]);
 
   const deriveCtx = useMemo(() => {
     const base = printedAbilities ? suppressItemEffects(ctx) : ctx;
@@ -541,7 +544,7 @@ function ForgeInner() {
     // ADDITIVE, not spread. The old version overwrote, so a species +2 CON and a background +1 CON
     // came out as +2. Nothing wrote a background bonus before, so the bug had never fired.
     const merged: Record<string, number> = {};
-    for (const src of [build.featMods || {}, build.bgAsi || {}, bonus]) {
+    for (const src of [build.featMods || {}, build.bgAsi || {}, effects.featMods, bonus]) {
       for (const [k, v] of Object.entries(src)) merged[k] = (merged[k] || 0) + Number(v || 0);
     }
     // Granted skills and expertise fold in here, so the engine sees them as though the player had
@@ -618,6 +621,10 @@ function ForgeInner() {
     return b;
   });
   const setBgAsi = (mods: Record<string, number>) => patch((b) => { b.bgAsi = mods; return b; });
+  const setBgFeatAbility = (a: string) => patch((b) => {
+    (b as Build & { bgFeatAbility?: string }).bgFeatAbility = a;
+    return b;
+  });
 
   // Several scores in one patch. Assigning an array touches up to six abilities at once, and six
   // separate calls would fire six autosaves with each reading the build before the last one landed.
@@ -902,6 +909,9 @@ function ForgeInner() {
                   build={build} backgroundRows={srd.backgrounds}
                   bgRec={srd.bgByName[build.meta.background]} desc={backgroundDesc}
                   onBackground={setBackground} onAsi={setBgAsi}
+                  featRec={srd.featByName[srd.bgByName[build.meta.background]?.feat || ""]}
+                  featAbility={(build as Build & { bgFeatAbility?: string }).bgFeatAbility || ""}
+                  onFeatAbility={setBgFeatAbility}
                 />
               )}
 
@@ -1193,7 +1203,8 @@ function FinishPanel({ build, name, sheet, onTab, effects }: {
  *   player cannot see, and rejecting their input afterwards. Picking the shape first and then only
  *   asking which ability gets the +2 makes an illegal assignment unreachable rather than caught.
  */
-function BackgroundPanel({ build, backgroundRows, bgRec, desc, onBackground, onAsi }: {
+function BackgroundPanel({ build, backgroundRows, bgRec, desc, onBackground, onAsi,
+  featRec, featAbility, onFeatAbility }: {
   build: Build;
   backgroundRows: BackgroundRecord[];
   bgRec: { ability_scores?: string; feat?: string; skill_proficiencies?: string;
@@ -1201,6 +1212,9 @@ function BackgroundPanel({ build, backgroundRows, bgRec, desc, onBackground, onA
   desc: Described | null;
   onBackground: (v: string) => void;
   onAsi: (mods: Record<string, number>) => void;
+  featRec: FeatOption | undefined;
+  featAbility: string;
+  onFeatAbility: (a: string) => void;
 }) {
   const abilities = useMemo(() => {
     const raw = bgRec?.ability_scores || "";
@@ -1314,6 +1328,25 @@ function BackgroundPanel({ build, backgroundRows, bgRec, desc, onBackground, onA
             textTransform: "uppercase", color: STONE.inkFaint, marginBottom: 8 }}>
             Also granted
           </div>
+
+          {/* A granted feat whose increase is the player's choice cannot apply itself. Asked here,
+              beside the feat that raises the question, rather than left as a silent gap on Finish. */}
+          {featRec?.asi && !ABILITIES.some((a) => typeof (featRec.asi as Record<string, unknown>)?.[a] === "number") && (
+            <div style={{ marginBottom: 10 }}>
+              <label style={forgeLabel}>
+                {featRec.name} raises an ability &mdash; which one?
+              </label>
+              <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
+                {ABILITIES.map((a) => (
+                  <button key={a} className="forge-btn" onClick={() => onFeatAbility(a)}
+                    style={{ ...stoneButton(featAbility === a ? "primary" : "stone"),
+                      fontSize: 12.5, padding: "6px 12px" }}>
+                    {a.toUpperCase()}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           <div style={{ display: "grid", gap: 5, fontSize: 13.5, color: STONE.ink }}>
             {bgRec?.feat && <span><strong>Feat:</strong> {bgRec.feat}</span>}
             {bgRec?.skill_proficiencies && <span><strong>Skills:</strong> {bgRec.skill_proficiencies}</span>}
@@ -1321,8 +1354,9 @@ function BackgroundPanel({ build, backgroundRows, bgRec, desc, onBackground, onA
             {bgRec?.equipment && <span><strong>Equipment:</strong> {bgRec.equipment}</span>}
           </div>
           <p style={{ color: STONE.inkFaint, fontSize: 12, marginTop: 8, marginBottom: 0, lineHeight: 1.55 }}>
-            The skills are applied to your sheet automatically. The feat and the gear are not: add
-            the equipment on the Equipment tab, and take the feat as one of your ASI picks.
+            The skills and the feat&rsquo;s effects apply to your sheet automatically. The gear is
+            offered on the Equipment tab rather than added, so it does not fight a list you have
+            already put together.
           </p>
         </div>
       )}

@@ -32,6 +32,18 @@ export type ChoiceInputs = {
   speciesOptions?: Record<string, { name: string; detail?: string }[]>;
   /** choice key -> chosen values, from lib/class-choices. */
   classChoices?: Record<string, string[]>;
+  /**
+   * The feat a background grants, already looked up from the catalog. Passing the RECORD rather
+   * than the name keeps this file free of the SRD loader: it maps effects to numbers and does not
+   * decide where feats come from.
+   */
+  grantedFeat?: {
+    name: string;
+    asi?: { amount?: number; any?: number; choice?: string[] } & Record<string, unknown>;
+    effects?: { hpPerLevel?: number; speed?: number; ac?: number; initiative?: number };
+  };
+  /** The ability the player chose for a granted feat whose increase is variable. */
+  grantedFeatAbility?: string;
   /** Which of those keys are expertise, so only those reach skillExpert. */
   expertiseKeys?: string[];
   /**
@@ -47,6 +59,8 @@ export type ChoiceEffects = {
   skillProf: string[];
   skillExpert: string[];
   resist: string[];
+  /** Ability and other numeric mods from a granted feat, merged into featMods by the caller. */
+  featMods: Record<string, number>;
   /** For showing the player what actually landed, rather than making them infer it. */
   applied: string[];
   /** Recorded but with nowhere to go. Named so the UI can say which, not just that some exist. */
@@ -61,6 +75,8 @@ const SKILL_KEYS: Record<string, string> = {
   performance: "performance", persuasion: "persuasion", religion: "religion",
   "sleight of hand": "sleight", stealth: "stealth", survival: "survival",
 };
+
+const ABILITY_SHORT = ["str", "dex", "con", "int", "wis", "cha"];
 
 const DAMAGE_TYPES = [
   "acid", "bludgeoning", "cold", "fire", "force", "lightning", "necrotic",
@@ -81,6 +97,7 @@ export function choiceEffects(input: ChoiceInputs): ChoiceEffects {
   const skillProf: string[] = [];
   const skillExpert: string[] = [];
   const resist: string[] = [];
+  const featMods: Record<string, number> = {};
   const applied: string[] = [];
   const unapplied: string[] = [];
 
@@ -141,7 +158,44 @@ export function choiceEffects(input: ChoiceInputs): ChoiceEffects {
     }
   }
 
-  return { skillProf, skillExpert, resist, applied, unapplied };
+  // --- the feat a background grants --------------------------------------------------------
+  const gf = input.grantedFeat;
+  if (gf) {
+    const e = gf.effects || {};
+    // Same four the ASI feat editor maps. Kept in step deliberately: a feat granted by a background
+    // and the same feat taken as an ASI pick must land on the sheet identically, or a player will
+    // find their Tough gives different hit points depending where it came from.
+    for (const k of ["hpPerLevel", "speed", "ac", "initiative"] as const) {
+      const v = e[k];
+      if (typeof v === "number" && v) featMods[k] = (featMods[k] || 0) + v;
+    }
+
+    const asi = gf.asi;
+    const amount = Number(asi?.amount ?? asi?.any ?? 0) || 0;
+    // A FIXED increase applies itself. "{con: 1}" needs nobody's input.
+    const fixed = asi
+      ? Object.entries(asi).find(([k, v]) => ABILITY_SHORT.includes(k) && typeof v === "number")
+      : undefined;
+
+    if (fixed) {
+      featMods[fixed[0]] = (featMods[fixed[0]] || 0) + Number(fixed[1]);
+      applied.push(`+${fixed[1]} ${fixed[0].toUpperCase()} from ${gf.name}`);
+    } else if (amount && input.grantedFeatAbility) {
+      featMods[input.grantedFeatAbility] = (featMods[input.grantedFeatAbility] || 0) + amount;
+      applied.push(`+${amount} ${input.grantedFeatAbility.toUpperCase()} from ${gf.name}`);
+    } else if (amount) {
+      // The feat raises something, but which is the player's call and they have not made it. Named
+      // rather than silently skipped: an unmade decision is not the same as a feature that does
+      // nothing, and only one of those the player can fix.
+      unapplied.push(`${gf.name}: choose which ability it raises`);
+    }
+
+    if (Object.keys(e).length) {
+      applied.push(`${gf.name} from your background`);
+    }
+  }
+
+  return { skillProf, skillExpert, resist, featMods, applied, unapplied };
 }
 
 /**
