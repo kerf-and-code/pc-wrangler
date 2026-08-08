@@ -895,6 +895,7 @@ function ForgeInner() {
               {tab === "spells" && (
                 <SpellsPanel
                   build={build} spells={srd.spells} sheet={sheet}
+                  structuredRec={srd.structuredByName[build.meta.className]}
                   onToggle={toggleSpell}
                   loadouts={(build as Build & { loadouts?: SpellLoadout[] }).loadouts || []}
                   onSaveLoadout={saveLoadout} onApplyLoadout={applyLoadout} onDeleteLoadout={deleteLoadout}
@@ -1333,9 +1334,10 @@ type SpellLoadout = { name: string; cantrips: string[]; known: string[] };
  *   and a player being told "you cannot prepare that" by a tool that is guessing is worse than no
  *   help at all. It COUNTS instead, and the count is the honest form of the same information.
  */
-function SpellsPanel({ build, spells, sheet, onToggle, loadouts, onSaveLoadout, onApplyLoadout, onDeleteLoadout }: {
+function SpellsPanel({ build, spells, sheet, structuredRec, onToggle, loadouts, onSaveLoadout, onApplyLoadout, onDeleteLoadout }: {
   build: Build;
   spells: SpellRecord[];
+  structuredRec?: unknown;
   sheet: NonNullable<ReturnType<typeof deriveSheet>> | null;
   onToggle: (name: string, cantrip: boolean) => void;
   loadouts: SpellLoadout[];
@@ -1374,6 +1376,24 @@ function SpellsPanel({ build, spells, sheet, onToggle, loadouts, onSaveLoadout, 
 
   const cantripCount = build.spells?.cantrips?.length || 0;
   const knownCount = build.spells?.known?.length || 0;
+
+  // The caps come from the class's own progression table, which carries "Cantrips" and "Prepared
+  // Spells" columns. Nothing is invented: a class whose table has no such column gets no cap, and
+  // the panel counts without limiting exactly as it did before.
+  const caps = useMemo(() => {
+    const row = classTable(structuredRec).find((r) => r.level === (build.level || 1));
+    const num = (v: string | undefined) => {
+      const n = parseInt(String(v ?? ""), 10);
+      return Number.isFinite(n) ? n : null;
+    };
+    return {
+      cantrips: num(row?.columns["Cantrips"] ?? row?.columns["Cantrips Known"]),
+      spells: num(row?.columns["Prepared Spells"] ?? row?.columns["Spells Known"]),
+    };
+  }, [structuredRec, build.level]);
+
+  const atCantripCap = caps.cantrips !== null && cantripCount >= caps.cantrips;
+  const atSpellCap = caps.spells !== null && knownCount >= caps.spells;
 
   return (
     <div style={stonePanel()}>
@@ -1459,7 +1479,14 @@ function SpellsPanel({ build, spells, sheet, onToggle, loadouts, onSaveLoadout, 
       </div>
 
       <div style={{ fontFamily: FORGE_FONTS.mono, fontSize: 11, color: STONE.inkFaint, marginBottom: 6 }}>
-        {filtered.length} shown &middot; you have {cantripCount} cantrip{cantripCount === 1 ? "" : "s"} and {knownCount} spell{knownCount === 1 ? "" : "s"}
+        {filtered.length} shown &middot;{" "}
+        <span style={{ color: atCantripCap ? C.good : undefined }}>
+          {cantripCount}{caps.cantrips !== null ? ` of ${caps.cantrips}` : ""} cantrip{cantripCount === 1 ? "" : "s"}
+        </span>{" "}
+        and{" "}
+        <span style={{ color: atSpellCap ? C.good : undefined }}>
+          {knownCount}{caps.spells !== null ? ` of ${caps.spells}` : ""} spell{knownCount === 1 ? "" : "s"}
+        </span>
       </div>
 
       <div style={{ maxHeight: 460, overflowY: "auto", display: "grid", gap: 4, paddingRight: 4 }}>
@@ -1468,14 +1495,21 @@ function SpellsPanel({ build, spells, sheet, onToggle, loadouts, onSaveLoadout, 
           const cantrip = lv === 0;
           const on = chosen.has(sp.name);
           const isOpen = open === sp.name;
+          // Full means "cannot add another", never "cannot remove this one" - a player at the cap
+          // must still be able to swap, and a picker that locks up entirely at the limit is the
+          // most annoying way to be right.
+          const blocked = !on && (cantrip ? atCantripCap : atSpellCap);
           return (
             <div key={`${sp.name}::${sp.level}`} style={{
               border: `1px solid ${on ? C.sun : STONE.hi}`, borderRadius: 4,
               background: on ? "rgba(200,162,75,0.09)" : "rgba(0,0,0,0.22)", padding: "8px 10px",
             }}>
               <div style={{ display: "flex", gap: 8, alignItems: "baseline", flexWrap: "wrap" }}>
-                <button onClick={() => onToggle(sp.name, cantrip)}
-                  style={{ background: "transparent", border: "none", cursor: "pointer", padding: 0,
+                <button onClick={() => { if (!blocked) onToggle(sp.name, cantrip); }}
+                  title={blocked ? `You already have ${cantrip ? caps.cantrips : caps.spells} at level ${build.level}. Remove one first.` : undefined}
+                  style={{ background: "transparent", border: "none",
+                    cursor: blocked ? "not-allowed" : "pointer", padding: 0,
+                    opacity: blocked ? 0.4 : 1,
                     color: on ? C.sun : STONE.ink, fontSize: 14, fontWeight: 600, textAlign: "left" }}>
                   {on ? "\u2713 " : ""}{sp.name}
                 </button>
@@ -2534,9 +2568,14 @@ function ClassProgressionPanel({ className, level, progression, epicRows, classR
   // this is the numbers beside it.
   const table = useMemo(() => classTable(structuredRec), [structuredRec]);
   const cols = useMemo(() => classTableColumns(table), [table]);
-  // Only up to the character's level. A level 3 Barbarian being shown rage counts for level 17 is
-  // not information, it is a wall to scroll past.
-  const shownRows = useMemo(() => table.filter((r) => r.level <= Math.max(1, level)), [table, level]);
+  // Just the current level by default. Even capped at the character's level, sixteen rows of a
+  // table whose only changing numbers are two columns is a wall to scroll past on the way to the
+  // features, and the row a player wants is almost always the one they are on.
+  const [fullTable, setFullTable] = useState(false);
+  const shownRows = useMemo(() => {
+    const upto = table.filter((r) => r.level <= Math.max(1, level));
+    return fullTable ? upto : upto.slice(-1);
+  }, [table, level, fullTable]);
 
   const meta = [
     classRec?.hit_die ? `Hit die d${String(classRec.hit_die).replace(/^d/i, "")}` : null,
@@ -2545,7 +2584,14 @@ function ClassProgressionPanel({ className, level, progression, epicRows, classR
   ].filter(Boolean).join("  ·  ");
 
   const tableBlock = cols.length > 0 && shownRows.length > 0 ? (
-    <div style={{ marginBottom: 16, overflowX: "auto" }}>
+    <div style={{ marginBottom: 16 }}>
+      {table.length > 1 && (
+        <button className="forge-btn" onClick={() => setFullTable((v) => !v)}
+          style={{ ...stoneButton("stone"), fontSize: 12, padding: "5px 11px", marginBottom: 6 }}>
+          {fullTable ? "Just this level" : `Show all ${Math.min(table.length, Math.max(1, level))} levels`}
+        </button>
+      )}
+      <div style={{ overflowX: "auto" }}>
       <table style={{ borderCollapse: "collapse", fontSize: 12.5, minWidth: "100%" }}>
         <thead>
           <tr>
@@ -2571,6 +2617,7 @@ function ClassProgressionPanel({ className, level, progression, epicRows, classR
           })}
         </tbody>
       </table>
+      </div>
     </div>
   ) : null;
 
@@ -2848,17 +2895,29 @@ function FeatEditor({ choice, featList, onChoose }: {
 
   return (
     <div>
-      <div style={{ position: "relative" }}>
-        <select value={choice.name || ""} style={stoneField()} onChange={(e) => pickFeat(e.target.value)}>
-          <option value="" style={OPTION_STYLE}>Choose a feat</option>
-          {featList.map((f) => (
-            <option key={f.name} value={f.name} style={OPTION_STYLE}>
-              {f.name}{f.category && f.category !== "Feat" ? ` · ${f.category}` : ""}
-            </option>
-          ))}
-        </select>
-        <span style={{ position: "absolute", right: 14, top: 14, fontSize: 9, color: SAX.brass, pointerEvents: "none" }}>▼</span>
-      </div>
+      {/* 223 feats in a native dropdown is a scroll with no way to narrow it, and the question a
+          player is actually asking - "which of these raise my Dexterity" - cannot be expressed in
+          one at all. Same picker as the background field. */}
+      <PickerField label="" value={choice.name || ""} onChange={pickFeat}
+        placeholder="Search feats"
+        rows={featList.map((f) => ({
+          name: f.name,
+          hint: [
+            f.category && f.category !== "Feat" ? f.category : "",
+            featAbilities((f as { description?: string }).description).map((a) => a.slice(0, 3).toUpperCase()).join("/"),
+          ].filter(Boolean).join(" \u00b7 "),
+          category: f.category,
+          abilities: featAbilities((f as { description?: string }).description),
+        }))}
+        filters={[
+          { label: "Raises", values: [...ABILITY_NAMES],
+            test: (r, v) => (r.abilities as string[] | undefined)?.includes(v) ?? false },
+          {
+            label: "Category",
+            values: Array.from(new Set(featList.map((f) => f.category).filter(Boolean) as string[])).sort(),
+            test: (r, v) => r.category === v,
+          },
+        ]} />
 
       {/* Ability selector for feats whose increase is player's choice ({any} or {choice:[...]}). */}
       {picked && asiAbilities && asiAmount ? (
