@@ -38,6 +38,31 @@ import subclasses from "./subclasses.json";
 // unknown one; reading both means each is used for what it is good at.
 import classesStructured2024 from "./classes-2024-structured.json";
 import classesStructured2014 from "./classes-2014-structured.json";
+import equipmentStructured2024 from "./equipment-2024-structured.json";
+
+/**
+ * The 2024 equipment catalog is the UNION of two files, because neither contains the other:
+ * equipment-2024.json holds 149 items, the Open5e fetch holds 203, and 42 of the originals are
+ * absent from the fetch while 96 of the fetched ones are absent from the original. Taking either
+ * alone loses real gear, and background grants were missing Waterskin, Mirror and Traveler's
+ * Clothes purely because they were in the file nobody was reading.
+ *
+ * THE EXISTING ENTRY WINS ON A NAME COLLISION. The derivation engine already reads the original
+ * file's field shapes - armour class, weapon category, properties - and a fetched record that
+ * spells one of them differently would break a calculation that works today. The fetch fills gaps;
+ * it does not get to redefine an item the sheet is already deriving from.
+ */
+function mergeEquipment(existing: Named[], fetched: Named[]): Named[] {
+  const norm = (n: string) => n.toLowerCase().replace(/[’']/g, "'").replace(/\s+/g, " ").trim();
+  const seen = new Set(existing.map((r) => norm(r.name)));
+  const out = [...existing];
+  for (const r of fetched) {
+    if (!r?.name || seen.has(norm(r.name))) continue;
+    seen.add(norm(r.name));
+    out.push(r);
+  }
+  return out.sort((a, b) => String(a.name).localeCompare(String(b.name)));
+}
 
 export type Ruleset = "2024" | "2014" | "both";
 
@@ -57,7 +82,13 @@ type Subclass = { subclass: string; class: string; partnered: boolean; partner: 
 
 const FLAT: Record<FlatDomain, { "2024": Named[]; "2014": Named[] }> = {
   spells: { "2024": spells2024 as unknown as Named[], "2014": spells2014 as unknown as Named[] },
-  equipment: { "2024": equipment2024 as unknown as Named[], "2014": equipment2014 as unknown as Named[] },
+  equipment: {
+    "2024": mergeEquipment(
+      equipment2024 as unknown as Named[],
+      equipmentStructured2024 as unknown as Named[],
+    ),
+    "2014": equipment2014 as unknown as Named[],
+  },
   monsters: { "2024": monsters2024 as unknown as Named[], "2014": monsters2014 as unknown as Named[] },
   "magic-items": { "2024": magicItems2024 as unknown as Named[], "2014": magicItems2014 as unknown as Named[] },
   feats: { "2024": feats2024 as unknown as Named[], "2014": feats2014 as unknown as Named[] },

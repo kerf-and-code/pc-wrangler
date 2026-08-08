@@ -475,6 +475,39 @@ def map_o5e_species(sp: dict) -> dict:
     }
 
 
+def map_o5e_item(it: dict) -> dict:
+    """
+    An equipment entry, flattened to what the Forge's gear panel and derivation actually read.
+    Shapes are confirmed by --open5e-inspect before this runs; anything unexpected lands as a
+    string rather than being dropped, because a mystery value in a field is recoverable and a
+    missing item is not.
+    """
+    def ref(v):
+        if isinstance(v, dict):
+            return v.get("name") or v.get("key") or ""
+        return "" if v is None else str(v)
+
+    cat = ref(it.get("category")) or ref(it.get("item_category"))
+    return {
+        "name": it.get("name"),
+        "key": it.get("key"),
+        "edition": "2024",
+        "source": ((it.get("document") or {}).get("key")),
+        "category": cat,
+        "cost": ref(it.get("cost")),
+        "weight": ref(it.get("weight")),
+        "desc": it.get("desc") or "",
+        # Weapon and armour fields, present only on those. Named to match equipment-2024.json so a
+        # merged catalog reads the same whichever file an item came from.
+        "weapon_category": ref(it.get("weapon_category")) or None,
+        "weapon_range": ref(it.get("range_type")) or ref(it.get("weapon_range")) or None,
+        "damage": ref(it.get("damage_dice")) or None,
+        "mastery": ref(it.get("mastery")) or None,
+        "ac": it.get("ac_base") if it.get("ac_base") is not None else None,
+        "properties": [ref(p) for p in (it.get("properties") or [])] or None,
+    }
+
+
 def open5e_write(outdir: str) -> int:
     def gs(r):
         doc = r.get("document") or {}
@@ -484,21 +517,27 @@ def open5e_write(outdir: str) -> int:
     classes_all = o5e_all("/v2/classes/")
     print("Fetching Open5e species ...")
     species_all = o5e_all("/v2/species/")
+    print("Fetching Open5e items ...")
+    items_all = o5e_all("/v2/items/")
 
     c24 = [r for r in classes_all if gs(r) == "5e-2024"]
     base = [r for r in c24 if not r.get("subclass_of")]
     subs = [r for r in c24 if r.get("subclass_of")]
     s24 = [r for r in species_all if gs(r) == "5e-2024"]
+    i24 = [r for r in items_all if gs(r) == "5e-2024"]
 
     classes = [map_o5e_class(c, c24) for c in base]
     subclasses = [map_o5e_class(c, c24) for c in subs]
     species = [map_o5e_species(r) for r in s24]
+    items = [map_o5e_item(r) for r in i24 if r.get("name")]
+    items.sort(key=lambda r: (r.get("category") or "", r.get("name") or ""))
 
     os.makedirs(outdir, exist_ok=True)
     targets = [
         (os.path.join(outdir, "classes-2024-structured.json"), classes),
         (os.path.join(outdir, "subclasses-2024-structured.json"), subclasses),
         (os.path.join(outdir, "species-2024-structured.json"), species),
+        (os.path.join(outdir, "equipment-2024-structured.json"), items),
     ]
     for path, payload in targets:
         with open(path, "w", encoding="utf-8") as fh:
@@ -511,6 +550,11 @@ def open5e_write(outdir: str) -> int:
     print(f"\n  classes with a progression table : {withtable} of {len(classes)}")
     print(f"  feature entries whose choice is PROSE : {prose}")
     print("    ^ these still need authoring; the 2024 SRD publishes no option lists")
+    have = {(r.get("name") or "").lower() for r in items}
+    for probe in ("traveler's clothes", "waterskin", "mirror", "healer's kit", "arrows"):
+        print(f"    {probe:<22} {'present' if probe in have else 'STILL ABSENT'}")
+    print("    ^ the items that were missing from equipment-2024.json and drove the 79% match rate")
+    print()
     print("\n  Backgrounds and feats deliberately NOT fetched: srd-2024 has 4 and 17,")
     print("  against 123 and 223 already in lib/srd. Pulling them would be a downgrade.")
     print("\n  Nothing existing was overwritten.")
