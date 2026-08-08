@@ -40,6 +40,7 @@ import { classTable, classTableColumns } from "@/lib/class-table";
 import { choiceEffects, applyToBuild, type ChoiceEffects } from "@/lib/apply-choices";
 import { parseCoreTraits } from "@/lib/core-traits";
 import { parseGranted, matchGranted, resolveCrossRefs } from "@/lib/granted-equipment";
+import { ABILITY_NAMES, backgroundAbilities, featAbilities, normalizeRarity, RARITY_ORDER, matches as textMatches } from "@/lib/picker-filters";
 import { buildRulesContext } from "@/lib/srd/rules-context";
 import {
   loadCatalog, partnerList, speciesOptions, classOptions, variantOptions, subclassOptions,
@@ -852,11 +853,12 @@ function ForgeInner() {
 
               {tab === "identity" && (
               <IdentityPanel
+                backgroundRows={srd.backgrounds}
                 build={build} speciesVariant={speciesVariant}
                 edition={edition} onEdition={setEdition}
                 partners={partners} enabledPartners={enabledPartners} onTogglePartner={togglePartner}
                 speciesOpts={speciesOpts} classOpts={classOpts} variantOpts={variantOpts}
-                subclassOpts={subclassOpts} backgroundOpts={srd.backgrounds.map((b) => b.name)}
+                subclassOpts={subclassOpts}
                 speciesDesc={speciesDesc} backgroundDesc={backgroundDesc} subclassRoleTags={subclassRoleTags}
                 catalogReady={!!catalog} epic={epic}
                 onSpecies={setSpecies} onVariant={setVariant} onBackground={setBackground}
@@ -878,7 +880,7 @@ function ForgeInner() {
 
               {tab === "background" && (
                 <BackgroundPanel
-                  build={build} backgroundOpts={srd.backgrounds.map((b) => b.name)}
+                  build={build} backgroundRows={srd.backgrounds}
                   bgRec={srd.bgByName[build.meta.background]} desc={backgroundDesc}
                   onBackground={setBackground} onAsi={setBgAsi}
                 />
@@ -1170,9 +1172,9 @@ function FinishPanel({ build, name, sheet, onTab, effects }: {
  *   player cannot see, and rejecting their input afterwards. Picking the shape first and then only
  *   asking which ability gets the +2 makes an illegal assignment unreachable rather than caught.
  */
-function BackgroundPanel({ build, backgroundOpts, bgRec, desc, onBackground, onAsi }: {
+function BackgroundPanel({ build, backgroundRows, bgRec, desc, onBackground, onAsi }: {
   build: Build;
-  backgroundOpts: string[];
+  backgroundRows: BackgroundRecord[];
   bgRec: { ability_scores?: string; feat?: string; skill_proficiencies?: string;
            tool_proficiency?: string; equipment?: string } | undefined;
   desc: Described | null;
@@ -1201,8 +1203,27 @@ function BackgroundPanel({ build, backgroundOpts, bgRec, desc, onBackground, onA
     <div style={stonePanel()}>
       <PanelTitle hint="Where this character came from, and what it gave them.">Background</PanelTitle>
 
-      <Field label="Background" value={build.meta.background} onChange={onBackground}
-        options={backgroundOpts} placeholder="Choose a background" />
+      <PickerField label="Background" value={build.meta.background} onChange={onBackground}
+        placeholder="Search 123 backgrounds"
+        rows={backgroundRows.map((b) => ({
+          name: b.name,
+          // The two things a player is choosing BETWEEN, on the row itself, so the filters are a
+          // way to narrow rather than the only way to see what a background offers.
+          hint: [b.feat, b.ability_scores].filter(Boolean).join(" \u00b7 "),
+          feat: b.feat, abilities: backgroundAbilities(b.ability_scores),
+        }))}
+        filters={[
+          {
+            label: "Origin feat",
+            values: Array.from(new Set(backgroundRows.map((b) => b.feat).filter(Boolean) as string[])).sort(),
+            test: (r, v) => r.feat === v,
+          },
+          {
+            label: "Ability",
+            values: [...ABILITY_NAMES],
+            test: (r, v) => (r.abilities as string[] | undefined)?.includes(v) ?? false,
+          },
+        ]} />
 
       {desc && <DescBlock desc={desc} />}
 
@@ -2147,6 +2168,134 @@ function DescBlock({ title, desc, compact }: { title?: string; desc: Described; 
 }
 
 // A carved dropdown (stoneField + a brass chevron).
+
+export type PickerFilter = {
+  label: string;
+  /** The distinct values, in the order they should appear. Computed by the caller. */
+  values: string[];
+  /** Which of a row's values this filter tests against. */
+  test: (row: PickerRow, value: string) => boolean;
+};
+
+export type PickerRow = { name: string; hint?: string; [k: string]: unknown };
+
+/**
+ * A searchable, filterable replacement for a plain dropdown.
+ *
+ * WHY NOT JUST A LONGER <select>
+ *   123 backgrounds, 223 feats, 249 magic items. A native dropdown of 223 names is a scroll with no
+ *   way to narrow it, and the thing a player is doing - "show me the feats that raise Dexterity" -
+ *   is not expressible in one at all.
+ *
+ * WHAT IT DELIBERATELY KEEPS
+ *   The current value is ALWAYS visible and always clearable, even when a filter would exclude it.
+ *   A picker that hides what you already chose because you then typed in the search box makes it
+ *   look like the choice was lost, and the recovery - clear the search - is not obvious when the
+ *   thing you want to check has vanished.
+ *
+ * WHAT IT DOES NOT DO
+ *   It does not virtualise. The largest list here is 335 spells and these render as plain buttons;
+ *   the monster picker needed windowing at 3,210 and this does not.
+ */
+function PickerField({
+  label, value, onChange, rows, filters, placeholder, maxHeight = 300,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  rows: PickerRow[];
+  filters?: PickerFilter[];
+  placeholder?: string;
+  maxHeight?: number;
+}) {
+  const [q, setQ] = useState("");
+  const [active, setActive] = useState<Record<string, string>>({});
+  const [open, setOpen] = useState(false);
+
+  const shown = useMemo(() => {
+    return rows.filter((r) => {
+      if (!textMatches(`${r.name} ${r.hint || ""}`, q)) return false;
+      for (const f of filters || []) {
+        const v = active[f.label];
+        if (v && !f.test(r, v)) return false;
+      }
+      return true;
+    });
+  }, [rows, q, active, filters]);
+
+  const anyFilter = Object.values(active).some(Boolean) || q.trim().length > 0;
+
+  return (
+    <div style={{ marginBottom: 16 }}>
+      <label style={forgeLabel}>{label}</label>
+
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center", marginBottom: 6 }}>
+        <input value={q} onChange={(e) => { setQ(e.target.value); setOpen(true); }}
+          onFocus={() => setOpen(true)}
+          placeholder={value || placeholder || `Search ${label.toLowerCase()}`}
+          style={{ ...stoneField(), flex: "1 1 200px", width: "auto", fontSize: 13.5, padding: "9px 11px" }} />
+        {(filters || []).map((f) => (
+          <select key={f.label} value={active[f.label] || ""}
+            onChange={(e) => { setActive((a) => ({ ...a, [f.label]: e.target.value })); setOpen(true); }}
+            style={{ ...stoneField(), width: "auto", minWidth: 130, fontSize: 13, padding: "9px 10px" }}>
+            <option value="" style={OPTION_STYLE}>{f.label}</option>
+            {f.values.map((v) => <option key={v} value={v} style={OPTION_STYLE}>{v}</option>)}
+          </select>
+        ))}
+        {anyFilter && (
+          <button className="forge-btn" onClick={() => { setQ(""); setActive({}); }}
+            style={{ ...stoneButton("stone"), fontSize: 12.5, padding: "8px 12px" }}>Clear</button>
+        )}
+      </div>
+
+      {/* The current pick, outside the filtered list so narrowing can never hide it. */}
+      {value && (
+        <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 6 }}>
+          <span style={{ ...stoneChip(), fontSize: 13, background: "rgba(200,162,75,0.16)", color: C.sun }}>
+            {value}
+          </span>
+          <button onClick={() => onChange("")}
+            style={{ background: "transparent", border: "none", cursor: "pointer",
+              color: STONE.inkFaint, fontSize: 12, fontFamily: FORGE_FONTS.mono }}>
+            clear
+          </button>
+        </div>
+      )}
+
+      {(open || anyFilter) && (
+        <>
+          <div style={{ fontFamily: FORGE_FONTS.mono, fontSize: 11, color: STONE.inkFaint, marginBottom: 4 }}>
+            {shown.length} of {rows.length}
+          </div>
+          <div style={{ maxHeight, overflowY: "auto", display: "grid", gap: 3, paddingRight: 4 }}>
+            {shown.map((r) => (
+              <button key={r.name} className="forge-btn"
+                onClick={() => { onChange(r.name); setQ(""); setOpen(false); }}
+                style={{ ...stoneButton(r.name === value ? "primary" : "stone"),
+                  textAlign: "left", fontSize: 13, padding: "8px 11px",
+                  display: "flex", justifyContent: "space-between", gap: 10 }}>
+                <span>{r.name}</span>
+                {r.hint && (
+                  <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 11, color: STONE.inkFaint,
+                    flexShrink: 0, maxWidth: "50%", overflow: "hidden", textOverflow: "ellipsis",
+                    whiteSpace: "nowrap" }}>
+                    {r.hint}
+                  </span>
+                )}
+              </button>
+            ))}
+            {shown.length === 0 && (
+              <p style={{ fontSize: 12.5, color: STONE.inkFaint, margin: "6px 0" }}>
+                Nothing matches. Clear a filter or widen the search.
+              </p>
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 function Field({ label, value, onChange, options, placeholder, disabled }: {
   label: string; value: string; onChange: (v: string) => void;
   options: string[]; placeholder?: string; disabled?: boolean;
@@ -2169,7 +2318,8 @@ function IdentityPanel(props: {
   edition: Edition; onEdition: (e: Edition) => void;
   partners: string[]; enabledPartners: Set<string>; onTogglePartner: (p: string) => void;
   speciesOpts: { name: string }[]; classOpts: { name: string }[];
-  variantOpts: { name: string; variant_kind: string }[]; subclassOpts: string[]; backgroundOpts: string[];
+  variantOpts: { name: string; variant_kind: string }[]; subclassOpts: string[];
+  backgroundRows: BackgroundRecord[];
   speciesDesc: Described | null; backgroundDesc: Described | null; subclassRoleTags: string[];
   catalogReady: boolean;
   epic: { abilityCap: number; asiCount: number; epicFeatCount: number };
@@ -2178,7 +2328,8 @@ function IdentityPanel(props: {
 }) {
   const {
     build, speciesVariant, edition, onEdition, partners, enabledPartners, onTogglePartner,
-    speciesOpts, classOpts, variantOpts, subclassOpts, backgroundOpts, speciesDesc, backgroundDesc,
+    speciesOpts, classOpts, variantOpts, subclassOpts, backgroundRows,
+    speciesDesc, backgroundDesc,
     subclassRoleTags, catalogReady, epic,
     onSpecies, onVariant, onBackground, onClassName, onSubclass, onLevel,
   } = props;
@@ -2243,9 +2394,26 @@ function IdentityPanel(props: {
           onChange={onSubclass} options={subclassOpts}
           placeholder={build.meta.className ? "Choose subclass" : "Choose a class first"}
           disabled={!build.meta.className} />
-        <Field label="Background" value={build.meta.background}
-          onChange={onBackground} options={backgroundOpts} />
       </div>
+
+      {/* Full width, because it carries a search box and two filters and would be cramped in the
+          three-up grid the other pickers share. */}
+      <PickerField label="Background" value={build.meta.background} onChange={onBackground}
+        placeholder="Search backgrounds"
+        rows={backgroundRows.map((b) => ({
+          name: b.name,
+          hint: [b.feat, b.ability_scores].filter(Boolean).join(" \u00b7 "),
+          feat: b.feat, abilities: backgroundAbilities(b.ability_scores),
+        }))}
+        filters={[
+          {
+            label: "Origin feat",
+            values: Array.from(new Set(backgroundRows.map((b) => b.feat).filter(Boolean) as string[])).sort(),
+            test: (r, v) => r.feat === v,
+          },
+          { label: "Ability", values: [...ABILITY_NAMES],
+            test: (r, v) => (r.abilities as string[] | undefined)?.includes(v) ?? false },
+        ]} />
 
       {/* Descriptions of the current species / background, so the pickers explain themselves. */}
       {(speciesDesc || backgroundDesc) && (
