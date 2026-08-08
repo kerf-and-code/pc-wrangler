@@ -92,6 +92,29 @@ export function slotsFor(
 }
 
 /**
+ * Resources a SPECIES grants, which no class table can describe.
+ *
+ * Goliath's Giant Ancestry gives uses equal to proficiency bonus - a number that lives on the
+ * derived sheet, not in any column - so the max is computed rather than read. Authored for the same
+ * reason the subclass spell table is: the species data carries prose, and a species absent from
+ * here simply grants no tracked resource.
+ */
+export const SPECIES_RESOURCES: Record<string, { label: string; from: "proficiency"; shortRest: "all" | "one" | "none" }> = {
+  "Giant Ancestry": { label: "Giant Ancestry", from: "proficiency", shortRest: "none" },
+};
+
+export function speciesResources(traitNames: string[], proficiencyBonus: number): Resource[] {
+  const out: Resource[] = [];
+  for (const name of traitNames) {
+    const def = SPECIES_RESOURCES[name];
+    if (!def) continue;
+    const max = def.from === "proficiency" ? proficiencyBonus : 0;
+    if (max > 0) out.push({ key: name, label: def.label, max, shortRest: def.shortRest });
+  }
+  return out;
+}
+
+/**
  * How many of a resource are left.
  *
  * Spent counts are stored rather than remaining, because the MAXIMUM moves: a barbarian levelling

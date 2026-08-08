@@ -37,7 +37,8 @@ import { applyAdvantage } from "@/lib/dice";
 import { traitOptions, traitAsksAChoice, lineageSpells } from "@/lib/species-choices";
 import { choicesFor, resolveChoice, choiceKey, costedPicks, actionsFor, type ClassChoice } from "@/lib/class-choices";
 import { classTable, classTableColumns } from "@/lib/class-table";
-import { resourcesFor, slotsFor, remaining, afterShortRest, type Resource } from "@/lib/resources";
+import { resourcesFor, slotsFor, remaining, afterShortRest, speciesResources, type Resource } from "@/lib/resources";
+import { subclassSpellsFor } from "@/lib/subclass-spells";
 import { choiceEffects, applyToBuild, type ChoiceEffects } from "@/lib/apply-choices";
 import { parseCoreTraits } from "@/lib/core-traits";
 import {
@@ -509,6 +510,12 @@ function ForgeInner() {
         // pending; they have nothing, and listing it as theirs would be wrong rather than early.
         if (g.level <= (build.level || 1)) out.push({ spell: g.spell, from: `${chosen} ${t.name}`, level: g.level });
       }
+    }
+    // A subclass that grants spells does so on exactly the same terms as a lineage - always
+    // prepared, free of the limit - so they land in one list rather than as two features the
+    // player has to learn are the same thing.
+    for (const g of subclassSpellsFor(build.meta.subclass || "", build.level || 1)) {
+      out.push({ spell: g.spell, from: build.meta.subclass || "your subclass", level: g.level });
     }
     return out;
   }, [build, speciesVariant, srd.speciesByName, srd.variantByName]);
@@ -1061,6 +1068,10 @@ function ForgeInner() {
                     (build as Build & { classChoices?: Record<string, string[]> }).classChoices || {},
                     ),
                   ]}
+                  extraPools={speciesResources(
+                    traitList(srd.speciesByName[build.meta.species]?.traits).map((t) => t.name),
+                    sheet?.proficiencyBonus || 0,
+                  )}
                   spent={(build as Build & { spent?: Record<string, number> }).spent || {}}
                   onSpend={setSpent} onRest={clearSpent} onSpentMap={setSpentMap}
                 />
@@ -2310,10 +2321,11 @@ function GrantedEquipmentPanel({ bgRec, coreTraits, catalog, owned, onAdd }: {
  *   asking: a tracker that silently refilled at the wrong moment is a tracker nobody can trust. The
  *   button is one tap and it is the player's call.
  */
-function ResourcePanel({ structuredRec, level, costed, spent, onSpend, onRest, onSpentMap }: {
+function ResourcePanel({ structuredRec, level, costed, extraPools, spent, onSpend, onRest, onSpentMap }: {
   structuredRec?: unknown;
   level: number;
   costed: { name: string; summary: string; resource: string; amount: number }[];
+  extraPools: Resource[];
   spent: Record<string, number>;
   onSpend: (key: string, n: number) => void;
   onRest: () => void;
@@ -2323,7 +2335,9 @@ function ResourcePanel({ structuredRec, level, costed, spent, onSpend, onRest, o
     () => classTable(structuredRec).find((r) => r.level === level),
     [structuredRec, level],
   );
-  const pools = useMemo(() => resourcesFor(row), [row]);
+  // Species-granted pools sit alongside the class ones. Goliath's Giant Ancestry scales with
+  // proficiency bonus rather than appearing in any column, so it can only arrive this way.
+  const pools = useMemo(() => [...resourcesFor(row), ...extraPools], [row, extraPools]);
   const slots = useMemo(() => slotsFor(row), [row]);
 
   if (pools.length === 0 && slots.length === 0) return null;
