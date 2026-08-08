@@ -24,6 +24,14 @@ export type ChoiceKind = "skill" | "weapon" | "tool" | "spell" | "feat" | "optio
 
 export type ClassChoice = {
   className: string;
+  /**
+   * Which ruleset this belongs to. Absent means BOTH, which is right for the things that did not
+   * change - Expertise doubles a proficiency in either edition. Metamagic is the case that forced
+   * this field: 2014 has eight options where 2024 has ten, Heightened costs 3 rather than 2, and
+   * Twinned's cost is not a fixed number at all. Offering one edition's list to the other would be
+   * confidently wrong at the price as well as the contents.
+   */
+  edition?: "2014" | "2024";
   /** Undefined means it comes from the class itself rather than a subclass. */
   subclass?: string;
   level: number;
@@ -187,7 +195,7 @@ export const CLASS_CHOICES: ClassChoice[] = [
   // once would not know which two were the level 2 pair.
   ...[2, 10, 17].map((lv) => ({
     className: "Sorcerer", level: lv, feature: `Metamagic (level ${lv})`, choose: 2,
-    kind: "option" as const,
+    kind: "option" as const, edition: "2024" as const,
     filter: { named: [
       { name: "Careful Spell", summary: "1 point: chosen creatures auto-succeed and take no damage", cost: { resource: "Sorcery Points", amount: 1 } },
       { name: "Distant Spell", summary: "1 point: double the range, or Touch becomes 30 feet", cost: { resource: "Sorcery Points", amount: 1 } },
@@ -213,6 +221,38 @@ export const CLASS_CHOICES: ClassChoice[] = [
       filter: { named: INVOCATIONS_2024 },
       note: lv === 1 ? "You can swap one invocation whenever you gain a Warlock level." : undefined,
     })),
+
+  // 2014 metamagic. A different list at different prices, and fewer picks: two at level 3, then one
+  // each at 10 and 17, for four rather than six.
+  ...([[3, 2], [10, 1], [17, 1]] as [number, number][]).map(([lv, n]) => ({
+    className: "Sorcerer", level: lv, feature: `Metamagic (level ${lv})`, choose: n,
+    kind: "option" as const, edition: "2014" as const,
+    filter: { named: [
+      { name: "Careful Spell", summary: "1 point: chosen creatures automatically succeed on the save",
+        cost: { resource: "Sorcery Points", amount: 1 } },
+      { name: "Distant Spell", summary: "1 point: double the range, or Touch becomes 30 feet",
+        cost: { resource: "Sorcery Points", amount: 1 } },
+      { name: "Empowered Spell", summary: "1 point: reroll damage dice up to your Charisma modifier",
+        cost: { resource: "Sorcery Points", amount: 1 } },
+      { name: "Extended Spell", summary: "1 point: double the duration, up to 24 hours",
+        cost: { resource: "Sorcery Points", amount: 1 } },
+      { name: "Heightened Spell", summary: "3 points: one target has disadvantage on its first save",
+        cost: { resource: "Sorcery Points", amount: 3 } },
+      { name: "Quickened Spell", summary: "2 points: cast an action spell as a bonus action",
+        cost: { resource: "Sorcery Points", amount: 2 } },
+      // From the expanded rules rather than the core book, and it costs TWO here against one in
+      // 2024. Same name, different price: the edition split is doing real work.
+      { name: "Seeking Spell", summary: "2 points: reroll a missed spell attack",
+        cost: { resource: "Sorcery Points", amount: 2 } },
+      { name: "Subtle Spell", summary: "1 point: cast with no verbal or somatic components",
+        cost: { resource: "Sorcery Points", amount: 1 } },
+      // No cost field on purpose. Twinned costs the SPELL'S LEVEL, which the tracker cannot know
+      // from here - a fixed number would be wrong for every casting but one, and a spend button
+      // that takes the wrong amount is worse than tapping the pips yourself.
+      { name: "Twinned Spell", summary: "points equal to the spell's level (1 for a cantrip): target a second creature" },
+    ] },
+    note: "One Metamagic per spell, unless the option says otherwise.",
+  })),
 
   // --- the originals -------------------------------------------------------------------------
   {
@@ -346,10 +386,15 @@ export function resolveChoice(choice: ClassChoice, data: ResolveInput): { value:
 }
 
 /** The choices this character faces at or below its level. */
-export function choicesFor(className: string, subclass: string, level: number): ClassChoice[] {
+export function choicesFor(
+  className: string, subclass: string, level: number, edition?: string,
+): ClassChoice[] {
   return CLASS_CHOICES
     .filter((c) => c.className === className && c.level <= level)
     .filter((c) => !c.subclass || c.subclass === subclass)
+    // No edition on the entry means it applies to both. No edition passed in means show everything,
+    // which keeps existing callers working rather than silently emptying their lists.
+    .filter((c) => !c.edition || !edition || c.edition === edition)
     .sort((a, b) => a.level - b.level || a.feature.localeCompare(b.feature));
 }
 
@@ -416,10 +461,11 @@ export function actionsFor(className: string, subclass: string, level: number): 
  */
 export function costedPicks(
   className: string, subclass: string, level: number, picks: Record<string, string[]>,
+  edition?: string,
 ): { name: string; summary: string; resource: string; amount: number }[] {
   const seen = new Set<string>();
   const out: { name: string; summary: string; resource: string; amount: number }[] = [];
-  for (const c of choicesFor(className, subclass, level)) {
+  for (const c of choicesFor(className, subclass, level, edition)) {
     const chosen = picks[choiceKey(c)] || [];
     for (const o of c.filter?.named || []) {
       if (!o.cost || !chosen.includes(o.name) || seen.has(o.name)) continue;

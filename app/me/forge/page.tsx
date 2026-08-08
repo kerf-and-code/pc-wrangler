@@ -527,7 +527,7 @@ function ForgeInner() {
     for (const t of traits) options[t.name] = traitOptions(t.desc);
 
     const cls = build.meta.className || "";
-    const expertiseKeys = choicesFor(cls, build.meta.subclass || "", build.level || 1)
+    const expertiseKeys = choicesFor(cls, build.meta.subclass || "", build.level || 1, edition)
       .filter((c) => c.feature.toLowerCase().includes("expertise"))
       .map(choiceKey);
 
@@ -1005,6 +1005,7 @@ function ForgeInner() {
                   build={build} sheet={sheet}
                   weapons={srd.equipment} spells={srd.spells} feats={srd.featList}
                   structuredRec={srd.structuredByName[build.meta.className]}
+                  edition={edition}
                   picks={(build as Build & { classChoices?: Record<string, string[]> }).classChoices || {}}
                   onPick={setClassChoice}
                 />
@@ -1066,6 +1067,7 @@ function ForgeInner() {
                     ...costedPicks(
                     build.meta.className || "", build.meta.subclass || "", build.level || 1,
                     (build as Build & { classChoices?: Record<string, string[]> }).classChoices || {},
+                    edition,
                     ),
                   ]}
                   extraPools={speciesResources(
@@ -2013,7 +2015,7 @@ function SpeciesPanel({
  *   says "2 of 2 chosen" rather than greying the rest out silently. A player who cannot see WHY an
  *   option stopped responding assumes the tool is broken; a count explains itself.
  */
-function ClassChoicesPanel({ build, sheet, weapons, spells, feats, picks, onPick, structuredRec }: {
+function ClassChoicesPanel({ build, sheet, weapons, spells, feats, picks, onPick, structuredRec, edition }: {
   build: Build;
   sheet: NonNullable<ReturnType<typeof deriveSheet>> | null;
   weapons: ItemRecord[];
@@ -2022,6 +2024,8 @@ function ClassChoicesPanel({ build, sheet, weapons, spells, feats, picks, onPick
   picks: Record<string, string[]>;
   onPick: (key: string, values: string[]) => void;
   structuredRec?: unknown;
+  /** Which ruleset's vocabulary to offer. 2014 and 2024 metamagic are different lists. */
+  edition: string;
 }) {
   // The level 1 skill grant, read out of the class's own core traits table rather than authored.
   // This is what every class was missing: without it nobody had their own proficiencies, so
@@ -2042,9 +2046,9 @@ function ClassChoicesPanel({ build, sheet, weapons, spells, feats, picks, onPick
   const list = useMemo(
     () => [
       ...fromCore,
-      ...choicesFor(build.meta.className || "", build.meta.subclass || "", build.level || 1),
+      ...choicesFor(build.meta.className || "", build.meta.subclass || "", build.level || 1, edition),
     ],
-    [fromCore, build.meta.className, build.meta.subclass, build.level],
+    [fromCore, build.meta.className, build.meta.subclass, build.level, edition],
   );
 
   const data = useMemo(() => ({
