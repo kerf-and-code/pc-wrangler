@@ -578,8 +578,14 @@ function ForgeInner() {
   // --- gear catalog (mundane + magic) with type + search ---
   const gearIndex = useMemo(() => {
     const rows: GearOption[] = [];
+    // Mundane gear has no rarity in the data and is not "Common" by omission - Common is a real
+    // magic-item rarity with two entries. Left undefined so the filter can tell "not magical" from
+    // "magical and common".
     srd.equipment.forEach((e) => rows.push({ name: e.name, type: e.category || "Gear", magic: false }));
-    srd.magic.forEach((m) => rows.push({ name: m.name, type: m.category || "Wondrous", magic: true }));
+    srd.magic.forEach((m) => rows.push({
+      name: m.name, type: m.category || "Wondrous", magic: true,
+      rarity: normalizeRarity((m as { rarity?: string }).rarity),
+    }));
     const seen = new Set<string>();
     return rows.filter((r) => (seen.has(r.name) ? false : (seen.add(r.name), true)))
       .sort((a, b) => a.name.localeCompare(b.name));
@@ -1339,6 +1345,7 @@ function SpellsPanel({ build, spells, sheet, onToggle, loadouts, onSaveLoadout, 
 }) {
   const [q, setQ] = useState("");
   const [lvl, setLvl] = useState<string>("");
+  const [school, setSchool] = useState<string>("");
   const [onlyMine, setOnlyMine] = useState(true);
   const [open, setOpen] = useState<string | null>(null);
   const [newLoadout, setNewLoadout] = useState("");
@@ -1352,10 +1359,18 @@ function SpellsPanel({ build, spells, sheet, onToggle, loadouts, onSaveLoadout, 
     return spells.filter((sp) => {
       if (onlyMine && cls && !spellClasses(sp).some((c) => c.toLowerCase() === cls.toLowerCase())) return false;
       if (lvl !== "" && spellLevel(sp) !== Number(lvl)) return false;
+      if (school && (sp.school || "") !== school) return false;
       if (needle && !sp.name.toLowerCase().includes(needle)) return false;
       return true;
     }).sort((a, b) => spellLevel(a) - spellLevel(b) || a.name.localeCompare(b.name));
-  }, [spells, cls, lvl, q, onlyMine]);
+  }, [spells, cls, lvl, school, q, onlyMine]);
+
+  // Built from the loaded spells rather than a hardcoded list, so a ruleset or partner content that
+  // introduces a school shows it without a code change.
+  const schools = useMemo(
+    () => Array.from(new Set(spells.map((sp) => sp.school).filter(Boolean) as string[])).sort(),
+    [spells],
+  );
 
   const cantripCount = build.spells?.cantrips?.length || 0;
   const knownCount = build.spells?.known?.length || 0;
@@ -1429,6 +1444,11 @@ function SpellsPanel({ build, spells, sheet, onToggle, loadouts, onSaveLoadout, 
           <option value="">Any level</option>
           <option value="0">Cantrips</option>
           {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => <option key={n} value={String(n)}>Level {n}</option>)}
+        </select>
+        <select value={school} onChange={(e) => setSchool(e.target.value)}
+          style={{ ...stoneField(), width: "auto", minWidth: 130, fontSize: 13, padding: "8px 10px" }}>
+          <option value="">Any school</option>
+          {schools.map((sc) => <option key={sc} value={sc}>{sc}</option>)}
         </select>
         {cls && (
           <button className="forge-btn" onClick={() => setOnlyMine((v) => !v)}
@@ -3022,13 +3042,17 @@ function GearPanel({ build, gearIndex, gearTypes, ctx, itemByName, onAdd, onRemo
   const [pick, setPick] = useState("");
   const [query, setQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
+  const [rarityFilter, setRarityFilter] = useState("");
+  const [magicFilter, setMagicFilter] = useState("");
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return gearIndex.filter((g) =>
+      (magicFilter === "" || (magicFilter === "magic" ? g.magic : !g.magic)) &&
+      (rarityFilter === "" || g.rarity === rarityFilter) &&
       (!typeFilter || g.type === typeFilter) && (!q || g.name.toLowerCase().includes(q)),
     );
-  }, [gearIndex, query, typeFilter]);
+  }, [gearIndex, query, typeFilter, rarityFilter, magicFilter]);
 
   return (
     <div style={stonePanel()}>
@@ -3043,6 +3067,16 @@ function GearPanel({ build, gearIndex, gearTypes, ctx, itemByName, onAdd, onRemo
         </div>
         <div style={{ flex: "1 1 150px", position: "relative" }}>
           <label style={forgeLabel}>Type</label>
+          <select value={magicFilter} onChange={(e) => setMagicFilter(e.target.value)} style={stoneField()}>
+            <option value="" style={OPTION_STYLE}>Everything</option>
+            <option value="mundane" style={OPTION_STYLE}>Mundane only</option>
+            <option value="magic" style={OPTION_STYLE}>Magical only</option>
+          </select>
+          <select value={rarityFilter} onChange={(e) => setRarityFilter(e.target.value)} style={stoneField()}>
+            <option value="" style={OPTION_STYLE}>Any rarity</option>
+            {RARITY_ORDER.filter((r) => gearIndex.some((g) => g.rarity === r))
+              .map((r) => <option key={r} value={r} style={OPTION_STYLE}>{r}</option>)}
+          </select>
           <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} style={stoneField()}>
             <option value="" style={OPTION_STYLE}>All types</option>
             {gearTypes.map((t) => <option key={t} value={t} style={OPTION_STYLE}>{t}</option>)}
@@ -3226,7 +3260,7 @@ function Picking({ stable }: { stable: StableRow[] }) {
 // Small helpers + local types
 // ---------------------------------------------------------------------------
 
-type GearOption = { name: string; type: string; magic: boolean };
+type GearOption = { name: string; type: string; magic: boolean; rarity?: string };
 
 // A species variant/lineage record. Only SRD subraces carry traits; catalog variants are name-only.
 type SpeciesVariantRec = { name: string; variant_kind?: string; ability_bonuses?: string; traits?: unknown };
