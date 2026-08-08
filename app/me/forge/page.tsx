@@ -958,7 +958,7 @@ function ForgeInner() {
               )}
 
               {tab === "roll" && (
-                <RollPanel sheet={sheet}
+                <RollPanel sheet={sheet} build={build}
                   characterId={mode === "character" && row ? row.id : null} />
               )}
 
@@ -1036,7 +1036,14 @@ function ForgeInner() {
 
 function TabBar({ tab, onTab, build }: { tab: TabKey; onTab: (t: TabKey) => void; build: Build }) {
   return (
-    <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }} role="tablist">
+    // A GRID, not a wrapping flex row. With ten tabs, flex-wrap packs as many as fit and leaves a
+    // ragged tail - seven then three - which reads as an accident. Five and five is deliberate, and
+    // it collapses to two columns on a narrow screen rather than to one long ladder.
+    <div style={{
+      display: "grid", gap: 4, marginBottom: 4,
+      gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 148px), 1fr))",
+      maxWidth: 5 * 168,
+    }} role="tablist">
       {TABS.map((t) => {
         const on = tab === t.key;
         const done = t.key !== "finish" && t.ready(build);
@@ -1044,8 +1051,8 @@ function TabBar({ tab, onTab, build }: { tab: TabKey; onTab: (t: TabKey) => void
           <button key={t.key} role="tab" aria-selected={on} onClick={() => onTab(t.key)}
             className="forge-btn" style={{
               ...stoneButton(on ? "primary" : "stone"),
-              padding: "9px 16px", fontSize: 13,
-              display: "flex", alignItems: "center", gap: 7,
+              padding: "9px 12px", fontSize: 13,
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 7,
             }}>
             {t.label}
             {/* A quiet mark, not a tick and a cross. Half-finished is the normal state of a
@@ -1475,8 +1482,9 @@ function SpellsPanel({ build, spells, sheet, onToggle, loadouts, onSaveLoadout, 
  *   produced it rather than overhearing it. A build that is not playing at a table has no session
  *   to log to; it still rolls, and says so rather than pretending it recorded something.
  */
-function RollPanel({ sheet, characterId }: {
+function RollPanel({ sheet, build, characterId }: {
   sheet: NonNullable<ReturnType<typeof deriveSheet>> | null;
+  build: Build;
   characterId: string | null;
 }) {
   const [mode, setMode] = useState<"flat" | "adv" | "dis">("flat");
@@ -1515,13 +1523,30 @@ function RollPanel({ sheet, characterId }: {
     );
   }
 
-  const Btn = ({ label, mod, kind }: { label: string; mod: number; kind: string }) => (
+  // rank 0 untrained, 1 proficient, 2 expertise. Shown as a mark rather than a word: the number
+  // beside it already says how much, and what a player is scanning for is "am I good at this".
+  const Btn = ({ label, mod, kind, rank = 0 }: {
+    label: string; mod: number; kind: string; rank?: number;
+  }) => (
     <button className="forge-btn" disabled={busy} onClick={() => void doRoll(label, mod, kind)}
+      title={rank >= 2 ? "Expertise" : rank >= 1 ? "Proficient" : undefined}
       style={{ ...stoneButton("stone"), display: "flex", justifyContent: "space-between",
-        gap: 10, fontSize: 13, textAlign: "left" }}>
-      <span style={{ color: STONE.ink }}>{label}</span>
-      <span style={{ fontFamily: FORGE_FONTS.mono, color: C.plum }}>
-        {mod >= 0 ? "+" : ""}{mod}
+        gap: 8, fontSize: 13, textAlign: "left", alignItems: "center",
+        borderColor: rank >= 2 ? C.sun : rank >= 1 ? "rgba(200,162,75,0.4)" : undefined }}>
+      <span style={{ color: STONE.ink, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" }}>
+        {label}
+      </span>
+      <span style={{ display: "flex", alignItems: "center", gap: 5, flexShrink: 0 }}>
+        {rank >= 1 && (
+          <span aria-hidden style={{
+            width: 6, height: 6, borderRadius: 3, flexShrink: 0,
+            background: rank >= 2 ? C.sun : "rgba(200,162,75,0.55)",
+            boxShadow: rank >= 2 ? `0 0 0 2px rgba(200,162,75,0.22)` : undefined,
+          }} />
+        )}
+        <span style={{ fontFamily: FORGE_FONTS.mono, color: C.plum }}>
+          {mod >= 0 ? "+" : ""}{mod}
+        </span>
       </span>
     </button>
   );
@@ -1547,32 +1572,33 @@ function RollPanel({ sheet, characterId }: {
       </div>
 
       <label style={forgeLabel}>Ability checks</label>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))",
-        gap: 5, marginBottom: 14 }}>
+      {/* Six columns, matching the six abilities exactly, so the last one never orphans onto a row
+          of its own. Skills use the same grid so the whole panel lines up rather than each block
+          finding its own rhythm. */}
+      <div style={{ display: "grid", gridTemplateColumns: ROLL_GRID, gap: 5, marginBottom: 14 }}>
         {ABILITIES.map((a) => (
           <Btn key={a} label={a.toUpperCase()} mod={sheet.mods[a] ?? 0} kind="check" />
         ))}
       </div>
 
       <label style={forgeLabel}>Saving throws</label>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))",
-        gap: 5, marginBottom: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: ROLL_GRID, gap: 5, marginBottom: 14 }}>
         {ABILITIES.map((a) => (
-          <Btn key={a} label={`${a.toUpperCase()} save`} mod={sheet.saves[a] ?? 0} kind="save" />
+          <Btn key={a} label={`${a.toUpperCase()} save`} mod={sheet.saves[a] ?? 0} kind="save"
+            rank={(build.saveProf || []).includes(a) ? 1 : 0} />
         ))}
       </div>
 
       <label style={forgeLabel}>Skills</label>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
-        gap: 5, marginBottom: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: ROLL_GRID, gap: 5, marginBottom: 14 }}>
         {skillNames.map((k) => (
-          <Btn key={k} label={k} mod={sheet.skills[k]?.val ?? 0} kind="skill" />
+          <Btn key={k} label={k} mod={sheet.skills[k]?.val ?? 0} kind="skill"
+            rank={sheet.skills[k]?.rank ?? 0} />
         ))}
       </div>
 
       <label style={forgeLabel}>Other</label>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
-        gap: 5 }}>
+      <div style={{ display: "grid", gridTemplateColumns: ROLL_GRID, gap: 5 }}>
         <Btn label="Initiative" mod={sheet.initiative ?? 0} kind="initiative" />
         {sheet.isCaster && <Btn label="Spell attack" mod={sheet.spellAttack ?? 0} kind="attack" />}
       </div>
@@ -1888,6 +1914,10 @@ function ClassChoicesPanel({ build, sheet, weapons, spells, picks, onPick, struc
     </div>
   );
 }
+
+// One grid for every block on the Roll tab. Six columns fits the six abilities exactly and divides
+// the eighteen skills into three clean rows.
+const ROLL_GRID = "repeat(auto-fit, minmax(min(100%, 132px), 1fr))";
 
 const thStyle: React.CSSProperties = {
   fontFamily: FORGE_FONTS.mono, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase",
