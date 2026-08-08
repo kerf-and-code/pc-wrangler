@@ -113,6 +113,33 @@ type StableRow = {
 type Mode = "character" | "library" | "new";
 
 // Map an ability abbreviation from the SRD ("STR", "CON") to the engine's lowercase key.
+/**
+ * A spell as it sits in lib/srd/spells-*.json.
+ *
+ * TWO FIELDS LIE ABOUT THEIR TYPE, and both bite quietly:
+ *   `classes`       is a PYTHON REPR STRING - "['Sorcerer', 'Wizard']" - not a JSON array, so
+ *                   JSON.parse fails on the single quotes and `.includes("Wizard")` succeeds on
+ *                   "Wizardry" too.
+ *   `concentration` and `ritual` are the STRINGS "True"/"False". `if (spell.concentration)` is
+ *                   therefore always true, which is the kind of bug that shows up as a wrong icon
+ *                   on half the list and gets blamed on the data.
+ */
+type SpellRecord = {
+  name: string; level: string; school?: string; classes?: string;
+  casting_time?: string; range?: string; components?: string; duration?: string;
+  concentration?: string; ritual?: string; description?: string;
+};
+
+const spellClasses = (s: SpellRecord): string[] =>
+  String(s.classes || "").replace(/[[\]'"]/g, "").split(",").map((t) => t.trim()).filter(Boolean);
+
+const truthy = (v: unknown) => String(v ?? "").trim().toLowerCase() === "true";
+
+const spellLevel = (s: SpellRecord): number => {
+  const n = parseInt(String(s.level ?? ""), 10);
+  return Number.isFinite(n) ? n : 0;
+};
+
 const ABBR_TO_KEY: Record<string, Ability> = {
   STR: "str", DEX: "dex", CON: "con", INT: "int", WIS: "wis", CHA: "cha",
 };
@@ -160,7 +187,7 @@ function denormOf(build: Build, speciesVariant: string): LibraryDenorm {
  * The `ready` predicate is not a gate either. It drives the mark beside each tab name and the list
  * on Finish, so "what have I not done" is answerable without reading the whole sheet.
  */
-type TabKey = "identity" | "class" | "background" | "abilities" | "equipment" | "features" | "finish";
+type TabKey = "identity" | "class" | "background" | "spells" | "abilities" | "equipment" | "features" | "finish";
 
 const bgAsiTotal = (b: Build) =>
   Object.values(b.bgAsi || {}).reduce((a, v) => a + Number(v || 0), 0);
@@ -169,6 +196,7 @@ const TABS: { key: TabKey; label: string; ready: (b: Build) => boolean }[] = [
   { key: "identity",  label: "Identity",  ready: (b) => Boolean(b.meta.species && b.meta.className && b.meta.background) },
   { key: "class",     label: "Class",     ready: (b) => Boolean(b.meta.className) },
   { key: "background", label: "Background", ready: (b) => Boolean(b.meta.background) && bgAsiTotal(b) > 0 },
+  { key: "spells", label: "Spells", ready: (b) => Boolean((b.spells?.cantrips?.length || 0) + (b.spells?.known?.length || 0)) },
   { key: "abilities", label: "Abilities", ready: (b) => Object.values(b.abilities || {}).some((v) => Number(v) > 0) },
   { key: "equipment", label: "Equipment", ready: (b) => Boolean((b.gear?.items || []).length) },
   { key: "features",  label: "Features",  ready: (b) => Boolean(b.meta.species) },
@@ -342,6 +370,7 @@ function ForgeInner() {
     classes.forEach((c) => { if (c?.name && !classByName[c.name]) classByName[c.name] = c; });
     // Feats for the ASI/feat picker: a name-sorted list plus a by-name lookup for descriptions.
     const feats = loadSrd("feats", srdMode) as unknown as FeatOption[];
+    const spells = loadSrd("spells", srdMode) as unknown as SpellRecord[];
     const featList = [...(feats || [])].sort((a, b) => a.name.localeCompare(b.name));
     const featByName: Record<string, FeatOption> = {};
     featList.forEach((f) => { if (!featByName[f.name]) featByName[f.name] = f; });
@@ -349,7 +378,7 @@ function ForgeInner() {
     const itemByName: Record<string, ItemRecord> = {};
     equipment.forEach((e) => { if (!itemByName[e.name]) itemByName[e.name] = e; });
     magic.forEach((m) => { if (!itemByName[m.name]) itemByName[m.name] = m; });
-    return { backgrounds, equipment, magic, speciesByName, variantByName, bgByName, classByName, itemByName, featList, featByName };
+    return { backgrounds, equipment, magic, speciesByName, variantByName, bgByName, classByName, itemByName, featList, featByName, spells };
   }, [srdMode]);
 
   // Description of the currently selected species / background, for the Identity panel.
@@ -512,6 +541,42 @@ function ForgeInner() {
     return b;
   });
   const setBgAsi = (mods: Record<string, number>) => patch((b) => { b.bgAsi = mods; return b; });
+
+  const toggleSpell = (name: string, cantrip: boolean) => patch((b) => {
+    const key = cantrip ? "cantrips" : "known";
+    const list = [...(b.spells?.[key] || [])];
+    const at = list.indexOf(name);
+    if (at >= 0) list.splice(at, 1); else list.push(name);
+    b.spells = { cantrips: b.spells?.cantrips || [], known: b.spells?.known || [], [key]: list };
+    return b;
+  });
+
+  // Loadouts are SNAPSHOTS, not a live link. Applying one copies its lists into the working set, so
+  // editing spells afterwards does not silently rewrite the saved loadout - which is what a player
+  // means by "swap in and out" rather than "rename my only list".
+  const saveLoadout = (label: string) => patch((b) => {
+    const outs = [...((b as Build & { loadouts?: SpellLoadout[] }).loadouts || [])];
+    const snap: SpellLoadout = {
+      name: label,
+      cantrips: [...(b.spells?.cantrips || [])],
+      known: [...(b.spells?.known || [])],
+    };
+    const at = outs.findIndex((o) => o.name === label);
+    if (at >= 0) outs[at] = snap; else outs.push(snap);
+    (b as Build & { loadouts?: SpellLoadout[] }).loadouts = outs;
+    return b;
+  });
+  const applyLoadout = (label: string) => patch((b) => {
+    const outs = (b as Build & { loadouts?: SpellLoadout[] }).loadouts || [];
+    const found = outs.find((o) => o.name === label);
+    if (found) b.spells = { cantrips: [...found.cantrips], known: [...found.known] };
+    return b;
+  });
+  const deleteLoadout = (label: string) => patch((b) => {
+    const t = b as Build & { loadouts?: SpellLoadout[] };
+    t.loadouts = (t.loadouts || []).filter((o) => o.name !== label);
+    return b;
+  });
   const setClassName = (v: string) => patch((b) => { b.meta.className = v; b.meta.subclass = ""; return b; });
   const setSubclass = (v: string) => patch((b) => { b.meta.subclass = v; return b; });
   const setLevel = (v: number) => patch((b) => { b.level = Math.max(1, Math.min(30, v || 1)); return b; });
@@ -718,6 +783,15 @@ function ForgeInner() {
                   build={build} backgroundOpts={srd.backgrounds.map((b) => b.name)}
                   bgRec={srd.bgByName[build.meta.background]} desc={backgroundDesc}
                   onBackground={setBackground} onAsi={setBgAsi}
+                />
+              )}
+
+              {tab === "spells" && (
+                <SpellsPanel
+                  build={build} spells={srd.spells} sheet={sheet}
+                  onToggle={toggleSpell}
+                  loadouts={(build as Build & { loadouts?: SpellLoadout[] }).loadouts || []}
+                  onSaveLoadout={saveLoadout} onApplyLoadout={applyLoadout} onDeleteLoadout={deleteLoadout}
                 />
               )}
 
@@ -1056,6 +1130,185 @@ function BackgroundPanel({ build, backgroundOpts, bgRec, desc, onBackground, onA
           </p>
         </div>
       )}
+    </div>
+  );
+}
+
+
+type SpellLoadout = { name: string; cantrips: string[]; known: string[] };
+
+/**
+ * The spell list, filtered to the character's class, with saved loadouts.
+ *
+ * WHY LOADOUTS ARE SNAPSHOTS
+ *   A prepared-caster's list changes every long rest, and the thing a player actually wants is
+ *   "give me back Tuesday's list". A live link would mean editing today's spells silently rewrote
+ *   Tuesday's, which is the opposite of a loadout - so applying one COPIES into the working set and
+ *   the saved copy stays put until it is explicitly saved over.
+ *
+ * IT DOES NOT ENFORCE LIMITS
+ *   How many spells a class may know or prepare depends on level, subclass, ability modifier and a
+ *   pile of features the engine does not model. Inventing a cap would be a rule the app made up,
+ *   and a player being told "you cannot prepare that" by a tool that is guessing is worse than no
+ *   help at all. It COUNTS instead, and the count is the honest form of the same information.
+ */
+function SpellsPanel({ build, spells, sheet, onToggle, loadouts, onSaveLoadout, onApplyLoadout, onDeleteLoadout }: {
+  build: Build;
+  spells: SpellRecord[];
+  sheet: NonNullable<ReturnType<typeof deriveSheet>> | null;
+  onToggle: (name: string, cantrip: boolean) => void;
+  loadouts: SpellLoadout[];
+  onSaveLoadout: (name: string) => void;
+  onApplyLoadout: (name: string) => void;
+  onDeleteLoadout: (name: string) => void;
+}) {
+  const [q, setQ] = useState("");
+  const [lvl, setLvl] = useState<string>("");
+  const [onlyMine, setOnlyMine] = useState(true);
+  const [open, setOpen] = useState<string | null>(null);
+  const [newLoadout, setNewLoadout] = useState("");
+
+  const cls = build.meta.className || "";
+  const chosen = useMemo(() => new Set([...(build.spells?.cantrips || []), ...(build.spells?.known || [])]),
+    [build.spells]);
+
+  const filtered = useMemo(() => {
+    const needle = q.trim().toLowerCase();
+    return spells.filter((sp) => {
+      if (onlyMine && cls && !spellClasses(sp).some((c) => c.toLowerCase() === cls.toLowerCase())) return false;
+      if (lvl !== "" && spellLevel(sp) !== Number(lvl)) return false;
+      if (needle && !sp.name.toLowerCase().includes(needle)) return false;
+      return true;
+    }).sort((a, b) => spellLevel(a) - spellLevel(b) || a.name.localeCompare(b.name));
+  }, [spells, cls, lvl, q, onlyMine]);
+
+  const cantripCount = build.spells?.cantrips?.length || 0;
+  const knownCount = build.spells?.known?.length || 0;
+
+  return (
+    <div style={stonePanel()}>
+      <PanelTitle hint="Your spells, and saved lists you can swap between.">Spells</PanelTitle>
+
+      {!cls && <Muted>Pick a class on the Identity tab to filter this list.</Muted>}
+
+      {sheet && !sheet.isCaster && cls && (
+        <p style={{ color: STONE.inkDim, fontSize: 13, margin: "0 0 12px", lineHeight: 1.6 }}>
+          {cls} is not a spellcasting class in this ruleset. You can still pick spells here if a
+          feat, subclass or item grants them.
+        </p>
+      )}
+
+      {sheet?.isCaster && (
+        <div style={{ display: "flex", gap: 16, flexWrap: "wrap", fontFamily: FORGE_FONTS.mono,
+          fontSize: 12, color: STONE.inkFaint, marginBottom: 12 }}>
+          <span>spell attack {sheet.spellAttack >= 0 ? "+" : ""}{sheet.spellAttack}</span>
+          <span>save DC {sheet.spellDC}</span>
+        </div>
+      )}
+
+      {/* Loadouts */}
+      <div style={{ marginBottom: 14, paddingBottom: 14, borderBottom: `1px solid ${STONE.hi}` }}>
+        <label style={forgeLabel}>Loadouts</label>
+        {loadouts.length === 0 ? (
+          <p style={{ color: STONE.inkFaint, fontSize: 12.5, margin: "0 0 8px", lineHeight: 1.55 }}>
+            None saved. Pick a set of spells below, name it, and you can bring it back after any
+            long rest.
+          </p>
+        ) : (
+          <div style={{ display: "grid", gap: 6, marginBottom: 10 }}>
+            {loadouts.map((o) => (
+              <div key={o.name} style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                <button className="forge-btn" onClick={() => onApplyLoadout(o.name)}
+                  style={{ ...stoneButton("stone"), fontSize: 13, flex: "1 1 180px", textAlign: "left" }}>
+                  {o.name}
+                  <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 11, color: STONE.inkFaint, marginLeft: 8 }}>
+                    {o.cantrips.length} cantrips, {o.known.length} spells
+                  </span>
+                </button>
+                <button onClick={() => onSaveLoadout(o.name)} title="Overwrite with the current list"
+                  style={{ ...stoneButton("ghost"), fontSize: 12, padding: "6px 10px" }}>Update</button>
+                <button onClick={() => onDeleteLoadout(o.name)}
+                  style={{ ...stoneButton("ghost"), fontSize: 12, padding: "6px 10px", color: C.warn }}>Remove</button>
+              </div>
+            ))}
+          </div>
+        )}
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <input value={newLoadout} onChange={(e) => setNewLoadout(e.target.value)}
+            placeholder="Name this list (Dungeon delve, Social night)"
+            style={{ ...stoneField(), flex: "1 1 220px", width: "auto", fontSize: 13, padding: "8px 10px" }} />
+          <button className="forge-btn" disabled={!newLoadout.trim()}
+            onClick={() => { onSaveLoadout(newLoadout.trim()); setNewLoadout(""); }}
+            style={{ ...stoneButton("primary"), fontSize: 13, opacity: newLoadout.trim() ? 1 : 0.5 }}>
+            Save current
+          </button>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center", marginBottom: 8 }}>
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search spells"
+          style={{ ...stoneField(), flex: "1 1 180px", width: "auto", fontSize: 13, padding: "8px 10px" }} />
+        <select value={lvl} onChange={(e) => setLvl(e.target.value)}
+          style={{ ...stoneField(), width: "auto", minWidth: 110, fontSize: 13, padding: "8px 10px" }}>
+          <option value="">Any level</option>
+          <option value="0">Cantrips</option>
+          {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => <option key={n} value={String(n)}>Level {n}</option>)}
+        </select>
+        {cls && (
+          <button className="forge-btn" onClick={() => setOnlyMine((v) => !v)}
+            style={{ ...stoneButton(onlyMine ? "primary" : "stone"), fontSize: 12.5 }}>
+            {onlyMine ? cls : "All classes"}
+          </button>
+        )}
+      </div>
+
+      <div style={{ fontFamily: FORGE_FONTS.mono, fontSize: 11, color: STONE.inkFaint, marginBottom: 6 }}>
+        {filtered.length} shown &middot; you have {cantripCount} cantrip{cantripCount === 1 ? "" : "s"} and {knownCount} spell{knownCount === 1 ? "" : "s"}
+      </div>
+
+      <div style={{ maxHeight: 460, overflowY: "auto", display: "grid", gap: 4, paddingRight: 4 }}>
+        {filtered.map((sp) => {
+          const lv = spellLevel(sp);
+          const cantrip = lv === 0;
+          const on = chosen.has(sp.name);
+          const isOpen = open === sp.name;
+          return (
+            <div key={`${sp.name}::${sp.level}`} style={{
+              border: `1px solid ${on ? C.sun : STONE.hi}`, borderRadius: 4,
+              background: on ? "rgba(200,162,75,0.09)" : "rgba(0,0,0,0.22)", padding: "8px 10px",
+            }}>
+              <div style={{ display: "flex", gap: 8, alignItems: "baseline", flexWrap: "wrap" }}>
+                <button onClick={() => onToggle(sp.name, cantrip)}
+                  style={{ background: "transparent", border: "none", cursor: "pointer", padding: 0,
+                    color: on ? C.sun : STONE.ink, fontSize: 14, fontWeight: 600, textAlign: "left" }}>
+                  {on ? "\u2713 " : ""}{sp.name}
+                </button>
+                <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 11, color: STONE.inkFaint }}>
+                  {cantrip ? "cantrip" : `lvl ${lv}`}{sp.school ? ` \u00b7 ${sp.school}` : ""}
+                  {truthy(sp.concentration) ? " \u00b7 conc" : ""}{truthy(sp.ritual) ? " \u00b7 ritual" : ""}
+                </span>
+                <button onClick={() => setOpen(isOpen ? null : sp.name)}
+                  style={{ marginLeft: "auto", background: "transparent", border: "none", cursor: "pointer",
+                    color: C.plum, fontSize: 12, fontFamily: FORGE_FONTS.mono }}>
+                  {isOpen ? "less" : "read"}
+                </button>
+              </div>
+              {isOpen && (
+                <div style={{ marginTop: 8, fontSize: 13, color: STONE.inkDim, lineHeight: 1.6 }}>
+                  <div style={{ fontFamily: FORGE_FONTS.mono, fontSize: 11, marginBottom: 6 }}>
+                    {[sp.casting_time, sp.range, sp.components, sp.duration].filter(Boolean).join(" \u00b7 ")}
+                  </div>
+                  {sp.description || "No description in this data set."}
+                </div>
+              )}
+            </div>
+          );
+        })}
+        {filtered.length === 0 && (
+          <Muted>Nothing matches. Widen the level, clear the search, or switch off the class filter.</Muted>
+        )}
+      </div>
     </div>
   );
 }
