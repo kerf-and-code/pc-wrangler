@@ -148,6 +148,29 @@ function denormOf(build: Build, speciesVariant: string): LibraryDenorm {
 
 // The default export wraps the working component in a Suspense boundary, because ForgeInner calls
 // useSearchParams(), which Next.js requires be inside <Suspense> so the route can prerender.
+/**
+ * The tabs, and the order a character is actually built in.
+ *
+ * WHY TABS AND NOT A WIZARD
+ *   Nothing here gates on order. A wizard that makes you walk six steps to change one ability score
+ *   is worse than the single stacked page this replaces - the stacking was never the problem, the
+ *   LENGTH was. Every tab is reachable at any time and the sheet updates live underneath all of
+ *   them, so this is a filing system, not a sequence.
+ *
+ * The `ready` predicate is not a gate either. It drives the mark beside each tab name and the list
+ * on Finish, so "what have I not done" is answerable without reading the whole sheet.
+ */
+type TabKey = "identity" | "class" | "abilities" | "equipment" | "features" | "finish";
+
+const TABS: { key: TabKey; label: string; ready: (b: Build) => boolean }[] = [
+  { key: "identity",  label: "Identity",  ready: (b) => Boolean(b.meta.species && b.meta.className && b.meta.background) },
+  { key: "class",     label: "Class",     ready: (b) => Boolean(b.meta.className) },
+  { key: "abilities", label: "Abilities", ready: (b) => Object.values(b.abilities || {}).some((v) => Number(v) > 0) },
+  { key: "equipment", label: "Equipment", ready: (b) => Boolean((b.gear?.items || []).length) },
+  { key: "features",  label: "Features",  ready: (b) => Boolean(b.meta.species) },
+  { key: "finish",    label: "Finish",    ready: () => true },
+];
+
 export default function ForgePage() {
   return (
     <Suspense fallback={null}>
@@ -167,6 +190,22 @@ function ForgeInner() {
   // to library once its first save creates a pc_library row.
   const [mode, setMode] = useState<Mode>(charId ? "character" : libIdParam ? "library" : "new");
   const [libId, setLibId] = useState<string | null>(libIdParam);
+
+  // The open tab lives in the URL so a half-built character survives a refresh and a tab can be
+  // linked to directly. replaceState rather than router.replace: this is a view change, not a
+  // navigation, and pushing it through the router would re-run the page's data effects on every
+  // tab click.
+  const tabParam = params.get("tab") as TabKey | null;
+  const [tab, setTabState] = useState<TabKey>(
+    TABS.some((t) => t.key === tabParam) ? (tabParam as TabKey) : "identity",
+  );
+  const setTab = useCallback((next: TabKey) => {
+    setTabState(next);
+    if (typeof window === "undefined") return;
+    const u = new URL(window.location.href);
+    u.searchParams.set("tab", next);
+    window.history.replaceState(null, "", u.toString());
+  }, []);
 
   const [stable, setStable] = useState<StableRow[]>([]);
   const [row, setRow] = useState<CharRow | null>(null);
@@ -640,6 +679,9 @@ function ForgeInner() {
                 )}
               </div>
 
+              <TabBar tab={tab} onTab={setTab} build={build} />
+
+              {tab === "identity" && (
               <IdentityPanel
                 build={build} speciesVariant={speciesVariant}
                 edition={edition} onEdition={setEdition}
@@ -651,10 +693,13 @@ function ForgeInner() {
                 onSpecies={setSpecies} onVariant={setVariant} onBackground={setBackground}
                 onClassName={setClassName} onSubclass={setSubclass} onLevel={setLevel}
               />
+              )}
 
-              <AbilitiesPanel build={build} cap={epic.abilityCap} sheet={sheet} onAbility={setAbility} />
+              {tab === "abilities" && (
+                <AbilitiesPanel build={build} cap={epic.abilityCap} sheet={sheet} onAbility={setAbility} />
+              )}
 
-              {build.meta.className && (progression.length > 0 || epicRows.length > 0) && (
+              {tab === "class" && build.meta.className && (progression.length > 0 || epicRows.length > 0) && (
                 <ClassProgressionPanel
                   className={build.meta.className} level={build.level}
                   progression={progression} epicRows={epicRows}
@@ -662,22 +707,38 @@ function ForgeInner() {
                 />
               )}
 
-              {build.meta.className && (asiLevels.length > 0 || build.level >= 19) && (
+              {tab === "class" && !build.meta.className && (
+                <div style={stonePanel()}>
+                  <PanelTitle>Class</PanelTitle>
+                  <Muted>Pick a class on the Identity tab and its levels appear here.</Muted>
+                </div>
+              )}
+
+              {tab === "class" && build.meta.className && (asiLevels.length > 0 || build.level >= 19) && (
                 <FeatsPanel
                   asiLevels={asiLevels} choices={build.epicChoices || {}}
                   featList={srd.featList} level={build.level} onChoose={setLevelChoice}
                 />
               )}
 
+              {tab === "equipment" && (
               <GearPanel
                 build={build} gearIndex={gearIndex} gearTypes={gearTypes} ctx={ctx}
                 itemByName={srd.itemByName}
                 onAdd={addItem} onRemove={removeItem} onMod={setItemMod} onVariant={setItemVariant}
               />
+              )}
 
+              {/* The sheet is the one panel shown on EVERY tab. It is the thing being edited, and
+                  hiding it behind a tab would make each change unverifiable at the moment it is
+                  made - which is the whole reason the Forge derives live. */}
               <SheetPanel sheet={sheet} name={name || "Character"} />
 
-              {build.meta.species && (
+              {tab === "finish" && (
+                <FinishPanel build={build} name={name} sheet={sheet} onTab={setTab} />
+              )}
+
+              {tab === "features" && build.meta.species && (
                 <FeaturesPanel
                   species={build.meta.species} speciesRec={srd.speciesByName[build.meta.species]}
                   variantName={speciesVariant} variantRec={srd.variantByName[speciesVariant]}
@@ -685,6 +746,13 @@ function ForgeInner() {
                   className={build.meta.className} classRec={srd.classByName[build.meta.className]}
                   level={build.level} chosenFeats={chosenFeats}
                 />
+              )}
+
+              {tab === "features" && !build.meta.species && (
+                <div style={stonePanel()}>
+                  <PanelTitle>Features and traits</PanelTitle>
+                  <Muted>Pick a species on the Identity tab and its traits appear here.</Muted>
+                </div>
               )}
 
               <div style={{ display: "flex", gap: 12, alignItems: "center", justifyContent: "flex-end", flexWrap: "wrap" }}>
@@ -735,6 +803,100 @@ function ForgeInner() {
               )}
             </div>
           )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+function TabBar({ tab, onTab, build }: { tab: TabKey; onTab: (t: TabKey) => void; build: Build }) {
+  return (
+    <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }} role="tablist">
+      {TABS.map((t) => {
+        const on = tab === t.key;
+        const done = t.key !== "finish" && t.ready(build);
+        return (
+          <button key={t.key} role="tab" aria-selected={on} onClick={() => onTab(t.key)}
+            className="forge-btn" style={{
+              ...stoneButton(on ? "primary" : "stone"),
+              padding: "9px 16px", fontSize: 13,
+              display: "flex", alignItems: "center", gap: 7,
+            }}>
+            {t.label}
+            {/* A quiet mark, not a tick and a cross. Half-finished is the normal state of a
+                character sheet and it should not read as an error. */}
+            {done && (
+              <span aria-hidden style={{
+                width: 6, height: 6, borderRadius: 3,
+                background: on ? STONE.shadow : C.good, opacity: 0.9,
+              }} />
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function FinishPanel({ build, name, sheet, onTab }: {
+  build: Build; name: string; sheet: NonNullable<ReturnType<typeof deriveSheet>>; onTab: (t: TabKey) => void;
+}) {
+  // What is not done yet, said plainly, each one a way back to the tab that fixes it. The point is
+  // that "am I finished" should be answerable without reading the whole sheet.
+  const gaps: { label: string; tab: TabKey }[] = [];
+  if (!name.trim()) gaps.push({ label: "The character has no name", tab: "identity" });
+  if (!build.meta.species) gaps.push({ label: "No species chosen", tab: "identity" });
+  if (!build.meta.className) gaps.push({ label: "No class chosen", tab: "identity" });
+  if (build.meta.className && !build.meta.subclass && build.level >= 3) {
+    gaps.push({ label: "No subclass, and this character is level 3 or higher", tab: "identity" });
+  }
+  if (!build.meta.background) gaps.push({ label: "No background chosen", tab: "identity" });
+  if (!Object.values(build.abilities || {}).some((v) => Number(v) > 0)) {
+    gaps.push({ label: "Ability scores are all zero", tab: "abilities" });
+  }
+  if (!(build.gear?.items || []).length) gaps.push({ label: "No equipment", tab: "equipment" });
+
+  return (
+    <div style={stonePanel()}>
+      <PanelTitle hint="Everything autosaves as you go; this is a check, not a commit.">
+        Finish
+      </PanelTitle>
+
+      {gaps.length === 0 ? (
+        <p style={{ color: C.good, fontSize: 14, margin: "6px 0 0" }}>
+          Nothing left unset. {name.trim() || "This character"} is ready for a table.
+        </p>
+      ) : (
+        <>
+          <p style={{ color: STONE.inkDim, fontSize: 13.5, margin: "6px 0 12px", lineHeight: 1.6 }}>
+            {gaps.length} thing{gaps.length === 1 ? "" : "s"} still unset. None of it stops you
+            playing, and a half-filled character is a perfectly normal thing to bring to a session.
+          </p>
+          <div style={{ display: "grid", gap: 6 }}>
+            {gaps.map((g) => (
+              <button key={g.label} onClick={() => onTab(g.tab)} className="forge-btn"
+                style={{ ...stoneButton("stone"), textAlign: "left", display: "flex",
+                  justifyContent: "space-between", gap: 12, fontSize: 13.5 }}>
+                <span style={{ color: STONE.ink }}>{g.label}</span>
+                <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 11, color: STONE.inkFaint }}>
+                  {TABS.find((t) => t.key === g.tab)?.label} &rarr;
+                </span>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+
+      <div style={{ marginTop: 16, paddingTop: 14, borderTop: `1px solid ${STONE.hi}` }}>
+        <div style={{ fontFamily: FORGE_FONTS.mono, fontSize: 11, letterSpacing: "0.14em",
+          textTransform: "uppercase", color: STONE.inkFaint, marginBottom: 8 }}>At a glance</div>
+        <div style={{ display: "flex", gap: 16, flexWrap: "wrap", fontSize: 13.5, color: STONE.ink }}>
+          <span>AC {sheet.ac}</span>
+          <span>HP {sheet.hpMax}</span>
+          <span>Level {build.level}</span>
+          {build.meta.className && <span>{build.meta.className}{build.meta.subclass ? ` (${build.meta.subclass})` : ""}</span>}
+          {build.meta.species && <span>{build.meta.species}</span>}
         </div>
       </div>
     </div>
