@@ -39,6 +39,7 @@ import { choicesFor, resolveChoice, choiceKey, type ClassChoice } from "@/lib/cl
 import { classTable, classTableColumns } from "@/lib/class-table";
 import { choiceEffects, applyToBuild, type ChoiceEffects } from "@/lib/apply-choices";
 import { parseCoreTraits } from "@/lib/core-traits";
+import { parseGranted, matchGranted, resolveCrossRefs } from "@/lib/granted-equipment";
 import { buildRulesContext } from "@/lib/srd/rules-context";
 import {
   loadCatalog, partnerList, speciesOptions, classOptions, variantOptions, subclassOptions,
@@ -659,6 +660,16 @@ function ForgeInner() {
     patch((b) => { b.abilities[a] = Math.max(1, Math.min(epic.abilityCap, v || 10)); return b; });
   const addItem = (nm: string) =>
     patch((b) => { if (nm) b.gear.items = [...b.gear.items, { n: nm }]; return b; });
+
+  // A granted bundle is one decision, so it is one patch. Adding seven items with seven calls to
+  // addItem would fire seven autosaves and, worse, each would read the build as it was before the
+  // previous one landed.
+  const addItems = (names: string[]) =>
+    patch((b) => {
+      const add = names.filter(Boolean);
+      if (add.length) b.gear.items = [...b.gear.items, ...add.map((n) => ({ n }))];
+      return b;
+    });
   const removeItem = (i: number) =>
     patch((b) => { b.gear.items = b.gear.items.filter((_, idx) => idx !== i); return b; });
   const setItemMod = (i: number, mod: number) =>
@@ -916,6 +927,16 @@ function ForgeInner() {
                 <FeatsPanel
                   asiLevels={asiLevels} choices={build.epicChoices || {}}
                   featList={srd.featList} level={build.level} onChoose={setLevelChoice}
+                />
+              )}
+
+              {tab === "equipment" && (
+                <GrantedEquipmentPanel
+                  bgRec={srd.bgByName[build.meta.background]}
+                  coreTraits={((srd.structuredByName[build.meta.className] || {}) as { core_traits?: string }).core_traits || ""}
+                  catalog={srd.equipment.map((i) => i.name)}
+                  owned={(build.gear?.items || []).map((i) => i.n)}
+                  onAdd={addItems}
                 />
               )}
 
@@ -1876,6 +1897,140 @@ const thStyle: React.CSSProperties = {
 const tdStyle: React.CSSProperties = {
   padding: "4px 10px 4px 0", whiteSpace: "nowrap", borderBottom: `1px solid rgba(255,235,200,0.05)`,
 };
+
+
+/**
+ * What your background and class hand you, ready to add.
+ *
+ * WHY IT OFFERS RATHER THAN AUTO-ADDS
+ *   A player may already have kitted themselves out, or be rebuilding a character that exists on
+ *   paper. Silently appending eight items to a list they curated is a worse failure than making
+ *   them press a button, and it is not undoable in one action either.
+ *
+ * THREE OUTCOMES PER ITEM, NOT TWO
+ *   matched  the catalog has it and it can be added with weight, cost and any armour class
+ *   choose   the grant points at a decision - "Choose one kind of Artisan's Tools" - which is not a
+ *            missing item and must not be reported as one
+ *   missing  a real name the catalog does not stock, almost always flavour from a partnered
+ *            background: a house signet ring, a school uniform. These get added as a PLAIN NOTE,
+ *            because a signet ring belongs on the sheet whether or not the app can price it.
+ */
+function GrantedEquipmentPanel({ bgRec, coreTraits, catalog, owned, onAdd }: {
+  bgRec: { equipment?: string; tool_proficiency?: string } | undefined;
+  coreTraits: string;
+  catalog: string[];
+  owned: string[];
+  onAdd: (names: string[]) => void;
+}) {
+  const [pickedBundle, setPickedBundle] = useState<Record<string, string>>({});
+
+  const sources = useMemo(() => {
+    const core = parseCoreTraits(coreTraits);
+    const out: { key: string; label: string; text: string; tool?: string }[] = [];
+    if (bgRec?.equipment) {
+      out.push({ key: "bg", label: "From your background", text: bgRec.equipment, tool: bgRec.tool_proficiency });
+    }
+    // The class grant is rebuilt from the raw row rather than core.equipment, so both sources go
+    // through exactly one parser and cannot disagree about what a bundle contains.
+    const classEquip = /\|\s*Starting Equipment\s*\|([^|]*)\|/i.exec(coreTraits)?.[1];
+    if (classEquip) out.push({ key: "class", label: "From your class", text: classEquip });
+    else if (core.equipment) {
+      out.push({ key: "class", label: "From your class",
+        text: core.equipment.options.map((o) => `(${o.label}) ${o.items}`).join("; or ") });
+    }
+    return out;
+  }, [bgRec, coreTraits]);
+
+  if (sources.length === 0) return null;
+
+  const has = (n: string) => owned.some((o) => o.toLowerCase() === n.toLowerCase());
+
+  return (
+    <div style={{ ...stonePanel(), marginBottom: 14 }}>
+      <PanelTitle hint="Your background and class each grant gear. Nothing is added until you say so.">
+        Granted equipment
+      </PanelTitle>
+
+      <div style={{ display: "grid", gap: 16 }}>
+        {sources.map((src) => {
+          const bundles = parseGranted(src.text);
+          if (!bundles.length) return null;
+          const multi = bundles.length > 1;
+          const chosen = pickedBundle[src.key] ?? bundles[0].label;
+          const active = multi ? bundles.find((b) => b.label === chosen) ?? bundles[0] : bundles[0];
+
+          const resolved = resolveCrossRefs(active.items, src.tool);
+          const { matched, missing, choose } = matchGranted(resolved, catalog);
+          const toAdd = matched.filter((i) => !has(i.name));
+
+          return (
+            <div key={src.key}>
+              <div style={{ display: "flex", gap: 8, alignItems: "baseline", flexWrap: "wrap", marginBottom: 8 }}>
+                <span style={{ fontSize: 13.5, color: STONE.ink }}>{src.label}</span>
+                {multi && bundles.map((b) => (
+                  <button key={b.label} className="forge-btn"
+                    onClick={() => setPickedBundle((p) => ({ ...p, [src.key]: b.label }))}
+                    style={{ ...stoneButton(b.label === chosen ? "primary" : "stone"),
+                      fontSize: 12, padding: "5px 11px" }}>
+                    Option {b.label}
+                  </button>
+                ))}
+              </div>
+
+              {active.currency.length > 0 && (
+                <p style={{ fontFamily: FORGE_FONTS.mono, fontSize: 11.5, color: C.sun, margin: "0 0 8px" }}>
+                  {active.currency.join(", ")}
+                </p>
+              )}
+
+              <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: 8 }}>
+                {matched.map((i) => (
+                  <span key={i.raw} style={{ ...stoneChip(), fontSize: 12.5,
+                    opacity: has(i.name) ? 0.45 : 1 }}>
+                    {i.qty > 1 ? `${i.qty}\u00d7 ` : ""}{i.name}{has(i.name) ? " \u2713" : ""}
+                  </span>
+                ))}
+                {choose.map((i) => (
+                  <span key={i.raw} style={{ ...stoneChip(), fontSize: 12.5, color: C.plum }}>
+                    {i.name} \u2014 your choice
+                  </span>
+                ))}
+                {missing.map((i) => (
+                  <span key={i.raw} style={{ ...stoneChip(), fontSize: 12.5, color: STONE.inkFaint }}>
+                    {i.name}
+                  </span>
+                ))}
+              </div>
+
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+                <button className="forge-btn" disabled={toAdd.length === 0}
+                  onClick={() => onAdd(toAdd.flatMap((i) => Array.from({ length: Math.min(i.qty, 20) }, () => i.name)))}
+                  style={{ ...stoneButton("primary"), fontSize: 12.5, opacity: toAdd.length ? 1 : 0.45 }}>
+                  {toAdd.length ? `Add ${toAdd.length} item${toAdd.length === 1 ? "" : "s"}` : "Already added"}
+                </button>
+                {missing.length > 0 && (
+                  <button className="forge-btn"
+                    onClick={() => onAdd(missing.filter((i) => !has(i.name)).map((i) => i.name))}
+                    style={{ ...stoneButton("stone"), fontSize: 12.5 }}>
+                    Add {missing.length} as notes
+                  </button>
+                )}
+              </div>
+
+              {missing.length > 0 && (
+                <p style={{ fontSize: 11.5, color: STONE.inkFaint, margin: "8px 0 0", lineHeight: 1.5 }}>
+                  The greyed items are not in the equipment catalog, usually because they are
+                  flavour from a third-party background. Adding them as notes puts them on the
+                  sheet without a weight or a price.
+                </p>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 function FontsAndCss() {
   return (
