@@ -33,6 +33,8 @@ import { SAX } from "@/lib/theme";
 import SixAxesNav from "@/components/six-axes-nav";
 import { C, STONE, FORGE_FONTS, forgeBackground, forgeVignette, stonePanel, stoneButton, FORGE_BUTTON_CSS, statTile, stoneField, stoneChip, forgeHeading, forgePanelTitle, forgeLabel, forgeRuleLine, forgeBoss } from "@/lib/forge-theme";
 import { loadSrd } from "@/lib/srd/srd";
+import { applyAdvantage } from "@/lib/dice";
+import { traitOptions, traitAsksAChoice } from "@/lib/species-choices";
 import { buildRulesContext } from "@/lib/srd/rules-context";
 import {
   loadCatalog, partnerList, speciesOptions, classOptions, variantOptions, subclassOptions,
@@ -187,7 +189,7 @@ function denormOf(build: Build, speciesVariant: string): LibraryDenorm {
  * The `ready` predicate is not a gate either. It drives the mark beside each tab name and the list
  * on Finish, so "what have I not done" is answerable without reading the whole sheet.
  */
-type TabKey = "identity" | "class" | "background" | "spells" | "abilities" | "equipment" | "features" | "finish";
+type TabKey = "identity" | "class" | "species" | "background" | "spells" | "abilities" | "equipment" | "roll" | "features" | "finish";
 
 const bgAsiTotal = (b: Build) =>
   Object.values(b.bgAsi || {}).reduce((a, v) => a + Number(v || 0), 0);
@@ -195,10 +197,12 @@ const bgAsiTotal = (b: Build) =>
 const TABS: { key: TabKey; label: string; ready: (b: Build) => boolean }[] = [
   { key: "identity",  label: "Identity",  ready: (b) => Boolean(b.meta.species && b.meta.className && b.meta.background) },
   { key: "class",     label: "Class",     ready: (b) => Boolean(b.meta.className) },
+  { key: "species",   label: "Species",   ready: (b) => Boolean(b.meta.species) },
   { key: "background", label: "Background", ready: (b) => Boolean(b.meta.background) && bgAsiTotal(b) > 0 },
   { key: "spells", label: "Spells", ready: (b) => Boolean((b.spells?.cantrips?.length || 0) + (b.spells?.known?.length || 0)) },
   { key: "abilities", label: "Abilities", ready: (b) => Object.values(b.abilities || {}).some((v) => Number(v) > 0) },
   { key: "equipment", label: "Equipment", ready: (b) => Boolean((b.gear?.items || []).length) },
+  { key: "roll",      label: "Roll",      ready: () => true },
   { key: "features",  label: "Features",  ready: (b) => Boolean(b.meta.species) },
   { key: "finish",    label: "Finish",    ready: () => true },
 ];
@@ -542,6 +546,12 @@ function ForgeInner() {
   });
   const setBgAsi = (mods: Record<string, number>) => patch((b) => { b.bgAsi = mods; return b; });
 
+  const setSpeciesChoice = (trait: string, value: string) => patch((b) => {
+    const t = b as Build & { speciesChoices?: Record<string, string> };
+    t.speciesChoices = { ...(t.speciesChoices || {}), [trait]: value };
+    return b;
+  });
+
   const toggleSpell = (name: string, cantrip: boolean) => patch((b) => {
     const key = cantrip ? "cantrips" : "known";
     const list = [...(b.spells?.[key] || [])];
@@ -778,6 +788,18 @@ function ForgeInner() {
               />
               )}
 
+              {tab === "species" && (
+                <SpeciesPanel
+                  build={build} speciesVariant={speciesVariant}
+                  speciesOpts={speciesOpts} variantOpts={variantOpts}
+                  speciesRec={srd.speciesByName[build.meta.species]}
+                  variantRec={srd.variantByName[speciesVariant]}
+                  desc={speciesDesc}
+                  choices={(build as Build & { speciesChoices?: Record<string, string> }).speciesChoices || {}}
+                  onSpecies={setSpecies} onVariant={setVariant} onChoice={setSpeciesChoice}
+                />
+              )}
+
               {tab === "background" && (
                 <BackgroundPanel
                   build={build} backgroundOpts={srd.backgrounds.map((b) => b.name)}
@@ -836,6 +858,11 @@ function ForgeInner() {
 
               {tab === "finish" && (
                 <FinishPanel build={build} name={name} sheet={sheet} onTab={setTab} />
+              )}
+
+              {tab === "roll" && (
+                <RollPanel sheet={sheet}
+                  characterId={mode === "character" && row ? row.id : null} />
               )}
 
               {tab === "features" && build.meta.species && (
@@ -1309,6 +1336,283 @@ function SpellsPanel({ build, spells, sheet, onToggle, loadouts, onSaveLoadout, 
           <Muted>Nothing matches. Widen the level, clear the search, or switch off the class filter.</Muted>
         )}
       </div>
+    </div>
+  );
+}
+
+
+/**
+ * Rolling straight off the sheet.
+ *
+ * WHY THE MODIFIERS ARE NOT RETYPED
+ *   Every number here comes from deriveSheet, which is the same engine that draws the sheet below.
+ *   A roller that asks the player what their Stealth bonus is has moved the arithmetic back to the
+ *   human, and the whole reason the Forge derives live is so nobody has to hold it.
+ *
+ * WHERE THE ROLL GOES
+ *   The server rolls and logs it, so the number shown and the number stored cannot disagree. It
+ *   reaches the same Mechanics page as a Beyond20 roll, at the same fidelity, because the app
+ *   produced it rather than overhearing it. A build that is not playing at a table has no session
+ *   to log to; it still rolls, and says so rather than pretending it recorded something.
+ */
+function RollPanel({ sheet, characterId }: {
+  sheet: NonNullable<ReturnType<typeof deriveSheet>> | null;
+  characterId: string | null;
+}) {
+  const [mode, setMode] = useState<"flat" | "adv" | "dis">("flat");
+  const [log, setLog] = useState<{ label: string; total: number; notation: string;
+    natural: 20 | 1 | null; logged: boolean; at: number }[]>([]);
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState<string | null>(null);
+
+  const doRoll = useCallback(async (label: string, mod: number, kind: string) => {
+    setBusy(true); setNote(null);
+    const base = `1d20${mod >= 0 ? "+" : "-"}${Math.abs(mod)}`;
+    const notation = applyAdvantage(base, mode);
+    try {
+      const res = await fetch("/api/rolls/player", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ characterId, notation, kind, label }),
+      });
+      const out = await res.json();
+      if (!res.ok) { setNote(out.error ?? "Could not roll."); return; }
+      setLog((l) => [{
+        label, total: out.result.total, notation: out.result.notation,
+        natural: out.result.natural, logged: Boolean(out.logged), at: Date.now(),
+      }, ...l].slice(0, 20));
+      if (!out.logged && out.reason) setNote(`Rolled, not recorded: ${out.reason}.`);
+    } catch {
+      setNote("Could not reach the server.");
+    } finally { setBusy(false); }
+  }, [characterId, mode]);
+
+  if (!sheet) {
+    return (
+      <div style={stonePanel()}>
+        <PanelTitle>Roll</PanelTitle>
+        <Muted>The sheet has not derived yet. Pick a class and species first.</Muted>
+      </div>
+    );
+  }
+
+  const Btn = ({ label, mod, kind }: { label: string; mod: number; kind: string }) => (
+    <button className="forge-btn" disabled={busy} onClick={() => void doRoll(label, mod, kind)}
+      style={{ ...stoneButton("stone"), display: "flex", justifyContent: "space-between",
+        gap: 10, fontSize: 13, textAlign: "left" }}>
+      <span style={{ color: STONE.ink }}>{label}</span>
+      <span style={{ fontFamily: FORGE_FONTS.mono, color: C.plum }}>
+        {mod >= 0 ? "+" : ""}{mod}
+      </span>
+    </button>
+  );
+
+  const skillNames = Object.keys(sheet.skills || {}).sort();
+
+  return (
+    <div style={stonePanel()}>
+      <PanelTitle hint="Every bonus comes from the sheet below, so there is nothing to retype.">
+        Roll
+      </PanelTitle>
+
+      <div style={{ display: "flex", gap: 6, marginBottom: 14, flexWrap: "wrap", alignItems: "center" }}>
+        {(["dis", "flat", "adv"] as const).map((m) => (
+          <button key={m} className="forge-btn" onClick={() => setMode(m)}
+            style={{ ...stoneButton(mode === m ? "primary" : "stone"), fontSize: 12.5 }}>
+            {m === "adv" ? "Advantage" : m === "dis" ? "Disadvantage" : "Straight"}
+          </button>
+        ))}
+        <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 11, color: STONE.inkFaint, marginLeft: "auto" }}>
+          {characterId ? "rolls are recorded to your session" : "library build \u2014 not recorded"}
+        </span>
+      </div>
+
+      <label style={forgeLabel}>Ability checks</label>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))",
+        gap: 5, marginBottom: 14 }}>
+        {ABILITIES.map((a) => (
+          <Btn key={a} label={a.toUpperCase()} mod={sheet.mods[a] ?? 0} kind="check" />
+        ))}
+      </div>
+
+      <label style={forgeLabel}>Saving throws</label>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))",
+        gap: 5, marginBottom: 14 }}>
+        {ABILITIES.map((a) => (
+          <Btn key={a} label={`${a.toUpperCase()} save`} mod={sheet.saves[a] ?? 0} kind="save" />
+        ))}
+      </div>
+
+      <label style={forgeLabel}>Skills</label>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
+        gap: 5, marginBottom: 14 }}>
+        {skillNames.map((k) => (
+          <Btn key={k} label={k} mod={sheet.skills[k]?.val ?? 0} kind="skill" />
+        ))}
+      </div>
+
+      <label style={forgeLabel}>Other</label>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
+        gap: 5 }}>
+        <Btn label="Initiative" mod={sheet.initiative ?? 0} kind="initiative" />
+        {sheet.isCaster && <Btn label="Spell attack" mod={sheet.spellAttack ?? 0} kind="attack" />}
+      </div>
+
+      {note && <p style={{ color: C.warn, fontSize: 12.5, marginTop: 12, marginBottom: 0 }}>{note}</p>}
+
+      {log.length > 0 && (
+        <div style={{ marginTop: 18, paddingTop: 14, borderTop: `1px solid ${STONE.hi}` }}>
+          <label style={forgeLabel}>This sitting</label>
+          {log.map((r) => (
+            <div key={r.at} style={{ display: "flex", justifyContent: "space-between",
+              alignItems: "baseline", gap: 10, padding: "6px 0", borderTop: `1px solid ${STONE.hi}` }}>
+              <span style={{ fontSize: 13.5, color: STONE.ink }}>
+                {r.label}
+                <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 11, color: STONE.inkFaint, marginLeft: 8 }}>
+                  {r.notation}{r.logged ? "" : " \u00b7 not recorded"}
+                </span>
+              </span>
+              <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 19,
+                color: r.natural === 20 ? C.good : r.natural === 1 ? C.warn : C.sun }}>
+                {r.total}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+/**
+ * Species, lineage, and the choices a species asks for.
+ *
+ * THE PICKERS ARE READ OUT OF THE RULES TEXT, not typed out beside it. traitOptions() pulls the
+ * markdown table or bold bullet list the trait already contains, so the dropdown and the paragraph
+ * under it come from one string and cannot drift apart when the SRD data is refetched.
+ *
+ * WHERE IT CANNOT READ ONE, IT SAYS SO. Gnomish Lineage and the Human traits point at tables that
+ * are not in their own description, so they get the prose and a note rather than an empty dropdown
+ * under a trait that plainly asks for a decision.
+ *
+ * THE CHOICE IS RECORDED, NOT APPLIED. Picking Black draconic ancestry does not yet grant acid
+ * resistance: the engine has no route from a species choice to a derived effect. Storing it is
+ * still worth doing - it is on the sheet, it survives to the table, and it is what a later pass
+ * would read - but a panel that implied the number had moved would be lying about the sheet.
+ */
+function SpeciesPanel({
+  build, speciesVariant, speciesOpts, variantOpts, speciesRec, variantRec, desc,
+  choices, onSpecies, onVariant, onChoice,
+}: {
+  build: Build; speciesVariant: string;
+  speciesOpts: { name: string }[];
+  variantOpts: { name: string; variant_kind: string }[];
+  speciesRec: { traits?: unknown; size?: string; speed?: string; ability_bonuses?: string } | undefined;
+  variantRec: { traits?: unknown; ability_bonuses?: string } | undefined;
+  desc: Described | null;
+  choices: Record<string, string>;
+  onSpecies: (v: string) => void; onVariant: (v: string) => void;
+  onChoice: (trait: string, value: string) => void;
+}) {
+  const traits: TraitEntry[] = useMemo(
+    () => [...traitList(speciesRec?.traits), ...traitList(variantRec?.traits)],
+    [speciesRec, variantRec],
+  );
+
+  const decisions = traits.filter((t) => traitAsksAChoice(t.desc || ""));
+
+  return (
+    <div style={stonePanel()}>
+      <PanelTitle hint="What this character is, and the choices that come with it.">Species</PanelTitle>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
+        <Field label="Species" value={build.meta.species} onChange={onSpecies}
+          options={speciesOpts.map((s) => s.name)} placeholder="Choose a species" />
+        {variantOpts.length > 0 && (
+          <Field label={variantOpts[0]?.variant_kind === "subrace" ? "Subrace" : "Lineage"}
+            value={speciesVariant} onChange={onVariant}
+            options={variantOpts.map((v) => v.name)} placeholder="None for this species" />
+        )}
+      </div>
+
+      {desc && <DescBlock desc={desc} />}
+
+      {!build.meta.species && <Muted>Pick a species and its traits appear here.</Muted>}
+
+      {build.meta.species && (speciesRec?.size || speciesRec?.speed || speciesRec?.ability_bonuses) && (
+        <div style={{ display: "flex", gap: 16, flexWrap: "wrap", fontFamily: FORGE_FONTS.mono,
+          fontSize: 12, color: STONE.inkFaint, margin: "10px 0 4px" }}>
+          {speciesRec?.size && <span>size {speciesRec.size}</span>}
+          {speciesRec?.speed && <span>speed {speciesRec.speed}</span>}
+          {speciesRec?.ability_bonuses && <span>{speciesRec.ability_bonuses}</span>}
+        </div>
+      )}
+
+      {decisions.length > 0 && (
+        <div style={{ marginTop: 16 }}>
+          <label style={forgeLabel}>Choices this species asks for</label>
+          <div style={{ display: "grid", gap: 10 }}>
+            {decisions.map((t) => {
+              const key = t.name;
+              const opts = traitOptions(t.desc || "");
+              const picked = choices[key] || "";
+              return (
+                <div key={key} style={{ background: "rgba(0,0,0,0.24)", borderRadius: 4,
+                  padding: "10px 12px" }}>
+                  <div style={{ fontSize: 14, color: STONE.ink, marginBottom: 6 }}>{t.name}</div>
+                  {opts.length > 0 ? (
+                    <>
+                      <select value={picked} onChange={(e) => onChoice(key, e.target.value)}
+                        style={{ ...stoneField(), fontSize: 13.5, padding: "8px 10px" }}>
+                        <option value="">Not chosen</option>
+                        {opts.map((o) => (
+                          <option key={o.name} value={o.name}>
+                            {o.name}{o.detail ? ` \u2014 ${o.detail.slice(0, 60)}` : ""}
+                          </option>
+                        ))}
+                      </select>
+                      {picked && (
+                        <p style={{ fontFamily: FORGE_FONTS.mono, fontSize: 11.5, color: STONE.inkFaint,
+                          margin: "6px 0 0" }}>
+                          recorded on the sheet, not yet applied to your numbers
+                        </p>
+                      )}
+                    </>
+                  ) : (
+                    <p style={{ fontSize: 12.5, color: STONE.inkFaint, margin: 0, lineHeight: 1.55 }}>
+                      This one asks you to choose, but its options are not listed in the rules text
+                      the app holds. Read the trait below and note your pick for now.
+                    </p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {traits.length > 0 && (
+        <div style={{ marginTop: 18, paddingTop: 14, borderTop: `1px solid ${STONE.hi}` }}>
+          <label style={forgeLabel}>Traits</label>
+          <div style={{ display: "grid", gap: 10 }}>
+            {traits.map((t, i) => (
+              <div key={`${t.name}-${i}`}>
+                <div style={{ fontSize: 13.5, color: STONE.ink, fontWeight: 600 }}>{t.name}</div>
+                <p style={{ fontSize: 13, color: STONE.inkDim, margin: "3px 0 0", lineHeight: 1.6 }}>
+                  {t.desc}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {build.meta.species && traits.length === 0 && (
+        <Muted>
+          No trait data for this species yet. Catalog entries from partnered content are names only;
+          the SRD species carry full traits.
+        </Muted>
+      )}
     </div>
   );
 }
