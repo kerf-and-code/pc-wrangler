@@ -35,9 +35,9 @@ import { C, STONE, FORGE_FONTS, forgeBackground, forgeVignette, stonePanel, ston
 import { loadSrd } from "@/lib/srd/srd";
 import { applyAdvantage } from "@/lib/dice";
 import { traitOptions, traitAsksAChoice, lineageSpells } from "@/lib/species-choices";
-import { choicesFor, resolveChoice, choiceKey, type ClassChoice } from "@/lib/class-choices";
+import { choicesFor, resolveChoice, choiceKey, costedPicks, actionsFor, type ClassChoice } from "@/lib/class-choices";
 import { classTable, classTableColumns } from "@/lib/class-table";
-import { resourcesFor, slotsFor, remaining, type Resource } from "@/lib/resources";
+import { resourcesFor, slotsFor, remaining, afterShortRest, type Resource } from "@/lib/resources";
 import { choiceEffects, applyToBuild, type ChoiceEffects } from "@/lib/apply-choices";
 import { parseCoreTraits } from "@/lib/core-traits";
 import {
@@ -658,6 +658,10 @@ function ForgeInner() {
     t.spent = next;
     return b;
   });
+  const setSpentMap = (next: Record<string, number>) => patch((b) => {
+    (b as Build & { spent?: Record<string, number> }).spent = next;
+    return b;
+  });
   const clearSpent = () => patch((b) => {
     (b as Build & { spent?: Record<string, number> }).spent = {};
     return b;
@@ -1046,8 +1050,19 @@ function ForgeInner() {
                 <ResourcePanel
                   structuredRec={srd.structuredByName[build.meta.className]}
                   level={build.level || 1}
+                  costed={[
+                    // Automatic first: a monk's Flurry is not a decision they made, and burying it
+                    // under the options they picked would read as though it were.
+                    ...actionsFor(build.meta.className || "", build.meta.subclass || "", build.level || 1)
+                      .map((a) => ({ name: a.name, summary: a.summary,
+                        resource: a.cost.resource, amount: a.cost.amount })),
+                    ...costedPicks(
+                    build.meta.className || "", build.meta.subclass || "", build.level || 1,
+                    (build as Build & { classChoices?: Record<string, string[]> }).classChoices || {},
+                    ),
+                  ]}
                   spent={(build as Build & { spent?: Record<string, number> }).spent || {}}
-                  onSpend={setSpent} onRest={clearSpent}
+                  onSpend={setSpent} onRest={clearSpent} onSpentMap={setSpentMap}
                 />
               )}
 
@@ -2295,12 +2310,14 @@ function GrantedEquipmentPanel({ bgRec, coreTraits, catalog, owned, onAdd }: {
  *   asking: a tracker that silently refilled at the wrong moment is a tracker nobody can trust. The
  *   button is one tap and it is the player's call.
  */
-function ResourcePanel({ structuredRec, level, spent, onSpend, onRest }: {
+function ResourcePanel({ structuredRec, level, costed, spent, onSpend, onRest, onSpentMap }: {
   structuredRec?: unknown;
   level: number;
+  costed: { name: string; summary: string; resource: string; amount: number }[];
   spent: Record<string, number>;
   onSpend: (key: string, n: number) => void;
   onRest: () => void;
+  onSpentMap: (next: Record<string, number>) => void;
 }) {
   const row = useMemo(
     () => classTable(structuredRec).find((r) => r.level === level),
@@ -2310,6 +2327,11 @@ function ResourcePanel({ structuredRec, level, spent, onSpend, onRest }: {
   const slots = useMemo(() => slotsFor(row), [row]);
 
   if (pools.length === 0 && slots.length === 0) return null;
+
+  // Only options whose pool this character actually has. A metamagic button that spends from a
+  // resource the tracker cannot see would either do nothing or throw, and both are worse than the
+  // button not being there.
+  const spendable = costed.filter((c) => pools.some((p) => p.key === c.resource));
 
   const anySpent = Object.values(spent).some((n) => n > 0);
 
@@ -2367,15 +2389,53 @@ function ResourcePanel({ structuredRec, level, spent, onSpend, onRest }: {
         </>
       )}
 
+      {spendable.length > 0 && (
+        <div style={{ marginTop: 14 }}>
+          <label style={forgeLabel}>Spend on</label>
+          <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
+            {spendable.map((c) => {
+              const pool = pools.find((p) => p.key === c.resource);
+              const left = pool ? remaining(pool, spent) : 0;
+              const affordable = left >= c.amount;
+              return (
+                <button key={c.name} className="forge-btn" disabled={!affordable}
+                  onClick={() => onSpend(c.resource, (spent[c.resource] || 0) + c.amount)}
+                  title={affordable ? c.summary : `Needs ${c.amount}, you have ${left}`}
+                  style={{ ...stoneButton("stone"), fontSize: 12.5, padding: "7px 12px",
+                    display: "flex", gap: 7, alignItems: "baseline",
+                    opacity: affordable ? 1 : 0.4,
+                    cursor: affordable ? "pointer" : "not-allowed" }}>
+                  <span>{c.name}</span>
+                  <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 11, color: C.plum }}>
+                    &minus;{c.amount}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          <p style={{ fontSize: 11.5, color: STONE.inkFaint, margin: "8px 0 0", lineHeight: 1.5 }}>
+            Only the options you have taken, and only while you can afford them. Tapping one spends
+            from the pool above; the pips undo it if you change your mind.
+          </p>
+        </div>
+      )}
+
       <div style={{ display: "flex", gap: 10, alignItems: "center", marginTop: 14 }}>
         <button className="forge-btn" onClick={onRest} disabled={!anySpent}
           style={{ ...stoneButton(anySpent ? "primary" : "stone"), fontSize: 12.5,
             opacity: anySpent ? 1 : 0.45 }}>
           Long rest
         </button>
+        {/* A short rest gives back different amounts per resource - all of a monk's Focus Points,
+            one Channel Divinity, none of a barbarian's rages - so this applies each pool's own rule
+            rather than one blanket refill. Spell slots are untouched: they are long-rest. */}
+        <button className="forge-btn" disabled={!anySpent}
+          onClick={() => onSpentMap(afterShortRest([...pools, ...slots], spent))}
+          style={{ ...stoneButton("stone"), fontSize: 12.5, opacity: anySpent ? 1 : 0.45 }}>
+          Short rest
+        </button>
         <span style={{ fontSize: 12, color: STONE.inkFaint, lineHeight: 1.5 }}>
-          Everything back. Warlock slots and some features return on a short rest too, which the app
-          does not track separately &mdash; give those back by tapping the pips.
+          A short rest returns what each feature actually recovers, not everything.
         </span>
       </div>
     </div>

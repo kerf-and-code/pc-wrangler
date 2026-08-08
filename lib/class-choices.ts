@@ -51,6 +51,13 @@ export type ClassChoice = {
       minLevel?: number;
       /** Another option that must be taken first, by name. Shown, but not enforced. */
       requires?: string;
+      /**
+       * What using this costs, and out of which pool. Metamagic spends Sorcery Points; nothing else
+       * authored so far spends anything. Kept as a NUMBER beside the prose rather than parsed back
+       * out of the summary: "2 points" in a sentence is for reading, and a tracker that re-derived
+       * it from English would break the first time somebody rephrased a line.
+       */
+      cost?: { resource: string; amount: number };
     }[];
     /** Spell level bounds, inclusive. 0 is a cantrip. */
     spellLevelMin?: number;
@@ -182,16 +189,16 @@ export const CLASS_CHOICES: ClassChoice[] = [
     className: "Sorcerer", level: lv, feature: `Metamagic (level ${lv})`, choose: 2,
     kind: "option" as const,
     filter: { named: [
-      { name: "Careful Spell", summary: "1 point: chosen creatures auto-succeed and take no damage" },
-      { name: "Distant Spell", summary: "1 point: double the range, or Touch becomes 30 feet" },
-      { name: "Empowered Spell", summary: "1 point: reroll damage dice up to your Charisma modifier" },
-      { name: "Extended Spell", summary: "1 point: double the duration, up to 24 hours" },
-      { name: "Heightened Spell", summary: "2 points: the target has Disadvantage on its save" },
-      { name: "Quickened Spell", summary: "2 points: cast an action spell as a Bonus Action" },
-      { name: "Seeking Spell", summary: "1 point: reroll a missed spell attack" },
-      { name: "Subtle Spell", summary: "1 point: cast with no verbal, somatic or material components" },
-      { name: "Transmuted Spell", summary: "1 point: swap the damage type for another elemental one" },
-      { name: "Twinned Spell", summary: "1 point: cast at one level higher to reach a second creature" },
+      { name: "Careful Spell", summary: "1 point: chosen creatures auto-succeed and take no damage", cost: { resource: "Sorcery Points", amount: 1 } },
+      { name: "Distant Spell", summary: "1 point: double the range, or Touch becomes 30 feet", cost: { resource: "Sorcery Points", amount: 1 } },
+      { name: "Empowered Spell", summary: "1 point: reroll damage dice up to your Charisma modifier", cost: { resource: "Sorcery Points", amount: 1 } },
+      { name: "Extended Spell", summary: "1 point: double the duration, up to 24 hours", cost: { resource: "Sorcery Points", amount: 1 } },
+      { name: "Heightened Spell", summary: "2 points: the target has Disadvantage on its save", cost: { resource: "Sorcery Points", amount: 2 } },
+      { name: "Quickened Spell", summary: "2 points: cast an action spell as a Bonus Action", cost: { resource: "Sorcery Points", amount: 2 } },
+      { name: "Seeking Spell", summary: "1 point: reroll a missed spell attack", cost: { resource: "Sorcery Points", amount: 1 } },
+      { name: "Subtle Spell", summary: "1 point: cast with no verbal, somatic or material components", cost: { resource: "Sorcery Points", amount: 1 } },
+      { name: "Transmuted Spell", summary: "1 point: swap the damage type for another elemental one", cost: { resource: "Sorcery Points", amount: 1 } },
+      { name: "Twinned Spell", summary: "1 point: cast at one level higher to reach a second creature", cost: { resource: "Sorcery Points", amount: 1 } },
     ] },
   })),
 
@@ -344,6 +351,83 @@ export function choicesFor(className: string, subclass: string, level: number): 
     .filter((c) => c.className === className && c.level <= level)
     .filter((c) => !c.subclass || c.subclass === subclass)
     .sort((a, b) => a.level - b.level || a.feature.localeCompare(b.feature));
+}
+
+/**
+ * Costed actions a class gets AUTOMATICALLY, without choosing them.
+ *
+ * WHY THESE ARE NOT IN CLASS_CHOICES
+ *   Metamagic is a choice: a sorcerer picks two of ten. Divine Spark is not - every Cleric has it
+ *   from level 2, and so does every other Cleric. Filing it as a choice with one option would mean
+ *   asking a player to pick the only thing available, which is a worse lie than a longer file.
+ *
+ * SUBCLASS-GATED ENTRIES CARRY THEIR SUBCLASS. Preserve Life is a Life Domain Cleric's Channel
+ * Divinity option and nobody else's, so offering it to every Cleric would hand them a button that
+ * spends a real resource on a feature they do not have.
+ */
+export type ClassAction = {
+  className: string;
+  subclass?: string;
+  level: number;
+  name: string;
+  summary: string;
+  cost: { resource: string; amount: number };
+};
+
+export const CLASS_ACTIONS: ClassAction[] = [
+  // Cleric. Channel Divinity is the pool; these are what it buys.
+  { className: "Cleric", level: 2, name: "Divine Spark", cost: { resource: "Channel Divinity", amount: 1 },
+    summary: "1d8 + Wisdom to heal a creature within 30 ft, or force a Con save for damage" },
+  { className: "Cleric", level: 2, name: "Turn Undead", cost: { resource: "Channel Divinity", amount: 1 },
+    summary: "Undead within 30 ft make a Wisdom save or are Frightened and Incapacitated for a minute" },
+  { className: "Cleric", subclass: "Life Domain", level: 3, name: "Preserve Life",
+    cost: { resource: "Channel Divinity", amount: 1 },
+    summary: "Restore 5 x your Cleric level in hit points, split among Bloodied creatures within 30 ft" },
+
+  // Paladin.
+  { className: "Paladin", level: 3, name: "Divine Sense", cost: { resource: "Channel Divinity", amount: 1 },
+    summary: "For 10 minutes, sense Celestials, Fiends and Undead within 60 ft" },
+  { className: "Paladin", subclass: "Oath of Devotion", level: 3, name: "Sacred Weapon",
+    cost: { resource: "Channel Divinity", amount: 1 },
+    summary: "Your weapon becomes magical and adds your Charisma to attack rolls" },
+
+  // Monk. All three arrive together at level 2 and none of them is chosen.
+  { className: "Monk", level: 2, name: "Flurry of Blows", cost: { resource: "Focus Points", amount: 1 },
+    summary: "Bonus Action: two Unarmed Strikes, three from level 10" },
+  { className: "Monk", level: 2, name: "Patient Defense", cost: { resource: "Focus Points", amount: 1 },
+    summary: "Bonus Action: Disengage and Dodge together" },
+  { className: "Monk", level: 2, name: "Step of the Wind", cost: { resource: "Focus Points", amount: 1 },
+    summary: "Bonus Action: Disengage and Dash, and double your jump distance" },
+];
+
+/** The automatic costed actions this character has reached. */
+export function actionsFor(className: string, subclass: string, level: number): ClassAction[] {
+  return CLASS_ACTIONS
+    .filter((a) => a.className === className && a.level <= level)
+    .filter((a) => !a.subclass || a.subclass === subclass)
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+/**
+ * Every named option this character has actually CHOSEN that costs something to use.
+ *
+ * Deduplicated by name: metamagic is granted at levels 2, 10 and 17 as three separate entries, and
+ * a sorcerer who took Quickened Spell at level 2 should see one button for it, not one per grant.
+ */
+export function costedPicks(
+  className: string, subclass: string, level: number, picks: Record<string, string[]>,
+): { name: string; summary: string; resource: string; amount: number }[] {
+  const seen = new Set<string>();
+  const out: { name: string; summary: string; resource: string; amount: number }[] = [];
+  for (const c of choicesFor(className, subclass, level)) {
+    const chosen = picks[choiceKey(c)] || [];
+    for (const o of c.filter?.named || []) {
+      if (!o.cost || !chosen.includes(o.name) || seen.has(o.name)) continue;
+      seen.add(o.name);
+      out.push({ name: o.name, summary: o.summary, resource: o.cost.resource, amount: o.cost.amount });
+    }
+  }
+  return out.sort((a, b) => a.name.localeCompare(b.name));
 }
 
 /** A stable key for storing a pick, so two Expertise grants at different levels do not collide. */

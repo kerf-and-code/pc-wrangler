@@ -18,15 +18,22 @@
 //   ("Unarmoed Movement" is spelled that way in the source data. Left alone: matching the data as
 //   published beats correcting it here and then failing to match on the next fetch.)
 
-/** Columns that are a spendable pool. Everything else in a class table is not. */
-export const RESOURCE_COLUMNS = new Set([
-  "Rages",
-  "Channel Divinity",
-  "Second Wind",
-  "Focus Points",
-  "Sorcery Points",
-  "Favored Enemy",
-  "Spell Slots",          // Warlock pact magic
+/**
+ * Columns that are a spendable pool, and what a SHORT REST gives back.
+ *
+ * The recovery rule is not uniform and the difference matters at the table: Channel Divinity comes
+ * back one use at a time, Focus Points come back entirely, and rages need a long rest. A single
+ * "short rest" button that treated them alike would be wrong for two of the three, which is worse
+ * than the button not existing.
+ */
+export const RESOURCE_COLUMNS = new Map<string, { shortRest: "all" | "one" | "none" }>([
+  ["Rages", { shortRest: "none" }],
+  ["Channel Divinity", { shortRest: "one" }],
+  ["Second Wind", { shortRest: "all" }],
+  ["Focus Points", { shortRest: "all" }],
+  ["Sorcery Points", { shortRest: "none" }],
+  ["Favored Enemy", { shortRest: "none" }],
+  ["Spell Slots", { shortRest: "all" }],   // Warlock pact magic
 ]);
 
 /** Spell slot columns, which are resources too but belong in their own row. */
@@ -36,8 +43,8 @@ export type Resource = {
   key: string;
   label: string;
   max: number;
-  /** Warlock slots all come back on a short rest; most of the rest are long-rest. */
-  note?: string;
+  /** What a short rest returns: everything, one use, or nothing. */
+  shortRest: "all" | "one" | "none";
 };
 
 const asCount = (v: string | undefined): number | null => {
@@ -59,10 +66,11 @@ export function resourcesFor(
   if (!row) return [];
   const out: Resource[] = [];
   for (const [col, raw] of Object.entries(row.columns)) {
-    if (!RESOURCE_COLUMNS.has(col)) continue;
+    const rule = RESOURCE_COLUMNS.get(col);
+    if (!rule) continue;
     const max = asCount(raw);
     if (max === null) continue;
-    out.push({ key: col, label: col, max });
+    out.push({ key: col, label: col, max, shortRest: rule.shortRest });
   }
   return out;
 }
@@ -76,7 +84,9 @@ export function slotsFor(
   for (const col of SLOT_COLUMNS) {
     const max = asCount(row.columns[col]);
     if (max === null) continue;
-    out.push({ key: `slot-${col}`, label: `${col} level`, max });
+    // Class spell slots return on a LONG rest. Warlock pact slots are the exception and they come
+    // through resourcesFor as "Spell Slots", not through here.
+    out.push({ key: `slot-${col}`, label: `${col} level`, max, shortRest: "none" });
   }
   return out;
 }
@@ -93,3 +103,26 @@ export const remaining = (r: Resource, spent: Record<string, number>): number =>
 
 /** Everything back. What a long rest does to almost all of these. */
 export const clearAll = (): Record<string, number> => ({});
+
+/**
+ * What a SHORT rest returns, applied to the spent map.
+ *
+ * Only touches resources it knows the rule for. A pool the tracker cannot classify is left exactly
+ * as it was rather than optimistically cleared - being handed back uses you have not earned is the
+ * error that loses a fight.
+ */
+export function afterShortRest(
+  pools: Resource[], spent: Record<string, number>,
+): Record<string, number> {
+  const next = { ...spent };
+  for (const r of pools) {
+    const used = next[r.key] || 0;
+    if (!used) continue;
+    if (r.shortRest === "all") delete next[r.key];
+    else if (r.shortRest === "one") {
+      if (used <= 1) delete next[r.key];
+      else next[r.key] = used - 1;
+    }
+  }
+  return next;
+}
