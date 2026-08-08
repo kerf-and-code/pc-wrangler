@@ -3248,7 +3248,7 @@ function ProficiencyBlock({ coreTraits, backgroundRec, masteries }: {
 
 function FeaturesPanel({
   species, speciesRec, variantName, variantRec, background, backgroundRec,
-  className, classRec, level, chosenFeats,
+  className, classRec, level, chosenFeats, coreTraits, masteries,
 }: {
   species: string; speciesRec: SpeciesMechRecord | undefined;
   variantName: string; variantRec: SpeciesVariantRec | undefined;
