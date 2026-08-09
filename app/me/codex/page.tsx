@@ -7,8 +7,6 @@ import PageShell from "@/components/page-shell";
 import { SAX } from "@/lib/theme";
 import { Header } from "@/app/me/campaigns/page";
 
-const C = { surface: SAX.slateBg, line: SAX.line, text: SAX.text, muted: SAX.muted };
-
 // The shared canon, across every campaign the player is in.
 //
 // codex_for_campaign() gates on owning a PC in the campaign, and resolves reveals
@@ -231,5 +229,5 @@ export default function MyCodexPage() {
 }
 
 function Muted({ children }: { children: React.ReactNode }) {
-  return <p style={{ textAlign: "center", color: SAX.muted, fontSize: 14, lineHeight: 1.65 }}>{children}</p>;
+  return <p style={{ textAlign: "center", color: C.muted, fontSize: 14, lineHeight: 1.65 }}>{children}</p>;
 }
