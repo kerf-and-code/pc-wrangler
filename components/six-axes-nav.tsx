@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from "react";
 import { SAX } from "@/lib/theme";
 import LogoutButton from "@/components/logout-button";
-import { C } from "@/lib/forge-theme";
 
 /* Six Axes — navigation.
    Wide screens (>=1024px): a left sidebar. Logo, an account popup (Help + Sign
@@ -23,20 +22,10 @@ const GROUPS: Group[] = [
   { label: "Play", href: "/gm/sessions", children: [
     { href: "/gm/sessions", label: "Sessions" },
     { href: "/gm/capture", label: "Capture" },
-    // The two capture paths sit together on purpose: Capture is the Discord route, Record in person
-    // is the one-microphone route, and a GM picks by how their table plays rather than by hunting
-    // through the menu. "Record in person" rather than "Record" because /record already exists on
-    // the player side, and a GM reading a nav should not have to work out which is which.
-    { href: "/gm/record", label: "Record in person" },
-    // Named for what it asks of you. "Speakers" reads like a settings page; this is a question the
-    // GM answers once per in-person recording.
-    { href: "/gm/speakers", label: "Who was speaking" },
     { href: "/gm/review", label: "Review" },
     { href: "/gm/transcripts", label: "Transcripts" },
     { href: "/gm/encounters", label: "Encounters" },
     { href: "/gm/statblock", label: "Monster Maker" },
-    // After Monster Maker, because both are things you reach for mid-session with the screen up.
-    { href: "/gm/roll", label: "Roll" },
     { href: "/gm/table", label: "Check-in" },
   ] },
   { label: "Story", href: "/gm/codex", children: [
@@ -45,10 +34,6 @@ const GROUPS: Group[] = [
     { href: "/gm/timeline", label: "Timeline" },
     { href: "/gm/map", label: "Map" },
     { href: "/gm/search", label: "Search" },
-    // Last in Story, and after Search on purpose: publishing is what you do once the codex is worth
-    // showing, not while you are still building it. Sitting beside the codex rather than under
-    // Table also keeps the decision next to the thing being decided about.
-    { href: "/gm/publish", label: "Publish" },
   ] },
   { label: "Insight", href: "/gm/dispositions", children: [
     { href: "/gm/dispositions", label: "Dispositions" },
@@ -113,6 +98,7 @@ const PLAYER_YOU: PGroup = {
     { href: "/me/library", label: "Library" },
     { href: "/me/threads", label: "Threads" },
     { href: "/me/codex", label: "Codex" },
+    { href: "/me/notes", label: "Notes" },
     { href: "/me/profile", label: "Your profile" },
     { href: "/me/settings", label: "Settings" },
   ],
@@ -121,24 +107,24 @@ const PLAYER_YOU: PGroup = {
 const hrefs = (g: Group) => (g.children ? g.children.map((c) => c.href) : [g.href]);
 
 const NAV_CSS = `
-.sax-nav{padding-bottom:14px;margin-bottom:26px;border-bottom:1px solid ${C.line};
+.sax-nav{padding-bottom:14px;margin-bottom:26px;border-bottom:1px solid ${SAX.line};
   font-family:ui-sans-serif,system-ui,-apple-system,sans-serif;}
 .sax-top{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;}
 .sax-right{display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
 .sax-brand{display:flex;align-items:center;gap:10px;text-decoration:none;}
 .sax-mark{width:30px;height:30px;opacity:.92;filter:drop-shadow(0 2px 4px rgba(0,0,0,.5));}
-.sax-word{font-family:${SAX.serif};font-size:23px;font-weight:600;color:${C.text};letter-spacing:-0.01em;line-height:1;}
-.sax-tag{font-family:${SAX.mono};font-size:9.5px;letter-spacing:0.22em;text-transform:uppercase;color:${C.muted};display:block;margin-top:3px;}
+.sax-word{font-family:${SAX.serif};font-size:23px;font-weight:600;color:${SAX.text};letter-spacing:-0.01em;line-height:1;}
+.sax-tag{font-family:${SAX.mono};font-size:9.5px;letter-spacing:0.22em;text-transform:uppercase;color:${SAX.muted};display:block;margin-top:3px;}
 .sax-grp{display:flex;gap:4px;flex-wrap:wrap;}
-.sax-glink{font-size:13.5px;color:${C.muted};text-decoration:none;padding:7px 15px;border-radius:999px;
+.sax-glink{font-size:13.5px;color:${SAX.muted};text-decoration:none;padding:7px 15px;border-radius:999px;
   transition:color .15s,background .15s;border:1px solid transparent;}
-.sax-glink:hover{color:${C.text};background:rgba(255,255,255,0.05);}
-.sax-glink.on{color:${C.ink};background:${SAX.brass};font-weight:600;}
+.sax-glink:hover{color:${SAX.text};background:rgba(255,255,255,0.05);}
+.sax-glink.on{color:${SAX.inkDeep};background:${SAX.brass};font-weight:600;}
 .sax-sub{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px;padding-left:2px;}
 .sax-slink{font-family:${SAX.mono};font-size:11px;letter-spacing:0.08em;text-transform:uppercase;
-  color:${C.muted};text-decoration:none;padding:5px 11px;border-radius:7px;border:1px solid ${C.line};
+  color:${SAX.muted};text-decoration:none;padding:5px 11px;border-radius:7px;border:1px solid ${SAX.line};
   transition:color .15s,border-color .15s,background .15s;}
-.sax-slink:hover{color:${C.text};border-color:${C.brassDim};}
+.sax-slink:hover{color:${SAX.text};border-color:${SAX.brassDim};}
 .sax-slink.on{color:${SAX.brass};border-color:${SAX.brass};background:rgba(200,162,75,0.08);}
 .sax-nav a:focus-visible,.sax-side a:focus-visible,.sax-side summary:focus-visible{outline:2px solid ${SAX.brass};outline-offset:2px;}
 
@@ -147,32 +133,32 @@ const NAV_CSS = `
 .sax-side .sax-word{font-size:20px;}
 .sax-vnav{display:flex;flex-direction:column;gap:2px;margin-top:4px;}
 .sax-vgroup{display:flex;flex-direction:column;}
-.sax-vlink{font-size:14.5px;color:${C.muted};text-decoration:none;padding:9px 12px;border-radius:9px;
+.sax-vlink{font-size:14.5px;color:${SAX.muted};text-decoration:none;padding:9px 12px;border-radius:9px;
   transition:color .15s,background .15s;}
-.sax-vlink:hover{color:${C.text};background:rgba(255,255,255,0.05);}
-.sax-vlink.on{color:${C.ink};background:${SAX.brass};font-weight:600;}
-.sax-vsub{display:flex;flex-direction:column;gap:1px;margin:2px 0 8px 12px;padding-left:9px;border-left:1px solid ${C.line};}
+.sax-vlink:hover{color:${SAX.text};background:rgba(255,255,255,0.05);}
+.sax-vlink.on{color:${SAX.inkDeep};background:${SAX.brass};font-weight:600;}
+.sax-vsub{display:flex;flex-direction:column;gap:1px;margin:2px 0 8px 12px;padding-left:9px;border-left:1px solid ${SAX.line};}
 .sax-vslink{font-family:${SAX.mono};font-size:11px;letter-spacing:0.06em;text-transform:uppercase;
-  color:${C.muted};text-decoration:none;padding:6px 10px;border-radius:6px;transition:color .15s;}
-.sax-vslink:hover{color:${C.text};}
+  color:${SAX.muted};text-decoration:none;padding:6px 10px;border-radius:6px;transition:color .15s;}
+.sax-vslink:hover{color:${SAX.text};}
 .sax-vslink.on{color:${SAX.brass};}
 .sax-acct{position:relative;}
 .sax-acct>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:9px;}
 .sax-acct>summary::-webkit-details-marker{display:none;}
 .sax-acct>summary:hover{background:rgba(255,255,255,0.05);}
-.sax-avatar{width:26px;height:26px;border-radius:50%;background:${C.surface};border:1px solid ${C.line};
+.sax-avatar{width:26px;height:26px;border-radius:50%;background:${SAX.slateBg};border:1px solid ${SAX.line};
   display:flex;align-items:center;justify-content:center;color:${SAX.brass};font-size:12px;flex-shrink:0;}
-.sax-acct-label{font-size:13.5px;color:${C.muted};}
-.sax-acct-menu{position:absolute;left:6px;right:6px;top:100%;margin-top:4px;background:${C.ink};
-  border:1px solid ${C.line};border-radius:10px;padding:6px;z-index:20;display:flex;flex-direction:column;gap:2px;
+.sax-acct-label{font-size:13.5px;color:${SAX.muted};}
+.sax-acct-menu{position:absolute;left:6px;right:6px;top:100%;margin-top:4px;background:${SAX.inkDeep};
+  border:1px solid ${SAX.line};border-radius:10px;padding:6px;z-index:20;display:flex;flex-direction:column;gap:2px;
   box-shadow:0 14px 30px rgba(0,0,0,0.55);}
-.sax-acct-item{font-size:13.5px;color:${C.muted};text-decoration:none;padding:8px 10px;border-radius:7px;}
-.sax-acct-item:hover{background:rgba(255,255,255,0.05);color:${C.text};}
+.sax-acct-item{font-size:13.5px;color:${SAX.muted};text-decoration:none;padding:8px 10px;border-radius:7px;}
+.sax-acct-item:hover{background:rgba(255,255,255,0.05);color:${SAX.text};}
 
 @media (min-width:1024px){
   .sax-nav{display:none;}
   .sax-side{display:flex;flex-direction:column;gap:16px;position:fixed;left:0;top:0;bottom:0;width:220px;
-    padding:22px 14px;overflow-y:auto;background:rgba(14,11,8,0.86);border-right:1px solid ${C.line};z-index:10;}
+    padding:22px 14px;overflow-y:auto;background:rgba(6,3,10,0.82);border-right:1px solid ${SAX.line};z-index:10;}
 }
 `;
 
