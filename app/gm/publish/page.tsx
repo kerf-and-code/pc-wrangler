@@ -18,6 +18,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import PageShell from "@/components/page-shell";
 import { createClient } from "@/lib/supabase/client";
+import { PortraitUploader } from "@/components/portrait-uploader";
 import { C, FORGE_RADIUS, STONE } from "@/lib/forge-theme";
 import { SAX } from "@/lib/theme";
 
@@ -25,6 +26,7 @@ type Campaign = {
   id: string; name: string;
   public_slug: string | null; public_published_at: string | null; public_blurb: string | null;
   public_listed: boolean;
+  codex_cover_url: string | null;
 };
 type Item = {
   key: string; kind: "entry" | "npc"; id: string;
@@ -47,6 +49,18 @@ export default function PublishPage() {
   const [note, setNote] = useState<string | null>(null);
 
   const campaign = campaigns.find((c) => c.id === campaignId) ?? null;
+
+  // The same control as on the codex page, on purpose. A GM setting up a public page works from
+  // here, and sending them elsewhere for the one visual choice the page has would be the kind of
+  // split that makes a setting feel hidden.
+  const saveCover = async (url: string) => {
+    if (!campaignId) return;
+    const { error } = await supabase
+      .from("campaigns").update({ codex_cover_url: url || null }).eq("id", campaignId);
+    if (error) return;
+    setCampaigns((prev) => prev.map((c) =>
+      (c.id === campaignId ? { ...c, codex_cover_url: url || null } : c)));
+  };
   const published = Boolean(campaign?.public_published_at);
   const publicCount = items.filter((i) => i.is_public).length;
 
@@ -56,7 +70,7 @@ export default function PublishPage() {
       if (!user) return;
       const { data } = await supabase
         .from("campaigns")
-        .select("id, name, public_slug, public_published_at, public_blurb, public_listed")
+        .select("id, name, public_slug, public_published_at, public_blurb, public_listed, codex_cover_url")
         .eq("gm_id", user.id).order("name");
       const rows = (data as Campaign[]) ?? [];
       setCampaigns(rows);
@@ -224,6 +238,27 @@ export default function PublishPage() {
                 ? `${publicCount} item${publicCount === 1 ? "" : "s"} are readable at that address. Unpublishing hides the page immediately and keeps every choice below.`
                 : "Publishing creates a public web address. It is separate from your players' link, so sharing it never lets a reader claim a character."}
             </p>
+          </Card>
+
+          <Card>
+            <Label>Cover image</Label>
+            <PortraitUploader
+              label=""
+              basePath={campaignId ? `${campaignId}/codex/cover` : null}
+              currentUrl={campaign?.codex_cover_url ?? null}
+              onUploaded={(url) => { void saveCover(url); }}
+            />
+            <p style={{ ...body, marginTop: 8, marginBottom: 0 }}>
+              Shown behind the campaign name at the top of the public page. A dark overlay keeps the
+              title readable over a bright image. Leave it empty and the page opens on the name alone.
+            </p>
+            {campaign?.codex_cover_url && (
+              <button type="button" onClick={() => void saveCover("")}
+                style={{ background: "transparent", color: C.muted, border: "none", cursor: "pointer",
+                  fontSize: 12, padding: 0, marginTop: 8, textDecoration: "underline" }}>
+                Remove the cover
+              </button>
+            )}
           </Card>
 
           <Card>
