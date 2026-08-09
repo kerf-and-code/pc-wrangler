@@ -1,0 +1,92 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files (can opt-in for committing if needed)
+.env*.local
+.env
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# secrets and local credentials (these have leaked before, keep them out)
+.Renviron
+**/.Renviron
+*.b64
+gcp-sa-key*.json
+
+# R noise
+.Rhistory
+.RData
+.Rproj.user/
+**/.Rhistory
+**/.RData
+
+# local spikes and capture debris
+dave_spike_spyder.py
+beyond20/
+captures/
+
+# supabase local state
+supabase/.temp/
+
+# --- Six Axes: build artifacts and local scratch ---
+filetree.txt
+*.lnk
+wrangler-disposition/*.exe
+wrangler-disposition/disposition_posteriors.csv
+six-axes-capture-extension/*.zip
+
+# local working files, not project source
+*.zip
+*.tar.gz
+BobertFighter.pdf
+BobertRogue.pdf
+BobertWizard.pdf
+bobert*.json
+incident-logs.txt
+HANDOFF-*.md
+extracted/
+__pycache__/
+
+# --- exceptions, and they have to come after the rules they override ---
+#
+# git applies the LAST matching pattern, so a negation placed above its rule does nothing. These sit
+# at the end of the file for that reason, not for tidiness.
+#
+# The Foundry module archive is a shipped deliverable, not scratch: public/foundry/six-axes.zip is
+# what the module manifest's download URL points at, and Foundry fetches it during an install. The
+# blanket *.zip above exists to keep repo-root working files out, and it caught this by accident.
+!public/foundry/*.zip
