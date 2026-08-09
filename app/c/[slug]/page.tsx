@@ -152,6 +152,22 @@ async function Codex({ params }: { params: Promise<{ slug: string }> }) {
 
   return (
     <>
+        <style dangerouslySetInnerHTML={{ __html: `
+          .cdx-cols { display: grid; gap: 26px; align-items: start;
+                      grid-template-columns: minmax(0, 1fr); }
+          .cdx-rail { display: flex; flex-wrap: wrap; gap: 4px; }
+          .cdx-link { text-decoration: none; }
+          .cdx-link:hover { background: rgba(0,0,0,0.05); }
+          /* Below this width a side rail would eat half the screen, so the sections become a row of
+             links above the content instead. */
+          @media (min-width: 860px) {
+            .cdx-cols { grid-template-columns: 190px minmax(0, 1fr); }
+            .cdx-rail { flex-direction: column; flex-wrap: nowrap;
+                        position: sticky; top: 16px;
+                        border-right: 1px solid rgba(0,0,0,0.08); padding-right: 12px; }
+          }
+        ` }} />
+
         {/* The cover is a BACKDROP for the title and the search, not a banner above them. A visitor
             arriving from a share link should see the campaign's own image with the one control that
             matters on top of it, rather than scrolling past a picture to reach a text box.
@@ -182,10 +198,10 @@ async function Codex({ params }: { params: Promise<{ slug: string }> }) {
                 sections and eighty entries is a reference document, and a reference document wants
                 its contents visible while you read rather than scrolled away. Collapses to a row
                 on a narrow screen, where a side rail would eat half the width. */}
-            <div style={twoCol}>
-              <nav style={rail} aria-label="Sections">
+            <div className="cdx-cols">
+              <nav className="cdx-rail" aria-label="Sections">
                 {sections.map((s) => (
-                  <a key={s.type} href={`#${s.type}`} style={railLink}>
+                  <a key={s.type} href={`#${s.type}`} className="cdx-link" style={railLink}>
                     <span>{s.label}</span>
                     <span style={railCount}>{s.rows.length}</span>
                   </a>
@@ -275,16 +291,6 @@ const coverHeader = (url: string): React.CSSProperties => ({
 });
 const coverInner: React.CSSProperties = { padding: "26px 24px 20px" };
 
-const twoCol: React.CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "minmax(0, 1fr)",
-  gap: 26,
-  alignItems: "start",
-};
-const rail: React.CSSProperties = {
-  display: "flex", flexWrap: "wrap", gap: 4,
-  position: "sticky", top: 16, alignSelf: "start",
-};
 const railLink: React.CSSProperties = {
   display: "flex", justifyContent: "space-between", gap: 10,
   padding: "7px 10px", borderRadius: 4, textDecoration: "none",
