@@ -1738,20 +1738,33 @@ function SpellsPanel({ build, spells, sheet, structuredRec, granted, onToggle, l
   const [open, setOpen] = useState<string | null>(null);
   const [newLoadout, setNewLoadout] = useState("");
 
-  const cls = build.meta.className || "";
+  // EVERY class the character holds, not just the primary. A Rogue(Assassin)/Cleric filtered on
+  // meta.className alone saw the Rogue list - which for an Assassin is EMPTY - so the tab looked
+  // broken rather than incomplete, and the only escape was turning the filter off entirely.
+  const myClasses = useMemo(() => {
+    const extra = ((build as Build & { multiclass?: { className: string }[] }).multiclass || [])
+      .map((c) => c.className);
+    return [build.meta.className || "", ...extra].filter(Boolean);
+  }, [build]);
+  const cls = myClasses.join(", ");
+
   const chosen = useMemo(() => new Set([...(build.spells?.cantrips || []), ...(build.spells?.known || [])]),
     [build.spells]);
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
     return spells.filter((sp) => {
-      if (onlyMine && cls && !spellClasses(sp).some((c) => c.toLowerCase() === cls.toLowerCase())) return false;
+      // Matches against ANY of the character's classes: a multiclassed caster should see the union
+      // of their lists, and a spell on two of them should appear once, not be filtered by whichever
+      // class happens to be first.
+      if (onlyMine && myClasses.length
+        && !spellClasses(sp).some((c) => myClasses.some((mine) => c.toLowerCase() === mine.toLowerCase()))) return false;
       if (lvl !== "" && spellLevel(sp) !== Number(lvl)) return false;
       if (school && (sp.school || "") !== school) return false;
       if (needle && !sp.name.toLowerCase().includes(needle)) return false;
       return true;
     }).sort((a, b) => spellLevel(a) - spellLevel(b) || a.name.localeCompare(b.name));
-  }, [spells, cls, lvl, school, q, onlyMine]);
+  }, [spells, myClasses, lvl, school, q, onlyMine]);
 
   // Built from the loaded spells rather than a hardcoded list, so a ruleset or partner content that
   // introduces a school shows it without a code change.
