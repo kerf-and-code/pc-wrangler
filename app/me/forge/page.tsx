@@ -247,6 +247,10 @@ function ForgeInner() {
   // navigation, and pushing it through the router would re-run the page's data effects on every
   // tab click.
   const tabParam = params.get("tab") as TabKey | null;
+  // Which class sub-tab is open. Not in the URL: it is a view inside a view, and a character with
+  // one class has no sub-tabs at all, so a stale value would point at nothing.
+  const [classTab, setClassTab] = useState("");
+
   const [tab, setTabState] = useState<TabKey>(
     TABS.some((t) => t.key === tabParam) ? (tabParam as TabKey) : "identity",
   );
@@ -685,6 +689,19 @@ function ForgeInner() {
     t.multiclass = [...(t.multiclass || []), { className, level: 1 }];
     return b;
   });
+  // The sub-tabs treat every class the same, so these route by NAME rather than by whether a class
+  // happens to be the primary. Without this the first tab would need its own handlers and would
+  // behave subtly differently - which is exactly the seam the sub-tabs exist to remove.
+  const setAnyClassLevel = (className: string, level: number) => {
+    const capped = Math.max(1, Math.min(30, level));
+    if (className === build.meta.className) return setLevel(capped);
+    return setClassLevel(className, capped);
+  };
+  const setAnyClassSubclass = (className: string, subclass: string) => {
+    if (className === build.meta.className) return setSubclass(subclass);
+    return setClassSubclass(className, subclass);
+  };
+
   const setClassLevel = (className: string, level: number) => patch((b) => {
     const t = b as Build & { multiclass?: MC[] };
     t.multiclass = (t.multiclass || []).map((c) =>
@@ -962,6 +979,9 @@ function ForgeInner() {
               {tab === "identity" && (
               <IdentityPanel
                 backgroundRows={srd.backgrounds}
+                heldClasses={((build as Build & { multiclass?: { className: string }[] }).multiclass || [])
+                  .map((c) => c.className)}
+                onAddClass={addClass}
                 build={build} speciesVariant={speciesVariant}
                 edition={edition} onEdition={setEdition}
                 partners={partners} enabledPartners={enabledPartners} onTogglePartner={togglePartner}
@@ -970,7 +990,7 @@ function ForgeInner() {
                 speciesDesc={speciesDesc} backgroundDesc={backgroundDesc} subclassRoleTags={subclassRoleTags}
                 catalogReady={!!catalog} epic={epic}
                 onSpecies={setSpecies} onVariant={setVariant} onBackground={setBackground}
-                onClassName={setClassName} onSubclass={setSubclass} onLevel={setLevel}
+                onClassName={setClassName} onSubclass={setSubclass}
               />
               )}
 
@@ -1013,62 +1033,19 @@ function ForgeInner() {
                   onAbility={setAbility} onMany={setAbilities} />
               )}
 
-              {tab === "class" && build.meta.className && (progression.length > 0 || epicRows.length > 0) && (
-                <ClassProgressionPanel
-                  className={build.meta.className} level={build.level}
-                  progression={progression} epicRows={epicRows}
-                  classRec={srd.classByName[build.meta.className]}
-                  structuredRec={srd.structuredByName[build.meta.className]}
-                />
-              )}
-
-              {/* Each additional class gets its OWN progression panel at its own level. One merged
-                  table would have to reconcile two classes' columns against two different levels,
-                  and the result reads as a single class that never existed. Two tables is honest
-                  and is also how the books present it. */}
-              {tab === "class" && ((build as Build & { multiclass?: { className: string; subclass?: string; level: number }[] })
-                .multiclass || []).map((c) => (
-                <ClassProgressionPanel key={c.className}
-                  className={c.className} level={c.level || 1}
-                  progression={classProgression(srd.classByName[c.className], c.level || 1)}
-                  epicRows={[]}
-                  classRec={srd.classByName[c.className]}
-                  structuredRec={srd.structuredByName[c.className]}
-                />
-              ))}
-
-              {tab === "class" && !build.meta.className && (
-                <div style={stonePanel()}>
-                  <PanelTitle>Class</PanelTitle>
-                  <Muted>Pick a class on the Identity tab and its levels appear here.</Muted>
-                </div>
-              )}
-
               {tab === "class" && (
-                <MulticlassPanel
-                  build={build} sheet={sheet}
-                  classOpts={classOpts.map((c) => c.name)}
+                <ClassTab
+                  build={build} sheet={sheet} edition={edition}
+                  activeClass={classTab} onClassTab={setClassTab}
+                  epicRows={epicRows}
+                  classRecFor={(cn) => srd.classByName[cn]}
+                  structuredFor={(cn) => srd.structuredByName[cn]}
                   subclassFor={(cn) => (catalog ? subclassOptions(catalog, cn, enabledPartners) : [])}
-                  onAdd={addClass} onLevel={setClassLevel}
-                  onSubclass={setClassSubclass} onRemove={removeClass}
-                />
-              )}
-
-              {tab === "class" && build.meta.className && (
-                <ClassChoicesPanel
-                  build={build} sheet={sheet}
                   weapons={srd.equipment} spells={srd.spells} feats={srd.featList}
-                  structuredRec={srd.structuredByName[build.meta.className]}
-                  edition={edition}
                   picks={(build as Build & { classChoices?: Record<string, string[]> }).classChoices || {}}
                   onPick={setClassChoice}
-                />
-              )}
-
-              {tab === "class" && build.meta.className && (asiLevels.length > 0 || build.level >= 19) && (
-                <FeatsPanel
-                  asiLevels={asiLevels} choices={build.epicChoices || {}}
-                  featList={srd.featList} level={build.level} onChoose={setLevelChoice}
+                  onLevel={setAnyClassLevel} onSubclass={setAnyClassSubclass} onRemove={removeClass}
+                  onChoose={setLevelChoice}
                 />
               )}
 
@@ -2571,119 +2548,135 @@ function ResourcePanel({ structuredRec, level, costed, extraPools, extraClasses,
 }
 
 
-/**
- * Additional classes beyond the first.
- *
- * WHY THE PRIMARY CLASS STAYS ON THE IDENTITY TAB
- *   meta.className is what every existing character has and what most of the derivation reads. This
- *   panel adds classes ALONGSIDE it rather than replacing it, so a single-class character is
- *   untouched and a multiclass one is the primary plus a list. The alternative - one array of
- *   classes - reads better and would have rewritten the meaning of build.level everywhere at once.
- *
- * WHAT IT DOES AND DOES NOT DERIVE YET
- *   Proficiency bonus and hit points are correct across classes: the bonus comes from the TOTAL
- *   level, and only the first class contributes a full hit die. What is NOT yet applied is the
- *   second class's FEATURES - a Fighter 5 / Rogue 3 gets no Sneak Attack from this panel, and the
- *   spell slot table for multiclass casters is untouched. Both are named below rather than left for
- *   a player to discover, because a sheet that is quietly missing half a class is worse than one
- *   that says so.
- */
-function MulticlassPanel({ build, sheet, classOpts, subclassFor, onAdd, onLevel, onSubclass, onRemove }: {
+function ClassTab({
+  build, sheet, edition, activeClass, onClassTab, epicRows,
+  classRecFor, structuredFor, subclassFor, weapons, spells, feats, picks,
+  onPick, onLevel, onSubclass, onRemove, onChoose,
+}: {
   build: Build;
   sheet: NonNullable<ReturnType<typeof deriveSheet>> | null;
-  classOpts: string[];
-  subclassFor: (className: string) => string[];
-  onAdd: (className: string) => void;
-  onLevel: (className: string, level: number) => void;
-  onSubclass: (className: string, subclass: string) => void;
-  onRemove: (className: string) => void;
+  edition: string;
+  activeClass: string;
+  onClassTab: (c: string) => void;
+  epicRows: LevelGroup[];
+  classRecFor: (cn: string) => ClassRecord | undefined;
+  structuredFor: (cn: string) => unknown;
+  subclassFor: (cn: string) => string[];
+  weapons: ItemRecord[];
+  spells: SpellRecord[];
+  feats: FeatOption[];
+  picks: Record<string, string[]>;
+  onPick: (key: string, values: string[]) => void;
+  onLevel: (cn: string, level: number) => void;
+  onSubclass: (cn: string, sc: string) => void;
+  onRemove: (cn: string) => void;
+  onChoose: (level: number, choice: EpicChoiceInput | null) => void;
 }) {
   const extra = ((build as Build & { multiclass?: { className: string; subclass?: string; level: number }[] })
     .multiclass) || [];
-  const [picking, setPicking] = useState("");
 
-  if (!build.meta.className) {
+  const classes = build.meta.className
+    ? [
+        { name: build.meta.className, subclass: build.meta.subclass || "", level: build.level, primary: true },
+        ...extra.map((c) => ({ name: c.className, subclass: c.subclass || "", level: c.level || 1, primary: false })),
+      ]
+    : [];
+
+  if (classes.length === 0) {
     return (
-      <div style={{ ...stonePanel(), marginBottom: 14 }}>
-        <PanelTitle>Classes</PanelTitle>
-        <Muted>Pick a class on the Identity tab first.</Muted>
+      <div style={stonePanel()}>
+        <PanelTitle>Class</PanelTitle>
+        <Muted>Pick a class on the Identity tab and its levels appear here.</Muted>
       </div>
     );
   }
 
-  const total = sheet?.totalLevel ?? build.level;
+  const current = classes.find((c) => c.name === activeClass) || classes[0];
+  const total = classes.reduce((n, c) => n + c.level, 0);
+  // What this class could rise to without the total passing 30.
+  const headroom = 30 - (total - current.level);
 
   return (
-    <div style={{ ...stonePanel(), marginBottom: 14 }}>
-      <PanelTitle hint="A character can hold levels in more than one class.">Classes</PanelTitle>
-
-      <div style={{ display: "grid", gap: 8, marginBottom: 10 }}>
-        <div style={{ display: "flex", gap: 10, alignItems: "baseline", flexWrap: "wrap",
-          background: "rgba(200,162,75,0.10)", borderRadius: 4, padding: "9px 12px" }}>
-          <span style={{ fontSize: 14, color: C.sun }}>
-            {build.meta.className} {build.level}
-          </span>
-          {build.meta.subclass && (
-            <span style={{ fontSize: 12.5, color: STONE.inkDim }}>{build.meta.subclass}</span>
-          )}
-          <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 11, color: STONE.inkFaint,
-            marginLeft: "auto" }}>
-            first class &middot; set on Identity
+    <>
+      {classes.length > 1 && (
+        <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 10 }} role="tablist">
+          {classes.map((c) => {
+            const on = c.name === current.name;
+            return (
+              <button key={c.name} role="tab" aria-selected={on} className="forge-btn"
+                onClick={() => onClassTab(c.name)}
+                style={{ ...stoneButton(on ? "primary" : "stone"), fontSize: 13, padding: "8px 14px" }}>
+                {c.name} {c.level}
+              </button>
+            );
+          })}
+          <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 11.5, color: C.sun,
+            marginLeft: "auto", alignSelf: "center" }}>
+            character level {total} of 30
           </span>
         </div>
-
-        {extra.map((c) => (
-          <div key={c.className} style={{ display: "flex", gap: 8, alignItems: "center",
-            flexWrap: "wrap", background: "rgba(0,0,0,0.24)", borderRadius: 4, padding: "9px 12px" }}>
-            <span style={{ fontSize: 14, color: STONE.ink, minWidth: 90 }}>{c.className}</span>
-            <label style={{ fontFamily: FORGE_FONTS.mono, fontSize: 11, color: STONE.inkFaint }}>
-              level
-              <input type="number" min={1} max={20} value={c.level}
-                onChange={(e) => onLevel(c.className, Number(e.target.value))}
-                style={{ ...stoneField(), width: 62, marginLeft: 6, padding: "5px 8px", fontSize: 13 }} />
-            </label>
-            <select value={c.subclass || ""} onChange={(e) => onSubclass(c.className, e.target.value)}
-              style={{ ...stoneField(), width: "auto", minWidth: 150, padding: "6px 9px", fontSize: 12.5 }}>
-              <option value="" style={OPTION_STYLE}>No subclass</option>
-              {subclassFor(c.className).map((sc) => (
-                <option key={sc} value={sc} style={OPTION_STYLE}>{sc}</option>
-              ))}
-            </select>
-            <button onClick={() => onRemove(c.className)}
-              style={{ ...stoneButton("ghost"), marginLeft: "auto", fontSize: 12, padding: "5px 10px",
-                color: C.warn }}>
-              Remove
-            </button>
-          </div>
-        ))}
-      </div>
-
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-        <select value={picking} onChange={(e) => setPicking(e.target.value)}
-          style={{ ...stoneField(), width: "auto", minWidth: 180, padding: "8px 10px", fontSize: 13 }}>
-          <option value="" style={OPTION_STYLE}>Add another class&hellip;</option>
-          {classOpts
-            .filter((n) => n !== build.meta.className && !extra.some((c) => c.className === n))
-            .map((n) => <option key={n} value={n} style={OPTION_STYLE}>{n}</option>)}
-        </select>
-        <button className="forge-btn" disabled={!picking}
-          onClick={() => { onAdd(picking); setPicking(""); }}
-          style={{ ...stoneButton("primary"), fontSize: 12.5, opacity: picking ? 1 : 0.45 }}>
-          Add
-        </button>
-        <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 11.5, color: C.sun, marginLeft: "auto" }}>
-          character level {total}
-        </span>
-      </div>
-
-      {extra.length > 0 && (
-        <p style={{ fontSize: 12, color: STONE.inkFaint, margin: "12px 0 0", lineHeight: 1.55 }}>
-          Your proficiency bonus and hit points account for every class. Two things do not yet: the
-          features of your later classes, and the shared spell slot table casters use when
-          multiclassed. Both are on the list; until then, take those from the book.
-        </p>
       )}
-    </div>
+
+      <div style={{ ...stonePanel(), marginBottom: 14 }}>
+        <PanelTitle hint={current.primary
+          ? "Your first class. Its hit die and saving throws are the ones you started with."
+          : "A class taken later. Only the first class contributes a full hit die."}>
+          {current.name}
+        </PanelTitle>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px,1fr))", gap: 14 }}>
+          <div>
+            <label style={forgeLabel}>Level {current.level}</label>
+            <input type="range" min={1} max={Math.max(1, headroom)} value={current.level}
+              onChange={(e) => onLevel(current.name, Number(e.target.value))}
+              style={{ width: "100%" }} />
+            <div style={{ display: "flex", justifyContent: "space-between",
+              fontFamily: FORGE_FONTS.mono, fontSize: 10.5, color: STONE.inkFaint }}>
+              <span>1</span>
+              <span>{Math.max(1, headroom)}{headroom < 30 ? " (cap)" : ""}</span>
+            </div>
+          </div>
+
+          <Field label="Subclass" value={current.subclass}
+            onChange={(v) => onSubclass(current.name, v)}
+            options={subclassFor(current.name)}
+            placeholder="No subclass yet" />
+        </div>
+
+        {!current.primary && (
+          <button onClick={() => { onRemove(current.name); onClassTab(""); }}
+            style={{ ...stoneButton("ghost"), fontSize: 12, padding: "6px 11px", marginTop: 8,
+              color: C.warn }}>
+            Remove {current.name}
+          </button>
+        )}
+      </div>
+
+      <ClassProgressionPanel
+        className={current.name} level={current.level}
+        progression={classProgression(classRecFor(current.name), current.level)}
+        epicRows={current.primary ? epicRows : []}
+        classRec={classRecFor(current.name)}
+        structuredRec={structuredFor(current.name)}
+      />
+
+      <ClassChoicesPanel
+        build={{ ...build, meta: { ...build.meta, className: current.name, subclass: current.subclass },
+          level: current.level } as Build}
+        sheet={sheet} weapons={weapons} spells={spells} feats={feats}
+        structuredRec={structuredFor(current.name)} edition={edition}
+        picks={picks} onPick={onPick}
+      />
+
+      {/* ASIs are granted PER CLASS at its own 4/8/12/16/19, so a Fighter 4 / Rogue 4 has two. The
+          panel is handed this class's ladder rather than the character's total level, which would
+          have given one ladder counted from a number neither class reached. */}
+      <FeatsPanel
+        asiLevels={asiLevelsUpTo(classRecFor(current.name), current.level)}
+        choices={build.epicChoices || {}}
+        featList={feats} level={current.level} onChoose={onChoose}
+      />
+    </>
   );
 }
 
@@ -2924,19 +2917,22 @@ function IdentityPanel(props: {
   speciesOpts: { name: string }[]; classOpts: { name: string }[];
   variantOpts: { name: string; variant_kind: string }[]; subclassOpts: string[];
   backgroundRows: BackgroundRecord[];
+  heldClasses: string[];
+  onAddClass: (cn: string) => void;
   speciesDesc: Described | null; backgroundDesc: Described | null; subclassRoleTags: string[];
   catalogReady: boolean;
   epic: { abilityCap: number; asiCount: number; epicFeatCount: number };
   onSpecies: (v: string) => void; onVariant: (v: string) => void; onBackground: (v: string) => void;
-  onClassName: (v: string) => void; onSubclass: (v: string) => void; onLevel: (v: number) => void;
+  onClassName: (v: string) => void; onSubclass: (v: string) => void;
 }) {
   const {
     build, speciesVariant, edition, onEdition, partners, enabledPartners, onTogglePartner,
-    speciesOpts, classOpts, variantOpts, subclassOpts, backgroundRows,
+    speciesOpts, classOpts, variantOpts, subclassOpts, backgroundRows, heldClasses, onAddClass,
     speciesDesc, backgroundDesc,
     subclassRoleTags, catalogReady, epic,
-    onSpecies, onVariant, onBackground, onClassName, onSubclass, onLevel,
+    onSpecies, onVariant, onBackground, onClassName, onSubclass,
   } = props;
+  const [adding, setAdding] = useState("");
 
   return (
     <div style={stonePanel()}>
@@ -3045,16 +3041,32 @@ function IdentityPanel(props: {
         </div>
       )}
 
-      <div style={{ marginTop: 6 }}>
-        <label style={forgeLabel}>Level</label>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <input type="range" min={1} max={30} value={build.level}
-            onChange={(e) => onLevel(parseInt(e.target.value, 10))}
-            style={{ flex: 1, accentColor: SAX.brass }} />
-          <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 22, color: STONE.brassHi, minWidth: 34, textAlign: "right" }}>
-            {build.level}
-          </span>
+      {/* Level lives on the Class tab now, one slider per class. Keeping a second copy here would
+          mean a multiclass character had their Fighter level in one place and their Monk level in
+          another, which is the disconnect the sub-tabs exist to remove. */}
+      <div style={{ marginTop: 10, paddingTop: 12, borderTop: `1px solid ${STONE.hi}` }}>
+        <label style={forgeLabel}>Classes</label>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+          <select value={adding} onChange={(e) => setAdding(e.target.value)}
+            style={{ ...stoneField(), width: "auto", minWidth: 180, padding: "8px 10px", fontSize: 13 }}>
+            <option value="" style={OPTION_STYLE}>Add another class&hellip;</option>
+            {classOpts.map((c) => c.name)
+              .filter((n) => n !== build.meta.className && !heldClasses.includes(n))
+              .map((n) => <option key={n} value={n} style={OPTION_STYLE}>{n}</option>)}
+          </select>
+          <button className="forge-btn" disabled={!adding || !build.meta.className}
+            onClick={() => { onAddClass(adding); setAdding(""); }}
+            style={{ ...stoneButton("primary"), fontSize: 12.5,
+              opacity: adding && build.meta.className ? 1 : 0.45 }}>
+            Add
+          </button>
         </div>
+        <p style={{ fontSize: 12, color: STONE.inkFaint, margin: "8px 0 0", lineHeight: 1.5 }}>
+          {build.meta.className
+            ? "Set each class's level and subclass on the Class tab. Levels total 30 at most."
+            : "Pick a first class above before adding another."}
+        </p>
+      </div>
         {build.level > 20 && (
           <div style={{ marginTop: 10 }}>
             <span style={stoneChip("brass")}>Epic tier</span>
@@ -3063,7 +3075,6 @@ function IdentityPanel(props: {
             <span style={stoneChip("moss")}>Ability cap {epic.abilityCap}</span>
           </div>
         )}
-      </div>
     </div>
   );
 }
