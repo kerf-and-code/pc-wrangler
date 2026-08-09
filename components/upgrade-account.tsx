@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { SAX } from "@/lib/theme";
-import { C } from "@/lib/forge-theme";
+import { FORGE_RADIUS, C } from "@/lib/forge-theme";
 
 // Upgrade a guest to a durable account.
 //

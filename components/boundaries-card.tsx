@@ -7,7 +7,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { C } from "@/lib/forge-theme";
+import { FORGE_RADIUS, C } from "@/lib/forge-theme";
 
 type SafetyRow = { player_name: string | null; safety: { lines?: string[]; veils?: string[]; note?: string | null } | null };
 

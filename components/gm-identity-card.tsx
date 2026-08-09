@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import { surfaces } from "@/lib/theme";
-import { C } from "@/lib/forge-theme";
+import { FORGE_RADIUS, C } from "@/lib/forge-theme";
 
 type Identity = {
   id: string;

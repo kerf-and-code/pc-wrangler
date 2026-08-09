@@ -49,6 +49,8 @@ TOKEN = {
     "#e2b878": "C.sun", "#f4c430": "C.brass", "#ffd75e": "C.sunSoft",
     "#9fe0ae": "C.good", "#5dbe9a": "C.good", "#8fbf8f": "C.good", "#9aa880": "C.good",
     "#e0a2b8": "C.warn", "#e07a5f": "C.warn", "#e7b7b0": "C.warn",
+    "#f2c6bc": "C.warn", "#c0392b": "C.warn",
+    "#2f7d4f": "C.good",
 }
 # Fills rather than text: these become a wash so they read as a surface.
 SURFACE = {
@@ -88,10 +90,19 @@ def migrate(text):
         notes.append(f"{hexv} -> {token}")
 
     if re.search(r'\bC\.\w+', s) and "forge-theme" not in s:
-        m = re.search(r'^import .*?\n(?!import)', s, re.M)
-        if m:
-            s = s[:m.end()] + IMPORT + "\n" + s[m.end():]
-            notes.append("added palette import")
+        # Insert after the LAST top-level import, or after "use client" when a file has no imports
+        # at all. The first version anchored on the first import not followed by another and simply
+        # did nothing when that did not match - so a file could come out full of C.* references with
+        # no import and the run would report success. A codemod that half-migrates a file silently
+        # is worse than one that refuses, which is why the failure is now loud.
+        imports = list(re.finditer(r'^import[^\n]*(?:\n(?![\S])[^\n]*)*\n', s, re.M))
+        if imports:
+            at = imports[-1].end()
+        else:
+            uc = re.search(r'^["\']use client["\'];\n', s, re.M)
+            at = uc.end() if uc else 0
+        s = s[:at] + IMPORT + "\n" + s[at:]
+        notes.append("added palette import")
 
     # A local const C now shadows the import and every key it defined resolves from the shared one.
     if "forge-theme" in s:

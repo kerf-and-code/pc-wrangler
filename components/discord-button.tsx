@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
+import { FORGE_RADIUS } from "@/lib/forge-theme";
 // claim=true routes the OAuth return through /auth/callback?claim=1, which runs
 // claim_by_discord to bind every character on this Discord account. Without it the callback
 // treats the sign-in as a plain login (GM going to /gm). The claim page sets it; the GM

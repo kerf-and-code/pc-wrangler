@@ -15,6 +15,7 @@
 import React, { useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
+import { FORGE_RADIUS } from "@/lib/forge-theme";
 const BUCKET = "campaign-maps";
 const MAX_BYTES = 4 * 1024 * 1024; // 4 MB; portraits don't need more and the bucket isn't a CDN.
 const OK_TYPES = ["image/png", "image/jpeg", "image/webp"];

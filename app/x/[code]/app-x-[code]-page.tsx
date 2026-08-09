@@ -7,7 +7,7 @@
 // this page shows what to install. Either way the player pastes nothing.
 
 import { useEffect, useState } from "react";
-import { FORGE_RADIUS } from "@/lib/forge-theme";
+import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 
 const BEYOND20_CHROME =
   "https://chrome.google.com/webstore/detail/beyond20/aibeceakhehbogooeplpapmbmknmdmpb";

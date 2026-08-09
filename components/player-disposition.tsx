@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { SAX } from "@/lib/theme";
-import { C } from "@/lib/forge-theme";
+import { FORGE_RADIUS, C } from "@/lib/forge-theme";
 
 // The PLAYER-level disposition: how a person tends to play, across every character
 // they have ever played. Distinct from the character posterior, which /me has shown

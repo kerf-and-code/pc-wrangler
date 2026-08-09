@@ -2,7 +2,7 @@
 
 import React, { Suspense } from "react";
 import { SAX } from "@/lib/theme";
-import { forgeBackground, FORGE_FONTS, STONE, FORGE_BUTTON_CSS } from "@/lib/forge-theme";
+import { stoneButton, stoneField, forgeBackground, FORGE_FONTS, STONE, FORGE_BUTTON_CSS } from "@/lib/forge-theme";
 import SixAxesNav from "@/components/six-axes-nav";
 
 /* PageShell — the cellar frame every page sits in.
