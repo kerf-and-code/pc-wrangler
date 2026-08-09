@@ -191,6 +191,58 @@ export async function instantiateToCampaign(
   lib: LibraryRow,
   campaignId: string,
 ): Promise<string> {
+  return (await launchWithAlters(supabase, lib, campaignId)).primaryId;
+}
+
+/**
+ * Launch a build AND any alter egos linked to it, returning the primary's id.
+ *
+ * WHY THE ALTERS COME TOO
+ *   An alter ego is part of what the character is, not a thing they acquire at a table. A player
+ *   who built a changeling's two faces in their library and had only one arrive would have to
+ *   rebuild the other by hand in every campaign they took the character to.
+ *
+ * THE ALTERS ARE LINKED AFTER, NOT DURING
+ *   characters.alter_ego_of has to point at a row that already exists, so the primary is inserted
+ *   first and the alters reference it. Doing both in one insert would need the id before the
+ *   database has assigned it.
+ *
+ * IT NEVER FAILS THE LAUNCH. If an alter cannot be created the primary is already at the table and
+ * that is the thing the player asked for; losing the whole launch over a second persona would be a
+ * worse outcome than arriving without it.
+ */
+export async function launchWithAlters(
+  supabase: SupabaseClient,
+  lib: LibraryRow,
+  campaignId: string,
+): Promise<{ primaryId: string; alterIds: string[] }> {
+  const primaryId = await insertInstance(supabase, lib, campaignId, null);
+
+  const alterIds: string[] = [];
+  try {
+    const { data } = await supabase
+      .from("pc_library")
+      .select("*")
+      .eq("alter_ego_of", lib.id);
+    for (const alt of ((data as LibraryRow[]) || [])) {
+      try {
+        alterIds.push(await insertInstance(supabase, alt, campaignId, primaryId));
+      } catch {
+        // One alter failing does not cost the others, or the primary.
+      }
+    }
+  } catch {
+    // See above: the primary is already in play.
+  }
+  return { primaryId, alterIds };
+}
+
+async function insertInstance(
+  supabase: SupabaseClient,
+  lib: LibraryRow,
+  campaignId: string,
+  alterEgoOf: string | null,
+): Promise<string> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Sign in to add a character.");
 
@@ -213,6 +265,7 @@ export async function instantiateToCampaign(
       level: lib.level ?? null,
       portrait_url: lib.portrait_url ?? null,
       identity_id: identityId,
+      alter_ego_of: alterEgoOf,
       // kind, active, tags, visibility, invite_code, timestamps all take their column defaults.
     })
     .select("id")

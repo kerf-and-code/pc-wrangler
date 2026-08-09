@@ -859,7 +859,70 @@ function ForgeInner() {
     return () => { live = false; };
   }, [mode, row, supabase]);
 
+  // The primary's name is the stem even when adding from an alter's sheet, so the family reads as
+  // one character rather than a chain of nicknames.
+  const alterName = (family: { name: string; primary: boolean }[], fallback: string) => {
+    const stem = family.find((k) => k.primary)?.name || fallback;
+    const n = Math.max(0, family.filter((k) => !k.primary).length) + 1;
+    return `${stem} (alter ego ${n})`;
+  };
+
+  // Matches the database trigger in p31. The button stopping first is a courtesy; the trigger is
+  // the actual limit, because an insert that skips this page skips this number too.
+  const MAX_ALTERS = 10;
+
   const [makingAlter, setMakingAlter] = useState(false);
+
+  // Library builds get alter egos too. A build is a TEMPLATE, and for a changeling or a Jekyll the
+  // second face is part of what the character is - building both and being able to launch only one
+  // would mean rebuilding the alter by hand in every campaign the character is taken to.
+  const [libKin, setLibKin] = useState<{ id: string; name: string; primary: boolean }[]>([]);
+  useEffect(() => {
+    if (mode !== "library" || !libId) { setLibKin([]); return; }
+    let live = true;
+    (async () => {
+      const { data: me } = await supabase
+        .from("pc_library").select("id, name, alter_ego_of").eq("id", libId).maybeSingle();
+      const meRow = me as { id: string; name: string; alter_ego_of: string | null } | null;
+      if (!meRow) return;
+      const primaryId = meRow.alter_ego_of || meRow.id;
+      const { data } = await supabase
+        .from("pc_library").select("id, name, alter_ego_of")
+        .or(`id.eq.${primaryId},alter_ego_of.eq.${primaryId}`);
+      if (!live) return;
+      const all = ((data as { id: string; name: string; alter_ego_of: string | null }[]) || [])
+        .map((c) => ({ id: c.id, name: c.name, primary: !c.alter_ego_of }))
+        .sort((a, b) => (a.primary === b.primary ? a.name.localeCompare(b.name) : a.primary ? -1 : 1));
+      setLibKin(all.length > 1 ? all : []);
+    })();
+    return () => { live = false; };
+  }, [mode, libId, supabase]);
+
+  const addLibraryAlter = useCallback(async () => {
+    if (mode !== "library" || !libId || makingAlter) return;
+    setMakingAlter(true);
+    try {
+      const { data: me } = await supabase
+        .from("pc_library").select("id, name, alter_ego_of").eq("id", libId).maybeSingle();
+      const meRow = me as { id: string; name: string; alter_ego_of: string | null } | null;
+      if (!meRow) return;
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data, error } = await supabase
+        .from("pc_library")
+        .insert({
+          profile_id: user.id,
+          name: alterName(libKin, meRow.name),
+          alter_ego_of: meRow.alter_ego_of || meRow.id,
+          build: null,
+        })
+        .select("id")
+        .maybeSingle();
+      if (error || !data) return;
+      window.location.href = `/me/forge?lib=${(data as { id: string }).id}`;
+    } finally { setMakingAlter(false); }
+  }, [mode, libId, supabase, makingAlter]);
+
   const addAlterEgo = useCallback(async () => {
     if (mode !== "character" || !row || makingAlter) return;
     setMakingAlter(true);
@@ -877,7 +940,10 @@ function ForgeInner() {
           campaign_id: rowAny.campaign_id,
           profile_id: rowAny.profile_id,
           kind: "pc",
-          name: `${rowAny.name} (alter ego)`,
+          // Numbered from the existing count so six personas are distinguishable at a glance.
+          // The player renames them anyway; what matters is that the switcher never shows six
+          // buttons with identical labels.
+          name: alterName(kin, rowAny.name),
           alter_ego_of: primaryId,
           active: true,
           // A blank sheet on purpose. An alter ego that started as a copy would be a character the
@@ -1018,14 +1084,18 @@ function ForgeInner() {
                     below is a different character, not a different view of this one. Only shown
                     when there is something to switch to - a solo character should not carry the
                     vocabulary of a feature they are not using. */}
-                {mode === "character" && row && kin.length > 1 && (
+                {((mode === "character" && row && kin.length > 1)
+                  || (mode === "library" && libId && libKin.length > 1)) && (
                   <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center",
                     marginTop: 12 }}>
-                    {kin.map((k) => {
-                      const here = k.id === row.id;
+                    {(mode === "library" ? libKin : kin).map((k) => {
+                      const here = k.id === (mode === "library" ? libId : row?.id);
                       return (
                         <button key={k.id} className="forge-btn" disabled={here}
-                          onClick={() => { window.location.href = `/me/forge?c=${k.id}`; }}
+                          onClick={() => {
+                            window.location.href = mode === "library"
+                              ? `/me/forge?lib=${k.id}` : `/me/forge?c=${k.id}`;
+                          }}
                           style={{ ...stoneButton(here ? "primary" : "stone"), fontSize: 12.5,
                             padding: "7px 13px", cursor: here ? "default" : "pointer" }}>
                           {k.name}
@@ -1073,7 +1143,21 @@ function ForgeInner() {
                 heldClasses={((build as Build & { multiclass?: { className: string }[] }).multiclass || [])
                   .map((c) => c.className)}
                 onAddClass={addClass}
-                onAddAlter={mode === "character" && row && kin.length < 2 ? addAlterEgo : undefined}
+                // No limit on how many. A character in an actual-play with six personas is a real
+                // case, the link is one-to-many, and launchWithAlters already loops. The earlier
+                // "one alter" cap was my assumption rather than anything the data required.
+                onAddAlter={
+                  mode === "character" && row && kin.filter((k) => !k.primary).length < MAX_ALTERS
+                    ? addAlterEgo
+                  : mode === "library" && libId && libKin.filter((k) => !k.primary).length < MAX_ALTERS
+                    ? addLibraryAlter
+                  : undefined}
+                showAlterEgo={(mode === "character" && Boolean(row)) || (mode === "library" && Boolean(libId))}
+                alterEgoReason={
+                  kin.filter((k) => !k.primary).length >= MAX_ALTERS
+                  || libKin.filter((k) => !k.primary).length >= MAX_ALTERS
+                    ? `That is ${MAX_ALTERS} alter egos, which is the limit. Rename or remove one to add another.`
+                    : "Save this build first, then alter egos can be added to it."}
                 build={build} speciesVariant={speciesVariant}
                 edition={edition} onEdition={setEdition}
                 partners={partners} enabledPartners={enabledPartners} onTogglePartner={togglePartner}
@@ -3011,8 +3095,11 @@ function IdentityPanel(props: {
   backgroundRows: BackgroundRecord[];
   heldClasses: string[];
   onAddClass: (cn: string) => void;
-  /** Absent for a library build, which has no campaign to put a second character in. */
+  /** Absent when one already exists, or on a library build with no campaign to put one in. */
   onAddAlter?: () => void;
+  /** Whether to show the section at all, and what to say when the button is not available. */
+  showAlterEgo: boolean;
+  alterEgoReason: string;
   speciesDesc: Described | null; backgroundDesc: Described | null; subclassRoleTags: string[];
   catalogReady: boolean;
   epic: { abilityCap: number; asiCount: number; epicFeatCount: number };
@@ -3021,7 +3108,7 @@ function IdentityPanel(props: {
 }) {
   const {
     build, speciesVariant, edition, onEdition, partners, enabledPartners, onTogglePartner,
-    speciesOpts, classOpts, variantOpts, subclassOpts, backgroundRows, heldClasses, onAddClass, onAddAlter,
+    speciesOpts, classOpts, variantOpts, subclassOpts, backgroundRows, heldClasses, onAddClass, onAddAlter, showAlterEgo, alterEgoReason,
     speciesDesc, backgroundDesc,
     subclassRoleTags, catalogReady, epic,
     onSpecies, onVariant, onBackground, onClassName, onSubclass,
@@ -3165,22 +3252,30 @@ function IdentityPanel(props: {
       {/* ALTER EGO belongs here rather than on Finish: it is a fact about WHO this character is,
           alongside species and class, not a box left unticked. Finish asks "what have I not done
           yet", and adding a second character is not a gap to close. */}
-      {onAddAlter && (
+      {showAlterEgo && (
         <div style={{ marginTop: 10, paddingTop: 12, borderTop: `1px solid ${STONE.hi}` }}>
           <label style={forgeLabel}>Alter ego</label>
           <p style={{ fontSize: 12.5, color: STONE.inkDim, margin: "0 0 10px", lineHeight: 1.6 }}>
-            A second character this one becomes: a changeling&rsquo;s other face, a curse that takes
-            over, a shape you are forced into. It gets its own sheet, its own class and level, and
-            you switch between them at the top of this page.
+            Another character this one becomes: a changeling&rsquo;s other faces, a curse that takes
+            over, a shape you are forced into. Each gets its own sheet, its own class and level, and
+            you switch between them at the top of this page. Up to ten.
           </p>
-          <button className="forge-btn" onClick={onAddAlter}
-            style={{ ...stoneButton("stone"), fontSize: 12.5 }}>
-            Add an alter ego
-          </button>
-          <p style={{ fontSize: 11.5, color: STONE.inkFaint, margin: "8px 0 0", lineHeight: 1.5 }}>
-            Recording and events stay on this character, whichever sheet is open. Your GM sees both
-            on the Roster.
-          </p>
+          {onAddAlter ? (
+            <>
+              <button className="forge-btn" onClick={onAddAlter}
+                style={{ ...stoneButton("stone"), fontSize: 12.5 }}>
+                Add an alter ego
+              </button>
+              <p style={{ fontSize: 11.5, color: STONE.inkFaint, margin: "8px 0 0", lineHeight: 1.5 }}>
+                Recording and events stay on this character, whichever sheet is open. Your GM sees
+                both on the Roster.
+              </p>
+            </>
+          ) : (
+            <p style={{ fontSize: 12.5, color: STONE.inkFaint, margin: 0, lineHeight: 1.55 }}>
+              {alterEgoReason}
+            </p>
+          )}
         </div>
       )}
         {build.level > 20 && (
