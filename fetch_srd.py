@@ -426,8 +426,13 @@ def map_o5e_class(c: dict, all_rows: list) -> dict:
     core = next((f for f in feats if (f.get("feature_type") or "") == "CORE_TRAITS_TABLE"), None)
 
     hp = c.get("hit_points") or {}
+    parent = c.get("subclass_of") or {}
     return {
         "core_traits": (core or {}).get("desc") or "",
+        # Empty for a base class, the parent's name for a subclass. Read from subclass_of because
+        # Open5e has no `class` field on a subclass record - the first version looked for one and
+        # every subclass came out as None.
+        "class": (parent.get("name") if isinstance(parent, dict) else "") or "",
         "name": c.get("name"),
         "key": key,
         "edition": "2024",

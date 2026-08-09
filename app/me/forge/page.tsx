@@ -1073,6 +1073,7 @@ function ForgeInner() {
                 heldClasses={((build as Build & { multiclass?: { className: string }[] }).multiclass || [])
                   .map((c) => c.className)}
                 onAddClass={addClass}
+                onAddAlter={mode === "character" && row && kin.length < 2 ? addAlterEgo : undefined}
                 build={build} speciesVariant={speciesVariant}
                 edition={edition} onEdition={setEdition}
                 partners={partners} enabledPartners={enabledPartners} onTogglePartner={togglePartner}
@@ -1165,7 +1166,6 @@ function ForgeInner() {
 
               {tab === "finish" && (
                 <FinishPanel build={build} name={name} sheet={sheet} onTab={setTab}
-                  onAddAlter={mode === "character" && row && kin.length < 2 ? addAlterEgo : undefined}
                   effects={{
                     ...effects,
                     // Lineage spells are an applied effect like any other, and Finish is where a
@@ -1347,11 +1347,9 @@ function TabBar({ tab, onTab, build }: { tab: TabKey; onTab: (t: TabKey) => void
   );
 }
 
-function FinishPanel({ build, name, sheet, onTab, effects, onAddAlter }: {
+function FinishPanel({ build, name, sheet, onTab, effects }: {
   build: Build; name: string; sheet: NonNullable<ReturnType<typeof deriveSheet>>;
   onTab: (t: TabKey) => void; effects: ChoiceEffects;
-  /** Absent for a library build, which has no campaign to put a second character in. */
-  onAddAlter?: () => void;
 }) {
   // What is not done yet, said plainly, each one a way back to the tab that fixes it. The point is
   // that "am I finished" should be answerable without reading the whole sheet.
@@ -1397,26 +1395,6 @@ function FinishPanel({ build, name, sheet, onTab, effects, onAddAlter }: {
             ))}
           </div>
         </>
-      )}
-
-      {onAddAlter && (
-        <div style={{ marginTop: 16, paddingTop: 14, borderTop: `1px solid ${STONE.hi}` }}>
-          <div style={{ fontFamily: FORGE_FONTS.mono, fontSize: 11, letterSpacing: "0.14em",
-            textTransform: "uppercase", color: STONE.inkFaint, marginBottom: 8 }}>Alter ego</div>
-          <p style={{ fontSize: 13, color: STONE.inkDim, margin: "0 0 10px", lineHeight: 1.6 }}>
-            A second character this one becomes: a changeling&rsquo;s other face, a curse that takes
-            over, a shape you are forced into. It gets its own sheet, its own class and level, and
-            you switch between them at the top of this page.
-          </p>
-          <button className="forge-btn" onClick={onAddAlter}
-            style={{ ...stoneButton("stone"), fontSize: 12.5 }}>
-            Add an alter ego
-          </button>
-          <p style={{ fontSize: 11.5, color: STONE.inkFaint, margin: "8px 0 0", lineHeight: 1.5 }}>
-            Recording and events stay on this character, whichever sheet is open. Your GM sees both
-            on the Roster.
-          </p>
-        </div>
       )}
 
       {(effects.applied.length > 0 || effects.unapplied.length > 0) && (
@@ -3033,6 +3011,8 @@ function IdentityPanel(props: {
   backgroundRows: BackgroundRecord[];
   heldClasses: string[];
   onAddClass: (cn: string) => void;
+  /** Absent for a library build, which has no campaign to put a second character in. */
+  onAddAlter?: () => void;
   speciesDesc: Described | null; backgroundDesc: Described | null; subclassRoleTags: string[];
   catalogReady: boolean;
   epic: { abilityCap: number; asiCount: number; epicFeatCount: number };
@@ -3041,7 +3021,7 @@ function IdentityPanel(props: {
 }) {
   const {
     build, speciesVariant, edition, onEdition, partners, enabledPartners, onTogglePartner,
-    speciesOpts, classOpts, variantOpts, subclassOpts, backgroundRows, heldClasses, onAddClass,
+    speciesOpts, classOpts, variantOpts, subclassOpts, backgroundRows, heldClasses, onAddClass, onAddAlter,
     speciesDesc, backgroundDesc,
     subclassRoleTags, catalogReady, epic,
     onSpecies, onVariant, onBackground, onClassName, onSubclass,
@@ -3181,6 +3161,28 @@ function IdentityPanel(props: {
             : "Pick a first class above before adding another."}
         </p>
       </div>
+
+      {/* ALTER EGO belongs here rather than on Finish: it is a fact about WHO this character is,
+          alongside species and class, not a box left unticked. Finish asks "what have I not done
+          yet", and adding a second character is not a gap to close. */}
+      {onAddAlter && (
+        <div style={{ marginTop: 10, paddingTop: 12, borderTop: `1px solid ${STONE.hi}` }}>
+          <label style={forgeLabel}>Alter ego</label>
+          <p style={{ fontSize: 12.5, color: STONE.inkDim, margin: "0 0 10px", lineHeight: 1.6 }}>
+            A second character this one becomes: a changeling&rsquo;s other face, a curse that takes
+            over, a shape you are forced into. It gets its own sheet, its own class and level, and
+            you switch between them at the top of this page.
+          </p>
+          <button className="forge-btn" onClick={onAddAlter}
+            style={{ ...stoneButton("stone"), fontSize: 12.5 }}>
+            Add an alter ego
+          </button>
+          <p style={{ fontSize: 11.5, color: STONE.inkFaint, margin: "8px 0 0", lineHeight: 1.5 }}>
+            Recording and events stay on this character, whichever sheet is open. Your GM sees both
+            on the Roster.
+          </p>
+        </div>
+      )}
         {build.level > 20 && (
           <div style={{ marginTop: 10 }}>
             <span style={stoneChip("brass")}>Epic tier</span>

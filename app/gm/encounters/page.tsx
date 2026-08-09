@@ -6,7 +6,11 @@ import PageShell from "@/components/page-shell";
 import { SAX } from "@/lib/theme";
 import { loadSrd } from "@/lib/srd/srd";
 import { listStatBlocks, type StatBlockRow } from "@/lib/stat-blocks";
-import { C, FORGE_RADIUS } from "@/lib/forge-theme";
+
+const C = {
+  ink: SAX.inkDeep, panel: SAX.slateBg, line: SAX.line, text: SAX.text,
+  muted: SAX.muted, brass: SAX.brass, good: SAX.good, warn: SAX.warn, plum: SAX.plum,
+};
 
 // ============================================================================
 // THE TWO METHODS ARE GENUINELY DIFFERENT. THIS IS THE WHOLE POINT OF THE TOOL.
@@ -165,6 +169,11 @@ export default function EncountersPage() {
       .from("characters")
       .select("id, name, level, class, subclass")
       .eq("campaign_id", cid).eq("kind", "pc").eq("active", true)
+      // An ALTER EGO is a second sheet for a player who already has one at the table, not a second
+      // body in the fight. Counting both inflates the XP budget and the party size, so a four-player
+      // party whose rogue has an alter would be balanced as five. Excluded here rather than in the
+      // schema, because the Roster and the Forge should still show them.
+      .is("alter_ego_of", null)
       .order("name");
     const list = (data as Char[]) || [];
     setChars(list);
@@ -348,12 +357,12 @@ export default function EncountersPage() {
 
   // ---- rendering -----------------------------------------------------------
   const box: React.CSSProperties = {
-    background: C.panel, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS,
+    background: C.panel, border: `1px solid ${C.line}`, borderRadius: 12,
     padding: "16px 18px", marginBottom: 14,
   };
   const inputStyle: React.CSSProperties = {
-    background: C.surface, color: C.text, border: `1px solid ${C.line}`,
-    borderRadius: FORGE_RADIUS, padding: "8px 10px", fontSize: 14,
+    background: SAX.panelBg, color: C.text, border: `1px solid ${C.line}`,
+    borderRadius: 8, padding: "8px 10px", fontSize: 14,
   };
   const eyebrow: React.CSSProperties = {
     fontFamily: SAX.mono, fontSize: 11, letterSpacing: "0.2em",
@@ -384,7 +393,8 @@ export default function EncountersPage() {
                 color: method === m ? C.ink : C.muted,
                 border: `1px solid ${method === m ? C.brass : C.line}`,
                 borderRadius: 999, padding: "6px 14px", fontSize: 12.5, fontWeight: 700,
-                fontFamily: SAX.mono, cursor: "pointer", boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}
+                fontFamily: SAX.mono, cursor: "pointer",
+              }}
             >
               {m === "2024" ? "2024 DMG (XP budget)" : "2014 DMG (thresholds + multiplier)"}
             </button>
@@ -436,7 +446,8 @@ export default function EncountersPage() {
                   color: noLevel ? C.warn : on ? C.text : C.muted,
                   border: `1px solid ${noLevel ? C.warn : on ? C.brass : C.line}`,
                   borderRadius: 999, padding: "6px 13px", fontSize: 13,
-                  cursor: "pointer", opacity: on ? 1 : 0.5, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}
+                  cursor: "pointer", opacity: on ? 1 : 0.5,
+                }}
               >
                 {c.name}
                 <span style={{ fontFamily: SAX.mono, fontSize: 11, marginLeft: 7, color: C.muted }}>
@@ -517,7 +528,7 @@ export default function EncountersPage() {
             onClick={() => setFoes((fs) => [...fs, { id: uid(), name: "", cr: "1", count: 1 }])}
             style={{
               background: "transparent", color: C.text, border: `1px solid ${C.line}`,
-              borderRadius: FORGE_RADIUS, padding: "7px 14px", fontSize: 12.5, fontWeight: 700,
+              borderRadius: 8, padding: "7px 14px", fontSize: 12.5, fontWeight: 700,
               fontFamily: SAX.mono, cursor: "pointer",
             }}
           >
@@ -529,8 +540,9 @@ export default function EncountersPage() {
             style={{
               background: pickerOpen ? C.brass : "transparent", color: pickerOpen ? C.ink : C.text,
               border: `1px solid ${pickerOpen ? C.brass : C.line}`,
-              borderRadius: FORGE_RADIUS, padding: "7px 14px", fontSize: 12.5, fontWeight: 700,
-              fontFamily: SAX.mono, cursor: "pointer", boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}
+              borderRadius: 8, padding: "7px 14px", fontSize: 12.5, fontWeight: 700,
+              fontFamily: SAX.mono, cursor: "pointer",
+            }}
           >
             Import from library
           </button>
@@ -635,7 +647,7 @@ export default function EncountersPage() {
             <div style={{ marginLeft: "auto", alignSelf: "flex-end" }}>
               <button type="button" onClick={saveToPlan} style={{
                 background: "transparent", color: C.text, border: `1px solid ${C.line}`,
-                borderRadius: FORGE_RADIUS, padding: "7px 14px", fontSize: 12.5, fontWeight: 700,
+                borderRadius: 8, padding: "7px 14px", fontSize: 12.5, fontWeight: 700,
                 fontFamily: SAX.mono, cursor: "pointer",
               }}>
                 Add to session plan
@@ -697,7 +709,8 @@ export default function EncountersPage() {
             style={{
               background: modOn ? C.brass : "transparent", color: modOn ? C.ink : C.muted,
               border: `1px solid ${modOn ? C.brass : C.line}`, borderRadius: 999,
-              padding: "4px 12px", fontSize: 11.5, fontFamily: SAX.mono, fontWeight: 700, cursor: "pointer", boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}
+              padding: "4px 12px", fontSize: 11.5, fontFamily: SAX.mono, fontWeight: 700, cursor: "pointer",
+            }}
           >
             {modOn ? "On" : "Off"}
           </button>
@@ -794,8 +807,9 @@ function MonsterPicker({ catalog, srdMode, onSrdMode, hasOwn, onAdd, C, inputSty
 
   return (
     <div style={{
-      marginTop: 12, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: 12,
-      background: "rgba(255,255,255,0.02)", boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
+      marginTop: 12, border: `1px solid ${C.line}`, borderRadius: 10, padding: 12,
+      background: "rgba(255,255,255,0.02)",
+    }}>
       <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 10 }}>
         <input
           value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search monsters…"
@@ -808,7 +822,8 @@ function MonsterPicker({ catalog, srdMode, onSrdMode, hasOwn, onAdd, C, inputSty
               style={{
                 background: srdMode === m ? C.brass : "transparent", color: srdMode === m ? C.ink : C.muted,
                 border: `1px solid ${srdMode === m ? C.brass : C.line}`, borderRadius: 999,
-                padding: "5px 11px", fontSize: 11.5, fontFamily: SAX.mono, fontWeight: 700, cursor: "pointer", boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}
+                padding: "5px 11px", fontSize: 11.5, fontFamily: SAX.mono, fontWeight: 700, cursor: "pointer",
+              }}
             >
               {m === "both" ? "Both" : m}
             </button>
@@ -829,7 +844,7 @@ function MonsterPicker({ catalog, srdMode, onSrdMode, hasOwn, onAdd, C, inputSty
             style={{
               display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8,
               background: "transparent", color: C.text, border: `1px solid ${C.line}`,
-              borderRadius: FORGE_RADIUS, padding: "7px 10px", fontSize: 13, cursor: "pointer", textAlign: "left",
+              borderRadius: 8, padding: "7px 10px", fontSize: 13, cursor: "pointer", textAlign: "left",
             }}
           >
             <span style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
