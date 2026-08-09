@@ -8,8 +8,9 @@
 // unverified; baked digital-dice results are canonical.
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 
-const BRASS = "#c8a24b";
+const BRASS = C.brass;
 const EVENT_TYPES = new Set([
   "to-hit",
   "damage",
@@ -356,8 +357,8 @@ export default function TableTap({ shareCode }: { shareCode: string }) {
         borderRadius: 999,
         fontSize: 13,
         fontWeight: 600,
-        background: ok === true ? "#1d3324" : ok === false ? "#3a2230" : "#2a2438",
-        color: ok === true ? "#9fe0ae" : ok === false ? "#e0a2b8" : "#b7aed1",
+        background: ok === true ? "rgba(122,138,94,0.22)" : ok === false ? C.surface2 : C.panel,
+        color: ok === true ? C.good : ok === false ? C.warn : C.muted,
       }}
     >
       {label}
@@ -367,16 +368,16 @@ export default function TableTap({ shareCode }: { shareCode: string }) {
   return (
     <section
       style={{
-        background: "#221c31",
-        border: "1px solid #37304a",
-        borderRadius: 12,
+        background: C.panel,
+        border: "1px solid ${C.line}",
+        borderRadius: FORGE_RADIUS,
         padding: 16,
-        color: "#e8e2f0",
+        color: C.text,
         fontFamily: "system-ui, sans-serif",
       }}
     >
       <h2 style={{ color: BRASS, fontSize: 17, margin: "0 0 4px" }}>Capture your D&D Beyond rolls</h2>
-      <p style={{ color: "#9a8fb0", fontSize: 13.5, marginTop: 0 }}>
+      <p style={{ color: C.muted, fontSize: 13.5, marginTop: 0 }}>
         Playing online with Beyond20? Keep this tab open while you play. Your attacks,
         saves, damage, and HP changes are captured for your GM&apos;s recap and table analytics.
       </p>
@@ -392,32 +393,32 @@ export default function TableTap({ shareCode }: { shareCode: string }) {
       </div>
 
       {b20 === "waiting" && (
-        <div style={{ background: "#221c31", border: "1px solid #37304a", borderRadius: 10, padding: 14, fontSize: 14, marginBottom: 12 }}>
+        <div style={{ background: C.panel, border: "1px solid ${C.line}", borderRadius: FORGE_RADIUS, padding: 14, fontSize: 14, marginBottom: 12 }}>
           <b style={{ color: BRASS }}>One-time setup:</b> in Beyond20&apos;s options, add{" "}
-          <code style={{ color: "#9fe0ae" }}>{siteOrigin()}/*</code> to Custom Domains and press
+          <code style={{ color: C.good }}>{siteOrigin()}/*</code> to Custom Domains and press
           Apply, then reload this page. For table-accurate numbers, also enable D&D Beyond digital dice.
         </div>
       )}
 
       {lastError && (
-        <div style={{ background: "#3a2230", border: "1px solid #5a3348", borderRadius: 10, padding: 12, fontSize: 14, marginBottom: 12, color: "#e0a2b8" }}>
+        <div style={{ background: C.surface2, border: `1px solid ${C.warn}`, borderRadius: FORGE_RADIUS, padding: 12, fontSize: 14, marginBottom: 12, color: C.warn }}>
           {lastError}
         </div>
       )}
 
       {unmatched.length > 0 && (
-        <div style={{ background: "#221c31", border: `1px solid ${BRASS}`, borderRadius: 10, padding: 14, fontSize: 13, marginBottom: 12 }}>
+        <div style={{ background: C.panel, border: `1px solid ${BRASS}`, borderRadius: FORGE_RADIUS, padding: 14, fontSize: 13, marginBottom: 12 }}>
           <div style={{ color: BRASS, fontWeight: 700, marginBottom: 8 }}>Link your character</div>
           {unmatched.map((ddbId) => (
             <div key={ddbId} style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 8 }}>
-              <span style={{ color: "#e8e2f0" }}>
+              <span style={{ color: C.text }}>
                 {actorNamesRef.current[ddbId] ?? "Unknown"}{" "}
-                <span style={{ color: "#776d90", fontSize: 12 }}>(D&amp;D Beyond {ddbId})</span> is
+                <span style={{ color: C.muted, fontSize: 12 }}>(D&amp;D Beyond {ddbId})</span> is
               </span>
               <select
                 value={linkSel[ddbId] ?? ""}
                 onChange={(e: any) => setLinkSel((s) => ({ ...s, [ddbId]: e.target.value }))}
-                style={{ background: "#1a1526", color: "#e8e2f0", border: "1px solid #37304a", borderRadius: 8, padding: "6px 8px", fontSize: 13 }}
+                style={{ background: C.field, color: C.text, border: "1px solid ${C.line}", borderRadius: FORGE_RADIUS, padding: "6px 8px", fontSize: 13 }}
               >
                 <option value="">Choose a character...</option>
                 {(charOptions ?? []).map((c) => (
@@ -428,9 +429,9 @@ export default function TableTap({ shareCode }: { shareCode: string }) {
                 onClick={() => void linkCharacter(ddbId)}
                 disabled={!linkSel[ddbId] || linking === ddbId}
                 style={{
-                  background: linkSel[ddbId] ? BRASS : "#2a2438",
-                  color: linkSel[ddbId] ? "#1a1626" : "#776d90",
-                  border: 0, borderRadius: 8, padding: "6px 14px", fontSize: 13, fontWeight: 700,
+                  background: linkSel[ddbId] ? BRASS : C.panel,
+                  color: linkSel[ddbId] ? C.ink : C.muted,
+                  border: 0, borderRadius: FORGE_RADIUS, padding: "6px 14px", fontSize: 13, fontWeight: 700,
                   cursor: linkSel[ddbId] ? "pointer" : "default",
                 }}
               >
@@ -439,7 +440,7 @@ export default function TableTap({ shareCode }: { shareCode: string }) {
             </div>
           ))}
           {charOptions !== null && charOptions.length === 0 && (
-            <div style={{ color: "#9a8fb0" }}>
+            <div style={{ color: C.muted }}>
               No unlinked characters available. Ask your GM to add your character in Six Axes, then roll again.
             </div>
           )}
@@ -455,9 +456,9 @@ export default function TableTap({ shareCode }: { shareCode: string }) {
               alignItems: "baseline",
               gap: 8,
               padding: "8px 12px",
-              background: "#221c31",
-              border: "1px solid #37304a",
-              borderRadius: 8,
+              background: C.panel,
+              border: "1px solid ${C.line}",
+              borderRadius: FORGE_RADIUS,
               marginBottom: 6,
               fontSize: 14,
             }}
@@ -468,16 +469,16 @@ export default function TableTap({ shareCode }: { shareCode: string }) {
                 width: 8,
                 height: 8,
                 borderRadius: 999,
-                background: f.fidelity === "canonical" ? "#9fe0ae" : "#e0c76a",
+                background: f.fidelity === "canonical" ? C.good : C.sun,
                 flexShrink: 0,
               }}
             />
             <span style={{ flex: 1 }}>{f.line}</span>
-            <span style={{ color: "#776d90", fontSize: 12 }}>{f.at}</span>
+            <span style={{ color: C.muted, fontSize: 12 }}>{f.at}</span>
           </div>
         ))}
         {feed.length === 0 && (
-          <p style={{ color: "#776d90", fontSize: 14 }}>No rolls captured yet. Roll something on your character sheet.</p>
+          <p style={{ color: C.muted, fontSize: 14 }}>No rolls captured yet. Roll something on your character sheet.</p>
         )}
       </div>
     </section>
