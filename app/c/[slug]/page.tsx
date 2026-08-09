@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
 import CodexFilter from "./codex-filter";
+import ThemeToggle from "./theme-toggle";
 
 // app/c/[slug]/page.tsx
 //
@@ -152,21 +153,73 @@ async function Codex({ params }: { params: Promise<{ slug: string }> }) {
 
   return (
     <>
+        {/* NO-FLASH THEME. This runs BEFORE first paint, because the page is server-rendered and
+            cached: without it every reader who chose dark gets a white flash on every load, which
+            is worse than not offering the choice. It reads the saved preference, falls back to the
+            operating system, and defaults to dark - the app's native mode. */}
+        <script dangerouslySetInnerHTML={{ __html: `
+          (function(){try{
+            var t = localStorage.getItem('sixaxes-wiki-theme');
+            if (!t) t = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+            document.documentElement.dataset.wiki = t;
+          }catch(e){document.documentElement.dataset.wiki='dark';}})();
+        ` }} />
+
         <style dangerouslySetInnerHTML={{ __html: `
+          /* ROLE NAMES, not hue names. --w-ink means body text, so the dark palette can invert it
+             without every variable becoming a lie. Dark is the default and is what an unset or
+             failed script lands on. */
+          :root, [data-wiki="dark"] {
+            --w-bg: #171310;
+            --w-panel: #221c17;
+            --w-ink: #e8dcc4;
+            --w-ink-2: #cbbfa6;
+            --w-muted: #a99e86;
+            --w-accent: #c8a24b;
+            --w-line: #3a332a;
+            --w-tag-bg: rgba(200,162,75,0.14);
+            --w-hover: rgba(255,255,255,0.06);
+            --w-rail-edge: rgba(255,255,255,0.10);
+          }
+          [data-wiki="light"] {
+            --w-bg: #f6f2e9;
+            --w-panel: #fffdf8;
+            --w-ink: #2a2620;
+            --w-ink-2: #4a443a;
+            --w-muted: #8a8069;
+            --w-accent: #8a6a2f;
+            --w-line: #ddd4c2;
+            --w-tag-bg: #ece4d2;
+            --w-hover: rgba(0,0,0,0.05);
+            --w-rail-edge: rgba(0,0,0,0.08);
+          }
+          html { background: var(--w-bg); }
+
           .cdx-cols { display: grid; gap: 26px; align-items: start;
                       grid-template-columns: minmax(0, 1fr); }
           .cdx-rail { display: flex; flex-wrap: wrap; gap: 4px; }
           .cdx-link { text-decoration: none; }
-          .cdx-link:hover { background: rgba(0,0,0,0.05); }
+          .cdx-link:hover { background: var(--w-hover); }
           /* Below this width a side rail would eat half the screen, so the sections become a row of
              links above the content instead. */
           @media (min-width: 860px) {
             .cdx-cols { grid-template-columns: 190px minmax(0, 1fr); }
             .cdx-rail { flex-direction: column; flex-wrap: nowrap;
                         position: sticky; top: 16px;
-                        border-right: 1px solid rgba(0,0,0,0.08); padding-right: 12px; }
+                        border-right: 1px solid var(--w-rail-edge); padding-right: 12px; }
           }
+          .cdx-theme {
+            position: absolute; top: 14px; right: 14px;
+            font-family: ui-monospace, monospace; font-size: 11px;
+            letter-spacing: 0.1em; text-transform: uppercase;
+            color: var(--w-muted); background: transparent;
+            border: 1px solid var(--w-line); border-radius: 3px;
+            padding: 5px 10px; cursor: pointer;
+          }
+          .cdx-theme:hover { color: var(--w-ink); }
         ` }} />
+
+        <ThemeToggle />
 
         {/* The cover is a BACKDROP for the title and the search, not a banner above them. A visitor
             arriving from a share link should see the campaign's own image with the one control that
@@ -244,7 +297,7 @@ async function Codex({ params }: { params: Promise<{ slug: string }> }) {
         <footer style={footer}>
           <p style={{ margin: 0 }}>
             Written from what was said at the table, not typed up afterwards. Made with{" "}
-            <a href="/" style={{ color: "#8a6a2f" }}>Six Axes</a>.
+            <a href="/" style={{ color: "var(--w-accent)" }}>Six Axes</a>.
           </p>
         </footer>
     </>
@@ -259,23 +312,24 @@ async function Codex({ params }: { params: Promise<{ slug: string }> }) {
 --------------------------------------------------------------------------- */
 
 const page: React.CSSProperties = {
-  minHeight: "100vh", background: "#f6f2e9", color: "#2a2620",
+  minHeight: "100vh", background: "var(--w-bg)", color: "var(--w-ink)",
+  position: "relative",
   padding: "48px 20px 64px",
   fontFamily: "'Iowan Old Style', Georgia, 'Times New Roman', serif",
 };
 const sheet: React.CSSProperties = { maxWidth: 720, margin: "0 auto" };
 const eyebrow: React.CSSProperties = {
   fontFamily: "ui-monospace, SFMono-Regular, monospace", fontSize: 11,
-  letterSpacing: "0.22em", textTransform: "uppercase", color: "#8a7a55", margin: "0 0 6px",
+  letterSpacing: "0.22em", textTransform: "uppercase", color: "var(--w-accent)", margin: "0 0 6px",
 };
 const h1: React.CSSProperties = { fontSize: 40, lineHeight: 1.1, margin: "0 0 10px", fontWeight: 600 };
-const lede: React.CSSProperties = { fontSize: 18, lineHeight: 1.6, color: "#4a443a", margin: "0 0 10px" };
+const lede: React.CSSProperties = { fontSize: 18, lineHeight: 1.6, color: "var(--w-ink-2)", margin: "0 0 10px" };
 const meta: React.CSSProperties = {
-  fontFamily: "ui-monospace, monospace", fontSize: 12, color: "#8a8069", margin: 0,
+  fontFamily: "ui-monospace, monospace", fontSize: 12, color: "var(--w-muted)", margin: 0,
 };
 const h2: React.CSSProperties = {
   fontSize: 26, margin: "0 0 4px", fontWeight: 600,
-  borderBottom: "1px solid #ddd4c2", paddingBottom: 8,
+  borderBottom: "1px solid var(--w-line)", paddingBottom: 8,
 };
 const coverHeader = (url: string): React.CSSProperties => ({
   // The gradient is what makes white type legible over an image nobody has vetted. Without it a
@@ -294,26 +348,26 @@ const coverInner: React.CSSProperties = { padding: "26px 24px 20px" };
 const railLink: React.CSSProperties = {
   display: "flex", justifyContent: "space-between", gap: 10,
   padding: "7px 10px", borderRadius: 4, textDecoration: "none",
-  color: "#4a4235", fontSize: 14, minWidth: 128,
+  color: "var(--w-ink-2)", fontSize: 14, minWidth: 128,
 };
-const railCount: React.CSSProperties = { color: "#9a9081", fontVariantNumeric: "tabular-nums" };
+const railCount: React.CSSProperties = { color: "var(--w-muted)", fontVariantNumeric: "tabular-nums" };
 
-const sectionBlurb: React.CSSProperties = { fontSize: 14, color: "#7a7060", margin: "6px 0 16px" };
+const sectionBlurb: React.CSSProperties = { fontSize: 14, color: "var(--w-muted)", margin: "6px 0 16px" };
 const card: React.CSSProperties = {
-  padding: "14px 0", borderBottom: "1px solid #e6ddcb",
+  padding: "14px 0", borderBottom: "1px solid var(--w-line)",
 };
 const h3: React.CSSProperties = { fontSize: 19, margin: "0 0 6px", fontWeight: 600 };
-const body: React.CSSProperties = { fontSize: 16, lineHeight: 1.7, margin: 0, color: "#3a352c" };
+const body: React.CSSProperties = { fontSize: 16, lineHeight: 1.7, margin: 0, color: "var(--w-ink)" };
 const tag: React.CSSProperties = {
   display: "inline-block", fontFamily: "ui-monospace, monospace", fontSize: 11,
-  color: "#7a6a45", background: "#ece4d2", borderRadius: 3, padding: "2px 7px", marginRight: 6,
+  color: "var(--w-accent)", background: "var(--w-tag-bg)", borderRadius: 3, padding: "2px 7px", marginRight: 6,
 };
 const chip: React.CSSProperties = {
   display: "inline-block", marginRight: 8, marginBottom: 8, padding: "5px 11px",
-  border: "1px solid #ddd4c2", borderRadius: 3, color: "#5a5245",
+  border: "1px solid var(--w-line)", borderRadius: 3, color: "var(--w-ink-2)",
   textDecoration: "none", fontSize: 13,
 };
 const footer: React.CSSProperties = {
-  marginTop: 40, paddingTop: 18, borderTop: "1px solid #ddd4c2",
-  fontSize: 13, color: "#8a8069",
+  marginTop: 40, paddingTop: 18, borderTop: "1px solid var(--w-line)",
+  fontSize: 13, color: "var(--w-muted)",
 };
