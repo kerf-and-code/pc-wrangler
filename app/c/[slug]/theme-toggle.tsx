@@ -36,7 +36,7 @@ export default function ThemeToggle() {
   };
 
   return (
-    <button className="cdx-theme" onClick={flip}
+    <button className="w-theme" onClick={flip}
       aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}>
       {theme === "dark" ? "Light" : "Dark"}
     </button>
