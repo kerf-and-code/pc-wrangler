@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { C, FORGE_RADIUS } from "@/lib/forge-theme";
+import { stoneButton, C, FORGE_RADIUS } from "@/lib/forge-theme";
 import PageShell from "@/components/page-shell";
 import { SAX } from "@/lib/theme";
 import { Header } from "@/app/me/campaigns/page";
@@ -18,12 +18,22 @@ type Item = { item_kind: string; item_type: string; id: string; title: string; b
 
 // Mirrors the GM's codex and the published page, so the same campaign reads the same way in all
 // three places. An item_type nobody anticipated falls into Other rather than vanishing.
-const SECTIONS: { label: string; types: string[] }[] = [
-  { label: "Places", types: ["location"] },
-  { label: "The cast", types: ["npc"] },
-  { label: "Lore", types: ["lore"] },
-  { label: "Notes", types: ["note"] },
-];
+// Labels for the item_types the GM codex uses, so the same campaign reads the same way on both
+// sides. A type not listed here keeps its own name rather than falling into a bucket - an
+// unexpected category should be visible, not swept up.
+const TYPE_LABEL: Record<string, string> = {
+  location: "Locations",
+  npc: "NPCs",
+  faction: "Factions",
+  item: "Items",
+  lore: "Lore",
+  note: "Notes",
+  pc: "PCs",
+};
+// The order the GM codex presents them in.
+const TYPE_ORDER = ["note", "location", "faction", "item", "lore", "npc", "pc"];
+
+const labelFor = (t: string) => TYPE_LABEL[t] || (t.charAt(0).toUpperCase() + t.slice(1));
 type Campaign = { campaign_id: string; campaign_name: string };
 
 
@@ -152,7 +162,49 @@ export default function MyCodexPage() {
         )}
 
         {status === "ready" && groups.map(({ campaign, items }) => (
-          <div key={campaign.campaign_id} style={{ marginBottom: 28 }}>
+          <CampaignCodex key={campaign.campaign_id}
+            campaign={campaign} items={items}
+            openId={openId} setOpenId={setOpenId} supabase={supabase} />
+        ))}
+      </div>
+    </PageShell>
+  );
+}
+
+/**
+ * One campaign's codex, split into sub-tabs by entry type.
+ *
+ * WHY TABS AND NOT HEADED SECTIONS
+ *   Headings gave the page structure but not navigation: a player still scrolled past the NPCs to
+ *   reach the lore. The GM codex has had tabs since it was built, and a player looking at the same
+ *   campaign should not have to work harder than the GM to find the same entry.
+ *
+ * TABS ARE BUILT FROM THE TYPES ACTUALLY PRESENT, not from a fixed list, so nobody sees an empty
+ * Factions tab in a campaign that has no factions - and a type nobody anticipated gets its own tab
+ * under its own name rather than being swept into Other.
+ */
+function CampaignCodex({ campaign, items, openId, setOpenId, supabase }: {
+  campaign: { campaign_id: string; campaign_name: string };
+  items: Item[];
+  openId: string | null;
+  setOpenId: (v: string | null) => void;
+  supabase: ReturnType<typeof createClient>;
+}) {
+  const types = React.useMemo(() => {
+    const present = Array.from(new Set(items.map((i) => i.item_type)));
+    return present.sort((a, b) => {
+      const ia = TYPE_ORDER.indexOf(a), ib = TYPE_ORDER.indexOf(b);
+      return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib) || a.localeCompare(b);
+    });
+  }, [items]);
+
+  const [tab, setTab] = useState<string>("");
+  // Default to the first tab that exists, and re-pick if the current one empties out.
+  const active = types.includes(tab) ? tab : (types[0] || "");
+  const rows = items.filter((i) => i.item_type === active);
+
+  return (
+          <div style={{ marginBottom: 28 }}>
             <div style={{
               fontFamily: SAX.mono, fontSize: 11, letterSpacing: "0.18em",
               textTransform: "uppercase", color: C.muted, marginBottom: 10,
@@ -160,23 +212,25 @@ export default function MyCodexPage() {
               {campaign.campaign_name}
             </div>
 
-            {[...SECTIONS, {
-              label: "Other",
-              types: items.map((i) => i.item_type)
-                .filter((t) => !SECTIONS.some((x) => x.types.includes(t))),
-            }].map((sec) => {
-              const rows = items.filter((i) => sec.types.includes(i.item_type));
-              if (!rows.length) return null;
-              return (
-                <div key={sec.label} style={{ marginBottom: 16 }}>
-                  <div style={{
-                    fontFamily: SAX.mono, fontSize: 10.5, letterSpacing: "0.12em",
-                    textTransform: "uppercase", color: C.muted, marginBottom: 6,
-                    paddingBottom: 4, borderBottom: `1px solid ${C.line}`,
-                  }}>
-                    {sec.label} <span style={{ opacity: 0.6 }}>{rows.length}</span>
-                  </div>
-                  {rows.map((it) => {
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 }} role="tablist">
+              {types.map((t) => {
+                const on = t === active;
+                const n = items.filter((i) => i.item_type === t).length;
+                return (
+                  <button key={t} role="tab" aria-selected={on} onClick={() => setTab(t)}
+                    style={{
+                      ...stoneButton(on ? "primary" : "stone"),
+                      fontSize: 12.5, padding: "7px 12px",
+                      display: "flex", alignItems: "baseline", gap: 7,
+                    }}>
+                    {labelFor(t)}
+                    <span style={{ fontFamily: SAX.mono, fontSize: 10.5, opacity: 0.66 }}>{n}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {rows.map((it) => {
               const open = openId === it.id;
               return (
                 <div
@@ -216,15 +270,9 @@ export default function MyCodexPage() {
                     </div>
                   )}
                 </div>
-                  );
-                  })}
-                </div>
               );
             })}
           </div>
-        ))}
-      </div>
-    </PageShell>
   );
 }
 
