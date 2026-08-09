@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { load, Shell, countsOf, sectionBySlug } from "../../shared";
+import { load, Shell, Frame, countsOf, sectionBySlug } from "../../shared";
 
 // One entry, on its own page.
 //
@@ -33,7 +33,11 @@ export async function generateMetadata({ params }: P): Promise<Metadata> {
   };
 }
 
-export default async function EntryPage({ params }: P) {
+export default function EntryPage({ params }: P) {
+  return <Frame><EntryBody params={params} /></Frame>;
+}
+
+async function EntryBody({ params }: P) {
   const { slug, section, entry } = await params;
   const { campaign, items, sec, item } = await find(slug, section, entry);
   if (!campaign || !sec || !item) notFound();

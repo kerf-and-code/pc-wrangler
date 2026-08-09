@@ -5,6 +5,7 @@
 //   rail, the same theme variables and the same data. Three copies would drift - and the one that
 //   drifts first is always the theme, because it is the part nobody re-reads.
 
+import React from "react";
 import { createClient } from "@supabase/supabase-js";
 import ThemeToggle from "./theme-toggle";
 
@@ -169,6 +170,40 @@ export function Rail({ slug, campaign, counts, current }: {
   );
 }
 
+/**
+ * The outer frame: background, theme and toggle, with a Suspense boundary for everything that has
+ * to be awaited.
+ *
+ * WHY IT IS SPLIT FROM Shell
+ *   This project runs with cacheComponents, which rejects any uncached await outside a Suspense
+ *   boundary - including `await params`. So nothing above the boundary may await, which means the
+ *   frame cannot know the campaign name and the rail has to live inside.
+ *
+ *   The THEME deliberately stays outside it. If the variables loaded with the content, the fallback
+ *   would paint on an unstyled page and every reader would get a white flash before their chosen
+ *   theme arrived - which is the exact thing the no-flash script exists to prevent.
+ */
+export function Frame({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="w-shell" style={{ position: "relative" }}>
+      <WikiHead />
+      <ThemeToggle />
+      <React.Suspense fallback={<FrameFallback />}>{children}</React.Suspense>
+    </div>
+  );
+}
+
+// Deliberately almost empty. A skeleton of fake rows would be guessing at how many entries a
+// campaign has, and a wrong guess reflows the moment the real ones arrive.
+function FrameFallback() {
+  return (
+    <div className="w-cols">
+      <nav className="w-rail" aria-hidden />
+      <main className="w-main" />
+    </div>
+  );
+}
+
 export function Shell({ slug, campaign, counts, current, children }: {
   slug: string;
   campaign: Campaign;
@@ -177,13 +212,9 @@ export function Shell({ slug, campaign, counts, current, children }: {
   children: React.ReactNode;
 }) {
   return (
-    <div className="w-shell" style={{ position: "relative" }}>
-      <WikiHead />
-      <ThemeToggle />
-      <div className="w-cols">
-        <Rail slug={slug} campaign={campaign} counts={counts} current={current} />
-        <main className="w-main">{children}</main>
-      </div>
+    <div className="w-cols">
+      <Rail slug={slug} campaign={campaign} counts={counts} current={current} />
+      <main className="w-main">{children}</main>
     </div>
   );
 }

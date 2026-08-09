@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { load, Shell, countsOf, SECTIONS, type Item } from "./shared";
+import { load, Shell, Frame, countsOf, SECTIONS, type Item } from "./shared";
 import CodexFilter from "./codex-filter";
 
 // The front page of a published campaign.
@@ -36,7 +36,14 @@ export async function generateMetadata({ params }: P): Promise<Metadata> {
   };
 }
 
-export default async function CodexPage({ params }: P) {
+// The default export MUST NOT await. cacheComponents rejects any uncached await outside a Suspense
+// boundary, and `await params` is one - so the awaiting work moves into a child that sits inside
+// Frame's boundary.
+export default function CodexPage({ params }: P) {
+  return <Frame><CodexBody params={params} /></Frame>;
+}
+
+async function CodexBody({ params }: P) {
   const { slug } = await params;
   const { campaign, items } = await load(slug);
   if (!campaign) notFound();

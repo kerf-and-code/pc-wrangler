@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { load, Shell, countsOf, sectionBySlug } from "../shared";
+import { load, Shell, Frame, countsOf, sectionBySlug } from "../shared";
 
 // One category: every place, or everyone the party has met.
 //
@@ -24,7 +24,11 @@ export async function generateMetadata({ params }: P): Promise<Metadata> {
   };
 }
 
-export default async function SectionPage({ params }: P) {
+export default function SectionPage({ params }: P) {
+  return <Frame><SectionBody params={params} /></Frame>;
+}
+
+async function SectionBody({ params }: P) {
   const { slug, section } = await params;
   const sec = sectionBySlug(section);
   const { campaign, items } = await load(slug);
