@@ -67,6 +67,8 @@ export type ClassChoice = {
        */
       cost?: { resource: string; amount: number };
     }[];
+    /** School of magic, for picks like Evocation Savant. */
+    spellSchool?: string;
     /** Spell level bounds, inclusive. 0 is a cantrip. */
     spellLevelMin?: number;
     spellLevelMax?: number;
@@ -157,6 +159,88 @@ export const CLASS_CHOICES: ClassChoice[] = [
     filter: { spellLevelMin: 2, spellLevelMax: 2 } },
   { className: "Wizard", level: 20, feature: "Signature Spells", choose: 2, kind: "spell",
     filter: { spellLevelMin: 3, spellLevelMax: 3 } },
+
+  // --- authored from Terry's worklist, 2026-08-09 ---------------------------------------------
+  //
+  // PERMANENT PICKS ONLY. The worklist also covered Cunning Strike, Devious Strikes, Open Hand
+  // Technique, Empowered Strikes and Self-Restoration, which are menus chosen AT THE MOMENT OF USE
+  // rather than at build time - a picker for those would record a decision the character does not
+  // make once. They belong on the Roll tab as reference, not here.
+  {
+    className: "Ranger", level: 9, feature: "Expertise", choose: 2, kind: "skill",
+    filter: { proficientOnly: true },
+  },
+  {
+    className: "Fighter", subclass: "Champion", level: 7, feature: "Additional Fighting Style",
+    choose: 1, kind: "feat", filter: { featCategory: "Fighting Style" },
+    note: "One you do not already have.",
+  },
+  {
+    className: "Bard", subclass: "College of Lore", level: 3, feature: "Bonus Proficiencies",
+    choose: 3, kind: "skill",
+  },
+  {
+    className: "Wizard", subclass: "Evoker", level: 3, feature: "Evocation Savant",
+    choose: 2, kind: "spell",
+    filter: { spellSchool: "Evocation", spellLevelMin: 1, spellLevelMax: 2 },
+  },
+  {
+    className: "Ranger", subclass: "Hunter", level: 3, feature: "Hunter's Prey", choose: 1,
+    kind: "option",
+    filter: { named: [
+      { name: "Colossus Slayer", summary: "Once a turn, +1d8 against a damaged target" },
+      { name: "Horde Breaker", summary: "Once a turn, a second attack against a different target" },
+    ] },
+  },
+  {
+    className: "Ranger", subclass: "Hunter", level: 7, feature: "Defensive Tactics", choose: 1,
+    kind: "option",
+    filter: { named: [
+      { name: "Escape the Horde", summary: "Opportunity Attacks against you have Disadvantage" },
+      { name: "Multiattack Defense", summary: "+4 AC against a creature's later attacks that turn" },
+    ] },
+  },
+  {
+    className: "Druid", subclass: "Circle of the Land", level: 3, feature: "Circle of the Land Spells",
+    choose: 1, kind: "option",
+    filter: { named: [
+      { name: "Arid", summary: "Blur, Burning Hands, Fire Bolt and the desert list" },
+      { name: "Polar", summary: "Fog Cloud, Hold Person, Ray of Frost and the tundra list" },
+      { name: "Temperate", summary: "Misty Step, Sleep, Shocking Grasp and the woodland list" },
+      { name: "Tropical", summary: "Acid Splash, Web, Stinking Cloud and the jungle list" },
+    ] },
+    note: "Changeable after any Long Rest.",
+  },
+  {
+    className: "Warlock", subclass: "Fiend Patron", level: 10, feature: "Fiendish Resilience",
+    choose: 1, kind: "option",
+    filter: { named: [
+      { name: "Acid", summary: "Resistance to Acid damage" },
+      { name: "Bludgeoning", summary: "Resistance to Bludgeoning damage" },
+      { name: "Cold", summary: "Resistance to Cold damage" },
+      { name: "Fire", summary: "Resistance to Fire damage" },
+      { name: "Lightning", summary: "Resistance to Lightning damage" },
+      { name: "Necrotic", summary: "Resistance to Necrotic damage" },
+      { name: "Piercing", summary: "Resistance to Piercing damage" },
+      { name: "Poison", summary: "Resistance to Poison damage" },
+      { name: "Psychic", summary: "Resistance to Psychic damage" },
+      { name: "Radiant", summary: "Resistance to Radiant damage" },
+      { name: "Slashing", summary: "Resistance to Slashing damage" },
+      { name: "Thunder", summary: "Resistance to Thunder damage" },
+    ] },
+    note: "Any damage type except Force. Changeable after a Short or Long Rest.",
+  },
+  {
+    className: "Sorcerer", subclass: "Draconic Sorcery", level: 6, feature: "Elemental Affinity",
+    choose: 1, kind: "option",
+    filter: { named: [
+      { name: "Acid", summary: "Add your Charisma to one Acid damage roll per turn" },
+      { name: "Cold", summary: "Add your Charisma to one Cold damage roll per turn" },
+      { name: "Fire", summary: "Add your Charisma to one Fire damage roll per turn" },
+      { name: "Lightning", summary: "Add your Charisma to one Lightning damage roll per turn" },
+      { name: "Poison", summary: "Add your Charisma to one Poison damage roll per turn" },
+    ] },
+  },
 
   // --- named lists, authored because they exist in no machine-readable source -----------------
   {
@@ -312,7 +396,7 @@ export type ResolveInput = {
   skills: { key: string; label: string }[];
   weapons: { name: string; weapon_category?: string; weapon_range?: string; mastery?: string }[];
   tools: { name: string }[];
-  spells: { name: string; level: string }[];
+  spells: { name: string; level: string; school?: string }[];
   /** Skill keys the character is already proficient in, for Expertise. */
   proficientSkills: string[];
   feats: { name: string; category?: string }[];
@@ -377,10 +461,13 @@ export function resolveChoice(choice: ClassChoice, data: ResolveInput): { value:
   // spell
   const lo = f.spellLevelMin ?? 0;
   const hi = f.spellLevelMax ?? 9;
+  const school = f.spellSchool?.toLowerCase();
   return data.spells
     .filter((sp) => {
       const n = parseInt(String(sp.level ?? ""), 10);
-      return Number.isFinite(n) && n >= lo && n <= hi;
+      if (!Number.isFinite(n) || n < lo || n > hi) return false;
+      if (school && String((sp as { school?: string }).school || "").toLowerCase() !== school) return false;
+      return true;
     })
     .map((sp) => ({ value: sp.name, label: sp.name }));
 }
