@@ -289,8 +289,21 @@ export const C = {
   accent: STONE.brassHi,
   good: STONE.mossLit,
   have: STONE.mossLit,
+  agree: STONE.mossLit,
   warn: STONE.bloodLit,
   missing: STONE.bloodLit,
+  disagree: STONE.bloodLit,
+
+  // A translucent darker wash used over the wall, distinct from a solid surface.
+  ink2: "rgba(0,0,0,0.34)",
+
+  // PARCHMENT stays parchment. These are DARK INK ON A LIGHT CARD - the disposition inventory
+  // prints its result on a vellum sheet - so mapping them onto STONE.ink (pale parchment TEXT)
+  // would invert the card into unreadable light-on-light. The stone palette has no light surface
+  // to map them to, and inventing one would change a deliberate design rather than retone it.
+  vellumInk: SAX.parchInk,
+  vellumLine: SAX.parchLine,
+  parch: SAX.parch,
 } as const;
 
 // The six axes keep their own colours. They are DATA ENCODING, not chrome: the same hue means the

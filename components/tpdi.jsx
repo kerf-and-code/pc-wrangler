@@ -7,6 +7,7 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { SAX, AXES } from "@/lib/theme";
+import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 
 /*
   TPDI — Player Disposition Inventory (cold-start prior)
@@ -19,20 +20,6 @@ import { SAX, AXES } from "@/lib/theme";
   This is a starting prior; logged play later updates it.
 */
 
-const C = {
-  ink: SAX.inkDeep,
-  ink2: "rgba(11,7,18,0.55)",
-  panel: SAX.panelBg,
-  line: SAX.line,
-  vellum: SAX.text,
-  vellumInk: SAX.parchInk,
-  vellumLine: SAX.parchLine,
-  brass: SAX.brass,
-  brassDim: SAX.brassDim,
-  muted: SAX.muted,
-  agree: SAX.good,
-  disagree: SAX.warn,
-};
 
 // AXES and TAVERN_ORDER now live in lib/theme.ts as the single source of truth
 // for axis labels and colors (internal keys stay N/T/O/S/E/I so scoring and the
@@ -394,7 +381,7 @@ export default function TPDI({ scope = "character" }) {
             <input value={playerName} onChange={(e) => setPlayerName(e.target.value)}
               placeholder="Your name (optional)"
               style={{ marginTop: 22, background: C.ink2, color: C.vellum, border: `1px solid ${C.line}`,
-                borderRadius: 10, padding: "12px 14px", fontSize: 15, width: "100%", maxWidth: 320, display: "block" }} />
+                borderRadius: FORGE_RADIUS, padding: "12px 14px", fontSize: 15, width: "100%", maxWidth: 320, display: "block" }} />
             <p style={{ fontSize: 12.5, color: C.muted, marginTop: 8 }}>
               Add your name if your GM is collecting profiles for the table.
             </p>
@@ -405,14 +392,14 @@ export default function TPDI({ scope = "character" }) {
             )}
 
             <button onClick={() => { setViewSaved(false); setPhase("quiz"); }} className="tpdi-foc"
-              style={{ marginTop: 28, background: C.brass, color: C.ink, border: "none", borderRadius: 10,
+              style={{ marginTop: 28, background: C.brass, color: C.ink, border: "none", borderRadius: FORGE_RADIUS,
                 padding: "14px 26px", fontSize: 16, fontWeight: 600, cursor: "pointer" }}>
               Begin
             </button>
             {existing && (
               <button onClick={() => { setViewSaved(true); setPhase("results"); }} className="tpdi-foc"
                 style={{ marginTop: 28, marginLeft: 12, background: "none", color: C.brass,
-                  border: `1px solid ${C.brassDim}`, borderRadius: 10, padding: "14px 22px",
+                  border: `1px solid ${C.brassDim}`, borderRadius: FORGE_RADIUS, padding: "14px 22px",
                   fontSize: 15, cursor: "pointer" }}>
                 View your last profile
               </button>
@@ -435,7 +422,7 @@ export default function TPDI({ scope = "character" }) {
 
             <div key={current.id} className="tpdi-fade" ref={liveRef} aria-live="polite">
               {/* statement card on vellum */}
-              <div style={{ background: SAX.parch, color: C.vellumInk, borderRadius: 14, padding: "30px 26px",
+              <div style={{ background: C.parch, color: C.vellumInk, borderRadius: FORGE_RADIUS, padding: "30px 26px",
                 border: `1px solid ${C.vellumLine}`, minHeight: 150, display: "flex", alignItems: "center" }}>
                 <p className="tpdi-serif" style={{ fontSize: 23, lineHeight: 1.34, fontWeight: 500, margin: 0 }}>
                   {current.text}
@@ -453,7 +440,7 @@ export default function TPDI({ scope = "character" }) {
                         background: chosen ? scoreColor(s.v) : C.panel,
                         color: chosen ? "#fff" : "#D8D0C0",
                         border: `1px solid ${chosen ? scoreColor(s.v) : C.line}`,
-                        borderRadius: 10, padding: "16px 6px 12px", cursor: "pointer",
+                        borderRadius: FORGE_RADIUS, padding: "16px 6px 12px", cursor: "pointer",
                         display: "flex", flexDirection: "column", alignItems: "center", gap: 8,
                         transition: reduce ? "none" : "background .15s ease, border-color .15s ease",
                       }}>
@@ -474,7 +461,7 @@ export default function TPDI({ scope = "character" }) {
                   &larr; Back
                 </button>
                 <button onClick={() => record("NB")} className="tpdi-foc"
-                  style={{ background: "none", border: `1px solid ${C.line}`, color: C.muted, borderRadius: 8,
+                  style={{ background: "none", border: `1px solid ${C.line}`, color: C.muted, borderRadius: FORGE_RADIUS,
                     padding: "7px 12px", fontSize: 12.5, cursor: "pointer" }}>
                   No basis to answer
                 </button>
@@ -504,7 +491,7 @@ export default function TPDI({ scope = "character" }) {
               { title: "Lines", subtitle: "hard no, never at the table", items: lines, setItems: setLines, custom: customLine, setCustom: setCustomLine, accent: C.brass },
               { title: "Veils", subtitle: "allowed, but off screen", items: veils, setItems: setVeils, custom: customVeil, setCustom: setCustomVeil, accent: "#6C76B0" },
             ].map((grp) => (
-              <div key={grp.title} style={{ background: C.panel, border: `1px solid ${C.line}`, borderRadius: 14, padding: "18px 20px", marginBottom: 14 }}>
+              <div key={grp.title} style={{ background: C.panel, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "18px 20px", marginBottom: 14 }}>
                 <div className="tpdi-mono" style={{ fontSize: 11, letterSpacing: "0.18em", color: grp.accent, textTransform: "uppercase", marginBottom: 3 }}>
                   {grp.title}
                 </div>
@@ -530,22 +517,22 @@ export default function TPDI({ scope = "character" }) {
                       }
                     }}
                     placeholder={`Add a ${grp.title.slice(0, -1).toLowerCase()}...`}
-                    style={{ flex: 1, background: "rgba(11,7,18,0.6)", border: `1px solid ${C.line}`, borderRadius: 8, padding: "8px 11px", color: C.vellum, fontSize: 13 }} />
+                    style={{ flex: 1, background: "rgba(11,7,18,0.6)", border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "8px 11px", color: C.vellum, fontSize: 13 }} />
                   <button onClick={() => { if (grp.custom.trim()) { grp.setItems((xs) => Array.from(new Set([...xs, grp.custom.trim()]))); grp.setCustom(""); } }}
-                    className="tpdi-foc" style={{ background: "none", border: `1px solid ${C.line}`, color: C.vellum, borderRadius: 8, padding: "8px 14px", fontSize: 13, cursor: "pointer" }}>
+                    className="tpdi-foc" style={{ background: "none", border: `1px solid ${C.line}`, color: C.vellum, borderRadius: FORGE_RADIUS, padding: "8px 14px", fontSize: 13, cursor: "pointer" }}>
                     Add
                   </button>
                 </div>
               </div>
             ))}
 
-            <div style={{ background: C.panel, border: `1px solid ${C.line}`, borderRadius: 14, padding: "18px 20px", marginBottom: 16 }}>
+            <div style={{ background: C.panel, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "18px 20px", marginBottom: 16 }}>
               <div className="tpdi-mono" style={{ fontSize: 11, letterSpacing: "0.18em", color: C.muted, textTransform: "uppercase", marginBottom: 10 }}>
                 Anything else for your GM (optional)
               </div>
               <textarea value={safetyNote} onChange={(e) => setSafetyNote(e.target.value)} rows={2}
                 placeholder="A content note, an ask, a heads-up..."
-                style={{ width: "100%", background: "rgba(11,7,18,0.6)", border: `1px solid ${C.line}`, borderRadius: 8, padding: "10px 12px", color: C.vellum, fontSize: 13.5, resize: "vertical" }} />
+                style={{ width: "100%", background: "rgba(11,7,18,0.6)", border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "10px 12px", color: C.vellum, fontSize: 13.5, resize: "vertical" }} />
             </div>
 
             <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
@@ -553,7 +540,7 @@ export default function TPDI({ scope = "character" }) {
                 onClick={async () => { await saveProfile(); setPhase("results"); }}
                 disabled={saving || !userId}
                 className="tpdi-foc"
-                style={{ background: C.brass, border: "none", color: "#1a1206", borderRadius: 10, padding: "11px 22px", fontSize: 14, fontWeight: 700, cursor: saving ? "default" : "pointer", opacity: saving ? 0.7 : 1 }}>
+                style={{ background: C.brass, border: "none", color: "#1a1206", borderRadius: FORGE_RADIUS, padding: "11px 22px", fontSize: 14, fontWeight: 700, cursor: saving ? "default" : "pointer", opacity: saving ? 0.7 : 1 }}>
                 {saving ? "Saving..." : saved ? "Saved \u2014 see results" : "Save & continue to results"}
               </button>
               <span style={{ color: C.muted, fontSize: 12.5 }}>
@@ -561,7 +548,7 @@ export default function TPDI({ scope = "character" }) {
               </span>
             </div>
             {saveError && (
-              <div style={{ marginTop: 12, background: "rgba(120,40,40,0.25)", border: `1px solid ${C.warn}`, borderRadius: 8, padding: "10px 12px", color: C.vellum, fontSize: 13 }}>
+              <div style={{ marginTop: 12, background: "rgba(120,40,40,0.25)", border: `1px solid ${C.warn}`, borderRadius: FORGE_RADIUS, padding: "10px 12px", color: C.vellum, fontSize: 13 }}>
                 Save error: {saveError}
               </div>
             )}
@@ -598,7 +585,7 @@ export default function TPDI({ scope = "character" }) {
             </div>
 
             {/* leans summary */}
-            <div style={{ background: C.panel, border: `1px solid ${C.line}`, borderRadius: 14, padding: "20px 22px", marginTop: 8 }}>
+            <div style={{ background: C.panel, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "20px 22px", marginTop: 8 }}>
               <div className="tpdi-mono" style={{ fontSize: 11, letterSpacing: "0.18em", color: C.brass, textTransform: "uppercase", marginBottom: 14 }}>
                 Your profile leans
               </div>
@@ -622,7 +609,7 @@ export default function TPDI({ scope = "character" }) {
             </div>
 
             {/* presence meter */}
-            <div style={{ background: C.panel, border: `1px solid ${C.line}`, borderRadius: 14, padding: "18px 22px", marginTop: 12 }}>
+            <div style={{ background: C.panel, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "18px 22px", marginTop: 12 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
                 <span className="tpdi-mono" style={{ fontSize: 11, letterSpacing: "0.18em", color: C.brass, textTransform: "uppercase" }}>Presence</span>
                 <span className="tpdi-mono" style={{ fontSize: 12, color: C.muted }}>
@@ -651,7 +638,7 @@ export default function TPDI({ scope = "character" }) {
               {!viewSaved && (
                 <button onClick={saveProfile} disabled={saving || saved || !userId} className="tpdi-foc"
                   style={{ background: saved ? "none" : C.brass, color: saved ? C.agree : C.ink,
-                    border: saved ? `1px solid ${C.agree}` : "none", borderRadius: 10,
+                    border: saved ? `1px solid ${C.agree}` : "none", borderRadius: FORGE_RADIUS,
                     padding: "12px 22px", fontSize: 15, fontWeight: 600,
                     cursor: saving || saved || !userId ? "default" : "pointer", opacity: !userId ? 0.6 : 1 }}>
                   {saved ? "Saved" : saving ? "Saving..." : "Save my profile"}
@@ -659,7 +646,7 @@ export default function TPDI({ scope = "character" }) {
               )}
               <button onClick={() => { setAnswers({}); setIdx(0); setOrder(shuffled(ITEMS)); setSaved(false); setViewSaved(false); setPhase("intro"); }} className="tpdi-foc"
                 style={{ background: "none", color: C.brass, border: `1px solid ${C.brassDim}`,
-                  borderRadius: 10, padding: "12px 22px", fontSize: 15, cursor: "pointer" }}>
+                  borderRadius: FORGE_RADIUS, padding: "12px 22px", fontSize: 15, cursor: "pointer" }}>
                 {viewSaved ? "Take it again" : "Retake"}
               </button>
             </div>
