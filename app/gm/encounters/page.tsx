@@ -4,13 +4,9 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { SAX } from "@/lib/theme";
+import { C, FORGE_RADIUS, stoneField, stonePanel, stoneButton } from "@/lib/forge-theme";
 import { loadSrd } from "@/lib/srd/srd";
 import { listStatBlocks, type StatBlockRow } from "@/lib/stat-blocks";
-
-const C = {
-  ink: SAX.inkDeep, panel: SAX.slateBg, line: SAX.line, text: SAX.text,
-  muted: SAX.muted, brass: SAX.brass, good: SAX.good, warn: SAX.warn, plum: SAX.plum,
-};
 
 // ============================================================================
 // THE TWO METHODS ARE GENUINELY DIFFERENT. THIS IS THE WHOLE POINT OF THE TOOL.
@@ -357,12 +353,11 @@ export default function EncountersPage() {
 
   // ---- rendering -----------------------------------------------------------
   const box: React.CSSProperties = {
-    background: C.panel, border: `1px solid ${C.line}`, borderRadius: 12,
+    background: C.panel, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS,
     padding: "16px 18px", marginBottom: 14,
   };
   const inputStyle: React.CSSProperties = {
-    background: SAX.panelBg, color: C.text, border: `1px solid ${C.line}`,
-    borderRadius: 8, padding: "8px 10px", fontSize: 14,
+    ...stoneField(), padding: "8px 10px", fontSize: 14,
   };
   const eyebrow: React.CSSProperties = {
     fontFamily: SAX.mono, fontSize: 11, letterSpacing: "0.2em",
@@ -528,7 +523,7 @@ export default function EncountersPage() {
             onClick={() => setFoes((fs) => [...fs, { id: uid(), name: "", cr: "1", count: 1 }])}
             style={{
               background: "transparent", color: C.text, border: `1px solid ${C.line}`,
-              borderRadius: 8, padding: "7px 14px", fontSize: 12.5, fontWeight: 700,
+              borderRadius: FORGE_RADIUS, padding: "7px 14px", fontSize: 12.5, fontWeight: 700,
               fontFamily: SAX.mono, cursor: "pointer",
             }}
           >
@@ -540,7 +535,7 @@ export default function EncountersPage() {
             style={{
               background: pickerOpen ? C.brass : "transparent", color: pickerOpen ? C.ink : C.text,
               border: `1px solid ${pickerOpen ? C.brass : C.line}`,
-              borderRadius: 8, padding: "7px 14px", fontSize: 12.5, fontWeight: 700,
+              borderRadius: FORGE_RADIUS, padding: "7px 14px", fontSize: 12.5, fontWeight: 700,
               fontFamily: SAX.mono, cursor: "pointer",
             }}
           >
@@ -577,7 +572,7 @@ export default function EncountersPage() {
           {/* The gauge. A "Hard" one xp over the line is a different fight from a
               "Hard" that is nearly Deadly, and a label alone hides that. */}
           <div style={{ margin: "4px 0 14px" }}>
-            <div style={{ position: "relative", height: 10, background: "rgba(255,255,255,0.05)", borderRadius: 6, overflow: "hidden" }}>
+            <div style={{ position: "relative", height: 10, background: "rgba(255,255,255,0.05)", borderRadius: FORGE_RADIUS, overflow: "hidden" }}>
               {(() => {
                 const t = budget.tiers as number[];
                 const top = t[t.length - 1] * 1.5; // headroom above the top tier
@@ -647,7 +642,7 @@ export default function EncountersPage() {
             <div style={{ marginLeft: "auto", alignSelf: "flex-end" }}>
               <button type="button" onClick={saveToPlan} style={{
                 background: "transparent", color: C.text, border: `1px solid ${C.line}`,
-                borderRadius: 8, padding: "7px 14px", fontSize: 12.5, fontWeight: 700,
+                borderRadius: FORGE_RADIUS, padding: "7px 14px", fontSize: 12.5, fontWeight: 700,
                 fontFamily: SAX.mono, cursor: "pointer",
               }}>
                 Add to session plan
@@ -807,7 +802,7 @@ function MonsterPicker({ catalog, srdMode, onSrdMode, hasOwn, onAdd, C, inputSty
 
   return (
     <div style={{
-      marginTop: 12, border: `1px solid ${C.line}`, borderRadius: 10, padding: 12,
+      marginTop: 12, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: 12,
       background: "rgba(255,255,255,0.02)",
     }}>
       <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 10 }}>
@@ -844,7 +839,7 @@ function MonsterPicker({ catalog, srdMode, onSrdMode, hasOwn, onAdd, C, inputSty
             style={{
               display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8,
               background: "transparent", color: C.text, border: `1px solid ${C.line}`,
-              borderRadius: 8, padding: "7px 10px", fontSize: 13, cursor: "pointer", textAlign: "left",
+              borderRadius: FORGE_RADIUS, padding: "7px 10px", fontSize: 13, cursor: "pointer", textAlign: "left",
             }}
           >
             <span style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
