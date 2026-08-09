@@ -17,6 +17,7 @@ type Entry = {
   visibility: string;
   tags: string[];
   image_url: string | null;
+  slug: string | null;
 };
 type Char = {
   id: string;
@@ -140,6 +141,21 @@ export default function CodexPage() {
     setEntries((prev) => prev.map((e) => (e.id === entryId ? { ...e, image_url: url || null } : e)));
   };
 
+  const [slugBusy, setSlugBusy] = useState(false);
+  const regenerateSlug = async (entryId: string) => {
+    // The warning lives HERE rather than in the database, because a function cannot ask a question.
+    // Naming the consequence in the confirm is the whole point of the feature being manual.
+    if (!confirm(
+      "Give this entry a new URL from its current title?\n\n" +
+      "Any link already shared to the old address will stop working. This cannot be undone."
+    )) return;
+    setSlugBusy(true);
+    const { data, error } = await supabase.rpc("regenerate_entry_slug", { p_entry: entryId });
+    setSlugBusy(false);
+    if (error || typeof data !== "string") return;
+    setEntries((prev) => prev.map((e) => (e.id === entryId ? { ...e, slug: data } : e)));
+  };
+
   const saveCover = async (url: string) => {
     if (!campaignId) return;
     const { error } = await supabase
@@ -183,7 +199,7 @@ export default function CodexPage() {
 
   async function reload(cid: string) {
     const [{ data: e }, { data: c }, { data: l }, { data: ss }, { data: rv }] = await Promise.all([
-      supabase.from("entries").select("id, type, title, body, visibility, tags, image_url").eq("campaign_id", cid).order("title"),
+      supabase.from("entries").select("id, type, title, body, visibility, tags, image_url, slug").eq("campaign_id", cid).order("title"),
       supabase.from("characters").select("id, name, kind, description, visibility, tags, class, subclass").eq("campaign_id", cid).order("name"),
       supabase.from("entity_links").select("id, source_type, source_id, target_type, target_id, relation").eq("campaign_id", cid),
       supabase.from("sessions").select("id, session_number").eq("campaign_id", cid),
@@ -246,7 +262,7 @@ export default function CodexPage() {
       } else {
         const { data } = await supabase.from("entries")
           .insert({ campaign_id: campaignId, type: mode.type, title: form.title.trim(), body: form.body, visibility: form.visibility, tags: entryTags })
-          .select("id, type, title, body, visibility, tags, image_url").single();
+          .select("id, type, title, body, visibility, tags, image_url, slug").single();
         if (data) setMode({ what: "entry", type: (data as Entry).type, tag: mode.tag ?? null, id: (data as Entry).id });
       }
     } else {
@@ -451,6 +467,32 @@ export default function CodexPage() {
                 ) : (
                   <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Name" style={{ ...input, fontSize: 16, fontWeight: 600, marginBottom: 12 }} />
                 )}
+
+                {/* THE PUBLISHED URL, shown so a GM can see what a reader gets before deciding
+                    whether it is worth breaking. A regenerate button with no visible current value
+                    is asking someone to change something they cannot see. */}
+                {mode.what === "entry" && mode.id && (() => {
+                  const ent = entries.find((e) => e.id === mode.id);
+                  if (!ent?.slug) return null;
+                  return (
+                    <div style={{ marginBottom: 12, display: "flex", gap: 10, alignItems: "baseline",
+                      flexWrap: "wrap" }}>
+                      <span style={{ fontFamily: SAX.mono, fontSize: 11, color: C.muted }}>
+                        /{ent.slug}
+                      </span>
+                      <button type="button" disabled={slugBusy}
+                        onClick={() => void regenerateSlug(mode.id!)}
+                        style={{ background: "transparent", color: C.muted, border: "none",
+                          cursor: slugBusy ? "default" : "pointer", fontSize: 12, padding: 0,
+                          textDecoration: "underline", opacity: slugBusy ? 0.5 : 1 }}>
+                        {slugBusy ? "Working" : "New URL from the title"}
+                      </button>
+                      <span style={{ fontSize: 11.5, color: C.muted }}>
+                        breaks links already shared
+                      </span>
+                    </div>
+                  );
+                })()}
 
                 {/* Only for a SAVED entry: the uploader needs an id for the storage path, and a
                     new entry has none until it is written. Offering it before then would produce a
