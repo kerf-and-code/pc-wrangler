@@ -12,12 +12,12 @@ type Group = { k: string; n: number; rate: number };
 type JobRow = { id: string; status: string; session: { session_number: number | null } | null };
 
 const pct = (x: number): string => `${Math.round(x * 100)}%`;
-const rateColor = (r: number): string => (r >= 0.7 ? "#5DBE9A" : r >= 0.4 ? "#F4C430" : "#E07A5F");
+const rateColor = (r: number): string => (r >= 0.7 ? C.good : r >= 0.4 ? C.brass : C.warn);
 const kappaLabel = (k: number): string =>
   k < 0 ? "poor" : k < 0.2 ? "slight" : k < 0.4 ? "fair" : k < 0.6 ? "moderate" : k < 0.8 ? "substantial" : "almost perfect";
 // Kappa is not a percentage and should not be coloured like one. 0.6 is the conventional
 // floor for "substantial", which is where these numbers start being safe to build on.
-const kappaColor = (k: number): string => (k >= 0.6 ? "#5DBE9A" : k >= 0.4 ? "#F4C430" : "#E07A5F");
+const kappaColor = (k: number): string => (k >= 0.6 ? C.good : k >= 0.4 ? C.brass : C.warn);
 
 type Agreement = {
   ready: boolean; needRecode: boolean;
@@ -472,7 +472,7 @@ export default function ReliabilityPage() {
 
               {recoding && recodeProg && (
                 <div style={{ marginBottom: 14 }}>
-                  <div style={{ height: 6, background: C.surface2, borderRadius: 6, overflow: "hidden" }}>
+                  <div style={{ height: 6, background: C.surface2, borderRadius: FORGE_RADIUS, overflow: "hidden" }}>
                     <div style={{ height: "100%", width: `${recodeProg.total ? Math.round((recodeProg.processed / recodeProg.total) * 100) : 0}%`, background: C.plum }} />
                   </div>
                   <div style={{ fontSize: 12, color: C.muted, marginTop: 6 }}>{recodeProg.processed} / {recodeProg.total} transcript lines</div>

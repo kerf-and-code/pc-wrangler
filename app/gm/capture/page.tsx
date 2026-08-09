@@ -16,14 +16,14 @@ type Track = { id: string; character_id: string | null; storage_path: string | n
 const PRESENT = ["present", "late", "partial"];
 
 const JOB_TONE: Record<string, string> = {
-  draft: "#A597BD",
-  blocked_consent: "#E07A5F",
-  uploading: "#F4C430",
-  transcribing: "#9B7BD4",
-  extracting: "#9B7BD4",
-  review: "#FFD75E",
-  done: "#5DBE9A",
-  error: "#E07A5F",
+  draft: C.muted,
+  blocked_consent: C.warn,
+  uploading: C.brass,
+  transcribing: C.sun,
+  extracting: C.sun,
+  review: C.sunSoft,
+  done: C.good,
+  error: C.warn,
 };
 
 export default function CapturePage() {

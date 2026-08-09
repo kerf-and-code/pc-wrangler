@@ -87,7 +87,7 @@ export default function GettingStartedPage() {
       {status === "ready" && (
         <>
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 18 }}>
-            <div style={{ flex: 1, height: 7, background: C.surface2, borderRadius: 6, overflow: "hidden" }}>
+            <div style={{ flex: 1, height: 7, background: C.surface2, borderRadius: FORGE_RADIUS, overflow: "hidden" }}>
               <div style={{ height: "100%", width: `${(doneCount / steps.length) * 100}%`, background: `linear-gradient(90deg, ${C.brass}, ${C.sun})`, transition: "width .3s" }} />
             </div>
             <div style={{ fontSize: 13, color: C.muted, fontFamily: "ui-monospace, monospace" }}>{doneCount}/{steps.length}</div>

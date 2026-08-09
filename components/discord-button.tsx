@@ -39,7 +39,7 @@ export default function DiscordButton({ next, claim }: { next?: string; claim?: 
         disabled={loading}
         style={{
           width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
-          background: "#5865F2", color: "#fff", border: "none", borderRadius: 8,
+          background: "#5865F2", color: "#fff", border: "none", borderRadius: FORGE_RADIUS,
           padding: "10px 16px", fontSize: 14, fontWeight: 600, cursor: loading ? "default" : "pointer",
           opacity: loading ? 0.7 : 1,
         }}

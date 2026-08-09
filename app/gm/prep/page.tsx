@@ -204,7 +204,7 @@ export default function PrepPage() {
     </div>
   );
   const empty = (t: string) => <div style={{ ...box, color: C.muted, fontSize: 13.5 }}>{t}</div>;
-  const miniBtn = (disabled: boolean) => ({ background: "none", border: `1px solid ${C.line}`, color: disabled ? C.line : C.muted, borderRadius: 6, cursor: disabled ? "default" : "pointer", fontSize: 12, padding: "2px 7px" } as const);
+  const miniBtn = (disabled: boolean) => ({ background: "none", border: `1px solid ${C.line}`, color: disabled ? C.line : C.muted, borderRadius: FORGE_RADIUS, cursor: disabled ? "default" : "pointer", fontSize: 12, padding: "2px 7px" } as const);
 
   const threadsEmpty = threads.length === 0;
 
@@ -379,7 +379,7 @@ export default function PrepPage() {
           <div style={{ display: "grid", gap: 8 }}>
             {beats.map((b) => (
               <div key={b.id} style={{ display: "flex", gap: 10, alignItems: "baseline", fontSize: 13.5, lineHeight: 1.5 }}>
-                <span style={{ width: 6, height: 6, borderRadius: 6, background: C.sun, flexShrink: 0, transform: "translateY(4px)" }} />
+                <span style={{ width: 6, height: 6, borderRadius: FORGE_RADIUS, background: C.sun, flexShrink: 0, transform: "translateY(4px)" }} />
                 <span style={{ color: C.text, flex: 1 }}>{b.summary}</span>
                 {b.audio_track_id && (
                   <MomentButton active={player.activeId === b.id} loading={player.loadingId === b.id} tStart={b.t_start_seconds}

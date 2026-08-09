@@ -32,11 +32,11 @@ const SPOTLIGHT_LABEL: Record<string, string> = {
 };
 
 const STATUS_TONE: Record<string, string> = {
-  scheduled: "#A597BD",
-  live: "#E07A5F",
-  completed: "#9B7BD4",
-  processed: "#5DBE9A",
-  cancelled: "#A597BD",
+  scheduled: C.muted,
+  live: C.warn,
+  completed: C.sun,
+  processed: C.good,
+  cancelled: C.muted,
 };
 
 export default function CheckInPage() {

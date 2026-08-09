@@ -460,7 +460,7 @@ export default function ReviewPage() {
               </div>
               {running && progress && (
                 <div style={{ marginTop: 14 }}>
-                  <div style={{ height: 6, background: C.surface2, borderRadius: 6, overflow: "hidden" }}>
+                  <div style={{ height: 6, background: C.surface2, borderRadius: FORGE_RADIUS, overflow: "hidden" }}>
                     <div style={{ height: "100%", width: `${progress.total ? Math.round((progress.processed / progress.total) * 100) : 0}%`, background: C.plum, transition: "width .3s" }} />
                   </div>
                   <div style={{ fontSize: 12, color: C.muted, marginTop: 6 }}>{progress.processed} / {progress.total} transcript lines</div>

@@ -173,7 +173,7 @@ export function PlayerDisposition({
         <p style={{
           color: C.warn, fontSize: 12, lineHeight: 1.55, margin: "0 0 14px",
           background: "rgba(224,122,95,0.10)", border: `1px solid ${C.warn}`,
-          borderRadius: 8, padding: "8px 11px", boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
+          borderRadius: FORGE_RADIUS, padding: "8px 11px", boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
           Based on {nChars === 1 ? "one character" : "no characters"} and no self-report,
           so this is mostly the model&apos;s prior rather than evidence about this person.
           The intervals are wide for a reason. It sharpens as they play more characters.
@@ -193,7 +193,7 @@ export function PlayerDisposition({
                 {typeof v === "number" ? Math.round(v * 100) : "\u2014"}
               </span>
             </div>
-            <div style={{ position: "relative", height: 8, background: "rgba(255,255,255,0.06)", borderRadius: 6, overflow: "hidden" }}>
+            <div style={{ position: "relative", height: 8, background: "rgba(255,255,255,0.06)", borderRadius: FORGE_RADIUS, overflow: "hidden" }}>
               {/* The credible interval, drawn UNDER the point estimate. A number
                   without its uncertainty is a lie of omission, and this one is about
                   a person. */}
@@ -234,7 +234,7 @@ function Card({ children }: { children: React.ReactNode }) {
   return (
     <div style={{
       background: C.surface, border: `1px solid ${C.line}`,
-      borderRadius: 12, padding: "16px 18px", marginBottom: 12, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
+      borderRadius: FORGE_RADIUS, padding: "16px 18px", marginBottom: 12, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
       {children}
     </div>
   );

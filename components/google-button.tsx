@@ -31,7 +31,7 @@ export default function GoogleButton({ next }: { next?: string }) {
         disabled={loading}
         style={{
           width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
-          background: "#fff", color: "#1f1f1f", border: "1px solid #dadce0", borderRadius: 8,
+          background: "#fff", color: "#1f1f1f", border: "1px solid #dadce0", borderRadius: FORGE_RADIUS,
           padding: "10px 16px", fontSize: 14, fontWeight: 600, cursor: loading ? "default" : "pointer",
           opacity: loading ? 0.7 : 1,
         }}

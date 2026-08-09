@@ -19,17 +19,18 @@
 
 import React from "react";
 import DiscordButton from "@/components/discord-button";
+import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 
 export default function ClaimPage() {
   return (
     <div style={{ minHeight: "100dvh", display: "flex", alignItems: "center", justifyContent: "center",
-      background: "#1B1426", color: "#F4EEFA", padding: 24,
+      background: C.bg, color: C.text, padding: 24,
       fontFamily: "ui-sans-serif, system-ui, sans-serif" }}>
       <div style={{ width: "100%", maxWidth: 420, textAlign: "center" }}>
         <div style={{ fontFamily: "'Iowan Old Style', Georgia, serif", fontSize: 26, fontWeight: 700, marginBottom: 8 }}>
           Open your table
         </div>
-        <p style={{ color: "#A597BD", fontSize: 15, lineHeight: 1.6, margin: "0 0 24px" }}>
+        <p style={{ color: C.muted, fontSize: 15, lineHeight: 1.6, margin: "0 0 24px" }}>
           Sign in with the Discord account you play on, and your character, your journal, and
           the party codex are all waiting. Nothing to type.
         </p>
@@ -38,7 +39,7 @@ export default function ClaimPage() {
             claim_by_discord and then routes to the player's table. */}
         <DiscordButton next="/me?claimed=1" claim />
 
-        <p style={{ color: "#6E6385", fontSize: 12.5, lineHeight: 1.55, marginTop: 20 }}>
+        <p style={{ color: C.line, fontSize: 12.5, lineHeight: 1.55, marginTop: 20 }}>
           Use the same Discord you use at the table. That is how we know which characters are
           yours.
         </p>

@@ -540,7 +540,7 @@ export default function TPDI({ scope = "character" }) {
                 onClick={async () => { await saveProfile(); setPhase("results"); }}
                 disabled={saving || !userId}
                 className="tpdi-foc"
-                style={{ background: C.brass, border: "none", color: "#1a1206", borderRadius: FORGE_RADIUS, padding: "11px 22px", fontSize: 14, fontWeight: 700, cursor: saving ? "default" : "pointer", opacity: saving ? 0.7 : 1 }}>
+                style={{ background: C.brass, border: "none", color: "rgba(0,0,0,0.34)", borderRadius: FORGE_RADIUS, padding: "11px 22px", fontSize: 14, fontWeight: 700, cursor: saving ? "default" : "pointer", opacity: saving ? 0.7 : 1 }}>
                 {saving ? "Saving..." : saved ? "Saved \u2014 see results" : "Save & continue to results"}
               </button>
               <span style={{ color: C.muted, fontSize: 12.5 }}>

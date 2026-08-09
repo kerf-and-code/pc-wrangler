@@ -120,7 +120,7 @@ export default function Beyond20Setup() {
               style={{ flex: 1, minWidth: 220, background: C.surface2, color: C.text, border: `1px solid ${C.line}`,
                 borderRadius: FORGE_RADIUS, padding: "11px 12px", fontFamily: "ui-monospace, monospace", fontSize: 14, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }} />
             <button type="button" onClick={copy}
-              style={{ background: copied ? C.good : C.sun, color: "#1a1206", border: "none", borderRadius: FORGE_RADIUS,
+              style={{ background: copied ? C.good : C.sun, color: "rgba(0,0,0,0.34)", border: "none", borderRadius: FORGE_RADIUS,
                 padding: "11px 18px", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>
               {copied ? "Copied ✓" : "Copy URL"}
             </button>
@@ -148,7 +148,7 @@ export default function Beyond20Setup() {
           <div style={{ marginTop: 18, textAlign: "center" }}>
             <a href={`/record?share=${encodeURIComponent(share)}`}
               style={{ display: "inline-block", background: status === "waiting" ? "transparent" : C.good,
-                color: status === "waiting" ? C.muted : "#12210f", border: `1px solid ${status === "waiting" ? C.line : C.good}`,
+                color: status === "waiting" ? C.muted : "rgba(122,138,94,0.22)", border: `1px solid ${status === "waiting" ? C.line : C.good}`,
                 borderRadius: FORGE_RADIUS, padding: "13px 22px", fontSize: 15, fontWeight: 700, textDecoration: "none" }}>
               {status === "waiting" ? "Go to your table (set this up first)" : "Go to your table →"}
             </a>

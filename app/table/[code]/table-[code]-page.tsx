@@ -7,12 +7,13 @@
 import { Suspense } from "react";
 import { useParams } from "next/navigation";
 import TableTap from "@/components/table-tap";
+import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 
 export default function TableTapPage() {
   return (
     <Suspense
       fallback={
-        <main style={{ minHeight: "100vh", background: "#16121f", color: "#9a8fb0", fontFamily: "system-ui, sans-serif", padding: 24 }}>
+        <main style={{ minHeight: "100vh", background: C.bg, color: C.muted, fontFamily: "system-ui, sans-serif", padding: 24 }}>
           Loading Table Tap...
         </main>
       }
@@ -29,7 +30,7 @@ function TableTapInner() {
     <main
       style={{
         minHeight: "100vh",
-        background: "#16121f",
+        background: C.bg,
         fontFamily: "system-ui, sans-serif",
         padding: 24,
       }}

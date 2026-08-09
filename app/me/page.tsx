@@ -112,7 +112,7 @@ export default function PlayerJournalPage() {
                         <span style={{ color: C.text }}>{TAVERN[ax]}</span>
                         <span style={{ fontFamily: "ui-monospace, monospace", color: C.muted }}>{v == null ? "—" : `${Math.round(v * 100)}`}</span>
                       </div>
-                      <div style={{ height: 8, background: "rgba(255,255,255,0.06)", borderRadius: 6, overflow: "hidden" }}>
+                      <div style={{ height: 8, background: "rgba(255,255,255,0.06)", borderRadius: FORGE_RADIUS, overflow: "hidden" }}>
                         <div style={{ height: "100%", width: `${(v ?? 0) * 100}%`, background: AXIS_COLOR[ax], transition: "width .3s" }} />
                       </div>
                     </div>

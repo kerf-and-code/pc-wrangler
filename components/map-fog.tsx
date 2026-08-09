@@ -32,6 +32,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 
 export type FogRow = { map_id: string; cols: number; rows: number; cells: string; updated_at: string };
 
@@ -376,7 +377,7 @@ export default function MapFog({
               <button onClick={() => setPainting((v) => !v)}
                 title={painting ? "Back to placing pins" : "Paint fog instead of placing pins"}
                 style={{ ...btn, background: painting ? "rgba(200,162,75,0.9)" : "transparent",
-                         color: painting ? "#241a0d" : "#e8dcc4" }}>
+                         color: painting ? "#241a0d" : C.text }}>
                 {painting ? "Painting" : "Paint"}
               </button>
               <button onClick={() => setErasing(false)} disabled={!painting}
@@ -387,7 +388,7 @@ export default function MapFog({
                 onChange={(e) => setBrush(Number(e.target.value))} style={{ width: 74 }} />
               <button onClick={() => fill(true)} style={btn}>All</button>
               <button onClick={() => fill(false)} style={btn}>None</button>
-              <span style={{ fontSize: 11, opacity: saving ? 1 : 0.45, color: "#e8dcc4" }}>
+              <span style={{ fontSize: 11, opacity: saving ? 1 : 0.45, color: C.text }}>
                 {saving ? "saving\u2026" : "saved"}
               </span>
             </>

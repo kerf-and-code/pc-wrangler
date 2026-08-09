@@ -6,7 +6,7 @@ import PageShell from "@/components/page-shell";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 
 const STATUS_TONE: Record<string, string> = {
-  scheduled: "#A597BD", live: "#E07A5F", completed: "#9B7BD4", processed: "#5DBE9A", cancelled: "#A597BD",
+  scheduled: C.muted, live: C.warn, completed: C.sun, processed: C.good, cancelled: C.muted,
 };
 const AXIS_COLOR: Record<string, string> = { N: "#B7615A", T: "#C8A24B", O: "#4E8077", S: "#CE8A42", E: "#6C76B0", I: "#9A93B0" };
 const AXIS_NAME: Record<string, string> = { N: "Voice", T: "Tactics", O: "Arcana", S: "Rapport", E: "Exploration", I: "Nerve" };
@@ -646,7 +646,7 @@ export default function SessionWorkspace() {
       <div className="mono" style={{ fontSize: 11, letterSpacing: "0.22em", color: C.brass, textTransform: "uppercase", marginBottom: 18 }}>
         Session Log
       </div>
-      {err && <div style={{ ...box, borderColor: C.warn, color: "#E7B7B0", fontSize: 13 }}>{err}</div>}
+      {err && <div style={{ ...box, borderColor: C.warn, color: C.warn, fontSize: 13 }}>{err}</div>}
 
       {/* campaign + session pickers */}
       <div style={box}>
