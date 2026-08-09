@@ -16,6 +16,7 @@ type Entry = {
   body: string | null;
   visibility: string;
   tags: string[];
+  image_url: string | null;
 };
 type Char = {
   id: string;
@@ -129,6 +130,16 @@ export default function CodexPage() {
     setCoverSaved(false);
   }, [campaignId, campaigns]);
 
+  // Per-entry image for the published wiki. Saved on upload rather than behind a Save button: the
+  // file is already in storage by the time this runs, so a second confirmation only adds a way to
+  // lose the image you just chose.
+  const saveEntryImage = async (entryId: string, url: string) => {
+    const { error } = await supabase
+      .from("entries").update({ image_url: url || null }).eq("id", entryId);
+    if (error) return;
+    setEntries((prev) => prev.map((e) => (e.id === entryId ? { ...e, image_url: url || null } : e)));
+  };
+
   const saveCover = async (url: string) => {
     if (!campaignId) return;
     const { error } = await supabase
@@ -172,7 +183,7 @@ export default function CodexPage() {
 
   async function reload(cid: string) {
     const [{ data: e }, { data: c }, { data: l }, { data: ss }, { data: rv }] = await Promise.all([
-      supabase.from("entries").select("id, type, title, body, visibility, tags").eq("campaign_id", cid).order("title"),
+      supabase.from("entries").select("id, type, title, body, visibility, tags, image_url").eq("campaign_id", cid).order("title"),
       supabase.from("characters").select("id, name, kind, description, visibility, tags, class, subclass").eq("campaign_id", cid).order("name"),
       supabase.from("entity_links").select("id, source_type, source_id, target_type, target_id, relation").eq("campaign_id", cid),
       supabase.from("sessions").select("id, session_number").eq("campaign_id", cid),
@@ -235,7 +246,7 @@ export default function CodexPage() {
       } else {
         const { data } = await supabase.from("entries")
           .insert({ campaign_id: campaignId, type: mode.type, title: form.title.trim(), body: form.body, visibility: form.visibility, tags: entryTags })
-          .select("id, type, title, body, visibility, tags").single();
+          .select("id, type, title, body, visibility, tags, image_url").single();
         if (data) setMode({ what: "entry", type: (data as Entry).type, tag: mode.tag ?? null, id: (data as Entry).id });
       }
     } else {
@@ -439,6 +450,28 @@ export default function CodexPage() {
                   <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Title" style={{ ...input, fontSize: 16, fontWeight: 600, marginBottom: 12 }} />
                 ) : (
                   <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Name" style={{ ...input, fontSize: 16, fontWeight: 600, marginBottom: 12 }} />
+                )}
+
+                {/* Only for a SAVED entry: the uploader needs an id for the storage path, and a
+                    new entry has none until it is written. Offering it before then would produce a
+                    file with nowhere to belong. */}
+                {mode.what === "entry" && mode.id && (
+                  <div style={{ marginBottom: 12 }}>
+                    <PortraitUploader
+                      label="Image for the published wiki"
+                      basePath={campaignId ? `${campaignId}/codex/entries/${mode.id}` : null}
+                      currentUrl={entries.find((e) => e.id === mode.id)?.image_url ?? null}
+                      onUploaded={(url) => { void saveEntryImage(mode.id!, url); }}
+                    />
+                    {entries.find((e) => e.id === mode.id)?.image_url && (
+                      <button type="button" onClick={() => void saveEntryImage(mode.id!, "")}
+                        style={{ background: "transparent", color: C.muted, border: "none",
+                          cursor: "pointer", fontSize: 12, padding: 0, marginTop: 6,
+                          textDecoration: "underline" }}>
+                        Remove the image
+                      </button>
+                    )}
+                  </div>
                 )}
 
                 <textarea

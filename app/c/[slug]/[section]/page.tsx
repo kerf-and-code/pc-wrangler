@@ -54,6 +54,12 @@ async function SectionBody({ params }: P) {
               display: "block", padding: "14px 0",
               borderBottom: "1px solid var(--w-line)", textDecoration: "none", color: "inherit",
             }}>
+            <div className="w-row">
+              {it.image_url && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img className="w-thumb" src={it.image_url} alt="" loading="lazy" />
+              )}
+              <div style={{ minWidth: 0 }}>
             <div style={{ fontSize: 19, fontWeight: 600, marginBottom: 4 }}>{it.title}</div>
             {it.body ? (
               <p style={{
@@ -69,6 +75,8 @@ async function SectionBody({ params }: P) {
               // about the tool than about the place.
               <p style={{ fontSize: 14, color: "var(--w-muted)", margin: 0 }}>Not yet described.</p>
             )}
+              </div>
+            </div>
           </a>
         ))
       )}

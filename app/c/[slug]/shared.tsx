@@ -17,6 +17,7 @@ export type Item = {
   body: string | null;
   tags: string[] | null;
   slug: string | null;
+  image_url: string | null;
 };
 
 export type Campaign = {
@@ -128,6 +129,15 @@ export function WikiHead() {
           text-transform: uppercase; color: var(--w-muted); background: transparent;
           border: 1px solid var(--w-line); border-radius: 3px; padding: 5px 10px; cursor: pointer; }
         .w-theme:hover { color: var(--w-ink); }
+
+        /* A thumbnail is a fixed square so a list of mixed portraits and landscapes still reads as
+           a column. object-fit crops rather than distorts - a squashed face is worse than a
+           cropped one. */
+        .w-thumb { width: 56px; height: 56px; flex-shrink: 0; border-radius: 4px;
+          object-fit: cover; background: var(--w-panel); }
+        .w-row { display: flex; gap: 14px; align-items: flex-start; }
+        .w-hero { width: 100%; max-height: 340px; object-fit: cover;
+          border-radius: 6px; margin-bottom: 18px; display: block; }
       ` }} />
     </>
   );

@@ -55,6 +55,14 @@ async function EntryBody({ params }: P) {
         {item.title}
       </h1>
 
+      {/* Below the title, not behind it. The campaign cover is a backdrop because the campaign NAME
+          is the only thing on it; an entry has a title, tags and a body, and putting type over an
+          unvetted image here would be a legibility gamble taken on the GM's behalf. */}
+      {item.image_url && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img className="w-hero" src={item.image_url} alt="" />
+      )}
+
       {item.tags && item.tags.length > 0 && (
         <div style={{ marginBottom: 16 }}>
           {item.tags.map((t) => (
