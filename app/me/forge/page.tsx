@@ -833,6 +833,67 @@ function ForgeInner() {
   // --- the write. One function for both stores; used by autosave and the explicit buttons. Returns
   // the id it wrote (needed when a NEW build's first save creates the pc_library row). A creating
   // ref guards against a double-insert when autosave and a button race on a brand-new build. ---
+  // --- alter ego ----------------------------------------------------------------------------
+  //
+  // The primary and its alter are two `characters` rows linked by alter_ego_of. The Forge already
+  // loads a character by id, so switching between them is a navigation rather than a mode: the
+  // sheet, the derivation and the autosave all work unchanged on whichever id is open.
+  const [kin, setKin] = useState<{ id: string; name: string; primary: boolean }[]>([]);
+  useEffect(() => {
+    if (mode !== "character" || !row) { setKin([]); return; }
+    let live = true;
+    (async () => {
+      const rowAny = row as unknown as { id: string; name: string; alter_ego_of?: string | null };
+      const primaryId = rowAny.alter_ego_of || rowAny.id;
+      const { data } = await supabase
+        .from("characters")
+        .select("id, name, alter_ego_of")
+        .or(`id.eq.${primaryId},alter_ego_of.eq.${primaryId}`);
+      if (!live) return;
+      const all = ((data as { id: string; name: string; alter_ego_of: string | null }[]) || [])
+        .map((c) => ({ id: c.id, name: c.name, primary: !c.alter_ego_of }))
+        // Primary first, then alters by name, so the order does not shuffle between loads.
+        .sort((a, b) => (a.primary === b.primary ? a.name.localeCompare(b.name) : a.primary ? -1 : 1));
+      setKin(all.length > 1 ? all : []);
+    })();
+    return () => { live = false; };
+  }, [mode, row, supabase]);
+
+  const [makingAlter, setMakingAlter] = useState(false);
+  const addAlterEgo = useCallback(async () => {
+    if (mode !== "character" || !row || makingAlter) return;
+    setMakingAlter(true);
+    try {
+      const rowAny = row as unknown as {
+        id: string; name: string; campaign_id: string; profile_id: string | null;
+        alter_ego_of?: string | null;
+      };
+      // Always link to the PRIMARY, never to another alter. The database enforces this too, but
+      // failing the insert would be a worse way to say it than simply doing the right thing.
+      const primaryId = rowAny.alter_ego_of || rowAny.id;
+      const { data, error } = await supabase
+        .from("characters")
+        .insert({
+          campaign_id: rowAny.campaign_id,
+          profile_id: rowAny.profile_id,
+          kind: "pc",
+          name: `${rowAny.name} (alter ego)`,
+          alter_ego_of: primaryId,
+          active: true,
+          // A blank sheet on purpose. An alter ego that started as a copy would be a character the
+          // player has to dismantle before they can build it, and the cases this exists for - a
+          // beast form, a curse, a second personality - rarely share a class.
+          build: null,
+        })
+        .select("id")
+        .maybeSingle();
+      if (error || !data) return;
+      window.location.href = `/me/forge?c=${(data as { id: string }).id}`;
+    } finally {
+      setMakingAlter(false);
+    }
+  }, [mode, row, supabase, makingAlter]);
+
   const creating = useRef(false);
   const persist = useCallback(async (): Promise<boolean> => {
     setSaveState("saving");
@@ -953,6 +1014,36 @@ function ForgeInner() {
                     This is a saved build in your library. Changes autosave; use “Play in campaign” from your library to bring it to a table.
                   </p>
                 )}
+                {/* ALTER EGO SWITCH. Sits with the name because that is what changes: the sheet
+                    below is a different character, not a different view of this one. Only shown
+                    when there is something to switch to - a solo character should not carry the
+                    vocabulary of a feature they are not using. */}
+                {mode === "character" && row && kin.length > 1 && (
+                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center",
+                    marginTop: 12 }}>
+                    {kin.map((k) => {
+                      const here = k.id === row.id;
+                      return (
+                        <button key={k.id} className="forge-btn" disabled={here}
+                          onClick={() => { window.location.href = `/me/forge?c=${k.id}`; }}
+                          style={{ ...stoneButton(here ? "primary" : "stone"), fontSize: 12.5,
+                            padding: "7px 13px", cursor: here ? "default" : "pointer" }}>
+                          {k.name}
+                          {k.primary && (
+                            <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 10,
+                              color: here ? STONE.shadow : STONE.inkFaint, marginLeft: 7 }}>
+                              primary
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                    <span style={{ fontSize: 11.5, color: STONE.inkFaint, marginLeft: 4 }}>
+                      one player, two sheets
+                    </span>
+                  </div>
+                )}
+
                 {mode === "character" && row && (
                   <div style={{ marginTop: 14 }}>
                     <PortraitUploader
@@ -1074,6 +1165,7 @@ function ForgeInner() {
 
               {tab === "finish" && (
                 <FinishPanel build={build} name={name} sheet={sheet} onTab={setTab}
+                  onAddAlter={mode === "character" && row && kin.length < 2 ? addAlterEgo : undefined}
                   effects={{
                     ...effects,
                     // Lineage spells are an applied effect like any other, and Finish is where a
@@ -1255,9 +1347,11 @@ function TabBar({ tab, onTab, build }: { tab: TabKey; onTab: (t: TabKey) => void
   );
 }
 
-function FinishPanel({ build, name, sheet, onTab, effects }: {
+function FinishPanel({ build, name, sheet, onTab, effects, onAddAlter }: {
   build: Build; name: string; sheet: NonNullable<ReturnType<typeof deriveSheet>>;
   onTab: (t: TabKey) => void; effects: ChoiceEffects;
+  /** Absent for a library build, which has no campaign to put a second character in. */
+  onAddAlter?: () => void;
 }) {
   // What is not done yet, said plainly, each one a way back to the tab that fixes it. The point is
   // that "am I finished" should be answerable without reading the whole sheet.
@@ -1303,6 +1397,26 @@ function FinishPanel({ build, name, sheet, onTab, effects }: {
             ))}
           </div>
         </>
+      )}
+
+      {onAddAlter && (
+        <div style={{ marginTop: 16, paddingTop: 14, borderTop: `1px solid ${STONE.hi}` }}>
+          <div style={{ fontFamily: FORGE_FONTS.mono, fontSize: 11, letterSpacing: "0.14em",
+            textTransform: "uppercase", color: STONE.inkFaint, marginBottom: 8 }}>Alter ego</div>
+          <p style={{ fontSize: 13, color: STONE.inkDim, margin: "0 0 10px", lineHeight: 1.6 }}>
+            A second character this one becomes: a changeling&rsquo;s other face, a curse that takes
+            over, a shape you are forced into. It gets its own sheet, its own class and level, and
+            you switch between them at the top of this page.
+          </p>
+          <button className="forge-btn" onClick={onAddAlter}
+            style={{ ...stoneButton("stone"), fontSize: 12.5 }}>
+            Add an alter ego
+          </button>
+          <p style={{ fontSize: 11.5, color: STONE.inkFaint, margin: "8px 0 0", lineHeight: 1.5 }}>
+            Recording and events stay on this character, whichever sheet is open. Your GM sees both
+            on the Roster.
+          </p>
+        </div>
       )}
 
       {(effects.applied.length > 0 || effects.unapplied.length > 0) && (
