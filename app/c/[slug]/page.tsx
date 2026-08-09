@@ -148,16 +148,26 @@ async function Codex({ params }: { params: Promise<{ slug: string }> }) {
   const other = items.filter((i) => !SECTIONS.some((s) => s.type === i.item_type));
   if (other.length) sections.push({ type: "other", label: "Other", blurb: "", rows: other });
 
+  const cover = (campaign as { codex_cover_url?: string | null }).codex_cover_url;
+
   return (
     <>
-        <header style={{ marginBottom: 26 }}>
-          <p style={eyebrow}>Campaign codex</p>
-          <h1 style={h1}>{campaign.name}</h1>
-          {campaign.blurb && <p style={lede}>{campaign.blurb}</p>}
-          <p style={meta}>
-            {items.length} entr{items.length === 1 ? "y" : "ies"}
-            {sections.length ? ` across ${sections.length} section${sections.length === 1 ? "" : "s"}` : ""}
-          </p>
+        {/* The cover is a BACKDROP for the title and the search, not a banner above them. A visitor
+            arriving from a share link should see the campaign's own image with the one control that
+            matters on top of it, rather than scrolling past a picture to reach a text box.
+            Absent by design when no image is set: an empty frame looks broken, no frame does not. */}
+        <header style={cover ? coverHeader(cover) : { marginBottom: 26 }}>
+          <div style={cover ? coverInner : undefined}>
+            <p style={cover ? { ...eyebrow, color: "rgba(255,255,255,0.72)" } : eyebrow}>Campaign codex</p>
+            <h1 style={cover ? { ...h1, color: "#fff" } : h1}>{campaign.name}</h1>
+            {campaign.blurb && (
+              <p style={cover ? { ...lede, color: "rgba(255,255,255,0.86)" } : lede}>{campaign.blurb}</p>
+            )}
+            <p style={cover ? { ...meta, color: "rgba(255,255,255,0.66)" } : meta}>
+              {items.length} entr{items.length === 1 ? "y" : "ies"}
+              {sections.length ? ` across ${sections.length} section${sections.length === 1 ? "" : "s"}` : ""}
+            </p>
+          </div>
         </header>
 
         {items.length === 0 ? (
@@ -168,12 +178,21 @@ async function Codex({ params }: { params: Promise<{ slug: string }> }) {
           <>
             <CodexFilter total={items.length} />
 
-            <nav style={{ marginBottom: 28 }} aria-label="Sections">
-              {sections.map((s) => (
-                <a key={s.type} href={`#${s.type}`} style={chip}>{s.label} ({s.rows.length})</a>
-              ))}
-            </nav>
+            {/* Sections down the SIDE rather than as chips above the fold. A codex with five
+                sections and eighty entries is a reference document, and a reference document wants
+                its contents visible while you read rather than scrolled away. Collapses to a row
+                on a narrow screen, where a side rail would eat half the width. */}
+            <div style={twoCol}>
+              <nav style={rail} aria-label="Sections">
+                {sections.map((s) => (
+                  <a key={s.type} href={`#${s.type}`} style={railLink}>
+                    <span>{s.label}</span>
+                    <span style={railCount}>{s.rows.length}</span>
+                  </a>
+                ))}
+              </nav>
 
+              <div>
             {sections.map((s) => (
               <section key={s.type} id={s.type} style={{ marginBottom: 34 }} data-section>
                 <h2 style={h2}>{s.label}</h2>
@@ -201,6 +220,8 @@ async function Codex({ params }: { params: Promise<{ slug: string }> }) {
                 ))}
               </section>
             ))}
+              </div>
+            </div>
           </>
         )}
 
@@ -240,6 +261,37 @@ const h2: React.CSSProperties = {
   fontSize: 26, margin: "0 0 4px", fontWeight: 600,
   borderBottom: "1px solid #ddd4c2", paddingBottom: 8,
 };
+const coverHeader = (url: string): React.CSSProperties => ({
+  // The gradient is what makes white type legible over an image nobody has vetted. Without it a
+  // pale photograph would render the campaign name invisible, and the GM would have no way to know.
+  backgroundImage: `linear-gradient(rgba(20,14,8,0.30), rgba(20,14,8,0.78)), url(${JSON.stringify(url)})`,
+  backgroundSize: "cover",
+  backgroundPosition: "center",
+  borderRadius: 6,
+  marginBottom: 26,
+  minHeight: 220,
+  display: "flex",
+  alignItems: "flex-end",
+});
+const coverInner: React.CSSProperties = { padding: "26px 24px 20px" };
+
+const twoCol: React.CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "minmax(0, 1fr)",
+  gap: 26,
+  alignItems: "start",
+};
+const rail: React.CSSProperties = {
+  display: "flex", flexWrap: "wrap", gap: 4,
+  position: "sticky", top: 16, alignSelf: "start",
+};
+const railLink: React.CSSProperties = {
+  display: "flex", justifyContent: "space-between", gap: 10,
+  padding: "7px 10px", borderRadius: 4, textDecoration: "none",
+  color: "#4a4235", fontSize: 14, minWidth: 128,
+};
+const railCount: React.CSSProperties = { color: "#9a9081", fontVariantNumeric: "tabular-nums" };
+
 const sectionBlurb: React.CSSProperties = { fontSize: 14, color: "#7a7060", margin: "6px 0 16px" };
 const card: React.CSSProperties = {
   padding: "14px 0", borderBottom: "1px solid #e6ddcb",

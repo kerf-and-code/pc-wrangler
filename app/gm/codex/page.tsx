@@ -1,13 +1,14 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
+import { PortraitUploader } from "@/components/portrait-uploader";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { useMomentPlayer, MomentButton } from "@/components/moment-player";
-import { surfaces, ui } from "@/lib/theme";
+import { SAX, surfaces, ui } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 
-type Campaign = { id: string; name: string };
+type Campaign = { id: string; name: string; public_slug?: string | null; codex_cover_url?: string | null };
 type Entry = {
   id: string;
   type: string;
@@ -116,7 +117,27 @@ export default function CodexPage() {
   const [chars, setChars] = useState<Char[]>([]);
   const [links, setLinks] = useState<Link[]>([]);
   const [tab, setTab] = useState<string>("note");
+  const [coverUrl, setCoverUrl] = useState<string | null>(null);
+  const [coverSaved, setCoverSaved] = useState(false);
   const [mode, setMode] = useState<Mode | null>(null);
+
+  // Follow the selected campaign rather than loading once: a GM switching campaigns should see
+  // that campaign's cover, not the one from whichever loaded first.
+  useEffect(() => {
+    const c = campaigns.find((x) => x.id === campaignId);
+    setCoverUrl(c?.codex_cover_url || null);
+    setCoverSaved(false);
+  }, [campaignId, campaigns]);
+
+  const saveCover = async (url: string) => {
+    if (!campaignId) return;
+    const { error } = await supabase
+      .from("campaigns").update({ codex_cover_url: url }).eq("id", campaignId);
+    if (error) return;
+    setCoverUrl(url);
+    setCoverSaved(true);
+    setCampaigns((prev) => prev.map((c) => (c.id === campaignId ? { ...c, codex_cover_url: url } : c)));
+  };
   const [form, setForm] = useState<{ title: string; body: string; name: string; description: string; visibility: string; tags: string }>(blankForm);
   const [saving, setSaving] = useState<boolean>(false);
   const [linkPick, setLinkPick] = useState<string>("");
@@ -142,7 +163,7 @@ export default function CodexPage() {
   // ---- load ----
   useEffect(() => {
     (async () => {
-      const { data } = await supabase.from("campaigns").select("id, name").order("created_at", { ascending: true });
+      const { data } = await supabase.from("campaigns").select("id, name, public_slug, codex_cover_url").order("created_at", { ascending: true });
       const list = (data as Campaign[]) || [];
       setCampaigns(list);
       if (list.length) setCampaignId(list[0].id);
@@ -315,7 +336,7 @@ export default function CodexPage() {
   const box = { ...surfaces.slate, padding: 18 } as const;
   const input = {
     width: "100%", boxSizing: "border-box" as const, background: C.surface2, color: C.text,
-    border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "10px 12px", fontSize: 14, outline: "none",
+    border: `1px solid ${C.line}`, borderRadius: 9, padding: "10px 12px", fontSize: 14, outline: "none",
   };
 
   return (
@@ -331,13 +352,38 @@ export default function CodexPage() {
             {campaigns.length === 0 && <option value="">No campaigns yet</option>}
             {campaigns.map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}
           </select>
+          {/* THE COVER FOR THE PUBLISHED PAGE, set here because this is where a GM is thinking
+              about what the public codex looks like. It sits under the campaign picker so it is
+              obviously per-campaign rather than a global setting. */}
+          <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${C.line}` }}>
+            <PortraitUploader
+              label="Cover image for the published codex"
+              basePath={campaignId ? `${campaignId}/codex/cover` : null}
+              currentUrl={coverUrl}
+              onUploaded={(url) => { void saveCover(url); }}
+            />
+            <p style={{ fontSize: 12, color: C.muted, margin: "6px 0 0", lineHeight: 1.5 }}>
+              {coverSaved
+                ? "Saved. It shows behind the campaign name at the top of your public page."
+                : "Shown behind the campaign name at the top of your public page. A dark overlay keeps the title readable, so a bright image is fine."}
+            </p>
+            {coverUrl && (
+              <button type="button"
+                onClick={() => { void saveCover(""); setCoverUrl(null); }}
+                style={{ background: "transparent", color: C.muted, border: "none", cursor: "pointer",
+                  fontSize: 12, padding: 0, marginTop: 6, textDecoration: "underline" }}>
+                Remove the cover
+              </button>
+            )}
+          </div>
+
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 14 }}>
             {TABS.map((t) => {
               const on = tab === t.key;
               return (
                 <button key={t.key} type="button" onClick={() => { setTab(t.key); setMode(null); }}
                   style={{ padding: "8px 14px", borderRadius: FORGE_RADIUS, border: `1px solid ${on ? C.sun : C.line}`,
-                    background: on ? C.sun : C.surface2, color: on ? C.ink : C.text, fontWeight: 600, fontSize: 13, cursor: "pointer", boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
+                    background: on ? C.sun : C.surface2, color: on ? SAX.inkDeep : C.text, fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
                   {t.label}
                 </button>
               );
@@ -353,7 +399,7 @@ export default function CodexPage() {
                 {TABS.find((t) => t.key === tab)?.label.toUpperCase()}
               </span>
               {tab !== "pc" && (
-                <button type="button" onClick={newItem} style={{ background: C.sun, color: C.ink, border: "none", borderRadius: 7, padding: "5px 12px", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>
+                <button type="button" onClick={newItem} style={{ background: C.sun, color: SAX.inkDeep, border: "none", borderRadius: 7, padding: "5px 12px", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>
                   + New
                 </button>
               )}
@@ -374,7 +420,7 @@ export default function CodexPage() {
                     onClick={() => isChar ? openChar(it as Char) : openEntry(it as Entry)}
                     style={{ textAlign: "left", padding: "9px 11px", borderRadius: FORGE_RADIUS,
                       border: `1px solid ${active ? C.plum : C.line}`,
-                      background: active ? "rgba(155,123,212,0.14)" : C.surface2, color: C.text, cursor: "pointer", boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
+                      background: active ? "rgba(155,123,212,0.14)" : C.surface2, color: C.text, cursor: "pointer" }}>
                     <div style={{ fontSize: 13.5, fontWeight: 600 }}>{label}</div>
                     <div style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>{VIS.find((v) => v.v === vis)?.l || vis}</div>
                   </button>
@@ -418,12 +464,12 @@ export default function CodexPage() {
 
                 <div style={{ display: "flex", gap: 8, marginBottom: 18 }}>
                   <button type="button" onClick={save} disabled={saving}
-                    style={{ background: `linear-gradient(90deg, ${C.sun}, ${C.sunSoft})`, color: C.ink, border: "none", borderRadius: FORGE_RADIUS, padding: "10px 20px", fontWeight: 700, fontSize: 14, cursor: saving ? "default" : "pointer", opacity: saving ? 0.7 : 1 }}>
+                    style={{ background: `linear-gradient(90deg, ${C.sun}, ${C.sunSoft})`, color: SAX.inkDeep, border: "none", borderRadius: 9, padding: "10px 20px", fontWeight: 700, fontSize: 14, cursor: saving ? "default" : "pointer", opacity: saving ? 0.7 : 1 }}>
                     {saving ? "Saving…" : "Save"}
                   </button>
                   {mode.id && (
                     <button type="button" onClick={remove}
-                      style={{ background: "transparent", color: C.warn, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "10px 16px", fontSize: 13, cursor: "pointer" }}>
+                      style={{ background: "transparent", color: C.warn, border: `1px solid ${C.line}`, borderRadius: 9, padding: "10px 16px", fontSize: 13, cursor: "pointer" }}>
                       Delete
                     </button>
                   )}
@@ -443,7 +489,7 @@ export default function CodexPage() {
                           const oType = otherIsSource ? l.source_type : l.target_type;
                           const oId = otherIsSource ? l.source_id : l.target_id;
                           return (
-                            <div key={l.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, background: C.surface2, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "7px 10px", boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
+                            <div key={l.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, background: C.surface2, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "7px 10px" }}>
                               <span style={{ fontSize: 13 }}>
                                 {labelOf(oType, oId)}
                                 {l.relation && <span style={{ color: C.muted }}> · {l.relation}</span>}
@@ -469,7 +515,7 @@ export default function CodexPage() {
                       </select>
                       <input value={linkRel} onChange={(e) => setLinkRel(e.target.value)} placeholder="relation (optional)" style={{ ...input, flex: "1 1 140px" }} />
                       <button type="button" onClick={addLink} disabled={!linkPick}
-                        style={{ background: C.plum, color: C.ink, border: "none", borderRadius: FORGE_RADIUS, padding: "10px 16px", fontWeight: 700, fontSize: 13, cursor: linkPick ? "pointer" : "default", opacity: linkPick ? 1 : 0.6 }}>
+                        style={{ background: C.plum, color: SAX.inkDeep, border: "none", borderRadius: 9, padding: "10px 16px", fontWeight: 700, fontSize: 13, cursor: linkPick ? "pointer" : "default", opacity: linkPick ? 1 : 0.6 }}>
                         Link
                       </button>
                     </div>
@@ -495,7 +541,7 @@ export default function CodexPage() {
                           {curReveals.map((r) => {
                             const pc = chars.find((c) => c.id === r.revealed_to_character_id);
                             return (
-                              <div key={r.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, background: C.surface2, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "7px 10px", boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
+                              <div key={r.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, background: C.surface2, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "7px 10px" }}>
                                 <span style={{ fontSize: 13 }}>{pc ? pc.name : "a player"}</span>
                                 <button type="button" onClick={() => revokeReveal(r.id)} style={{ background: "transparent", color: C.muted, border: "none", cursor: "pointer", fontSize: 16, lineHeight: 1 }}>×</button>
                               </div>
@@ -511,7 +557,7 @@ export default function CodexPage() {
                           ))}
                         </select>
                         <button type="button" onClick={() => revealTo(revealPick)} disabled={!revealPick}
-                          style={{ background: C.sun, color: C.ink, border: "none", borderRadius: FORGE_RADIUS, padding: "10px 16px", fontWeight: 700, fontSize: 13, cursor: revealPick ? "pointer" : "default", opacity: revealPick ? 1 : 0.6 }}>
+                          style={{ background: C.sun, color: SAX.inkDeep, border: "none", borderRadius: 9, padding: "10px 16px", fontWeight: 700, fontSize: 13, cursor: revealPick ? "pointer" : "default", opacity: revealPick ? 1 : 0.6 }}>
                           Reveal
                         </button>
                       </div>
@@ -535,7 +581,7 @@ export default function CodexPage() {
                     ) : (
                       <div style={{ display: "grid", gap: 8 }}>
                         {beats.map((b) => (
-                          <div key={b.id} style={{ background: C.surface2, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "10px 12px", boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
+                          <div key={b.id} style={{ background: C.surface2, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "10px 12px" }}>
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                               <span style={{ fontSize: 11, color: C.plum, fontFamily: "ui-monospace, monospace", letterSpacing: "0.04em" }}>
                                 {BEAT_LABEL[b.kind] || b.kind}{sessNo(b.session_id) ? ` · ${sessNo(b.session_id)}` : ""}
