@@ -5,7 +5,8 @@ import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { UpgradeAccount } from "@/components/upgrade-account";
 import TableTap from "@/components/table-tap";
-import { C, FORGE_RADIUS } from "@/lib/forge-theme";
+import { SAX } from "@/lib/theme";
+import { C, FORGE_RADIUS, stoneField, stonePanel, stoneButton } from "@/lib/forge-theme";
 
 type RosterEntry = { character_id: string; name: string };
 type Phase = "idle" | "recording" | "recorded" | "uploading" | "uploaded";
@@ -229,7 +230,7 @@ export default function RecordPage() {
 
               <label style={{ fontSize: 12, color: C.muted, fontFamily: "ui-monospace, monospace", letterSpacing: "0.1em" }}>YOUR CHARACTER</label>
               <select value={charId} onChange={(e) => chooseChar(e.target.value)} disabled={phase === "recording" || phase === "uploading"}
-                style={{ display: "block", width: "100%", marginTop: 6, marginBottom: 16, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "11px 12px", fontSize: 15, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
+                style={{ display: "block", width: "100%", marginTop: 6, marginBottom: 16, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: 9, padding: "11px 12px", fontSize: 15 }}>
                 <option value="">Pick your character…</option>
                 {roster.map((r) => (<option key={r.character_id} value={r.character_id}>{r.name}</option>))}
               </select>
@@ -252,7 +253,7 @@ export default function RecordPage() {
                     <span style={{ fontSize: 34, fontWeight: 800, fontVariantNumeric: "tabular-nums" }}>{fmt(elapsed)}</span>
                   </div>
                   <div style={{ fontSize: 12, color: C.muted, marginBottom: 18 }}>{fmtMB(bytes)} recorded</div>
-                  <div style={{ background: "rgba(224,122,95,0.12)", border: `1px solid ${C.warn}`, borderRadius: FORGE_RADIUS, padding: "10px 12px", fontSize: 12.5, color: C.sunSoft, marginBottom: 16, lineHeight: 1.5, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
+                  <div style={{ background: "rgba(224,122,95,0.12)", border: `1px solid ${C.warn}`, borderRadius: FORGE_RADIUS, padding: "10px 12px", fontSize: 12.5, color: C.sunSoft, marginBottom: 16, lineHeight: 1.5 }}>
                     Keep this tab open and your screen awake. Backgrounding the tab can pause recording.
                   </div>
                   <button type="button" onClick={stopRecording} style={bigBtn(C.sun, C.ink)}>■ Stop and save</button>
