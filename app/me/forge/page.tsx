@@ -38,6 +38,7 @@ import { traitOptions, traitAsksAChoice, lineageSpells } from "@/lib/species-cho
 import { choicesFor, resolveChoice, choiceKey, costedPicks, actionsFor, type ClassChoice } from "@/lib/class-choices";
 import { classTable, classTableColumns } from "@/lib/class-table";
 import { resourcesFor, slotsFor, remaining, afterShortRest, speciesResources, type Resource } from "@/lib/resources";
+import { menusFor, type ClassMenu } from "@/lib/class-menus";
 import { casterLevel, multiclassSlots, isMulticlassCaster, type CasterType } from "@/lib/multiclass-slots";
 import { subclassSpellsFor } from "@/lib/subclass-spells";
 import { choiceEffects, applyToBuild, type ChoiceEffects } from "@/lib/apply-choices";
@@ -1312,6 +1313,14 @@ function ForgeInner() {
                   spent={(build as Build & { spent?: Record<string, number> }).spent || {}}
                   onSpend={setSpent} onRest={clearSpent} onSpentMap={setSpentMap}
                 />
+              )}
+
+              {tab === "roll" && (
+                <MenuPanel menus={[
+                  { cn: build.meta.className || "", sc: build.meta.subclass || "", lv: build.level || 1 },
+                  ...((build as Build & { multiclass?: { className: string; subclass?: string; level: number }[] })
+                    .multiclass || []).map((c) => ({ cn: c.className, sc: c.subclass || "", lv: c.level || 1 })),
+                ].flatMap(({ cn, sc, lv }) => menusFor(cn, sc, lv))} />
               )}
 
               {tab === "roll" && (
@@ -2853,6 +2862,67 @@ function ClassTab({
         featList={feats} level={current.level} onChoose={onChoose}
       />
     </>
+  );
+}
+
+
+/**
+ * The menus a character picks from mid-turn: Cunning Strike, Open Hand Technique and the like.
+ *
+ * REFERENCE, NOT A PICKER. These are decided on the hit and differently on the next one, so there
+ * is nothing to store and nothing to spend. What a player needs at the table is the list itself,
+ * where they are already sitting when the question comes up.
+ *
+ * Collapsed by default: a level 14 rogue has six options across two menus and none of them is
+ * needed until a hit lands, so opening the Roll tab should not start with a wall of rules text.
+ */
+function MenuPanel({ menus }: { menus: ClassMenu[] }) {
+  const [open, setOpen] = useState<string | null>(null);
+  if (menus.length === 0) return null;
+
+  return (
+    <div style={{ ...stonePanel(), marginBottom: 14 }}>
+      <PanelTitle hint="Chosen when you use them, not when you build.">On a hit</PanelTitle>
+      <div style={{ display: "grid", gap: 6 }}>
+        {menus.map((m) => {
+          const isOpen = open === m.name;
+          return (
+            <div key={m.name} style={{ background: "rgba(0,0,0,0.24)", borderRadius: 4, padding: "9px 11px" }}>
+              <button onClick={() => setOpen(isOpen ? null : m.name)}
+                style={{ background: "transparent", border: "none", cursor: "pointer", padding: 0,
+                  width: "100%", display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10 }}>
+                <span style={{ fontSize: 13.5, color: STONE.ink }}>{m.name}</span>
+                <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 11, color: STONE.inkFaint }}>
+                  {m.options.length} options {isOpen ? "\u2013" : "+"}
+                </span>
+              </button>
+              {isOpen && (
+                <div style={{ marginTop: 8 }}>
+                  <p style={{ fontSize: 12.5, color: STONE.inkDim, margin: "0 0 8px", lineHeight: 1.55 }}>
+                    {m.when}
+                  </p>
+                  <div style={{ display: "grid", gap: 5 }}>
+                    {m.options.map((o) => (
+                      <div key={o.name} style={{ display: "flex", gap: 10, alignItems: "baseline", flexWrap: "wrap" }}>
+                        <span style={{ fontSize: 13, color: C.sun, minWidth: 92 }}>{o.name}</span>
+                        {o.cost && (
+                          <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 11, color: C.plum }}>
+                            {o.cost}
+                          </span>
+                        )}
+                        <span style={{ fontSize: 12.5, color: STONE.inkDim, flex: 1, lineHeight: 1.5 }}>
+                          {o.summary}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
