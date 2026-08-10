@@ -29,10 +29,54 @@ const GENERIC_NAMES = new Set([
 // mentioned a second time, or immediately if the GM ticks the box.
 const AUTO_CREATE_MIN_MENTIONS = 2;
 
-// Short title for an item/lore entry created from a beat's summary.
+// Short title for an item entry created from a beat's summary. Lore no longer uses this: a beat has
+// no name, so a title cut from its summary is a whole sentence wearing a title, which is exactly the
+// 100+ sentence-titled lore rows this change stops producing. See the fold logic below.
 function deriveTitle(summary: string): string {
   const first = (summary || "").split(/[.!?]/)[0].trim();
   return first.slice(0, 120);
+}
+
+// A campaign entity a lore fact can fold onto: an NPC (a character) or a location/faction (an entry).
+type FoldTarget = { et: "character" | "entry"; kind: "npc" | "location" | "faction"; id: string };
+
+function escapeRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+// Whole-word, case-insensitive presence test. A name under 4 chars, or one on the GENERIC_NAMES
+// stoplist, is not distinctive enough to hang a fact on and is skipped: the same guard the
+// auto-create path already trusts, so "Guard" or "Man" cannot match a whole campaign.
+function nameInText(name: string, text: string): boolean {
+  const n = (name || "").trim();
+  if (n.length < 4) return false;
+  if (GENERIC_NAMES.has(n.toLowerCase())) return false;
+  return new RegExp(`\\b${escapeRegex(n)}\\b`, "i").test(text);
+}
+
+// The distinct existing entities a beat's TEXT names. This is the whole fold decision: exactly one
+// match is a confident home and the fact folds into it; zero or several is not, and the beat is left
+// for the GM to route. It reads the campaign's real NPCs, places and factions rather than the beat's
+// structured name slots, because a lore beat carries no npc_name (the extractor fills that only for
+// npc_* kinds) - the subject of a lore fact lives in its prose, not a field.
+async function resolveFoldTargets(
+  admin: ReturnType<typeof createAdminClient>,
+  campaignId: string,
+  text: string,
+): Promise<FoldTarget[]> {
+  const [{ data: npcs }, { data: entries }] = await Promise.all([
+    admin.from("characters").select("id, name").eq("campaign_id", campaignId).eq("kind", "npc"),
+    admin.from("entries").select("id, type, title, tags").eq("campaign_id", campaignId).in("type", ["location", "lore"]),
+  ]);
+  const out: FoldTarget[] = [];
+  for (const c of ((npcs as { id: string; name: string }[]) || [])) {
+    if (nameInText(c.name, text)) out.push({ et: "character", kind: "npc", id: c.id });
+  }
+  for (const e of ((entries as { id: string; type: string; title: string; tags: string[] | null }[]) || [])) {
+    if (e.type === "location" && nameInText(e.title, text)) out.push({ et: "entry", kind: "location", id: e.id });
+    else if (e.type === "lore" && (e.tags || []).includes("faction") && nameInText(e.title, text)) out.push({ et: "entry", kind: "faction", id: e.id });
+  }
+  return out;
 }
 
 // Sensible relation + direction for a link between two created entities.
@@ -273,20 +317,58 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  let loreId: string | null = null;
+  // loreId stays null now: lore no longer mints its own entry. It is kept as a node below only so
+  // the cross-link loop and the JSON response need no edit, and it is simply never set.
+  const loreId: string | null = null;
+
+  // FOLD instead of mint. A beat that names exactly one existing entity has the fact appended to
+  // that entity's own page (an NPC's description, a place or faction's body), which is the same
+  // field public_codex already renders, so it shows on the wiki and both codices with no page
+  // change. A beat that names none or several mints nothing here: forcing a home would be a wrong
+  // attach that looks correct, so the approved gm_event is left for the proposals surface to route.
   if (body.createLore) {
-    const title = deriveTitle(finalSummary);
-    if (title) {
-      const { data: ex } = await admin.from("entries").select("id").eq("campaign_id", prop.campaign_id).eq("type", "lore").ilike("title", title).maybeSingle();
-      if (ex) loreId = (ex as { id: string }).id;
-      else {
-        const { data: cr, error: e } = await admin.from("entries")
-          .insert({ campaign_id: prop.campaign_id, created_by: user.id, type: "lore", title, body: (prop.detail || prop.summary || "").toString().slice(0, 2000) || null, visibility: "player" })
-          .select("id").single();
-        if (e) return NextResponse.json({ error: `Could not create lore: ${e.message}` }, { status: 500 });
-        loreId = (cr as { id: string }).id;
+    const scanText = `${finalSummary}\n${prop.detail || ""}\n${prop.quote || ""}`;
+    const scanned = await resolveFoldTargets(admin, prop.campaign_id, scanText);
+
+    // Entities already resolved through the structured name slots above (the npc/location/faction
+    // blocks) count as named too, so a beat that stands up a place AND is about a person is two
+    // entities and does not auto-fold. Merge by id.
+    const byId = new Map<string, FoldTarget>();
+    for (const t of scanned) byId.set(t.id, t);
+    if (npcId) byId.set(npcId, { et: "character", kind: "npc", id: npcId });
+    if (locationId) byId.set(locationId, { et: "entry", kind: "location", id: locationId });
+    if (factionId) byId.set(factionId, { et: "entry", kind: "faction", id: factionId });
+
+    if (byId.size === 1) {
+      const t = Array.from(byId.values())[0];
+      const fact = finalSummary.trim();
+      if (fact) {
+        if (t.et === "character") {
+          const { data: cur } = await admin.from("characters").select("description").eq("id", t.id).maybeSingle();
+          const curBody = ((cur as { description: string | null } | null)?.description) || "";
+          // Never twice: a re-approval or the retro pass must fold the same fact without stacking it.
+          if (!curBody.toLowerCase().includes(fact.toLowerCase())) {
+            const next = curBody ? `${curBody}\n\n${fact}` : fact;
+            const { error: e } = await admin.from("characters").update({ description: next }).eq("id", t.id);
+            if (e) return NextResponse.json({ error: `Could not fold the fact into the NPC: ${e.message}` }, { status: 500 });
+          }
+        } else {
+          const { data: cur } = await admin.from("entries").select("body").eq("id", t.id).maybeSingle();
+          const curBody = ((cur as { body: string | null } | null)?.body) || "";
+          if (!curBody.toLowerCase().includes(fact.toLowerCase())) {
+            const next = curBody ? `${curBody}\n\n${fact}` : fact;
+            const { error: e } = await admin.from("entries").update({ body: next }).eq("id", t.id);
+            if (e) return NextResponse.json({ error: `Could not fold the fact into the entry: ${e.message}` }, { status: 500 });
+          }
+        }
       }
+      // Carry the id onto the beat through the matching FK, so the attach survives a later body edit
+      // and the gm_event records what the fact was about even after the text is trimmed.
+      if (t.kind === "npc") npcId = t.id;
+      else if (t.kind === "location") locationId = t.id;
+      else if (t.kind === "faction") factionId = t.id;
     }
+    // byId.size === 0 or > 1: mint nothing. The gm_event below still records the beat.
   }
 
 
