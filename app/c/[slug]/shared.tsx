@@ -27,18 +27,36 @@ export type Campaign = {
   codex_cover_url?: string | null;
 };
 
-// PHASE 1 IS LOCATIONS AND NPCS ONLY, and that is a measured decision rather than a simplification:
-// of 122 lore entries, 102 have a whole sentence as their title because they were minted from
-// session beats, and none has ever been published. A thing with a NAME is a page; a sentence is
-// not. Lore joins this list when the generator that creates it attaches beats to entries instead of
-// turning each one into its own entry.
-export const SECTIONS: { type: string; slug: string; label: string; blurb: string }[] = [
+// FIVE SECTIONS, tag-aware. Lore, factions and items are all stored as type='lore', split only by a
+// reserved tag, exactly like the GM codex tabs. So a section cannot match on type alone: a faction
+// would fall into Factions, Items and Lore at once. matchesSection() below checks the tag too, and
+// the Lore section (no tag) takes only lore carrying NEITHER reserved tag, so every entry lands in
+// exactly one place. Notes and PCs stay off the wiki on purpose: notes default to GM-secret, and
+// PCs are not returned by public_codex at all.
+export const SECTIONS: { type: string; slug: string; label: string; blurb: string; tag?: string }[] = [
   { type: "location", slug: "places", label: "Places", blurb: "Where the story has been." },
   { type: "npc", slug: "cast", label: "The cast", blurb: "Who the party has met." },
+  { type: "lore", slug: "factions", label: "Factions", blurb: "The powers and groups in play.", tag: "faction" },
+  { type: "lore", slug: "items", label: "Items", blurb: "The objects that matter.", tag: "item" },
+  { type: "lore", slug: "lore", label: "Lore", blurb: "History, rumours, and the world itself." },
 ];
+
+// The tags that promote a lore entry into its own section. A section with a tag matches only entries
+// carrying it; a section without one matches entries carrying none of these.
+export const RESERVED_TAGS = new Set(SECTIONS.map((s) => s.tag).filter((t): t is string => !!t));
 
 export const sectionBySlug = (s: string) => SECTIONS.find((x) => x.slug === s);
 export const sectionByType = (t: string) => SECTIONS.find((x) => x.type === t);
+
+// The one place section membership is decided. Type first, then the tag: a tagged section wants that
+// exact tag, an untagged one wants none of the reserved tags. Everything that used to compare
+// item_type === sec.type must call this instead, or lore, factions and items collapse into one list.
+export function matchesSection(item: { item_type: string; tags: string[] | null }, sec: { type: string; tag?: string }): boolean {
+  if (item.item_type !== sec.type) return false;
+  const tags = item.tags || [];
+  if (sec.tag) return tags.includes(sec.tag);
+  return !tags.some((t) => RESERVED_TAGS.has(t));
+}
 
 // A PLAIN anon client, not @/lib/supabase/server: these pages are read by strangers with no session
 // and must never carry one.
@@ -172,7 +190,7 @@ export function Rail({ slug, campaign, counts, current }: {
           <a key={s.slug} href={`/c/${slug}/${s.slug}`}
             aria-current={current === s.slug ? "page" : undefined}>
             <span>{s.label}</span>
-            <span className="w-count">{counts[s.type] ?? 0}</span>
+            <span className="w-count">{counts[s.slug] ?? 0}</span>
           </a>
         ))}
       </div>
@@ -229,8 +247,10 @@ export function Shell({ slug, campaign, counts, current, children }: {
   );
 }
 
+// Keyed by section SLUG, not entry type: three sections share type='lore', so a per-type count
+// could not tell Factions from Lore. Each section counts the items that matchesSection it.
 export const countsOf = (items: Item[]): Record<string, number> =>
-  items.reduce((acc, i) => {
-    acc[i.item_type] = (acc[i.item_type] || 0) + 1;
+  SECTIONS.reduce((acc, sec) => {
+    acc[sec.slug] = items.filter((i) => matchesSection(i, sec)).length;
     return acc;
   }, {} as Record<string, number>);

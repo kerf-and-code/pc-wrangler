@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { load, Shell, Frame, countsOf, sectionBySlug } from "../shared";
+import { load, Shell, Frame, countsOf, sectionBySlug, matchesSection } from "../shared";
 
 // One category: every place, or everyone the party has met.
 //
@@ -35,7 +35,7 @@ async function SectionBody({ params }: P) {
   if (!campaign || !sec) notFound();
 
   const rows = items
-    .filter((i) => i.item_type === sec.type)
+    .filter((i) => matchesSection(i, sec))
     .sort((a, b) => (a.title || "").localeCompare(b.title || ""));
 
   return (

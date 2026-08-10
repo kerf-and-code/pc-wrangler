@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { load, Shell, Frame, countsOf, SECTIONS, type Item } from "./shared";
+import { load, Shell, Frame, countsOf, SECTIONS, matchesSection, type Item } from "./shared";
 import CodexFilter from "./codex-filter";
 
 // The front page of a published campaign.
@@ -97,7 +97,7 @@ async function CodexBody({ params }: P) {
       ) : (
         SECTIONS.map((sec) => {
           const rows = items
-            .filter((i) => i.item_type === sec.type)
+            .filter((i) => matchesSection(i, sec))
             .sort((a, b) => (a.title || "").localeCompare(b.title || ""))
             .slice(0, 6);
           if (!rows.length) return null;
@@ -112,7 +112,7 @@ async function CodexBody({ params }: P) {
                   fontFamily: "ui-monospace, monospace", fontSize: 11.5,
                   color: "var(--w-accent)", textDecoration: "none",
                 }}>
-                  all {counts[sec.type] ?? 0} &rarr;
+                  all {counts[sec.slug] ?? 0} &rarr;
                 </a>
               </div>
               <p style={{ fontSize: 14, color: "var(--w-muted)", margin: "6px 0 12px" }}>

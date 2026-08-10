@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { load, Shell, Frame, countsOf, sectionBySlug } from "../../shared";
+import { load, Shell, Frame, countsOf, sectionBySlug, matchesSection } from "../../shared";
 
 // One entry, on its own page.
 //
@@ -14,7 +14,7 @@ async function find(slug: string, section: string, entry: string) {
   const sec = sectionBySlug(section);
   const { campaign, items, listed } = await load(slug);
   const item = sec
-    ? items.find((i) => i.item_type === sec.type && (i.slug === entry || i.id === entry))
+    ? items.find((i) => matchesSection(i, sec) && (i.slug === entry || i.id === entry))
     : undefined;
   return { campaign, items, listed, sec, item };
 }
