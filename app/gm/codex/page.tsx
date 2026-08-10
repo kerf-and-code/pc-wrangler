@@ -7,6 +7,7 @@ import PageShell from "@/components/page-shell";
 import { useMomentPlayer, MomentButton } from "@/components/moment-player";
 import { SAX, surfaces, ui } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
+import LoreTriage from "./LoreTriage";
 
 type Campaign = { id: string; name: string; public_slug?: string | null; codex_cover_url?: string | null };
 type Entry = {
@@ -75,6 +76,7 @@ const TABS: { key: string; label: string; type?: string; tag?: string }[] = [
   { key: "lore", label: "Lore", type: "lore" },
   { key: "npc", label: "NPCs" },
   { key: "pc", label: "PCs" },
+  { key: "triage", label: "Loose ends" },
 ];
 
 // Tags that promote a lore entry into its own tab. Anything here is excluded from Lore.
@@ -418,6 +420,9 @@ export default function CodexPage() {
           </div>
         </div>
 
+        {tab === "triage" ? (
+          <LoreTriage campaignId={campaignId} entries={entries} chars={chars} onChanged={() => { void reload(campaignId); }} />
+        ) : (
         <div style={{ display: "flex", flexWrap: "wrap", gap: 16, alignItems: "flex-start" }}>
           {/* list */}
           <div style={{ ...box, flex: "1 1 240px", minWidth: 240, maxWidth: 320 }}>
@@ -678,6 +683,7 @@ export default function CodexPage() {
             )}
           </div>
       </div>
+        )}
     </PageShell>
   );
 }
