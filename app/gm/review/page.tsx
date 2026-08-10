@@ -299,6 +299,38 @@ export default function ReviewPage() {
   // queue can render empty mid-review.
   //
   // force=true is the escape hatch for a GM who deliberately leaves rows undecided.
+  // The undecided rows, read straight from the database rather than from what the page managed to
+  // render. That distinction is the point: a proposal the renderer cannot show still counts against
+  // finalization, so a GM looking at an empty-looking queue has no way to know what is holding the
+  // recap. Reading the tables directly means Show cannot lie by omission.
+  const [showUndecided, setShowUndecided] = useState(false);
+  const [undecided, setUndecided] = useState<
+    { id: string; table: "player" | "gm"; label: string }[] | null>(null);
+
+  async function loadUndecided(jobId: string) {
+    const [pe, ge] = await Promise.all([
+      supabase.from("proposed_events")
+        .select("id, event_type, axis, frame, rationale").eq("job_id", jobId).eq("status", "proposed"),
+      supabase.from("gm_proposed_events")
+        .select("id, kind, summary, npc_name, location_name").eq("job_id", jobId).eq("status", "proposed"),
+    ]);
+    const rows: { id: string; table: "player" | "gm"; label: string }[] = [];
+    for (const r of ((pe.data as Record<string, unknown>[]) || [])) {
+      rows.push({
+        id: String(r.id), table: "player",
+        label: [r.event_type, r.axis, r.frame].filter(Boolean).join(" \u00b7 ")
+          || String(r.rationale || "an unlabelled proposal"),
+      });
+    }
+    for (const r of ((ge.data as Record<string, unknown>[]) || [])) {
+      rows.push({
+        id: String(r.id), table: "gm",
+        label: String(r.summary || r.npc_name || r.location_name || r.kind || "an unlabelled proposal"),
+      });
+    }
+    setUndecided(rows);
+  }
+
   async function finalize(force: boolean) {
     if (!job) return;
     if (force) { setBusy(true); setRecapMsg(null); }
@@ -501,13 +533,80 @@ export default function ReviewPage() {
                         </>
                       )}
                       {job.status === "review" && remaining !== null && remaining > 0 && (
-                        <button type="button" onClick={() => finalize(true)} style={btn(C.sun, C.ink)}>
-                          {`Finish review (leave ${remaining} undecided)`}
+                        <button type="button"
+                          onClick={() => { setShowUndecided(true); void loadUndecided(job.id); }}
+                          style={btn(C.sun, C.ink)}>
+                          Show {remaining} undecided
                         </button>
                       )}
                     </div>
                   </div>
                 </div>
+
+
+                {/* THE RECAP IS BEING WITHHELD AND NOTHING SAID SO. Three CandleKeep sessions sat
+                    at review on one, three and seven undecided rows - a GM who has worked through
+                    the queue sees it looking finished and has no reason to think anything is
+                    outstanding. The escape hatch existed but it is a lever for someone who already
+                    knows; this is the part that tells them. */}
+                {job.status === "review" && remaining !== null && remaining > 0 && (
+                  <div style={{
+                    background: "rgba(200,162,75,0.10)", border: `1px solid ${C.sun}`,
+                    borderRadius: FORGE_RADIUS, padding: "12px 14px", marginBottom: 14,
+                  }}>
+                    <div style={{ fontSize: 14, color: C.text, marginBottom: 4 }}>
+                      {remaining === 1
+                        ? "One proposal is still undecided, so this session has no recap yet."
+                        : `${remaining} proposals are still undecided, so this session has no recap yet.`}
+                    </div>
+                    <div style={{ fontSize: 12.5, color: C.muted, lineHeight: 1.55 }}>
+                      The recap writes itself once every proposal has been accepted or rejected.
+                      Decide the rest, or finish anyway and leave them undecided.
+                    </div>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
+                      <button type="button"
+                        onClick={() => { setShowUndecided((v) => !v); if (!undecided) void loadUndecided(job.id); }}
+                        style={btn(C.sun, C.ink)}>
+                        {showUndecided ? "Hide" : "Show"} {remaining} undecided
+                      </button>
+                      <button type="button" onClick={() => finalize(true)} disabled={busy}
+                        style={{ background: "transparent", color: C.muted,
+                          border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS,
+                          padding: "9px 16px", fontWeight: 700, fontSize: 13,
+                          cursor: busy ? "default" : "pointer", opacity: busy ? 0.55 : 1 }}>
+                        Finish anyway
+                      </button>
+                    </div>
+
+                    {showUndecided && (
+                      <div style={{ marginTop: 12, paddingTop: 10, borderTop: `1px solid ${C.line}` }}>
+                        {undecided === null ? (
+                          <span style={{ fontSize: 12.5, color: C.muted }}>Loading&hellip;</span>
+                        ) : undecided.length === 0 ? (
+                          // The count and the rows disagree, which is worth saying rather than
+                          // rendering an empty box: it means something was decided elsewhere since
+                          // the count was taken, and a reload will clear it.
+                          <span style={{ fontSize: 12.5, color: C.muted }}>
+                            Nothing outstanding now. Reload to refresh the count.
+                          </span>
+                        ) : (
+                          undecided.map((u) => (
+                            <div key={u.id} style={{
+                              display: "flex", gap: 10, alignItems: "baseline",
+                              padding: "5px 0", fontSize: 13, color: C.text,
+                            }}>
+                              <span style={{ fontFamily: "ui-monospace, monospace", fontSize: 10.5, color: C.muted,
+                                minWidth: 44 }}>
+                                {u.table === "gm" ? "story" : "player"}
+                              </span>
+                              <span style={{ minWidth: 0 }}>{u.label}</span>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {props.length === 0 ? (
                   <div style={{ ...box, color: C.muted, fontSize: 14 }}>
