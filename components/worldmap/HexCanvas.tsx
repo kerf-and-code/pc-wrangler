@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef } from "react";
-import { type Terrain, index, setBiome, BIOME_UNSET } from "@/lib/worldmap/hex";
+import { type Terrain, index, setBiome, BIOME_UNSET, offsetToAxial, axialToOffset, AXIAL_DIRS, inBounds } from "@/lib/worldmap/hex";
 import { hexToPixel, hexCorners, pixelToHex, gridPixelSize, gridOrigin, BASE_SIZE, type PlacedImage } from "@/lib/worldmap/layout";
 
 // The flat-top grid on a canvas. Two backings for the same grid:
@@ -17,6 +17,22 @@ const UNSET_FILL = "#1c1712";
 const GRID_LINE = "rgba(255,255,255,0.06)";
 const IMAGE_TINT_ALPHA = 0.3;
 const SQRT3 = Math.sqrt(3);
+
+// Average of two #rrggbb colours, memoised. The seam midpoint between two biomes uses this, so both
+// hexes reach the same colour at the shared edge and the blend is continuous.
+const MIX_CACHE = new Map<string, string>();
+function mix(a: string, b: string): string {
+  const key = a < b ? a + b : b + a;
+  const hit = MIX_CACHE.get(key);
+  if (hit) return hit;
+  const pa = parseInt(a.slice(1), 16), pb = parseInt(b.slice(1), 16);
+  const r = (((pa >> 16) & 255) + ((pb >> 16) & 255)) >> 1;
+  const g = (((pa >> 8) & 255) + ((pb >> 8) & 255)) >> 1;
+  const bl = ((pa & 255) + (pb & 255)) >> 1;
+  const out = `rgb(${r},${g},${bl})`;
+  MIX_CACHE.set(key, out);
+  return out;
+}
 
 type View = { scale: number; tx: number; ty: number };
 
@@ -128,6 +144,7 @@ export default function HexCanvas({
         ctx.closePath();
         const b = t.biome[index(col, row, width)];
         const painted = b !== BIOME_UNSET && b < cols.length;
+        let blended = false;
         if (hasImages) {
           if (painted) {
             ctx.globalAlpha = IMAGE_TINT_ALPHA;
@@ -138,6 +155,37 @@ export default function HexCanvas({
         } else {
           ctx.fillStyle = painted ? cols[b] : UNSET_FILL;
           ctx.fill();
+          // Blend each edge that borders a different painted biome. Skipped when zoomed far out,
+          // where per-hex seams are sub-pixel and the gradients are not worth the redraw cost.
+          if (painted && s > 0.15) {
+            const a = offsetToAxial(col, row);
+            for (let d = 0; d < 6; d++) {
+              const dir = AXIAL_DIRS[d];
+              const no = axialToOffset(a.q + dir.q, a.r + dir.r);
+              if (!inBounds(no.col, no.row, width, height)) continue;
+              const nb = t.biome[index(no.col, no.row, width)];
+              if (nb === BIOME_UNSET || nb >= cols.length || nb === b) continue;
+              const c0 = pts[(6 - d) % 6];
+              const c1 = pts[(7 - d) % 6];
+              const grad = ctx.createLinearGradient(center.x, center.y, (c0.x + c1.x) / 2, (c0.y + c1.y) / 2);
+              grad.addColorStop(0, cols[b]);
+              grad.addColorStop(1, mix(cols[b], cols[nb]));
+              ctx.beginPath();
+              ctx.moveTo(center.x, center.y);
+              ctx.lineTo(c0.x, c0.y);
+              ctx.lineTo(c1.x, c1.y);
+              ctx.closePath();
+              ctx.fillStyle = grad;
+              ctx.fill();
+              blended = true;
+            }
+          }
+        }
+        if (blended) {
+          ctx.beginPath();
+          ctx.moveTo(pts[0].x, pts[0].y);
+          for (let i = 1; i < 6; i++) ctx.lineTo(pts[i].x, pts[i].y);
+          ctx.closePath();
         }
         ctx.stroke();
       }
