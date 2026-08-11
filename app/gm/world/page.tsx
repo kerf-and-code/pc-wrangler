@@ -7,7 +7,7 @@ import { surfaces, ui } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import HexCanvas from "@/components/worldmap/HexCanvas";
 import {
-  type Terrain, createTerrain, decodeTerrain, encodeTerrain, base64ToBytes, bytesToBase64, expandTerrain,
+  type Terrain, createTerrain, decodeTerrain, encodeTerrain, base64ToBytes, bytesToBase64, expandTerrain, BIOME_UNSET,
 } from "@/lib/worldmap/hex";
 
 // The GM's world map, in paint mode, with an optional uploaded background image and a settable grid
@@ -194,7 +194,7 @@ export default function WorldMapPage() {
     <PageShell width={1200}>
       <h1 style={{ ...ui.h1, fontSize: 28, margin: "4px 0 4px" }}>World map</h1>
       <p style={{ color: C.muted, fontSize: 14, margin: "0 0 16px" }}>
-        Paint biomes across the world, or upload your own map and designate areas over it. Pick a biome and drag to paint; deselect it to pan. Scroll to zoom.
+        Paint biomes across the world, or upload your own map and designate areas over it. Pick a biome and drag to paint, Erase to clear a mis-painted hex, or Pan to move the view. Scroll to zoom.
       </p>
 
       <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginBottom: 14 }}>
@@ -240,14 +240,24 @@ export default function WorldMapPage() {
             </p>
           </div>
 
-          <button type="button" onClick={() => setSelected(null)}
-            style={{
-              width: "100%", textAlign: "left", padding: "7px 9px", borderRadius: 7, marginBottom: 10, cursor: "pointer",
-              border: `1px solid ${selected === null ? C.sun : C.line}`, background: selected === null ? "rgba(200,162,75,0.14)" : C.surface2,
-              color: C.text, fontSize: 12.5, fontWeight: 600,
-            }}>
-            Pan / no biome
-          </button>
+          <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
+            <button type="button" onClick={() => setSelected(null)}
+              style={{
+                flex: 1, textAlign: "center", padding: "7px 9px", borderRadius: 7, cursor: "pointer",
+                border: `1px solid ${selected === null ? C.sun : C.line}`, background: selected === null ? "rgba(200,162,75,0.14)" : C.surface2,
+                color: C.text, fontSize: 12.5, fontWeight: 600,
+              }}>
+              Pan
+            </button>
+            <button type="button" onClick={() => setSelected(BIOME_UNSET)}
+              style={{
+                flex: 1, textAlign: "center", padding: "7px 9px", borderRadius: 7, cursor: "pointer",
+                border: `1px solid ${selected === BIOME_UNSET ? C.sun : C.line}`, background: selected === BIOME_UNSET ? "rgba(200,162,75,0.14)" : C.surface2,
+                color: C.text, fontSize: 12.5, fontWeight: 600,
+              }}>
+              Erase
+            </button>
+          </div>
           {grouped.map((g) => (
             <div key={g.category} style={{ marginBottom: 12 }}>
               <div style={secLabel}>{(CATEGORY_LABEL[g.category] || g.category).toUpperCase()}</div>
