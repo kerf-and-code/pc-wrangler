@@ -6,6 +6,7 @@ import PageShell from "@/components/page-shell";
 import { surfaces, ui } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import HexCanvas from "@/components/worldmap/HexCanvas";
+import RegionsPanel from "@/components/worldmap/RegionsPanel";
 import {
   type Terrain, createTerrain, decodeTerrain, encodeTerrain, base64ToBytes, bytesToBase64, expandTerrain, BIOME_UNSET,
 } from "@/lib/worldmap/hex";
@@ -52,6 +53,7 @@ export default function WorldMapPage() {
   const [terrain, setTerrain] = useState<Terrain | null>(null);
   const [images, setImages] = useState<PlacedImage[]>([]);
   const [positionId, setPositionId] = useState<string | null>(null);
+  const [mode, setMode] = useState<"terrain" | "regions">("terrain");
   const [selected, setSelected] = useState<number | null>(null);
   const [sizeW, setSizeW] = useState<string>("100");
   const [sizeH, setSizeH] = useState<string>("100");
@@ -258,6 +260,11 @@ export default function WorldMapPage() {
 
       <div style={{ display: "flex", gap: 14, alignItems: "flex-start", flexWrap: "wrap" }}>
         <div style={{ ...surfaces.slate, padding: 12, flex: "0 0 230px", maxHeight: "72vh", overflowY: "auto" }}>
+          <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
+            {modeChip("Terrain", mode === "terrain", () => setMode("terrain"))}
+            {modeChip("Regions", mode === "regions", () => { setMode("regions"); setSelected(null); })}
+          </div>
+          {mode === "terrain" && (<>
           <div style={{ marginBottom: 14 }}>
             <div style={secLabel}>MAP SIZE (HEXES)</div>
             <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
@@ -313,6 +320,10 @@ export default function WorldMapPage() {
               <div style={{ display: "grid", gap: 5 }}>{g.items.map(swatch)}</div>
             </div>
           ))}
+          </>)}
+          {mode === "regions" && mapRow && (
+            <RegionsPanel worldMapId={mapRow.id} campaignId={campaignId} />
+          )}
         </div>
 
         <div style={{ ...surfaces.slate, padding: 0, flex: "1 1 520px", minWidth: 320, height: "72vh", position: "relative", overflow: "hidden", borderRadius: FORGE_RADIUS }}>
