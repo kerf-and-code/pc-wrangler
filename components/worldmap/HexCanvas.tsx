@@ -169,7 +169,10 @@ export default function HexCanvas({
     return () => ro.disconnect();
   }, [resize]);
 
-  useEffect(() => { scheduleDraw(); }, [terrain, colors, scheduleDraw]);
+  // Re-fit the view whenever a NEW terrain object arrives (load, campaign switch, resize).
+  // Painting mutates in place (same identity) so it does not re-fit. Colours only redraw.
+  useEffect(() => { fittedRef.current = false; resize(); }, [terrain, resize]);
+  useEffect(() => { scheduleDraw(); }, [colors, scheduleDraw]);
 
   const paintAt = useCallback((clientX: number, clientY: number, last: { col: number; row: number } | null) => {
     const canvas = canvasRef.current;

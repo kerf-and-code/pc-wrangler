@@ -7,14 +7,13 @@ import { surfaces, ui } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import HexCanvas from "@/components/worldmap/HexCanvas";
 import {
-  type Terrain, createTerrain, decodeTerrain, encodeTerrain, base64ToBytes, bytesToBase64,
+  type Terrain, createTerrain, decodeTerrain, encodeTerrain, base64ToBytes, bytesToBase64, expandTerrain,
 } from "@/lib/worldmap/hex";
 
-// The GM's world map, in paint mode, with an optional uploaded background image. Loads (or creates)
-// the one world_maps row for the selected campaign, shows the 28 biomes as a palette, decodes the
-// terrain blob into the shared canvas, and saves the re-encoded blob (debounced) as the GM paints.
-// An uploaded image turns the biome fill off in the canvas and shows painted hexes as a faint tint.
-// Sits beside /gm/map, the image-and-pins tactical map.
+// The GM's world map, in paint mode, with an optional uploaded background image and a settable grid
+// size in hex units. Loads (or creates) the one world_maps row for the selected campaign, shows the
+// 28 biomes as a palette, decodes the terrain blob into the shared canvas, and saves the re-encoded
+// blob (debounced) as the GM paints. Sits beside /gm/map, the image-and-pins tactical map.
 
 type Campaign = { id: string; name: string };
 type Biome = { id: number; key: string; label: string; category: string; color: string };
@@ -27,6 +26,7 @@ const MAP_COLS = "id, name, width, height, origin_col, origin_row, format_versio
 const BUCKET = "campaign-maps";
 const IMG_TYPES = ["image/png", "image/jpeg", "image/webp"];
 const MAX_IMG_BYTES = 8 * 1024 * 1024;
+const MAX_DIM = 250;
 const CATEGORY_ORDER = ["terrestrial", "wetland", "water", "geologic", "fantasy"];
 const CATEGORY_LABEL: Record<string, string> = {
   terrestrial: "Terrestrial", wetland: "Wetland", water: "Water", geologic: "Mountain & geologic", fantasy: "Fantasy",
@@ -41,6 +41,8 @@ export default function WorldMapPage() {
   const [terrain, setTerrain] = useState<Terrain | null>(null);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [selected, setSelected] = useState<number | null>(null);
+  const [sizeW, setSizeW] = useState<string>("100");
+  const [sizeH, setSizeH] = useState<string>("100");
   const [status, setStatus] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
 
@@ -92,6 +94,7 @@ export default function WorldMapPage() {
       if (cancelled) return;
       setMapRow(row);
       setImageUrl(row?.image_url ?? null);
+      if (row) { setSizeW(String(row.width)); setSizeH(String(row.height)); }
       setTerrain(row
         ? (row.terrain ? decodeTerrain(base64ToBytes(row.terrain)) : createTerrain(row.width, row.height, row.origin_col, row.origin_row))
         : null);
@@ -115,6 +118,26 @@ export default function WorldMapPage() {
   const onPaint = useCallback(() => { scheduleSave(); }, [scheduleSave]);
 
   useEffect(() => () => { if (saveTimer.current) clearTimeout(saveTimer.current); }, []);
+
+  const applyResize = useCallback(async () => {
+    if (!mapRow || !terrain) return;
+    const nw = Math.max(1, Math.min(MAX_DIM, Math.round(Number(sizeW) || 0)));
+    const nh = Math.max(1, Math.min(MAX_DIM, Math.round(Number(sizeH) || 0)));
+    if (!nw || !nh) { setStatus("Enter a size between 1 and 250."); return; }
+    if (nw === terrain.meta.width && nh === terrain.meta.height) { setStatus("Size unchanged."); return; }
+    const oc = -Math.floor(nw / 2);
+    const or = -Math.floor(nh / 2);
+    const nt = expandTerrain(terrain, nw, nh, oc, or);
+    setStatus("Resizing\u2026");
+    const b64 = bytesToBase64(encodeTerrain(nt));
+    const { error } = await supabase.from("world_maps").update({ width: nw, height: nh, origin_col: oc, origin_row: or, terrain: b64 }).eq("id", mapRow.id);
+    if (error) { setStatus(`Resize failed: ${error.message}`); return; }
+    setMapRow({ ...mapRow, width: nw, height: nh, origin_col: oc, origin_row: or });
+    setTerrain(nt);
+    setSizeW(String(nw));
+    setSizeH(String(nh));
+    setStatus(`Resized to ${nw} x ${nh}`);
+  }, [supabase, mapRow, terrain, sizeW, sizeH]);
 
   const uploadImage = useCallback(async (file: File) => {
     if (!mapRow || !campaignId) return;
@@ -163,6 +186,8 @@ export default function WorldMapPage() {
   };
 
   const secLabel: React.CSSProperties = { fontSize: 11, color: C.muted, fontFamily: "ui-monospace, monospace", letterSpacing: "0.08em", marginBottom: 6 };
+  const numInput: React.CSSProperties = { width: 58, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: 7, padding: "6px 8px", fontSize: 13 };
+  const smallBtn: React.CSSProperties = { background: C.sun, color: "#171310", border: "none", borderRadius: 7, padding: "6px 12px", fontWeight: 700, fontSize: 12.5, cursor: "pointer" };
 
   return (
     <PageShell width={1200}>
@@ -181,6 +206,19 @@ export default function WorldMapPage() {
 
       <div style={{ display: "flex", gap: 14, alignItems: "flex-start", flexWrap: "wrap" }}>
         <div style={{ ...surfaces.slate, padding: 12, flex: "0 0 220px", maxHeight: "72vh", overflowY: "auto" }}>
+          <div style={{ marginBottom: 14 }}>
+            <div style={secLabel}>MAP SIZE (HEXES)</div>
+            <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+              <input type="number" min={1} max={MAX_DIM} value={sizeW} onChange={(e) => setSizeW(e.target.value)} style={numInput} />
+              <span style={{ color: C.muted, fontSize: 13 }}>x</span>
+              <input type="number" min={1} max={MAX_DIM} value={sizeH} onChange={(e) => setSizeH(e.target.value)} style={numInput} />
+              <button type="button" onClick={applyResize} style={smallBtn}>Resize</button>
+            </div>
+            <p style={{ fontSize: 11, color: C.muted, margin: "6px 0 0", lineHeight: 1.4 }}>
+              1 to 250 each. Match an uploaded map&apos;s aspect so the grid is not too fine. Shrinking drops hexes outside the new area, kept centred.
+            </p>
+          </div>
+
           <div style={{ marginBottom: 14 }}>
             <div style={secLabel}>MAP BACKGROUND</div>
             <label style={{
