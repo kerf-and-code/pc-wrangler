@@ -23,7 +23,6 @@ type MapRow = {
 };
 
 const MAP_COLS = "id, name, width, height, origin_col, origin_row, format_version, terrain, image_url";
-const BUCKET = "campaign-maps";
 const IMG_TYPES = ["image/png", "image/jpeg", "image/webp"];
 const MAX_IMG_BYTES = 8 * 1024 * 1024;
 const MAX_DIM = 250;
@@ -144,15 +143,17 @@ export default function WorldMapPage() {
     if (!IMG_TYPES.includes(file.type)) { setStatus("Use a PNG, JPG, or WebP image."); return; }
     if (file.size > MAX_IMG_BYTES) { setStatus("Image must be under 8 MB."); return; }
     setStatus("Uploading\u2026");
-    const ext = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
-    const path = `${campaignId}/world/${crypto.randomUUID()}.${ext}`;
-    const up = await supabase.storage.from(BUCKET).upload(path, file, { upsert: true, contentType: file.type });
-    if (up.error) { setStatus(`Upload failed: ${up.error.message}`); return; }
-    const { data: pub } = supabase.storage.from(BUCKET).getPublicUrl(path);
-    const url = pub.publicUrl;
-    const { error } = await supabase.from("world_maps").update({ image_url: url }).eq("id", mapRow.id);
+    // Upload through a server route (service role): storage RLS does not authenticate the browser
+    // session here, so a client upload is denied. Then set image_url client-side (the DB does auth).
+    const form = new FormData();
+    form.append("campaignId", campaignId);
+    form.append("file", file);
+    const res = await fetch("/api/world-map/image", { method: "POST", body: form });
+    const data = (await res.json().catch(() => ({}))) as { url?: string; error?: string };
+    if (!res.ok || !data.url) { setStatus(`Upload failed: ${data.error || "unknown error"}`); return; }
+    const { error } = await supabase.from("world_maps").update({ image_url: data.url }).eq("id", mapRow.id);
     if (error) { setStatus(`Save failed: ${error.message}`); return; }
-    setImageUrl(url);
+    setImageUrl(data.url);
     setStatus("Map image set");
   }, [supabase, mapRow, campaignId]);
 
