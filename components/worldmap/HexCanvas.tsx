@@ -4,14 +4,19 @@ import React, { useCallback, useEffect, useRef } from "react";
 import { type Terrain, index, setBiome, BIOME_UNSET } from "@/lib/worldmap/hex";
 import { hexToPixel, hexCorners, pixelToHex, gridPixelSize } from "@/lib/worldmap/layout";
 
-// The flat-top grid on a canvas: renders coloured biome tiles, pans on drag, zooms toward the
-// cursor, and (when a biome is selected) paints into the shared Terrain. Terrain is mutated in place
-// for instant feedback and onPaint notifies the parent to persist; the parent holds the same object.
-// Colours-first: real per-biome art and the edge blend are a later Phase 1 step.
+// The flat-top grid on a canvas. Two backings for the same grid:
+//   - no image: draws coloured biome tiles (the painted terrain).
+//   - a background image: draws the image covering the grid and turns the biome FILL OFF, leaving
+//     the hex grid as an outline over it. Painted hexes still show as a faint translucent tint so a
+//     GM can see which areas they have designated a biome for; the biome is metadata, not the art.
+// Either way it pans on drag, zooms toward the cursor, and paints the selected biome into the
+// shared Terrain in place (onPaint notifies the parent to persist).
 
 const BASE_SIZE = 14;         // hex radius in px before zoom
-const UNSET_FILL = "#1c1712"; // an unpainted hex
+const SQRT3 = Math.sqrt(3);
+const UNSET_FILL = "#1c1712"; // an unpainted hex (no-image mode)
 const GRID_LINE = "rgba(255,255,255,0.06)";
+const IMAGE_TINT_ALPHA = 0.3; // painted-hex tint over a background image
 
 type View = { scale: number; tx: number; ty: number };
 
@@ -20,12 +25,14 @@ export default function HexCanvas({
   colors,
   selectedBiome,
   onPaint,
+  backgroundImageUrl,
   className,
 }: {
   terrain: Terrain;
   colors: readonly string[];
   selectedBiome: number | null;
   onPaint?: (col: number, row: number, biome: number) => void;
+  backgroundImageUrl?: string | null;
   className?: string;
 }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -33,8 +40,9 @@ export default function HexCanvas({
   const sizeRef = useRef<{ w: number; h: number; dpr: number }>({ w: 0, h: 0, dpr: 1 });
   const rafRef = useRef<number | null>(null);
   const fittedRef = useRef<boolean>(false);
+  const imgRef = useRef<HTMLImageElement | null>(null);
+  const imgReadyRef = useRef<boolean>(false);
 
-  // Latest props in refs so the pointer handlers, attached once, always see current values.
   const terrainRef = useRef(terrain);
   const colorsRef = useRef(colors);
   const selRef = useRef(selectedBiome);
@@ -61,7 +69,16 @@ export default function HexCanvas({
     ctx.translate(view.tx, view.ty);
     ctx.scale(view.scale, view.scale);
 
-    // Cull to the visible rectangle: convert the four screen corners to hexes, pad, clamp.
+    const img = imgRef.current;
+    const hasImage = imgReadyRef.current && img !== null;
+    if (hasImage && img) {
+      const gb = gridPixelSize(width, height, BASE_SIZE);
+      // Cover the grid's pixel bounds; origin is the top-left of the outermost hexes. The image is
+      // stretched to the grid rectangle, so the GM sizes the grid to match their map's aspect.
+      ctx.drawImage(img, -BASE_SIZE, -(SQRT3 * BASE_SIZE) / 2, gb.w, gb.h);
+    }
+
+    // Cull to the visible rectangle.
     const s = view.scale;
     const cornersWorld = [
       pixelToHex((0 - view.tx) / s, (0 - view.ty) / s, BASE_SIZE),
@@ -90,8 +107,18 @@ export default function HexCanvas({
         for (let i = 1; i < 6; i++) ctx.lineTo(pts[i].x, pts[i].y);
         ctx.closePath();
         const b = t.biome[index(col, row, width)];
-        ctx.fillStyle = b !== BIOME_UNSET && b < cols.length ? cols[b] : UNSET_FILL;
-        ctx.fill();
+        const painted = b !== BIOME_UNSET && b < cols.length;
+        if (hasImage) {
+          if (painted) {
+            ctx.globalAlpha = IMAGE_TINT_ALPHA;
+            ctx.fillStyle = cols[b];
+            ctx.fill();
+            ctx.globalAlpha = 1;
+          }
+        } else {
+          ctx.fillStyle = painted ? cols[b] : UNSET_FILL;
+          ctx.fill();
+        }
         ctx.stroke();
       }
     }
@@ -101,7 +128,21 @@ export default function HexCanvas({
     if (rafRef.current == null) rafRef.current = requestAnimationFrame(draw);
   }, [draw]);
 
-  // Size the backing store to the element and devicePixelRatio; fit the grid the first time.
+  // Load or clear the background image; redraw when it settles.
+  useEffect(() => {
+    imgReadyRef.current = false;
+    if (!backgroundImageUrl) {
+      imgRef.current = null;
+      scheduleDraw();
+      return;
+    }
+    const img = new Image();
+    img.onload = () => { imgRef.current = img; imgReadyRef.current = true; scheduleDraw(); };
+    img.onerror = () => { imgRef.current = null; imgReadyRef.current = false; scheduleDraw(); };
+    img.src = backgroundImageUrl;
+    return () => { img.onload = null; img.onerror = null; };
+  }, [backgroundImageUrl, scheduleDraw]);
+
   const resize = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -128,10 +169,8 @@ export default function HexCanvas({
     return () => ro.disconnect();
   }, [resize]);
 
-  // Redraw when the terrain object identity changes (parent reassigns after load/expand).
   useEffect(() => { scheduleDraw(); }, [terrain, colors, scheduleDraw]);
 
-  // ---- interaction ----
   const paintAt = useCallback((clientX: number, clientY: number, last: { col: number; row: number } | null) => {
     const canvas = canvasRef.current;
     const sel = selRef.current;
@@ -188,7 +227,6 @@ export default function HexCanvas({
       const view = viewRef.current;
       const factor = Math.exp(-e.deltaY * 0.0015);
       const newScale = Math.min(8, Math.max(0.05, view.scale * factor));
-      // Keep the world point under the cursor fixed while zooming.
       const cx = e.clientX - rect.left, cy = e.clientY - rect.top;
       view.tx = cx - (cx - view.tx) * (newScale / view.scale);
       view.ty = cy - (cy - view.ty) * (newScale / view.scale);
