@@ -54,6 +54,10 @@ export default function WorldMapPage() {
   const [images, setImages] = useState<PlacedImage[]>([]);
   const [positionId, setPositionId] = useState<string | null>(null);
   const [mode, setMode] = useState<"terrain" | "regions">("terrain");
+  const [paintRegionId, setPaintRegionId] = useState<string | null>(null);
+  const [regionErase, setRegionErase] = useState<boolean>(false);
+  const [regionCells, setRegionCells] = useState<Set<string>>(new Set());
+  const worldHexesRef = useRef<Map<string, string>>(new Map());
   const [selected, setSelected] = useState<number | null>(null);
   const [sizeW, setSizeW] = useState<string>("100");
   const [sizeH, setSizeH] = useState<string>("100");
@@ -114,6 +118,10 @@ export default function WorldMapPage() {
         setTerrain(row.terrain ? decodeTerrain(base64ToBytes(row.terrain)) : createTerrain(row.width, row.height, row.origin_col, row.origin_row));
         const { data: imgs } = await supabase.from("map_images").select(IMG_COLS).eq("world_map_id", row.id).order("z", { ascending: true });
         if (!cancelled) setImages((imgs as PlacedImage[]) || []);
+        const { data: whx } = await supabase.from("world_hexes").select("col, row, region_id").eq("world_map_id", row.id);
+        const wm = new Map<string, string>();
+        for (const h of (whx as { col: number; row: number; region_id: string }[]) || []) wm.set(`${h.col},${h.row}`, h.region_id);
+        if (!cancelled) { worldHexesRef.current = wm; setPaintRegionId(null); setRegionCells(new Set()); }
       } else {
         setTerrain(null);
       }
@@ -135,6 +143,55 @@ export default function WorldMapPage() {
   }, [supabase, mapRow, terrain]);
 
   const onPaint = useCallback(() => { scheduleSave(); }, [scheduleSave]);
+
+  useEffect(() => {
+    if (!paintRegionId) { setRegionCells(new Set()); return; }
+    const cells = new Set<string>();
+    for (const [k, rid] of worldHexesRef.current) if (rid === paintRegionId) cells.add(k);
+    setRegionCells(cells);
+  }, [paintRegionId]);
+
+  const rgUp = useRef<Map<string, { col: number; row: number }>>(new Map());
+  const rgDel = useRef<Map<string, { col: number; row: number }>>(new Map());
+  const rgTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const onRegionPaint = useCallback((col: number, row: number) => {
+    if (!mapRow || !paintRegionId) return;
+    const key = `${col},${row}`;
+    if (regionErase) {
+      worldHexesRef.current.delete(key);
+      rgDel.current.set(key, { col, row });
+      rgUp.current.delete(key);
+    } else {
+      worldHexesRef.current.set(key, paintRegionId);
+      rgUp.current.set(key, { col, row });
+      rgDel.current.delete(key);
+    }
+    if (rgTimer.current) clearTimeout(rgTimer.current);
+    setStatus("Saving\u2026");
+    const wmId = mapRow.id;
+    const rid = paintRegionId;
+    rgTimer.current = setTimeout(async () => {
+      const ups = [...rgUp.current.values()].map((c) => ({ world_map_id: wmId, col: c.col, row: c.row, region_id: rid }));
+      const dels = [...rgDel.current.values()];
+      rgUp.current.clear();
+      rgDel.current.clear();
+      let err: string | null = null;
+      if (ups.length) {
+        const { error } = await supabase.from("world_hexes").upsert(ups, { onConflict: "world_map_id,col,row" });
+        if (error) err = error.message;
+      }
+      for (const c of dels) {
+        const { error } = await supabase.from("world_hexes").delete().eq("world_map_id", wmId).eq("col", c.col).eq("row", c.row);
+        if (error) err = error.message;
+      }
+      setStatus(err ? `Save failed: ${err}` : "Saved");
+    }, 600);
+  }, [supabase, mapRow, paintRegionId, regionErase]);
+
+  const onPaintState = useCallback((regionId: string | null, erase: boolean) => {
+    setPaintRegionId(regionId);
+    setRegionErase(erase);
+  }, []);
 
   useEffect(() => () => { if (saveTimer.current) clearTimeout(saveTimer.current); }, []);
 
@@ -261,7 +318,7 @@ export default function WorldMapPage() {
       <div style={{ display: "flex", gap: 14, alignItems: "flex-start", flexWrap: "wrap" }}>
         <div style={{ ...surfaces.slate, padding: 12, flex: "0 0 230px", maxHeight: "72vh", overflowY: "auto" }}>
           <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
-            {modeChip("Terrain", mode === "terrain", () => setMode("terrain"))}
+            {modeChip("Terrain", mode === "terrain", () => { setMode("terrain"); setPaintRegionId(null); })}
             {modeChip("Regions", mode === "regions", () => { setMode("regions"); setSelected(null); })}
           </div>
           {mode === "terrain" && (<>
@@ -322,7 +379,7 @@ export default function WorldMapPage() {
           ))}
           </>)}
           {mode === "regions" && mapRow && (
-            <RegionsPanel worldMapId={mapRow.id} campaignId={campaignId} />
+            <RegionsPanel worldMapId={mapRow.id} campaignId={campaignId} onPaintState={onPaintState} />
           )}
         </div>
 
@@ -333,6 +390,7 @@ export default function WorldMapPage() {
             <HexCanvas
               terrain={terrain} colors={colors} selectedBiome={selected} onPaint={onPaint}
               images={images} positionImageId={positionId} onImageMove={onImageMove} onImageScale={onImageScale}
+              paintRegionId={paintRegionId} regionCells={regionCells} regionErase={regionErase} onRegionPaint={onRegionPaint}
             />
           ) : (
             <p style={{ color: C.muted, fontSize: 14, padding: 16 }}>Pick a campaign to start its world map.</p>

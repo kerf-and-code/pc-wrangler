@@ -45,6 +45,11 @@ export default function HexCanvas({
   positionImageId,
   onImageMove,
   onImageScale,
+  paintRegionId,
+  regionCells,
+  regionErase,
+  regionTint,
+  onRegionPaint,
   className,
 }: {
   terrain: Terrain;
@@ -55,6 +60,11 @@ export default function HexCanvas({
   positionImageId?: string | null;
   onImageMove?: (id: string, x: number, y: number) => void;
   onImageScale?: (id: string, scale: number) => void;
+  paintRegionId?: string | null;
+  regionCells?: Set<string>;
+  regionErase?: boolean;
+  regionTint?: string | null;
+  onRegionPaint?: (col: number, row: number) => void;
   className?: string;
 }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -74,6 +84,11 @@ export default function HexCanvas({
   const posRef = useRef<string | null>(positionImageId ?? null);
   const onMoveRef = useRef(onImageMove);
   const onScaleRef = useRef(onImageScale);
+  const paintRegionRef = useRef<string | null>(paintRegionId ?? null);
+  const regionCellsRef = useRef<Set<string> | undefined>(regionCells);
+  const regionEraseRef = useRef<boolean>(regionErase ?? false);
+  const regionTintRef = useRef<string | null>(regionTint ?? null);
+  const onRegionPaintRef = useRef(onRegionPaint);
   terrainRef.current = terrain;
   colorsRef.current = colors;
   selRef.current = selectedBiome;
@@ -82,6 +97,11 @@ export default function HexCanvas({
   posRef.current = positionImageId ?? null;
   onMoveRef.current = onImageMove;
   onScaleRef.current = onImageScale;
+  paintRegionRef.current = paintRegionId ?? null;
+  regionCellsRef.current = regionCells;
+  regionEraseRef.current = regionErase ?? false;
+  regionTintRef.current = regionTint ?? null;
+  onRegionPaintRef.current = onRegionPaint;
 
   const draw = useCallback(() => {
     rafRef.current = null;
@@ -190,6 +210,27 @@ export default function HexCanvas({
         ctx.stroke();
       }
     }
+
+    // Highlight the active paint region's assigned hexes (2c). Full multi-region drawing is 2d.
+    const rc = regionCellsRef.current;
+    if (rc && rc.size) {
+      ctx.globalAlpha = 0.4;
+      ctx.fillStyle = regionTintRef.current || "#c8a24b";
+      for (const key of rc) {
+        const ci = key.indexOf(",");
+        const cc = parseInt(key.slice(0, ci), 10);
+        const rr = parseInt(key.slice(ci + 1), 10);
+        if (cc < minCol || cc > maxCol || rr < minRow || rr > maxRow) continue;
+        const center = hexToPixel(cc, rr, BASE_SIZE);
+        const pts = hexCorners(center, BASE_SIZE);
+        ctx.beginPath();
+        ctx.moveTo(pts[0].x, pts[0].y);
+        for (let i = 1; i < 6; i++) ctx.lineTo(pts[i].x, pts[i].y);
+        ctx.closePath();
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    }
   }, []);
 
   const scheduleDraw = useCallback(() => {
@@ -238,7 +279,7 @@ export default function HexCanvas({
   }, [resize]);
 
   useEffect(() => { fittedRef.current = false; resize(); }, [terrain, resize]);
-  useEffect(() => { scheduleDraw(); }, [colors, positionImageId, scheduleDraw]);
+  useEffect(() => { scheduleDraw(); }, [colors, positionImageId, regionCells, paintRegionId, scheduleDraw]);
 
   const paintAt = useCallback((clientX: number, clientY: number, last: { col: number; row: number } | null) => {
     const canvas = canvasRef.current;
@@ -258,11 +299,31 @@ export default function HexCanvas({
     return { col, row };
   }, [scheduleDraw]);
 
+  const paintRegionAt = useCallback((clientX: number, clientY: number, last: { col: number; row: number } | null) => {
+    const canvas = canvasRef.current;
+    const rid = paintRegionRef.current;
+    const rc = regionCellsRef.current;
+    if (!canvas || !rid || !rc) return last;
+    const rect = canvas.getBoundingClientRect();
+    const view = viewRef.current;
+    const wx = (clientX - rect.left - view.tx) / view.scale;
+    const wy = (clientY - rect.top - view.ty) / view.scale;
+    const { col, row } = pixelToHex(wx, wy, BASE_SIZE);
+    const t = terrainRef.current;
+    if (col < 0 || row < 0 || col >= t.meta.width || row >= t.meta.height) return last;
+    if (last && last.col === col && last.row === row) return last;
+    const key = `${col},${row}`;
+    if (regionEraseRef.current) rc.delete(key); else rc.add(key);
+    onRegionPaintRef.current?.(col, row);
+    scheduleDraw();
+    return { col, row };
+  }, [scheduleDraw]);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    let mode: "none" | "pan" | "paint" | "move" = "none";
+    let mode: "none" | "pan" | "paint" | "move" | "region" = "none";
     let lastX = 0, lastY = 0;
     let lastHex: { col: number; row: number } | null = null;
 
@@ -273,6 +334,9 @@ export default function HexCanvas({
       if (posId && e.button === 0) {
         mode = "move";
         dragRef.current = { id: posId, dx: 0, dy: 0 };
+      } else if (paintRegionRef.current && e.button === 0) {
+        mode = "region";
+        lastHex = paintRegionAt(e.clientX, e.clientY, null);
       } else if (selRef.current != null && e.button === 0) {
         mode = "paint";
         lastHex = paintAt(e.clientX, e.clientY, null);
@@ -283,6 +347,8 @@ export default function HexCanvas({
     const onMove = (e: PointerEvent) => {
       if (mode === "paint") {
         lastHex = paintAt(e.clientX, e.clientY, lastHex);
+      } else if (mode === "region") {
+        lastHex = paintRegionAt(e.clientX, e.clientY, lastHex);
       } else if (mode === "move") {
         const drag = dragRef.current;
         if (drag) {
@@ -343,9 +409,9 @@ export default function HexCanvas({
       canvas.removeEventListener("pointercancel", onUp);
       canvas.removeEventListener("wheel", onWheel);
     };
-  }, [paintAt, scheduleDraw]);
+  }, [paintAt, paintRegionAt, scheduleDraw]);
 
-  const cursor = positionImageId != null ? "move" : selectedBiome != null ? "crosshair" : "grab";
+  const cursor = positionImageId != null ? "move" : (paintRegionId != null || selectedBiome != null) ? "crosshair" : "grab";
 
   return (
     <canvas

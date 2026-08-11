@@ -21,16 +21,19 @@ const LAYER_COLS = "id, name, ord";
 const REGION_COLS = "id, layer_id, name, parent_region_id, entry_id, visibility, tint";
 const VIS = ["common", "player", "gm", "private"];
 
-export default function RegionsPanel({ worldMapId, campaignId, onChanged }: {
+export default function RegionsPanel({ worldMapId, campaignId, onChanged, onPaintState }: {
   worldMapId: string;
   campaignId: string;
   onChanged?: () => void;
+  onPaintState?: (regionId: string | null, erase: boolean) => void;
 }) {
   const supabase = useMemo(() => createClient(), []);
   const [layers, setLayers] = useState<Layer[]>([]);
   const [regions, setRegions] = useState<Region[]>([]);
   const [entries, setEntries] = useState<EntryOpt[]>([]);
   const [status, setStatus] = useState<string>("");
+  const [paintId, setPaintId] = useState<string | null>(null);
+  const [erase, setErase] = useState<boolean>(false);
 
   const load = useCallback(async () => {
     if (!worldMapId) return;
@@ -45,8 +48,10 @@ export default function RegionsPanel({ worldMapId, campaignId, onChanged }: {
   }, [supabase, worldMapId, campaignId]);
 
   useEffect(() => { void load(); }, [load]);
+  useEffect(() => { onPaintState?.(paintId, erase); }, [paintId, erase, onPaintState]);
 
   const sortedLayers = useMemo(() => [...layers].sort((a, b) => a.ord - b.ord), [layers]);
+  const baseLayerId = sortedLayers[0]?.id;
 
   // ---- layer ops ----
   const addLayer = useCallback(async () => {
@@ -99,6 +104,7 @@ export default function RegionsPanel({ worldMapId, campaignId, onChanged }: {
     const { error } = await supabase.from("regions").delete().eq("id", id);
     if (error) { setStatus(error.message); return; }
     setRegions((prev) => prev.filter((r) => r.id !== id));
+    setPaintId((pv) => (pv === id ? null : pv));
     onChanged?.();
   }, [supabase, onChanged]);
 
@@ -178,6 +184,16 @@ export default function RegionsPanel({ worldMapId, campaignId, onChanged }: {
                         {!r.entry_id && <button type="button" onClick={() => createEntry(r)} style={mini}>+ Add to codex</button>}
                         <button type="button" onClick={() => deleteRegion(r.id)} style={mini}>Delete</button>
                       </div>
+                      {layer.id === baseLayerId && (paintId === r.id ? (
+                        <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                          <span style={{ fontSize: 11, color: C.sun, fontWeight: 600 }}>Painting</span>
+                          <button type="button" onClick={() => setErase(false)} style={{ ...mini, color: !erase ? C.sun : C.muted, borderColor: !erase ? C.sun : C.line }}>Paint</button>
+                          <button type="button" onClick={() => setErase(true)} style={{ ...mini, color: erase ? C.sun : C.muted, borderColor: erase ? C.sun : C.line }}>Erase</button>
+                          <button type="button" onClick={() => setPaintId(null)} style={mini}>Done</button>
+                        </div>
+                      ) : (
+                        <button type="button" onClick={() => { setPaintId(r.id); setErase(false); }} style={{ ...mini, alignSelf: "flex-start" }}>Paint hexes</button>
+                      ))}
                     </div>
                   );
                 })}
