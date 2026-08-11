@@ -59,7 +59,8 @@ export default function RegionsPanel({ worldMapId, campaignId, onChanged, onPain
     const ins = await supabase.from("map_layers").insert({ world_map_id: worldMapId, name: "New tier", ord }).select(LAYER_COLS).single();
     if (ins.error || !ins.data) { setStatus(ins.error?.message || "Could not add tier."); return; }
     setLayers((prev) => [...prev, ins.data as Layer]);
-  }, [supabase, worldMapId, layers]);
+    onChanged?.();
+  }, [supabase, worldMapId, layers, onChanged]);
 
   const renameLayer = useCallback((id: string, name: string) => {
     setLayers((prev) => prev.map((l) => (l.id === id ? { ...l, name } : l)));
@@ -70,7 +71,8 @@ export default function RegionsPanel({ worldMapId, campaignId, onChanged, onPain
     const { error } = await supabase.from("map_layers").delete().eq("id", id);
     if (error) { setStatus(error.code === "23503" ? "Remove this tier's regions first." : error.message); return; }
     setLayers((prev) => prev.filter((l) => l.id !== id));
-  }, [supabase]);
+    onChanged?.();
+  }, [supabase, onChanged]);
 
   const moveLayer = useCallback(async (id: string, dir: number) => {
     const s = [...layers].sort((a, b) => a.ord - b.ord);
@@ -83,7 +85,8 @@ export default function RegionsPanel({ worldMapId, campaignId, onChanged, onPain
       supabase.from("map_layers").update({ ord: b.ord }).eq("id", a.id),
       supabase.from("map_layers").update({ ord: a.ord }).eq("id", b.id),
     ]);
-  }, [supabase, layers]);
+    onChanged?.();
+  }, [supabase, layers, onChanged]);
 
   // ---- region ops ----
   const addRegion = useCallback(async (layerId: string) => {

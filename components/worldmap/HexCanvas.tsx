@@ -50,6 +50,7 @@ export default function HexCanvas({
   regionErase,
   regionTint,
   onRegionPaint,
+  regionRender,
   className,
 }: {
   terrain: Terrain;
@@ -65,6 +66,7 @@ export default function HexCanvas({
   regionErase?: boolean;
   regionTint?: string | null;
   onRegionPaint?: (col: number, row: number) => void;
+  regionRender?: { id: string; name: string; tint: string; cells: Set<string> }[];
   className?: string;
 }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -89,6 +91,7 @@ export default function HexCanvas({
   const regionEraseRef = useRef<boolean>(regionErase ?? false);
   const regionTintRef = useRef<string | null>(regionTint ?? null);
   const onRegionPaintRef = useRef(onRegionPaint);
+  const regionRenderRef = useRef(regionRender);
   terrainRef.current = terrain;
   colorsRef.current = colors;
   selRef.current = selectedBiome;
@@ -102,6 +105,7 @@ export default function HexCanvas({
   regionEraseRef.current = regionErase ?? false;
   regionTintRef.current = regionTint ?? null;
   onRegionPaintRef.current = onRegionPaint;
+  regionRenderRef.current = regionRender;
 
   const draw = useCallback(() => {
     rafRef.current = null;
@@ -231,6 +235,52 @@ export default function HexCanvas({
       }
       ctx.globalAlpha = 1;
     }
+
+    // Regions at the selected tier (2d): a translucent fill plus a boundary outline per region.
+    const rr = regionRenderRef.current;
+    if (rr && rr.length) {
+      for (const reg of rr) {
+        ctx.globalAlpha = 0.22;
+        ctx.fillStyle = reg.tint;
+        for (const key of reg.cells) {
+          const ci = key.indexOf(",");
+          const cc = parseInt(key.slice(0, ci), 10);
+          const rw = parseInt(key.slice(ci + 1), 10);
+          if (cc < minCol || cc > maxCol || rw < minRow || rw > maxRow) continue;
+          const center = hexToPixel(cc, rw, BASE_SIZE);
+          const pts = hexCorners(center, BASE_SIZE);
+          ctx.beginPath();
+          ctx.moveTo(pts[0].x, pts[0].y);
+          for (let i = 1; i < 6; i++) ctx.lineTo(pts[i].x, pts[i].y);
+          ctx.closePath();
+          ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+        ctx.strokeStyle = reg.tint;
+        ctx.lineWidth = 2 / s;
+        for (const key of reg.cells) {
+          const ci = key.indexOf(",");
+          const cc = parseInt(key.slice(0, ci), 10);
+          const rw = parseInt(key.slice(ci + 1), 10);
+          if (cc < minCol - 1 || cc > maxCol + 1 || rw < minRow - 1 || rw > maxRow + 1) continue;
+          const center = hexToPixel(cc, rw, BASE_SIZE);
+          const pts = hexCorners(center, BASE_SIZE);
+          const a = offsetToAxial(cc, rw);
+          for (let d = 0; d < 6; d++) {
+            const dir = AXIAL_DIRS[d];
+            const no = axialToOffset(a.q + dir.q, a.r + dir.r);
+            if (reg.cells.has(`${no.col},${no.row}`)) continue;
+            const c0 = pts[(6 - d) % 6];
+            const c1 = pts[(7 - d) % 6];
+            ctx.beginPath();
+            ctx.moveTo(c0.x, c0.y);
+            ctx.lineTo(c1.x, c1.y);
+            ctx.stroke();
+          }
+        }
+      }
+      ctx.lineWidth = 1 / s;
+    }
   }, []);
 
   const scheduleDraw = useCallback(() => {
@@ -279,7 +329,7 @@ export default function HexCanvas({
   }, [resize]);
 
   useEffect(() => { fittedRef.current = false; resize(); }, [terrain, resize]);
-  useEffect(() => { scheduleDraw(); }, [colors, positionImageId, regionCells, paintRegionId, scheduleDraw]);
+  useEffect(() => { scheduleDraw(); }, [colors, positionImageId, regionCells, paintRegionId, regionRender, scheduleDraw]);
 
   const paintAt = useCallback((clientX: number, clientY: number, last: { col: number; row: number } | null) => {
     const canvas = canvasRef.current;

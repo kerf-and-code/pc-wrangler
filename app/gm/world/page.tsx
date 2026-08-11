@@ -44,6 +44,16 @@ function loadImageWidth(url: string): Promise<number> {
   });
 }
 
+function autoTint(id: string): string {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
+  return `hsl(${h % 360}, 55%, 55%)`;
+}
+
+type LayerRow = { id: string; name: string; ord: number };
+type RegionRow = { id: string; layer_id: string; name: string; parent_region_id: string | null; tint: string | null };
+type RegionRender = { id: string; name: string; tint: string; cells: Set<string> };
+
 export default function WorldMapPage() {
   const supabase = useMemo(() => createClient(), []);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
@@ -58,6 +68,11 @@ export default function WorldMapPage() {
   const [regionErase, setRegionErase] = useState<boolean>(false);
   const [regionCells, setRegionCells] = useState<Set<string>>(new Set());
   const worldHexesRef = useRef<Map<string, string>>(new Map());
+  const [layerRows, setLayerRows] = useState<LayerRow[]>([]);
+  const [regionRows, setRegionRows] = useState<RegionRow[]>([]);
+  const [selectedLayerId, setSelectedLayerId] = useState<string>("");
+  const [hexesVersion, setHexesVersion] = useState<number>(0);
+  const [regionRender, setRegionRender] = useState<RegionRender[]>([]);
   const [selected, setSelected] = useState<number | null>(null);
   const [sizeW, setSizeW] = useState<string>("100");
   const [sizeH, setSizeH] = useState<string>("100");
@@ -122,6 +137,17 @@ export default function WorldMapPage() {
         const wm = new Map<string, string>();
         for (const h of (whx as { col: number; row: number; region_id: string }[]) || []) wm.set(`${h.col},${h.row}`, h.region_id);
         if (!cancelled) { worldHexesRef.current = wm; setPaintRegionId(null); setRegionCells(new Set()); }
+        const [{ data: ls }, { data: rs }] = await Promise.all([
+          supabase.from("map_layers").select("id, name, ord").eq("world_map_id", row.id).order("ord", { ascending: true }),
+          supabase.from("regions").select("id, layer_id, name, parent_region_id, tint").eq("world_map_id", row.id),
+        ]);
+        if (!cancelled) {
+          const lyrs = (ls as LayerRow[]) || [];
+          setLayerRows(lyrs);
+          setRegionRows((rs as RegionRow[]) || []);
+          setSelectedLayerId(lyrs[0]?.id || "");
+          setHexesVersion((v) => v + 1);
+        }
       } else {
         setTerrain(null);
       }
@@ -185,6 +211,7 @@ export default function WorldMapPage() {
         if (error) err = error.message;
       }
       setStatus(err ? `Save failed: ${err}` : "Saved");
+      setHexesVersion((v) => v + 1);
     }, 600);
   }, [supabase, mapRow, paintRegionId, regionErase]);
 
@@ -192,6 +219,44 @@ export default function WorldMapPage() {
     setPaintRegionId(regionId);
     setRegionErase(erase);
   }, []);
+
+  const reloadRegions = useCallback(async () => {
+    if (!mapRow) return;
+    const [{ data: ls }, { data: rs }] = await Promise.all([
+      supabase.from("map_layers").select("id, name, ord").eq("world_map_id", mapRow.id).order("ord", { ascending: true }),
+      supabase.from("regions").select("id, layer_id, name, parent_region_id, tint").eq("world_map_id", mapRow.id),
+    ]);
+    setLayerRows((ls as LayerRow[]) || []);
+    setRegionRows((rs as RegionRow[]) || []);
+    setHexesVersion((v) => v + 1);
+  }, [supabase, mapRow]);
+
+  useEffect(() => {
+    if (!selectedLayerId || regionRows.length === 0) { setRegionRender([]); return; }
+    const byId = new Map(regionRows.map((r) => [r.id, r]));
+    const ancestorAt = (baseId: string): string | null => {
+      let cur = byId.get(baseId);
+      let guard = 0;
+      while (cur && guard++ < 20) {
+        if (cur.layer_id === selectedLayerId) return cur.id;
+        if (!cur.parent_region_id) return null;
+        cur = byId.get(cur.parent_region_id);
+      }
+      return null;
+    };
+    const groups = new Map<string, Set<string>>();
+    for (const [cell, baseRegionId] of worldHexesRef.current) {
+      const tierId = ancestorAt(baseRegionId);
+      if (!tierId) continue;
+      let set = groups.get(tierId);
+      if (!set) { set = new Set(); groups.set(tierId, set); }
+      set.add(cell);
+    }
+    setRegionRender([...groups.entries()].map(([rid, cells]) => {
+      const r = byId.get(rid);
+      return { id: rid, name: r?.name || "", tint: r?.tint || autoTint(rid), cells };
+    }));
+  }, [regionRows, selectedLayerId, hexesVersion]);
 
   useEffect(() => () => { if (saveTimer.current) clearTimeout(saveTimer.current); }, []);
 
@@ -313,6 +378,15 @@ export default function WorldMapPage() {
           {campaigns.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
         <span style={{ fontSize: 12.5, color: C.muted }}>{status}</span>
+        {mode === "regions" && layerRows.length > 0 && (
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <span style={{ fontSize: 12, color: C.muted }}>Layer</span>
+            <input type="range" min={0} max={layerRows.length - 1}
+              value={Math.max(0, layerRows.findIndex((l) => l.id === selectedLayerId))}
+              onChange={(e) => setSelectedLayerId(layerRows[Number(e.target.value)]?.id || "")} />
+            <span style={{ fontSize: 12.5, color: C.text }}>{layerRows.find((l) => l.id === selectedLayerId)?.name || ""}</span>
+          </div>
+        )}
       </div>
 
       <div style={{ display: "flex", gap: 14, alignItems: "flex-start", flexWrap: "wrap" }}>
@@ -379,7 +453,7 @@ export default function WorldMapPage() {
           ))}
           </>)}
           {mode === "regions" && mapRow && (
-            <RegionsPanel worldMapId={mapRow.id} campaignId={campaignId} onPaintState={onPaintState} />
+            <RegionsPanel worldMapId={mapRow.id} campaignId={campaignId} onPaintState={onPaintState} onChanged={reloadRegions} />
           )}
         </div>
 
@@ -391,6 +465,7 @@ export default function WorldMapPage() {
               terrain={terrain} colors={colors} selectedBiome={selected} onPaint={onPaint}
               images={images} positionImageId={positionId} onImageMove={onImageMove} onImageScale={onImageScale}
               paintRegionId={paintRegionId} regionCells={regionCells} regionErase={regionErase} onRegionPaint={onRegionPaint}
+              regionRender={mode === "regions" ? regionRender : undefined}
             />
           ) : (
             <p style={{ color: C.muted, fontSize: 14, padding: 16 }}>Pick a campaign to start its world map.</p>
