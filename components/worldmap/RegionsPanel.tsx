@@ -178,6 +178,9 @@ export default function RegionsPanel({ worldMapId, campaignId, onChanged, onPain
                         <select value={r.visibility} onChange={(e) => patchRegion(r.id, { visibility: e.target.value })} style={{ ...field, flex: "0 0 auto" }}>
                           {VIS.map((v) => <option key={v} value={v}>{v}</option>)}
                         </select>
+                        <input type="color" value={r.tint || "#8a8378"} onChange={(e) => patchRegion(r.id, { tint: e.target.value })} title="Region colour"
+                          style={{ width: 30, height: 28, padding: 0, border: `1px solid ${C.line}`, borderRadius: 6, background: C.surface2, cursor: "pointer" }} />
+                        {r.tint && <button type="button" onClick={() => patchRegion(r.id, { tint: null })} style={mini}>auto</button>}
                       </div>
                       <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
                         <select value={r.entry_id || ""} onChange={(e) => patchRegion(r.id, { entry_id: e.target.value || null })} style={{ ...field, flex: "1 1 140px" }}>

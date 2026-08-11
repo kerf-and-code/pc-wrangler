@@ -280,6 +280,33 @@ export default function HexCanvas({
         }
       }
       ctx.lineWidth = 1 / s;
+
+      // Region name labels, drawn in SCREEN space so they stay legible at any zoom.
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.font = "600 13px 'Iowan Old Style', Georgia, serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.lineJoin = "round";
+      for (const reg of rr) {
+        if (!reg.name || reg.cells.size === 0) continue;
+        let cx = 0, cy = 0, n = 0;
+        for (const key of reg.cells) {
+          const ci = key.indexOf(",");
+          const cc = parseInt(key.slice(0, ci), 10);
+          const rw = parseInt(key.slice(ci + 1), 10);
+          const c = hexToPixel(cc, rw, BASE_SIZE);
+          cx += c.x; cy += c.y; n++;
+        }
+        cx /= n; cy /= n;
+        const sx = cx * view.scale + view.tx;
+        const sy = cy * view.scale + view.ty;
+        if (sx < -60 || sx > w + 60 || sy < -20 || sy > h + 20) continue;
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = "rgba(20,16,12,0.85)";
+        ctx.strokeText(reg.name, sx, sy);
+        ctx.fillStyle = "#f2e9d6";
+        ctx.fillText(reg.name, sx, sy);
+      }
     }
   }, []);
 
