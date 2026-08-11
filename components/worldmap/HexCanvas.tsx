@@ -2,21 +2,21 @@
 
 import React, { useCallback, useEffect, useRef } from "react";
 import { type Terrain, index, setBiome, BIOME_UNSET } from "@/lib/worldmap/hex";
-import { hexToPixel, hexCorners, pixelToHex, gridPixelSize } from "@/lib/worldmap/layout";
+import { hexToPixel, hexCorners, pixelToHex, gridPixelSize, gridOrigin, BASE_SIZE, type PlacedImage } from "@/lib/worldmap/layout";
 
 // The flat-top grid on a canvas. Two backings for the same grid:
-//   - no image: draws coloured biome tiles (the painted terrain).
-//   - a background image: draws the image covering the grid and turns the biome FILL OFF, leaving
-//     the hex grid as an outline over it. Painted hexes still show as a faint translucent tint so a
-//     GM can see which areas they have designated a biome for; the biome is metadata, not the art.
-// Either way it pans on drag, zooms toward the cursor, and paints the selected biome into the
-// shared Terrain in place (onPaint notifies the parent to persist).
+//   - no images: draws coloured biome tiles (the painted terrain).
+//   - placed images: draws each image at its own position and scale under the grid and turns biome
+//     FILL OFF, painted hexes showing only as a faint tint so designations stay visible over the map.
+// It pans on drag and zooms on wheel; with a biome selected it paints (Erase paints "unset"); with
+// positionImageId set it instead MOVES that image on drag and SCALES it on wheel, so a GM can line a
+// map up and place several. Terrain is mutated in place (onPaint persists); image moves/scales are
+// reported via onImageMove / onImageScale for the page to persist.
 
-const BASE_SIZE = 14;         // hex radius in px before zoom
-const SQRT3 = Math.sqrt(3);
-const UNSET_FILL = "#1c1712"; // an unpainted hex (no-image mode)
+const UNSET_FILL = "#1c1712";
 const GRID_LINE = "rgba(255,255,255,0.06)";
-const IMAGE_TINT_ALPHA = 0.3; // painted-hex tint over a background image
+const IMAGE_TINT_ALPHA = 0.3;
+const SQRT3 = Math.sqrt(3);
 
 type View = { scale: number; tx: number; ty: number };
 
@@ -25,14 +25,20 @@ export default function HexCanvas({
   colors,
   selectedBiome,
   onPaint,
-  backgroundImageUrl,
+  images,
+  positionImageId,
+  onImageMove,
+  onImageScale,
   className,
 }: {
   terrain: Terrain;
   colors: readonly string[];
   selectedBiome: number | null;
   onPaint?: (col: number, row: number, biome: number) => void;
-  backgroundImageUrl?: string | null;
+  images?: PlacedImage[];
+  positionImageId?: string | null;
+  onImageMove?: (id: string, x: number, y: number) => void;
+  onImageScale?: (id: string, scale: number) => void;
   className?: string;
 }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -40,17 +46,26 @@ export default function HexCanvas({
   const sizeRef = useRef<{ w: number; h: number; dpr: number }>({ w: 0, h: 0, dpr: 1 });
   const rafRef = useRef<number | null>(null);
   const fittedRef = useRef<boolean>(false);
-  const imgRef = useRef<HTMLImageElement | null>(null);
-  const imgReadyRef = useRef<boolean>(false);
+  const cacheRef = useRef<Map<string, HTMLImageElement>>(new Map());
+  const readyRef = useRef<Set<string>>(new Set());
+  const dragRef = useRef<{ id: string; dx: number; dy: number } | null>(null);
 
   const terrainRef = useRef(terrain);
   const colorsRef = useRef(colors);
   const selRef = useRef(selectedBiome);
   const onPaintRef = useRef(onPaint);
+  const imagesRef = useRef<PlacedImage[]>(images ?? []);
+  const posRef = useRef<string | null>(positionImageId ?? null);
+  const onMoveRef = useRef(onImageMove);
+  const onScaleRef = useRef(onImageScale);
   terrainRef.current = terrain;
   colorsRef.current = colors;
   selRef.current = selectedBiome;
   onPaintRef.current = onPaint;
+  imagesRef.current = images ?? [];
+  posRef.current = positionImageId ?? null;
+  onMoveRef.current = onImageMove;
+  onScaleRef.current = onImageScale;
 
   const draw = useCallback(() => {
     rafRef.current = null;
@@ -62,6 +77,7 @@ export default function HexCanvas({
     const view = viewRef.current;
     const t = terrainRef.current;
     const cols = colorsRef.current;
+    const imgs = imagesRef.current;
     const { width, height } = t.meta;
 
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -69,13 +85,17 @@ export default function HexCanvas({
     ctx.translate(view.tx, view.ty);
     ctx.scale(view.scale, view.scale);
 
-    const img = imgRef.current;
-    const hasImage = imgReadyRef.current && img !== null;
-    if (hasImage && img) {
-      const gb = gridPixelSize(width, height, BASE_SIZE);
-      // Cover the grid's pixel bounds; origin is the top-left of the outermost hexes. The image is
-      // stretched to the grid rectangle, so the GM sizes the grid to match their map's aspect.
-      ctx.drawImage(img, -BASE_SIZE, -(SQRT3 * BASE_SIZE) / 2, gb.w, gb.h);
+    const hasImages = imgs.length > 0;
+    if (hasImages) {
+      const drag = dragRef.current;
+      const ordered = [...imgs].sort((a, b) => a.z - b.z);
+      for (const im of ordered) {
+        const el = cacheRef.current.get(im.url);
+        if (!el || !readyRef.current.has(im.url)) continue;
+        const ox = drag && drag.id === im.id ? drag.dx : 0;
+        const oy = drag && drag.id === im.id ? drag.dy : 0;
+        ctx.drawImage(el, im.x + ox, im.y + oy, el.naturalWidth * im.scale, el.naturalHeight * im.scale);
+      }
     }
 
     // Cull to the visible rectangle.
@@ -108,7 +128,7 @@ export default function HexCanvas({
         ctx.closePath();
         const b = t.biome[index(col, row, width)];
         const painted = b !== BIOME_UNSET && b < cols.length;
-        if (hasImage) {
+        if (hasImages) {
           if (painted) {
             ctx.globalAlpha = IMAGE_TINT_ALPHA;
             ctx.fillStyle = cols[b];
@@ -128,20 +148,19 @@ export default function HexCanvas({
     if (rafRef.current == null) rafRef.current = requestAnimationFrame(draw);
   }, [draw]);
 
-  // Load or clear the background image; redraw when it settles.
+  // Load any image urls not yet cached; redraw as each settles. Old urls are left in the cache.
   useEffect(() => {
-    imgReadyRef.current = false;
-    if (!backgroundImageUrl) {
-      imgRef.current = null;
-      scheduleDraw();
-      return;
+    const imgs = images ?? [];
+    for (const im of imgs) {
+      if (cacheRef.current.has(im.url)) continue;
+      const el = new Image();
+      cacheRef.current.set(im.url, el);
+      el.onload = () => { readyRef.current.add(im.url); scheduleDraw(); };
+      el.onerror = () => { readyRef.current.delete(im.url); };
+      el.src = im.url;
     }
-    const img = new Image();
-    img.onload = () => { imgRef.current = img; imgReadyRef.current = true; scheduleDraw(); };
-    img.onerror = () => { imgRef.current = null; imgReadyRef.current = false; scheduleDraw(); };
-    img.src = backgroundImageUrl;
-    return () => { img.onload = null; img.onerror = null; };
-  }, [backgroundImageUrl, scheduleDraw]);
+    scheduleDraw();
+  }, [images, scheduleDraw]);
 
   const resize = useCallback(() => {
     const canvas = canvasRef.current;
@@ -153,8 +172,9 @@ export default function HexCanvas({
     sizeRef.current = { w: rect.width, h: rect.height, dpr };
     if (!fittedRef.current && rect.width > 0 && rect.height > 0) {
       const g = gridPixelSize(terrainRef.current.meta.width, terrainRef.current.meta.height, BASE_SIZE);
+      const o = gridOrigin();
       const scale = Math.min(rect.width / g.w, rect.height / g.h);
-      viewRef.current = { scale, tx: (rect.width - g.w * scale) / 2 + BASE_SIZE * scale, ty: (rect.height - g.h * scale) / 2 + BASE_SIZE * scale };
+      viewRef.current = { scale, tx: (rect.width - g.w * scale) / 2 - o.x * scale, ty: (rect.height - g.h * scale) / 2 - o.y * scale };
       fittedRef.current = true;
     }
     scheduleDraw();
@@ -169,10 +189,8 @@ export default function HexCanvas({
     return () => ro.disconnect();
   }, [resize]);
 
-  // Re-fit the view whenever a NEW terrain object arrives (load, campaign switch, resize).
-  // Painting mutates in place (same identity) so it does not re-fit. Colours only redraw.
   useEffect(() => { fittedRef.current = false; resize(); }, [terrain, resize]);
-  useEffect(() => { scheduleDraw(); }, [colors, scheduleDraw]);
+  useEffect(() => { scheduleDraw(); }, [colors, positionImageId, scheduleDraw]);
 
   const paintAt = useCallback((clientX: number, clientY: number, last: { col: number; row: number } | null) => {
     const canvas = canvasRef.current;
@@ -196,14 +214,18 @@ export default function HexCanvas({
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    let mode: "none" | "pan" | "paint" = "none";
+    let mode: "none" | "pan" | "paint" | "move" = "none";
     let lastX = 0, lastY = 0;
     let lastHex: { col: number; row: number } | null = null;
 
     const onDown = (e: PointerEvent) => {
       canvas.setPointerCapture(e.pointerId);
       lastX = e.clientX; lastY = e.clientY;
-      if (selRef.current != null && e.button === 0) {
+      const posId = posRef.current;
+      if (posId && e.button === 0) {
+        mode = "move";
+        dragRef.current = { id: posId, dx: 0, dy: 0 };
+      } else if (selRef.current != null && e.button === 0) {
         mode = "paint";
         lastHex = paintAt(e.clientX, e.clientY, null);
       } else {
@@ -213,6 +235,14 @@ export default function HexCanvas({
     const onMove = (e: PointerEvent) => {
       if (mode === "paint") {
         lastHex = paintAt(e.clientX, e.clientY, lastHex);
+      } else if (mode === "move") {
+        const drag = dragRef.current;
+        if (drag) {
+          drag.dx += (e.clientX - lastX) / viewRef.current.scale;
+          drag.dy += (e.clientY - lastY) / viewRef.current.scale;
+          lastX = e.clientX; lastY = e.clientY;
+          scheduleDraw();
+        }
       } else if (mode === "pan") {
         viewRef.current.tx += e.clientX - lastX;
         viewRef.current.ty += e.clientY - lastY;
@@ -221,14 +251,30 @@ export default function HexCanvas({
       }
     };
     const onUp = (e: PointerEvent) => {
+      if (mode === "move") {
+        const drag = dragRef.current;
+        if (drag) {
+          const im = imagesRef.current.find((x) => x.id === drag.id);
+          if (im && (drag.dx !== 0 || drag.dy !== 0)) onMoveRef.current?.(im.id, im.x + drag.dx, im.y + drag.dy);
+        }
+        dragRef.current = null;
+        scheduleDraw();
+      }
       mode = "none"; lastHex = null;
       try { canvas.releasePointerCapture(e.pointerId); } catch { /* already released */ }
     };
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
+      const factor = Math.exp(-e.deltaY * 0.0015);
+      const posId = posRef.current;
+      if (posId) {
+        // Scale the image being positioned, not the view.
+        const im = imagesRef.current.find((x) => x.id === posId);
+        if (im) onScaleRef.current?.(im.id, Math.max(0.02, im.scale * factor));
+        return;
+      }
       const rect = canvas.getBoundingClientRect();
       const view = viewRef.current;
-      const factor = Math.exp(-e.deltaY * 0.0015);
       const newScale = Math.min(8, Math.max(0.05, view.scale * factor));
       const cx = e.clientX - rect.left, cy = e.clientY - rect.top;
       view.tx = cx - (cx - view.tx) * (newScale / view.scale);
@@ -251,11 +297,13 @@ export default function HexCanvas({
     };
   }, [paintAt, scheduleDraw]);
 
+  const cursor = positionImageId != null ? "move" : selectedBiome != null ? "crosshair" : "grab";
+
   return (
     <canvas
       ref={canvasRef}
       className={className}
-      style={{ width: "100%", height: "100%", display: "block", touchAction: "none", cursor: selectedBiome != null ? "crosshair" : "grab" }}
+      style={{ width: "100%", height: "100%", display: "block", touchAction: "none", cursor }}
     />
   );
 }

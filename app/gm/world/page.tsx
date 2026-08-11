@@ -9,20 +9,23 @@ import HexCanvas from "@/components/worldmap/HexCanvas";
 import {
   type Terrain, createTerrain, decodeTerrain, encodeTerrain, base64ToBytes, bytesToBase64, expandTerrain, BIOME_UNSET,
 } from "@/lib/worldmap/hex";
+import { fitImageToGrid, type PlacedImage } from "@/lib/worldmap/layout";
 
-// The GM's world map, in paint mode, with an optional uploaded background image and a settable grid
-// size in hex units. Loads (or creates) the one world_maps row for the selected campaign, shows the
-// 28 biomes as a palette, decodes the terrain blob into the shared canvas, and saves the re-encoded
-// blob (debounced) as the GM paints. Sits beside /gm/map, the image-and-pins tactical map.
+// The GM's world map. Paint biomes (Erase clears a hex), set the grid size in hex units, and place
+// one or more uploaded map images that you can move (drag) and scale (scroll) to line up or stitch
+// into a larger world. Terrain is a packed blob on world_maps; images are rows in map_images with a
+// world-space transform. Uploads go through /api/world-map/image (service role), because storage RLS
+// does not authenticate the browser session. Sits beside /gm/map, the tactical image-and-pins map.
 
 type Campaign = { id: string; name: string };
 type Biome = { id: number; key: string; label: string; category: string; color: string };
 type MapRow = {
   id: string; name: string; width: number; height: number;
-  origin_col: number; origin_row: number; format_version: number; terrain: string | null; image_url: string | null;
+  origin_col: number; origin_row: number; format_version: number; terrain: string | null;
 };
 
-const MAP_COLS = "id, name, width, height, origin_col, origin_row, format_version, terrain, image_url";
+const MAP_COLS = "id, name, width, height, origin_col, origin_row, format_version, terrain";
+const IMG_COLS = "id, url, x, y, scale, z";
 const IMG_TYPES = ["image/png", "image/jpeg", "image/webp"];
 const MAX_IMG_BYTES = 8 * 1024 * 1024;
 const MAX_DIM = 250;
@@ -31,6 +34,15 @@ const CATEGORY_LABEL: Record<string, string> = {
   terrestrial: "Terrestrial", wetland: "Wetland", water: "Water", geologic: "Mountain & geologic", fantasy: "Fantasy",
 };
 
+function loadImageWidth(url: string): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img.naturalWidth || 1);
+    img.onerror = () => reject(new Error("image load failed"));
+    img.src = url;
+  });
+}
+
 export default function WorldMapPage() {
   const supabase = useMemo(() => createClient(), []);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
@@ -38,7 +50,8 @@ export default function WorldMapPage() {
   const [biomes, setBiomes] = useState<Biome[]>([]);
   const [mapRow, setMapRow] = useState<MapRow | null>(null);
   const [terrain, setTerrain] = useState<Terrain | null>(null);
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [images, setImages] = useState<PlacedImage[]>([]);
+  const [positionId, setPositionId] = useState<string | null>(null);
   const [selected, setSelected] = useState<number | null>(null);
   const [sizeW, setSizeW] = useState<string>("100");
   const [sizeH, setSizeH] = useState<string>("100");
@@ -80,7 +93,8 @@ export default function WorldMapPage() {
       setLoading(true);
       setStatus("");
       setTerrain(null);
-      setImageUrl(null);
+      setImages([]);
+      setPositionId(null);
       const { data, error } = await supabase.from("world_maps").select(MAP_COLS).eq("campaign_id", campaignId).maybeSingle();
       let row = data as MapRow | null;
       if (error) {
@@ -92,11 +106,15 @@ export default function WorldMapPage() {
       }
       if (cancelled) return;
       setMapRow(row);
-      setImageUrl(row?.image_url ?? null);
-      if (row) { setSizeW(String(row.width)); setSizeH(String(row.height)); }
-      setTerrain(row
-        ? (row.terrain ? decodeTerrain(base64ToBytes(row.terrain)) : createTerrain(row.width, row.height, row.origin_col, row.origin_row))
-        : null);
+      if (row) {
+        setSizeW(String(row.width));
+        setSizeH(String(row.height));
+        setTerrain(row.terrain ? decodeTerrain(base64ToBytes(row.terrain)) : createTerrain(row.width, row.height, row.origin_col, row.origin_row));
+        const { data: imgs } = await supabase.from("map_images").select(IMG_COLS).eq("world_map_id", row.id).order("z", { ascending: true });
+        if (!cancelled) setImages((imgs as PlacedImage[]) || []);
+      } else {
+        setTerrain(null);
+      }
       setLoading(false);
     })();
     return () => { cancelled = true; };
@@ -143,27 +161,48 @@ export default function WorldMapPage() {
     if (!IMG_TYPES.includes(file.type)) { setStatus("Use a PNG, JPG, or WebP image."); return; }
     if (file.size > MAX_IMG_BYTES) { setStatus("Image must be under 8 MB."); return; }
     setStatus("Uploading\u2026");
-    // Upload through a server route (service role): storage RLS does not authenticate the browser
-    // session here, so a client upload is denied. Then set image_url client-side (the DB does auth).
     const form = new FormData();
     form.append("campaignId", campaignId);
     form.append("file", file);
     const res = await fetch("/api/world-map/image", { method: "POST", body: form });
     const data = (await res.json().catch(() => ({}))) as { url?: string; error?: string };
     if (!res.ok || !data.url) { setStatus(`Upload failed: ${data.error || "unknown error"}`); return; }
-    const { error } = await supabase.from("world_maps").update({ image_url: data.url }).eq("id", mapRow.id);
-    if (error) { setStatus(`Save failed: ${error.message}`); return; }
-    setImageUrl(data.url);
-    setStatus("Map image set");
-  }, [supabase, mapRow, campaignId]);
+    let naturalW = 1000;
+    try { naturalW = await loadImageWidth(data.url); } catch { /* fall back */ }
+    const fit = fitImageToGrid(mapRow.width, mapRow.height, naturalW);
+    const z = images.length ? Math.max(...images.map((i) => i.z)) + 1 : 0;
+    const ins = await supabase.from("map_images")
+      .insert({ world_map_id: mapRow.id, url: data.url, x: fit.x, y: fit.y, scale: fit.scale, z })
+      .select(IMG_COLS).single();
+    if (ins.error || !ins.data) { setStatus(`Save failed: ${ins.error?.message || "unknown"}`); return; }
+    const added = ins.data as PlacedImage;
+    setImages((prev) => [...prev, added]);
+    setPositionId(added.id);
+    setStatus("Image added, drag on the map to place it");
+  }, [supabase, mapRow, campaignId, images]);
 
-  const removeImage = useCallback(async () => {
-    if (!mapRow) return;
-    const { error } = await supabase.from("world_maps").update({ image_url: null }).eq("id", mapRow.id);
+  const onImageMove = useCallback((id: string, x: number, y: number) => {
+    setImages((prev) => prev.map((i) => (i.id === id ? { ...i, x, y } : i)));
+    void supabase.from("map_images").update({ x, y }).eq("id", id);
+  }, [supabase]);
+
+  const scaleTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+  const onImageScale = useCallback((id: string, scale: number) => {
+    setImages((prev) => prev.map((i) => (i.id === id ? { ...i, scale } : i)));
+    const prev = scaleTimers.current.get(id);
+    if (prev) clearTimeout(prev);
+    scaleTimers.current.set(id, setTimeout(() => {
+      void supabase.from("map_images").update({ scale }).eq("id", id);
+    }, 500));
+  }, [supabase]);
+
+  const removeImage = useCallback(async (id: string) => {
+    const { error } = await supabase.from("map_images").delete().eq("id", id);
     if (error) { setStatus(`Failed: ${error.message}`); return; }
-    setImageUrl(null);
-    setStatus("Map image removed");
-  }, [supabase, mapRow]);
+    setImages((prev) => prev.filter((i) => i.id !== id));
+    setPositionId((p) => (p === id ? null : p));
+    setStatus("Image removed");
+  }, [supabase]);
 
   const onFile = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -189,12 +228,24 @@ export default function WorldMapPage() {
   const secLabel: React.CSSProperties = { fontSize: 11, color: C.muted, fontFamily: "ui-monospace, monospace", letterSpacing: "0.08em", marginBottom: 6 };
   const numInput: React.CSSProperties = { width: 58, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: 7, padding: "6px 8px", fontSize: 13 };
   const smallBtn: React.CSSProperties = { background: C.sun, color: "#171310", border: "none", borderRadius: 7, padding: "6px 12px", fontWeight: 700, fontSize: 12.5, cursor: "pointer" };
+  const uploadBtn: React.CSSProperties = { display: "block", textAlign: "center", padding: "7px 9px", borderRadius: 7, cursor: "pointer", border: `1px solid ${C.line}`, background: C.surface2, color: C.text, fontSize: 12.5, fontWeight: 600 };
+  const miniBtn: React.CSSProperties = { background: "transparent", border: `1px solid ${C.line}`, borderRadius: 6, padding: "3px 8px", fontSize: 11.5, cursor: "pointer", color: C.muted };
+  const modeChip = (label: string, on: boolean, onClick: () => void): React.ReactElement => (
+    <button type="button" onClick={onClick}
+      style={{
+        flex: 1, textAlign: "center", padding: "7px 9px", borderRadius: 7, cursor: "pointer",
+        border: `1px solid ${on ? C.sun : C.line}`, background: on ? "rgba(200,162,75,0.14)" : C.surface2,
+        color: C.text, fontSize: 12.5, fontWeight: 600,
+      }}>
+      {label}
+    </button>
+  );
 
   return (
     <PageShell width={1200}>
       <h1 style={{ ...ui.h1, fontSize: 28, margin: "4px 0 4px" }}>World map</h1>
       <p style={{ color: C.muted, fontSize: 14, margin: "0 0 16px" }}>
-        Paint biomes across the world, or upload your own map and designate areas over it. Pick a biome and drag to paint, Erase to clear a mis-painted hex, or Pan to move the view. Scroll to zoom.
+        Paint biomes across the world, or upload one or more maps and place them. Pick a biome and drag to paint, Erase to clear, or Pan to move the view. Scroll to zoom.
       </p>
 
       <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginBottom: 14 }}>
@@ -206,7 +257,7 @@ export default function WorldMapPage() {
       </div>
 
       <div style={{ display: "flex", gap: 14, alignItems: "flex-start", flexWrap: "wrap" }}>
-        <div style={{ ...surfaces.slate, padding: 12, flex: "0 0 220px", maxHeight: "72vh", overflowY: "auto" }}>
+        <div style={{ ...surfaces.slate, padding: 12, flex: "0 0 230px", maxHeight: "72vh", overflowY: "auto" }}>
           <div style={{ marginBottom: 14 }}>
             <div style={secLabel}>MAP SIZE (HEXES)</div>
             <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
@@ -216,47 +267,45 @@ export default function WorldMapPage() {
               <button type="button" onClick={applyResize} style={smallBtn}>Resize</button>
             </div>
             <p style={{ fontSize: 11, color: C.muted, margin: "6px 0 0", lineHeight: 1.4 }}>
-              1 to 250 each. Match an uploaded map&apos;s aspect so the grid is not too fine. Shrinking drops hexes outside the new area, kept centred.
+              1 to 250 each. Make it large and place a small map inside if you like. Shrinking drops hexes outside the new area, kept centred.
             </p>
           </div>
 
           <div style={{ marginBottom: 14 }}>
-            <div style={secLabel}>MAP BACKGROUND</div>
-            <label style={{
-              display: "block", textAlign: "center", padding: "7px 9px", borderRadius: 7, cursor: "pointer",
-              border: `1px solid ${C.line}`, background: C.surface2, color: C.text, fontSize: 12.5, fontWeight: 600,
-            }}>
-              {imageUrl ? "Replace image" : "Upload an image"}
+            <div style={secLabel}>MAP IMAGES</div>
+            <label style={uploadBtn}>
+              Upload an image
               <input type="file" accept="image/png,image/jpeg,image/webp" onChange={onFile} style={{ display: "none" }} />
             </label>
-            {imageUrl && (
-              <button type="button" onClick={removeImage}
-                style={{ marginTop: 6, width: "100%", background: "transparent", color: C.muted, border: `1px solid ${C.line}`, borderRadius: 7, padding: "6px 9px", fontSize: 12, cursor: "pointer" }}>
-                Remove image
-              </button>
+            {images.length > 0 && (
+              <div style={{ display: "grid", gap: 6, marginTop: 8 }}>
+                {images.map((im, idx) => {
+                  const active = positionId === im.id;
+                  return (
+                    <div key={im.id} style={{ border: `1px solid ${active ? C.sun : C.line}`, borderRadius: 7, padding: 7, background: C.surface2 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 6 }}>
+                        <span style={{ fontSize: 12.5, color: C.text }}>Image {idx + 1}</span>
+                        <div style={{ display: "flex", gap: 6 }}>
+                          <button type="button" onClick={() => setPositionId(active ? null : im.id)} style={{ ...miniBtn, borderColor: active ? C.sun : C.line, color: active ? C.sun : C.muted }}>
+                            {active ? "Done" : "Position"}
+                          </button>
+                          <button type="button" onClick={() => removeImage(im.id)} style={miniBtn}>Remove</button>
+                        </div>
+                      </div>
+                      {active && <p style={{ fontSize: 11, color: C.muted, margin: "6px 0 0", lineHeight: 1.4 }}>Drag on the map to move it, scroll to resize it.</p>}
+                    </div>
+                  );
+                })}
+              </div>
             )}
             <p style={{ fontSize: 11, color: C.muted, margin: "6px 0 0", lineHeight: 1.4 }}>
-              PNG, JPG or WebP, under 8 MB. With an image, biome art turns off and painted hexes show as a faint tint.
+              PNG, JPG or WebP, under 8 MB. Place several to stitch a larger world. With an image, biome art turns off and painted hexes show as a faint tint.
             </p>
           </div>
 
           <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
-            <button type="button" onClick={() => setSelected(null)}
-              style={{
-                flex: 1, textAlign: "center", padding: "7px 9px", borderRadius: 7, cursor: "pointer",
-                border: `1px solid ${selected === null ? C.sun : C.line}`, background: selected === null ? "rgba(200,162,75,0.14)" : C.surface2,
-                color: C.text, fontSize: 12.5, fontWeight: 600,
-              }}>
-              Pan
-            </button>
-            <button type="button" onClick={() => setSelected(BIOME_UNSET)}
-              style={{
-                flex: 1, textAlign: "center", padding: "7px 9px", borderRadius: 7, cursor: "pointer",
-                border: `1px solid ${selected === BIOME_UNSET ? C.sun : C.line}`, background: selected === BIOME_UNSET ? "rgba(200,162,75,0.14)" : C.surface2,
-                color: C.text, fontSize: 12.5, fontWeight: 600,
-              }}>
-              Erase
-            </button>
+            {modeChip("Pan", selected === null, () => setSelected(null))}
+            {modeChip("Erase", selected === BIOME_UNSET, () => setSelected(BIOME_UNSET))}
           </div>
           {grouped.map((g) => (
             <div key={g.category} style={{ marginBottom: 12 }}>
@@ -270,7 +319,10 @@ export default function WorldMapPage() {
           {loading ? (
             <p style={{ color: C.muted, fontSize: 14, padding: 16 }}>Loading\u2026</p>
           ) : terrain ? (
-            <HexCanvas terrain={terrain} colors={colors} selectedBiome={selected} onPaint={onPaint} backgroundImageUrl={imageUrl} />
+            <HexCanvas
+              terrain={terrain} colors={colors} selectedBiome={selected} onPaint={onPaint}
+              images={images} positionImageId={positionId} onImageMove={onImageMove} onImageScale={onImageScale}
+            />
           ) : (
             <p style={{ color: C.muted, fontSize: 14, padding: 16 }}>Pick a campaign to start its world map.</p>
           )}
