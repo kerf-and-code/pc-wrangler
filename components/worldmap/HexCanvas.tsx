@@ -51,6 +51,11 @@ export default function HexCanvas({
   regionTint,
   onRegionPaint,
   regionRender,
+  pois,
+  poiPlaceActive,
+  onPlacePoi,
+  onPoiClick,
+  onPoiHover,
   className,
 }: {
   terrain: Terrain;
@@ -67,6 +72,11 @@ export default function HexCanvas({
   regionTint?: string | null;
   onRegionPaint?: (col: number, row: number) => void;
   regionRender?: { id: string; name: string; tint: string; cells: Set<string> }[];
+  pois?: { id: string; x: number; y: number; name: string; iconId: string; iconSrc: string }[];
+  poiPlaceActive?: boolean;
+  onPlacePoi?: (x: number, y: number) => void;
+  onPoiClick?: (id: string) => void;
+  onPoiHover?: (h: { names: string[]; sx: number; sy: number } | null) => void;
   className?: string;
 }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -92,6 +102,14 @@ export default function HexCanvas({
   const regionTintRef = useRef<string | null>(regionTint ?? null);
   const onRegionPaintRef = useRef(onRegionPaint);
   const regionRenderRef = useRef(regionRender);
+  const poisRef = useRef(pois);
+  const placeActiveRef = useRef<boolean>(poiPlaceActive ?? false);
+  const onPlacePoiRef = useRef(onPlacePoi);
+  const onPoiClickRef = useRef(onPoiClick);
+  const onPoiHoverRef = useRef(onPoiHover);
+  const iconCacheRef = useRef<Map<string, HTMLImageElement>>(new Map());
+  const iconReadyRef = useRef<Set<string>>(new Set());
+  const poiHitRef = useRef<{ kind: "poi" | "cluster"; sx: number; sy: number; r: number; id?: string; names: string[]; wx: number; wy: number }[]>([]);
   terrainRef.current = terrain;
   colorsRef.current = colors;
   selRef.current = selectedBiome;
@@ -106,6 +124,11 @@ export default function HexCanvas({
   regionTintRef.current = regionTint ?? null;
   onRegionPaintRef.current = onRegionPaint;
   regionRenderRef.current = regionRender;
+  poisRef.current = pois;
+  placeActiveRef.current = poiPlaceActive ?? false;
+  onPlacePoiRef.current = onPlacePoi;
+  onPoiClickRef.current = onPoiClick;
+  onPoiHoverRef.current = onPoiHover;
 
   const draw = useCallback(() => {
     rafRef.current = null;
@@ -308,6 +331,58 @@ export default function HexCanvas({
         ctx.fillText(reg.name, sx, sy);
       }
     }
+
+    // POIs (Phase 4b): constant screen-size icons with screen-distance clustering, drawn last.
+    const ps = poisRef.current;
+    const hits: { kind: "poi" | "cluster"; sx: number; sy: number; r: number; id?: string; names: string[]; wx: number; wy: number }[] = [];
+    if (ps && ps.length) {
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const S = 26, CLUSTER = 30;
+      const mk: { sx: number; sy: number; p: { id: string; x: number; y: number; name: string; iconId: string } }[] = [];
+      for (const p of ps) {
+        const sx = p.x * view.scale + view.tx;
+        const sy = p.y * view.scale + view.ty;
+        if (sx < -40 || sx > w + 40 || sy < -40 || sy > h + 40) continue;
+        mk.push({ sx, sy, p });
+      }
+      const used = new Set<number>();
+      for (let i = 0; i < mk.length; i++) {
+        if (used.has(i)) continue;
+        const grp = [mk[i]];
+        used.add(i);
+        for (let j = i + 1; j < mk.length; j++) {
+          if (used.has(j)) continue;
+          const dx = mk[j].sx - mk[i].sx, dy = mk[j].sy - mk[i].sy;
+          if (dx * dx + dy * dy < CLUSTER * CLUSTER) { grp.push(mk[j]); used.add(j); }
+        }
+        let cx = 0, cy = 0, wx = 0, wy = 0;
+        for (const g of grp) { cx += g.sx; cy += g.sy; wx += g.p.x; wy += g.p.y; }
+        cx /= grp.length; cy /= grp.length; wx /= grp.length; wy /= grp.length;
+        if (grp.length === 1) {
+          const p = grp[0].p;
+          const img = iconCacheRef.current.get(p.iconId);
+          if (img && iconReadyRef.current.has(p.iconId)) {
+            ctx.drawImage(img, cx - S / 2, cy - S / 2, S, S);
+          } else {
+            ctx.fillStyle = "#c8a24b";
+            ctx.beginPath(); ctx.arc(cx, cy, 6, 0, Math.PI * 2); ctx.fill();
+          }
+          hits.push({ kind: "poi", sx: cx, sy: cy, r: S / 2 + 4, id: p.id, names: [p.name], wx, wy });
+        } else {
+          ctx.fillStyle = "#2a2118";
+          ctx.strokeStyle = "#c8a24b";
+          ctx.lineWidth = 2;
+          ctx.beginPath(); ctx.arc(cx, cy, 13, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+          ctx.fillStyle = "#f2e9d6";
+          ctx.font = "600 12px system-ui, sans-serif";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText(String(grp.length), cx, cy);
+          hits.push({ kind: "cluster", sx: cx, sy: cy, r: 15, names: grp.map((g) => g.p.name), wx, wy });
+        }
+      }
+    }
+    poiHitRef.current = hits;
   }, []);
 
   const scheduleDraw = useCallback(() => {
@@ -327,6 +402,19 @@ export default function HexCanvas({
     }
     scheduleDraw();
   }, [images, scheduleDraw]);
+
+  useEffect(() => {
+    const ps = pois ?? [];
+    for (const p of ps) {
+      if (!p.iconId || iconCacheRef.current.has(p.iconId)) continue;
+      const el = new Image();
+      iconCacheRef.current.set(p.iconId, el);
+      el.onload = () => { iconReadyRef.current.add(p.iconId); scheduleDraw(); };
+      el.onerror = () => { iconReadyRef.current.delete(p.iconId); };
+      el.src = p.iconSrc;
+    }
+    scheduleDraw();
+  }, [pois, scheduleDraw]);
 
   const resize = useCallback(() => {
     const canvas = canvasRef.current;
@@ -356,7 +444,7 @@ export default function HexCanvas({
   }, [resize]);
 
   useEffect(() => { fittedRef.current = false; resize(); }, [terrain, resize]);
-  useEffect(() => { scheduleDraw(); }, [colors, positionImageId, regionCells, paintRegionId, regionRender, scheduleDraw]);
+  useEffect(() => { scheduleDraw(); }, [colors, positionImageId, regionCells, paintRegionId, regionRender, pois, scheduleDraw]);
 
   const paintAt = useCallback((clientX: number, clientY: number, last: { col: number; row: number } | null) => {
     const canvas = canvasRef.current;
@@ -402,11 +490,31 @@ export default function HexCanvas({
 
     let mode: "none" | "pan" | "paint" | "move" | "region" = "none";
     let lastX = 0, lastY = 0;
+    let downClientX = 0, downClientY = 0;
+    let lastHoverKey: string | null = null;
     let lastHex: { col: number; row: number } | null = null;
+
+    const hitTestPoi = (mx: number, my: number) => {
+      for (const h of poiHitRef.current) {
+        const dx = mx - h.sx, dy = my - h.sy;
+        if (dx * dx + dy * dy <= h.r * h.r) return h;
+      }
+      return null;
+    };
+    const onHover = (e: MouseEvent) => {
+      if (mode !== "none") return;
+      const rect = canvas.getBoundingClientRect();
+      const hit = hitTestPoi(e.clientX - rect.left, e.clientY - rect.top);
+      const key = hit ? (hit.id || `c:${Math.round(hit.sx)},${Math.round(hit.sy)}`) : null;
+      if (key === lastHoverKey) return;
+      lastHoverKey = key;
+      onPoiHoverRef.current?.(hit ? { names: hit.names, sx: hit.sx, sy: hit.sy } : null);
+    };
 
     const onDown = (e: PointerEvent) => {
       canvas.setPointerCapture(e.pointerId);
       lastX = e.clientX; lastY = e.clientY;
+      downClientX = e.clientX; downClientY = e.clientY;
       const posId = posRef.current;
       if (posId && e.button === 0) {
         mode = "move";
@@ -451,6 +559,26 @@ export default function HexCanvas({
         dragRef.current = null;
         scheduleDraw();
       }
+      if ((mode === "pan" || mode === "none") && Math.abs(e.clientX - downClientX) < 5 && Math.abs(e.clientY - downClientY) < 5) {
+        const rect = canvas.getBoundingClientRect();
+        const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+        const hit = hitTestPoi(mx, my);
+        if (hit) {
+          if (hit.kind === "poi" && hit.id) {
+            onPoiClickRef.current?.(hit.id);
+          } else if (hit.kind === "cluster") {
+            const v = viewRef.current;
+            const ns = Math.min(8, v.scale * 2);
+            v.tx = hit.sx - hit.wx * ns;
+            v.ty = hit.sy - hit.wy * ns;
+            v.scale = ns;
+            scheduleDraw();
+          }
+        } else if (placeActiveRef.current) {
+          const v = viewRef.current;
+          onPlacePoiRef.current?.((mx - v.tx) / v.scale, (my - v.ty) / v.scale);
+        }
+      }
       mode = "none"; lastHex = null;
       try { canvas.releasePointerCapture(e.pointerId); } catch { /* already released */ }
     };
@@ -479,16 +607,18 @@ export default function HexCanvas({
     canvas.addEventListener("pointerup", onUp);
     canvas.addEventListener("pointercancel", onUp);
     canvas.addEventListener("wheel", onWheel, { passive: false });
+    canvas.addEventListener("mousemove", onHover);
     return () => {
       canvas.removeEventListener("pointerdown", onDown);
       canvas.removeEventListener("pointermove", onMove);
       canvas.removeEventListener("pointerup", onUp);
       canvas.removeEventListener("pointercancel", onUp);
       canvas.removeEventListener("wheel", onWheel);
+      canvas.removeEventListener("mousemove", onHover);
     };
   }, [paintAt, paintRegionAt, scheduleDraw]);
 
-  const cursor = positionImageId != null ? "move" : (paintRegionId != null || selectedBiome != null) ? "crosshair" : "grab";
+  const cursor = positionImageId != null ? "move" : (paintRegionId != null || selectedBiome != null || poiPlaceActive) ? "crosshair" : "grab";
 
   return (
     <canvas

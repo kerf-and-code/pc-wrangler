@@ -8,10 +8,11 @@ import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import HexCanvas from "@/components/worldmap/HexCanvas";
 import RegionsPanel from "@/components/worldmap/RegionsPanel";
 import IconLibrary from "@/components/worldmap/IconLibrary";
+import { POI_ICON_SVG } from "@/lib/worldmap/poi-icons";
 import {
   type Terrain, createTerrain, decodeTerrain, encodeTerrain, base64ToBytes, bytesToBase64, expandTerrain, BIOME_UNSET,
 } from "@/lib/worldmap/hex";
-import { fitImageToGrid, type PlacedImage } from "@/lib/worldmap/layout";
+import { fitImageToGrid, pixelToHex, BASE_SIZE, type PlacedImage } from "@/lib/worldmap/layout";
 
 // The GM's world map. Paint biomes (Erase clears a hex), set the grid size in hex units, and place
 // one or more uploaded map images that you can move (drag) and scale (scroll) to line up or stitch
@@ -54,6 +55,22 @@ function autoTint(id: string): string {
 type LayerRow = { id: string; name: string; ord: number };
 type RegionRow = { id: string; layer_id: string; name: string; parent_region_id: string | null; tint: string | null };
 type RegionRender = { id: string; name: string; tint: string; cells: Set<string> };
+type PoiRow = { id: string; x: number; y: number; name: string; icon_key: string | null; icon_id: string | null };
+type ArmedIcon = { key: string } | { iconId: string; url: string };
+const POI_COLOR = "#e6d8b5";
+function poiIconSrc(iconKey: string | null, iconId: string | null, urlById: Map<string, string>): { iconId: string; iconSrc: string } | null {
+  if (iconKey) {
+    const svg = POI_ICON_SVG[iconKey];
+    if (!svg) return null;
+    return { iconId: iconKey, iconSrc: "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg.replace(/currentColor/g, POI_COLOR)) };
+  }
+  if (iconId) {
+    const url = urlById.get(iconId);
+    if (!url) return null;
+    return { iconId, iconSrc: url };
+  }
+  return null;
+}
 
 export default function WorldMapPage() {
   const supabase = useMemo(() => createClient(), []);
@@ -64,7 +81,7 @@ export default function WorldMapPage() {
   const [terrain, setTerrain] = useState<Terrain | null>(null);
   const [images, setImages] = useState<PlacedImage[]>([]);
   const [positionId, setPositionId] = useState<string | null>(null);
-  const [mode, setMode] = useState<"terrain" | "regions" | "icons">("terrain");
+  const [mode, setMode] = useState<"terrain" | "regions" | "icons" | "pois">("terrain");
   const [paintRegionId, setPaintRegionId] = useState<string | null>(null);
   const [regionErase, setRegionErase] = useState<boolean>(false);
   const [regionCells, setRegionCells] = useState<Set<string>>(new Set());
@@ -74,6 +91,10 @@ export default function WorldMapPage() {
   const [selectedLayerId, setSelectedLayerId] = useState<string>("");
   const [hexesVersion, setHexesVersion] = useState<number>(0);
   const [regionRender, setRegionRender] = useState<RegionRender[]>([]);
+  const [armedIcon, setArmedIcon] = useState<ArmedIcon | null>(null);
+  const [poiRows, setPoiRows] = useState<PoiRow[]>([]);
+  const [iconUrlById, setIconUrlById] = useState<Map<string, string>>(new Map());
+  const [poiTooltip, setPoiTooltip] = useState<{ names: string[]; x: number; y: number } | null>(null);
   const [selected, setSelected] = useState<number | null>(null);
   const [sizeW, setSizeW] = useState<string>("100");
   const [sizeH, setSizeH] = useState<string>("100");
@@ -148,6 +169,16 @@ export default function WorldMapPage() {
           setRegionRows((rs as RegionRow[]) || []);
           setSelectedLayerId(lyrs[0]?.id || "");
           setHexesVersion((v) => v + 1);
+        }
+        const [{ data: poiData }, { data: iconData }] = await Promise.all([
+          supabase.from("map_pois").select("id, x, y, name, icon_key, icon_id").eq("world_map_id", row.id),
+          supabase.from("map_icons").select("id, url").eq("campaign_id", campaignId),
+        ]);
+        if (!cancelled) {
+          setPoiRows((poiData as PoiRow[]) || []);
+          const um = new Map<string, string>();
+          for (const ic of (iconData as { id: string; url: string }[]) || []) um.set(ic.id, ic.url);
+          setIconUrlById(um);
         }
       } else {
         setTerrain(null);
@@ -258,6 +289,43 @@ export default function WorldMapPage() {
       return { id: rid, name: r?.name || "", tint: r?.tint || autoTint(rid), cells };
     }));
   }, [regionRows, selectedLayerId, hexesVersion]);
+
+  const pois = useMemo(() => {
+    const out: { id: string; x: number; y: number; name: string; iconId: string; iconSrc: string }[] = [];
+    for (const r of poiRows) {
+      const src = poiIconSrc(r.icon_key, r.icon_id, iconUrlById) || poiIconSrc("unknown_poi", null, iconUrlById);
+      if (!src) continue;
+      out.push({ id: r.id, x: r.x, y: r.y, name: r.name, iconId: src.iconId, iconSrc: src.iconSrc });
+    }
+    return out;
+  }, [poiRows, iconUrlById]);
+
+  const onPlacePoi = useCallback(async (x: number, y: number) => {
+    if (!mapRow || !armedIcon) { setStatus("Pick an icon first."); return; }
+    const { col, row } = pixelToHex(x, y, BASE_SIZE);
+    const iconCols = "key" in armedIcon ? { icon_key: armedIcon.key } : { icon_id: armedIcon.iconId };
+    const ins = await supabase.from("map_pois")
+      .insert({ world_map_id: mapRow.id, x, y, col, row, name: "New marker", visibility: "common", ...iconCols })
+      .select("id, x, y, name, icon_key, icon_id").single();
+    if (ins.error || !ins.data) { setStatus(`Failed: ${ins.error?.message || "unknown"}`); return; }
+    setPoiRows((prev) => [...prev, ins.data as PoiRow]);
+    setStatus("Marker placed");
+  }, [supabase, mapRow, armedIcon]);
+
+  const onPoiHover = useCallback((h: { names: string[]; sx: number; sy: number } | null) => {
+    setPoiTooltip(h ? { names: h.names, x: h.sx, y: h.sy } : null);
+  }, []);
+
+  const onPoiClick = useCallback((id: string) => {
+    const p = poiRows.find((r) => r.id === id);
+    if (p) setStatus(p.name);
+  }, [poiRows]);
+
+  const removePoi = useCallback(async (id: string) => {
+    const { error } = await supabase.from("map_pois").delete().eq("id", id);
+    if (error) { setStatus(error.message); return; }
+    setPoiRows((prev) => prev.filter((r) => r.id !== id));
+  }, [supabase]);
 
   useEffect(() => () => { if (saveTimer.current) clearTimeout(saveTimer.current); }, []);
 
@@ -392,10 +460,11 @@ export default function WorldMapPage() {
 
       <div style={{ display: "flex", gap: 14, alignItems: "flex-start", flexWrap: "wrap" }}>
         <div style={{ ...surfaces.slate, padding: 12, flex: "0 0 230px", maxHeight: "72vh", overflowY: "auto" }}>
-          <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
+          <div style={{ display: "flex", gap: 6, marginBottom: 12, flexWrap: "wrap" }}>
             {modeChip("Terrain", mode === "terrain", () => { setMode("terrain"); setPaintRegionId(null); })}
             {modeChip("Regions", mode === "regions", () => { setMode("regions"); setSelected(null); })}
             {modeChip("Icons", mode === "icons", () => { setMode("icons"); setSelected(null); setPaintRegionId(null); })}
+            {modeChip("POIs", mode === "pois", () => { setMode("pois"); setSelected(null); setPaintRegionId(null); })}
           </div>
           {mode === "terrain" && (<>
           <div style={{ marginBottom: 14 }}>
@@ -460,6 +529,27 @@ export default function WorldMapPage() {
           {mode === "icons" && campaignId && (
             <IconLibrary campaignId={campaignId} />
           )}
+          {mode === "pois" && campaignId && (
+            <div>
+              <div style={{ fontSize: 12.5, color: C.text, marginBottom: 8, lineHeight: 1.4 }}>
+                {armedIcon ? "Click the map to place this marker. Pick another icon to switch." : "Pick an icon below, then click the map to place a marker."}
+              </div>
+              <IconLibrary campaignId={campaignId} onPick={setArmedIcon} />
+              {poiRows.length > 0 && (
+                <div style={{ marginTop: 14 }}>
+                  <div style={secLabel}>PLACED MARKERS ({poiRows.length})</div>
+                  <div style={{ display: "grid", gap: 4 }}>
+                    {poiRows.map((r) => (
+                      <div key={r.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 6, border: `1px solid ${C.line}`, borderRadius: 6, padding: "4px 7px", background: C.surface2 }}>
+                        <span style={{ fontSize: 12, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.name}</span>
+                        <button type="button" onClick={() => removePoi(r.id)} style={miniBtn}>Remove</button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <div style={{ ...surfaces.slate, padding: 0, flex: "1 1 520px", minWidth: 320, height: "72vh", position: "relative", overflow: "hidden", borderRadius: FORGE_RADIUS }}>
@@ -471,9 +561,18 @@ export default function WorldMapPage() {
               images={images} positionImageId={positionId} onImageMove={onImageMove} onImageScale={onImageScale}
               paintRegionId={paintRegionId} regionCells={regionCells} regionErase={regionErase} onRegionPaint={onRegionPaint}
               regionRender={mode === "regions" ? regionRender : undefined}
+              pois={pois} poiPlaceActive={mode === "pois" && !!armedIcon} onPlacePoi={onPlacePoi} onPoiClick={onPoiClick} onPoiHover={onPoiHover}
             />
           ) : (
             <p style={{ color: C.muted, fontSize: 14, padding: 16 }}>Pick a campaign to start its world map.</p>
+          )}
+          {poiTooltip && (
+            <div style={{ position: "absolute", left: poiTooltip.x, top: poiTooltip.y - 14, transform: "translate(-50%, -100%)", background: "rgba(20,16,12,0.96)", border: `1px solid ${C.line}`, borderRadius: 6, padding: "4px 8px", pointerEvents: "none", zIndex: 5, maxWidth: 220 }}>
+              {poiTooltip.names.slice(0, 8).map((n, i) => (
+                <div key={i} style={{ fontSize: 12, color: C.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{n}</div>
+              ))}
+              {poiTooltip.names.length > 8 && <div style={{ fontSize: 11, color: C.muted }}>+{poiTooltip.names.length - 8} more</div>}
+            </div>
           )}
         </div>
       </div>

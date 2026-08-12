@@ -12,7 +12,7 @@ import { POI_ICONS, POI_ICON_SVG, POI_ICON_CATEGORIES } from "@/lib/worldmap/poi
 type PersonalIcon = { id: string; key: string; label: string; url: string; bytes: number };
 const BUDGET = 1024 * 1024;
 
-export default function IconLibrary({ campaignId }: { campaignId: string }) {
+export default function IconLibrary({ campaignId, onPick }: { campaignId: string; onPick?: (icon: { key: string } | { iconId: string; url: string }) => void }) {
   const supabase = useMemo(() => createClient(), []);
   const [personal, setPersonal] = useState<PersonalIcon[]>([]);
   const [q, setQ] = useState("");
@@ -77,7 +77,7 @@ export default function IconLibrary({ campaignId }: { campaignId: string }) {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6, marginTop: 8 }}>
           {personal.map((i) => (
             <div key={i.id} style={{ position: "relative" }} title={i.label}>
-              <div style={cell}><img src={i.url} alt={i.label} style={{ width: "100%", height: "100%", objectFit: "contain" }} /></div>
+              <div style={{ ...cell, cursor: onPick ? "pointer" : "default" }} onClick={() => onPick?.({ iconId: i.id, url: i.url })}><img src={i.url} alt={i.label} style={{ width: "100%", height: "100%", objectFit: "contain" }} /></div>
               <button type="button" onClick={() => remove(i.id)} title="Remove"
                 style={{ position: "absolute", top: -6, right: -6, width: 18, height: 18, borderRadius: 9, border: `1px solid ${C.line}`, background: C.surface, color: C.muted, fontSize: 11, lineHeight: "16px", cursor: "pointer", padding: 0 }}>x</button>
             </div>
@@ -96,7 +96,7 @@ export default function IconLibrary({ campaignId }: { campaignId: string }) {
         style={{ width: "100%", background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: 7, padding: "6px 8px", fontSize: 12.5, marginBottom: 8, boxSizing: "border-box" }} />
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6 }}>
         {base.map((i) => (
-          <div key={i.key} className="poi-ico" style={cell} title={i.label} dangerouslySetInnerHTML={{ __html: POI_ICON_SVG[i.key] || "" }} />
+          <div key={i.key} className="poi-ico" style={{ ...cell, cursor: onPick ? "pointer" : "default" }} title={i.label} onClick={() => onPick?.({ key: i.key })} dangerouslySetInnerHTML={{ __html: POI_ICON_SVG[i.key] || "" }} />
         ))}
       </div>
       {base.length === 0 && <p style={{ fontSize: 12, color: C.muted, marginTop: 6 }}>No icons match.</p>}
