@@ -10,9 +10,9 @@ import { C } from "@/lib/forge-theme";
 // table shape is confirmed. The page owns the POI rows (the canvas needs them); this panel calls
 // onPatch/onRemove and the page persists.
 
-type Poi = { id: string; name: string; visibility: string; note: string | null; entry_id: string | null; color: string | null; icon_key: string | null };
+type Poi = { id: string; name: string; visibility: string; note: string | null; entry_id: string | null; color: string | null; icon_key: string | null; character_id: string | null };
 type EntryOpt = { id: string; title: string | null };
-type PoiPatch = Partial<Pick<Poi, "name" | "visibility" | "note" | "entry_id" | "color">>;
+type PoiPatch = Partial<Pick<Poi, "name" | "visibility" | "note" | "entry_id" | "color" | "character_id">>;
 const VIS = ["common", "player", "gm", "private"];
 
 export default function PoiPanel({ campaignId, pois, onPatch, onRemove }: {
@@ -23,13 +23,17 @@ export default function PoiPanel({ campaignId, pois, onPatch, onRemove }: {
 }) {
   const supabase = useMemo(() => createClient(), []);
   const [entries, setEntries] = useState<EntryOpt[]>([]);
+  const [chars, setChars] = useState<{ id: string; name: string }[]>([]);
   const [status, setStatus] = useState("");
 
   useEffect(() => {
     let off = false;
     (async () => {
-      const { data } = await supabase.from("entries").select("id, title").eq("campaign_id", campaignId).in("type", ["location", "lore"]).order("title", { ascending: true });
-      if (!off) setEntries((data as EntryOpt[]) || []);
+      const [{ data: es }, { data: cs }] = await Promise.all([
+        supabase.from("entries").select("id, title").eq("campaign_id", campaignId).in("type", ["location", "lore"]).order("title", { ascending: true }),
+        supabase.from("characters").select("id, name").eq("campaign_id", campaignId).order("name", { ascending: true }),
+      ]);
+      if (!off) { setEntries((es as EntryOpt[]) || []); setChars((cs as { id: string; name: string }[]) || []); }
     })();
     return () => { off = true; };
   }, [supabase, campaignId]);
@@ -66,6 +70,10 @@ export default function PoiPanel({ campaignId, pois, onPatch, onRemove }: {
               <select value={p.entry_id || ""} onChange={(e) => onPatch(p.id, { entry_id: e.target.value || null })} style={{ ...field, flex: "1 1 130px" }}>
                 <option value="">No codex entry</option>
                 {entries.map((en) => <option key={en.id} value={en.id}>{en.title || "(untitled)"}</option>)}
+              </select>
+              <select value={p.character_id || ""} onChange={(e) => onPatch(p.id, { character_id: e.target.value || null })} style={{ ...field, flex: "1 1 130px" }}>
+                <option value="">No linked character</option>
+                {chars.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
               {p.icon_key && (
                 <>

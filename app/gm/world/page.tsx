@@ -99,6 +99,7 @@ export default function WorldMapPage() {
   const [poiTooltip, setPoiTooltip] = useState<{ names: string[]; x: number; y: number } | null>(null);
   const [selectedPoi, setSelectedPoi] = useState<{ id: string; sx: number; sy: number } | null>(null);
   const [selectedEntry, setSelectedEntry] = useState<{ title: string | null; body: string | null } | null>(null);
+  const [selectedChar, setSelectedChar] = useState<{ name: string } | null>(null);
   const [selected, setSelected] = useState<number | null>(null);
   const [sizeW, setSizeW] = useState<string>("100");
   const [sizeH, setSizeH] = useState<string>("100");
@@ -325,13 +326,19 @@ export default function WorldMapPage() {
   }, []);
 
   useEffect(() => {
-    if (!selectedPoi) { setSelectedEntry(null); return; }
+    if (!selectedPoi) { setSelectedEntry(null); setSelectedChar(null); return; }
     const poi = poiRows.find((r) => r.id === selectedPoi.id);
-    if (!poi || !poi.entry_id) { setSelectedEntry(null); return; }
+    if (!poi) { setSelectedEntry(null); setSelectedChar(null); return; }
     let off = false;
     (async () => {
-      const { data } = await supabase.from("entries").select("title, body").eq("id", poi.entry_id).single();
-      if (!off) setSelectedEntry((data as { title: string | null; body: string | null }) || null);
+      if (poi.entry_id) {
+        const { data } = await supabase.from("entries").select("title, body").eq("id", poi.entry_id).single();
+        if (!off) setSelectedEntry((data as { title: string | null; body: string | null }) || null);
+      } else if (!off) { setSelectedEntry(null); }
+      if (poi.character_id) {
+        const { data } = await supabase.from("characters").select("name").eq("id", poi.character_id).single();
+        if (!off) setSelectedChar((data as { name: string }) || null);
+      } else if (!off) { setSelectedChar(null); }
     })();
     return () => { off = true; };
   }, [selectedPoi, poiRows, supabase]);
@@ -608,6 +615,7 @@ export default function WorldMapPage() {
                 ) : (
                   <div style={{ fontSize: 12, color: C.muted, fontStyle: "italic" }}>No description yet.</div>
                 )}
+                {selectedChar && <div style={{ fontSize: 12, color: C.sun, marginTop: 8 }}>Linked character: {selectedChar.name}</div>}
               </div>
             );
           })()}
