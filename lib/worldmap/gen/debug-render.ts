@@ -5,7 +5,7 @@
 import { type Fields } from "./types";
 import { hexToPixel, hexCorners, gridPixelSize } from "../layout";
 
-export type DebugMode = "elevation" | "terrain" | "temperature" | "moisture" | "rivers" | "landmass";
+export type DebugMode = "biomes" | "elevation" | "terrain" | "temperature" | "moisture" | "rivers" | "landmass";
 
 const OCEAN = "#20476b";
 const SQRT3 = Math.sqrt(3);
@@ -22,6 +22,12 @@ function tempColor(t: number): string {
   return lerpHex([120, 190, 120], [200, 70, 50], (t - 0.5) * 2);
 }
 const PALETTE = ["#c85b5b", "#5bc87a", "#5b8bc8", "#c8a24b", "#a25bc8", "#4bc8c0", "#c87ba2", "#8ac85b"];
+const BIOME_COLORS = [
+  "#9cbf6a", "#cbb765", "#b3c76a", "#4f8f4a", "#3f6f57", "#2f7a3f", "#43964a", "#b9ac63",
+  "#e3ca8c", "#c6ab7d", "#bcc6c2", "#dde1e6", "#ab9d72", "#5f7a55", "#6b7050", "#3f7fb0",
+  "#2f6fb0", "#20476b", "#dcc890", "#4fb3a3", "#918f8c", "#6e4040", "#b57a52", "#5a5a6a",
+  "#6a4f6a", "#6fb3a3", "#a3a3d3", "#c483c4",
+];
 
 export function renderFields(f: Fields, ctx: CanvasRenderingContext2D, cw: number, ch: number, mode: DebugMode): void {
   const gb = gridPixelSize(f.width, f.height, 1);
@@ -33,7 +39,9 @@ export function renderFields(f: Fields, ctx: CanvasRenderingContext2D, cw: numbe
     for (let col = 0; col < f.width; col++) {
       const i = row * f.width + col;
       let fill = OCEAN;
-      if (!f.land[i]) {
+      if (mode === "biomes") {
+        fill = BIOME_COLORS[f.biome[i]] || OCEAN;
+      } else if (!f.land[i]) {
         if (mode === "elevation") fill = f.elevation[i] < f.seaLevel * 0.5 ? "#16324c" : OCEAN;
         else if (f.shallows[i]) fill = "#2e628a";
         else fill = OCEAN;
@@ -61,7 +69,7 @@ export function renderFields(f: Fields, ctx: CanvasRenderingContext2D, cw: numbe
     }
   }
 
-  if (mode === "rivers") {
+  if (mode === "rivers" || mode === "biomes") {
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
     ctx.strokeStyle = "#2f6fb0";

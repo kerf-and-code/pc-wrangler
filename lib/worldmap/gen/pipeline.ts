@@ -9,6 +9,7 @@ import { pass3Depressions } from "./pass3-depressions";
 import { pass4Temperature } from "./pass4-temperature";
 import { pass5Moisture } from "./pass5-moisture";
 import { pass6Rivers } from "./pass6-rivers";
+import { pass7Biomes } from "./pass7-biomes";
 
 export function generateTerrain(cfg: GenConfig): Fields {
   const elevation = pass1Elevation(cfg);
@@ -18,5 +19,6 @@ export function generateTerrain(cfg: GenConfig): Fields {
   pass4Temperature(f, cfg);
   pass5Moisture(f, cfg);
   pass6Rivers(f, cfg);
+  pass7Biomes(f);
   return f;
 }

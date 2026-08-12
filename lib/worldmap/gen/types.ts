@@ -53,6 +53,10 @@ export type Fields = {
   delta: Uint8Array;         // pass 6: major-river mouth
   frozen: Uint8Array;        // pass 6: river/lake in the polar band
   rivers: RiverPolyline[];   // pass 6: overlay polylines (not biomes)
+  biome: Uint8Array;         // pass 7: assigned biome id (canonical 28)
+  glacier: Uint8Array;       // pass 7: polar-wet tundra render flag
+  gorge: Uint8Array;         // pass 7: major river through wet high terrain
+  saltPan: Uint8Array;       // pass 7: dry basin in arid moisture
 };
 
 export function createFields(width: number, height: number, elevation: Float32Array): Fields {
@@ -82,6 +86,10 @@ export function createFields(width: number, height: number, elevation: Float32Ar
     delta: new Uint8Array(n),
     frozen: new Uint8Array(n),
     rivers: [],
+    biome: new Uint8Array(n),
+    glacier: new Uint8Array(n),
+    gorge: new Uint8Array(n),
+    saltPan: new Uint8Array(n),
   };
 }
 
