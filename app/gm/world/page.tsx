@@ -56,14 +56,15 @@ function autoTint(id: string): string {
 type LayerRow = { id: string; name: string; ord: number };
 type RegionRow = { id: string; layer_id: string; name: string; parent_region_id: string | null; tint: string | null };
 type RegionRender = { id: string; name: string; tint: string; cells: Set<string> };
-type PoiRow = { id: string; x: number; y: number; name: string; icon_key: string | null; icon_id: string | null; visibility: string; note: string | null; entry_id: string | null; character_id: string | null };
+type PoiRow = { id: string; x: number; y: number; name: string; icon_key: string | null; icon_id: string | null; visibility: string; note: string | null; entry_id: string | null; character_id: string | null; color: string | null };
 type ArmedIcon = { key: string } | { iconId: string; url: string };
 const POI_COLOR = "#e6d8b5";
-function poiIconSrc(iconKey: string | null, iconId: string | null, urlById: Map<string, string>): { iconId: string; iconSrc: string } | null {
+function poiIconSrc(iconKey: string | null, iconId: string | null, color: string | null, urlById: Map<string, string>): { iconId: string; iconSrc: string } | null {
   if (iconKey) {
     const svg = POI_ICON_SVG[iconKey];
     if (!svg) return null;
-    return { iconId: iconKey, iconSrc: "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg.replace(/currentColor/g, POI_COLOR)) };
+    const c = color || POI_COLOR;
+    return { iconId: `${iconKey}:${c}`, iconSrc: "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg.replace(/currentColor/g, c)) };
   }
   if (iconId) {
     const url = urlById.get(iconId);
@@ -172,7 +173,7 @@ export default function WorldMapPage() {
           setHexesVersion((v) => v + 1);
         }
         const [{ data: poiData }, { data: iconData }] = await Promise.all([
-          supabase.from("map_pois").select("id, x, y, name, icon_key, icon_id, visibility, note, entry_id, character_id").eq("world_map_id", row.id),
+          supabase.from("map_pois").select("id, x, y, name, icon_key, icon_id, visibility, note, entry_id, character_id, color").eq("world_map_id", row.id),
           supabase.from("map_icons").select("id, url").eq("campaign_id", campaignId),
         ]);
         if (!cancelled) {
@@ -294,7 +295,7 @@ export default function WorldMapPage() {
   const pois = useMemo(() => {
     const out: { id: string; x: number; y: number; name: string; iconId: string; iconSrc: string }[] = [];
     for (const r of poiRows) {
-      const src = poiIconSrc(r.icon_key, r.icon_id, iconUrlById) || poiIconSrc("unknown_poi", null, iconUrlById);
+      const src = poiIconSrc(r.icon_key, r.icon_id, r.color, iconUrlById) || poiIconSrc("unknown_poi", null, r.color, iconUrlById);
       if (!src) continue;
       out.push({ id: r.id, x: r.x, y: r.y, name: r.name, iconId: src.iconId, iconSrc: src.iconSrc });
     }
@@ -307,7 +308,7 @@ export default function WorldMapPage() {
     const iconCols = "key" in armedIcon ? { icon_key: armedIcon.key } : { icon_id: armedIcon.iconId };
     const ins = await supabase.from("map_pois")
       .insert({ world_map_id: mapRow.id, x, y, col, row, name: "New marker", visibility: "common", ...iconCols })
-      .select("id, x, y, name, icon_key, icon_id, visibility, note, entry_id, character_id").single();
+      .select("id, x, y, name, icon_key, icon_id, visibility, note, entry_id, character_id, color").single();
     if (ins.error || !ins.data) { setStatus(`Failed: ${ins.error?.message || "unknown"}`); return; }
     setPoiRows((prev) => [...prev, ins.data as PoiRow]);
     setStatus("Marker placed");

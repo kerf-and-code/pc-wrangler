@@ -10,9 +10,9 @@ import { C } from "@/lib/forge-theme";
 // table shape is confirmed. The page owns the POI rows (the canvas needs them); this panel calls
 // onPatch/onRemove and the page persists.
 
-type Poi = { id: string; name: string; visibility: string; note: string | null; entry_id: string | null };
+type Poi = { id: string; name: string; visibility: string; note: string | null; entry_id: string | null; color: string | null; icon_key: string | null };
 type EntryOpt = { id: string; title: string | null };
-type PoiPatch = Partial<Pick<Poi, "name" | "visibility" | "note" | "entry_id">>;
+type PoiPatch = Partial<Pick<Poi, "name" | "visibility" | "note" | "entry_id" | "color">>;
 const VIS = ["common", "player", "gm", "private"];
 
 export default function PoiPanel({ campaignId, pois, onPatch, onRemove }: {
@@ -67,6 +67,13 @@ export default function PoiPanel({ campaignId, pois, onPatch, onRemove }: {
                 <option value="">No codex entry</option>
                 {entries.map((en) => <option key={en.id} value={en.id}>{en.title || "(untitled)"}</option>)}
               </select>
+              {p.icon_key && (
+                <>
+                  <input type="color" value={p.color || "#e6d8b5"} onChange={(e) => onPatch(p.id, { color: e.target.value })} title="Marker colour"
+                    style={{ width: 30, height: 28, padding: 0, border: `1px solid ${C.line}`, borderRadius: 6, background: C.surface2, cursor: "pointer", flex: "0 0 auto" }} />
+                  {p.color && <button type="button" onClick={() => onPatch(p.id, { color: null })} style={mini}>auto</button>}
+                </>
+              )}
             </div>
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
               {!p.entry_id && <button type="button" onClick={() => createEntry(p)} style={mini}>+ Add to codex</button>}
