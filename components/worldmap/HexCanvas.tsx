@@ -76,7 +76,7 @@ export default function HexCanvas({
   pois?: { id: string; x: number; y: number; name: string; iconId: string; iconSrc: string }[];
   poiPlaceActive?: boolean;
   onPlacePoi?: (x: number, y: number) => void;
-  onPoiClick?: (id: string) => void;
+  onPoiClick?: (id: string, sx: number, sy: number) => void;
   onPoiHover?: (h: { names: string[]; sx: number; sy: number } | null) => void;
   onMovePoi?: (id: string, x: number, y: number) => void;
   className?: string;
@@ -584,7 +584,7 @@ export default function HexCanvas({
           const moved = Math.abs(e.clientX - downClientX) >= 5 || Math.abs(e.clientY - downClientY) >= 5;
           const p = poisRef.current?.find((x) => x.id === d.id);
           if (moved && p) onMovePoiRef.current?.(d.id, p.x + d.dx, p.y + d.dy);
-          else if (!moved) onPoiClickRef.current?.(d.id);
+          else if (!moved && p) { const v = viewRef.current; onPoiClickRef.current?.(d.id, p.x * v.scale + v.tx, p.y * v.scale + v.ty); }
         }
         poiDragRef.current = null;
         scheduleDraw();
@@ -595,7 +595,7 @@ export default function HexCanvas({
         const hit = hitTestPoi(mx, my);
         if (hit) {
           if (hit.kind === "poi" && hit.id) {
-            onPoiClickRef.current?.(hit.id);
+            onPoiClickRef.current?.(hit.id, hit.sx, hit.sy);
           } else if (hit.kind === "cluster") {
             const v = viewRef.current;
             const ns = Math.min(8, v.scale * 2);

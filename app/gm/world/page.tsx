@@ -97,6 +97,8 @@ export default function WorldMapPage() {
   const [poiRows, setPoiRows] = useState<PoiRow[]>([]);
   const [iconUrlById, setIconUrlById] = useState<Map<string, string>>(new Map());
   const [poiTooltip, setPoiTooltip] = useState<{ names: string[]; x: number; y: number } | null>(null);
+  const [selectedPoi, setSelectedPoi] = useState<{ id: string; sx: number; sy: number } | null>(null);
+  const [selectedEntry, setSelectedEntry] = useState<{ title: string | null; body: string | null } | null>(null);
   const [selected, setSelected] = useState<number | null>(null);
   const [sizeW, setSizeW] = useState<string>("100");
   const [sizeH, setSizeH] = useState<string>("100");
@@ -318,10 +320,21 @@ export default function WorldMapPage() {
     setPoiTooltip(h ? { names: h.names, x: h.sx, y: h.sy } : null);
   }, []);
 
-  const onPoiClick = useCallback((id: string) => {
-    const p = poiRows.find((r) => r.id === id);
-    if (p) setStatus(p.name);
-  }, [poiRows]);
+  const onPoiClick = useCallback((id: string, sx: number, sy: number) => {
+    setSelectedPoi({ id, sx, sy });
+  }, []);
+
+  useEffect(() => {
+    if (!selectedPoi) { setSelectedEntry(null); return; }
+    const poi = poiRows.find((r) => r.id === selectedPoi.id);
+    if (!poi || !poi.entry_id) { setSelectedEntry(null); return; }
+    let off = false;
+    (async () => {
+      const { data } = await supabase.from("entries").select("title, body").eq("id", poi.entry_id).single();
+      if (!off) setSelectedEntry((data as { title: string | null; body: string | null }) || null);
+    })();
+    return () => { off = true; };
+  }, [selectedPoi, poiRows, supabase]);
 
   const removePoi = useCallback(async (id: string) => {
     const { error } = await supabase.from("map_pois").delete().eq("id", id);
@@ -577,6 +590,27 @@ export default function WorldMapPage() {
               {poiTooltip.names.length > 8 && <div style={{ fontSize: 11, color: C.muted }}>+{poiTooltip.names.length - 8} more</div>}
             </div>
           )}
+          {selectedPoi && (() => {
+            const poi = poiRows.find((r) => r.id === selectedPoi.id);
+            if (!poi) return null;
+            const resolved = pois.find((pp) => pp.id === selectedPoi.id);
+            const title = selectedEntry?.title || poi.name;
+            const desc = selectedEntry?.body || poi.note || "";
+            return (
+              <div style={{ position: "absolute", left: selectedPoi.sx, top: selectedPoi.sy - 16, transform: "translate(-50%, -100%)", width: 240, maxHeight: 260, overflowY: "auto", background: "rgba(20,16,12,0.98)", border: `1px solid ${C.line}`, borderRadius: 8, padding: 10, zIndex: 6, boxShadow: "0 6px 20px rgba(0,0,0,0.5)" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                  {resolved && <img src={resolved.iconSrc} alt="" style={{ width: 24, height: 24, objectFit: "contain", flex: "0 0 auto" }} />}
+                  <span style={{ fontSize: 14, fontWeight: 700, color: C.text, overflow: "hidden", textOverflow: "ellipsis" }}>{title}</span>
+                  <button type="button" onClick={() => setSelectedPoi(null)} style={{ marginLeft: "auto", background: "transparent", border: "none", color: C.muted, cursor: "pointer", fontSize: 18, lineHeight: 1, padding: 0 }}>{"\u00d7"}</button>
+                </div>
+                {desc ? (
+                  <div style={{ fontSize: 12.5, color: C.muted, whiteSpace: "pre-wrap", lineHeight: 1.45 }}>{desc}</div>
+                ) : (
+                  <div style={{ fontSize: 12, color: C.muted, fontStyle: "italic" }}>No description yet.</div>
+                )}
+              </div>
+            );
+          })()}
         </div>
       </div>
     </PageShell>
