@@ -25,10 +25,10 @@ type Campaign = { id: string; name: string };
 type Biome = { id: number; key: string; label: string; category: string; color: string };
 type MapRow = {
   id: string; name: string; width: number; height: number;
-  origin_col: number; origin_row: number; format_version: number; terrain: string | null;
+  origin_col: number; origin_row: number; format_version: number; terrain: string | null; editable_by: string;
 };
 
-const MAP_COLS = "id, name, width, height, origin_col, origin_row, format_version, terrain";
+const MAP_COLS = "id, name, width, height, origin_col, origin_row, format_version, terrain, editable_by";
 const IMG_COLS = "id, url, x, y, scale, z";
 const IMG_TYPES = ["image/png", "image/jpeg", "image/webp"];
 const MAX_IMG_BYTES = 8 * 1024 * 1024;
@@ -384,6 +384,15 @@ export default function WorldMapPage() {
     setStatus(`Resized to ${nw} x ${nh}`);
   }, [supabase, mapRow, terrain, sizeW, sizeH]);
 
+  const togglePlayerEdit = useCallback(async () => {
+    if (!mapRow) return;
+    const next = mapRow.editable_by === "party" ? "gm" : "party";
+    const { error } = await supabase.from("world_maps").update({ editable_by: next }).eq("id", mapRow.id);
+    if (error) { setStatus(error.message); return; }
+    setMapRow({ ...mapRow, editable_by: next });
+    setStatus(next === "party" ? "Players can now edit the map" : "Editing locked to you");
+  }, [supabase, mapRow]);
+
   const uploadImage = useCallback(async (file: File) => {
     if (!mapRow || !campaignId) return;
     if (!IMG_TYPES.includes(file.type)) { setStatus("Use a PNG, JPG, or WebP image."); return; }
@@ -482,6 +491,15 @@ export default function WorldMapPage() {
           {campaigns.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
         <span style={{ fontSize: 12.5, color: C.muted }}>{status}</span>
+        {mapRow && (
+          <button type="button" onClick={togglePlayerEdit} title="Let party members add to this map"
+            style={{ fontSize: 12, padding: "5px 10px", borderRadius: 7, cursor: "pointer",
+              border: `1px solid ${mapRow.editable_by === "party" ? C.sun : C.line}`,
+              background: mapRow.editable_by === "party" ? "rgba(200,162,75,0.14)" : C.surface2,
+              color: C.text, fontWeight: 600 }}>
+            Player editing: {mapRow.editable_by === "party" ? "On" : "Off"}
+          </button>
+        )}
         {mode === "regions" && layerRows.length > 0 && (
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
             <span style={{ fontSize: 12, color: C.muted }}>Layer</span>
