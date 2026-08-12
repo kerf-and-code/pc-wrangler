@@ -14,6 +14,10 @@ export type GenConfig = {
   latN: number;              // latitude of the top row (deg)
   latS: number;              // latitude of the bottom row (deg)
   lapsePerBand: number;      // temperature drop per land band above lowland
+  windDir: number;           // downwind AXIAL_DIRS index 0-5 (0 = E, prevailing westerlies)
+  cBase: number;             // moisture capacity base
+  pBase: number;             // base precipitation fraction over land
+  pOro: number;              // extra orographic precipitation per band climbed
 };
 
 // Per-hex fields, row-major (i = row*W + col), grown pass by pass.
@@ -35,6 +39,8 @@ export type Fields = {
   distToOcean: Int32Array;   // pass 3: BFS hops over land (-1 ocean)
   temperature: Float32Array; // pass 4, 0-1
   tempBand: Uint8Array;      // pass 4: 0 polar..4 tropical
+  moisture: Float32Array;    // pass 5, 0-1 (land); 1 over water
+  moistureBand: Uint8Array;  // pass 5: 0 arid..4 saturated
 };
 
 export function createFields(width: number, height: number, elevation: Float32Array): Fields {
@@ -55,6 +61,8 @@ export function createFields(width: number, height: number, elevation: Float32Ar
     distToOcean: new Int32Array(n).fill(-1),
     temperature: new Float32Array(n),
     tempBand: new Uint8Array(n),
+    moisture: new Float32Array(n),
+    moistureBand: new Uint8Array(n),
   };
 }
 
@@ -72,5 +80,9 @@ export function defaultConfig(width: number, height: number, seed: string | numb
     latN: height >= 150 ? 75 : 60,
     latS: height >= 150 ? -15 : 10,
     lapsePerBand: 0.12,
+    windDir: 0,
+    cBase: 1.0,
+    pBase: 0.10,
+    pOro: 0.22,
   };
 }

@@ -5,7 +5,7 @@
 import { type Fields } from "./types";
 import { hexToPixel, hexCorners, gridPixelSize } from "../layout";
 
-export type DebugMode = "elevation" | "terrain" | "temperature" | "landmass";
+export type DebugMode = "elevation" | "terrain" | "temperature" | "moisture" | "landmass";
 
 const OCEAN = "#20476b";
 const SQRT3 = Math.sqrt(3);
@@ -43,6 +43,8 @@ export function renderFields(f: Fields, ctx: CanvasRenderingContext2D, cw: numbe
         fill = f.coast[i] ? "#d8c48a" : BANDS[f.elevBand[i]];
       } else if (mode === "temperature") {
         fill = tempColor(f.temperature[i]);
+      } else if (mode === "moisture") {
+        fill = lerpHex([200, 170, 110], [40, 130, 130], f.moisture[i]);
       } else {
         fill = f.landmassId[i] >= 0 ? PALETTE[f.landmassId[i] % PALETTE.length] : "#333";
       }
