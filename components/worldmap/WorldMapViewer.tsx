@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { createClient } from "@/lib/supabase/client";
 import { C } from "@/lib/forge-theme";
 import HexCanvas from "@/components/worldmap/HexCanvas";
-import { type Terrain, createTerrain, decodeTerrain, base64ToBytes } from "@/lib/worldmap/hex";
+import { type Terrain, createTerrain, decodeTerrain, base64ToBytes, encodeTerrain, bytesToBase64, BIOME_UNSET } from "@/lib/worldmap/hex";
 import { POI_ICON_SVG } from "@/lib/worldmap/poi-icons";
 
 // Phase 5a: the read-only member viewer. It calls world_map_read (the security-definer RPC that
@@ -14,9 +14,11 @@ import { POI_ICON_SVG } from "@/lib/worldmap/poi-icons";
 // Route-agnostic: give it a campaignId. Editing when the GM opens the map is a later phase.
 
 const POI_COLOR = "#e6d8b5";
+const CATEGORY_ORDER = ["terrestrial", "wetland", "water", "geologic", "fantasy"];
+const CATEGORY_LABEL: Record<string, string> = { terrestrial: "Terrestrial", wetland: "Wetland", water: "Water", geologic: "Mountain & geologic", fantasy: "Fantasy" };
 
 type MapRow = { id: string; width: number; height: number; origin_col: number; origin_row: number; terrain: string | null; editable_by?: string | null };
-type Biome = { id: number; color: string };
+type Biome = { id: number; key: string; label: string; category: string; color: string };
 type ImageRow = { id: string; url: string; x: number; y: number; scale: number; z: number };
 type Layer = { id: string; name: string; ord: number };
 type Region = { id: string; layer_id: string; name: string; parent_region_id: string | null; tint: string | null };
@@ -57,6 +59,7 @@ export default function WorldMapViewer({ campaignId }: { campaignId: string }) {
   const [selectedPoi, setSelectedPoi] = useState<{ id: string; sx: number; sy: number } | null>(null);
   const [selectedEntry, setSelectedEntry] = useState<{ title: string | null; body: string | null } | null>(null);
   const [selectedChar, setSelectedChar] = useState<{ name: string } | null>(null);
+  const [selectedBiome, setSelectedBiome] = useState<number | null>(null);
 
   useEffect(() => {
     let off = false;
@@ -150,6 +153,21 @@ export default function WorldMapViewer({ campaignId }: { campaignId: string }) {
     return () => { off = true; };
   }, [selectedPoi, supabase]);
 
+  const grouped = useMemo(() => {
+    const by: Record<string, Biome[]> = {};
+    for (const b of bundle?.biomes || []) (by[b.category] ||= []).push(b);
+    return CATEGORY_ORDER.filter((c) => by[c]?.length).map((c) => ({ category: c, items: by[c] }));
+  }, [bundle]);
+
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const onPaint = useCallback(() => {
+    if (!terrain) return;
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    const b64 = bytesToBase64(encodeTerrain(terrain));
+    saveTimer.current = setTimeout(() => { void supabase.rpc("world_map_paint", { p_campaign: campaignId, p_terrain: b64 }); }, 900);
+  }, [supabase, campaignId, terrain]);
+  useEffect(() => () => { if (saveTimer.current) clearTimeout(saveTimer.current); }, []);
+
   if (bundle === undefined) {
     return <p style={{ color: C.muted, fontSize: 14, padding: 24 }}>Loading the world map\u2026</p>;
   }
@@ -157,6 +175,10 @@ export default function WorldMapViewer({ campaignId }: { campaignId: string }) {
     return <p style={{ color: C.muted, fontSize: 14, padding: 24 }}>This world map is not available to you.</p>;
   }
 
+  const editing = bundle.map.editable_by === "party";
+  const chip = (label: string, on: boolean, onClick: () => void) => (
+    <button type="button" onClick={onClick} style={{ flex: 1, textAlign: "center", padding: "6px 8px", borderRadius: 7, cursor: "pointer", border: `1px solid ${on ? C.sun : C.line}`, background: on ? "rgba(200,162,75,0.14)" : C.surface2, color: C.text, fontSize: 12, fontWeight: 600 }}>{label}</button>
+  );
   const layers = bundle.layers;
 
   return (
@@ -174,11 +196,39 @@ export default function WorldMapViewer({ campaignId }: { campaignId: string }) {
         )}
       </div>
 
-      <div style={{ flex: 1, position: "relative", overflow: "hidden" }}>
+      <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
+        {editing && (
+          <div style={{ width: 212, flex: "0 0 212px", overflowY: "auto", padding: 12, borderRight: `1px solid ${C.line}`, background: C.surface }}>
+            <p style={{ fontSize: 11, color: C.muted, margin: "0 0 10px", lineHeight: 1.4 }}>The GM opened this map. Paint biomes to help build the world.</p>
+            <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
+              {chip("Pan", selectedBiome === null, () => setSelectedBiome(null))}
+              {chip("Erase", selectedBiome === BIOME_UNSET, () => setSelectedBiome(BIOME_UNSET))}
+            </div>
+            {grouped.map((g) => (
+              <div key={g.category} style={{ marginBottom: 10 }}>
+                <div style={{ fontSize: 11, color: C.muted, fontFamily: "ui-monospace, monospace", letterSpacing: "0.08em", marginBottom: 6 }}>{(CATEGORY_LABEL[g.category] || g.category).toUpperCase()}</div>
+                <div style={{ display: "grid", gap: 4 }}>
+                  {g.items.map((b) => {
+                    const on = selectedBiome === b.id;
+                    return (
+                      <button key={b.id} type="button" onClick={() => setSelectedBiome(on ? null : b.id)} title={b.label}
+                        style={{ display: "flex", alignItems: "center", gap: 8, textAlign: "left", padding: "5px 7px", borderRadius: 6, cursor: "pointer", border: `1px solid ${on ? C.sun : C.line}`, background: on ? "rgba(200,162,75,0.14)" : C.surface2, color: C.text }}>
+                        <span style={{ width: 14, height: 14, borderRadius: 3, background: b.color, border: `1px solid ${C.line}`, flexShrink: 0 }} />
+                        <span style={{ fontSize: 12 }}>{b.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        <div style={{ flex: 1, position: "relative", overflow: "hidden" }}>
         <HexCanvas
           terrain={terrain}
           colors={colors}
-          selectedBiome={null}
+          selectedBiome={editing ? selectedBiome : null}
+          onPaint={editing ? onPaint : undefined}
           images={bundle.images}
           regionRender={regionRender}
           pois={pois}
@@ -215,6 +265,7 @@ export default function WorldMapViewer({ campaignId }: { campaignId: string }) {
             </div>
           );
         })()}
+        </div>
       </div>
     </div>
   );
