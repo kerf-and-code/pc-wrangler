@@ -70,14 +70,15 @@ function anon() {
 
 export async function load(slug: string) {
   const supabase = anon();
-  const [{ data: head }, { data: items }, { data: listed }] = await Promise.all([
+  const [{ data: head }, { data: items }, { data: listed }, { data: snapshot }] = await Promise.all([
     supabase.rpc("public_campaign", { p_slug: slug }),
     supabase.rpc("public_codex", { p_slug: slug }),
     supabase.rpc("public_campaign_listing", { p_slug: slug }),
+    supabase.rpc("public_world_snapshot", { p_slug: slug }),
   ]);
   const campaign = (Array.isArray(head) ? head[0] : head) as Campaign | null;
   const all = ((items as Item[]) ?? []).filter((i) => SECTIONS.some((s) => s.type === i.item_type));
-  return { campaign: campaign ?? null, items: all, listed: listed === true };
+  return { campaign: campaign ?? null, items: all, listed: listed === true, snapshotUrl: typeof snapshot === "string" ? snapshot : null };
 }
 
 /**

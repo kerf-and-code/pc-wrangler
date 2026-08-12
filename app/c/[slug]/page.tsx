@@ -45,7 +45,7 @@ export default function CodexPage({ params }: P) {
 
 async function CodexBody({ params }: P) {
   const { slug } = await params;
-  const { campaign, items } = await load(slug);
+  const { campaign, items, snapshotUrl } = await load(slug);
   if (!campaign) notFound();
 
   const counts = countsOf(items);
@@ -87,6 +87,11 @@ async function CodexBody({ params }: P) {
           </p>
         </div>
       </header>
+
+      {snapshotUrl && (
+        <img src={snapshotUrl} alt={`${campaign.name} world map`}
+          style={{ width: "100%", borderRadius: 6, display: "block", marginBottom: 26 }} />
+      )}
 
       <CodexFilter total={items.length} />
 
