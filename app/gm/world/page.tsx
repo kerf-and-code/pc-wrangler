@@ -9,6 +9,7 @@ import HexCanvas from "@/components/worldmap/HexCanvas";
 import RegionsPanel from "@/components/worldmap/RegionsPanel";
 import IconLibrary from "@/components/worldmap/IconLibrary";
 import { POI_ICON_SVG } from "@/lib/worldmap/poi-icons";
+import PoiPanel from "@/components/worldmap/PoiPanel";
 import {
   type Terrain, createTerrain, decodeTerrain, encodeTerrain, base64ToBytes, bytesToBase64, expandTerrain, BIOME_UNSET,
 } from "@/lib/worldmap/hex";
@@ -55,7 +56,7 @@ function autoTint(id: string): string {
 type LayerRow = { id: string; name: string; ord: number };
 type RegionRow = { id: string; layer_id: string; name: string; parent_region_id: string | null; tint: string | null };
 type RegionRender = { id: string; name: string; tint: string; cells: Set<string> };
-type PoiRow = { id: string; x: number; y: number; name: string; icon_key: string | null; icon_id: string | null };
+type PoiRow = { id: string; x: number; y: number; name: string; icon_key: string | null; icon_id: string | null; visibility: string; note: string | null; entry_id: string | null; character_id: string | null };
 type ArmedIcon = { key: string } | { iconId: string; url: string };
 const POI_COLOR = "#e6d8b5";
 function poiIconSrc(iconKey: string | null, iconId: string | null, urlById: Map<string, string>): { iconId: string; iconSrc: string } | null {
@@ -171,7 +172,7 @@ export default function WorldMapPage() {
           setHexesVersion((v) => v + 1);
         }
         const [{ data: poiData }, { data: iconData }] = await Promise.all([
-          supabase.from("map_pois").select("id, x, y, name, icon_key, icon_id").eq("world_map_id", row.id),
+          supabase.from("map_pois").select("id, x, y, name, icon_key, icon_id, visibility, note, entry_id, character_id").eq("world_map_id", row.id),
           supabase.from("map_icons").select("id, url").eq("campaign_id", campaignId),
         ]);
         if (!cancelled) {
@@ -306,7 +307,7 @@ export default function WorldMapPage() {
     const iconCols = "key" in armedIcon ? { icon_key: armedIcon.key } : { icon_id: armedIcon.iconId };
     const ins = await supabase.from("map_pois")
       .insert({ world_map_id: mapRow.id, x, y, col, row, name: "New marker", visibility: "common", ...iconCols })
-      .select("id, x, y, name, icon_key, icon_id").single();
+      .select("id, x, y, name, icon_key, icon_id, visibility, note, entry_id, character_id").single();
     if (ins.error || !ins.data) { setStatus(`Failed: ${ins.error?.message || "unknown"}`); return; }
     setPoiRows((prev) => [...prev, ins.data as PoiRow]);
     setStatus("Marker placed");
@@ -331,6 +332,12 @@ export default function WorldMapPage() {
     const { col, row } = pixelToHex(x, y, BASE_SIZE);
     setPoiRows((prev) => prev.map((r) => (r.id === id ? { ...r, x, y } : r)));
     const { error } = await supabase.from("map_pois").update({ x, y, col, row }).eq("id", id);
+    if (error) setStatus(error.message);
+  }, [supabase]);
+
+  const patchPoi = useCallback(async (id: string, patch: Partial<PoiRow>) => {
+    setPoiRows((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)));
+    const { error } = await supabase.from("map_pois").update(patch).eq("id", id);
     if (error) setStatus(error.message);
   }, [supabase]);
 
@@ -542,19 +549,7 @@ export default function WorldMapPage() {
                 {armedIcon ? "Click the map to place this marker. Pick another icon to switch." : "Pick an icon below, then click the map to place a marker."}
               </div>
               <IconLibrary campaignId={campaignId} onPick={setArmedIcon} />
-              {poiRows.length > 0 && (
-                <div style={{ marginTop: 14 }}>
-                  <div style={secLabel}>PLACED MARKERS ({poiRows.length})</div>
-                  <div style={{ display: "grid", gap: 4 }}>
-                    {poiRows.map((r) => (
-                      <div key={r.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 6, border: `1px solid ${C.line}`, borderRadius: 6, padding: "4px 7px", background: C.surface2 }}>
-                        <span style={{ fontSize: 12, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.name}</span>
-                        <button type="button" onClick={() => removePoi(r.id)} style={miniBtn}>Remove</button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+              <PoiPanel campaignId={campaignId} pois={poiRows} onPatch={patchPoi} onRemove={removePoi} />
             </div>
           )}
         </div>
