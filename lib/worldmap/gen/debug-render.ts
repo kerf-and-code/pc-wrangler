@@ -5,7 +5,7 @@
 import { type Fields } from "./types";
 import { hexToPixel, hexCorners, gridPixelSize } from "../layout";
 
-export type DebugMode = "elevation" | "terrain" | "temperature" | "moisture" | "landmass";
+export type DebugMode = "elevation" | "terrain" | "temperature" | "moisture" | "rivers" | "landmass";
 
 const OCEAN = "#20476b";
 const SQRT3 = Math.sqrt(3);
@@ -45,6 +45,8 @@ export function renderFields(f: Fields, ctx: CanvasRenderingContext2D, cw: numbe
         fill = tempColor(f.temperature[i]);
       } else if (mode === "moisture") {
         fill = lerpHex([200, 170, 110], [40, 130, 130], f.moisture[i]);
+      } else if (mode === "rivers") {
+        fill = f.lake[i] ? "#2f6fb0" : f.coast[i] ? "#d8c48a" : BANDS[f.elevBand[i]];
       } else {
         fill = f.landmassId[i] >= 0 ? PALETTE[f.landmassId[i] % PALETTE.length] : "#333";
       }
@@ -58,5 +60,23 @@ export function renderFields(f: Fields, ctx: CanvasRenderingContext2D, cw: numbe
       ctx.fill();
     }
   }
+
+  if (mode === "rivers") {
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.strokeStyle = "#2f6fb0";
+    for (const r of f.rivers) {
+      if (r.path.length < 2) continue;
+      ctx.lineWidth = r.width >= 2 ? 1.5 : 0.7;
+      ctx.beginPath();
+      for (let k = 0; k < r.path.length; k++) {
+        const idx = r.path[k];
+        const p = hexToPixel(idx % f.width, (idx / f.width) | 0, 1);
+        if (k === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y);
+      }
+      ctx.stroke();
+    }
+  }
+
   ctx.setTransform(1, 0, 0, 1, 0, 0);
 }

@@ -18,7 +18,12 @@ export type GenConfig = {
   cBase: number;             // moisture capacity base
   pBase: number;             // base precipitation fraction over land
   pOro: number;              // extra orographic precipitation per band climbed
+  riverQuantile: number;     // flowAccum quantile that becomes a river (density knob)
+  majorQuantile: number;     // flowAccum quantile that becomes a major river
+  minRiverLength: number;    // drop river polylines shorter than this
 };
+
+export type RiverPolyline = { path: number[]; width: number }; // path = hex indices; width 1 minor / 2 major
 
 // Per-hex fields, row-major (i = row*W + col), grown pass by pass.
 export type Fields = {
@@ -41,6 +46,13 @@ export type Fields = {
   tempBand: Uint8Array;      // pass 4: 0 polar..4 tropical
   moisture: Float32Array;    // pass 5, 0-1 (land); 1 over water
   moistureBand: Uint8Array;  // pass 5: 0 arid..4 saturated
+  flowAccum: Float32Array;   // pass 6: accumulated flow
+  river: Uint8Array;         // pass 6: hex is on a river
+  lake: Uint8Array;          // pass 6: hex is lake water
+  riverAdjacent: Uint8Array; // pass 6: adjacent to river/lake (cohesion exemption + fertile bonus)
+  delta: Uint8Array;         // pass 6: major-river mouth
+  frozen: Uint8Array;        // pass 6: river/lake in the polar band
+  rivers: RiverPolyline[];   // pass 6: overlay polylines (not biomes)
 };
 
 export function createFields(width: number, height: number, elevation: Float32Array): Fields {
@@ -63,6 +75,13 @@ export function createFields(width: number, height: number, elevation: Float32Ar
     tempBand: new Uint8Array(n),
     moisture: new Float32Array(n),
     moistureBand: new Uint8Array(n),
+    flowAccum: new Float32Array(n),
+    river: new Uint8Array(n),
+    lake: new Uint8Array(n),
+    riverAdjacent: new Uint8Array(n),
+    delta: new Uint8Array(n),
+    frozen: new Uint8Array(n),
+    rivers: [],
   };
 }
 
@@ -84,5 +103,8 @@ export function defaultConfig(width: number, height: number, seed: string | numb
     cBase: 1.0,
     pBase: 0.10,
     pOro: 0.22,
+    riverQuantile: 0.95,
+    majorQuantile: 0.99,
+    minRiverLength: 4,
   };
 }

@@ -9,7 +9,7 @@ import { C } from "@/lib/forge-theme";
 // Phase 6a debug preview: generates on the main thread (the Web Worker + progress + accept flow are
 // 6d) and draws raw fields, so the terrain passes can be eyeballed against fixed seeds before 6b.
 
-const MODES: DebugMode[] = ["terrain", "elevation", "temperature", "moisture", "landmass"];
+const MODES: DebugMode[] = ["terrain", "elevation", "temperature", "moisture", "rivers", "landmass"];
 
 export default function GenDebug() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
