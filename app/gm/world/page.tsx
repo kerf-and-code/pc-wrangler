@@ -9,6 +9,7 @@ import HexCanvas from "@/components/worldmap/HexCanvas";
 import RegionsPanel from "@/components/worldmap/RegionsPanel";
 import IconLibrary from "@/components/worldmap/IconLibrary";
 import { POI_ICON_SVG } from "@/lib/worldmap/poi-icons";
+import { renderWorldSnapshot } from "@/lib/worldmap/snapshot";
 import PoiPanel from "@/components/worldmap/PoiPanel";
 import {
   type Terrain, createTerrain, decodeTerrain, encodeTerrain, base64ToBytes, bytesToBase64, expandTerrain, BIOME_UNSET,
@@ -25,10 +26,10 @@ type Campaign = { id: string; name: string };
 type Biome = { id: number; key: string; label: string; category: string; color: string };
 type MapRow = {
   id: string; name: string; width: number; height: number;
-  origin_col: number; origin_row: number; format_version: number; terrain: string | null; editable_by: string;
+  origin_col: number; origin_row: number; format_version: number; terrain: string | null; editable_by: string; snapshot_url: string | null; published: boolean;
 };
 
-const MAP_COLS = "id, name, width, height, origin_col, origin_row, format_version, terrain, editable_by";
+const MAP_COLS = "id, name, width, height, origin_col, origin_row, format_version, terrain, editable_by, snapshot_url, published";
 const IMG_COLS = "id, url, x, y, scale, z";
 const IMG_TYPES = ["image/png", "image/jpeg", "image/webp"];
 const MAX_IMG_BYTES = 8 * 1024 * 1024;
@@ -80,6 +81,7 @@ export default function WorldMapPage() {
   const [campaignId, setCampaignId] = useState<string>("");
   const [biomes, setBiomes] = useState<Biome[]>([]);
   const [artEnabled, setArtEnabled] = useState(false);
+  const [publishing, setPublishing] = useState(false);
   const [mapRow, setMapRow] = useState<MapRow | null>(null);
   const [terrain, setTerrain] = useState<Terrain | null>(null);
   const [images, setImages] = useState<PlacedImage[]>([]);
@@ -400,6 +402,30 @@ export default function WorldMapPage() {
     setStatus(next === "party" ? "Players can now edit the map" : "Editing locked to you");
   }, [supabase, mapRow]);
 
+  const publishSnapshot = useCallback(async () => {
+    if (!mapRow || !terrain) return;
+    setPublishing(true);
+    setStatus("Rendering snapshot\u2026");
+    try {
+      const blob = await renderWorldSnapshot({
+        terrain, colors, biomeArt, images,
+        pois: pois.map((p) => ({ x: p.x, y: p.y, iconSrc: p.iconSrc })),
+      });
+      const fd = new FormData();
+      fd.append("campaignId", campaignId);
+      fd.append("file", new File([blob], "snapshot.png", { type: "image/png" }));
+      const res = await fetch("/api/world-map/snapshot", { method: "POST", body: fd });
+      const json = await res.json();
+      if (!res.ok) { setStatus(json.error || "Publish failed."); return; }
+      setMapRow({ ...mapRow, snapshot_url: json.url, published: true });
+      setStatus("Published to the wiki");
+    } catch (e) {
+      setStatus(e instanceof Error ? e.message : "Publish failed.");
+    } finally {
+      setPublishing(false);
+    }
+  }, [mapRow, terrain, colors, biomeArt, images, pois, campaignId]);
+
   const uploadImage = useCallback(async (file: File) => {
     if (!mapRow || !campaignId) return;
     if (!IMG_TYPES.includes(file.type)) { setStatus("Use a PNG, JPG, or WebP image."); return; }
@@ -514,6 +540,14 @@ export default function WorldMapPage() {
             color: C.text, fontWeight: 600 }}>
           Terrain art: {artEnabled ? "On" : "Off"}
         </button>
+        {mapRow && (
+          <button type="button" onClick={publishSnapshot} disabled={publishing}
+            title="Render the world without hex lines and show it on the wiki"
+            style={{ fontSize: 12, padding: "5px 10px", borderRadius: 7, cursor: publishing ? "default" : "pointer",
+              border: `1px solid ${C.line}`, background: C.surface2, color: C.text, fontWeight: 600, opacity: publishing ? 0.6 : 1 }}>
+            {publishing ? "Publishing\u2026" : mapRow.published ? "Update wiki snapshot" : "Publish to wiki"}
+          </button>
+        )}
         {mode === "regions" && layerRows.length > 0 && (
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
             <span style={{ fontSize: 12, color: C.muted }}>Layer</span>
