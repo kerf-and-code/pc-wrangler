@@ -23,12 +23,12 @@ export type Offset = { col: number; row: number };
 export type Axial = { q: number; r: number };
 export type Cube = { x: number; y: number; z: number };
 
-// odd-q offset -> axial (flat-top): q = col, r = row - (col - (col & 1)) / 2.
+// odd-r offset -> axial (pointy-top): q = col - (row - (row & 1)) / 2, r = row.
 export function offsetToAxial(col: number, row: number): Axial {
-  return { q: col, r: row - (col - (col & 1)) / 2 };
+  return { q: col - (row - (row & 1)) / 2, r: row };
 }
 export function axialToOffset(q: number, r: number): Offset {
-  return { col: q, row: r + (q - (q & 1)) / 2 };
+  return { col: q + (r - (r & 1)) / 2, row: r };
 }
 export function axialToCube(q: number, r: number): Cube {
   const x = q;
@@ -51,14 +51,14 @@ export function cubeRound(x: number, y: number, z: number): Cube {
   return { x: rx, y: ry, z: rz };
 }
 
-// The six flat-top neighbour vectors in axial space, in the blueprint's order
-//   N, NE, SE, S, SW, NW  ==  (+1,0),(+1,-1),(0,-1),(-1,0),(-1,+1),(0,+1)
-// The index into this array is the flowDir value 0..5 the generator uses.
+// The six neighbour vectors in axial space. Same axial vectors regardless of orientation; on the
+// pointy-top grid they point E, NE, NW, W, SW, SE (verified against the pixel geometry). The index
+// into this array is the flowDir value 0..5 the generator uses.
 export const AXIAL_DIRS: ReadonlyArray<Axial> = [
   { q: +1, r: 0 }, { q: +1, r: -1 }, { q: 0, r: -1 },
   { q: -1, r: 0 }, { q: -1, r: +1 }, { q: 0, r: +1 },
 ];
-export const DIR_NAMES = ["N", "NE", "SE", "S", "SW", "NW"] as const;
+export const DIR_NAMES = ["E", "NE", "NW", "W", "SW", "SE"] as const;
 
 export function axialNeighbor(q: number, r: number, dir: number): Axial {
   const d = AXIAL_DIRS[((dir % 6) + 6) % 6];
@@ -72,10 +72,11 @@ export function index(col: number, row: number, width: number): number {
 export function inBounds(col: number, row: number, width: number, height: number): boolean {
   return col >= 0 && col < width && row >= 0 && row < height;
 }
-// True vertical position: odd columns shift down half a hex. Use for latitude/climate, never the
-// raw row, or the odd-q stagger stripes the map.
+// True vertical position: on the pointy-top grid rows stack cleanly and the stagger is horizontal,
+// so latitude is simply the row. Use for latitude/climate.
 export function trueY(col: number, row: number): number {
-  return row + 0.5 * (col & 1);
+  void col;
+  return row;
 }
 
 // ---- the terrain blob: 12-byte header + width*height records of 2 bytes ----
