@@ -6,6 +6,8 @@ import { C } from "@/lib/forge-theme";
 import HexCanvas from "@/components/worldmap/HexCanvas";
 import { type Terrain, createTerrain, decodeTerrain, base64ToBytes, encodeTerrain, bytesToBase64, BIOME_UNSET } from "@/lib/worldmap/hex";
 import { POI_ICON_SVG } from "@/lib/worldmap/poi-icons";
+import { pixelToHex, BASE_SIZE } from "@/lib/worldmap/layout";
+import IconLibrary from "@/components/worldmap/IconLibrary";
 
 // Phase 5a: the read-only member viewer. It calls world_map_read (the security-definer RPC that
 // applies visibility server-side) and renders the returned bundle through the same HexCanvas the GM
@@ -60,6 +62,8 @@ export default function WorldMapViewer({ campaignId }: { campaignId: string }) {
   const [selectedEntry, setSelectedEntry] = useState<{ title: string | null; body: string | null } | null>(null);
   const [selectedChar, setSelectedChar] = useState<{ name: string } | null>(null);
   const [selectedBiome, setSelectedBiome] = useState<number | null>(null);
+  const [poiRows, setPoiRows] = useState<Poi[]>([]);
+  const [armedIcon, setArmedIcon] = useState<{ key: string } | null>(null);
 
   useEffect(() => {
     let off = false;
@@ -69,6 +73,7 @@ export default function WorldMapViewer({ campaignId }: { campaignId: string }) {
       if (error || !data) { setBundle(null); return; }
       const b = data as Bundle;
       setBundle(b);
+      setPoiRows(b.pois || []);
       if (b.map) {
         setTerrain(b.map.terrain ? decodeTerrain(base64ToBytes(b.map.terrain)) : createTerrain(b.map.width, b.map.height, b.map.origin_col, b.map.origin_row));
       }
@@ -91,13 +96,13 @@ export default function WorldMapViewer({ campaignId }: { campaignId: string }) {
 
   const pois = useMemo(() => {
     const out: { id: string; x: number; y: number; name: string; iconId: string; iconSrc: string }[] = [];
-    for (const r of bundle?.pois || []) {
+    for (const r of poiRows) {
       const src = poiIconSrc(r.icon_key, r.icon_id, r.color, iconUrlById) || poiIconSrc("unknown_poi", null, r.color, iconUrlById);
       if (!src) continue;
       out.push({ id: r.id, x: r.x, y: r.y, name: r.name, iconId: src.iconId, iconSrc: src.iconSrc });
     }
     return out;
-  }, [bundle, iconUrlById]);
+  }, [poiRows, iconUrlById]);
 
   useEffect(() => {
     if (!bundle || !selectedLayerId || bundle.regions.length === 0) { setRegionRender([]); return; }
@@ -134,7 +139,7 @@ export default function WorldMapViewer({ campaignId }: { campaignId: string }) {
   }, []);
 
   const poiRowsRef = useRef<Poi[]>([]);
-  poiRowsRef.current = bundle?.pois || [];
+  poiRowsRef.current = poiRows;
   useEffect(() => {
     if (!selectedPoi) { setSelectedEntry(null); setSelectedChar(null); return; }
     const poi = poiRowsRef.current.find((r) => r.id === selectedPoi.id);
@@ -167,6 +172,29 @@ export default function WorldMapViewer({ campaignId }: { campaignId: string }) {
     saveTimer.current = setTimeout(() => { void supabase.rpc("world_map_paint", { p_campaign: campaignId, p_terrain: b64 }); }, 900);
   }, [supabase, campaignId, terrain]);
   useEffect(() => () => { if (saveTimer.current) clearTimeout(saveTimer.current); }, []);
+
+  const onPlacePoi = useCallback(async (x: number, y: number) => {
+    if (!bundle?.map || !armedIcon) return;
+    const { col, row } = pixelToHex(x, y, BASE_SIZE);
+    const ins = await supabase.from("map_pois")
+      .insert({ world_map_id: bundle.map.id, x, y, col, row, name: "New marker", visibility: "common", icon_key: armedIcon.key })
+      .select("id, x, y, name, icon_key, icon_id, color, entry_id, character_id").single();
+    if (ins.error || !ins.data) return;
+    setPoiRows((prev) => [...prev, ins.data as Poi]);
+  }, [supabase, bundle, armedIcon]);
+
+  const onMovePoi = useCallback(async (id: string, x: number, y: number) => {
+    const { col, row } = pixelToHex(x, y, BASE_SIZE);
+    setPoiRows((prev) => prev.map((r) => (r.id === id ? { ...r, x, y } : r)));
+    void supabase.from("map_pois").update({ x, y, col, row }).eq("id", id);
+  }, [supabase]);
+
+  const removePoi = useCallback(async (id: string) => {
+    const { error } = await supabase.from("map_pois").delete().eq("id", id);
+    if (error) return;
+    setPoiRows((prev) => prev.filter((r) => r.id !== id));
+    setSelectedPoi(null);
+  }, [supabase]);
 
   if (bundle === undefined) {
     return <p style={{ color: C.muted, fontSize: 14, padding: 24 }}>Loading the world map\u2026</p>;
@@ -221,6 +249,11 @@ export default function WorldMapViewer({ campaignId }: { campaignId: string }) {
                 </div>
               </div>
             ))}
+            <div style={{ marginTop: 8, borderTop: `1px solid ${C.line}`, paddingTop: 10 }}>
+              <div style={{ fontSize: 11, color: C.muted, fontFamily: "ui-monospace, monospace", letterSpacing: "0.08em", marginBottom: 6 }}>ADD A MARKER</div>
+              <div style={{ fontSize: 11, color: C.muted, margin: "0 0 6px", lineHeight: 1.4 }}>{armedIcon ? "Click the map to place it." : "Pick an icon, then click the map."}</div>
+              <IconLibrary campaignId={campaignId} builtinOnly onPick={(ic) => { if ("key" in ic) setArmedIcon(ic); }} />
+            </div>
           </div>
         )}
         <div style={{ flex: 1, position: "relative", overflow: "hidden" }}>
@@ -232,6 +265,9 @@ export default function WorldMapViewer({ campaignId }: { campaignId: string }) {
           images={bundle.images}
           regionRender={regionRender}
           pois={pois}
+          poiPlaceActive={editing && !!armedIcon}
+          onPlacePoi={editing ? onPlacePoi : undefined}
+          onMovePoi={editing ? onMovePoi : undefined}
           onPoiHover={onPoiHover}
           onPoiClick={onPoiClick}
         />
@@ -254,7 +290,8 @@ export default function WorldMapViewer({ campaignId }: { campaignId: string }) {
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
                 {resolved && <img src={resolved.iconSrc} alt="" style={{ width: 24, height: 24, objectFit: "contain", flex: "0 0 auto" }} />}
                 <span style={{ fontSize: 14, fontWeight: 700, color: C.text, overflow: "hidden", textOverflow: "ellipsis" }}>{title}</span>
-                <button type="button" onClick={() => setSelectedPoi(null)} style={{ marginLeft: "auto", background: "transparent", border: "none", color: C.muted, cursor: "pointer", fontSize: 18, lineHeight: 1, padding: 0 }}>{"\u00d7"}</button>
+                {editing && <button type="button" onClick={() => removePoi(selectedPoi.id)} style={{ marginLeft: "auto", background: "transparent", border: `1px solid ${C.line}`, borderRadius: 5, color: C.muted, cursor: "pointer", fontSize: 11, padding: "2px 7px" }}>Remove</button>}
+                <button type="button" onClick={() => setSelectedPoi(null)} style={{ marginLeft: editing ? 6 : "auto", background: "transparent", border: "none", color: C.muted, cursor: "pointer", fontSize: 18, lineHeight: 1, padding: 0 }}>{"\u00d7"}</button>
               </div>
               {desc ? (
                 <div style={{ fontSize: 12.5, color: C.muted, whiteSpace: "pre-wrap", lineHeight: 1.45 }}>{desc}</div>

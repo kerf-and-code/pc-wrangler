@@ -12,7 +12,7 @@ import { POI_ICONS, POI_ICON_SVG, POI_ICON_CATEGORIES } from "@/lib/worldmap/poi
 type PersonalIcon = { id: string; key: string; label: string; url: string; bytes: number };
 const BUDGET = 1024 * 1024;
 
-export default function IconLibrary({ campaignId, onPick }: { campaignId: string; onPick?: (icon: { key: string } | { iconId: string; url: string }) => void }) {
+export default function IconLibrary({ campaignId, onPick, builtinOnly }: { campaignId: string; onPick?: (icon: { key: string } | { iconId: string; url: string }) => void; builtinOnly?: boolean }) {
   const supabase = useMemo(() => createClient(), []);
   const [personal, setPersonal] = useState<PersonalIcon[]>([]);
   const [q, setQ] = useState("");
@@ -20,10 +20,10 @@ export default function IconLibrary({ campaignId, onPick }: { campaignId: string
   const [status, setStatus] = useState("");
 
   const load = useCallback(async () => {
-    if (!campaignId) return;
+    if (!campaignId || builtinOnly) return;
     const { data } = await supabase.from("map_icons").select("id, key, label, url, bytes").eq("campaign_id", campaignId).order("created_at", { ascending: true });
     setPersonal((data as PersonalIcon[]) || []);
-  }, [supabase, campaignId]);
+  }, [supabase, campaignId, builtinOnly]);
   useEffect(() => { void load(); }, [load]);
 
   const used = useMemo(() => personal.reduce((a, i) => a + (i.bytes || 0), 0), [personal]);
@@ -64,6 +64,7 @@ export default function IconLibrary({ campaignId, onPick }: { campaignId: string
     <div>
       <style>{`.poi-ico svg { width: 100%; height: 100%; display: block; }`}</style>
 
+      {!builtinOnly && (<>
       <div style={secLabel}>YOUR ICONS</div>
       <div style={{ height: 6, borderRadius: 3, background: C.surface2, border: `1px solid ${C.line}`, overflow: "hidden", marginBottom: 4 }}>
         <div style={{ width: `${Math.min(100, (used / BUDGET) * 100)}%`, height: "100%", background: used > BUDGET * 0.9 ? "#b4552f" : C.sun }} />
@@ -85,6 +86,7 @@ export default function IconLibrary({ campaignId, onPick }: { campaignId: string
         </div>
       )}
       {status && <p style={{ fontSize: 11.5, color: C.muted, marginTop: 6 }}>{status}</p>}
+      </>)}
 
       <div style={{ ...secLabel, marginTop: 16 }}>BUILT-IN ICONS ({base.length})</div>
       <select value={cat} onChange={(e) => setCat(e.target.value)}
