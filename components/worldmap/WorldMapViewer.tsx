@@ -64,6 +64,7 @@ export default function WorldMapViewer({ campaignId }: { campaignId: string }) {
   const [selectedBiome, setSelectedBiome] = useState<number | null>(null);
   const [poiRows, setPoiRows] = useState<Poi[]>([]);
   const [armedIcon, setArmedIcon] = useState<{ key: string } | null>(null);
+  const [artEnabled, setArtEnabled] = useState(true);
 
   useEffect(() => {
     let off = false;
@@ -85,6 +86,12 @@ export default function WorldMapViewer({ campaignId }: { campaignId: string }) {
   const colors = useMemo(() => {
     const arr: string[] = [];
     for (const b of bundle?.biomes || []) arr[b.id] = b.color;
+    return arr;
+  }, [bundle]);
+
+  const biomeArt = useMemo(() => {
+    const arr: (string | null)[] = [];
+    for (const b of bundle?.biomes || []) arr[b.id] = `/worldmap/biomes/${b.key}.png`;
     return arr;
   }, [bundle]);
 
@@ -213,6 +220,10 @@ export default function WorldMapViewer({ campaignId }: { campaignId: string }) {
     <div style={{ height: "100vh", display: "flex", flexDirection: "column", background: "#171310" }}>
       <div style={{ display: "flex", gap: 12, alignItems: "center", padding: "10px 16px", borderBottom: `1px solid ${C.line}` }}>
         <span style={{ fontSize: 15, fontWeight: 700, color: C.text }}>World map</span>
+        <button type="button" onClick={() => setArtEnabled((v) => !v)}
+          style={{ fontSize: 12, padding: "4px 9px", borderRadius: 7, cursor: "pointer", border: `1px solid ${artEnabled ? C.sun : C.line}`, background: artEnabled ? "rgba(200,162,75,0.14)" : C.surface2, color: C.text }}>
+          Art: {artEnabled ? "On" : "Off"}
+        </button>
         {layers.length > 0 && (
           <div style={{ display: "flex", gap: 8, alignItems: "center", marginLeft: "auto" }}>
             <span style={{ fontSize: 12, color: C.muted }}>Layer</span>
@@ -260,6 +271,8 @@ export default function WorldMapViewer({ campaignId }: { campaignId: string }) {
         <HexCanvas
           terrain={terrain}
           colors={colors}
+          biomeArt={biomeArt}
+          artEnabled={artEnabled}
           selectedBiome={editing ? selectedBiome : null}
           onPaint={editing ? onPaint : undefined}
           images={bundle.images}

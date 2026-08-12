@@ -39,6 +39,8 @@ type View = { scale: number; tx: number; ty: number };
 export default function HexCanvas({
   terrain,
   colors,
+  biomeArt,
+  artEnabled,
   selectedBiome,
   onPaint,
   images,
@@ -61,6 +63,8 @@ export default function HexCanvas({
 }: {
   terrain: Terrain;
   colors: readonly string[];
+  biomeArt?: readonly (string | null)[];
+  artEnabled?: boolean;
   selectedBiome: number | null;
   onPaint?: (col: number, row: number, biome: number) => void;
   images?: PlacedImage[];
@@ -114,6 +118,10 @@ export default function HexCanvas({
   const poiHitRef = useRef<{ kind: "poi" | "cluster"; sx: number; sy: number; r: number; id?: string; names: string[]; wx: number; wy: number }[]>([]);
   const onMovePoiRef = useRef(onMovePoi);
   const poiDragRef = useRef<{ id: string; dx: number; dy: number } | null>(null);
+  const biomeArtRef = useRef(biomeArt);
+  const artEnabledRef = useRef<boolean>(artEnabled ?? false);
+  const biomeArtCacheRef = useRef<Map<number, HTMLImageElement>>(new Map());
+  const biomeArtReadyRef = useRef<Set<number>>(new Set());
   terrainRef.current = terrain;
   colorsRef.current = colors;
   selRef.current = selectedBiome;
@@ -134,6 +142,8 @@ export default function HexCanvas({
   onPoiClickRef.current = onPoiClick;
   onPoiHoverRef.current = onPoiHover;
   onMovePoiRef.current = onMovePoi;
+  biomeArtRef.current = biomeArt;
+  artEnabledRef.current = artEnabled ?? false;
 
   const draw = useCallback(() => {
     rafRef.current = null;
@@ -197,7 +207,11 @@ export default function HexCanvas({
         const b = t.biome[index(col, row, width)];
         const painted = b !== BIOME_UNSET && b < cols.length;
         let blended = false;
-        if (hasImages) {
+        const artImg = artEnabledRef.current && painted ? biomeArtCacheRef.current.get(b) : undefined;
+        if (artImg && biomeArtReadyRef.current.has(b)) {
+          const bw = SQRT3 * BASE_SIZE, bh = 2 * BASE_SIZE;
+          ctx.drawImage(artImg, center.x - bw / 2, center.y - bh / 2, bw, bh);
+        } else if (hasImages) {
           if (painted) {
             ctx.globalAlpha = IMAGE_TINT_ALPHA;
             ctx.fillStyle = cols[b];
@@ -424,6 +438,20 @@ export default function HexCanvas({
     scheduleDraw();
   }, [pois, scheduleDraw]);
 
+  useEffect(() => {
+    const arr = biomeArt ?? [];
+    for (let id = 0; id < arr.length; id++) {
+      const url = arr[id];
+      if (!url || biomeArtCacheRef.current.has(id)) continue;
+      const el = new Image();
+      biomeArtCacheRef.current.set(id, el);
+      el.onload = () => { biomeArtReadyRef.current.add(id); scheduleDraw(); };
+      el.onerror = () => { biomeArtReadyRef.current.delete(id); };
+      el.src = url;
+    }
+    scheduleDraw();
+  }, [biomeArt, scheduleDraw]);
+
   const resize = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -452,7 +480,7 @@ export default function HexCanvas({
   }, [resize]);
 
   useEffect(() => { fittedRef.current = false; resize(); }, [terrain, resize]);
-  useEffect(() => { scheduleDraw(); }, [colors, positionImageId, regionCells, paintRegionId, regionRender, pois, scheduleDraw]);
+  useEffect(() => { scheduleDraw(); }, [colors, positionImageId, regionCells, paintRegionId, regionRender, pois, biomeArt, artEnabled, scheduleDraw]);
 
   const paintAt = useCallback((clientX: number, clientY: number, last: { col: number; row: number } | null) => {
     const canvas = canvasRef.current;

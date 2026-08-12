@@ -79,6 +79,7 @@ export default function WorldMapPage() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [campaignId, setCampaignId] = useState<string>("");
   const [biomes, setBiomes] = useState<Biome[]>([]);
+  const [artEnabled, setArtEnabled] = useState(false);
   const [mapRow, setMapRow] = useState<MapRow | null>(null);
   const [terrain, setTerrain] = useState<Terrain | null>(null);
   const [images, setImages] = useState<PlacedImage[]>([]);
@@ -109,6 +110,12 @@ export default function WorldMapPage() {
   const colors = useMemo(() => {
     const arr: string[] = [];
     for (const b of biomes) arr[b.id] = b.color;
+    return arr;
+  }, [biomes]);
+
+  const biomeArt = useMemo(() => {
+    const arr: (string | null)[] = [];
+    for (const b of biomes) arr[b.id] = `/worldmap/biomes/${b.key}.png`;
     return arr;
   }, [biomes]);
 
@@ -500,6 +507,13 @@ export default function WorldMapPage() {
             Player editing: {mapRow.editable_by === "party" ? "On" : "Off"}
           </button>
         )}
+        <button type="button" onClick={() => setArtEnabled((v) => !v)} title="Show the hand-painted terrain art"
+          style={{ fontSize: 12, padding: "5px 10px", borderRadius: 7, cursor: "pointer",
+            border: `1px solid ${artEnabled ? C.sun : C.line}`,
+            background: artEnabled ? "rgba(200,162,75,0.14)" : C.surface2,
+            color: C.text, fontWeight: 600 }}>
+          Terrain art: {artEnabled ? "On" : "Off"}
+        </button>
         {mode === "regions" && layerRows.length > 0 && (
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
             <span style={{ fontSize: 12, color: C.muted }}>Layer</span>
@@ -598,7 +612,7 @@ export default function WorldMapPage() {
             <p style={{ color: C.muted, fontSize: 14, padding: 16 }}>Loading\u2026</p>
           ) : terrain ? (
             <HexCanvas
-              terrain={terrain} colors={colors} selectedBiome={selected} onPaint={onPaint}
+              terrain={terrain} colors={colors} biomeArt={biomeArt} artEnabled={artEnabled} selectedBiome={selected} onPaint={onPaint}
               images={images} positionImageId={positionId} onImageMove={onImageMove} onImageScale={onImageScale}
               paintRegionId={paintRegionId} regionCells={regionCells} regionErase={regionErase} onRegionPaint={onRegionPaint}
               regionRender={mode === "regions" ? regionRender : undefined}
