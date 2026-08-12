@@ -56,6 +56,7 @@ export default function HexCanvas({
   onPlacePoi,
   onPoiClick,
   onPoiHover,
+  onMovePoi,
   className,
 }: {
   terrain: Terrain;
@@ -77,6 +78,7 @@ export default function HexCanvas({
   onPlacePoi?: (x: number, y: number) => void;
   onPoiClick?: (id: string) => void;
   onPoiHover?: (h: { names: string[]; sx: number; sy: number } | null) => void;
+  onMovePoi?: (id: string, x: number, y: number) => void;
   className?: string;
 }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -110,6 +112,8 @@ export default function HexCanvas({
   const iconCacheRef = useRef<Map<string, HTMLImageElement>>(new Map());
   const iconReadyRef = useRef<Set<string>>(new Set());
   const poiHitRef = useRef<{ kind: "poi" | "cluster"; sx: number; sy: number; r: number; id?: string; names: string[]; wx: number; wy: number }[]>([]);
+  const onMovePoiRef = useRef(onMovePoi);
+  const poiDragRef = useRef<{ id: string; dx: number; dy: number } | null>(null);
   terrainRef.current = terrain;
   colorsRef.current = colors;
   selRef.current = selectedBiome;
@@ -129,6 +133,7 @@ export default function HexCanvas({
   onPlacePoiRef.current = onPlacePoi;
   onPoiClickRef.current = onPoiClick;
   onPoiHoverRef.current = onPoiHover;
+  onMovePoiRef.current = onMovePoi;
 
   const draw = useCallback(() => {
     rafRef.current = null;
@@ -339,9 +344,12 @@ export default function HexCanvas({
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       const S = 26, CLUSTER = 30;
       const mk: { sx: number; sy: number; p: { id: string; x: number; y: number; name: string; iconId: string } }[] = [];
+      const pd = poiDragRef.current;
       for (const p of ps) {
-        const sx = p.x * view.scale + view.tx;
-        const sy = p.y * view.scale + view.ty;
+        const ox = pd && pd.id === p.id ? pd.dx : 0;
+        const oy = pd && pd.id === p.id ? pd.dy : 0;
+        const sx = (p.x + ox) * view.scale + view.tx;
+        const sy = (p.y + oy) * view.scale + view.ty;
         if (sx < -40 || sx > w + 40 || sy < -40 || sy > h + 40) continue;
         mk.push({ sx, sy, p });
       }
@@ -488,7 +496,7 @@ export default function HexCanvas({
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    let mode: "none" | "pan" | "paint" | "move" | "region" = "none";
+    let mode: "none" | "pan" | "paint" | "move" | "region" | "poi-move" = "none";
     let lastX = 0, lastY = 0;
     let downClientX = 0, downClientY = 0;
     let lastHoverKey: string | null = null;
@@ -526,7 +534,10 @@ export default function HexCanvas({
         mode = "paint";
         lastHex = paintAt(e.clientX, e.clientY, null);
       } else {
-        mode = "pan";
+        const rect = canvas.getBoundingClientRect();
+        const hit = hitTestPoi(e.clientX - rect.left, e.clientY - rect.top);
+        if (hit && hit.kind === "poi" && hit.id) { mode = "poi-move"; poiDragRef.current = { id: hit.id, dx: 0, dy: 0 }; }
+        else { mode = "pan"; }
       }
     };
     const onMove = (e: PointerEvent) => {
@@ -534,6 +545,14 @@ export default function HexCanvas({
         lastHex = paintAt(e.clientX, e.clientY, lastHex);
       } else if (mode === "region") {
         lastHex = paintRegionAt(e.clientX, e.clientY, lastHex);
+      } else if (mode === "poi-move") {
+        const d = poiDragRef.current;
+        if (d) {
+          d.dx += (e.clientX - lastX) / viewRef.current.scale;
+          d.dy += (e.clientY - lastY) / viewRef.current.scale;
+          lastX = e.clientX; lastY = e.clientY;
+          scheduleDraw();
+        }
       } else if (mode === "move") {
         const drag = dragRef.current;
         if (drag) {
@@ -557,6 +576,17 @@ export default function HexCanvas({
           if (im && (drag.dx !== 0 || drag.dy !== 0)) onMoveRef.current?.(im.id, im.x + drag.dx, im.y + drag.dy);
         }
         dragRef.current = null;
+        scheduleDraw();
+      }
+      if (mode === "poi-move") {
+        const d = poiDragRef.current;
+        if (d) {
+          const moved = Math.abs(e.clientX - downClientX) >= 5 || Math.abs(e.clientY - downClientY) >= 5;
+          const p = poisRef.current?.find((x) => x.id === d.id);
+          if (moved && p) onMovePoiRef.current?.(d.id, p.x + d.dx, p.y + d.dy);
+          else if (!moved) onPoiClickRef.current?.(d.id);
+        }
+        poiDragRef.current = null;
         scheduleDraw();
       }
       if ((mode === "pan" || mode === "none") && Math.abs(e.clientX - downClientX) < 5 && Math.abs(e.clientY - downClientY) < 5) {

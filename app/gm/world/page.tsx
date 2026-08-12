@@ -327,6 +327,13 @@ export default function WorldMapPage() {
     setPoiRows((prev) => prev.filter((r) => r.id !== id));
   }, [supabase]);
 
+  const onMovePoi = useCallback(async (id: string, x: number, y: number) => {
+    const { col, row } = pixelToHex(x, y, BASE_SIZE);
+    setPoiRows((prev) => prev.map((r) => (r.id === id ? { ...r, x, y } : r)));
+    const { error } = await supabase.from("map_pois").update({ x, y, col, row }).eq("id", id);
+    if (error) setStatus(error.message);
+  }, [supabase]);
+
   useEffect(() => () => { if (saveTimer.current) clearTimeout(saveTimer.current); }, []);
 
   const applyResize = useCallback(async () => {
@@ -561,7 +568,7 @@ export default function WorldMapPage() {
               images={images} positionImageId={positionId} onImageMove={onImageMove} onImageScale={onImageScale}
               paintRegionId={paintRegionId} regionCells={regionCells} regionErase={regionErase} onRegionPaint={onRegionPaint}
               regionRender={mode === "regions" ? regionRender : undefined}
-              pois={pois} poiPlaceActive={mode === "pois" && !!armedIcon} onPlacePoi={onPlacePoi} onPoiClick={onPoiClick} onPoiHover={onPoiHover}
+              pois={pois} poiPlaceActive={mode === "pois" && !!armedIcon} onPlacePoi={onPlacePoi} onPoiClick={onPoiClick} onPoiHover={onPoiHover} onMovePoi={onMovePoi}
             />
           ) : (
             <p style={{ color: C.muted, fontSize: 14, padding: 16 }}>Pick a campaign to start its world map.</p>
