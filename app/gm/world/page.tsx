@@ -7,6 +7,7 @@ import { surfaces, ui } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import HexCanvas from "@/components/worldmap/HexCanvas";
 import RegionsPanel from "@/components/worldmap/RegionsPanel";
+import IconLibrary from "@/components/worldmap/IconLibrary";
 import {
   type Terrain, createTerrain, decodeTerrain, encodeTerrain, base64ToBytes, bytesToBase64, expandTerrain, BIOME_UNSET,
 } from "@/lib/worldmap/hex";
@@ -63,7 +64,7 @@ export default function WorldMapPage() {
   const [terrain, setTerrain] = useState<Terrain | null>(null);
   const [images, setImages] = useState<PlacedImage[]>([]);
   const [positionId, setPositionId] = useState<string | null>(null);
-  const [mode, setMode] = useState<"terrain" | "regions">("terrain");
+  const [mode, setMode] = useState<"terrain" | "regions" | "icons">("terrain");
   const [paintRegionId, setPaintRegionId] = useState<string | null>(null);
   const [regionErase, setRegionErase] = useState<boolean>(false);
   const [regionCells, setRegionCells] = useState<Set<string>>(new Set());
@@ -394,6 +395,7 @@ export default function WorldMapPage() {
           <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
             {modeChip("Terrain", mode === "terrain", () => { setMode("terrain"); setPaintRegionId(null); })}
             {modeChip("Regions", mode === "regions", () => { setMode("regions"); setSelected(null); })}
+            {modeChip("Icons", mode === "icons", () => { setMode("icons"); setSelected(null); setPaintRegionId(null); })}
           </div>
           {mode === "terrain" && (<>
           <div style={{ marginBottom: 14 }}>
@@ -454,6 +456,9 @@ export default function WorldMapPage() {
           </>)}
           {mode === "regions" && mapRow && (
             <RegionsPanel worldMapId={mapRow.id} campaignId={campaignId} onPaintState={onPaintState} onChanged={reloadRegions} />
+          )}
+          {mode === "icons" && campaignId && (
+            <IconLibrary campaignId={campaignId} />
           )}
         </div>
 
