@@ -84,6 +84,15 @@ export function renderFields(f: Fields, ctx: CanvasRenderingContext2D, cw: numbe
       }
       ctx.stroke();
     }
+    for (const st of f.settlements) {
+      const p = hexToPixel(st.index % f.width, (st.index / f.width) | 0, 1);
+      const rad = st.tier === 0 ? 1.3 : st.tier === 1 ? 0.85 : 0.45;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, rad, 0, Math.PI * 2);
+      ctx.fillStyle = st.tier === 0 ? "#f4d47a" : st.tier === 1 ? "#e6b866" : "#caa060";
+      ctx.fill();
+      if (st.tier === 0) { ctx.lineWidth = 0.35; ctx.strokeStyle = "#3a2a10"; ctx.stroke(); }
+    }
   }
 
   ctx.setTransform(1, 0, 0, 1, 0, 0);
