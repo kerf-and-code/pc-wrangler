@@ -12,6 +12,11 @@ import { renderFields } from "@/lib/worldmap/gen/debug-render";
 const BIOME_LABELS = ["Plains", "Savanna", "Prairie", "Forest", "Taiga", "Rainforest", "Jungle", "Medit.", "Sand desert", "Rock desert", "Tundra", "Alpine", "Highland", "Swamp", "Bog", "River", "Lake", "Sea", "Coast", "Reef", "Mountains", "Volcanic", "Canyon", "Cave", "Blighted", "Enchanted", "Crystal", "Feywild"];
 const WINDS = [["E", 0], ["NE", 1], ["NW", 2], ["W", 3], ["SW", 4], ["SE", 5]] as const;
 const VILLAGE_PRESETS: Record<string, [number, number]> = { sparse: [2, 5], normal: [1, 4], dense: [0, 3] };
+const POI_PRESETS: Record<string, { resource: number; cave: number; dungeonPer: number }> = {
+  sparse: { resource: 0.025, cave: 0.02, dungeonPer: 260 },
+  normal: { resource: 0.05, cave: 0.03, dungeonPer: 175 },
+  dense: { resource: 0.09, cave: 0.055, dungeonPer: 120 },
+};
 
 type Stats = { land: number; sea: number; river: number; cities: number; towns: number; villages: number; largest: number; fantasy: number; census: [string, number][] };
 
@@ -49,6 +54,7 @@ export default function GenPanel({ campaignId, onAccepted, onClose }: { campaign
   const [archipelago, setArchipelago] = useState(false);
   const [wind, setWind] = useState(0);
   const [villages, setVillages] = useState<"sparse" | "normal" | "dense">("normal");
+  const [pois, setPois] = useState<"sparse" | "normal" | "dense">("normal");
 
   const [phase, setPhase] = useState<"idle" | "generating" | "preview" | "accepting">("idle");
   const [progress, setProgress] = useState<{ index: number; total: number; pass: string }>({ index: 0, total: 12, pass: "" });
@@ -57,12 +63,14 @@ export default function GenPanel({ campaignId, onAccepted, onClose }: { campaign
 
   const buildConfig = useCallback((): GenConfig => {
     const [vFloor, vSpacing] = VILLAGE_PRESETS[villages];
+    const p = POI_PRESETS[pois];
     return {
       ...defaultConfig(size, size, seed),
       oceanCoverage: ocean, continentCount: continents, landConcentration: landConc, archipelago, windDir: wind,
       villageScoreFloor: vFloor, villageSpacing: vSpacing,
+      resourceDensity: p.resource, caveDensity: p.cave, dungeonPer: p.dungeonPer,
     };
-  }, [size, seed, ocean, continents, landConc, archipelago, wind, villages]);
+  }, [size, seed, ocean, continents, landConc, archipelago, wind, villages, pois]);
 
   useEffect(() => () => { workerRef.current?.terminate(); }, []);
 
@@ -140,6 +148,9 @@ export default function GenPanel({ campaignId, onAccepted, onClose }: { campaign
           <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 12.5, color: C.text }}><input type="checkbox" checked={archipelago} onChange={(e) => setArchipelago(e.target.checked)} disabled={busy} /> Archipelago mode</label>
           <div><span style={label}>Villages</span>
             <div style={{ display: "flex", gap: 5 }}>{(["sparse", "normal", "dense"] as const).map((v) => <button key={v} type="button" onClick={() => setVillages(v)} style={{ ...chip(villages === v), flex: 1, padding: "5px 2px", textTransform: "capitalize" }} disabled={busy}>{v}</button>)}</div>
+          </div>
+          <div><span style={label}>POIs (resources, caves, dungeons)</span>
+            <div style={{ display: "flex", gap: 5 }}>{(["sparse", "normal", "dense"] as const).map((v) => <button key={v} type="button" onClick={() => setPois(v)} style={{ ...chip(pois === v), flex: 1, padding: "5px 2px", textTransform: "capitalize" }} disabled={busy}>{v}</button>)}</div>
           </div>
           <button type="button" onClick={generate} disabled={busy} style={{ ...chip(false), padding: "9px", background: C.sun, color: "#1a1206", border: "none", opacity: busy ? 0.6 : 1 }}>{phase === "generating" ? `Generating\u2026 ${pct}%` : "Generate"}</button>
           {phase === "generating" && (

@@ -61,7 +61,7 @@ export function pass12Pois(f: Fields, cfg: GenConfig): void {
     const elig = f.biome[i] === 20 || f.biome[i] === 11 || f.biome[i] === 22 || f.elevBand[i] === 1;
     if (!elig) continue;
     const remote = Math.min(1, remoteOf(i) / 12);
-    if (rnd() < 0.03 + 0.05 * remote) { pois.push({ index: i, kind: "cave" }); occupied[i] = 1; }
+    if (rnd() < cfg.caveDensity * (1 + 1.6 * remote)) { pois.push({ index: i, kind: "cave" }); occupied[i] = 1; }
   }
 
   // Dungeons: remoteness x biome weight, floor 6 from settlements, sampled w/o replacement, spaced.

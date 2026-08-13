@@ -33,6 +33,7 @@ export type GenConfig = {
   resourceDensity: number;   // per-eligible-hex chance of a resource node
   dungeonPer: number;        // one dungeon per this many land hexes
   dungeonMinSpacing: number; // min hex distance between dungeon-tier POIs
+  caveDensity: number;       // base per-eligible-hex chance of a cave entrance
 };
 
 export type GenPoi = { index: number; kind: string }; // ore/gems/lumber/farmland/fishing/herbs/cave/dungeon/hazard
@@ -156,5 +157,6 @@ export function defaultConfig(width: number, height: number, seed: string | numb
     resourceDensity: 0.05,
     dungeonPer: 175,
     dungeonMinSpacing: 3,
+    caveDensity: 0.03,
   };
 }
