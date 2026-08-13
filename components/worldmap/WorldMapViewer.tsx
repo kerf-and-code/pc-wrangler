@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { C } from "@/lib/forge-theme";
-import HexCanvas from "@/components/worldmap/HexCanvas";
+import HexCanvas, { type MapFeature } from "@/components/worldmap/HexCanvas";
 import { type Terrain, createTerrain, decodeTerrain, base64ToBytes, encodeTerrain, bytesToBase64, BIOME_UNSET } from "@/lib/worldmap/hex";
 import { POI_ICON_SVG } from "@/lib/worldmap/poi-icons";
 import { pixelToHex, BASE_SIZE } from "@/lib/worldmap/layout";
@@ -65,6 +65,7 @@ export default function WorldMapViewer({ campaignId }: { campaignId: string }) {
   const [poiRows, setPoiRows] = useState<Poi[]>([]);
   const [armedIcon, setArmedIcon] = useState<{ key: string } | null>(null);
   const [artEnabled, setArtEnabled] = useState(true);
+  const [features, setFeatures] = useState<MapFeature[]>([]);
 
   useEffect(() => {
     let off = false;
@@ -75,6 +76,11 @@ export default function WorldMapViewer({ campaignId }: { campaignId: string }) {
       const b = data as Bundle;
       setBundle(b);
       setPoiRows(b.pois || []);
+      const { data: featData } = await supabase.rpc("world_map_features_read", { p_campaign: campaignId });
+      if (!off && Array.isArray(featData)) {
+        const rows = featData as { kind: "river" | "road"; class: number; path: [number, number][]; name: string | null }[];
+        setFeatures(rows.map((r) => ({ kind: r.kind, klass: r.class, path: r.path, name: r.name })));
+      }
       if (b.map) {
         setTerrain(b.map.terrain ? decodeTerrain(base64ToBytes(b.map.terrain)) : createTerrain(b.map.width, b.map.height, b.map.origin_col, b.map.origin_row));
       }
@@ -271,6 +277,7 @@ export default function WorldMapViewer({ campaignId }: { campaignId: string }) {
         <HexCanvas
           terrain={terrain}
           colors={colors}
+          features={features}
           biomeArt={biomeArt}
           artEnabled={artEnabled}
           selectedBiome={editing ? selectedBiome : null}

@@ -35,7 +35,7 @@ function mix(a: string, b: string): string {
 }
 
 type View = { scale: number; tx: number; ty: number };
-export type MapFeature = { kind: "river" | "road"; klass: number; path: [number, number][] };
+export type MapFeature = { kind: "river" | "road"; klass: number; path: [number, number][]; name?: string | null };
 
 export default function HexCanvas({
   terrain,
@@ -380,6 +380,24 @@ export default function HexCanvas({
       };
       drawFeat("river");
       drawFeat("road");
+      // River name labels: constant screen size, drawn at the named segment's midpoint.
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.font = "italic 12px Georgia, serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = "rgba(247,244,239,0.85)";
+      ctx.fillStyle = "#2e5a80";
+      for (const ft of feats) {
+        if (ft.kind !== "river" || !ft.name || ft.path.length < 3) continue;
+        const mid = ft.path[Math.floor(ft.path.length / 2)];
+        const o = axialToOffset(mid[0], mid[1]);
+        const wc = hexToPixel(o.col, o.row, BASE_SIZE);
+        const sx = view.scale * wc.x + view.tx;
+        const sy = view.scale * wc.y + view.ty;
+        ctx.strokeText(ft.name, sx, sy);
+        ctx.fillText(ft.name, sx, sy);
+      }
     }
 
     // POIs (Phase 4b): constant screen-size icons with screen-distance clustering, drawn last.

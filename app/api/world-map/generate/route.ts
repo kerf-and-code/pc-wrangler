@@ -10,7 +10,7 @@ export const maxDuration = 30;
 // features, and pins wholesale, so hand-placed pins and hex-to-region assignments are cleared; the
 // named regions themselves are kept. GM-only.
 
-type Feature = { kind: string; klass: number; path: [number, number][] };
+type Feature = { kind: string; klass: number; path: [number, number][]; name: string | null };
 type Poi = { col: number; row: number; x: number; y: number; iconKey: string; name: string };
 type Body = {
   campaignId: string;
@@ -55,7 +55,7 @@ export async function POST(request: Request) {
 
     await admin.from("map_features").delete().eq("world_map_id", worldMapId);
     if (features.length) {
-      const rows = features.map((f) => ({ world_map_id: worldMapId, kind: f.kind, class: f.klass, path: f.path }));
+      const rows = features.map((f) => ({ world_map_id: worldMapId, kind: f.kind, class: f.klass, path: f.path, name: f.name ?? null }));
       const insF = await admin.from("map_features").insert(rows);
       if (insF.error) return NextResponse.json({ error: `Features write failed: ${insF.error.message}` }, { status: 500 });
     }

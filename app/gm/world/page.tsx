@@ -433,10 +433,10 @@ export default function WorldMapPage() {
   useEffect(() => {
     if (!mapRowId) { setFeatures([]); return; }
     let cancelled = false;
-    supabase.from("map_features").select("kind, class, path").eq("world_map_id", mapRowId).then(({ data }) => {
+    supabase.from("map_features").select("kind, class, path, name").eq("world_map_id", mapRowId).then(({ data }) => {
       if (cancelled) return;
-      const rows = (data ?? []) as { kind: "river" | "road"; class: number; path: [number, number][] }[];
-      setFeatures(rows.map((r) => ({ kind: r.kind, klass: r.class, path: r.path })));
+      const rows = (data ?? []) as { kind: "river" | "road"; class: number; path: [number, number][]; name: string | null }[];
+      setFeatures(rows.map((r) => ({ kind: r.kind, klass: r.class, path: r.path, name: r.name })));
     });
     return () => { cancelled = true; };
   }, [mapRowId, supabase]);
