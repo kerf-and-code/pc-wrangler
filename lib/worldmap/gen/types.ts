@@ -22,7 +22,19 @@ export type GenConfig = {
   majorQuantile: number;     // flowAccum quantile that becomes a major river
   minRiverLength: number;    // drop river polylines shorter than this
   fantasyDensityCap: number; // max fantasy hexes as a fraction of land
+  citySpacing: number;       // min hex distance between cities on a landmass
+  townSpacing: number;       // min hex distance from any city/town
+  villageSpacing: number;    // min hex distance from any settlement
+  townScoreFloor: number;    // min suitability for a town
+  villageScoreFloor: number; // min suitability for a village
+  bridgeCost: number;        // extra road cost to cross a river hex
+  mountainRoadCost: number;  // road cost through mountain/alpine (Infinity to forbid)
+  villageRoadMax: number;    // max cost-distance to hook a village to the road net
 };
+
+export type RoadPolyline = { path: number[]; class: number }; // class 0 major / 1 minor
+
+export type Settlement = { index: number; tier: number }; // tier 0 city / 1 town / 2 village
 
 export type RiverPolyline = { path: number[]; width: number }; // path = hex indices; width 1 minor / 2 major
 
@@ -58,6 +70,11 @@ export type Fields = {
   glacier: Uint8Array;       // pass 7: polar-wet tundra render flag
   gorge: Uint8Array;         // pass 7: major river through wet high terrain
   saltPan: Uint8Array;       // pass 7: dry basin in arid moisture
+  settlementTier: Int8Array; // pass 10: -1 none / 0 city / 1 town / 2 village
+  settlements: Settlement[]; // pass 10
+  roads: RoadPolyline[];     // pass 11
+  road: Uint8Array;          // pass 11: hex carries a road
+  bridge: Uint8Array;        // pass 11: 0 none / 1 ford / 2 bridge (river crossing)
 };
 
 export function createFields(width: number, height: number, elevation: Float32Array): Fields {
@@ -91,6 +108,11 @@ export function createFields(width: number, height: number, elevation: Float32Ar
     glacier: new Uint8Array(n),
     gorge: new Uint8Array(n),
     saltPan: new Uint8Array(n),
+    settlementTier: new Int8Array(n).fill(-1),
+    settlements: [],
+    roads: [],
+    road: new Uint8Array(n),
+    bridge: new Uint8Array(n),
   };
 }
 
@@ -116,5 +138,13 @@ export function defaultConfig(width: number, height: number, seed: string | numb
     majorQuantile: 0.99,
     minRiverLength: 4,
     fantasyDensityCap: 0.025,
+    citySpacing: 13,
+    townSpacing: 6,
+    villageSpacing: 3,
+    townScoreFloor: 1,
+    villageScoreFloor: 0,
+    bridgeCost: 3,
+    mountainRoadCost: 6,
+    villageRoadMax: 10,
   };
 }

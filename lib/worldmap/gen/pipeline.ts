@@ -13,6 +13,7 @@ import { pass7Biomes } from "./pass7-biomes";
 import { pass8Cohesion } from "./pass8-cohesion";
 import { pass9Fantasy } from "./pass9-fantasy";
 import { pass10Settlements } from "./pass10-settlements";
+import { pass11Roads } from "./pass11-roads";
 
 export function generateTerrain(cfg: GenConfig): Fields {
   const elevation = pass1Elevation(cfg);
@@ -26,5 +27,6 @@ export function generateTerrain(cfg: GenConfig): Fields {
   pass8Cohesion(f);
   pass9Fantasy(f, cfg);
   pass10Settlements(f, cfg);
+  pass11Roads(f, cfg);
   return f;
 }

@@ -84,6 +84,18 @@ export function renderFields(f: Fields, ctx: CanvasRenderingContext2D, cw: numbe
       }
       ctx.stroke();
     }
+    for (const rd of f.roads) {
+      if (rd.path.length < 2) continue;
+      ctx.strokeStyle = rd.class === 0 ? "#efd39a" : "#b8945f";
+      ctx.lineWidth = rd.class === 0 ? 0.7 : 0.4;
+      ctx.beginPath();
+      for (let k = 0; k < rd.path.length; k++) {
+        const idx = rd.path[k];
+        const p = hexToPixel(idx % f.width, (idx / f.width) | 0, 1);
+        if (k === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y);
+      }
+      ctx.stroke();
+    }
     for (const st of f.settlements) {
       const p = hexToPixel(st.index % f.width, (st.index / f.width) | 0, 1);
       const rad = st.tier === 0 ? 1.3 : st.tier === 1 ? 0.85 : 0.45;
