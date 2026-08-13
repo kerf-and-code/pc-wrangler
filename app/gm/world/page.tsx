@@ -412,7 +412,7 @@ export default function WorldMapPage() {
     setStatus("Rendering snapshot\u2026");
     try {
       const blob = await renderWorldSnapshot({
-        terrain, colors, biomeArt, images,
+        terrain, colors, biomeArt, images, features,
         pois: pois.map((p) => ({ x: p.x, y: p.y, iconSrc: p.iconSrc })),
       });
       const fd = new FormData();

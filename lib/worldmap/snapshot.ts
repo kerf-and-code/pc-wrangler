@@ -5,13 +5,14 @@
 // picture, not the interactive map. Client-side (needs a real canvas + toBlob); cross-origin images
 // are loaded with crossOrigin so toBlob does not taint. Regions are intentionally out of v1.
 
-import { type Terrain, index, BIOME_UNSET } from "./hex";
+import { type Terrain, index, BIOME_UNSET, axialToOffset } from "./hex";
 import { hexToPixel, hexCorners, gridPixelSize, gridOrigin, BASE_SIZE } from "./layout";
 
 const SQRT3 = Math.sqrt(3);
 
 type SnapImage = { url: string; x: number; y: number; scale: number; z: number };
 type SnapPoi = { x: number; y: number; iconSrc: string };
+type SnapFeature = { kind: "river" | "road"; klass: number; path: [number, number][]; name?: string | null };
 
 function loadImage(url: string): Promise<HTMLImageElement | null> {
   return new Promise((resolve) => {
@@ -29,9 +30,10 @@ export async function renderWorldSnapshot(opts: {
   biomeArt?: readonly (string | null)[];
   images?: SnapImage[];
   pois?: SnapPoi[];
+  features?: SnapFeature[];
   maxPx?: number;
 }): Promise<Blob> {
-  const { terrain, colors, biomeArt = [], images = [], pois = [], maxPx = 2048 } = opts;
+  const { terrain, colors, biomeArt = [], images = [], pois = [], features = [], maxPx = 2048 } = opts;
   const W = terrain.meta.width, H = terrain.meta.height;
 
   const g = gridPixelSize(W, H, BASE_SIZE);
@@ -86,6 +88,42 @@ export async function renderWorldSnapshot(opts: {
         ctx.fillStyle = colors[b];
         ctx.fill();
       }
+    }
+  }
+
+  // Feature overlays (rivers, roads) over terrain, then river labels, under POIs.
+  if (features.length) {
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    const drawKind = (kind: "river" | "road") => {
+      for (const ft of features) {
+        if (ft.kind !== kind || ft.path.length < 2) continue;
+        ctx.beginPath();
+        for (let k = 0; k < ft.path.length; k++) {
+          const off = axialToOffset(ft.path[k][0], ft.path[k][1]);
+          const c = hexToPixel(off.col, off.row, BASE_SIZE);
+          if (k === 0) ctx.moveTo(c.x, c.y); else ctx.lineTo(c.x, c.y);
+        }
+        if (kind === "river") { ctx.strokeStyle = "#3f7fb0"; ctx.lineWidth = (ft.klass >= 2 ? 0.42 : 0.24) * BASE_SIZE; }
+        else { ctx.strokeStyle = "#caa25e"; ctx.lineWidth = (ft.klass === 0 ? 0.3 : 0.18) * BASE_SIZE; }
+        ctx.stroke();
+      }
+    };
+    drawKind("river");
+    drawKind("road");
+    ctx.font = `italic ${1.2 * BASE_SIZE}px Georgia, serif`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.lineWidth = 0.22 * BASE_SIZE;
+    ctx.strokeStyle = "rgba(247,244,239,0.85)";
+    ctx.fillStyle = "#2e5a80";
+    for (const ft of features) {
+      if (ft.kind !== "river" || !ft.name || ft.path.length < 3) continue;
+      const mid = ft.path[Math.floor(ft.path.length / 2)];
+      const off = axialToOffset(mid[0], mid[1]);
+      const c = hexToPixel(off.col, off.row, BASE_SIZE);
+      ctx.strokeText(ft.name, c.x, c.y);
+      ctx.fillText(ft.name, c.x, c.y);
     }
   }
 
