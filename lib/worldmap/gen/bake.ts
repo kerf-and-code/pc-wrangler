@@ -5,13 +5,14 @@
 // icon keys and generic labels (NO codex entries - linking a pin to an entry stays a GM act). Pure.
 
 import { type Fields, type GenConfig } from "./types";
+import { hexToPixel, BASE_SIZE } from "../layout";
 import {
   createTerrain, encodeTerrain, bytesToBase64, offsetToAxial,
   FLAG_SHALLOWS, FLAG_CLIFF, FLAG_DELTA, FLAG_GORGE, FLAG_FROZEN, FLAG_SALTPAN, FLAG_GLACIER,
 } from "../hex";
 
 export type BakedFeature = { kind: "river" | "road"; klass: number; path: [number, number][] };
-export type BakedPoi = { col: number; row: number; iconKey: string; name: string };
+export type BakedPoi = { col: number; row: number; x: number; y: number; iconKey: string; name: string };
 export type BakedWorld = { terrain: string; features: BakedFeature[]; pois: BakedPoi[]; metadata: Record<string, unknown> };
 
 const SETTLE_ICON = ["city_walled", "town", "village"];
@@ -43,7 +44,11 @@ export function bakeWorld(f: Fields, cfg: GenConfig, originCol: number, originRo
   for (const rd of f.roads) features.push({ kind: "road", klass: rd.class, path: toPath(rd.path) });
 
   const pois: BakedPoi[] = [];
-  const push = (i: number, iconKey: string, name: string) => pois.push({ col: i % W, row: (i / W) | 0, iconKey, name });
+  const push = (i: number, iconKey: string, name: string) => {
+    const col = i % W, row = (i / W) | 0;
+    const p = hexToPixel(col, row, BASE_SIZE);
+    pois.push({ col, row, x: p.x, y: p.y, iconKey, name });
+  };
   for (const st of f.settlements) push(st.index, SETTLE_ICON[st.tier], SETTLE_NAME[st.tier]);
   for (let i = 0; i < N; i++) { if (f.bridge[i] === 2) push(i, "bridge", "Bridge"); else if (f.bridge[i] === 1) push(i, "ford", "Ford"); }
   for (const p of f.pois) push(p.index, POI_ICON[p.kind] ?? "unknown_poi", POI_NAME[p.kind] ?? "Site");

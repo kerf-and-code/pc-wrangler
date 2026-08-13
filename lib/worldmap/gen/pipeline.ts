@@ -16,19 +16,23 @@ import { pass10Settlements } from "./pass10-settlements";
 import { pass11Roads } from "./pass11-roads";
 import { pass12Pois } from "./pass12-pois";
 
-export function generateTerrain(cfg: GenConfig): Fields {
-  const elevation = pass1Elevation(cfg);
+export type GenProgress = (p: { pass: string; index: number; total: number }) => void;
+
+export function generateTerrain(cfg: GenConfig, onProgress?: GenProgress): Fields {
+  const total = 12;
+  const step = (index: number, pass: string) => { if (onProgress) onProgress({ pass, index, total }); };
+  const elevation = pass1Elevation(cfg); step(1, "elevation");
   const f = createFields(cfg.width, cfg.height, elevation);
-  pass2SeaLevel(f, cfg);
-  pass3Depressions(f);
-  pass4Temperature(f, cfg);
-  pass5Moisture(f, cfg);
-  pass6Rivers(f, cfg);
-  pass7Biomes(f);
-  pass8Cohesion(f);
-  pass9Fantasy(f, cfg);
-  pass10Settlements(f, cfg);
-  pass11Roads(f, cfg);
-  pass12Pois(f, cfg);
+  pass2SeaLevel(f, cfg); step(2, "sea level");
+  pass3Depressions(f); step(3, "drainage");
+  pass4Temperature(f, cfg); step(4, "temperature");
+  pass5Moisture(f, cfg); step(5, "moisture");
+  pass6Rivers(f, cfg); step(6, "rivers");
+  pass7Biomes(f); step(7, "biomes");
+  pass8Cohesion(f); step(8, "cohesion");
+  pass9Fantasy(f, cfg); step(9, "fantasy");
+  pass10Settlements(f, cfg); step(10, "settlements");
+  pass11Roads(f, cfg); step(11, "roads");
+  pass12Pois(f, cfg); step(12, "POIs");
   return f;
 }
