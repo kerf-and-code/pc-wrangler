@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useRef } from "react";
 import { type Terrain, index, setBiome, BIOME_UNSET, offsetToAxial, axialToOffset, AXIAL_DIRS, inBounds } from "@/lib/worldmap/hex";
 import { hexToPixel, hexCorners, pixelToHex, gridPixelSize, gridOrigin, BASE_SIZE, type PlacedImage } from "@/lib/worldmap/layout";
+import { buildFeatureEdges, selectTile, type FeatureEdges, type MapFeatureLike } from "@/lib/worldmap/feature-tiles";
 
 // The flat-top grid on a canvas. Two backings for the same grid:
 //   - no images: draws coloured biome tiles (the painted terrain).
@@ -126,6 +127,10 @@ export default function HexCanvas({
   const artEnabledRef = useRef<boolean>(artEnabled ?? false);
   const biomeArtCacheRef = useRef<Map<number, HTMLImageElement>>(new Map());
   const biomeArtReadyRef = useRef<Set<number>>(new Set());
+  const featTileCacheRef = useRef<Map<string, HTMLImageElement>>(new Map());
+  const featTileReadyRef = useRef<Set<string>>(new Set());
+  const featEdgesRef = useRef<{ key: unknown; w: number; h: number; edges: FeatureEdges } | null>(null);
+  const redrawRef = useRef<() => void>(() => {});
   terrainRef.current = terrain;
   colorsRef.current = colors;
   selRef.current = selectedBiome;
@@ -162,6 +167,27 @@ export default function HexCanvas({
     const cols = colorsRef.current;
     const imgs = imagesRef.current;
     const { width, height } = t.meta;
+
+    // Connected-tile support: per-cell feature-edge bitmasks (cached per features array + size),
+    // lazily loaded tile images, and coverage sets so the v1 polylines skip fully tiled segments.
+    const featsForTiles = featuresRef.current ?? [];
+    const ec = featEdgesRef.current;
+    if (!ec || ec.key !== featsForTiles || ec.w !== width || ec.h !== height) {
+      featEdgesRef.current = { key: featsForTiles, w: width, h: height, edges: buildFeatureEdges(width, height, featsForTiles as readonly MapFeatureLike[]) };
+    }
+    const tileEnv = { width, height, biome: t.biome, flags: t.flags, edges: (featEdgesRef.current as { edges: FeatureEdges }).edges };
+    const coveredRiver = new Set<number>();
+    const coveredRoad = new Set<number>();
+    const featTile = (name: string): HTMLImageElement | null => {
+      let img = featTileCacheRef.current.get(name);
+      if (!img) {
+        img = new Image();
+        img.onload = () => { featTileReadyRef.current.add(name); redrawRef.current(); };
+        img.src = `/worldmap/features/${name}.png`;
+        featTileCacheRef.current.set(name, img);
+      }
+      return featTileReadyRef.current.has(name) ? img : null;
+    };
 
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, w, h);
@@ -212,8 +238,30 @@ export default function HexCanvas({
         const b = t.biome[index(col, row, width)];
         const painted = b !== BIOME_UNSET && b < cols.length;
         let blended = false;
-        const artImg = artEnabledRef.current && painted ? biomeArtCacheRef.current.get(b) : undefined;
-        if (artImg && biomeArtReadyRef.current.has(b)) {
+        let tiled = false;
+        if (artEnabledRef.current) {
+          const choice = selectTile(col, row, tileEnv);
+          if (choice) {
+            const timg = featTile(choice.name);
+            if (timg) {
+              const bw = SQRT3 * BASE_SIZE, bh = 2 * BASE_SIZE;
+              ctx.save();
+              ctx.translate(center.x, center.y);
+              ctx.rotate(-choice.rot * Math.PI / 3);
+              if (choice.flip) ctx.scale(-1, 1);
+              ctx.drawImage(timg, -bw / 2, -bh / 2, bw, bh);
+              ctx.restore();
+              const ci = index(col, row, width);
+              if (choice.coversRiver) coveredRiver.add(ci);
+              if (choice.coversRoad) coveredRoad.add(ci);
+              tiled = true;
+            }
+          }
+        }
+        const artImg = !tiled && artEnabledRef.current && painted ? biomeArtCacheRef.current.get(b) : undefined;
+        if (tiled) {
+          // tile drawn; the grid stroke below still applies
+        } else if (artImg && biomeArtReadyRef.current.has(b)) {
           const bw = SQRT3 * BASE_SIZE, bh = 2 * BASE_SIZE;
           ctx.drawImage(artImg, center.x - bw / 2, center.y - bh / 2, bw, bh);
         } else if (hasImages) {
@@ -364,14 +412,26 @@ export default function HexCanvas({
       ctx.scale(view.scale, view.scale);
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
+      const covered = (kind: "river" | "road", q: number, r: number): boolean => {
+        const o = axialToOffset(q, r);
+        if (o.col < 0 || o.col >= width || o.row < 0 || o.row >= height) return false;
+        const ci = index(o.col, o.row, width);
+        return kind === "river" ? coveredRiver.has(ci) : coveredRoad.has(ci);
+      };
       const drawFeat = (kind: "river" | "road") => {
         for (const ft of feats) {
           if (ft.kind !== kind || !ft.path || ft.path.length < 2) continue;
           ctx.beginPath();
-          for (let k = 0; k < ft.path.length; k++) {
-            const o = axialToOffset(ft.path[k][0], ft.path[k][1]);
-            const c = hexToPixel(o.col, o.row, BASE_SIZE);
-            if (k === 0) ctx.moveTo(c.x, c.y); else ctx.lineTo(c.x, c.y);
+          let pen = false;
+          for (let k = 0; k + 1 < ft.path.length; k++) {
+            const [aq, ar] = ft.path[k], [bq, br] = ft.path[k + 1];
+            // A segment whose both cells carry an exact tile is already painted by the art.
+            if (covered(kind, aq, ar) && covered(kind, bq, br)) { pen = false; continue; }
+            const oa = axialToOffset(aq, ar), ob = axialToOffset(bq, br);
+            const ca = hexToPixel(oa.col, oa.row, BASE_SIZE), cb = hexToPixel(ob.col, ob.row, BASE_SIZE);
+            if (!pen) ctx.moveTo(ca.x, ca.y);
+            ctx.lineTo(cb.x, cb.y);
+            pen = true;
           }
           if (kind === "river") { ctx.strokeStyle = "#3f7fb0"; ctx.lineWidth = (ft.klass >= 2 ? 0.42 : 0.24) * BASE_SIZE; }
           else { ctx.strokeStyle = "#caa25e"; ctx.lineWidth = (ft.klass === 0 ? 0.3 : 0.18) * BASE_SIZE; }
@@ -529,6 +589,7 @@ export default function HexCanvas({
   }, [resize]);
 
   useEffect(() => { fittedRef.current = false; resize(); }, [terrain, resize]);
+  useEffect(() => { redrawRef.current = scheduleDraw; }, [scheduleDraw]);
   useEffect(() => { scheduleDraw(); }, [colors, positionImageId, regionCells, paintRegionId, regionRender, pois, biomeArt, artEnabled, features, scheduleDraw]);
 
   const paintAt = useCallback((clientX: number, clientY: number, last: { col: number; row: number } | null) => {
