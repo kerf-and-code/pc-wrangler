@@ -51,13 +51,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: `Daily fantasy-view limit reached (${DAILY_LIMIT} per day). Try again later.`, limited: true, remaining: 0 }, { status: 429 });
     }
 
+    const mimeMatch = controlImage.match(/^data:(image\/\w+);base64,/);
+    const mime = mimeMatch ? mimeMatch[1] : "image/png";
     const b64 = controlImage.replace(/^data:image\/\w+;base64,/, "");
 
     const gemResp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: PROMPT }, { inline_data: { mime_type: "image/png", data: b64 } }] }],
+        contents: [{ parts: [{ text: PROMPT }, { inline_data: { mime_type: mime, data: b64 } }] }],
         generationConfig: { responseModalities: ["TEXT", "IMAGE"] },
       }),
     });

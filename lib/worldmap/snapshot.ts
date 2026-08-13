@@ -32,8 +32,10 @@ export async function renderWorldSnapshot(opts: {
   pois?: SnapPoi[];
   features?: SnapFeature[];
   maxPx?: number;
+  mime?: "image/png" | "image/jpeg";
+  quality?: number;
 }): Promise<Blob> {
-  const { terrain, colors, biomeArt = [], images = [], pois = [], features = [], maxPx = 2048 } = opts;
+  const { terrain, colors, biomeArt = [], images = [], pois = [], features = [], maxPx = 2048, mime = "image/png", quality = 0.92 } = opts;
   const W = terrain.meta.width, H = terrain.meta.height;
 
   const g = gridPixelSize(W, H, BASE_SIZE);
@@ -135,6 +137,6 @@ export async function renderWorldSnapshot(opts: {
   });
 
   return await new Promise<Blob>((resolve, reject) => {
-    canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("Snapshot toBlob failed."))), "image/png");
+    canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("Snapshot toBlob failed."))), mime, quality);
   });
 }
