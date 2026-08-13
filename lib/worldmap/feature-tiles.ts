@@ -26,6 +26,14 @@ const matchRotFlip = (art: number, target: number): [number, boolean] | null => 
   return null;
 };
 const hash = (i: number) => ((i * 2654435761) >>> 8) % 100;
+// The edge index (DIR_NAMES) whose direction best represents a set of edges, by angle centroid.
+const dominantDir = (mask: number): number => {
+  let sx = 0, sy = 0;
+  for (let d = 0; d < 6; d++) if (mask & (1 << d)) { const a = (d * 60) * Math.PI / 180; sx += Math.cos(a); sy += Math.sin(a); }
+  if (sx === 0 && sy === 0) return 0;
+  let deg = Math.atan2(sy, sx) * 180 / Math.PI; if (deg < 0) deg += 360;
+  return Math.round(deg / 60) % 6;
+};
 
 // Verified canonical edge sets of the art (tile-connection-rules.md).
 const RIVER_TILES: [string, number][] = [
@@ -159,25 +167,26 @@ export function selectTile(col: number, row: number, env: SelectEnv): TileChoice
     if (allWater) return { name: hash(i) < 70 ? "island_small" : "islet_rocky", rot: 0, flip: false, kind: "terrain" };
   }
 
-  // 12. Coast variants by sea-edge count (sea/reef neighbors only).
+  // 12. Coast: exact shape when the water edges fit a tile, otherwise a straight shore rotated to
+  // face the water centroid, so every shore hex gets a beach and the coastline never gaps.
   if (b === 18) {
     let w = 0;
-    for (let d = 0; d < 6; d++) { const nb = nbBiome(d); if (nb === 17 || nb === 19) w |= 1 << d; }
+    for (let d = 0; d < 6; d++) { const nb = nbBiome(d); if (nb === 16 || nb === 17 || nb === 19) w |= 1 << d; }
     const c = pop(w);
-    if (c === 5) { const m = matchRotFlip(COAST5, w); if (m) return { name: "coast_peninsula", rot: m[0], flip: m[1], kind: "terrain" }; }
+    if (c === 0) return null; // no water neighbor: leave to the biome fill
+    if (c >= 5) { const m = matchRotFlip(COAST5, w); if (m) return { name: "coast_peninsula", rot: m[0], flip: m[1], kind: "terrain" }; }
     if (c === 4) { const m = matchRotFlip(COAST4, w); if (m) return { name: "coast_bay", rot: m[0], flip: m[1], kind: "terrain" }; }
     if (c === 3) {
       const m = matchRotFlip(COAST3, w);
-      if (m) {
-        const pick = hash(i); const name = pick < 50 ? "coast_straight" : pick < 80 ? "coast_cape" : "coast_point";
-        return { name, rot: m[0], flip: m[1], kind: "terrain" };
-      }
+      if (m) { const pick = hash(i); return { name: pick < 50 ? "coast_straight" : pick < 80 ? "coast_cape" : "coast_point", rot: m[0], flip: m[1], kind: "terrain" }; }
     }
-    return null; // 0-2 water edges or non-contiguous: plain fill + blend
+    // 1-2 water edges, or a non-contiguous set: face a straight/cape shore at the water.
+    const k = (dominantDir(w) - 3 + 6) % 6; // canonical coast water side is W (index 3)
+    return { name: hash(i) < 70 ? "coast_straight" : "coast_cape", rot: k, flip: false, kind: "terrain" };
   }
 
   // 13. Reef: some cells render as an atoll.
-  if (b === 19 && hash(i) < 30) return { name: "atoll_reef", rot: 0, flip: false, kind: "terrain" };
+  if (b === 19 && hash(i) < 12) return { name: "atoll_reef", rot: 0, flip: false, kind: "terrain" };
 
   return null;
 }
