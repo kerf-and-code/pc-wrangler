@@ -85,8 +85,8 @@ export default function WorldMapPage() {
   const [publishing, setPublishing] = useState(false);
   const [showGen, setShowGen] = useState(false);
   const [features, setFeatures] = useState<MapFeature[]>([]);
-  const mapRowId = mapRow?.id ?? null;
   const [mapRow, setMapRow] = useState<MapRow | null>(null);
+  const mapRowId = mapRow?.id ?? null;
   const [terrain, setTerrain] = useState<Terrain | null>(null);
   const [images, setImages] = useState<PlacedImage[]>([]);
   const [positionId, setPositionId] = useState<string | null>(null);
