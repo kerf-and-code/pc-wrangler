@@ -44,6 +44,8 @@ export default function HexCanvas({
   biomeArt,
   artEnabled,
   features,
+  baseImage,
+  showBaseImage,
   selectedBiome,
   onPaint,
   images,
@@ -69,6 +71,8 @@ export default function HexCanvas({
   biomeArt?: readonly (string | null)[];
   artEnabled?: boolean;
   features?: readonly MapFeature[];
+  baseImage?: string | null;
+  showBaseImage?: boolean;
   selectedBiome: number | null;
   onPaint?: (col: number, row: number, biome: number) => void;
   images?: PlacedImage[];
@@ -130,6 +134,10 @@ export default function HexCanvas({
   const featTileCacheRef = useRef<Map<string, HTMLImageElement>>(new Map());
   const featTileReadyRef = useRef<Set<string>>(new Set());
   const featEdgesRef = useRef<{ key: unknown; w: number; h: number; edges: FeatureEdges } | null>(null);
+  const baseImgRef = useRef<HTMLImageElement | null>(null);
+  const baseImgReadyRef = useRef(false);
+  const showBaseImageRef = useRef(showBaseImage);
+  showBaseImageRef.current = showBaseImage;
   const redrawRef = useRef<() => void>(() => {});
   terrainRef.current = terrain;
   colorsRef.current = colors;
@@ -207,6 +215,14 @@ export default function HexCanvas({
       }
     }
 
+    // Fantasy view: an AI-painted image as the base layer, with the grid/regions/pins still on top.
+    const baseOn = !!showBaseImageRef.current && baseImgReadyRef.current && !!baseImgRef.current;
+    if (baseOn && baseImgRef.current) {
+      const gp = gridPixelSize(width, height, BASE_SIZE);
+      const go = gridOrigin();
+      ctx.drawImage(baseImgRef.current, go.x, go.y, gp.w, gp.h);
+    }
+
     // Cull to the visible rectangle.
     const s = view.scale;
     const cornersWorld = [
@@ -235,6 +251,7 @@ export default function HexCanvas({
         ctx.moveTo(pts[0].x, pts[0].y);
         for (let i = 1; i < 6; i++) ctx.lineTo(pts[i].x, pts[i].y);
         ctx.closePath();
+        if (baseOn) { ctx.stroke(); continue; }
         const b = t.biome[index(col, row, width)];
         const painted = b !== BIOME_UNSET && b < cols.length;
         let blended = false;
@@ -590,7 +607,14 @@ export default function HexCanvas({
 
   useEffect(() => { fittedRef.current = false; resize(); }, [terrain, resize]);
   useEffect(() => { redrawRef.current = scheduleDraw; }, [scheduleDraw]);
-  useEffect(() => { scheduleDraw(); }, [colors, positionImageId, regionCells, paintRegionId, regionRender, pois, biomeArt, artEnabled, features, scheduleDraw]);
+  useEffect(() => {
+    if (!baseImage) { baseImgRef.current = null; baseImgReadyRef.current = false; scheduleDraw(); return; }
+    const img = new Image();
+    img.onload = () => { baseImgRef.current = img; baseImgReadyRef.current = true; scheduleDraw(); };
+    img.src = baseImage;
+    return () => { img.onload = null; };
+  }, [baseImage, scheduleDraw]);
+  useEffect(() => { scheduleDraw(); }, [colors, positionImageId, regionCells, paintRegionId, regionRender, pois, biomeArt, artEnabled, features, showBaseImage, scheduleDraw]);
 
   const paintAt = useCallback((clientX: number, clientY: number, last: { col: number; row: number } | null) => {
     const canvas = canvasRef.current;

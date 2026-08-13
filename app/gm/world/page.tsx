@@ -27,10 +27,10 @@ type Campaign = { id: string; name: string };
 type Biome = { id: number; key: string; label: string; category: string; color: string };
 type MapRow = {
   id: string; name: string; width: number; height: number;
-  origin_col: number; origin_row: number; format_version: number; terrain: string | null; editable_by: string; snapshot_url: string | null; published: boolean;
+  origin_col: number; origin_row: number; format_version: number; terrain: string | null; editable_by: string; snapshot_url: string | null; published: boolean; ai_image_url: string | null;
 };
 
-const MAP_COLS = "id, name, width, height, origin_col, origin_row, format_version, terrain, editable_by, snapshot_url, published";
+const MAP_COLS = "id, name, width, height, origin_col, origin_row, format_version, terrain, editable_by, snapshot_url, published, ai_image_url";
 const IMG_COLS = "id, url, x, y, scale, z";
 const IMG_TYPES = ["image/png", "image/jpeg", "image/webp"];
 const MAX_IMG_BYTES = 8 * 1024 * 1024;
@@ -82,6 +82,9 @@ export default function WorldMapPage() {
   const [campaignId, setCampaignId] = useState<string>("");
   const [biomes, setBiomes] = useState<Biome[]>([]);
   const [artEnabled, setArtEnabled] = useState(false);
+  const [fantasyView, setFantasyView] = useState(false);
+  const [imagining, setImagining] = useState(false);
+  const [imagineMsg, setImagineMsg] = useState<string | null>(null);
   const [publishing, setPublishing] = useState(false);
   const [showGen, setShowGen] = useState(false);
   const [features, setFeatures] = useState<MapFeature[]>([]);
@@ -430,6 +433,34 @@ export default function WorldMapPage() {
     }
   }, [mapRow, terrain, colors, biomeArt, images, pois, campaignId]);
 
+  const generateFantasyView = useCallback(async () => {
+    if (!campaignId || !terrain) return;
+    setImagining(true);
+    setImagineMsg("Painting the world\u2026 this can take up to a minute.");
+    try {
+      const blob = await renderWorldSnapshot({ terrain, colors, biomeArt, images, features, pois: [], maxPx: 1280 });
+      const dataUrl = await new Promise<string>((res, rej) => {
+        const r = new FileReader();
+        r.onloadend = () => res(String(r.result));
+        r.onerror = () => rej(new Error("Could not read the control image."));
+        r.readAsDataURL(blob);
+      });
+      const resp = await fetch("/api/world-map/imagine", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ campaignId, controlImage: dataUrl }),
+      });
+      const json = await resp.json();
+      if (!resp.ok) { setImagineMsg(json.error || "Generation failed."); return; }
+      setMapRow((prev) => (prev ? { ...prev, ai_image_url: json.url as string } : prev));
+      setFantasyView(true);
+      setImagineMsg(typeof json.remaining === "number" ? `Done. ${json.remaining} left today.` : "Done.");
+    } catch (e) {
+      setImagineMsg(e instanceof Error ? e.message : "Generation failed.");
+    } finally {
+      setImagining(false);
+    }
+  }, [campaignId, terrain, colors, biomeArt, images, features]);
+
   useEffect(() => {
     if (!mapRowId) { setFeatures([]); return; }
     let cancelled = false;
@@ -555,6 +586,22 @@ export default function WorldMapPage() {
             color: C.text, fontWeight: 600 }}>
           Terrain art: {artEnabled ? "On" : "Off"}
         </button>
+        {mapRow?.ai_image_url && (
+          <button type="button" onClick={() => setFantasyView((v) => !v)} title="Show the AI-painted fantasy map under the grid"
+            style={{ fontSize: 12, padding: "5px 10px", borderRadius: 7, cursor: "pointer",
+              border: `1px solid ${fantasyView ? C.sun : C.line}`,
+              background: fantasyView ? "rgba(200,162,75,0.14)" : C.surface2, color: C.text, fontWeight: 600 }}>
+            Fantasy view: {fantasyView ? "On" : "Off"}
+          </button>
+        )}
+        {mapRow && (
+          <button type="button" onClick={generateFantasyView} disabled={imagining} title="Repaint the current world as a fantasy map (AI)"
+            style={{ fontSize: 12, padding: "5px 10px", borderRadius: 7, cursor: imagining ? "default" : "pointer",
+              border: `1px solid ${C.line}`, background: C.surface2, color: C.text, fontWeight: 600, opacity: imagining ? 0.6 : 1 }}>
+            {imagining ? "Painting\u2026" : mapRow.ai_image_url ? "Regenerate fantasy view" : "Generate fantasy view"}
+          </button>
+        )}
+        {imagineMsg && <span style={{ fontSize: 11, color: C.muted, alignSelf: "center" }}>{imagineMsg}</span>}
         {mapRow && (
           <button type="button" onClick={publishSnapshot} disabled={publishing}
             title="Render the world without hex lines and show it on the wiki"
@@ -671,7 +718,7 @@ export default function WorldMapPage() {
             <p style={{ color: C.muted, fontSize: 14, padding: 16 }}>Loading\u2026</p>
           ) : terrain ? (
             <HexCanvas
-              terrain={terrain} colors={colors} biomeArt={biomeArt} artEnabled={artEnabled} features={features} selectedBiome={selected} onPaint={onPaint}
+              terrain={terrain} colors={colors} biomeArt={biomeArt} artEnabled={artEnabled} features={features} baseImage={mapRow?.ai_image_url ?? null} showBaseImage={fantasyView} selectedBiome={selected} onPaint={onPaint}
               images={images} positionImageId={positionId} onImageMove={onImageMove} onImageScale={onImageScale}
               paintRegionId={paintRegionId} regionCells={regionCells} regionErase={regionErase} onRegionPaint={onRegionPaint}
               regionRender={mode === "regions" ? regionRender : undefined}
