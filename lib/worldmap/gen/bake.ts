@@ -6,6 +6,7 @@
 
 import { type Fields, type GenConfig } from "./types";
 import { hexToPixel, BASE_SIZE } from "../layout";
+import { settlementName, dungeonName, caveName } from "./names";
 import {
   createTerrain, encodeTerrain, bytesToBase64, offsetToAxial,
   FLAG_SHALLOWS, FLAG_CLIFF, FLAG_DELTA, FLAG_GORGE, FLAG_FROZEN, FLAG_SALTPAN, FLAG_GLACIER,
@@ -16,7 +17,6 @@ export type BakedPoi = { col: number; row: number; x: number; y: number; iconKey
 export type BakedWorld = { terrain: string; features: BakedFeature[]; pois: BakedPoi[]; metadata: Record<string, unknown> };
 
 const SETTLE_ICON = ["city_walled", "town", "village"];
-const SETTLE_NAME = ["City", "Town", "Village"];
 const POI_ICON: Record<string, string> = { ore: "mine_generic", gems: "gem_mine", lumber: "lumber_camp", farmland: "farmland", fishing: "fishing_spot", herbs: "herb_node", cave: "cave_entrance", dungeon: "dungeon_entrance", hazard: "unstable_ground" };
 const POI_NAME: Record<string, string> = { ore: "Ore vein", gems: "Gem deposit", lumber: "Lumber camp", farmland: "Farmland", fishing: "Fishing ground", herbs: "Herb grove", cave: "Cave entrance", dungeon: "Ruins", hazard: "Hazard" };
 
@@ -49,9 +49,14 @@ export function bakeWorld(f: Fields, cfg: GenConfig, originCol: number, originRo
     const p = hexToPixel(col, row, BASE_SIZE);
     pois.push({ col, row, x: p.x, y: p.y, iconKey, name });
   };
-  for (const st of f.settlements) push(st.index, SETTLE_ICON[st.tier], SETTLE_NAME[st.tier]);
+  for (const st of f.settlements) push(st.index, SETTLE_ICON[st.tier], settlementName(cfg.seed, st.index, f.biome[st.index]));
   for (let i = 0; i < N; i++) { if (f.bridge[i] === 2) push(i, "bridge", "Bridge"); else if (f.bridge[i] === 1) push(i, "ford", "Ford"); }
-  for (const p of f.pois) push(p.index, POI_ICON[p.kind] ?? "unknown_poi", POI_NAME[p.kind] ?? "Site");
+  for (const p of f.pois) {
+    const nm = p.kind === "dungeon" ? dungeonName(cfg.seed, p.index)
+      : p.kind === "cave" ? caveName(cfg.seed, p.index)
+      : (POI_NAME[p.kind] ?? "Site");
+    push(p.index, POI_ICON[p.kind] ?? "unknown_poi", nm);
+  }
 
   const metadata: Record<string, unknown> = { config: cfg, seed: cfg.seed };
   return { terrain, features, pois, metadata };
