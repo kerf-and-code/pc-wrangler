@@ -21,6 +21,7 @@ export type GenConfig = {
   riverQuantile: number;     // flowAccum quantile that becomes a river (density knob)
   majorQuantile: number;     // flowAccum quantile that becomes a major river
   minRiverLength: number;    // drop river polylines shorter than this
+  fantasyDensityCap: number; // max fantasy hexes as a fraction of land
 };
 
 export type RiverPolyline = { path: number[]; width: number }; // path = hex indices; width 1 minor / 2 major
@@ -114,5 +115,6 @@ export function defaultConfig(width: number, height: number, seed: string | numb
     riverQuantile: 0.95,
     majorQuantile: 0.99,
     minRiverLength: 4,
+    fantasyDensityCap: 0.025,
   };
 }
