@@ -10,6 +10,7 @@ import RegionsPanel from "@/components/worldmap/RegionsPanel";
 import IconLibrary from "@/components/worldmap/IconLibrary";
 import { POI_ICON_SVG } from "@/lib/worldmap/poi-icons";
 import { renderWorldSnapshot } from "@/lib/worldmap/snapshot";
+import GenPanel from "@/components/worldmap/GenPanel";
 import PoiPanel from "@/components/worldmap/PoiPanel";
 import {
   type Terrain, createTerrain, decodeTerrain, encodeTerrain, base64ToBytes, bytesToBase64, expandTerrain, BIOME_UNSET,
@@ -82,6 +83,7 @@ export default function WorldMapPage() {
   const [biomes, setBiomes] = useState<Biome[]>([]);
   const [artEnabled, setArtEnabled] = useState(false);
   const [publishing, setPublishing] = useState(false);
+  const [showGen, setShowGen] = useState(false);
   const [mapRow, setMapRow] = useState<MapRow | null>(null);
   const [terrain, setTerrain] = useState<Terrain | null>(null);
   const [images, setImages] = useState<PlacedImage[]>([]);
@@ -547,6 +549,16 @@ export default function WorldMapPage() {
               border: `1px solid ${C.line}`, background: C.surface2, color: C.text, fontWeight: 600, opacity: publishing ? 0.6 : 1 }}>
             {publishing ? "Publishing\u2026" : mapRow.published ? "Update wiki snapshot" : "Publish to wiki"}
           </button>
+        )}
+        {campaignId && (
+          <button type="button" onClick={() => setShowGen(true)} title="Generate a random world"
+            style={{ fontSize: 12, padding: "5px 10px", borderRadius: 7, cursor: "pointer",
+              border: `1px solid ${C.sun}`, background: "rgba(200,162,75,0.14)", color: C.text, fontWeight: 600 }}>
+            Generate world
+          </button>
+        )}
+        {showGen && campaignId && (
+          <GenPanel campaignId={campaignId} onClose={() => setShowGen(false)} onAccepted={() => window.location.reload()} />
         )}
         {mode === "regions" && layerRows.length > 0 && (
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
