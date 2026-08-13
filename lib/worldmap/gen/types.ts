@@ -30,7 +30,12 @@ export type GenConfig = {
   bridgeCost: number;        // extra road cost to cross a river hex
   mountainRoadCost: number;  // road cost through mountain/alpine (Infinity to forbid)
   villageRoadMax: number;    // max cost-distance to hook a village to the road net
+  resourceDensity: number;   // per-eligible-hex chance of a resource node
+  dungeonPer: number;        // one dungeon per this many land hexes
+  dungeonMinSpacing: number; // min hex distance between dungeon-tier POIs
 };
+
+export type GenPoi = { index: number; kind: string }; // ore/gems/lumber/farmland/fishing/herbs/cave/dungeon/hazard
 
 export type RoadPolyline = { path: number[]; class: number }; // class 0 major / 1 minor
 
@@ -75,6 +80,7 @@ export type Fields = {
   roads: RoadPolyline[];     // pass 11
   road: Uint8Array;          // pass 11: hex carries a road
   bridge: Uint8Array;        // pass 11: 0 none / 1 ford / 2 bridge (river crossing)
+  pois: GenPoi[];            // pass 12: generated resource/cave/dungeon/hazard POIs
 };
 
 export function createFields(width: number, height: number, elevation: Float32Array): Fields {
@@ -113,6 +119,7 @@ export function createFields(width: number, height: number, elevation: Float32Ar
     roads: [],
     road: new Uint8Array(n),
     bridge: new Uint8Array(n),
+    pois: [],
   };
 }
 
@@ -146,5 +153,8 @@ export function defaultConfig(width: number, height: number, seed: string | numb
     bridgeCost: 3,
     mountainRoadCost: 6,
     villageRoadMax: 10,
+    resourceDensity: 0.05,
+    dungeonPer: 175,
+    dungeonMinSpacing: 3,
   };
 }

@@ -22,6 +22,7 @@ function tempColor(t: number): string {
   return lerpHex([120, 190, 120], [200, 70, 50], (t - 0.5) * 2);
 }
 const PALETTE = ["#c85b5b", "#5bc87a", "#5b8bc8", "#c8a24b", "#a25bc8", "#4bc8c0", "#c87ba2", "#8ac85b"];
+const POI_COLORS: Record<string, string> = { ore: "#9a9aa2", gems: "#b487d6", lumber: "#3f8a3f", farmland: "#c9c25e", fishing: "#4a92c4", herbs: "#3fae8e", cave: "#4a4a58", dungeon: "#c23c3c", hazard: "#d38030" };
 const BIOME_COLORS = [
   "#9cbf6a", "#cbb765", "#b3c76a", "#4f8f4a", "#3f6f57", "#2f7a3f", "#43964a", "#b9ac63",
   "#e3ca8c", "#c6ab7d", "#bcc6c2", "#dde1e6", "#ab9d72", "#5f7a55", "#6b7050", "#3f7fb0",
@@ -104,6 +105,14 @@ export function renderFields(f: Fields, ctx: CanvasRenderingContext2D, cw: numbe
       ctx.fillStyle = st.tier === 0 ? "#f4d47a" : st.tier === 1 ? "#e6b866" : "#caa060";
       ctx.fill();
       if (st.tier === 0) { ctx.lineWidth = 0.35; ctx.strokeStyle = "#3a2a10"; ctx.stroke(); }
+    }
+    for (const poi of f.pois) {
+      const pt = hexToPixel(poi.index % f.width, (poi.index / f.width) | 0, 1);
+      const rad = poi.kind === "dungeon" ? 0.6 : poi.kind === "hazard" ? 0.55 : 0.38;
+      ctx.beginPath();
+      ctx.arc(pt.x, pt.y, rad, 0, Math.PI * 2);
+      ctx.fillStyle = POI_COLORS[poi.kind] || "#aaaaaa";
+      ctx.fill();
     }
   }
 
