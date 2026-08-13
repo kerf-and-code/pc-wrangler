@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { surfaces, ui } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
-import HexCanvas from "@/components/worldmap/HexCanvas";
+import HexCanvas, { type MapFeature } from "@/components/worldmap/HexCanvas";
 import RegionsPanel from "@/components/worldmap/RegionsPanel";
 import IconLibrary from "@/components/worldmap/IconLibrary";
 import { POI_ICON_SVG } from "@/lib/worldmap/poi-icons";
@@ -84,6 +84,8 @@ export default function WorldMapPage() {
   const [artEnabled, setArtEnabled] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [showGen, setShowGen] = useState(false);
+  const [features, setFeatures] = useState<MapFeature[]>([]);
+  const mapRowId = mapRow?.id ?? null;
   const [mapRow, setMapRow] = useState<MapRow | null>(null);
   const [terrain, setTerrain] = useState<Terrain | null>(null);
   const [images, setImages] = useState<PlacedImage[]>([]);
@@ -428,6 +430,17 @@ export default function WorldMapPage() {
     }
   }, [mapRow, terrain, colors, biomeArt, images, pois, campaignId]);
 
+  useEffect(() => {
+    if (!mapRowId) { setFeatures([]); return; }
+    let cancelled = false;
+    supabase.from("map_features").select("kind, class, path").eq("world_map_id", mapRowId).then(({ data }) => {
+      if (cancelled) return;
+      const rows = (data ?? []) as { kind: "river" | "road"; class: number; path: [number, number][] }[];
+      setFeatures(rows.map((r) => ({ kind: r.kind, klass: r.class, path: r.path })));
+    });
+    return () => { cancelled = true; };
+  }, [mapRowId, supabase]);
+
   const uploadImage = useCallback(async (file: File) => {
     if (!mapRow || !campaignId) return;
     if (!IMG_TYPES.includes(file.type)) { setStatus("Use a PNG, JPG, or WebP image."); return; }
@@ -658,7 +671,7 @@ export default function WorldMapPage() {
             <p style={{ color: C.muted, fontSize: 14, padding: 16 }}>Loading\u2026</p>
           ) : terrain ? (
             <HexCanvas
-              terrain={terrain} colors={colors} biomeArt={biomeArt} artEnabled={artEnabled} selectedBiome={selected} onPaint={onPaint}
+              terrain={terrain} colors={colors} biomeArt={biomeArt} artEnabled={artEnabled} features={features} selectedBiome={selected} onPaint={onPaint}
               images={images} positionImageId={positionId} onImageMove={onImageMove} onImageScale={onImageScale}
               paintRegionId={paintRegionId} regionCells={regionCells} regionErase={regionErase} onRegionPaint={onRegionPaint}
               regionRender={mode === "regions" ? regionRender : undefined}

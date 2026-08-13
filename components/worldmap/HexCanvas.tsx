@@ -35,12 +35,14 @@ function mix(a: string, b: string): string {
 }
 
 type View = { scale: number; tx: number; ty: number };
+export type MapFeature = { kind: "river" | "road"; klass: number; path: [number, number][] };
 
 export default function HexCanvas({
   terrain,
   colors,
   biomeArt,
   artEnabled,
+  features,
   selectedBiome,
   onPaint,
   images,
@@ -65,6 +67,7 @@ export default function HexCanvas({
   colors: readonly string[];
   biomeArt?: readonly (string | null)[];
   artEnabled?: boolean;
+  features?: readonly MapFeature[];
   selectedBiome: number | null;
   onPaint?: (col: number, row: number, biome: number) => void;
   images?: PlacedImage[];
@@ -119,6 +122,7 @@ export default function HexCanvas({
   const onMovePoiRef = useRef(onMovePoi);
   const poiDragRef = useRef<{ id: string; dx: number; dy: number } | null>(null);
   const biomeArtRef = useRef(biomeArt);
+  const featuresRef = useRef(features);
   const artEnabledRef = useRef<boolean>(artEnabled ?? false);
   const biomeArtCacheRef = useRef<Map<number, HTMLImageElement>>(new Map());
   const biomeArtReadyRef = useRef<Set<number>>(new Set());
@@ -143,6 +147,7 @@ export default function HexCanvas({
   onPoiHoverRef.current = onPoiHover;
   onMovePoiRef.current = onMovePoi;
   biomeArtRef.current = biomeArt;
+  featuresRef.current = features;
   artEnabledRef.current = artEnabled ?? false;
 
   const draw = useCallback(() => {
@@ -351,6 +356,32 @@ export default function HexCanvas({
       }
     }
 
+    // Feature overlays (rivers, roads) in world space, over terrain + regions, under POIs.
+    const feats = featuresRef.current;
+    if (feats && feats.length) {
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.translate(view.tx, view.ty);
+      ctx.scale(view.scale, view.scale);
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      const drawFeat = (kind: "river" | "road") => {
+        for (const ft of feats) {
+          if (ft.kind !== kind || !ft.path || ft.path.length < 2) continue;
+          ctx.beginPath();
+          for (let k = 0; k < ft.path.length; k++) {
+            const o = axialToOffset(ft.path[k][0], ft.path[k][1]);
+            const c = hexToPixel(o.col, o.row, BASE_SIZE);
+            if (k === 0) ctx.moveTo(c.x, c.y); else ctx.lineTo(c.x, c.y);
+          }
+          if (kind === "river") { ctx.strokeStyle = "#3f7fb0"; ctx.lineWidth = (ft.klass >= 2 ? 0.42 : 0.24) * BASE_SIZE; }
+          else { ctx.strokeStyle = "#caa25e"; ctx.lineWidth = (ft.klass === 0 ? 0.3 : 0.18) * BASE_SIZE; }
+          ctx.stroke();
+        }
+      };
+      drawFeat("river");
+      drawFeat("road");
+    }
+
     // POIs (Phase 4b): constant screen-size icons with screen-distance clustering, drawn last.
     const ps = poisRef.current;
     const hits: { kind: "poi" | "cluster"; sx: number; sy: number; r: number; id?: string; names: string[]; wx: number; wy: number }[] = [];
@@ -480,7 +511,7 @@ export default function HexCanvas({
   }, [resize]);
 
   useEffect(() => { fittedRef.current = false; resize(); }, [terrain, resize]);
-  useEffect(() => { scheduleDraw(); }, [colors, positionImageId, regionCells, paintRegionId, regionRender, pois, biomeArt, artEnabled, scheduleDraw]);
+  useEffect(() => { scheduleDraw(); }, [colors, positionImageId, regionCells, paintRegionId, regionRender, pois, biomeArt, artEnabled, features, scheduleDraw]);
 
   const paintAt = useCallback((clientX: number, clientY: number, last: { col: number; row: number } | null) => {
     const canvas = canvasRef.current;
