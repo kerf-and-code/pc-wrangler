@@ -21,16 +21,19 @@ export type GenProgress = (p: { pass: string; index: number; total: number }) =>
 export function generateTerrain(cfg: GenConfig, onProgress?: GenProgress): Fields {
   const total = 12;
   const step = (index: number, pass: string) => { if (onProgress) onProgress({ pass, index, total }); };
-  const elevation = pass1Elevation(cfg); step(1, "elevation");
-  const f = createFields(cfg.width, cfg.height, elevation);
+  const p1 = pass1Elevation(cfg); step(1, "elevation");
+  const f = createFields(cfg.width, cfg.height, p1.elevation);
+  f.volcanicCandidate.set(p1.volcanicCandidate);
   pass2SeaLevel(f, cfg); step(2, "sea level");
   pass3Depressions(f); step(3, "drainage");
   pass4Temperature(f, cfg); step(4, "temperature");
   pass5Moisture(f, cfg); step(5, "moisture");
   pass6Rivers(f, cfg); step(6, "rivers");
-  pass7Biomes(f); step(7, "biomes");
+  pass7Biomes(f, cfg); step(7, "biomes");
   pass8Cohesion(f); step(8, "cohesion");
   pass9Fantasy(f, cfg); step(9, "fantasy");
+  // Snowcap: cold-latitude mountains/alpine, set on FINAL biomes (after cohesion + fantasy).
+  for (let i = 0; i < cfg.width * cfg.height; i++) { const b = f.biome[i]; if ((b === 20 || b === 11) && f.tempBand[i] <= 1) f.snowcap[i] = 1; }
   pass10Settlements(f, cfg); step(10, "settlements");
   pass11Roads(f, cfg); step(11, "roads");
   pass12Pois(f, cfg); step(12, "POIs");
