@@ -65,7 +65,7 @@ function autoTint(id: string): string {
 type LayerRow = { id: string; name: string; ord: number };
 type RegionRow = { id: string; layer_id: string; name: string; parent_region_id: string | null; tint: string | null };
 type RegionRender = { id: string; name: string; tint: string; cells: Set<string> };
-type PoiRow = { id: string; x: number; y: number; name: string; icon_key: string | null; icon_id: string | null; visibility: string; note: string | null; entry_id: string | null; character_id: string | null; color: string | null };
+type PoiRow = { id: string; x: number; y: number; name: string; icon_key: string | null; icon_id: string | null; visibility: string; note: string | null; entry_id: string | null; character_id: string | null; color: string | null; locked: boolean };
 type ArmedIcon = { key: string } | { iconId: string; url: string };
 const POI_COLOR = "#e6d8b5";
 function poiIconSrc(iconKey: string | null, iconId: string | null, color: string | null, urlById: Map<string, string>): { iconId: string; iconSrc: string } | null {
@@ -203,9 +203,9 @@ export default function WorldMapPage() {
           setHexesVersion((v) => v + 1);
         }
         const [{ data: poiData }, { data: iconData }, { data: labelData }] = await Promise.all([
-          supabase.from("map_pois").select("id, x, y, name, icon_key, icon_id, visibility, note, entry_id, character_id, color").eq("world_map_id", row.id),
+          supabase.from("map_pois").select("id, x, y, name, icon_key, icon_id, visibility, note, entry_id, character_id, color, locked").eq("world_map_id", row.id),
           supabase.from("map_icons").select("id, url").eq("campaign_id", campaignId),
-          supabase.from("map_labels").select("id, x, y, text, size, color").eq("world_map_id", row.id),
+          supabase.from("map_labels").select("id, x, y, text, size, color, locked").eq("world_map_id", row.id),
         ]);
         if (!cancelled) {
           setPoiRows((poiData as PoiRow[]) || []);
@@ -332,7 +332,7 @@ export default function WorldMapPage() {
       if (hiddenCategories.has(poiIconCategory(r.icon_key))) continue;
       const src = poiIconSrc(r.icon_key, r.icon_id, r.color, iconUrlById) || poiIconSrc("unknown_poi", null, r.color, iconUrlById);
       if (!src) continue;
-      out.push({ id: r.id, x: r.x, y: r.y, name: r.name, iconId: src.iconId, iconSrc: src.iconSrc });
+      out.push({ id: r.id, x: r.x, y: r.y, name: r.name, iconId: src.iconId, iconSrc: src.iconSrc, locked: r.locked });
     }
     return out;
   }, [poiRows, iconUrlById, markersHidden, hiddenCategories]);
@@ -370,8 +370,8 @@ export default function WorldMapPage() {
   const armLabel = useCallback(() => { setLabelPlacing(true); setArmedIcon(null); }, []);
   const placeLabel = useCallback(async (x: number, y: number) => {
     if (!mapRow) { setLabelPlacing(false); return; }
-    const ins = await supabase.from("map_labels").insert({ world_map_id: mapRow.id, x, y, text: "New label", size: 18, visibility: "common" })
-      .select("id, x, y, text, size, color").single();
+    const ins = await supabase.from("map_labels").insert({ world_map_id: mapRow.id, x, y, text: "New label", size: 18, visibility: "common", locked: false })
+      .select("id, x, y, text, size, color, locked").single();
     setLabelPlacing(false);
     if (ins.error || !ins.data) { setStatus(ins.error?.message || "Could not add label."); return; }
     setLabelRows((prev) => [...prev, ins.data as LabelRow]);
@@ -436,7 +436,7 @@ export default function WorldMapPage() {
     const iconCols = "key" in armedIcon ? { icon_key: armedIcon.key } : { icon_id: armedIcon.iconId };
     const ins = await supabase.from("map_pois")
       .insert({ world_map_id: mapRow.id, x, y, col, row, name: "New marker", visibility: "common", ...iconCols })
-      .select("id, x, y, name, icon_key, icon_id, visibility, note, entry_id, character_id, color").single();
+      .select("id, x, y, name, icon_key, icon_id, visibility, note, entry_id, character_id, color, locked").single();
     if (ins.error || !ins.data) { setStatus(`Failed: ${ins.error?.message || "unknown"}`); return; }
     setPoiRows((prev) => [...prev, ins.data as PoiRow]);
     setStatus("Marker placed");

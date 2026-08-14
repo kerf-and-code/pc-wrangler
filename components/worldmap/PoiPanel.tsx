@@ -11,9 +11,9 @@ import { poiIconCategory, POI_ICON_CATEGORIES } from "@/lib/worldmap/poi-icons";
 // table shape is confirmed. The page owns the POI rows (the canvas needs them); this panel calls
 // onPatch/onRemove and the page persists.
 
-type Poi = { id: string; name: string; visibility: string; note: string | null; entry_id: string | null; color: string | null; icon_key: string | null; character_id: string | null };
+type Poi = { id: string; name: string; visibility: string; note: string | null; entry_id: string | null; color: string | null; icon_key: string | null; character_id: string | null; locked: boolean };
 type EntryOpt = { id: string; title: string | null };
-type PoiPatch = Partial<Pick<Poi, "name" | "visibility" | "note" | "entry_id" | "color" | "character_id">>;
+type PoiPatch = Partial<Pick<Poi, "name" | "visibility" | "note" | "entry_id" | "color" | "character_id" | "locked">>;
 const VIS = ["common", "player", "gm", "private"];
 
 export default function PoiPanel({ campaignId, pois, onPatch, onRemove }: {
@@ -106,6 +106,8 @@ export default function PoiPanel({ campaignId, pois, onPatch, onRemove }: {
             </div>
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
               {!p.entry_id && <button type="button" onClick={() => createEntry(p)} style={mini}>+ Add to codex</button>}
+              <button type="button" onClick={() => onPatch(p.id, { locked: !p.locked })} title={p.locked ? "Unlock to move" : "Lock so it won't drag"}
+                style={{ ...mini, borderColor: p.locked ? C.sun : C.line, color: p.locked ? C.sun : C.muted }}>{p.locked ? "Locked" : "Lock"}</button>
               <button type="button" onClick={() => onRemove(p.id)} style={mini}>Delete</button>
             </div>
             {!p.entry_id && (

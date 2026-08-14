@@ -90,13 +90,13 @@ export default function HexCanvas({
   regionTint?: string | null;
   onRegionPaint?: (col: number, row: number) => void;
   regionRender?: { id: string; name: string; tint: string; cells: Set<string> }[];
-  pois?: { id: string; x: number; y: number; name: string; iconId: string; iconSrc: string }[];
+  pois?: { id: string; x: number; y: number; name: string; iconId: string; iconSrc: string; locked?: boolean }[];
   poiPlaceActive?: boolean;
   onPlacePoi?: (x: number, y: number) => void;
   onPoiClick?: (id: string, sx: number, sy: number) => void;
   onPoiHover?: (h: { names: string[]; sx: number; sy: number } | null) => void;
   onMovePoi?: (id: string, x: number, y: number) => void;
-  labels?: { id: string; x: number; y: number; text: string; size: number; color: string | null }[];
+  labels?: { id: string; x: number; y: number; text: string; size: number; color: string | null; locked?: boolean }[];
   labelPlaceActive?: boolean;
   onPlaceLabel?: (x: number, y: number) => void;
   onMoveLabel?: (id: string, x: number, y: number) => void;
@@ -133,7 +133,7 @@ export default function HexCanvas({
   const onPoiHoverRef = useRef(onPoiHover);
   const iconCacheRef = useRef<Map<string, HTMLImageElement>>(new Map());
   const iconReadyRef = useRef<Set<string>>(new Set());
-  const poiHitRef = useRef<{ kind: "poi" | "cluster"; sx: number; sy: number; r: number; id?: string; names: string[]; wx: number; wy: number }[]>([]);
+  const poiHitRef = useRef<{ kind: "poi" | "cluster"; sx: number; sy: number; r: number; id?: string; names: string[]; wx: number; wy: number; locked?: boolean }[]>([]);
   const onMovePoiRef = useRef(onMovePoi);
   const poiDragRef = useRef<{ id: string; dx: number; dy: number } | null>(null);
   const labelsRef = useRef(labels);
@@ -141,7 +141,7 @@ export default function HexCanvas({
   const onPlaceLabelRef = useRef(onPlaceLabel);
   const onMoveLabelRef = useRef(onMoveLabel);
   const onLabelClickRef = useRef(onLabelClick);
-  const labelHitRef = useRef<{ id: string; sx: number; sy: number; hw: number; hh: number }[]>([]);
+  const labelHitRef = useRef<{ id: string; sx: number; sy: number; hw: number; hh: number; locked?: boolean }[]>([]);
   const labelDragRef = useRef<{ id: string; dx: number; dy: number } | null>(null);
   const biomeArtRef = useRef(biomeArt);
   const featuresRef = useRef(features);
@@ -517,11 +517,11 @@ export default function HexCanvas({
 
     // POIs (Phase 4b): constant screen-size icons with screen-distance clustering, drawn last.
     const ps = poisRef.current;
-    const hits: { kind: "poi" | "cluster"; sx: number; sy: number; r: number; id?: string; names: string[]; wx: number; wy: number }[] = [];
+    const hits: { kind: "poi" | "cluster"; sx: number; sy: number; r: number; id?: string; names: string[]; wx: number; wy: number; locked?: boolean }[] = [];
     if (ps && ps.length) {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       const S = 26, CLUSTER = 30;
-      const mk: { sx: number; sy: number; p: { id: string; x: number; y: number; name: string; iconId: string } }[] = [];
+      const mk: { sx: number; sy: number; p: { id: string; x: number; y: number; name: string; iconId: string; locked?: boolean } }[] = [];
       const pd = poiDragRef.current;
       for (const p of ps) {
         const ox = pd && pd.id === p.id ? pd.dx : 0;
@@ -553,7 +553,7 @@ export default function HexCanvas({
             ctx.fillStyle = "#c8a24b";
             ctx.beginPath(); ctx.arc(cx, cy, 6, 0, Math.PI * 2); ctx.fill();
           }
-          hits.push({ kind: "poi", sx: cx, sy: cy, r: S / 2 + 4, id: p.id, names: [p.name], wx, wy });
+          hits.push({ kind: "poi", sx: cx, sy: cy, r: S / 2 + 4, id: p.id, names: [p.name], wx, wy, locked: p.locked });
         } else {
           ctx.fillStyle = "#2a2118";
           ctx.strokeStyle = "#c8a24b";
@@ -593,7 +593,7 @@ export default function HexCanvas({
         ctx.strokeText(lb.text || "", sx, sy);
         ctx.fillStyle = lb.color || "#f2e9d6";
         ctx.fillText(lb.text || "", sx, sy);
-        lhits.push({ id: lb.id, sx, sy, hw: tw / 2 + 8, hh: sz / 2 + 6 });
+        lhits.push({ id: lb.id, sx, sy, hw: tw / 2 + 8, hh: sz / 2 + 6, locked: lb.locked });
       }
     }
     labelHitRef.current = lhits;
@@ -773,10 +773,10 @@ export default function HexCanvas({
         const rect = canvas.getBoundingClientRect();
         const mx = e.clientX - rect.left, my = e.clientY - rect.top;
         const hit = hitTestPoi(mx, my);
-        if (hit && hit.kind === "poi" && hit.id) { mode = "poi-move"; poiDragRef.current = { id: hit.id, dx: 0, dy: 0 }; }
+        if (hit && hit.kind === "poi" && hit.id && !hit.locked) { mode = "poi-move"; poiDragRef.current = { id: hit.id, dx: 0, dy: 0 }; }
         else {
           const lhit = hitTestLabel(mx, my);
-          if (lhit && onMoveLabelRef.current) { mode = "label-move"; labelDragRef.current = { id: lhit.id, dx: 0, dy: 0 }; }
+          if (lhit && onMoveLabelRef.current && !lhit.locked) { mode = "label-move"; labelDragRef.current = { id: lhit.id, dx: 0, dy: 0 }; }
           else { mode = "pan"; }
         }
       }
