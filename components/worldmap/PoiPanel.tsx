@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { C } from "@/lib/forge-theme";
+import { poiIconCategory, POI_ICON_CATEGORIES } from "@/lib/worldmap/poi-icons";
 
 // Phase 4c: edit placed POIs. Rename, set visibility, link a codex entry (pick an existing one or
 // mint a new location entry from the marker, the same reverse the regions have), give it an inline
@@ -25,6 +26,14 @@ export default function PoiPanel({ campaignId, pois, onPatch, onRemove }: {
   const [entries, setEntries] = useState<EntryOpt[]>([]);
   const [chars, setChars] = useState<{ id: string; name: string }[]>([]);
   const [status, setStatus] = useState("");
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const toggleCat = useCallback((c: string) => setExpanded((prev) => { const n = new Set(prev); if (n.has(c)) n.delete(c); else n.add(c); return n; }), []);
+  const groups = useMemo(() => {
+    const byCat = new Map<string, Poi[]>();
+    for (const p of pois) { const cat = poiIconCategory(p.icon_key); const arr = byCat.get(cat); if (arr) arr.push(p); else byCat.set(cat, [p]); }
+    const order = [...POI_ICON_CATEGORIES, "Other"];
+    return [...byCat.entries()].sort((a, b) => (order.indexOf(a[0]) + 1 || 99) - (order.indexOf(b[0]) + 1 || 99)).map(([cat, items]) => ({ cat, items }));
+  }, [pois]);
 
   useEffect(() => {
     let off = false;
@@ -59,8 +68,20 @@ export default function PoiPanel({ campaignId, pois, onPatch, onRemove }: {
   return (
     <div style={{ marginTop: 14 }}>
       <div style={secLabel}>MARKERS ({pois.length})</div>
-      <div style={{ display: "grid", gap: 8 }}>
-        {pois.map((p) => (
+      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+        {groups.map(({ cat, items }) => {
+          const open = expanded.has(cat);
+          return (
+            <div key={cat}>
+              <button type="button" onClick={() => toggleCat(cat)}
+                style={{ display: "flex", alignItems: "center", gap: 6, width: "100%", textAlign: "left", padding: "5px 8px", borderRadius: 7, cursor: "pointer", border: `1px solid ${C.line}`, background: C.surface2, color: C.text, fontSize: 12 }}>
+                <span style={{ color: C.muted, width: 12, fontSize: 11 }}>{open ? "\u25be" : "\u25b8"}</span>
+                <span style={{ flex: 1 }}>{cat}</span>
+                <span style={{ color: C.muted, fontVariantNumeric: "tabular-nums" }}>{items.length}</span>
+              </button>
+              {open && (
+                <div style={{ display: "grid", gap: 8, margin: "6px 0 4px" }}>
+                  {items.map((p) => (
           <div key={p.id} style={{ border: `1px solid ${C.line}`, borderRadius: 7, padding: 8, background: C.surface2, display: "grid", gap: 6 }}>
             <input value={p.name} onChange={(e) => onPatch(p.id, { name: e.target.value })} style={{ ...field, width: "100%" }} />
             <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
@@ -91,7 +112,12 @@ export default function PoiPanel({ campaignId, pois, onPatch, onRemove }: {
               <textarea value={p.note || ""} onChange={(e) => onPatch(p.id, { note: e.target.value })} placeholder="Short note (shown if there is no linked entry)" rows={2} style={{ ...field, width: "100%", resize: "vertical" }} />
             )}
           </div>
-        ))}
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
       {status && <p style={{ fontSize: 11.5, color: C.muted, marginTop: 8 }}>{status}</p>}
     </div>

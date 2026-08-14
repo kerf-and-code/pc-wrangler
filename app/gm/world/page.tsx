@@ -362,6 +362,21 @@ export default function WorldMapPage() {
     setFeatures((prev) => prev.map((f) => (f.name === oldName ? { ...f, name: newName } : f)));
   }, [supabase, mapRow]);
 
+  const clearAll = useCallback(async () => {
+    if (!mapRow) return;
+    const n = poiRows.length;
+    if (!window.confirm(`Delete all ${n} marker${n === 1 ? "" : "s"} and clear every river name on this map? Terrain, regions, and layers are kept. This cannot be undone.`)) return;
+    const [poiRes, featRes] = await Promise.all([
+      supabase.from("map_pois").delete().eq("world_map_id", mapRow.id),
+      supabase.from("map_features").update({ name: null }).eq("world_map_id", mapRow.id).not("name", "is", null),
+    ]);
+    if (poiRes.error) { setStatus(poiRes.error.message); return; }
+    if (featRes.error) { setStatus(featRes.error.message); return; }
+    setPoiRows([]);
+    setFeatures((prev) => prev.map((f) => (f.name ? { ...f, name: null } : f)));
+    setStatus("Cleared all markers and river names.");
+  }, [supabase, mapRow, poiRows.length]);
+
   // One-time per map: delete auto-generated pins that cohesion stranded on open water, so they leave
   // the map AND the marker list. Hand-placed markers (non-generator icons) are never touched.
   useEffect(() => {
@@ -777,6 +792,10 @@ export default function WorldMapPage() {
                 c={C}
               />
               <RiverLabels rivers={namedRivers} onRename={renameRiver} c={C} />
+              <button type="button" onClick={clearAll}
+                style={{ marginTop: 16, width: "100%", padding: "7px 9px", borderRadius: 7, cursor: "pointer", border: "1px solid #7a3b2f", background: "rgba(150,60,45,0.14)", color: "#e6b3a3", fontSize: 12.5, fontWeight: 600 }}>
+                Clear all markers &amp; river names
+              </button>
             </div>
           )}
         </div>
