@@ -196,7 +196,7 @@ export default function WorldMapPage() {
           const lyrs = (ls as LayerRow[]) || [];
           setLayerRows(lyrs);
           setRegionRows((rs as RegionRow[]) || []);
-          setSelectedLayerId(lyrs[0]?.id || "");
+          setSelectedLayerId("");
           setHexesVersion((v) => v + 1);
         }
         const [{ data: poiData }, { data: iconData }] = await Promise.all([
@@ -698,13 +698,13 @@ export default function WorldMapPage() {
         {showGen && campaignId && (
           <GenPanel campaignId={campaignId} onClose={() => setShowGen(false)} onAccepted={() => window.location.reload()} />
         )}
-        {mode === "regions" && layerRows.length > 0 && (
-          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            <span style={{ fontSize: 12, color: C.muted }}>Layer</span>
-            <input type="range" min={0} max={layerRows.length - 1}
-              value={Math.max(0, layerRows.findIndex((l) => l.id === selectedLayerId))}
-              onChange={(e) => setSelectedLayerId(layerRows[Number(e.target.value)]?.id || "")} />
-            <span style={{ fontSize: 12.5, color: C.text }}>{layerRows.find((l) => l.id === selectedLayerId)?.name || ""}</span>
+        {layerRows.length > 0 && (
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }} title="Step through the region tiers to see their names on the map">
+            <span style={{ fontSize: 12, color: C.muted }}>View layer</span>
+            <input type="range" min={-1} max={layerRows.length - 1}
+              value={selectedLayerId ? layerRows.findIndex((l) => l.id === selectedLayerId) : -1}
+              onChange={(e) => { const i = Number(e.target.value); setSelectedLayerId(i < 0 ? "" : (layerRows[i]?.id || "")); }} />
+            <span style={{ fontSize: 12.5, color: selectedLayerId ? C.text : C.muted }}>{selectedLayerId ? (layerRows.find((l) => l.id === selectedLayerId)?.name || "") : "Off"}</span>
           </div>
         )}
       </div>
@@ -713,7 +713,7 @@ export default function WorldMapPage() {
         <div style={{ ...surfaces.slate, padding: 12, flex: "0 0 230px", maxHeight: "72vh", overflowY: "auto" }}>
           <div style={{ display: "flex", gap: 6, marginBottom: 12, flexWrap: "wrap" }}>
             {modeChip("Terrain", mode === "terrain", () => { setMode("terrain"); setPaintRegionId(null); })}
-            {modeChip("Regions", mode === "regions", () => { setMode("regions"); setSelected(null); })}
+            {modeChip("Regions", mode === "regions", () => { setMode("regions"); setSelected(null); if (!selectedLayerId) setSelectedLayerId(layerRows[0]?.id || ""); })}
             {modeChip("Markers", mode === "pois", () => { setMode("pois"); setSelected(null); setPaintRegionId(null); })}
           </div>
           {mode === "terrain" && (<>
@@ -808,7 +808,7 @@ export default function WorldMapPage() {
               terrain={terrain} colors={colors} biomeArt={biomeArt} artEnabled={artEnabled} features={features} baseImage={mapRow?.ai_image_url ?? null} showBaseImage={fantasyView} selectedBiome={selected} onPaint={onPaint}
               images={images} positionImageId={positionId} onImageMove={onImageMove} onImageScale={onImageScale}
               paintRegionId={paintRegionId} regionCells={regionCells} regionErase={regionErase} onRegionPaint={onRegionPaint}
-              regionRender={mode === "regions" ? regionRender : undefined}
+              regionRender={selectedLayerId ? regionRender : undefined}
               pois={pois} poiPlaceActive={mode === "pois" && !!armedIcon} onPlacePoi={onPlacePoi} onPoiClick={onPoiClick} onPoiHover={onPoiHover} onMovePoi={onMovePoi}
             />
           ) : (
