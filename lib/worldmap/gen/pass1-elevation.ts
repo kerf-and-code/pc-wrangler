@@ -33,15 +33,18 @@ export function pass1Elevation(cfg: GenConfig): Float32Array {
   const mask = new Float32Array(N);
   const rndM = passStream(master, "mask");
   const warp = makeNoise2D(master ^ 0x9e3779b9);
+  const nCont = Math.max(1, cfg.continentCount);
+  // Continent size shrinks as the count rises so they stay DISTINCT instead of overlapping into one
+  // Pangaea. minSep keeps their centres apart (~1.5 radii), and we sample more of the map to spread them.
+  const contRadius = small * 0.62 / Math.max(1, Math.sqrt(nCont));
   const centers: V2[] = [];
-  const minSep = small / 3;
+  const minSep = Math.max(small / 9, contRadius * 1.5);
   let guard = 0;
-  while (centers.length < Math.max(1, cfg.continentCount) && guard++ < 800) {
-    const cx = minX + (0.2 + 0.6 * rndM()) * spanX;
-    const cy = minY + (0.2 + 0.6 * rndM()) * spanY;
+  while (centers.length < nCont && guard++ < 3000) {
+    const cx = minX + (0.14 + 0.72 * rndM()) * spanX;
+    const cy = minY + (0.14 + 0.72 * rndM()) * spanY;
     if (centers.every((c) => Math.hypot(c.x - cx, c.y - cy) >= minSep)) centers.push({ x: cx, y: cy });
   }
-  const contRadius = small * 0.6;
   for (let i = 0; i < N; i++) {
     if (cfg.archipelago) { mask[i] = 0.5; continue; }
     const wx = px[i] + warp(px[i] * 0.04, py[i] * 0.04) * small * 0.16;

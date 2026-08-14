@@ -139,8 +139,8 @@ export default function GenPanel({ campaignId, onAccepted, onClose }: { campaign
           <div><span style={label}>Size {size}x{size}</span>
             <div style={{ display: "flex", gap: 5 }}>{[60, 100, 150, 200, 250].map((s) => <button key={s} type="button" onClick={() => setSize(s)} style={{ ...chip(size === s), flex: 1, padding: "5px 2px" }} disabled={busy}>{s}</button>)}</div>
           </div>
-          <div><span style={label}>Ocean coverage {ocean.toFixed(2)}</span><input type="range" min={0.4} max={0.8} step={0.01} value={ocean} onChange={(e) => setOcean(Number(e.target.value))} style={{ width: "100%" }} disabled={busy} /></div>
-          <div><span style={label}>Continents {continents}</span><input type="range" min={1} max={4} step={1} value={continents} onChange={(e) => setContinents(Number(e.target.value))} style={{ width: "100%" }} disabled={busy || archipelago} /></div>
+          <div><span style={label}>Ocean coverage {ocean.toFixed(2)}</span><input type="range" min={0.05} max={0.95} step={0.01} value={ocean} onChange={(e) => setOcean(Number(e.target.value))} style={{ width: "100%" }} disabled={busy} /></div>
+          <div><span style={label}>Continents {continents}</span><input type="range" min={1} max={8} step={1} value={continents} onChange={(e) => setContinents(Number(e.target.value))} style={{ width: "100%" }} disabled={busy || archipelago} /></div>
           <div><span style={label}>Land concentration {landConc.toFixed(2)}</span><input type="range" min={0} max={1} step={0.05} value={landConc} onChange={(e) => setLandConc(Number(e.target.value))} style={{ width: "100%" }} disabled={busy || archipelago} /></div>
           <div><span style={label}>Prevailing wind</span>
             <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>{WINDS.map(([n, v]) => <button key={v} type="button" onClick={() => setWind(v)} style={chip(wind === v)} disabled={busy}>{n}</button>)}</div>
