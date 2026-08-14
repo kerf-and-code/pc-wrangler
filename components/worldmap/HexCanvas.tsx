@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef } from "react";
-import { type Terrain, index, setBiome, getFlags, setFlags, BIOME_UNSET, offsetToAxial, axialToOffset, AXIAL_DIRS, inBounds, FLAG_SALTPAN, FLAG_SNOWCAP, FLAG_GLACIER, FLAG_FROZEN, FLAG_SHALLOWS } from "@/lib/worldmap/hex";
+import { type Terrain, index, setBiome, getFlags, setFlags, BIOME_UNSET, offsetToAxial, axialToOffset, AXIAL_DIRS, inBounds } from "@/lib/worldmap/hex";
 import { hexToPixel, hexCorners, pixelToHex, gridPixelSize, gridOrigin, BASE_SIZE, type PlacedImage } from "@/lib/worldmap/layout";
 import { buildFeatureEdges, selectTile, type FeatureEdges, type MapFeatureLike } from "@/lib/worldmap/feature-tiles";
 
@@ -38,7 +38,8 @@ function mix(a: string, b: string): string {
 type View = { scale: number; tx: number; ty: number };
 export type MapFeature = { kind: "river" | "road"; klass: number; path: [number, number][]; name?: string | null };
 
-const STAMPABLE_MASK = FLAG_SALTPAN | FLAG_SNOWCAP | FLAG_GLACIER | FLAG_FROZEN | FLAG_SHALLOWS;
+// Special-terrain flag bits (mirror feature-tiles FL_*): shallows|frozen|saltpan|glacier|snowcap.
+const STAMPABLE_MASK = 1 | 16 | 32 | 64 | 128;
 
 export default function HexCanvas({
   terrain,

@@ -17,7 +17,6 @@ import GenPanel from "@/components/worldmap/GenPanel";
 import PoiPanel from "@/components/worldmap/PoiPanel";
 import {
   type Terrain, createTerrain, decodeTerrain, encodeTerrain, base64ToBytes, bytesToBase64, expandTerrain, BIOME_UNSET,
-  FLAG_SALTPAN, FLAG_SNOWCAP, FLAG_GLACIER, FLAG_FROZEN, FLAG_SHALLOWS,
 } from "@/lib/worldmap/hex";
 import { fitImageToGrid, pixelToHex, BASE_SIZE, type PlacedImage } from "@/lib/worldmap/layout";
 
@@ -46,12 +45,14 @@ const MAX_DIM = 250;
 const CATEGORY_ORDER = ["terrestrial", "wetland", "water", "geologic", "fantasy"];
 // Hand-placeable special-terrain tiles: each sets a flag on the clicked hex. iceberg/shallows only
 // render over sea, so they also set the sea biome. salt/snow/glacier render over any biome.
+// Special-terrain flag bits, as literals mirroring feature-tiles FL_* (shallows 1, frozen 16,
+// saltpan 32, glacier 64, snowcap 128) - kept independent of which FLAG_* hex.ts exports.
 const SPECIAL_TERRAIN: { key: string; label: string; flag: number; biome: number | null }[] = [
-  { key: "saltpan", label: "Salt flat", flag: FLAG_SALTPAN, biome: null },
-  { key: "snowcap", label: "Snowcap", flag: FLAG_SNOWCAP, biome: null },
-  { key: "glacier", label: "Glacier", flag: FLAG_GLACIER, biome: null },
-  { key: "iceberg", label: "Iceberg", flag: FLAG_FROZEN, biome: 17 },
-  { key: "shallows", label: "Shallows", flag: FLAG_SHALLOWS, biome: 17 },
+  { key: "saltpan", label: "Salt flat", flag: 32, biome: null },
+  { key: "snowcap", label: "Snowcap", flag: 128, biome: null },
+  { key: "glacier", label: "Glacier", flag: 64, biome: null },
+  { key: "iceberg", label: "Iceberg", flag: 16, biome: 17 },
+  { key: "shallows", label: "Shallows", flag: 1, biome: 17 },
 ];
 const CATEGORY_LABEL: Record<string, string> = {
   terrestrial: "Terrestrial", wetland: "Wetland", water: "Water", geologic: "Mountain & geologic", fantasy: "Fantasy",
