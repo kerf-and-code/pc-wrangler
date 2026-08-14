@@ -29,6 +29,7 @@ export function pass8Cohesion(f: Fields, minBlobSize = 3): void {
   const exempt = new Uint8Array(N);
   for (let i = 0; i < N; i++) {
     exempt[i] = !f.land[i] || f.delta[i] || f.biome[i] === COAST || f.biome[i] === LAKE ||
+      f.biome[i] === VOLCANIC ||
       (f.biome[i] === CANYON && f.basinId[i] >= 0) || f.riverAdjacent[i] ? 1 : 0;
   }
 

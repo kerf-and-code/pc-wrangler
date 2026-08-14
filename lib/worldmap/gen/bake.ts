@@ -9,7 +9,7 @@ import { hexToPixel, BASE_SIZE } from "../layout";
 import { settlementName, dungeonName, caveName, riverName } from "./names";
 import {
   createTerrain, encodeTerrain, bytesToBase64, offsetToAxial,
-  FLAG_SHALLOWS, FLAG_CLIFF, FLAG_DELTA, FLAG_GORGE, FLAG_FROZEN, FLAG_SALTPAN, FLAG_GLACIER,
+  FLAG_SHALLOWS, FLAG_CLIFF, FLAG_DELTA, FLAG_GORGE, FLAG_FROZEN, FLAG_SALTPAN, FLAG_GLACIER, FLAG_SNOWCAP,
 } from "../hex";
 
 export type BakedFeature = { kind: "river" | "road"; klass: number; path: [number, number][]; name: string | null };
@@ -17,8 +17,8 @@ export type BakedPoi = { col: number; row: number; x: number; y: number; iconKey
 export type BakedWorld = { terrain: string; features: BakedFeature[]; pois: BakedPoi[]; metadata: Record<string, unknown> };
 
 const SETTLE_ICON = ["city_walled", "town", "village"];
-const POI_ICON: Record<string, string> = { ore: "mine_generic", gems: "gem_mine", lumber: "lumber_camp", farmland: "farmland", fishing: "fishing_spot", herbs: "herb_node", cave: "cave_entrance", dungeon: "dungeon_entrance", hazard: "unstable_ground" };
-const POI_NAME: Record<string, string> = { ore: "Ore vein", gems: "Gem deposit", lumber: "Lumber camp", farmland: "Farmland", fishing: "Fishing ground", herbs: "Herb grove", cave: "Cave entrance", dungeon: "Ruins", hazard: "Hazard" };
+const POI_ICON: Record<string, string> = { ore: "mine_generic", gems: "gem_mine", lumber: "lumber_camp", farmland: "farmland", fishing: "fishing_spot", herbs: "herb_node", cave: "cave_entrance", dungeon: "dungeon_entrance", hazard: "unstable_ground", oasis: "holy_spring" };
+const POI_NAME: Record<string, string> = { ore: "Ore vein", gems: "Gem deposit", lumber: "Lumber camp", farmland: "Farmland", fishing: "Fishing ground", herbs: "Herb grove", cave: "Cave entrance", dungeon: "Ruins", hazard: "Hazard", oasis: "Oasis" };
 
 export function bakeWorld(f: Fields, cfg: GenConfig, originCol: number, originRow: number): BakedWorld {
   const W = f.width, H = f.height, N = W * H;
@@ -34,6 +34,7 @@ export function bakeWorld(f: Fields, cfg: GenConfig, originCol: number, originRo
     if (f.frozen[i]) fl |= FLAG_FROZEN;
     if (f.saltPan[i]) fl |= FLAG_SALTPAN;
     if (f.glacier[i]) fl |= FLAG_GLACIER;
+    if (f.snowcap[i]) fl |= FLAG_SNOWCAP;
     t.flags[i] = fl;
   }
   const terrain = bytesToBase64(encodeTerrain(t));

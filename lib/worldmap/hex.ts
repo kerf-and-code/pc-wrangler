@@ -16,6 +16,7 @@ export const FLAG_GORGE    = 1 << 3;
 export const FLAG_FROZEN   = 1 << 4;
 export const FLAG_SALTPAN  = 1 << 5;
 export const FLAG_GLACIER  = 1 << 6;
+export const FLAG_SNOWCAP  = 1 << 7;
 // bit 7 (1 << 7) reserved
 
 // ---- coordinates ----

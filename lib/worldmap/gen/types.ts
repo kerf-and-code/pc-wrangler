@@ -76,6 +76,8 @@ export type Fields = {
   glacier: Uint8Array;       // pass 7: polar-wet tundra render flag
   gorge: Uint8Array;         // pass 7: major river through wet high terrain
   saltPan: Uint8Array;       // pass 7: dry basin in arid moisture
+  snowcap: Uint8Array;       // pass 7: cold-latitude mountain/alpine
+  volcanicCandidate: Uint8Array; // pass 1: near a convergent plate boundary
   settlementTier: Int8Array; // pass 10: -1 none / 0 city / 1 town / 2 village
   settlements: Settlement[]; // pass 10
   roads: RoadPolyline[];     // pass 11
@@ -115,6 +117,8 @@ export function createFields(width: number, height: number, elevation: Float32Ar
     glacier: new Uint8Array(n),
     gorge: new Uint8Array(n),
     saltPan: new Uint8Array(n),
+    snowcap: new Uint8Array(n),
+    volcanicCandidate: new Uint8Array(n),
     settlementTier: new Int8Array(n).fill(-1),
     settlements: [],
     roads: [],
