@@ -52,6 +52,10 @@ const FORD = { name: "road_ford", river: B(0, 3), road: B(1, 4) };
 const COAST3 = B(2, 3, 4), COAST4 = B(2, 3, 4, 5), COAST5 = B(1, 2, 3, 4, 5);
 const DELTA_RIVER = B(0), DELTA_WATER = B(2, 3, 4);
 const ISLAND_BIOMES = new Set([0, 1, 2, 3, 5, 6, 7, 18]);
+// Coast tiling is OFF: the current coast art shorelines do not cross edge midpoints, so tiled coasts
+// misalign. Coast hexes fall back to the flat biome fill + edge blend (the clean coastline). Flip to
+// true once coasts are redrawn with strict midpoint crossings.
+const COAST_TILES_ENABLED = false;
 
 export function buildFeatureEdges(width: number, height: number, features: readonly MapFeatureLike[]): FeatureEdges {
   const n = width * height;
@@ -172,6 +176,7 @@ export function selectTile(col: number, row: number, env: SelectEnv): TileChoice
   // 12. Coast: exact shape when the water edges fit a tile, otherwise a straight shore rotated to
   // face the water centroid, so every shore hex gets a beach and the coastline never gaps.
   if (b === 18) {
+    if (!COAST_TILES_ENABLED) return null; // reverted to the blended coastline
     let w = 0;
     for (let d = 0; d < 6; d++) { const nb = nbBiome(d); if (nb === 16 || nb === 17 || nb === 19) w |= 1 << d; }
     const c = pop(w);

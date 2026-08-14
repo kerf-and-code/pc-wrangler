@@ -368,3 +368,12 @@ export const POI_ICON_SVG: Record<string, string> = {
 export function poiIconLabel(key: string): string {
   return POI_ICONS.find((i) => i.key === key)?.label || key;
 }
+
+const POI_ICON_BY_KEY: Map<string, PoiIcon> = new Map(POI_ICONS.map((i) => [i.key, i]));
+
+// The category a built-in icon key belongs to (for grouping markers). Custom-uploaded icons and any
+// unknown key fall in "Other".
+export function poiIconCategory(key: string | null): string {
+  if (!key) return "Other";
+  return POI_ICON_BY_KEY.get(key)?.category || "Other";
+}

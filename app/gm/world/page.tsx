@@ -8,7 +8,8 @@ import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import HexCanvas, { type MapFeature } from "@/components/worldmap/HexCanvas";
 import RegionsPanel from "@/components/worldmap/RegionsPanel";
 import IconLibrary from "@/components/worldmap/IconLibrary";
-import { POI_ICON_SVG } from "@/lib/worldmap/poi-icons";
+import { POI_ICON_SVG, poiIconCategory, POI_ICON_CATEGORIES } from "@/lib/worldmap/poi-icons";
+import MarkerLegend, { type MarkerGroup } from "@/components/worldmap/MarkerLegend";
 import { renderWorldSnapshot } from "@/lib/worldmap/snapshot";
 import GenPanel from "@/components/worldmap/GenPanel";
 import PoiPanel from "@/components/worldmap/PoiPanel";
@@ -108,6 +109,8 @@ export default function WorldMapPage() {
   const [iconUrlById, setIconUrlById] = useState<Map<string, string>>(new Map());
   const [poiTooltip, setPoiTooltip] = useState<{ names: string[]; x: number; y: number } | null>(null);
   const [selectedPoi, setSelectedPoi] = useState<{ id: string; sx: number; sy: number } | null>(null);
+  const [markersHidden, setMarkersHidden] = useState(false);
+  const [hiddenCategories, setHiddenCategories] = useState<Set<string>>(new Set());
   const [selectedEntry, setSelectedEntry] = useState<{ title: string | null; body: string | null } | null>(null);
   const [selectedChar, setSelectedChar] = useState<{ name: string } | null>(null);
   const [selected, setSelected] = useState<number | null>(null);
@@ -313,13 +316,32 @@ export default function WorldMapPage() {
 
   const pois = useMemo(() => {
     const out: { id: string; x: number; y: number; name: string; iconId: string; iconSrc: string }[] = [];
+    if (markersHidden) return out;
     for (const r of poiRows) {
+      if (hiddenCategories.has(poiIconCategory(r.icon_key))) continue;
       const src = poiIconSrc(r.icon_key, r.icon_id, r.color, iconUrlById) || poiIconSrc("unknown_poi", null, r.color, iconUrlById);
       if (!src) continue;
       out.push({ id: r.id, x: r.x, y: r.y, name: r.name, iconId: src.iconId, iconSrc: src.iconSrc });
     }
     return out;
-  }, [poiRows, iconUrlById]);
+  }, [poiRows, iconUrlById, markersHidden, hiddenCategories]);
+
+  const markerGroups = useMemo<MarkerGroup[]>(() => {
+    const byCat = new Map<string, { id: string; name: string }[]>();
+    for (const r of poiRows) {
+      const cat = poiIconCategory(r.icon_key);
+      if (!byCat.has(cat)) byCat.set(cat, []);
+      byCat.get(cat)!.push({ id: r.id, name: r.name });
+    }
+    const order = [...POI_ICON_CATEGORIES, "Other"];
+    return [...byCat.entries()]
+      .sort((a, b) => (order.indexOf(a[0]) + 1 || 99) - (order.indexOf(b[0]) + 1 || 99))
+      .map(([category, markers]) => ({ category, markers: markers.sort((x, y) => (x.name || "").localeCompare(y.name || "")) }));
+  }, [poiRows]);
+
+  const toggleCategory = useCallback((cat: string) => {
+    setHiddenCategories((prev) => { const s = new Set(prev); if (s.has(cat)) s.delete(cat); else s.add(cat); return s; });
+  }, []);
 
   const onPlacePoi = useCallback(async (x: number, y: number) => {
     if (!mapRow || !armedIcon) { setStatus("Pick an icon first."); return; }
@@ -709,6 +731,14 @@ export default function WorldMapPage() {
               </div>
               <IconLibrary campaignId={campaignId} onPick={setArmedIcon} />
               <PoiPanel campaignId={campaignId} pois={poiRows} onPatch={patchPoi} onRemove={removePoi} />
+              <MarkerLegend
+                groups={markerGroups}
+                markersHidden={markersHidden}
+                hiddenCategories={hiddenCategories}
+                onToggleAll={() => setMarkersHidden((v) => !v)}
+                onToggleCategory={toggleCategory}
+                c={C}
+              />
             </div>
           )}
         </div>
