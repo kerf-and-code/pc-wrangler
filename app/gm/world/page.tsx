@@ -11,6 +11,7 @@ import IconLibrary from "@/components/worldmap/IconLibrary";
 import { POI_ICON_SVG, poiIconCategory, POI_ICON_CATEGORIES } from "@/lib/worldmap/poi-icons";
 import MarkerLegend, { type MarkerGroup } from "@/components/worldmap/MarkerLegend";
 import RiverLabels from "@/components/worldmap/RiverLabels";
+import LabelPanel, { type LabelRow, type LabelPatch } from "@/components/worldmap/LabelPanel";
 import { renderWorldSnapshot } from "@/lib/worldmap/snapshot";
 import GenPanel from "@/components/worldmap/GenPanel";
 import PoiPanel from "@/components/worldmap/PoiPanel";
@@ -115,6 +116,8 @@ export default function WorldMapPage() {
   const [poiTooltip, setPoiTooltip] = useState<{ names: string[]; x: number; y: number } | null>(null);
   const [selectedPoi, setSelectedPoi] = useState<{ id: string; sx: number; sy: number } | null>(null);
   const [markersHidden, setMarkersHidden] = useState(false);
+  const [labelRows, setLabelRows] = useState<LabelRow[]>([]);
+  const [labelPlacing, setLabelPlacing] = useState(false);
   const [hiddenCategories, setHiddenCategories] = useState<Set<string>>(new Set());
   const [selectedEntry, setSelectedEntry] = useState<{ title: string | null; body: string | null } | null>(null);
   const [selectedChar, setSelectedChar] = useState<{ name: string } | null>(null);
@@ -199,15 +202,17 @@ export default function WorldMapPage() {
           setSelectedLayerId("");
           setHexesVersion((v) => v + 1);
         }
-        const [{ data: poiData }, { data: iconData }] = await Promise.all([
+        const [{ data: poiData }, { data: iconData }, { data: labelData }] = await Promise.all([
           supabase.from("map_pois").select("id, x, y, name, icon_key, icon_id, visibility, note, entry_id, character_id, color").eq("world_map_id", row.id),
           supabase.from("map_icons").select("id, url").eq("campaign_id", campaignId),
+          supabase.from("map_labels").select("id, x, y, text, size, color").eq("world_map_id", row.id),
         ]);
         if (!cancelled) {
           setPoiRows((poiData as PoiRow[]) || []);
           const um = new Map<string, string>();
           for (const ic of (iconData as { id: string; url: string }[]) || []) um.set(ic.id, ic.url);
           setIconUrlById(um);
+          setLabelRows((labelData as LabelRow[]) || []);
         }
       } else {
         setTerrain(null);
@@ -362,19 +367,45 @@ export default function WorldMapPage() {
     setFeatures((prev) => prev.map((f) => (f.name === oldName ? { ...f, name: newName } : f)));
   }, [supabase, mapRow]);
 
+  const armLabel = useCallback(() => { setLabelPlacing(true); setArmedIcon(null); }, []);
+  const placeLabel = useCallback(async (x: number, y: number) => {
+    if (!mapRow) { setLabelPlacing(false); return; }
+    const ins = await supabase.from("map_labels").insert({ world_map_id: mapRow.id, x, y, text: "New label", size: 18, visibility: "common" })
+      .select("id, x, y, text, size, color").single();
+    setLabelPlacing(false);
+    if (ins.error || !ins.data) { setStatus(ins.error?.message || "Could not add label."); return; }
+    setLabelRows((prev) => [...prev, ins.data as LabelRow]);
+  }, [supabase, mapRow]);
+  const moveLabel = useCallback(async (id: string, x: number, y: number) => {
+    setLabelRows((prev) => prev.map((l) => (l.id === id ? { ...l, x, y } : l)));
+    await supabase.from("map_labels").update({ x, y }).eq("id", id);
+  }, [supabase]);
+  const patchLabel = useCallback(async (id: string, patch: LabelPatch) => {
+    setLabelRows((prev) => prev.map((l) => (l.id === id ? { ...l, ...patch } : l)));
+    await supabase.from("map_labels").update(patch).eq("id", id);
+  }, [supabase]);
+  const removeLabel = useCallback(async (id: string) => {
+    const { error } = await supabase.from("map_labels").delete().eq("id", id);
+    if (error) { setStatus(error.message); return; }
+    setLabelRows((prev) => prev.filter((l) => l.id !== id));
+  }, [supabase]);
+
   const clearAll = useCallback(async () => {
     if (!mapRow) return;
     const n = poiRows.length;
-    if (!window.confirm(`Delete all ${n} marker${n === 1 ? "" : "s"} and clear every river name on this map? Terrain, regions, and layers are kept. This cannot be undone.`)) return;
-    const [poiRes, featRes] = await Promise.all([
+    if (!window.confirm(`Delete all ${n} marker${n === 1 ? "" : "s"}, every river name, and every area label on this map? Terrain, regions, and layers are kept. This cannot be undone.`)) return;
+    const [poiRes, featRes, lblRes] = await Promise.all([
       supabase.from("map_pois").delete().eq("world_map_id", mapRow.id),
       supabase.from("map_features").update({ name: null }).eq("world_map_id", mapRow.id).not("name", "is", null),
+      supabase.from("map_labels").delete().eq("world_map_id", mapRow.id),
     ]);
     if (poiRes.error) { setStatus(poiRes.error.message); return; }
     if (featRes.error) { setStatus(featRes.error.message); return; }
+    if (lblRes.error) { setStatus(lblRes.error.message); return; }
     setPoiRows([]);
     setFeatures((prev) => prev.map((f) => (f.name ? { ...f, name: null } : f)));
-    setStatus("Cleared all markers and river names.");
+    setLabelRows([]);
+    setStatus("Cleared all markers, river names, and area labels.");
   }, [supabase, mapRow, poiRows.length]);
 
   // One-time per map: delete auto-generated pins that cohesion stranded on open water, so they leave
@@ -792,6 +823,7 @@ export default function WorldMapPage() {
                 c={C}
               />
               <RiverLabels rivers={namedRivers} onRename={renameRiver} c={C} />
+              <LabelPanel labels={labelRows} placing={labelPlacing} onArm={armLabel} onPatch={patchLabel} onRemove={removeLabel} c={C} />
               <button type="button" onClick={clearAll}
                 style={{ marginTop: 16, width: "100%", padding: "7px 9px", borderRadius: 7, cursor: "pointer", border: "1px solid #7a3b2f", background: "rgba(150,60,45,0.14)", color: "#e6b3a3", fontSize: 12.5, fontWeight: 600 }}>
                 Clear all markers &amp; river names
@@ -810,6 +842,7 @@ export default function WorldMapPage() {
               paintRegionId={paintRegionId} regionCells={regionCells} regionErase={regionErase} onRegionPaint={onRegionPaint}
               regionRender={selectedLayerId ? regionRender : undefined}
               pois={pois} poiPlaceActive={mode === "pois" && !!armedIcon} onPlacePoi={onPlacePoi} onPoiClick={onPoiClick} onPoiHover={onPoiHover} onMovePoi={onMovePoi}
+              labels={labelRows} labelPlaceActive={mode === "pois" && labelPlacing} onPlaceLabel={placeLabel} onMoveLabel={moveLabel}
             />
           ) : (
             <p style={{ color: C.muted, fontSize: 14, padding: 16 }}>Pick a campaign to start its world map.</p>

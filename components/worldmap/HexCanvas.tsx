@@ -64,6 +64,11 @@ export default function HexCanvas({
   onPoiClick,
   onPoiHover,
   onMovePoi,
+  labels,
+  labelPlaceActive,
+  onPlaceLabel,
+  onMoveLabel,
+  onLabelClick,
   className,
 }: {
   terrain: Terrain;
@@ -91,6 +96,11 @@ export default function HexCanvas({
   onPoiClick?: (id: string, sx: number, sy: number) => void;
   onPoiHover?: (h: { names: string[]; sx: number; sy: number } | null) => void;
   onMovePoi?: (id: string, x: number, y: number) => void;
+  labels?: { id: string; x: number; y: number; text: string; size: number; color: string | null }[];
+  labelPlaceActive?: boolean;
+  onPlaceLabel?: (x: number, y: number) => void;
+  onMoveLabel?: (id: string, x: number, y: number) => void;
+  onLabelClick?: (id: string, sx: number, sy: number) => void;
   className?: string;
 }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -126,6 +136,13 @@ export default function HexCanvas({
   const poiHitRef = useRef<{ kind: "poi" | "cluster"; sx: number; sy: number; r: number; id?: string; names: string[]; wx: number; wy: number }[]>([]);
   const onMovePoiRef = useRef(onMovePoi);
   const poiDragRef = useRef<{ id: string; dx: number; dy: number } | null>(null);
+  const labelsRef = useRef(labels);
+  const labelPlaceActiveRef = useRef<boolean>(labelPlaceActive ?? false);
+  const onPlaceLabelRef = useRef(onPlaceLabel);
+  const onMoveLabelRef = useRef(onMoveLabel);
+  const onLabelClickRef = useRef(onLabelClick);
+  const labelHitRef = useRef<{ id: string; sx: number; sy: number; hw: number; hh: number }[]>([]);
+  const labelDragRef = useRef<{ id: string; dx: number; dy: number } | null>(null);
   const biomeArtRef = useRef(biomeArt);
   const featuresRef = useRef(features);
   const artEnabledRef = useRef<boolean>(artEnabled ?? false);
@@ -156,6 +173,11 @@ export default function HexCanvas({
   poisRef.current = pois;
   placeActiveRef.current = poiPlaceActive ?? false;
   onPlacePoiRef.current = onPlacePoi;
+  labelsRef.current = labels;
+  labelPlaceActiveRef.current = labelPlaceActive ?? false;
+  onPlaceLabelRef.current = onPlaceLabel;
+  onMoveLabelRef.current = onMoveLabel;
+  onLabelClickRef.current = onLabelClick;
   onPoiClickRef.current = onPoiClick;
   onPoiHoverRef.current = onPoiHover;
   onMovePoiRef.current = onMovePoi;
@@ -547,6 +569,34 @@ export default function HexCanvas({
       }
     }
     poiHitRef.current = hits;
+
+    // GM area labels: free text at a world point, drawn last so they sit above everything.
+    const lbls = labelsRef.current;
+    const lhits: { id: string; sx: number; sy: number; hw: number; hh: number }[] = [];
+    if (lbls && lbls.length) {
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.lineJoin = "round";
+      const ld = labelDragRef.current;
+      for (const lb of lbls) {
+        const ox = ld && ld.id === lb.id ? ld.dx : 0;
+        const oy = ld && ld.id === lb.id ? ld.dy : 0;
+        const sx = (lb.x + ox) * view.scale + view.tx;
+        const sy = (lb.y + oy) * view.scale + view.ty;
+        const sz = Math.max(10, lb.size || 18);
+        if (sx < -240 || sx > w + 240 || sy < -60 || sy > h + 60) continue;
+        ctx.font = `italic 600 ${sz}px 'Iowan Old Style', Georgia, serif`;
+        const tw = ctx.measureText(lb.text || "").width;
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = "rgba(20,16,12,0.82)";
+        ctx.strokeText(lb.text || "", sx, sy);
+        ctx.fillStyle = lb.color || "#f2e9d6";
+        ctx.fillText(lb.text || "", sx, sy);
+        lhits.push({ id: lb.id, sx, sy, hw: tw / 2 + 8, hh: sz / 2 + 6 });
+      }
+    }
+    labelHitRef.current = lhits;
   }, []);
 
   const scheduleDraw = useCallback(() => {
@@ -630,7 +680,7 @@ export default function HexCanvas({
     img.src = baseImage;
     return () => { img.onload = null; };
   }, [baseImage, scheduleDraw]);
-  useEffect(() => { scheduleDraw(); }, [colors, positionImageId, regionCells, paintRegionId, regionRender, pois, biomeArt, artEnabled, features, showBaseImage, scheduleDraw]);
+  useEffect(() => { scheduleDraw(); }, [colors, positionImageId, regionCells, paintRegionId, regionRender, pois, labels, biomeArt, artEnabled, features, showBaseImage, scheduleDraw]);
 
   const paintAt = useCallback((clientX: number, clientY: number, last: { col: number; row: number } | null) => {
     const canvas = canvasRef.current;
@@ -674,7 +724,7 @@ export default function HexCanvas({
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    let mode: "none" | "pan" | "paint" | "move" | "region" | "poi-move" = "none";
+    let mode: "none" | "pan" | "paint" | "move" | "region" | "poi-move" | "label-move" = "none";
     let lastX = 0, lastY = 0;
     let downClientX = 0, downClientY = 0;
     let lastHoverKey: string | null = null;
@@ -684,6 +734,14 @@ export default function HexCanvas({
       for (const h of poiHitRef.current) {
         const dx = mx - h.sx, dy = my - h.sy;
         if (dx * dx + dy * dy <= h.r * h.r) return h;
+      }
+      return null;
+    };
+    const hitTestLabel = (mx: number, my: number) => {
+      const ls = labelHitRef.current;
+      for (let k = ls.length - 1; k >= 0; k--) {
+        const h = ls[k];
+        if (Math.abs(mx - h.sx) <= h.hw && Math.abs(my - h.sy) <= h.hh) return h;
       }
       return null;
     };
@@ -713,9 +771,14 @@ export default function HexCanvas({
         lastHex = paintAt(e.clientX, e.clientY, null);
       } else {
         const rect = canvas.getBoundingClientRect();
-        const hit = hitTestPoi(e.clientX - rect.left, e.clientY - rect.top);
+        const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+        const hit = hitTestPoi(mx, my);
         if (hit && hit.kind === "poi" && hit.id) { mode = "poi-move"; poiDragRef.current = { id: hit.id, dx: 0, dy: 0 }; }
-        else { mode = "pan"; }
+        else {
+          const lhit = hitTestLabel(mx, my);
+          if (lhit) { mode = "label-move"; labelDragRef.current = { id: lhit.id, dx: 0, dy: 0 }; }
+          else { mode = "pan"; }
+        }
       }
     };
     const onMove = (e: PointerEvent) => {
@@ -725,6 +788,14 @@ export default function HexCanvas({
         lastHex = paintRegionAt(e.clientX, e.clientY, lastHex);
       } else if (mode === "poi-move") {
         const d = poiDragRef.current;
+        if (d) {
+          d.dx += (e.clientX - lastX) / viewRef.current.scale;
+          d.dy += (e.clientY - lastY) / viewRef.current.scale;
+          lastX = e.clientX; lastY = e.clientY;
+          scheduleDraw();
+        }
+      } else if (mode === "label-move") {
+        const d = labelDragRef.current;
         if (d) {
           d.dx += (e.clientX - lastX) / viewRef.current.scale;
           d.dy += (e.clientY - lastY) / viewRef.current.scale;
@@ -767,6 +838,17 @@ export default function HexCanvas({
         poiDragRef.current = null;
         scheduleDraw();
       }
+      if (mode === "label-move") {
+        const d = labelDragRef.current;
+        if (d) {
+          const moved = Math.abs(e.clientX - downClientX) >= 5 || Math.abs(e.clientY - downClientY) >= 5;
+          const lb = labelsRef.current?.find((x) => x.id === d.id);
+          if (moved && lb) onMoveLabelRef.current?.(d.id, lb.x + d.dx, lb.y + d.dy);
+          else if (!moved && lb) { const v = viewRef.current; onLabelClickRef.current?.(d.id, lb.x * v.scale + v.tx, lb.y * v.scale + v.ty); }
+        }
+        labelDragRef.current = null;
+        scheduleDraw();
+      }
       if ((mode === "pan" || mode === "none") && Math.abs(e.clientX - downClientX) < 5 && Math.abs(e.clientY - downClientY) < 5) {
         const rect = canvas.getBoundingClientRect();
         const mx = e.clientX - rect.left, my = e.clientY - rect.top;
@@ -782,6 +864,9 @@ export default function HexCanvas({
             v.scale = ns;
             scheduleDraw();
           }
+        } else if (labelPlaceActiveRef.current) {
+          const v = viewRef.current;
+          onPlaceLabelRef.current?.((mx - v.tx) / v.scale, (my - v.ty) / v.scale);
         } else if (placeActiveRef.current) {
           const v = viewRef.current;
           onPlacePoiRef.current?.((mx - v.tx) / v.scale, (my - v.ty) / v.scale);
