@@ -68,10 +68,21 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: `Image service error (${gemResp.status}): ${detail.slice(0, 200)}` }, { status: 502 });
     }
 
-    const gem = (await gemResp.json()) as { candidates?: { content?: { parts?: { inline_data?: { data?: string } }[] } }[] };
-    const parts = gem.candidates?.[0]?.content?.parts ?? [];
-    const outB64 = parts.find((p) => p?.inline_data?.data)?.inline_data?.data;
-    if (!outB64) return NextResponse.json({ error: "The image service returned no image." }, { status: 502 });
+    const gem = (await gemResp.json()) as {
+      promptFeedback?: { blockReason?: string };
+      candidates?: { finishReason?: string; content?: { parts?: Array<{ text?: string; inline_data?: { data?: string }; inlineData?: { data?: string } }> } }[];
+    };
+    const cand = gem.candidates?.[0];
+    const parts = cand?.content?.parts ?? [];
+    // The REST response uses camelCase inlineData; accept snake_case too for safety.
+    const outB64 = parts.map((pt) => pt.inline_data?.data ?? pt.inlineData?.data).find(Boolean);
+    if (!outB64) {
+      const block = gem.promptFeedback?.blockReason;
+      const finish = cand?.finishReason ?? "unknown";
+      const said = parts.map((pt) => pt.text).filter(Boolean).join(" ").slice(0, 300);
+      const why = block ? `prompt blocked (${block})` : `finishReason ${finish}${said ? ` - model said: ${said}` : ""}`;
+      return NextResponse.json({ error: `The image service returned no image. ${why}` }, { status: 502 });
+    }
 
     const bytes = Buffer.from(outB64, "base64");
     const path = `${campaignId}/ai-${crypto.randomUUID()}.png`;
