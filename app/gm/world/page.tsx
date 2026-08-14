@@ -17,6 +17,7 @@ import GenPanel from "@/components/worldmap/GenPanel";
 import PoiPanel from "@/components/worldmap/PoiPanel";
 import {
   type Terrain, createTerrain, decodeTerrain, encodeTerrain, base64ToBytes, bytesToBase64, expandTerrain, BIOME_UNSET,
+  FLAG_SALTPAN, FLAG_SNOWCAP, FLAG_GLACIER, FLAG_FROZEN, FLAG_SHALLOWS,
 } from "@/lib/worldmap/hex";
 import { fitImageToGrid, pixelToHex, BASE_SIZE, type PlacedImage } from "@/lib/worldmap/layout";
 
@@ -43,6 +44,15 @@ const IMG_TYPES = ["image/png", "image/jpeg", "image/webp"];
 const MAX_IMG_BYTES = 8 * 1024 * 1024;
 const MAX_DIM = 250;
 const CATEGORY_ORDER = ["terrestrial", "wetland", "water", "geologic", "fantasy"];
+// Hand-placeable special-terrain tiles: each sets a flag on the clicked hex. iceberg/shallows only
+// render over sea, so they also set the sea biome. salt/snow/glacier render over any biome.
+const SPECIAL_TERRAIN: { key: string; label: string; flag: number; biome: number | null }[] = [
+  { key: "saltpan", label: "Salt flat", flag: FLAG_SALTPAN, biome: null },
+  { key: "snowcap", label: "Snowcap", flag: FLAG_SNOWCAP, biome: null },
+  { key: "glacier", label: "Glacier", flag: FLAG_GLACIER, biome: null },
+  { key: "iceberg", label: "Iceberg", flag: FLAG_FROZEN, biome: 17 },
+  { key: "shallows", label: "Shallows", flag: FLAG_SHALLOWS, biome: 17 },
+];
 const CATEGORY_LABEL: Record<string, string> = {
   terrestrial: "Terrestrial", wetland: "Wetland", water: "Water", geologic: "Mountain & geologic", fantasy: "Fantasy",
 };
@@ -89,6 +99,7 @@ export default function WorldMapPage() {
   const [campaignId, setCampaignId] = useState<string>("");
   const [biomes, setBiomes] = useState<Biome[]>([]);
   const [artEnabled, setArtEnabled] = useState(false);
+  const [stamp, setStamp] = useState<{ flag: number; biome: number | null } | null>(null);
   const [fantasyView, setFantasyView] = useState(false);
   const [imagining, setImagining] = useState(false);
   const [imagineMsg, setImagineMsg] = useState<string | null>(null);
@@ -638,7 +649,7 @@ export default function WorldMapPage() {
   const swatch = (b: Biome) => {
     const on = selected === b.id;
     return (
-      <button key={b.id} type="button" onClick={() => setSelected(on ? null : b.id)} title={b.label}
+      <button key={b.id} type="button" onClick={() => { setSelected(on ? null : b.id); setStamp(null); }} title={b.label}
         style={{
           display: "flex", alignItems: "center", gap: 8, width: "100%", textAlign: "left",
           padding: "6px 8px", borderRadius: 7, cursor: "pointer",
@@ -794,8 +805,8 @@ export default function WorldMapPage() {
           </div>
 
           <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
-            {modeChip("Pan", selected === null, () => setSelected(null))}
-            {modeChip("Erase", selected === BIOME_UNSET, () => setSelected(BIOME_UNSET))}
+            {modeChip("Pan", selected === null && !stamp, () => { setSelected(null); setStamp(null); })}
+            {modeChip("Erase", selected === BIOME_UNSET, () => { setSelected(BIOME_UNSET); setStamp(null); })}
           </div>
           {grouped.map((g) => (
             <div key={g.category} style={{ marginBottom: 12 }}>
@@ -803,6 +814,29 @@ export default function WorldMapPage() {
               <div style={{ display: "grid", gap: 5 }}>{g.items.map(swatch)}</div>
             </div>
           ))}
+          <div style={{ marginBottom: 12 }}>
+            <div style={secLabel}>SPECIAL TERRAIN</div>
+            <div style={{ fontSize: 11, color: C.muted, margin: "0 0 6px", lineHeight: 1.4 }}>Pick one, then click or drag hexes. Shows with Terrain art on.</div>
+            <div style={{ display: "grid", gap: 5 }}>
+              {SPECIAL_TERRAIN.map((sp) => {
+                const on = stamp?.flag === sp.flag;
+                return (
+                  <button key={sp.key} type="button"
+                    onClick={() => { if (on) { setStamp(null); } else { setStamp({ flag: sp.flag, biome: sp.biome }); setSelected(null); setArtEnabled(true); } }}
+                    style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", textAlign: "left", padding: "6px 8px", borderRadius: 7, cursor: "pointer",
+                      border: `1px solid ${on ? C.sun : C.line}`, background: on ? "rgba(200,162,75,0.14)" : C.surface2, color: C.text }}>
+                    <span style={{ fontSize: 12.5 }}>{sp.label}</span>
+                  </button>
+                );
+              })}
+              <button type="button"
+                onClick={() => { if (stamp?.flag === 0) { setStamp(null); } else { setStamp({ flag: 0, biome: null }); setSelected(null); } }}
+                style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", textAlign: "left", padding: "6px 8px", borderRadius: 7, cursor: "pointer",
+                  border: `1px solid ${stamp?.flag === 0 ? C.sun : C.line}`, background: stamp?.flag === 0 ? "rgba(200,162,75,0.14)" : C.surface2, color: C.muted }}>
+                <span style={{ fontSize: 12.5 }}>Erase special</span>
+              </button>
+            </div>
+          </div>
           </>)}
           {mode === "regions" && mapRow && (
             <RegionsPanel worldMapId={mapRow.id} campaignId={campaignId} onPaintState={onPaintState} onChanged={reloadRegions} />
@@ -837,7 +871,7 @@ export default function WorldMapPage() {
             <p style={{ color: C.muted, fontSize: 14, padding: 16 }}>Loading\u2026</p>
           ) : terrain ? (
             <HexCanvas
-              terrain={terrain} colors={colors} biomeArt={biomeArt} artEnabled={artEnabled} features={features} baseImage={mapRow?.ai_image_url ?? null} showBaseImage={fantasyView} selectedBiome={selected} onPaint={onPaint}
+              terrain={terrain} colors={colors} biomeArt={biomeArt} artEnabled={artEnabled} features={features} baseImage={mapRow?.ai_image_url ?? null} showBaseImage={fantasyView} selectedBiome={selected} onPaint={onPaint} stampFlag={stamp?.flag ?? null} stampBiome={stamp?.biome ?? null} onStampFlag={onPaint}
               images={images} positionImageId={positionId} onImageMove={onImageMove} onImageScale={onImageScale}
               paintRegionId={paintRegionId} regionCells={regionCells} regionErase={regionErase} onRegionPaint={onRegionPaint}
               regionRender={selectedLayerId ? regionRender : undefined}

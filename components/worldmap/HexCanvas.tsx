@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef } from "react";
-import { type Terrain, index, setBiome, BIOME_UNSET, offsetToAxial, axialToOffset, AXIAL_DIRS, inBounds } from "@/lib/worldmap/hex";
+import { type Terrain, index, setBiome, getFlags, setFlags, BIOME_UNSET, offsetToAxial, axialToOffset, AXIAL_DIRS, inBounds, FLAG_SALTPAN, FLAG_SNOWCAP, FLAG_GLACIER, FLAG_FROZEN, FLAG_SHALLOWS } from "@/lib/worldmap/hex";
 import { hexToPixel, hexCorners, pixelToHex, gridPixelSize, gridOrigin, BASE_SIZE, type PlacedImage } from "@/lib/worldmap/layout";
 import { buildFeatureEdges, selectTile, type FeatureEdges, type MapFeatureLike } from "@/lib/worldmap/feature-tiles";
 
@@ -38,6 +38,8 @@ function mix(a: string, b: string): string {
 type View = { scale: number; tx: number; ty: number };
 export type MapFeature = { kind: "river" | "road"; klass: number; path: [number, number][]; name?: string | null };
 
+const STAMPABLE_MASK = FLAG_SALTPAN | FLAG_SNOWCAP | FLAG_GLACIER | FLAG_FROZEN | FLAG_SHALLOWS;
+
 export default function HexCanvas({
   terrain,
   colors,
@@ -69,6 +71,9 @@ export default function HexCanvas({
   onPlaceLabel,
   onMoveLabel,
   onLabelClick,
+  stampFlag,
+  stampBiome,
+  onStampFlag,
   className,
 }: {
   terrain: Terrain;
@@ -101,6 +106,9 @@ export default function HexCanvas({
   onPlaceLabel?: (x: number, y: number) => void;
   onMoveLabel?: (id: string, x: number, y: number) => void;
   onLabelClick?: (id: string, sx: number, sy: number) => void;
+  stampFlag?: number | null;
+  stampBiome?: number | null;
+  onStampFlag?: (col: number, row: number) => void;
   className?: string;
 }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -116,6 +124,9 @@ export default function HexCanvas({
   const colorsRef = useRef(colors);
   const selRef = useRef(selectedBiome);
   const onPaintRef = useRef(onPaint);
+  const stampFlagRef = useRef<number | null>(stampFlag ?? null);
+  const stampBiomeRef = useRef<number | null>(stampBiome ?? null);
+  const onStampFlagRef = useRef(onStampFlag);
   const imagesRef = useRef<PlacedImage[]>(images ?? []);
   const posRef = useRef<string | null>(positionImageId ?? null);
   const onMoveRef = useRef(onImageMove);
@@ -160,6 +171,9 @@ export default function HexCanvas({
   colorsRef.current = colors;
   selRef.current = selectedBiome;
   onPaintRef.current = onPaint;
+  stampFlagRef.current = stampFlag ?? null;
+  stampBiomeRef.current = stampBiome ?? null;
+  onStampFlagRef.current = onStampFlag;
   imagesRef.current = images ?? [];
   posRef.current = positionImageId ?? null;
   onMoveRef.current = onImageMove;
@@ -700,6 +714,27 @@ export default function HexCanvas({
     return { col, row };
   }, [scheduleDraw]);
 
+  const stampAt = useCallback((clientX: number, clientY: number, last: { col: number; row: number } | null) => {
+    const canvas = canvasRef.current;
+    const flag = stampFlagRef.current;
+    if (!canvas || flag == null) return last;
+    const rect = canvas.getBoundingClientRect();
+    const view = viewRef.current;
+    const wx = (clientX - rect.left - view.tx) / view.scale;
+    const wy = (clientY - rect.top - view.ty) / view.scale;
+    const { col, row } = pixelToHex(wx, wy, BASE_SIZE);
+    const t = terrainRef.current;
+    if (col < 0 || row < 0 || col >= t.meta.width || row >= t.meta.height) return last;
+    if (last && last.col === col && last.row === row) return last;
+    // Replace this hex's special-terrain flags with the armed one (flag 0 = erase special).
+    setFlags(t, col, row, (getFlags(t, col, row) & ~STAMPABLE_MASK) | flag);
+    const biome = stampBiomeRef.current;
+    if (biome != null) setBiome(t, col, row, biome);
+    onStampFlagRef.current?.(col, row);
+    scheduleDraw();
+    return { col, row };
+  }, [scheduleDraw]);
+
   const paintRegionAt = useCallback((clientX: number, clientY: number, last: { col: number; row: number } | null) => {
     const canvas = canvasRef.current;
     const rid = paintRegionRef.current;
@@ -724,7 +759,7 @@ export default function HexCanvas({
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    let mode: "none" | "pan" | "paint" | "move" | "region" | "poi-move" | "label-move" = "none";
+    let mode: "none" | "pan" | "paint" | "stamp" | "move" | "region" | "poi-move" | "label-move" = "none";
     let lastX = 0, lastY = 0;
     let downClientX = 0, downClientY = 0;
     let lastHoverKey: string | null = null;
@@ -769,6 +804,9 @@ export default function HexCanvas({
       } else if (selRef.current != null && e.button === 0) {
         mode = "paint";
         lastHex = paintAt(e.clientX, e.clientY, null);
+      } else if (stampFlagRef.current != null && e.button === 0) {
+        mode = "stamp";
+        lastHex = stampAt(e.clientX, e.clientY, null);
       } else {
         const rect = canvas.getBoundingClientRect();
         const mx = e.clientX - rect.left, my = e.clientY - rect.top;
@@ -784,6 +822,8 @@ export default function HexCanvas({
     const onMove = (e: PointerEvent) => {
       if (mode === "paint") {
         lastHex = paintAt(e.clientX, e.clientY, lastHex);
+      } else if (mode === "stamp") {
+        lastHex = stampAt(e.clientX, e.clientY, lastHex);
       } else if (mode === "region") {
         lastHex = paintRegionAt(e.clientX, e.clientY, lastHex);
       } else if (mode === "poi-move") {
@@ -909,7 +949,7 @@ export default function HexCanvas({
       canvas.removeEventListener("wheel", onWheel);
       canvas.removeEventListener("mousemove", onHover);
     };
-  }, [paintAt, paintRegionAt, scheduleDraw]);
+  }, [paintAt, stampAt, paintRegionAt, scheduleDraw]);
 
   const cursor = positionImageId != null ? "move" : (paintRegionId != null || selectedBiome != null || poiPlaceActive) ? "crosshair" : "grab";
 
