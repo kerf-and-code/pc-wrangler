@@ -8,17 +8,18 @@ const DAILY_LIMIT = 3;
 const RATE_LIMIT_ENABLED = false; // TESTING: set true to enforce DAILY_LIMIT
 const MODEL = process.env.GEMINI_IMAGE_MODEL || "gemini-2.5-flash-image";
 const PROMPT =
-  "You are given a hand-painted hex-tile fantasy world map: each region already carries distinct terrain " +
-  "artwork, with rivers and roads drawn over it. Repaint the whole thing as ONE cohesive, beautiful " +
-  "hand-illustrated fantasy world-map poster. Keep every coastline, landmass, lake, river, road, " +
-  "mountain range, and terrain region in the SAME position, shape, and proportion as the source - do " +
-  "not move, add, or remove anything. Render each terrain in its true character: lush green forests, " +
-  "snow-capped alpine peaks, rolling plains and prairie, golden deserts and cracked white salt flats, " +
-  "murky reed-filled swamps and bogs, glowing magical feywild and enchanted groves with fairy rings, " +
-  "ashen blighted wastes, glittering crystal caverns, and smoking volcanic peaks. Draw the rivers as " +
-  "flowing blue water and the roads as worn trails following their exact routes. Style: rich painterly " +
-  "antique cartography - parchment tones, softly illustrated relief, subtle sea texture, elegant " +
-  "flourishes. No text, no labels, no hex grid, no borders. Preserve the overall layout and framing exactly.";
+  "Transform this map into ONE cohesive, hand-painted fantasy world map. The source is a colored " +
+  "tile map - use it ONLY as a guide to WHERE each terrain, river, and road goes; do NOT copy its " +
+  "blocky look. Completely DISSOLVE every hexagon, tile edge, and grid line: the result must read as " +
+  "smooth, organic regions with soft natural transitions blending between terrains, like a beautiful " +
+  "antique cartographer's map, NOT a grid of colored cells. Keep every coastline, landmass, lake, " +
+  "river, road, and terrain region in the SAME position and proportion. Render each terrain in its " +
+  "true character: lush green forests, snow-capped alpine peaks, rolling plains and prairie, golden " +
+  "deserts and cracked white salt flats, murky reed-filled swamps and bogs, glowing magical feywild " +
+  "and enchanted groves with fairy rings, ashen blighted wastes, glittering crystal caverns, and " +
+  "smoking volcanic peaks. Draw rivers as flowing blue water and roads as worn trails along their " +
+  "exact routes. Style: rich painterly antique cartography - parchment tones, softly illustrated " +
+  "relief, subtle sea texture, elegant flourishes. No text, no labels, no hex grid, no borders.";
 
 type Body = { campaignId: string; controlImage: string };
 

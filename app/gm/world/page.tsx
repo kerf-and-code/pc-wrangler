@@ -326,7 +326,7 @@ export default function WorldMapPage() {
   }, [regionRows, selectedLayerId, hexesVersion]);
 
   const pois = useMemo(() => {
-    const out: { id: string; x: number; y: number; name: string; iconId: string; iconSrc: string }[] = [];
+    const out: { id: string; x: number; y: number; name: string; iconId: string; iconSrc: string; locked: boolean }[] = [];
     if (markersHidden) return out;
     for (const r of poiRows) {
       if (hiddenCategories.has(poiIconCategory(r.icon_key))) continue;
@@ -547,7 +547,7 @@ export default function WorldMapPage() {
     setImagining(true);
     setImagineMsg("Painting the world\u2026 this can take up to a minute.");
     try {
-      const blob = await renderWorldSnapshot({ terrain, colors, biomeArt, features, pois: [], images: [], maxPx: 1280, mime: "image/jpeg", quality: 0.8 });
+      const blob = await renderWorldSnapshot({ terrain, colors, biomeArt, features, pois: [], images: [], maxPx: 1280, mime: "image/jpeg", quality: 0.8, smooth: true });
       const dataUrl = await new Promise<string>((res, rej) => {
         const r = new FileReader();
         r.onloadend = () => res(String(r.result));

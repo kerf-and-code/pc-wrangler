@@ -32,10 +32,11 @@ export async function renderWorldSnapshot(opts: {
   pois?: SnapPoi[];
   features?: SnapFeature[];
   maxPx?: number;
+  smooth?: boolean;
   mime?: "image/png" | "image/jpeg";
   quality?: number;
 }): Promise<Blob> {
-  const { terrain, colors, biomeArt = [], images = [], pois = [], features = [], maxPx = 2048, mime = "image/png", quality = 0.92 } = opts;
+  const { terrain, colors, biomeArt = [], images = [], pois = [], features = [], maxPx = 2048, mime = "image/png", quality = 0.92, smooth = false } = opts;
   const W = terrain.meta.width, H = terrain.meta.height;
 
   const g = gridPixelSize(W, H, BASE_SIZE);
@@ -136,7 +137,19 @@ export async function renderWorldSnapshot(opts: {
     if (el) ctx.drawImage(el, p.x - poiSize / 2, p.y - poiSize / 2, poiSize, poiSize);
   });
 
+  // Smoothing pass (used for the AI fantasy control): blur away the hard hex edges so the model sees
+  // soft organic regions, not a grid of tiles. Blur auto-scales to the on-screen hex width.
+  let outCanvas: HTMLCanvasElement = canvas;
+  if (smooth) {
+    const hexPx = Math.sqrt(3) * BASE_SIZE * scale;
+    const blur = Math.max(2, Math.round(hexPx * 0.55));
+    const tmp = document.createElement("canvas");
+    tmp.width = cw; tmp.height = ch;
+    const tctx = tmp.getContext("2d");
+    if (tctx) { tctx.filter = `blur(${blur}px)`; tctx.drawImage(canvas, 0, 0); outCanvas = tmp; }
+  }
+
   return await new Promise<Blob>((resolve, reject) => {
-    canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("Snapshot toBlob failed."))), mime, quality);
+    outCanvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("Snapshot toBlob failed."))), mime, quality);
   });
 }
