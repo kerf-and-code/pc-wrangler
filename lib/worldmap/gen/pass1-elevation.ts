@@ -11,7 +11,7 @@ import { hexToPixel } from "../layout";
 type V2 = { x: number; y: number };
 const smoother = (t: number) => (t <= 0 ? 0 : t >= 1 ? 1 : t * t * t * (t * (t * 6 - 15) + 10));
 
-export function pass1Elevation(cfg: GenConfig): { elevation: Float32Array; volcanicCandidate: Uint8Array } {
+export function pass1Elevation(cfg: GenConfig): Float32Array {
   const W = cfg.width, H = cfg.height, N = W * H;
   const master = hashSeed(cfg.seed);
 
@@ -72,7 +72,6 @@ export function pass1Elevation(cfg: GenConfig): { elevation: Float32Array; volca
   }
   const B = small * 0.06;
   const plateField = new Float32Array(N);
-  const volcanicCandidate = new Uint8Array(N);
   for (let i = 0; i < N; i++) {
     let a = 0, ad = Infinity, fk = -1, fd = Infinity;
     for (let k = 0; k < P; k++) {
@@ -88,7 +87,6 @@ export function pass1Elevation(cfg: GenConfig): { elevation: Float32Array; volca
       const nl = Math.hypot(nx, ny) || 1;
       const rel = (drift[a].x - drift[fk].x) * (nx / nl) + (drift[a].y - drift[fk].y) * (ny / nl);
       bf = rel * strength * 0.6; // convergent (+) ridge / divergent (-) rift
-      if (rel > 0 && strength > 0.7) volcanicCandidate[i] = 1; // narrow band on the boundary spine
     }
     plateField[i] = base[a] + bf;
   }
@@ -118,5 +116,5 @@ export function pass1Elevation(cfg: GenConfig): { elevation: Float32Array; volca
   const range = mx - mn || 1;
   const elev = new Float32Array(N);
   for (let i = 0; i < N; i++) elev[i] = (raw[i] - mn) / range;
-  return { elevation: elev, volcanicCandidate };
+  return elev;
 }

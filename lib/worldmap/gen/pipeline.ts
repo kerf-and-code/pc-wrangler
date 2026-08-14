@@ -21,9 +21,8 @@ export type GenProgress = (p: { pass: string; index: number; total: number }) =>
 export function generateTerrain(cfg: GenConfig, onProgress?: GenProgress): Fields {
   const total = 12;
   const step = (index: number, pass: string) => { if (onProgress) onProgress({ pass, index, total }); };
-  const p1 = pass1Elevation(cfg); step(1, "elevation");
-  const f = createFields(cfg.width, cfg.height, p1.elevation);
-  f.volcanicCandidate.set(p1.volcanicCandidate);
+  const elevation = pass1Elevation(cfg); step(1, "elevation");
+  const f = createFields(cfg.width, cfg.height, elevation);
   pass2SeaLevel(f, cfg); step(2, "sea level");
   pass3Depressions(f); step(3, "drainage");
   pass4Temperature(f, cfg); step(4, "temperature");
