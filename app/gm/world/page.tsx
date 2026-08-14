@@ -70,6 +70,19 @@ function axialLine(a: [number, number], b: [number, number]): [number, number][]
 // straight shorelines gain natural inlets and spits, a few hexes either way. Ocean = 17/19; lakes (16)
 // are left alone. Eroded land becomes shallow ocean (FL_SHALLOWS=1 so it blends); new land copies a
 // land neighbour's biome. Operates on the raw blob arrays so it needs no hex.ts helpers.
+// Map size -> miles per hex, clean round breakpoints (Terry): 60->6, 100->15, 150->30, 200->45, 250->60,
+// piecewise-linear between, clamped to [60,250]. dim = the map's larger side. Small maps read as regions
+// (a US state at 60), large maps as whole worlds (at 250). Feeds both region measurements and the render.
+const SCALE_POINTS: [number, number][] = [[60, 6], [100, 15], [150, 30], [200, 45], [250, 60]];
+function milesPerHex(dim: number): number {
+  const d = Math.max(60, Math.min(250, dim));
+  for (let i = 1; i < SCALE_POINTS.length; i++) {
+    const [x0, y0] = SCALE_POINTS[i - 1], [x1, y1] = SCALE_POINTS[i];
+    if (d <= x1) return y0 + (y1 - y0) * (d - x0) / (x1 - x0);
+  }
+  return 60;
+}
+
 function roughenCoastsInPlace(biome: Uint8Array, flags: Uint8Array, W: number, H: number, strength: number, iterations: number, seed: number): void {
   const AX: [number, number][] = [[1, 0], [1, -1], [0, -1], [-1, 0], [-1, 1], [0, 1]];
   const nbrs = (col: number, row: number): number[] => {
@@ -417,6 +430,39 @@ export default function WorldMapPage() {
     }));
   }, [regionRows, selectedLayerId, hexesVersion]);
 
+  // Per-region measurements: hex count + water-bordering edges (sea vs lake, kept separate). Each hex rolls
+  // up its parent chain so higher tiers aggregate their children. Recomputes when terrain/regions/paint change.
+  const regionMetrics = useMemo(() => {
+    const m: Record<string, { hexCount: number; seaEdges: number; lakeEdges: number }> = {};
+    if (!terrain) return m;
+    const W = terrain.meta.width, H = terrain.meta.height;
+    const byId = new Map(regionRows.map((r) => [r.id, r]));
+    const AX: [number, number][] = [[1, 0], [1, -1], [0, -1], [-1, 0], [-1, 1], [0, 1]];
+    for (const [key, baseRid] of worldHexesRef.current) {
+      const ids: string[] = [];
+      let cur = byId.get(baseRid), guard = 0;
+      while (cur && guard++ < 20) { ids.push(cur.id); cur = cur.parent_region_id ? byId.get(cur.parent_region_id) : undefined; }
+      if (ids.length === 0) continue;
+      const ci = key.indexOf(",");
+      const col = +key.slice(0, ci), row = +key.slice(ci + 1);
+      let sea = 0, lake = 0;
+      const q = col - (row - (row & 1)) / 2, r = row;
+      for (const [dq, dr] of AX) {
+        const nr = r + dr, nc = (q + dq) + (nr - (nr & 1)) / 2;
+        if (nc < 0 || nc >= W || nr < 0 || nr >= H) continue;
+        const b = terrain.biome[nr * W + nc];
+        if (b === 17 || b === 19) sea++; else if (b === 16) lake++;
+      }
+      for (const rid of ids) {
+        const e = m[rid] || (m[rid] = { hexCount: 0, seaEdges: 0, lakeEdges: 0 });
+        e.hexCount++; e.seaEdges += sea; e.lakeEdges += lake;
+      }
+    }
+    return m;
+  }, [terrain, regionRows, hexesVersion]);
+
+  const mphex = useMemo(() => (terrain ? milesPerHex(Math.max(terrain.meta.width, terrain.meta.height)) : 0), [terrain]);
+
   const pois = useMemo(() => {
     const out: { id: string; x: number; y: number; name: string; iconId: string; iconSrc: string; locked: boolean }[] = [];
     if (markersHidden) return out;
@@ -687,9 +733,18 @@ export default function WorldMapPage() {
         r.onerror = () => rej(new Error("Could not read the control image."));
         r.readAsDataURL(blob);
       });
+      const dim = Math.max(terrain.meta.width, terrain.meta.height);
+      const extentMiles = Math.round(dim * milesPerHex(dim));
+      const scaleHint = extentMiles < 800
+        ? `a regional map about ${extentMiles} miles across; render fine regional detail - individual peaks, distinct forests, coves and inlets`
+        : extentMiles < 4000
+        ? `a map about ${extentMiles} miles across; render at province scale - mountain ranges, broad forests, notable rivers`
+        : extentMiles < 10000
+        ? `a map about ${extentMiles} miles across; render at continental scale - major mountain ranges, vast biome regions, large river systems, generalized like a world atlas`
+        : `a map about ${extentMiles} miles across; render at whole-world scale - continental landmasses, planetary mountain belts, broad climate zones, heavily generalized like a global atlas`;
       const resp = await fetch("/api/world-map/imagine", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ campaignId, controlImage: dataUrl }),
+        body: JSON.stringify({ campaignId, controlImage: dataUrl, scaleHint }),
       });
       const json = await resp.json();
       if (!resp.ok) { setImagineMsg(json.error || "Generation failed."); return; }
@@ -992,7 +1047,7 @@ export default function WorldMapPage() {
           </div>
           </>)}
           {mode === "regions" && mapRow && (
-            <RegionsPanel worldMapId={mapRow.id} campaignId={campaignId} onPaintState={onPaintState} onChanged={reloadRegions} />
+            <RegionsPanel worldMapId={mapRow.id} campaignId={campaignId} onPaintState={onPaintState} onChanged={reloadRegions} metrics={regionMetrics} milesPerHex={mphex} />
           )}
           {mode === "pois" && campaignId && (
             <div>

@@ -25,11 +25,11 @@ const PROMPT =
   "Style: rich painterly antique cartography - parchment tones, softly illustrated " +
   "relief, subtle sea texture, elegant flourishes. No text, no labels, no hex grid, no borders.";
 
-type Body = { campaignId: string; controlImage: string };
+type Body = { campaignId: string; controlImage: string; scaleHint?: string };
 
 export async function POST(request: Request) {
   try {
-    const { campaignId, controlImage } = (await request.json()) as Body;
+    const { campaignId, controlImage, scaleHint } = (await request.json()) as Body;
     if (!campaignId || typeof controlImage !== "string") {
       return NextResponse.json({ error: "Missing campaignId or image." }, { status: 400 });
     }
@@ -69,7 +69,7 @@ export async function POST(request: Request) {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: PROMPT }, { inline_data: { mime_type: mime, data: b64 } }] }],
+        contents: [{ parts: [{ text: scaleHint ? `${PROMPT} Cartographic scale: this is ${scaleHint}.` : PROMPT }, { inline_data: { mime_type: mime, data: b64 } }] }],
         generationConfig: { responseModalities: ["TEXT", "IMAGE"], imageConfig: { imageSize: IMAGE_SIZE } },
       }),
     });

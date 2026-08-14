@@ -21,11 +21,13 @@ const LAYER_COLS = "id, name, ord";
 const REGION_COLS = "id, layer_id, name, parent_region_id, entry_id, visibility, tint";
 const VIS = ["common", "player", "gm", "private"];
 
-export default function RegionsPanel({ worldMapId, campaignId, onChanged, onPaintState }: {
+export default function RegionsPanel({ worldMapId, campaignId, onChanged, onPaintState, metrics, milesPerHex }: {
   worldMapId: string;
   campaignId: string;
   onChanged?: () => void;
   onPaintState?: (regionId: string | null, erase: boolean) => void;
+  metrics?: Record<string, { hexCount: number; seaEdges: number; lakeEdges: number }>;
+  milesPerHex?: number;
 }) {
   const supabase = useMemo(() => createClient(), []);
   const [layers, setLayers] = useState<Layer[]>([]);
@@ -34,6 +36,7 @@ export default function RegionsPanel({ worldMapId, campaignId, onChanged, onPain
   const [status, setStatus] = useState<string>("");
   const [paintId, setPaintId] = useState<string | null>(null);
   const [erase, setErase] = useState<boolean>(false);
+  const [useMetric, setUseMetric] = useState<boolean>(false);
 
   const load = useCallback(async () => {
     if (!worldMapId) return;
@@ -131,6 +134,27 @@ export default function RegionsPanel({ worldMapId, campaignId, onChanged, onPain
     return regions.filter((r) => r.layer_id === higher.id);
   }, [layers, regions]);
 
+  // Area = hexCount * hex area (hex is milesPerHex corner-to-corner -> 0.6495*d^2 sq mi). Coast/lake =
+  // water-bordering hex edges * side length (milesPerHex/2). Metric: mi*1.609=km, sqmi*2.590=km2.
+  const readout = useCallback((rid: string): string | null => {
+    const rm = metrics?.[rid];
+    if (!rm || !milesPerHex || rm.hexCount === 0) return null;
+    const mph = milesPerHex, edge = mph / 2;
+    const areaMi = rm.hexCount * 0.6495 * mph * mph;
+    const seaMi = rm.seaEdges * edge, lakeMi = rm.lakeEdges * edge;
+    const n = (x: number) => Math.round(x).toLocaleString();
+    if (useMetric) {
+      let o = `${n(areaMi * 2.59)} km\u00b2`;
+      if (seaMi > 0) o += ` \u00b7 coast ${n(seaMi * 1.609)} km`;
+      if (lakeMi > 0) o += ` \u00b7 lake ${n(lakeMi * 1.609)} km`;
+      return o;
+    }
+    let o = `${n(areaMi)} sq mi`;
+    if (seaMi > 0) o += ` \u00b7 coast ${n(seaMi)} mi`;
+    if (lakeMi > 0) o += ` \u00b7 lake ${n(lakeMi)} mi`;
+    return o;
+  }, [metrics, milesPerHex, useMetric]);
+
   const field: React.CSSProperties = { background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: 6, padding: "5px 7px", fontSize: 12.5, outline: "none" };
   const mini: React.CSSProperties = { background: "transparent", border: `1px solid ${C.line}`, borderRadius: 6, padding: "3px 7px", fontSize: 11.5, cursor: "pointer", color: C.muted };
   const secLabel: React.CSSProperties = { fontSize: 11, color: C.muted, fontFamily: "ui-monospace, monospace", letterSpacing: "0.08em", marginBottom: 8 };
@@ -153,7 +177,10 @@ export default function RegionsPanel({ worldMapId, campaignId, onChanged, onPain
       </div>
       <button type="button" onClick={addLayer} style={{ ...mini, width: "100%", padding: "6px 9px", marginBottom: 16 }}>+ Add tier</button>
 
-      <div style={secLabel}>REGIONS</div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+        <div style={{ ...secLabel, marginBottom: 0 }}>REGIONS</div>
+        {milesPerHex ? <button type="button" onClick={() => setUseMetric((v) => !v)} style={mini} title="Toggle units">{useMetric ? "Metric" : "Imperial"}</button> : null}
+      </div>
       {sortedLayers.length === 0 ? (
         <p style={{ fontSize: 12.5, color: C.muted }}>Add a tier first.</p>
       ) : (
@@ -165,6 +192,7 @@ export default function RegionsPanel({ worldMapId, campaignId, onChanged, onPain
               <div style={{ display: "grid", gap: 8 }}>
                 {inLayer.map((r) => {
                   const parents = parentOptions(r);
+                  const ro = readout(r.id);
                   return (
                     <div key={r.id} style={{ border: `1px solid ${C.line}`, borderRadius: 7, padding: 8, background: C.surface2, display: "grid", gap: 6 }}>
                       <input value={r.name} onChange={(e) => patchRegion(r.id, { name: e.target.value })} style={{ ...field }} />
@@ -200,6 +228,7 @@ export default function RegionsPanel({ worldMapId, campaignId, onChanged, onPain
                       ) : (
                         <button type="button" onClick={() => { setPaintId(r.id); setErase(false); }} style={{ ...mini, alignSelf: "flex-start" }}>Paint hexes</button>
                       ))}
+                      {ro && <div style={{ fontSize: 11, color: C.muted, lineHeight: 1.5, borderTop: `1px solid ${C.line}`, paddingTop: 5 }}>{ro}</div>}
                     </div>
                   );
                 })}
