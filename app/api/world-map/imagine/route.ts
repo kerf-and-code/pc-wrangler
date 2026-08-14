@@ -8,12 +8,17 @@ const DAILY_LIMIT = 3;
 const RATE_LIMIT_ENABLED = false; // TESTING: set true to enforce DAILY_LIMIT
 const MODEL = process.env.GEMINI_IMAGE_MODEL || "gemini-2.5-flash-image";
 const PROMPT =
-  "Repaint this world map as a beautiful hand-painted fantasy cartography poster. Keep every coastline, " +
-  "river, lake, mountain range, forest, desert, and terrain region in the SAME position, shape, and " +
-  "proportion as the source image - do not move, add, or remove landmasses or water. Render it in a rich " +
-  "painterly antique-map style: parchment tones, softly illustrated mountains and forests, gentle color " +
-  "gradients for biomes, subtle sea texture, and elegant cartographic flourishes. No text, no labels, no " +
-  "hex grid, no borders. Preserve the overall layout and framing exactly.";
+  "You are given a hand-painted hex-tile fantasy world map: each region already carries distinct terrain " +
+  "artwork, with rivers and roads drawn over it. Repaint the whole thing as ONE cohesive, beautiful " +
+  "hand-illustrated fantasy world-map poster. Keep every coastline, landmass, lake, river, road, " +
+  "mountain range, and terrain region in the SAME position, shape, and proportion as the source - do " +
+  "not move, add, or remove anything. Render each terrain in its true character: lush green forests, " +
+  "snow-capped alpine peaks, rolling plains and prairie, golden deserts and cracked white salt flats, " +
+  "murky reed-filled swamps and bogs, glowing magical feywild and enchanted groves with fairy rings, " +
+  "ashen blighted wastes, glittering crystal caverns, and smoking volcanic peaks. Draw the rivers as " +
+  "flowing blue water and the roads as worn trails following their exact routes. Style: rich painterly " +
+  "antique cartography - parchment tones, softly illustrated relief, subtle sea texture, elegant " +
+  "flourishes. No text, no labels, no hex grid, no borders. Preserve the overall layout and framing exactly.";
 
 type Body = { campaignId: string; controlImage: string };
 

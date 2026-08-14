@@ -547,7 +547,7 @@ export default function WorldMapPage() {
     setImagining(true);
     setImagineMsg("Painting the world\u2026 this can take up to a minute.");
     try {
-      const blob = await renderWorldSnapshot({ terrain, colors, features, pois: [], images: [], maxPx: 1024, mime: "image/jpeg", quality: 0.82 });
+      const blob = await renderWorldSnapshot({ terrain, colors, biomeArt, features, pois: [], images: [], maxPx: 1280, mime: "image/jpeg", quality: 0.8 });
       const dataUrl = await new Promise<string>((res, rej) => {
         const r = new FileReader();
         r.onloadend = () => res(String(r.result));
