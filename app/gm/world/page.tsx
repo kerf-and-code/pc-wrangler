@@ -10,6 +10,7 @@ import RegionsPanel from "@/components/worldmap/RegionsPanel";
 import IconLibrary from "@/components/worldmap/IconLibrary";
 import { POI_ICON_SVG, poiIconCategory, POI_ICON_CATEGORIES } from "@/lib/worldmap/poi-icons";
 import MarkerLegend, { type MarkerGroup } from "@/components/worldmap/MarkerLegend";
+import RiverLabels from "@/components/worldmap/RiverLabels";
 import { renderWorldSnapshot } from "@/lib/worldmap/snapshot";
 import GenPanel from "@/components/worldmap/GenPanel";
 import PoiPanel from "@/components/worldmap/PoiPanel";
@@ -347,6 +348,19 @@ export default function WorldMapPage() {
   const toggleCategory = useCallback((cat: string) => {
     setHiddenCategories((prev) => { const s = new Set(prev); if (s.has(cat)) s.delete(cat); else s.add(cat); return s; });
   }, []);
+
+  const namedRivers = useMemo(() => {
+    const seen = new Set<string>();
+    for (const f of features) if (f.kind === "river" && f.name) seen.add(f.name);
+    return [...seen];
+  }, [features]);
+
+  const renameRiver = useCallback(async (oldName: string, newName: string) => {
+    if (!mapRow) return;
+    const { error } = await supabase.from("map_features").update({ name: newName }).eq("world_map_id", mapRow.id).eq("name", oldName);
+    if (error) { setStatus(error.message); return; }
+    setFeatures((prev) => prev.map((f) => (f.name === oldName ? { ...f, name: newName } : f)));
+  }, [supabase, mapRow]);
 
   // One-time per map: delete auto-generated pins that cohesion stranded on open water, so they leave
   // the map AND the marker list. Hand-placed markers (non-generator icons) are never touched.
@@ -762,6 +776,7 @@ export default function WorldMapPage() {
                 onToggleCategory={toggleCategory}
                 c={C}
               />
+              <RiverLabels rivers={namedRivers} onRename={renameRiver} c={C} />
             </div>
           )}
         </div>
