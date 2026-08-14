@@ -256,22 +256,29 @@ export default function HexCanvas({
         const painted = b !== BIOME_UNSET && b < cols.length;
         let blended = false;
         let tiled = false;
+        let overlayDraw: { timg: HTMLImageElement; rot: number; flip: boolean } | null = null;
         if (artEnabledRef.current) {
           const choice = selectTile(col, row, tileEnv);
           if (choice) {
             const timg = featTile(choice.name);
             if (timg) {
-              const bw = SQRT3 * BASE_SIZE, bh = 2 * BASE_SIZE;
-              ctx.save();
-              ctx.translate(center.x, center.y);
-              ctx.rotate(-choice.rot * Math.PI / 3);
-              if (choice.flip) ctx.scale(-1, 1);
-              ctx.drawImage(timg, -bw / 2, -bh / 2, bw, bh);
-              ctx.restore();
               const ci = index(col, row, width);
               if (choice.coversRiver) coveredRiver.add(ci);
               if (choice.coversRoad) coveredRoad.add(ci);
-              tiled = true;
+              if (choice.overlay) {
+                // Transparent overlay: let the biome draw underneath, then paint this on top.
+                overlayDraw = { timg, rot: choice.rot, flip: choice.flip };
+              } else {
+                // Opaque full-fill tile: replace the biome for this cell.
+                const bw = SQRT3 * BASE_SIZE, bh = 2 * BASE_SIZE;
+                ctx.save();
+                ctx.translate(center.x, center.y);
+                ctx.rotate(-choice.rot * Math.PI / 3);
+                if (choice.flip) ctx.scale(-1, 1);
+                ctx.drawImage(timg, -bw / 2, -bh / 2, bw, bh);
+                ctx.restore();
+                tiled = true;
+              }
             }
           }
         }
@@ -316,6 +323,15 @@ export default function HexCanvas({
               blended = true;
             }
           }
+        }
+        if (overlayDraw) {
+          const bw = SQRT3 * BASE_SIZE, bh = 2 * BASE_SIZE;
+          ctx.save();
+          ctx.translate(center.x, center.y);
+          ctx.rotate(-overlayDraw.rot * Math.PI / 3);
+          if (overlayDraw.flip) ctx.scale(-1, 1);
+          ctx.drawImage(overlayDraw.timg, -bw / 2, -bh / 2, bw, bh);
+          ctx.restore();
         }
         if (blended) {
           ctx.beginPath();

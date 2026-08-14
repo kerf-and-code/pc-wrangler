@@ -9,7 +9,7 @@
 import { AXIAL_DIRS, offsetToAxial, axialToOffset, index } from "./hex";
 
 export type MapFeatureLike = { kind: "river" | "road"; klass: number; path: [number, number][] };
-export type TileChoice = { name: string; rot: number; flip: boolean; kind: "feature" | "terrain"; coversRiver?: boolean; coversRoad?: boolean };
+export type TileChoice = { name: string; rot: number; flip: boolean; kind: "feature" | "terrain"; overlay: boolean; coversRiver?: boolean; coversRoad?: boolean };
 export type FeatureEdges = { riverEdges: Uint8Array; roadEdges: Uint8Array; riverClass: Uint8Array };
 
 const B = (...ds: number[]) => ds.reduce((m, d) => m | (1 << d), 0);
@@ -114,13 +114,13 @@ export function selectTile(col: number, row: number, env: SelectEnv): TileChoice
         const ar = flip ? flipMask(art.river) : art.river;
         const ad = flip ? flipMask(art.road) : art.road;
         for (let k = 0; k < 6; k++) {
-          if (rotMask(ar, k) === rE && rotMask(ad, k) === dE) return { name: art.name, rot: k, flip, kind: "feature", coversRiver: true, coversRoad: true };
+          if (rotMask(ar, k) === rE && rotMask(ad, k) === dE) return { name: art.name, rot: k, flip, kind: "feature", overlay: true, coversRiver: true, coversRoad: true };
         }
       }
     }
     // No exact crossing tile (the road bends, or the river ends here): tile the RIVER and let the
     // road polyline draw over it, so the crossing still reads (rule 7).
-    for (const [name, art] of RIVER_TILES) { const m = matchRotFlip(art, rE); if (m) return { name, rot: m[0], flip: m[1], kind: "feature", coversRiver: true, coversRoad: false }; }
+    for (const [name, art] of RIVER_TILES) { const m = matchRotFlip(art, rE); if (m) return { name, rot: m[0], flip: m[1], kind: "feature", overlay: true, coversRiver: true, coversRoad: false }; }
     return null;
   }
 
@@ -130,7 +130,7 @@ export function selectTile(col: number, row: number, env: SelectEnv): TileChoice
     const k = d; // art river edge is 0
     let waterHits = 0;
     for (let e = 0; e < 6; e++) if (rotMask(DELTA_WATER, k) & (1 << e)) { const nb = nbBiome(e); if (nb >= 15 && nb <= 19) waterHits++; }
-    if (waterHits >= 2) return { name: "delta_fan", rot: k, flip: false, kind: "feature", coversRiver: true };
+    if (waterHits >= 2) return { name: "delta_fan", rot: k, flip: false, kind: "feature", overlay: true, coversRiver: true };
   }
 
   // 3. Waterfall: gorge/cliff river step with a wide (lake/sea) upstream pair.
@@ -138,33 +138,33 @@ export function selectTile(col: number, row: number, env: SelectEnv): TileChoice
     for (let k = 0; k < 6; k++) {
       const n1 = nbBiome((1 + k) % 6), n2 = nbBiome((2 + k) % 6);
       const wide = (x: number) => x === 16 || x === 17;
-      if (wide(n1) && wide(n2) && (rE & (1 << ((5 + k) % 6)))) return { name: "waterfall", rot: k, flip: false, kind: "feature", coversRiver: true };
+      if (wide(n1) && wide(n2) && (rE & (1 << ((5 + k) % 6)))) return { name: "waterfall", rot: k, flip: false, kind: "feature", overlay: true, coversRiver: true };
     }
   }
 
   // 4/5. Plain river or road path tiles.
-  if (rE) { for (const [name, art] of RIVER_TILES) { const m = matchRotFlip(art, rE); if (m) return { name, rot: m[0], flip: m[1], kind: "feature", coversRiver: true }; } return null; }
-  if (dE) { for (const [name, art] of ROAD_TILES) { const m = matchRotFlip(art, dE); if (m) return { name, rot: m[0], flip: m[1], kind: "feature", coversRoad: true }; } return null; }
+  if (rE) { for (const [name, art] of RIVER_TILES) { const m = matchRotFlip(art, rE); if (m) return { name, rot: m[0], flip: m[1], kind: "feature", overlay: true, coversRiver: true }; } return null; }
+  if (dE) { for (const [name, art] of ROAD_TILES) { const m = matchRotFlip(art, dE); if (m) return { name, rot: m[0], flip: m[1], kind: "feature", overlay: true, coversRoad: true }; } return null; }
 
   // 6-8. Flag terrain: salt pans, snowcaps, glacier sheet/margin.
-  if (fl & FL_SALTPAN) return { name: "salt_flat", rot: 0, flip: false, kind: "terrain" };
-  if (fl & FL_SNOWCAP) return { name: "snowcap_peak", rot: 0, flip: false, kind: "terrain" };
+  if (fl & FL_SALTPAN) return { name: "salt_flat", rot: 0, flip: false, kind: "terrain", overlay: false };
+  if (fl & FL_SNOWCAP) return { name: "snowcap_peak", rot: 0, flip: false, kind: "terrain", overlay: false };
   if (fl & FL_GLACIER) {
     let iceMask = 0;
     for (let d = 0; d < 6; d++) if (nbFlag(d) & FL_GLACIER) iceMask |= 1 << d;
-    if (iceMask !== 63) { const m = matchRotFlip(COAST3, iceMask); if (m) return { name: "glacier_margin", rot: m[0], flip: m[1], kind: "terrain" }; }
-    return { name: "glacier_sheet", rot: 0, flip: false, kind: "terrain" };
+    if (iceMask !== 63) { const m = matchRotFlip(COAST3, iceMask); if (m) return { name: "glacier_margin", rot: m[0], flip: m[1], kind: "terrain", overlay: true }; }
+    return { name: "glacier_sheet", rot: 0, flip: false, kind: "terrain", overlay: false };
   }
 
   // 9/10. Frozen seas and volcanoes (variants by hash so it is not wall-to-wall).
-  if ((fl & FL_FROZEN) && (b === 17 || b === 18)) { if (hash(i) < 45) return { name: "iceberg_sea", rot: 0, flip: false, kind: "terrain" }; return null; }
-  if (b === 21) { if (hash(i) < 50) return { name: "volcanic_peak", rot: 0, flip: false, kind: "terrain" }; return null; }
+  if ((fl & FL_FROZEN) && (b === 17 || b === 18)) { if (hash(i) < 45) return { name: "iceberg_sea", rot: 0, flip: false, kind: "terrain", overlay: false }; return null; }
+  if (b === 21) { if (hash(i) < 50) return { name: "volcanic_peak", rot: 0, flip: false, kind: "terrain", overlay: false }; return null; }
 
   // 11. One-hex islands: land completely ringed by open water.
   if (ISLAND_BIOMES.has(b)) {
     let allWater = true;
     for (let d = 0; d < 6; d++) { const nb = nbBiome(d); if (!(nb === 16 || nb === 17 || nb === 19)) { allWater = false; break; } }
-    if (allWater) return { name: hash(i) < 70 ? "island_small" : "islet_rocky", rot: 0, flip: false, kind: "terrain" };
+    if (allWater) return { name: hash(i) < 70 ? "island_small" : "islet_rocky", rot: 0, flip: false, kind: "terrain", overlay: false };
   }
 
   // 12. Coast: exact shape when the water edges fit a tile, otherwise a straight shore rotated to
@@ -174,19 +174,19 @@ export function selectTile(col: number, row: number, env: SelectEnv): TileChoice
     for (let d = 0; d < 6; d++) { const nb = nbBiome(d); if (nb === 16 || nb === 17 || nb === 19) w |= 1 << d; }
     const c = pop(w);
     if (c === 0) return null; // no water neighbor: leave to the biome fill
-    if (c >= 5) { const m = matchRotFlip(COAST5, w); if (m) return { name: "coast_peninsula", rot: m[0], flip: m[1], kind: "terrain" }; }
-    if (c === 4) { const m = matchRotFlip(COAST4, w); if (m) return { name: "coast_bay", rot: m[0], flip: m[1], kind: "terrain" }; }
+    if (c >= 5) { const m = matchRotFlip(COAST5, w); if (m) return { name: "coast_peninsula", rot: m[0], flip: m[1], kind: "terrain", overlay: true }; }
+    if (c === 4) { const m = matchRotFlip(COAST4, w); if (m) return { name: "coast_bay", rot: m[0], flip: m[1], kind: "terrain", overlay: true }; }
     if (c === 3) {
       const m = matchRotFlip(COAST3, w);
-      if (m) { const pick = hash(i); return { name: pick < 50 ? "coast_straight" : pick < 80 ? "coast_cape" : "coast_point", rot: m[0], flip: m[1], kind: "terrain" }; }
+      if (m) { const pick = hash(i); return { name: pick < 50 ? "coast_straight" : pick < 80 ? "coast_cape" : "coast_point", rot: m[0], flip: m[1], kind: "terrain", overlay: true }; }
     }
     // 1-2 water edges, or a non-contiguous set: face a straight/cape shore at the water.
     const k = (dominantDir(w) - 3 + 6) % 6; // canonical coast water side is W (index 3)
-    return { name: hash(i) < 70 ? "coast_straight" : "coast_cape", rot: k, flip: false, kind: "terrain" };
+    return { name: hash(i) < 70 ? "coast_straight" : "coast_cape", rot: k, flip: false, kind: "terrain", overlay: true };
   }
 
   // 13. Reef: some cells render as an atoll.
-  if (b === 19 && hash(i) < 12) return { name: "atoll_reef", rot: 0, flip: false, kind: "terrain" };
+  if (b === 19 && hash(i) < 12) return { name: "atoll_reef", rot: 0, flip: false, kind: "terrain", overlay: false };
 
   return null;
 }
