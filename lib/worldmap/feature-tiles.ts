@@ -90,7 +90,7 @@ export type SelectEnv = {
   edges: FeatureEdges;
 };
 
-const FL_CLIFF = 2, FL_DELTA = 4, FL_GORGE = 8, FL_FROZEN = 16, FL_SALTPAN = 32, FL_GLACIER = 64, FL_SNOWCAP = 128;
+const FL_SHALLOWS = 1, FL_CLIFF = 2, FL_DELTA = 4, FL_GORGE = 8, FL_FROZEN = 16, FL_SALTPAN = 32, FL_GLACIER = 64, FL_SNOWCAP = 128;
 
 export function selectTile(col: number, row: number, env: SelectEnv): TileChoice | null {
   const { width, height, biome, flags, edges } = env;
@@ -164,6 +164,9 @@ export function selectTile(col: number, row: number, env: SelectEnv): TileChoice
 
   // 9/10. Frozen seas and volcanoes (variants by hash so it is not wall-to-wall).
   if ((fl & FL_FROZEN) && (b === 17 || b === 18)) { if (hash(i) < 45) return { name: "iceberg_sea", rot: 0, flip: false, kind: "terrain", overlay: false }; return null; }
+  // Shallow open sea (the coast-adjacent band Pass 2 tags): a lighter fill so the shore doesn't jump
+  // straight to deep navy. Reef keeps its own art; frozen seas were handled just above.
+  if ((fl & FL_SHALLOWS) && b === 17) return { name: "sea_shallows", rot: 0, flip: false, kind: "terrain", overlay: false };
   if (b === 21) { if (hash(i) < 50) return { name: "volcanic_peak", rot: 0, flip: false, kind: "terrain", overlay: false }; return null; }
 
   // 11. One-hex islands: land completely ringed by open water.
