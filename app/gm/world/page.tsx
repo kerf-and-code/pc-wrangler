@@ -32,6 +32,10 @@ type MapRow = {
 };
 
 const MAP_COLS = "id, name, width, height, origin_col, origin_row, format_version, terrain, editable_by, snapshot_url, published, ai_image_url";
+// icon_keys the world generator emits. A marker on open water with one of these is a spurious
+// auto-placed pin (cohesion flooded its hex); a hand-placed sea marker uses a different icon and is
+// exempt. Kept in sync with bake.ts SETTLE_ICON + POI_ICON + bridge/ford.
+const GEN_ICON_KEYS = new Set(["city_walled", "town", "village", "mine_generic", "gem_mine", "lumber_camp", "farmland", "fishing_spot", "herb_node", "cave_entrance", "dungeon_entrance", "unstable_ground", "holy_spring", "bridge", "ford"]);
 const IMG_COLS = "id, url, x, y, scale, z";
 const IMG_TYPES = ["image/png", "image/jpeg", "image/webp"];
 const MAX_IMG_BYTES = 8 * 1024 * 1024;
@@ -213,6 +217,7 @@ export default function WorldMapPage() {
   }, [supabase, campaignId]);
 
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const waterCleanupRef = useRef<string | null>(null);
   const scheduleSave = useCallback(() => {
     if (!mapRow || !terrain) return;
     if (saveTimer.current) clearTimeout(saveTimer.current);
@@ -342,6 +347,28 @@ export default function WorldMapPage() {
   const toggleCategory = useCallback((cat: string) => {
     setHiddenCategories((prev) => { const s = new Set(prev); if (s.has(cat)) s.delete(cat); else s.add(cat); return s; });
   }, []);
+
+  // One-time per map: delete auto-generated pins that cohesion stranded on open water, so they leave
+  // the map AND the marker list. Hand-placed markers (non-generator icons) are never touched.
+  useEffect(() => {
+    if (!terrain || !mapRow || !poiRows.length) return;
+    if (waterCleanupRef.current === mapRow.id) return;
+    waterCleanupRef.current = mapRow.id;
+    const tw = terrain.meta.width, th = terrain.meta.height;
+    const doomed: string[] = [];
+    for (const r of poiRows) {
+      if (!r.icon_key || !GEN_ICON_KEYS.has(r.icon_key)) continue;
+      const { col, row } = pixelToHex(r.x, r.y, BASE_SIZE);
+      if (col < 0 || row < 0 || col >= tw || row >= th) continue;
+      const b = terrain.biome[row * tw + col];
+      if (b === 16 || b === 17 || b === 19) doomed.push(r.id);
+    }
+    if (!doomed.length) return;
+    (async () => {
+      const { error } = await supabase.from("map_pois").delete().in("id", doomed);
+      if (!error) setPoiRows((prev) => prev.filter((r) => !doomed.includes(r.id)));
+    })();
+  }, [terrain, mapRow, poiRows, supabase]);
 
   const onPlacePoi = useCallback(async (x: number, y: number) => {
     if (!mapRow || !armedIcon) { setStatus("Pick an icon first."); return; }

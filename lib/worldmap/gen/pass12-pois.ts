@@ -39,10 +39,14 @@ export function pass12Pois(f: Fields, cfg: GenConfig): void {
   const mtnAdj = (i: number) => { neighborsByDir(i % W, (i / W) | 0, W, H, nb); for (let d = 0; d < 6; d++) { const n = nb[d]; if (n >= 0 && f.biome[n] === 20) return true; } return false; };
   const waterAdj = (i: number) => { if (f.river[i] || f.lake[i]) return true; neighborsByDir(i % W, (i / W) | 0, W, H, nb); for (let d = 0; d < 6; d++) { const n = nb[d]; if (n >= 0 && (f.lake[n] || f.river[n] || !f.land[n])) return true; } return false; };
 
+  // Cohesion (Pass 8) can flip a tiny land island to a water BIOME while f.land stays true, so a
+  // land gate alone leaks POIs onto open water. Also require the final biome to be dry land.
+  const isWaterBiome = (b: number) => b === 16 || b === 17 || b === 19;
+
   // Resource nodes (one per hex, priority order, density chance).
   const dens = cfg.resourceDensity;
   for (let i = 0; i < N; i++) {
-    if (!f.land[i] || occupied[i]) continue;
+    if (!f.land[i] || isWaterBiome(f.biome[i]) || occupied[i]) continue;
     const b = f.biome[i];
     let kind: string | null = null;
     if ((f.elevBand[i] === 1 || f.elevBand[i] === 2) && mtnAdj(i)) kind = rnd() < 0.2 ? "gems" : "ore";
@@ -53,12 +57,18 @@ export function pass12Pois(f: Fields, cfg: GenConfig): void {
     if (kind && rnd() < dens) { pois.push({ index: i, kind }); occupied[i] = 1; }
   }
 
+  // Oases: rare water in deep, waterless desert.
+  for (let i = 0; i < N; i++) {
+    if (!f.land[i] || occupied[i]) continue;
+    if ((f.biome[i] === 8 || f.biome[i] === 9) && !waterAdj(i) && rnd() < 0.04) { pois.push({ index: i, kind: "oasis" }); occupied[i] = 1; }
+  }
+
   // Cave entrances (POIs, never the Cave biome). Crystal caverns always get one.
   for (let i = 0; i < N; i++) {
     if (!f.land[i]) continue;
     if (f.biome[i] === 26 && !occupied[i]) { pois.push({ index: i, kind: "cave" }); occupied[i] = 1; continue; }
     if (occupied[i]) continue;
-    const elig = f.biome[i] === 20 || f.biome[i] === 11 || f.biome[i] === 22 || f.elevBand[i] === 1;
+    const elig = !isWaterBiome(f.biome[i]) && (f.biome[i] === 20 || f.biome[i] === 11 || f.biome[i] === 22 || f.elevBand[i] === 1);
     if (!elig) continue;
     const remote = Math.min(1, remoteOf(i) / 12);
     if (rnd() < cfg.caveDensity * (1 + 1.6 * remote)) { pois.push({ index: i, kind: "cave" }); occupied[i] = 1; }
@@ -77,7 +87,7 @@ export function pass12Pois(f: Fields, cfg: GenConfig): void {
   };
   const cand: number[] = [], wts: number[] = [];
   for (let i = 0; i < N; i++) {
-    if (!f.land[i] || occupied[i]) continue;
+    if (!f.land[i] || isWaterBiome(f.biome[i]) || occupied[i]) continue;
     if (distS[i] >= 0 && distS[i] < 6) continue;
     const w = biomeWeight(f.biome[i]) * (1 + remoteOf(i) / 6);
     if (w <= 0) continue;
