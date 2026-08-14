@@ -45,6 +45,27 @@ const MAX_DIM = 250;
 const CATEGORY_ORDER = ["terrestrial", "wetland", "water", "geologic", "fantasy"];
 // Hand-placeable special-terrain tiles: each sets a flag on the clicked hex. iceberg/shallows only
 // render over sea, so they also set the sea biome. salt/snow/glacier render over any biome.
+// Hexes along a line between two axial coords (cube lerp + round), inclusive of both ends. Lets the
+// GM click waypoints and have the river/road fill in the hexes between, keeping the path connected.
+function axialLine(a: [number, number], b: [number, number]): [number, number][] {
+  const ax = a[0], az = a[1], ay = -ax - az;
+  const bx = b[0], bz = b[1], by = -bx - bz;
+  const dist = Math.max(Math.abs(ax - bx), Math.abs(ay - by), Math.abs(az - bz));
+  if (dist === 0) return [[a[0], a[1]]];
+  const out: [number, number][] = [];
+  for (let i = 0; i <= dist; i++) {
+    const t = i / dist;
+    const x = ax + (bx - ax) * t, y = ay + (by - ay) * t, z = az + (bz - az) * t;
+    let rx = Math.round(x), ry = Math.round(y), rz = Math.round(z);
+    const xd = Math.abs(rx - x), yd = Math.abs(ry - y), zd = Math.abs(rz - z);
+    if (xd > yd && xd > zd) rx = -ry - rz;
+    else if (yd > zd) ry = -rx - rz;
+    else rz = -rx - ry;
+    out.push([rx, rz]); // axial: q=x, r=z
+  }
+  return out;
+}
+
 // Special-terrain flag bits, as literals mirroring feature-tiles FL_* (shallows 1, frozen 16,
 // saltpan 32, glacier 64, snowcap 128) - kept independent of which FLAG_* hex.ts exports.
 const SPECIAL_TERRAIN: { key: string; label: string; flag: number; biome: number | null }[] = [
@@ -101,6 +122,8 @@ export default function WorldMapPage() {
   const [biomes, setBiomes] = useState<Biome[]>([]);
   const [artEnabled, setArtEnabled] = useState(false);
   const [stamp, setStamp] = useState<{ flag: number; biome: number | null } | null>(null);
+  const [drawKind, setDrawKind] = useState<"river" | "road" | null>(null);
+  const [drawPath, setDrawPath] = useState<[number, number][]>([]);
   const [fantasyView, setFantasyView] = useState(false);
   const [imagining, setImagining] = useState(false);
   const [imagineMsg, setImagineMsg] = useState<string | null>(null);
@@ -233,6 +256,8 @@ export default function WorldMapPage() {
     })();
     return () => { cancelled = true; };
   }, [supabase, campaignId]);
+
+  useEffect(() => { if (!drawKind) setDrawPath([]); }, [drawKind]);
 
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const waterCleanupRef = useRef<string | null>(null);
@@ -401,6 +426,33 @@ export default function WorldMapPage() {
     if (error) { setStatus(error.message); return; }
     setLabelRows((prev) => prev.filter((l) => l.id !== id));
   }, [supabase]);
+
+  const armDraw = useCallback((kind: "river" | "road") => {
+    setDrawKind((k) => (k === kind ? null : kind));
+    setSelected(null); setStamp(null); setArtEnabled(true);
+  }, []);
+  const addDrawPoint = useCallback((col: number, row: number) => {
+    const q = col - (row - (row & 1)) / 2, r = row; // offset -> axial (odd-r)
+    setDrawPath((prev) => {
+      if (prev.length === 0) return [[q, r]];
+      const last = prev[prev.length - 1];
+      if (last[0] === q && last[1] === r) return prev;
+      return [...prev, ...axialLine(last, [q, r]).slice(1)];
+    });
+  }, []);
+  const undoDrawPoint = useCallback(() => setDrawPath((p) => p.slice(0, -1)), []);
+  const cancelDraw = useCallback(() => { setDrawKind(null); }, []);
+  const commitDraw = useCallback(async () => {
+    if (!mapRow || !drawKind || drawPath.length < 2) return;
+    const klass = drawKind === "river" ? 2 : 0;
+    const ins = await supabase.from("map_features")
+      .insert({ world_map_id: mapRow.id, kind: drawKind, class: klass, path: drawPath })
+      .select("kind, class, path, name").single();
+    if (ins.error || !ins.data) { setStatus(ins.error?.message || "Could not save the path."); return; }
+    const row = ins.data as { kind: "river" | "road"; class: number; path: [number, number][]; name: string | null };
+    setFeatures((prev) => [...prev, { kind: row.kind, klass: row.class, path: row.path, name: row.name }]);
+    setDrawKind(null);
+  }, [supabase, mapRow, drawKind, drawPath]);
 
   const clearAll = useCallback(async () => {
     if (!mapRow) return;
@@ -650,7 +702,7 @@ export default function WorldMapPage() {
   const swatch = (b: Biome) => {
     const on = selected === b.id;
     return (
-      <button key={b.id} type="button" onClick={() => { setSelected(on ? null : b.id); setStamp(null); }} title={b.label}
+      <button key={b.id} type="button" onClick={() => { setSelected(on ? null : b.id); setStamp(null); setDrawKind(null); }} title={b.label}
         style={{
           display: "flex", alignItems: "center", gap: 8, width: "100%", textAlign: "left",
           padding: "6px 8px", borderRadius: 7, cursor: "pointer",
@@ -806,8 +858,8 @@ export default function WorldMapPage() {
           </div>
 
           <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
-            {modeChip("Pan", selected === null && !stamp, () => { setSelected(null); setStamp(null); })}
-            {modeChip("Erase", selected === BIOME_UNSET, () => { setSelected(BIOME_UNSET); setStamp(null); })}
+            {modeChip("Pan", selected === null && !stamp && !drawKind, () => { setSelected(null); setStamp(null); setDrawKind(null); })}
+            {modeChip("Erase", selected === BIOME_UNSET, () => { setSelected(BIOME_UNSET); setStamp(null); setDrawKind(null); })}
           </div>
           {grouped.map((g) => (
             <div key={g.category} style={{ marginBottom: 12 }}>
@@ -823,7 +875,7 @@ export default function WorldMapPage() {
                 const on = stamp?.flag === sp.flag;
                 return (
                   <button key={sp.key} type="button"
-                    onClick={() => { if (on) { setStamp(null); } else { setStamp({ flag: sp.flag, biome: sp.biome }); setSelected(null); setArtEnabled(true); } }}
+                    onClick={() => { if (on) { setStamp(null); } else { setStamp({ flag: sp.flag, biome: sp.biome }); setSelected(null); setDrawKind(null); setArtEnabled(true); } }}
                     style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", textAlign: "left", padding: "6px 8px", borderRadius: 7, cursor: "pointer",
                       border: `1px solid ${on ? C.sun : C.line}`, background: on ? "rgba(200,162,75,0.14)" : C.surface2, color: C.text }}>
                     <span style={{ fontSize: 12.5 }}>{sp.label}</span>
@@ -837,6 +889,29 @@ export default function WorldMapPage() {
                 <span style={{ fontSize: 12.5 }}>Erase special</span>
               </button>
             </div>
+          </div>
+          <div style={{ marginBottom: 12 }}>
+            <div style={secLabel}>RIVERS & ROADS</div>
+            <div style={{ display: "flex", gap: 6, marginBottom: 6 }}>
+              {modeChip("Draw river", drawKind === "river", () => armDraw("river"))}
+              {modeChip("Draw road", drawKind === "road", () => armDraw("road"))}
+            </div>
+            {drawKind && (
+              <div style={{ border: `1px solid ${C.line}`, borderRadius: 7, padding: 8, background: C.surface2 }}>
+                <div style={{ fontSize: 11, color: C.muted, margin: "0 0 7px", lineHeight: 1.4 }}>
+                  Click hexes to lay the {drawKind}; gaps between clicks fill in. {drawPath.length} hex{drawPath.length === 1 ? "" : "es"} so far.
+                </div>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  <button type="button" onClick={commitDraw} disabled={drawPath.length < 2}
+                    style={{ padding: "5px 10px", borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: drawPath.length < 2 ? "default" : "pointer",
+                      border: `1px solid ${drawPath.length < 2 ? C.line : C.sun}`, background: drawPath.length < 2 ? C.surface2 : "rgba(200,162,75,0.16)", color: C.text, opacity: drawPath.length < 2 ? 0.5 : 1 }}>Finish</button>
+                  <button type="button" onClick={undoDrawPoint} disabled={!drawPath.length}
+                    style={{ padding: "5px 10px", borderRadius: 6, fontSize: 12, cursor: drawPath.length ? "pointer" : "default", border: `1px solid ${C.line}`, background: "transparent", color: C.muted, opacity: drawPath.length ? 1 : 0.5 }}>Undo point</button>
+                  <button type="button" onClick={cancelDraw}
+                    style={{ padding: "5px 10px", borderRadius: 6, fontSize: 12, cursor: "pointer", border: `1px solid ${C.line}`, background: "transparent", color: C.muted }}>Cancel</button>
+                </div>
+              </div>
+            )}
           </div>
           </>)}
           {mode === "regions" && mapRow && (
@@ -872,7 +947,7 @@ export default function WorldMapPage() {
             <p style={{ color: C.muted, fontSize: 14, padding: 16 }}>Loading\u2026</p>
           ) : terrain ? (
             <HexCanvas
-              terrain={terrain} colors={colors} biomeArt={biomeArt} artEnabled={artEnabled} features={features} baseImage={mapRow?.ai_image_url ?? null} showBaseImage={fantasyView} selectedBiome={selected} onPaint={onPaint} stampFlag={stamp?.flag ?? null} stampBiome={stamp?.biome ?? null} onStampFlag={onPaint}
+              terrain={terrain} colors={colors} biomeArt={biomeArt} artEnabled={artEnabled} features={features} baseImage={mapRow?.ai_image_url ?? null} showBaseImage={fantasyView} selectedBiome={selected} onPaint={onPaint} stampFlag={stamp?.flag ?? null} stampBiome={stamp?.biome ?? null} onStampFlag={onPaint} drawActive={drawKind !== null} drawPath={drawPath} onDrawPoint={addDrawPoint}
               images={images} positionImageId={positionId} onImageMove={onImageMove} onImageScale={onImageScale}
               paintRegionId={paintRegionId} regionCells={regionCells} regionErase={regionErase} onRegionPaint={onRegionPaint}
               regionRender={selectedLayerId ? regionRender : undefined}

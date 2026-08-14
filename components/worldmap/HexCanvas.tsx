@@ -75,6 +75,9 @@ export default function HexCanvas({
   stampFlag,
   stampBiome,
   onStampFlag,
+  drawActive,
+  drawPath,
+  onDrawPoint,
   className,
 }: {
   terrain: Terrain;
@@ -110,6 +113,9 @@ export default function HexCanvas({
   stampFlag?: number | null;
   stampBiome?: number | null;
   onStampFlag?: (col: number, row: number) => void;
+  drawActive?: boolean;
+  drawPath?: readonly [number, number][];
+  onDrawPoint?: (col: number, row: number) => void;
   className?: string;
 }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -128,6 +134,9 @@ export default function HexCanvas({
   const stampFlagRef = useRef<number | null>(stampFlag ?? null);
   const stampBiomeRef = useRef<number | null>(stampBiome ?? null);
   const onStampFlagRef = useRef(onStampFlag);
+  const drawActiveRef = useRef<boolean>(drawActive ?? false);
+  const drawPathRef = useRef<readonly [number, number][]>(drawPath ?? []);
+  const onDrawPointRef = useRef(onDrawPoint);
   const imagesRef = useRef<PlacedImage[]>(images ?? []);
   const posRef = useRef<string | null>(positionImageId ?? null);
   const onMoveRef = useRef(onImageMove);
@@ -175,6 +184,9 @@ export default function HexCanvas({
   stampFlagRef.current = stampFlag ?? null;
   stampBiomeRef.current = stampBiome ?? null;
   onStampFlagRef.current = onStampFlag;
+  drawActiveRef.current = drawActive ?? false;
+  drawPathRef.current = drawPath ?? [];
+  onDrawPointRef.current = onDrawPoint;
   imagesRef.current = images ?? [];
   posRef.current = positionImageId ?? null;
   onMoveRef.current = onImageMove;
@@ -530,6 +542,31 @@ export default function HexCanvas({
       }
     }
 
+    // In-progress river/road path the GM is drawing: a dashed guide with a dot at each hex.
+    const dpath = drawPathRef.current;
+    if (dpath && dpath.length && !baseOn) {
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.translate(view.tx, view.ty);
+      ctx.scale(view.scale, view.scale);
+      ctx.lineCap = "round"; ctx.lineJoin = "round";
+      ctx.beginPath();
+      for (let k = 0; k < dpath.length; k++) {
+        const o = axialToOffset(dpath[k][0], dpath[k][1]);
+        const c = hexToPixel(o.col, o.row, BASE_SIZE);
+        if (k === 0) ctx.moveTo(c.x, c.y); else ctx.lineTo(c.x, c.y);
+      }
+      ctx.strokeStyle = "#f6c453"; ctx.lineWidth = 0.34 * BASE_SIZE;
+      ctx.setLineDash([BASE_SIZE * 0.5, BASE_SIZE * 0.35]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = "#f6c453";
+      for (const pt of dpath) {
+        const o = axialToOffset(pt[0], pt[1]);
+        const c = hexToPixel(o.col, o.row, BASE_SIZE);
+        ctx.beginPath(); ctx.arc(c.x, c.y, BASE_SIZE * 0.16, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+
     // POIs (Phase 4b): constant screen-size icons with screen-distance clustering, drawn last.
     const ps = poisRef.current;
     const hits: { kind: "poi" | "cluster"; sx: number; sy: number; r: number; id?: string; names: string[]; wx: number; wy: number; locked?: boolean }[] = [];
@@ -695,7 +732,7 @@ export default function HexCanvas({
     img.src = baseImage;
     return () => { img.onload = null; };
   }, [baseImage, scheduleDraw]);
-  useEffect(() => { scheduleDraw(); }, [colors, positionImageId, regionCells, paintRegionId, regionRender, pois, labels, biomeArt, artEnabled, features, showBaseImage, scheduleDraw]);
+  useEffect(() => { scheduleDraw(); }, [colors, positionImageId, regionCells, paintRegionId, regionRender, pois, labels, biomeArt, artEnabled, features, drawPath, showBaseImage, scheduleDraw]);
 
   const paintAt = useCallback((clientX: number, clientY: number, last: { col: number; row: number } | null) => {
     const canvas = canvasRef.current;
@@ -735,6 +772,21 @@ export default function HexCanvas({
     scheduleDraw();
     return { col, row };
   }, [scheduleDraw]);
+
+  const drawAt = useCallback((clientX: number, clientY: number, last: { col: number; row: number } | null) => {
+    const canvas = canvasRef.current;
+    if (!canvas || !drawActiveRef.current) return last;
+    const rect = canvas.getBoundingClientRect();
+    const view = viewRef.current;
+    const wx = (clientX - rect.left - view.tx) / view.scale;
+    const wy = (clientY - rect.top - view.ty) / view.scale;
+    const { col, row } = pixelToHex(wx, wy, BASE_SIZE);
+    const t = terrainRef.current;
+    if (col < 0 || row < 0 || col >= t.meta.width || row >= t.meta.height) return last;
+    if (last && last.col === col && last.row === row) return last;
+    onDrawPointRef.current?.(col, row);
+    return { col, row };
+  }, []);
 
   const paintRegionAt = useCallback((clientX: number, clientY: number, last: { col: number; row: number } | null) => {
     const canvas = canvasRef.current;
@@ -893,6 +945,7 @@ export default function HexCanvas({
       if ((mode === "pan" || mode === "none") && Math.abs(e.clientX - downClientX) < 5 && Math.abs(e.clientY - downClientY) < 5) {
         const rect = canvas.getBoundingClientRect();
         const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+        if (drawActiveRef.current) { drawAt(e.clientX, e.clientY, null); mode = "none"; lastHex = null; try { canvas.releasePointerCapture(e.pointerId); } catch { /* already released */ } return; }
         const hit = hitTestPoi(mx, my);
         if (hit) {
           if (hit.kind === "poi" && hit.id) {
@@ -950,7 +1003,7 @@ export default function HexCanvas({
       canvas.removeEventListener("wheel", onWheel);
       canvas.removeEventListener("mousemove", onHover);
     };
-  }, [paintAt, stampAt, paintRegionAt, scheduleDraw]);
+  }, [paintAt, stampAt, drawAt, paintRegionAt, scheduleDraw]);
 
   const cursor = positionImageId != null ? "move" : (paintRegionId != null || selectedBiome != null || poiPlaceActive) ? "crosshair" : "grab";
 
