@@ -98,7 +98,7 @@ export default function WorldMapPage() {
   const [terrain, setTerrain] = useState<Terrain | null>(null);
   const [images, setImages] = useState<PlacedImage[]>([]);
   const [positionId, setPositionId] = useState<string | null>(null);
-  const [mode, setMode] = useState<"terrain" | "regions" | "icons" | "pois">("terrain");
+  const [mode, setMode] = useState<"terrain" | "regions" | "pois">("terrain");
   const [paintRegionId, setPaintRegionId] = useState<string | null>(null);
   const [regionErase, setRegionErase] = useState<boolean>(false);
   const [regionCells, setRegionCells] = useState<Set<string>>(new Set());
@@ -685,8 +685,7 @@ export default function WorldMapPage() {
           <div style={{ display: "flex", gap: 6, marginBottom: 12, flexWrap: "wrap" }}>
             {modeChip("Terrain", mode === "terrain", () => { setMode("terrain"); setPaintRegionId(null); })}
             {modeChip("Regions", mode === "regions", () => { setMode("regions"); setSelected(null); })}
-            {modeChip("Icons", mode === "icons", () => { setMode("icons"); setSelected(null); setPaintRegionId(null); })}
-            {modeChip("POIs", mode === "pois", () => { setMode("pois"); setSelected(null); setPaintRegionId(null); })}
+            {modeChip("Markers", mode === "pois", () => { setMode("pois"); setSelected(null); setPaintRegionId(null); })}
           </div>
           {mode === "terrain" && (<>
           <div style={{ marginBottom: 14 }}>
@@ -748,13 +747,10 @@ export default function WorldMapPage() {
           {mode === "regions" && mapRow && (
             <RegionsPanel worldMapId={mapRow.id} campaignId={campaignId} onPaintState={onPaintState} onChanged={reloadRegions} />
           )}
-          {mode === "icons" && campaignId && (
-            <IconLibrary campaignId={campaignId} />
-          )}
           {mode === "pois" && campaignId && (
             <div>
               <div style={{ fontSize: 12.5, color: C.text, marginBottom: 8, lineHeight: 1.4 }}>
-                {armedIcon ? "Click the map to place this marker. Pick another icon to switch." : "Pick an icon below, then click the map to place a marker."}
+                {armedIcon ? "Click the map to place this marker. Pick another icon to switch." : "Pick or upload an icon below, then click the map to place a marker."}
               </div>
               <IconLibrary campaignId={campaignId} onPick={setArmedIcon} />
               <PoiPanel campaignId={campaignId} pois={poiRows} onPatch={patchPoi} onRemove={removePoi} />
