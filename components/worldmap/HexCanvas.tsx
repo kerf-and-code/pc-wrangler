@@ -572,7 +572,7 @@ export default function HexCanvas({
 
     // GM area labels: free text at a world point, drawn last so they sit above everything.
     const lbls = labelsRef.current;
-    const lhits: { id: string; sx: number; sy: number; hw: number; hh: number }[] = [];
+    const lhits: { id: string; sx: number; sy: number; hw: number; hh: number; locked?: boolean }[] = [];
     if (lbls && lbls.length) {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.textAlign = "center";
