@@ -11,7 +11,7 @@ import { hexToPixel } from "../layout";
 type V2 = { x: number; y: number };
 const smoother = (t: number) => (t <= 0 ? 0 : t >= 1 ? 1 : t * t * t * (t * (t * 6 - 15) + 10));
 
-export function pass1Elevation(cfg: GenConfig): Float32Array {
+export function pass1Elevation(cfg: GenConfig): { elevation: Float32Array; volcanicCandidate: Uint8Array } {
   const W = cfg.width, H = cfg.height, N = W * H;
   const master = hashSeed(cfg.seed);
 
@@ -72,6 +72,7 @@ export function pass1Elevation(cfg: GenConfig): Float32Array {
   }
   const B = small * 0.06;
   const plateField = new Float32Array(N);
+  const volcanicCandidate = new Uint8Array(N);
   for (let i = 0; i < N; i++) {
     let a = 0, ad = Infinity, fk = -1, fd = Infinity;
     for (let k = 0; k < P; k++) {
@@ -87,6 +88,7 @@ export function pass1Elevation(cfg: GenConfig): Float32Array {
       const nl = Math.hypot(nx, ny) || 1;
       const rel = (drift[a].x - drift[fk].x) * (nx / nl) + (drift[a].y - drift[fk].y) * (ny / nl);
       bf = rel * strength * 0.6; // convergent (+) ridge / divergent (-) rift
+      if (rel > 0 && strength > 0.7) volcanicCandidate[i] = 1; // narrow band on the boundary spine
     }
     plateField[i] = base[a] + bf;
   }
@@ -95,10 +97,13 @@ export function pass1Elevation(cfg: GenConfig): Float32Array {
   const detail = makeNoise2D(master ^ 0x1234567);
   const dwarp = makeNoise2D(master ^ 0x89abcdef);
   const fscale = 3 / small;
+  // Strong domain warp: coasts trace the fBm detail more than the plate steps, so warping it hard bends
+  // the shoreline off the straight Voronoi plate edges into natural, irregular lines.
+  const COAST_FBM_WARP = 1.5;
   const fbmField = new Float32Array(N);
   for (let i = 0; i < N; i++) {
-    const wx = px[i] * fscale + dwarp(px[i] * fscale * 0.5, py[i] * fscale * 0.5) * 0.5;
-    const wy = py[i] * fscale + dwarp(px[i] * fscale * 0.5 + 50, py[i] * fscale * 0.5 + 50) * 0.5;
+    const wx = px[i] * fscale + dwarp(px[i] * fscale * 0.5, py[i] * fscale * 0.5) * COAST_FBM_WARP;
+    const wy = py[i] * fscale + dwarp(px[i] * fscale * 0.5 + 50, py[i] * fscale * 0.5 + 50) * COAST_FBM_WARP;
     fbmField[i] = fbm(detail, wx, wy, 5);
   }
 
@@ -106,12 +111,12 @@ export function pass1Elevation(cfg: GenConfig): Float32Array {
   const raw = new Float32Array(N);
   let mn = Infinity, mx = -Infinity;
   for (let i = 0; i < N; i++) {
-    raw[i] = cfg.landConcentration * mask[i] + 0.65 * plateField[i] + 0.35 * fbmField[i];
+    raw[i] = cfg.landConcentration * mask[i] + 0.45 * plateField[i] + 0.55 * fbmField[i];
     if (raw[i] < mn) mn = raw[i];
     if (raw[i] > mx) mx = raw[i];
   }
   const range = mx - mn || 1;
   const elev = new Float32Array(N);
   for (let i = 0; i < N; i++) elev[i] = (raw[i] - mn) / range;
-  return elev;
+  return { elevation: elev, volcanicCandidate };
 }
