@@ -6,7 +6,10 @@ export const maxDuration = 60; // Nano Banana image generation can take a while
 
 const DAILY_LIMIT = 3;
 const RATE_LIMIT_ENABLED = false; // TESTING: set true to enforce DAILY_LIMIT
-const MODEL = process.env.GEMINI_IMAGE_MODEL || "gemini-2.5-flash-image";
+// Nano Banana 2 (gemini-3.1-flash-image) outputs 1K/2K/4K; the older gemini-2.5-flash-image was 1K only.
+// Both overridable via env: if the model 404s, try "gemini-3.1-flash-image-preview". Size: 1K|2K|4K.
+const MODEL = process.env.GEMINI_IMAGE_MODEL || "gemini-3.1-flash-image";
+const IMAGE_SIZE = process.env.GEMINI_IMAGE_SIZE || "2K";
 const PROMPT =
   "Transform this map into ONE cohesive, hand-painted fantasy world map. The source is a colored " +
   "tile map - use it ONLY as a guide to WHERE each terrain, river, and road goes; do NOT copy its " +
@@ -66,7 +69,7 @@ export async function POST(request: Request) {
       headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
       body: JSON.stringify({
         contents: [{ parts: [{ text: PROMPT }, { inline_data: { mime_type: mime, data: b64 } }] }],
-        generationConfig: { responseModalities: ["TEXT", "IMAGE"] },
+        generationConfig: { responseModalities: ["TEXT", "IMAGE"], imageConfig: { imageSize: IMAGE_SIZE } },
       }),
     });
     if (!gemResp.ok) {
@@ -81,7 +84,8 @@ export async function POST(request: Request) {
     const cand = gem.candidates?.[0];
     const parts = cand?.content?.parts ?? [];
     // The REST response uses camelCase inlineData; accept snake_case too for safety.
-    const outB64 = parts.map((pt) => pt.inline_data?.data ?? pt.inlineData?.data).find(Boolean);
+    const outImgs = parts.map((pt) => pt.inline_data?.data ?? pt.inlineData?.data).filter(Boolean);
+    const outB64 = outImgs[outImgs.length - 1];
     if (!outB64) {
       const block = gem.promptFeedback?.blockReason;
       const finish = cand?.finishReason ?? "unknown";
