@@ -21,7 +21,8 @@ const PROMPT =
   "deserts and cracked white salt flats, murky reed-filled swamps and bogs, glowing magical feywild " +
   "and enchanted groves with fairy rings, ashen blighted wastes, glittering crystal caverns, and " +
   "smoking volcanic peaks. Draw rivers as flowing blue water and roads as worn trails along their " +
-  "exact routes. Style: rich painterly antique cartography - parchment tones, softly illustrated " +
+  "exact routes. Where land meets the sea, render soft sandy and rocky beaches along the coastline. " +
+  "Style: rich painterly antique cartography - parchment tones, softly illustrated " +
   "relief, subtle sea texture, elegant flourishes. No text, no labels, no hex grid, no borders.";
 
 type Body = { campaignId: string; controlImage: string };

@@ -94,6 +94,37 @@ export async function renderWorldSnapshot(opts: {
     }
   }
 
+  // Beach fringe (fantasy control only): paint a sandy, or rocky for mountainous coasts, band on land
+  // hexes that touch open ocean, so the smoothing blur turns it into a beach and Gemini renders shores.
+  if (smooth) {
+    const AX: [number, number][] = [[1, 0], [1, -1], [0, -1], [-1, 0], [-1, 1], [0, 1]];
+    const isOcean = (bb: number) => bb === 17 || bb === 19;
+    const isLand = (bb: number) => !(bb === BIOME_UNSET || bb === 16 || bb === 17 || bb === 19);
+    for (let row = 0; row < H; row++) {
+      for (let col = 0; col < W; col++) {
+        const b = terrain.biome[index(col, row, W)];
+        if (!isLand(b)) continue;
+        const q = col - (row - (row & 1)) / 2, r = row;
+        let coastal = false;
+        for (const [dq, dr] of AX) {
+          const nr = r + dr, nc = (q + dq) + (nr - (nr & 1)) / 2;
+          if (nc < 0 || nc >= W || nr < 0 || nr >= H) continue;
+          if (isOcean(terrain.biome[nr * W + nc])) { coastal = true; break; }
+        }
+        if (!coastal) continue;
+        const rocky = b === 20 || b === 11 || b === 22 || b === 21 || b === 24; // mountains/alpine/canyon/volcanic/blighted
+        const center = hexToPixel(col, row, BASE_SIZE);
+        const pts = hexCorners(center, BASE_SIZE);
+        ctx.beginPath();
+        ctx.moveTo(pts[0].x, pts[0].y);
+        for (let k = 1; k < 6; k++) ctx.lineTo(pts[k].x, pts[k].y);
+        ctx.closePath();
+        ctx.fillStyle = rocky ? "#8f8674" : "#e6d5a8";
+        ctx.fill();
+      }
+    }
+  }
+
   // Feature overlays (rivers, roads) over terrain, then river labels, under POIs.
   if (features.length) {
     ctx.lineCap = "round";
