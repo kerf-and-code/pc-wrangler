@@ -439,7 +439,7 @@ export default function HexCanvas({
 
     // Feature overlays (rivers, roads) in world space, over terrain + regions, under POIs.
     const feats = featuresRef.current;
-    if (feats && feats.length) {
+    if (feats && feats.length && !baseOn) {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.translate(view.tx, view.ty);
       ctx.scale(view.scale, view.scale);

@@ -118,10 +118,12 @@ export function selectTile(col: number, row: number, env: SelectEnv): TileChoice
         }
       }
     }
-    // No exact crossing tile (the road bends, or the river ends here): tile the RIVER and let the
-    // road polyline draw over it, so the crossing still reads (rule 7).
-    for (const [name, art] of RIVER_TILES) { const m = matchRotFlip(art, rE); if (m) return { name, rot: m[0], flip: m[1], kind: "feature", overlay: true, coversRiver: true, coversRoad: false }; }
-    return null;
+    // No EXACT match (road bends, or the road's edges differ from the tile's painted road). As long
+    // as the RIVER runs straight-ish through this cell, still show a bridge/ford spanning it and let
+    // the road polyline draw over the top - so a bridge appears at (almost) every crossing.
+    const spanArt = edges.riverClass[i] >= 2 ? "road_bridge_ew" : "road_ford"; // both paint river E-W
+    const dir = dominantDir(rE); // orient the bridge's river axis along the river's main direction
+    return { name: spanArt, rot: dir, flip: false, kind: "feature", overlay: true, coversRiver: true, coversRoad: false };
   }
 
   // 2. Delta: river edge to upstream, sea filling the far side.
