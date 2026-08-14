@@ -66,6 +66,61 @@ function axialLine(a: [number, number], b: [number, number]): [number, number][]
   return out;
 }
 
+// In-place ocean-coastline roughening. Perturbs the land/ocean boundary with smooth value noise so
+// straight shorelines gain natural inlets and spits, a few hexes either way. Ocean = 17/19; lakes (16)
+// are left alone. Eroded land becomes shallow ocean (FL_SHALLOWS=1 so it blends); new land copies a
+// land neighbour's biome. Operates on the raw blob arrays so it needs no hex.ts helpers.
+function roughenCoastsInPlace(biome: Uint8Array, flags: Uint8Array, W: number, H: number, strength: number, iterations: number, seed: number): void {
+  const AX: [number, number][] = [[1, 0], [1, -1], [0, -1], [-1, 0], [-1, 1], [0, 1]];
+  const nbrs = (col: number, row: number): number[] => {
+    const q = col - (row - (row & 1)) / 2, r = row;
+    const out: number[] = [];
+    for (const [dq, dr] of AX) {
+      const nr = r + dr, nc = (q + dq) + (nr - (nr & 1)) / 2;
+      if (nc >= 0 && nc < W && nr >= 0 && nr < H) out.push(nr * W + nc);
+    }
+    return out;
+  };
+  const hash2 = (x: number, y: number, sd: number): number => {
+    let h = (Math.imul(x, 374761393) + Math.imul(y, 668265263) + Math.imul(sd, 1274126177)) | 0;
+    h = Math.imul(h ^ (h >>> 13), 1274126177);
+    h = h ^ (h >>> 16);
+    return ((h >>> 0) % 100000) / 100000;
+  };
+  const sm = (t: number): number => t * t * (3 - 2 * t);
+  const noiseAt = (col: number, row: number, cell: number, sd: number): number => {
+    const fx = col / cell, fy = row / cell;
+    const x0 = Math.floor(fx), y0 = Math.floor(fy);
+    const tx = sm(fx - x0), ty = sm(fy - y0);
+    const v00 = hash2(x0, y0, sd), v10 = hash2(x0 + 1, y0, sd);
+    const v01 = hash2(x0, y0 + 1, sd), v11 = hash2(x0 + 1, y0 + 1, sd);
+    const top = v00 + (v10 - v00) * tx, bot = v01 + (v11 - v01) * tx;
+    return top + (bot - top) * ty;
+  };
+  const isOcean = (b: number): boolean => b === 17 || b === 19;
+  for (let iter = 0; iter < iterations; iter++) {
+    const orig = biome.slice();
+    for (let row = 0; row < H; row++) {
+      for (let col = 0; col < W; col++) {
+        const i = row * W + col;
+        const b = orig[i];
+        const ocean = isOcean(b);
+        const land = !(b === 16 || b === 17 || b === 19);
+        if (!ocean && !land) continue;
+        let oceanAdj = false, landAdj = false, landB = -1;
+        for (const n of nbrs(col, row)) {
+          const nb = orig[n];
+          if (isOcean(nb)) oceanAdj = true;
+          else if (nb !== 16) { landAdj = true; landB = nb; }
+        }
+        const nz = noiseAt(col, row, 4.5, seed + iter * 131);
+        if (land && oceanAdj && nz > 1 - strength) { biome[i] = 17; flags[i] = 1; }
+        else if (ocean && landAdj && nz < strength && landB >= 0) { biome[i] = landB; flags[i] = 0; }
+      }
+    }
+  }
+}
+
 // Special-terrain flag bits, as literals mirroring feature-tiles FL_* (shallows 1, frozen 16,
 // saltpan 32, glacier 64, snowcap 128) - kept independent of which FLAG_* hex.ts exports.
 const SPECIAL_TERRAIN: { key: string; label: string; flag: number; biome: number | null }[] = [
@@ -426,6 +481,20 @@ export default function WorldMapPage() {
     if (error) { setStatus(error.message); return; }
     setLabelRows((prev) => prev.filter((l) => l.id !== id));
   }, [supabase]);
+
+  const roughenCoasts = useCallback(() => {
+    if (!terrain || !mapRow) return;
+    if (!window.confirm("Reshape the ocean coastlines with natural noise? This carves inlets and adds spits, edits the terrain, and can't be undone. You can run it again for more effect.")) return;
+    const nb = new Uint8Array(terrain.biome), nf = new Uint8Array(terrain.flags);
+    roughenCoastsInPlace(nb, nf, terrain.meta.width, terrain.meta.height, 0.3, 2, (Math.random() * 1e9) | 0);
+    const nt: Terrain = { meta: terrain.meta, biome: nb, flags: nf };
+    setTerrain(nt);
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    setStatus("Saving\u2026");
+    const b64 = bytesToBase64(encodeTerrain(nt));
+    supabase.from("world_maps").update({ terrain: b64 }).eq("id", mapRow.id)
+      .then(({ error }: { error: { message: string } | null }) => setStatus(error ? `Save failed: ${error.message}` : "Saved"));
+  }, [terrain, mapRow, supabase]);
 
   const armDraw = useCallback((kind: "river" | "road") => {
     setDrawKind((k) => (k === kind ? null : kind));
@@ -889,6 +958,14 @@ export default function WorldMapPage() {
                 <span style={{ fontSize: 12.5 }}>Erase special</span>
               </button>
             </div>
+          </div>
+          <div style={{ marginBottom: 12 }}>
+            <div style={secLabel}>COASTLINES</div>
+            <button type="button" onClick={roughenCoasts}
+              style={{ display: "block", width: "100%", textAlign: "center", padding: "7px 9px", borderRadius: 7, cursor: "pointer", fontSize: 12.5, border: `1px solid ${C.line}`, background: C.surface2, color: C.text }}>
+              Roughen coastlines
+            </button>
+            <div style={{ fontSize: 11, color: C.muted, margin: "6px 0 0", lineHeight: 1.4 }}>Adds natural inlets and spits to ocean shores. Run again for more. Not undoable.</div>
           </div>
           <div style={{ marginBottom: 12 }}>
             <div style={secLabel}>RIVERS & ROADS</div>
