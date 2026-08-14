@@ -776,7 +776,7 @@ export default function HexCanvas({
         if (hit && hit.kind === "poi" && hit.id) { mode = "poi-move"; poiDragRef.current = { id: hit.id, dx: 0, dy: 0 }; }
         else {
           const lhit = hitTestLabel(mx, my);
-          if (lhit) { mode = "label-move"; labelDragRef.current = { id: lhit.id, dx: 0, dy: 0 }; }
+          if (lhit && onMoveLabelRef.current) { mode = "label-move"; labelDragRef.current = { id: lhit.id, dx: 0, dy: 0 }; }
           else { mode = "pan"; }
         }
       }

@@ -9,6 +9,11 @@ import { POI_ICON_SVG } from "@/lib/worldmap/poi-icons";
 import { pixelToHex, BASE_SIZE } from "@/lib/worldmap/layout";
 import IconLibrary from "@/components/worldmap/IconLibrary";
 
+// Generated POI icon keys (kept in sync with bake.ts); a marker with one of these on an open-water
+// hex is a spurious auto-placed pin, hidden from members. Hand-placed sea markers use other icons.
+const GEN_ICON_KEYS = new Set(["city_walled", "town", "village", "mine_generic", "gem_mine", "lumber_camp", "farmland", "fishing_spot", "herb_node", "cave_entrance", "dungeon_entrance", "unstable_ground", "holy_spring", "bridge", "ford"]);
+type LabelRow = { id: string; x: number; y: number; text: string; size: number; color: string | null };
+
 // Phase 5a: the read-only member viewer. It calls world_map_read (the security-definer RPC that
 // applies visibility server-side) and renders the returned bundle through the same HexCanvas the GM
 // uses, minus every editing affordance: pan, zoom, the layer slider, POI hover tooltips, and click
@@ -66,6 +71,9 @@ export default function WorldMapViewer({ campaignId }: { campaignId: string }) {
   const [armedIcon, setArmedIcon] = useState<{ key: string } | null>(null);
   const [artEnabled, setArtEnabled] = useState(true);
   const [features, setFeatures] = useState<MapFeature[]>([]);
+  const [aiImageUrl, setAiImageUrl] = useState<string | null>(null);
+  const [fantasyView, setFantasyView] = useState(false);
+  const [labels, setLabels] = useState<LabelRow[]>([]);
 
   useEffect(() => {
     let off = false;
@@ -81,6 +89,10 @@ export default function WorldMapViewer({ campaignId }: { campaignId: string }) {
         const rows = featData as { kind: "river" | "road"; class: number; path: [number, number][]; name: string | null }[];
         setFeatures(rows.map((r) => ({ kind: r.kind, klass: r.class, path: r.path, name: r.name })));
       }
+      const { data: aiUrl } = await supabase.rpc("world_map_ai_image_read", { p_campaign: campaignId });
+      if (!off && typeof aiUrl === "string" && aiUrl) setAiImageUrl(aiUrl);
+      const { data: lblData } = await supabase.rpc("world_map_labels_read", { p_campaign: campaignId });
+      if (!off && Array.isArray(lblData)) setLabels(lblData as LabelRow[]);
       if (b.map) {
         setTerrain(b.map.terrain ? decodeTerrain(base64ToBytes(b.map.terrain)) : createTerrain(b.map.width, b.map.height, b.map.origin_col, b.map.origin_row));
       }
@@ -109,13 +121,22 @@ export default function WorldMapViewer({ campaignId }: { campaignId: string }) {
 
   const pois = useMemo(() => {
     const out: { id: string; x: number; y: number; name: string; iconId: string; iconSrc: string }[] = [];
+    const tw = terrain?.meta.width ?? 0, th = terrain?.meta.height ?? 0;
     for (const r of poiRows) {
+      // Hide auto-generated pins stranded on open water (older maps a GM hasn't cleaned yet).
+      if (terrain && tw && r.icon_key && GEN_ICON_KEYS.has(r.icon_key)) {
+        const { col, row } = pixelToHex(r.x, r.y, BASE_SIZE);
+        if (col >= 0 && row >= 0 && col < tw && row < th) {
+          const b = terrain.biome[row * tw + col];
+          if (b === 16 || b === 17 || b === 19) continue;
+        }
+      }
       const src = poiIconSrc(r.icon_key, r.icon_id, r.color, iconUrlById) || poiIconSrc("unknown_poi", null, r.color, iconUrlById);
       if (!src) continue;
       out.push({ id: r.id, x: r.x, y: r.y, name: r.name, iconId: src.iconId, iconSrc: src.iconSrc });
     }
     return out;
-  }, [poiRows, iconUrlById]);
+  }, [poiRows, iconUrlById, terrain]);
 
   useEffect(() => {
     if (!bundle || !selectedLayerId || bundle.regions.length === 0) { setRegionRender([]); return; }
@@ -230,6 +251,12 @@ export default function WorldMapViewer({ campaignId }: { campaignId: string }) {
           style={{ fontSize: 12, padding: "4px 9px", borderRadius: 7, cursor: "pointer", border: `1px solid ${artEnabled ? C.sun : C.line}`, background: artEnabled ? "rgba(200,162,75,0.14)" : C.surface2, color: C.text }}>
           Art: {artEnabled ? "On" : "Off"}
         </button>
+        {aiImageUrl && (
+          <button type="button" onClick={() => setFantasyView((v) => !v)}
+            style={{ fontSize: 12, padding: "4px 9px", borderRadius: 7, cursor: "pointer", border: `1px solid ${fantasyView ? C.sun : C.line}`, background: fantasyView ? "rgba(200,162,75,0.14)" : C.surface2, color: C.text }}>
+            Fantasy: {fantasyView ? "On" : "Off"}
+          </button>
+        )}
         {layers.length > 0 && (
           <div style={{ display: "flex", gap: 8, alignItems: "center", marginLeft: "auto" }}>
             <span style={{ fontSize: 12, color: C.muted }}>Layer</span>
@@ -280,6 +307,9 @@ export default function WorldMapViewer({ campaignId }: { campaignId: string }) {
           features={features}
           biomeArt={biomeArt}
           artEnabled={artEnabled}
+          baseImage={aiImageUrl}
+          showBaseImage={fantasyView}
+          labels={labels}
           selectedBiome={editing ? selectedBiome : null}
           onPaint={editing ? onPaint : undefined}
           images={bundle.images}
