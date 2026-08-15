@@ -28,6 +28,16 @@ export type Campaign = {
   codex_cover_url?: string | null;
 };
 
+// A public connection between two codex items. entity_links types are "entry" | "character";
+// a "character" endpoint is one of the item_kind='npc' rows public_codex returns.
+export type Link = {
+  source_type: string;
+  source_id: string;
+  target_type: string;
+  target_id: string;
+  relation: string | null;
+};
+
 // FIVE SECTIONS, tag-aware. Lore, factions and items are all stored as type='lore', split only by a
 // reserved tag, exactly like the GM codex tabs. matchesSection() checks the tag so every entry lands
 // in exactly one place; the Lore section (no tag) takes lore carrying NEITHER reserved tag.
@@ -62,15 +72,48 @@ function anon() {
 
 export async function load(slug: string) {
   const supabase = anon();
-  const [{ data: head }, { data: items }, { data: listed }, { data: snapshot }] = await Promise.all([
+  const [{ data: head }, { data: items }, { data: listed }, { data: snapshot }, { data: links }] = await Promise.all([
     supabase.rpc("public_campaign", { p_slug: slug }),
     supabase.rpc("public_codex", { p_slug: slug }),
     supabase.rpc("public_campaign_listing", { p_slug: slug }),
     supabase.rpc("public_world_snapshot", { p_slug: slug }),
+    supabase.rpc("public_codex_links", { p_slug: slug }),
   ]);
   const campaign = (Array.isArray(head) ? head[0] : head) as Campaign | null;
   const all = ((items as Item[]) ?? []).filter((i) => SECTIONS.some((s) => s.type === i.item_type));
-  return { campaign: campaign ?? null, items: all, listed: listed === true, snapshotUrl: typeof snapshot === "string" ? snapshot : null };
+  return {
+    campaign: campaign ?? null,
+    items: all,
+    listed: listed === true,
+    snapshotUrl: typeof snapshot === "string" ? snapshot : null,
+    links: (links as Link[]) ?? [],
+  };
+}
+
+// Given the loaded items, resolve the public entries connected to one item, ready to link.
+// entity_links types map to item_kind: "entry" -> "entry", "character" -> "npc".
+export function relatedTo(item: Item, links: Link[], items: Item[]): { item: Item; relation: string | null }[] {
+  const selfType = item.item_kind === "npc" ? "character" : "entry";
+  const byId = new Map(items.map((i) => [i.id, i]));
+  const kindOf = (t: string) => (t === "character" ? "npc" : "entry");
+  const out: { item: Item; relation: string | null }[] = [];
+  const seen = new Set<string>();
+  for (const l of links) {
+    let otherType: string | null = null, otherId: string | null = null;
+    if (l.source_type === selfType && l.source_id === item.id) { otherType = l.target_type; otherId = l.target_id; }
+    else if (l.target_type === selfType && l.target_id === item.id) { otherType = l.source_type; otherId = l.source_id; }
+    if (!otherId || !otherType) continue;
+    const found = byId.get(otherId);
+    if (!found || found.item_kind !== kindOf(otherType) || seen.has(found.id)) continue;
+    seen.add(found.id);
+    out.push({ item: found, relation: l.relation });
+  }
+  return out;
+}
+
+// The SECTIONS entry an item belongs to, for building its /c/[slug]/[section]/[entry] href.
+export function sectionForItem(item: Item): { slug: string; label: string } | undefined {
+  return SECTIONS.find((s) => matchesSection(item, s));
 }
 
 /**
@@ -188,6 +231,24 @@ export function WikiHead() {
           text-transform: uppercase; color: var(--w-muted); background: transparent;
           border: 1px solid var(--w-line); border-radius: 8px; padding: 6px 11px; cursor: pointer; }
         .w-theme:hover { color: var(--w-ink); border-color: var(--w-accent-dim); }
+
+        /* ---- entry page: wide variant + right rail ---- */
+        .w-main-wide { max-width: 1080px; margin: 0 auto; width: 100%; padding: 40px 24px 90px; position: relative; }
+        .w-entry { display: grid; grid-template-columns: minmax(0,1fr) 260px; gap: 46px; align-items: start; }
+        @media (max-width: 900px) { .w-entry { grid-template-columns: 1fr; } .w-rail-r { position: static; } }
+        .w-rail-r { position: sticky; top: 78px; }
+        .w-card { background: var(--w-panel); border: 1px solid var(--w-line); border-radius: 12px; padding: 15px 15px 12px; }
+        .w-title { font-family: 'Cinzel','EB Garamond',serif; font-size: 38px; line-height: 1.12; margin: 12px 0 14px; font-weight: 600; }
+        .w-back { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.14em;
+          text-transform: uppercase; color: var(--w-muted); text-decoration: none; }
+        .w-back:hover { color: var(--w-accent); }
+        .w-body { font-size: 17.5px; line-height: 1.78; color: var(--w-ink); white-space: pre-wrap; }
+        .w-rel { display: flex; align-items: center; gap: 11px; padding: 8px; border-radius: 8px; text-decoration: none; color: var(--w-ink); }
+        .w-rel:hover { background: var(--w-hover); }
+        .w-rel .k { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 9px; letter-spacing: 0.1em;
+          text-transform: uppercase; color: #15110b; background: var(--w-accent-dim); border-radius: 4px; padding: 2px 5px; flex: none; }
+        .w-rel .t { font-size: 15px; line-height: 1.25; }
+        .w-rel .t small { display: block; color: var(--w-muted); font-size: 12px; font-style: italic; }
       ` }} />
     </>
   );
@@ -244,17 +305,18 @@ function FrameFallback() {
   return <main className="w-main" />;
 }
 
-export function Shell({ slug, campaign, counts, current, children }: {
+export function Shell({ slug, campaign, counts, current, wide, children }: {
   slug: string;
   campaign: Campaign;
   counts: Record<string, number>;
   current?: string;
+  wide?: boolean;
   children: React.ReactNode;
 }) {
   return (
     <>
       <TopNav slug={slug} campaign={campaign} counts={counts} current={current} />
-      <main className="w-main">{children}</main>
+      <main className={wide ? "w-main-wide" : "w-main"}>{children}</main>
     </>
   );
 }
