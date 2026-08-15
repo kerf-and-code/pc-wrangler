@@ -249,6 +249,22 @@ export function WikiHead() {
           text-transform: uppercase; color: #15110b; background: var(--w-accent-dim); border-radius: 4px; padding: 2px 5px; flex: none; }
         .w-rel .t { font-size: 15px; line-height: 1.25; }
         .w-rel .t small { display: block; color: var(--w-muted); font-size: 12px; font-style: italic; }
+
+        /* ---- index banner + crest ---- */
+        .w-banner { position: relative; border-radius: 10px; margin-bottom: 26px; overflow: hidden;
+          border: 1px solid var(--w-line); }
+        .w-banner.cover { min-height: 250px; display: flex; align-items: flex-end; background-size: cover; background-position: center; }
+        .w-banner-in { padding: 26px 24px 22px; position: relative; z-index: 2; }
+        .w-banner h1 { font-family: 'Cinzel','EB Garamond',serif; font-size: 40px; line-height: 1.1;
+          margin: 0 0 10px; font-weight: 600; }
+        .w-crest { position: absolute; top: 22px; left: 50%; transform: translateX(-50%); z-index: 3;
+          width: 84px; height: 84px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+          border: 2px solid var(--w-accent); box-shadow: 0 0 0 5px var(--w-tag-bg), inset 0 0 22px rgba(0,0,0,.45);
+          background: radial-gradient(circle at 50% 35%, var(--w-panel-2), var(--w-deep));
+          font-family: 'Cinzel','EB Garamond',serif; font-size: 34px; color: var(--w-accent); }
+        .w-sec { margin-bottom: 34px; }
+        .w-sec-blurb { font-size: 14px; color: var(--w-muted); margin: 6px 0 12px; }
+        .w-empty { color: var(--w-muted); font-size: 15px; }
       ` }} />
     </>
   );

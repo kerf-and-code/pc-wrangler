@@ -5,18 +5,17 @@
 // The search box on a published codex.
 //
 // WHY IT FILTERS THE DOM INSTEAD OF HOLDING THE DATA
-//   The page is a server component so that a crawler receives the whole codex as HTML. If this
-//   component owned the list, the content would have to be passed down and re-rendered on the
-//   client, which means the text exists twice - once for machines, once for people - and the two
-//   drift the first time either side changes. So the server renders one list, tags each item with
-//   data-search, and this hides the ones that do not match.
-//
-//   The trade is that it is DOM manipulation rather than React state, which is normally the wrong
-//   instinct. Here it is the point: nothing about what a reader sees can diverge from what was
-//   indexed, because they are the same nodes.
+//   The page is a server component so a crawler receives the whole codex as HTML. If this component
+//   owned the list, the content would exist twice - once for machines, once for people - and drift
+//   the first time either side changed. So the server renders one list, tags each item with
+//   data-search, and this hides the ones that do not match. Nothing a reader sees can diverge from
+//   what was indexed, because they are the same nodes.
 //
 // It degrades honestly: with JavaScript off the box never appears and the full codex is still there
 // to read and to search with the browser's own find.
+//
+// STYLING: colours come from the shared --w-* theme variables (the .w-search class), so the box is
+// dark in dark mode instead of the old hardcoded parchment.
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -50,24 +49,19 @@ export default function CodexFilter({ total }: { total: number }) {
   }, []);
 
   return (
-    <div style={{ marginBottom: 22 }}>
+    <div style={{ marginBottom: 24 }}>
       <input
         type="search"
+        className="w-search"
         value={q}
         onChange={(e) => { setQ(e.target.value); apply(e.target.value); }}
         placeholder="Search this codex"
         aria-label="Search this codex"
-        style={{
-          width: "100%", padding: "11px 14px", fontSize: 16,
-          fontFamily: "'Iowan Old Style', Georgia, serif",
-          color: "#2a2620", background: "#fffdf8",
-          border: "1px solid #ddd4c2", borderRadius: 3,
-        }}
       />
       {q.trim() !== "" && (
-        <p style={{
-          fontFamily: "ui-monospace, monospace", fontSize: 12,
-          color: shown === 0 ? "#9a5b3f" : "#8a8069", margin: "8px 0 0",
+        <p className="w-mono" style={{
+          fontSize: 12, margin: "8px 0 0", letterSpacing: "0.04em",
+          color: shown === 0 ? "var(--w-accent)" : "var(--w-muted)",
         }}>
           {shown === 0
             ? `Nothing here matches "${q.trim()}".`

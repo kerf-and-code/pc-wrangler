@@ -4,9 +4,9 @@ import { load, Shell, Frame, countsOf, sectionBySlug, matchesSection } from "../
 
 // One category: every place, or everyone the party has met.
 //
-// A PAGE PER CATEGORY rather than an anchor on one long document. The difference is that a category
-// is now somewhere you can link to, come back to, and land on from a search - which is most of what
-// separates a wiki from a page with headings.
+// A PAGE PER CATEGORY rather than an anchor on one long document. A category is now somewhere you can
+// link to, come back to, and land on from a search - which is most of what separates a wiki from a
+// page with headings.
 
 type P = { params: Promise<{ slug: string; section: string }> };
 
@@ -40,41 +40,34 @@ async function SectionBody({ params }: P) {
 
   return (
     <Shell slug={slug} campaign={campaign} counts={countsOf(items)} current={sec.slug}>
-      <h1 style={{ fontSize: 32, lineHeight: 1.15, margin: "0 0 6px", fontWeight: 600 }}>
-        {sec.label}
-      </h1>
-      <p style={{ fontSize: 15, color: "var(--w-muted)", margin: "0 0 24px" }}>{sec.blurb}</p>
+      <div className="ey" style={{ marginBottom: 8 }}>Codex</div>
+      <div className="w-sec-head" style={{ marginBottom: 6 }}>
+        <h2 style={{ fontSize: 30 }}>{sec.label}</h2>
+      </div>
+      <p className="w-sec-blurb" style={{ margin: "8px 0 24px" }}>{sec.blurb}</p>
 
       {rows.length === 0 ? (
-        <p style={{ color: "var(--w-muted)", fontSize: 15 }}>Nothing here yet.</p>
+        <p className="w-empty">Nothing here yet.</p>
       ) : (
         rows.map((it) => (
-          <a key={it.id} href={`/c/${slug}/${sec.slug}/${it.slug || it.id}`}
-            style={{
-              display: "block", padding: "14px 0",
-              borderBottom: "1px solid var(--w-line)", textDecoration: "none", color: "inherit",
-            }}>
+          <a key={it.id} className="w-item" href={`/c/${slug}/${sec.slug}/${it.slug || it.id}`}>
             <div className="w-row">
               {it.image_url && (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img className="w-thumb" src={it.image_url} alt="" loading="lazy" />
               )}
               <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: 19, fontWeight: 600, marginBottom: 4 }}>{it.title}</div>
-            {it.body ? (
-              <p style={{
-                fontSize: 15, lineHeight: 1.6, margin: 0, color: "var(--w-ink-2)",
-                display: "-webkit-box", WebkitLineClamp: 2,
-                WebkitBoxOrient: "vertical" as const, overflow: "hidden",
-              }}>
-                {it.body}
-              </p>
-            ) : (
-              // Named but not yet described. Said plainly rather than with an apologetic italic
-              // "No description yet" - the name IS information, and the phrasing was saying more
-              // about the tool than about the place.
-              <p style={{ fontSize: 14, color: "var(--w-muted)", margin: 0 }}>Not yet described.</p>
-            )}
+                <div className="w-item-t" style={{ fontSize: 19 }}>{it.title}</div>
+                {it.body ? (
+                  <p style={{
+                    fontSize: 15, lineHeight: 1.6, margin: 0, color: "var(--w-ink-2)",
+                    display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const, overflow: "hidden",
+                  }}>
+                    {it.body}
+                  </p>
+                ) : (
+                  <p style={{ fontSize: 14, color: "var(--w-muted)", margin: 0 }}>Not yet described.</p>
+                )}
               </div>
             </div>
           </a>
