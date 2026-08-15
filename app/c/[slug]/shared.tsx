@@ -1,9 +1,10 @@
 // Everything the three wiki routes share: the loader, the theme, and the page chrome.
 //
-// WHY EXTRACT IT
-//   The index, a category page and an entry page all need the same campaign header, the same left
-//   rail, the same theme variables and the same data. Three copies would drift - and the one that
-//   drifts first is always the theme, because it is the part nobody re-reads.
+// REDESIGN NOTE (Six Axes look): the DATA layer below (load, SECTIONS, matchesSection, countsOf, the
+// RPCs, the anon client) is unchanged. What changed is the chrome and the stylesheet: the left rail
+// became a top bar with a native <details> dropdown (no client JS, links stay in the HTML so crawlers
+// still see them), the content is a centered column, and the styles carry the dark-and-gold treatment.
+// Server-render, SEO, and the light/dark toggle are all preserved.
 
 import React from "react";
 import { createClient } from "@supabase/supabase-js";
@@ -28,11 +29,8 @@ export type Campaign = {
 };
 
 // FIVE SECTIONS, tag-aware. Lore, factions and items are all stored as type='lore', split only by a
-// reserved tag, exactly like the GM codex tabs. So a section cannot match on type alone: a faction
-// would fall into Factions, Items and Lore at once. matchesSection() below checks the tag too, and
-// the Lore section (no tag) takes only lore carrying NEITHER reserved tag, so every entry lands in
-// exactly one place. Notes and PCs stay off the wiki on purpose: notes default to GM-secret, and
-// PCs are not returned by public_codex at all.
+// reserved tag, exactly like the GM codex tabs. matchesSection() checks the tag so every entry lands
+// in exactly one place; the Lore section (no tag) takes lore carrying NEITHER reserved tag.
 export const SECTIONS: { type: string; slug: string; label: string; blurb: string; tag?: string }[] = [
   { type: "location", slug: "places", label: "Places", blurb: "Where the story has been." },
   { type: "npc", slug: "cast", label: "The cast", blurb: "Who the party has met." },
@@ -41,16 +39,11 @@ export const SECTIONS: { type: string; slug: string; label: string; blurb: strin
   { type: "lore", slug: "lore", label: "Lore", blurb: "History, rumours, and the world itself." },
 ];
 
-// The tags that promote a lore entry into its own section. A section with a tag matches only entries
-// carrying it; a section without one matches entries carrying none of these.
 export const RESERVED_TAGS = new Set(SECTIONS.map((s) => s.tag).filter((t): t is string => !!t));
 
 export const sectionBySlug = (s: string) => SECTIONS.find((x) => x.slug === s);
 export const sectionByType = (t: string) => SECTIONS.find((x) => x.type === t);
 
-// The one place section membership is decided. Type first, then the tag: a tagged section wants that
-// exact tag, an untagged one wants none of the reserved tags. Everything that used to compare
-// item_type === sec.type must call this instead, or lore, factions and items collapse into one list.
 export function matchesSection(item: { item_type: string; tags: string[] | null }, sec: { type: string; tag?: string }): boolean {
   if (item.item_type !== sec.type) return false;
   const tags = item.tags || [];
@@ -58,8 +51,7 @@ export function matchesSection(item: { item_type: string; tags: string[] | null 
   return !tags.some((t) => RESERVED_TAGS.has(t));
 }
 
-// A PLAIN anon client, not @/lib/supabase/server: these pages are read by strangers with no session
-// and must never carry one.
+// A PLAIN anon client, not @/lib/supabase/server: these pages are read by strangers with no session.
 function anon() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -82,139 +74,163 @@ export async function load(slug: string) {
 }
 
 /**
- * The theme layer and the shared stylesheet.
- *
- * The script runs BEFORE first paint. The page is server-rendered and cached, so without it every
- * reader who chose dark gets a white flash on every load - worse than not offering the choice.
+ * The theme layer and the shared stylesheet. The script runs BEFORE first paint so a reader who chose
+ * dark never gets a white flash. Dark is the default and the Six Axes forge palette.
  */
 export function WikiHead() {
   return (
     <>
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+      <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
       <script dangerouslySetInnerHTML={{ __html: `
         (function(){try{
-          var t = localStorage.getItem('sixaxes-wiki-theme');
-          if (!t) t = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+          // Default to the Six Axes dark theme. A reader can still switch, and the choice persists;
+          // only the FIRST visit ignores the OS preference, because beige-by-default was the complaint.
+          var t = localStorage.getItem('sixaxes-wiki-theme') || 'dark';
           document.documentElement.dataset.wiki = t;
         }catch(e){document.documentElement.dataset.wiki='dark';}})();
       ` }} />
       <style dangerouslySetInnerHTML={{ __html: `
-        /* ROLE NAMES, not hue names: --w-ink means body text, so the dark palette can invert it
-           without every variable name becoming a lie. Dark is the default and is where an unset or
-           failed script lands. */
+        /* ROLE NAMES, not hue names. Dark is default and the forge palette; light stays a warm reading
+           tone rather than flat beige. --w-deep is the page ground, one step under the panel. */
         :root, [data-wiki="dark"] {
-          --w-bg: #171310; --w-panel: #221c17; --w-ink: #e8dcc4; --w-ink-2: #cbbfa6;
-          --w-muted: #a99e86; --w-accent: #c8a24b; --w-line: #3a332a;
-          --w-tag-bg: rgba(200,162,75,0.14); --w-hover: rgba(255,255,255,0.06);
-          --w-rail-edge: rgba(255,255,255,0.10);
+          --w-deep: #14110d; --w-bg: #171310; --w-panel: #1f1a15; --w-panel-2: #251f18;
+          --w-ink: #ece4d6; --w-ink-2: #cbbfa6; --w-muted: #a99e86;
+          --w-accent: #c9a24b; --w-accent-dim: #8a7038; --w-line: #3a332a;
+          --w-tag-bg: rgba(201,162,75,0.12); --w-hover: rgba(255,255,255,0.05);
         }
         [data-wiki="light"] {
-          --w-bg: #f6f2e9; --w-panel: #fffdf8; --w-ink: #2a2620; --w-ink-2: #4a443a;
-          --w-muted: #8a8069; --w-accent: #8a6a2f; --w-line: #ddd4c2;
-          --w-tag-bg: #ece4d2; --w-hover: rgba(0,0,0,0.05);
-          --w-rail-edge: rgba(0,0,0,0.08);
+          --w-deep: #efe7d6; --w-bg: #f5efe2; --w-panel: #fffdf8; --w-panel-2: #fbf6ea;
+          --w-ink: #241f18; --w-ink-2: #4a4236; --w-muted: #857a63;
+          --w-accent: #97701f; --w-accent-dim: #b08a3e; --w-line: #ddd2ba;
+          --w-tag-bg: #ece1c8; --w-hover: rgba(0,0,0,0.045);
         }
-        html { background: var(--w-bg); }
+        html { background: var(--w-deep); }
+        * { box-sizing: border-box; }
 
-        .w-shell { min-height: 100vh; background: var(--w-bg); color: var(--w-ink);
-          font-family: 'Iowan Old Style', Georgia, 'Times New Roman', serif; }
-        .w-cols { display: grid; grid-template-columns: minmax(0,1fr); }
-        .w-main { padding: 34px 20px 64px; max-width: 760px; margin: 0 auto; width: 100%; }
+        .w-shell { min-height: 100vh; background: var(--w-deep); color: var(--w-ink);
+          font-family: 'EB Garamond', 'Iowan Old Style', Georgia, serif; font-size: 18px; line-height: 1.72; }
+        .w-mono { font-family: 'IBM Plex Mono', ui-monospace, monospace; }
+        .w-serif-d { font-family: 'Cinzel', 'EB Garamond', serif; }
 
-        /* The rail is CHROME on every page, not a table of contents on one. Below 900px it becomes
-           a strip across the top, because a side column on a phone eats half the width. */
-        .w-rail { background: var(--w-panel); border-bottom: 1px solid var(--w-rail-edge);
-          padding: 16px 18px; }
-        .w-brand { display: flex; align-items: baseline; gap: 8px; margin-bottom: 14px;
-          font-family: ui-monospace, monospace; font-size: 10.5px; letter-spacing: 0.18em;
-          text-transform: uppercase; color: var(--w-muted); text-decoration: none; }
-        .w-brand:hover { color: var(--w-accent); }
-        .w-nav { display: flex; flex-wrap: wrap; gap: 4px; }
-        .w-nav a { display: flex; justify-content: space-between; gap: 10px; min-width: 132px;
-          padding: 7px 10px; border-radius: 4px; text-decoration: none;
-          color: var(--w-ink-2); font-size: 14px; }
-        .w-nav a:hover { background: var(--w-hover); }
-        .w-nav a[aria-current="page"] { background: var(--w-hover); color: var(--w-accent); }
+        /* ---- top bar: dropdown nav + brand ---- */
+        .w-topbar { position: sticky; top: 0; z-index: 40; display: flex; align-items: center; gap: 14px;
+          padding: 10px 20px; background: linear-gradient(180deg,#171310,#141009);
+          border-bottom: 1px solid var(--w-line); }
+        [data-wiki="light"] .w-topbar { background: linear-gradient(180deg,#fbf6ea,#f3ecdc); }
+
+        .w-dd { position: relative; }
+        .w-dd > summary { list-style: none; cursor: pointer; display: inline-flex; align-items: center; gap: 10px;
+          padding: 9px 14px; border: 1px solid var(--w-line); border-radius: 9px; background: var(--w-panel-2);
+          color: var(--w-ink); font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px;
+          letter-spacing: 0.06em; text-transform: uppercase; }
+        .w-dd > summary::-webkit-details-marker { display: none; }
+        .w-dd > summary:hover { border-color: var(--w-accent-dim); }
+        .w-dd .bars { display: inline-flex; flex-direction: column; gap: 3px; }
+        .w-dd .bars i { width: 16px; height: 2px; background: var(--w-accent); border-radius: 2px; }
+        .w-dd-menu { position: absolute; top: 48px; left: 0; width: 260px; background: var(--w-panel);
+          border: 1px solid var(--w-line); border-radius: 12px; padding: 10px; z-index: 50;
+          box-shadow: 0 24px 60px rgba(0,0,0,.5); }
+        .w-dd-menu .ey { margin: 6px 6px 8px; }
+        .w-dd-menu a { display: flex; justify-content: space-between; gap: 10px; padding: 8px 9px;
+          border-radius: 8px; text-decoration: none; color: var(--w-ink-2); font-size: 15px; }
+        .w-dd-menu a:hover { background: var(--w-hover); color: var(--w-ink); }
+        .w-dd-menu a[aria-current="page"] { color: var(--w-accent); background: var(--w-hover); }
         .w-count { color: var(--w-muted); font-variant-numeric: tabular-nums; }
 
-        @media (min-width: 900px) {
-          .w-cols { grid-template-columns: 236px minmax(0,1fr); }
-          .w-rail { position: sticky; top: 0; align-self: start; height: 100vh;
-            border-bottom: none; border-right: 1px solid var(--w-rail-edge); padding: 22px 18px; }
-          .w-main { padding: 40px 30px 72px; }
-        }
+        .w-brand { flex: 1; text-align: center; min-width: 0; }
+        .w-brand a { text-decoration: none; color: var(--w-ink); }
+        .w-brand .nm { font-family: 'Cinzel','EB Garamond',serif; font-weight: 600; letter-spacing: 0.14em;
+          font-size: 14px; text-transform: uppercase; color: var(--w-accent); white-space: nowrap;
+          overflow: hidden; text-overflow: ellipsis; display: block; }
+        .w-mark { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10.5px; letter-spacing: 0.2em;
+          text-transform: uppercase; color: var(--w-muted); text-decoration: none; white-space: nowrap; }
+        .w-mark:hover { color: var(--w-accent); }
+        @media (max-width: 720px) { .w-mark { display: none; } }
 
-        .w-theme { position: absolute; top: 14px; right: 14px;
-          font-family: ui-monospace, monospace; font-size: 11px; letter-spacing: 0.1em;
-          text-transform: uppercase; color: var(--w-muted); background: transparent;
-          border: 1px solid var(--w-line); border-radius: 3px; padding: 5px 10px; cursor: pointer; }
-        .w-theme:hover { color: var(--w-ink); }
+        /* ---- content column ---- */
+        .w-main { max-width: 820px; margin: 0 auto; width: 100%; padding: 40px 24px 90px; position: relative; }
+        .ey { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.2em;
+          text-transform: uppercase; color: var(--w-accent-dim); }
 
-        /* A thumbnail is a fixed square so a list of mixed portraits and landscapes still reads as
-           a column. object-fit crops rather than distorts - a squashed face is worse than a
-           cropped one. */
-        .w-thumb { width: 56px; height: 56px; flex-shrink: 0; border-radius: 4px;
-          object-fit: cover; background: var(--w-panel); }
+        /* section headings on category/index pages get the dagger + hairline */
+        .w-main h2 { font-family: 'Cinzel','EB Garamond',serif; }
+        .w-sec-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px;
+          border-bottom: 1px solid var(--w-line); padding-bottom: 8px; }
+        .w-sec-head h2 { font-size: 24px; margin: 0; font-weight: 600; display: flex; align-items: center; gap: 11px; }
+        .w-sec-head h2::before { content: "\\2726"; color: var(--w-accent); font-size: 14px; }
+        .w-all { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11.5px; color: var(--w-accent);
+          text-decoration: none; }
+
+        /* rows and cards */
+        .w-item { display: block; padding: 13px 0; border-bottom: 1px solid var(--w-line);
+          text-decoration: none; color: inherit; }
+        .w-item:hover .w-item-t { color: var(--w-accent); }
+        .w-item-t { font-size: 18px; font-weight: 600; margin-bottom: 3px; transition: color .12s; }
         .w-row { display: flex; gap: 14px; align-items: flex-start; }
-        .w-hero { width: 100%; max-height: 340px; object-fit: cover;
-          border-radius: 6px; margin-bottom: 18px; display: block; }
+        .w-thumb { width: 60px; height: 60px; flex-shrink: 0; border-radius: 6px; object-fit: cover;
+          background: var(--w-panel); border: 1px solid var(--w-line); }
+        .w-hero { width: 100%; max-height: 360px; object-fit: cover; border-radius: 8px;
+          margin-bottom: 20px; display: block; border: 1px solid var(--w-line); }
+
+        .w-tag { display: inline-block; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px;
+          color: var(--w-accent); background: var(--w-tag-bg); border: 1px solid var(--w-line);
+          border-radius: 999px; padding: 3px 9px; margin-right: 6px; }
+
+        .w-search { width: 100%; padding: 12px 15px; font-size: 16px; font-family: inherit;
+          color: var(--w-ink); background: var(--w-panel); border: 1px solid var(--w-line); border-radius: 9px; outline: none; }
+        .w-search:focus { border-color: var(--w-accent-dim); box-shadow: 0 0 0 3px var(--w-tag-bg); }
+        .w-search::placeholder { color: var(--w-muted); font-style: italic; }
+
+        .w-theme { position: absolute; top: 12px; right: 16px; z-index: 60;
+          font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.1em;
+          text-transform: uppercase; color: var(--w-muted); background: transparent;
+          border: 1px solid var(--w-line); border-radius: 8px; padding: 6px 11px; cursor: pointer; }
+        .w-theme:hover { color: var(--w-ink); border-color: var(--w-accent-dim); }
       ` }} />
     </>
   );
 }
 
 /**
- * The left rail. Six Axes mark, campaign name, one link per section.
- *
- * THE MARK IS DISCREET ON PURPOSE. This is the GM's page made with Six Axes, not a Six Axes page
- * with a GM's content on it - a GM who feels the product is advertising in their world shares it
- * less. Anyone curious can still click it.
+ * The top bar. Six Axes mark, campaign name centered, and a native <details> dropdown for the sections.
+ * No client JS: the dropdown is a real element, its links live in the HTML, so a crawler indexes them.
  */
-export function Rail({ slug, campaign, counts, current }: {
-  slug: string;
-  campaign: Campaign;
-  counts: Record<string, number>;
-  current?: string;
+export function TopNav({ slug, campaign, counts, current }: {
+  slug: string; campaign: Campaign; counts: Record<string, number>; current?: string;
 }) {
   return (
-    <nav className="w-rail" aria-label="Sections">
-      <a className="w-brand" href="https://www.six-axes.com" target="_blank" rel="noreferrer">
-        Six Axes
-      </a>
-      <a href={`/c/${slug}`} style={{
-        display: "block", fontSize: 20, lineHeight: 1.2, marginBottom: 16,
-        color: "var(--w-ink)", textDecoration: "none", fontWeight: 600,
-      }}>
-        {campaign.name}
-      </a>
-      <div className="w-nav">
-        {SECTIONS.map((s) => (
-          <a key={s.slug} href={`/c/${slug}/${s.slug}`}
-            aria-current={current === s.slug ? "page" : undefined}>
-            <span>{s.label}</span>
-            <span className="w-count">{counts[s.slug] ?? 0}</span>
-          </a>
-        ))}
+    <div className="w-topbar">
+      <details className="w-dd">
+        <summary aria-label="Browse the codex">
+          <span className="bars"><i /><i /><i /></span> Codex
+        </summary>
+        <nav className="w-dd-menu" aria-label="Sections">
+          <div className="ey">Sections</div>
+          {SECTIONS.map((s) => (
+            <a key={s.slug} href={`/c/${slug}/${s.slug}`} aria-current={current === s.slug ? "page" : undefined}>
+              <span>{s.label}</span><span className="w-count">{counts[s.slug] ?? 0}</span>
+            </a>
+          ))}
+        </nav>
+      </details>
+      <div className="w-brand">
+        <a href={`/c/${slug}`}><span className="nm">{campaign.name}</span></a>
       </div>
-    </nav>
+      <a className="w-mark" href="https://www.six-axes.com" target="_blank" rel="noreferrer">Six Axes</a>
+    </div>
   );
 }
 
 /**
- * The outer frame: background, theme and toggle, with a Suspense boundary for everything that has
- * to be awaited.
- *
- * WHY IT IS SPLIT FROM Shell
- *   This project runs with cacheComponents, which rejects any uncached await outside a Suspense
- *   boundary - including `await params`. So nothing above the boundary may await, which means the
- *   frame cannot know the campaign name and the rail has to live inside.
- *
- *   The THEME deliberately stays outside it. If the variables loaded with the content, the fallback
- *   would paint on an unstyled page and every reader would get a white flash before their chosen
- *   theme arrived - which is the exact thing the no-flash script exists to prevent.
+ * The outer frame: background, theme + toggle, and a Suspense boundary for everything awaited.
+ * The theme deliberately stays outside the boundary so the no-flash script's variables are present
+ * before the fallback paints.
  */
 export function Frame({ children }: { children: React.ReactNode }) {
   return (
-    <div className="w-shell" style={{ position: "relative" }}>
+    <div className="w-shell">
       <WikiHead />
       <ThemeToggle />
       <React.Suspense fallback={<FrameFallback />}>{children}</React.Suspense>
@@ -222,15 +238,10 @@ export function Frame({ children }: { children: React.ReactNode }) {
   );
 }
 
-// Deliberately almost empty. A skeleton of fake rows would be guessing at how many entries a
-// campaign has, and a wrong guess reflows the moment the real ones arrive.
+// Deliberately almost empty: a fake skeleton would guess the entry count and reflow when the real
+// rows arrive.
 function FrameFallback() {
-  return (
-    <div className="w-cols">
-      <nav className="w-rail" aria-hidden />
-      <main className="w-main" />
-    </div>
-  );
+  return <main className="w-main" />;
 }
 
 export function Shell({ slug, campaign, counts, current, children }: {
@@ -241,15 +252,15 @@ export function Shell({ slug, campaign, counts, current, children }: {
   children: React.ReactNode;
 }) {
   return (
-    <div className="w-cols">
-      <Rail slug={slug} campaign={campaign} counts={counts} current={current} />
+    <>
+      <TopNav slug={slug} campaign={campaign} counts={counts} current={current} />
       <main className="w-main">{children}</main>
-    </div>
+    </>
   );
 }
 
-// Keyed by section SLUG, not entry type: three sections share type='lore', so a per-type count
-// could not tell Factions from Lore. Each section counts the items that matchesSection it.
+// Keyed by section SLUG: three sections share type='lore', so a per-type count could not tell Factions
+// from Lore. Each section counts the items that matchesSection it.
 export const countsOf = (items: Item[]): Record<string, number> =>
   SECTIONS.reduce((acc, sec) => {
     acc[sec.slug] = items.filter((i) => matchesSection(i, sec)).length;
