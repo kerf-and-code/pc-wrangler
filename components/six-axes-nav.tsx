@@ -35,6 +35,7 @@ const GROUPS: Group[] = [
     { href: "/gm/map", label: "Map" },
     { href: "/gm/world", label: "World Map" },
     { href: "/gm/search", label: "Search" },
+    { href: "/gm/publish", label: "Publish" },
   ] },
   { label: "Insight", href: "/gm/dispositions", children: [
     { href: "/gm/dispositions", label: "Dispositions" },
