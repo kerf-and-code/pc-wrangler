@@ -33,6 +33,7 @@ const GROUPS: Group[] = [
     { href: "/gm/prep", label: "Prep" },
     { href: "/gm/timeline", label: "Timeline" },
     { href: "/gm/map", label: "Map" },
+    { href: "/gm/world", label: "World Map" },
     { href: "/gm/search", label: "Search" },
   ] },
   { label: "Insight", href: "/gm/dispositions", children: [
@@ -75,6 +76,7 @@ const PLAYER_TABLE: PGroup = {
     { href: "/recaps", label: "Recaps" },
     { href: "/lore", label: "Lore" },
     { href: "/map", label: "Map" },
+    { href: "/world", label: "World Map" },
     { href: "/chat", label: "Chat" },
   ],
 };

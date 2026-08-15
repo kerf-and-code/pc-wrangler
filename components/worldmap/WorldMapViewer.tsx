@@ -56,7 +56,7 @@ function poiIconSrc(iconKey: string | null, iconId: string | null, color: string
   return null;
 }
 
-export default function WorldMapViewer({ campaignId }: { campaignId: string }) {
+export default function WorldMapViewer({ campaignId, shareCode }: { campaignId?: string; shareCode?: string }) {
   const supabase = useMemo(() => createClient(), []);
   const [bundle, setBundle] = useState<Bundle | null | undefined>(undefined);
   const [terrain, setTerrain] = useState<Terrain | null>(null);
@@ -78,20 +78,28 @@ export default function WorldMapViewer({ campaignId }: { campaignId: string }) {
   useEffect(() => {
     let off = false;
     (async () => {
-      const { data, error } = await supabase.rpc("world_map_read", { p_campaign: campaignId });
+      const { data, error } = shareCode
+        ? await supabase.rpc("world_map_read_for_player", { p_share: shareCode })
+        : await supabase.rpc("world_map_read", { p_campaign: campaignId });
       if (off) return;
       if (error || !data) { setBundle(null); return; }
       const b = data as Bundle;
       setBundle(b);
       setPoiRows(b.pois || []);
-      const { data: featData } = await supabase.rpc("world_map_features_read", { p_campaign: campaignId });
+      const { data: featData } = shareCode
+        ? await supabase.rpc("world_map_features_read_for_player", { p_share: shareCode })
+        : await supabase.rpc("world_map_features_read", { p_campaign: campaignId });
       if (!off && Array.isArray(featData)) {
         const rows = featData as { kind: "river" | "road"; class: number; path: [number, number][]; name: string | null }[];
         setFeatures(rows.map((r) => ({ kind: r.kind, klass: r.class, path: r.path, name: r.name })));
       }
-      const { data: aiUrl } = await supabase.rpc("world_map_ai_image_read", { p_campaign: campaignId });
+      const { data: aiUrl } = shareCode
+        ? await supabase.rpc("world_map_ai_image_read_for_player", { p_share: shareCode })
+        : await supabase.rpc("world_map_ai_image_read", { p_campaign: campaignId });
       if (!off && typeof aiUrl === "string" && aiUrl) setAiImageUrl(aiUrl);
-      const { data: lblData } = await supabase.rpc("world_map_labels_read", { p_campaign: campaignId });
+      const { data: lblData } = shareCode
+        ? await supabase.rpc("world_map_labels_read_for_player", { p_share: shareCode })
+        : await supabase.rpc("world_map_labels_read", { p_campaign: campaignId });
       if (!off && Array.isArray(lblData)) setLabels(lblData as LabelRow[]);
       if (b.map) {
         setTerrain(b.map.terrain ? decodeTerrain(base64ToBytes(b.map.terrain)) : createTerrain(b.map.width, b.map.height, b.map.origin_col, b.map.origin_row));
@@ -99,7 +107,7 @@ export default function WorldMapViewer({ campaignId }: { campaignId: string }) {
       setSelectedLayerId(b.layers[0]?.id || "");
     })();
     return () => { off = true; };
-  }, [supabase, campaignId]);
+  }, [supabase, campaignId, shareCode]);
 
   const colors = useMemo(() => {
     const arr: string[] = [];
@@ -200,7 +208,7 @@ export default function WorldMapViewer({ campaignId }: { campaignId: string }) {
 
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const onPaint = useCallback(() => {
-    if (!terrain) return;
+    if (!terrain || !campaignId) return;
     if (saveTimer.current) clearTimeout(saveTimer.current);
     const b64 = bytesToBase64(encodeTerrain(terrain));
     saveTimer.current = setTimeout(() => { void supabase.rpc("world_map_paint", { p_campaign: campaignId, p_terrain: b64 }); }, 900);
@@ -237,7 +245,7 @@ export default function WorldMapViewer({ campaignId }: { campaignId: string }) {
     return <p style={{ color: C.muted, fontSize: 14, padding: 24 }}>This world map is not available to you.</p>;
   }
 
-  const editing = bundle.map.editable_by === "party";
+  const editing = !shareCode && bundle.map.editable_by === "party";
   const chip = (label: string, on: boolean, onClick: () => void) => (
     <button type="button" onClick={onClick} style={{ flex: 1, textAlign: "center", padding: "6px 8px", borderRadius: 7, cursor: "pointer", border: `1px solid ${on ? C.sun : C.line}`, background: on ? "rgba(200,162,75,0.14)" : C.surface2, color: C.text, fontSize: 12, fontWeight: 600 }}>{label}</button>
   );
@@ -296,7 +304,7 @@ export default function WorldMapViewer({ campaignId }: { campaignId: string }) {
             <div style={{ marginTop: 8, borderTop: `1px solid ${C.line}`, paddingTop: 10 }}>
               <div style={{ fontSize: 11, color: C.muted, fontFamily: "ui-monospace, monospace", letterSpacing: "0.08em", marginBottom: 6 }}>ADD A MARKER</div>
               <div style={{ fontSize: 11, color: C.muted, margin: "0 0 6px", lineHeight: 1.4 }}>{armedIcon ? "Click the map to place it." : "Pick an icon, then click the map."}</div>
-              <IconLibrary campaignId={campaignId} builtinOnly onPick={(ic) => { if ("key" in ic) setArmedIcon(ic); }} />
+              <IconLibrary campaignId={campaignId ?? ""} builtinOnly onPick={(ic) => { if ("key" in ic) setArmedIcon(ic); }} />
             </div>
           </div>
         )}
