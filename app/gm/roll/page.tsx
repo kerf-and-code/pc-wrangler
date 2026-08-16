@@ -26,10 +26,11 @@ import PageShell from "@/components/page-shell";
 import DicePicker from "@/components/dice-picker";
 import { createClient } from "@/lib/supabase/client";
 import { applyAdvantage, canHaveAdvantage, parseDice, DiceError } from "@/lib/dice";
+import { getModule } from "@/lib/systems/registry";
 import { C, FORGE_RADIUS, STONE } from "@/lib/forge-theme";
 import { SAX } from "@/lib/theme";
 
-type Campaign = { id: string; name: string };
+type Campaign = { id: string; name: string; system: string | null };
 type Session = { id: string; session_number: number | null; ended_at: string | null };
 type Character = { id: string; name: string };
 type Rolled = {
@@ -72,7 +73,7 @@ export default function RollerPage() {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const { data } = await supabase.from("campaigns").select("id, name").eq("gm_id", user.id).order("name");
+      const { data } = await supabase.from("campaigns").select("id, name, system").eq("gm_id", user.id).order("name");
       const rows = (data as Campaign[]) ?? [];
       setCampaigns(rows);
       if (rows.length === 1) setCampaignId(rows[0].id);
@@ -159,7 +160,13 @@ export default function RollerPage() {
     catch (e) { return e instanceof DiceError ? e.message : "Cannot read that roll."; }
   }, [finalNotation]);
 
-  const advMeaningful = canHaveAdvantage(notation);
+  // Resolve this campaign's rules module. Its dice style - not a hardcoded d20 assumption - decides
+  // whether advantage even applies. For D&D (d20-vs-dc with advantage) this is unchanged; a future
+  // percentile or dice-pool system would simply never offer the toggle.
+  const activeSystem = campaigns.find((c) => c.id === campaignId)?.system;
+  const dice = getModule(activeSystem).dice;
+  const advMeaningful =
+    canHaveAdvantage(notation) && dice.style.kind === "d20-vs-dc" && dice.style.advantage;
 
   const doRoll = useCallback(async () => {
     setBusy(true); setError(null);
