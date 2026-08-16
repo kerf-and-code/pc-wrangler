@@ -397,7 +397,7 @@ export default function CodexPage() {
   };
 
   return (
-    <PageShell width={1040}>
+    <PageShell width={1200}>
       <h1 style={{ ...ui.h1, fontSize: 28, margin: "4px 0 4px" }}>Codex</h1>
       <p style={{ color: C.muted, fontSize: 14, margin: "0 0 18px" }}>
         Notes, lore, places, and the cast. Tag anything to the PCs it involves; set who can see it.
@@ -495,19 +495,13 @@ export default function CodexPage() {
               <p style={{ color: C.muted, fontSize: 14 }}>Pick something on the left, or hit New to start one.</p>
             ) : (
               <>
+                <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) 300px", gap: 18, alignItems: "start" }}>
+                  {/* content column */}
+                  <div>
                 {mode.what === "entry" ? (
                   <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Title" style={{ ...input, fontSize: 16, fontWeight: 600, marginBottom: 12 }} />
                 ) : (
                   <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Name" style={{ ...input, fontSize: 16, fontWeight: 600, marginBottom: 12 }} />
-                )}
-
-                {mode.what === "entry" && (
-                  <div style={{ marginBottom: 12 }}>
-                    <label style={{ fontSize: 11, color: C.muted }}>Summary — the lead line on the wiki. Leave blank to use the start of the entry.</label>
-                    <textarea value={form.summary} onChange={(e) => setForm({ ...form, summary: e.target.value })}
-                      rows={2} placeholder="A sentence or two…"
-                      style={{ ...input, marginTop: 4, resize: "vertical", fontFamily: "inherit" }} />
-                  </div>
                 )}
 
                 {/* THE PUBLISHED URL, shown so a GM can see what a reader gets before deciding
@@ -535,28 +529,6 @@ export default function CodexPage() {
                     </div>
                   );
                 })()}
-
-                {/* Only for a SAVED entry: the uploader needs an id for the storage path, and a
-                    new entry has none until it is written. Offering it before then would produce a
-                    file with nowhere to belong. */}
-                {mode.what === "entry" && mode.id && (
-                  <div style={{ marginBottom: 12 }}>
-                    <PortraitUploader
-                      label="Image for the published wiki"
-                      basePath={campaignId ? `${campaignId}/codex/entries/${mode.id}` : null}
-                      currentUrl={entries.find((e) => e.id === mode.id)?.image_url ?? null}
-                      onUploaded={(url) => { void saveEntryImage(mode.id!, url); }}
-                    />
-                    {entries.find((e) => e.id === mode.id)?.image_url && (
-                      <button type="button" onClick={() => void saveEntryImage(mode.id!, "")}
-                        style={{ background: "transparent", color: C.muted, border: "none",
-                          cursor: "pointer", fontSize: 12, padding: 0, marginTop: 6,
-                          textDecoration: "underline" }}>
-                        Remove the image
-                      </button>
-                    )}
-                  </div>
-                )}
 
                 {mode.what === "entry" ? (
                   <div style={{ marginBottom: 12 }}>
@@ -602,6 +574,39 @@ export default function CodexPage() {
                     </button>
                   )}
                 </div>
+                  </div>
+                  {/* right rail: summary, images, connections, reveals */}
+                  <div style={{ display: "grid", gap: 14, alignContent: "start" }}>
+                {mode.what === "entry" && (
+                  <div style={{ marginBottom: 12 }}>
+                    <label style={{ fontSize: 11, color: C.muted }}>Summary — the lead line on the wiki. Leave blank to use the start of the entry.</label>
+                    <textarea value={form.summary} onChange={(e) => setForm({ ...form, summary: e.target.value })}
+                      rows={2} placeholder="A sentence or two…"
+                      style={{ ...input, marginTop: 4, resize: "vertical", fontFamily: "inherit" }} />
+                  </div>
+                )}
+
+                {/* Only for a SAVED entry: the uploader needs an id for the storage path, and a
+                    new entry has none until it is written. Offering it before then would produce a
+                    file with nowhere to belong. */}
+                {mode.what === "entry" && mode.id && (
+                  <div style={{ marginBottom: 12 }}>
+                    <PortraitUploader
+                      label="Image for the published wiki"
+                      basePath={campaignId ? `${campaignId}/codex/entries/${mode.id}` : null}
+                      currentUrl={entries.find((e) => e.id === mode.id)?.image_url ?? null}
+                      onUploaded={(url) => { void saveEntryImage(mode.id!, url); }}
+                    />
+                    {entries.find((e) => e.id === mode.id)?.image_url && (
+                      <button type="button" onClick={() => void saveEntryImage(mode.id!, "")}
+                        style={{ background: "transparent", color: C.muted, border: "none",
+                          cursor: "pointer", fontSize: 12, padding: 0, marginTop: 6,
+                          textDecoration: "underline" }}>
+                        Remove the image
+                      </button>
+                    )}
+                  </div>
+                )}
 
                 {/* connections */}
                 {mode.id ? (
@@ -727,6 +732,8 @@ export default function CodexPage() {
                     )}
                   </div>
                 )}
+                  </div>
+                </div>
               </>
             )}
           </div>
