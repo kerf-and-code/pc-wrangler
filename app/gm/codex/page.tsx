@@ -9,6 +9,7 @@ import { SAX, surfaces, ui } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import LoreTriage from "./LoreTriage";
 import BlockEditor, { blocksToPlainText, bodyToBlocks, type Block } from "./BlockEditor";
+import EntryPreview from "./EntryPreview";
 
 type Campaign = { id: string; name: string; public_slug?: string | null; codex_cover_url?: string | null };
 type Entry = {
@@ -187,6 +188,7 @@ export default function CodexPage() {
   };
   const [form, setForm] = useState<{ title: string; body: string; name: string; description: string; visibility: string; tags: string; summary: string }>(blankForm);
   const [saving, setSaving] = useState<boolean>(false);
+  const [showPreview, setShowPreview] = useState<boolean>(false);
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [linkPick, setLinkPick] = useState<string>("");
   const [linkRel, setLinkRel] = useState<string>("");
@@ -563,6 +565,12 @@ export default function CodexPage() {
                 </div>
 
                 <div style={{ display: "flex", gap: 8, marginBottom: 18 }}>
+                  {mode.what === "entry" && (
+                    <button type="button" onClick={() => setShowPreview(true)}
+                      style={{ background: "transparent", color: C.text, border: `1px solid ${C.line}`, borderRadius: 9, padding: "10px 16px", fontSize: 13, cursor: "pointer" }}>
+                      Preview
+                    </button>
+                  )}
                   <button type="button" onClick={save} disabled={saving}
                     style={{ background: `linear-gradient(90deg, ${C.sun}, ${C.sunSoft})`, color: SAX.inkDeep, border: "none", borderRadius: 9, padding: "10px 20px", fontWeight: 700, fontSize: 14, cursor: saving ? "default" : "pointer", opacity: saving ? 0.7 : 1 }}>
                     {saving ? "Saving…" : "Save"}
@@ -739,6 +747,15 @@ export default function CodexPage() {
           </div>
       </div>
         )}
+    {showPreview && mode?.what === "entry" && (
+      <EntryPreview
+        title={form.title}
+        summary={form.summary.trim() || blocksToPlainText(blocks).slice(0, 200)}
+        tags={form.tags.split(",").map((t) => t.trim()).filter(Boolean)}
+        blocks={blocks}
+        onClose={() => setShowPreview(false)}
+      />
+    )}
     </PageShell>
   );
 }
