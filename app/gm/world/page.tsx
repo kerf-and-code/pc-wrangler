@@ -746,7 +746,7 @@ export default function WorldMapPage() {
         : `a map about ${extentMiles} miles across; render at whole-world scale - continental landmasses, planetary mountain belts, broad climate zones, heavily generalized like a global atlas`;
       const resp = await fetch("/api/world-map/imagine", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ campaignId, controlImage: dataUrl, scaleHint, style: mapStyle }),
+        body: JSON.stringify({ campaignId, controlImage: dataUrl, scaleHint, style: mapStyle, biomes: biomes.map((b) => ({ label: b.label, color: b.color })) }),
       });
       const json = await resp.json();
       if (!resp.ok) { setImagineMsg(json.error || "Generation failed."); return; }
@@ -758,7 +758,7 @@ export default function WorldMapPage() {
     } finally {
       setImagining(false);
     }
-  }, [campaignId, terrain, colors, biomeArt, images, features, mapStyle]);
+  }, [campaignId, terrain, colors, biomeArt, images, features, mapStyle, biomes]);
 
   // Download the current rendered image to the GM's computer. Point of this: a render you love can be
   // banked before you regenerate and lose it - keep it, and later re-upload it (via the image upload)

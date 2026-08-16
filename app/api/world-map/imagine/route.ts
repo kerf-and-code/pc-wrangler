@@ -56,13 +56,52 @@ const STYLE_PROMPTS: Record<string, string> = {
     "colour blocking, subtle paper texture. " + NO_LABELS,
 };
 
-type Body = { campaignId: string; controlImage: string; scaleHint?: string; style?: string };
+// Non-fantasy genres reinterpret the fantasy TILE TYPES into genre-native features. The fantasy tiles
+// (feywild, enchanted forest, corrupted/blighted land, crystal caverns, volcanic) carry magical
+// meaning the base style alone won't convey, so each genre says explicitly what they become.
+const STYLE_REINTERP: Record<string, string> = {
+  scifi:
+    " Reinterpret the realm's magical and distinctive regions for a colonized world: feywild-touched " +
+    "regions become reality-warped anomaly and exotic-energy zones; enchanted or magical forests become " +
+    "bio-engineered xenoflora reserves and arcology greenbelts; corrupted or blighted lands become toxic " +
+    "contamination and fallout exclusion zones; crystal caverns become energy- and data-crystal mines; " +
+    "volcanic peaks become geothermal power fields and refineries; swamps become algae-farm or hydrocarbon " +
+    "wetlands; snowfields become cryo and polar research stations; deserts become solar-array flats and " +
+    "mining claims. Render all other regions as their plausible colonized-world equivalent.",
+  grimdark:
+    " Reinterpret the realm's magical and distinctive regions for a war-torn world: feywild-touched " +
+    "regions become killing fields; enchanted or magical forests become smoke-belching war factories; " +
+    "corrupted or blighted lands become a demonic incursion of hell-rifts and daemon-scarred earth; " +
+    "crystal caverns become soul-gem mines; volcanic peaks become active artillery battlefields; swamps " +
+    "become plague-ridden trench works; snowfields become frozen death-march fronts; deserts become ash " +
+    "wastes strewn with mass graves. Render all other regions as their grim, brutalized equivalent.",
+  urban:
+    " Reinterpret the realm's magical and distinctive regions for a modern developed land: feywild-touched " +
+    "regions become protected wildland and national parks; enchanted or magical forests become old-growth " +
+    "reserves and botanical parkland; corrupted or blighted lands become industrial brownfields and " +
+    "abandoned exclusion zones; crystal caverns become quarries and mining districts; volcanic peaks " +
+    "become geothermal plants and badlands parks; swamps become wetland preserves; snowfields become " +
+    "alpine ski resorts; deserts become arid ranchland and solar farms. Render all other regions as their " +
+    "modern real-world equivalent.",
+};
+
+type Body = { campaignId: string; controlImage: string; scaleHint?: string; style?: string; biomes?: { label: string; color: string }[] };
 
 export async function POST(request: Request) {
   try {
-    const { campaignId, controlImage, scaleHint, style } = (await request.json()) as Body;
+    const { campaignId, controlImage, scaleHint, style, biomes } = (await request.json()) as Body;
     const chosenStyle = style && STYLE_PROMPTS[style] ? style : "fantasy";
     const basePrompt = STYLE_PROMPTS[chosenStyle];
+    // Only non-fantasy genres reinterpret + get a colour legend; fantasy renders exactly as before.
+    const reinterp = chosenStyle !== "fantasy" ? STYLE_REINTERP[chosenStyle] ?? "" : "";
+    const legend =
+      chosenStyle !== "fantasy" && biomes && biomes.length
+        ? " The source map's region colours are: " +
+          biomes.map((b) => `${b.label} ${b.color}`).join(", ") +
+          " - use these to identify each region before reinterpreting it."
+        : "";
+    const scale = scaleHint ? ` Cartographic scale: this is ${scaleHint}.` : "";
+    const promptText = `${basePrompt}${reinterp}${legend}${scale}`;
     if (!campaignId || typeof controlImage !== "string") {
       return NextResponse.json({ error: "Missing campaignId or image." }, { status: 400 });
     }
@@ -102,7 +141,7 @@ export async function POST(request: Request) {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: scaleHint ? `${basePrompt} Cartographic scale: this is ${scaleHint}.` : basePrompt }, { inline_data: { mime_type: mime, data: b64 } }] }],
+        contents: [{ parts: [{ text: promptText }, { inline_data: { mime_type: mime, data: b64 } }] }],
         generationConfig: { responseModalities: ["TEXT", "IMAGE"], imageConfig: { imageSize: IMAGE_SIZE } },
       }),
     });
