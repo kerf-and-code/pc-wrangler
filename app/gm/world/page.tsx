@@ -193,6 +193,7 @@ export default function WorldMapPage() {
   const [drawKind, setDrawKind] = useState<"river" | "road" | null>(null);
   const [drawPath, setDrawPath] = useState<[number, number][]>([]);
   const [fantasyView, setFantasyView] = useState(false);
+  const [mapStyle, setMapStyle] = useState<string>("fantasy");
   const [imagining, setImagining] = useState(false);
   const [imagineMsg, setImagineMsg] = useState<string | null>(null);
   const [publishing, setPublishing] = useState(false);
@@ -744,7 +745,7 @@ export default function WorldMapPage() {
         : `a map about ${extentMiles} miles across; render at whole-world scale - continental landmasses, planetary mountain belts, broad climate zones, heavily generalized like a global atlas`;
       const resp = await fetch("/api/world-map/imagine", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ campaignId, controlImage: dataUrl, scaleHint }),
+        body: JSON.stringify({ campaignId, controlImage: dataUrl, scaleHint, style: mapStyle }),
       });
       const json = await resp.json();
       if (!resp.ok) { setImagineMsg(json.error || "Generation failed."); return; }
@@ -756,7 +757,7 @@ export default function WorldMapPage() {
     } finally {
       setImagining(false);
     }
-  }, [campaignId, terrain, colors, biomeArt, images, features]);
+  }, [campaignId, terrain, colors, biomeArt, images, features, mapStyle]);
 
   useEffect(() => {
     if (!mapRowId) { setFeatures([]); return; }
@@ -884,19 +885,28 @@ export default function WorldMapPage() {
           Terrain art: {artEnabled ? "On" : "Off"}
         </button>
         {mapRow?.ai_image_url && (
-          <button type="button" onClick={() => setFantasyView((v) => !v)} title="Show the AI-painted fantasy map under the grid"
+          <button type="button" onClick={() => setFantasyView((v) => !v)} title="Show the AI-painted map under the grid"
             style={{ fontSize: 12, padding: "5px 10px", borderRadius: 7, cursor: "pointer",
               border: `1px solid ${fantasyView ? C.sun : C.line}`,
               background: fantasyView ? "rgba(200,162,75,0.14)" : C.surface2, color: C.text, fontWeight: 600 }}>
-            Fantasy view: {fantasyView ? "On" : "Off"}
+            Rendered view: {fantasyView ? "On" : "Off"}
           </button>
         )}
         {mapRow && (
-          <button type="button" onClick={generateFantasyView} disabled={imagining} title="Repaint the current world as a fantasy map (AI)"
-            style={{ fontSize: 12, padding: "5px 10px", borderRadius: 7, cursor: imagining ? "default" : "pointer",
-              border: `1px solid ${C.line}`, background: C.surface2, color: C.text, fontWeight: 600, opacity: imagining ? 0.6 : 1 }}>
-            {imagining ? "Painting\u2026" : mapRow.ai_image_url ? "Regenerate fantasy view" : "Generate fantasy view"}
-          </button>
+          <>
+            <select value={mapStyle} onChange={(e) => setMapStyle(e.target.value)} disabled={imagining} title="Render style"
+              style={{ fontSize: 12, padding: "5px 8px", borderRadius: 7, border: `1px solid ${C.line}`, background: C.surface2, color: C.text, cursor: imagining ? "default" : "pointer" }}>
+              <option value="fantasy">Fantasy</option>
+              <option value="scifi">Sci-fi</option>
+              <option value="grimdark">Grimdark</option>
+              <option value="urban">Urban</option>
+            </select>
+            <button type="button" onClick={generateFantasyView} disabled={imagining} title="Repaint the current world in the chosen style (AI)"
+              style={{ fontSize: 12, padding: "5px 10px", borderRadius: 7, cursor: imagining ? "default" : "pointer",
+                border: `1px solid ${C.line}`, background: C.surface2, color: C.text, fontWeight: 600, opacity: imagining ? 0.6 : 1 }}>
+              {imagining ? "Painting\u2026" : mapRow.ai_image_url ? "Regenerate view" : "Generate view"}
+            </button>
+          </>
         )}
         {imagineMsg && <span style={{ fontSize: 11, color: C.muted, alignSelf: "center" }}>{imagineMsg}</span>}
         {mapRow && (
