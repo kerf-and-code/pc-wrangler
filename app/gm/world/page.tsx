@@ -30,10 +30,10 @@ type Campaign = { id: string; name: string };
 type Biome = { id: number; key: string; label: string; category: string; color: string };
 type MapRow = {
   id: string; name: string; width: number; height: number;
-  origin_col: number; origin_row: number; format_version: number; terrain: string | null; editable_by: string; snapshot_url: string | null; published: boolean; ai_image_url: string | null;
+  origin_col: number; origin_row: number; format_version: number; terrain: string | null; editable_by: string; snapshot_url: string | null; published: boolean; ai_image_url: string | null; style: string | null;
 };
 
-const MAP_COLS = "id, name, width, height, origin_col, origin_row, format_version, terrain, editable_by, snapshot_url, published, ai_image_url";
+const MAP_COLS = "id, name, width, height, origin_col, origin_row, format_version, terrain, editable_by, snapshot_url, published, ai_image_url, style";
 // icon_keys the world generator emits. A marker on open water with one of these is a spurious
 // auto-placed pin (cohesion flooded its hex); a hand-placed sea marker uses a different icon and is
 // exempt. Kept in sync with bake.ts SETTLE_ICON + POI_ICON + bridge/ford.
@@ -286,6 +286,7 @@ export default function WorldMapPage() {
       if (cancelled) return;
       setMapRow(row);
       if (row) {
+        setMapStyle(row.style ?? "fantasy");
         setSizeW(String(row.width));
         setSizeH(String(row.height));
         setTerrain(row.terrain ? decodeTerrain(base64ToBytes(row.terrain)) : createTerrain(row.width, row.height, row.origin_col, row.origin_row));
@@ -759,6 +760,25 @@ export default function WorldMapPage() {
     }
   }, [campaignId, terrain, colors, biomeArt, images, features, mapStyle]);
 
+  // Download the current rendered image to the GM's computer. Point of this: a render you love can be
+  // banked before you regenerate and lose it - keep it, and later re-upload it (via the image upload)
+  // to restore that design or reuse it for another setting.
+  const saveImageLocally = useCallback(async () => {
+    const url = mapRow?.ai_image_url;
+    if (!url) return;
+    try {
+      const blob = await (await fetch(url)).blob();
+      const obj = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = obj;
+      a.download = `${(mapRow?.name || "world-map").replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-${mapStyle}.png`;
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(obj);
+    } catch {
+      setImagineMsg("Could not save the image automatically. Right-click it and Save image as instead.");
+    }
+  }, [mapRow, mapStyle]);
+
   useEffect(() => {
     if (!mapRowId) { setFeatures([]); return; }
     let cancelled = false;
@@ -890,6 +910,13 @@ export default function WorldMapPage() {
               border: `1px solid ${fantasyView ? C.sun : C.line}`,
               background: fantasyView ? "rgba(200,162,75,0.14)" : C.surface2, color: C.text, fontWeight: 600 }}>
             Rendered view: {fantasyView ? "On" : "Off"}
+          </button>
+        )}
+        {mapRow?.ai_image_url && (
+          <button type="button" onClick={saveImageLocally} title="Download this rendered image, bank a design before regenerating"
+            style={{ fontSize: 12, padding: "5px 10px", borderRadius: 7, cursor: "pointer",
+              border: `1px solid ${C.line}`, background: C.surface2, color: C.text, fontWeight: 600 }}>
+            Save image
           </button>
         )}
         {mapRow && (
