@@ -14,13 +14,14 @@ export type Align = "left" | "center" | "right" | "full";
 export type Width = "full" | "half";
 export type Block =
   | { id: string; type: "text"; text: string; width?: Width }
+  | { id: string; type: "header"; text: string; width?: Width }
   | { id: string; type: "image"; url: string; caption: string; align: Align; width?: Width };
 
 const uid = () => Math.random().toString(36).slice(2, 10);
 
 export function blocksToPlainText(blocks: Block[]): string {
   return blocks
-    .map((b) => (b.type === "text" ? b.text : b.caption))
+    .map((b) => (b.type === "image" ? b.caption : b.text))
     .map((s) => (s || "").trim())
     .filter(Boolean)
     .join("\n\n");
@@ -58,6 +59,7 @@ export default function BlockEditor({
     onChange(next);
   };
   const addText = () => onChange([...blocks, { id: uid(), type: "text", text: "", width: "full" }]);
+  const addHeader = () => onChange([...blocks, { id: uid(), type: "header", text: "", width: "full" }]);
   const onPickFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = "";
@@ -110,7 +112,10 @@ export default function BlockEditor({
                 </div>
               </div>
 
-              {b.type === "text" ? (
+              {b.type === "header" ? (
+                <input value={b.text} onChange={(e) => setBlock(b.id, { ...b, text: e.target.value })}
+                  placeholder="Section heading" style={{ ...input, fontSize: 17, fontWeight: 700, fontFamily: "inherit" }} />
+              ) : b.type === "text" ? (
                 <textarea value={b.text} onChange={(e) => setBlock(b.id, { ...b, text: e.target.value })}
                   placeholder="Write. Markdown works for bold, italics, and links." rows={half ? 6 : 4}
                   style={{ ...input, resize: "vertical", lineHeight: 1.6 }} />
@@ -147,6 +152,10 @@ export default function BlockEditor({
       )}
 
       <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+        <button type="button" onClick={addHeader}
+          style={{ background: C.surface2, color: C.text, border: `1px dashed ${C.line}`, borderRadius: 9, padding: "9px 14px", fontSize: 13, cursor: "pointer" }}>
+          &#65291; Header
+        </button>
         <button type="button" onClick={addText}
           style={{ background: C.surface2, color: C.text, border: `1px dashed ${C.line}`, borderRadius: 9, padding: "9px 14px", fontSize: 13, cursor: "pointer" }}>
           &#65291; Text

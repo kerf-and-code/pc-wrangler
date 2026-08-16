@@ -12,6 +12,7 @@ import ThemeToggle from "./theme-toggle";
 
 export type WikiBlock =
   | { id: string; type: "text"; text: string; width?: "full" | "half" }
+  | { id: string; type: "header"; text: string; width?: "full" | "half" }
   | { id: string; type: "image"; url: string; caption: string; align: "left" | "center" | "right" | "full"; width?: "full" | "half" };
 
 export type Item = {
@@ -240,9 +241,16 @@ export function WikiHead() {
 
         /* ---- entry page: wide variant + right rail ---- */
         .w-main-wide { max-width: 1080px; margin: 0 auto; width: 100%; padding: 40px 24px 90px; position: relative; }
-        .w-entry { display: grid; grid-template-columns: minmax(0,1fr) 260px; gap: 46px; align-items: start; }
-        @media (max-width: 900px) { .w-entry { grid-template-columns: 1fr; } .w-rail-r { position: static; } }
+        .w-entry { display: grid; grid-template-columns: 240px minmax(0,1fr); gap: 40px; align-items: start; }
+        @media (max-width: 900px) { .w-entry { grid-template-columns: 1fr; } .w-rail-r, .w-rail-l { position: static; } }
         .w-rail-r { position: sticky; top: 78px; }
+        .w-rail-l { position: sticky; top: 78px; }
+        .w-h2 { font-family: 'Cinzel','EB Garamond',serif; font-size: 24px; font-weight: 600; margin: 8px 0 12px;
+          scroll-margin-top: 80px; display: flex; align-items: center; gap: 10px; }
+        .w-h2::before { content: "\\2726"; color: var(--w-accent); font-size: 13px; }
+        .w-toc a { display: block; padding: 5px 8px; margin-left: -2px; border-left: 2px solid transparent;
+          color: var(--w-muted); font-size: 14px; text-decoration: none; border-radius: 6px; line-height: 1.4; }
+        .w-toc a:hover { color: var(--w-ink); background: var(--w-hover); border-left-color: var(--w-accent-dim); }
         .w-card { background: var(--w-panel); border: 1px solid var(--w-line); border-radius: 12px; padding: 15px 15px 12px; }
         .w-title { font-family: 'Cinzel','EB Garamond',serif; font-size: 38px; line-height: 1.12; margin: 12px 0 14px; font-weight: 600; }
         .w-back { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.14em;
