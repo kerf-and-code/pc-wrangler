@@ -11,8 +11,8 @@ import { createClient } from "@supabase/supabase-js";
 import ThemeToggle from "./theme-toggle";
 
 export type WikiBlock =
-  | { id: string; type: "text"; text: string }
-  | { id: string; type: "image"; url: string; caption: string; align: "left" | "center" | "right" | "full" };
+  | { id: string; type: "text"; text: string; width?: "full" | "half" }
+  | { id: string; type: "image"; url: string; caption: string; align: "left" | "center" | "right" | "full"; width?: "full" | "half" };
 
 export type Item = {
   item_kind: "entry" | "npc";

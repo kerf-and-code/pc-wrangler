@@ -36,32 +36,38 @@ export async function generateMetadata({ params }: P): Promise<Metadata> {
   };
 }
 
-// Render a rich entry: text blocks as prose, image blocks with their caption and alignment.
+// Render a rich entry: text blocks as prose, image blocks with caption and alignment. Blocks flow
+// left to right and wrap; a "half" block takes about half the width, so two halves sit side by side.
 function WikiBlocks({ blocks }: { blocks: WikiBlock[] }) {
   return (
-    <>
-      {blocks.map((b) =>
-        b.type === "text" ? (
-          <div key={b.id} className="w-body" style={{ marginBottom: 16 }}>{b.text}</div>
-        ) : (
-          <figure key={b.id} style={{ margin: "20px 0" }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={b.url} alt={b.caption}
-              style={{
-                display: "block", borderRadius: 8, border: "1px solid var(--w-line)", maxWidth: "100%",
-                width: b.align === "full" ? "100%" : "auto",
-                marginLeft: b.align === "right" || b.align === "center" ? "auto" : 0,
-                marginRight: b.align === "left" || b.align === "center" ? "auto" : 0,
-              }} />
-            {b.caption && (
-              <figcaption style={{ fontSize: 13.5, color: "var(--w-muted)", fontStyle: "italic", marginTop: 8 }}>
-                {b.caption}
-              </figcaption>
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 20, alignItems: "flex-start" }}>
+      {blocks.map((b) => {
+        const half = b.width === "half";
+        return (
+          <div key={b.id} style={{ flexBasis: half ? "calc(50% - 10px)" : "100%", flexGrow: half ? 1 : 0, minWidth: 240 }}>
+            {b.type === "text" ? (
+              <div className="w-body">{b.text}</div>
+            ) : (
+              <figure style={{ margin: 0 }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={b.url} alt={b.caption}
+                  style={{
+                    display: "block", borderRadius: 8, border: "1px solid var(--w-line)", maxWidth: "100%",
+                    width: b.align === "full" || half ? "100%" : "auto",
+                    marginLeft: b.align === "right" || b.align === "center" ? "auto" : 0,
+                    marginRight: b.align === "left" || b.align === "center" ? "auto" : 0,
+                  }} />
+                {b.caption && (
+                  <figcaption style={{ fontSize: 13.5, color: "var(--w-muted)", fontStyle: "italic", marginTop: 8 }}>
+                    {b.caption}
+                  </figcaption>
+                )}
+              </figure>
             )}
-          </figure>
-        )
-      )}
-    </>
+          </div>
+        );
+      })}
+    </div>
   );
 }
 
