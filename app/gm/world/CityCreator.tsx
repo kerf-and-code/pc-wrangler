@@ -2,11 +2,11 @@
 
 import React, { useMemo, useState } from "react";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
-import { generateRadialCity, type Centerpiece } from "@/lib/city/radial";
+import { generateCity, type CityLayout, type Centerpiece } from "@/lib/city/generate";
 
-// The City map tab. Tune a radial city plan, paint it in a genre through the same imagine route the
-// world map uses (mode: "city"), and save the result. The AI render is not attached to the world map
-// row - a city is its own asset - so save it locally and reuse it wherever you like.
+// The City map tab. Pick a layout, tune its plan, paint it in a genre through the imagine route
+// (mode: "city"), and save. The AI render is a standalone asset - not attached to the world map - so
+// save it locally and reuse it wherever you like.
 
 const STYLES = [
   { v: "fantasy", label: "Fantasy" },
@@ -21,9 +21,17 @@ const CENTERPIECES: { v: Centerpiece; label: string }[] = [
   { v: "plaza", label: "Grand plaza" },
 ];
 
+// Per-layout: [label, min, max, default] for each of the two shape sliders.
+const LAYOUTS: Record<CityLayout, { name: string; d1: [string, number, number, number]; d2: [string, number, number, number] }> = {
+  radial: { name: "Radial", d1: ["Ring roads", 3, 9, 5], d2: ["Radial roads", 4, 16, 8] },
+  grid: { name: "Grid", d1: ["Blocks", 5, 14, 9], d2: ["Avenues", 0, 6, 3] },
+  nuclei: { name: "Merging", d1: ["Districts", 2, 6, 4], d2: ["Spread", 4, 14, 9] },
+};
+
 export default function CityCreator({ campaignId }: { campaignId: string }) {
-  const [rings, setRings] = useState(5);
-  const [spokes, setSpokes] = useState(8);
+  const [layout, setLayout] = useState<CityLayout>("radial");
+  const [density, setDensity] = useState(5);
+  const [detail, setDetail] = useState(8);
   const [jitter, setJitter] = useState(18);
   const [centerpiece, setCenterpiece] = useState<Centerpiece>("castle");
   const [wall, setWall] = useState(true);
@@ -34,15 +42,22 @@ export default function CityCreator({ campaignId }: { campaignId: string }) {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
-  // The control image (the city's bones) regenerates whenever a parameter changes.
+  const cfg = LAYOUTS[layout];
   const control = useMemo(
-    () => generateRadialCity({ rings, spokes, jitter: jitter / 100, centerpiece, wall, river, seed, size: 1024 }),
-    [rings, spokes, jitter, centerpiece, wall, river, seed],
+    () => generateCity({ layout, density, detail, jitter: jitter / 100, centerpiece, wall, river, seed, size: 1024 }),
+    [layout, density, detail, jitter, centerpiece, wall, river, seed],
   );
 
+  const clear = () => setRendered(null);
+  const changeLayout = (l: CityLayout) => {
+    setLayout(l);
+    setDensity(LAYOUTS[l].d1[3]);
+    setDetail(LAYOUTS[l].d2[3]);
+    clear();
+  };
+
   const render = async () => {
-    setBusy(true);
-    setMsg(null);
+    setBusy(true); setMsg(null);
     try {
       const res = await fetch("/api/world-map/imagine", {
         method: "POST",
@@ -66,7 +81,7 @@ export default function CityCreator({ campaignId }: { campaignId: string }) {
       const obj = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = obj;
-      a.download = `city-${style}-${seed}.png`;
+      a.download = `city-${layout}-${style}-${seed}.png`;
       document.body.appendChild(a); a.click(); a.remove();
       URL.revokeObjectURL(obj);
     } catch {
@@ -76,7 +91,8 @@ export default function CityCreator({ campaignId }: { campaignId: string }) {
 
   const label: React.CSSProperties = { display: "block", fontSize: 11, letterSpacing: "0.06em", textTransform: "uppercase", color: C.muted, margin: "14px 0 5px" };
   const select: React.CSSProperties = { width: "100%", padding: "7px 9px", background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: 7, fontFamily: "inherit", fontSize: 14 };
-  const btn = (bg: string, fg: string): React.CSSProperties => ({ padding: "9px 14px", background: bg, color: fg, border: bg === "transparent" ? `1px solid ${C.line}` : "none", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: busy ? "default" : "pointer", opacity: busy ? 0.7 : 1 });
+  const range: React.CSSProperties = { width: "100%", accentColor: C.sun };
+  const btn = (bg: string, fg: string): React.CSSProperties => ({ padding: "9px 14px", background: bg, color: fg, border: bg === "transparent" ? `1px solid ${C.line}` : "none", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: busy ? "default" : "pointer", opacity: busy ? 0.7 : 1, width: "100%" });
 
   return (
     <div style={{ display: "flex", gap: 20, flexWrap: "wrap", alignItems: "flex-start" }}>
@@ -89,15 +105,20 @@ export default function CityCreator({ campaignId }: { campaignId: string }) {
       </div>
 
       <div style={{ width: 260, background: C.surface, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: 16 }}>
-        <label style={label}>Ring roads: {rings}</label>
-        <input type="range" min={3} max={9} value={rings} onChange={(e) => { setRings(+e.target.value); setRendered(null); }} style={{ width: "100%", accentColor: C.sun }} />
-        <label style={label}>Radial roads: {spokes}</label>
-        <input type="range" min={4} max={16} value={spokes} onChange={(e) => { setSpokes(+e.target.value); setRendered(null); }} style={{ width: "100%", accentColor: C.sun }} />
+        <label style={label}>Layout</label>
+        <select value={layout} onChange={(e) => changeLayout(e.target.value as CityLayout)} style={select}>
+          {(Object.keys(LAYOUTS) as CityLayout[]).map((k) => <option key={k} value={k}>{LAYOUTS[k].name}</option>)}
+        </select>
+
+        <label style={label}>{cfg.d1[0]}: {density}</label>
+        <input type="range" min={cfg.d1[1]} max={cfg.d1[2]} value={density} onChange={(e) => { setDensity(+e.target.value); clear(); }} style={range} />
+        <label style={label}>{cfg.d2[0]}: {detail}</label>
+        <input type="range" min={cfg.d2[1]} max={cfg.d2[2]} value={detail} onChange={(e) => { setDetail(+e.target.value); clear(); }} style={range} />
         <label style={label}>Irregularity: {jitter}%</label>
-        <input type="range" min={0} max={60} value={jitter} onChange={(e) => { setJitter(+e.target.value); setRendered(null); }} style={{ width: "100%", accentColor: C.sun }} />
+        <input type="range" min={0} max={60} value={jitter} onChange={(e) => { setJitter(+e.target.value); clear(); }} style={range} />
 
         <label style={label}>Centerpiece</label>
-        <select value={centerpiece} onChange={(e) => { setCenterpiece(e.target.value as Centerpiece); setRendered(null); }} style={select}>
+        <select value={centerpiece} onChange={(e) => { setCenterpiece(e.target.value as Centerpiece); clear(); }} style={select}>
           {CENTERPIECES.map((c) => <option key={c.v} value={c.v}>{c.label}</option>)}
         </select>
 
@@ -106,24 +127,18 @@ export default function CityCreator({ campaignId }: { campaignId: string }) {
           {STYLES.map((s) => <option key={s.v} value={s.v}>{s.label}</option>)}
         </select>
 
-        <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+        <div style={{ display: "flex", gap: 14, marginTop: 12 }}>
           <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: C.text }}>
-            <input type="checkbox" checked={wall} onChange={(e) => { setWall(e.target.checked); setRendered(null); }} style={{ accentColor: C.sun }} /> Wall
+            <input type="checkbox" checked={wall} onChange={(e) => { setWall(e.target.checked); clear(); }} style={{ accentColor: C.sun }} /> Wall
           </label>
           <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: C.text }}>
-            <input type="checkbox" checked={river} onChange={(e) => { setRiver(e.target.checked); setRendered(null); }} style={{ accentColor: C.sun }} /> River
+            <input type="checkbox" checked={river} onChange={(e) => { setRiver(e.target.checked); clear(); }} style={{ accentColor: C.sun }} /> River
           </label>
         </div>
 
-        <button type="button" onClick={() => { setSeed((Math.random() * 1e9) | 0); setRendered(null); }} style={{ ...btn("transparent", C.text), width: "100%", marginTop: 16 }}>
-          New layout
-        </button>
-        <button type="button" onClick={render} disabled={busy} style={{ ...btn(C.sun, "#1b1712"), width: "100%", marginTop: 8 }}>
-          {busy ? "Painting\u2026" : "Paint city"}
-        </button>
-        <button type="button" onClick={saveLocally} style={{ ...btn("transparent", C.text), width: "100%", marginTop: 8 }}>
-          Save image
-        </button>
+        <div style={{ marginTop: 16 }}><button type="button" onClick={() => { setSeed((Math.random() * 1e9) | 0); clear(); }} style={btn("transparent", C.text)}>New layout</button></div>
+        <div style={{ marginTop: 8 }}><button type="button" onClick={render} disabled={busy} style={btn(C.sun, "#1b1712")}>{busy ? "Painting\u2026" : "Paint city"}</button></div>
+        <div style={{ marginTop: 8 }}><button type="button" onClick={saveLocally} style={btn("transparent", C.text)}>Save image</button></div>
 
         {msg && <p style={{ color: "#c98a7a", fontSize: 12, marginTop: 12 }}>{msg}</p>}
       </div>
