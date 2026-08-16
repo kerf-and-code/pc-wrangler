@@ -15,7 +15,7 @@ export type Width = "full" | "half";
 export type Block =
   | { id: string; type: "text"; text: string; width?: Width }
   | { id: string; type: "header"; text: string; width?: Width }
-  | { id: string; type: "image"; url: string; caption: string; align: Align; width?: Width };
+  | { id: string; type: "image"; url: string; caption: string; align: Align; width?: Width; slot?: "body" | "panel" };
 
 const uid = () => Math.random().toString(36).slice(2, 10);
 
@@ -139,6 +139,13 @@ export default function BlockEditor({
                         {a.label}
                       </button>
                     ))}
+                  </div>
+                  <div style={{ display: "flex", gap: 6, marginTop: 6, alignItems: "center", flexWrap: "wrap" }}>
+                    <span style={{ fontSize: 11, color: C.muted }}>Show in:</span>
+                    <button type="button" onClick={() => setBlock(b.id, { ...b, slot: "body" })}
+                      style={{ ...ctrlBtn, borderColor: b.slot !== "panel" ? C.sun : C.line, color: b.slot !== "panel" ? C.sun : C.muted }}>Body</button>
+                    <button type="button" onClick={() => setBlock(b.id, { ...b, slot: "panel" })}
+                      style={{ ...ctrlBtn, borderColor: b.slot === "panel" ? C.sun : C.line, color: b.slot === "panel" ? C.sun : C.muted }}>Right panel</button>
                   </div>
                 </div>
               )}

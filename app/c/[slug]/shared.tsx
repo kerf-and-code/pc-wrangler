@@ -13,7 +13,7 @@ import ThemeToggle from "./theme-toggle";
 export type WikiBlock =
   | { id: string; type: "text"; text: string; width?: "full" | "half" }
   | { id: string; type: "header"; text: string; width?: "full" | "half" }
-  | { id: string; type: "image"; url: string; caption: string; align: "left" | "center" | "right" | "full"; width?: "full" | "half" };
+  | { id: string; type: "image"; url: string; caption: string; align: "left" | "center" | "right" | "full"; width?: "full" | "half"; slot?: "body" | "panel" };
 
 export type Item = {
   item_kind: "entry" | "npc";
@@ -240,11 +240,14 @@ export function WikiHead() {
         .w-theme:hover { color: var(--w-ink); border-color: var(--w-accent-dim); }
 
         /* ---- entry page: wide variant + right rail ---- */
-        .w-main-wide { max-width: 1080px; margin: 0 auto; width: 100%; padding: 40px 24px 90px; position: relative; }
+        .w-main-wide { max-width: 1200px; margin: 0 auto; width: 100%; padding: 40px 24px 90px; position: relative; }
         .w-entry { display: grid; grid-template-columns: 240px minmax(0,1fr); gap: 40px; align-items: start; }
         @media (max-width: 900px) { .w-entry { grid-template-columns: 1fr; } .w-rail-r, .w-rail-l { position: static; } }
         .w-rail-r { position: sticky; top: 78px; }
         .w-rail-l { position: sticky; top: 78px; }
+        .w-panel-r figure { margin: 0 0 14px; }
+        .w-panel-r img { display: block; width: 100%; border-radius: 8px; border: 1px solid var(--w-line); }
+        .w-panel-r figcaption { font-size: 13px; color: var(--w-muted); font-style: italic; margin-top: 6px; }
         .w-h2 { font-family: 'Cinzel','EB Garamond',serif; font-size: 24px; font-weight: 600; margin: 8px 0 12px;
           scroll-margin-top: 80px; display: flex; align-items: center; gap: 10px; }
         .w-h2::before { content: "\\2726"; color: var(--w-accent); font-size: 13px; }
