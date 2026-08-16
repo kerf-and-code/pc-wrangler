@@ -135,7 +135,7 @@ export async function POST(request: Request) {
     const url = admin.storage.from("campaign-maps").getPublicUrl(path).data.publicUrl;
 
     const { data: wm } = await admin.from("world_maps").select("id").eq("campaign_id", campaignId).maybeSingle();
-    if (wm) await admin.from("world_maps").update({ ai_image_url: url, ai_image_at: new Date().toISOString() }).eq("id", (wm as { id: string }).id);
+    if (wm) await admin.from("world_maps").update({ ai_image_url: url, ai_image_at: new Date().toISOString(), style: chosenStyle }).eq("id", (wm as { id: string }).id);
     await admin.from("ai_map_renders").insert({ campaign_id: campaignId, profile_id: user.id });
 
     return NextResponse.json({ ok: true, url, remaining: Math.max(0, DAILY_LIMIT - (used + 1)) });
