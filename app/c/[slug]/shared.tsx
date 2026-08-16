@@ -10,6 +10,10 @@ import React from "react";
 import { createClient } from "@supabase/supabase-js";
 import ThemeToggle from "./theme-toggle";
 
+export type WikiBlock =
+  | { id: string; type: "text"; text: string }
+  | { id: string; type: "image"; url: string; caption: string; align: "left" | "center" | "right" | "full" };
+
 export type Item = {
   item_kind: "entry" | "npc";
   item_type: string;
@@ -19,6 +23,8 @@ export type Item = {
   tags: string[] | null;
   slug: string | null;
   image_url: string | null;
+  summary: string | null;
+  blocks: WikiBlock[] | null;
 };
 
 export type Campaign = {

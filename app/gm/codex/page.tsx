@@ -8,6 +8,7 @@ import { useMomentPlayer, MomentButton } from "@/components/moment-player";
 import { SAX, surfaces, ui } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import LoreTriage from "./LoreTriage";
+import BlockEditor, { blocksToPlainText, bodyToBlocks, type Block } from "./BlockEditor";
 
 type Campaign = { id: string; name: string; public_slug?: string | null; codex_cover_url?: string | null };
 type Entry = {
@@ -19,6 +20,8 @@ type Entry = {
   tags: string[];
   image_url: string | null;
   slug: string | null;
+  summary: string | null;
+  blocks: Block[] | null;
 };
 type Char = {
   id: string;
@@ -109,6 +112,7 @@ const blankForm = {
   description: "",
   visibility: "gm",
   tags: "",
+  summary: "",
 };
 
 type EntryReveal = { id: string; target_type: string; target_id: string; revealed_to_character_id: string };
@@ -143,6 +147,20 @@ export default function CodexPage() {
     setEntries((prev) => prev.map((e) => (e.id === entryId ? { ...e, image_url: url || null } : e)));
   };
 
+  // Upload a block image to the same campaign-maps bucket PortraitUploader uses, under the entry's
+  // own folder. Requires a saved entry (an id for the path), like the hero image does.
+  const onUploadBlockImage = async (file: File): Promise<string | null> => {
+    if (!campaignId || !mode?.id) return null;
+    const ok = ["image/png", "image/jpeg", "image/webp"];
+    if (!ok.includes(file.type) || file.size > 4 * 1024 * 1024) return null;
+    const ext = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
+    const path = `${campaignId}/codex/entries/${mode.id}/blocks/${Math.random().toString(36).slice(2, 10)}.${ext}`;
+    const { error } = await supabase.storage.from("campaign-maps").upload(path, file, { upsert: true, contentType: file.type });
+    if (error) return null;
+    const { data } = supabase.storage.from("campaign-maps").getPublicUrl(path);
+    return `${data.publicUrl}?v=${Date.now()}`;
+  };
+
   const [slugBusy, setSlugBusy] = useState(false);
   const regenerateSlug = async (entryId: string) => {
     // The warning lives HERE rather than in the database, because a function cannot ask a question.
@@ -167,8 +185,9 @@ export default function CodexPage() {
     setCoverSaved(true);
     setCampaigns((prev) => prev.map((c) => (c.id === campaignId ? { ...c, codex_cover_url: url } : c)));
   };
-  const [form, setForm] = useState<{ title: string; body: string; name: string; description: string; visibility: string; tags: string }>(blankForm);
+  const [form, setForm] = useState<{ title: string; body: string; name: string; description: string; visibility: string; tags: string; summary: string }>(blankForm);
   const [saving, setSaving] = useState<boolean>(false);
+  const [blocks, setBlocks] = useState<Block[]>([]);
   const [linkPick, setLinkPick] = useState<string>("");
   const [linkRel, setLinkRel] = useState<string>("");
   const [sessions, setSessions] = useState<Sess[]>([]);
@@ -201,7 +220,7 @@ export default function CodexPage() {
 
   async function reload(cid: string) {
     const [{ data: e }, { data: c }, { data: l }, { data: ss }, { data: rv }] = await Promise.all([
-      supabase.from("entries").select("id, type, title, body, visibility, tags, image_url, slug").eq("campaign_id", cid).order("title"),
+      supabase.from("entries").select("id, type, title, body, visibility, tags, image_url, slug, summary, blocks").eq("campaign_id", cid).order("title"),
       supabase.from("characters").select("id, name, kind, description, visibility, tags, class, subclass").eq("campaign_id", cid).order("name"),
       supabase.from("entity_links").select("id, source_type, source_id, target_type, target_id, relation").eq("campaign_id", cid),
       supabase.from("sessions").select("id, session_number").eq("campaign_id", cid),
@@ -224,14 +243,17 @@ export default function CodexPage() {
   // ---- open / new ----
   function openEntry(e: Entry) {
     setMode({ what: "entry", type: e.type, tag: tabDef(tab)?.tag ?? null, id: e.id });
-    setForm({ title: e.title, body: e.body || "", name: "", description: "", visibility: e.visibility, tags: (e.tags || []).join(", ") });
+    setForm({ title: e.title, body: e.body || "", name: "", description: "", visibility: e.visibility, tags: (e.tags || []).join(", "), summary: e.summary || "" });
+    setBlocks(e.blocks && e.blocks.length ? e.blocks : bodyToBlocks(e.body));
   }
   function openChar(c: Char) {
     setMode({ what: "character", id: c.id });
-    setForm({ title: "", body: "", name: c.name, description: c.description || "", visibility: c.visibility, tags: (c.tags || []).join(", ") });
+    setForm({ title: "", body: "", name: c.name, description: c.description || "", visibility: c.visibility, tags: (c.tags || []).join(", "), summary: "" });
+    setBlocks([]);
   }
   function newItem() {
     if (tab === "pc") return;
+    setBlocks([]);
     if (tab === "npc") {
       setMode({ what: "character", id: null });
       setForm({ ...blankForm, visibility: "player" });
@@ -259,12 +281,18 @@ export default function CodexPage() {
       // tags field on a faction silently demotes it to plain lore and it vanishes from the
       // tab it was created in, which reads as data loss rather than a tag change.
       const entryTags = mode.tag && !tags.includes(mode.tag) ? [...tags, mode.tag] : tags;
+      // The block editor is the source of truth for an entry's content. Flatten it to the plain
+      // `body` (search and any not-yet-rendered surface still read that), and derive the summary
+      // from it when the GM left the summary blank.
+      const flat = blocksToPlainText(blocks);
+      const body = flat || form.body;
+      const summary = form.summary.trim() || body.slice(0, 200);
       if (mode.id) {
-        await supabase.from("entries").update({ title: form.title.trim(), body: form.body, visibility: form.visibility, tags: entryTags }).eq("id", mode.id);
+        await supabase.from("entries").update({ title: form.title.trim(), body, blocks, summary, visibility: form.visibility, tags: entryTags }).eq("id", mode.id);
       } else {
         const { data } = await supabase.from("entries")
-          .insert({ campaign_id: campaignId, type: mode.type, title: form.title.trim(), body: form.body, visibility: form.visibility, tags: entryTags })
-          .select("id, type, title, body, visibility, tags, image_url, slug").single();
+          .insert({ campaign_id: campaignId, type: mode.type, title: form.title.trim(), body, blocks, summary, visibility: form.visibility, tags: entryTags })
+          .select("id, type, title, body, visibility, tags, image_url, slug, summary, blocks").single();
         if (data) setMode({ what: "entry", type: (data as Entry).type, tag: mode.tag ?? null, id: (data as Entry).id });
       }
     } else {
@@ -473,6 +501,15 @@ export default function CodexPage() {
                   <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Name" style={{ ...input, fontSize: 16, fontWeight: 600, marginBottom: 12 }} />
                 )}
 
+                {mode.what === "entry" && (
+                  <div style={{ marginBottom: 12 }}>
+                    <label style={{ fontSize: 11, color: C.muted }}>Summary — the lead line on the wiki. Leave blank to use the start of the entry.</label>
+                    <textarea value={form.summary} onChange={(e) => setForm({ ...form, summary: e.target.value })}
+                      rows={2} placeholder="A sentence or two…"
+                      style={{ ...input, marginTop: 4, resize: "vertical", fontFamily: "inherit" }} />
+                  </div>
+                )}
+
                 {/* THE PUBLISHED URL, shown so a GM can see what a reader gets before deciding
                     whether it is worth breaking. A regenerate button with no visible current value
                     is asking someone to change something they cannot see. */}
@@ -521,13 +558,24 @@ export default function CodexPage() {
                   </div>
                 )}
 
-                <textarea
-                  value={mode.what === "entry" ? form.body : form.description}
-                  onChange={(e) => setForm(mode.what === "entry" ? { ...form, body: e.target.value } : { ...form, description: e.target.value })}
-                  placeholder={mode.what === "entry" ? "Body (markdown)" : "Description (markdown)"}
-                  rows={8}
-                  style={{ ...input, fontFamily: "inherit", resize: "vertical", marginBottom: 12 }}
-                />
+                {mode.what === "entry" ? (
+                  <div style={{ marginBottom: 12 }}>
+                    {!mode.id && (
+                      <p style={{ fontSize: 12, color: C.muted, margin: "0 0 8px" }}>
+                        Text blocks work now; save the entry first to add images.
+                      </p>
+                    )}
+                    <BlockEditor blocks={blocks} onChange={setBlocks} onUploadImage={onUploadBlockImage} />
+                  </div>
+                ) : (
+                  <textarea
+                    value={form.description}
+                    onChange={(e) => setForm({ ...form, description: e.target.value })}
+                    placeholder="Description (markdown)"
+                    rows={8}
+                    style={{ ...input, fontFamily: "inherit", resize: "vertical", marginBottom: 12 }}
+                  />
+                )}
 
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 12 }}>
                   <div style={{ flex: "1 1 160px" }}>

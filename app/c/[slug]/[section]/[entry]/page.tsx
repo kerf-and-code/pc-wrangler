@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import {
   load, Shell, Frame, countsOf, sectionBySlug, matchesSection,
-  relatedTo, sectionForItem,
+  relatedTo, sectionForItem, type WikiBlock,
 } from "../../shared";
 
 // One entry, on its own page.
@@ -34,6 +34,35 @@ export async function generateMetadata({ params }: P): Promise<Metadata> {
     openGraph: { title, description, type: "article" },
     robots: listed ? undefined : { index: false, follow: false },
   };
+}
+
+// Render a rich entry: text blocks as prose, image blocks with their caption and alignment.
+function WikiBlocks({ blocks }: { blocks: WikiBlock[] }) {
+  return (
+    <>
+      {blocks.map((b) =>
+        b.type === "text" ? (
+          <div key={b.id} className="w-body" style={{ marginBottom: 16 }}>{b.text}</div>
+        ) : (
+          <figure key={b.id} style={{ margin: "20px 0" }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={b.url} alt={b.caption}
+              style={{
+                display: "block", borderRadius: 8, border: "1px solid var(--w-line)", maxWidth: "100%",
+                width: b.align === "full" ? "100%" : "auto",
+                marginLeft: b.align === "right" || b.align === "center" ? "auto" : 0,
+                marginRight: b.align === "left" || b.align === "center" ? "auto" : 0,
+              }} />
+            {b.caption && (
+              <figcaption style={{ fontSize: 13.5, color: "var(--w-muted)", fontStyle: "italic", marginTop: 8 }}>
+                {b.caption}
+              </figcaption>
+            )}
+          </figure>
+        )
+      )}
+    </>
+  );
 }
 
 export default function EntryPage({ params }: P) {
@@ -70,9 +99,16 @@ async function EntryBody({ params }: P) {
             </div>
           )}
 
-          {item.body ? (
-            // whiteSpace preserves the paragraph breaks a GM typed; without it the entry runs together
-            // into one block and reads as a wall.
+          {item.summary && (
+            <p style={{ fontSize: 19, lineHeight: 1.6, color: "var(--w-ink-2)", fontStyle: "italic", margin: "0 0 20px" }}>
+              {item.summary}
+            </p>
+          )}
+
+          {item.blocks && item.blocks.length > 0 ? (
+            <WikiBlocks blocks={item.blocks} />
+          ) : item.body ? (
+            // whiteSpace preserves the paragraph breaks a GM typed; without it the entry runs together.
             <div className="w-body">{item.body}</div>
           ) : (
             <p style={{ color: "var(--w-muted)", fontSize: 15 }}>
