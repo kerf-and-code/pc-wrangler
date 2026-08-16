@@ -10,26 +10,59 @@ const RATE_LIMIT_ENABLED = false; // TESTING: set true to enforce DAILY_LIMIT
 // Both overridable via env: if the model 404s, try "gemini-3.1-flash-image-preview". Size: 1K|2K|4K.
 const MODEL = process.env.GEMINI_IMAGE_MODEL || "gemini-3.1-flash-image";
 const IMAGE_SIZE = process.env.GEMINI_IMAGE_SIZE || "2K";
-const PROMPT =
-  "Transform this map into ONE cohesive, hand-painted fantasy world map. The source is a colored " +
-  "tile map - use it ONLY as a guide to WHERE each terrain, river, and road goes; do NOT copy its " +
-  "blocky look. Completely DISSOLVE every hexagon, tile edge, and grid line: the result must read as " +
-  "smooth, organic regions with soft natural transitions blending between terrains, like a beautiful " +
-  "antique cartographer's map, NOT a grid of colored cells. Keep every coastline, landmass, lake, " +
-  "river, road, and terrain region in the SAME position and proportion. Render each terrain in its " +
-  "true character: lush green forests, snow-capped alpine peaks, rolling plains and prairie, golden " +
-  "deserts and cracked white salt flats, murky reed-filled swamps and bogs, glowing magical feywild " +
-  "and enchanted groves with fairy rings, ashen blighted wastes, glittering crystal caverns, and " +
-  "smoking volcanic peaks. Draw rivers as flowing blue water and roads as worn trails along their " +
-  "exact routes. Where land meets the sea, render soft sandy and rocky beaches along the coastline. " +
-  "Style: rich painterly antique cartography - parchment tones, softly illustrated " +
-  "relief, subtle sea texture, elegant flourishes. No text, no labels, no hex grid, no borders.";
+// Genre render presets. The placement rules (use the tile map only for WHERE things go, dissolve the
+// hexes, keep every coastline/river/road in the same position) are shared; each genre swaps the
+// terrain interpretation and the visual style. `style` on the request picks one; the default,
+// 'fantasy', is the original render, unchanged.
+const PLACEMENT =
+  "The source is a colored tile map - use it ONLY as a guide to WHERE each terrain, river, and road " +
+  "goes; do NOT copy its blocky look. Completely DISSOLVE every hexagon, tile edge, and grid line, so " +
+  "the result reads as smooth, organic regions with soft natural transitions, NOT a grid of colored " +
+  "cells. Keep every coastline, landmass, lake, river, road, and terrain region in the SAME position " +
+  "and proportion.";
+const NO_LABELS = "No text, no labels, no hex grid, no borders.";
 
-type Body = { campaignId: string; controlImage: string; scaleHint?: string };
+const STYLE_PROMPTS: Record<string, string> = {
+  fantasy:
+    "Transform this map into ONE cohesive, hand-painted fantasy world map. " + PLACEMENT + " " +
+    "Render each terrain in its true character: lush green forests, snow-capped alpine peaks, rolling " +
+    "plains and prairie, golden deserts and cracked white salt flats, murky reed-filled swamps and " +
+    "bogs, glowing magical feywild and enchanted groves with fairy rings, ashen blighted wastes, " +
+    "glittering crystal caverns, and smoking volcanic peaks. Draw rivers as flowing blue water and " +
+    "roads as worn trails along their exact routes. Where land meets the sea, render soft sandy and " +
+    "rocky beaches along the coastline. Style: rich painterly antique cartography - parchment tones, " +
+    "softly illustrated relief, subtle sea texture, elegant flourishes. " + NO_LABELS,
+  scifi:
+    "Transform this map into ONE cohesive orbital survey map of a colonized alien world. " + PLACEMENT + " " +
+    "Render each terrain as an alien biome or developed zone: bioluminescent forests, jagged mineral " +
+    "ranges, terraformed plains, glassy deserts and dry seabeds, toxic marshlands, crystalline caverns, " +
+    "and volcanic geothermal fields. Draw rivers as glowing energy or coolant channels and roads as " +
+    "mag-lev lines and lit highways along their exact routes. Style: clean high-tech cartography - a " +
+    "satellite / holographic survey atlas, deep blues and teals with cyan and amber glowing accents, " +
+    "subtle scan-line and topographic contours on a dark background. " + NO_LABELS,
+  grimdark:
+    "Transform this map into ONE cohesive grim, war-scarred dark-fantasy world map. " + PLACEMENT + " " +
+    "Render each terrain oppressive and blighted: dead blackened forests, jagged ash-grey peaks, " +
+    "trampled battle-plains, bone-white salt deserts, fetid bogs, corrupted wastes, and smoking " +
+    "volcanic scars. Draw rivers as dark sluggish water and roads as churned war-trails along their " +
+    "exact routes. Style: heavy ink-and-wash cartography on scorched, stained parchment - desaturated " +
+    "ash tones with ember-red and sickly-green accents, deep shadow, an ominous oppressive mood. " + NO_LABELS,
+  urban:
+    "Transform this map into ONE cohesive modern regional map of a developed, built-up land. " + PLACEMENT + " " +
+    "Render each region in contemporary character: dense city sprawl and suburbs, green parks and " +
+    "reserves, farmland patchwork, industrial districts, and open water. Draw rivers as blue waterways " +
+    "and roads as a network of highways and streets along their exact routes. Style: clean stylized " +
+    "modern road-atlas / noir city-region cartography - muted contemporary tones, clear land-use " +
+    "colour blocking, subtle paper texture. " + NO_LABELS,
+};
+
+type Body = { campaignId: string; controlImage: string; scaleHint?: string; style?: string };
 
 export async function POST(request: Request) {
   try {
-    const { campaignId, controlImage, scaleHint } = (await request.json()) as Body;
+    const { campaignId, controlImage, scaleHint, style } = (await request.json()) as Body;
+    const chosenStyle = style && STYLE_PROMPTS[style] ? style : "fantasy";
+    const basePrompt = STYLE_PROMPTS[chosenStyle];
     if (!campaignId || typeof controlImage !== "string") {
       return NextResponse.json({ error: "Missing campaignId or image." }, { status: 400 });
     }
@@ -69,7 +102,7 @@ export async function POST(request: Request) {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: scaleHint ? `${PROMPT} Cartographic scale: this is ${scaleHint}.` : PROMPT }, { inline_data: { mime_type: mime, data: b64 } }] }],
+        contents: [{ parts: [{ text: scaleHint ? `${basePrompt} Cartographic scale: this is ${scaleHint}.` : basePrompt }, { inline_data: { mime_type: mime, data: b64 } }] }],
         generationConfig: { responseModalities: ["TEXT", "IMAGE"], imageConfig: { imageSize: IMAGE_SIZE } },
       }),
     });
