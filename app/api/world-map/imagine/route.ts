@@ -85,23 +85,56 @@ const STYLE_REINTERP: Record<string, string> = {
     "modern real-world equivalent.",
 };
 
-type Body = { campaignId: string; controlImage: string; scaleHint?: string; style?: string; biomes?: { label: string; color: string }[] };
+// City renders. The source is a city PLAN (from the radial generator), not terrain, so the legend is
+// fixed and baked in here rather than sent per-request. Same four genres.
+const CITY_LEGEND =
+  " The source is a city PLAN, not terrain: the gold central shape is the CENTREPIECE landmark, dark " +
+  "lines are streets and avenues, the shaded concentric bands are city DISTRICTS (denser and taller " +
+  "toward the centre, looser at the edge), a brown outer ring is the CITY WALL with gates where roads " +
+  "cross it, and blue is water. Keep every street, district, the wall, and the centre in the SAME " +
+  "position and proportion. Dissolve the flat plan into a cohesive illustrated bird's-eye city with " +
+  "rooftops, towers, plazas and bridges. No text, no labels, no grid.";
+
+const CITY_PROMPTS: Record<string, string> = {
+  fantasy:
+    "Transform this city plan into ONE hand-painted fantasy city seen from above: red-tiled roofs, " +
+    "stone towers and spires, market squares, timber-and-stone quarters, a grand fortified centre. " +
+    "Painterly antique cartography, parchment tones." + CITY_LEGEND,
+  scifi:
+    "Transform this city plan into ONE futuristic megacity seen from above: arcology towers, elevated " +
+    "mag-lev skyways, glowing districts, a monumental central complex. Clean high-tech holographic " +
+    "atlas look, deep blues and teals with neon accents." + CITY_LEGEND,
+  grimdark:
+    "Transform this city plan into ONE grim, war-scarred industrial city seen from above: smoke-belching " +
+    "factory quarters, brutal fortifications, cramped shadowed slums, a looming central stronghold. " +
+    "Heavy ink-and-wash on stained parchment, desaturated ash with ember-red accents, oppressive mood." + CITY_LEGEND,
+  urban:
+    "Transform this city plan into ONE modern contemporary city seen from above: glass downtown " +
+    "high-rises, gridded neighbourhoods, parks and waterfront, ring-road and arterials, a civic centre. " +
+    "Clean stylized modern map look, muted contemporary tones." + CITY_LEGEND,
+};
+
+type Body = { campaignId: string; controlImage: string; scaleHint?: string; style?: string; biomes?: { label: string; color: string }[]; mode?: "world" | "city"; centerpiece?: string };
 
 export async function POST(request: Request) {
   try {
-    const { campaignId, controlImage, scaleHint, style, biomes } = (await request.json()) as Body;
-    const chosenStyle = style && STYLE_PROMPTS[style] ? style : "fantasy";
-    const basePrompt = STYLE_PROMPTS[chosenStyle];
-    // Only non-fantasy genres reinterpret + get a colour legend; fantasy renders exactly as before.
-    const reinterp = chosenStyle !== "fantasy" ? STYLE_REINTERP[chosenStyle] ?? "" : "";
+    const { campaignId, controlImage, scaleHint, style, biomes, mode, centerpiece } = (await request.json()) as Body;
+    const isCity = mode === "city";
+    const PROMPTS = isCity ? CITY_PROMPTS : STYLE_PROMPTS;
+    const chosenStyle = style && PROMPTS[style] ? style : "fantasy";
+    const basePrompt = PROMPTS[chosenStyle];
+    // World reinterpretation + biome legend apply only to world maps; the city legend is baked into
+    // CITY_PROMPTS since a city plan's colours are fixed.
+    const reinterp = !isCity && chosenStyle !== "fantasy" ? STYLE_REINTERP[chosenStyle] ?? "" : "";
     const legend =
-      chosenStyle !== "fantasy" && biomes && biomes.length
+      !isCity && chosenStyle !== "fantasy" && biomes && biomes.length
         ? " The source map's region colours are: " +
           biomes.map((b) => `${b.label} ${b.color}`).join(", ") +
           " - use these to identify each region before reinterpreting it."
         : "";
+    const cpNote = isCity && centerpiece ? ` The centrepiece landmark is a ${centerpiece}.` : "";
     const scale = scaleHint ? ` Cartographic scale: this is ${scaleHint}.` : "";
-    const promptText = `${basePrompt}${reinterp}${legend}${scale}`;
+    const promptText = `${basePrompt}${reinterp}${legend}${cpNote}${scale}`;
     if (!campaignId || typeof controlImage !== "string") {
       return NextResponse.json({ error: "Missing campaignId or image." }, { status: 400 });
     }
@@ -173,8 +206,10 @@ export async function POST(request: Request) {
     if (up.error) return NextResponse.json({ error: `Upload failed: ${up.error.message}` }, { status: 500 });
     const url = admin.storage.from("campaign-maps").getPublicUrl(path).data.publicUrl;
 
-    const { data: wm } = await admin.from("world_maps").select("id").eq("campaign_id", campaignId).maybeSingle();
-    if (wm) await admin.from("world_maps").update({ ai_image_url: url, ai_image_at: new Date().toISOString(), style: chosenStyle }).eq("id", (wm as { id: string }).id);
+    if (!isCity) {
+      const { data: wm } = await admin.from("world_maps").select("id").eq("campaign_id", campaignId).maybeSingle();
+      if (wm) await admin.from("world_maps").update({ ai_image_url: url, ai_image_at: new Date().toISOString(), style: chosenStyle }).eq("id", (wm as { id: string }).id);
+    }
     await admin.from("ai_map_renders").insert({ campaign_id: campaignId, profile_id: user.id });
 
     return NextResponse.json({ ok: true, url, remaining: Math.max(0, DAILY_LIMIT - (used + 1)) });

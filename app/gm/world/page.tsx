@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
+import CityCreator from "./CityCreator";
 import { surfaces, ui } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import HexCanvas, { type MapFeature } from "@/components/worldmap/HexCanvas";
@@ -194,6 +195,7 @@ export default function WorldMapPage() {
   const [drawPath, setDrawPath] = useState<[number, number][]>([]);
   const [fantasyView, setFantasyView] = useState(false);
   const [mapStyle, setMapStyle] = useState<string>("fantasy");
+  const [tab, setTab] = useState<"world" | "city">("world");
   const [imagining, setImagining] = useState(false);
   const [imagineMsg, setImagineMsg] = useState<string | null>(null);
   const [publishing, setPublishing] = useState(false);
@@ -877,6 +879,28 @@ export default function WorldMapPage() {
 
   return (
     <PageShell width={1200}>
+      <div style={{ display: "flex", gap: 6, marginBottom: 14 }}>
+        <button type="button" onClick={() => setTab("world")}
+          style={{ padding: "7px 14px", borderRadius: 8, border: `1px solid ${tab === "world" ? C.sun : C.line}`, background: tab === "world" ? C.surface2 : "transparent", color: tab === "world" ? C.sun : C.muted, fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
+          World map
+        </button>
+        <button type="button" onClick={() => setTab("city")}
+          style={{ padding: "7px 14px", borderRadius: 8, border: `1px solid ${tab === "city" ? C.sun : C.line}`, background: tab === "city" ? C.surface2 : "transparent", color: tab === "city" ? C.sun : C.muted, fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
+          City map
+        </button>
+      </div>
+
+      {tab === "city" && (
+        <>
+          <h1 style={{ ...ui.h1, fontSize: 28, margin: "4px 0 10px" }}>City map</h1>
+          {campaignId
+            ? <CityCreator campaignId={campaignId} />
+            : <p style={{ color: C.muted, fontSize: 14 }}>Pick a campaign on the World map tab first.</p>}
+        </>
+      )}
+
+      {tab === "world" && (
+      <>
       <h1 style={{ ...ui.h1, fontSize: 28, margin: "4px 0 4px" }}>World map</h1>
       <p style={{ color: C.muted, fontSize: 14, margin: "0 0 16px" }}>
         Paint biomes across the world, or upload one or more maps and place them. Pick a biome and drag to paint, Erase to clear, or Pan to move the view. Scroll to zoom.
@@ -1158,6 +1182,8 @@ export default function WorldMapPage() {
           })()}
         </div>
       </div>
+      </>
+      )}
     </PageShell>
   );
 }
