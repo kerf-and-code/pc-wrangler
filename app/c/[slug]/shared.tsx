@@ -254,6 +254,7 @@ export function WikiHead() {
         .w-toc a { display: block; padding: 5px 8px; margin-left: -2px; border-left: 2px solid transparent;
           color: var(--w-muted); font-size: 14px; text-decoration: none; border-radius: 6px; line-height: 1.4; }
         .w-toc a:hover { color: var(--w-ink); background: var(--w-hover); border-left-color: var(--w-accent-dim); }
+        .w-toc a.active { color: var(--w-accent); background: var(--w-hover); border-left-color: var(--w-accent); }
         .w-card { background: var(--w-panel); border: 1px solid var(--w-line); border-radius: 12px; padding: 15px 15px 12px; }
         .w-title { font-family: 'Cinzel','EB Garamond',serif; font-size: 38px; line-height: 1.12; margin: 12px 0 14px; font-weight: 600; }
         .w-back { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.14em;

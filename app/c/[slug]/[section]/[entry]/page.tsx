@@ -4,6 +4,7 @@ import {
   load, Shell, Frame, countsOf, sectionBySlug, matchesSection,
   relatedTo, sectionForItem, type WikiBlock,
 } from "../../shared";
+import TocSpy from "./TocSpy";
 
 // One entry, on its own page.
 //
@@ -87,10 +88,15 @@ async function EntryBody({ params }: P) {
     (b): b is Extract<WikiBlock, { type: "header" }> => b.type === "header" && !!b.text.trim()
   );
   const hasLeft = headers.length > 0 || related.length > 0;
+  const bodyBlocks = (item.blocks || []).filter((b) => !(b.type === "image" && b.slot === "panel"));
+  const panelBlocks = (item.blocks || []).filter(
+    (b): b is Extract<WikiBlock, { type: "image" }> => b.type === "image" && b.slot === "panel"
+  );
+  const hasRight = panelBlocks.length > 0;
 
   return (
     <Shell slug={slug} campaign={campaign} counts={countsOf(items)} current={sec.slug} wide>
-      <div className="w-entry" style={hasLeft ? undefined : { gridTemplateColumns: "minmax(0,1fr)" }}>
+      <div className="w-entry" style={{ gridTemplateColumns: `${hasLeft ? "220px " : ""}minmax(0,1fr)${hasRight ? " 280px" : ""}` }}>
         {/* Left rail: the entry's own contents (from header blocks), then its connections. Present
             only when there's something to show; otherwise the content takes the full width. */}
         {hasLeft && (
@@ -103,6 +109,7 @@ async function EntryBody({ params }: P) {
                     <a key={h.id} href={`#h-${h.id}`}>{h.text}</a>
                   ))}
                 </nav>
+                <TocSpy ids={headers.map((h) => h.id)} />
               </div>
             )}
             {related.length > 0 && (
@@ -153,7 +160,7 @@ async function EntryBody({ params }: P) {
           )}
 
           {item.blocks && item.blocks.length > 0 ? (
-            <WikiBlocks blocks={item.blocks} />
+            <WikiBlocks blocks={bodyBlocks} />
           ) : item.body ? (
             <div className="w-body">{item.body}</div>
           ) : (
@@ -162,6 +169,19 @@ async function EntryBody({ params }: P) {
             </p>
           )}
         </article>
+
+        {/* Right image panel: images flagged "Right panel" in the editor, scrolling with the page. */}
+        {hasRight && (
+          <aside className="w-panel-r">
+            {panelBlocks.map((b) => (
+              <figure key={b.id}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={b.url} alt={b.caption} />
+                {b.caption && <figcaption>{b.caption}</figcaption>}
+              </figure>
+            ))}
+          </aside>
+        )}
       </div>
     </Shell>
   );
