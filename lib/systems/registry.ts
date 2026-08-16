@@ -1,5 +1,6 @@
 import type { RulesModule, SystemId } from "./contract";
 import { dnd5e } from "./dnd5e";
+import { coc7e } from "./coc7e";
 
 // The registry maps a campaign's `system` to its module. Today it holds only D&D 5e, so every
 // campaign resolves to the same module and behavior is unchanged. New systems are added here as
@@ -12,6 +13,7 @@ import { dnd5e } from "./dnd5e";
 
 const MODULES: Record<SystemId, RulesModule> = {
   dnd5e,
+  coc7e,
 };
 
 export const DEFAULT_SYSTEM: SystemId = "dnd5e";
