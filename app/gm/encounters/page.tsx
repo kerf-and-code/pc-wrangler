@@ -152,7 +152,7 @@ export default function EncountersPage() {
         supabase.from("class_capabilities").select("class, subclass, capabilities"),
         listStatBlocks(supabase).catch(() => [] as StatBlockRow[]),
       ]);
-      const list = (data as Array<{ id: string; name: string }>) || [];
+      const list = (data as Array<{ id: string; name: string; system: string | null }>) || [];
       setCampaigns(list);
       setCaps((cp as Array<{ class: string; subclass: string | null; capabilities: string[] }>) || []);
       setStatBlocks(blocks);
