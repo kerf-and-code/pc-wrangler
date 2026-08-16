@@ -25,12 +25,19 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: "Sign in first." }, { status: 401 });
   }
 
-  const expected = process.env.SITE_ACCESS_CODE;
-  if (!expected) {
+  // Two codes: a GM code and a player code. Either one is a valid key to the pilot, so you can hand
+  // them out and rotate them separately. Both grant the same access_granted flag.
+  const gmCode = process.env.SITE_ACCESS_CODE;
+  const playerCode = process.env.PLAYER_ACCESS_CODE;
+  if (!gmCode && !playerCode) {
     // Misconfigured: fail closed rather than letting everyone through.
     return NextResponse.json({ ok: false, error: "The gate isn't configured yet." }, { status: 500 });
   }
-  if ((code || "").trim() !== expected) {
+  const attempt = (code || "").trim();
+  let role: "gm" | "player" | null = null;
+  if (gmCode && attempt === gmCode) role = "gm";
+  else if (playerCode && attempt === playerCode) role = "player";
+  if (!role) {
     return NextResponse.json({ ok: false, error: "That code isn't right." });
   }
 
@@ -40,7 +47,7 @@ export async function POST(request: Request) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
     { auth: { persistSession: false, autoRefreshToken: false } },
   );
-  const { error } = await admin.from("profiles").update({ access_granted: true }).eq("id", user.id);
+  const { error } = await admin.from("profiles").update({ access_granted: true, access_role: role }).eq("id", user.id);
   if (error) {
     return NextResponse.json({ ok: false, error: "Couldn't save that. Try again." }, { status: 500 });
   }
