@@ -7,6 +7,7 @@ import { SAX } from "@/lib/theme";
 import { C, FORGE_RADIUS, stoneField, stonePanel, stoneButton } from "@/lib/forge-theme";
 import { loadSrd } from "@/lib/srd/srd";
 import { listStatBlocks, type StatBlockRow } from "@/lib/stat-blocks";
+import { getModule } from "@/lib/systems/registry";
 
 // ============================================================================
 // THE TWO METHODS ARE GENUINELY DIFFERENT. THIS IS THE WHOLE POINT OF THE TOOL.
@@ -118,7 +119,7 @@ const uid = () => `f${++seq}`;
 
 export default function EncountersPage() {
   const supabase = createClient();
-  const [campaigns, setCampaigns] = useState<Array<{ id: string; name: string }>>([]);
+  const [campaigns, setCampaigns] = useState<Array<{ id: string; name: string; system: string | null }>>([]);
   const [campaignId, setCampaignId] = useState("");
   const [chars, setChars] = useState<Char[]>([]);
   const [present, setPresent] = useState<Record<string, boolean>>({});
@@ -147,7 +148,7 @@ export default function EncountersPage() {
   useEffect(() => {
     (async () => {
       const [{ data }, { data: cp }, blocks] = await Promise.all([
-        supabase.from("campaigns").select("id, name").order("created_at", { ascending: false }),
+        supabase.from("campaigns").select("id, name, system").order("created_at", { ascending: false }),
         supabase.from("class_capabilities").select("class, subclass, capabilities"),
         listStatBlocks(supabase).catch(() => [] as StatBlockRow[]),
       ]);
@@ -364,6 +365,12 @@ export default function EncountersPage() {
     textTransform: "uppercase", color: C.muted, marginBottom: 10,
   };
 
+  // The campaign's rules module decides whether encounter budgets even apply. For D&D
+  // (adversary.hasEncounterMath) the balancer shows as-is; a system without CR/XP budgets, like
+  // Call of Cthulhu, says so instead of presenting maths that mean nothing there.
+  const adversary = getModule(campaigns.find((c) => c.id === campaignId)?.system).adversary;
+  const hasEncounterMath = adversary?.hasEncounterMath ?? false;
+
   return (
     <PageShell width={980}>
       <div style={{ fontFamily: SAX.serif, fontSize: 26, fontWeight: 700, color: C.text, marginBottom: 4 }}>
@@ -373,6 +380,15 @@ export default function EncountersPage() {
         Built against the party actually sitting at your table tonight, not the one the
         module assumed.
       </p>
+
+      {campaignId && !hasEncounterMath && (
+        <div style={box}>
+          <p style={{ color: C.muted, fontSize: 13, margin: 0, lineHeight: 1.6 }}>
+            This campaign&apos;s system doesn&apos;t use encounter budgets. The balancer below is built
+            around D&amp;D&apos;s CR and XP maths, so it won&apos;t mean much here.
+          </p>
+        </div>
+      )}
 
       {/* method */}
       <div style={box}>
