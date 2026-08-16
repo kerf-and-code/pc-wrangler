@@ -96,7 +96,7 @@ async function EntryBody({ params }: P) {
 
   return (
     <Shell slug={slug} campaign={campaign} counts={countsOf(items)} current={sec.slug} wide>
-      <div className="w-entry" style={{ gridTemplateColumns: `${hasLeft ? "220px " : ""}minmax(0,1fr)${hasRight ? " 280px" : ""}` }}>
+      <div className="w-entry" style={{ gridTemplateColumns: `${hasLeft ? "240px " : ""}minmax(0,1fr)${hasRight ? " 340px" : ""}` }}>
         {/* Left rail: the entry's own contents (from header blocks), then its connections. Present
             only when there's something to show; otherwise the content takes the full width. */}
         {hasLeft && (

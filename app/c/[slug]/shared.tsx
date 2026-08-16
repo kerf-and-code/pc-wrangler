@@ -240,7 +240,7 @@ export function WikiHead() {
         .w-theme:hover { color: var(--w-ink); border-color: var(--w-accent-dim); }
 
         /* ---- entry page: wide variant + right rail ---- */
-        .w-main-wide { max-width: 1200px; margin: 0 auto; width: 100%; padding: 40px 24px 90px; position: relative; }
+        .w-main-wide { max-width: min(1600px, 96vw); margin: 0 auto; width: 100%; padding: 40px 24px 90px; position: relative; }
         .w-entry { display: grid; grid-template-columns: 240px minmax(0,1fr); gap: 40px; align-items: start; }
         @media (max-width: 900px) { .w-entry { grid-template-columns: 1fr; } .w-rail-r, .w-rail-l { position: static; } }
         .w-rail-r { position: sticky; top: 78px; }
