@@ -1,16 +1,23 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { PF2Creature } from "@/lib/pf2e/creature";
 
 /**
  * Persistence for GM monster stat blocks. Mirrors lib/pc-library.ts in spirit: a stat block is a
- * living JSONB document (`block`) plus denormalized challenge columns (cr/xp/ac/hp/size/type) the
- * encounter builder reads without parsing JSON. A block with campaign_id null is library-wide
- * (usable in any of the GM's campaigns); a block pinned to a campaign is readable by its members.
+ * living JSONB document (`block`) plus denormalized challenge columns (cr/xp/ac/hp/size/type, and
+ * level for PF2e) the encounter builder reads without parsing JSON. A block with campaign_id null is
+ * library-wide (usable in any of the GM's campaigns); a block pinned to a campaign is readable by its
+ * members.
  *
  * Unlike the Forge, there is NO derivation: a monster's numbers are authored directly, so what the
  * GM types into the block IS the stat block. The denorm columns are kept in sync on every save.
+ *
+ * Multi-system: every block carries a `system` ('dnd5e' default, 'pf2e', ...). A D&D block is a
+ * StatBlockDoc; a PF2e block is a PF2Creature. The row keeps `block` typed as the D&D shape for
+ * back-compat with existing callers - the PF2e editor narrows by `system` and casts. The denorm
+ * dispatches on system (D&D uses cr/xp; PF2e uses level).
  */
 
-// The full stat block document. Matches the shape templated from monsters-2014.json plus the
+// The full D&D stat block document. Matches the shape templated from monsters-2014.json plus the
 // custom-authoring fields the schema reserves (bonus_actions, reactions, special_attacks, link).
 export type NamedEntry = { name: string; desc: string };
 
@@ -46,20 +53,25 @@ export type StatBlockDoc = {
   notes?: string;
 };
 
+// A stored block is one system's document. Callers that know the system narrow by it.
+export type AnyStatBlock = StatBlockDoc | PF2Creature;
+
 export type StatBlockRow = {
   id: string;
   gm_id: string;
   campaign_id: string | null;
   name: string;
+  system: string;              // 'dnd5e' | 'pf2e' | ...
   cr: string | null;
   xp: number | null;
+  level: number | null;        // PF2e priced by level; null for D&D
   ac: number | null;
   hp: number | null;
   size: string | null;
   type: string | null;
   portrait_path: string | null;
   source_edition: string;
-  block: StatBlockDoc;
+  block: StatBlockDoc;         // for PF2e rows this is actually a PF2Creature; narrow by `system`
   created_at: string;
   updated_at: string;
 };
@@ -67,21 +79,32 @@ export type StatBlockRow = {
 export type StatBlockDenorm = {
   cr: string | null;
   xp: number | null;
+  level: number | null;
   ac: number | null;
   hp: number | null;
   size: string | null;
   type: string | null;
 };
 
-// Pull the denorm columns out of a block so a save keeps them in sync with the JSONB.
-export function denormFromBlock(block: StatBlockDoc): StatBlockDenorm {
+// Pull the denorm columns out of a block so a save keeps them in sync with the JSONB. Dispatches on
+// system: D&D uses cr/xp (level null); PF2e uses level (cr/xp null), and takes its "type" from the
+// first creature trait.
+export function denormFromBlock(system: string, block: AnyStatBlock): StatBlockDenorm {
+  if (system === "pf2e") {
+    const c = block as PF2Creature;
+    return {
+      cr: null, xp: null,
+      level: typeof c.level === "number" ? c.level : null,
+      ac: c.ac ?? null, hp: c.hp ?? null,
+      size: c.size || null,
+      type: (c.traits && c.traits[0]) || "creature",
+    };
+  }
+  const b = block as StatBlockDoc;
   return {
-    cr: block.cr || null,
-    xp: block.xp ?? null,
-    ac: block.ac ?? null,
-    hp: block.hp ?? null,
-    size: block.size || null,
-    type: block.type || null,
+    cr: b.cr || null, xp: b.xp ?? null, level: null,
+    ac: b.ac ?? null, hp: b.hp ?? null,
+    size: b.size || null, type: b.type || null,
   };
 }
 
@@ -102,18 +125,21 @@ export async function getStatBlock(sb: SupabaseClient, id: string): Promise<Stat
   return (data as StatBlockRow) || null;
 }
 
-// Insert a new stat block. campaignId null = library-wide. Returns the new id.
+// Insert a new stat block. campaignId null = library-wide. `system` defaults to 'dnd5e' so existing
+// callers keep working unchanged. Returns the new id.
 export async function createStatBlock(
   sb: SupabaseClient,
-  args: { gmId: string; campaignId: string | null; name: string; sourceEdition: string; block: StatBlockDoc },
+  args: { gmId: string; campaignId: string | null; name: string; system?: string; sourceEdition: string; block: AnyStatBlock },
 ): Promise<string> {
-  const denorm = denormFromBlock(args.block);
+  const system = args.system ?? "dnd5e";
+  const denorm = denormFromBlock(system, args.block);
   const { data, error } = await sb
     .from("stat_blocks")
     .insert({
       gm_id: args.gmId,
       campaign_id: args.campaignId,
       name: args.name,
+      system,
       source_edition: args.sourceEdition,
       block: args.block,
       ...denorm,
@@ -124,15 +150,17 @@ export async function createStatBlock(
   return (data as { id: string }).id;
 }
 
-// Update an existing stat block's name + block + denorm columns.
+// Update an existing stat block's name + block + denorm columns. `system` defaults to 'dnd5e'.
 export async function updateStatBlock(
   sb: SupabaseClient,
   id: string,
-  args: { name: string; campaignId?: string | null; block: StatBlockDoc },
+  args: { name: string; campaignId?: string | null; system?: string; block: AnyStatBlock },
 ): Promise<void> {
-  const denorm = denormFromBlock(args.block);
+  const system = args.system ?? "dnd5e";
+  const denorm = denormFromBlock(system, args.block);
   const patch: Record<string, unknown> = {
     name: args.name,
+    system,
     block: args.block,
     updated_at: new Date().toISOString(),
     ...denorm,
@@ -153,7 +181,7 @@ export async function updateStatBlockPortrait(sb: SupabaseClient, id: string, po
   if (error) throw error;
 }
 
-// A blank stat block for start-from-scratch authoring. Sensible defaults; the GM fills the rest.
+// A blank D&D stat block for start-from-scratch authoring. Sensible defaults; the GM fills the rest.
 export function blankStatBlock(): StatBlockDoc {
   return {
     size: "Medium", type: "humanoid", subtype: "", tags: [], alignment: "unaligned",
