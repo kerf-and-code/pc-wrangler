@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { AXES, type AxisKey } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
+import { listModules } from "@/lib/systems/registry";
 
 // Palette mapped onto the shared cellar theme.
 
@@ -130,6 +131,14 @@ export default function GMWorkspace() {
   useEffect(() => { if (selected) loadCharacters(selected); }, [selected, loadCharacters]);
 
   // ---- mutations ----
+  async function changeSystem(id: string, system: string) {
+    setBusy(true); setErr(null);
+    const { error } = await supabase.from("campaigns").update({ system }).eq("id", id);
+    if (error) setErr(error.message);
+    else setCampaigns((cs) => cs.map((c) => (c.id === id ? { ...c, system } : c)));
+    setBusy(false);
+  }
+
   async function createCampaign() {
     if (!newCampaign.name.trim() || busy) return;
     setBusy(true); setErr(null);
@@ -389,9 +398,12 @@ export default function GMWorkspace() {
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
           <input style={{ ...inputStyle, maxWidth: 240 }} placeholder="New campaign name"
             value={newCampaign.name} onChange={(e) => setNewCampaign({ ...newCampaign, name: e.target.value })} />
-          <select style={{ ...inputStyle, maxWidth: 120 }} value={newCampaign.system}
+          <select style={{ ...inputStyle, maxWidth: 200 }} value={newCampaign.system}
             onChange={(e) => setNewCampaign({ ...newCampaign, system: e.target.value })}>
-            <option value="2014">2014</option><option value="5e">5e</option><option value="5.5e">5.5e</option>
+            <option value="5e">D&amp;D 5e (2024)</option>
+            <option value="2014">D&amp;D 2014</option>
+            <option value="5.5e">D&amp;D 5.5e</option>
+            {listModules().filter((m) => m.id !== "dnd5e").map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}
           </select>
           <button style={btn} onClick={createCampaign} disabled={busy}>Create</button>
         </div>
@@ -405,6 +417,13 @@ export default function GMWorkspace() {
                 <a href={DISCORD_INVITE} target="_blank" rel="noreferrer" style={{ ...btnGhost, textDecoration: "none", display: "inline-block" }}>Invite bot</a>
                 <button style={btnGhost} onClick={() => copySetup(sc.share_code)}>{copied === sc.share_code ? "Copied" : "Copy /setup command"}</button>
               </>}
+              <span style={{ fontSize: 12.5, color: C.muted }}>System:</span>
+              <select value={sc.system ?? "5e"} onChange={(e) => changeSystem(sc.id, e.target.value)} disabled={busy} style={{ ...inputStyle, maxWidth: 200 }}>
+                <option value="5e">D&amp;D 5e (2024)</option>
+                <option value="2014">D&amp;D 2014</option>
+                <option value="5.5e">D&amp;D 5.5e</option>
+                {listModules().filter((m) => m.id !== "dnd5e").map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}
+              </select>
               <button onClick={() => deleteCampaign(sc.id)}
                 style={{ marginLeft: "auto", background: "none", border: `1px solid ${C.line}`, color: C.muted, borderRadius: FORGE_RADIUS, padding: "9px 14px", fontSize: 12.5, cursor: "pointer" }}>
                 Delete campaign
