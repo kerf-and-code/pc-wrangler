@@ -132,25 +132,44 @@ const DUNGEON_PROMPT =
   "them. Keep every room, wall, and corridor in the SAME position and shape. Rich top-down battle-map " +
   "illustration, subtle grid feel. No text, no labels, no numbers.";
 
-type Body = { campaignId: string; controlImage: string; scaleHint?: string; style?: string; biomes?: { label: string; color: string }[]; mode?: "world" | "city" | "dungeon"; centerpiece?: string; promptModifier?: string };
+// Building renders. The source is a BSP floor plan (see lib/building); the type drives the room mix
+// and furnishings, and the chosen genre tints the materials.
+const BUILDING_PROMPT =
+  "Transform this floor plan into ONE top-down furnished BUILDING interior map viewed directly from " +
+  "above. The source is a plan: light blocks are rooms, dark lines are walls, the pale gaps in walls " +
+  "are doorways, and the gold notch on the outer wall is the main entrance. Render each room furnished " +
+  "and floored for its purpose within the building, with clear walls and doorways. Keep every room, " +
+  "wall, and door in the SAME position and shape. Rich top-down building-map illustration. No text, no labels.";
+const BUILDING_GENRE: Record<string, string> = {
+  fantasy: "hand-painted fantasy medieval",
+  scifi: "clean sci-fi / futuristic, metal and panels",
+  grimdark: "grim, war-worn, oppressive",
+  urban: "modern contemporary",
+};
+
+type Body = { campaignId: string; controlImage: string; scaleHint?: string; style?: string; biomes?: { label: string; color: string }[]; mode?: "world" | "city" | "dungeon" | "building"; centerpiece?: string; promptModifier?: string; buildingType?: string };
 
 export async function POST(request: Request) {
   try {
-    const { campaignId, controlImage, scaleHint, style, biomes, mode, centerpiece, promptModifier } = (await request.json()) as Body;
+    const { campaignId, controlImage, scaleHint, style, biomes, mode, centerpiece, promptModifier, buildingType } = (await request.json()) as Body;
     const isCity = mode === "city";
     const isDungeon = mode === "dungeon";
+    const isBuilding = mode === "building";
     let chosenStyle = "fantasy";
     let basePrompt: string;
     if (isDungeon) {
       basePrompt = DUNGEON_PROMPT;
+    } else if (isBuilding) {
+      chosenStyle = style && BUILDING_GENRE[style] ? style : "fantasy";
+      basePrompt = BUILDING_PROMPT;
     } else {
       const PROMPTS = isCity ? CITY_PROMPTS : STYLE_PROMPTS;
       chosenStyle = style && PROMPTS[style] ? style : "fantasy";
       basePrompt = PROMPTS[chosenStyle];
     }
-    // World-map reinterpretation + biome legend apply only to the world map; city and dungeon legends
-    // are baked into their prompts (fixed control colours).
-    const enrich = !isCity && !isDungeon;
+    // World-map reinterpretation + biome legend apply only to the world map; the others bake their
+    // legends into their prompts (fixed control colours).
+    const enrich = !isCity && !isDungeon && !isBuilding;
     const reinterp = enrich && chosenStyle !== "fantasy" ? STYLE_REINTERP[chosenStyle] ?? "" : "";
     const legend =
       enrich && chosenStyle !== "fantasy" && biomes && biomes.length
@@ -159,10 +178,11 @@ export async function POST(request: Request) {
           " - use these to identify each region before reinterpreting it."
         : "";
     const cpNote = isCity && centerpiece ? ` The centrepiece landmark is a ${centerpiece}.` : "";
+    const buildingNote = isBuilding ? ` The building is a ${buildingType || "house"}, its rooms furnished for that purpose. Style: ${BUILDING_GENRE[chosenStyle]}.` : "";
     // The GM's free-text flavour, added to every mode.
     const flavour = promptModifier && promptModifier.trim() ? ` ${promptModifier.trim()}.` : "";
     const scale = scaleHint ? ` Cartographic scale: this is ${scaleHint}.` : "";
-    const promptText = `${basePrompt}${reinterp}${legend}${cpNote}${flavour}${scale}`;
+    const promptText = `${basePrompt}${reinterp}${legend}${cpNote}${buildingNote}${flavour}${scale}`;
     if (!campaignId || typeof controlImage !== "string") {
       return NextResponse.json({ error: "Missing campaignId or image." }, { status: 400 });
     }
@@ -234,7 +254,7 @@ export async function POST(request: Request) {
     if (up.error) return NextResponse.json({ error: `Upload failed: ${up.error.message}` }, { status: 500 });
     const url = admin.storage.from("campaign-maps").getPublicUrl(path).data.publicUrl;
 
-    if (!isCity && !isDungeon) {
+    if (!isCity && !isDungeon && !isBuilding) {
       const { data: wm } = await admin.from("world_maps").select("id").eq("campaign_id", campaignId).maybeSingle();
       if (wm) await admin.from("world_maps").update({ ai_image_url: url, ai_image_at: new Date().toISOString(), style: chosenStyle }).eq("id", (wm as { id: string }).id);
     }
