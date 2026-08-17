@@ -60,6 +60,7 @@ export default function RollerPage() {
 
   const [notation, setNotation] = useState("1d20");
   const [target, setTarget] = useState(50);
+  const [cocMode, setCocMode] = useState(false);
   const [mode, setMode] = useState<"flat" | "adv" | "dis">("flat");
   const [kind, setKind] = useState("attack");
   const [actor, setActor] = useState("");
@@ -155,7 +156,8 @@ export default function RollerPage() {
   // system (Call of Cthulhu) rolls d100 under a skill target instead.
   const activeSystem = campaigns.find((c) => c.id === campaignId)?.system;
   const dice = getModule(activeSystem).dice;
-  const isPercentile = dice.style.kind === "percentile-under";
+  const moduleIsPercentile = dice.style.kind === "percentile-under";
+  const isPercentile = cocMode || moduleIsPercentile;
   const advMeaningful =
     !isPercentile && canHaveAdvantage(notation) && dice.style.kind === "d20-vs-dc" && dice.style.advantage;
 
@@ -238,6 +240,15 @@ export default function RollerPage() {
 
       <Card>
         <Label>The roll</Label>
+        <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
+          <button type="button" onClick={() => setCocMode(false)} disabled={moduleIsPercentile}
+            style={{ ...chip(!isPercentile), opacity: moduleIsPercentile ? 0.4 : 1, cursor: moduleIsPercentile ? "default" : "pointer" }}>
+            d20 &middot; D&amp;D
+          </button>
+          <button type="button" onClick={() => setCocMode(true)} style={chip(isPercentile)}>
+            d100 &middot; Call of Cthulhu
+          </button>
+        </div>
         {isPercentile && (
           <div style={{ marginBottom: 10 }}>
             <Label>Skill target</Label>
