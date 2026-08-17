@@ -1095,7 +1095,11 @@ function ForgeInner() {
   };
 
   const psheet = useMemo(() => { try { return derivePf2eSheet(pbuild, PF2_RULES); } catch { return null; } }, [pbuild]);
-  const editable = status === "ready" && (system === "pf2e" ? !!psheet : !!sheet);
+  // Two separate readiness aliases, one per system branch. They MUST stay plain conjunctions:
+  // TypeScript's aliased-condition narrowing is what lets `sheet={sheet}` pass as non-null inside
+  // the D&D body (and psheet inside the PF2e body). A ternary in the alias breaks that narrowing.
+  const dndReady = status === "ready" && system !== "pf2e" && !!sheet;
+  const pf2eReady = status === "ready" && system === "pf2e" && !!psheet;
 
   return (
     <div style={shellStyle}>
@@ -1113,11 +1117,11 @@ function ForgeInner() {
 
           {status === "picking" && <Picking stable={stable} />}
 
-          {editable && system === "pf2e" && (
+          {pf2eReady && (
             <Pf2eForge pbuild={pbuild} onChange={(b) => { setPbuild(b); setSaveState("idle"); }}
               sheet={psheet} name={name} onName={editName} />
           )}
-          {editable && system !== "pf2e" && (
+          {dndReady && (
             <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 20 }}>
               {/* Name (editable for every mode; it's the character's name). */}
               <div style={stonePanel()}>

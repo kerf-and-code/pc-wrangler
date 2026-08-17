@@ -38,7 +38,7 @@ type Rolled = {
   total: number; notation: string; natural: 20 | 1 | null;
   dice: { sides: number; value: number; kept: boolean }[];
   label: string; actor: string; at: number;
-  band?: string; target?: number;
+  band?: string; target?: number; degrees?: boolean;
 };
 
 const KINDS: { key: string; label: string }[] = [
@@ -62,6 +62,7 @@ export default function RollerPage() {
   const [notation, setNotation] = useState("1d20");
   const [target, setTarget] = useState(50);
   const [cocMode, setCocMode] = useState(false);
+  const [dc, setDc] = useState("");
   const [mode, setMode] = useState<"flat" | "adv" | "dis">("flat");
   const [kind, setKind] = useState("attack");
   const [actor, setActor] = useState("");
@@ -159,6 +160,9 @@ export default function RollerPage() {
   const dice = getModule(activeSystem).dice;
   const moduleIsPercentile = dice.style.kind === "percentile-under";
   const isPercentile = cocMode || moduleIsPercentile;
+  // PF2e keeps the d20 roll but adds an optional DC -> four degrees of success (beat by 10 / meet /
+  // miss / miss by 10, with a natural 20 stepping the result up one and a natural 1 stepping it down).
+  const isPf2e = activeSystem === "pf2e" && !isPercentile;
   const advMeaningful =
     !isPercentile && canHaveAdvantage(notation) && dice.style.kind === "d20-vs-dc" && dice.style.advantage;
 
@@ -183,7 +187,11 @@ export default function RollerPage() {
   const doRoll = useCallback(async () => {
     setBusy(true); setError(null);
     try {
-      const rollLabel = isPercentile ? [label, `skill ${target}`].filter(Boolean).join(" · ") : label;
+      const dcNum = Number(dc);
+      const usePf2eDc = isPf2e && dc.trim() !== "" && Number.isFinite(dcNum);
+      const rollLabel = isPercentile
+        ? [label, `skill ${target}`].filter(Boolean).join(" · ")
+        : usePf2eDc ? [label, `DC ${dcNum}`].filter(Boolean).join(" · ") : label;
       const res = await fetch("/api/rolls/gm", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -197,14 +205,15 @@ export default function RollerPage() {
       const r = out.result;
       setLog((l) => [{
         total: r.total, notation: r.notation, natural: r.natural, dice: r.dice,
-        band: isPercentile ? cocBand(r.total, target) : undefined,
-        target: isPercentile ? target : undefined,
+        band: isPercentile ? cocBand(r.total, target) : usePf2eDc ? pf2eDegree(r.total, dcNum, r.natural) : undefined,
+        target: isPercentile ? target : usePf2eDc ? dcNum : undefined,
+        degrees: usePf2eDc,
         label: rollLabel || KINDS.find((k) => k.key === kind)?.label || "",
         actor: characterId ? (characters.find((c) => c.id === characterId)?.name ?? "") : (actor || "the GM"),
         at: Date.now(),
       }, ...l].slice(0, 60));
     } finally { setBusy(false); }
-  }, [campaignId, sessionId, finalNotation, kind, actor, characterId, label, characters, isPercentile, target]);
+  }, [campaignId, sessionId, finalNotation, kind, actor, characterId, label, characters, isPercentile, target, isPf2e, dc]);
 
   const session = sessions.find((s) => s.id === sessionId) ?? null;
 
@@ -264,6 +273,17 @@ export default function RollerPage() {
             <p style={{ ...body, marginTop: 6, marginBottom: 0, fontSize: 12.5 }}>
               Roll d100 under the skill. 01 is a critical; extreme at a fifth, hard at half; a fumble is
               100, or 96 to 99 when the skill is under 50.
+            </p>
+          </div>
+        )}
+        {isPf2e && (
+          <div style={{ marginBottom: 10 }}>
+            <Label>DC (optional)</Label>
+            <input type="number" min={1} value={dc} onChange={(e) => setDc(e.target.value)}
+              placeholder="e.g. 18" style={{ ...field, fontFamily: SAX.mono }} />
+            <p style={{ ...body, marginTop: 6, marginBottom: 0, fontSize: 12.5 }}>
+              Set a DC to read the degree of success: critical success at DC+10, critical failure at
+              DC-10; a natural 20 steps the result up one, a natural 1 steps it down.
             </p>
           </div>
         )}
@@ -359,7 +379,9 @@ export default function RollerPage() {
               </div>
               <div style={{ fontFamily: SAX.mono, fontSize: 11.5, color: STONE.inkFaint, marginTop: 2 }}>
                 {r.band
-                  ? `d100 · ${r.band}${r.target != null ? ` vs ${r.target}` : ""}`
+                  ? (r.degrees
+                      ? `${r.notation} · ${r.band}${r.target != null ? ` vs DC ${r.target}` : ""}${r.natural === 20 ? " · nat 20" : r.natural === 1 ? " · nat 1" : ""}`
+                      : `d100 · ${r.band}${r.target != null ? ` vs ${r.target}` : ""}`)
                   : `${r.notation} · ${r.dice.map((d) => (d.kept ? `${d.value}` : `(${d.value})`)).join(" ")}${r.natural === 20 ? " · natural 20" : r.natural === 1 ? " · natural 1" : ""}`}
               </div>
             </div>
@@ -383,7 +405,15 @@ function cocBand(roll: number, target: number): string {
   if (roll <= target) return "Success";
   return "Failure";
 }
+function pf2eDegree(total: number, dc: number, natural: 20 | 1 | null): string {
+  let step = total >= dc + 10 ? 3 : total >= dc ? 2 : total <= dc - 10 ? 0 : 1;
+  if (natural === 20) step = Math.min(3, step + 1);
+  else if (natural === 1) step = Math.max(0, step - 1);
+  return ["Critical Failure", "Failure", "Success", "Critical Success"][step];
+}
 function bandColor(band: string): string {
+  if (band === "Critical Success") return C.good;
+  if (band === "Critical Failure") return C.warn;
   if (band === "Critical" || band === "Extreme") return C.good;
   if (band === "Fumble") return C.warn;
   if (band === "Success" || band === "Hard") return C.sun;
