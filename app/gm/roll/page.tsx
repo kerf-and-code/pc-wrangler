@@ -29,6 +29,7 @@ import { applyAdvantage, canHaveAdvantage, parseDice, DiceError } from "@/lib/di
 import { getModule } from "@/lib/systems/registry";
 import { C, FORGE_RADIUS, STONE } from "@/lib/forge-theme";
 import { SAX } from "@/lib/theme";
+import { setActiveCampaign } from "@/lib/active-campaign";
 
 type Campaign = { id: string; name: string; system: string | null };
 type Session = { id: string; session_number: number | null; ended_at: string | null };
@@ -173,6 +174,11 @@ export default function RollerPage() {
     try { parseDice(finalNotation); return null; }
     catch (e) { return e instanceof DiceError ? e.message : "Cannot read that roll."; }
   }, [finalNotation]);
+
+  useEffect(() => {
+    const c = campaigns.find((x) => x.id === campaignId);
+    if (c) setActiveCampaign({ id: c.id, name: c.name, system: c.system });
+  }, [campaignId, campaigns]);
 
   const doRoll = useCallback(async () => {
     setBusy(true); setError(null);

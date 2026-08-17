@@ -3,6 +3,8 @@
 import React, { useEffect, useState } from "react";
 import { SAX } from "@/lib/theme";
 import LogoutButton from "@/components/logout-button";
+import { getModule } from "@/lib/systems/registry";
+import { getActiveCampaign, onActiveCampaignChange } from "@/lib/active-campaign";
 
 /* Six Axes — navigation.
    Wide screens (>=1024px): a left sidebar. Logo, an account popup (Help + Sign
@@ -10,7 +12,7 @@ import LogoutButton from "@/components/logout-button";
    it. Narrow screens: the original top bar (groups row + sub-row). The player
    portal (opened via a ?share link) stays flat in both. One shell, no drift. */
 
-type Leaf = { href: string; label: string };
+type Leaf = { href: string; label: string; needs?: "character" | "adversary" };
 type Group = { label: string; href: string; children?: Leaf[] };
 
 const GROUPS: Group[] = [
@@ -24,9 +26,9 @@ const GROUPS: Group[] = [
     { href: "/gm/capture", label: "Capture" },
     { href: "/gm/review", label: "Review" },
     { href: "/gm/transcripts", label: "Transcripts" },
-    { href: "/gm/encounters", label: "Encounters" },
+    { href: "/gm/encounters", label: "Encounters", needs: "adversary" },
     { href: "/gm/roll", label: "Roll" },
-    { href: "/gm/statblock", label: "Monster Maker" },
+    { href: "/gm/statblock", label: "Monster Maker", needs: "adversary" },
     { href: "/gm/table", label: "Check-in" },
   ] },
   { label: "Story", href: "/gm/codex", children: [
@@ -189,6 +191,7 @@ function rememberShare(code: string | null): string | null {
 
 export default function SixAxesNav() {
   const [pathname, setPathname] = useState<string>("");
+  const [activeSystem, setActiveSystem] = useState<string | null>(null);
   const [share, setShare] = useState<{ on: boolean; qs: string; code: string | null }>({ on: false, qs: "", code: null });
 
   useEffect(() => {
@@ -199,6 +202,12 @@ export default function SixAxesNav() {
     } catch {
       /* no window */
     }
+  }, []);
+
+  useEffect(() => {
+    const read = () => setActiveSystem(getActiveCampaign()?.system ?? null);
+    read();
+    return onActiveCampaignChange(read);
   }, []);
 
   const brand = (href: string) => (
@@ -322,6 +331,12 @@ export default function SixAxesNav() {
     );
   }
 
+  const mod = getModule(activeSystem);
+  // A leaf shows unless it declares a capability the active campaign's system lacks. Reusable: new
+  // tools just set needs; new systems just declare (or omit) character/adversary in their module.
+  const vis = (children?: Leaf[]) => (children ?? []).filter((c) =>
+    c.needs === "adversary" ? Boolean(mod.adversary) : c.needs === "character" ? Boolean(mod.character) : true);
+
   const active = GROUPS.find((g) => hrefs(g).includes(pathname));
 
   return (
@@ -349,7 +364,7 @@ export default function SixAxesNav() {
                 <a className={`sax-vlink${on ? " on" : ""}`} href={g.href}>{g.label}</a>
                 {on && g.children && (
                   <div className="sax-vsub">
-                    {g.children.map((c) => (
+                    {vis(g.children).map((c) => (
                       <a key={c.href} className={`sax-vslink${pathname === c.href ? " on" : ""}`} href={c.href}>{c.label}</a>
                     ))}
                   </div>
@@ -377,7 +392,7 @@ export default function SixAxesNav() {
 
         {active?.children && (
           <nav className="sax-sub">
-            {active.children.map((c) => (
+            {vis(active.children).map((c) => (
               <a key={c.href} className={`sax-slink${pathname === c.href ? " on" : ""}`} href={c.href}>{c.label}</a>
             ))}
           </nav>

@@ -8,6 +8,7 @@ import { C, FORGE_RADIUS, stoneField, stonePanel, stoneButton } from "@/lib/forg
 import { loadSrd } from "@/lib/srd/srd";
 import { listStatBlocks, type StatBlockRow } from "@/lib/stat-blocks";
 import { getModule } from "@/lib/systems/registry";
+import { setActiveCampaign } from "@/lib/active-campaign";
 
 // ============================================================================
 // THE TWO METHODS ARE GENUINELY DIFFERENT. THIS IS THE WHOLE POINT OF THE TOOL.
@@ -186,6 +187,11 @@ export default function EncountersPage() {
   const missingLevels = party.length - levelled.length;
 
   // ---- the party's budget / thresholds ------------------------------------
+  useEffect(() => {
+    const c = campaigns.find((x) => x.id === campaignId);
+    if (c) setActiveCampaign({ id: c.id, name: c.name, system: c.system });
+  }, [campaignId, campaigns]);
+
   const budget = useMemo(() => {
     if (levelled.length === 0) return null;
     if (method === "2024") {

@@ -6,6 +6,7 @@ import PageShell from "@/components/page-shell";
 import { AXES, type AxisKey } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import { listModules } from "@/lib/systems/registry";
+import { setActiveCampaign } from "@/lib/active-campaign";
 
 // Palette mapped onto the shared cellar theme.
 
@@ -131,6 +132,11 @@ export default function GMWorkspace() {
   useEffect(() => { if (selected) loadCharacters(selected); }, [selected, loadCharacters]);
 
   // ---- mutations ----
+  useEffect(() => {
+    const c = campaigns.find((x) => x.id === selected);
+    if (c) setActiveCampaign({ id: c.id, name: c.name, system: c.system ?? null });
+  }, [selected, campaigns]);
+
   async function changeSystem(id: string, system: string) {
     setBusy(true); setErr(null);
     const { error } = await supabase.from("campaigns").update({ system }).eq("id", id);
