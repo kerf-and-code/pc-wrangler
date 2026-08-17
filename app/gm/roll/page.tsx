@@ -37,6 +37,7 @@ type Rolled = {
   total: number; notation: string; natural: 20 | 1 | null;
   dice: { sides: number; value: number; kept: boolean }[];
   label: string; actor: string; at: number;
+  band?: string; target?: number;
 };
 
 const KINDS: { key: string; label: string }[] = [
@@ -58,6 +59,7 @@ export default function RollerPage() {
   const [characters, setCharacters] = useState<Character[]>([]);
 
   const [notation, setNotation] = useState("1d20");
+  const [target, setTarget] = useState(50);
   const [mode, setMode] = useState<"flat" | "adv" | "dis">("flat");
   const [kind, setKind] = useState("attack");
   const [actor, setActor] = useState("");
@@ -148,11 +150,21 @@ export default function RollerPage() {
 
   useEffect(() => { void loadHistory(campaignId, sessionId); }, [campaignId, sessionId, loadHistory]);
 
-  // The notation actually rolled, with the modifier folded in and advantage applied. Shown to the
-  // GM before they roll, because a roller you cannot check is a roller you cannot trust.
+  // Resolve this campaign's rules module. Its dice style - not a hardcoded d20 assumption - decides
+  // how the roller behaves: D&D (d20-vs-dc) rolls dice with optional advantage; a percentile-under
+  // system (Call of Cthulhu) rolls d100 under a skill target instead.
+  const activeSystem = campaigns.find((c) => c.id === campaignId)?.system;
+  const dice = getModule(activeSystem).dice;
+  const isPercentile = dice.style.kind === "percentile-under";
+  const advMeaningful =
+    !isPercentile && canHaveAdvantage(notation) && dice.style.kind === "d20-vs-dc" && dice.style.advantage;
+
+  // The notation actually rolled. Percentile systems always roll 1d100; otherwise the modifier is
+  // folded in and advantage applied. Shown to the GM before they roll, because a roller you cannot
+  // check is a roller you cannot trust.
   const finalNotation = useMemo(
-    () => applyAdvantage(notation.trim() || "1d20", mode),
-    [notation, mode],
+    () => isPercentile ? "1d100" : applyAdvantage(notation.trim() || "1d20", mode),
+    [notation, mode, isPercentile],
   );
 
   const valid = useMemo(() => {
@@ -160,23 +172,16 @@ export default function RollerPage() {
     catch (e) { return e instanceof DiceError ? e.message : "Cannot read that roll."; }
   }, [finalNotation]);
 
-  // Resolve this campaign's rules module. Its dice style - not a hardcoded d20 assumption - decides
-  // whether advantage even applies. For D&D (d20-vs-dc with advantage) this is unchanged; a future
-  // percentile or dice-pool system would simply never offer the toggle.
-  const activeSystem = campaigns.find((c) => c.id === campaignId)?.system;
-  const dice = getModule(activeSystem).dice;
-  const advMeaningful =
-    canHaveAdvantage(notation) && dice.style.kind === "d20-vs-dc" && dice.style.advantage;
-
   const doRoll = useCallback(async () => {
     setBusy(true); setError(null);
     try {
+      const rollLabel = isPercentile ? [label, `skill ${target}`].filter(Boolean).join(" · ") : label;
       const res = await fetch("/api/rolls/gm", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           campaignId, sessionId: sessionId || null, notation: finalNotation,
-          kind, actorName: characterId ? null : actor, characterId: characterId || null,
-          label,
+          kind: isPercentile ? "check" : kind, actorName: characterId ? null : actor, characterId: characterId || null,
+          label: rollLabel,
         }),
       });
       const out = await res.json();
@@ -184,12 +189,14 @@ export default function RollerPage() {
       const r = out.result;
       setLog((l) => [{
         total: r.total, notation: r.notation, natural: r.natural, dice: r.dice,
-        label: label || KINDS.find((k) => k.key === kind)?.label || "",
+        band: isPercentile ? cocBand(r.total, target) : undefined,
+        target: isPercentile ? target : undefined,
+        label: rollLabel || KINDS.find((k) => k.key === kind)?.label || "",
         actor: characterId ? (characters.find((c) => c.id === characterId)?.name ?? "") : (actor || "the GM"),
         at: Date.now(),
       }, ...l].slice(0, 60));
     } finally { setBusy(false); }
-  }, [campaignId, sessionId, finalNotation, kind, actor, characterId, label, characters]);
+  }, [campaignId, sessionId, finalNotation, kind, actor, characterId, label, characters, isPercentile, target]);
 
   const session = sessions.find((s) => s.id === sessionId) ?? null;
 
@@ -231,6 +238,19 @@ export default function RollerPage() {
 
       <Card>
         <Label>The roll</Label>
+        {isPercentile && (
+          <div style={{ marginBottom: 10 }}>
+            <Label>Skill target</Label>
+            <input type="number" min={1} max={99} value={target}
+              onChange={(e) => setTarget(Math.max(1, Math.min(99, Math.round(Number(e.target.value) || 0))))}
+              style={{ ...field, fontFamily: SAX.mono }} />
+            <p style={{ ...body, marginTop: 6, marginBottom: 0, fontSize: 12.5 }}>
+              Roll d100 under the skill. 01 is a critical; extreme at a fifth, hard at half; a fumble is
+              100, or 96 to 99 when the skill is under 50.
+            </p>
+          </div>
+        )}
+        {!isPercentile && (<>
         <DicePicker notation={notation} onChange={setNotation} />
 
         <div style={{ marginTop: 12, marginBottom: 10 }}>
@@ -257,21 +277,24 @@ export default function RollerPage() {
             </span>
           )}
         </div>
+        </>)}
 
         <div style={{
           background: "rgba(0,0,0,0.28)", borderRadius: FORGE_RADIUS, padding: "8px 12px",
           fontFamily: SAX.mono, fontSize: 13, color: valid ? C.warn : C.plum, marginBottom: 12,
         }}>
-          {valid ?? `rolling  ${finalNotation}`}
+          {valid ?? (isPercentile ? `rolling 1d100 under ${target}` : `rolling  ${finalNotation}`)}
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+        <div style={{ display: "grid", gridTemplateColumns: isPercentile ? "1fr" : "1fr 1fr", gap: 10, marginBottom: 10 }}>
+          {!isPercentile && (
           <div>
             <Label>What kind</Label>
             <select value={kind} onChange={(e) => setKind(e.target.value)} style={field}>
               {KINDS.map((k) => <option key={k.key} value={k.key}>{k.label}</option>)}
             </select>
           </div>
+          )}
           <div>
             <Label>Who is rolling</Label>
             <select value={characterId} onChange={(e) => setCharacterId(e.target.value)} style={field}>
@@ -291,7 +314,7 @@ export default function RollerPage() {
           style={{ ...field, marginBottom: 12 }} />
 
         <button onClick={() => void doRoll()} disabled={busy || !campaignId || Boolean(valid)} style={btn}>
-          {busy ? "Rolling…" : "Roll"}
+          {busy ? "Rolling…" : isPercentile ? "Roll d100" : "Roll"}
         </button>
       </Card>
 
@@ -312,14 +335,15 @@ export default function RollerPage() {
                 </span>
                 <span style={{
                   fontFamily: SAX.mono, fontSize: 20,
-                  color: r.natural === 20 ? C.good : r.natural === 1 ? C.warn : C.sun,
+                  color: r.band ? bandColor(r.band) : r.natural === 20 ? C.good : r.natural === 1 ? C.warn : C.sun,
                 }}>
                   {r.total}
                 </span>
               </div>
               <div style={{ fontFamily: SAX.mono, fontSize: 11.5, color: STONE.inkFaint, marginTop: 2 }}>
-                {r.notation} · {r.dice.map((d) => (d.kept ? `${d.value}` : `(${d.value})`)).join(" ")}
-                {r.natural === 20 ? " · natural 20" : r.natural === 1 ? " · natural 1" : ""}
+                {r.band
+                  ? `d100 · ${r.band}${r.target != null ? ` vs ${r.target}` : ""}`
+                  : `${r.notation} · ${r.dice.map((d) => (d.kept ? `${d.value}` : `(${d.value})`)).join(" ")}${r.natural === 20 ? " · natural 20" : r.natural === 1 ? " · natural 1" : ""}`}
               </div>
             </div>
           ))}
@@ -331,6 +355,22 @@ export default function RollerPage() {
       )}
     </PageShell>
   );
+}
+
+function cocBand(roll: number, target: number): string {
+  if (roll === 1) return "Critical";
+  const fumble = target < 50 ? roll >= 96 : roll === 100;
+  if (fumble) return "Fumble";
+  if (roll <= Math.floor(target / 5)) return "Extreme";
+  if (roll <= Math.floor(target / 2)) return "Hard";
+  if (roll <= target) return "Success";
+  return "Failure";
+}
+function bandColor(band: string): string {
+  if (band === "Critical" || band === "Extreme") return C.good;
+  if (band === "Fumble") return C.warn;
+  if (band === "Success" || band === "Hard") return C.sun;
+  return C.text;
 }
 
 function Card({ children, tone }: { children: React.ReactNode; tone?: "warn" }) {
