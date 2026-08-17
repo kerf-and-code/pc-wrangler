@@ -235,6 +235,8 @@ export default function WorldMapPage() {
   const [sizeH, setSizeH] = useState<string>("100");
   const [status, setStatus] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
+  const [tracing, setTracing] = useState(false);
+  const traceInput = useRef<HTMLInputElement | null>(null);
 
   const colors = useMemo(() => {
     const arr: string[] = [];
@@ -765,6 +767,30 @@ export default function WorldMapPage() {
     }
   }, [campaignId, terrain, colors, biomeArt, images, features, mapStyle, biomes, mapModifier]);
 
+  // Trace an image back into editable hex tiles: AI vision labels each hex's terrain, and we drop the
+  // biome array straight into the current grid. Approximate by nature - it's a starting point to edit,
+  // then Generate view re-renders. Uses the CURRENT grid's width/height, so resize first if needed.
+  const onTraceFile = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]; e.target.value = "";
+    if (!file || !terrain || !mapRow) return;
+    if (!window.confirm("Trace this image into hex tiles with AI? It replaces the current terrain with the AI's best reading, which you can then edit and re-render.")) return;
+    setTracing(true); setStatus("Reading the map into tiles\u2026");
+    try {
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const r = new FileReader(); r.onload = () => resolve(String(r.result)); r.onerror = () => reject(new Error("read")); r.readAsDataURL(file);
+      });
+      const res = await fetch("/api/world-map/trace", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ campaignId, image: dataUrl, width: terrain.meta.width, height: terrain.meta.height, biomes: biomes.map((b) => ({ id: b.id, label: b.label, color: b.color })) }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !Array.isArray(data.tiles)) { setStatus(data.error || "Trace failed."); return; }
+      setTerrain({ meta: terrain.meta, biome: Uint8Array.from(data.tiles as number[]), flags: terrain.flags });
+      setStatus("Traced to tiles. Edit them, then Generate view to re-render.");
+    } catch { setStatus("Trace failed."); }
+    finally { setTracing(false); }
+  }, [campaignId, terrain, mapRow, biomes]);
+
   // Download the current rendered image to the GM's computer. Point of this: a render you love can be
   // banked before you regenerate and lose it - keep it, and later re-upload it (via the image upload)
   // to restore that design or reuse it for another setting.
@@ -987,6 +1013,13 @@ export default function WorldMapPage() {
               style={{ fontSize: 12, padding: "5px 10px", borderRadius: 7, cursor: imagining ? "default" : "pointer",
                 border: `1px solid ${C.line}`, background: C.surface2, color: C.text, fontWeight: 600, opacity: imagining ? 0.6 : 1 }}>
               {imagining ? "Painting\u2026" : mapRow.ai_image_url ? "Regenerate view" : "Generate view"}
+            </button>
+            <input ref={traceInput} type="file" accept="image/*" onChange={onTraceFile} style={{ display: "none" }} />
+            <button type="button" onClick={() => traceInput.current?.click()} disabled={tracing || !terrain}
+              title="Read an image into hex tiles with AI, then edit and re-render"
+              style={{ fontSize: 12, padding: "5px 10px", borderRadius: 7, cursor: tracing ? "default" : "pointer",
+                border: `1px solid ${C.line}`, background: C.surface2, color: C.text, fontWeight: 600, opacity: tracing ? 0.6 : 1 }}>
+              {tracing ? "Tracing\u2026" : "Trace to tiles"}
             </button>
           </>
         )}
