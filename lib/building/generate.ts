@@ -1,7 +1,7 @@
-// Building floor-plan generator. Picks a building type and lays out rooms automatically by recursive
-// binary splitting (BSP), then draws a control image - light rooms, dark walls, pale door gaps at each
-// split, a gold entrance notch - for the imagine route to paint into a furnished top-down building.
-// Fully described by (type, rooms, floor, seed), so it regenerates identically; nothing is stored.
+// Building floor-plan model + geometry + renderer. A plan is an editable BSP tree over a footprint;
+// rooms are DERIVED from the tree on render, so dragging a wall only changes one `pos`. The GM drags
+// walls, doors and the entrance; flip/rotate reorient the whole plan. renderControlImage draws the
+// current (edited) plan as a control image for the imagine route (mode: "building") to paint.
 
 export type BuildingTypeDef = { key: string; label: string; group: string; rooms: number; aspect: number; compact?: boolean };
 
@@ -30,7 +30,11 @@ export function buildingDef(key: string): BuildingTypeDef {
   return BUILDING_TYPES.find((b) => b.key === key) ?? BUILDING_TYPES[1];
 }
 
-export type BuildingOpts = { type: string; rooms: number; floor: number; seed: number; size?: number };
+export type Side = "N" | "E" | "S" | "W";
+export type Entrance = { side: Side; off: number };
+export type BuildingNode = { kind: "leaf" } | { kind: "split"; axis: "v" | "h"; pos: number; door: number; a: BuildingNode; b: BuildingNode };
+export type BuildingPlan = { type: string; aspect: number; rooms: number; seed: number; tree: BuildingNode; entrance: Entrance };
+export type Rect = { x: number; y: number; w: number; h: number };
 
 function mulberry32(a: number) {
   return function () {
@@ -41,67 +45,120 @@ function mulberry32(a: number) {
   };
 }
 
-type Rect = { x: number; y: number; w: number; h: number };
-type Door = { x: number; y: number; horiz: boolean };
-
-// Split the footprint until there are EXACTLY `target` rooms: repeatedly split the largest room that
-// still fits two, along its longer axis, and drop a door on the wall that split just created (so every
-// interior wall gets one doorway on a real shared edge).
-function splitToRooms(rng: () => number, footprint: Rect, target: number, min: number, rooms: Rect[], doors: Door[]): void {
-  rooms.push({ ...footprint });
-  while (rooms.length < target) {
-    let idx = -1, best = -1;
-    for (let i = 0; i < rooms.length; i++) { const l = rooms[i]; if (l.w >= min * 2 || l.h >= min * 2) { const a = l.w * l.h; if (a > best) { best = a; idx = i; } } }
-    if (idx < 0) break; // nothing left large enough to split
-    const l = rooms[idx];
-    const canV = l.w >= min * 2, canH = l.h >= min * 2;
-    const vert = canV && (!canH || l.w >= l.h);
-    if (vert) {
-      const sx = l.x + l.w * (0.4 + rng() * 0.2);
-      doors.push({ x: sx, y: l.y + l.h * (0.35 + rng() * 0.3), horiz: false });
-      rooms.splice(idx, 1, { x: l.x, y: l.y, w: sx - l.x, h: l.h }, { x: sx, y: l.y, w: l.x + l.w - sx, h: l.h });
-    } else {
-      const sy = l.y + l.h * (0.4 + rng() * 0.2);
-      doors.push({ x: l.x + l.w * (0.35 + rng() * 0.3), y: sy, horiz: true });
-      rooms.splice(idx, 1, { x: l.x, y: l.y, w: l.w, h: sy - l.y }, { x: l.x, y: sy, w: l.w, h: l.y + l.h - sy });
-    }
-  }
+function buildTree(rng: () => number, w: number, h: number, target: number): BuildingNode {
+  if (target <= 1) return { kind: "leaf" };
+  const la = Math.max(1, Math.round(target * (0.35 + rng() * 0.3)));
+  const lb = Math.max(1, target - la);
+  if (lb < 1) return { kind: "leaf" };
+  const axis: "v" | "h" = w >= h ? "v" : "h";
+  const pos = 0.4 + rng() * 0.2;
+  const aw = axis === "v" ? w * pos : w, ah = axis === "v" ? h : h * pos;
+  const bw = axis === "v" ? w * (1 - pos) : w, bh = axis === "v" ? h : h * (1 - pos);
+  return { kind: "split", axis, pos, door: 0.35 + rng() * 0.3, a: buildTree(rng, aw, ah, la), b: buildTree(rng, bw, bh, lb) };
 }
 
-export function generateBuilding(opts: BuildingOpts): string {
-  const size = opts.size ?? 1024;
+function footprintDims(aspect: number, compact: boolean, size: number): Rect {
+  let w = compact ? size * 0.5 : size * 0.78, h = w / aspect;
+  if (h > size * 0.82) { h = size * 0.82; w = h * aspect; }
+  return { x: (size - w) / 2, y: (size - h) / 2, w, h };
+}
+export function footprintOf(plan: BuildingPlan, size: number): Rect {
+  return footprintDims(plan.aspect, !!buildingDef(plan.type).compact, size);
+}
+
+export function makePlan(type: string, rooms: number, seed: number): BuildingPlan {
+  const def = buildingDef(type);
+  const f = footprintDims(def.aspect, !!def.compact, 1024);
+  const r = Math.max(1, Math.round(rooms));
+  return { type, aspect: def.aspect, rooms: r, seed, tree: buildTree(mulberry32(seed), f.w, f.h, r), entrance: { side: "S", off: 0.5 } };
+}
+
+export function childRects(node: Extract<BuildingNode, { kind: "split" }>, r: Rect): [Rect, Rect] {
+  const p = node.pos;
+  return node.axis === "v"
+    ? [{ x: r.x, y: r.y, w: r.w * p, h: r.h }, { x: r.x + r.w * p, y: r.y, w: r.w * (1 - p), h: r.h }]
+    : [{ x: r.x, y: r.y, w: r.w, h: r.h * p }, { x: r.x, y: r.y + r.h * p, w: r.w, h: r.h * (1 - p) }];
+}
+export function walkLeaves(node: BuildingNode, r: Rect, out: Rect[]): void {
+  if (node.kind === "leaf") { out.push(r); return; }
+  const [ra, rb] = childRects(node, r); walkLeaves(node.a, ra, out); walkLeaves(node.b, rb, out);
+}
+export type SplitHit = { node: Extract<BuildingNode, { kind: "split" }>; r: Rect };
+export function walkSplits(node: BuildingNode, r: Rect, out: SplitHit[]): void {
+  if (node.kind !== "split") return;
+  out.push({ node, r });
+  const [ra, rb] = childRects(node, r); walkSplits(node.a, ra, out); walkSplits(node.b, rb, out);
+}
+export function splitLine(node: Extract<BuildingNode, { kind: "split" }>, r: Rect) {
+  return node.axis === "v"
+    ? { x1: r.x + r.w * node.pos, y1: r.y, x2: r.x + r.w * node.pos, y2: r.y + r.h }
+    : { x1: r.x, y1: r.y + r.h * node.pos, x2: r.x + r.w, y2: r.y + r.h * node.pos };
+}
+export function doorPt(node: Extract<BuildingNode, { kind: "split" }>, r: Rect) {
+  const l = splitLine(node, r);
+  return node.axis === "v" ? { x: l.x1, y: l.y1 + (l.y2 - l.y1) * node.door } : { x: l.x1 + (l.x2 - l.x1) * node.door, y: l.y1 };
+}
+export function entPt(ent: Entrance, f: Rect) {
+  if (ent.side === "N") return { x: f.x + f.w * ent.off, y: f.y };
+  if (ent.side === "S") return { x: f.x + f.w * ent.off, y: f.y + f.h };
+  if (ent.side === "W") return { x: f.x, y: f.y + f.h * ent.off };
+  return { x: f.x + f.w, y: f.y + f.h * ent.off };
+}
+
+// --- transforms (pure) ---
+function flipNode(node: BuildingNode, horiz: boolean): BuildingNode {
+  if (node.kind !== "split") return node;
+  const flAxis = horiz ? "v" : "h";
+  if (node.axis === flAxis) return { kind: "split", axis: node.axis, pos: 1 - node.pos, door: node.door, a: flipNode(node.b, horiz), b: flipNode(node.a, horiz) };
+  return { kind: "split", axis: node.axis, pos: node.pos, door: 1 - node.door, a: flipNode(node.a, horiz), b: flipNode(node.b, horiz) };
+}
+function flipEnt(e: Entrance, horiz: boolean): Entrance {
+  if (horiz) { if (e.side === "E") return { side: "W", off: e.off }; if (e.side === "W") return { side: "E", off: e.off }; return { side: e.side, off: 1 - e.off }; }
+  if (e.side === "N") return { side: "S", off: e.off }; if (e.side === "S") return { side: "N", off: e.off }; return { side: e.side, off: 1 - e.off };
+}
+export function flipPlan(plan: BuildingPlan, horiz: boolean): BuildingPlan {
+  return { ...plan, tree: flipNode(plan.tree, horiz), entrance: flipEnt(plan.entrance, horiz) };
+}
+// 90 degrees clockwise.
+function rotNode(node: BuildingNode): BuildingNode {
+  if (node.kind !== "split") return node;
+  if (node.axis === "v") return { kind: "split", axis: "h", pos: node.pos, door: 1 - node.door, a: rotNode(node.a), b: rotNode(node.b) };
+  return { kind: "split", axis: "v", pos: 1 - node.pos, door: node.door, a: rotNode(node.b), b: rotNode(node.a) };
+}
+function rotEnt(e: Entrance): Entrance {
+  const map: Record<Side, Side> = { N: "E", E: "S", S: "W", W: "N" };
+  return { side: map[e.side], off: e.side === "E" || e.side === "W" ? 1 - e.off : e.off };
+}
+export function rotatePlan(plan: BuildingPlan): BuildingPlan {
+  return { ...plan, aspect: 1 / plan.aspect, tree: rotNode(plan.tree), entrance: rotEnt(plan.entrance) };
+}
+
+// --- rendering ---
+export function drawPlan(ctx: CanvasRenderingContext2D, plan: BuildingPlan, size: number): void {
+  const f = footprintOf(plan, size);
+  ctx.fillStyle = "#e7dfce"; ctx.fillRect(0, 0, size, size);
+  const leaves: Rect[] = []; walkLeaves(plan.tree, f, leaves);
+  leaves.forEach((rm, i) => {
+    const v = 196 - ((i * 37) % 40);
+    ctx.fillStyle = `rgb(${v},${v - 8},${v - 22})`; ctx.fillRect(rm.x, rm.y, rm.w, rm.h);
+    const r2 = mulberry32(plan.seed + i * 131);
+    for (let k = 0; k < 10; k++) { const s = size * 0.012 + r2() * size * 0.018; ctx.fillStyle = "rgba(120,105,85,0.3)"; ctx.fillRect(rm.x + 8 + r2() * Math.max(0, rm.w - s - 16), rm.y + 8 + r2() * Math.max(0, rm.h - s - 16), s, s * (0.6 + r2() * 0.8)); }
+  });
+  const splits: SplitHit[] = []; walkSplits(plan.tree, f, splits);
+  ctx.strokeStyle = "#3a332a"; ctx.lineWidth = size * 0.007; ctx.lineCap = "round";
+  splits.forEach(({ node, r }) => { const l = splitLine(node, r); ctx.beginPath(); ctx.moveTo(l.x1, l.y1); ctx.lineTo(l.x2, l.y2); ctx.stroke(); });
+  ctx.lineWidth = size * 0.013; ctx.strokeRect(f.x, f.y, f.w, f.h);
+  const dw = size * 0.055; ctx.fillStyle = "#cfc6b0";
+  splits.forEach(({ node, r }) => { const d = doorPt(node, r); if (node.axis === "v") ctx.fillRect(d.x - size * 0.009, d.y - dw / 2, size * 0.018, dw); else ctx.fillRect(d.x - dw / 2, d.y - size * 0.009, dw, size * 0.018); });
+  const e = entPt(plan.entrance, f); const vert = plan.entrance.side === "E" || plan.entrance.side === "W"; const ew = size * 0.06;
+  ctx.fillStyle = "#c9a24b"; ctx.fillRect(e.x - (vert ? size * 0.012 : ew / 2), e.y - (vert ? ew / 2 : size * 0.012), vert ? size * 0.024 : ew, vert ? ew : size * 0.024);
+}
+
+export function renderControlImage(plan: BuildingPlan, size = 1024): string {
   const canvas = document.createElement("canvas");
   canvas.width = size; canvas.height = size;
   const ctx = canvas.getContext("2d");
   if (!ctx) return "";
-  const W = size, def = buildingDef(opts.type), rng = mulberry32(opts.seed + opts.floor * 7919);
-
-  ctx.fillStyle = "#e7dfce"; ctx.fillRect(0, 0, W, W);
-  let fw = def.compact ? W * 0.5 : W * 0.78, fh = fw / def.aspect;
-  if (fh > W * 0.82) { fh = W * 0.82; fw = fh * def.aspect; }
-  const fx = (W - fw) / 2, fy = (W - fh) / 2;
-  const target = Math.max(1, Math.round(opts.rooms));
-  const rooms: Rect[] = [], doors: Door[] = [];
-  splitToRooms(rng, { x: fx, y: fy, w: fw, h: fh }, target, W * 0.09, rooms, doors);
-
-  rooms.forEach((rm, i) => {
-    const v = 196 - ((i * 37) % 40);
-    ctx.fillStyle = `rgb(${v},${v - 8},${v - 22})`; ctx.fillRect(rm.x, rm.y, rm.w, rm.h);
-    for (let k = 0; k < 12; k++) {
-      const s = W * 0.012 + rng() * W * 0.018;
-      ctx.fillStyle = "rgba(120,105,85,0.35)";
-      ctx.fillRect(rm.x + 6 + rng() * Math.max(0, rm.w - s - 12), rm.y + 6 + rng() * Math.max(0, rm.h - s - 12), s, s * (0.6 + rng() * 0.8));
-    }
-  });
-
-  ctx.strokeStyle = "#3a332a"; ctx.lineWidth = W * 0.006;
-  rooms.forEach((rm) => ctx.strokeRect(rm.x, rm.y, rm.w, rm.h));
-  ctx.lineWidth = W * 0.012; ctx.strokeRect(fx, fy, fw, fh);
-
-  const dw = W * 0.05;
-  ctx.fillStyle = "#cfc6b0";
-  doors.forEach((d) => { if (d.horiz) ctx.fillRect(d.x - dw / 2, d.y - W * 0.008, dw, W * 0.016); else ctx.fillRect(d.x - W * 0.008, d.y - dw / 2, W * 0.016, dw); });
-  ctx.fillStyle = "#c9a24b"; ctx.fillRect(fx + fw / 2 - dw / 2, fy + fh - W * 0.01, dw, W * 0.02);
-
+  drawPlan(ctx, plan, size);
   return canvas.toDataURL("image/png");
 }
