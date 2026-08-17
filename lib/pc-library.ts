@@ -34,6 +34,7 @@ export type LibraryDenorm = {
 export type LibraryRow = LibraryDenorm & {
   id: string;
   name: string;
+  system?: string;
   build: unknown;
   created_at: string;
   updated_at: string;
@@ -45,7 +46,7 @@ export type CampaignOption = { campaign_id: string; campaign_name: string };
 export async function listLibrary(supabase: SupabaseClient): Promise<LibraryRow[]> {
   const { data, error } = await supabase
     .from("pc_library")
-    .select("id, name, build, species, class, subclass, species_variant, level, portrait_url, created_at, updated_at")
+    .select("id, name, system, build, species, class, subclass, species_variant, level, portrait_url, created_at, updated_at")
     .order("updated_at", { ascending: false });
   if (error) throw error;
   return (data as LibraryRow[]) || [];
@@ -58,6 +59,7 @@ export async function saveToLibrary(
   name: string,
   build: unknown,
   denorm: LibraryDenorm,
+  system?: string,
 ): Promise<string> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Sign in to save to your library.");
@@ -66,6 +68,7 @@ export async function saveToLibrary(
     .insert({
       profile_id: user.id,
       name: name || "Unnamed character",
+      system: system ?? "dnd5e",
       build: build as Record<string, unknown>,
       species: denorm.species ?? null,
       class: denorm.class ?? null,
@@ -88,11 +91,13 @@ export async function updateLibrary(
   name: string,
   build: unknown,
   denorm: LibraryDenorm,
+  system?: string,
 ): Promise<void> {
   const { error } = await supabase
     .from("pc_library")
     .update({
       name: name || "Unnamed character",
+      ...(system ? { system } : {}),
       build: build as Record<string, unknown>,
       species: denorm.species ?? null,
       class: denorm.class ?? null,
@@ -257,6 +262,7 @@ async function insertInstance(
       profile_id: user.id,
       kind: "pc",
       name: lib.name,
+      system: lib.system ?? "dnd5e",
       build: lib.build as Record<string, unknown>,
       species: lib.species ?? null,
       class: lib.class ?? null,
@@ -291,17 +297,17 @@ export async function saveCharacterToLibrary(
 ): Promise<string> {
   const { data, error } = await supabase
     .from("characters")
-    .select("name, build, species, class, subclass, species_variant, level, portrait_url")
+    .select("name, system, build, species, class, subclass, species_variant, level, portrait_url")
     .eq("id", characterId)
     .single();
   if (error) throw error;
   const c = data as {
-    name: string; build: unknown; species: string | null; class: string | null;
+    name: string; system: string | null; build: unknown; species: string | null; class: string | null;
     subclass: string | null; species_variant: string | null; level: number | null;
     portrait_url: string | null;
   };
   return saveToLibrary(supabase, c.name, c.build ?? {}, {
     species: c.species, class: c.class, subclass: c.subclass,
     species_variant: c.species_variant, level: c.level, portrait_url: c.portrait_url,
-  });
+  }, c.system ?? "dnd5e");
 }

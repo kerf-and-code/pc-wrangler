@@ -38,6 +38,10 @@ import { traitOptions, traitAsksAChoice, lineageSpells } from "@/lib/species-cho
 import { choicesFor, resolveChoice, choiceKey, costedPicks, actionsFor, type ClassChoice } from "@/lib/class-choices";
 import { classTable, classTableColumns } from "@/lib/class-table";
 import { resourcesFor, slotsFor, remaining, afterShortRest, speciesResources, type Resource } from "@/lib/resources";
+import { getActiveCampaign } from "@/lib/active-campaign";
+import { derivePf2eSheet, emptyPf2eBuild, type Pf2eBuild } from "@/lib/pf2e/character";
+import { PF2_RULES } from "@/lib/pf2e/rules-data";
+import Pf2eForge from "@/components/pf2e-forge";
 import { menusFor, type ClassMenu } from "@/lib/class-menus";
 import { casterLevel, multiclassSlots, isMulticlassCaster, type CasterType } from "@/lib/multiclass-slots";
 import { subclassSpellsFor } from "@/lib/subclass-spells";
@@ -266,6 +270,8 @@ function ForgeInner() {
   const [stable, setStable] = useState<StableRow[]>([]);
   const [row, setRow] = useState<CharRow | null>(null);
   const [build, setBuild] = useState<Build>(emptyBuild());
+  const [system, setSystem] = useState<string>("dnd5e");
+  const [pbuild, setPbuild] = useState<Pf2eBuild>(emptyPf2eBuild);
   const [name, setName] = useState<string>("");
   const [speciesVariant, setSpeciesVariant] = useState<string>("");
   const [portraitUrl, setPortraitUrl] = useState<string | null>(null);
@@ -291,6 +297,7 @@ function ForgeInner() {
       if (mode === "new") {
         if (!active) return;
         setName("New character");
+        setSystem(getActiveCampaign()?.system === "pf2e" ? "pf2e" : "dnd5e");
         setStatus("ready");
         return;
       }
@@ -299,13 +306,16 @@ function ForgeInner() {
       if (mode === "library" && libIdParam) {
         const { data, error } = await supabase
           .from("pc_library")
-          .select("id, name, build, species, class, subclass, species_variant, level, portrait_url")
+          .select("id, name, system, build, species, class, subclass, species_variant, level, portrait_url")
           .eq("id", libIdParam)
           .single();
         if (!active) return;
         if (error || !data) { setStatus("error"); return; }
         const r = data as LibRow;
-        setBuild(seedFromDenorm(normalizeBuild(r.build), r));
+        const sys = (r as { system?: string }).system || "dnd5e";
+        setSystem(sys);
+        if (sys === "pf2e") setPbuild({ ...emptyPf2eBuild(), ...(r.build as Partial<Pf2eBuild>) });
+        else setBuild(seedFromDenorm(normalizeBuild(r.build), r));
         setName(r.name || "");
         setSpeciesVariant(r.species_variant || "");
         setStatus("ready");
@@ -325,14 +335,17 @@ function ForgeInner() {
       // CAMPAIGN character.
       const { data, error } = await supabase
         .from("characters")
-        .select("id, name, build, species, class, subclass, species_variant, level, alignment, campaign_id, portrait_url")
+        .select("id, name, system, build, species, class, subclass, species_variant, level, alignment, campaign_id, portrait_url")
         .eq("id", charId)
         .single();
       if (!active) return;
       if (error || !data) { setStatus("error"); return; }
       const r = data as CharRow;
       setRow(r);
-      setBuild(seedFromDenorm(normalizeBuild(r.build), r));
+      const sys = (r as { system?: string }).system || "dnd5e";
+      setSystem(sys);
+      if (sys === "pf2e") setPbuild({ ...emptyPf2eBuild(), ...(r.build as Partial<Pf2eBuild>) });
+      else setBuild(seedFromDenorm(normalizeBuild(r.build), r));
       setName(r.name || "");
       setSpeciesVariant(r.species_variant || "");
       if (r.portrait_url) {
@@ -965,6 +978,36 @@ function ForgeInner() {
   const persist = useCallback(async (): Promise<boolean> => {
     setSaveState("saving");
     try {
+      if (system === "pf2e") {
+        const pdenorm = {
+          species: pbuild.ancestryId || null, class: pbuild.classId || null,
+          subclass: pbuild.heritageId || null, species_variant: null, level: pbuild.level,
+        };
+        if (mode === "character") {
+          if (!row) return false;
+          const { error } = await supabase.from("characters").update({
+            build: pbuild as unknown as Record<string, unknown>, system: "pf2e",
+            name: name || row.name, species: pbuild.ancestryId || null, class: pbuild.classId || null,
+            subclass: pbuild.heritageId || null, level: pbuild.level,
+          }).eq("id", row.id);
+          if (error) throw error;
+          setSaveState("saved"); return true;
+        }
+        if (mode === "new" && !libId) {
+          if (creating.current) return false;
+          creating.current = true;
+          const newId = await saveToLibrary(supabase, name || "New character", pbuild, pdenorm, "pf2e");
+          creating.current = false;
+          setLibId(newId); setMode("library"); router.replace(`/me/forge?lib=${newId}`);
+          setSaveState("saved"); return true;
+        }
+        if (libId) {
+          await updateLibrary(supabase, libId, name || "New character", pbuild, pdenorm, "pf2e");
+          setSaveState("saved"); return true;
+        }
+        return false;
+      }
+
       if (mode === "character") {
         if (!row) return false;
         const { error } = await supabase
@@ -1009,7 +1052,7 @@ function ForgeInner() {
       setSaveState("error");
       return false;
     }
-  }, [supabase, router, mode, row, libId, build, name, speciesVariant]);
+  }, [supabase, router, mode, row, libId, build, name, speciesVariant, system, pbuild]);
 
   // Autosave: debounce ~1s after the last change. Only runs once loaded and when there are unsaved
   // edits (saveState "idle"). Skips while picking / signed out / errored.
@@ -1051,7 +1094,8 @@ function ForgeInner() {
     fontFamily: FORGE_FONTS.body, ...forgeBackground(),
   };
 
-  const editable = status === "ready" && !!sheet;
+  const psheet = useMemo(() => { try { return derivePf2eSheet(pbuild, PF2_RULES); } catch { return null; } }, [pbuild]);
+  const editable = status === "ready" && (system === "pf2e" ? !!psheet : !!sheet);
 
   return (
     <div style={shellStyle}>
@@ -1069,7 +1113,11 @@ function ForgeInner() {
 
           {status === "picking" && <Picking stable={stable} />}
 
-          {editable && (
+          {editable && system === "pf2e" && (
+            <Pf2eForge pbuild={pbuild} onChange={(b) => { setPbuild(b); setSaveState("idle"); }}
+              sheet={psheet} name={name} onName={editName} />
+          )}
+          {editable && system !== "pf2e" && (
             <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 20 }}>
               {/* Name (editable for every mode; it's the character's name). */}
               <div style={stonePanel()}>

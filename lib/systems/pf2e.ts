@@ -21,7 +21,9 @@ export const pf2e: RulesModule = {
   // adversary ON: the PF2e Monster Maker (schema lib/pf2e/creature.ts) + the level-budget encounter
   // method (lib/pf2e/encounter.ts) are built, so these tools now appear for a PF2e campaign.
   adversary: { schemaId: "pf2e-creature", hasEncounterMath: true, encounterMethod: "pf2e", dataSource: "archives-of-nethys" },
-  // character: still absent - the ancestry/class creator (step 3) is not built yet.
+  // character ON: the PF2e Forge (ancestry/heritage/background/class builder + derivePf2eSheet, rules
+  // in lib/pf2e/rules-data.ts). No importer yet; derivation is live. The creator now shows for PF2e.
+  character: { schemaId: "pf2e-pc", hasImport: false, hasDerivation: true },
   axes: [],
   rulesRef: { id: "archives-of-nethys", label: "Archives of Nethys" },
 };
