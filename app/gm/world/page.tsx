@@ -86,6 +86,23 @@ function milesPerHex(dim: number): number {
   return 60;
 }
 
+// Downscale an uploaded image to a JPEG data URL before tracing, so the request body stays well under
+// the platform's size limit (a full-res map as base64 easily exceeds it -> 413 Content Too Large).
+async function downscaleToDataUrl(file: File, maxDim: number, quality: number): Promise<string> {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const im = new Image(); im.onload = () => resolve(im); im.onerror = () => reject(new Error("image")); im.src = url;
+    });
+    const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+    const w = Math.max(1, Math.round(img.width * scale)), h = Math.max(1, Math.round(img.height * scale));
+    const canvas = document.createElement("canvas"); canvas.width = w; canvas.height = h;
+    const ctx = canvas.getContext("2d"); if (!ctx) throw new Error("ctx");
+    ctx.drawImage(img, 0, 0, w, h);
+    return canvas.toDataURL("image/jpeg", quality);
+  } finally { URL.revokeObjectURL(url); }
+}
+
 function roughenCoastsInPlace(biome: Uint8Array, flags: Uint8Array, W: number, H: number, strength: number, iterations: number, seed: number): void {
   const AX: [number, number][] = [[1, 0], [1, -1], [0, -1], [-1, 0], [-1, 1], [0, 1]];
   const nbrs = (col: number, row: number): number[] => {
@@ -776,9 +793,7 @@ export default function WorldMapPage() {
     if (!window.confirm("Trace this image into hex tiles with AI? It replaces the current terrain with the AI's best reading, which you can then edit and re-render.")) return;
     setTracing(true); setStatus("Reading the map into tiles\u2026");
     try {
-      const dataUrl = await new Promise<string>((resolve, reject) => {
-        const r = new FileReader(); r.onload = () => resolve(String(r.result)); r.onerror = () => reject(new Error("read")); r.readAsDataURL(file);
-      });
+      const dataUrl = await downscaleToDataUrl(file, 1024, 0.85);
       const res = await fetch("/api/world-map/trace", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ campaignId, image: dataUrl, width: terrain.meta.width, height: terrain.meta.height, biomes: biomes.map((b) => ({ id: b.id, label: b.label, color: b.color })) }),

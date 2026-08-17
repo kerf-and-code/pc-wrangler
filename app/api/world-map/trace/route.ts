@@ -40,10 +40,16 @@ export async function POST(request: Request) {
     const mime = mimeMatch ? mimeMatch[1] : "image/png";
     const b64 = image.replace(/^data:image\/\w+;base64,/, "");
 
-    const total = width * height;
+    // A model can't meaningfully label 10k hexes from a picture, and asking for that many integers is slow
+    // and can time out the gateway. Read into a COARSE grid (<= MAX_TRACE_CELLS), then upsample below.
+    const MAX_TRACE_CELLS = 2500;
+    const scale = Math.min(1, Math.sqrt(MAX_TRACE_CELLS / (width * height)));
+    const tw = Math.max(1, Math.round(width * scale));
+    const th = Math.max(1, Math.round(height * scale));
+    const total = tw * th;
     const legend = biomes.map((b) => `${b.id} = ${b.label}`).join("; ");
     const prompt =
-      `This image is a top-down fantasy world map. Read it as a ${width}-column by ${height}-row grid ` +
+      `This image is a top-down fantasy world map. Read it as a ${tw}-column by ${th}-row grid ` +
       `of ${total} cells, scanning left to right, top to bottom. For EACH cell choose the biome id whose ` +
       `terrain best matches what that cell mostly shows. Judge by the map's features and context, not ` +
       `colour alone: distinguish plain forest from enchanted or magical forest, plains from desert, open ` +
@@ -75,11 +81,21 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: `The trace returned ${Array.isArray(raw) ? raw.length : 0} tiles; expected ${total}. Try again.` }, { status: 502 });
     }
 
-    // Validate: clamp every cell to a known biome id, pad/truncate to exactly width*height.
+    // Validate the coarse grid: clamp every cell to a known biome id, pad/truncate to exactly tw*th.
     const known = new Set(biomes.map((b) => b.id));
     const fallback = biomes[0].id;
-    const tiles: number[] = [];
-    for (let i = 0; i < total; i++) { const v = raw[i]; tiles.push(typeof v === "number" && known.has(v) ? v : fallback); }
+    const coarse: number[] = [];
+    for (let i = 0; i < total; i++) { const v = raw[i]; coarse.push(typeof v === "number" && known.has(v) ? v : fallback); }
+
+    // Upsample the coarse grid (tw x th) to the real grid (width x height), nearest-neighbour.
+    const tiles: number[] = new Array(width * height);
+    for (let r = 0; r < height; r++) {
+      const cr = Math.min(th - 1, Math.floor((r * th) / height));
+      for (let c = 0; c < width; c++) {
+        const cc = Math.min(tw - 1, Math.floor((c * tw) / width));
+        tiles[r * width + c] = coarse[cr * tw + cc];
+      }
+    }
 
     return NextResponse.json({ ok: true, tiles });
   } catch (e) {
