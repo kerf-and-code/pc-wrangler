@@ -3,9 +3,10 @@ import { createClient } from "@/lib/supabase/server";
 
 export const maxDuration = 60;
 
-// A vision model (understanding, not image-gen) reads a map image and labels each hex's terrain. If it
-// 404s, set GEMINI_VISION_MODEL to a model your key can call.
-const MODEL = process.env.GEMINI_VISION_MODEL || "gemini-2.5-flash";
+// A vision model (understanding, not image-gen) reads a map image and labels each hex's terrain. Uses a
+// current GA Flash model (older ones like gemini-2.5-flash are blocked for new keys). If it 404s, set
+// GEMINI_VISION_MODEL to a model your key can call (e.g. gemini-3.7-flash).
+const MODEL = process.env.GEMINI_VISION_MODEL || "gemini-3.6-flash";
 
 type Body = {
   campaignId: string;
@@ -54,7 +55,7 @@ export async function POST(request: Request) {
       headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: mime, data: b64 } }] }],
-        generationConfig: { temperature: 0.2, responseMimeType: "application/json" },
+        generationConfig: { responseMimeType: "application/json" },
       }),
     });
     if (!gemResp.ok) {
