@@ -8,6 +8,7 @@ import { C, FORGE_RADIUS, stoneField, stonePanel, stoneButton } from "@/lib/forg
 import { loadSrd } from "@/lib/srd/srd";
 import { listStatBlocks, type StatBlockRow } from "@/lib/stat-blocks";
 import { getModule } from "@/lib/systems/registry";
+import { pf2Budget, pf2EncounterXp, pf2Threat, PF2_THREATS, PF2_THREAT_LABEL } from "@/lib/pf2e/encounter";
 import { setActiveCampaign } from "@/lib/active-campaign";
 
 // ============================================================================
@@ -137,6 +138,9 @@ export default function EncountersPage() {
   // and the SRD monster library. Both feed the same Foe model, so the whole calc downstream is
   // unchanged, this only replaces hand-typing a name and CR.
   const [statBlocks, setStatBlocks] = useState<StatBlockRow[]>([]);
+  const [pfLevel, setPfLevel] = useState(1);
+  const [pfSize, setPfSize] = useState(4);
+  const [pfoes, setPfoes] = useState<{ id: string; name: string; level: number; count: number }[]>([]);
   const [srdMode, setSrdMode] = useState<SrdMode>("2014");
   const [pickerOpen, setPickerOpen] = useState(false);
 
@@ -185,6 +189,19 @@ export default function EncountersPage() {
   const party = useMemo(() => chars.filter((c) => present[c.id]), [chars, present]);
   const levelled = useMemo(() => party.filter((c) => c.level != null && c.level >= 1 && c.level <= 20), [party]);
   const missingLevels = party.length - levelled.length;
+
+  // PF2e wants one party level + a size. Derive from the present, levelled party (most common level),
+  // and keep it in sync so switching campaigns/toggling PCs updates it; the GM can still override.
+  const pf2Derived = useMemo(() => {
+    const lvls = levelled.map((c) => c.level as number);
+    if (!lvls.length) return { level: 1, size: 4 };
+    const counts = new Map<number, number>();
+    for (const l of lvls) counts.set(l, (counts.get(l) ?? 0) + 1);
+    let level = lvls[0], best = 0;
+    for (const [l, c] of counts) if (c > best || (c === best && l > level)) { best = c; level = l; }
+    return { level, size: lvls.length };
+  }, [levelled]);
+  useEffect(() => { setPfLevel(pf2Derived.level); setPfSize(pf2Derived.size); }, [pf2Derived]);
 
   // ---- the party's budget / thresholds ------------------------------------
   useEffect(() => {
@@ -370,12 +387,21 @@ export default function EncountersPage() {
     fontFamily: SAX.mono, fontSize: 11, letterSpacing: "0.2em",
     textTransform: "uppercase", color: C.muted, marginBottom: 10,
   };
+  const ghostBtn: React.CSSProperties = {
+    background: "transparent", border: `1px solid ${C.line}`, color: C.text,
+    borderRadius: 8, padding: "8px 12px", fontSize: 13, cursor: "pointer",
+  };
 
   // The campaign's rules module decides whether encounter budgets even apply. For D&D
   // (adversary.hasEncounterMath) the balancer shows as-is; a system without CR/XP budgets, like
   // Call of Cthulhu, says so instead of presenting maths that mean nothing there.
   const adversary = getModule(campaigns.find((c) => c.id === campaignId)?.system).adversary;
   const hasEncounterMath = adversary?.hasEncounterMath ?? false;
+  const encMethod = adversary?.encounterMethod ?? "dnd5e";
+  const pfLevels = pfoes.flatMap((f) => Array(Math.max(0, f.count)).fill(f.level) as number[]);
+  const pfTotal = pf2EncounterXp(pfLevels, pfLevel);
+  const pfThreat = pf2Threat(pfTotal, pfSize);
+  const pfBudget = pf2Budget(pfSize);
 
   return (
     <PageShell width={980}>
@@ -400,7 +426,7 @@ export default function EncountersPage() {
         </div>
       )}
 
-      {hasEncounterMath && (<>
+      {hasEncounterMath && encMethod !== "pf2e" && (<>
       {/* method */}
       <div style={box}>
         <div style={eyebrow}>Method</div>
@@ -801,6 +827,75 @@ export default function EncountersPage() {
         whether anyone remembered to take a long rest will move a fight further than any
         table on this page.
       </p>
+      </>)}
+
+      {hasEncounterMath && encMethod === "pf2e" && (<>
+        <div style={box}>
+          <div style={eyebrow}>Party</div>
+          <select value={campaignId} onChange={(e) => setCampaignId(e.target.value)} style={{ ...inputStyle, maxWidth: 240 }}>
+            {campaigns.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+          <div style={{ display: "flex", gap: 14, marginTop: 12, flexWrap: "wrap" }}>
+            <label style={{ display: "grid", gap: 4 }}>
+              <span style={{ fontSize: 12, color: C.muted }}>Party level</span>
+              <input type="number" value={pfLevel} onChange={(e) => setPfLevel(parseInt(e.target.value, 10) || 1)} style={{ ...inputStyle, maxWidth: 100 }} />
+            </label>
+            <label style={{ display: "grid", gap: 4 }}>
+              <span style={{ fontSize: 12, color: C.muted }}>Party size</span>
+              <input type="number" value={pfSize} onChange={(e) => setPfSize(Math.max(1, parseInt(e.target.value, 10) || 1))} style={{ ...inputStyle, maxWidth: 100 }} />
+            </label>
+          </div>
+          {levelled.length > 0 && (
+            <p style={{ color: C.muted, fontSize: 12, marginTop: 8 }}>From the present party: {levelled.length} at level {pf2Derived.level}.</p>
+          )}
+          <div style={{ display: "flex", gap: 8, marginTop: 14, flexWrap: "wrap" }}>
+            {PF2_THREATS.map((t) => (
+              <div key={t} style={{ flex: 1, minWidth: 88, textAlign: "center", padding: "8px 6px", border: `1px solid ${C.line}`, borderRadius: 8 }}>
+                <div style={{ fontSize: 10.5, color: C.muted, textTransform: "uppercase", letterSpacing: "0.05em" }}>{PF2_THREAT_LABEL[t]}</div>
+                <div style={{ fontFamily: SAX.mono, fontSize: 16, color: C.text }}>{pfBudget[t]}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div style={box}>
+          <div style={eyebrow}>The encounter</div>
+          {pfoes.length === 0 && <p style={{ color: C.muted, fontSize: 13, margin: "0 0 10px" }}>Add creatures by level to price the fight.</p>}
+          {pfoes.map((f) => (
+            <div key={f.id} style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8, flexWrap: "wrap" }}>
+              <input value={f.name} placeholder="Creature" onChange={(e) => setPfoes((xs) => xs.map((x) => (x.id === f.id ? { ...x, name: e.target.value } : x)))} style={{ ...inputStyle, flex: 1, minWidth: 140 }} />
+              <label style={{ display: "flex", gap: 5, alignItems: "center", fontSize: 12, color: C.muted }}>Lvl
+                <input type="number" value={f.level} onChange={(e) => setPfoes((xs) => xs.map((x) => (x.id === f.id ? { ...x, level: parseInt(e.target.value, 10) || 0 } : x)))} style={{ ...inputStyle, width: 64 }} />
+              </label>
+              <label style={{ display: "flex", gap: 5, alignItems: "center", fontSize: 12, color: C.muted }}>&times;
+                <input type="number" value={f.count} onChange={(e) => setPfoes((xs) => xs.map((x) => (x.id === f.id ? { ...x, count: Math.max(1, parseInt(e.target.value, 10) || 1) } : x)))} style={{ ...inputStyle, width: 56 }} />
+              </label>
+              <span style={{ fontFamily: SAX.mono, fontSize: 12, color: C.muted, minWidth: 62, textAlign: "right" }}>{pf2EncounterXp(Array(Math.max(0, f.count)).fill(f.level) as number[], pfLevel)} XP</span>
+              <button onClick={() => setPfoes((xs) => xs.filter((x) => x.id !== f.id))} style={ghostBtn}>Remove</button>
+            </div>
+          ))}
+          <div style={{ display: "flex", gap: 8, marginTop: 6, flexWrap: "wrap", alignItems: "center" }}>
+            <button onClick={() => setPfoes((xs) => [...xs, { id: uid(), name: "", level: pfLevel, count: 1 }])} style={ghostBtn}>Add creature</button>
+            {statBlocks.filter((r) => r.system === "pf2e" && r.level != null).length > 0 && (
+              <select value="" onChange={(e) => { const r = statBlocks.find((x) => x.id === e.target.value); if (r) setPfoes((xs) => [...xs, { id: uid(), name: r.name, level: r.level ?? pfLevel, count: 1 }]); }} style={{ ...inputStyle, maxWidth: 220 }}>
+                <option value="">Add from library…</option>
+                {statBlocks.filter((r) => r.system === "pf2e" && r.level != null).map((r) => <option key={r.id} value={r.id}>{r.name} (Lvl {r.level})</option>)}
+              </select>
+            )}
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 16, paddingTop: 14, borderTop: `1px solid ${C.line}`, flexWrap: "wrap", gap: 10 }}>
+            <div>
+              <div style={{ fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: "0.05em" }}>Total</div>
+              <div style={{ fontFamily: SAX.mono, fontSize: 22, color: C.text }}>{pfTotal} XP</div>
+            </div>
+            <div style={{ textAlign: "right" }}>
+              <div style={{ fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: "0.05em" }}>Threat</div>
+              <div style={{ fontFamily: SAX.mono, fontSize: 22, fontWeight: 700, color: pfThreat === "extreme" || pfThreat === "severe" ? SAX.warn : (pfThreat === "trivial" || pfThreat === null ? C.muted : SAX.good) }}>
+                {pfThreat ? PF2_THREAT_LABEL[pfThreat] : "Below Trivial"}
+              </div>
+            </div>
+          </div>
+        </div>
       </>)}
     </PageShell>
   );

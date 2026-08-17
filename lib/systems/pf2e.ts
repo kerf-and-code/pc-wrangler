@@ -18,6 +18,10 @@ export const pf2e: RulesModule = {
   id: "pf2e",
   label: "Pathfinder 2e",
   dice: { style: { kind: "d20-vs-dc", advantage: false }, label: "Roll d20" },
+  // adversary ON: the PF2e Monster Maker (schema lib/pf2e/creature.ts) + the level-budget encounter
+  // method (lib/pf2e/encounter.ts) are built, so these tools now appear for a PF2e campaign.
+  adversary: { schemaId: "pf2e-creature", hasEncounterMath: true, encounterMethod: "pf2e", dataSource: "archives-of-nethys" },
+  // character: still absent - the ancestry/class creator (step 3) is not built yet.
   axes: [],
   rulesRef: { id: "archives-of-nethys", label: "Archives of Nethys" },
 };

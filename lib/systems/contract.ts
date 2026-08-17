@@ -38,6 +38,9 @@ export interface CharacterModule {
 export interface AdversaryModule {
   schemaId: string;
   hasEncounterMath: boolean;      // CR/XP budget (5e), level budget (PF2e); false for CoC/Vampire
+  encounterMethod?: string;       // which budgeting ALGORITHM the encounter builder dispatches to:
+                                  // "dnd5e" (CR/XP) or "pf2e" (level-relative XP). Present only when
+                                  // hasEncounterMath. New crunch systems add their own id here.
   dataSource?: string;            // "open5e", "archives-of-nethys"
 }
 

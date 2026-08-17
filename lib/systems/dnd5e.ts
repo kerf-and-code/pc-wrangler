@@ -9,7 +9,7 @@ export const dnd5e: RulesModule = {
   label: "D&D 5e (2024)",
   dice: { style: { kind: "d20-vs-dc", advantage: true }, label: "Roll d20" },
   character: { schemaId: "dnd5e", hasImport: true, hasDerivation: true },
-  adversary: { schemaId: "dnd5e", hasEncounterMath: true, dataSource: "open5e" },
+  adversary: { schemaId: "dnd5e", hasEncounterMath: true, encounterMethod: "dnd5e", dataSource: "open5e" },
   axes: [{ id: "arcana", label: "Arcana", blurb: "Rules mastery and character-build optimization." }],
   rulesRef: { id: "srd-open5e", label: "SRD (Open5e)" },
 };
