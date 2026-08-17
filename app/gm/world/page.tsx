@@ -793,7 +793,7 @@ export default function WorldMapPage() {
     if (!window.confirm("Trace this image into hex tiles with AI? It replaces the current terrain with the AI's best reading, which you can then edit and re-render.")) return;
     setTracing(true); setStatus("Reading the map into tiles\u2026");
     try {
-      const dataUrl = await downscaleToDataUrl(file, 1024, 0.85);
+      const dataUrl = await downscaleToDataUrl(file, 1536, 0.85);
       const res = await fetch("/api/world-map/trace", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ campaignId, image: dataUrl, width: terrain.meta.width, height: terrain.meta.height, biomes: biomes.map((b) => ({ id: b.id, label: b.label, color: b.color })) }),
