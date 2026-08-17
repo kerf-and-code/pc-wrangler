@@ -383,13 +383,18 @@ export default function EncountersPage() {
 
       {campaignId && !hasEncounterMath && (
         <div style={box}>
-          <p style={{ color: C.muted, fontSize: 13, margin: 0, lineHeight: 1.6 }}>
-            This campaign&apos;s system doesn&apos;t use encounter budgets. The balancer below is built
-            around D&amp;D&apos;s CR and XP maths, so it won&apos;t mean much here.
+          <div style={eyebrow}>Not for this system</div>
+          <p style={{ color: C.muted, fontSize: 13, margin: "0 0 12px", lineHeight: 1.6 }}>
+            This campaign&apos;s system doesn&apos;t use encounter budgets, so the CR and XP balancer is
+            hidden here, its maths wouldn&apos;t mean anything. Switch to a D&amp;D campaign to use it.
           </p>
+          <select value={campaignId} onChange={(e) => setCampaignId(e.target.value)} style={{ ...inputStyle, maxWidth: 240 }}>
+            {campaigns.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
         </div>
       )}
 
+      {hasEncounterMath && (<>
       {/* method */}
       <div style={box}>
         <div style={eyebrow}>Method</div>
@@ -790,6 +795,7 @@ export default function EncountersPage() {
         whether anyone remembered to take a long rest will move a fight further than any
         table on this page.
       </p>
+      </>)}
     </PageShell>
   );
 }
