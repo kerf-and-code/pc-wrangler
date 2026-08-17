@@ -118,9 +118,12 @@ const CITY_PROMPTS: Record<string, string> = {
 // (see lib/dungeon), so the legend is baked in. Output is a top-down tabletop battle map.
 const DUNGEON_PROMPT =
   "Transform this dungeon plan into ONE cohesive top-down tabletop BATTLE MAP viewed directly from " +
-  "above. The source is a plan on a dark background: each solid colour block is a room, dark lines are " +
-  "stone walls, and the lighter tan corridor cells are hallways linking rooms. Render each room in the " +
-  "character of its colour: pale stone = a furnished chamber; grey stone = a dungeon cell block; brown " +
+  "above. The source is a plan on a dark background. Any group of touching coloured cells is ONE room, " +
+  "even where the colours differ - blend them into a single cohesive space that combines both features " +
+  "(for example a cave with a lava pool, or a sewer with a flooded channel), NOT separate rooms. Dark " +
+  "lines are walls, drawn only around the outer edge of each area against the black empty space; the " +
+  "lighter tan corridor cells are hallways linking areas. Render each area in the character of its " +
+  "colour(s): pale stone = a furnished chamber; grey stone = a dungeon cell block; brown " +
   "= a rough natural cave; blue = a water pool or flooded room; warm tan = a grand castle hall; dark " +
   "grey = a crypt of tombs and sarcophagi; ochre = a mine with ore veins and rail tracks; green-grey = " +
   "a dank sewer; red-orange = a lava chamber with molten flows; pale blue = an ice cavern; violet = a " +

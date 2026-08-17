@@ -58,21 +58,18 @@ export function renderDungeonLevel(grid: number[], size = 1024): string {
     if (CELL_TYPES[t].key === "corridor") { ctx.fillStyle = "rgba(0,0,0,0.08)"; ctx.fillRect(x + CELL * 0.18, y + CELL * 0.18, CELL * 0.64, CELL * 0.64); }
   }
 
+  // Walls only where painted space meets EMPTY space, so any block of touching cells - whatever their
+  // types - reads as ONE cohesive room (a cave with lava, a flooded sewer), not separate rooms.
   ctx.strokeStyle = "#2a2620"; ctx.lineWidth = CELL * 0.14; ctx.lineCap = "round";
-  const isWall = (t: number, rr: number, cc: number) => {
-    if (rr < 0 || cc < 0 || rr >= N || cc >= N) return true;
-    const nt = grid[rr * N + cc]; if (!nt) return true;
-    if (CELL_TYPES[nt].key === "corridor") return false;
-    return nt !== t;
-  };
+  const isWall = (rr: number, cc: number) => (rr < 0 || cc < 0 || rr >= N || cc >= N) ? true : grid[rr * N + cc] === 0;
   for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
-    const t = grid[r * N + c]; if (!t || CELL_TYPES[t].key === "corridor") continue;
+    const t = grid[r * N + c]; if (!t) continue;
     const x = c * CELL, y = r * CELL;
     ctx.beginPath();
-    if (isWall(t, r - 1, c)) { ctx.moveTo(x, y); ctx.lineTo(x + CELL, y); }
-    if (isWall(t, r + 1, c)) { ctx.moveTo(x, y + CELL); ctx.lineTo(x + CELL, y + CELL); }
-    if (isWall(t, r, c - 1)) { ctx.moveTo(x, y); ctx.lineTo(x, y + CELL); }
-    if (isWall(t, r, c + 1)) { ctx.moveTo(x + CELL, y); ctx.lineTo(x + CELL, y + CELL); }
+    if (isWall(r - 1, c)) { ctx.moveTo(x, y); ctx.lineTo(x + CELL, y); }
+    if (isWall(r + 1, c)) { ctx.moveTo(x, y + CELL); ctx.lineTo(x + CELL, y + CELL); }
+    if (isWall(r, c - 1)) { ctx.moveTo(x, y); ctx.lineTo(x, y + CELL); }
+    if (isWall(r, c + 1)) { ctx.moveTo(x + CELL, y); ctx.lineTo(x + CELL, y + CELL); }
     ctx.stroke();
   }
 

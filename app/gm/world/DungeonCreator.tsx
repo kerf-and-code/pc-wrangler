@@ -55,12 +55,12 @@ export default function DungeonCreator({ campaignId }: { campaignId: string }) {
     if (level > 0) { const b = levels[level - 1]; for (let i = 0; i < N * N; i++) if (b[i]) { const x = (i % N) * CELL, y = ((i / N) | 0) * CELL; ctx.fillStyle = "rgba(201,162,75,0.06)"; ctx.fillRect(x, y, CELL, CELL); } }
     for (let i = 0; i < N * N; i++) { const t = g[i]; if (!t) continue; const col = CELL_TYPES[t].color; if (!col) continue; const x = (i % N) * CELL, y = ((i / N) | 0) * CELL; ctx.fillStyle = col; ctx.fillRect(x, y, CELL, CELL); if (CELL_TYPES[t].key === "corridor") { ctx.fillStyle = "rgba(0,0,0,0.08)"; ctx.fillRect(x + CELL * 0.18, y + CELL * 0.18, CELL * 0.64, CELL * 0.64); } }
     ctx.strokeStyle = "#2a2620"; ctx.lineWidth = CELL * 0.14; ctx.lineCap = "round";
-    const wall = (t: number, rr: number, cc: number) => { if (rr < 0 || cc < 0 || rr >= N || cc >= N) return true; const nt = g[rr * N + cc]; if (!nt) return true; if (CELL_TYPES[nt].key === "corridor") return false; return nt !== t; };
-    for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) { const t = g[r * N + c]; if (!t || CELL_TYPES[t].key === "corridor") continue; const x = c * CELL, y = r * CELL; ctx.beginPath();
-      if (wall(t, r - 1, c)) { ctx.moveTo(x, y); ctx.lineTo(x + CELL, y); }
-      if (wall(t, r + 1, c)) { ctx.moveTo(x, y + CELL); ctx.lineTo(x + CELL, y + CELL); }
-      if (wall(t, r, c - 1)) { ctx.moveTo(x, y); ctx.lineTo(x, y + CELL); }
-      if (wall(t, r, c + 1)) { ctx.moveTo(x + CELL, y); ctx.lineTo(x + CELL, y + CELL); }
+    const wall = (rr: number, cc: number) => (rr < 0 || cc < 0 || rr >= N || cc >= N) ? true : g[rr * N + cc] === 0;
+    for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) { const t = g[r * N + c]; if (!t) continue; const x = c * CELL, y = r * CELL; ctx.beginPath();
+      if (wall(r - 1, c)) { ctx.moveTo(x, y); ctx.lineTo(x + CELL, y); }
+      if (wall(r + 1, c)) { ctx.moveTo(x, y + CELL); ctx.lineTo(x + CELL, y + CELL); }
+      if (wall(r, c - 1)) { ctx.moveTo(x, y); ctx.lineTo(x, y + CELL); }
+      if (wall(r, c + 1)) { ctx.moveTo(x + CELL, y); ctx.lineTo(x + CELL, y + CELL); }
       ctx.stroke(); }
     ctx.strokeStyle = "rgba(255,255,255,0.05)"; ctx.lineWidth = 1;
     for (let i = 0; i <= N; i++) { ctx.beginPath(); ctx.moveTo(i * CELL, 0); ctx.lineTo(i * CELL, W); ctx.stroke(); ctx.beginPath(); ctx.moveTo(0, i * CELL); ctx.lineTo(W, i * CELL); ctx.stroke(); }
