@@ -38,6 +38,7 @@ export default function CityCreator({ campaignId }: { campaignId: string }) {
   const [river, setRiver] = useState(false);
   const [seed, setSeed] = useState<number>(() => (Math.random() * 1e9) | 0);
   const [style, setStyle] = useState("fantasy");
+  const [modifier, setModifier] = useState("");
   const [rendered, setRendered] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
@@ -62,7 +63,7 @@ export default function CityCreator({ campaignId }: { campaignId: string }) {
       const res = await fetch("/api/world-map/imagine", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ campaignId, controlImage: control, style, mode: "city", centerpiece }),
+        body: JSON.stringify({ campaignId, controlImage: control, style, mode: "city", centerpiece, promptModifier: modifier }),
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok && data.url) setRendered(data.url);
@@ -126,6 +127,11 @@ export default function CityCreator({ campaignId }: { campaignId: string }) {
         <select value={style} onChange={(e) => setStyle(e.target.value)} style={select}>
           {STYLES.map((s) => <option key={s.v} value={s.v}>{s.label}</option>)}
         </select>
+
+        <label style={label}>Flavour</label>
+        <textarea value={modifier} onChange={(e) => setModifier(e.target.value)} rows={2}
+          placeholder="e.g. besieged, snow-dusted, lantern-lit at dusk"
+          style={{ width: "100%", padding: "8px 9px", background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: 7, fontFamily: "inherit", fontSize: 13, resize: "vertical" }} />
 
         <div style={{ display: "flex", gap: 14, marginTop: 12 }}>
           <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: C.text }}>

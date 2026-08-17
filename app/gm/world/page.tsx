@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import CityCreator from "./CityCreator";
+import DungeonCreator from "./DungeonCreator";
 import { surfaces, ui } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import HexCanvas, { type MapFeature } from "@/components/worldmap/HexCanvas";
@@ -195,7 +196,8 @@ export default function WorldMapPage() {
   const [drawPath, setDrawPath] = useState<[number, number][]>([]);
   const [fantasyView, setFantasyView] = useState(false);
   const [mapStyle, setMapStyle] = useState<string>("fantasy");
-  const [tab, setTab] = useState<"world" | "city">("world");
+  const [tab, setTab] = useState<"world" | "city" | "dungeon">("world");
+  const [mapModifier, setMapModifier] = useState("");
   const [imagining, setImagining] = useState(false);
   const [imagineMsg, setImagineMsg] = useState<string | null>(null);
   const [publishing, setPublishing] = useState(false);
@@ -748,7 +750,7 @@ export default function WorldMapPage() {
         : `a map about ${extentMiles} miles across; render at whole-world scale - continental landmasses, planetary mountain belts, broad climate zones, heavily generalized like a global atlas`;
       const resp = await fetch("/api/world-map/imagine", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ campaignId, controlImage: dataUrl, scaleHint, style: mapStyle, biomes: biomes.map((b) => ({ label: b.label, color: b.color })) }),
+        body: JSON.stringify({ campaignId, controlImage: dataUrl, scaleHint, style: mapStyle, biomes: biomes.map((b) => ({ label: b.label, color: b.color })), promptModifier: mapModifier }),
       });
       const json = await resp.json();
       if (!resp.ok) { setImagineMsg(json.error || "Generation failed."); return; }
@@ -760,7 +762,7 @@ export default function WorldMapPage() {
     } finally {
       setImagining(false);
     }
-  }, [campaignId, terrain, colors, biomeArt, images, features, mapStyle, biomes]);
+  }, [campaignId, terrain, colors, biomeArt, images, features, mapStyle, biomes, mapModifier]);
 
   // Download the current rendered image to the GM's computer. Point of this: a render you love can be
   // banked before you regenerate and lose it - keep it, and later re-upload it (via the image upload)
@@ -888,6 +890,10 @@ export default function WorldMapPage() {
           style={{ padding: "7px 14px", borderRadius: 8, border: `1px solid ${tab === "city" ? C.sun : C.line}`, background: tab === "city" ? C.surface2 : "transparent", color: tab === "city" ? C.sun : C.muted, fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
           City map
         </button>
+        <button type="button" onClick={() => setTab("dungeon")}
+          style={{ padding: "7px 14px", borderRadius: 8, border: `1px solid ${tab === "dungeon" ? C.sun : C.line}`, background: tab === "dungeon" ? C.surface2 : "transparent", color: tab === "dungeon" ? C.sun : C.muted, fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
+          Dungeon
+        </button>
       </div>
 
       {tab === "city" && (
@@ -895,6 +901,15 @@ export default function WorldMapPage() {
           <h1 style={{ ...ui.h1, fontSize: 28, margin: "4px 0 10px" }}>City map</h1>
           {campaignId
             ? <CityCreator campaignId={campaignId} />
+            : <p style={{ color: C.muted, fontSize: 14 }}>Pick a campaign on the World map tab first.</p>}
+        </>
+      )}
+
+      {tab === "dungeon" && (
+        <>
+          <h1 style={{ ...ui.h1, fontSize: 28, margin: "4px 0 10px" }}>Dungeon map</h1>
+          {campaignId
+            ? <DungeonCreator campaignId={campaignId} />
             : <p style={{ color: C.muted, fontSize: 14 }}>Pick a campaign on the World map tab first.</p>}
         </>
       )}
@@ -952,6 +967,8 @@ export default function WorldMapPage() {
               <option value="grimdark">Grimdark</option>
               <option value="urban">Urban</option>
             </select>
+            <input type="text" value={mapModifier} onChange={(e) => setMapModifier(e.target.value)} disabled={imagining} placeholder="flavour (optional)" title="Extra prompt flavour"
+              style={{ fontSize: 12, padding: "5px 8px", borderRadius: 7, border: `1px solid ${C.line}`, background: C.surface2, color: C.text, width: 150 }} />
             <button type="button" onClick={generateFantasyView} disabled={imagining} title="Repaint the current world in the chosen style (AI)"
               style={{ fontSize: 12, padding: "5px 10px", borderRadius: 7, cursor: imagining ? "default" : "pointer",
                 border: `1px solid ${C.line}`, background: C.surface2, color: C.text, fontWeight: 600, opacity: imagining ? 0.6 : 1 }}>

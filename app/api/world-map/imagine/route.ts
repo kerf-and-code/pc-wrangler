@@ -114,27 +114,52 @@ const CITY_PROMPTS: Record<string, string> = {
     "Clean stylized modern map look, muted contemporary tones." + CITY_LEGEND,
 };
 
-type Body = { campaignId: string; controlImage: string; scaleHint?: string; style?: string; biomes?: { label: string; color: string }[]; mode?: "world" | "city"; centerpiece?: string };
+// Dungeon renders. The source is a painted 20x20 plan on a dark background; the cell colours are fixed
+// (see lib/dungeon), so the legend is baked in. Output is a top-down tabletop battle map.
+const DUNGEON_PROMPT =
+  "Transform this dungeon plan into ONE cohesive top-down tabletop BATTLE MAP viewed directly from " +
+  "above. The source is a plan on a dark background: each solid colour block is a room, dark lines are " +
+  "stone walls, and the lighter tan corridor cells are hallways linking rooms. Render each room in the " +
+  "character of its colour: pale stone = a furnished chamber; grey stone = a dungeon cell block; brown " +
+  "= a rough natural cave; blue = a water pool or flooded room; warm tan = a grand castle hall; dark " +
+  "grey = a crypt of tombs and sarcophagi; ochre = a mine with ore veins and rail tracks; green-grey = " +
+  "a dank sewer; red-orange = a lava chamber with molten flows; pale blue = an ice cavern; violet = a " +
+  "temple with an altar; wood brown = a ship's timber deck; blue-grey metal = a spaceship corridor with " +
+  "panels. Draw clear structural walls around every room, textured floors, and open corridors linking " +
+  "them. Keep every room, wall, and corridor in the SAME position and shape. Rich top-down battle-map " +
+  "illustration, subtle grid feel. No text, no labels, no numbers.";
+
+type Body = { campaignId: string; controlImage: string; scaleHint?: string; style?: string; biomes?: { label: string; color: string }[]; mode?: "world" | "city" | "dungeon"; centerpiece?: string; promptModifier?: string };
 
 export async function POST(request: Request) {
   try {
-    const { campaignId, controlImage, scaleHint, style, biomes, mode, centerpiece } = (await request.json()) as Body;
+    const { campaignId, controlImage, scaleHint, style, biomes, mode, centerpiece, promptModifier } = (await request.json()) as Body;
     const isCity = mode === "city";
-    const PROMPTS = isCity ? CITY_PROMPTS : STYLE_PROMPTS;
-    const chosenStyle = style && PROMPTS[style] ? style : "fantasy";
-    const basePrompt = PROMPTS[chosenStyle];
-    // World reinterpretation + biome legend apply only to world maps; the city legend is baked into
-    // CITY_PROMPTS since a city plan's colours are fixed.
-    const reinterp = !isCity && chosenStyle !== "fantasy" ? STYLE_REINTERP[chosenStyle] ?? "" : "";
+    const isDungeon = mode === "dungeon";
+    let chosenStyle = "fantasy";
+    let basePrompt: string;
+    if (isDungeon) {
+      basePrompt = DUNGEON_PROMPT;
+    } else {
+      const PROMPTS = isCity ? CITY_PROMPTS : STYLE_PROMPTS;
+      chosenStyle = style && PROMPTS[style] ? style : "fantasy";
+      basePrompt = PROMPTS[chosenStyle];
+    }
+    // World-map reinterpretation + biome legend apply only to the world map; city and dungeon legends
+    // are baked into their prompts (fixed control colours).
+    const enrich = !isCity && !isDungeon;
+    const reinterp = enrich && chosenStyle !== "fantasy" ? STYLE_REINTERP[chosenStyle] ?? "" : "";
     const legend =
-      !isCity && chosenStyle !== "fantasy" && biomes && biomes.length
+      enrich && chosenStyle !== "fantasy" && biomes && biomes.length
         ? " The source map's region colours are: " +
           biomes.map((b) => `${b.label} ${b.color}`).join(", ") +
           " - use these to identify each region before reinterpreting it."
         : "";
     const cpNote = isCity && centerpiece ? ` The centrepiece landmark is a ${centerpiece}.` : "";
+    // The GM's free-text flavour, added to every mode.
+    const flavour = promptModifier && promptModifier.trim() ? ` ${promptModifier.trim()}.` : "";
     const scale = scaleHint ? ` Cartographic scale: this is ${scaleHint}.` : "";
-    const promptText = `${basePrompt}${reinterp}${legend}${cpNote}${scale}`;
+    const promptText = `${basePrompt}${reinterp}${legend}${cpNote}${flavour}${scale}`;
     if (!campaignId || typeof controlImage !== "string") {
       return NextResponse.json({ error: "Missing campaignId or image." }, { status: 400 });
     }
@@ -206,7 +231,7 @@ export async function POST(request: Request) {
     if (up.error) return NextResponse.json({ error: `Upload failed: ${up.error.message}` }, { status: 500 });
     const url = admin.storage.from("campaign-maps").getPublicUrl(path).data.publicUrl;
 
-    if (!isCity) {
+    if (!isCity && !isDungeon) {
       const { data: wm } = await admin.from("world_maps").select("id").eq("campaign_id", campaignId).maybeSingle();
       if (wm) await admin.from("world_maps").update({ ai_image_url: url, ai_image_at: new Date().toISOString(), style: chosenStyle }).eq("id", (wm as { id: string }).id);
     }
