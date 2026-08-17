@@ -44,21 +44,27 @@ function mulberry32(a: number) {
 type Rect = { x: number; y: number; w: number; h: number };
 type Door = { x: number; y: number; horiz: boolean };
 
-function bsp(rng: () => number, x: number, y: number, w: number, h: number, depth: number, min: number, rooms: Rect[], doors: Door[]): void {
-  if (depth <= 0 || (w < min * 2 && h < min * 2)) { rooms.push({ x, y, w, h }); return; }
-  const r = 0.38 + rng() * 0.24;
-  if (w >= h) {
-    const sx = x + w * r;
-    if (sx - x < min || x + w - sx < min) { rooms.push({ x, y, w, h }); return; }
-    doors.push({ x: sx, y: y + min * 0.4 + rng() * (h - min * 0.8), horiz: false });
-    bsp(rng, x, y, sx - x, h, depth - 1, min, rooms, doors);
-    bsp(rng, sx, y, x + w - sx, h, depth - 1, min, rooms, doors);
-  } else {
-    const sy = y + h * r;
-    if (sy - y < min || y + h - sy < min) { rooms.push({ x, y, w, h }); return; }
-    doors.push({ x: x + min * 0.4 + rng() * (w - min * 0.8), y: sy, horiz: true });
-    bsp(rng, x, y, w, sy - y, depth - 1, min, rooms, doors);
-    bsp(rng, x, sy, w, y + h - sy, depth - 1, min, rooms, doors);
+// Split the footprint until there are EXACTLY `target` rooms: repeatedly split the largest room that
+// still fits two, along its longer axis, and drop a door on the wall that split just created (so every
+// interior wall gets one doorway on a real shared edge).
+function splitToRooms(rng: () => number, footprint: Rect, target: number, min: number, rooms: Rect[], doors: Door[]): void {
+  rooms.push({ ...footprint });
+  while (rooms.length < target) {
+    let idx = -1, best = -1;
+    for (let i = 0; i < rooms.length; i++) { const l = rooms[i]; if (l.w >= min * 2 || l.h >= min * 2) { const a = l.w * l.h; if (a > best) { best = a; idx = i; } } }
+    if (idx < 0) break; // nothing left large enough to split
+    const l = rooms[idx];
+    const canV = l.w >= min * 2, canH = l.h >= min * 2;
+    const vert = canV && (!canH || l.w >= l.h);
+    if (vert) {
+      const sx = l.x + l.w * (0.4 + rng() * 0.2);
+      doors.push({ x: sx, y: l.y + l.h * (0.35 + rng() * 0.3), horiz: false });
+      rooms.splice(idx, 1, { x: l.x, y: l.y, w: sx - l.x, h: l.h }, { x: sx, y: l.y, w: l.x + l.w - sx, h: l.h });
+    } else {
+      const sy = l.y + l.h * (0.4 + rng() * 0.2);
+      doors.push({ x: l.x + l.w * (0.35 + rng() * 0.3), y: sy, horiz: true });
+      rooms.splice(idx, 1, { x: l.x, y: l.y, w: l.w, h: sy - l.y }, { x: l.x, y: sy, w: l.w, h: l.y + l.h - sy });
+    }
   }
 }
 
@@ -74,9 +80,9 @@ export function generateBuilding(opts: BuildingOpts): string {
   let fw = def.compact ? W * 0.5 : W * 0.78, fh = fw / def.aspect;
   if (fh > W * 0.82) { fh = W * 0.82; fw = fh * def.aspect; }
   const fx = (W - fw) / 2, fy = (W - fh) / 2;
-  const depth = Math.max(0, Math.round(Math.log2(Math.max(1, opts.rooms))));
+  const target = Math.max(1, Math.round(opts.rooms));
   const rooms: Rect[] = [], doors: Door[] = [];
-  bsp(rng, fx, fy, fw, fh, depth, W * 0.1, rooms, doors);
+  splitToRooms(rng, { x: fx, y: fy, w: fw, h: fh }, target, W * 0.09, rooms, doors);
 
   rooms.forEach((rm, i) => {
     const v = 196 - ((i * 37) % 40);
