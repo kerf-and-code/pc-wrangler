@@ -18,6 +18,11 @@ import {
   createStatBlock, getStatBlock, updateStatBlock, listStatBlocks, updateStatBlockPortrait,
   type StatBlockDoc, type StatBlockRow, type NamedEntry,
 } from "@/lib/stat-blocks";
+import {
+  blankPF2Creature, PF2_SIZES, PF2_RARITIES, PF2_ABILITIES, PF2_SAVES,
+  type PF2Creature,
+} from "@/lib/pf2e/creature";
+import { getActiveCampaign } from "@/lib/active-campaign";
 import { PortraitUploader } from "@/components/portrait-uploader";
 import {
   STONE, FORGE_FONTS, stonePanel, stoneButton, stoneField,
@@ -73,6 +78,8 @@ function StatBlockInner() {
   // The document under edit and its identity.
   const [name, setName] = useState("");
   const [block, setBlock] = useState<StatBlockDoc>(blankStatBlock);
+  const [system, setSystem] = useState<string>("dnd5e");
+  const [pblock, setPblock] = useState<PF2Creature>(blankPF2Creature);
   const [rowId, setRowId] = useState<string | null>(null);
   const [portraitUrl, setPortraitUrl] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
@@ -97,7 +104,10 @@ function StatBlockInner() {
         if (!alive) return;
         if (row) {
           setName(row.name);
-          setBlock({ ...blankStatBlock(), ...row.block });
+          const sys = row.system || "dnd5e";
+          setSystem(sys);
+          if (sys === "pf2e") setPblock({ ...blankPF2Creature(), ...(row.block as unknown as PF2Creature) });
+          else setBlock({ ...blankStatBlock(), ...row.block });
           setRowId(row.id);
           if (row.portrait_path) {
             const { data } = supabase.storage.from("campaign-maps").getPublicUrl(row.portrait_path);
@@ -110,8 +120,11 @@ function StatBlockInner() {
         return;
       }
       if (isNew) {
+        const sys = getActiveCampaign()?.system === "pf2e" ? "pf2e" : "dnd5e";
+        setSystem(sys);
         setName("");
-        setBlock(blankStatBlock());
+        if (sys === "pf2e") setPblock(blankPF2Creature());
+        else setBlock(blankStatBlock());
         setRowId(null);
         setStatus("ready");
         return;
@@ -126,18 +139,18 @@ function StatBlockInner() {
   }, [supabase, sbId, isNew]);
 
   // --- persistence: debounced autosave once we have a target we can write to ---
-  const persist = useCallback(async (nextName: string, nextBlock: StatBlockDoc) => {
+  const persist = useCallback(async (nextName: string, nextDoc: StatBlockDoc | PF2Creature) => {
     if (!gmId) return;
     setSaveState("saving");
     try {
       if (rowId) {
-        await updateStatBlock(supabase, rowId, { name: nextName || "Unnamed", block: nextBlock });
+        await updateStatBlock(supabase, rowId, { name: nextName || "Unnamed", system, block: nextDoc });
       } else {
         if (creatingRef.current) return;
         creatingRef.current = true;
         const id = await createStatBlock(supabase, {
-          gmId, campaignId: null, name: nextName || "Unnamed",
-          sourceEdition: srdMode === "both" ? "2024" : srdMode, block: nextBlock,
+          gmId, campaignId: null, name: nextName || "Unnamed", system,
+          sourceEdition: system === "pf2e" ? "pf2e" : (srdMode === "both" ? "2024" : srdMode), block: nextDoc,
         });
         setRowId(id);
         creatingRef.current = false;
@@ -148,7 +161,7 @@ function StatBlockInner() {
       setSaveState("error");
       creatingRef.current = false;
     }
-  }, [gmId, rowId, supabase, srdMode, router]);
+  }, [gmId, rowId, supabase, srdMode, router, system]);
 
   // Debounce writes ~1s after the last edit. For a brand-new block (no rowId yet) hold off until it
   // has a name, so merely opening "New" doesn't litter the library with empty "Unnamed" blocks.
@@ -157,14 +170,15 @@ function StatBlockInner() {
     if (status !== "ready") return;
     if (!rowId && !name.trim()) return;
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => { void persist(name, block); }, 1000);
+    debounceRef.current = setTimeout(() => { void persist(name, system === "pf2e" ? pblock : block); }, 1000);
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
     // persist intentionally omitted to avoid a new timer on every identity change; name+block drive it.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [name, block, status, rowId]);
+  }, [name, block, pblock, system, status, rowId]);
 
   // --- block mutation helpers ---
   const patch = useCallback((p: Partial<StatBlockDoc>) => setBlock((b) => ({ ...b, ...p })), []);
+  const ppatch = useCallback((p: Partial<PF2Creature>) => setPblock((b) => ({ ...b, ...p })), []);
   const setAbil = (k: string, v: number) => patch({ [k]: v } as Partial<StatBlockDoc>);
   // When CR changes, offer the standard XP so it stays coherent (GM can still override XP).
   const setCr = (cr: string) => patch({ cr, xp: CR_XP[cr] ?? block.xp });
@@ -207,7 +221,7 @@ function StatBlockInner() {
             value={name} onChange={(e) => setName(e.target.value)} placeholder="Creature name"
             style={{ ...stoneField(), fontFamily: FORGE_FONTS.display, fontSize: 22, flex: 1, minWidth: 240 }}
           />
-          <SrdToggle mode={srdMode} onMode={setSrdMode} />
+          {system !== "pf2e" && <SrdToggle mode={srdMode} onMode={setSrdMode} />}
         </div>
 
         <div style={stonePanel()}>
@@ -224,6 +238,7 @@ function StatBlockInner() {
           />
         </div>
 
+        {system !== "pf2e" && (<>
         <IdentityBlock block={block} onPatch={patch} onCr={setCr} />
         <AbilityBlock block={block} onAbil={setAbil} />
         <DefensesBlock block={block} onPatch={patch} />
@@ -249,6 +264,27 @@ function StatBlockInner() {
             style={{ ...stoneField(), width: "100%", minHeight: 70, marginTop: 6, resize: "vertical" }}
           />
         </div>
+        </>)}
+
+        {system === "pf2e" && (<>
+        <Pf2eIdentityBlock pblock={pblock} onPatch={ppatch} />
+        <Pf2eAbilityBlock pblock={pblock} onPatch={ppatch} />
+        <Pf2eDefensesBlock pblock={pblock} onPatch={ppatch} />
+        <EntryListPanel title="Strikes" hint="Melee and ranged attacks (e.g. Jaws +18, Damage 2d10+9 piercing plus Grab)."
+          entries={pblock.strikes} onChange={(v) => ppatch({ strikes: v })} />
+        <EntryListPanel title="Actions & Abilities" hint="Activated abilities, reactions, and passives."
+          entries={pblock.actions} onChange={(v) => ppatch({ actions: v })} />
+        <EntryListPanel title="Spells" hint="Spellcasting, if any (e.g. 3rd rank: fireball, haste)."
+          entries={pblock.spells} onChange={(v) => ppatch({ spells: v })} collapsedWhenEmpty />
+        <div style={stonePanel()}>
+          <div style={forgeLabel}>Notes</div>
+          <textarea
+            value={pblock.blurb} onChange={(e) => ppatch({ blurb: e.target.value })}
+            placeholder="Lore, tactics, or anything else for your eyes."
+            style={{ ...stoneField(), width: "100%", minHeight: 70, marginTop: 6, resize: "vertical" }}
+          />
+        </div>
+        </>)}
 
         <div style={{ display: "flex", gap: 12, alignItems: "center", justifyContent: "flex-end", flexWrap: "wrap" }}>
           <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 12, color:
@@ -579,6 +615,83 @@ function SrdToggle({ mode, onMode }: { mode: SrdMode; onMode: (m: SrdMode) => vo
           {m === "both" ? "Both" : m}
         </button>
       ))}
+    </div>
+  );
+}
+
+// ---- PF2e blocks -------------------------------------------------------------------------------
+
+function Pf2eIdentityBlock({ pblock, onPatch }: { pblock: PF2Creature; onPatch: (p: Partial<PF2Creature>) => void }) {
+  const csv = (a: string[]) => a.join(", ");
+  const parse = (v: string) => v.split(",").map((x) => x.trim()).filter(Boolean);
+  return (
+    <div style={stonePanel()}>
+      <div style={forgeLabel}>Identity</div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 10, marginTop: 8 }}>
+        <Field label="Level"><NumInput value={pblock.level} onChange={(v) => onPatch({ level: v ?? 0 })} /></Field>
+        <Field label="Size">
+          <select value={pblock.size} onChange={(e) => onPatch({ size: e.target.value as PF2Creature["size"] })} style={stoneField()}>
+            {PF2_SIZES.map((s) => <option key={s} value={s}>{s}</option>)}
+          </select>
+        </Field>
+        <Field label="Rarity">
+          <select value={pblock.rarity} onChange={(e) => onPatch({ rarity: e.target.value as PF2Creature["rarity"] })} style={stoneField()}>
+            {PF2_RARITIES.map((r) => <option key={r} value={r}>{r}</option>)}
+          </select>
+        </Field>
+        <Field label="Adjustment">
+          <select value={pblock.adjustment ?? ""} onChange={(e) => onPatch({ adjustment: (e.target.value || null) as PF2Creature["adjustment"] })} style={stoneField()}>
+            <option value="">none</option><option value="elite">elite</option><option value="weak">weak</option>
+          </select>
+        </Field>
+        <Field label="Perception"><NumInput value={pblock.perception} onChange={(v) => onPatch({ perception: v ?? 0 })} /></Field>
+        <Field label="Speed"><input value={pblock.speed} onChange={(e) => onPatch({ speed: e.target.value })} placeholder="25 feet, fly 40 feet" style={stoneField()} /></Field>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginTop: 10 }}>
+        <Field label="Traits"><input value={csv(pblock.traits)} onChange={(e) => onPatch({ traits: parse(e.target.value) })} placeholder="undead, fiend, aquatic" style={stoneField()} /></Field>
+        <Field label="Senses"><input value={pblock.senses} onChange={(e) => onPatch({ senses: e.target.value })} placeholder="darkvision, scent (imprecise) 30 feet" style={stoneField()} /></Field>
+        <Field label="Languages"><input value={pblock.languages} onChange={(e) => onPatch({ languages: e.target.value })} placeholder="Common, Draconic" style={stoneField()} /></Field>
+      </div>
+    </div>
+  );
+}
+
+function Pf2eAbilityBlock({ pblock, onPatch }: { pblock: PF2Creature; onPatch: (p: Partial<PF2Creature>) => void }) {
+  return (
+    <div style={stonePanel()}>
+      <div style={forgeLabel}>Ability modifiers</div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 8, marginTop: 8 }}>
+        {PF2_ABILITIES.map(([k, lbl]) => (
+          <label key={k} style={{ display: "grid", gap: 3, textAlign: "center" }}>
+            <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 10.5, color: STONE.inkDim, textTransform: "uppercase" }}>{lbl}</span>
+            <input type="number" value={pblock.abilities[k]} onChange={(e) => onPatch({ abilities: { ...pblock.abilities, [k]: parseInt(e.target.value, 10) || 0 } })}
+              style={{ ...stoneField(), textAlign: "center", padding: "6px 2px", width: "100%" }} />
+          </label>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function Pf2eDefensesBlock({ pblock, onPatch }: { pblock: PF2Creature; onPatch: (p: Partial<PF2Creature>) => void }) {
+  const csv = (a: string[]) => a.join(", ");
+  const parse = (v: string) => v.split(",").map((x) => x.trim()).filter(Boolean);
+  return (
+    <div style={stonePanel()}>
+      <div style={forgeLabel}>Defenses</div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))", gap: 10, marginTop: 8 }}>
+        <Field label="AC"><NumInput value={pblock.ac} onChange={(v) => onPatch({ ac: v ?? 0 })} /></Field>
+        {PF2_SAVES.map(([k, lbl]) => (
+          <Field key={k} label={lbl}><NumInput value={pblock.saves[k]} onChange={(v) => onPatch({ saves: { ...pblock.saves, [k]: v ?? 0 } })} /></Field>
+        ))}
+        <Field label="HP"><NumInput value={pblock.hp} onChange={(v) => onPatch({ hp: v ?? 0 })} /></Field>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginTop: 10 }}>
+        <Field label="Skills"><input value={pblock.skills} onChange={(e) => onPatch({ skills: e.target.value })} placeholder="Athletics +12, Stealth +9" style={stoneField()} /></Field>
+        <Field label="Immunities"><input value={csv(pblock.immunities)} onChange={(e) => onPatch({ immunities: parse(e.target.value) })} placeholder="fire, paralyzed" style={stoneField()} /></Field>
+        <Field label="Resistances"><input value={csv(pblock.resistances)} onChange={(e) => onPatch({ resistances: parse(e.target.value) })} placeholder="physical 10, fire 5" style={stoneField()} /></Field>
+        <Field label="Weaknesses"><input value={csv(pblock.weaknesses)} onChange={(e) => onPatch({ weaknesses: parse(e.target.value) })} placeholder="cold iron 5, good 10" style={stoneField()} /></Field>
+      </div>
     </div>
   );
 }
