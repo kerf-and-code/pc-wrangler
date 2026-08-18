@@ -19,7 +19,8 @@ export type DiceStyle =
   | { kind: "d20-vs-dc"; advantage: boolean }                 // D&D 5e, Pathfinder 2e
   | { kind: "percentile-under" }                              // Call of Cthulhu (d100 under skill)
   | { kind: "dice-pool"; die: 6 | 10; countSuccesses: true }  // Blades (d6), Vampire (d10)
-  | { kind: "step-plus-stat"; dice: string }                  // PbtA 2d6+stat, Daggerheart 2d12
+  | { kind: "step-plus-stat"; dice: string }                  // PbtA 2d6+stat
+  | { kind: "duality"; dice: string }                         // Daggerheart: 2d12 Hope vs Fear
   | { kind: "custom" };
 
 export interface DiceConfig {

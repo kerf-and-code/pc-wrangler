@@ -38,7 +38,7 @@ type Rolled = {
   total: number; notation: string; natural: 20 | 1 | null;
   dice: { sides: number; value: number; kept: boolean }[];
   label: string; actor: string; at: number;
-  band?: string; target?: number; degrees?: boolean;
+  band?: string; target?: number; degrees?: boolean; duality?: boolean; hope?: number; fear?: number;
 };
 
 const KINDS: { key: string; label: string }[] = [
@@ -63,6 +63,8 @@ export default function RollerPage() {
   const [target, setTarget] = useState(50);
   const [cocMode, setCocMode] = useState(false);
   const [dc, setDc] = useState("");
+  const [dualityMod, setDualityMod] = useState("");
+  const [dualityDiff, setDualityDiff] = useState("");
   const [mode, setMode] = useState<"flat" | "adv" | "dis">("flat");
   const [kind, setKind] = useState("attack");
   const [actor, setActor] = useState("");
@@ -163,6 +165,10 @@ export default function RollerPage() {
   // PF2e keeps the d20 roll but adds an optional DC -> four degrees of success (beat by 10 / meet /
   // miss / miss by 10, with a natural 20 stepping the result up one and a natural 1 stepping it down).
   const isPf2e = activeSystem === "pf2e" && !isPercentile;
+  // Daggerheart: roll 2d12 (a Hope die + a Fear die) + a modifier; the higher die colours the result,
+  // matching dice are a critical, and the sum meets a Difficulty for success/failure.
+  const isDuality = dice.style.kind === "duality";
+  const dualityDice = dice.style.kind === "duality" ? dice.style.dice : "2d12";
   const advMeaningful =
     !isPercentile && canHaveAdvantage(notation) && dice.style.kind === "d20-vs-dc" && dice.style.advantage;
 
@@ -170,8 +176,10 @@ export default function RollerPage() {
   // folded in and advantage applied. Shown to the GM before they roll, because a roller you cannot
   // check is a roller you cannot trust.
   const finalNotation = useMemo(
-    () => isPercentile ? "1d100" : applyAdvantage(notation.trim() || "1d20", mode),
-    [notation, mode, isPercentile],
+    () => isPercentile ? "1d100"
+      : isDuality ? `${dualityDice}${dualityMod.trim() ? ` + ${dualityMod.trim()}` : ""}`
+      : applyAdvantage(notation.trim() || "1d20", mode),
+    [notation, mode, isPercentile, isDuality, dualityDice, dualityMod],
   );
 
   const valid = useMemo(() => {
@@ -189,31 +197,41 @@ export default function RollerPage() {
     try {
       const dcNum = Number(dc);
       const usePf2eDc = isPf2e && dc.trim() !== "" && Number.isFinite(dcNum);
+      const diffNum = Number(dualityDiff);
+      const useDiff = isDuality && dualityDiff.trim() !== "" && Number.isFinite(diffNum);
       const rollLabel = isPercentile
         ? [label, `skill ${target}`].filter(Boolean).join(" · ")
-        : usePf2eDc ? [label, `DC ${dcNum}`].filter(Boolean).join(" · ") : label;
+        : usePf2eDc ? [label, `DC ${dcNum}`].filter(Boolean).join(" · ")
+        : isDuality ? [label, useDiff ? `Diff ${diffNum}` : ""].filter(Boolean).join(" · ")
+        : label;
       const res = await fetch("/api/rolls/gm", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           campaignId, sessionId: sessionId || null, notation: finalNotation,
-          kind: isPercentile ? "check" : kind, actorName: characterId ? null : actor, characterId: characterId || null,
+          kind: isPercentile || isDuality ? "check" : kind, actorName: characterId ? null : actor, characterId: characterId || null,
           label: rollLabel,
         }),
       });
       const out = await res.json();
       if (!res.ok) { setError(out.error ?? "Could not roll."); return; }
       const r = out.result;
+      const hf = isDuality && r.dice.length >= 2 ? { hope: r.dice[0].value, fear: r.dice[1].value } : null;
       setLog((l) => [{
         total: r.total, notation: r.notation, natural: r.natural, dice: r.dice,
-        band: isPercentile ? cocBand(r.total, target) : usePf2eDc ? pf2eDegree(r.total, dcNum, r.natural) : undefined,
-        target: isPercentile ? target : usePf2eDc ? dcNum : undefined,
+        band: isPercentile ? cocBand(r.total, target)
+          : usePf2eDc ? pf2eDegree(r.total, dcNum, r.natural)
+          : hf ? dualityOutcome(hf.hope, hf.fear, r.total, useDiff ? diffNum : null)
+          : undefined,
+        target: isPercentile ? target : usePf2eDc ? dcNum : useDiff ? diffNum : undefined,
         degrees: usePf2eDc,
+        duality: !!hf,
+        hope: hf?.hope, fear: hf?.fear,
         label: rollLabel || KINDS.find((k) => k.key === kind)?.label || "",
         actor: characterId ? (characters.find((c) => c.id === characterId)?.name ?? "") : (actor || "the GM"),
         at: Date.now(),
       }, ...l].slice(0, 60));
     } finally { setBusy(false); }
-  }, [campaignId, sessionId, finalNotation, kind, actor, characterId, label, characters, isPercentile, target, isPf2e, dc]);
+  }, [campaignId, sessionId, finalNotation, kind, actor, characterId, label, characters, isPercentile, target, isPf2e, dc, isDuality, dualityDiff]);
 
   const session = sessions.find((s) => s.id === sessionId) ?? null;
 
@@ -255,6 +273,7 @@ export default function RollerPage() {
 
       <Card>
         <Label>The roll</Label>
+        {!isDuality && (
         <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
           <button type="button" onClick={() => setCocMode(false)} disabled={moduleIsPercentile}
             style={{ ...chip(!isPercentile), opacity: moduleIsPercentile ? 0.4 : 1, cursor: moduleIsPercentile ? "default" : "pointer" }}>
@@ -264,6 +283,7 @@ export default function RollerPage() {
             d100 &middot; Call of Cthulhu
           </button>
         </div>
+        )}
         {isPercentile && (
           <div style={{ marginBottom: 10 }}>
             <Label>Skill target</Label>
@@ -287,7 +307,23 @@ export default function RollerPage() {
             </p>
           </div>
         )}
-        {!isPercentile && (<>
+        {isDuality && (<>
+          <div style={{ marginBottom: 10 }}>
+            <Label>Modifier</Label>
+            <input value={dualityMod} onChange={(e) => setDualityMod(e.target.value)}
+              placeholder="e.g. 2 (trait + bonuses)" style={{ ...field, fontFamily: SAX.mono }} />
+          </div>
+          <div style={{ marginBottom: 10 }}>
+            <Label>Difficulty (optional)</Label>
+            <input type="number" min={1} value={dualityDiff} onChange={(e) => setDualityDiff(e.target.value)}
+              placeholder="e.g. 14" style={{ ...field, fontFamily: SAX.mono }} />
+            <p style={{ ...body, marginTop: 6, marginBottom: 0, fontSize: 12.5 }}>
+              Roll 2d12 (Hope + Fear) plus your modifier against the Difficulty. Higher Hope die is with
+              Hope, higher Fear die is with Fear, and matching dice are a critical success.
+            </p>
+          </div>
+        </>)}
+        {!isPercentile && !isDuality && (<>
         <DicePicker notation={notation} onChange={setNotation} />
 
         <div style={{ marginTop: 12, marginBottom: 10 }}>
@@ -323,8 +359,8 @@ export default function RollerPage() {
           {valid ?? (isPercentile ? `rolling 1d100 under ${target}` : `rolling  ${finalNotation}`)}
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: isPercentile ? "1fr" : "1fr 1fr", gap: 10, marginBottom: 10 }}>
-          {!isPercentile && (
+        <div style={{ display: "grid", gridTemplateColumns: isPercentile || isDuality ? "1fr" : "1fr 1fr", gap: 10, marginBottom: 10 }}>
+          {!isPercentile && !isDuality && (
           <div>
             <Label>What kind</Label>
             <select value={kind} onChange={(e) => setKind(e.target.value)} style={field}>
@@ -351,7 +387,7 @@ export default function RollerPage() {
           style={{ ...field, marginBottom: 12 }} />
 
         <button onClick={() => void doRoll()} disabled={busy || !campaignId || Boolean(valid)} style={btn}>
-          {busy ? "Rolling…" : isPercentile ? "Roll d100" : "Roll"}
+          {busy ? "Rolling…" : isPercentile ? "Roll d100" : isDuality ? "Roll with Hope & Fear" : "Roll"}
         </button>
       </Card>
 
@@ -379,9 +415,11 @@ export default function RollerPage() {
               </div>
               <div style={{ fontFamily: SAX.mono, fontSize: 11.5, color: STONE.inkFaint, marginTop: 2 }}>
                 {r.band
-                  ? (r.degrees
-                      ? `${r.notation} · ${r.band}${r.target != null ? ` vs DC ${r.target}` : ""}${r.natural === 20 ? " · nat 20" : r.natural === 1 ? " · nat 1" : ""}`
-                      : `d100 · ${r.band}${r.target != null ? ` vs ${r.target}` : ""}`)
+                  ? (r.duality
+                      ? `Hope ${r.hope} · Fear ${r.fear} · ${r.band}${r.target != null ? ` vs ${r.target}` : ""}`
+                      : r.degrees
+                        ? `${r.notation} · ${r.band}${r.target != null ? ` vs DC ${r.target}` : ""}${r.natural === 20 ? " · nat 20" : r.natural === 1 ? " · nat 1" : ""}`
+                        : `d100 · ${r.band}${r.target != null ? ` vs ${r.target}` : ""}`)
                   : `${r.notation} · ${r.dice.map((d) => (d.kept ? `${d.value}` : `(${d.value})`)).join(" ")}${r.natural === 20 ? " · natural 20" : r.natural === 1 ? " · natural 1" : ""}`}
               </div>
             </div>
@@ -411,9 +449,18 @@ function pf2eDegree(total: number, dc: number, natural: 20 | 1 | null): string {
   else if (natural === 1) step = Math.max(0, step - 1);
   return ["Critical Failure", "Failure", "Success", "Critical Success"][step];
 }
+function dualityOutcome(hope: number, fear: number, total: number, difficulty: number | null): string {
+  if (hope === fear) return "Critical Success";           // matching dice: a crit regardless of difficulty
+  const via = hope > fear ? "Hope" : "Fear";
+  if (difficulty == null) return `with ${via}`;           // no difficulty set: just the tone
+  return `${total >= difficulty ? "Success" : "Failure"} with ${via}`;
+}
 function bandColor(band: string): string {
   if (band === "Critical Success") return C.good;
   if (band === "Critical Failure") return C.warn;
+  if (band === "with Hope" || band === "Success with Hope") return C.good;
+  if (band === "with Fear" || band === "Failure with Fear") return C.warn;
+  if (band === "Success with Fear" || band === "Failure with Hope") return C.sun;
   if (band === "Critical" || band === "Extreme") return C.good;
   if (band === "Fumble") return C.warn;
   if (band === "Success" || band === "Hard") return C.sun;
