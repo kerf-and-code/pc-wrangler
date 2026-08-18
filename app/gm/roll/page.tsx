@@ -138,22 +138,30 @@ export default function RollerPage() {
         } | null;
       }[]) ?? [];
 
+      // Reconstruct the derived band on reload. The stored payload is the Beyond20 shape and carries no
+      // band, so recompute it from the campaign's dice style plus the target the roll label already holds
+      // ("skill N" / "DC N" / "Diff N"). Keying off the campaign's module means a CoC / PF2e / Daggerheart
+      // / pool roll reads back with its outcome tomorrow instead of a bare number. (A manual d100 toggle
+      // used on a non-CoC campaign won't reconstruct, since the campaign's own style isn't percentile.)
+      const histSys = campaigns.find((c) => c.id === cid)?.system;
+      const styleKind = getModule(histSys).dice.style.kind;
       setLog(rows.map((r) => {
         const kept = (r.rolls?.dice ?? []).flatMap((g) =>
           (g.results ?? []).map((v) => ({ sides: g.faces, value: v, kept: true })));
         const dropped = (r.rolls?.dropped ?? []).map((d) => ({ sides: d.faces, value: d.value, kept: false }));
+        const dice = [...kept, ...dropped];
+        const total = r.rolls?.total ?? 0;
+        const natural = r.rolls?.natural ?? null;
+        const label = r.name ?? (KINDS.find((k) => k.key === r.rolls?.kind)?.label ?? "");
         return {
-          total: r.rolls?.total ?? 0,
-          notation: r.rolls?.notation ?? "",
-          natural: r.rolls?.natural ?? null,
-          dice: [...kept, ...dropped],
-          label: r.name ?? (KINDS.find((k) => k.key === r.rolls?.kind)?.label ?? ""),
+          total, notation: r.rolls?.notation ?? "", natural, dice, label,
           actor: r.actor_name ?? "the GM",
           at: new Date(r.rolled_at).getTime(),
+          ...reloadBand(styleKind, histSys, dice, total, natural, label),
         };
       }));
     } finally { setLoadingLog(false); }
-  }, [supabase]);
+  }, [supabase, campaigns]);
 
   useEffect(() => { void loadHistory(campaignId, sessionId); }, [campaignId, sessionId, loadHistory]);
 
@@ -510,6 +518,34 @@ function bandColor(band: string): string {
   if (band === "Fumble") return C.warn;
   if (band === "Success" || band === "Hard") return C.sun;
   return C.text;
+}
+
+// Recompute a roll's band on reload from the campaign's dice style and the target its label carries.
+// Returns only the band-related fields to spread over the reconstructed row; {} when there is none.
+function reloadBand(
+  styleKind: string, sys: string | null | undefined,
+  dice: { sides: number; value: number; kept: boolean }[],
+  total: number, natural: 20 | 1 | null, label: string,
+): Partial<Rolled> {
+  const num = (re: RegExp) => { const m = re.exec(label); return m ? Number(m[1]) : undefined; };
+  if (styleKind === "percentile-under") {
+    const target = num(/skill\s+(\d+)/i);
+    if (target != null) return { band: cocBand(total, target), target };
+  } else if (sys === "pf2e") {
+    const target = num(/DC\s+(\d+)/i);
+    if (target != null) return { band: pf2eDegree(total, target, natural), target, degrees: true };
+  } else if (styleKind === "duality") {
+    if (dice.length >= 2) {
+      const hope = dice[0].value, fear = dice[1].value;
+      const target = num(/Diff\s+(\d+)/i);
+      return { band: dualityOutcome(hope, fear, total, target ?? null), target, duality: true, hope, fear };
+    }
+  } else if (styleKind === "dice-pool") {
+    const target = num(/Diff\s+(\d+)/i);
+    const po = poolOutcome(dice, target ?? null);
+    return { band: po.band, target, pool: true, total: po.successes };
+  }
+  return {};
 }
 
 function Card({ children, tone }: { children: React.ReactNode; tone?: "warn" }) {
