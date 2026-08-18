@@ -11,6 +11,8 @@ import { getModule } from "@/lib/systems/registry";
 import { pf2Budget, pf2EncounterXp, pf2Threat, PF2_THREATS, PF2_THREAT_LABEL } from "@/lib/pf2e/encounter";
 import { dhBattlePoints, dhAdjustedBudget, dhSpend, DH_ADJUSTMENTS, DH_BP_COST, type DHAdjustment } from "@/lib/daggerheart/encounter";
 import { DH_ADVERSARY_TYPES, type DHAdversaryType } from "@/lib/daggerheart/adversary";
+import { dsBands, dsDifficultyOf, dsSpend, dsBenchmarkEV, DS_DIFFICULTY_LABEL, type DSDifficulty } from "@/lib/drawsteel/encounter";
+import { DS_ORGANIZATIONS, type DSOrganization } from "@/lib/drawsteel/adversary";
 import { setActiveCampaign } from "@/lib/active-campaign";
 
 // ============================================================================
@@ -146,6 +148,10 @@ export default function EncountersPage() {
   const [dhSize, setDhSize] = useState(4);
   const [dhAdj, setDhAdj] = useState<DHAdjustment[]>([]);
   const [dhRoster, setDhRoster] = useState<{ id: string; type: DHAdversaryType; count: number }[]>([]);
+  const [dsSize, setDsSize] = useState(4);
+  const [dsLevel, setDsLevel] = useState(1);
+  const [dsVictories, setDsVictories] = useState(0);
+  const [dsRoster, setDsRoster] = useState<{ id: string; org: DSOrganization; level: number; count: number; ev: number | null }[]>([]);
   const [srdMode, setSrdMode] = useState<SrdMode>("2014");
   const [pickerOpen, setPickerOpen] = useState(false);
 
@@ -208,6 +214,7 @@ export default function EncountersPage() {
   }, [levelled]);
   useEffect(() => { setPfLevel(pf2Derived.level); setPfSize(pf2Derived.size); }, [pf2Derived]);
   useEffect(() => { setDhSize(levelled.length || 4); }, [levelled.length]);
+  useEffect(() => { setDsLevel(pf2Derived.level); setDsSize(pf2Derived.size); }, [pf2Derived]);
 
   // ---- the party's budget / thresholds ------------------------------------
   useEffect(() => {
@@ -418,6 +425,17 @@ export default function EncountersPage() {
     : dhBalance === 0 ? { label: "On budget", tone: C.brass }
     : { label: `${-dhBalance} over`, tone: C.warn };
 
+  // Draw Steel EV budget. The party has an Encounter Strength (ES); each monster costs its EV; the
+  // difficulty is a band relative to ES. A row's EV is the benchmark for its organization+level unless
+  // an authored EV overrides it (library imports carry the stat block's own EV).
+  const dsRowEv = (r: { org: DSOrganization; level: number; ev: number | null }) => r.ev ?? dsBenchmarkEV(r.org, r.level);
+  const dsBandSet = dsBands(dsSize, dsLevel, dsVictories);
+  const dsSpent = dsSpend(dsRoster.map((r) => ({ ev: dsRowEv(r), count: r.count })));
+  const dsDiff: DSDifficulty | null = dsSpent === 0 ? null : dsDifficultyOf(dsSpent, dsBandSet);
+  const dsTone = dsDiff === "extreme" ? C.warn : dsDiff === "hard" ? C.brass : dsDiff === "trivial" || dsDiff === null ? C.muted : C.good;
+  // The highest creature level allowed against this party (level + 2; Solos are capped at +1).
+  const dsLevelCap = dsLevel + 2;
+
   return (
     <PageShell width={980}>
       <div style={{ fontFamily: SAX.serif, fontSize: 26, fontWeight: 700, color: C.text, marginBottom: 4 }}>
@@ -441,7 +459,7 @@ export default function EncountersPage() {
         </div>
       )}
 
-      {hasEncounterMath && encMethod !== "pf2e" && encMethod !== "daggerheart" && (<>
+      {hasEncounterMath && encMethod !== "pf2e" && encMethod !== "daggerheart" && encMethod !== "drawsteel" && (<>
       {/* method */}
       <div style={box}>
         <div style={eyebrow}>Method</div>
@@ -762,7 +780,7 @@ export default function EncountersPage() {
         </div>
       )}
 
-      {/* module scaling — the thing that prompted this */}
+      {/* module scaling: the thing that prompted this */}
       <div style={box}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
           <div style={{ ...eyebrow, marginBottom: 0 }}>The module assumed a different party</div>
@@ -987,6 +1005,102 @@ export default function EncountersPage() {
           </div>
           <p style={{ color: C.muted, fontSize: 11.5, lineHeight: 1.6, marginTop: 12 }}>
             Minions cost 1 point per group equal to the party size; Social and Support cost 1; Horde, Ranged, Skulk, and Standard cost 2; Leader 3; Bruiser 4; Solo 5.
+          </p>
+        </div>
+      </>)}
+
+      {hasEncounterMath && encMethod === "drawsteel" && (<>
+        <div style={box}>
+          <div style={eyebrow}>Party</div>
+          <select value={campaignId} onChange={(e) => setCampaignId(e.target.value)} style={{ ...inputStyle, maxWidth: 240 }}>
+            {campaigns.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+          <div style={{ display: "flex", gap: 14, marginTop: 12, flexWrap: "wrap", alignItems: "flex-end" }}>
+            <label style={{ display: "grid", gap: 4 }}>
+              <span style={{ fontSize: 12, color: C.muted }}>Heroes</span>
+              <input type="number" value={dsSize} onChange={(e) => setDsSize(Math.max(1, parseInt(e.target.value, 10) || 1))} style={{ ...inputStyle, maxWidth: 90 }} />
+            </label>
+            <label style={{ display: "grid", gap: 4 }}>
+              <span style={{ fontSize: 12, color: C.muted }}>Level</span>
+              <input type="number" value={dsLevel} onChange={(e) => setDsLevel(Math.max(1, Math.min(10, parseInt(e.target.value, 10) || 1)))} style={{ ...inputStyle, maxWidth: 90 }} />
+            </label>
+            <label style={{ display: "grid", gap: 4 }}>
+              <span style={{ fontSize: 12, color: C.muted }}>Victories (avg)</span>
+              <input type="number" value={dsVictories} onChange={(e) => setDsVictories(Math.max(0, parseInt(e.target.value, 10) || 0))} style={{ ...inputStyle, maxWidth: 90 }} />
+            </label>
+            <div>
+              <div style={{ fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: "0.05em" }}>Encounter Strength</div>
+              <div style={{ fontFamily: SAX.mono, fontSize: 22, color: C.text }}>{dsBandSet.es}</div>
+              <div style={{ fontSize: 10.5, color: C.muted }}>{dsSize} hero{dsSize === 1 ? "" : "es"} &times; {dsBandSet.hero}{dsVictories >= 2 ? ` + ${Math.floor(dsVictories / 2)} for Victories` : ""}</div>
+            </div>
+          </div>
+          {levelled.length > 0 && (
+            <p style={{ color: C.muted, fontSize: 12, marginTop: 8 }}>From the present party: {levelled.length} at level {pf2Derived.level}.</p>
+          )}
+          <div style={{ marginTop: 14 }}>
+            <div style={{ ...eyebrow, marginBottom: 8 }}>Difficulty budget (EV)</div>
+            <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
+              {([
+                ["Trivial", `< ${dsBandSet.trivialMax}`],
+                ["Easy", `${dsBandSet.trivialMax} - ${dsBandSet.standardMin - 1}`],
+                ["Standard", `${dsBandSet.standardMin} - ${dsBandSet.standardMax}`],
+                ["Hard", `${dsBandSet.standardMax + 1} - ${dsBandSet.hardMax}`],
+                ["Extreme", `> ${dsBandSet.hardMax}`],
+              ] as [string, string][]).map(([lbl, range]) => (
+                <div key={lbl} style={{ minWidth: 92, textAlign: "center", padding: "8px 6px", border: `1px solid ${C.line}`, borderRadius: 8 }}>
+                  <div style={{ fontSize: 10.5, color: C.muted, textTransform: "uppercase", letterSpacing: "0.05em" }}>{lbl}</div>
+                  <div style={{ fontFamily: SAX.mono, fontSize: 13, color: C.text }}>{range}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div style={box}>
+          <div style={eyebrow}>The encounter</div>
+          {dsRoster.length === 0 && <p style={{ color: C.muted, fontSize: 13, margin: "0 0 10px" }}>Add monsters by organization and level to spend your EV budget.</p>}
+          {dsRoster.map((r) => {
+            const overLevel = r.level > (r.org === "solo" ? dsLevel + 1 : dsLevelCap);
+            return (
+              <div key={r.id} style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8, flexWrap: "wrap" }}>
+                <select value={r.org} onChange={(e) => setDsRoster((xs) => xs.map((x) => (x.id === r.id ? { ...x, org: e.target.value as DSOrganization, ev: null } : x)))} style={{ ...inputStyle, flex: 1, minWidth: 140 }}>
+                  {DS_ORGANIZATIONS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                </select>
+                <label style={{ display: "flex", gap: 5, alignItems: "center", fontSize: 12, color: C.muted }}>Lvl
+                  <input type="number" value={r.level} onChange={(e) => setDsRoster((xs) => xs.map((x) => (x.id === r.id ? { ...x, level: Math.max(1, Math.min(10, parseInt(e.target.value, 10) || 1)), ev: null } : x)))} style={{ ...inputStyle, width: 60 }} />
+                </label>
+                <label style={{ display: "flex", gap: 5, alignItems: "center", fontSize: 12, color: C.muted }}>
+                  {r.org === "minion" ? "groups" : "×"}
+                  <input type="number" value={r.count} onChange={(e) => setDsRoster((xs) => xs.map((x) => (x.id === r.id ? { ...x, count: Math.max(1, parseInt(e.target.value, 10) || 1) } : x)))} style={{ ...inputStyle, width: 60 }} />
+                </label>
+                <span style={{ fontFamily: SAX.mono, fontSize: 12, color: overLevel ? C.warn : C.muted, minWidth: 74, textAlign: "right" }} title={overLevel ? "Above the recommended level cap for this party" : ""}>
+                  {dsRowEv(r) * r.count} EV{overLevel ? " !" : ""}
+                </span>
+                <button onClick={() => setDsRoster((xs) => xs.filter((x) => x.id !== r.id))} style={ghostBtn}>Remove</button>
+              </div>
+            );
+          })}
+          <div style={{ display: "flex", gap: 8, marginTop: 6, flexWrap: "wrap", alignItems: "center" }}>
+            <button onClick={() => setDsRoster((xs) => [...xs, { id: uid(), org: "platoon", level: dsLevel, count: 1, ev: null }])} style={ghostBtn}>Add monster</button>
+            {statBlocks.filter((r) => r.system === "drawsteel").length > 0 && (
+              <select value="" onChange={(e) => { const r = statBlocks.find((x) => x.id === e.target.value); if (r) setDsRoster((xs) => [...xs, { id: uid(), org: ((r.type as DSOrganization) || "platoon"), level: r.level ?? dsLevel, count: 1, ev: r.xp ?? null }]); }} style={{ ...inputStyle, maxWidth: 220 }}>
+                <option value="">Add from library&hellip;</option>
+                {statBlocks.filter((r) => r.system === "drawsteel").map((r) => <option key={r.id} value={r.id}>{r.name}{r.xp != null ? ` (EV ${r.xp})` : ""}</option>)}
+              </select>
+            )}
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 16, paddingTop: 14, borderTop: `1px solid ${C.line}`, flexWrap: "wrap", gap: 10 }}>
+            <div>
+              <div style={{ fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: "0.05em" }}>Spent</div>
+              <div style={{ fontFamily: SAX.mono, fontSize: 22, color: C.text }}>{dsSpent} EV</div>
+            </div>
+            <div style={{ textAlign: "right" }}>
+              <div style={{ fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: "0.05em" }}>Difficulty</div>
+              <div style={{ fontFamily: SAX.mono, fontSize: 22, fontWeight: 700, color: dsTone }}>{dsDiff ? DS_DIFFICULTY_LABEL[dsDiff] : "Empty"}</div>
+            </div>
+          </div>
+          <p style={{ color: C.muted, fontSize: 11.5, lineHeight: 1.6, marginTop: 12 }}>
+            Each monster costs its Encounter Value. Minions are bought four at a time, so a Minion row&apos;s EV is the cost of a group of four and its count is the number of groups. Keep monsters within {dsLevelCap} levels of the party ({dsLevel + 1} for Solos); rows above that are flagged.
           </p>
         </div>
       </>)}

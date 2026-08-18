@@ -9,14 +9,16 @@ import type { RulesModule } from "./contract";
 // digital tools with no royalties. The app must carry the required attribution ("<product> is an
 // independent product published under the DRAW STEEL Creator License and is not affiliated with MCDM
 // Productions, LLC.") and must NOT use MCDM's or Draw Steel's logos or wordmark. Only MECHANICS ship
-// here (the power-roll numbers), not MCDM's descriptive prose. First cut: dice-only, no character or
-// adversary module yet (like PF2e / Daggerheart's first cuts). `character` is now ON: full derivation
-// (deriveDrawSteelSheet) so the Forge shows a Draw Steel build column. Adversary is still absent.
+// here (the power-roll numbers), not MCDM's descriptive prose. `character` is ON: full derivation
+// (deriveDrawSteelSheet) so the Forge shows a Draw Steel build column. `adversary` is now ON too: the
+// Monster Maker authors Draw Steel stat blocks, and the encounter builder uses the Encounter Value (EV)
+// budget against the party's Encounter Strength (encounterMethod "drawsteel").
 export const drawsteel: RulesModule = {
   id: "drawsteel",
   label: "Draw Steel",
   dice: { style: { kind: "power-roll" }, label: "Power Roll (2d10)" },
   character: { schemaId: "drawsteel-pc", hasImport: false, hasDerivation: true },
+  adversary: { schemaId: "drawsteel-adversary", hasEncounterMath: true, encounterMethod: "drawsteel" },
   axes: [],
   rulesRef: { id: "draw-steel-creator-license", label: "Draw Steel (Creator License)" },
 };

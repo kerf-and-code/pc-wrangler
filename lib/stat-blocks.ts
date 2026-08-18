@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { PF2Creature } from "@/lib/pf2e/creature";
 import type { DHAdversary } from "@/lib/daggerheart/adversary";
+import type { DSAdversary } from "@/lib/drawsteel/adversary";
 
 /**
  * Persistence for GM monster stat blocks. Mirrors lib/pc-library.ts in spirit: a stat block is a
@@ -55,7 +56,7 @@ export type StatBlockDoc = {
 };
 
 // A stored block is one system's document. Callers that know the system narrow by it.
-export type AnyStatBlock = StatBlockDoc | PF2Creature | DHAdversary;
+export type AnyStatBlock = StatBlockDoc | PF2Creature | DHAdversary | DSAdversary;
 
 export type StatBlockRow = {
   id: string;
@@ -108,6 +109,18 @@ export function denormFromBlock(system: string, block: AnyStatBlock): StatBlockD
       level: typeof a.tier === "number" ? a.tier : null,   // Daggerheart adversaries priced by tier
       ac: null, hp: a.hp ?? null,
       size: null, type: a.type || null,
+    };
+  }
+  if (system === "drawsteel") {
+    const a = block as DSAdversary;
+    return {
+      // Draw Steel monsters are priced by Encounter Value (EV): stored in `xp` so the encounter builder
+      // reads the authored cost straight from the denorm without parsing the block. `level` is the
+      // creature's level (used for the level-cap check), `type` its organization, `hp` its Stamina.
+      cr: null, xp: typeof a.ev === "number" ? a.ev : null,
+      level: typeof a.level === "number" ? a.level : null,
+      ac: null, hp: a.stamina ?? null,
+      size: a.size || null, type: a.organization || null,
     };
   }
   const b = block as StatBlockDoc;
