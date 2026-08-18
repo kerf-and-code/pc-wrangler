@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import { ThemeProvider } from "next-themes";
+import SystemThemeProvider from "@/components/system-theme-provider";
 import "./globals.css";
 
 // NEXT_PUBLIC_SITE_URL first, and it matters more than it looks.
@@ -44,6 +45,8 @@ export default function RootLayout({
           forcedTheme="dark"
           disableTransitionOnChange
         >
+          {/* Applies the active campaign's per-system theme variables directly to <html>. */}
+          <SystemThemeProvider />
           {children}
         </ThemeProvider>
       </body>
