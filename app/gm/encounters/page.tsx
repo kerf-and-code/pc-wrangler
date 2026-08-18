@@ -9,6 +9,8 @@ import { loadSrd } from "@/lib/srd/srd";
 import { listStatBlocks, type StatBlockRow } from "@/lib/stat-blocks";
 import { getModule } from "@/lib/systems/registry";
 import { pf2Budget, pf2EncounterXp, pf2Threat, PF2_THREATS, PF2_THREAT_LABEL } from "@/lib/pf2e/encounter";
+import { dhBattlePoints, dhAdjustedBudget, dhSpend, DH_ADJUSTMENTS, DH_BP_COST, type DHAdjustment } from "@/lib/daggerheart/encounter";
+import { DH_ADVERSARY_TYPES, type DHAdversaryType } from "@/lib/daggerheart/adversary";
 import { setActiveCampaign } from "@/lib/active-campaign";
 
 // ============================================================================
@@ -141,6 +143,9 @@ export default function EncountersPage() {
   const [pfLevel, setPfLevel] = useState(1);
   const [pfSize, setPfSize] = useState(4);
   const [pfoes, setPfoes] = useState<{ id: string; name: string; level: number; count: number }[]>([]);
+  const [dhSize, setDhSize] = useState(4);
+  const [dhAdj, setDhAdj] = useState<DHAdjustment[]>([]);
+  const [dhRoster, setDhRoster] = useState<{ id: string; type: DHAdversaryType; count: number }[]>([]);
   const [srdMode, setSrdMode] = useState<SrdMode>("2014");
   const [pickerOpen, setPickerOpen] = useState(false);
 
@@ -202,6 +207,7 @@ export default function EncountersPage() {
     return { level, size: lvls.length };
   }, [levelled]);
   useEffect(() => { setPfLevel(pf2Derived.level); setPfSize(pf2Derived.size); }, [pf2Derived]);
+  useEffect(() => { setDhSize(levelled.length || 4); }, [levelled.length]);
 
   // ---- the party's budget / thresholds ------------------------------------
   useEffect(() => {
@@ -402,6 +408,15 @@ export default function EncountersPage() {
   const pfTotal = pf2EncounterXp(pfLevels, pfLevel);
   const pfThreat = pf2Threat(pfTotal, pfSize);
   const pfBudget = pf2Budget(pfSize);
+  const dhBase = dhBattlePoints(dhSize);
+  const dhBudget = dhAdjustedBudget(dhSize, dhAdj);
+  const dhSpent = dhSpend(dhRoster);
+  const dhBalance = dhBudget - dhSpent;
+  const dhVerdict = dhSpent === 0
+    ? { label: "Empty", tone: C.muted }
+    : dhBalance > 0 ? { label: `${dhBalance} under`, tone: C.good }
+    : dhBalance === 0 ? { label: "On budget", tone: C.brass }
+    : { label: `${-dhBalance} over`, tone: C.warn };
 
   return (
     <PageShell width={980}>
@@ -426,7 +441,7 @@ export default function EncountersPage() {
         </div>
       )}
 
-      {hasEncounterMath && encMethod !== "pf2e" && (<>
+      {hasEncounterMath && encMethod !== "pf2e" && encMethod !== "daggerheart" && (<>
       {/* method */}
       <div style={box}>
         <div style={eyebrow}>Method</div>
@@ -895,6 +910,84 @@ export default function EncountersPage() {
               </div>
             </div>
           </div>
+        </div>
+      </>)}
+
+      {hasEncounterMath && encMethod === "daggerheart" && (<>
+        <div style={box}>
+          <div style={eyebrow}>Party</div>
+          <select value={campaignId} onChange={(e) => setCampaignId(e.target.value)} style={{ ...inputStyle, maxWidth: 240 }}>
+            {campaigns.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+          <div style={{ display: "flex", gap: 18, marginTop: 12, flexWrap: "wrap", alignItems: "flex-end" }}>
+            <label style={{ display: "grid", gap: 4 }}>
+              <span style={{ fontSize: 12, color: C.muted }}>PCs in combat</span>
+              <input type="number" value={dhSize} onChange={(e) => setDhSize(Math.max(1, parseInt(e.target.value, 10) || 1))} style={{ ...inputStyle, maxWidth: 100 }} />
+            </label>
+            <div>
+              <div style={{ fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: "0.05em" }}>Battle Points</div>
+              <div style={{ fontFamily: SAX.mono, fontSize: 22, color: C.text }}>{dhBudget}</div>
+              <div style={{ fontSize: 10.5, color: C.muted }}>base {dhBase} = (3 &times; {dhSize}) + 2</div>
+            </div>
+          </div>
+          {levelled.length > 0 && (
+            <p style={{ color: C.muted, fontSize: 12, marginTop: 8 }}>From the present party: {levelled.length} in combat.</p>
+          )}
+          <div style={{ marginTop: 14 }}>
+            <div style={{ ...eyebrow, marginBottom: 8 }}>Adjustments</div>
+            <div style={{ display: "grid", gap: 6 }}>
+              {DH_ADJUSTMENTS.map((a) => {
+                const on = dhAdj.includes(a.id);
+                return (
+                  <label key={a.id} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: C.text, cursor: "pointer" }}>
+                    <input type="checkbox" checked={on} onChange={() => setDhAdj((xs) => on ? xs.filter((x) => x !== a.id) : [...xs, a.id])} />
+                    <span style={{ flex: 1 }}>{a.label}</span>
+                    <span style={{ fontFamily: SAX.mono, fontSize: 11, color: a.delta > 0 ? C.warn : C.muted }}>{a.delta > 0 ? `+${a.delta}` : a.delta}</span>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        <div style={box}>
+          <div style={eyebrow}>The encounter</div>
+          {dhRoster.length === 0 && <p style={{ color: C.muted, fontSize: 13, margin: "0 0 10px" }}>Add adversaries by type to spend your Battle Points.</p>}
+          {dhRoster.map((r) => (
+            <div key={r.id} style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8, flexWrap: "wrap" }}>
+              <select value={r.type} onChange={(e) => setDhRoster((xs) => xs.map((x) => (x.id === r.id ? { ...x, type: e.target.value as DHAdversaryType } : x)))} style={{ ...inputStyle, flex: 1, minWidth: 150 }}>
+                {DH_ADVERSARY_TYPES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+              </select>
+              <label style={{ display: "flex", gap: 5, alignItems: "center", fontSize: 12, color: C.muted }}>
+                {r.type === "minion" ? "groups" : "\u00D7"}
+                <input type="number" value={r.count} onChange={(e) => setDhRoster((xs) => xs.map((x) => (x.id === r.id ? { ...x, count: Math.max(1, parseInt(e.target.value, 10) || 1) } : x)))} style={{ ...inputStyle, width: 64 }} />
+              </label>
+              <span style={{ fontFamily: SAX.mono, fontSize: 12, color: C.muted, minWidth: 60, textAlign: "right" }}>{DH_BP_COST[r.type] * r.count} pts</span>
+              <button onClick={() => setDhRoster((xs) => xs.filter((x) => x.id !== r.id))} style={ghostBtn}>Remove</button>
+            </div>
+          ))}
+          <div style={{ display: "flex", gap: 8, marginTop: 6, flexWrap: "wrap", alignItems: "center" }}>
+            <button onClick={() => setDhRoster((xs) => [...xs, { id: uid(), type: "standard", count: 1 }])} style={ghostBtn}>Add adversary</button>
+            {statBlocks.filter((r) => r.system === "daggerheart").length > 0 && (
+              <select value="" onChange={(e) => { const r = statBlocks.find((x) => x.id === e.target.value); if (r) setDhRoster((xs) => [...xs, { id: uid(), type: ((r.type as DHAdversaryType) || "standard"), count: 1 }]); }} style={{ ...inputStyle, maxWidth: 220 }}>
+                <option value="">Add from library&hellip;</option>
+                {statBlocks.filter((r) => r.system === "daggerheart").map((r) => <option key={r.id} value={r.id}>{r.name}{r.type ? ` (${r.type})` : ""}</option>)}
+              </select>
+            )}
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 16, paddingTop: 14, borderTop: `1px solid ${C.line}`, flexWrap: "wrap", gap: 10 }}>
+            <div>
+              <div style={{ fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: "0.05em" }}>Spent</div>
+              <div style={{ fontFamily: SAX.mono, fontSize: 22, color: C.text }}>{dhSpent} / {dhBudget}</div>
+            </div>
+            <div style={{ textAlign: "right" }}>
+              <div style={{ fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: "0.05em" }}>Balance</div>
+              <div style={{ fontFamily: SAX.mono, fontSize: 22, fontWeight: 700, color: dhVerdict.tone }}>{dhVerdict.label}</div>
+            </div>
+          </div>
+          <p style={{ color: C.muted, fontSize: 11.5, lineHeight: 1.6, marginTop: 12 }}>
+            Minions cost 1 point per group equal to the party size; Social and Support cost 1; Horde, Ranged, Skulk, and Standard cost 2; Leader 3; Bruiser 4; Solo 5.
+          </p>
         </div>
       </>)}
     </PageShell>
