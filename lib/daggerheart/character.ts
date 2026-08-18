@@ -129,6 +129,35 @@ export interface DHArmor {
   traitMods?: Partial<Record<DHTrait, number>>;  // Very Heavy -1 Agility, Gilded +1 Presence, etc.
 }
 
+export type DHDamageType = "phy" | "mag";
+export type DHBurden = "One-Handed" | "Two-Handed";
+
+export interface DHWeapon {
+  id: string;
+  name: string;
+  tier: DHTier;
+  category: "primary" | "secondary";
+  trait: DHTrait;            // the trait the attack roll uses
+  range: string;
+  damageDie: string;        // "d6" | "d8" | "d10" | "d12"
+  damageBonus: number;      // flat modifier added ONCE (not multiplied by Proficiency)
+  damageType: DHDamageType;
+  burden: DHBurden;
+  magic?: boolean;          // magic weapons require a Spellcast trait to wield
+  feature?: string;
+}
+
+// A player-authored weapon for anything not in the shipped Tier 1 list (higher tiers, homebrew).
+export interface DHCustomWeapon {
+  name: string;
+  trait: DHTrait;
+  range: string;
+  damageDie: string;
+  damageBonus: number;
+  damageType: DHDamageType;
+  burden: DHBurden;
+}
+
 export interface DHDomainDef {
   id: DHDomainId;
   name: string;
@@ -141,6 +170,7 @@ export interface DHRules {
   ancestries: Record<string, DHAncestry>;
   communities: Record<string, DHCommunity>;
   armors: Record<string, DHArmor>;
+  weapons: Record<string, DHWeapon>;
   domains: Record<DHDomainId, DHDomainDef>;
 }
 
@@ -155,6 +185,8 @@ export interface DHBuild {
   communityId: string;
   traits: Record<DHTrait, number>;   // the assigned base array values (before advancement bumps)
   armorId: string;                   // equipped armor, "" for unarmored
+  weaponId: string;                  // equipped primary weapon: "" none, "custom", or a rules.weapons id
+  customWeapon: DHCustomWeapon;      // used when weaponId === "custom"
   advancements: Advancement[];       // every advancement chosen across levels 2..level
   experiences: DHExperience[];       // the character's Experiences (names + running bonus)
   loadout: string[];                 // freeform domain-card labels the player is tracking (no catalog)
@@ -180,6 +212,10 @@ export interface DHSheet {
   armorScore: number;                // capped at 12
   spellcastTrait: DHTrait | null;
   spellcast: number | null;          // spellcast trait value + modifiers, or null for martial subclasses
+  weaponName: string | null;
+  attackTrait: DHTrait | null;       // the trait the equipped weapon attacks with
+  attackMod: number | null;          // that trait's value (the attack modifier)
+  damage: string | null;             // Proficiency dice of the weapon die + its flat modifier, e.g. "2d8+1"
   domains: [DHDomainId, DHDomainId];
   subclassTier: number;              // 1 foundation, 2 specialization, 3 mastery
   loadoutMax: number;                // 5
@@ -201,6 +237,8 @@ export function emptyDHBuild(): DHBuild {
     communityId: "",
     traits: emptyDHTraits(),
     armorId: "",
+    weaponId: "",
+    customWeapon: { name: "", trait: "strength", range: "Melee", damageDie: "d6", damageBonus: 0, damageType: "phy", burden: "One-Handed" },
     advancements: [],
     experiences: [{ name: "", bonus: 2 }, { name: "", bonus: 2 }],
     loadout: [],
@@ -282,6 +320,23 @@ export function deriveDaggerheartSheet(build: DHBuild, rules: DHRules): DHSheet 
   const spellcastTrait = sub?.spellcast ?? null;
   const spellcast = spellcastTrait ? traits[spellcastTrait] + sumMod(mods, "spellcast") + (armor?.spellcastMod ?? 0) : null;
 
+  // Equipped weapon. The attack rolls with the weapon's trait; damage rolls a number of the weapon's
+  // die equal to Proficiency, plus the weapon's flat modifier added once (not multiplied by Proficiency).
+  const wpn: DHWeapon | DHCustomWeapon | undefined =
+    build.weaponId === "custom" ? build.customWeapon
+    : build.weaponId ? rules.weapons[build.weaponId]
+    : undefined;
+  let weaponName: string | null = null;
+  let attackTrait: DHTrait | null = null;
+  let attackMod: number | null = null;
+  let damage: string | null = null;
+  if (wpn) {
+    weaponName = wpn.name || "Custom weapon";
+    attackTrait = wpn.trait;
+    attackMod = traits[wpn.trait];
+    damage = `${proficiency}${wpn.damageDie}${wpn.damageBonus ? `+${wpn.damageBonus}` : ""}`;
+  }
+
   const domainCardsKnown = 2 + (level - 1) + countAdvancements(build, "domainCard");
 
   return {
@@ -299,6 +354,10 @@ export function deriveDaggerheartSheet(build: DHBuild, rules: DHRules): DHSheet 
     armorScore,
     spellcastTrait,
     spellcast,
+    weaponName,
+    attackTrait,
+    attackMod,
+    damage,
     domains: cls.domains,
     subclassTier,
     loadoutMax: 5,

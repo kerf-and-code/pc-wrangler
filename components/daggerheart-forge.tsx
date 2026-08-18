@@ -7,11 +7,12 @@
 
 import React from "react";
 import {
-  DH_TRAITS, DH_TRAIT_ARRAY,
+  DH_TRAITS, DH_TRAIT_ARRAY, tierOf,
   type DHBuild, type DHSheet, type DHTrait, type Advancement, type AdvancementKind, type DHExperience,
+  type DHCustomWeapon, type DHDamageType, type DHBurden,
 } from "@/lib/daggerheart/character";
 import {
-  DH_RULES, DH_CLASS_LIST, DH_ANCESTRY_LIST, DH_COMMUNITY_LIST, DH_ARMOR_LIST, subclassesForClass,
+  DH_RULES, DH_CLASS_LIST, DH_ANCESTRY_LIST, DH_COMMUNITY_LIST, DH_ARMOR_LIST, DH_WEAPON_LIST, subclassesForClass,
 } from "@/lib/daggerheart/rules-data";
 import { STONE, FORGE_FONTS, stonePanel, stoneField, forgeLabel, statTile } from "@/lib/forge-theme";
 
@@ -47,6 +48,7 @@ export default function DaggerheartForge({
   onName: (s: string) => void;
 }) {
   const set = (p: Partial<DHBuild>) => onChange({ ...dbuild, ...p });
+  const setCustom = (p: Partial<DHCustomWeapon>) => set({ customWeapon: { ...dbuild.customWeapon, ...p } });
   const cls = DH_RULES.classes[dbuild.classId];
   const subOptions = dbuild.classId ? subclassesForClass(dbuild.classId) : [];
 
@@ -185,6 +187,53 @@ export default function DaggerheartForge({
         </div>
       </div>
 
+      {/* Weapon */}
+      <div style={stonePanel()}>
+        <div style={forgeLabel}>Weapon</div>
+        <p style={{ color: STONE.inkDim, fontSize: 12, margin: "4px 0 8px" }}>
+          The attack rolls with the weapon's trait; damage rolls Proficiency dice of the weapon die plus its flat modifier.
+          Tier 1 weapons are listed; use Custom for higher tiers or homebrew.
+        </p>
+        <Field label="Equipped weapon">
+          <select value={dbuild.weaponId} onChange={(e) => set({ weaponId: e.target.value })} style={selStyle}>
+            <option value="">None</option>
+            {DH_WEAPON_LIST.filter((w) => w.tier <= tierOf(dbuild.level)).map((w) => (
+              <option key={w.id} value={w.id}>
+                {w.name} ({TRAIT_LABEL[w.trait]}, {w.range}, {w.damageDie}{w.damageBonus ? `+${w.damageBonus}` : ""} {w.damageType}{w.magic ? ", magic" : ""})
+              </option>
+            ))}
+            <option value="custom">Custom weapon…</option>
+          </select>
+        </Field>
+        {dbuild.weaponId === "custom" && (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 10, marginTop: 10 }}>
+            <Field label="Name"><input value={dbuild.customWeapon.name} onChange={(e) => setCustom({ name: e.target.value })} style={stoneField()} /></Field>
+            <Field label="Trait">
+              <select value={dbuild.customWeapon.trait} onChange={(e) => setCustom({ trait: e.target.value as DHTrait })} style={selStyle}>
+                {DH_TRAITS.map((t) => <option key={t} value={t}>{TRAIT_LABEL[t]}</option>)}
+              </select>
+            </Field>
+            <Field label="Range"><input value={dbuild.customWeapon.range} onChange={(e) => setCustom({ range: e.target.value })} style={stoneField()} /></Field>
+            <Field label="Damage die">
+              <select value={dbuild.customWeapon.damageDie} onChange={(e) => setCustom({ damageDie: e.target.value })} style={selStyle}>
+                {["d4", "d6", "d8", "d10", "d12", "d20"].map((d) => <option key={d} value={d}>{d}</option>)}
+              </select>
+            </Field>
+            <Field label="Damage bonus"><input type="number" value={dbuild.customWeapon.damageBonus} onChange={(e) => setCustom({ damageBonus: parseInt(e.target.value, 10) || 0 })} style={stoneField()} /></Field>
+            <Field label="Type">
+              <select value={dbuild.customWeapon.damageType} onChange={(e) => setCustom({ damageType: e.target.value as DHDamageType })} style={selStyle}>
+                <option value="phy">phy</option><option value="mag">mag</option>
+              </select>
+            </Field>
+            <Field label="Burden">
+              <select value={dbuild.customWeapon.burden} onChange={(e) => setCustom({ burden: e.target.value as DHBurden })} style={selStyle}>
+                <option value="One-Handed">One-Handed</option><option value="Two-Handed">Two-Handed</option>
+              </select>
+            </Field>
+          </div>
+        )}
+      </div>
+
       {/* Advancements */}
       {dbuild.level >= 2 && (
         <div style={stonePanel()}>
@@ -286,6 +335,8 @@ export default function DaggerheartForge({
               <Stat label="Severe" value={`${sheet.severe}`} />
               <Stat label="Armor" value={`${sheet.armorScore}`} />
               <Stat label="Spellcast" value={sheet.spellcast == null ? "-" : sign(sheet.spellcast)} />
+              {sheet.attackMod != null && <Stat label="Attack" value={sign(sheet.attackMod)} />}
+              {sheet.damage && <Stat label="Damage" value={sheet.damage} />}
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 6, marginTop: 12 }}>
               {DH_TRAITS.map((t) => (
