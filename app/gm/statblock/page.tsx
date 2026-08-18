@@ -22,6 +22,10 @@ import {
   blankPF2Creature, PF2_SIZES, PF2_RARITIES, PF2_ABILITIES, PF2_SAVES,
   type PF2Creature,
 } from "@/lib/pf2e/creature";
+import {
+  blankDHAdversary, DH_ADVERSARY_TYPES, DH_ADV_TIERS, DH_BENCHMARKS,
+  type DHAdversary, type DHAdvTier,
+} from "@/lib/daggerheart/adversary";
 import { getActiveCampaign } from "@/lib/active-campaign";
 import { PortraitUploader } from "@/components/portrait-uploader";
 import {
@@ -80,6 +84,7 @@ function StatBlockInner() {
   const [block, setBlock] = useState<StatBlockDoc>(blankStatBlock);
   const [system, setSystem] = useState<string>("dnd5e");
   const [pblock, setPblock] = useState<PF2Creature>(blankPF2Creature);
+  const [dblock, setDblock] = useState<DHAdversary>(blankDHAdversary);
   const [rowId, setRowId] = useState<string | null>(null);
   const [portraitUrl, setPortraitUrl] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
@@ -107,6 +112,7 @@ function StatBlockInner() {
           const sys = row.system || "dnd5e";
           setSystem(sys);
           if (sys === "pf2e") setPblock({ ...blankPF2Creature(), ...(row.block as unknown as PF2Creature) });
+          else if (sys === "daggerheart") setDblock({ ...blankDHAdversary(), ...(row.block as unknown as DHAdversary) });
           else setBlock({ ...blankStatBlock(), ...row.block });
           setRowId(row.id);
           if (row.portrait_path) {
@@ -120,10 +126,12 @@ function StatBlockInner() {
         return;
       }
       if (isNew) {
-        const sys = getActiveCampaign()?.system === "pf2e" ? "pf2e" : "dnd5e";
+        const asys = getActiveCampaign()?.system;
+        const sys = asys === "pf2e" || asys === "daggerheart" ? asys : "dnd5e";
         setSystem(sys);
         setName("");
         if (sys === "pf2e") setPblock(blankPF2Creature());
+        else if (sys === "daggerheart") setDblock(blankDHAdversary());
         else setBlock(blankStatBlock());
         setRowId(null);
         setStatus("ready");
@@ -139,7 +147,7 @@ function StatBlockInner() {
   }, [supabase, sbId, isNew]);
 
   // --- persistence: debounced autosave once we have a target we can write to ---
-  const persist = useCallback(async (nextName: string, nextDoc: StatBlockDoc | PF2Creature) => {
+  const persist = useCallback(async (nextName: string, nextDoc: StatBlockDoc | PF2Creature | DHAdversary) => {
     if (!gmId) return;
     setSaveState("saving");
     try {
@@ -150,7 +158,7 @@ function StatBlockInner() {
         creatingRef.current = true;
         const id = await createStatBlock(supabase, {
           gmId, campaignId: null, name: nextName || "Unnamed", system,
-          sourceEdition: system === "pf2e" ? "pf2e" : (srdMode === "both" ? "2024" : srdMode), block: nextDoc,
+          sourceEdition: system === "pf2e" ? "pf2e" : system === "daggerheart" ? "daggerheart" : (srdMode === "both" ? "2024" : srdMode), block: nextDoc,
         });
         setRowId(id);
         creatingRef.current = false;
@@ -170,15 +178,16 @@ function StatBlockInner() {
     if (status !== "ready") return;
     if (!rowId && !name.trim()) return;
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => { void persist(name, system === "pf2e" ? pblock : block); }, 1000);
+    debounceRef.current = setTimeout(() => { void persist(name, system === "pf2e" ? pblock : system === "daggerheart" ? dblock : block); }, 1000);
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
     // persist intentionally omitted to avoid a new timer on every identity change; name+block drive it.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [name, block, pblock, system, status, rowId]);
+  }, [name, block, pblock, dblock, system, status, rowId]);
 
   // --- block mutation helpers ---
   const patch = useCallback((p: Partial<StatBlockDoc>) => setBlock((b) => ({ ...b, ...p })), []);
   const ppatch = useCallback((p: Partial<PF2Creature>) => setPblock((b) => ({ ...b, ...p })), []);
+  const dpatch = useCallback((p: Partial<DHAdversary>) => setDblock((b) => ({ ...b, ...p })), []);
   const setAbil = (k: string, v: number) => patch({ [k]: v } as Partial<StatBlockDoc>);
   // When CR changes, offer the standard XP so it stays coherent (GM can still override XP).
   const setCr = (cr: string) => patch({ cr, xp: CR_XP[cr] ?? block.xp });
@@ -193,7 +202,7 @@ function StatBlockInner() {
     router.replace("/gm/statblock?new");
   };
 
-  const saveAndExit = async () => { await persist(name, block); router.push("/gm/statblock"); };
+  const saveAndExit = async () => { await persist(name, system === "pf2e" ? pblock : system === "daggerheart" ? dblock : block); router.push("/gm/statblock"); };
 
   // -------------------------------------------------------------------------
   if (status === "loading") {
@@ -221,7 +230,7 @@ function StatBlockInner() {
             value={name} onChange={(e) => setName(e.target.value)} placeholder="Creature name"
             style={{ ...stoneField(), fontFamily: FORGE_FONTS.display, fontSize: 22, flex: 1, minWidth: 240 }}
           />
-          {system !== "pf2e" && <SrdToggle mode={srdMode} onMode={setSrdMode} />}
+          {system !== "pf2e" && system !== "daggerheart" && <SrdToggle mode={srdMode} onMode={setSrdMode} />}
         </div>
 
         <div style={stonePanel()}>
@@ -238,7 +247,7 @@ function StatBlockInner() {
           />
         </div>
 
-        {system !== "pf2e" && (<>
+        {system !== "pf2e" && system !== "daggerheart" && (<>
         <IdentityBlock block={block} onPatch={patch} onCr={setCr} />
         <AbilityBlock block={block} onAbil={setAbil} />
         <DefensesBlock block={block} onPatch={patch} />
@@ -280,6 +289,27 @@ function StatBlockInner() {
           <div style={forgeLabel}>Notes</div>
           <textarea
             value={pblock.blurb} onChange={(e) => ppatch({ blurb: e.target.value })}
+            placeholder="Lore, tactics, or anything else for your eyes."
+            style={{ ...stoneField(), width: "100%", minHeight: 70, marginTop: 6, resize: "vertical" }}
+          />
+        </div>
+        </>)}
+
+        {system === "daggerheart" && (<>
+        <DHIdentityBlock dblock={dblock} onPatch={dpatch} />
+        <DHAttackBlock dblock={dblock} onPatch={dpatch} />
+        <EntryListPanel title="Actions" hint="Special attacks and activated actions."
+          entries={dblock.actions} onChange={(v) => dpatch({ actions: v })} />
+        <EntryListPanel title="Reactions" hint="Triggered effects."
+          entries={dblock.reactions} onChange={(v) => dpatch({ reactions: v })} collapsedWhenEmpty />
+        <EntryListPanel title="Passives" hint="Always-on abilities."
+          entries={dblock.passives} onChange={(v) => dpatch({ passives: v })} collapsedWhenEmpty />
+        <EntryListPanel title="Fear Features" hint="High-impact features that cost a Fear to activate."
+          entries={dblock.fearFeatures} onChange={(v) => dpatch({ fearFeatures: v })} collapsedWhenEmpty />
+        <div style={stonePanel()}>
+          <div style={forgeLabel}>Notes</div>
+          <textarea
+            value={dblock.blurb} onChange={(e) => dpatch({ blurb: e.target.value })}
             placeholder="Lore, tactics, or anything else for your eyes."
             style={{ ...stoneField(), width: "100%", minHeight: 70, marginTop: 6, resize: "vertical" }}
           />
@@ -691,6 +721,54 @@ function Pf2eDefensesBlock({ pblock, onPatch }: { pblock: PF2Creature; onPatch: 
         <Field label="Immunities"><input value={csv(pblock.immunities)} onChange={(e) => onPatch({ immunities: parse(e.target.value) })} placeholder="fire, paralyzed" style={stoneField()} /></Field>
         <Field label="Resistances"><input value={csv(pblock.resistances)} onChange={(e) => onPatch({ resistances: parse(e.target.value) })} placeholder="physical 10, fire 5" style={stoneField()} /></Field>
         <Field label="Weaknesses"><input value={csv(pblock.weaknesses)} onChange={(e) => onPatch({ weaknesses: parse(e.target.value) })} placeholder="cold iron 5, good 10" style={stoneField()} /></Field>
+      </div>
+    </div>
+  );
+}
+
+function DHIdentityBlock({ dblock, onPatch }: { dblock: DHAdversary; onPatch: (p: Partial<DHAdversary>) => void }) {
+  const bm = DH_BENCHMARKS[dblock.tier];
+  return (
+    <div style={stonePanel()}>
+      <div style={forgeLabel}>Identity &amp; stats</div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 10, marginTop: 8 }}>
+        <Field label="Tier">
+          <select value={dblock.tier} onChange={(e) => onPatch({ tier: parseInt(e.target.value, 10) as DHAdvTier })} style={stoneField()}>
+            {DH_ADV_TIERS.map((t) => <option key={t} value={t}>Tier {t}</option>)}
+          </select>
+        </Field>
+        <Field label="Type">
+          <select value={dblock.type} onChange={(e) => onPatch({ type: e.target.value as DHAdversary["type"] })} style={stoneField()}>
+            {DH_ADVERSARY_TYPES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+          </select>
+        </Field>
+        <Field label="Difficulty"><NumInput value={dblock.difficulty} onChange={(v) => onPatch({ difficulty: v ?? 0 })} /></Field>
+        <Field label="Major threshold"><NumInput value={dblock.thresholdMajor} onChange={(v) => onPatch({ thresholdMajor: v ?? 0 })} /></Field>
+        <Field label="Severe threshold"><NumInput value={dblock.thresholdSevere} onChange={(v) => onPatch({ thresholdSevere: v ?? 0 })} /></Field>
+        <Field label="HP"><NumInput value={dblock.hp} onChange={(v) => onPatch({ hp: v ?? 0 })} /></Field>
+        <Field label="Stress"><NumInput value={dblock.stress} onChange={(v) => onPatch({ stress: v ?? 0 })} /></Field>
+        <Field label="Attack (ATK)"><NumInput value={dblock.atk} onChange={(v) => onPatch({ atk: v ?? 0 })} /></Field>
+      </div>
+      <p style={{ color: STONE.inkDim, fontSize: 12, marginTop: 10 }}>
+        Tier {dblock.tier} benchmarks: ATK +{bm.atk}, Difficulty {bm.difficulty}, Thresholds {bm.major}/{bm.severe}, damage {bm.damageDice}.
+      </p>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginTop: 10 }}>
+        <Field label="Description"><input value={dblock.description} onChange={(e) => onPatch({ description: e.target.value })} placeholder="A horse-sized insect with acidic blood." style={stoneField()} /></Field>
+        <Field label="Motives &amp; tactics"><input value={dblock.motives} onChange={(e) => onPatch({ motives: e.target.value })} placeholder="Burrow, drag away, feed" style={stoneField()} /></Field>
+        <Field label="Experiences"><input value={dblock.experiences} onChange={(e) => onPatch({ experiences: e.target.value })} placeholder="Tremor Sense +2" style={stoneField()} /></Field>
+      </div>
+    </div>
+  );
+}
+
+function DHAttackBlock({ dblock, onPatch }: { dblock: DHAdversary; onPatch: (p: Partial<DHAdversary>) => void }) {
+  return (
+    <div style={stonePanel()}>
+      <div style={forgeLabel}>Standard attack</div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 10, marginTop: 8 }}>
+        <Field label="Name"><input value={dblock.attackName} onChange={(e) => onPatch({ attackName: e.target.value })} placeholder="Claws" style={stoneField()} /></Field>
+        <Field label="Range"><input value={dblock.attackRange} onChange={(e) => onPatch({ attackRange: e.target.value })} placeholder="Very Close" style={stoneField()} /></Field>
+        <Field label="Damage"><input value={dblock.attackDamage} onChange={(e) => onPatch({ attackDamage: e.target.value })} placeholder="1d12+2 phy" style={stoneField()} /></Field>
       </div>
     </div>
   );

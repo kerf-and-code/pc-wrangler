@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { PF2Creature } from "@/lib/pf2e/creature";
+import type { DHAdversary } from "@/lib/daggerheart/adversary";
 
 /**
  * Persistence for GM monster stat blocks. Mirrors lib/pc-library.ts in spirit: a stat block is a
@@ -54,7 +55,7 @@ export type StatBlockDoc = {
 };
 
 // A stored block is one system's document. Callers that know the system narrow by it.
-export type AnyStatBlock = StatBlockDoc | PF2Creature;
+export type AnyStatBlock = StatBlockDoc | PF2Creature | DHAdversary;
 
 export type StatBlockRow = {
   id: string;
@@ -98,6 +99,15 @@ export function denormFromBlock(system: string, block: AnyStatBlock): StatBlockD
       ac: c.ac ?? null, hp: c.hp ?? null,
       size: c.size || null,
       type: (c.traits && c.traits[0]) || "creature",
+    };
+  }
+  if (system === "daggerheart") {
+    const a = block as DHAdversary;
+    return {
+      cr: null, xp: null,
+      level: typeof a.tier === "number" ? a.tier : null,   // Daggerheart adversaries priced by tier
+      ac: null, hp: a.hp ?? null,
+      size: null, type: a.type || null,
     };
   }
   const b = block as StatBlockDoc;
