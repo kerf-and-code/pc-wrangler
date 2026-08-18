@@ -13,12 +13,14 @@ import type { RulesModule } from "./contract";
 // game mechanics. The license requires two verbatim notices in the product (handled in the app's legal
 // text): "<work> is not an official Lancer product; it is a third party work, and is not affiliated with
 // Massif Press. <work> is published via the Lancer Third Party License." and "Lancer is copyright Massif
-// Press." Only MECHANICS ship here (the numbers), never Massif Press's descriptive prose. First cut:
-// dice-only (like PF2e / Daggerheart / Draw Steel's first cuts); character and adversary modules follow.
+// Press." Only MECHANICS ship here (the numbers), never Massif Press's descriptive prose. `character` is
+// now ON: full derivation (deriveLancerSheet) so the Forge shows a Lancer pilot-and-mech build column.
+// The adversary module (NPC classes and templates) is still absent.
 export const lancer: RulesModule = {
   id: "lancer",
   label: "Lancer",
   dice: { style: { kind: "d20-accuracy" }, label: "Roll d20 (Accuracy / Difficulty)" },
+  character: { schemaId: "lancer-pc", hasImport: false, hasDerivation: true },
   axes: [],
   rulesRef: { id: "lancer-third-party-license", label: "Lancer (Third Party License)" },
 };
