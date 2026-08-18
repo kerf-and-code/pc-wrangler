@@ -38,7 +38,7 @@ type Rolled = {
   total: number; notation: string; natural: 20 | 1 | null;
   dice: { sides: number; value: number; kept: boolean }[];
   label: string; actor: string; at: number;
-  band?: string; target?: number; degrees?: boolean; duality?: boolean; hope?: number; fear?: number;
+  band?: string; target?: number; degrees?: boolean; duality?: boolean; hope?: number; fear?: number; pool?: boolean;
 };
 
 const KINDS: { key: string; label: string }[] = [
@@ -65,6 +65,8 @@ export default function RollerPage() {
   const [dc, setDc] = useState("");
   const [dualityMod, setDualityMod] = useState("");
   const [dualityDiff, setDualityDiff] = useState("");
+  const [poolSize, setPoolSize] = useState(5);
+  const [poolDiff, setPoolDiff] = useState("");
   const [mode, setMode] = useState<"flat" | "adv" | "dis">("flat");
   const [kind, setKind] = useState("attack");
   const [actor, setActor] = useState("");
@@ -169,6 +171,9 @@ export default function RollerPage() {
   // matching dice are a critical, and the sum meets a Difficulty for success/failure.
   const isDuality = dice.style.kind === "duality";
   const dualityDice = dice.style.kind === "duality" ? dice.style.dice : "2d12";
+  // A system-neutral d10 success pool: roll N ten-sided dice, 6+ is a success, a pair of 10s is a crit.
+  const isPool = dice.style.kind === "dice-pool";
+  const poolDie = dice.style.kind === "dice-pool" ? dice.style.die : 10;
   const advMeaningful =
     !isPercentile && canHaveAdvantage(notation) && dice.style.kind === "d20-vs-dc" && dice.style.advantage;
 
@@ -178,8 +183,9 @@ export default function RollerPage() {
   const finalNotation = useMemo(
     () => isPercentile ? "1d100"
       : isDuality ? `${dualityDice}${dualityMod.trim() ? ` + ${dualityMod.trim()}` : ""}`
+      : isPool ? `${Math.max(1, Math.min(30, poolSize))}d${poolDie}`
       : applyAdvantage(notation.trim() || "1d20", mode),
-    [notation, mode, isPercentile, isDuality, dualityDice, dualityMod],
+    [notation, mode, isPercentile, isDuality, dualityDice, dualityMod, isPool, poolSize, poolDie],
   );
 
   const valid = useMemo(() => {
@@ -199,16 +205,19 @@ export default function RollerPage() {
       const usePf2eDc = isPf2e && dc.trim() !== "" && Number.isFinite(dcNum);
       const diffNum = Number(dualityDiff);
       const useDiff = isDuality && dualityDiff.trim() !== "" && Number.isFinite(diffNum);
+      const poolDiffNum = Number(poolDiff);
+      const usePoolDiff = isPool && poolDiff.trim() !== "" && Number.isFinite(poolDiffNum);
       const rollLabel = isPercentile
         ? [label, `skill ${target}`].filter(Boolean).join(" · ")
         : usePf2eDc ? [label, `DC ${dcNum}`].filter(Boolean).join(" · ")
         : isDuality ? [label, useDiff ? `Diff ${diffNum}` : ""].filter(Boolean).join(" · ")
+        : isPool ? [label, usePoolDiff ? `Diff ${poolDiffNum}` : ""].filter(Boolean).join(" · ")
         : label;
       const res = await fetch("/api/rolls/gm", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           campaignId, sessionId: sessionId || null, notation: finalNotation,
-          kind: isPercentile || isDuality ? "check" : kind, actorName: characterId ? null : actor, characterId: characterId || null,
+          kind: isPercentile || isDuality || isPool ? "check" : kind, actorName: characterId ? null : actor, characterId: characterId || null,
           label: rollLabel,
         }),
       });
@@ -216,22 +225,25 @@ export default function RollerPage() {
       if (!res.ok) { setError(out.error ?? "Could not roll."); return; }
       const r = out.result;
       const hf = isDuality && r.dice.length >= 2 ? { hope: r.dice[0].value, fear: r.dice[1].value } : null;
+      const pool = isPool ? poolOutcome(r.dice, usePoolDiff ? poolDiffNum : null) : null;
       setLog((l) => [{
-        total: r.total, notation: r.notation, natural: r.natural, dice: r.dice,
+        total: pool ? pool.successes : r.total, notation: r.notation, natural: r.natural, dice: r.dice,
         band: isPercentile ? cocBand(r.total, target)
           : usePf2eDc ? pf2eDegree(r.total, dcNum, r.natural)
           : hf ? dualityOutcome(hf.hope, hf.fear, r.total, useDiff ? diffNum : null)
+          : pool ? pool.band
           : undefined,
-        target: isPercentile ? target : usePf2eDc ? dcNum : useDiff ? diffNum : undefined,
+        target: isPercentile ? target : usePf2eDc ? dcNum : useDiff ? diffNum : usePoolDiff ? poolDiffNum : undefined,
         degrees: usePf2eDc,
         duality: !!hf,
+        pool: !!pool,
         hope: hf?.hope, fear: hf?.fear,
         label: rollLabel || KINDS.find((k) => k.key === kind)?.label || "",
         actor: characterId ? (characters.find((c) => c.id === characterId)?.name ?? "") : (actor || "the GM"),
         at: Date.now(),
       }, ...l].slice(0, 60));
     } finally { setBusy(false); }
-  }, [campaignId, sessionId, finalNotation, kind, actor, characterId, label, characters, isPercentile, target, isPf2e, dc, isDuality, dualityDiff]);
+  }, [campaignId, sessionId, finalNotation, kind, actor, characterId, label, characters, isPercentile, target, isPf2e, dc, isDuality, dualityDiff, isPool, poolDiff]);
 
   const session = sessions.find((s) => s.id === sessionId) ?? null;
 
@@ -273,7 +285,7 @@ export default function RollerPage() {
 
       <Card>
         <Label>The roll</Label>
-        {!isDuality && (
+        {!isDuality && !isPool && (
         <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
           <button type="button" onClick={() => setCocMode(false)} disabled={moduleIsPercentile}
             style={{ ...chip(!isPercentile), opacity: moduleIsPercentile ? 0.4 : 1, cursor: moduleIsPercentile ? "default" : "pointer" }}>
@@ -323,7 +335,24 @@ export default function RollerPage() {
             </p>
           </div>
         </>)}
-        {!isPercentile && !isDuality && (<>
+        {isPool && (<>
+          <div style={{ marginBottom: 10 }}>
+            <Label>Pool size</Label>
+            <input type="number" min={1} max={30} value={poolSize}
+              onChange={(e) => setPoolSize(Math.max(1, Math.min(30, Math.round(Number(e.target.value) || 0))))}
+              style={{ ...field, fontFamily: SAX.mono }} />
+          </div>
+          <div style={{ marginBottom: 10 }}>
+            <Label>Difficulty (successes, optional)</Label>
+            <input type="number" min={1} value={poolDiff} onChange={(e) => setPoolDiff(e.target.value)}
+              placeholder="e.g. 3" style={{ ...field, fontFamily: SAX.mono }} />
+            <p style={{ ...body, marginTop: 6, marginBottom: 0, fontSize: 12.5 }}>
+              Roll a pool of d{poolDie}s. Each 6 or higher is a success; a pair of 10s adds a critical
+              bonus. Set a difficulty (a number of successes) to read it as success or failure.
+            </p>
+          </div>
+        </>)}
+        {!isPercentile && !isDuality && !isPool && (<>
         <DicePicker notation={notation} onChange={setNotation} />
 
         <div style={{ marginTop: 12, marginBottom: 10 }}>
@@ -359,8 +388,8 @@ export default function RollerPage() {
           {valid ?? (isPercentile ? `rolling 1d100 under ${target}` : `rolling  ${finalNotation}`)}
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: isPercentile || isDuality ? "1fr" : "1fr 1fr", gap: 10, marginBottom: 10 }}>
-          {!isPercentile && !isDuality && (
+        <div style={{ display: "grid", gridTemplateColumns: isPercentile || isDuality || isPool ? "1fr" : "1fr 1fr", gap: 10, marginBottom: 10 }}>
+          {!isPercentile && !isDuality && !isPool && (
           <div>
             <Label>What kind</Label>
             <select value={kind} onChange={(e) => setKind(e.target.value)} style={field}>
@@ -387,7 +416,7 @@ export default function RollerPage() {
           style={{ ...field, marginBottom: 12 }} />
 
         <button onClick={() => void doRoll()} disabled={busy || !campaignId || Boolean(valid)} style={btn}>
-          {busy ? "Rolling…" : isPercentile ? "Roll d100" : isDuality ? "Roll with Hope & Fear" : "Roll"}
+          {busy ? "Rolling…" : isPercentile ? "Roll d100" : isDuality ? "Roll with Hope & Fear" : isPool ? "Roll pool" : "Roll"}
         </button>
       </Card>
 
@@ -417,9 +446,11 @@ export default function RollerPage() {
                 {r.band
                   ? (r.duality
                       ? `Hope ${r.hope} · Fear ${r.fear} · ${r.band}${r.target != null ? ` vs ${r.target}` : ""}`
-                      : r.degrees
-                        ? `${r.notation} · ${r.band}${r.target != null ? ` vs DC ${r.target}` : ""}${r.natural === 20 ? " · nat 20" : r.natural === 1 ? " · nat 1" : ""}`
-                        : `d100 · ${r.band}${r.target != null ? ` vs ${r.target}` : ""}`)
+                      : r.pool
+                        ? `${r.notation} · ${r.dice.map((d) => `${d.value}`).join(" ")} · ${r.band}${r.target != null ? ` vs ${r.target}` : ""}`
+                        : r.degrees
+                          ? `${r.notation} · ${r.band}${r.target != null ? ` vs DC ${r.target}` : ""}${r.natural === 20 ? " · nat 20" : r.natural === 1 ? " · nat 1" : ""}`
+                          : `d100 · ${r.band}${r.target != null ? ` vs ${r.target}` : ""}`)
                   : `${r.notation} · ${r.dice.map((d) => (d.kept ? `${d.value}` : `(${d.value})`)).join(" ")}${r.natural === 20 ? " · natural 20" : r.natural === 1 ? " · natural 1" : ""}`}
               </div>
             </div>
@@ -454,6 +485,20 @@ function dualityOutcome(hope: number, fear: number, total: number, difficulty: n
   const via = hope > fear ? "Hope" : "Fear";
   if (difficulty == null) return `with ${via}`;           // no difficulty set: just the tone
   return `${total >= difficulty ? "Success" : "Failure"} with ${via}`;
+}
+function poolOutcome(
+  dice: { sides: number; value: number; kept: boolean }[],
+  difficulty: number | null,
+): { successes: number; band: string } {
+  const vals = dice.filter((d) => d.kept).map((d) => d.value);
+  const base = vals.filter((v) => v >= 6).length;
+  const tens = vals.filter((v) => v === 10).length;
+  const successes = base + Math.floor(tens / 2) * 2;   // a pair of 10s adds a critical bonus
+  const critical = tens >= 2;
+  const noun = `${successes} success${successes === 1 ? "" : "es"}`;
+  if (difficulty == null) return { successes, band: critical ? `Critical · ${noun}` : noun };
+  const win = successes >= difficulty;
+  return { successes, band: win ? (critical ? "Critical Success" : "Success") : "Failure" };
 }
 function bandColor(band: string): string {
   if (band === "Critical Success") return C.good;
