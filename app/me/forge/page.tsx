@@ -42,6 +42,9 @@ import { getActiveCampaign } from "@/lib/active-campaign";
 import { derivePf2eSheet, emptyPf2eBuild, type Pf2eBuild } from "@/lib/pf2e/character";
 import { PF2_RULES } from "@/lib/pf2e/rules-data";
 import Pf2eForge from "@/components/pf2e-forge";
+import { deriveDaggerheartSheet, emptyDHBuild, type DHBuild } from "@/lib/daggerheart/character";
+import { DH_RULES } from "@/lib/daggerheart/rules-data";
+import DaggerheartForge from "@/components/daggerheart-forge";
 import { menusFor, type ClassMenu } from "@/lib/class-menus";
 import { casterLevel, multiclassSlots, isMulticlassCaster, type CasterType } from "@/lib/multiclass-slots";
 import { subclassSpellsFor } from "@/lib/subclass-spells";
@@ -272,6 +275,7 @@ function ForgeInner() {
   const [build, setBuild] = useState<Build>(emptyBuild());
   const [system, setSystem] = useState<string>("dnd5e");
   const [pbuild, setPbuild] = useState<Pf2eBuild>(emptyPf2eBuild);
+  const [dbuild, setDbuild] = useState<DHBuild>(emptyDHBuild);
   const [name, setName] = useState<string>("");
   const [speciesVariant, setSpeciesVariant] = useState<string>("");
   const [portraitUrl, setPortraitUrl] = useState<string | null>(null);
@@ -297,7 +301,8 @@ function ForgeInner() {
       if (mode === "new") {
         if (!active) return;
         setName("New character");
-        setSystem(getActiveCampaign()?.system === "pf2e" ? "pf2e" : "dnd5e");
+        const newSys = getActiveCampaign()?.system;
+        setSystem(newSys === "pf2e" || newSys === "daggerheart" ? newSys : "dnd5e");
         setStatus("ready");
         return;
       }
@@ -315,6 +320,7 @@ function ForgeInner() {
         const sys = (r as { system?: string }).system || "dnd5e";
         setSystem(sys);
         if (sys === "pf2e") setPbuild({ ...emptyPf2eBuild(), ...(r.build as Partial<Pf2eBuild>) });
+        else if (sys === "daggerheart") setDbuild({ ...emptyDHBuild(), ...(r.build as Partial<DHBuild>) });
         else setBuild(seedFromDenorm(normalizeBuild(r.build), r));
         setName(r.name || "");
         setSpeciesVariant(r.species_variant || "");
@@ -345,6 +351,7 @@ function ForgeInner() {
       const sys = (r as { system?: string }).system || "dnd5e";
       setSystem(sys);
       if (sys === "pf2e") setPbuild({ ...emptyPf2eBuild(), ...(r.build as Partial<Pf2eBuild>) });
+      else if (sys === "daggerheart") setDbuild({ ...emptyDHBuild(), ...(r.build as Partial<DHBuild>) });
       else setBuild(seedFromDenorm(normalizeBuild(r.build), r));
       setName(r.name || "");
       setSpeciesVariant(r.species_variant || "");
@@ -1008,6 +1015,36 @@ function ForgeInner() {
         return false;
       }
 
+      if (system === "daggerheart") {
+        const ddenorm = {
+          species: dbuild.ancestryId || null, class: dbuild.classId || null,
+          subclass: dbuild.subclassId || null, species_variant: null, level: dbuild.level,
+        };
+        if (mode === "character") {
+          if (!row) return false;
+          const { error } = await supabase.from("characters").update({
+            build: dbuild as unknown as Record<string, unknown>, system: "daggerheart",
+            name: name || row.name, species: dbuild.ancestryId || null, class: dbuild.classId || null,
+            subclass: dbuild.subclassId || null, level: dbuild.level,
+          }).eq("id", row.id);
+          if (error) throw error;
+          setSaveState("saved"); return true;
+        }
+        if (mode === "new" && !libId) {
+          if (creating.current) return false;
+          creating.current = true;
+          const newId = await saveToLibrary(supabase, name || "New character", dbuild, ddenorm, "daggerheart");
+          creating.current = false;
+          setLibId(newId); setMode("library"); router.replace(`/me/forge?lib=${newId}`);
+          setSaveState("saved"); return true;
+        }
+        if (libId) {
+          await updateLibrary(supabase, libId, name || "New character", dbuild, ddenorm, "daggerheart");
+          setSaveState("saved"); return true;
+        }
+        return false;
+      }
+
       if (mode === "character") {
         if (!row) return false;
         const { error } = await supabase
@@ -1052,7 +1089,7 @@ function ForgeInner() {
       setSaveState("error");
       return false;
     }
-  }, [supabase, router, mode, row, libId, build, name, speciesVariant, system, pbuild]);
+  }, [supabase, router, mode, row, libId, build, name, speciesVariant, system, pbuild, dbuild]);
 
   // Autosave: debounce ~1s after the last change. Only runs once loaded and when there are unsaved
   // edits (saveState "idle"). Skips while picking / signed out / errored.
@@ -1095,11 +1132,14 @@ function ForgeInner() {
   };
 
   const psheet = useMemo(() => { try { return derivePf2eSheet(pbuild, PF2_RULES); } catch { return null; } }, [pbuild]);
-  // Two separate readiness aliases, one per system branch. They MUST stay plain conjunctions:
+  const dsheet = useMemo(() => { try { return deriveDaggerheartSheet(dbuild, DH_RULES); } catch { return null; } }, [dbuild]);
+  // Separate readiness aliases, one per system branch. They MUST stay plain conjunctions:
   // TypeScript's aliased-condition narrowing is what lets `sheet={sheet}` pass as non-null inside
-  // the D&D body (and psheet inside the PF2e body). A ternary in the alias breaks that narrowing.
-  const dndReady = status === "ready" && system !== "pf2e" && !!sheet;
+  // the D&D body (psheet inside the PF2e body, dsheet inside the Daggerheart body). A ternary in the
+  // alias breaks that narrowing.
+  const dndReady = status === "ready" && system !== "pf2e" && system !== "daggerheart" && !!sheet;
   const pf2eReady = status === "ready" && system === "pf2e" && !!psheet;
+  const dhReady = status === "ready" && system === "daggerheart" && !!dsheet;
 
   return (
     <div style={shellStyle}>
@@ -1120,6 +1160,10 @@ function ForgeInner() {
           {pf2eReady && (
             <Pf2eForge pbuild={pbuild} onChange={(b) => { setPbuild(b); setSaveState("idle"); }}
               sheet={psheet} name={name} onName={editName} />
+          )}
+          {dhReady && (
+            <DaggerheartForge dbuild={dbuild} onChange={(b) => { setDbuild(b); setSaveState("idle"); }}
+              sheet={dsheet} name={name} onName={editName} />
           )}
           {dndReady && (
             <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 20 }}>
