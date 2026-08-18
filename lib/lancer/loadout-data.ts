@@ -4,7 +4,7 @@
 // keywords with their values substituted in. Ship-class weapons are omitted (not mech-mountable). See
 // lib/systems/lancer.ts for the required in-app attribution.
 
-import type { LancerWeapon, LancerSystem } from "./loadout";
+import type { LancerWeapon, LancerSystem, LancerMod } from "./loadout";
 
 export const LANCER_WEAPONS: LancerWeapon[] = [
   { id: "mw_fuel_rod_gun", name: "Fuel Rod Gun", size: "Main", type: "CQB", damage: ["1d3+2 Energy"], range: ["Range 3", "Threat 3"], tags: ["Limited 3", "Unique"], manufacturer: "", license: "GMS", licenseLevel: 0 },
@@ -218,4 +218,15 @@ export const LANCER_SYSTEMS: LancerSystem[] = [
   { id: "ms_stuncrown", name: "StunCrown", type: "", sp: 2, tags: ["Limited 2", "Unique"], manufacturer: "SSC", license: "Dusk Wing", licenseLevel: 3 },
   { id: "ms_tlaloc_class_nhp", name: "TLALOC-Class NHP", type: "AI", sp: 3, tags: ["AI", "Unique", "Heat 2 (Self)"], manufacturer: "SSC", license: "Monarch", licenseLevel: 3 },
   { id: "ms_tracking_bug", name: "Tracking Bug", type: "Tech", sp: 2, tags: [], manufacturer: "SSC", license: "Death’s Head", licenseLevel: 1 },
+];
+
+export const LANCER_MODS: LancerMod[] = [
+  { id: "wm_paracausal_mod", name: "Paracausal Mod", sp: 4, allowedTypes: ["Melee", "CQB", "Rifle", "Launcher", "Cannon", "Nexus"], restrictedSizes: [], addedTags: ["Overkill ", "Irreducible"], addedRange: [], license: "Saladin", licenseLevel: 3 },
+  { id: "wm_phase_ready_mod", name: "Phase-Ready Mod", sp: 2, allowedTypes: ["Melee", "CQB", "Rifle", "Launcher", "Cannon", "Nexus"], restrictedSizes: [], addedTags: [], addedRange: [], license: "Napoleon", licenseLevel: 2 },
+  { id: "wm_nanocomposite_adaptation", name: "Nanocomposite Adaptation", sp: 2, allowedTypes: ["Melee", "CQB", "Rifle", "Launcher", "Cannon", "Nexus"], restrictedSizes: [], addedTags: ["Smart", "Seeking"], addedRange: [], license: "Balor", licenseLevel: 2 },
+  { id: "wm_thermal_charge", name: "Thermal Charge", sp: 2, allowedTypes: ["Melee"], restrictedSizes: [], addedTags: [], addedRange: [], license: "Nelson", licenseLevel: 2 },
+  { id: "wm_throughbolt_rounds", name: "Throughbolt Rounds", sp: 2, allowedTypes: ["CQB", "Cannon", "Rifle"], restrictedSizes: [], addedTags: [], addedRange: [], license: "Tortuga", licenseLevel: 3 },
+  { id: "wm_uncle_class_comp_con", name: "UNCLE-Class Comp/Con", sp: 3, allowedTypes: ["Melee", "CQB", "Rifle", "Launcher", "Cannon", "Nexus"], restrictedSizes: ["Superheavy"], addedTags: [], addedRange: [], license: "Raleigh", licenseLevel: 3 },
+  { id: "wm_shock_wreath", name: "Shock Wreath", sp: 2, allowedTypes: ["Melee"], restrictedSizes: [], addedTags: [], addedRange: [], license: "Metalmark", licenseLevel: 3 },
+  { id: "wm_stabilizer_mod", name: "Stabilizer Mod", sp: 2, allowedTypes: ["Launcher", "Cannon"], restrictedSizes: [], addedTags: ["Ordnance"], addedRange: ["Range 5"], license: "Monarch", licenseLevel: 2 },
 ];

@@ -58,3 +58,33 @@ export function systemsSpUsed(ids: string[], systems: LancerSystem[]): number {
     return n + (s ? s.sp : 0);
   }, 0);
 }
+
+// A weapon mod attaches to a single mounted weapon and costs SP from the same pool as systems. A mod is
+// restricted to certain weapon TYPES (Melee, Rifle, ...) and may exclude certain SIZES (e.g. Superheavy).
+export interface LancerMod {
+  id: string;
+  name: string;
+  sp: number;
+  allowedTypes: string[];    // weapon types this mod can attach to; empty = any type
+  restrictedSizes: string[]; // weapon sizes this mod cannot attach to; empty = no size restriction
+  addedTags: string[];       // tags the mod grants the weapon
+  addedRange: string[];      // range profiles the mod grants (e.g. "Range 5")
+  license: string;
+  licenseLevel: number;
+}
+
+// Can this mod be applied to this weapon? Type must be allowed (if the mod restricts types) and the
+// weapon's size must not be restricted.
+export function modFits(mod: LancerMod, weapon: LancerWeapon): boolean {
+  if (mod.allowedTypes.length && !mod.allowedTypes.includes(weapon.type)) return false;
+  if (mod.restrictedSizes.length && mod.restrictedSizes.includes(weapon.size)) return false;
+  return true;
+}
+
+// Total SP consumed by a list of applied mod ids.
+export function modsSpUsed(ids: string[], mods: LancerMod[]): number {
+  return ids.reduce((n, id) => {
+    const m = mods.find((x) => x.id === id);
+    return n + (m ? m.sp : 0);
+  }, 0);
+}

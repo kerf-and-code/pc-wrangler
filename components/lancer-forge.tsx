@@ -12,9 +12,16 @@ import {
   type LancerBuild, type LancerSheet, type MechSkill,
 } from "@/lib/lancer/character";
 import { LANCER_FRAME_LIST } from "@/lib/lancer/rules-data";
-import { fitsMount, systemsSpUsed } from "@/lib/lancer/loadout";
-import { LANCER_WEAPONS, LANCER_SYSTEMS } from "@/lib/lancer/loadout-data";
+import { fitsMount, systemsSpUsed, modsSpUsed, modFits } from "@/lib/lancer/loadout";
+import { LANCER_WEAPONS, LANCER_SYSTEMS, LANCER_MODS } from "@/lib/lancer/loadout-data";
+import {
+  talentPointsAvailable, licenseRanksAvailable, ranksSpent, setRank, removeRank,
+  MAX_TALENT_RANK, MAX_LICENSE_RANK,
+} from "@/lib/lancer/pilot";
+import { LANCER_TALENTS } from "@/lib/lancer/pilot-data";
 import { STONE, FORGE_FONTS, stonePanel, stoneField, forgeLabel, statTile } from "@/lib/forge-theme";
+
+const ROMAN = ["", "I", "II", "III"];
 
 const sign = (n: number) => (n >= 0 ? `+${n}` : `${n}`);
 const licenseOf = (lic: string) => lic || "Integrated";
@@ -30,6 +37,11 @@ const WEAPON_LICENSES: string[] = LANCER_WEAPONS.reduce<string[]>((acc, w) => {
 }, []);
 const SYSTEM_LICENSES: string[] = LANCER_SYSTEMS.reduce<string[]>((acc, s) => {
   const l = licenseOf(s.license); if (!acc.includes(l)) acc.push(l); return acc;
+}, []);
+// License lines a pilot can rank up: every non-GMS frame is its own license (GMS gear is license-free).
+const LICENSE_LINES = LANCER_FRAME_LIST.filter((f) => f.manufacturer !== "GENERAL MASSIVE SYSTEMS");
+const LICENSE_MANUFACTURERS: string[] = LICENSE_LINES.reduce<string[]>((acc, f) => {
+  if (!acc.includes(f.manufacturer)) acc.push(f.manufacturer); return acc;
 }, []);
 
 export default function LancerForge({
@@ -53,14 +65,34 @@ export default function LancerForge({
     const next = [...build.weapons];
     while (next.length <= i) next.push("");
     next[i] = id;
-    set({ weapons: next });
+    // A mod belongs to the weapon it sits on; changing the weapon clears its mod.
+    const nextMods = [...build.mods];
+    while (nextMods.length <= i) nextMods.push("");
+    nextMods[i] = "";
+    set({ weapons: next, mods: nextMods });
+  };
+  const setMod = (i: number, id: string) => {
+    const next = [...build.mods];
+    while (next.length <= i) next.push("");
+    next[i] = id;
+    set({ mods: next });
   };
   const addSystem = (id: string) => { if (id) set({ systems: [...build.systems, id] }); };
   const removeSystem = (i: number) => set({ systems: build.systems.filter((_, j) => j !== i) });
 
-  const spUsed = sheet ? systemsSpUsed(build.systems, LANCER_SYSTEMS) : 0;
+  const spUsed = sheet ? systemsSpUsed(build.systems, LANCER_SYSTEMS) + modsSpUsed(build.mods, LANCER_MODS) : 0;
   const spBudget = sheet ? sheet.mech.sp : 0;
   const spOver = spUsed > spBudget;
+
+  // Pilot progression: talents (3 + level points) and license ranks (level ranks), rank cap 3 each.
+  const talentAvail = talentPointsAvailable(build.level);
+  const talentSpent = ranksSpent(build.talents);
+  const licAvail = licenseRanksAvailable(build.level);
+  const licSpent = ranksSpent(build.licenses);
+  const setTalentRank = (id: string, rank: number) => set({ talents: setRank(build.talents, id, rank, MAX_TALENT_RANK) });
+  const dropTalent = (id: string) => set({ talents: removeRank(build.talents, id) });
+  const setLicenseRank = (id: string, rank: number) => set({ licenses: setRank(build.licenses, id, rank, MAX_LICENSE_RANK) });
+  const dropLicense = (id: string) => set({ licenses: removeRank(build.licenses, id) });
 
   return (
     <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 20 }}>
@@ -188,14 +220,35 @@ export default function LancerForge({
                       })}
                     </select>
                   </Field>
-                  {sel && (
+                  {sel && (<>
                     <p style={{ color: STONE.inkDim, fontSize: 11.5, margin: "4px 0 0" }}>
                       {sel.type}
                       {sel.damage.length ? ` · ${sel.damage.join(", ")}` : ""}
                       {sel.range.length ? ` · ${sel.range.join(", ")}` : ""}
                       {sel.tags.length ? ` · ${sel.tags.join(", ")}` : ""}
                     </p>
-                  )}
+                    {(() => {
+                      const modOpts = LANCER_MODS.filter((m) => modFits(m, sel));
+                      if (!modOpts.length) return null;
+                      const modId = build.mods[i] || "";
+                      const mod = LANCER_MODS.find((m) => m.id === modId);
+                      return (
+                        <div style={{ marginTop: 6 }}>
+                          <select value={modId} onChange={(e) => setMod(i, e.target.value)} style={{ ...selStyle, fontSize: 13 }}>
+                            <option value="">No mod</option>
+                            {modOpts.map((m) => <option key={m.id} value={m.id}>{m.name} ({m.sp} SP)</option>)}
+                          </select>
+                          {mod && (
+                            <p style={{ color: STONE.inkDim, fontSize: 11, margin: "3px 0 0" }}>
+                              Mod: {mod.name} · {mod.sp} SP
+                              {mod.addedTags.length ? ` · +${mod.addedTags.join(", ")}` : ""}
+                              {mod.addedRange.length ? ` · +${mod.addedRange.join(", ")}` : ""}
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })()}
+                  </>)}
                 </div>
               );
             })}
@@ -203,8 +256,8 @@ export default function LancerForge({
         </div>
       )}
 
-      {/* Systems: bought against the mech's System Points. Weapon mods and unique/limited caps are not
-          enforced yet; the running total is the useful part. */}
+      {/* Systems: bought against the mech's System Points. The SP total also includes weapon mods
+          (applied above). Unique/limited caps are not enforced yet; the running total is the useful part. */}
       {sheet && (
         <div style={stonePanel()}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
@@ -259,6 +312,94 @@ export default function LancerForge({
           </div>
         </div>
       )}
+
+      {/* Pilot progression: talents (ranked I to III, 3 + level points) and license ranks (level ranks). */}
+      <div style={stonePanel()}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
+          <div style={forgeLabel}>Talents</div>
+          <span style={{ flex: 1 }} />
+          <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 13, color: talentSpent > talentAvail ? "#d66" : STONE.ink }}>
+            {talentSpent} / {talentAvail}
+          </span>
+        </div>
+        {talentSpent > talentAvail && (
+          <p style={{ color: "#d66", fontSize: 12, margin: "4px 0 0" }}>Over by {talentSpent - talentAvail}. Drop a rank or raise license level.</p>
+        )}
+        <div style={{ marginTop: 10 }}>
+          <Field label="Add a talent">
+            <select value="" onChange={(e) => { if (e.target.value) setTalentRank(e.target.value, 1); e.currentTarget.selectedIndex = 0; }} style={selStyle}>
+              <option value="">Choose...</option>
+              {LANCER_TALENTS.filter((t) => !(t.id in build.talents)).map((t) => (
+                <option key={t.id} value={t.id}>{t.name}</option>
+              ))}
+            </select>
+          </Field>
+        </div>
+        <div style={{ display: "grid", gap: 8, marginTop: 12 }}>
+          {Object.keys(build.talents).length === 0 && (
+            <p style={{ color: STONE.inkDim, fontSize: 12.5, fontStyle: "italic" }}>No talents taken.</p>
+          )}
+          {Object.entries(build.talents).map(([id, rank]) => {
+            const t = LANCER_TALENTS.find((x) => x.id === id);
+            if (!t) return null;
+            return (
+              <div key={id} style={{ display: "flex", gap: 10, alignItems: "center", borderLeft: `2px solid ${STONE.inkFaint}`, paddingLeft: 12 }}>
+                <span style={{ color: STONE.ink, fontSize: 14, flex: 1 }}>{t.name}</span>
+                <select value={rank} onChange={(e) => setTalentRank(id, parseInt(e.target.value, 10))} style={{ ...selStyle, width: "auto", padding: "4px 8px", fontSize: 13 }}>
+                  {[1, 2, 3].map((r) => <option key={r} value={r}>Rank {ROMAN[r]}</option>)}
+                </select>
+                <button type="button" onClick={() => dropTalent(id)} style={{ background: "none", border: "none", color: STONE.inkDim, cursor: "pointer", fontSize: 16, lineHeight: 1 }}>×</button>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div style={stonePanel()}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
+          <div style={forgeLabel}>Licenses</div>
+          <span style={{ flex: 1 }} />
+          <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 13, color: licSpent > licAvail ? "#d66" : STONE.ink }}>
+            {licSpent} / {licAvail}
+          </span>
+        </div>
+        <p style={{ color: STONE.inkDim, fontSize: 12, margin: "4px 0 0" }}>
+          Every non-GMS frame is its own license line, ranked I to III; GMS gear needs no license.
+          {licSpent > licAvail ? ` Over by ${licSpent - licAvail}.` : ""}
+        </p>
+        <div style={{ marginTop: 10 }}>
+          <Field label="Add a license">
+            <select value="" onChange={(e) => { if (e.target.value) setLicenseRank(e.target.value, 1); e.currentTarget.selectedIndex = 0; }} style={selStyle}>
+              <option value="">Choose...</option>
+              {LICENSE_MANUFACTURERS.map((man) => {
+                const opts = LICENSE_LINES.filter((f) => f.manufacturer === man && !(f.id in build.licenses));
+                if (!opts.length) return null;
+                return <optgroup key={man} label={man}>{opts.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}</optgroup>;
+              })}
+            </select>
+          </Field>
+        </div>
+        <div style={{ display: "grid", gap: 8, marginTop: 12 }}>
+          {Object.keys(build.licenses).length === 0 && (
+            <p style={{ color: STONE.inkDim, fontSize: 12.5, fontStyle: "italic" }}>No licenses taken.</p>
+          )}
+          {Object.entries(build.licenses).map(([id, rank]) => {
+            const f = LICENSE_LINES.find((x) => x.id === id);
+            if (!f) return null;
+            return (
+              <div key={id} style={{ display: "flex", gap: 10, alignItems: "center", borderLeft: `2px solid ${STONE.inkFaint}`, paddingLeft: 12 }}>
+                <span style={{ color: STONE.ink, fontSize: 14, flex: 1 }}>
+                  {f.name}<span style={{ color: STONE.inkDim, fontSize: 11.5 }}>{"  "}{f.manufacturer}</span>
+                </span>
+                <select value={rank} onChange={(e) => setLicenseRank(id, parseInt(e.target.value, 10))} style={{ ...selStyle, width: "auto", padding: "4px 8px", fontSize: 13 }}>
+                  {[1, 2, 3].map((r) => <option key={r} value={r}>Rank {ROMAN[r]}</option>)}
+                </select>
+                <button type="button" onClick={() => dropLicense(id)} style={{ background: "none", border: "none", color: STONE.inkDim, cursor: "pointer", fontSize: 16, lineHeight: 1 }}>×</button>
+              </div>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }
