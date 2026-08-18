@@ -30,6 +30,10 @@ import {
   blankDSAdversary, DS_ORGANIZATIONS, DS_ROLES, DS_ADV_CHARS, dsBenchmarkEV,
   type DSAdversary, type DSOrganization, type DSRole,
 } from "@/lib/drawsteel/adversary";
+import {
+  blankLancerNPC, LANCER_NPC_ROLES, LANCER_NPC_TIERS, LANCER_NPC_SIZES,
+  type LancerNPC, type LancerNPCRole, type LancerNPCTier,
+} from "@/lib/lancer/adversary";
 import { getActiveCampaign } from "@/lib/active-campaign";
 import { PortraitUploader } from "@/components/portrait-uploader";
 import {
@@ -90,6 +94,7 @@ function StatBlockInner() {
   const [pblock, setPblock] = useState<PF2Creature>(blankPF2Creature);
   const [dblock, setDblock] = useState<DHAdversary>(blankDHAdversary);
   const [sblock, setSblock] = useState<DSAdversary>(blankDSAdversary);
+  const [nblock, setNblock] = useState<LancerNPC>(blankLancerNPC);
   const [rowId, setRowId] = useState<string | null>(null);
   const [portraitUrl, setPortraitUrl] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
@@ -119,6 +124,7 @@ function StatBlockInner() {
           if (sys === "pf2e") setPblock({ ...blankPF2Creature(), ...(row.block as unknown as PF2Creature) });
           else if (sys === "daggerheart") setDblock({ ...blankDHAdversary(), ...(row.block as unknown as DHAdversary) });
           else if (sys === "drawsteel") setSblock({ ...blankDSAdversary(), ...(row.block as unknown as DSAdversary) });
+          else if (sys === "lancer") setNblock({ ...blankLancerNPC(), ...(row.block as unknown as LancerNPC) });
           else setBlock({ ...blankStatBlock(), ...row.block });
           setRowId(row.id);
           if (row.portrait_path) {
@@ -133,12 +139,13 @@ function StatBlockInner() {
       }
       if (isNew) {
         const asys = getActiveCampaign()?.system;
-        const sys = asys === "pf2e" || asys === "daggerheart" || asys === "drawsteel" ? asys : "dnd5e";
+        const sys = asys === "pf2e" || asys === "daggerheart" || asys === "drawsteel" || asys === "lancer" ? asys : "dnd5e";
         setSystem(sys);
         setName("");
         if (sys === "pf2e") setPblock(blankPF2Creature());
         else if (sys === "daggerheart") setDblock(blankDHAdversary());
         else if (sys === "drawsteel") setSblock(blankDSAdversary());
+        else if (sys === "lancer") setNblock(blankLancerNPC());
         else setBlock(blankStatBlock());
         setRowId(null);
         setStatus("ready");
@@ -154,7 +161,7 @@ function StatBlockInner() {
   }, [supabase, sbId, isNew]);
 
   // --- persistence: debounced autosave once we have a target we can write to ---
-  const persist = useCallback(async (nextName: string, nextDoc: StatBlockDoc | PF2Creature | DHAdversary | DSAdversary) => {
+  const persist = useCallback(async (nextName: string, nextDoc: StatBlockDoc | PF2Creature | DHAdversary | DSAdversary | LancerNPC) => {
     if (!gmId) return;
     setSaveState("saving");
     try {
@@ -165,7 +172,7 @@ function StatBlockInner() {
         creatingRef.current = true;
         const id = await createStatBlock(supabase, {
           gmId, campaignId: null, name: nextName || "Unnamed", system,
-          sourceEdition: system === "pf2e" ? "pf2e" : system === "daggerheart" ? "daggerheart" : system === "drawsteel" ? "drawsteel" : (srdMode === "both" ? "2024" : srdMode), block: nextDoc,
+          sourceEdition: system === "pf2e" ? "pf2e" : system === "daggerheart" ? "daggerheart" : system === "drawsteel" ? "drawsteel" : system === "lancer" ? "lancer" : (srdMode === "both" ? "2024" : srdMode), block: nextDoc,
         });
         setRowId(id);
         creatingRef.current = false;
@@ -185,17 +192,18 @@ function StatBlockInner() {
     if (status !== "ready") return;
     if (!rowId && !name.trim()) return;
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => { void persist(name, system === "pf2e" ? pblock : system === "daggerheart" ? dblock : system === "drawsteel" ? sblock : block); }, 1000);
+    debounceRef.current = setTimeout(() => { void persist(name, system === "pf2e" ? pblock : system === "daggerheart" ? dblock : system === "drawsteel" ? sblock : system === "lancer" ? nblock : block); }, 1000);
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
     // persist intentionally omitted to avoid a new timer on every identity change; name+block drive it.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [name, block, pblock, dblock, sblock, system, status, rowId]);
+  }, [name, block, pblock, dblock, sblock, nblock, system, status, rowId]);
 
   // --- block mutation helpers ---
   const patch = useCallback((p: Partial<StatBlockDoc>) => setBlock((b) => ({ ...b, ...p })), []);
   const ppatch = useCallback((p: Partial<PF2Creature>) => setPblock((b) => ({ ...b, ...p })), []);
   const dpatch = useCallback((p: Partial<DHAdversary>) => setDblock((b) => ({ ...b, ...p })), []);
   const spatch = useCallback((p: Partial<DSAdversary>) => setSblock((b) => ({ ...b, ...p })), []);
+  const npatch = useCallback((p: Partial<LancerNPC>) => setNblock((b) => ({ ...b, ...p })), []);
   const setAbil = (k: string, v: number) => patch({ [k]: v } as Partial<StatBlockDoc>);
   // When CR changes, offer the standard XP so it stays coherent (GM can still override XP).
   const setCr = (cr: string) => patch({ cr, xp: CR_XP[cr] ?? block.xp });
@@ -210,7 +218,7 @@ function StatBlockInner() {
     router.replace("/gm/statblock?new");
   };
 
-  const saveAndExit = async () => { await persist(name, system === "pf2e" ? pblock : system === "daggerheart" ? dblock : system === "drawsteel" ? sblock : block); router.push("/gm/statblock"); };
+  const saveAndExit = async () => { await persist(name, system === "pf2e" ? pblock : system === "daggerheart" ? dblock : system === "drawsteel" ? sblock : system === "lancer" ? nblock : block); router.push("/gm/statblock"); };
 
   // -------------------------------------------------------------------------
   if (status === "loading") {
@@ -238,7 +246,7 @@ function StatBlockInner() {
             value={name} onChange={(e) => setName(e.target.value)} placeholder="Creature name"
             style={{ ...stoneField(), fontFamily: FORGE_FONTS.display, fontSize: 22, flex: 1, minWidth: 240 }}
           />
-          {system !== "pf2e" && system !== "daggerheart" && system !== "drawsteel" && <SrdToggle mode={srdMode} onMode={setSrdMode} />}
+          {system !== "pf2e" && system !== "daggerheart" && system !== "drawsteel" && system !== "lancer" && <SrdToggle mode={srdMode} onMode={setSrdMode} />}
         </div>
 
         <div style={stonePanel()}>
@@ -255,7 +263,7 @@ function StatBlockInner() {
           />
         </div>
 
-        {system !== "pf2e" && system !== "daggerheart" && system !== "drawsteel" && (<>
+        {system !== "pf2e" && system !== "daggerheart" && system !== "drawsteel" && system !== "lancer" && (<>
         <IdentityBlock block={block} onPatch={patch} onCr={setCr} />
         <AbilityBlock block={block} onAbil={setAbil} />
         <DefensesBlock block={block} onPatch={patch} />
@@ -341,6 +349,27 @@ function StatBlockInner() {
           <textarea
             value={sblock.blurb} onChange={(e) => spatch({ blurb: e.target.value })}
             placeholder="Lore, tactics, or anything else for your eyes."
+            style={{ ...stoneField(), width: "100%", minHeight: 70, marginTop: 6, resize: "vertical" }}
+          />
+        </div>
+        </>)}
+
+        {system === "lancer" && (<>
+        <LancerNPCIdentityBlock nblock={nblock} onPatch={npatch} />
+        <LancerNPCStatsBlock nblock={nblock} onPatch={npatch} />
+        <EntryListPanel title="Traits" hint="Always-on features (e.g. Fortify, Squad)."
+          entries={nblock.traits} onChange={(v) => npatch({ traits: v })} collapsedWhenEmpty />
+        <EntryListPanel title="Weapons" hint="Attacks with damage, range, and tags (e.g. Assault Rifle, 1d6+2 kinetic, Range 10)."
+          entries={nblock.weapons} onChange={(v) => npatch({ weapons: v })} />
+        <EntryListPanel title="Systems" hint="Activated systems and tech actions."
+          entries={nblock.systems} onChange={(v) => npatch({ systems: v })} collapsedWhenEmpty />
+        <EntryListPanel title="Reactions" hint="Triggered reactions."
+          entries={nblock.reactions} onChange={(v) => npatch({ reactions: v })} collapsedWhenEmpty />
+        <div style={stonePanel()}>
+          <div style={forgeLabel}>Notes</div>
+          <textarea
+            value={nblock.blurb} onChange={(e) => npatch({ blurb: e.target.value })}
+            placeholder="Tactics, protocols, or anything else for your eyes."
             style={{ ...stoneField(), width: "100%", minHeight: 70, marginTop: 6, resize: "vertical" }}
           />
         </div>
@@ -874,6 +903,57 @@ function DSCharBlock({ sblock, onPatch }: { sblock: DSAdversary; onPatch: (p: Pa
               style={{ ...stoneField(), textAlign: "center", padding: "6px 2px", width: "100%" }} />
           </label>
         ))}
+      </div>
+    </div>
+  );
+}
+
+// ---- Lancer NPC blocks -------------------------------------------------------------------------
+
+function LancerNPCIdentityBlock({ nblock, onPatch }: { nblock: LancerNPC; onPatch: (p: Partial<LancerNPC>) => void }) {
+  return (
+    <div style={stonePanel()}>
+      <div style={forgeLabel}>Identity</div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 10, marginTop: 8 }}>
+        <Field label="Tier">
+          <select value={nblock.tier} onChange={(e) => onPatch({ tier: parseInt(e.target.value, 10) as LancerNPCTier })} style={stoneField()}>
+            {LANCER_NPC_TIERS.map((t) => <option key={t} value={t}>Tier {t}</option>)}
+          </select>
+        </Field>
+        <Field label="Class"><input value={nblock.className} onChange={(e) => onPatch({ className: e.target.value })} placeholder="Assault" style={stoneField()} /></Field>
+        <Field label="Role">
+          <select value={nblock.role} onChange={(e) => onPatch({ role: e.target.value as LancerNPCRole })} style={stoneField()}>
+            {LANCER_NPC_ROLES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+          </select>
+        </Field>
+        <Field label="Size">
+          <select value={nblock.size} onChange={(e) => onPatch({ size: parseFloat(e.target.value) })} style={stoneField()}>
+            {LANCER_NPC_SIZES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+          </select>
+        </Field>
+        <Field label="Activations"><NumInput value={nblock.activations} onChange={(v) => onPatch({ activations: v ?? 1 })} /></Field>
+      </div>
+      <p style={{ color: STONE.inkDim, fontSize: 12, marginTop: 10 }}>
+        Lancer NPCs are authored directly: pick a tier and role, then fill the stats and features from your NPC source.
+      </p>
+    </div>
+  );
+}
+
+function LancerNPCStatsBlock({ nblock, onPatch }: { nblock: LancerNPC; onPatch: (p: Partial<LancerNPC>) => void }) {
+  return (
+    <div style={stonePanel()}>
+      <div style={forgeLabel}>Stats</div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))", gap: 10, marginTop: 8 }}>
+        <Field label="Structure"><NumInput value={nblock.structure} onChange={(v) => onPatch({ structure: v ?? 0 })} /></Field>
+        <Field label="HP"><NumInput value={nblock.hp} onChange={(v) => onPatch({ hp: v ?? 0 })} /></Field>
+        <Field label="Armor"><NumInput value={nblock.armor} onChange={(v) => onPatch({ armor: v ?? 0 })} /></Field>
+        <Field label="Evasion"><NumInput value={nblock.evasion} onChange={(v) => onPatch({ evasion: v ?? 0 })} /></Field>
+        <Field label="E-Defense"><NumInput value={nblock.edef} onChange={(v) => onPatch({ edef: v ?? 0 })} /></Field>
+        <Field label="Heat Cap"><NumInput value={nblock.heatcap} onChange={(v) => onPatch({ heatcap: v ?? 0 })} /></Field>
+        <Field label="Speed"><NumInput value={nblock.speed} onChange={(v) => onPatch({ speed: v ?? 0 })} /></Field>
+        <Field label="Sensors"><NumInput value={nblock.sensors} onChange={(v) => onPatch({ sensors: v ?? 0 })} /></Field>
+        <Field label="Save"><NumInput value={nblock.saveTarget} onChange={(v) => onPatch({ saveTarget: v ?? 0 })} /></Field>
       </div>
     </div>
   );

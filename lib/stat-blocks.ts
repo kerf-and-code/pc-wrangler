@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { PF2Creature } from "@/lib/pf2e/creature";
 import type { DHAdversary } from "@/lib/daggerheart/adversary";
 import type { DSAdversary } from "@/lib/drawsteel/adversary";
+import type { LancerNPC } from "@/lib/lancer/adversary";
 
 /**
  * Persistence for GM monster stat blocks. Mirrors lib/pc-library.ts in spirit: a stat block is a
@@ -56,7 +57,7 @@ export type StatBlockDoc = {
 };
 
 // A stored block is one system's document. Callers that know the system narrow by it.
-export type AnyStatBlock = StatBlockDoc | PF2Creature | DHAdversary | DSAdversary;
+export type AnyStatBlock = StatBlockDoc | PF2Creature | DHAdversary | DSAdversary | LancerNPC;
 
 export type StatBlockRow = {
   id: string;
@@ -109,6 +110,18 @@ export function denormFromBlock(system: string, block: AnyStatBlock): StatBlockD
       level: typeof a.tier === "number" ? a.tier : null,   // Daggerheart adversaries priced by tier
       ac: null, hp: a.hp ?? null,
       size: null, type: a.type || null,
+    };
+  }
+  if (system === "lancer") {
+    const a = block as LancerNPC;
+    return {
+      // Lancer NPCs are priced by tier (1-3), stored in `level`. `type` is the role, `hp` the NPC's HP,
+      // `size` its size. No cr/xp (Lancer has no XP budget).
+      cr: null, xp: null,
+      level: typeof a.tier === "number" ? a.tier : null,
+      ac: null, hp: a.hp ?? null,
+      size: typeof a.size === "number" ? (a.size === 0.5 ? "1/2" : String(a.size)) : null,
+      type: a.role || null,
     };
   }
   if (system === "drawsteel") {

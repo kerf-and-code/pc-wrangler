@@ -15,12 +15,15 @@ import type { RulesModule } from "./contract";
 // Massif Press. <work> is published via the Lancer Third Party License." and "Lancer is copyright Massif
 // Press." Only MECHANICS ship here (the numbers), never Massif Press's descriptive prose. `character` is
 // now ON: full derivation (deriveLancerSheet) so the Forge shows a Lancer pilot-and-mech build column.
-// The adversary module (NPC classes and templates) is still absent.
+// `adversary` is now ON: the Monster Maker authors Lancer NPC stat blocks. hasEncounterMath is FALSE
+// because Lancer has no XP/EV point budget (encounters are built by NPC tier and count, not a spend), so
+// the encounter balancer stays hidden for Lancer rather than presenting maths that do not apply.
 export const lancer: RulesModule = {
   id: "lancer",
   label: "Lancer",
   dice: { style: { kind: "d20-accuracy" }, label: "Roll d20 (Accuracy / Difficulty)" },
   character: { schemaId: "lancer-pc", hasImport: false, hasDerivation: true },
+  adversary: { schemaId: "lancer-npc", hasEncounterMath: false },
   axes: [],
   rulesRef: { id: "lancer-third-party-license", label: "Lancer (Third Party License)" },
 };
