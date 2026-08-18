@@ -7,6 +7,7 @@ import { AXES, type AxisKey } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import { listModules } from "@/lib/systems/registry";
 import { setActiveCampaign } from "@/lib/active-campaign";
+import { getRosterFields, type RosterSpec } from "@/lib/systems/roster-fields";
 
 // Palette mapped onto the shared cellar theme.
 
@@ -136,6 +137,12 @@ export default function GMWorkspace() {
     const c = campaigns.find((x) => x.id === selected);
     if (c) setActiveCampaign({ id: c.id, name: c.name, system: c.system ?? null });
   }, [selected, campaigns]);
+
+  // The selected campaign's system decides the roster shape. D&D and its 5e-compatible settings return
+  // null and keep the rich D&D roster below (species/variant/subclass catalog + coverage); a non-D&D
+  // system returns a field spec, and the roster shows that system's own choices instead.
+  const activeSystem = useMemo(() => campaigns.find((c) => c.id === selected)?.system ?? null, [campaigns, selected]);
+  const rosterSpec = useMemo(() => getRosterFields(activeSystem), [activeSystem]);
 
   async function changeSystem(id: string, system: string) {
     setBusy(true); setErr(null);
@@ -444,7 +451,7 @@ export default function GMWorkspace() {
           {/* roster */}
           <div style={box}>
             <div style={{ fontSize: 13, color: C.muted, marginBottom: 12 }}>Party roster</div>
-            {partnerList.length > 0 && (
+            {!rosterSpec && partnerList.length > 0 && (
               <div style={{ marginBottom: 14 }}>
                 <div style={{ fontSize: 11.5, color: C.muted, marginBottom: 7 }}>
                   Partnered content {enabledPartners.size > 0 ? `(${enabledPartners.size} on)` : "— off by default; toggle a partner to add its options"}
@@ -466,7 +473,7 @@ export default function GMWorkspace() {
             )}
             {characters.length === 0 && <p style={{ color: C.muted, fontSize: 13 }}>No characters yet.</p>}
             {characters.map((ch) => {
-              const gap = coverageGap(ch);
+              const gap = rosterSpec ? null : coverageGap(ch);
               const editing = editId === ch.id;
 
               return (
@@ -516,7 +523,9 @@ export default function GMWorkspace() {
                       correction cannot reintroduce free text. Editing in place keeps
                       character_id intact, which is the whole point: delete-and-re-add
                       would orphan every event and disposition tied to this character. */}
-                  {editing && (
+                  {editing && (rosterSpec ? (
+                    <SpecFields spec={rosterSpec} values={editChar} onChange={(p) => setEditChar({ ...editChar, ...p })} onAction={saveEdit} actionLabel="Save" busy={busy} />
+                  ) : (
                     <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10, alignItems: "center" }}>
                       <select style={{ ...inputStyle, maxWidth: 140 }} value={editChar.class}
                         onChange={(e) => setEditChar({ ...editChar, class: e.target.value, subclass: "" })}>
@@ -556,7 +565,7 @@ export default function GMWorkspace() {
 
                       <button style={btn} onClick={saveEdit} disabled={busy}>Save</button>
                     </div>
-                  )}
+                  ))}
                 </div>
               );
             })}
@@ -573,6 +582,9 @@ export default function GMWorkspace() {
                 Species now cascades into a variant (subrace or lineage). That
                 dimension simply did not exist before, which is why High Elf could
                 not be selected and Vulpin could not be found. */}
+            {rosterSpec ? (
+              <SpecFields spec={rosterSpec} values={newChar} onChange={(p) => setNewChar({ ...newChar, ...p })} name={newChar.name} onName={(v) => setNewChar({ ...newChar, name: v })} onAction={addCharacter} actionLabel="Add" busy={busy} />
+            ) : (
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 14, alignItems: "center" }}>
               <input style={{ ...inputStyle, maxWidth: 150 }} placeholder="Name"
                 value={newChar.name} onChange={(e) => setNewChar({ ...newChar, name: e.target.value })} />
@@ -638,10 +650,12 @@ export default function GMWorkspace() {
 
               <button style={btn} onClick={addCharacter} disabled={busy}>Add</button>
             </div>
+            )}
 
             {/* Edition. 2024 is the default; 2014 is offered rather than dropped,
                 because tables run both and a character sheet does not care what we
                 standardised on. */}
+            {!rosterSpec && (
             <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 10 }}>
               <span style={{ fontSize: 11.5, color: C.muted, fontFamily: "ui-monospace, monospace", letterSpacing: "0.1em", textTransform: "uppercase" }}>
                 Rules
@@ -665,9 +679,11 @@ export default function GMWorkspace() {
                 </button>
               ))}
             </div>
+            )}
           </div>
 
-          {/* coverage */}
+          {/* coverage — D&D party-role analysis; hidden for systems without a class-capability model. */}
+          {!rosterSpec && (
           <div style={box}>
             <div style={{ fontSize: 13, color: C.muted, marginBottom: 12 }}>Coverage analysis</div>
             {characters.length === 0 ? (
@@ -706,6 +722,7 @@ export default function GMWorkspace() {
               </>
             )}
           </div>
+          )}
 
           {/* player dispositions */}
           <div style={box}>
@@ -756,6 +773,50 @@ export default function GMWorkspace() {
         </div>
       )}
     </Shell>
+  );
+}
+
+// The system-aware roster fields. Renders a name (add only), the campaign system's own identity fields
+// (a constrained select where the option data exists, a free-text input where it doesn't), and a level
+// where the system uses one, then the action button. Writes the same character columns the D&D roster
+// does (name / class / subclass / species / level), so add and edit persist through the existing handlers.
+type RosterValues = { class: string; subclass: string; species: string; level: string };
+function SpecFields({ spec, values, onChange, onAction, actionLabel, name, onName, busy }: {
+  spec: RosterSpec;
+  values: RosterValues;
+  onChange: (p: Partial<RosterValues>) => void;
+  onAction: () => void;
+  actionLabel: string;
+  name?: string;          // present on add (editable), omitted on edit
+  onName?: (v: string) => void;
+  busy: boolean;
+}) {
+  return (
+    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: onName ? 14 : 10, alignItems: "center" }}>
+      {onName && (
+        <input style={{ ...inputStyle, maxWidth: 150 }} placeholder="Name"
+          value={name ?? ""} onChange={(e) => onName(e.target.value)} />
+      )}
+      {spec.fields.map((f) => (
+        f.options.length > 0 ? (
+          <select key={f.col} style={{ ...inputStyle, maxWidth: 200 }} value={values[f.col]}
+            onChange={(e) => onChange({ [f.col]: e.target.value } as Partial<RosterValues>)}>
+            <option value="">{f.label}{f.optional ? " (optional)" : ""}</option>
+            {f.options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
+        ) : (
+          <input key={f.col} style={{ ...inputStyle, maxWidth: 180 }}
+            placeholder={f.optional ? `${f.label} (optional)` : f.label}
+            value={values[f.col]} onChange={(e) => onChange({ [f.col]: e.target.value } as Partial<RosterValues>)} />
+        )
+      ))}
+      {spec.level.show && (
+        <input style={{ ...inputStyle, maxWidth: 110 }} type="number" placeholder={spec.level.label}
+          title={spec.level.label} min={spec.level.min} max={spec.level.max}
+          value={values.level} onChange={(e) => onChange({ level: e.target.value })} />
+      )}
+      <button style={btn} onClick={onAction} disabled={busy}>{actionLabel}</button>
+    </div>
   );
 }
 
