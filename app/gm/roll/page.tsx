@@ -38,7 +38,7 @@ type Rolled = {
   total: number; notation: string; natural: 20 | 1 | null;
   dice: { sides: number; value: number; kept: boolean }[];
   label: string; actor: string; at: number;
-  band?: string; target?: number; degrees?: boolean; duality?: boolean; hope?: number; fear?: number; pool?: boolean; power?: boolean;
+  band?: string; target?: number; degrees?: boolean; duality?: boolean; hope?: number; fear?: number; pool?: boolean; power?: boolean; lancer?: boolean;
 };
 
 const KINDS: { key: string; label: string }[] = [
@@ -69,6 +69,9 @@ export default function RollerPage() {
   const [poolDiff, setPoolDiff] = useState("");
   const [dsMod, setDsMod] = useState("");
   const [dsEB, setDsEB] = useState(0);   // Draw Steel edges/banes: -2 double bane .. +2 double edge
+  const [lancerMod, setLancerMod] = useState("");
+  const [lancerAcc, setLancerAcc] = useState(0);  // Lancer net accuracy: positive = Accuracy, negative = Difficulty
+  const [lancerTarget, setLancerTarget] = useState("");
   const [mode, setMode] = useState<"flat" | "adv" | "dis">("flat");
   const [kind, setKind] = useState("attack");
   const [actor, setActor] = useState("");
@@ -186,6 +189,9 @@ export default function RollerPage() {
   const poolDie = dice.style.kind === "dice-pool" ? dice.style.die : 10;
   // Draw Steel: roll 2d10 + a characteristic against tiers; edges/banes adjust it, a natural 19-20 crits.
   const isPowerRoll = dice.style.kind === "power-roll";
+  // Lancer: roll 1d20 + a flat bonus, adjusted by net Accuracy/Difficulty (roll |net| d6, add or subtract
+  // the single highest), against a target number. A natural 20 on the d20 is a critical hit.
+  const isLancer = dice.style.kind === "d20-accuracy";
   const advMeaningful =
     !isPercentile && canHaveAdvantage(notation) && dice.style.kind === "d20-vs-dc" && dice.style.advantage;
 
@@ -197,8 +203,9 @@ export default function RollerPage() {
       : isDuality ? `${dualityDice}${dualityMod.trim() ? ` + ${dualityMod.trim()}` : ""}`
       : isPool ? `${Math.max(1, Math.min(30, poolSize))}d${poolDie}`
       : isPowerRoll ? powerRollNotation(dsMod, dsEB)
+      : isLancer ? lancerNotation(lancerMod, lancerAcc)
       : applyAdvantage(notation.trim() || "1d20", mode),
-    [notation, mode, isPercentile, isDuality, dualityDice, dualityMod, isPool, poolSize, poolDie, isPowerRoll, dsMod, dsEB],
+    [notation, mode, isPercentile, isDuality, dualityDice, dualityMod, isPool, poolSize, poolDie, isPowerRoll, dsMod, dsEB, isLancer, lancerMod, lancerAcc],
   );
 
   const valid = useMemo(() => {
@@ -221,12 +228,18 @@ export default function RollerPage() {
       const poolDiffNum = Number(poolDiff);
       const usePoolDiff = isPool && poolDiff.trim() !== "" && Number.isFinite(poolDiffNum);
       const ebLabel = dsEB === 2 ? "Double Edge" : dsEB === 1 ? "Edge" : dsEB === -1 ? "Bane" : dsEB === -2 ? "Double Bane" : "";
+      const lancerTgtNum = Number(lancerTarget);
+      const useLancerTgt = isLancer && lancerTarget.trim() !== "" && Number.isFinite(lancerTgtNum);
+      // Encode net accuracy and target in the label so a reloaded roll can rebuild its outcome from the
+      // stored dice (positive = "Acc N", negative = "Diff N", and "Tgt N" for the target number).
+      const lancerAccLabel = lancerAcc > 0 ? `Acc ${lancerAcc}` : lancerAcc < 0 ? `Diff ${-lancerAcc}` : "";
       const rollLabel = isPercentile
         ? [label, `skill ${target}`].filter(Boolean).join(" · ")
         : usePf2eDc ? [label, `DC ${dcNum}`].filter(Boolean).join(" · ")
         : isDuality ? [label, useDiff ? `Diff ${diffNum}` : ""].filter(Boolean).join(" · ")
         : isPool ? [label, usePoolDiff ? `Diff ${poolDiffNum}` : ""].filter(Boolean).join(" · ")
         : isPowerRoll ? [label, ebLabel].filter(Boolean).join(" · ")
+        : isLancer ? [label, lancerAccLabel, useLancerTgt ? `Tgt ${lancerTgtNum}` : ""].filter(Boolean).join(" · ")
         : label;
       const res = await fetch("/api/rolls/gm", {
         method: "POST", headers: { "Content-Type": "application/json" },
@@ -242,26 +255,29 @@ export default function RollerPage() {
       const hf = isDuality && r.dice.length >= 2 ? { hope: r.dice[0].value, fear: r.dice[1].value } : null;
       const pool = isPool ? poolOutcome(r.dice, usePoolDiff ? poolDiffNum : null) : null;
       const ds = isPowerRoll && r.dice.length >= 2 ? drawSteelOutcome(r.dice[0].value, r.dice[1].value, r.total, dsEB === 2, dsEB === -2) : null;
+      const lan = isLancer ? lancerResolve(r.dice, r.total, lancerAcc, useLancerTgt ? lancerTgtNum : null) : null;
       setLog((l) => [{
-        total: pool ? pool.successes : r.total, notation: r.notation, natural: r.natural, dice: r.dice,
+        total: pool ? pool.successes : lan ? lan.total : r.total, notation: r.notation, natural: r.natural, dice: r.dice,
         band: isPercentile ? cocBand(r.total, target)
           : usePf2eDc ? pf2eDegree(r.total, dcNum, r.natural)
           : hf ? dualityOutcome(hf.hope, hf.fear, r.total, useDiff ? diffNum : null)
           : pool ? pool.band
           : ds ? ds
+          : lan ? (lan.band || undefined)
           : undefined,
-        target: isPercentile ? target : usePf2eDc ? dcNum : useDiff ? diffNum : usePoolDiff ? poolDiffNum : undefined,
+        target: isPercentile ? target : usePf2eDc ? dcNum : useDiff ? diffNum : usePoolDiff ? poolDiffNum : useLancerTgt ? lancerTgtNum : undefined,
         degrees: usePf2eDc,
         duality: !!hf,
         pool: !!pool,
         power: !!ds,
+        lancer: !!lan,
         hope: hf?.hope, fear: hf?.fear,
         label: rollLabel || KINDS.find((k) => k.key === kind)?.label || "",
         actor: characterId ? (characters.find((c) => c.id === characterId)?.name ?? "") : (actor || "the GM"),
         at: Date.now(),
       }, ...l].slice(0, 60));
     } finally { setBusy(false); }
-  }, [campaignId, sessionId, finalNotation, kind, actor, characterId, label, characters, isPercentile, target, isPf2e, dc, isDuality, dualityDiff, isPool, poolDiff, isPowerRoll, dsEB]);
+  }, [campaignId, sessionId, finalNotation, kind, actor, characterId, label, characters, isPercentile, target, isPf2e, dc, isDuality, dualityDiff, isPool, poolDiff, isPowerRoll, dsEB, isLancer, lancerAcc, lancerTarget]);
 
   const session = sessions.find((s) => s.id === sessionId) ?? null;
 
@@ -303,7 +319,7 @@ export default function RollerPage() {
 
       <Card>
         <Label>The roll</Label>
-        {!isDuality && !isPool && !isPowerRoll && (
+        {!isDuality && !isPool && !isPowerRoll && !isLancer && (
         <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
           <button type="button" onClick={() => setCocMode(false)} disabled={moduleIsPercentile}
             style={{ ...chip(!isPercentile), opacity: moduleIsPercentile ? 0.4 : 1, cursor: moduleIsPercentile ? "default" : "pointer" }}>
@@ -389,7 +405,36 @@ export default function RollerPage() {
             </p>
           </div>
         </>)}
-        {!isPercentile && !isDuality && !isPool && !isPowerRoll && (<>
+        {isLancer && (<>
+          <div style={{ marginBottom: 10 }}>
+            <Label>Bonus (grit, tier, tags)</Label>
+            <input value={lancerMod} onChange={(e) => setLancerMod(e.target.value)}
+              placeholder="e.g. 4" style={{ ...field, fontFamily: SAX.mono }} />
+          </div>
+          <div style={{ marginBottom: 10 }}>
+            <Label>Accuracy / Difficulty</Label>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              {[-3, -2, -1, 0, 1, 2, 3].map((v) => (
+                <button key={v} type="button" onClick={() => setLancerAcc(v)} style={chip(lancerAcc === v)}>
+                  {v > 0 ? `+${v}` : v === 0 ? "0" : `${v}`}
+                </button>
+              ))}
+            </div>
+            <p style={{ ...body, marginTop: 6, marginBottom: 0, fontSize: 12.5 }}>
+              Positive is Accuracy, negative is Difficulty. The net rolls that many d6 and adds (or
+              subtracts) the single highest. They cancel one for one, so only the net is rolled.
+            </p>
+          </div>
+          <div style={{ marginBottom: 10 }}>
+            <Label>Target (Evasion / E-Defense / DC, optional)</Label>
+            <input type="number" min={1} value={lancerTarget} onChange={(e) => setLancerTarget(e.target.value)}
+              placeholder="e.g. 10" style={{ ...field, fontFamily: SAX.mono }} />
+            <p style={{ ...body, marginTop: 6, marginBottom: 0, fontSize: 12.5 }}>
+              Roll 1d20 + bonus against the target to read hit or miss. A natural 20 on the d20 is a critical hit.
+            </p>
+          </div>
+        </>)}
+        {!isPercentile && !isDuality && !isPool && !isPowerRoll && !isLancer && (<>
         <DicePicker notation={notation} onChange={setNotation} />
 
         <div style={{ marginTop: 12, marginBottom: 10 }}>
@@ -487,6 +532,8 @@ export default function RollerPage() {
                         ? `${r.notation} · ${r.dice.map((d) => `${d.value}`).join(" ")} · ${r.band}${r.target != null ? ` vs ${r.target}` : ""}`
                         : r.power
                         ? `${r.notation} · ${r.dice.map((d) => `${d.value}`).join(" ")} · ${r.band}`
+                        : r.lancer
+                        ? `${r.notation} · ${r.dice.map((d) => `${d.value}`).join(" ")} · ${r.band}${r.target != null ? ` vs ${r.target}` : ""}`
                         : r.degrees
                           ? `${r.notation} · ${r.band}${r.target != null ? ` vs DC ${r.target}` : ""}${r.natural === 20 ? " · nat 20" : r.natural === 1 ? " · nat 1" : ""}`
                           : `d100 · ${r.band}${r.target != null ? ` vs ${r.target}` : ""}`)
@@ -532,6 +579,39 @@ function powerRollNotation(mod: string, eb: number): string {
   return `2d10${m > 0 ? ` + ${m}` : m < 0 ? ` - ${-m}` : ""}`;
 }
 
+// Lancer: 1d20 + a flat bonus, plus |net accuracy| d6 rolled additively so every d6 comes back and the
+// single highest can be selected client-side (the sum is corrected out in lancerResolve). Difficulty is
+// negative accuracy; the d6 count is the same, only the sign of the applied highest changes.
+function lancerNotation(mod: string, acc: number): string {
+  const n = Math.min(6, Math.abs(Math.round(acc) || 0));
+  const m = parseInt(mod, 10) || 0;
+  const accTerm = n > 0 ? ` + ${n}d6` : "";
+  const modTerm = m > 0 ? ` + ${m}` : m < 0 ? ` - ${-m}` : "";
+  return `1d20${accTerm}${modTerm}`;
+}
+// Lancer outcome: a critical hit is a natural 20 on the d20 (and a crit is always a hit). Otherwise, with
+// a target set, the adjusted total hits when it meets or beats it; with no target, there is no band.
+function lancerBand(total: number, target: number | null, crit: boolean): string {
+  if (crit) return "Critical Hit";
+  if (target == null) return "";
+  return total >= target ? "Hit" : "Miss";
+}
+// Rebuild a Lancer roll's true total and band from the returned/stored dice. The server total is
+// 1d20 + bonus + the sum of ALL the accuracy d6, so subtracting that sum leaves 1d20 + bonus, to which
+// the single highest d6 is added (Accuracy) or subtracted (Difficulty). Works the same live or on reload.
+function lancerResolve(
+  dice: { sides: number; value: number; kept: boolean }[],
+  serverTotal: number, acc: number, target: number | null,
+): { total: number; band: string } {
+  const d20 = dice.find((d) => d.sides === 20)?.value ?? 0;
+  const d6s = dice.filter((d) => d.sides === 6 && d.kept).map((d) => d.value);
+  const sumd6 = d6s.reduce((a, b) => a + b, 0);
+  const maxd6 = d6s.length ? Math.max(...d6s) : 0;
+  const adj = acc > 0 ? maxd6 : acc < 0 ? -maxd6 : 0;
+  const total = (serverTotal - sumd6) + adj;
+  return { total, band: lancerBand(total, target, d20 === 20) };
+}
+
 function poolOutcome(
   dice: { sides: number; value: number; kept: boolean }[],
   difficulty: number | null,
@@ -554,6 +634,8 @@ function bandColor(band: string): string {
   if (band === "Success with Fear" || band === "Failure with Hope") return C.sun;
   if (band === "Critical" || band === "Extreme") return C.good;
   if (band === "Fumble") return C.warn;
+  if (band === "Critical Hit" || band === "Hit") return band === "Critical Hit" ? C.good : C.sun;
+  if (band === "Miss") return C.warn;
   if (band === "Success" || band === "Hard") return C.sun;
   return C.text;
 }
@@ -599,6 +681,13 @@ function reloadBand(
       const doubleBane = /Double Bane/.test(label);
       return { band: drawSteelOutcome(dice[0].value, dice[1].value, total, doubleEdge, doubleBane), power: true };
     }
+  } else if (styleKind === "d20-accuracy") {
+    // Net accuracy sign from the label ("Acc N" adds, "Diff N" subtracts); target from "Tgt N".
+    const acc = /Acc\s+(\d+)/i.test(label) ? Number(/Acc\s+(\d+)/i.exec(label)![1])
+      : /Diff\s+(\d+)/i.test(label) ? -Number(/Diff\s+(\d+)/i.exec(label)![1]) : 0;
+    const target = num(/Tgt\s+(\d+)/i);
+    const lan = lancerResolve(dice, total, acc, target ?? null);
+    return { band: lan.band || undefined, target, lancer: true, total: lan.total };
   }
   return {};
 }

@@ -1,0 +1,24 @@
+import type { RulesModule } from "./contract";
+
+// Lancer (Massif Press) - the d20 + ACCURACY / DIFFICULTY system: roll 1d20 + a flat bonus against a
+// target number (a check/save DC, or a foe's Evasion or E-Defense). Accuracy and Difficulty are the
+// game's swing dice: for each net point of Accuracy you roll a d6 and ADD the single highest, for each
+// net point of Difficulty you roll a d6 and SUBTRACT the single highest, and the two cancel one for one
+// so you only ever roll the net. A natural 20 on the d20 is a critical hit. That accuracy/difficulty
+// resolution is new to the dice-style seam (it is not advantage), which is why it gets its own kind and
+// a proven roll branch, exactly as Draw Steel's power roll did.
+//
+// LICENSING: Lancer third-party content is used under the Lancer Third Party License, which explicitly
+// permits commercial products, charges no royalties, and does not restrict digital tools or shipping
+// game mechanics. The license requires two verbatim notices in the product (handled in the app's legal
+// text): "<work> is not an official Lancer product; it is a third party work, and is not affiliated with
+// Massif Press. <work> is published via the Lancer Third Party License." and "Lancer is copyright Massif
+// Press." Only MECHANICS ship here (the numbers), never Massif Press's descriptive prose. First cut:
+// dice-only (like PF2e / Daggerheart / Draw Steel's first cuts); character and adversary modules follow.
+export const lancer: RulesModule = {
+  id: "lancer",
+  label: "Lancer",
+  dice: { style: { kind: "d20-accuracy" }, label: "Roll d20 (Accuracy / Difficulty)" },
+  axes: [],
+  rulesRef: { id: "lancer-third-party-license", label: "Lancer (Third Party License)" },
+};
