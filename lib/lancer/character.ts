@@ -59,6 +59,8 @@ export interface LancerBuild {
   level: number;                          // license level 0-12
   frameId: string;
   skills: Record<MechSkill, number>;      // HASE, 0-6 each
+  weapons: string[];                      // one weapon id per frame mount slot (index-aligned), "" = empty
+  systems: string[];                      // equipped mech system ids (bought with SP)
 }
 
 export interface LancerPilotStats {
@@ -85,7 +87,7 @@ export function emptyMechSkills(): Record<MechSkill, number> {
 }
 
 export function emptyLancerBuild(): LancerBuild {
-  return { level: 0, frameId: "", skills: emptyMechSkills() };
+  return { level: 0, frameId: "", skills: emptyMechSkills(), weapons: [], systems: [] };
 }
 
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
