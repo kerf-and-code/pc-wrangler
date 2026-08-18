@@ -6,6 +6,7 @@ import PageShell from "@/components/page-shell";
 import { SAX } from "@/lib/theme";
 import { UpgradeAccount } from "@/components/upgrade-account";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
+import { setActiveCampaign } from "@/lib/active-campaign";
 
 // Every campaign this player has a character in, across all of them.
 //
@@ -68,7 +69,11 @@ export default function MyCampaignsPage() {
           </Muted>
         )}
 
-        {status === "ready" && rows.map((c) => (
+        {status === "ready" && rows.map((c) => {
+          // Picking a campaign sets it as the player's active campaign, which themes their whole
+          // experience to that system and points the Forge at it. Fires on any way into the table.
+          const enter = () => setActiveCampaign({ id: c.campaign_id, name: c.campaign_name, system: c.system });
+          return (
           <div
             key={c.campaign_id}
             style={{
@@ -92,16 +97,18 @@ export default function MyCampaignsPage() {
               )}
             </div>
 
-            {c.share_code && (
-              <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
-                <A href={`/me?share=${c.share_code}`}>Journal</A>
-                <A href={`/recaps?share=${c.share_code}`}>Recaps</A>
-                <A href={`/lore?share=${c.share_code}`}>Lore</A>
-                <A href={`/record?share=${c.share_code}`}>Record</A>
-              </div>
-            )}
+            <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
+              {c.share_code && <>
+                <A href={`/me?share=${c.share_code}`} onClick={enter}>Journal</A>
+                <A href={`/recaps?share=${c.share_code}`} onClick={enter}>Recaps</A>
+                <A href={`/lore?share=${c.share_code}`} onClick={enter}>Lore</A>
+                <A href={`/record?share=${c.share_code}`} onClick={enter}>Record</A>
+              </>}
+              <A href="/me/forge" onClick={enter}>New character</A>
+            </div>
           </div>
-        ))}
+          );
+        })}
       </div>
     </PageShell>
   );
@@ -128,10 +135,11 @@ function Muted({ children }: { children: React.ReactNode }) {
   return <p style={{ textAlign: "center", color: C.muted, fontSize: 14, lineHeight: 1.65 }}>{children}</p>;
 }
 
-function A({ href, children }: { href: string; children: React.ReactNode }) {
+function A({ href, children, onClick }: { href: string; children: React.ReactNode; onClick?: () => void }) {
   return (
     <a
       href={href}
+      onClick={onClick}
       style={{
         background: "transparent", color: C.text,
         border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS,

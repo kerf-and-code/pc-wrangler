@@ -38,7 +38,7 @@ import { traitOptions, traitAsksAChoice, lineageSpells } from "@/lib/species-cho
 import { choicesFor, resolveChoice, choiceKey, costedPicks, actionsFor, type ClassChoice } from "@/lib/class-choices";
 import { classTable, classTableColumns } from "@/lib/class-table";
 import { resourcesFor, slotsFor, remaining, afterShortRest, speciesResources, type Resource } from "@/lib/resources";
-import { getActiveCampaign } from "@/lib/active-campaign";
+import { getActiveCampaign, setActiveCampaign } from "@/lib/active-campaign";
 import { derivePf2eSheet, emptyPf2eBuild, type Pf2eBuild } from "@/lib/pf2e/character";
 import { PF2_RULES } from "@/lib/pf2e/rules-data";
 import Pf2eForge from "@/components/pf2e-forge";
@@ -310,7 +310,7 @@ function ForgeInner() {
         if (!active) return;
         setName("New character");
         const newSys = getActiveCampaign()?.system;
-        setSystem(newSys === "pf2e" || newSys === "daggerheart" || newSys === "drawsteel" || newSys === "lancer" ? newSys : "dnd5e");
+        setSystem(newSys === "pf2e" || newSys === "daggerheart" || newSys === "drawsteel" || newSys === "lancer" || newSys === "darkmatter" ? newSys : "dnd5e");
         setStatus("ready");
         return;
       }
@@ -360,6 +360,11 @@ function ForgeInner() {
       setRow(r);
       const sys = (r as { system?: string }).system || "dnd5e";
       setSystem(sys);
+      // Opening a campaign character sets it as the active campaign, so the Forge (and the rest of the
+      // app) theme to that campaign's system and build for it. A Lancer character opens with the Lancer
+      // look and the Lancer builder even when reached straight from the stable.
+      const cid = (r as { campaign_id?: string }).campaign_id;
+      if (cid) setActiveCampaign({ id: cid, system: sys });
       if (sys === "pf2e") setPbuild({ ...emptyPf2eBuild(), ...(r.build as Partial<Pf2eBuild>) });
       else if (sys === "daggerheart") setDbuild({ ...emptyDHBuild(), ...(r.build as Partial<DHBuild>) });
       else if (sys === "drawsteel") setSteelBuild({ ...emptyDSBuild(), ...(r.build as Partial<DSBuild>) });
@@ -1142,7 +1147,7 @@ function ForgeInner() {
       if (mode === "new" && !libId) {
         if (creating.current) return false;    // an insert is already in flight
         creating.current = true;
-        const newId = await saveToLibrary(supabase, name || "New character", build, denorm);
+        const newId = await saveToLibrary(supabase, name || "New character", build, denorm, system);
         creating.current = false;
         setLibId(newId);
         setMode("library");
@@ -1152,7 +1157,7 @@ function ForgeInner() {
         return true;
       }
       if (libId) {
-        await updateLibrary(supabase, libId, name || "New character", build, denorm);
+        await updateLibrary(supabase, libId, name || "New character", build, denorm, system);
         setSaveState("saved");
         return true;
       }

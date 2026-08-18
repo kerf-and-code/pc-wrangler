@@ -13,6 +13,7 @@
 import { LANCER_FRAME_LIST } from "@/lib/lancer/rules-data";
 import { DS_CLASS_LIST, DS_ANCESTRY_LIST, DS_KIT_LIST } from "@/lib/drawsteel/rules-data";
 import { DH_CLASS_LIST, DH_ANCESTRY_LIST } from "@/lib/daggerheart/rules-data";
+import { PF2_RULES } from "@/lib/pf2e/rules-data";
 
 // A roster field writes one of the character row's columns. `options` empty = a free-text input (the
 // GM types it); otherwise a constrained select. `optional` fields may be left blank.
@@ -76,11 +77,10 @@ export function getRosterFields(system: string | null | undefined): RosterSpec |
         level: { show: false, label: "Level", min: 1, max: 20 },
       };
     case "pf2e":
-      // PF2e's ancestry/class catalog is not wired into this file yet; free text until it is.
       return {
         fields: [
-          { col: "class", label: "Class", options: [] },
-          { col: "species", label: "Ancestry", options: [], optional: true },
+          { col: "class", label: "Class", options: opt(Object.values(PF2_RULES.classes)) },
+          { col: "species", label: "Ancestry", options: opt(Object.values(PF2_RULES.ancestries)), optional: true },
         ],
         level: { show: true, label: "Level", min: 1, max: 20 },
       };
