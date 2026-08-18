@@ -42,6 +42,10 @@ export default function TermsOfServicePage() {
       <h2>8. Third-party services and game content</h2>
       <p>Six Axes integrates with third parties (for example Discord, and virtual tabletops). Your use of those is governed by their terms, and their availability is outside our control. Six Axes is <strong>not affiliated with, endorsed by, or sponsored by Wizards of the Coast or any virtual-tabletop provider.</strong> You&rsquo;re responsible for using game content consistent with the rights you hold and applicable content policies.</p>
 
+      <h3>Licensed game systems</h3>
+      <p>Some tabletop systems are supported under licenses granted by their publishers. Six Axes ships only the game mechanics of those systems, never the publishers&rsquo; descriptive text, and is not an official or endorsed product of any of them. Where a publisher&rsquo;s license requires a specific notice, that notice appears below.</p>
+      <p>Six Axes is an independent product published under the DRAW STEEL Creator License and is not affiliated with MCDM Productions, LLC. DRAW STEEL &copy; 2026 MCDM Productions, LLC.</p>
+
       <h2>9. Payments and subscriptions</h2>
       <p>Six Axes is currently free to use. There are no paid plans and we do not collect payment information. If we introduce paid plans, the pricing, billing cycle, renewal terms, and refund policy will be presented to you at the point of purchase, and you will not be charged for anything you have not agreed to. Usage-metered features (such as transcription minutes or model runs) are subject to the limits shown in-app, and we may change those limits with notice.</p>
 
