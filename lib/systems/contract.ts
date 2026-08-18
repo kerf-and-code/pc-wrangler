@@ -21,6 +21,7 @@ export type DiceStyle =
   | { kind: "dice-pool"; die: 6 | 10; countSuccesses: true }  // Blades (d6), Vampire (d10)
   | { kind: "step-plus-stat"; dice: string }                  // PbtA 2d6+stat
   | { kind: "duality"; dice: string }                         // Daggerheart: 2d12 Hope vs Fear
+  | { kind: "power-roll" }                                    // Draw Steel: 2d10 + characteristic vs tiers
   | { kind: "custom" };
 
 export interface DiceConfig {

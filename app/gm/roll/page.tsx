@@ -38,7 +38,7 @@ type Rolled = {
   total: number; notation: string; natural: 20 | 1 | null;
   dice: { sides: number; value: number; kept: boolean }[];
   label: string; actor: string; at: number;
-  band?: string; target?: number; degrees?: boolean; duality?: boolean; hope?: number; fear?: number; pool?: boolean;
+  band?: string; target?: number; degrees?: boolean; duality?: boolean; hope?: number; fear?: number; pool?: boolean; power?: boolean;
 };
 
 const KINDS: { key: string; label: string }[] = [
@@ -67,6 +67,8 @@ export default function RollerPage() {
   const [dualityDiff, setDualityDiff] = useState("");
   const [poolSize, setPoolSize] = useState(5);
   const [poolDiff, setPoolDiff] = useState("");
+  const [dsMod, setDsMod] = useState("");
+  const [dsEB, setDsEB] = useState(0);   // Draw Steel edges/banes: -2 double bane .. +2 double edge
   const [mode, setMode] = useState<"flat" | "adv" | "dis">("flat");
   const [kind, setKind] = useState("attack");
   const [actor, setActor] = useState("");
@@ -182,6 +184,8 @@ export default function RollerPage() {
   // A system-neutral d10 success pool: roll N ten-sided dice, 6+ is a success, a pair of 10s is a crit.
   const isPool = dice.style.kind === "dice-pool";
   const poolDie = dice.style.kind === "dice-pool" ? dice.style.die : 10;
+  // Draw Steel: roll 2d10 + a characteristic against tiers; edges/banes adjust it, a natural 19-20 crits.
+  const isPowerRoll = dice.style.kind === "power-roll";
   const advMeaningful =
     !isPercentile && canHaveAdvantage(notation) && dice.style.kind === "d20-vs-dc" && dice.style.advantage;
 
@@ -192,8 +196,9 @@ export default function RollerPage() {
     () => isPercentile ? "1d100"
       : isDuality ? `${dualityDice}${dualityMod.trim() ? ` + ${dualityMod.trim()}` : ""}`
       : isPool ? `${Math.max(1, Math.min(30, poolSize))}d${poolDie}`
+      : isPowerRoll ? powerRollNotation(dsMod, dsEB)
       : applyAdvantage(notation.trim() || "1d20", mode),
-    [notation, mode, isPercentile, isDuality, dualityDice, dualityMod, isPool, poolSize, poolDie],
+    [notation, mode, isPercentile, isDuality, dualityDice, dualityMod, isPool, poolSize, poolDie, isPowerRoll, dsMod, dsEB],
   );
 
   const valid = useMemo(() => {
@@ -215,17 +220,19 @@ export default function RollerPage() {
       const useDiff = isDuality && dualityDiff.trim() !== "" && Number.isFinite(diffNum);
       const poolDiffNum = Number(poolDiff);
       const usePoolDiff = isPool && poolDiff.trim() !== "" && Number.isFinite(poolDiffNum);
+      const ebLabel = dsEB === 2 ? "Double Edge" : dsEB === 1 ? "Edge" : dsEB === -1 ? "Bane" : dsEB === -2 ? "Double Bane" : "";
       const rollLabel = isPercentile
         ? [label, `skill ${target}`].filter(Boolean).join(" · ")
         : usePf2eDc ? [label, `DC ${dcNum}`].filter(Boolean).join(" · ")
         : isDuality ? [label, useDiff ? `Diff ${diffNum}` : ""].filter(Boolean).join(" · ")
         : isPool ? [label, usePoolDiff ? `Diff ${poolDiffNum}` : ""].filter(Boolean).join(" · ")
+        : isPowerRoll ? [label, ebLabel].filter(Boolean).join(" · ")
         : label;
       const res = await fetch("/api/rolls/gm", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           campaignId, sessionId: sessionId || null, notation: finalNotation,
-          kind: isPercentile || isDuality || isPool ? "check" : kind, actorName: characterId ? null : actor, characterId: characterId || null,
+          kind: isPercentile || isDuality || isPool || isPowerRoll ? "check" : kind, actorName: characterId ? null : actor, characterId: characterId || null,
           label: rollLabel,
         }),
       });
@@ -234,24 +241,27 @@ export default function RollerPage() {
       const r = out.result;
       const hf = isDuality && r.dice.length >= 2 ? { hope: r.dice[0].value, fear: r.dice[1].value } : null;
       const pool = isPool ? poolOutcome(r.dice, usePoolDiff ? poolDiffNum : null) : null;
+      const ds = isPowerRoll && r.dice.length >= 2 ? drawSteelOutcome(r.dice[0].value, r.dice[1].value, r.total, dsEB === 2, dsEB === -2) : null;
       setLog((l) => [{
         total: pool ? pool.successes : r.total, notation: r.notation, natural: r.natural, dice: r.dice,
         band: isPercentile ? cocBand(r.total, target)
           : usePf2eDc ? pf2eDegree(r.total, dcNum, r.natural)
           : hf ? dualityOutcome(hf.hope, hf.fear, r.total, useDiff ? diffNum : null)
           : pool ? pool.band
+          : ds ? ds
           : undefined,
         target: isPercentile ? target : usePf2eDc ? dcNum : useDiff ? diffNum : usePoolDiff ? poolDiffNum : undefined,
         degrees: usePf2eDc,
         duality: !!hf,
         pool: !!pool,
+        power: !!ds,
         hope: hf?.hope, fear: hf?.fear,
         label: rollLabel || KINDS.find((k) => k.key === kind)?.label || "",
         actor: characterId ? (characters.find((c) => c.id === characterId)?.name ?? "") : (actor || "the GM"),
         at: Date.now(),
       }, ...l].slice(0, 60));
     } finally { setBusy(false); }
-  }, [campaignId, sessionId, finalNotation, kind, actor, characterId, label, characters, isPercentile, target, isPf2e, dc, isDuality, dualityDiff, isPool, poolDiff]);
+  }, [campaignId, sessionId, finalNotation, kind, actor, characterId, label, characters, isPercentile, target, isPf2e, dc, isDuality, dualityDiff, isPool, poolDiff, isPowerRoll, dsEB]);
 
   const session = sessions.find((s) => s.id === sessionId) ?? null;
 
@@ -293,7 +303,7 @@ export default function RollerPage() {
 
       <Card>
         <Label>The roll</Label>
-        {!isDuality && !isPool && (
+        {!isDuality && !isPool && !isPowerRoll && (
         <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
           <button type="button" onClick={() => setCocMode(false)} disabled={moduleIsPercentile}
             style={{ ...chip(!isPercentile), opacity: moduleIsPercentile ? 0.4 : 1, cursor: moduleIsPercentile ? "default" : "pointer" }}>
@@ -360,7 +370,26 @@ export default function RollerPage() {
             </p>
           </div>
         </>)}
-        {!isPercentile && !isDuality && !isPool && (<>
+        {isPowerRoll && (<>
+          <div style={{ marginBottom: 10 }}>
+            <Label>Modifier (characteristic + bonuses)</Label>
+            <input value={dsMod} onChange={(e) => setDsMod(e.target.value)}
+              placeholder="e.g. 2" style={{ ...field, fontFamily: SAX.mono }} />
+          </div>
+          <div style={{ marginBottom: 10 }}>
+            <Label>Edges / banes</Label>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              {[{ v: -2, l: "Bane \u00D72" }, { v: -1, l: "Bane" }, { v: 0, l: "\u2014" }, { v: 1, l: "Edge" }, { v: 2, l: "Edge \u00D72" }].map((o) => (
+                <button key={o.v} type="button" onClick={() => setDsEB(o.v)} style={chip(dsEB === o.v)}>{o.l}</button>
+              ))}
+            </div>
+            <p style={{ ...body, marginTop: 6, marginBottom: 0, fontSize: 12.5 }}>
+              Roll 2d10 + modifier against the tiers (11 or lower, 12 to 16, 17+). An edge is +2 and a
+              double edge bumps the tier up; a bane is -2 and a double bane drops it. A natural 19 to 20 is a critical.
+            </p>
+          </div>
+        </>)}
+        {!isPercentile && !isDuality && !isPool && !isPowerRoll && (<>
         <DicePicker notation={notation} onChange={setNotation} />
 
         <div style={{ marginTop: 12, marginBottom: 10 }}>
@@ -396,8 +425,8 @@ export default function RollerPage() {
           {valid ?? (isPercentile ? `rolling 1d100 under ${target}` : `rolling  ${finalNotation}`)}
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: isPercentile || isDuality || isPool ? "1fr" : "1fr 1fr", gap: 10, marginBottom: 10 }}>
-          {!isPercentile && !isDuality && !isPool && (
+        <div style={{ display: "grid", gridTemplateColumns: isPercentile || isDuality || isPool || isPowerRoll ? "1fr" : "1fr 1fr", gap: 10, marginBottom: 10 }}>
+          {!isPercentile && !isDuality && !isPool && !isPowerRoll && (
           <div>
             <Label>What kind</Label>
             <select value={kind} onChange={(e) => setKind(e.target.value)} style={field}>
@@ -424,7 +453,7 @@ export default function RollerPage() {
           style={{ ...field, marginBottom: 12 }} />
 
         <button onClick={() => void doRoll()} disabled={busy || !campaignId || Boolean(valid)} style={btn}>
-          {busy ? "Rolling…" : isPercentile ? "Roll d100" : isDuality ? "Roll with Hope & Fear" : isPool ? "Roll pool" : "Roll"}
+          {busy ? "Rolling…" : isPercentile ? "Roll d100" : isDuality ? "Roll with Hope & Fear" : isPool ? "Roll pool" : isPowerRoll ? "Roll power" : "Roll"}
         </button>
       </Card>
 
@@ -456,6 +485,8 @@ export default function RollerPage() {
                       ? `Hope ${r.hope} · Fear ${r.fear} · ${r.band}${r.target != null ? ` vs ${r.target}` : ""}`
                       : r.pool
                         ? `${r.notation} · ${r.dice.map((d) => `${d.value}`).join(" ")} · ${r.band}${r.target != null ? ` vs ${r.target}` : ""}`
+                        : r.power
+                        ? `${r.notation} · ${r.dice.map((d) => `${d.value}`).join(" ")} · ${r.band}`
                         : r.degrees
                           ? `${r.notation} · ${r.band}${r.target != null ? ` vs DC ${r.target}` : ""}${r.natural === 20 ? " · nat 20" : r.natural === 1 ? " · nat 1" : ""}`
                           : `d100 · ${r.band}${r.target != null ? ` vs ${r.target}` : ""}`)
@@ -494,6 +525,13 @@ function dualityOutcome(hope: number, fear: number, total: number, difficulty: n
   if (difficulty == null) return `with ${via}`;           // no difficulty set: just the tone
   return `${total >= difficulty ? "Success" : "Failure"} with ${via}`;
 }
+// Build the "2d10 + N" notation for a power roll; a single edge/bane folds its +2/-2 into the modifier,
+// while a double edge/bane carries no numeric (it shifts the tier) and leaves the modifier alone.
+function powerRollNotation(mod: string, eb: number): string {
+  const m = (parseInt(mod, 10) || 0) + (eb === 1 ? 2 : eb === -1 ? -2 : 0);
+  return `2d10${m > 0 ? ` + ${m}` : m < 0 ? ` - ${-m}` : ""}`;
+}
+
 function poolOutcome(
   dice: { sides: number; value: number; kept: boolean }[],
   difficulty: number | null,
@@ -520,6 +558,17 @@ function bandColor(band: string): string {
   return C.text;
 }
 
+// Draw Steel power roll: total (2d10 + modifier, single edge/bane already folded into it) against the
+// tiers; a double edge/bane shifts the tier by one; a natural 19-20 on the 2d10 is always tier 3 + a crit.
+function drawSteelOutcome(d1: number, d2: number, total: number, doubleEdge: boolean, doubleBane: boolean): string {
+  const crit = d1 + d2 >= 19;
+  let tier = total <= 11 ? 1 : total <= 16 ? 2 : 3;
+  if (doubleEdge) tier = Math.min(3, tier + 1);
+  if (doubleBane) tier = Math.max(1, tier - 1);
+  if (crit) tier = 3;
+  return `Tier ${tier}${crit ? " · critical" : ""}`;
+}
+
 // Recompute a roll's band on reload from the campaign's dice style and the target its label carries.
 // Returns only the band-related fields to spread over the reconstructed row; {} when there is none.
 function reloadBand(
@@ -544,6 +593,12 @@ function reloadBand(
     const target = num(/Diff\s+(\d+)/i);
     const po = poolOutcome(dice, target ?? null);
     return { band: po.band, target, pool: true, total: po.successes };
+  } else if (styleKind === "power-roll") {
+    if (dice.length >= 2) {
+      const doubleEdge = /Double Edge/.test(label);
+      const doubleBane = /Double Bane/.test(label);
+      return { band: drawSteelOutcome(dice[0].value, dice[1].value, total, doubleEdge, doubleBane), power: true };
+    }
   }
   return {};
 }
