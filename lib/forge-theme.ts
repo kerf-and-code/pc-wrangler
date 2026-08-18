@@ -23,7 +23,7 @@ export { STONE, FORGE_RADIUS };
 // Cinzel is the Forge display face (carved-inscription serif); load it in the page head. Body
 // stays on SAX.serif (Iowan Old Style), stat readouts on SAX.mono.
 export const FORGE_FONTS = {
-  display: "'Cinzel', 'Iowan Old Style', Georgia, serif",
+  display: "var(--forge-display, 'Cinzel', 'Iowan Old Style', Georgia, serif)",
   body: SAX.serif,
   mono: SAX.mono,
 } as const;
@@ -33,17 +33,13 @@ export const FORGE_FONTS = {
 // wall is already dark) over the real /wall-2.png. Mirrors stoneBackground() but re-tinted for
 // the Forge. Pass a different url only for a themed room.
 export function forgeBackground(url = "/wall-2.png"): CSSProperties {
+  // The whole background is one CSS variable so a system can replace it wholesale (Lancer swaps the
+  // stone wall for a gunmetal terminal grid, no image asset needed). The fallback reproduces the
+  // dungeon look exactly: warm lamp glow + a light ink darkening over the wall, on the deep-ink base.
+  // backgroundAttachment stays a separate longhand so it survives the shorthand and keeps the wall fixed.
   return {
-    backgroundColor: SAX.inkDeep,
-    backgroundImage: [
-      "radial-gradient(ellipse 66% 44% at 50% 12%, rgba(184,135,74,0.16), transparent 62%)",
-      "linear-gradient(180deg, rgba(18,13,8,0.28), rgba(10,7,4,0.52))",
-      `url(${url})`,
-    ].join(","),
-    backgroundSize: "cover, cover, cover",
-    backgroundPosition: "center",
+    background: `var(--sax-page-bg, radial-gradient(ellipse 66% 44% at 50% 12%, rgba(184,135,74,0.16), transparent 62%), linear-gradient(180deg, rgba(18,13,8,0.28), rgba(10,7,4,0.52)), url(${url}) center / cover no-repeat #0B0712)`,
     backgroundAttachment: "fixed",
-    backgroundRepeat: "no-repeat",
   };
 }
 
@@ -58,7 +54,7 @@ export const forgeVignette: CSSProperties = {
 export function stonePanel(): CSSProperties {
   return {
     background:
-      "linear-gradient(160deg, rgba(52,47,39,0.80) 0%, rgba(38,34,28,0.85) 45%, rgba(22,19,15,0.90) 100%)",
+      "var(--forge-panel-bg, linear-gradient(160deg, rgba(52,47,39,0.80) 0%, rgba(38,34,28,0.85) 45%, rgba(22,19,15,0.90) 100%))",
     borderRadius: FORGE_RADIUS,
     padding: "24px 26px",
     position: "relative",

@@ -1,14 +1,22 @@
 import type { CSSProperties } from "react";
 
-/* Six Axes — shared theme (the cellar look).
+/* Six Axes: shared theme (the cellar look).
    One source of truth for palette, type, surfaces, and the stone background.
    Pages import SAX for colors and `surfaces` / `ui` for ready-made style blocks
-   so every screen stays cohesive without copy-pasting CSS. */
+   so every screen stays cohesive without copy-pasting CSS.
+
+   PER-SYSTEM THEMING: the feel-carrying tokens below resolve to CSS custom properties with their
+   current value as the fallback, e.g. `var(--sax-accent, #C8A24B)`. The defaults live in
+   lib/systems/system-theme.ts as a `:root { ... }` block, and a per-system block such as
+   `[data-system="lancer"] { ... }` overrides them; SystemThemeProvider sets `data-system` on <html>
+   from the active campaign. Because these are the values every page already reads (directly or through
+   the `C` palette in forge-theme), the whole app re-skins when the campaign's system changes, with no
+   per-page edits. The fallbacks keep the app byte-identical if the stylesheet ever fails to load. */
 
 export const SAX = {
   // stone / ink
-  ink: "#140E1F",
-  inkDeep: "#0B0712",
+  ink: "var(--sax-ink, #140E1F)",
+  inkDeep: "var(--sax-ink-deep, #0B0712)",
   // surfaces
   panelBg: "rgba(26,19,37,0.82)",   // atmospheric "chrome" plate
   slateBg: "rgba(18,13,26,0.92)",   // dark + clean, for chart panels
@@ -16,25 +24,26 @@ export const SAX = {
   parchInk: "#2B2218",
   parchLine: "#C9B894",
   // lines & metal
-  line: "#3A2C4E",
-  brass: "#C8A24B",
-  brassDim: "#7A632E",
+  line: "var(--sax-line, #3A2C4E)",
+  brass: "var(--sax-accent, #C8A24B)",
+  brassDim: "var(--sax-accent-dim, #7A632E)",
   copper: "#B5763A",
   // text
-  text: "#F1E9F7",
-  muted: "#A091B8",
+  text: "var(--sax-text, #F1E9F7)",
+  muted: "var(--sax-muted, #A091B8)",
   // states
-  good: "#5DBE9A",
-  warn: "#E07A5F",
+  good: "var(--sax-good, #5DBE9A)",
+  warn: "var(--sax-warn, #E07A5F)",
   spark: "#BFE3FF",
   ember: "#E8923A",
   plum: "#9B7BD4",
   sun: "#F4C430",
-  // the six axes
+  // the six axes, DATA ENCODING, kept literal so a hue means the same axis in every chart on every
+  // system. These never theme.
   axis: { N: "#B7615A", T: "#C8A24B", O: "#4E8077", S: "#CE8A42", E: "#6C76B0", I: "#9A93B0" },
   // type
-  serif: "'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif",
-  mono: "ui-monospace, SFMono-Regular, Menlo, monospace",
+  serif: "var(--forge-body, 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif)",
+  mono: "var(--forge-mono, ui-monospace, SFMono-Regular, Menlo, monospace)",
 } as const;
 
 export type AxisKey = "N" | "T" | "O" | "S" | "E" | "I";
@@ -65,10 +74,12 @@ export const AXES: Record<AxisKey, AxisDescriptor> = {
 export const TAVERN_ORDER: AxisKey[] = ["T", "O", "N", "E", "S", "I"];
 
 /* full-page stone background: the wall image, darkened, with a faint warm
-   lamp glow toward the top so the center reads as lit. */
+   lamp glow toward the top so the center reads as lit. Left LITERAL (not themed): PageShell and the
+   Forge paint the app-wide background via forgeBackground(), which is the themed one; stoneBackground
+   is the older cool tint kept for any page still calling it directly. */
 export function stoneBackground(url = "/wall-2.png"): CSSProperties {
   return {
-    backgroundColor: SAX.inkDeep,
+    backgroundColor: "#0B0712",
     backgroundImage: [
       "radial-gradient(ellipse 70% 48% at 50% 16%, rgba(232,146,58,0.10), transparent 62%)",
       "linear-gradient(180deg, rgba(12,8,18,0.58), rgba(7,4,12,0.82))",
@@ -84,40 +95,44 @@ export function stoneBackground(url = "/wall-2.png"): CSSProperties {
 /* surface plates */
 
 // Weathered-stone tones, the dungeon palette. Defined HERE rather than in forge-theme because
-// surfaces/ui below need them, and forge-theme imports this file — the other direction would be a
+// surfaces/ui below need them, and forge-theme imports this file, the other direction would be a
 // cycle. forge-theme re-exports STONE, so `import { STONE } from "@/lib/forge-theme"` still works.
+// Each feel-carrying tone resolves to a CSS variable (fallback = its current value), so the whole
+// stone palette shifts per system while defaulting to the dungeon look.
 export const STONE = {
-  face: "#2b2620",     // the working stone surface
-  lit: "#3a342b",      // a raised edge catching torchlight (top-left bevel)
-  hi: "#4a4237",       // the brightest bevel
-  shadow: "#1a1611",   // recessed stone, sunk below the face
-  mortar: "#0c0a07",   // the dark seams between blocks
-  brassHi: "#e2b878",  // polished highlight on brass (SAX.brass is the base)
-  brassDeep: "#6e4e26",
+  face: "var(--stone-face, #2b2620)",     // the working stone surface
+  lit: "var(--stone-lit, #3a342b)",       // a raised edge catching torchlight (top-left bevel)
+  hi: "var(--stone-hi, #4a4237)",         // the brightest bevel
+  shadow: "var(--stone-shadow, #1a1611)", // recessed stone, sunk below the face
+  mortar: "var(--stone-mortar, #0c0a07)", // the dark seams between blocks
+  brassHi: "var(--sax-accent-hi, #e2b878)",  // polished highlight on the accent (SAX.brass is the base)
+  brassDeep: "var(--sax-accent-deep, #6e4e26)",
   moss: "#6f7d55",     // age and damp, the green of old stone
   blood: "#8a3324",    // dried-blood warning red
   // Text-safe values of moss and blood. The base tones are surface colours: against the panel
   // face they measure 3.38 and 1.84, both under the 4.5 needed for readable text, and warn is
   // used as a text colour in 46 places. These are the same hues lifted until they clear it.
-  mossLit: "#9aa880",
-  bloodLit: "#d97d6d",
-  ink: "#e8dcc4",      // parchment text on stone
-  inkDim: "#a99e86",   // weathered secondary
-  inkFaint: "#8a8069", // hints and captions
+  mossLit: "var(--stone-moss-lit, #9aa880)",
+  bloodLit: "var(--stone-blood-lit, #d97d6d)",
+  ink: "var(--stone-ink, #e8dcc4)",      // parchment text on stone
+  inkDim: "var(--stone-ink-dim, #a99e86)",   // weathered secondary
+  inkFaint: "var(--stone-ink-faint, #8a8069)", // hints and captions
 } as const;
 
 export const FORGE_RADIUS = 4; // stone chips, it doesn't round
 
+// The themed panel gradient (the carved-stone plate by default). One variable so a system can swap
+// the whole surface material (e.g. gunmetal for Lancer) without touching the sixteen pages that
+// spread `surfaces.panel`.
+const PANEL_BG = "var(--forge-panel-bg, linear-gradient(160deg, rgba(52,47,39,0.80) 0%, rgba(38,34,28,0.85) 45%, rgba(22,19,15,0.90) 100%))";
+const SLATE_BG = "var(--forge-slate-bg, linear-gradient(180deg, rgba(38,34,28,0.94), rgba(24,21,17,0.96)))";
+
 export const surfaces: Record<string, CSSProperties> = {
   // These are what most pages spread for their cards, so retoning them here moves roughly sixteen
-  // pages at once. They were a purple plate at radius 14; they are now the same carved stone the
-  // Forge and the Monster Maker use, so a page picks up the dungeon look without being edited.
-  //
-  // The face is translucent on purpose: the wall texture reads through it, which is what stops a
-  // panel looking like a floating card and makes it look cut into the wall behind.
+  // pages at once. The face is translucent on purpose: the wall texture reads through it, which is
+  // what stops a panel looking like a floating card and makes it look cut into the wall behind.
   panel: {
-    background:
-      "linear-gradient(160deg, rgba(52,47,39,0.80) 0%, rgba(38,34,28,0.85) 45%, rgba(22,19,15,0.90) 100%)",
+    background: PANEL_BG,
     borderRadius: FORGE_RADIUS,
     boxShadow: [
       "inset 1px 1px 0 rgba(255,235,200,0.13)",
@@ -130,7 +145,7 @@ export const surfaces: Record<string, CSSProperties> = {
   // Slightly flatter and more opaque, for panels holding charts where a texture behind the data
   // would fight the plot.
   slate: {
-    background: "linear-gradient(180deg, rgba(38,34,28,0.94), rgba(24,21,17,0.96))",
+    background: SLATE_BG,
     borderRadius: FORGE_RADIUS,
     boxShadow: [
       "inset 1px 1px 0 rgba(255,235,200,0.10)",
@@ -160,13 +175,9 @@ export const ui: Record<string, CSSProperties> = {
     fontFamily: SAX.mono, fontSize: 10, letterSpacing: "0.16em",
     textTransform: "uppercase", color: STONE.inkDim,
   },
-  // Carved, not flat. These were pills (borderRadius 999) with a single flat fill, which is why
-  // buttons outside the Monster Maker felt like a different app. The depth is three things
-  // together: a vertical gradient so the face catches light at the top, an inset rim, and a solid
-  // offset shadow underneath acting as the lip the button sits proud of.
-  //
-  // The PRESS is not here. :active cannot be expressed inline, so PageShell injects the rule that
-  // drops the button onto its lip. Any button using these picks it up automatically.
+  // Carved, not flat. The depth is three things together: a vertical gradient so the face catches
+  // light at the top, an inset rim, and a solid offset shadow underneath acting as the lip the button
+  // sits proud of. The PRESS is not here (:active can't be inline); PageShell injects that rule.
   btnPrimary: {
     background: `linear-gradient(180deg, ${STONE.brassHi} 0%, ${SAX.brass} 52%, ${STONE.brassDeep} 100%)`,
     color: "#241a0d",
