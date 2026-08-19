@@ -53,6 +53,7 @@ export default function Home() {
           </p>
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 26 }}>
             <Link href="/pilot" style={cta}>Join the pilot</Link>
+            <Link href="/tools" style={ctaGhost}>Free tools</Link>
             <Link href="/enter" style={ctaGhost}>I have an account</Link>
           </div>
           <p style={{ ...small, marginTop: 14 }}>
@@ -129,13 +130,18 @@ export default function Home() {
           </p>
         </Section>
 
-        <Section title="Free tools, no login" lead="Launching alongside the pilot, no account required.">
+        <Section title="Free tools, no login" lead="A growing set, no account required.">
           <p style={body}>
-            Some of what Six Axes does inside a campaign is useful on its own, so a set of free,
-            no-account tools is on the way: an encounter balancer, a hex and battle map generator, a
-            party coverage check, and the player-type quiz, each with a picker for the system it
-            applies to. They store nothing and need no sign-up.
+            Some of what Six Axes does inside a campaign is useful on its own, so there is a growing
+            set of free, no-account tools you can use right now: an encounter balancer, a fair dice
+            roller, a hex and battle map generator, a party coverage check, a session-zero charter, a
+            session and arc pacing planner, a magic item price calculator, and the player-type quiz.
+            Each picks the system it applies to where that matters. They store nothing and need no
+            sign-up.
           </p>
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap", margin: "4px 0 16px" }}>
+            <Link href="/tools" style={cta}>Open the free tools</Link>
+          </div>
           <p style={small}>
             These are a taste. The real work, transcription, table management and the player insight
             that comes from a whole campaign, is what the pilot is for.
