@@ -90,6 +90,7 @@ export default function ToolsHub() {
       tagline="Small, sharp tools you can use without an account. More are rolling out."
       hideHubLink
     >
+      <style dangerouslySetInnerHTML={{ __html: HUB_CSS }} />
       <div style={{ display: "grid", gap: 14, marginTop: 4 }}>
         {TOOLS.map((t) => {
           const inner = (
@@ -103,7 +104,7 @@ export default function ToolsHub() {
             </>
           );
           return t.href ? (
-            <Link key={t.name} href={t.href} style={{ ...cardBase, ...cardLive }}>{inner}</Link>
+            <Link key={t.name} href={t.href} className="tool-card" style={{ ...cardBase, ...cardLive }}>{inner}</Link>
           ) : (
             <div key={t.name} style={{ ...cardBase, ...cardSoon }}>{inner}</div>
           );
@@ -114,11 +115,20 @@ export default function ToolsHub() {
 }
 
 const cardBase: React.CSSProperties = {
-  display: "block", padding: "18px 20px", borderRadius: 6, border: "1px solid #ddd4c2",
-  background: "#fffdf8", textDecoration: "none", color: "inherit",
+  display: "block", padding: "18px 20px 18px 22px", borderRadius: 6,
+  border: "1px solid #d8cdb4", borderLeft: "3px solid #b98f2f",
+  background: "linear-gradient(180deg, #fffefb, #faf5e8)", textDecoration: "none", color: "inherit",
+  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.8), 0 2px 0 -1px #d8cdb4, 0 9px 18px rgba(70,55,25,0.16)",
+  transition: "transform .08s ease, box-shadow .08s ease",
 };
-const cardLive: React.CSSProperties = { borderColor: "#c9bfa8" };
-const cardSoon: React.CSSProperties = { opacity: 0.72 };
+const cardLive: React.CSSProperties = {};
+const cardSoon: React.CSSProperties = { opacity: 0.72, borderLeftColor: "#cbbf9f" };
+
+const HUB_CSS = `
+.tool-card:hover { transform: translateY(-2px);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.85), 0 3px 0 -1px #d8cdb4, 0 13px 24px rgba(70,55,25,0.22); }
+.tool-card:hover span { color: #7a5a1a; }
+`;
 const cardName: React.CSSProperties = { fontSize: 20, fontWeight: 600, color: "#2a2620" };
 const soon: React.CSSProperties = {
   fontFamily: "ui-monospace, SFMono-Regular, monospace", fontSize: 10.5, letterSpacing: "0.12em",

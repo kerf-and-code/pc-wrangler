@@ -64,7 +64,7 @@ const TOOLS = [
 
 export default function Home() {
   return (
-    <main style={{ ...forgeBackground(), minHeight: "100vh", color: C.text, position: "relative", overflowX: "hidden" }}>
+    <main style={{ ...forgeBackground(), minHeight: "100vh", color: C.text, position: "relative", overflowX: "clip" }}>
       <div style={forgeVignette} />
       <style dangerouslySetInnerHTML={{ __html: CSS }} />
 
@@ -75,7 +75,9 @@ export default function Home() {
           <span className="brand-word">Six Axes</span>
         </Link>
         <nav className="home-topnav">
+          <Link href="/features" className="topnav-link">Features</Link>
           <Link href="/tools" className="topnav-link">Free tools</Link>
+          <Link href="/pricing" className="topnav-link">Pricing</Link>
           <Link href="/enter" className="topnav-link">Enter</Link>
           <Link href="/pilot" className="forge-btn is-primary" style={{ ...stoneButton("primary"), padding: "9px 18px", fontSize: 12.5 }}>
             Join the pilot
@@ -221,8 +223,8 @@ export default function Home() {
               </div>
               <div style={{ ...stonePanel(), padding: "18px 20px" }}>
                 <div style={forgeLabel}>Planned</div>
-                <p style={tierText}>On the roadmap, two pending publisher approval before we can ship them.</p>
-                <p style={tierList}>Cyberpunk RED · one more to announce</p>
+                <p style={tierText}>On the roadmap, waiting on the publisher&apos;s permission before we can ship them.</p>
+                <p style={tierList}>Cyberpunk RED · Vampire: The Masquerade</p>
               </div>
             </div>
             <p style={{ ...small, marginTop: 16 }}>
@@ -300,9 +302,17 @@ export default function Home() {
         <div className="foot-inner">
           <span>Six Axes is made by Kerf and Code.</span>
           <span className="foot-links">
+            <Link href="/features" style={inlineLink}>Features</Link>
+            {" · "}
             <Link href="/tools" style={inlineLink}>Free tools</Link>
             {" · "}
-            <a href="mailto:kncadmin@kerfandcode.com" style={inlineLink}>Contact</a>
+            <Link href="/pricing" style={inlineLink}>Pricing</Link>
+            {" · "}
+            <Link href="/about" style={inlineLink}>About</Link>
+            {" · "}
+            <Link href="/faq" style={inlineLink}>FAQ</Link>
+            {" · "}
+            <Link href="/contact" style={inlineLink}>Contact</Link>
             {" · "}
             <Link href="/privacy" style={inlineLink}>Privacy</Link>
             {" · "}

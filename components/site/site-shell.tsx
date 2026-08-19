@@ -19,7 +19,7 @@ export default function SiteShell({
   children: React.ReactNode;
 }) {
   return (
-    <main style={{ ...forgeBackground(), minHeight: "100vh", color: C.text, position: "relative", overflowX: "hidden" }}>
+    <main style={{ ...forgeBackground(), minHeight: "100vh", color: C.text, position: "relative", overflowX: "clip" }}>
       <div style={forgeVignette} />
       <style dangerouslySetInnerHTML={{ __html: CSS }} />
 
@@ -29,6 +29,7 @@ export default function SiteShell({
           <span className="site-word">Six Axes</span>
         </Link>
         <nav className="site-nav">
+          <Link href="/features" className="site-link">Features</Link>
           <Link href="/tools" className="site-link">Free tools</Link>
           <Link href="/pricing" className="site-link">Pricing</Link>
           <Link href="/contact" className="site-link">Contact</Link>

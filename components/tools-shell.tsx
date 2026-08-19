@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { SAX, STONE, surfaces } from "@/lib/theme";
-import { C, forgeBackground, forgeVignette, stoneButton, FORGE_BUTTON_CSS } from "@/lib/forge-theme";
+import { C, forgeBackground, forgeVignette, stoneButton, FORGE_BUTTON_CSS, forgeRuleLine, forgeBoss } from "@/lib/forge-theme";
 
 // components/tools-shell.tsx
 //
@@ -27,7 +27,7 @@ export default function ToolsShell({
   children: React.ReactNode;
 }) {
   return (
-    <main style={{ ...forgeBackground(), minHeight: "100vh", color: C.text, position: "relative", overflowX: "hidden" }}>
+    <main style={{ ...forgeBackground(), minHeight: "100vh", color: C.text, position: "relative", overflowX: "clip" }}>
       <div style={forgeVignette} />
       <style dangerouslySetInnerHTML={{ __html: CSS }} />
 
@@ -37,6 +37,7 @@ export default function ToolsShell({
           <span className="ts-word">Six Axes</span>
         </Link>
         <nav className="ts-nav">
+          <Link href="/features" className="ts-link">Features</Link>
           <Link href="/tools" className="ts-link">Free tools</Link>
           <Link href="/pricing" className="ts-link">Pricing</Link>
           <Link href="/contact" className="ts-link">Contact</Link>
@@ -55,6 +56,12 @@ export default function ToolsShell({
           </div>
           <h1 style={h1}>{title}</h1>
           {tagline && <p style={lede}>{tagline}</p>}
+
+          <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "20px 0 4px" }} aria-hidden>
+            <span style={forgeRuleLine} />
+            <span style={forgeBoss} />
+            <span style={{ ...forgeRuleLine, transform: "scaleX(-1)" }} />
+          </div>
 
           <div style={{ marginTop: 22 }}>{children}</div>
 
@@ -92,11 +99,23 @@ export default function ToolsShell({
 
 const sheet: React.CSSProperties = {
   ...surfaces.parchment,
+  // A lit-from-the-top parchment with a carved frame and a deep drop onto the stone, so it reads as a
+  // physical sheet on the table rather than a flat panel.
+  background: "radial-gradient(130% 90% at 50% -6%, #F4ECD9 0%, #E9DEC7 58%, #E1D5BC 100%)",
   maxWidth: 800,
   margin: "0 auto",
-  padding: "34px 38px 30px",
+  padding: "38px 42px 32px",
   position: "relative",
   zIndex: 1,
+  borderRadius: 10,
+  border: "1px solid #cdbc95",
+  boxShadow: [
+    "inset 0 2px 0 rgba(255,255,255,0.65)",
+    "inset 0 0 0 1px rgba(255,253,248,0.6)",
+    "inset 0 -18px 40px rgba(140,120,80,0.12)",
+    "0 22px 46px rgba(0,0,0,0.6)",
+    "0 0 0 1px rgba(0,0,0,0.4)",
+  ].join(","),
 };
 const topRow: React.CSSProperties = { display: "flex", alignItems: "center", gap: 10, marginBottom: 12 };
 const eyebrow: React.CSSProperties = {
