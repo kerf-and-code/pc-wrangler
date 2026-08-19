@@ -8,8 +8,12 @@
 // variables silently fall back to the dungeon defaults. Setting the variables directly on the element via
 // style.setProperty (see SystemThemeProvider) cannot fail that way.
 //
+// FONTS: --forge-display / --forge-body / --forge-mono point at the per-system webfonts loaded in
+// app/layout.tsx (next/font, exposed as --font-*). The system-font stacks after each var are the fallback
+// used until the webfont paints. D&D keeps Cinzel + the system serif exactly as before.
+//
 // LICENSING: each look EVOKES the game's aesthetic; it never reproduces a publisher's logos, wordmarks, or
-// art. Fonts use system-font stacks (no webfonts loaded here) so the family shifts without new assets.
+// art.
 
 type Vars = Record<string, string>;
 
@@ -38,7 +42,7 @@ const DEFAULT: Vars = {
   "--stone-ink-faint": "#8a8069",
   "--stone-moss-lit": "#9aa880",
   "--stone-blood-lit": "#d97d6d",
-  "--forge-display": "'Cinzel', 'Iowan Old Style', Georgia, serif",
+  "--forge-display": "var(--font-cinzel), 'Cinzel', 'Iowan Old Style', Georgia, serif",
   "--forge-body": "'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif",
   "--forge-mono": "ui-monospace, SFMono-Regular, Menlo, monospace",
   "--forge-panel-bg": "linear-gradient(160deg, rgba(52,47,39,0.80) 0%, rgba(38,34,28,0.85) 45%, rgba(22,19,15,0.90) 100%)",
@@ -46,7 +50,8 @@ const DEFAULT: Vars = {
   "--sax-page-bg": "radial-gradient(ellipse 66% 44% at 50% 12%, rgba(184,135,74,0.16), transparent 62%), linear-gradient(180deg, rgba(18,13,8,0.28), rgba(10,7,4,0.52)), url(/wall-2.png) center / cover no-repeat #0B0712",
 };
 
-// Lancer: NavSat / COMP-CON terminal. Gunmetal, a faint technical grid, teal readout, amber alerts, mono.
+// Lancer: NavSat / COMP-CON terminal. Gunmetal, a faint technical grid, teal readout, amber alerts,
+// squared technical display (Chakra Petch) with a monospace readout (JetBrains Mono).
 const LANCER: Vars = {
   ...DEFAULT,
   "--sax-ink": "#0c1116", "--sax-ink-deep": "#070a0d", "--sax-line": "#26333d",
@@ -55,15 +60,16 @@ const LANCER: Vars = {
   "--stone-face": "#18212a", "--stone-lit": "#22303a", "--stone-hi": "#2e404c", "--stone-shadow": "#0f171d", "--stone-mortar": "#05090c",
   "--stone-ink": "#e2ebf0", "--stone-ink-dim": "#93a6b1", "--stone-ink-faint": "#6a7c87",
   "--stone-moss-lit": "#57cf9a", "--stone-blood-lit": "#ef9a5a",
-  "--forge-display": "'Chakra Petch', 'Bahnschrift', 'DIN Alternate', ui-monospace, monospace",
+  "--forge-display": "var(--font-chakra), 'Chakra Petch', 'Bahnschrift', ui-monospace, monospace",
   "--forge-body": "ui-sans-serif, 'Segoe UI', system-ui, 'Helvetica Neue', sans-serif",
-  "--forge-mono": "ui-monospace, 'Cascadia Code', SFMono-Regular, Menlo, monospace",
+  "--forge-mono": "var(--font-jetbrains), ui-monospace, SFMono-Regular, Menlo, monospace",
   "--forge-panel-bg": "linear-gradient(160deg, rgba(30,42,52,0.86) 0%, rgba(20,29,36,0.9) 45%, rgba(12,18,23,0.94) 100%)",
   "--forge-slate-bg": "linear-gradient(180deg, rgba(22,31,39,0.95), rgba(12,18,23,0.97))",
   "--sax-page-bg": "radial-gradient(ellipse 72% 46% at 50% 8%, rgba(55,182,198,0.10), transparent 60%), linear-gradient(0deg, rgba(7,10,13,0.55), rgba(7,10,13,0.55)), repeating-linear-gradient(0deg, transparent 0 39px, rgba(120,150,165,0.045) 39px 40px), repeating-linear-gradient(90deg, transparent 0 39px, rgba(120,150,165,0.045) 39px 40px), #0a0e12",
 };
 
-// Pathfinder 2e: heraldic crimson and gold, an ornate serif, deep oxblood surfaces.
+// Pathfinder 2e: heraldic crimson and gold, an ornate inscription serif (Cinzel Decorative) over a book
+// serif (EB Garamond), deep oxblood surfaces.
 const PF2E: Vars = {
   ...DEFAULT,
   "--sax-ink": "#1a0f10", "--sax-ink-deep": "#0f0708", "--sax-line": "#4a2226",
@@ -72,14 +78,15 @@ const PF2E: Vars = {
   "--stone-face": "#2a1516", "--stone-lit": "#3a1d1f", "--stone-hi": "#4c2528", "--stone-shadow": "#190c0d", "--stone-mortar": "#0a0405",
   "--stone-ink": "#f2e6d4", "--stone-ink-dim": "#c2a898", "--stone-ink-faint": "#9c8072",
   "--stone-moss-lit": "#8bb07f", "--stone-blood-lit": "#e0715f",
-  "--forge-display": "'Cinzel', 'Trajan Pro', 'Bookman Old Style', Georgia, serif",
-  "--forge-body": "'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif",
+  "--forge-display": "var(--font-cinzel-dec), 'Cinzel', 'Trajan Pro', Georgia, serif",
+  "--forge-body": "var(--font-garamond), 'Palatino Linotype', Palatino, Georgia, serif",
   "--forge-panel-bg": "linear-gradient(160deg, rgba(60,28,30,0.85) 0%, rgba(42,20,22,0.9) 45%, rgba(24,11,12,0.94) 100%)",
   "--forge-slate-bg": "linear-gradient(180deg, rgba(42,20,22,0.95), rgba(24,11,12,0.97))",
   "--sax-page-bg": "radial-gradient(ellipse 66% 44% at 50% 12%, rgba(207,155,52,0.12), transparent 60%), linear-gradient(180deg, rgba(26,10,11,0.55), rgba(12,5,6,0.8)), #100708",
 };
 
-// Draw Steel: heroic steel. Cool slate surfaces with a bold ember-red action and a strong condensed face.
+// Draw Steel: heroic steel. Cool slate surfaces with a bold ember-red action and a strong condensed
+// display (Oswald) over a clean sans.
 const DRAWSTEEL: Vars = {
   ...DEFAULT,
   "--sax-ink": "#0f1317", "--sax-ink-deep": "#080b0e", "--sax-line": "#2c353d",
@@ -88,14 +95,15 @@ const DRAWSTEEL: Vars = {
   "--stone-face": "#1c232a", "--stone-lit": "#28313a", "--stone-hi": "#35414c", "--stone-shadow": "#121820", "--stone-mortar": "#070a0d",
   "--stone-ink": "#e9edf1", "--stone-ink-dim": "#9aa7b1", "--stone-ink-faint": "#71808b",
   "--stone-moss-lit": "#61c795", "--stone-blood-lit": "#f0805c",
-  "--forge-display": "'Bahnschrift', 'DIN Condensed', 'Arial Narrow', 'Oswald', sans-serif",
+  "--forge-display": "var(--font-oswald), 'Bahnschrift', 'Arial Narrow', sans-serif",
   "--forge-body": "ui-sans-serif, 'Segoe UI', system-ui, 'Helvetica Neue', sans-serif",
   "--forge-panel-bg": "linear-gradient(160deg, rgba(32,40,48,0.86) 0%, rgba(22,29,36,0.9) 45%, rgba(14,19,24,0.94) 100%)",
   "--forge-slate-bg": "linear-gradient(180deg, rgba(24,31,38,0.95), rgba(14,19,24,0.97))",
   "--sax-page-bg": "radial-gradient(ellipse 70% 46% at 50% 8%, rgba(220,82,48,0.12), transparent 58%), linear-gradient(180deg, rgba(12,16,20,0.5), rgba(7,10,13,0.8)), #0a0e12",
 };
 
-// Daggerheart: warm painterly high fantasy. Plum surfaces, gold and rose, an elegant serif.
+// Daggerheart: warm painterly high fantasy. Plum surfaces, gold and rose, an elegant display (Marcellus)
+// over a book serif (EB Garamond).
 const DAGGERHEART: Vars = {
   ...DEFAULT,
   "--sax-ink": "#1a1329", "--sax-ink-deep": "#0f0a1a", "--sax-line": "#3c2f52",
@@ -104,14 +112,15 @@ const DAGGERHEART: Vars = {
   "--stone-face": "#271c3a", "--stone-lit": "#33264b", "--stone-hi": "#41335d", "--stone-shadow": "#170f24", "--stone-mortar": "#0a0613",
   "--stone-ink": "#f3ecf7", "--stone-ink-dim": "#b9abce", "--stone-ink-faint": "#8f81a6",
   "--stone-moss-lit": "#7fcfb2", "--stone-blood-lit": "#eb9db0",
-  "--forge-display": "'Cinzel', 'Cormorant Garamond', Georgia, serif",
-  "--forge-body": "'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif",
+  "--forge-display": "var(--font-marcellus), 'Cinzel', Georgia, serif",
+  "--forge-body": "var(--font-garamond), 'Iowan Old Style', Palatino, Georgia, serif",
   "--forge-panel-bg": "linear-gradient(160deg, rgba(52,40,74,0.82) 0%, rgba(38,28,56,0.88) 45%, rgba(23,16,36,0.92) 100%)",
   "--forge-slate-bg": "linear-gradient(180deg, rgba(40,30,58,0.94), rgba(24,17,37,0.96))",
   "--sax-page-bg": "radial-gradient(ellipse 68% 46% at 50% 10%, rgba(217,164,65,0.12), transparent 60%), linear-gradient(180deg, rgba(26,17,42,0.5), rgba(13,8,22,0.8)), #0f0a1a",
 };
 
-// Call of Cthulhu: 1920s. Aged sepia and olive-dark surfaces, a sickly green accent, typewriter body.
+// Call of Cthulhu: 1920s. Aged sepia and olive-dark surfaces, a sickly green accent, a distressed
+// typewriter display (Special Elite) over a clean typewriter body (Courier Prime).
 const COC: Vars = {
   ...DEFAULT,
   "--sax-ink": "#16150f", "--sax-ink-deep": "#0d0c08", "--sax-line": "#3a3826",
@@ -120,15 +129,16 @@ const COC: Vars = {
   "--stone-face": "#26241a", "--stone-lit": "#312f22", "--stone-hi": "#3f3c2c", "--stone-shadow": "#181610", "--stone-mortar": "#0a0906",
   "--stone-ink": "#e5dcc2", "--stone-ink-dim": "#ada484", "--stone-ink-faint": "#877e63",
   "--stone-moss-lit": "#a8b57f", "--stone-blood-lit": "#cf8062",
-  "--forge-display": "'Special Elite', 'Courier New', 'Courier', ui-monospace, monospace",
-  "--forge-body": "'Courier New', 'Courier', ui-monospace, monospace",
-  "--forge-mono": "'Courier New', ui-monospace, SFMono-Regular, monospace",
+  "--forge-display": "var(--font-special-elite), 'Courier New', Courier, monospace",
+  "--forge-body": "var(--font-courier-prime), 'Courier New', Courier, monospace",
+  "--forge-mono": "var(--font-courier-prime), ui-monospace, SFMono-Regular, monospace",
   "--forge-panel-bg": "linear-gradient(160deg, rgba(44,42,30,0.86) 0%, rgba(34,32,22,0.9) 45%, rgba(20,19,13,0.94) 100%)",
   "--forge-slate-bg": "linear-gradient(180deg, rgba(34,32,22,0.95), rgba(20,19,13,0.97))",
   "--sax-page-bg": "radial-gradient(ellipse 66% 44% at 50% 14%, rgba(138,154,82,0.09), transparent 60%), linear-gradient(180deg, rgba(22,21,14,0.5), rgba(11,10,7,0.82)), #100f0a",
 };
 
-// The generic d10 pool (unbranded Vampire): gothic. Near-black surfaces, blood red, a dark serif.
+// The generic d10 pool (unbranded Vampire): gothic. Near-black surfaces, blood red, a gothic display
+// (Pirata One) over an old-print serif (IM Fell English).
 const POOLD10: Vars = {
   ...DEFAULT,
   "--sax-ink": "#120b0d", "--sax-ink-deep": "#0a0507", "--sax-line": "#3a1e22",
@@ -137,8 +147,8 @@ const POOLD10: Vars = {
   "--stone-face": "#1c1214", "--stone-lit": "#271719", "--stone-hi": "#341f22", "--stone-shadow": "#120a0c", "--stone-mortar": "#070303",
   "--stone-ink": "#e9dede", "--stone-ink-dim": "#b09aa0", "--stone-ink-faint": "#877075",
   "--stone-moss-lit": "#8aa88f", "--stone-blood-lit": "#e06068",
-  "--forge-display": "'Cinzel', 'Times New Roman', Georgia, serif",
-  "--forge-body": "'Times New Roman', Georgia, 'Palatino Linotype', serif",
+  "--forge-display": "var(--font-pirata), 'Cinzel', 'Times New Roman', Georgia, serif",
+  "--forge-body": "var(--font-imfell), 'Times New Roman', Georgia, 'Palatino Linotype', serif",
   "--forge-panel-bg": "linear-gradient(160deg, rgba(40,22,25,0.86) 0%, rgba(28,16,18,0.9) 45%, rgba(16,9,10,0.94) 100%)",
   "--forge-slate-bg": "linear-gradient(180deg, rgba(28,16,18,0.95), rgba(16,9,10,0.97))",
   "--sax-page-bg": "radial-gradient(ellipse 64% 44% at 50% 12%, rgba(165,31,44,0.10), transparent 58%), linear-gradient(180deg, rgba(18,10,12,0.55), rgba(8,4,5,0.85)), #0a0507",

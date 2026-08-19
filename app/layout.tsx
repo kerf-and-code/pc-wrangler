@@ -1,5 +1,18 @@
 import type { Metadata } from "next";
-import { Geist } from "next/font/google";
+import {
+  Geist,
+  Cinzel,
+  Cinzel_Decorative,
+  Oswald,
+  Chakra_Petch,
+  Marcellus,
+  Special_Elite,
+  Pirata_One,
+  EB_Garamond,
+  Courier_Prime,
+  IM_Fell_English,
+  JetBrains_Mono,
+} from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import SystemThemeProvider from "@/components/system-theme-provider";
 import "./globals.css";
@@ -26,11 +39,30 @@ export const metadata: Metadata = {
   description: "Run the table. Player typing and session analytics for tabletop RPGs.",
 };
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  display: "swap",
-  subsets: ["latin"],
-});
+const geistSans = Geist({ variable: "--font-geist-sans", display: "swap", subsets: ["latin"] });
+
+// Per-system display / body / mono faces, self-hosted by next/font and exposed as CSS variables. They
+// are attached to <html> (below) so the theme variables in lib/systems/system-theme.ts, which the
+// provider sets on <html> per active campaign, can reference them (a variable must be defined on the
+// element that reads it or an ancestor). Each system's --forge-display / --forge-body / --forge-mono
+// points at the right one; unthemed D&D uses Cinzel + the system serif exactly as before.
+const cinzel = Cinzel({ variable: "--font-cinzel", weight: ["600", "700"], display: "swap", subsets: ["latin"] });
+const cinzelDec = Cinzel_Decorative({ variable: "--font-cinzel-dec", weight: ["700"], display: "swap", subsets: ["latin"] });
+const oswald = Oswald({ variable: "--font-oswald", weight: ["500", "600"], display: "swap", subsets: ["latin"] });
+const chakra = Chakra_Petch({ variable: "--font-chakra", weight: ["500", "700"], display: "swap", subsets: ["latin"] });
+const marcellus = Marcellus({ variable: "--font-marcellus", weight: ["400"], display: "swap", subsets: ["latin"] });
+const specialElite = Special_Elite({ variable: "--font-special-elite", weight: ["400"], display: "swap", subsets: ["latin"] });
+const pirata = Pirata_One({ variable: "--font-pirata", weight: ["400"], display: "swap", subsets: ["latin"] });
+const garamond = EB_Garamond({ variable: "--font-garamond", weight: ["400", "600"], display: "swap", subsets: ["latin"] });
+const courierPrime = Courier_Prime({ variable: "--font-courier-prime", weight: ["400", "700"], display: "swap", subsets: ["latin"] });
+const imFell = IM_Fell_English({ variable: "--font-imfell", weight: ["400"], display: "swap", subsets: ["latin"] });
+const jetbrains = JetBrains_Mono({ variable: "--font-jetbrains", weight: ["400", "500"], display: "swap", subsets: ["latin"] });
+
+const fontVars = [
+  geistSans.variable, cinzel.variable, cinzelDec.variable, oswald.variable, chakra.variable,
+  marcellus.variable, specialElite.variable, pirata.variable, garamond.variable,
+  courierPrime.variable, imFell.variable, jetbrains.variable,
+].join(" ");
 
 export default function RootLayout({
   children,
@@ -38,7 +70,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className={fontVars} suppressHydrationWarning>
       <body className={`${geistSans.className} antialiased`}>
         <ThemeProvider
           attribute="class"
