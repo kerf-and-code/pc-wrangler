@@ -153,6 +153,10 @@ html[data-system="daggerheart"] .sax-fx-motes span{
 html[data-system="poold10"] .sax-fx-grain{ opacity:0.055; }
 html[data-system="poold10"] .sax-fx-pulse{ opacity:1; animation:saxPulse 6s ease-in-out infinite; }
 
+/* Dark Matter: heavy derelict-ship grain + faint failing-console scanlines. */
+html[data-system="darkmatter"] .sax-fx-grain{ opacity:0.06; }
+html[data-system="darkmatter"] .sax-fx-scan{ opacity:0.04; }
+
 /* Motion off: keep the static layers (grain, scanlines, a steady pulse tint), drop everything that moves. */
 @media (prefers-reduced-motion: reduce){
   .sax-fx-sweep, .sax-fx-motes{ display:none; }

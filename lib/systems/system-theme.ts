@@ -70,7 +70,7 @@ const LANCER: Vars = {
   "--forge-mono": "var(--font-jetbrains), ui-monospace, SFMono-Regular, Menlo, monospace",
   "--forge-panel-bg": "linear-gradient(160deg, rgba(30,42,52,0.86) 0%, rgba(20,29,36,0.9) 45%, rgba(12,18,23,0.94) 100%)",
   "--forge-slate-bg": "linear-gradient(180deg, rgba(22,31,39,0.95), rgba(12,18,23,0.97))",
-  "--sax-page-bg": "radial-gradient(ellipse 72% 46% at 50% 8%, rgba(55,182,198,0.10), transparent 60%), linear-gradient(0deg, rgba(7,10,13,0.55), rgba(7,10,13,0.55)), repeating-linear-gradient(0deg, transparent 0 39px, rgba(120,150,165,0.045) 39px 40px), repeating-linear-gradient(90deg, transparent 0 39px, rgba(120,150,165,0.045) 39px 40px), #0a0e12",
+  "--sax-page-bg": "radial-gradient(ellipse 72% 46% at 50% 8%, rgba(55,182,198,0.12), transparent 60%), linear-gradient(180deg, rgba(7,10,13,0.32), rgba(7,10,13,0.66)), repeating-linear-gradient(0deg, transparent 0 39px, rgba(120,150,165,0.05) 39px 40px), repeating-linear-gradient(90deg, transparent 0 39px, rgba(120,150,165,0.05) 39px 40px), url(/lancer-bg.webp) center / cover no-repeat, #0a0e12",
   // Squared HUD panels with a bright teal readout hairline: the COMP/CON terminal look.
   "--sax-radius": "0px",
   "--sax-panel-frame": "rgba(55,182,198,0.38)",
@@ -90,7 +90,7 @@ const PF2E: Vars = {
   "--forge-body": "var(--font-garamond), 'Palatino Linotype', Palatino, Georgia, serif",
   "--forge-panel-bg": "linear-gradient(160deg, rgba(60,28,30,0.85) 0%, rgba(42,20,22,0.9) 45%, rgba(24,11,12,0.94) 100%)",
   "--forge-slate-bg": "linear-gradient(180deg, rgba(42,20,22,0.95), rgba(24,11,12,0.97))",
-  "--sax-page-bg": "radial-gradient(ellipse 66% 44% at 50% 12%, rgba(207,155,52,0.12), transparent 60%), linear-gradient(180deg, rgba(26,10,11,0.55), rgba(12,5,6,0.8)), #100708",
+  "--sax-page-bg": "radial-gradient(ellipse 66% 44% at 50% 12%, rgba(207,155,52,0.14), transparent 60%), linear-gradient(180deg, rgba(26,10,11,0.42), rgba(12,5,6,0.72)), url(/pf2e-bg.webp) center / cover no-repeat, #100708",
   // Lightly rounded plates edged in a gold heraldic hairline, like a tome's ruled border.
   "--sax-radius": "3px",
   "--sax-panel-frame": "rgba(207,155,52,0.32)",
@@ -110,7 +110,7 @@ const DRAWSTEEL: Vars = {
   "--forge-body": "ui-sans-serif, 'Segoe UI', system-ui, 'Helvetica Neue', sans-serif",
   "--forge-panel-bg": "linear-gradient(160deg, rgba(32,40,48,0.86) 0%, rgba(22,29,36,0.9) 45%, rgba(14,19,24,0.94) 100%)",
   "--forge-slate-bg": "linear-gradient(180deg, rgba(24,31,38,0.95), rgba(14,19,24,0.97))",
-  "--sax-page-bg": "radial-gradient(ellipse 70% 46% at 50% 8%, rgba(220,82,48,0.12), transparent 58%), linear-gradient(180deg, rgba(12,16,20,0.5), rgba(7,10,13,0.8)), #0a0e12",
+  "--sax-page-bg": "radial-gradient(ellipse 70% 46% at 50% 8%, rgba(220,82,48,0.12), transparent 58%), linear-gradient(180deg, rgba(12,16,20,0.3), rgba(7,10,13,0.66)), url(/drawsteel-bg.webp) center / cover no-repeat, #0a0e12",
   // Near-square forged plates with a faint ember edge: hammered steel, not a card.
   "--sax-radius": "1px",
   "--sax-panel-frame": "rgba(220,82,48,0.30)",
@@ -130,7 +130,7 @@ const DAGGERHEART: Vars = {
   "--forge-body": "var(--font-garamond), 'Iowan Old Style', Palatino, Georgia, serif",
   "--forge-panel-bg": "linear-gradient(160deg, rgba(52,40,74,0.82) 0%, rgba(38,28,56,0.88) 45%, rgba(23,16,36,0.92) 100%)",
   "--forge-slate-bg": "linear-gradient(180deg, rgba(40,30,58,0.94), rgba(24,17,37,0.96))",
-  "--sax-page-bg": "radial-gradient(ellipse 68% 46% at 50% 10%, rgba(217,164,65,0.12), transparent 60%), linear-gradient(180deg, rgba(26,17,42,0.5), rgba(13,8,22,0.8)), #0f0a1a",
+  "--sax-page-bg": "radial-gradient(ellipse 68% 46% at 50% 10%, rgba(217,164,65,0.12), transparent 60%), linear-gradient(180deg, rgba(26,17,42,0.28), rgba(13,8,22,0.66)), url(/daggerheart-bg.webp) center / cover no-repeat, #0f0a1a",
   // Soft, generously rounded cards with a warm gold edge: painterly and inviting, not carved.
   "--sax-radius": "14px",
   "--sax-panel-frame": "rgba(217,164,65,0.28)",
@@ -151,7 +151,7 @@ const COC: Vars = {
   "--forge-mono": "var(--font-courier-prime), ui-monospace, SFMono-Regular, monospace",
   "--forge-panel-bg": "linear-gradient(160deg, rgba(44,42,30,0.86) 0%, rgba(34,32,22,0.9) 45%, rgba(20,19,13,0.94) 100%)",
   "--forge-slate-bg": "linear-gradient(180deg, rgba(34,32,22,0.95), rgba(20,19,13,0.97))",
-  "--sax-page-bg": "radial-gradient(ellipse 66% 44% at 50% 14%, rgba(138,154,82,0.09), transparent 60%), linear-gradient(180deg, rgba(22,21,14,0.5), rgba(11,10,7,0.82)), #100f0a",
+  "--sax-page-bg": "radial-gradient(ellipse 66% 44% at 50% 14%, rgba(138,154,82,0.09), transparent 60%), linear-gradient(180deg, rgba(22,21,14,0.32), rgba(11,10,7,0.7)), url(/coc-bg.webp) center / cover no-repeat, #100f0a",
   // Hard corners edged in a dry olive line: a squared-off manila case folder, no softness.
   "--sax-radius": "0px",
   "--sax-panel-frame": "rgba(138,154,82,0.24)",
@@ -171,10 +171,34 @@ const POOLD10: Vars = {
   "--forge-body": "var(--font-imfell), 'Times New Roman', Georgia, 'Palatino Linotype', serif",
   "--forge-panel-bg": "linear-gradient(160deg, rgba(40,22,25,0.86) 0%, rgba(28,16,18,0.9) 45%, rgba(16,9,10,0.94) 100%)",
   "--forge-slate-bg": "linear-gradient(180deg, rgba(28,16,18,0.95), rgba(16,9,10,0.97))",
-  "--sax-page-bg": "radial-gradient(ellipse 64% 44% at 50% 12%, rgba(165,31,44,0.10), transparent 58%), linear-gradient(180deg, rgba(18,10,12,0.55), rgba(8,4,5,0.85)), #0a0507",
+  "--sax-page-bg": "radial-gradient(ellipse 64% 44% at 50% 12%, rgba(165,31,44,0.10), transparent 58%), linear-gradient(180deg, rgba(18,10,12,0.34), rgba(8,4,5,0.72)), url(/vampire-bg.webp) center / cover no-repeat, #0a0507",
   // Barely rounded, edged in a blood hairline: severe baroque frames.
   "--sax-radius": "2px",
   "--sax-panel-frame": "rgba(165,31,44,0.32)",
+};
+
+// Dark Matter: sci-fi horror on the D&D engine. A derelict-ship look distinct from Lancer's clean
+// cockpit: colder and greener, deeper black, a sickly cyan-green readout, squared industrial panels.
+// It shares the technical display face with Lancer but the palette and the heavy grain/flicker in the
+// effects layer make it read as a haunted hull, not a command deck. (Rules still resolve to dnd5e via
+// getModule; only the THEME is distinct.)
+const DARKMATTER: Vars = {
+  ...DEFAULT,
+  "--sax-ink": "#0a0f0e", "--sax-ink-deep": "#050807", "--sax-line": "#20302c",
+  "--sax-accent": "#3fc0a2", "--sax-accent-dim": "#1c6355", "--sax-accent-hi": "#74e8ce", "--sax-accent-deep": "#12756a",
+  "--sax-text": "#dbe7e3", "--sax-muted": "#7b938d", "--sax-good": "#4fc98a", "--sax-warn": "#e8894b",
+  "--stone-face": "#141d1b", "--stone-lit": "#1e2a27", "--stone-hi": "#293834", "--stone-shadow": "#0c1413", "--stone-mortar": "#040807",
+  "--stone-ink": "#dbe7e3", "--stone-ink-dim": "#8ba59f", "--stone-ink-faint": "#63807a",
+  "--stone-moss-lit": "#57cf9a", "--stone-blood-lit": "#ef8a6a",
+  "--forge-display": "var(--font-chakra), 'Chakra Petch', 'Bahnschrift', ui-monospace, monospace",
+  "--forge-body": "ui-sans-serif, 'Segoe UI', system-ui, 'Helvetica Neue', sans-serif",
+  "--forge-mono": "var(--font-jetbrains), ui-monospace, SFMono-Regular, Menlo, monospace",
+  "--forge-panel-bg": "linear-gradient(160deg, rgba(26,38,34,0.86) 0%, rgba(18,27,24,0.9) 45%, rgba(10,16,14,0.94) 100%)",
+  "--forge-slate-bg": "linear-gradient(180deg, rgba(20,29,26,0.95), rgba(10,16,14,0.97))",
+  "--sax-page-bg": "radial-gradient(ellipse 72% 46% at 50% 8%, rgba(63,192,162,0.09), transparent 60%), linear-gradient(180deg, rgba(6,10,9,0.34), rgba(4,7,6,0.72)), url(/darkmatter-bg.webp) center / cover no-repeat, #060909",
+  // Squared industrial panels edged in a cold cyan-green hairline.
+  "--sax-radius": "0px",
+  "--sax-panel-frame": "rgba(63,192,162,0.32)",
 };
 
 const SYSTEM_THEME_VARS: Record<string, Vars> = {
@@ -185,10 +209,12 @@ const SYSTEM_THEME_VARS: Record<string, Vars> = {
   daggerheart: DAGGERHEART,
   coc7e: COC,
   poold10: POOLD10,
+  darkmatter: DARKMATTER,
 };
 
-// D&D and its 5e-compatible settings keep the dungeon default.
-const DND_FAMILY = new Set(["5e", "2014", "5.5e", "dnd5e", "darkmatter"]);
+// D&D and its 5e-compatible settings keep the dungeon default. Dark Matter runs on the same rules
+// engine but is themed distinctly (see DARKMATTER above), so it is intentionally NOT in this set.
+const DND_FAMILY = new Set(["5e", "2014", "5.5e", "dnd5e"]);
 
 // The variable set to apply for a campaign's system. Unknown or D&D-family systems get the default.
 export function resolveSystemVars(system: string | null | undefined): Vars {
