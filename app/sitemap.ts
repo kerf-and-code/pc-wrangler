@@ -14,8 +14,27 @@ import { createClient } from "@supabase/supabase-js";
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = process.env.NEXT_PUBLIC_SITE_URL || "https://pc-wrangler.vercel.app";
 
+  // The free, no-login tools. These exist to be found in search, so they belong in the sitemap; the
+  // hub ranks a touch higher than the individual tools.
+  const toolPaths = [
+    "/tools",
+    "/tools/encounter-balancer",
+    "/tools/player-quiz",
+    "/tools/map-generator",
+    "/tools/party-coverage",
+    "/tools/session-zero",
+    "/tools/pacing",
+    "/tools/magic-item-price",
+    "/tools/dice-roller",
+  ];
+
   const statics: MetadataRoute.Sitemap = [
     { url: base, lastModified: new Date(), changeFrequency: "monthly", priority: 1 },
+    ...toolPaths.map((p) => ({
+      url: `${base}${p}`,
+      changeFrequency: "monthly" as const,
+      priority: p === "/tools" ? 0.8 : 0.7,
+    })),
     { url: `${base}/privacy`, changeFrequency: "yearly", priority: 0.2 },
     { url: `${base}/terms`, changeFrequency: "yearly", priority: 0.2 },
   ];
