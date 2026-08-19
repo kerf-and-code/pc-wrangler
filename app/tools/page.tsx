@@ -10,8 +10,8 @@ import ToolsShell from "@/components/tools-shell";
 export const metadata: Metadata = {
   title: "Free tabletop RPG tools",
   description:
-    "Free, no-login tools for tabletop RPGs: an encounter balancer for D&D 5e, Pathfinder 2e, Draw Steel "
-    + "and Daggerheart, and a player-type quiz, with more on the way. No account, nothing saved.",
+    "Free, no-login tools for tabletop RPGs: a hex world map generator, an encounter balancer for D&D 5e, "
+    + "Pathfinder 2e, Draw Steel and Daggerheart, and a player-type quiz. No account, nothing saved.",
   alternates: { canonical: "/tools" },
 };
 
@@ -39,9 +39,11 @@ const TOOLS: Tool[] = [
     status: "live",
   },
   {
+    href: "/tools/map-generator",
     name: "Map generator",
-    blurb: "Generate hex and battle map tiles in the browser, free, with an optional rendered view.",
-    status: "soon",
+    blurb: "Generate a full fantasy hex world, continents, rivers, biomes, towns and roads, from a seed, and download it.",
+    systems: "Any system",
+    status: "live",
   },
   {
     name: "Party coverage check",
