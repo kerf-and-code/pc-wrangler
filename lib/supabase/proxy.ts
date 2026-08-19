@@ -93,6 +93,17 @@ export async function updateSession(request: NextRequest) {
     !request.nextUrl.pathname.startsWith("/tools") &&
     !request.nextUrl.pathname.startsWith("/api/tools") &&
     //
+    // MARKETING PAGES (added 2026-08). The public site beyond the landing: features, about, pricing,
+    // FAQ, and contact, plus the contact form endpoint, which only emails the admin (no session) and so
+    // must accept a POST with no auth. All public by design; a logged-out visitor must read them and be
+    // able to send the contact form, or the whole site funnel bounces to a login form.
+    !request.nextUrl.pathname.startsWith("/features") &&
+    !request.nextUrl.pathname.startsWith("/about") &&
+    !request.nextUrl.pathname.startsWith("/pricing") &&
+    !request.nextUrl.pathname.startsWith("/faq") &&
+    !request.nextUrl.pathname.startsWith("/contact") &&
+    !request.nextUrl.pathname.startsWith("/api/contact") &&
+    //
     // PUBLISHED CODEXES. The whole point of /c/ is that a stranger can read it with no account, and
     // p23 already decides what a stranger may see. This middleware was silently overriding that:
     // the read gate said "published and marked public", the redirect said "sign in first", and the
