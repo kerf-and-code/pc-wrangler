@@ -67,6 +67,13 @@ const TOOLS: Tool[] = [
     systems: "Any system",
     status: "live",
   },
+  {
+    href: "/tools/magic-item-price",
+    name: "Magic item prices and finder",
+    blurb: "Price a magic item by rarity, or search 400+ named 2024 items and see each one's estimate.",
+    systems: "D&D 5e (2024)",
+    status: "live",
+  },
 ];
 
 export default function ToolsHub() {
