@@ -30,6 +30,7 @@ export default function SiteShell({
         </Link>
         <nav className="site-nav">
           <Link href="/tools" className="site-link">Free tools</Link>
+          <Link href="/pricing" className="site-link">Pricing</Link>
           <Link href="/contact" className="site-link">Contact</Link>
           <Link href="/enter" className="site-link">Enter</Link>
           <Link href="/pilot" className="forge-btn is-primary" style={{ ...stoneButton("primary"), padding: "9px 18px", fontSize: 12.5 }}>
@@ -52,7 +53,11 @@ export default function SiteShell({
           <span>
             <Link href="/tools" style={link}>Free tools</Link>
             {" · "}
-            <a href="mailto:kncadmin@kerfandcode.com" style={link}>Contact</a>
+            <Link href="/about" style={link}>About</Link>
+            {" · "}
+            <Link href="/faq" style={link}>FAQ</Link>
+            {" · "}
+            <Link href="/contact" style={link}>Contact</Link>
             {" · "}
             <Link href="/privacy" style={link}>Privacy</Link>
             {" · "}
