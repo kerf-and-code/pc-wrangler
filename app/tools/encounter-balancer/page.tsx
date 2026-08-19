@@ -8,10 +8,11 @@ import EncounterBalancer from "@/components/encounter-balancer";
 // Must be reachable logged-out: /tools is on the middleware allowlist in lib/supabase/proxy.ts.
 
 export const metadata: Metadata = {
-  title: "Encounter balancer for D&D 5e and Pathfinder 2e",
+  title: "Encounter balancer for D&D 5e, Pathfinder 2e, Draw Steel and Daggerheart",
   description:
     "Free encounter balancer. Add your party and the monsters, and see whether the fight is Easy, Hard or "
-    + "deadly, using the real 2024 and 2014 D&D methods and Pathfinder 2e's budget. No login, nothing saved.",
+    + "deadly, using the real per-system math for D&D 5e (2024 and 2014), Pathfinder 2e, Draw Steel and "
+    + "Daggerheart. No login, nothing saved.",
   alternates: { canonical: "/tools/encounter-balancer" },
 };
 

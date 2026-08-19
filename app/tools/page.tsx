@@ -10,8 +10,8 @@ import ToolsShell from "@/components/tools-shell";
 export const metadata: Metadata = {
   title: "Free tabletop RPG tools",
   description:
-    "Free, no-login tools for tabletop RPGs: an encounter balancer for D&D 5e and Pathfinder 2e, with more "
-    + "on the way. No account, nothing saved.",
+    "Free, no-login tools for tabletop RPGs: an encounter balancer for D&D 5e, Pathfinder 2e, Draw Steel "
+    + "and Daggerheart, with more on the way. No account, nothing saved.",
   alternates: { canonical: "/tools" },
 };
 
@@ -28,7 +28,7 @@ const TOOLS: Tool[] = [
     href: "/tools/encounter-balancer",
     name: "Encounter balancer",
     blurb: "Build a fight, add your party, and see whether it lands Easy, Hard or lethal, with the real per-system math.",
-    systems: "D&D 5e (2024 and 2014), Pathfinder 2e",
+    systems: "D&D 5e (2024 and 2014), Pathfinder 2e, Draw Steel, Daggerheart",
     status: "live",
   },
   {
