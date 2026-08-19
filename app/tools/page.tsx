@@ -10,8 +10,9 @@ import ToolsShell from "@/components/tools-shell";
 export const metadata: Metadata = {
   title: "Free tabletop RPG tools",
   description:
-    "Free, no-login tools for tabletop RPGs: a hex world map generator, an encounter balancer for D&D 5e, "
-    + "Pathfinder 2e, Draw Steel and Daggerheart, and a player-type quiz. No account, nothing saved.",
+    "Free, no-login tools for tabletop RPGs: a hex world map generator, an encounter balancer, a party "
+    + "coverage check, and a player-type quiz, across D&D 5e, Pathfinder 2e, Draw Steel and Daggerheart. "
+    + "No account, nothing saved.",
   alternates: { canonical: "/tools" },
 };
 
@@ -46,9 +47,11 @@ const TOOLS: Tool[] = [
     status: "live",
   },
   {
+    href: "/tools/party-coverage",
     name: "Party coverage check",
     blurb: "Enter the party and see the gaps: no healer, no front line, no face.",
-    status: "soon",
+    systems: "D&D 5e, Pathfinder 2e, Draw Steel, Daggerheart, Call of Cthulhu",
+    status: "live",
   },
 ];
 
