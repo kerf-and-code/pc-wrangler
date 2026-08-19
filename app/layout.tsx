@@ -15,6 +15,7 @@ import {
 } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import SystemThemeProvider from "@/components/system-theme-provider";
+import SystemEffects from "@/components/system-effects";
 import "./globals.css";
 
 // NEXT_PUBLIC_SITE_URL first, and it matters more than it looks.
@@ -79,6 +80,8 @@ export default function RootLayout({
         >
           {/* Applies the active campaign's per-system theme variables directly to <html>. */}
           <SystemThemeProvider />
+          {/* Per-system ambient effects (grain / scanlines / sweep / motes / pulse), keyed on data-system. */}
+          <SystemEffects />
           {children}
         </ThemeProvider>
       </body>
