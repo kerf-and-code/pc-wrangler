@@ -74,6 +74,13 @@ const TOOLS: Tool[] = [
     systems: "D&D 5e (2024)",
     status: "live",
   },
+  {
+    href: "/tools/dice-roller",
+    name: "Dice roller",
+    blurb: "A provably-fair roller with per-system modes: advantage, degrees, d100, power rolls, Hope and Fear, d10 pools.",
+    systems: "D&D 5e, Pathfinder 2e, Call of Cthulhu, Draw Steel, Daggerheart, d10 pool",
+    status: "live",
+  },
 ];
 
 export default function ToolsHub() {
