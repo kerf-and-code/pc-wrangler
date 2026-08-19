@@ -79,6 +79,19 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname !== "/" &&
     !request.nextUrl.pathname.startsWith("/enter") &&
     //
+    // THE PILOT APPLICATION PAGE + its form endpoint (added 2026-08). Public by design: a logged-out
+    // visitor arriving from the landing page applies here without an account. /api/pilot-request only
+    // emails the admin (no session), so it must accept a POST with no auth, or the form silently 307s
+    // to /auth/login and the application is lost.
+    !request.nextUrl.pathname.startsWith("/pilot") &&
+    !request.nextUrl.pathname.startsWith("/api/pilot-request") &&
+    //
+    // THE FREE TOOLS HUB (added 2026-08). The no-login SEO tools live under /tools and store nothing;
+    // they must be public or the search traffic they exist to catch is bounced to a login form. Their
+    // API endpoints (metered renders, generators) live under /api/tools and are exempted alongside.
+    !request.nextUrl.pathname.startsWith("/tools") &&
+    !request.nextUrl.pathname.startsWith("/api/tools") &&
+    //
     // PUBLISHED CODEXES. The whole point of /c/ is that a stranger can read it with no account, and
     // p23 already decides what a stranger may see. This middleware was silently overriding that:
     // the read gate said "published and marked public", the redirect said "sign in first", and the
@@ -102,6 +115,36 @@ export async function updateSession(request: NextRequest) {
     url.pathname = "/auth/login";
     return NextResponse.redirect(url);
   }
+
+  // ---- Secondary access gate (private pilot) ----
+  // An authenticated user who has not entered the pilot code is held at /enter. Only the private app
+  // (/gm, /me) is gated; the published wiki, share links, auth and legal pages stay open via the
+  // allowlist above, and /enter itself is never gated (it starts with neither prefix). The flag lives
+  // on profiles.access_granted and is set ONLY by /api/gate, after the code is verified server-side,
+  // so a user cannot grant themselves by calling the database directly.
+  if (user) {
+    const path = request.nextUrl.pathname;
+    if (path.startsWith("/gm") || path.startsWith("/me")) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("access_granted, access_role")
+        .eq("id", user.sub as string)
+        .maybeSingle();
+      if (!profile?.access_granted) {
+        // Not in the pilot at all: send to the code screen.
+        const url = request.nextUrl.clone();
+        url.pathname = "/enter";
+        return NextResponse.redirect(url);
+      }
+      if (path.startsWith("/gm") && profile.access_role !== "gm") {
+        // In the pilot on a player code: the GM tools are off-limits, send them to their own area.
+        const url = request.nextUrl.clone();
+        url.pathname = "/me";
+        return NextResponse.redirect(url);
+      }
+    }
+  }
+
   // IMPORTANT: You *must* return the supabaseResponse object as it is.
   // If you're creating a new response object with NextResponse.next() make sure to:
   // 1. Pass the request in it, like so:

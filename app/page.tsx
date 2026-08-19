@@ -7,25 +7,30 @@ import Link from "next/link";
 // codex footer and every search result points at, and a client-side splash gives a crawler nothing
 // to read. The pull-to-enter moment that used to live here is preserved at /enter and linked below.
 //
-// WHAT IT LEADS WITH, AND WHY
-//   Mechanical capture. Every competitor in this space transcribes audio and summarises it; the one
-//   thing they structurally cannot do from a microphone is know what was ROLLED. Leading with
-//   "session notes" would mean competing on their strongest ground with a feature they already have.
+// REPOSITIONED (2026-08): from a single-system pilot pitch into a product landing. The old page said
+// "only does 5e" and titled itself "for D&D", which is now false: Six Axes runs across several
+// systems. This page leads with the product (mechanical capture, the self-writing wiki, player
+// insight), states honestly which systems have real tools vs a themed table and roller, teases the
+// free no-login tools, and routes serious readers to /pilot to apply. The detailed honest pitch
+// (consent, retention, requirements, "this is early") lives on /pilot now, one click behind the CTA.
+//
+// WHAT IT STILL LEADS WITH, AND WHY
+//   Mechanical capture. Every competitor transcribes audio and summarises it; the one thing they
+//   structurally cannot do from a microphone is know what was ROLLED. Leading with "session notes"
+//   would mean competing on their strongest ground with a feature they already have.
 //
 // WHAT IT DELIBERATELY DOES NOT DO
-//   No pricing table, no testimonials, no invented numbers. This is recruiting pilots, and a page
-//   that oversells is worse than a plain one: a GM promised a finished product finds a pilot, and
-//   does not come back. The requirements section exists for the same reason. Saying up front that
-//   this needs Discord or a microphone, and only does 5e, costs one visitor and saves a
-//   disappointed one.
+//   No pricing table, no testimonials, no invented numbers, no publisher logos. This recruits pilots,
+//   and a page that oversells is worse than a plain one. System names are referenced for
+//   compatibility only; licensed-system attributions live on /terms.
 
 export const metadata: Metadata = {
-  title: "Six Axes: session analytics for D&D",
+  title: "Six Axes: session analytics for tabletop RPGs",
   description:
     "Records your table, writes the recap, builds the campaign wiki, and tracks what was actually "
-    + "rolled. For D&D games on Discord or in person.",
+    + "rolled. Works across D&D 5e, Pathfinder 2e, Lancer and more, on Discord or in person.",
   openGraph: {
-    title: "Six Axes: session analytics for D&D",
+    title: "Six Axes: session analytics for tabletop RPGs",
     description:
       "Records your table, writes the recap, builds the campaign wiki, and tracks what was actually rolled.",
     type: "website",
@@ -44,10 +49,10 @@ export default function Home() {
           <p style={lede}>
             Six Axes sits in your session, transcribes it, and turns it into the work you would do
             afterwards if you ever had the time: the recap, the campaign wiki, and a record of what
-            actually happened at the table.
+            actually happened at the table. Across your system, not just one.
           </p>
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 26 }}>
-            <Link href="/auth/sign-up" style={cta}>Join the pilot</Link>
+            <Link href="/pilot" style={cta}>Join the pilot</Link>
             <Link href="/enter" style={ctaGhost}>I have an account</Link>
           </div>
           <p style={{ ...small, marginTop: 14 }}>
@@ -58,14 +63,14 @@ export default function Home() {
         <Section title="It knows what you rolled" lead="This is the part other tools cannot do.">
           <p style={body}>
             Most session tools listen and summarise. Six Axes also captures the mechanics: attacks,
-            saves, damage, hit points, who rolled what and when. Playing on D&amp;D Beyond, that
-            arrives automatically. Playing in person with real dice, it reads the numbers your table
-            says out loud.
+            saves, damage, hit points, who rolled what and when. On a supported virtual tabletop those
+            numbers arrive automatically; playing in person with real dice, it reads the numbers your
+            table says out loud.
           </p>
           <p style={body}>
-            Which lets it do arithmetic nobody else can. It knows the encounter it called Moderate
-            left the party at a third of their hit points, and it can tell you that your Moderate
-            fights land like Hard ones, at your table specifically, across a whole campaign.
+            Which lets it do arithmetic nobody else can. It knows the fight it called Moderate left the
+            party at a third of their hit points, and it can tell you that your Moderate encounters land
+            like Hard ones, at your table specifically, across a whole campaign.
           </p>
         </Section>
 
@@ -96,45 +101,56 @@ export default function Home() {
           </p>
         </Section>
 
-        <Section title="Recording other people, done properly" lead="The part worth reading before you sign up.">
+        <Section title="Works with your system" lead="Honestly, because the depth varies by system.">
           <p style={body}>
-            Every player consents once, when they claim their character, and is never asked again
-            mid-game in front of the whole table. If someone present has not consented, the pipeline
-            stops rather than transcribing them anyway. It is not a warning you can click past.
+            The tool now reskins and re-rules itself around the system your campaign runs on. What
+            that means concretely, and we would rather be straight about it than imply eight finished
+            systems:
           </p>
-          <p style={body}>
-            Audio is deleted after 60 days, automatically, and nobody can extend that, including
-            you. The transcript and the moments drawn from it stay; the recording of a
-            person&apos;s voice does not. Any player can export everything held about them, or
-            delete it.
+          <ul style={list}>
+            <li style={li}>
+              <strong>Full toolset</strong> (character builder, monsters or NPCs, encounter maths,
+              system-correct dice): Dungeons &amp; Dragons 5e (2014 and 2024), Pathfinder 2e, Lancer,
+              and Dark Matter.
+            </li>
+            <li style={li}>
+              <strong>Building out:</strong> Draw Steel has monster and encounter tools and its dice
+              today; the character builder is next.
+            </li>
+            <li style={li}>
+              <strong>Themed table and the right dice</strong> (no character or monster builders yet):
+              Daggerheart, Call of Cthulhu, and a generic d10 pool for gothic games. More on the way.
+            </li>
+          </ul>
+          <p style={small}>
+            The record, recap, wiki and player insight work the same on every system. System names are
+            referenced for compatibility only; see the <Link href="/terms" style={link}>Terms</Link>{" "}
+            for the Lancer, Daggerheart and Draw Steel attributions.
           </p>
         </Section>
 
-        <Section title="What you need" lead="Being straight about the requirements.">
-          <ul style={list}>
-            <li style={li}>
-              <strong>A Discord server</strong> if you play online, so each player is recorded on
-              their own track. Or <strong>one microphone in the room</strong> if you play in person.
-            </li>
-            <li style={li}>
-              <strong>D&amp;D 5e.</strong> The character tools, monster stat blocks and encounter
-              maths are 5e-native today. Other systems are not supported yet.
-            </li>
-            <li style={li}>
-              <strong>Nothing from your players.</strong> No accounts and no installs, unless they
-              roll on D&amp;D Beyond and want those rolls captured.
-            </li>
-          </ul>
+        <Section title="Free tools, no login" lead="Launching alongside the pilot, no account required.">
+          <p style={body}>
+            Some of what Six Axes does inside a campaign is useful on its own, so a set of free,
+            no-account tools is on the way: an encounter balancer, a hex and battle map generator, a
+            party coverage check, and the player-type quiz, each with a picker for the system it
+            applies to. They store nothing and need no sign-up.
+          </p>
+          <p style={small}>
+            These are a taste. The real work, transcription, table management and the player insight
+            that comes from a whole campaign, is what the pilot is for.
+          </p>
         </Section>
 
         <section style={card}>
           <h2 style={h2}>Looking for pilot tables</h2>
           <p style={body}>
             This is early. It works, it is in use at real tables, and it is not finished. What it
-            needs most is more campaigns and honest feedback, including the unflattering kind.
+            needs most is more campaigns and honest feedback, including the unflattering kind. The
+            pilot is invitation-based right now, so tell us about your table and we will get you in.
           </p>
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 18 }}>
-            <Link href="/auth/sign-up" style={cta}>Start a campaign</Link>
+            <Link href="/pilot" style={cta}>Apply to the pilot</Link>
           </div>
         </section>
 
@@ -142,7 +158,7 @@ export default function Home() {
           <p style={{ margin: 0 }}>
             Six Axes is made by Kerf and Code.{" "}
             <Link href="/privacy" style={link}>Privacy</Link>
-            {" \u00B7 "}
+            {" · "}
             <Link href="/terms" style={link}>Terms</Link>
           </p>
         </footer>
@@ -184,9 +200,9 @@ const sectionLead: React.CSSProperties = {
   fontSize: 14.5, color: "#8a7a55", margin: "0 0 14px", fontStyle: "italic",
 };
 const body: React.CSSProperties = { fontSize: 16.5, lineHeight: 1.72, margin: "0 0 14px", color: "#3a352c" };
-const list: React.CSSProperties = { margin: "4px 0 0", paddingLeft: 20 };
+const list: React.CSSProperties = { margin: "4px 0 14px", paddingLeft: 20 };
 const li: React.CSSProperties = { fontSize: 16.5, lineHeight: 1.72, marginBottom: 10, color: "#3a352c" };
-const small: React.CSSProperties = { fontSize: 13.5, color: "#8a8069", margin: 0 };
+const small: React.CSSProperties = { fontSize: 13.5, color: "#8a8069", margin: 0, lineHeight: 1.6 };
 const cta: React.CSSProperties = {
   display: "inline-block", background: "#3a352c", color: "#f6f2e9",
   padding: "12px 24px", borderRadius: 3, textDecoration: "none",
