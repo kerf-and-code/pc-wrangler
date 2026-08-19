@@ -1,4 +1,5 @@
 import { createServerClient } from "@supabase/ssr";
+import { createClient } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
 import { hasEnvVars } from "../utils";
 export async function updateSession(request: NextRequest) {
@@ -125,11 +126,26 @@ export async function updateSession(request: NextRequest) {
   if (user) {
     const path = request.nextUrl.pathname;
     if (path.startsWith("/gm") || path.startsWith("/me")) {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("access_granted, access_role")
-        .eq("id", user.sub as string)
-        .maybeSingle();
+      // Read the pilot flags with the SERVICE ROLE, not the `supabase` client above. That client is
+      // authenticated via getClaims(), which validates the JWT but does not attach the session to a
+      // PostgREST query, so a `.from("profiles")` read here goes out effectively anonymous and RLS
+      // returns nothing, bouncing a genuinely-granted user back to /enter forever. The service role
+      // reads the true row (it only reads, and only this user's own id), the same key /api/gate writes
+      // the flag with. If the key is somehow missing we fail closed to /enter, exactly as before.
+      const admin = process.env.SUPABASE_SERVICE_ROLE_KEY
+        ? createClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.SUPABASE_SERVICE_ROLE_KEY,
+            { auth: { persistSession: false, autoRefreshToken: false } },
+          )
+        : null;
+      const { data: profile } = admin
+        ? await admin
+            .from("profiles")
+            .select("access_granted, access_role")
+            .eq("id", user.sub as string)
+            .maybeSingle()
+        : { data: null };
       if (!profile?.access_granted) {
         // Not in the pilot at all: send to the code screen.
         const url = request.nextUrl.clone();
