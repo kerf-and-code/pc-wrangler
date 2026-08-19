@@ -375,6 +375,37 @@ export function rolesForOption(system: CoverageSystem, value: string): Role[] {
   return cfg.options.find((o) => o.value === value)?.roles ?? [];
 }
 
+// class value (as stored on a character row) -> universal roles, for the app's roster read. The roster
+// stores each system's class NAME; we normalize case/whitespace so "Fury" and "fury" both resolve. Only
+// systems with a real class list map (D&D, PF2e, Draw Steel, Daggerheart); free-text-class systems (CoC
+// occupation, d10 concept) return [] and simply get no coverage panel.
+const CLASS_TABLES: Partial<Record<CoverageSystem, Record<string, Role[]>>> = {
+  dnd: DND_CLASS_ROLES,
+  pf2e: PF2E_CLASS_ROLES,
+  drawsteel: DRAWSTEEL_CLASS_ROLES,
+};
+
+export function rolesForClass(system: CoverageSystem, className: string): Role[] {
+  const key = className.trim().toLowerCase();
+  if (!key) return [];
+  if (system === "daggerheart") {
+    const domains = DH_CLASS_DOMAINS[key];
+    return domains ? rolesFromDomains(domains) : [];
+  }
+  const table = CLASS_TABLES[system];
+  return table ? table[key] ?? [] : [];
+}
+
+// Which classes in a system can fill a given role, for the "fill with" suggestion next to a gap.
+export function classesForRole(system: CoverageSystem, role: Role, limit = 4): string[] {
+  const out: string[] = [];
+  for (const o of systemConfig(system).options) {
+    if (o.roles.includes(role)) out.push(o.label);
+    if (out.length >= limit) break;
+  }
+  return out;
+}
+
 // ----------------------------------------------------------------------------------------------------
 // Coverage computation
 // ----------------------------------------------------------------------------------------------------

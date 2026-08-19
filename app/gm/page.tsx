@@ -8,6 +8,7 @@ import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import { listModules } from "@/lib/systems/registry";
 import { setActiveCampaign } from "@/lib/active-campaign";
 import { getRosterFields, type RosterSpec } from "@/lib/systems/roster-fields";
+import { computeCoverage, rolesForClass, classesForRole, ROLE_LABEL, type CoverageSystem } from "@/lib/party/coverage";
 
 // Palette mapped onto the shared cellar theme.
 
@@ -381,6 +382,22 @@ export default function GMWorkspace() {
     };
   }, [characters, capIndex, caps, enabledPartners]);
 
+  // Basic party coverage for the non-D&D systems whose roster uses a constrained class list (Draw Steel,
+  // Daggerheart, PF2e). D&D keeps its deep class_capabilities panel above; these systems have no
+  // capability catalog, so they get the shared 7-role read from lib/party/coverage, keyed on the stored
+  // class. Systems with a free-text class (CoC occupation, d10 concept) or non-class field (Lancer frame)
+  // resolve to null here and show no coverage panel.
+  const basicSys: CoverageSystem | null =
+    activeSystem === "drawsteel" ? "drawsteel"
+    : activeSystem === "daggerheart" ? "daggerheart"
+    : activeSystem === "pf2e" ? "pf2e"
+    : null;
+  const basicCoverage = useMemo(() => {
+    if (!basicSys) return null;
+    const members = characters.map((ch: any) => ({ label: ch.name, roles: rolesForClass(basicSys, ch.class || "") }));
+    return computeCoverage(basicSys, members);
+  }, [basicSys, characters]);
+
   // ---- render ----
   if (loading) return <Shell><p style={{ color: C.muted }}>Loading workspace...</p></Shell>;
 
@@ -719,6 +736,52 @@ export default function GMWorkspace() {
                     ))
                   )}
                 </div>
+              </>
+            )}
+          </div>
+          )}
+
+          {/* basic coverage — the shared 7-role read for non-D&D systems that expose a class list.
+              D&D uses the deep class_capabilities panel above; this is the parity read everywhere else. */}
+          {rosterSpec && basicSys && basicCoverage && (
+          <div style={box}>
+            <div style={{ fontSize: 13, color: C.muted, marginBottom: 12 }}>Coverage analysis <span style={{ color: C.line }}>· basic</span></div>
+            {characters.length === 0 ? (
+              <p style={{ color: C.muted, fontSize: 13 }}>Add characters to see where the party is covered and where it has gaps.</p>
+            ) : (
+              <>
+                <div style={{ marginBottom: 14 }}>
+                  <div style={{ fontSize: 12, color: C.have, marginBottom: 8, letterSpacing: "0.05em" }}>COVERED</div>
+                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                    {basicCoverage.present.map((r) => (
+                      <span key={r} title={(basicCoverage.contributors[r] || []).join(", ")}
+                        style={{ background: "rgba(94,140,126,0.18)", color: C.have, border: `1px solid ${C.have}`, borderRadius: 999, padding: "4px 11px", fontSize: 12.5, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
+                        {ROLE_LABEL[r]}
+                      </span>
+                    ))}
+                    {basicCoverage.present.length === 0 && <span style={{ color: C.muted, fontSize: 13 }}>Nothing yet.</span>}
+                  </div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 12, color: C.missing, marginBottom: 8, letterSpacing: "0.05em" }}>GAPS</div>
+                  {basicCoverage.missing.length === 0 ? (
+                    <p style={{ color: C.have, fontSize: 13 }}>Party covers all core roles. Solid composition.</p>
+                  ) : (
+                    basicCoverage.missing.map((r) => (
+                      <div key={r} style={{ marginBottom: 9 }}>
+                        <span style={{ background: "rgba(168,73,62,0.16)", color: C.missing, border: `1px solid ${C.missing}`, borderRadius: 999, padding: "4px 11px", fontSize: 12.5, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
+                          {ROLE_LABEL[r]}
+                        </span>
+                        <span style={{ color: C.muted, fontSize: 12.5 }}>
+                          {"  "}fill with: {classesForRole(basicSys, r).join(", ")}
+                        </span>
+                      </div>
+                    ))
+                  )}
+                </div>
+                <p style={{ color: C.muted, fontSize: 11.5, marginTop: 14, lineHeight: 1.5 }}>
+                  Basic role coverage from each character&apos;s class. D&amp;D campaigns get the deeper, subclass-aware read; in the app it fills in from your players&apos; actual characters.
+                </p>
               </>
             )}
           </div>
