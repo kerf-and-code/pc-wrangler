@@ -17,7 +17,7 @@ import { defaultConfig } from "@/lib/worldmap/gen/types";
 import { bakeWorld } from "@/lib/worldmap/gen/bake";
 import { decodeTerrain, base64ToBytes } from "@/lib/worldmap/hex";
 import { renderWorldSnapshot } from "@/lib/worldmap/snapshot";
-import { BIOME_COLORS, BIOME_ART } from "@/lib/tools/worldgen-biomes";
+import { BIOME_COLORS, BIOME_ART, WORLD_BIOMES } from "@/lib/tools/worldgen-biomes";
 
 const SIZES: Record<string, [number, number, string]> = {
   s: [64, 44, "Small"],
@@ -45,9 +45,21 @@ export default function MapGenerator() {
   const [err, setErr] = useState<string | null>(null);
   const started = useRef(false);
 
+  // The last generated terrain + features, kept so the AI paint can build a control image from them.
+  const terrainRef = useRef<import("@/lib/worldmap/hex").Terrain | null>(null);
+  const featuresRef = useRef<import("@/lib/worldmap/gen/bake").BakedFeature[]>([]);
+
+  // Part B: AI render.
+  const [style, setStyle] = useState("fantasy");
+  const [aiStatus, setAiStatus] = useState<Status>("idle");
+  const [aiUrl, setAiUrl] = useState<string | null>(null);
+  const [aiErr, setAiErr] = useState<string | null>(null);
+
   async function run() {
     setStatus("working");
     setErr(null);
+    // A new map invalidates the previous AI painting.
+    setAiUrl(null); setAiErr(null); setAiStatus("idle");
     // Let the "Generating..." state paint before the synchronous pipeline blocks the thread.
     await new Promise((r) => setTimeout(r, 20));
     try {
@@ -62,6 +74,8 @@ export default function MapGenerator() {
       const fields = generateTerrain(cfg);
       const baked = bakeWorld(fields, cfg, 0, 0);
       const terrain = decodeTerrain(base64ToBytes(baked.terrain));
+      terrainRef.current = terrain;
+      featuresRef.current = baked.features;
       const blob = await renderWorldSnapshot({
         terrain,
         colors: BIOME_COLORS,
@@ -96,6 +110,51 @@ export default function MapGenerator() {
     // run() reads state; setState is async, so run after a tick with the new seed applied.
     setTimeout(() => void run(), 0);
   };
+
+  // Part B: paint the current map with AI. Builds the smooth control image (same as the product) from
+  // the last terrain, posts it to the free-tier render route, and shows the returned image.
+  async function paintAi() {
+    const terrain = terrainRef.current;
+    if (!terrain || aiStatus === "working") return;
+    setAiStatus("working");
+    setAiErr(null);
+    await new Promise((r) => setTimeout(r, 20));
+    try {
+      const blob = await renderWorldSnapshot({
+        terrain,
+        colors: BIOME_COLORS,
+        biomeArt: BIOME_ART,
+        features: featuresRef.current,
+        pois: [],
+        images: [],
+        maxPx: 1280,
+        mime: "image/jpeg",
+        quality: 0.8,
+        smooth: true,
+      });
+      const controlImage = await blobToDataURL(blob);
+      const res = await fetch("/api/tools/map-render", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          controlImage,
+          style,
+          biomes: style === "fantasy" ? undefined : WORLD_BIOMES.map((b) => ({ label: b.label, color: b.color })),
+        }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || !json?.ok) {
+        setAiErr(json?.error || "The render failed. Please try again.");
+        setAiStatus("error");
+        return;
+      }
+      setAiUrl(json.image as string);
+      setAiStatus("done");
+    } catch (e) {
+      setAiErr(e instanceof Error ? e.message : "Could not render the map.");
+      setAiStatus("error");
+    }
+  }
 
   const busy = status === "working";
   const slug = (seed.trim() || "world").replace(/[^a-z0-9]+/gi, "-").toLowerCase();
@@ -167,11 +226,33 @@ export default function MapGenerator() {
         )}
       </div>
 
-      {/* AI upsell teaser (Part B) */}
+      {/* Part B: AI render */}
       <div style={teaser}>
-        <strong style={{ color: "#2a2620" }}>Want it hand-painted?</strong> This is the tile map. In the full
-        version, Six Axes renders it into a cohesive illustrated world, fantasy, sci-fi, grimdark or modern,
-        keeping every coastline, river and road exactly where the generator put them.
+        <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+          <strong style={{ color: "#2a2620" }}>Paint it with AI</strong>
+          <select value={style} onChange={(e) => setStyle(e.target.value)} style={{ ...input, maxWidth: 170 }} disabled={aiStatus === "working"}>
+            <option value="fantasy">Fantasy</option>
+            <option value="scifi">Sci-fi</option>
+            <option value="grimdark">Grimdark</option>
+            <option value="urban">Modern</option>
+          </select>
+          <button onClick={() => void paintAi()} disabled={aiStatus === "working" || !url} style={{ ...cta, opacity: aiStatus === "working" || !url ? 0.6 : 1 }}>
+            {aiStatus === "working" ? "Painting…" : "Paint this map"}
+          </button>
+          <span style={hint}>Dissolves the hexes into a cohesive illustrated world, keeping every coast, river and road in place.</span>
+        </div>
+        {aiStatus === "working" && <p style={{ ...hint, marginTop: 8 }}>This can take up to a minute.</p>}
+        {aiErr && <p style={errStyle}>{aiErr}</p>}
+        {aiUrl && aiStatus === "done" && (
+          <div style={{ marginTop: 12 }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={aiUrl} alt="AI-painted world map" style={{ width: "100%", height: "auto", display: "block", borderRadius: 4 }} />
+            <div style={{ display: "flex", gap: 10, alignItems: "center", marginTop: 10, flexWrap: "wrap" }}>
+              <a href={aiUrl} download={`six-axes-world-${slug}-${style}.png`} style={dl}>Download PNG</a>
+              <span style={hint}>Standard resolution. High-def renders are in the full version.</span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* SEO / explainer */}
@@ -192,6 +273,15 @@ export default function MapGenerator() {
       </div>
     </div>
   );
+}
+
+function blobToDataURL(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(String(r.result));
+    r.onerror = () => reject(new Error("Could not read the map image."));
+    r.readAsDataURL(blob);
+  });
 }
 
 // styles
