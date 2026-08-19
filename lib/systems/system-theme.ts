@@ -48,6 +48,11 @@ const DEFAULT: Vars = {
   "--forge-panel-bg": "linear-gradient(160deg, rgba(52,47,39,0.80) 0%, rgba(38,34,28,0.85) 45%, rgba(22,19,15,0.90) 100%)",
   "--forge-slate-bg": "linear-gradient(180deg, rgba(38,34,28,0.94), rgba(24,21,17,0.96))",
   "--sax-page-bg": "radial-gradient(ellipse 66% 44% at 50% 12%, rgba(184,135,74,0.16), transparent 62%), linear-gradient(180deg, rgba(18,13,8,0.28), rgba(10,7,4,0.52)), url(/wall-2.png) center / cover no-repeat #0B0712",
+  // Structural signature: corner rounding (stone barely rounds) and the panel frame ring color (none by
+  // default). Each system repoints these to shift its shape language: squared HUD panels for Lancer,
+  // soft cards for Daggerheart, hard corners for CoC.
+  "--sax-radius": "4px",
+  "--sax-panel-frame": "transparent",
 };
 
 // Lancer: NavSat / COMP-CON terminal. Gunmetal, a faint technical grid, teal readout, amber alerts,
@@ -66,6 +71,9 @@ const LANCER: Vars = {
   "--forge-panel-bg": "linear-gradient(160deg, rgba(30,42,52,0.86) 0%, rgba(20,29,36,0.9) 45%, rgba(12,18,23,0.94) 100%)",
   "--forge-slate-bg": "linear-gradient(180deg, rgba(22,31,39,0.95), rgba(12,18,23,0.97))",
   "--sax-page-bg": "radial-gradient(ellipse 72% 46% at 50% 8%, rgba(55,182,198,0.10), transparent 60%), linear-gradient(0deg, rgba(7,10,13,0.55), rgba(7,10,13,0.55)), repeating-linear-gradient(0deg, transparent 0 39px, rgba(120,150,165,0.045) 39px 40px), repeating-linear-gradient(90deg, transparent 0 39px, rgba(120,150,165,0.045) 39px 40px), #0a0e12",
+  // Squared HUD panels with a bright teal readout hairline: the COMP/CON terminal look.
+  "--sax-radius": "0px",
+  "--sax-panel-frame": "rgba(55,182,198,0.38)",
 };
 
 // Pathfinder 2e: heraldic crimson and gold, an ornate inscription serif (Cinzel Decorative) over a book
@@ -83,6 +91,9 @@ const PF2E: Vars = {
   "--forge-panel-bg": "linear-gradient(160deg, rgba(60,28,30,0.85) 0%, rgba(42,20,22,0.9) 45%, rgba(24,11,12,0.94) 100%)",
   "--forge-slate-bg": "linear-gradient(180deg, rgba(42,20,22,0.95), rgba(24,11,12,0.97))",
   "--sax-page-bg": "radial-gradient(ellipse 66% 44% at 50% 12%, rgba(207,155,52,0.12), transparent 60%), linear-gradient(180deg, rgba(26,10,11,0.55), rgba(12,5,6,0.8)), #100708",
+  // Lightly rounded plates edged in a gold heraldic hairline, like a tome's ruled border.
+  "--sax-radius": "3px",
+  "--sax-panel-frame": "rgba(207,155,52,0.32)",
 };
 
 // Draw Steel: heroic steel. Cool slate surfaces with a bold ember-red action and a strong condensed
@@ -100,6 +111,9 @@ const DRAWSTEEL: Vars = {
   "--forge-panel-bg": "linear-gradient(160deg, rgba(32,40,48,0.86) 0%, rgba(22,29,36,0.9) 45%, rgba(14,19,24,0.94) 100%)",
   "--forge-slate-bg": "linear-gradient(180deg, rgba(24,31,38,0.95), rgba(14,19,24,0.97))",
   "--sax-page-bg": "radial-gradient(ellipse 70% 46% at 50% 8%, rgba(220,82,48,0.12), transparent 58%), linear-gradient(180deg, rgba(12,16,20,0.5), rgba(7,10,13,0.8)), #0a0e12",
+  // Near-square forged plates with a faint ember edge: hammered steel, not a card.
+  "--sax-radius": "1px",
+  "--sax-panel-frame": "rgba(220,82,48,0.30)",
 };
 
 // Daggerheart: warm painterly high fantasy. Plum surfaces, gold and rose, an elegant display (Marcellus)
@@ -117,6 +131,9 @@ const DAGGERHEART: Vars = {
   "--forge-panel-bg": "linear-gradient(160deg, rgba(52,40,74,0.82) 0%, rgba(38,28,56,0.88) 45%, rgba(23,16,36,0.92) 100%)",
   "--forge-slate-bg": "linear-gradient(180deg, rgba(40,30,58,0.94), rgba(24,17,37,0.96))",
   "--sax-page-bg": "radial-gradient(ellipse 68% 46% at 50% 10%, rgba(217,164,65,0.12), transparent 60%), linear-gradient(180deg, rgba(26,17,42,0.5), rgba(13,8,22,0.8)), #0f0a1a",
+  // Soft, generously rounded cards with a warm gold edge: painterly and inviting, not carved.
+  "--sax-radius": "14px",
+  "--sax-panel-frame": "rgba(217,164,65,0.28)",
 };
 
 // Call of Cthulhu: 1920s. Aged sepia and olive-dark surfaces, a sickly green accent, a distressed
@@ -135,6 +152,9 @@ const COC: Vars = {
   "--forge-panel-bg": "linear-gradient(160deg, rgba(44,42,30,0.86) 0%, rgba(34,32,22,0.9) 45%, rgba(20,19,13,0.94) 100%)",
   "--forge-slate-bg": "linear-gradient(180deg, rgba(34,32,22,0.95), rgba(20,19,13,0.97))",
   "--sax-page-bg": "radial-gradient(ellipse 66% 44% at 50% 14%, rgba(138,154,82,0.09), transparent 60%), linear-gradient(180deg, rgba(22,21,14,0.5), rgba(11,10,7,0.82)), #100f0a",
+  // Hard corners edged in a dry olive line: a squared-off manila case folder, no softness.
+  "--sax-radius": "0px",
+  "--sax-panel-frame": "rgba(138,154,82,0.24)",
 };
 
 // The generic d10 pool (unbranded Vampire): gothic. Near-black surfaces, blood red, a gothic display
@@ -152,6 +172,9 @@ const POOLD10: Vars = {
   "--forge-panel-bg": "linear-gradient(160deg, rgba(40,22,25,0.86) 0%, rgba(28,16,18,0.9) 45%, rgba(16,9,10,0.94) 100%)",
   "--forge-slate-bg": "linear-gradient(180deg, rgba(28,16,18,0.95), rgba(16,9,10,0.97))",
   "--sax-page-bg": "radial-gradient(ellipse 64% 44% at 50% 12%, rgba(165,31,44,0.10), transparent 58%), linear-gradient(180deg, rgba(18,10,12,0.55), rgba(8,4,5,0.85)), #0a0507",
+  // Barely rounded, edged in a blood hairline: severe baroque frames.
+  "--sax-radius": "2px",
+  "--sax-panel-frame": "rgba(165,31,44,0.32)",
 };
 
 const SYSTEM_THEME_VARS: Record<string, Vars> = {

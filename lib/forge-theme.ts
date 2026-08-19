@@ -64,6 +64,7 @@ export function stonePanel(): CSSProperties {
       "inset 0 0 46px rgba(0,0,0,0.4)",
       "0 5px 14px rgba(0,0,0,0.6)",
       `0 0 0 1px ${STONE.mortar}`,
+      "0 0 0 2px var(--sax-panel-frame, transparent)",
       "0 0 0 3px rgba(0,0,0,0.4)",
     ].join(","),
   };

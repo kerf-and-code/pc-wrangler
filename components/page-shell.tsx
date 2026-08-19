@@ -66,7 +66,7 @@ export default function PageShell({
           color-scheme: dark;
           color: ${STONE.ink};
           border: none;
-          border-radius: 4px;
+          border-radius: var(--sax-radius, 4px);
           background: linear-gradient(180deg, rgba(14,11,8,0.82), rgba(40,36,30,0.82));
           box-shadow:
             inset 1px 1px 4px rgba(0,0,0,0.7),

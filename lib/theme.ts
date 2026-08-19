@@ -119,7 +119,9 @@ export const STONE = {
   inkFaint: "var(--stone-ink-faint, #8a8069)", // hints and captions
 } as const;
 
-export const FORGE_RADIUS = 4; // stone chips, it doesn't round
+// Corner rounding, per active system. Stone barely rounds (4px default); Lancer and CoC square off
+// to 0, Daggerheart softens to 14. One variable so every panel, field and button reshapes at once.
+export const FORGE_RADIUS = "var(--sax-radius, 4px)"; // stone chips, it doesn't round
 
 // The themed panel gradient (the carved-stone plate by default). One variable so a system can swap
 // the whole surface material (e.g. gunmetal for Lancer) without touching the sixteen pages that
@@ -140,6 +142,7 @@ export const surfaces: Record<string, CSSProperties> = {
       "inset 0 0 46px rgba(0,0,0,0.4)",
       "0 5px 14px rgba(0,0,0,0.6)",
       `0 0 0 1px ${STONE.mortar}`,
+      "0 0 0 2px var(--sax-panel-frame, transparent)",
     ].join(","),
   },
   // Slightly flatter and more opaque, for panels holding charts where a texture behind the data
@@ -152,6 +155,7 @@ export const surfaces: Record<string, CSSProperties> = {
       "inset -1px -1px 0 rgba(0,0,0,0.6)",
       "0 5px 14px rgba(0,0,0,0.6)",
       `0 0 0 1px ${STONE.mortar}`,
+      "0 0 0 2px var(--sax-panel-frame, transparent)",
     ].join(","),
   },
   // Unchanged: parchment is a deliberate contrast surface for reading, not a stone panel.
