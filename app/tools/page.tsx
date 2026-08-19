@@ -11,8 +11,8 @@ export const metadata: Metadata = {
   title: "Free tabletop RPG tools",
   description:
     "Free, no-login tools for tabletop RPGs: a hex world map generator, an encounter balancer, a party "
-    + "coverage check, and a player-type quiz, across D&D 5e, Pathfinder 2e, Draw Steel and Daggerheart. "
-    + "No account, nothing saved.",
+    + "coverage check, a session zero charter, a pacing planner, and a player-type quiz, across D&D 5e, "
+    + "Pathfinder 2e, Draw Steel and Daggerheart. No account, nothing saved.",
   alternates: { canonical: "/tools" },
 };
 
@@ -51,6 +51,20 @@ const TOOLS: Tool[] = [
     name: "Party coverage check",
     blurb: "Enter the party and see the gaps: no healer, no front line, no face.",
     systems: "D&D 5e, Pathfinder 2e, Draw Steel, Daggerheart, Call of Cthulhu",
+    status: "live",
+  },
+  {
+    href: "/tools/session-zero",
+    name: "Session zero checklist",
+    blurb: "Walk the table through every session-zero topic and download a table charter everyone can hold you to.",
+    systems: "Any system",
+    status: "live",
+  },
+  {
+    href: "/tools/pacing",
+    name: "Session and arc pacing",
+    blurb: "See whether tonight's plan fits the clock, and estimate how many sessions an arc will take.",
+    systems: "Any system",
     status: "live",
   },
 ];
