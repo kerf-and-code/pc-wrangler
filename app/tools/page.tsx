@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   title: "Free tabletop RPG tools",
   description:
     "Free, no-login tools for tabletop RPGs: an encounter balancer for D&D 5e, Pathfinder 2e, Draw Steel "
-    + "and Daggerheart, with more on the way. No account, nothing saved.",
+    + "and Daggerheart, and a player-type quiz, with more on the way. No account, nothing saved.",
   alternates: { canonical: "/tools" },
 };
 
@@ -32,9 +32,11 @@ const TOOLS: Tool[] = [
     status: "live",
   },
   {
+    href: "/tools/player-quiz",
     name: "Player-type quiz",
-    blurb: "A quick read on how you play across the six axes, and a shareable result card.",
-    status: "soon",
+    blurb: "A quick read on how you play across the six axes, with your tavern disposition chart at the end.",
+    systems: "Any system",
+    status: "live",
   },
   {
     name: "Map generator",
