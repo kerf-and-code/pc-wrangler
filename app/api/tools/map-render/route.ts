@@ -20,7 +20,10 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 export const maxDuration = 60; // image generation can take a while
 
-const MODEL = process.env.GEMINI_IMAGE_MODEL || "gemini-3.1-flash-image";
+// The free route uses its OWN model + key, fully separate from the product's paid route. The default is
+// Nano Banana (gemini-2.5-flash-image), which is available on the Gemini FREE tier (~500 images/day, no
+// billing). Override with GEMINI_FREE_IMAGE_MODEL if Google changes the free-tier image model.
+const MODEL = process.env.GEMINI_FREE_IMAGE_MODEL || "gemini-2.5-flash-image";
 const IMAGE_SIZE = "1K"; // standard def; high-def is the signup upsell
 const GLOBAL_DAILY = parseInt(process.env.TOOL_RENDER_GLOBAL_DAILY || "120", 10);
 const PER_IP_DAILY = parseInt(process.env.TOOL_RENDER_IP_DAILY || "3", 10);

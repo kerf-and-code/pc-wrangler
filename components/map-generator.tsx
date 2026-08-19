@@ -266,9 +266,25 @@ export default function MapGenerator() {
           harbours, and roads connect them across a cost surface that bridges rivers and skirts mountains.
         </p>
         <p style={body}>
-          The same seed always makes the same world, so you can share a seed and a friend gets your exact map.
-          It is the same generator that runs inside Six Axes, where a world is tied to your campaign, painted
-          by AI, and marked up with the places your party discovers.
+          The same seed always makes the same world, so you can share a seed and get the exact map back. This
+          free tool generates one world at a time and hands you the PNG.
+        </p>
+
+        <h2 style={{ ...h2, marginTop: 22 }}>Inside Six Axes, the map does much more</h2>
+        <p style={body}>
+          The full version runs the same engine far further. Worlds scale up to 250 by 250 hexes, and you are
+          not stuck with what the generator rolls: paint or repaint any hex by hand, drop your own images onto
+          the map and drag them into place, and tune every knob, land and ocean level, continents and plate
+          activity, latitude and prevailing wind and the rain shadows they throw, river and road density, how
+          much of the world is fantasy terrain, and how thickly settlements, roads and points of interest are
+          seeded. Each world is tied to your campaign, shareable, and annotated with the places your party
+          discovers.
+        </p>
+        <p style={body}>
+          And the world map is only one of four generators. Six Axes also builds city maps, top-down dungeon
+          battle maps, and building and room floor plans, each hand-editable and each renderable by AI in the
+          same four styles, so one tool draws your continent, the capital on it, the dungeon beneath the
+          capital, and the very room where the fight breaks out.
         </p>
       </div>
     </div>
