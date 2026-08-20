@@ -64,6 +64,23 @@ export default function AboutPage() {
         ))}
       </div>
 
+      <h2 style={h2}>Who&apos;s behind it</h2>
+      <p style={body}>
+        Kerf and Code is <strong>Terry Mickail</strong>, working out of Seattle. By day he is an educational
+        research analyst; his training is in measurement and applied statistics, a master&apos;s in the field
+        and doctoral work at the University of Washington on how people learn and how you measure it honestly,
+        with peer-reviewed research along the way.
+      </p>
+      <p style={body}>
+        That background is not incidental to Six Axes. The disposition model, the encounter math that
+        calibrates to your table, the read on how each player engages, is psychometrics pointed at game night:
+        measuring something real without pretending the measurement is more certain than it is. The analytics
+        show their own uncertainty because the person who built them spent years learning why that matters.
+      </p>
+      <p style={body}>
+        He also runs games, and built the thing he wished existed on his side of the screen.
+      </p>
+
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 26 }}>
         <Link href="/pilot" className="forge-btn is-primary" style={stoneButton("primary")}>Join the pilot</Link>
         <Link href="/tools" className="forge-btn is-ghost" style={stoneButton("ghost")}>Try the free tools</Link>

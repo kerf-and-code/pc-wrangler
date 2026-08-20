@@ -292,20 +292,29 @@ export default function Home() {
             <h2 style={h2}>It meets your table where it plays</h2>
             <div className="tier-grid">
               <div style={{ ...stonePanel(), padding: "18px 20px" }}>
-                <div style={forgeLabel}>Chrome extension</div>
+                <div style={forgeLabel}>Discord</div>
                 <p style={tierText}>
-                  Captures rolls from D&amp;D Beyond with no VTT setup, so mechanical capture reaches
-                  browser tables too.
+                  The bot records your voice channel with each player on their own track, then files the
+                  recap, for the tables that already live in Discord.
                 </p>
               </div>
               <div style={{ ...stonePanel(), padding: "18px 20px" }}>
-                <div style={forgeLabel}>Discord bot</div>
+                <div style={forgeLabel}>D&amp;D Beyond &amp; Roll20</div>
                 <p style={tierText}>
-                  Records the session over voice and files the recap, for the tables that already live
-                  in Discord.
+                  Rolls from D&amp;D Beyond and Roll20 come in through the browser, so mechanical capture
+                  reaches your online table without a separate setup on the night.
+                </p>
+              </div>
+              <div style={{ ...stonePanel(), padding: "18px 20px" }}>
+                <div style={forgeLabel}>Foundry VTT</div>
+                <p style={tierText}>
+                  A Foundry module pipes every roll straight in. <Link href="/foundry" style={inlineLink}>Set it up →</Link>
                 </p>
               </div>
             </div>
+            <p style={{ ...small, marginTop: 14 }}>
+              The Discord bot and the browser capture are set up when you join the pilot.
+            </p>
           </section>
 
           <Divider />

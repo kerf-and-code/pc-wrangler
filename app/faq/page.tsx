@@ -69,8 +69,9 @@ const FAQ: QA[] = [
     a: (
       <>
         Two things: the words spoken at the table, transcribed, and the mechanics, who rolled what, the
-        damage, the saves, the hit points. On a supported virtual tabletop the numbers arrive
-        automatically; in person it reads the numbers your table says out loud. You approve what gets
+        damage, the saves, the hit points. On a supported virtual tabletop (D&amp;D Beyond, Roll20, or
+        Foundry) the numbers arrive automatically; in person it reads the numbers your table says out
+        loud. You approve what gets
         filed into the wiki.
       </>
     ),
@@ -120,9 +121,9 @@ const FAQ: QA[] = [
     q: "In person or online?",
     a: (
       <>
-        Both. Online tables on a supported virtual tabletop get mechanical capture automatically; in-person
-        tables record over one microphone in the room, and it reads the rolls spoken aloud, which is the
-        thing no audio-only tool does.
+        Both. Online tables on a supported virtual tabletop (D&amp;D Beyond, Roll20, or Foundry) get
+        mechanical capture automatically; in-person tables record over one microphone in the room, and it
+        reads the rolls spoken aloud, which is the thing no audio-only tool does.
       </>
     ),
   },
