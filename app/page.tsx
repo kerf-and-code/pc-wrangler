@@ -6,6 +6,7 @@ import {
   FORGE_BUTTON_CSS, forgeHeading, forgeLabel, forgeRuleLine, forgeBoss,
 } from "@/lib/forge-theme";
 import SectionRail, { type RailSection } from "@/components/home/section-rail";
+import RoadmapComing from "@/components/roadmap-coming";
 
 // app/page.tsx
 //
@@ -53,6 +54,7 @@ const RAIL: RailSection[] = [
   { id: "maps", label: "Maps & world" },
   { id: "systems", label: "Your system" },
   { id: "tools", label: "Free tools" },
+  { id: "roadmap", label: "On the way" },
   { id: "pilot", label: "The pilot" },
 ];
 
@@ -279,6 +281,13 @@ export default function Home() {
                 </p>
               </div>
             </div>
+          </section>
+
+          <Divider />
+
+          {/* ROADMAP */}
+          <section id="roadmap" className="sec">
+            <RoadmapComing />
           </section>
 
           <Divider />
