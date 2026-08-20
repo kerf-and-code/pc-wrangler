@@ -179,7 +179,7 @@ export default function Home() {
                   <li key={k} style={legendItem}>
                     <span style={{ ...legendSwatch, background: AXES[k].color }} />
                     <span style={{ color: STONE.ink }}>{AXES[k].tavernName}</span>
-                    <span style={{ color: STONE.inkFaint }}>&nbsp;·&nbsp;{AXES[k].facet}</span>
+                    <span style={{ color: STONE.inkDim }}>&nbsp;·&nbsp;{AXES[k].facet}</span>
                   </li>
                 ))}
               </ul>
@@ -246,7 +246,7 @@ export default function Home() {
                 <div key={t} className="tool-chip" style={toolChip}>{t}</div>
               ))}
             </div>
-            <div style={{ marginTop: 18 }}>
+            <div className="tool-cta">
               <Link href="/tools" className="forge-btn is-primary" style={stoneButton("primary")}>Open the free tools</Link>
             </div>
           </section>
@@ -368,7 +368,7 @@ function MotifHex() {
     <svg viewBox="-1.25 -1.25 2.5 2.5" width="150" height="150" className="motif" aria-hidden>
       {[0.33, 0.66, 1].map((r) => (
         <polygon key={r} points={HEX.map((h) => `${h.x * r},${h.y * r}`).join(" ")}
-          fill="none" stroke={STONE.hi} strokeWidth={0.008} />
+          fill="none" stroke={STONE.hi} strokeWidth={0.012} />
       ))}
       {HEX.map((h) => (
         <line key={h.k} x1={0} y1={0} x2={h.x} y2={h.y} stroke={h.color} strokeWidth={0.014} opacity={0.85} />
@@ -458,8 +458,13 @@ html { scroll-behavior: smooth; }
 @keyframes sax-spin { to { transform: rotate(360deg); } }
 
 .tier-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; margin-top: 4px; }
-.tool-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 4px; }
-.axis-legend { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
+.tool-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 4px; }
+.tool-cta { display: flex; justify-content: center; margin-top: 18px; }
+.axis-legend { display: flex; gap: 22px; align-items: center; flex-wrap: wrap; margin-top: 16px;
+  padding: 20px 22px; border-radius: 4px;
+  background: linear-gradient(180deg, rgba(38,34,28,0.94), rgba(24,21,17,0.96));
+  box-shadow: inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.6),
+    0 5px 14px rgba(0,0,0,0.6), 0 0 0 1px ${STONE.mortar}; }
 .motif { flex: 0 0 auto; }
 
 .home-foot { border-top: 1px solid ${STONE.mortar}; margin-top: 30px; position: relative; z-index: 1;
@@ -474,6 +479,10 @@ html { scroll-behavior: smooth; }
   .hero-logo { max-width: 240px; }
   .sec.row { grid-template-columns: 1fr; gap: 22px; }
   .wordmark { font-size: 44px; }
+  .tool-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 520px) {
+  .tool-grid { grid-template-columns: 1fr; }
 }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
