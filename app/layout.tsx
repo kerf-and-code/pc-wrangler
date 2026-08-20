@@ -38,24 +38,17 @@ export const metadata: Metadata = {
     template: "%s · Six Axes",
   },
   description: "Run the table. Player typing and session analytics for tabletop RPGs.",
-  // The tab icon (favicon / home-screen icon): the Six Axes mark, served from /public. Next emits the
-  // <link rel="icon"> tags from this. One PNG covers browser tab, bookmark and Apple touch icon.
-  icons: {
-    icon: "/six-axes-logo.png",
-    shortcut: "/six-axes-logo.png",
-    apple: "/six-axes-logo.png",
-  },
-  // Default link-preview card for every page that does not set its own openGraph (features, tools,
-  // pricing, etc.). Pages that DO define openGraph (e.g. the home page) must repeat images, because
-  // Next merges metadata shallowly and a child openGraph replaces this one wholesale.
+  // Favicon and social image come from Next's FILE conventions, not from here: app/icon.png +
+  // app/favicon.ico are the tab icon, and app/opengraph-image.png + app/twitter-image.png are the
+  // 1200x630 link-preview banner. Declaring icons/og images in metadata as well would double the tags
+  // and (for the icon) point a heavyweight PNG at the tab, so this block only carries the text bits and
+  // the large-image card type. Every page inherits this unless it sets its own openGraph.
   openGraph: {
     type: "website",
     siteName: "Six Axes",
-    images: [{ url: "/six-axes-logo.png", alt: "The Six Axes mark" }],
   },
   twitter: {
-    card: "summary",
-    images: ["/six-axes-logo.png"],
+    card: "summary_large_image",
   },
 };
 

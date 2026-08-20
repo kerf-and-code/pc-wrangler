@@ -37,11 +37,10 @@ export const metadata: Metadata = {
       "Records your table, writes the recap, builds the campaign wiki, and tracks what was actually rolled.",
     type: "website",
     siteName: "Six Axes",
-    images: [{ url: "/six-axes-logo.png", alt: "The Six Axes mark" }],
+    // Image omitted on purpose: the app/opengraph-image.png banner (file convention) supplies it.
   },
   twitter: {
-    card: "summary",
-    images: ["/six-axes-logo.png"],
+    card: "summary_large_image",
   },
   alternates: { canonical: "/" },
 };
