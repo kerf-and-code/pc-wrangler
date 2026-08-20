@@ -32,6 +32,7 @@ export default function SiteShell({
           <Link href="/features" className="site-link">Features</Link>
           <Link href="/players" className="site-link">For players</Link>
           <Link href="/tools" className="site-link">Free tools</Link>
+          <Link href="/guides" className="site-link">Guides</Link>
           <Link href="/pricing" className="site-link">Pricing</Link>
           <Link href="/contact" className="site-link">Contact</Link>
           <Link href="/enter" className="site-link">Enter</Link>
@@ -56,6 +57,8 @@ export default function SiteShell({
             <Link href="/players" style={link}>For players</Link>
             {" · "}
             <Link href="/tools" style={link}>Free tools</Link>
+            {" · "}
+            <Link href="/guides" style={link}>Guides</Link>
             {" · "}
             <Link href="/about" style={link}>About</Link>
             {" · "}

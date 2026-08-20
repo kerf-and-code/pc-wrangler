@@ -99,6 +99,9 @@ export async function updateSession(request: NextRequest) {
     // able to send the contact form, or the whole site funnel bounces to a login form.
     !request.nextUrl.pathname.startsWith("/features") &&
     !request.nextUrl.pathname.startsWith("/players") &&
+    // The guides content layer: long-form articles that exist to be found in search; they store
+    // nothing and must be public, or the organic traffic they exist to catch bounces to a login form.
+    !request.nextUrl.pathname.startsWith("/guides") &&
     !request.nextUrl.pathname.startsWith("/about") &&
     !request.nextUrl.pathname.startsWith("/pricing") &&
     !request.nextUrl.pathname.startsWith("/faq") &&

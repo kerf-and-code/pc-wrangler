@@ -98,6 +98,23 @@ export function breadcrumbSchema(segments: { name: string; path: string }[]) {
   };
 }
 
+// Article (guide) markup. Unlike FAQ/HowTo, Article structured data still earns SERP treatment and
+// helps entity/author understanding. datePublished/dateModified take an ISO date string.
+export function articleSchema(g: { slug: string; title: string; description: string; updated: string }) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    headline: g.title,
+    description: g.description,
+    url: `${SITE_URL}/guides/${g.slug}`,
+    mainEntityOfPage: `${SITE_URL}/guides/${g.slug}`,
+    datePublished: g.updated,
+    dateModified: g.updated,
+    author: { "@type": "Person", name: "Terry Mickail" },
+    publisher: { "@id": ORG_ID },
+  };
+}
+
 // Convenience for the free-tool pages: Home › Free tools › <tool>.
 export function toolBreadcrumb(name: string, slug: string) {
   return breadcrumbSchema([
