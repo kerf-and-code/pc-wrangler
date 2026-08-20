@@ -33,6 +33,7 @@ const GROUPS: Group[] = [
   ] },
   { label: "Story", href: "/gm/codex", children: [
     { href: "/gm/codex", label: "Codex" },
+    { href: "/gm/import", label: "Import" },
     { href: "/gm/prep", label: "Prep" },
     { href: "/gm/timeline", label: "Timeline" },
     { href: "/gm/map", label: "Map" },
