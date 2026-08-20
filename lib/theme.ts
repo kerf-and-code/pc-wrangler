@@ -116,7 +116,7 @@ export const STONE = {
   bloodLit: "var(--stone-blood-lit, #d97d6d)",
   ink: "var(--stone-ink, #e8dcc4)",      // parchment text on stone
   inkDim: "var(--stone-ink-dim, #a99e86)",   // weathered secondary
-  inkFaint: "var(--stone-ink-faint, #8a8069)", // hints and captions
+  inkFaint: "var(--stone-ink-faint, #9c927a)", // hints and captions (lifted to clear WCAG AA on the panel face)
 } as const;
 
 // Corner rounding, per active system. Stone barely rounds (4px default); Lancer and CoC square off
