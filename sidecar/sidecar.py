@@ -78,6 +78,24 @@ FLUSH_SECONDS = int(os.environ.get("FLUSH_SECONDS", "60"))
 KEEP_ORPHANED_AUDIO = os.environ.get("KEEP_ORPHANED_AUDIO", "0") == "1"
 AUDIO_BUCKET = os.environ.get("AUDIO_BUCKET", "session-audio")
 OPUS_BITRATE = os.environ.get("OPUS_BITRATE", "32k")
+# ---- Silence trimming (opt-in; A/B on pilot tables). ------------------------------------
+# Off by default: the full time-aligned track is uploaded exactly as it is today. On: the
+# silence is stripped out before upload to cut the Deepgram bill (billed per minute of audio),
+# and a timeline_map is written on the audio_tracks row so the transcribe callback can put
+# Deepgram's timestamps back onto the real session clock. See trim_silence() and finalize().
+# Every failure path falls back to the untrimmed file with no map, i.e. current behavior, so
+# turning this on can never make a session worse than it already is.
+TRIM_SILENCE = os.environ.get("TRIM_SILENCE", "0") == "1"
+# silencedetect threshold. The fabricated silence is digital-zero-ish after Opus, and real
+# inter-utterance pauses sit well below speech; -35 dB with a 0.7 s floor catches both without
+# clipping into words (boundaries land inside silence, never on speech).
+TRIM_NOISE_DB = float(os.environ.get("TRIM_NOISE_DB", "-35"))
+TRIM_MIN_SILENCE = float(os.environ.get("TRIM_MIN_SILENCE", "0.7"))
+# Do not bother trimming (second encode pass + a map) unless it saves at least this much.
+TRIM_MIN_SAVED_SECONDS = float(os.environ.get("TRIM_MIN_SAVED_SECONDS", "5"))
+# One aselect expression holds every kept span, so cap the count to keep the ffmpeg command
+# bounded. Past the cap we ship the full file - always safe.
+TRIM_MAX_SPANS = int(os.environ.get("TRIM_MAX_SPANS", "600"))
 # Opt-in probe: when set, log RTCP Sender Reports (ssrc + NTP/RTP pair) so a test
 # recording can confirm whether Discord emits the reports needed for frame-exact
 # cross-speaker sync. Off in normal operation to keep logs quiet.
@@ -256,6 +274,139 @@ async def concat_oggs(paths: list, out_path: str) -> bool:
             os.remove(list_path)
         except Exception:
             pass
+
+
+# ------------------------------------------------------------ silence trim (opt-in)
+
+async def _detect_silences(path: str, total_secs: float,
+                           noise_db: float, min_sil: float):
+    """Return [(start_s, end_s), ...] of silence intervals in `path` via ffmpeg
+    silencedetect. A trailing silence_start with no matching silence_end means silence
+    ran to EOF, so it is closed at total_secs.
+
+    Parses ffmpeg's stderr log lines:
+        [silencedetect @ ..] silence_start: 12.345
+        [silencedetect @ ..] silence_end: 18.900 | silence_duration: 6.555
+    """
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            "ffmpeg", "-hide_banner", "-nostats", "-i", path,
+            "-af", f"silencedetect=noise={noise_db}dB:d={min_sil:.3f}",
+            "-f", "null", "-",
+            stderr=asyncio.subprocess.PIPE,
+        )
+        _, err = await proc.communicate()
+    except Exception as e:
+        log.warning("silencedetect error: %r", e)
+        return []
+    text = (err or b"").decode(errors="replace")
+    sils = []
+    cur = None
+    for raw in text.splitlines():
+        line = raw.strip()
+        i = line.find("silence_start:")
+        if i != -1:
+            try:
+                cur = float(line[i + len("silence_start:"):].strip().split()[0])
+            except Exception:
+                cur = None
+            continue
+        j = line.find("silence_end:")
+        if j != -1 and cur is not None:
+            try:
+                seg = line[j + len("silence_end:"):].strip()
+                end = float(seg.split("|")[0].strip().split()[0])
+                sils.append((cur, end))
+            except Exception:
+                pass
+            cur = None
+    if cur is not None and total_secs > cur:
+        sils.append((cur, total_secs))
+    return sils
+
+
+async def trim_silence(src_path: str, out_path: str, total_secs: float):
+    """Remove silence from `src_path`, writing a shorter ogg to `out_path`.
+
+    Returns (ok, timeline_map, trimmed_secs). timeline_map is
+        [{"t0": trimmed_start_ms, "r0": real_start_ms, "d": dur_ms}, ...]
+    one entry per kept (speech) span, in order. It lets the transcribe callback map a
+    Deepgram timestamp in TRIMMED time back to REAL session time: for the span with
+    t0 <= tms <= t0+d, real = r0 + (tms - t0).
+
+    ok is False (caller keeps the full file, writes no map) when the total is unknown,
+    nothing is silent, the file is basically all silence, there are too many spans to
+    encode in one pass, the saving is below the floor, or ffmpeg fails. Every one of
+    those falls back to today's behavior.
+
+    Cut boundaries are chosen INSIDE silence, so no speech is clipped. ffmpeg selects
+    whole audio frames, so the trimmed file can differ from the arithmetic map by up to a
+    frame (~20 ms) per boundary; that is well within the pipeline's existing alignment
+    noise (TimelineSink's leading silence is already only jitter-buffer accurate), and the
+    boundaries being in silence means the drift never lands on a word.
+    """
+    if total_secs <= 0:
+        return (False, None, total_secs)
+    sils = await _detect_silences(src_path, total_secs, TRIM_NOISE_DB, TRIM_MIN_SILENCE)
+    if not sils:
+        return (False, None, total_secs)
+
+    # Kept (speech) spans = the complement of the silence intervals within [0, total_secs].
+    kept = []
+    prev = 0.0
+    for s, e in sils:
+        s = max(0.0, min(s, total_secs))
+        e = max(0.0, min(e, total_secs))
+        if s > prev + 0.001:
+            kept.append((prev, s))
+        prev = max(prev, e)
+    if total_secs > prev + 0.001:
+        kept.append((prev, total_secs))
+
+    if not kept:
+        return (False, None, total_secs)   # whole track is silence; nothing to send
+    if len(kept) > TRIM_MAX_SPANS:
+        log.info("trim: %d spans exceeds cap %d; sending full track.", len(kept), TRIM_MAX_SPANS)
+        return (False, None, total_secs)
+
+    timeline_map = []
+    trimmed_off = 0.0
+    for a, b in kept:
+        d = b - a
+        if d <= 0:
+            continue
+        timeline_map.append({
+            "t0": int(round(trimmed_off * 1000)),
+            "r0": int(round(a * 1000)),
+            "d": int(round(d * 1000)),
+        })
+        trimmed_off += d
+    if not timeline_map:
+        return (False, None, total_secs)
+    if (total_secs - trimmed_off) < TRIM_MIN_SAVED_SECONDS:
+        return (False, None, total_secs)
+
+    # One aselect expression keeps every span; asetpts rebuilds a continuous clock. Commas
+    # inside between() are protected by the single quotes, which ffmpeg's filter parser reads
+    # (we pass args directly, no shell in between).
+    select = "+".join(f"between(t,{a:.3f},{b:.3f})" for a, b in kept)
+    af = f"aselect='{select}',asetpts=N/SR/TB"
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            "ffmpeg", "-hide_banner", "-loglevel", "error",
+            "-i", src_path, "-ac", "1", "-af", af,
+            "-c:a", "libopus", "-b:a", OPUS_BITRATE, "-f", "ogg", "-y", out_path,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        _, err = await proc.communicate()
+        if proc.returncode != 0 or not os.path.exists(out_path) or os.path.getsize(out_path) == 0:
+            log.warning("trim encode failed: %s", (err or b"").decode(errors="replace")[:300])
+            return (False, None, total_secs)
+    except Exception as e:
+        log.warning("trim encode error: %r", e)
+        return (False, None, total_secs)
+
+    return (True, timeline_map, trimmed_off)
 
 
 # PCM shape that WaveSink writes, taken from the branch's OpusDecoder: 48 kHz,
@@ -1110,9 +1261,37 @@ class Sidecar(discord.Client):
                           "their audio for this session is gone.",
                           uid, len(chunks), char_id, gm_id)
                 continue
+            # OPTIONAL SILENCE TRIM (feature-flagged; A/B on pilot tables).
+            #
+            # final_path spans real session time by construction: TimelineSink fabricates the
+            # silences so every speaker shares one clock and the transcript interleaves correctly
+            # (lib/recap/build.ts orders segments by start_ms ACROSS speakers). That alignment is
+            # the whole reason the silence is there - and it is also most of the Deepgram bill,
+            # since we pay per minute of audio and a speaker who talks for 8 minutes of a 3-hour
+            # session still uploads 3 hours.
+            #
+            # With TRIM_SILENCE on we strip the silence and ship a timeline_map so the transcribe
+            # callback restores real session time. duration_seconds stays the REAL length below so
+            # the Capture page reads the same; only the uploaded bytes and the map differ. Any
+            # failure leaves upload_path/timeline_map at the untrimmed defaults, i.e. today.
+            upload_path = final_path
+            timeline_map = None
+            if TRIM_SILENCE:
+                trimmed_path = os.path.join(rec.tmpdir, f"trim-{uid}.ogg")
+                ok, tmap, trimmed_secs = await trim_silence(final_path, trimmed_path, total_secs)
+                if ok and tmap:
+                    upload_path = trimmed_path
+                    timeline_map = tmap
+                    saved = max(0.0, total_secs - trimmed_secs)
+                    log.info("  trim: speaker %s %.0fs -> %.0fs (%.0fs / %.0f%% silence removed, %d span(s))",
+                             uid, total_secs, trimmed_secs, saved,
+                             (saved / total_secs * 100) if total_secs else 0.0, len(tmap))
+                else:
+                    log.info("  trim: no trim applied for speaker %s; uploading full track.", uid)
+
             slot = char_id if char_id else f"gm-{gm_id}"
             storage_path = f"{rec.campaign_id}/{job_id}/{slot}-{int(time.time() * 1000)}.ogg"
-            with open(final_path, "rb") as f:
+            with open(upload_path, "rb") as f:
                 blob = f.read()
             if not await self.upload_blob(http, storage_path, blob, "audio/ogg"):
                 failed += 1
@@ -1120,7 +1299,8 @@ class Sidecar(discord.Client):
                           "session is gone.", slot, storage_path)
                 continue
             if await self.insert_track(http, job_id, rec.campaign_id, storage_path, round(total_secs),
-                                       character_id=char_id, gm_identity_id=gm_id):
+                                       character_id=char_id, gm_identity_id=gm_id,
+                                       timeline_map=timeline_map):
                 uploaded += 1
                 who = f"character={char_id}" if char_id else f"gm_identity={gm_id}"
                 log.info("  uploaded track: %s %.0fs %d KB -> %s",
@@ -1299,7 +1479,7 @@ class Sidecar(discord.Client):
             return False
 
     async def insert_track(self, http, job_id, campaign_id, storage_path, duration,
-                           character_id=None, gm_identity_id=None, attempts=4):
+                           character_id=None, gm_identity_id=None, timeline_map=None, attempts=4):
         """Create the audio_tracks row for an uploaded file. Retries with backoff.
 
         This row is not bookkeeping, it is the only handle anything downstream has on the
@@ -1330,6 +1510,10 @@ class Sidecar(discord.Client):
             body["gm_identity_id"] = gm_identity_id
         if duration:
             body["duration_seconds"] = duration
+        # Only present when the track was silence-trimmed. PostgREST maps this list straight
+        # into the jsonb column; a null map is simply omitted so untrimmed rows stay null.
+        if timeline_map is not None:
+            body["timeline_map"] = timeline_map
 
         delay = 1.0
         for attempt in range(1, attempts + 1):

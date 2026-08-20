@@ -22,9 +22,36 @@ type SegmentRow = {
   // Null on the Discord path, where the track already identifies the speaker.
   speaker?: number | null;
 };
-type Track = { id: string; job_id: string; campaign_id: string; character_id: string | null };
+// One kept-speech span from a silence-trimmed track: trimmed ms [t0, t0+d] came from real
+// session ms [r0, r0+d]. Written by the sidecar's trim_silence(); null on untrimmed tracks.
+type TimelineSpan = { t0: number; r0: number; d: number };
+type Track = {
+  id: string;
+  job_id: string;
+  campaign_id: string;
+  character_id: string | null;
+  timeline_map: TimelineSpan[] | null;
+};
 
 type Admin = ReturnType<typeof createAdminClient>;
+
+// Put a Deepgram timestamp (in TRIMMED time, because the uploaded ogg had its silences removed)
+// back onto the real session clock. Untrimmed tracks pass null and the value is used as-is.
+//
+// The map's spans are contiguous and sorted in trimmed time, so for any tms past the first span's
+// start, the first span whose end reaches tms is the one it fell in. Before the first span (only
+// possible via rounding) pins to the real start; past the last (Deepgram rounding beyond the
+// trimmed length) pins to the real end. Keeping start_ms session-relative is what lets the recap
+// builder interleave speakers, since it orders segments by start_ms across every track.
+function remapMs(trimmedMs: number, map: TimelineSpan[] | null): number {
+  if (!map || map.length === 0) return trimmedMs;
+  if (trimmedMs <= map[0].t0) return map[0].r0;
+  for (const s of map) {
+    if (trimmedMs <= s.t0 + s.d) return s.r0 + (trimmedMs - s.t0);
+  }
+  const last = map[map.length - 1];
+  return last.r0 + last.d;
+}
 
 // Decide the job's fate once every track has resolved. A track that transcribed
 // but produced no speech is "done", not an error, so a quiet player never sinks
@@ -87,11 +114,15 @@ export async function POST(req: NextRequest) {
 
   const { data: trackRow } = await admin
     .from("audio_tracks")
-    .select("id, job_id, campaign_id, character_id")
+    .select("id, job_id, campaign_id, character_id, timeline_map")
     .eq("id", trackId)
     .single();
   if (!trackRow) return NextResponse.json({ error: "unknown track" }, { status: 404 });
   const t = trackRow as Track;
+
+  // Deepgram's times are seconds; convert to ms and, if this track was silence-trimmed, remap
+  // trimmed -> real session time. A track with no timeline_map is unaffected.
+  const toRealMs = (secs: number) => remapMs(Math.round((secs || 0) * 1000), t.timeline_map);
 
   // Mark a track failed, then re-check the job. Return 200 so Deepgram doesn't
   // retry; the failure is captured in the track + job state, not the HTTP code.
@@ -120,8 +151,8 @@ export async function POST(req: NextRequest) {
         track_id: t.id,
         campaign_id: t.campaign_id,
         character_id: t.character_id,
-        start_ms: Math.round((u.start || 0) * 1000),
-        end_ms: Math.round((u.end || 0) * 1000),
+        start_ms: toRealMs(u.start),
+        end_ms: toRealMs(u.end),
         text: u.transcript.trim(),
         // Carried through so a room recording can be attributed later. Dropping it here would be
         // unrecoverable: the audio is already transcribed, and getting the labels back would mean
@@ -136,8 +167,8 @@ export async function POST(req: NextRequest) {
         track_id: t.id,
         campaign_id: t.campaign_id,
         character_id: t.character_id,
-        start_ms: 0,
-        end_ms: Math.round((body.metadata?.duration || 0) * 1000),
+        start_ms: toRealMs(0),
+        end_ms: toRealMs(body.metadata?.duration || 0),
         text: whole,
       }];
     }
