@@ -8,6 +8,7 @@ import {
 import SectionRail, { type RailSection } from "@/components/home/section-rail";
 import RoadmapComing from "@/components/roadmap-coming";
 import HowItWorks from "@/components/how-it-works";
+import TrustSection from "@/components/trust-section";
 
 // app/page.tsx
 //
@@ -49,6 +50,7 @@ export const metadata: Metadata = {
 const RAIL: RailSection[] = [
   { id: "top", label: "Overview" },
   { id: "how", label: "How it works" },
+  { id: "trust", label: "Your data" },
   { id: "capture", label: "What you rolled" },
   { id: "wiki", label: "Living wiki" },
   { id: "insight", label: "Player insight" },
@@ -133,6 +135,13 @@ export default function Home() {
           {/* HOW IT WORKS */}
           <section id="how" className="sec">
             <HowItWorks />
+          </section>
+
+          <Divider />
+
+          {/* TRUST */}
+          <section id="trust" className="sec">
+            <TrustSection />
           </section>
 
           <Divider />
