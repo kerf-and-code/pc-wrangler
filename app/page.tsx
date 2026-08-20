@@ -35,6 +35,12 @@ export const metadata: Metadata = {
     description:
       "Records your table, writes the recap, builds the campaign wiki, and tracks what was actually rolled.",
     type: "website",
+    siteName: "Six Axes",
+    images: [{ url: "/six-axes-logo.png", alt: "The Six Axes mark" }],
+  },
+  twitter: {
+    card: "summary",
+    images: ["/six-axes-logo.png"],
   },
   alternates: { canonical: "/" },
 };

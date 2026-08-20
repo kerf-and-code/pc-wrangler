@@ -38,6 +38,25 @@ export const metadata: Metadata = {
     template: "%s · Six Axes",
   },
   description: "Run the table. Player typing and session analytics for tabletop RPGs.",
+  // The tab icon (favicon / home-screen icon): the Six Axes mark, served from /public. Next emits the
+  // <link rel="icon"> tags from this. One PNG covers browser tab, bookmark and Apple touch icon.
+  icons: {
+    icon: "/six-axes-logo.png",
+    shortcut: "/six-axes-logo.png",
+    apple: "/six-axes-logo.png",
+  },
+  // Default link-preview card for every page that does not set its own openGraph (features, tools,
+  // pricing, etc.). Pages that DO define openGraph (e.g. the home page) must repeat images, because
+  // Next merges metadata shallowly and a child openGraph replaces this one wholesale.
+  openGraph: {
+    type: "website",
+    siteName: "Six Axes",
+    images: [{ url: "/six-axes-logo.png", alt: "The Six Axes mark" }],
+  },
+  twitter: {
+    card: "summary",
+    images: ["/six-axes-logo.png"],
+  },
 };
 
 const geistSans = Geist({ variable: "--font-geist-sans", display: "swap", subsets: ["latin"] });
