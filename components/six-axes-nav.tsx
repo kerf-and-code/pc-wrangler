@@ -213,7 +213,7 @@ export default function SixAxesNav() {
 
   const brand = (href: string) => (
     <a className="sax-brand" href={href}>
-      <img className="sax-mark" src="/astrolabe.png" alt="" />
+      <img className="sax-mark" src="/astrolabe.png" alt="" aria-hidden="true" />
       <span><span className="sax-word">Six Axes</span><span className="sax-tag">run the table</span></span>
     </a>
   );

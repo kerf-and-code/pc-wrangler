@@ -1,5 +1,7 @@
 import type { MetadataRoute } from "next";
 import { createClient } from "@supabase/supabase-js";
+import { GUIDES } from "@/lib/guides/guides";
+import { SITE_URL } from "@/lib/seo";
 
 // app/sitemap.ts
 //
@@ -12,7 +14,11 @@ import { createClient } from "@supabase/supabase-js";
 // took four attempts to find on the codex page itself.
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const base = process.env.NEXT_PUBLIC_SITE_URL || "https://pc-wrangler.vercel.app";
+  // One source of host truth: SITE_URL resolves NEXT_PUBLIC_SITE_URL first, then VERCEL_URL, exactly
+  // like layout.tsx's metadataBase and the JSON-LD @ids. That keeps canonical tags, structured data,
+  // and this sitemap from ever disagreeing on host (the old hardcoded pc-wrangler.vercel.app default
+  // could split authority if the env var was ever missing).
+  const base = SITE_URL;
 
   // The free, no-login tools. These exist to be found in search, so they belong in the sitemap; the
   // hub ranks a touch higher than the individual tools.
@@ -37,10 +43,22 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     })),
     { url: `${base}/features`, changeFrequency: "monthly", priority: 0.8 },
     { url: `${base}/players`, changeFrequency: "monthly", priority: 0.8 },
+    // The guides content layer: the hub plus each article, enumerated from the GUIDES registry.
+    { url: `${base}/guides`, changeFrequency: "weekly", priority: 0.6 },
+    ...GUIDES.map((g) => ({
+      url: `${base}/guides/${g.slug}`,
+      lastModified: new Date(g.updated),
+      changeFrequency: "monthly" as const,
+      priority: 0.6,
+    })),
     { url: `${base}/pricing`, changeFrequency: "monthly", priority: 0.5 },
     { url: `${base}/faq`, changeFrequency: "monthly", priority: 0.5 },
     { url: `${base}/about`, changeFrequency: "yearly", priority: 0.4 },
     { url: `${base}/contact`, changeFrequency: "yearly", priority: 0.4 },
+    // The pilot application (public conversion page) and the Foundry install docs (public), both linked
+    // from the site but previously absent from the sitemap.
+    { url: `${base}/pilot`, changeFrequency: "monthly", priority: 0.6 },
+    { url: `${base}/foundry`, changeFrequency: "yearly", priority: 0.4 },
     { url: `${base}/privacy`, changeFrequency: "yearly", priority: 0.2 },
     { url: `${base}/terms`, changeFrequency: "yearly", priority: 0.2 },
   ];

@@ -34,7 +34,7 @@ export const metadata: Metadata = {
   title: "Six Axes: session analytics for tabletop RPGs",
   description:
     "Records your table, writes the recap, builds the campaign wiki, and tracks what was actually "
-    + "rolled. Works across D&D 5e, Pathfinder 2e, Draw Steel, Daggerheart and more, on Discord or in person.",
+    + "rolled — across D&D 5e, Pathfinder 2e, Draw Steel and more.",
   openGraph: {
     title: "Six Axes: session analytics for tabletop RPGs",
     description:
@@ -112,6 +112,10 @@ export default function Home() {
               <p style={eyebrow}>Kerf &amp; Code · Six Axes</p>
               <h1 className="wordmark" style={{ ...forgeHeading, fontFamily: "var(--font-cinzel-dec, 'Cinzel Decorative', serif)" }}>
                 SIX AXES
+                {/* Visible wordmark stays the brand; this descriptor gives the page's most-weighted
+                    heading the actual value-prop phrase for search and screen readers, matching the
+                    title tag. Not hidden spam - it's the site's own one-line description. */}
+                <span style={srOnly}> — session analytics for tabletop RPGs</span>
               </h1>
               <p className="hero-tag" style={{ fontFamily: FORGE_FONTS.display, color: STONE.ink }}>
                 Your table already tells the story. This writes it down.
@@ -354,6 +358,8 @@ export default function Home() {
             {" · "}
             <Link href="/tools" style={inlineLink}>Free tools</Link>
             {" · "}
+            <Link href="/guides" style={inlineLink}>Guides</Link>
+            {" · "}
             <Link href="/pricing" style={inlineLink}>Pricing</Link>
             {" · "}
             <Link href="/about" style={inlineLink}>About</Link>
@@ -441,6 +447,11 @@ const sectionLead: React.CSSProperties = { fontSize: 14.5, color: SAX.brass, fon
 const body: React.CSSProperties = { fontSize: 16.5, lineHeight: 1.72, margin: "0 0 14px", color: STONE.ink, fontFamily: FORGE_FONTS.body };
 const small: React.CSSProperties = { fontSize: 13.5, color: STONE.inkFaint, margin: 0, lineHeight: 1.6, fontFamily: FORGE_FONTS.body };
 const inlineLink: React.CSSProperties = { color: STONE.brassHi, textDecoration: "none" };
+// Visually hidden, still read by search engines and screen readers (standard clip technique).
+const srOnly: React.CSSProperties = {
+  position: "absolute", width: 1, height: 1, padding: 0, margin: -1, overflow: "hidden",
+  clip: "rect(0, 0, 0, 0)", whiteSpace: "nowrap", border: 0,
+};
 
 const shotFrame: React.CSSProperties = {
   ...stonePanel(), padding: 10, margin: 0, overflow: "hidden", alignSelf: "start",

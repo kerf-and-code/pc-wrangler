@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import {
   Geist,
   Cinzel,
@@ -40,6 +40,12 @@ export const metadata: Metadata = {
     template: "%s · Six Axes",
   },
   description: "Run the table. Player typing and session analytics for tabletop RPGs.",
+  applicationName: "Six Axes",
+  creator: "Kerf and Code",
+  publisher: "Kerf and Code",
+  // Explicit, though index/follow is already the default. Per-page noindex (e.g. gated /gm, /me) is
+  // handled by the middleware redirect, so those never reach a crawler in the first place.
+  robots: { index: true, follow: true },
   // Favicon and social image come from Next's FILE conventions, not from here: app/icon.png +
   // app/favicon.ico are the tab icon, and app/opengraph-image.png + app/twitter-image.png are the
   // 1200x630 link-preview banner. Declaring icons/og images in metadata as well would double the tags
@@ -52,6 +58,13 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
   },
+};
+
+// Next 16 moves themeColor/colorScheme out of `metadata` into a `viewport` export. Matches the dark
+// forge wall so the mobile browser chrome doesn't flash white.
+export const viewport: Viewport = {
+  themeColor: "#14110d",
+  colorScheme: "dark",
 };
 
 const geistSans = Geist({ variable: "--font-geist-sans", display: "swap", subsets: ["latin"] });

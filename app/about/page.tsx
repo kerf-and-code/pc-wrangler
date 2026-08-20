@@ -12,8 +12,8 @@ import { stonePanel, forgeLabel, stoneButton } from "@/lib/forge-theme";
 export const metadata: Metadata = {
   title: "About",
   description:
-    "Six Axes records your table, writes the recap, keeps the campaign wiki, and tracks what was actually "
-    + "rolled. Built by Kerf and Code on three commitments: consent, honesty, and you own your data.",
+    "Six Axes records your table, writes the recap, and keeps the campaign wiki. Built by Kerf and Code "
+    + "on consent, honesty, and you owning your data.",
   alternates: { canonical: "/about" },
 };
 

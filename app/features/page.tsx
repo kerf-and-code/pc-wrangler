@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   title: "Features",
   description:
     "What Six Axes does: mechanical capture of what was rolled, a self-writing campaign wiki, player "
-    + "insight across six axes, multi-system support, and world and map building. One feature at a time.",
+    + "insight across six axes, and multi-system support.",
   alternates: { canonical: "/features" },
 };
 

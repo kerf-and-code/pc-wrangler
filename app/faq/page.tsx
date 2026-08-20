@@ -15,8 +15,8 @@ import { faqPageSchema } from "@/lib/seo";
 export const metadata: Metadata = {
   title: "FAQ",
   description:
-    "Answers on how Six Axes handles recording, consent, and your data: audio is deleted after 60 days, "
-    + "you can export everything, and you own your characters. Plus systems, cost, and pilot access.",
+    "How Six Axes handles recording, consent, and your data: audio deleted after 60 days, export "
+    + "everything, you own your characters. Plus systems and cost.",
   alternates: { canonical: "/faq" },
 };
 
