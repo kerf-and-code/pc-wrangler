@@ -6,7 +6,7 @@ import {
   FORGE_BUTTON_CSS, forgeHeading, forgeLabel, forgeRuleLine, forgeBoss,
 } from "@/lib/forge-theme";
 import SectionRail, { type RailSection } from "@/components/home/section-rail";
-import RoadmapComing from "@/components/roadmap-coming";
+import SampleOutput from "@/components/sample-output";
 import HowItWorks from "@/components/how-it-works";
 import TrustSection from "@/components/trust-section";
 
@@ -50,6 +50,7 @@ export const metadata: Metadata = {
 const RAIL: RailSection[] = [
   { id: "top", label: "Overview" },
   { id: "how", label: "How it works" },
+  { id: "sample", label: "See it" },
   { id: "trust", label: "Your data" },
   { id: "capture", label: "What you rolled" },
   { id: "wiki", label: "Living wiki" },
@@ -57,7 +58,6 @@ const RAIL: RailSection[] = [
   { id: "maps", label: "Maps & world" },
   { id: "systems", label: "Your system" },
   { id: "tools", label: "Free tools" },
-  { id: "roadmap", label: "On the way" },
   { id: "pilot", label: "The pilot" },
 ];
 
@@ -136,6 +136,13 @@ export default function Home() {
           {/* HOW IT WORKS */}
           <section id="how" className="sec">
             <HowItWorks />
+          </section>
+
+          <Divider />
+
+          {/* SAMPLE OUTPUT */}
+          <section id="sample" className="sec">
+            <SampleOutput />
           </section>
 
           <Divider />
@@ -299,13 +306,6 @@ export default function Home() {
                 </p>
               </div>
             </div>
-          </section>
-
-          <Divider />
-
-          {/* ROADMAP */}
-          <section id="roadmap" className="sec">
-            <RoadmapComing />
           </section>
 
           <Divider />

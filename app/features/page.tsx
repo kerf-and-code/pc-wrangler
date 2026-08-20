@@ -2,8 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import SiteShell from "@/components/site/site-shell";
 import FeaturesExplorer from "@/components/features-explorer";
-import RoadmapComing from "@/components/roadmap-coming";
-import { stoneButton, forgeRuleLine, forgeBoss } from "@/lib/forge-theme";
+import { stoneButton } from "@/lib/forge-theme";
 
 // app/features/page.tsx
 //
@@ -22,14 +21,7 @@ export default function FeaturesPage() {
     <SiteShell title="What Six Axes does" tagline="Five pillars. Pick one, and see it on its own.">
       <FeaturesExplorer />
 
-      <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "40px 0 32px" }} aria-hidden>
-        <span style={forgeRuleLine} />
-        <span style={forgeBoss} />
-        <span style={{ ...forgeRuleLine, transform: "scaleX(-1)" }} />
-      </div>
-      <RoadmapComing />
-
-      <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 28 }}>
+      <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 40 }}>
         <Link href="/pilot" className="forge-btn is-primary" style={stoneButton("primary")}>Join the pilot</Link>
         <Link href="/tools" className="forge-btn" style={stoneButton("stone")}>Try the free tools</Link>
         <Link href="/faq" className="forge-btn is-ghost" style={stoneButton("ghost")}>Questions?</Link>
