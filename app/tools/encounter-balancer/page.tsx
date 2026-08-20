@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import ToolsShell from "@/components/tools-shell";
+import JsonLd from "@/components/json-ld";
+import { toolBreadcrumb } from "@/lib/seo";
 import EncounterBalancer from "@/components/encounter-balancer";
 
 // app/tools/encounter-balancer/page.tsx
@@ -22,6 +24,7 @@ export default function EncounterBalancerPage() {
       title="Encounter balancer"
       tagline="Add your table and the fight, and see how hard it really lands. The same math Six Axes uses in-app."
     >
+      <JsonLd data={toolBreadcrumb("Encounter balancer", "encounter-balancer")} />
       <EncounterBalancer />
     </ToolsShell>
   );

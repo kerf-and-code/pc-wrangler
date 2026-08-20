@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import ToolsShell from "@/components/tools-shell";
+import JsonLd from "@/components/json-ld";
+import { breadcrumbSchema } from "@/lib/seo";
 import { SAX, STONE } from "@/lib/theme";
 
 // app/tools/page.tsx
@@ -91,6 +93,7 @@ export default function ToolsHub() {
       tagline="Small, sharp tools you can use without an account. More are rolling out."
       hideHubLink
     >
+      <JsonLd data={breadcrumbSchema([{ name: "Home", path: "/" }, { name: "Free tools", path: "/tools" }])} />
       <style dangerouslySetInnerHTML={{ __html: HUB_CSS }} />
       <div style={{ display: "grid", gap: 14, marginTop: 4 }}>
         {TOOLS.map((t) => {

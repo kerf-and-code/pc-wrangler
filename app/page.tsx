@@ -9,6 +9,8 @@ import SectionRail, { type RailSection } from "@/components/home/section-rail";
 import SampleOutput from "@/components/sample-output";
 import HowItWorks from "@/components/how-it-works";
 import TrustSection from "@/components/trust-section";
+import JsonLd from "@/components/json-ld";
+import { softwareApplicationSchema } from "@/lib/seo";
 
 // app/page.tsx
 //
@@ -76,6 +78,8 @@ const TOOLS = [
 export default function Home() {
   return (
     <main style={{ ...forgeBackground(), minHeight: "100vh", color: C.text, position: "relative", overflowX: "clip" }}>
+      {/* Product entity for the home page (Organization + WebSite come from the root layout). */}
+      <JsonLd data={softwareApplicationSchema()} />
       <div style={forgeVignette} />
       <style dangerouslySetInnerHTML={{ __html: CSS }} />
 

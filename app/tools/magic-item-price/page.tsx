@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import ToolsShell from "@/components/tools-shell";
+import JsonLd from "@/components/json-ld";
+import { toolBreadcrumb } from "@/lib/seo";
 import MagicItemPricer from "@/components/magic-item-pricer";
 import MagicItemFinder from "@/components/magic-item-finder";
 
@@ -22,6 +24,7 @@ export default function MagicItemPricePage() {
       title="Magic item price calculator"
       tagline="What is that magic item worth? Price it by rarity, or search the 2024 items and see each one's estimate."
     >
+      <JsonLd data={toolBreadcrumb("Magic item price calculator", "magic-item-price")} />
       <MagicItemPricer />
       <MagicItemFinder />
     </ToolsShell>

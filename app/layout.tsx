@@ -16,6 +16,8 @@ import {
 import { ThemeProvider } from "next-themes";
 import SystemThemeProvider from "@/components/system-theme-provider";
 import SystemEffects from "@/components/system-effects";
+import JsonLd from "@/components/json-ld";
+import { organizationSchema, websiteSchema } from "@/lib/seo";
 import "./globals.css";
 
 // NEXT_PUBLIC_SITE_URL first, and it matters more than it looks.
@@ -85,6 +87,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={fontVars} suppressHydrationWarning>
       <body className={`${geistSans.className} antialiased`}>
+        {/* Sitewide entity graph: Organization + WebSite. Product/FAQ/breadcrumb schema is added
+            per-page (home, /faq, /tools/*). */}
+        <JsonLd data={[organizationSchema(), websiteSchema()]} />
         <ThemeProvider
           attribute="class"
           forcedTheme="dark"

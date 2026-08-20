@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import ToolsShell from "@/components/tools-shell";
+import JsonLd from "@/components/json-ld";
+import { toolBreadcrumb } from "@/lib/seo";
 import SessionZero from "@/components/session-zero";
 
 // app/tools/session-zero/page.tsx
@@ -21,6 +23,7 @@ export default function SessionZeroPage() {
       title="Session zero checklist and charter"
       tagline="Walk the table through every session-zero topic, then download a charter everyone can hold you to."
     >
+      <JsonLd data={toolBreadcrumb("Session zero checklist", "session-zero")} />
       <SessionZero />
     </ToolsShell>
   );

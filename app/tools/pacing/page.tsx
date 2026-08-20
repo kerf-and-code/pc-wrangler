@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import ToolsShell from "@/components/tools-shell";
+import JsonLd from "@/components/json-ld";
+import { toolBreadcrumb } from "@/lib/seo";
 import PacingCalculator from "@/components/pacing-calculator";
 
 // app/tools/pacing/page.tsx
@@ -21,6 +23,7 @@ export default function PacingPage() {
       title="Session and arc pacing"
       tagline="Will tonight's plan fit the clock, and how many sessions is this arc? Two quick calculators, system-aware."
     >
+      <JsonLd data={toolBreadcrumb("Session and arc pacing", "pacing")} />
       <PacingCalculator />
     </ToolsShell>
   );

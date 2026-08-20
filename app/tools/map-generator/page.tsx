@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import ToolsShell from "@/components/tools-shell";
+import JsonLd from "@/components/json-ld";
+import { toolBreadcrumb } from "@/lib/seo";
 import MapGenerator from "@/components/map-generator";
 
 // app/tools/map-generator/page.tsx
@@ -21,6 +23,7 @@ export default function MapGeneratorPage() {
       title="Fantasy world map generator"
       tagline="A whole hex world from a seed: continents, climate, rivers, biomes, towns and roads. Free, in your browser."
     >
+      <JsonLd data={toolBreadcrumb("Fantasy world map generator", "map-generator")} />
       <MapGenerator />
     </ToolsShell>
   );

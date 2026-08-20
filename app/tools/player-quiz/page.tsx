@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import ToolsShell from "@/components/tools-shell";
+import JsonLd from "@/components/json-ld";
+import { toolBreadcrumb } from "@/lib/seo";
 import PlayerQuiz from "@/components/player-quiz";
 
 // app/tools/player-quiz/page.tsx
@@ -21,6 +23,7 @@ export default function PlayerQuizPage() {
       title="What kind of player are you?"
       tagline="Twenty-four quick reads on what pulls you to the table, then your disposition across the six axes."
     >
+      <JsonLd data={toolBreadcrumb("Player-type quiz", "player-quiz")} />
       <PlayerQuiz />
     </ToolsShell>
   );

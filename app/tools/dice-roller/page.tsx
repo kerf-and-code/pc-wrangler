@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import ToolsShell from "@/components/tools-shell";
+import JsonLd from "@/components/json-ld";
+import { toolBreadcrumb } from "@/lib/seo";
 import DiceRoller from "@/components/dice-roller";
 
 // app/tools/dice-roller/page.tsx
@@ -21,6 +23,7 @@ export default function DiceRollerPage() {
       title="Dice roller"
       tagline="A fair roller for six systems: advantage, d100 skill checks, power rolls, Hope and Fear, and d10 pools."
     >
+      <JsonLd data={toolBreadcrumb("Dice roller", "dice-roller")} />
       <DiceRoller />
     </ToolsShell>
   );

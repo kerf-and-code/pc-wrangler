@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import ToolsShell from "@/components/tools-shell";
+import JsonLd from "@/components/json-ld";
+import { toolBreadcrumb } from "@/lib/seo";
 import PartyCoverage from "@/components/party-coverage";
 
 // app/tools/party-coverage/page.tsx
@@ -21,6 +23,7 @@ export default function PartyCoveragePage() {
       title="Party coverage check"
       tagline="Enter the party and see the holes: no healer, no front line, no face. Pick your system, then the classes."
     >
+      <JsonLd data={toolBreadcrumb("Party coverage check", "party-coverage")} />
       <PartyCoverage />
     </ToolsShell>
   );
