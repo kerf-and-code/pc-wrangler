@@ -30,6 +30,7 @@ export default function SiteShell({
         </Link>
         <nav className="site-nav">
           <Link href="/features" className="site-link">Features</Link>
+          <Link href="/players" className="site-link">For players</Link>
           <Link href="/tools" className="site-link">Free tools</Link>
           <Link href="/pricing" className="site-link">Pricing</Link>
           <Link href="/contact" className="site-link">Contact</Link>
@@ -52,6 +53,8 @@ export default function SiteShell({
         <div className="site-foot-inner">
           <span>Six Axes is made by Kerf and Code.</span>
           <span>
+            <Link href="/players" style={link}>For players</Link>
+            {" · "}
             <Link href="/tools" style={link}>Free tools</Link>
             {" · "}
             <Link href="/about" style={link}>About</Link>

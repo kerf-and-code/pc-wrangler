@@ -98,6 +98,7 @@ export async function updateSession(request: NextRequest) {
     // must accept a POST with no auth. All public by design; a logged-out visitor must read them and be
     // able to send the contact form, or the whole site funnel bounces to a login form.
     !request.nextUrl.pathname.startsWith("/features") &&
+    !request.nextUrl.pathname.startsWith("/players") &&
     !request.nextUrl.pathname.startsWith("/about") &&
     !request.nextUrl.pathname.startsWith("/pricing") &&
     !request.nextUrl.pathname.startsWith("/faq") &&

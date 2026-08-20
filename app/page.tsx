@@ -87,6 +87,7 @@ export default function Home() {
         </Link>
         <nav className="home-topnav">
           <Link href="/features" className="topnav-link">Features</Link>
+          <Link href="/players" className="topnav-link">For players</Link>
           <Link href="/tools" className="topnav-link">Free tools</Link>
           <Link href="/pricing" className="topnav-link">Pricing</Link>
           <Link href="/enter" className="topnav-link">Enter</Link>
@@ -335,6 +336,8 @@ export default function Home() {
           <span>Six Axes is made by Kerf and Code.</span>
           <span className="foot-links">
             <Link href="/features" style={inlineLink}>Features</Link>
+            {" · "}
+            <Link href="/players" style={inlineLink}>For players</Link>
             {" · "}
             <Link href="/tools" style={inlineLink}>Free tools</Link>
             {" · "}
