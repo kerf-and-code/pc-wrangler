@@ -1,6 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { SAX, STONE, surfaces } from "@/lib/theme";
+import { stoneField } from "@/lib/forge-theme";
 
 // components/session-zero.tsx
 //
@@ -278,8 +280,8 @@ function Section({ id, d, onToggle, children }: { id: string; d: Set<string>; on
     <div style={section}>
       <div style={sectionHead}>
         <label style={checkWrap}>
-          <input type="checkbox" checked={done} onChange={() => onToggle(id)} style={{ width: 17, height: 17, accentColor: "#3a352c" }} />
-          <span style={{ ...sectionTitle, ...(done ? { color: "#3d6b3d" } : null) }}>{meta.title}</span>
+          <input type="checkbox" checked={done} onChange={() => onToggle(id)} style={{ width: 17, height: 17, accentColor: SAX.brass }} />
+          <span style={{ ...sectionTitle, ...(done ? { color: "#9aa880" } : null) }}>{meta.title}</span>
         </label>
       </div>
       <p style={why}>{meta.why}</p>
@@ -314,52 +316,51 @@ function LevelPick({ label, value, onChange }: { label: string; value: Level; on
   );
 }
 
-// ---- styles (cream document register) ----
+// ---- styles (carved dark forge register) ----
 
-const intro: React.CSSProperties = { fontSize: 15.5, lineHeight: 1.6, color: "#4a443a", margin: "0 0 12px" };
+const intro: React.CSSProperties = { fontSize: 15.5, lineHeight: 1.6, color: STONE.inkDim, margin: "0 0 12px", fontFamily: SAX.serif };
 const progressBar: React.CSSProperties = {
-  fontFamily: "ui-monospace, SFMono-Regular, monospace", fontSize: 12, letterSpacing: "0.08em",
-  color: "#8a7a55", border: "1px solid #e0d6bf", background: "#faf6ec", borderRadius: 4, padding: "6px 10px",
+  fontFamily: SAX.mono, fontSize: 12, letterSpacing: "0.08em",
+  color: SAX.brass, border: `1px solid ${STONE.hi}`, background: "rgba(0,0,0,0.24)", borderRadius: 4, padding: "6px 10px",
   display: "inline-block", marginBottom: 18,
 };
-const section: React.CSSProperties = { border: "1px solid #ddd4c2", background: "#fffdf8", borderRadius: 6, padding: "16px 18px", marginBottom: 14 };
+const section: React.CSSProperties = { ...surfaces.panel, padding: "16px 18px", marginBottom: 14 };
 const sectionHead: React.CSSProperties = { display: "flex", alignItems: "center", justifyContent: "space-between" };
 const checkWrap: React.CSSProperties = { display: "flex", alignItems: "center", gap: 10, cursor: "pointer" };
-const sectionTitle: React.CSSProperties = { fontSize: 19, fontWeight: 600, color: "#2a2620" };
-const why: React.CSSProperties = { fontSize: 13.5, lineHeight: 1.5, color: "#7a7060", margin: "6px 0 14px" };
+const sectionTitle: React.CSSProperties = { fontSize: 19, fontWeight: 600, color: STONE.ink, fontFamily: "var(--forge-display, 'Cinzel', serif)" };
+const why: React.CSSProperties = { fontSize: 13.5, lineHeight: 1.5, color: STONE.inkFaint, margin: "6px 0 14px", fontFamily: SAX.serif };
 const fieldWrap: React.CSSProperties = { display: "block", marginTop: 12 };
 const smallLabel: React.CSSProperties = {
-  display: "block", fontFamily: "ui-monospace, SFMono-Regular, monospace", fontSize: 10.5,
-  letterSpacing: "0.12em", textTransform: "uppercase", color: "#8a7a55", marginBottom: 6,
+  display: "block", fontFamily: SAX.mono, fontSize: 10.5,
+  letterSpacing: "0.12em", textTransform: "uppercase", color: STONE.inkDim, marginBottom: 6,
 };
-const inp: React.CSSProperties = {
-  width: "100%", padding: "8px 10px", borderRadius: 4, border: "1px solid #d8cdb4", background: "#fff",
-  color: "#2a2620", fontSize: 14.5, fontFamily: "inherit", boxSizing: "border-box",
-};
-const ta: React.CSSProperties = { ...inp, resize: "vertical", lineHeight: 1.5 };
+const inp: React.CSSProperties = { ...stoneField(), fontSize: 14.5, boxSizing: "border-box" };
+const ta: React.CSSProperties = { ...inp, cursor: "text", resize: "vertical", lineHeight: 1.5 };
 const safetyNote: React.CSSProperties = {
-  fontSize: 14, lineHeight: 1.55, color: "#4a443a", background: "#f3ecdd", border: "1px solid #e0d6bf",
+  fontSize: 14, lineHeight: 1.55, color: STONE.inkDim, fontFamily: SAX.serif,
+  background: "rgba(0,0,0,0.24)", boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.4)",
   borderRadius: 5, padding: "10px 12px", marginBottom: 12,
 };
 const chips: React.CSSProperties = { display: "flex", gap: 6, flexWrap: "wrap" };
 const chip: React.CSSProperties = {
-  fontFamily: "ui-monospace, SFMono-Regular, monospace", fontSize: 11.5, color: "#7a7060",
-  border: "1px solid #d8cdb4", borderRadius: 3, padding: "5px 10px", background: "#fff", cursor: "pointer",
+  fontFamily: SAX.mono, fontSize: 11.5, color: STONE.inkDim,
+  border: `1px solid ${STONE.hi}`, borderRadius: 3, padding: "5px 10px", background: "rgba(0,0,0,0.24)", cursor: "pointer",
 };
-const chipOn: React.CSSProperties = { background: "#3a352c", color: "#f6f2e9", borderColor: "#3a352c" };
-const toolExplain: React.CSSProperties = { fontSize: 13, lineHeight: 1.55, color: "#7a7060", margin: "10px 0 0" };
-const charterPanel: React.CSSProperties = { border: "1px solid #d8cdb4", background: "#f3ecdd", borderRadius: 6, padding: "16px 18px", marginTop: 6 };
+const chipOn: React.CSSProperties = { background: `linear-gradient(180deg, ${STONE.brassHi}, ${SAX.brass})`, color: "#241a0d", borderColor: SAX.brass };
+const toolExplain: React.CSSProperties = { fontSize: 13, lineHeight: 1.55, color: STONE.inkFaint, margin: "10px 0 0", fontFamily: SAX.serif };
+const charterPanel: React.CSSProperties = { ...surfaces.slate, padding: "16px 18px", marginTop: 6 };
 const charterHead: React.CSSProperties = {
   display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12,
-  fontFamily: "ui-monospace, SFMono-Regular, monospace", fontSize: 11, letterSpacing: "0.14em",
-  textTransform: "uppercase", color: "#8a7a55",
+  fontFamily: SAX.mono, fontSize: 11, letterSpacing: "0.14em",
+  textTransform: "uppercase", color: SAX.brass,
 };
 const dlBtn: React.CSSProperties = {
-  background: "#3a352c", color: "#f6f2e9", border: "none", borderRadius: 3, padding: "8px 16px",
-  fontFamily: "ui-monospace, monospace", fontSize: 12, letterSpacing: "0.06em", textTransform: "uppercase", cursor: "pointer",
+  background: `linear-gradient(180deg, ${STONE.brassHi}, ${SAX.brass})`, color: "#241a0d", border: "none", borderRadius: 3, padding: "8px 16px",
+  fontFamily: SAX.mono, fontSize: 12, letterSpacing: "0.06em", textTransform: "uppercase", cursor: "pointer",
 };
 const charterPre: React.CSSProperties = {
-  whiteSpace: "pre-wrap", wordBreak: "break-word", fontFamily: "ui-monospace, SFMono-Regular, monospace",
-  fontSize: 12.5, lineHeight: 1.6, color: "#3a352c", background: "#fffdf8", border: "1px solid #e0d6bf",
+  whiteSpace: "pre-wrap", wordBreak: "break-word", fontFamily: SAX.mono,
+  fontSize: 12.5, lineHeight: 1.6, color: STONE.ink, background: "rgba(0,0,0,0.28)",
+  boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.4)",
   borderRadius: 4, padding: "14px 16px", margin: 0, maxHeight: 360, overflow: "auto",
 };

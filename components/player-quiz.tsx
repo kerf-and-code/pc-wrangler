@@ -16,7 +16,7 @@
 // lib/theme (SAX.axis), the data-encoding hues that are the same in every Six Axes chart.
 
 import { useEffect, useMemo, useState } from "react";
-import { AXES, type AxisKey } from "@/lib/theme";
+import { AXES, SAX, STONE, surfaces, type AxisKey } from "@/lib/theme";
 
 const KEYS: AxisKey[] = ["N", "T", "O", "S", "E", "I"];
 const FLAVOR: AxisKey[] = ["N", "T", "O", "S", "E"];
@@ -131,8 +131,8 @@ export default function PlayerQuiz() {
     return (
       <div>
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
-          <div style={{ flex: 1, height: 4, background: "#e3dbc9", borderRadius: 3, overflow: "hidden" }}>
-            <div style={{ width: `${(answered / ITEMS.length) * 100}%`, height: "100%", background: "#8a6a2f", transition: reduce ? "none" : "width .3s ease" }} />
+          <div style={{ flex: 1, height: 4, background: "rgba(0,0,0,0.34)", borderRadius: 3, overflow: "hidden", boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.4)" }}>
+            <div style={{ width: `${(answered / ITEMS.length) * 100}%`, height: "100%", background: SAX.brass, transition: reduce ? "none" : "width .3s ease" }} />
           </div>
           <div style={mono}>{String(idx + 1).padStart(2, "0")} / {ITEMS.length}</div>
         </div>
@@ -144,7 +144,7 @@ export default function PlayerQuiz() {
             const chosen = answers[current.id] === s.v;
             return (
               <button key={s.v} onClick={() => record(s.v)} aria-label={s.label}
-                style={{ ...likert, background: chosen ? scoreColor(s.v) : "#fffdf8", color: chosen ? "#fff" : "#4a443a", borderColor: chosen ? scoreColor(s.v) : "#c9bfa8" }}>
+                style={{ ...likert, background: chosen ? scoreColor(s.v) : "rgba(0,0,0,0.24)", color: chosen ? "#160f04" : STONE.inkDim, borderColor: chosen ? scoreColor(s.v) : STONE.hi }}>
                 <span style={{ fontFamily: MONO, fontSize: 15 }}>{s.v}</span>
                 <span style={{ fontSize: 10.5, lineHeight: 1.2, height: 26 }}>{s.label}</span>
               </button>
@@ -153,10 +153,10 @@ export default function PlayerQuiz() {
         </div>
 
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 18 }}>
-          <button onClick={back} disabled={idx === 0} style={{ ...ghost, color: idx === 0 ? "#cfc3a4" : "#8a7a55", cursor: idx === 0 ? "default" : "pointer" }}>Back</button>
+          <button onClick={back} disabled={idx === 0} style={{ ...ghost, color: idx === 0 ? STONE.inkFaint : STONE.brassHi, cursor: idx === 0 ? "default" : "pointer" }}>Back</button>
           <button onClick={() => record("NB")} style={nbBtn}>No basis to answer</button>
         </div>
-        <div style={{ ...mono, textAlign: "center", marginTop: 16, color: "#a89a78" }}>tip: keys 1 to 5 to answer, 0 to skip</div>
+        <div style={{ ...mono, textAlign: "center", marginTop: 16, color: STONE.inkFaint }}>tip: keys 1 to 5 to answer, 0 to skip</div>
       </div>
     );
   }
@@ -183,11 +183,11 @@ export default function PlayerQuiz() {
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 5, gap: 8 }}>
                 <span style={{ fontSize: 15 }}>
                   <span style={{ color: ax.color, fontWeight: 600 }}>{ax.tavernName}</span>
-                  <span style={{ color: "#8a8069", fontSize: 12.5 }}> · {ax.facet}</span>
+                  <span style={{ color: STONE.inkFaint, fontSize: 12.5 }}> · {ax.facet}</span>
                 </span>
-                <span style={{ fontFamily: MONO, fontSize: 13, color: "#4a443a" }}>{Math.round(w.w * 100)}%</span>
+                <span style={{ fontFamily: MONO, fontSize: 13, color: STONE.inkDim }}>{Math.round(w.w * 100)}%</span>
               </div>
-              <div style={{ height: 5, background: "#e3dbc9", borderRadius: 4, overflow: "hidden" }}>
+              <div style={{ height: 5, background: "rgba(0,0,0,0.34)", borderRadius: 4, overflow: "hidden", boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.4)" }}>
                 <div style={{ width: `${w.w * 100}%`, height: "100%", background: ax.color }} />
               </div>
             </div>
@@ -199,9 +199,9 @@ export default function PlayerQuiz() {
       <div style={panel}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
           <span style={panelEyebrow}>Presence</span>
-          <span style={{ fontFamily: MONO, fontSize: 12, color: "#8a8069" }}>{result.intensity === null ? "no data" : `${result.intensity.toFixed(1)} / 5`}</span>
+          <span style={{ fontFamily: MONO, fontSize: 12, color: STONE.inkFaint }}>{result.intensity === null ? "no data" : `${result.intensity.toFixed(1)} / 5`}</span>
         </div>
-        <div style={{ height: 6, background: "#e3dbc9", borderRadius: 4, overflow: "hidden" }}>
+        <div style={{ height: 6, background: "rgba(0,0,0,0.34)", borderRadius: 4, overflow: "hidden", boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.4)" }}>
           <div style={{ width: `${result.intensity === null ? 0 : ((result.intensity - 1) / 4) * 100}%`, height: "100%", background: AXES.I.color }} />
         </div>
         <p style={{ ...small, marginTop: 10 }}>Shown as a raw level. A true Presence score is set against other players, so it calibrates once there is a table to compare against.</p>
@@ -236,11 +236,11 @@ function Explainer() {
             <div key={k} style={axRow}>
               <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
                 <span style={{ width: 10, height: 10, borderRadius: 2, background: ax.color, display: "inline-block" }} />
-                <span style={{ fontWeight: 600, fontSize: 16 }}>{ax.tavernName}</span>
-                <span style={{ color: "#8a8069", fontSize: 12.5 }}>{ax.name.replace("The ", "")}</span>
+                <span style={{ fontWeight: 600, fontSize: 16, color: STONE.ink }}>{ax.tavernName}</span>
+                <span style={{ color: STONE.inkFaint, fontSize: 12.5 }}>{ax.name.replace("The ", "")}</span>
               </div>
-              <p style={{ ...small, margin: "6px 0 0" }}><strong style={{ color: "#4a443a" }}>Measures.</strong> {ex.measures}</p>
-              <p style={{ ...small, margin: "4px 0 0" }}><strong style={{ color: "#4a443a" }}>For the GM.</strong> {ex.matters}</p>
+              <p style={{ ...small, margin: "6px 0 0" }}><strong style={{ color: STONE.ink }}>Measures.</strong> {ex.measures}</p>
+              <p style={{ ...small, margin: "4px 0 0" }}><strong style={{ color: STONE.ink }}>For the GM.</strong> {ex.matters}</p>
             </div>
           );
         })}
@@ -253,13 +253,13 @@ function Explainer() {
         enjoys, so you can aim prep at it.
       </p>
       <p style={body}>
-        <strong style={{ color: "#2a2620" }}>How it changes each session.</strong> The quiz is a one-time
+        <strong style={{ color: STONE.ink }}>How it changes each session.</strong> The quiz is a one-time
         self-report, how you think you play. In Six Axes, the same six axes are measured from what players
         actually do in each recorded session, so the read moves off the survey and toward observed
         behaviour, session by session. Watching self-perception meet reality over a campaign is the point.
       </p>
       <p style={body}>
-        <strong style={{ color: "#2a2620" }}>What it offers the GM.</strong> A living read of every player,
+        <strong style={{ color: STONE.ink }}>What it offers the GM.</strong> A living read of every player,
         not a one-night guess. It surfaces who has not had their kind of moment in a while, who is leaning
         in, and who is drifting, so the table stays balanced and everyone gets a night that plays to what
         they came for.
@@ -282,16 +282,16 @@ function RadarChart({ axisMean }: { axisMean: Record<AxisKey, number | null> }) 
   return (
     <div style={{ display: "flex", justifyContent: "center", margin: "6px 0 2px" }}>
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} role="img" aria-label="Your disposition across the five flavour axes">
-        {rings.map((p, i) => <polygon key={i} points={p} fill="none" stroke="#d8cdb4" strokeWidth={1} />)}
-        {FLAVOR.map((_, i) => { const [x, y] = pt(i, R); return <line key={i} x1={cx} y1={cy} x2={x} y2={y} stroke="#d8cdb4" strokeWidth={1} />; })}
-        <polygon points={dataPts} fill="rgba(200,162,75,0.28)" stroke="#a9822f" strokeWidth={2} />
+        {rings.map((p, i) => <polygon key={i} points={p} fill="none" stroke="rgba(255,235,200,0.14)" strokeWidth={1} />)}
+        {FLAVOR.map((_, i) => { const [x, y] = pt(i, R); return <line key={i} x1={cx} y1={cy} x2={x} y2={y} stroke="rgba(255,235,200,0.14)" strokeWidth={1} />; })}
+        <polygon points={dataPts} fill="rgba(200,162,75,0.28)" stroke={SAX.brass} strokeWidth={2} />
         {FLAVOR.map((k, i) => {
           const [x, y] = pt(i, radiusFor(axisMean[k]));
           return <circle key={k} cx={x} cy={y} r={3} fill={AXES[k].color} />;
         })}
         {FLAVOR.map((k, i) => {
           const [x, y] = pt(i, R + 18);
-          return <text key={k} x={x} y={y} fill={AXES[k].color} fontSize={13} fontWeight={600} textAnchor="middle" dominantBaseline="middle" style={{ fontFamily: "'Iowan Old Style', Georgia, serif" }}>{AXES[k].tavernName}</text>;
+          return <text key={k} x={x} y={y} fill={AXES[k].color} fontSize={13} fontWeight={600} textAnchor="middle" dominantBaseline="middle" style={{ fontFamily: SAX.serif }}>{AXES[k].tavernName}</text>;
         })}
       </svg>
     </div>
@@ -335,24 +335,24 @@ function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 function scoreColor(v: number) {
-  if (v <= 2) return "#a44a3a";
-  if (v >= 4) return "#5a7d4a";
-  return "#8a8069";
+  if (v <= 2) return "#d97d6d";
+  if (v >= 4) return "#9aa880";
+  return STONE.inkFaint;
 }
 
-// ---------- styles ----------
+// ---------- styles (carved dark forge register) ----------
 const MONO = "ui-monospace, SFMono-Regular, Menlo, monospace";
-const body: React.CSSProperties = { fontSize: 16.5, lineHeight: 1.7, color: "#3a352c", margin: "0 0 12px" };
-const small: React.CSSProperties = { fontSize: 13.5, color: "#7a6f57", lineHeight: 1.6, margin: 0 };
-const mono: React.CSSProperties = { fontFamily: MONO, fontSize: 12, color: "#8a8069" };
-const h2: React.CSSProperties = { fontSize: 24, fontWeight: 600, color: "#2a2620", margin: "0 0 8px" };
-const cta: React.CSSProperties = { marginTop: 20, background: "#3a352c", color: "#f6f2e9", border: "none", borderRadius: 3, padding: "13px 28px", fontFamily: MONO, fontSize: 14, letterSpacing: "0.08em", textTransform: "uppercase", cursor: "pointer" };
-const statement: React.CSSProperties = { background: "#fffdf8", border: "1px solid #cfc3a4", borderRadius: 6, padding: "28px 26px", minHeight: 130, display: "flex", alignItems: "center" };
-const statementText: React.CSSProperties = { fontSize: 22, lineHeight: 1.35, fontWeight: 500, margin: 0, color: "#2a2620" };
+const body: React.CSSProperties = { fontSize: 16.5, lineHeight: 1.7, color: STONE.ink, margin: "0 0 12px", fontFamily: SAX.serif };
+const small: React.CSSProperties = { fontSize: 13.5, color: STONE.inkFaint, lineHeight: 1.6, margin: 0, fontFamily: SAX.serif };
+const mono: React.CSSProperties = { fontFamily: MONO, fontSize: 12, color: STONE.inkFaint };
+const h2: React.CSSProperties = { fontSize: 24, fontWeight: 600, color: STONE.ink, margin: "0 0 8px", fontFamily: "var(--forge-display, 'Cinzel', serif)" };
+const cta: React.CSSProperties = { marginTop: 20, background: `linear-gradient(180deg, ${STONE.brassHi}, ${SAX.brass})`, color: "#241a0d", border: "none", borderRadius: 3, padding: "13px 28px", fontFamily: MONO, fontSize: 14, letterSpacing: "0.08em", textTransform: "uppercase", cursor: "pointer" };
+const statement: React.CSSProperties = { ...surfaces.slate, borderRadius: 6, padding: "28px 26px", minHeight: 130, display: "flex", alignItems: "center" };
+const statementText: React.CSSProperties = { fontSize: 22, lineHeight: 1.35, fontWeight: 500, margin: 0, color: STONE.ink, fontFamily: SAX.serif };
 const likert: React.CSSProperties = { border: "1px solid", borderRadius: 4, padding: "15px 6px 11px", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 8, textAlign: "center" };
 const ghost: React.CSSProperties = { background: "none", border: "none", fontSize: 14, padding: 6 };
-const ghostBtn: React.CSSProperties = { background: "none", color: "#8a6a2f", border: "1px solid #c9bfa8", borderRadius: 3, padding: "11px 22px", fontSize: 15, cursor: "pointer", fontFamily: "'Iowan Old Style', Georgia, serif" };
-const nbBtn: React.CSSProperties = { background: "none", border: "1px solid #c9bfa8", color: "#7a6f57", borderRadius: 3, padding: "7px 12px", fontSize: 12.5, cursor: "pointer" };
-const panel: React.CSSProperties = { background: "#fffdf8", border: "1px solid #ddd4c2", borderRadius: 6, padding: "18px 20px", marginTop: 12 };
-const panelEyebrow: React.CSSProperties = { fontFamily: MONO, fontSize: 11, letterSpacing: "0.16em", color: "#9a7b2e", textTransform: "uppercase" };
-const axRow: React.CSSProperties = { padding: "12px 0", borderTop: "1px solid #e3dbc9" };
+const ghostBtn: React.CSSProperties = { background: "rgba(0,0,0,0.24)", color: STONE.brassHi, border: `1px solid ${STONE.hi}`, borderRadius: 3, padding: "11px 22px", fontSize: 15, cursor: "pointer", fontFamily: SAX.serif };
+const nbBtn: React.CSSProperties = { background: "rgba(0,0,0,0.24)", border: `1px solid ${STONE.hi}`, color: STONE.inkDim, borderRadius: 3, padding: "7px 12px", fontSize: 12.5, cursor: "pointer" };
+const panel: React.CSSProperties = { ...surfaces.panel, padding: "18px 20px", marginTop: 12 };
+const panelEyebrow: React.CSSProperties = { fontFamily: MONO, fontSize: 11, letterSpacing: "0.16em", color: SAX.brass, textTransform: "uppercase" };
+const axRow: React.CSSProperties = { padding: "12px 0", borderTop: "1px solid rgba(255,235,200,0.1)" };

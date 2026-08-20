@@ -1,6 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { SAX, STONE, surfaces } from "@/lib/theme";
+import { stoneField } from "@/lib/forge-theme";
 
 // components/pacing-calculator.tsx
 //
@@ -168,7 +170,7 @@ function Grid({ children }: { children: React.ReactNode }) {
   return <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>{children}</div>;
 }
 function Stat({ label, value, tone }: { label: string; value: string; tone?: "good" | "bad" }) {
-  const color = tone === "good" ? "#3d6b3d" : tone === "bad" ? "#a4442e" : "#2a2620";
+  const color = tone === "good" ? "#9aa880" : tone === "bad" ? "#d97d6d" : STONE.ink;
   return (
     <div style={statBox}>
       <div style={statLabel}>{label}</div>
@@ -179,26 +181,27 @@ function Stat({ label, value, tone }: { label: string; value: string; tone?: "go
 
 // ---- styles (cream document register) ----
 
-const panel: React.CSSProperties = { border: "1px solid #ddd4c2", background: "#fffdf8", borderRadius: 6, padding: "16px 18px", marginBottom: 16 };
+const panel: React.CSSProperties = { ...surfaces.panel, padding: "16px 18px", marginBottom: 16 };
 const panelHead: React.CSSProperties = {
-  fontFamily: "ui-monospace, SFMono-Regular, monospace", fontSize: 11, letterSpacing: "0.14em",
-  textTransform: "uppercase", color: "#8a7a55", marginBottom: 12,
+  fontFamily: SAX.mono, fontSize: 11, letterSpacing: "0.14em",
+  textTransform: "uppercase", color: SAX.brass, marginBottom: 12,
 };
 const smallLabel: React.CSSProperties = {
-  display: "block", fontFamily: "ui-monospace, SFMono-Regular, monospace", fontSize: 10.5,
-  letterSpacing: "0.12em", textTransform: "uppercase", color: "#8a7a55", marginBottom: 6,
+  display: "block", fontFamily: SAX.mono, fontSize: 10.5,
+  letterSpacing: "0.12em", textTransform: "uppercase", color: STONE.inkDim, marginBottom: 6,
 };
-const inp: React.CSSProperties = {
-  width: "100%", padding: "8px 10px", borderRadius: 4, border: "1px solid #d8cdb4", background: "#fff",
-  color: "#2a2620", fontSize: 14.5, fontFamily: "inherit", boxSizing: "border-box",
-};
+const inp: React.CSSProperties = { ...stoneField(), fontSize: 14.5, boxSizing: "border-box" };
 const readout: React.CSSProperties = { display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 };
-const statBox: React.CSSProperties = { flex: "1 1 120px", border: "1px solid #e0d6bf", background: "#faf6ec", borderRadius: 5, padding: "10px 12px" };
-const statLabel: React.CSSProperties = {
-  fontFamily: "ui-monospace, SFMono-Regular, monospace", fontSize: 10, letterSpacing: "0.1em",
-  textTransform: "uppercase", color: "#8a7a55", marginBottom: 5,
+const statBox: React.CSSProperties = {
+  flex: "1 1 120px", borderRadius: 4, padding: "10px 12px",
+  background: "linear-gradient(180deg, rgba(14,11,8,0.78), rgba(6,4,3,0.82))",
+  boxShadow: "inset 1px 1px 4px rgba(0,0,0,0.8), inset -1px -1px 0 rgba(255,230,190,0.06)",
 };
-const statValue: React.CSSProperties = { fontSize: 22, fontWeight: 600 };
-const verdict: React.CSSProperties = { fontSize: 14.5, lineHeight: 1.55, color: "#4a443a", margin: "14px 0 0" };
-const hint: React.CSSProperties = { fontSize: 13.5, color: "#7a7060", margin: "0 0 12px" };
-const foot: React.CSSProperties = { fontSize: 13.5, lineHeight: 1.6, color: "#7a7060", margin: "4px 0 0" };
+const statLabel: React.CSSProperties = {
+  fontFamily: SAX.mono, fontSize: 10, letterSpacing: "0.1em",
+  textTransform: "uppercase", color: STONE.inkFaint, marginBottom: 5,
+};
+const statValue: React.CSSProperties = { fontSize: 22, fontWeight: 600, color: STONE.ink };
+const verdict: React.CSSProperties = { fontSize: 14.5, lineHeight: 1.55, color: STONE.inkDim, margin: "14px 0 0", fontFamily: SAX.serif };
+const hint: React.CSSProperties = { fontSize: 13.5, color: STONE.inkFaint, margin: "0 0 12px", fontFamily: SAX.serif };
+const foot: React.CSSProperties = { fontSize: 13.5, lineHeight: 1.6, color: STONE.inkFaint, margin: "4px 0 0", fontFamily: SAX.serif };

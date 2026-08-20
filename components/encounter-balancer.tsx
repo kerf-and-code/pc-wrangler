@@ -15,6 +15,8 @@
 // party size, plus Draw Steel Victories and the Daggerheart adjustments).
 
 import { useMemo, useState } from "react";
+import { SAX, STONE, surfaces } from "@/lib/theme";
+import { stoneField } from "@/lib/forge-theme";
 import { computeDnd, CR_LIST, type DndMethod } from "@/lib/tools/encounter-dnd";
 import { pf2Budget, pf2EncounterXp, pf2Threat, PF2_THREATS, PF2_THREAT_LABEL } from "@/lib/pf2e/encounter";
 import { dsBands, dsDifficultyOf, dsSpend, dsBenchmarkEV, DS_DIFFICULTY_LABEL } from "@/lib/drawsteel/encounter";
@@ -322,22 +324,22 @@ function clampInt(v: string, lo: number, hi: number) {
   return Math.max(lo, Math.min(hi, n));
 }
 function bandColorDnd(band: string) {
-  if (band === "Deadly" || band === "High") return "#9a3b2e";
-  if (band === "Hard" || band === "Moderate") return "#8a6a2f";
-  if (band === "Trivial") return "#8a8069";
-  return "#4a7a4a";
+  if (band === "Deadly" || band === "High") return "#d97d6d";
+  if (band === "Hard" || band === "Moderate") return "#e2b878";
+  if (band === "Trivial") return STONE.inkFaint;
+  return "#9aa880";
 }
 function bandColorPf(t: string | null) {
-  if (t === "extreme" || t === "severe") return "#9a3b2e";
-  if (t === "moderate") return "#8a6a2f";
-  if (!t || t === "trivial") return "#8a8069";
-  return "#4a7a4a";
+  if (t === "extreme" || t === "severe") return "#d97d6d";
+  if (t === "moderate") return "#e2b878";
+  if (!t || t === "trivial") return STONE.inkFaint;
+  return "#9aa880";
 }
 function bandColorDs(t: string | null) {
-  if (t === "extreme" || t === "hard") return "#9a3b2e";
-  if (t === "standard") return "#8a6a2f";
-  if (!t || t === "trivial") return "#8a8069";
-  return "#4a7a4a";
+  if (t === "extreme" || t === "hard") return "#d97d6d";
+  if (t === "standard") return "#e2b878";
+  if (!t || t === "trivial") return STONE.inkFaint;
+  return "#9aa880";
 }
 function dhStatus(spent: number, budget: number) {
   if (spent > budget) return "Over budget";
@@ -345,35 +347,35 @@ function dhStatus(spent: number, budget: number) {
   return "Under budget";
 }
 function bandColorDh(spent: number, budget: number) {
-  if (spent > budget) return "#9a3b2e";
-  if (spent === budget) return "#8a6a2f";
-  return "#4a7a4a";
+  if (spent > budget) return "#d97d6d";
+  if (spent === budget) return "#e2b878";
+  return "#9aa880";
 }
 
-// styles --------------------------------------------------------------
+// styles (carved dark forge register) --------------------------------
 const row: React.CSSProperties = { display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 4 };
-const card: React.CSSProperties = { marginTop: 20, padding: "20px 0 0", borderTop: "1px solid #ddd4c2" };
-const h2: React.CSSProperties = { fontSize: 22, fontWeight: 600, margin: "0 0 4px", color: "#2a2620" };
-const note: React.CSSProperties = { fontSize: 14.5, color: "#7a6f57", fontStyle: "italic", margin: 0, lineHeight: 1.55 };
+const card: React.CSSProperties = { marginTop: 20, padding: "20px 0 0", borderTop: "1px solid rgba(255,235,200,0.1)" };
+const h2: React.CSSProperties = { fontSize: 22, fontWeight: 600, margin: "0 0 4px", color: STONE.ink, fontFamily: "var(--forge-display, 'Cinzel', serif)" };
+const note: React.CSSProperties = { fontSize: 14.5, color: STONE.inkFaint, fontStyle: "italic", margin: 0, lineHeight: 1.55, fontFamily: SAX.serif };
 const pcRow: React.CSSProperties = { display: "flex", alignItems: "center", gap: 8, marginBottom: 8, flexWrap: "wrap" };
-const fieldLabel: React.CSSProperties = { fontFamily: "ui-monospace, SFMono-Regular, monospace", fontSize: 12, letterSpacing: "0.04em", color: "#6a6252", textTransform: "uppercase" };
+const fieldLabel: React.CSSProperties = { fontFamily: SAX.mono, fontSize: 12, letterSpacing: "0.04em", color: STONE.inkDim, textTransform: "uppercase" };
 const miniLbl: React.CSSProperties = { ...fieldLabel, flex: "0 0 auto", margin: "0 2px" };
-const input: React.CSSProperties = { padding: "9px 11px", fontSize: 15.5, fontFamily: "'Iowan Old Style', Georgia, serif", color: "#2a2620", background: "#fffdf8", border: "1px solid #c9bfa8", borderRadius: 3, boxSizing: "border-box", colorScheme: "light" };
-const addBtn: React.CSSProperties = { marginTop: 6, background: "transparent", color: "#8a6a2f", border: "1px solid #c9bfa8", borderRadius: 3, padding: "8px 14px", fontSize: 13.5, cursor: "pointer", fontFamily: "'Iowan Old Style', Georgia, serif" };
-const xBtn: React.CSSProperties = { background: "transparent", border: "none", color: "#b0a488", fontSize: 20, lineHeight: 1, cursor: "pointer", padding: "0 4px" };
-const pill: React.CSSProperties = { background: "transparent", color: "#6a6252", border: "1px solid #c9bfa8", borderRadius: 3, padding: "7px 12px", fontSize: 12.5, cursor: "pointer", fontFamily: "ui-monospace, monospace", letterSpacing: "0.04em" };
-const pillOn: React.CSSProperties = { ...pill, background: "#3a352c", color: "#f6f2e9", borderColor: "#3a352c" };
-const evTag: React.CSSProperties = { fontFamily: "ui-monospace, monospace", fontSize: 12, color: "#8a7a55", whiteSpace: "nowrap" };
-const adjRow: React.CSSProperties = { display: "flex", alignItems: "center", gap: 8, fontSize: 14.5, color: "#3a352c", cursor: "pointer" };
-const adjDelta: React.CSSProperties = { marginLeft: "auto", fontFamily: "ui-monospace, monospace", fontSize: 12.5, color: "#8a7a55" };
-const verdictCard: React.CSSProperties = { marginTop: 24, padding: "20px 22px", background: "#fffdf8", border: "1px solid #cfc3a4", borderRadius: 8 };
+const input: React.CSSProperties = { ...stoneField(), fontSize: 15.5, boxSizing: "border-box", colorScheme: "dark" };
+const addBtn: React.CSSProperties = { marginTop: 6, background: "rgba(0,0,0,0.24)", color: STONE.brassHi, border: `1px solid ${STONE.hi}`, borderRadius: 3, padding: "8px 14px", fontSize: 13.5, cursor: "pointer", fontFamily: SAX.serif };
+const xBtn: React.CSSProperties = { background: "transparent", border: "none", color: STONE.inkFaint, fontSize: 20, lineHeight: 1, cursor: "pointer", padding: "0 4px" };
+const pill: React.CSSProperties = { background: "rgba(0,0,0,0.24)", color: STONE.inkDim, border: `1px solid ${STONE.hi}`, borderRadius: 3, padding: "7px 12px", fontSize: 12.5, cursor: "pointer", fontFamily: SAX.mono, letterSpacing: "0.04em" };
+const pillOn: React.CSSProperties = { ...pill, background: `linear-gradient(180deg, ${STONE.brassHi}, ${SAX.brass})`, color: "#241a0d", borderColor: SAX.brass };
+const evTag: React.CSSProperties = { fontFamily: SAX.mono, fontSize: 12, color: STONE.brassHi, whiteSpace: "nowrap" };
+const adjRow: React.CSSProperties = { display: "flex", alignItems: "center", gap: 8, fontSize: 14.5, color: STONE.ink, cursor: "pointer", fontFamily: SAX.serif };
+const adjDelta: React.CSSProperties = { marginLeft: "auto", fontFamily: SAX.mono, fontSize: 12.5, color: STONE.brassHi };
+const verdictCard: React.CSSProperties = { ...surfaces.slate, marginTop: 24, padding: "20px 22px" };
 const verdictTop: React.CSSProperties = { display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16 };
-const verdictLabel: React.CSSProperties = { fontFamily: "ui-monospace, monospace", fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", color: "#8a7a55", marginBottom: 4 };
-const verdictBig: React.CSSProperties = { fontSize: 30, fontWeight: 700, lineHeight: 1.1 };
-const verdictNum: React.CSSProperties = { fontFamily: "ui-monospace, monospace", fontSize: 22, color: "#2a2620" };
-const mini: React.CSSProperties = { fontSize: 12, color: "#8a8069", marginTop: 2 };
+const verdictLabel: React.CSSProperties = { fontFamily: SAX.mono, fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", color: SAX.brass, marginBottom: 4 };
+const verdictBig: React.CSSProperties = { fontSize: 30, fontWeight: 700, lineHeight: 1.1, fontFamily: "var(--forge-display, 'Cinzel', serif)" };
+const verdictNum: React.CSSProperties = { fontFamily: SAX.mono, fontSize: 22, color: STONE.ink };
+const mini: React.CSSProperties = { fontSize: 12, color: STONE.inkFaint, marginTop: 2, fontFamily: SAX.serif };
 const tierRow: React.CSSProperties = { display: "flex", gap: 8, marginTop: 16, flexWrap: "wrap" };
-const tierCell: React.CSSProperties = { flex: "1 1 0", minWidth: 62, textAlign: "center", padding: "8px 6px", background: "#f3ecdb", borderRadius: 4 };
-const tierLabel: React.CSSProperties = { fontSize: 11, color: "#8a7a55", textTransform: "uppercase", letterSpacing: "0.04em" };
-const tierNum: React.CSSProperties = { fontFamily: "ui-monospace, monospace", fontSize: 15, color: "#2a2620", marginTop: 2 };
-const verdictNote: React.CSSProperties = { fontSize: 13, color: "#8a8069", margin: "14px 0 0", lineHeight: 1.55 };
+const tierCell: React.CSSProperties = { flex: "1 1 0", minWidth: 62, textAlign: "center", padding: "8px 6px", background: "rgba(0,0,0,0.24)", boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.4)", borderRadius: 4 };
+const tierLabel: React.CSSProperties = { fontSize: 11, color: STONE.inkDim, textTransform: "uppercase", letterSpacing: "0.04em", fontFamily: SAX.mono };
+const tierNum: React.CSSProperties = { fontFamily: SAX.mono, fontSize: 15, color: STONE.ink, marginTop: 2 };
+const verdictNote: React.CSSProperties = { fontSize: 13, color: STONE.inkFaint, margin: "14px 0 0", lineHeight: 1.55, fontFamily: SAX.serif };

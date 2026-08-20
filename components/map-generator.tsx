@@ -12,6 +12,8 @@
 // render is the product upsell (Part B), teased below and gated to the pilot.
 
 import { useEffect, useRef, useState } from "react";
+import { SAX, STONE, surfaces } from "@/lib/theme";
+import { stoneField } from "@/lib/forge-theme";
 import { generateTerrain } from "@/lib/worldmap/gen/pipeline";
 import { defaultConfig } from "@/lib/worldmap/gen/types";
 import { bakeWorld } from "@/lib/worldmap/gen/bake";
@@ -222,14 +224,14 @@ export default function MapGenerator() {
           // eslint-disable-next-line @next/next/no-img-element
           <img src={url} alt="Generated hex world map" style={{ width: "100%", height: "auto", display: "block", borderRadius: 4 }} />
         ) : (
-          <div style={{ padding: "60px 0", textAlign: "center", color: "#8a8069" }}>{busy ? "Generating your world…" : "Your map will appear here."}</div>
+          <div style={{ padding: "60px 0", textAlign: "center", color: STONE.inkFaint }}>{busy ? "Generating your world…" : "Your map will appear here."}</div>
         )}
       </div>
 
       {/* Part B: AI render */}
       <div style={teaser}>
         <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-          <strong style={{ color: "#2a2620" }}>Paint it with AI</strong>
+          <strong style={{ color: STONE.ink }}>Paint it with AI</strong>
           <select value={style} onChange={(e) => setStyle(e.target.value)} style={{ ...input, maxWidth: 170 }} disabled={aiStatus === "working"}>
             <option value="fantasy">Fantasy</option>
             <option value="scifi">Sci-fi</option>
@@ -300,18 +302,18 @@ function blobToDataURL(blob: Blob): Promise<string> {
   });
 }
 
-// styles
-const panel: React.CSSProperties = { background: "#fffdf8", border: "1px solid #ddd4c2", borderRadius: 6, padding: "18px 20px" };
+// styles (carved dark forge register)
+const panel: React.CSSProperties = { ...surfaces.panel, padding: "18px 20px" };
 const grid: React.CSSProperties = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 14 };
 const field: React.CSSProperties = { display: "flex", flexDirection: "column", gap: 6 };
-const label: React.CSSProperties = { fontFamily: "ui-monospace, SFMono-Regular, monospace", fontSize: 12, letterSpacing: "0.03em", color: "#6a6252", textTransform: "uppercase" };
-const input: React.CSSProperties = { padding: "9px 11px", fontSize: 15, fontFamily: "'Iowan Old Style', Georgia, serif", color: "#2a2620", background: "#fffdf8", border: "1px solid #c9bfa8", borderRadius: 3, boxSizing: "border-box", colorScheme: "light" };
-const ghost: React.CSSProperties = { background: "transparent", color: "#8a6a2f", border: "1px solid #c9bfa8", borderRadius: 3, padding: "0 12px", fontSize: 13, cursor: "pointer", fontFamily: "'Iowan Old Style', Georgia, serif" };
-const cta: React.CSSProperties = { background: "#3a352c", color: "#f6f2e9", border: "none", borderRadius: 3, padding: "12px 24px", fontFamily: "ui-monospace, monospace", fontSize: 13, letterSpacing: "0.08em", textTransform: "uppercase", cursor: "pointer" };
-const dl: React.CSSProperties = { background: "transparent", color: "#3a352c", border: "1px solid #c9bfa8", borderRadius: 3, padding: "12px 22px", fontFamily: "ui-monospace, monospace", fontSize: 13, letterSpacing: "0.08em", textTransform: "uppercase", textDecoration: "none" };
-const hint: React.CSSProperties = { fontSize: 12.5, color: "#8a8069" };
-const errStyle: React.CSSProperties = { color: "#9a3b2e", fontSize: 14, margin: "12px 0 0" };
-const preview: React.CSSProperties = { marginTop: 14, background: "#efe9db", border: "1px solid #ddd4c2", borderRadius: 6, padding: 8, overflow: "hidden" };
-const teaser: React.CSSProperties = { marginTop: 14, background: "#fffdf8", border: "1px solid #e3dbc9", borderRadius: 6, padding: "14px 18px", fontSize: 15, lineHeight: 1.6, color: "#4a443a" };
-const h2: React.CSSProperties = { fontSize: 22, fontWeight: 600, color: "#2a2620", margin: "0 0 8px" };
-const body: React.CSSProperties = { fontSize: 16, lineHeight: 1.7, color: "#3a352c", margin: "0 0 12px" };
+const label: React.CSSProperties = { fontFamily: SAX.mono, fontSize: 12, letterSpacing: "0.03em", color: STONE.inkDim, textTransform: "uppercase" };
+const input: React.CSSProperties = { ...stoneField(), fontSize: 15, boxSizing: "border-box", colorScheme: "dark" };
+const ghost: React.CSSProperties = { background: "rgba(0,0,0,0.24)", color: STONE.brassHi, border: `1px solid ${STONE.hi}`, borderRadius: 3, padding: "0 12px", fontSize: 13, cursor: "pointer", fontFamily: SAX.serif };
+const cta: React.CSSProperties = { background: `linear-gradient(180deg, ${STONE.brassHi}, ${SAX.brass})`, color: "#241a0d", border: "none", borderRadius: 3, padding: "12px 24px", fontFamily: SAX.mono, fontSize: 13, letterSpacing: "0.08em", textTransform: "uppercase", cursor: "pointer" };
+const dl: React.CSSProperties = { background: "rgba(0,0,0,0.24)", color: STONE.brassHi, border: `1px solid ${STONE.hi}`, borderRadius: 3, padding: "12px 22px", fontFamily: SAX.mono, fontSize: 13, letterSpacing: "0.08em", textTransform: "uppercase", textDecoration: "none" };
+const hint: React.CSSProperties = { fontSize: 12.5, color: STONE.inkFaint, fontFamily: SAX.serif };
+const errStyle: React.CSSProperties = { color: "#d97d6d", fontSize: 14, margin: "12px 0 0", fontFamily: SAX.serif };
+const preview: React.CSSProperties = { marginTop: 14, background: "rgba(0,0,0,0.34)", boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.4)", borderRadius: 6, padding: 8, overflow: "hidden" };
+const teaser: React.CSSProperties = { ...surfaces.panel, marginTop: 14, padding: "14px 18px", fontSize: 15, lineHeight: 1.6, color: STONE.inkDim };
+const h2: React.CSSProperties = { fontSize: 22, fontWeight: 600, color: STONE.ink, margin: "0 0 8px", fontFamily: "var(--forge-display, 'Cinzel', serif)" };
+const body: React.CSSProperties = { fontSize: 16, lineHeight: 1.7, color: STONE.ink, margin: "0 0 12px", fontFamily: SAX.serif };

@@ -1,6 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { SAX, STONE, surfaces } from "@/lib/theme";
+import { stoneField } from "@/lib/forge-theme";
 import {
   POWERS, POWER_LABEL, Power,
   RARITIES, RARITY_LABEL, Rarity,
@@ -115,35 +117,32 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 // ---- styles (cream document register) ----
 
-const panel: React.CSSProperties = { border: "1px solid #ddd4c2", background: "#fffdf8", borderRadius: 6, padding: "16px 18px", marginBottom: 16 };
-const resultPanel: React.CSSProperties = { ...panel, background: "#f3ecdd", borderColor: "#d8cdb4" };
+const panel: React.CSSProperties = { ...surfaces.panel, padding: "16px 18px", marginBottom: 16 };
+const resultPanel: React.CSSProperties = { ...surfaces.slate, padding: "16px 18px", marginBottom: 16 };
 const panelHead: React.CSSProperties = {
-  fontFamily: "ui-monospace, SFMono-Regular, monospace", fontSize: 11, letterSpacing: "0.14em",
-  textTransform: "uppercase", color: "#8a7a55", marginBottom: 12,
+  fontFamily: SAX.mono, fontSize: 11, letterSpacing: "0.14em",
+  textTransform: "uppercase", color: SAX.brass, marginBottom: 12,
 };
 const smallLabel: React.CSSProperties = {
-  display: "block", fontFamily: "ui-monospace, SFMono-Regular, monospace", fontSize: 10.5,
-  letterSpacing: "0.12em", textTransform: "uppercase", color: "#8a7a55", marginBottom: 8,
+  display: "block", fontFamily: SAX.mono, fontSize: 10.5,
+  letterSpacing: "0.12em", textTransform: "uppercase", color: STONE.inkDim, marginBottom: 8,
 };
-const inp: React.CSSProperties = {
-  width: "100%", padding: "9px 10px", borderRadius: 4, border: "1px solid #c9bfa8", background: "#fff",
-  color: "#2a2620", fontSize: 15.5, fontFamily: "inherit", boxSizing: "border-box",
-};
+const inp: React.CSSProperties = { ...stoneField(), fontSize: 15.5, boxSizing: "border-box" };
 const chips: React.CSSProperties = { display: "flex", gap: 6, flexWrap: "wrap" };
 const chip: React.CSSProperties = {
-  fontFamily: "ui-monospace, SFMono-Regular, monospace", fontSize: 12, color: "#7a7060",
-  border: "1px solid #d8cdb4", borderRadius: 3, padding: "7px 11px", background: "#fff", cursor: "pointer",
+  fontFamily: SAX.mono, fontSize: 12, color: STONE.inkDim,
+  border: `1px solid ${STONE.hi}`, borderRadius: 3, padding: "7px 11px", background: "rgba(0,0,0,0.24)", cursor: "pointer",
 };
-const chipOn: React.CSSProperties = { background: "#3a352c", color: "#f6f2e9", borderColor: "#3a352c" };
-const priceBig: React.CSSProperties = { fontSize: 40, fontWeight: 700, color: "#2a2620", lineHeight: 1.1 };
-const rangeLine: React.CSSProperties = { fontSize: 14.5, color: "#7a7060", margin: "8px 0 0" };
-const rationale: React.CSSProperties = { margin: "14px 0 0", paddingLeft: 18, fontSize: 14, lineHeight: 1.55, color: "#4a443a" };
-const explain: React.CSSProperties = { border: "1px solid #e6ddca", borderRadius: 6, padding: "12px 16px", marginBottom: 16, background: "#fffdf8" };
-const explainSummary: React.CSSProperties = { cursor: "pointer", fontSize: 14.5, color: "#8a6a2f", fontWeight: 600 };
-const p: React.CSSProperties = { fontSize: 14.5, lineHeight: 1.6, color: "#4a443a", margin: "0 0 10px" };
-const pMuted: React.CSSProperties = { fontSize: 13, lineHeight: 1.55, color: "#8a8069", margin: 0 };
-const upsell: React.CSSProperties = { border: "1px solid #d8cdb4", borderRadius: 6, padding: "16px 18px", background: "#f3ecdd" };
+const chipOn: React.CSSProperties = { background: `linear-gradient(180deg, ${STONE.brassHi}, ${SAX.brass})`, color: "#241a0d", borderColor: SAX.brass };
+const priceBig: React.CSSProperties = { fontSize: 40, fontWeight: 700, color: STONE.ink, lineHeight: 1.1, fontFamily: "var(--forge-display, 'Cinzel', serif)" };
+const rangeLine: React.CSSProperties = { fontSize: 14.5, color: STONE.inkFaint, margin: "8px 0 0", fontFamily: SAX.serif };
+const rationale: React.CSSProperties = { margin: "14px 0 0", paddingLeft: 18, fontSize: 14, lineHeight: 1.55, color: STONE.inkDim, fontFamily: SAX.serif };
+const explain: React.CSSProperties = { ...surfaces.panel, padding: "12px 16px", marginBottom: 16 };
+const explainSummary: React.CSSProperties = { cursor: "pointer", fontSize: 14.5, color: STONE.brassHi, fontWeight: 600 };
+const p: React.CSSProperties = { fontSize: 14.5, lineHeight: 1.6, color: STONE.inkDim, margin: "0 0 10px", fontFamily: SAX.serif };
+const pMuted: React.CSSProperties = { fontSize: 13, lineHeight: 1.55, color: STONE.inkFaint, margin: 0, fontFamily: SAX.serif };
+const upsell: React.CSSProperties = { ...surfaces.slate, padding: "16px 18px" };
 const upsellHead: React.CSSProperties = {
-  fontFamily: "ui-monospace, SFMono-Regular, monospace", fontSize: 11, letterSpacing: "0.14em",
-  textTransform: "uppercase", color: "#8a7a55", marginBottom: 8,
+  fontFamily: SAX.mono, fontSize: 11, letterSpacing: "0.14em",
+  textTransform: "uppercase", color: SAX.brass, marginBottom: 8,
 };

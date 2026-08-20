@@ -1,6 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { SAX, STONE, surfaces } from "@/lib/theme";
+import { stoneField } from "@/lib/forge-theme";
 import { MAGIC_ITEMS, MagicItemType, isConsumableType } from "@/lib/tools/magic-items";
 import {
   Rarity, RARITIES, RARITY_LABEL, priceMagicItem, fmtGp,
@@ -19,12 +21,12 @@ const TYPES: MagicItemType[] = ["Armor", "Potion", "Ring", "Rod", "Scroll", "Sta
 const SORTED = [...MAGIC_ITEMS].sort((a, b) => a.name.localeCompare(b.name));
 
 const RARITY_TINT: Record<Rarity, string> = {
-  common: "#6b6250",
-  uncommon: "#3d6b3d",
-  rare: "#2f6a8a",
-  "very rare": "#6a3d8a",
-  legendary: "#9a7b2e",
-  artifact: "#a4442e",
+  common: "#a99e86",
+  uncommon: "#9aa880",
+  rare: "#6fa3c9",
+  "very rare": "#b493d4",
+  legendary: "#e2b878",
+  artifact: "#d97d6d",
 };
 
 export default function MagicItemFinder() {
@@ -131,40 +133,34 @@ export default function MagicItemFinder() {
 // ---- styles (cream document register) ----
 
 const header: React.CSSProperties = { marginBottom: 14 };
-const h2: React.CSSProperties = { fontSize: 24, fontWeight: 600, color: "#2a2620", margin: "0 0 4px" };
-const sub: React.CSSProperties = { fontSize: 14.5, lineHeight: 1.55, color: "#7a7060", margin: 0 };
-const panel: React.CSSProperties = { border: "1px solid #ddd4c2", background: "#fffdf8", borderRadius: 6, padding: "14px 16px", marginBottom: 12 };
-const search: React.CSSProperties = {
-  width: "100%", padding: "9px 11px", borderRadius: 4, border: "1px solid #c9bfa8", background: "#fff",
-  color: "#2a2620", fontSize: 15, fontFamily: "inherit", boxSizing: "border-box",
-};
+const h2: React.CSSProperties = { fontSize: 24, fontWeight: 600, color: STONE.ink, margin: "0 0 4px", fontFamily: "var(--forge-display, 'Cinzel', serif)" };
+const sub: React.CSSProperties = { fontSize: 14.5, lineHeight: 1.55, color: STONE.inkDim, margin: 0, fontFamily: SAX.serif };
+const panel: React.CSSProperties = { ...surfaces.panel, padding: "14px 16px", marginBottom: 12 };
+const search: React.CSSProperties = { ...stoneField(), fontSize: 15, boxSizing: "border-box" };
 const filters: React.CSSProperties = { display: "flex", gap: 10, flexWrap: "wrap", marginTop: 10 };
 const filterWrap: React.CSSProperties = { flex: "1 1 140px" };
 const smallLabel: React.CSSProperties = {
-  display: "block", fontFamily: "ui-monospace, SFMono-Regular, monospace", fontSize: 10,
-  letterSpacing: "0.12em", textTransform: "uppercase", color: "#8a7a55", marginBottom: 5,
+  display: "block", fontFamily: SAX.mono, fontSize: 10,
+  letterSpacing: "0.12em", textTransform: "uppercase", color: STONE.inkDim, marginBottom: 5,
 };
-const sel: React.CSSProperties = {
-  width: "100%", padding: "7px 9px", borderRadius: 4, border: "1px solid #c9bfa8", background: "#fff",
-  color: "#2a2620", fontSize: 14, fontFamily: "inherit", boxSizing: "border-box",
-};
+const sel: React.CSSProperties = { ...stoneField(), padding: "8px 10px", fontSize: 14, boxSizing: "border-box" };
 const countLine: React.CSSProperties = {
-  fontFamily: "ui-monospace, SFMono-Regular, monospace", fontSize: 12, color: "#8a7a55", margin: "0 0 10px",
+  fontFamily: SAX.mono, fontSize: 12, color: STONE.inkFaint, margin: "0 0 10px",
 };
 const row: React.CSSProperties = {
   display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
-  padding: "9px 12px", borderRadius: 5, background: "#fffdf8", border: "1px solid #e6ddca",
+  padding: "9px 12px", borderRadius: 4, background: "rgba(0,0,0,0.22)", boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.4)",
 };
-const itemName: React.CSSProperties = { fontSize: 15, fontWeight: 600, color: "#2a2620" };
+const itemName: React.CSSProperties = { fontSize: 15, fontWeight: 600, color: STONE.ink };
 const meta: React.CSSProperties = { display: "flex", gap: 8, alignItems: "center", marginTop: 3, flexWrap: "wrap" };
 const rarityBadge: React.CSSProperties = {
-  fontFamily: "ui-monospace, SFMono-Regular, monospace", fontSize: 10.5, letterSpacing: "0.04em",
+  fontFamily: SAX.mono, fontSize: 10.5, letterSpacing: "0.04em",
   border: "1px solid", borderRadius: 3, padding: "1px 6px", textTransform: "uppercase",
 };
-const typeText: React.CSSProperties = { fontSize: 12.5, color: "#7a7060" };
+const typeText: React.CSSProperties = { fontSize: 12.5, color: STONE.inkDim };
 const attuneText: React.CSSProperties = {
-  fontFamily: "ui-monospace, SFMono-Regular, monospace", fontSize: 10.5, color: "#9a7b5b",
+  fontFamily: SAX.mono, fontSize: 10.5, color: SAX.brass,
   textTransform: "uppercase", letterSpacing: "0.05em",
 };
-const priceCell: React.CSSProperties = { flex: "0 0 auto", fontSize: 15, fontWeight: 600, color: "#3a352c", whiteSpace: "nowrap" };
-const disclaimer: React.CSSProperties = { fontSize: 12, lineHeight: 1.5, color: "#9a9078", margin: "18px 0 0" };
+const priceCell: React.CSSProperties = { flex: "0 0 auto", fontSize: 15, fontWeight: 600, color: STONE.brassHi, whiteSpace: "nowrap" };
+const disclaimer: React.CSSProperties = { fontSize: 12, lineHeight: 1.5, color: STONE.inkFaint, margin: "18px 0 0", fontFamily: SAX.serif };

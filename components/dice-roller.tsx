@@ -1,6 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { SAX, STONE, surfaces } from "@/lib/theme";
+import { stoneField } from "@/lib/forge-theme";
 import { roll, applyAdvantage, parseDice, DiceError } from "@/lib/dice";
 import { countsToNotation, notationToCounts } from "@/components/dice-picker";
 import {
@@ -172,7 +174,7 @@ export default function DiceRoller() {
               ))}
               <button type="button" onClick={() => setText(bumpMod(text, 1))} style={diceBtn}>+1</button>
               <button type="button" onClick={() => setText(bumpMod(text, -1))} style={diceBtn}>-1</button>
-              <button type="button" onClick={() => setText("")} style={{ ...diceBtn, color: "#9a7b5b" }}>clear</button>
+              <button type="button" onClick={() => setText("")} style={{ ...diceBtn, color: STONE.inkFaint }}>clear</button>
             </div>
             <label style={{ display: "block", marginTop: 12 }}>
               <span style={smallLabel}>Or type it</span>
@@ -259,7 +261,7 @@ export default function DiceRoller() {
                   {e.band && <div style={{ ...bandText, color: TONE_COLOR[e.tone] }}>{e.band}</div>}
                   <div style={detailText}>{e.detail}</div>
                 </div>
-                <div style={{ ...headlineText, color: e.band ? TONE_COLOR[e.tone] : "#2a2620" }}>{e.headline}</div>
+                <div style={{ ...headlineText, color: e.band ? TONE_COLOR[e.tone] : STONE.ink }}>{e.headline}</div>
               </div>
             ))}
           </div>
@@ -296,55 +298,49 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 const TONE_COLOR: Record<Tone, string> = {
-  good: "#3d6b3d", bad: "#a4442e", warn: "#9a7b2e", neutral: "#2a2620",
+  good: "#9aa880", bad: "#d97d6d", warn: "#e2b878", neutral: STONE.ink,
 };
 
-// ---- styles (cream document register) ----
+// ---- styles (carved dark forge register) ----
 
-const panel: React.CSSProperties = { border: "1px solid #ddd4c2", background: "#fffdf8", borderRadius: 6, padding: "16px 18px", marginBottom: 16 };
+const panel: React.CSSProperties = { ...surfaces.panel, padding: "16px 18px", marginBottom: 16 };
 const fieldLabel: React.CSSProperties = {
-  display: "block", fontFamily: "ui-monospace, SFMono-Regular, monospace", fontSize: 11,
-  letterSpacing: "0.14em", textTransform: "uppercase", color: "#8a7a55", marginBottom: 8,
+  display: "block", fontFamily: SAX.mono, fontSize: 11,
+  letterSpacing: "0.14em", textTransform: "uppercase", color: SAX.brass, marginBottom: 8,
 };
 const smallLabel: React.CSSProperties = {
-  display: "block", fontFamily: "ui-monospace, SFMono-Regular, monospace", fontSize: 10.5,
-  letterSpacing: "0.12em", textTransform: "uppercase", color: "#8a7a55", marginBottom: 8,
+  display: "block", fontFamily: SAX.mono, fontSize: 10.5,
+  letterSpacing: "0.12em", textTransform: "uppercase", color: STONE.inkDim, marginBottom: 8,
 };
-const sel: React.CSSProperties = {
-  width: "100%", padding: "9px 10px", borderRadius: 4, border: "1px solid #c9bfa8", background: "#fff",
-  color: "#2a2620", fontSize: 15.5, fontFamily: "inherit", boxSizing: "border-box",
-};
-const inp: React.CSSProperties = {
-  width: "100%", padding: "8px 10px", borderRadius: 4, border: "1px solid #d8cdb4", background: "#fff",
-  color: "#2a2620", fontSize: 14.5, fontFamily: "inherit", boxSizing: "border-box",
-};
-const mono: React.CSSProperties = { ...inp, fontFamily: "ui-monospace, SFMono-Regular, monospace" };
+const sel: React.CSSProperties = { ...stoneField(), fontSize: 15.5, boxSizing: "border-box" };
+const inp: React.CSSProperties = { ...stoneField(), fontSize: 14.5, boxSizing: "border-box" };
+const mono: React.CSSProperties = { ...inp, cursor: "text", fontFamily: SAX.mono };
 const grid2: React.CSSProperties = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12 };
 const diceRow: React.CSSProperties = { display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" };
 const diceBtn: React.CSSProperties = {
-  fontFamily: "ui-monospace, SFMono-Regular, monospace", fontSize: 13, color: "#3a352c",
-  border: "1px solid #d8cdb4", borderRadius: 4, padding: "8px 12px", background: "#fff", cursor: "pointer",
+  fontFamily: SAX.mono, fontSize: 13, color: STONE.ink,
+  border: `1px solid ${STONE.hi}`, borderRadius: 4, padding: "8px 12px", background: "rgba(0,0,0,0.24)", cursor: "pointer",
 };
 const chip: React.CSSProperties = {
-  fontFamily: "ui-monospace, SFMono-Regular, monospace", fontSize: 12, color: "#7a7060",
-  border: "1px solid #d8cdb4", borderRadius: 3, padding: "6px 11px", background: "#fff", cursor: "pointer",
+  fontFamily: SAX.mono, fontSize: 12, color: STONE.inkDim,
+  border: `1px solid ${STONE.hi}`, borderRadius: 3, padding: "6px 11px", background: "rgba(0,0,0,0.24)", cursor: "pointer",
 };
-const chipOn: React.CSSProperties = { background: "#3a352c", color: "#f6f2e9", borderColor: "#3a352c" };
-const hint: React.CSSProperties = { fontSize: 13, lineHeight: 1.55, color: "#7a7060", margin: "10px 0 0" };
-const hintInline: React.CSSProperties = { fontSize: 12.5, color: "#8a8069", alignSelf: "center" };
+const chipOn: React.CSSProperties = { background: `linear-gradient(180deg, ${STONE.brassHi}, ${SAX.brass})`, color: "#241a0d", borderColor: SAX.brass };
+const hint: React.CSSProperties = { fontSize: 13, lineHeight: 1.55, color: STONE.inkFaint, margin: "10px 0 0", fontFamily: SAX.serif };
+const hintInline: React.CSSProperties = { fontSize: 12.5, color: STONE.inkFaint, alignSelf: "center", fontFamily: SAX.serif };
 const notationPreview: React.CSSProperties = {
-  fontFamily: "ui-monospace, SFMono-Regular, monospace", fontSize: 13, color: "#6b6250",
-  background: "#f3ecdd", border: "1px solid #e0d6bf", borderRadius: 4, padding: "8px 11px", margin: "14px 0 12px",
+  fontFamily: SAX.mono, fontSize: 13, color: STONE.inkDim,
+  background: "rgba(0,0,0,0.24)", boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.4)", borderRadius: 4, padding: "8px 11px", margin: "14px 0 12px",
 };
 const rollBtn: React.CSSProperties = {
-  background: "#3a352c", color: "#f6f2e9", border: "none", borderRadius: 4, padding: "11px 26px",
-  fontFamily: "ui-monospace, monospace", fontSize: 13, letterSpacing: "0.1em", textTransform: "uppercase", cursor: "pointer",
+  background: `linear-gradient(180deg, ${STONE.brassHi}, ${SAX.brass})`, color: "#241a0d", border: "none", borderRadius: 4, padding: "11px 26px",
+  fontFamily: SAX.mono, fontSize: 13, letterSpacing: "0.1em", textTransform: "uppercase", cursor: "pointer",
 };
 const logRow: React.CSSProperties = {
   display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
-  padding: "10px 0", borderTop: "1px solid #ece3cf",
+  padding: "10px 0", borderTop: "1px solid rgba(255,235,200,0.08)",
 };
 const bandText: React.CSSProperties = { fontSize: 14.5, fontWeight: 600 };
-const detailText: React.CSSProperties = { fontFamily: "ui-monospace, SFMono-Regular, monospace", fontSize: 12, color: "#8a8069", marginTop: 2 };
-const headlineText: React.CSSProperties = { fontFamily: "ui-monospace, SFMono-Regular, monospace", fontSize: 24, fontWeight: 700, flex: "0 0 auto" };
-const foot: React.CSSProperties = { fontSize: 13, lineHeight: 1.6, color: "#7a7060", margin: "4px 0 0" };
+const detailText: React.CSSProperties = { fontFamily: SAX.mono, fontSize: 12, color: STONE.inkFaint, marginTop: 2 };
+const headlineText: React.CSSProperties = { fontFamily: SAX.mono, fontSize: 24, fontWeight: 700, flex: "0 0 auto" };
+const foot: React.CSSProperties = { fontSize: 13, lineHeight: 1.6, color: STONE.inkFaint, margin: "4px 0 0", fontFamily: SAX.serif };
