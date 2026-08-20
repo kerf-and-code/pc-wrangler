@@ -7,6 +7,7 @@ import {
 } from "@/lib/forge-theme";
 import SectionRail, { type RailSection } from "@/components/home/section-rail";
 import RoadmapComing from "@/components/roadmap-coming";
+import HowItWorks from "@/components/how-it-works";
 
 // app/page.tsx
 //
@@ -47,6 +48,7 @@ export const metadata: Metadata = {
 
 const RAIL: RailSection[] = [
   { id: "top", label: "Overview" },
+  { id: "how", label: "How it works" },
   { id: "capture", label: "What you rolled" },
   { id: "wiki", label: "Living wiki" },
   { id: "insight", label: "Player insight" },
@@ -124,6 +126,13 @@ export default function Home() {
             <div className="hero-mark">
               <img src="/six-axes-logo.png" alt="The Six Axes mark" className="spin-slow hero-logo" />
             </div>
+          </section>
+
+          <Divider />
+
+          {/* HOW IT WORKS */}
+          <section id="how" className="sec">
+            <HowItWorks />
           </section>
 
           <Divider />
