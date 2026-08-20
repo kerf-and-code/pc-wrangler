@@ -88,19 +88,20 @@ const FEATURES: Feature[] = [
 
 export default function FeaturesExplorer() {
   const [active, setActive] = useState(0);
-  const f = FEATURES[active];
-
   return (
     <div className="feat-wrap">
       <style dangerouslySetInnerHTML={{ __html: CSS }} />
-      <nav className="feat-nav" aria-label="Features">
+      <nav className="feat-nav" aria-label="Features" role="tablist">
         {FEATURES.map((x, i) => (
           <button
             key={x.key}
             type="button"
+            role="tab"
+            id={`feat-tab-${x.key}`}
+            aria-controls={`feat-panel-${x.key}`}
+            aria-selected={i === active}
             onClick={() => setActive(i)}
             className={i === active ? "feat-tab is-on" : "feat-tab"}
-            aria-current={i === active ? "true" : undefined}
           >
             <span className="feat-num">{String(i + 1).padStart(2, "0")}</span>
             <span className="feat-lbl">{x.label}</span>
@@ -108,15 +109,30 @@ export default function FeaturesExplorer() {
         ))}
       </nav>
 
-      <article className="feat-card" style={{ ...stonePanel(), padding: "26px 28px" }} key={f.key}>
-        <p style={eyebrow}>{f.label}</p>
-        <h2 style={title}>{f.title}</h2>
-        <p style={lead}>{f.lead}</p>
-        {f.paras.map((p, i) => <p key={i} style={body}>{p}</p>)}
-        <figure style={shotFrame}>
-          <img src={f.img} alt={f.imgAlt} style={shotImg} loading="lazy" />
-        </figure>
-      </article>
+      {/* Every panel is rendered into the HTML; the inactive ones are hidden. That keeps the
+          click-to-switch feel while putting all five features' copy in the server response, so crawlers
+          and link previews read the whole page instead of just the first card. */}
+      <div className="feat-stage" style={{ minWidth: 0 }}>
+        {FEATURES.map((f, i) => (
+          <article
+            key={f.key}
+            id={`feat-panel-${f.key}`}
+            role="tabpanel"
+            aria-labelledby={`feat-tab-${f.key}`}
+            hidden={i !== active}
+            className="feat-card"
+            style={{ ...stonePanel(), padding: "26px 28px" }}
+          >
+            <p style={eyebrow}>{f.label}</p>
+            <h2 style={title}>{f.title}</h2>
+            <p style={lead}>{f.lead}</p>
+            {f.paras.map((p, j) => <p key={j} style={body}>{p}</p>)}
+            <figure style={shotFrame}>
+              <img src={f.img} alt={f.imgAlt} style={shotImg} loading="lazy" />
+            </figure>
+          </article>
+        ))}
+      </div>
     </div>
   );
 }
