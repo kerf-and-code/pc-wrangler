@@ -64,7 +64,7 @@ export default function MyCharactersPage() {
         <UpgradeAccount variant="card" next="/me/characters" />
 
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, margin: "4px 0 18px", flexWrap: "wrap" }}>
-          <span style={{ color: C.muted, fontSize: 13 }}>Tap a character to open it in the Forge.</span>
+          <span style={{ color: C.muted, fontSize: 13 }}>Open a character&rsquo;s page to write its story, or jump to the Forge to build.</span>
           <a href="/me/forge" style={{
             textDecoration: "none", fontFamily: SAX.mono, fontSize: 12, letterSpacing: "0.1em",
             textTransform: "uppercase", color: C.ink, background: SAX.brass,
@@ -93,20 +93,18 @@ export default function MyCharactersPage() {
             </div>
 
             {group.chars.map((c) => (
-              <a
+              <div
                 key={c.character_id}
-                href={`/me/forge?c=${c.character_id}`}
                 style={{
-                  display: "block", textDecoration: "none",
                   background: C.surface, border: `1px solid ${C.line}`,
                   borderRadius: FORGE_RADIUS, padding: "14px 18px", marginBottom: 10,
                   opacity: c.active ? 1 : 0.55,
                 }}
               >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
-                  <span style={{ fontFamily: SAX.serif, fontSize: 18, fontWeight: 700, color: C.text }}>
+                  <a href={`/me/characters/${c.character_id}`} style={{ fontFamily: SAX.serif, fontSize: 18, fontWeight: 700, color: C.text, textDecoration: "none" }}>
                     {c.name}
-                  </span>
+                  </a>
                   {!c.active && (
                     <span style={{ fontFamily: SAX.mono, fontSize: 10.5, letterSpacing: "0.1em", color: C.muted, textTransform: "uppercase" }}>
                       retired
@@ -122,7 +120,16 @@ export default function MyCharactersPage() {
                     c.alignment,
                   ].filter(Boolean).join(" · ") || "No details recorded yet."}
                 </div>
-              </a>
+
+                <div style={{ display: "flex", gap: 16, marginTop: 11 }}>
+                  <a href={`/me/characters/${c.character_id}`} style={{ fontFamily: SAX.mono, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: SAX.brass, textDecoration: "none" }}>
+                    Character page
+                  </a>
+                  <a href={`/me/forge?c=${c.character_id}`} style={{ fontFamily: SAX.mono, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: C.muted, textDecoration: "none" }}>
+                    Forge
+                  </a>
+                </div>
+              </div>
             ))}
           </div>
         ))}
