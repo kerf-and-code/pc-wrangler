@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import ToolsShell from "@/components/tools-shell";
 import JsonLd from "@/components/json-ld";
 import { toolBreadcrumb } from "@/lib/seo";
+import ToolCopy from "@/components/tools/tool-copy";
+import { TOOL_COPY } from "@/lib/tools/tool-copy-content";
 import MapGenerator from "@/components/map-generator";
 
 // app/tools/map-generator/page.tsx
@@ -25,6 +27,7 @@ export default function MapGeneratorPage() {
     >
       <JsonLd data={toolBreadcrumb("Fantasy world map generator", "map-generator")} />
       <MapGenerator />
+      <ToolCopy {...TOOL_COPY["map-generator"]} />
     </ToolsShell>
   );
 }

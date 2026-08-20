@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import ToolsShell from "@/components/tools-shell";
 import JsonLd from "@/components/json-ld";
 import { toolBreadcrumb } from "@/lib/seo";
+import ToolCopy from "@/components/tools/tool-copy";
+import { TOOL_COPY } from "@/lib/tools/tool-copy-content";
 import EncounterBalancer from "@/components/encounter-balancer";
 
 // app/tools/encounter-balancer/page.tsx
@@ -26,6 +28,7 @@ export default function EncounterBalancerPage() {
     >
       <JsonLd data={toolBreadcrumb("Encounter balancer", "encounter-balancer")} />
       <EncounterBalancer />
+      <ToolCopy {...TOOL_COPY["encounter-balancer"]} />
     </ToolsShell>
   );
 }

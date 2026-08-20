@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import ToolsShell from "@/components/tools-shell";
 import JsonLd from "@/components/json-ld";
 import { toolBreadcrumb } from "@/lib/seo";
+import ToolCopy from "@/components/tools/tool-copy";
+import { TOOL_COPY } from "@/lib/tools/tool-copy-content";
 import PlayerQuiz from "@/components/player-quiz";
 
 // app/tools/player-quiz/page.tsx
@@ -25,6 +27,7 @@ export default function PlayerQuizPage() {
     >
       <JsonLd data={toolBreadcrumb("Player-type quiz", "player-quiz")} />
       <PlayerQuiz />
+      <ToolCopy {...TOOL_COPY["player-quiz"]} />
     </ToolsShell>
   );
 }

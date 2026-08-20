@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import ToolsShell from "@/components/tools-shell";
 import JsonLd from "@/components/json-ld";
 import { toolBreadcrumb } from "@/lib/seo";
+import ToolCopy from "@/components/tools/tool-copy";
+import { TOOL_COPY } from "@/lib/tools/tool-copy-content";
 import MagicItemPricer from "@/components/magic-item-pricer";
 import MagicItemFinder from "@/components/magic-item-finder";
 
@@ -27,6 +29,7 @@ export default function MagicItemPricePage() {
       <JsonLd data={toolBreadcrumb("Magic item price calculator", "magic-item-price")} />
       <MagicItemPricer />
       <MagicItemFinder />
+      <ToolCopy {...TOOL_COPY["magic-item-price"]} />
     </ToolsShell>
   );
 }

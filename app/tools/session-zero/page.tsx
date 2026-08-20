@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import ToolsShell from "@/components/tools-shell";
 import JsonLd from "@/components/json-ld";
 import { toolBreadcrumb } from "@/lib/seo";
+import ToolCopy from "@/components/tools/tool-copy";
+import { TOOL_COPY } from "@/lib/tools/tool-copy-content";
 import SessionZero from "@/components/session-zero";
 
 // app/tools/session-zero/page.tsx
@@ -25,6 +27,7 @@ export default function SessionZeroPage() {
     >
       <JsonLd data={toolBreadcrumb("Session zero checklist", "session-zero")} />
       <SessionZero />
+      <ToolCopy {...TOOL_COPY["session-zero"]} />
     </ToolsShell>
   );
 }

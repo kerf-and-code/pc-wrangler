@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import ToolsShell from "@/components/tools-shell";
 import JsonLd from "@/components/json-ld";
 import { toolBreadcrumb } from "@/lib/seo";
+import ToolCopy from "@/components/tools/tool-copy";
+import { TOOL_COPY } from "@/lib/tools/tool-copy-content";
 import DiceRoller from "@/components/dice-roller";
 
 // app/tools/dice-roller/page.tsx
@@ -25,6 +27,7 @@ export default function DiceRollerPage() {
     >
       <JsonLd data={toolBreadcrumb("Dice roller", "dice-roller")} />
       <DiceRoller />
+      <ToolCopy {...TOOL_COPY["dice-roller"]} />
     </ToolsShell>
   );
 }

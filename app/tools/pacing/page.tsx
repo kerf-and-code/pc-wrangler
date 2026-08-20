@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import ToolsShell from "@/components/tools-shell";
 import JsonLd from "@/components/json-ld";
 import { toolBreadcrumb } from "@/lib/seo";
+import ToolCopy from "@/components/tools/tool-copy";
+import { TOOL_COPY } from "@/lib/tools/tool-copy-content";
 import PacingCalculator from "@/components/pacing-calculator";
 
 // app/tools/pacing/page.tsx
@@ -25,6 +27,7 @@ export default function PacingPage() {
     >
       <JsonLd data={toolBreadcrumb("Session and arc pacing", "pacing")} />
       <PacingCalculator />
+      <ToolCopy {...TOOL_COPY["pacing"]} />
     </ToolsShell>
   );
 }
