@@ -1,16 +1,17 @@
 import Link from "next/link";
-import { SAX, STONE, surfaces } from "@/lib/theme";
-import { C, forgeBackground, forgeVignette, stoneButton, FORGE_BUTTON_CSS, forgeRuleLine, forgeBoss } from "@/lib/forge-theme";
+import { SAX, STONE } from "@/lib/theme";
+import {
+  C, forgeBackground, forgeVignette, stonePanel, stoneButton, FORGE_BUTTON_CSS, forgeRuleLine, forgeBoss,
+} from "@/lib/forge-theme";
 
 // components/tools-shell.tsx
 //
 // The shared frame every free tool sits in. No auth, no database, no account: these pages exist to be
 // found in search and used on the spot, then to breadcrumb the visitor toward the pilot.
 //
-// REGISTER (updated 2026-08): the CHROME is now the site's forge look (dark stone, the logo, the same top
-// nav as the marketing pages) so the tools match the rest of the site, while the tool BODY sits on a
-// PARCHMENT reading sheet laid on the stone, the app's own idiom (dungeon chrome, vellum for reading).
-// The individual tool components keep their light cards untouched; they simply sit on the sheet now.
+// REGISTER (2026-08): the full dungeon/forge look, matching the site and the app, dark stone, carved
+// panels, brass. The tool bodies themselves are carved dark panels too (each tool's own styles), so the
+// whole tools surface reads with the app's depth rather than a flat document.
 //
 // Every tool passes a title and a one-line tagline; the shell supplies the top bar, the eyebrow, the
 // back-link to the tools hub, the pilot CTA, and the footer, so each tool page only writes its own body.
@@ -49,34 +50,32 @@ export default function ToolsShell({
       </header>
 
       <div className="ts-wrap">
-        <article style={sheet}>
-          <div style={topRow}>
-            <span style={eyebrow}>Free tools</span>
-            {!hideHubLink && <Link href="/tools" style={hubLink}>All tools</Link>}
+        <div style={topRow}>
+          <span style={eyebrow}>Free tools</span>
+          {!hideHubLink && <Link href="/tools" style={hubLink}>All tools</Link>}
+        </div>
+        <h1 style={h1}>{title}</h1>
+        {tagline && <p style={lede}>{tagline}</p>}
+
+        <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "20px 0 26px" }} aria-hidden>
+          <span style={forgeRuleLine} />
+          <span style={forgeBoss} />
+          <span style={{ ...forgeRuleLine, transform: "scaleX(-1)" }} />
+        </div>
+
+        <div>{children}</div>
+
+        <section style={{ ...stonePanel(), padding: "22px 24px", marginTop: 34 }}>
+          <p style={ctaLead}>These tools run on a slice of what Six Axes does at the table.</p>
+          <p style={ctaBody}>
+            The full product records your session, writes the recap, keeps the campaign wiki, and reads how
+            your table actually plays, across whatever system you run. It is in free pilot now.
+          </p>
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 16 }}>
+            <Link href="/pilot" className="forge-btn is-primary" style={stoneButton("primary")}>Join the pilot</Link>
+            <Link href="/features" className="forge-btn is-ghost" style={stoneButton("ghost")}>What is Six Axes?</Link>
           </div>
-          <h1 style={h1}>{title}</h1>
-          {tagline && <p style={lede}>{tagline}</p>}
-
-          <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "20px 0 4px" }} aria-hidden>
-            <span style={forgeRuleLine} />
-            <span style={forgeBoss} />
-            <span style={{ ...forgeRuleLine, transform: "scaleX(-1)" }} />
-          </div>
-
-          <div style={{ marginTop: 22 }}>{children}</div>
-
-          <section style={cta}>
-            <p style={ctaLead}>These tools run on a slice of what Six Axes does at the table.</p>
-            <p style={ctaBody}>
-              The full product records your session, writes the recap, keeps the campaign wiki, and reads how
-              your table actually plays, across whatever system you run. It is in free pilot now.
-            </p>
-            <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 16 }}>
-              <Link href="/pilot" style={ctaBtn}>Join the pilot</Link>
-              <Link href="/features" style={ctaGhost}>What is Six Axes?</Link>
-            </div>
-          </section>
-        </article>
+        </section>
       </div>
 
       <footer className="ts-foot">
@@ -95,47 +94,19 @@ export default function ToolsShell({
   );
 }
 
-// ---- the parchment reading sheet (light, for reading) laid on the dark stone ----
-
-const sheet: React.CSSProperties = {
-  ...surfaces.parchment,
-  // A lit-from-the-top parchment with a carved frame and a deep drop onto the stone, so it reads as a
-  // physical sheet on the table rather than a flat panel.
-  background: "radial-gradient(130% 90% at 50% -6%, #F4ECD9 0%, #E9DEC7 58%, #E1D5BC 100%)",
-  maxWidth: 800,
-  margin: "0 auto",
-  padding: "38px 42px 32px",
-  position: "relative",
-  zIndex: 1,
-  borderRadius: 10,
-  border: "1px solid #cdbc95",
-  boxShadow: [
-    "inset 0 2px 0 rgba(255,255,255,0.65)",
-    "inset 0 0 0 1px rgba(255,253,248,0.6)",
-    "inset 0 -18px 40px rgba(140,120,80,0.12)",
-    "0 22px 46px rgba(0,0,0,0.6)",
-    "0 0 0 1px rgba(0,0,0,0.4)",
-  ].join(","),
-};
 const topRow: React.CSSProperties = { display: "flex", alignItems: "center", gap: 10, marginBottom: 12 };
 const eyebrow: React.CSSProperties = {
-  fontFamily: "ui-monospace, SFMono-Regular, monospace", fontSize: 11, letterSpacing: "0.2em",
-  textTransform: "uppercase", color: "#8a7a55",
+  fontFamily: SAX.mono, fontSize: 11, letterSpacing: "0.22em", textTransform: "uppercase", color: SAX.brass,
 };
-const hubLink: React.CSSProperties = { marginLeft: "auto", color: "#8a6a2f", fontSize: 14, textDecoration: "none" };
+const hubLink: React.CSSProperties = { marginLeft: "auto", color: STONE.brassHi, fontSize: 14, textDecoration: "none" };
 const h1: React.CSSProperties = {
-  fontFamily: "var(--forge-display, 'Cinzel', 'Iowan Old Style', Georgia, serif)",
-  fontSize: 34, lineHeight: 1.15, margin: "0 0 10px", fontWeight: 700, color: SAX.parchInk, letterSpacing: "0.02em",
+  fontFamily: "var(--forge-display, 'Cinzel', serif)", fontSize: 36, lineHeight: 1.14, margin: "0 0 10px",
+  fontWeight: 700, color: STONE.ink, letterSpacing: "0.03em",
+  textShadow: "0 -1px 0 rgba(0,0,0,0.9), 0 1px 0 rgba(255,230,190,0.08)",
 };
-const lede: React.CSSProperties = { fontSize: 18, lineHeight: 1.6, color: "#4a443a", margin: 0, fontFamily: SAX.serif };
-const cta: React.CSSProperties = { marginTop: 34, padding: "22px 0 0", borderTop: "1px solid #cbba95" };
-const ctaLead: React.CSSProperties = { fontSize: 17, fontWeight: 600, color: SAX.parchInk, margin: "0 0 6px", fontFamily: SAX.serif };
-const ctaBody: React.CSSProperties = { fontSize: 15.5, lineHeight: 1.65, color: "#4a443a", margin: 0, fontFamily: SAX.serif };
-const ctaBtn: React.CSSProperties = {
-  display: "inline-block", background: "#3a352c", color: "#f6f2e9", padding: "11px 22px", borderRadius: 3,
-  textDecoration: "none", fontFamily: "ui-monospace, monospace", fontSize: 13, letterSpacing: "0.08em", textTransform: "uppercase",
-};
-const ctaGhost: React.CSSProperties = { ...ctaBtn, background: "transparent", color: "#3a352c", border: "1px solid #b9a878" };
+const lede: React.CSSProperties = { fontSize: 18, lineHeight: 1.6, color: STONE.inkDim, margin: 0, fontFamily: SAX.serif };
+const ctaLead: React.CSSProperties = { fontSize: 17, fontWeight: 600, color: STONE.ink, margin: "0 0 6px", fontFamily: SAX.serif };
+const ctaBody: React.CSSProperties = { fontSize: 15.5, lineHeight: 1.65, color: STONE.inkDim, margin: 0, fontFamily: SAX.serif };
 const footLink: React.CSSProperties = { color: STONE.brassHi, textDecoration: "none" };
 
 const CSS = `
@@ -156,8 +127,8 @@ ${FORGE_BUTTON_CSS}
 .ts-link { font-family: ${SAX.mono}; font-size: 12.5px; letter-spacing: 0.08em; text-transform: uppercase;
   color: ${STONE.inkDim}; text-decoration: none; }
 .ts-link:hover { color: ${STONE.brassHi}; }
-.ts-wrap { padding: 40px 20px 26px; position: relative; z-index: 1; }
-.ts-foot { border-top: 1px solid ${STONE.mortar}; position: relative; z-index: 1;
+.ts-wrap { max-width: 820px; margin: 0 auto; padding: 46px 24px 24px; position: relative; z-index: 1; }
+.ts-foot { border-top: 1px solid ${STONE.mortar}; margin-top: 30px; position: relative; z-index: 1;
   background: linear-gradient(180deg, transparent, rgba(10,7,4,0.5)); }
 .ts-foot-inner { max-width: 820px; margin: 0 auto; padding: 22px 24px; display: flex; gap: 14px;
   justify-content: space-between; flex-wrap: wrap; font-family: ${SAX.mono}; font-size: 12.5px; color: ${STONE.inkFaint}; }

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import ToolsShell from "@/components/tools-shell";
+import { SAX, STONE } from "@/lib/theme";
 
 // app/tools/page.tsx
 //
@@ -96,7 +97,7 @@ export default function ToolsHub() {
           const inner = (
             <>
               <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
-                <span style={cardName}>{t.name}</span>
+                <span className="tool-name" style={cardName}>{t.name}</span>
                 {t.status === "soon" && <span style={soon}>Coming soon</span>}
               </div>
               <p style={cardBlurb}>{t.blurb}</p>
@@ -115,26 +116,31 @@ export default function ToolsHub() {
 }
 
 const cardBase: React.CSSProperties = {
-  display: "block", padding: "18px 20px 18px 22px", borderRadius: 6,
-  border: "1px solid #d8cdb4", borderLeft: "3px solid #b98f2f",
-  background: "linear-gradient(180deg, #fffefb, #faf5e8)", textDecoration: "none", color: "inherit",
-  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.8), 0 2px 0 -1px #d8cdb4, 0 9px 18px rgba(70,55,25,0.16)",
+  display: "block", padding: "18px 20px 18px 22px", borderRadius: 4,
+  borderLeft: `3px solid ${SAX.brass}`,
+  background: "linear-gradient(160deg, rgba(52,47,39,0.82) 0%, rgba(38,34,28,0.86) 45%, rgba(22,19,15,0.9) 100%)",
+  textDecoration: "none", color: "inherit",
+  boxShadow: [
+    "inset 1px 1px 0 rgba(255,235,200,0.12)", "inset -1px -1px 0 rgba(0,0,0,0.6)",
+    "0 4px 0 -1px #17130d", "0 6px 14px rgba(0,0,0,0.55)",
+  ].join(","),
   transition: "transform .08s ease, box-shadow .08s ease",
 };
 const cardLive: React.CSSProperties = {};
-const cardSoon: React.CSSProperties = { opacity: 0.72, borderLeftColor: "#cbbf9f" };
+const cardSoon: React.CSSProperties = { opacity: 0.6, borderLeftColor: STONE.hi };
 
 const HUB_CSS = `
 .tool-card:hover { transform: translateY(-2px);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.85), 0 3px 0 -1px #d8cdb4, 0 13px 24px rgba(70,55,25,0.22); }
-.tool-card:hover span { color: #7a5a1a; }
+  box-shadow: inset 1px 1px 0 rgba(255,235,200,0.14), inset -1px -1px 0 rgba(0,0,0,0.6),
+    0 6px 0 -1px #17130d, 0 12px 22px rgba(0,0,0,0.6); }
+.tool-card:hover .tool-name { color: ${STONE.brassHi}; }
 `;
-const cardName: React.CSSProperties = { fontSize: 20, fontWeight: 600, color: "#2a2620" };
+const cardName: React.CSSProperties = { fontSize: 20, fontWeight: 600, color: STONE.ink, fontFamily: "var(--forge-display, 'Cinzel', serif)" };
 const soon: React.CSSProperties = {
-  fontFamily: "ui-monospace, SFMono-Regular, monospace", fontSize: 10.5, letterSpacing: "0.12em",
-  textTransform: "uppercase", color: "#9a7b2e", border: "1px solid #d8c9a2", borderRadius: 3, padding: "2px 7px",
+  fontFamily: SAX.mono, fontSize: 10.5, letterSpacing: "0.12em",
+  textTransform: "uppercase", color: SAX.brass, border: `1px solid ${STONE.brassDeep}`, borderRadius: 3, padding: "2px 7px",
 };
-const cardBlurb: React.CSSProperties = { fontSize: 15.5, lineHeight: 1.6, color: "#4a443a", margin: "8px 0 0" };
+const cardBlurb: React.CSSProperties = { fontSize: 15.5, lineHeight: 1.6, color: STONE.inkDim, margin: "8px 0 0", fontFamily: SAX.serif };
 const cardSystems: React.CSSProperties = {
-  fontFamily: "ui-monospace, SFMono-Regular, monospace", fontSize: 12, color: "#8a7a55", margin: "8px 0 0",
+  fontFamily: SAX.mono, fontSize: 12, color: STONE.inkFaint, margin: "8px 0 0",
 };

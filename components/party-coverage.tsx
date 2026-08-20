@@ -1,6 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { SAX, STONE, surfaces } from "@/lib/theme";
+import { stoneField } from "@/lib/forge-theme";
 import {
   CoverageSystem,
   PartyMember,
@@ -163,12 +165,12 @@ export default function PartyCoverage() {
         <div style={panelHead}>Coverage</div>
         <p style={summaryLine}>
           {gapCount === 0 ? (
-            <span style={{ color: "#3d6b3d", fontWeight: 600 }}>
+            <span style={{ color: "#9aa880", fontWeight: 600 }}>
               All {coverage.relevant.length} roles covered.
             </span>
           ) : (
             <span>
-              <span style={{ color: "#a4442e", fontWeight: 600 }}>
+              <span style={{ color: "#d97d6d", fontWeight: 600 }}>
                 {gapCount} gap{gapCount === 1 ? "" : "s"}:
               </span>{" "}
               {coverage.missing.map((r) => ROLE_LABEL[r]).join(", ")}.
@@ -183,7 +185,7 @@ export default function PartyCoverage() {
             return (
               <div key={role} style={{ ...covRow, ...(covered ? null : covRowGap) }}>
                 <div style={covLabel}>
-                  <span style={{ ...dot, background: covered ? "#3d6b3d" : "#c14a2e" }} />
+                  <span style={{ ...dot, background: covered ? "#9aa880" : "#d97d6d" }} />
                   <span style={{ fontWeight: 600 }}>{ROLE_LABEL[role]}</span>
                 </div>
                 <div style={covWho}>
@@ -234,70 +236,63 @@ function uniq(a: string[]): string[] {
 
 // ---- styles (cream document register, matching tools-shell) ----
 
-const panel: React.CSSProperties = {
-  border: "1px solid #ddd4c2", background: "#fffdf8", borderRadius: 6, padding: "16px 18px", marginBottom: 16,
-};
+// Forge register: carved dark panels, recessed fields, brass accents. Markup and logic unchanged.
+const MONO = SAX.mono;
+const inset = "rgba(0,0,0,0.24)";
+const panel: React.CSSProperties = { ...surfaces.panel, padding: "16px 18px", marginBottom: 16 };
 const panelHead: React.CSSProperties = {
-  fontFamily: "ui-monospace, SFMono-Regular, monospace", fontSize: 11, letterSpacing: "0.14em",
-  textTransform: "uppercase", color: "#8a7a55", marginBottom: 12,
+  fontFamily: MONO, fontSize: 11, letterSpacing: "0.14em",
+  textTransform: "uppercase", color: SAX.brass, marginBottom: 12,
 };
 const fieldLabel: React.CSSProperties = {
-  display: "block", fontFamily: "ui-monospace, SFMono-Regular, monospace", fontSize: 11,
-  letterSpacing: "0.14em", textTransform: "uppercase", color: "#8a7a55", marginBottom: 8,
+  display: "block", fontFamily: MONO, fontSize: 11,
+  letterSpacing: "0.14em", textTransform: "uppercase", color: STONE.inkDim, marginBottom: 8,
 };
-const select: React.CSSProperties = {
-  width: "100%", padding: "9px 10px", borderRadius: 4, border: "1px solid #c9bfa8", background: "#fff",
-  color: "#2a2620", fontSize: 15.5, fontFamily: "inherit",
+const select: React.CSSProperties = { ...stoneField(), fontSize: 15.5 };
+const noteText: React.CSSProperties = { fontSize: 13.5, lineHeight: 1.55, color: STONE.inkFaint, margin: "10px 0 0", fontFamily: SAX.serif };
+const rowBox: React.CSSProperties = {
+  borderRadius: 4, padding: "10px 12px", background: inset,
+  boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.4), inset 1px 1px 3px rgba(0,0,0,0.45)",
 };
-const noteText: React.CSSProperties = { fontSize: 13.5, lineHeight: 1.55, color: "#7a7060", margin: "10px 0 0" };
-const rowBox: React.CSSProperties = { border: "1px solid #e6ddca", borderRadius: 5, padding: "10px 12px", background: "#fffefb" };
 const rowTop: React.CSSProperties = { display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" };
-const nameInput: React.CSSProperties = {
-  flex: "1 1 160px", minWidth: 0, padding: "8px 10px", borderRadius: 4, border: "1px solid #d8cdb4",
-  background: "#fff", color: "#2a2620", fontSize: 14.5, fontFamily: "inherit",
-};
-const rowSelect: React.CSSProperties = {
-  flex: "1 1 200px", padding: "8px 10px", borderRadius: 4, border: "1px solid #c9bfa8", background: "#fff",
-  color: "#2a2620", fontSize: 14.5, fontFamily: "inherit",
-};
+const nameInput: React.CSSProperties = { ...stoneField(), flex: "1 1 160px", minWidth: 0, fontSize: 14.5 };
+const rowSelect: React.CSSProperties = { ...stoneField(), flex: "1 1 200px", fontSize: 14.5 };
 const removeBtn: React.CSSProperties = {
-  flex: "0 0 auto", width: 30, height: 30, borderRadius: 4, border: "1px solid #d8cdb4", background: "#fff",
-  color: "#9a7b5b", fontSize: 18, lineHeight: 1, cursor: "pointer",
+  flex: "0 0 auto", width: 30, height: 30, borderRadius: 4, border: `1px solid ${STONE.hi}`, background: "rgba(0,0,0,0.3)",
+  color: STONE.inkDim, fontSize: 18, lineHeight: 1, cursor: "pointer",
 };
 const rowRoles: React.CSSProperties = { display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 };
 const roleTag: React.CSSProperties = {
-  fontFamily: "ui-monospace, SFMono-Regular, monospace", fontSize: 11, color: "#6b6250",
-  border: "1px solid #e0d6bf", borderRadius: 3, padding: "2px 7px", background: "#faf6ec",
+  fontFamily: MONO, fontSize: 11, color: STONE.inkDim,
+  border: `1px solid ${STONE.hi}`, borderRadius: 3, padding: "2px 7px", background: inset,
 };
 const roleChips: React.CSSProperties = { display: "flex", gap: 6, flexWrap: "wrap", marginTop: 10 };
 const chip: React.CSSProperties = {
-  fontFamily: "ui-monospace, SFMono-Regular, monospace", fontSize: 11.5, color: "#7a7060",
-  border: "1px solid #d8cdb4", borderRadius: 3, padding: "4px 9px", background: "#fff", cursor: "pointer",
+  fontFamily: MONO, fontSize: 11.5, color: STONE.inkDim,
+  border: `1px solid ${STONE.hi}`, borderRadius: 3, padding: "4px 9px", background: inset, cursor: "pointer",
 };
-const chipOn: React.CSSProperties = { background: "#3a352c", color: "#f6f2e9", borderColor: "#3a352c" };
+const chipOn: React.CSSProperties = {
+  background: `linear-gradient(180deg, ${STONE.brassHi}, ${SAX.brass})`, color: "#241a0d", borderColor: SAX.brass,
+};
 const addBtn: React.CSSProperties = {
-  marginTop: 12, padding: "8px 14px", borderRadius: 4, border: "1px dashed #c3b48f", background: "transparent",
-  color: "#8a6a2f", fontSize: 13.5, cursor: "pointer", fontFamily: "inherit",
+  marginTop: 12, padding: "8px 14px", borderRadius: 4, border: `1px dashed ${STONE.brassDeep}`, background: "transparent",
+  color: STONE.brassHi, fontSize: 13.5, cursor: "pointer", fontFamily: MONO,
 };
-const summaryLine: React.CSSProperties = { fontSize: 16, lineHeight: 1.5, margin: "0 0 12px" };
+const summaryLine: React.CSSProperties = { fontSize: 16, lineHeight: 1.5, margin: "0 0 12px", color: STONE.ink, fontFamily: SAX.serif };
 const covRow: React.CSSProperties = {
   display: "flex", gap: 12, alignItems: "baseline", justifyContent: "space-between",
-  padding: "8px 10px", borderRadius: 4, background: "#faf6ec", border: "1px solid #ece3cf",
+  padding: "8px 10px", borderRadius: 4, background: inset, boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.4)",
 };
-const covRowGap: React.CSSProperties = { background: "#fbeee9", border: "1px solid #ecccbf" };
+const covRowGap: React.CSSProperties = { background: "rgba(138,51,36,0.16)", boxShadow: "inset 0 0 0 1px rgba(217,125,109,0.35)" };
 const covLabel: React.CSSProperties = { display: "flex", alignItems: "center", gap: 8, flex: "0 0 auto" };
 const dot: React.CSSProperties = { display: "inline-block", width: 9, height: 9, borderRadius: "50%" };
-const covWho: React.CSSProperties = { fontSize: 14, color: "#5a5344", textAlign: "right", flex: "1 1 auto" };
-const explain: React.CSSProperties = {
-  border: "1px solid #e6ddca", borderRadius: 6, padding: "12px 16px", marginBottom: 16, background: "#fffdf8",
-};
-const explainSummary: React.CSSProperties = { cursor: "pointer", fontSize: 14.5, color: "#8a6a2f", fontWeight: 600 };
-const explainLine: React.CSSProperties = { fontSize: 14.5, lineHeight: 1.55, color: "#4a443a", margin: 0 };
-const upsell: React.CSSProperties = {
-  border: "1px solid #d8cdb4", borderRadius: 6, padding: "18px 20px", background: "#f3ecdd", marginTop: 4,
-};
+const covWho: React.CSSProperties = { fontSize: 14, color: STONE.inkDim, textAlign: "right", flex: "1 1 auto", fontFamily: SAX.serif };
+const explain: React.CSSProperties = { ...surfaces.panel, padding: "12px 16px", marginBottom: 16 };
+const explainSummary: React.CSSProperties = { cursor: "pointer", fontSize: 14.5, color: STONE.brassHi, fontWeight: 600 };
+const explainLine: React.CSSProperties = { fontSize: 14.5, lineHeight: 1.55, color: STONE.inkDim, margin: 0, fontFamily: SAX.serif };
+const upsell: React.CSSProperties = { ...surfaces.slate, padding: "18px 20px", marginTop: 4 };
 const upsellHead: React.CSSProperties = {
-  fontFamily: "ui-monospace, SFMono-Regular, monospace", fontSize: 11, letterSpacing: "0.14em",
-  textTransform: "uppercase", color: "#8a7a55", marginBottom: 8,
+  fontFamily: MONO, fontSize: 11, letterSpacing: "0.14em",
+  textTransform: "uppercase", color: SAX.brass, marginBottom: 8,
 };
-const upsellBody: React.CSSProperties = { fontSize: 15, lineHeight: 1.65, color: "#4a443a", margin: "0 0 10px" };
+const upsellBody: React.CSSProperties = { fontSize: 15, lineHeight: 1.65, color: STONE.inkDim, margin: "0 0 10px", fontFamily: SAX.serif };
