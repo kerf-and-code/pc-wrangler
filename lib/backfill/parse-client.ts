@@ -63,10 +63,17 @@ async function decodeZip(file: InputFile): Promise<{ files: UploadedFile[]; warn
   return { files: out, warnings };
 }
 
+type DocxFn = (i: { arrayBuffer: ArrayBuffer }) => Promise<{ value: string }>;
+
 async function decodeDocx(buf: ArrayBuffer): Promise<string> {
-  // mammoth ships a browser build; import it dynamically and read raw text.
-  const mod = (await import("mammoth")) as unknown as { extractRawText: (i: { arrayBuffer: ArrayBuffer }) => Promise<{ value: string }> };
-  const res = await mod.extractRawText({ arrayBuffer: buf });
+  // Import mammoth's prebuilt browser bundle (self-contained, no Node deps). It is UMD, so under a
+  // dynamic import the API may sit on the namespace or on .default; accept either. The subpath ships no
+  // .d.ts, so the resolution error is suppressed while the static specifier stays bundler-resolvable.
+  // @ts-expect-error mammoth's browser build has no type declarations
+  const m = (await import("mammoth/mammoth.browser")) as unknown as { extractRawText?: DocxFn; default?: { extractRawText?: DocxFn } };
+  const extractRawText = m.extractRawText ?? m.default?.extractRawText;
+  if (!extractRawText) throw new Error("mammoth browser build did not expose extractRawText.");
+  const res = await extractRawText({ arrayBuffer: buf });
   return res.value || "";
 }
 
