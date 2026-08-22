@@ -27,6 +27,10 @@ type Character = {
 };
 type Section = { id: string; title: string; body: string; visibility: string; position: number };
 type Campaign = { gm_id: string; public_slug: string | null; public_published_at: string | null };
+type LinkRow = { id: string; source_type: string; source_id: string; target_type: string; target_id: string; relation: string | null };
+type CandItem = { id: string; item_kind: string; item_type: string; title: string };
+
+const candLabel = (c: CandItem) => (c.item_kind === "npc" ? "NPC" : c.item_type);
 
 const field: React.CSSProperties = {
   boxSizing: "border-box", width: "100%", background: C.surface2, color: C.text,
@@ -56,6 +60,12 @@ export default function CharacterPage() {
   const [pageSaved, setPageSaved] = useState(false);
   const [pageError, setPageError] = useState<string | null>(null);
 
+  // Connections (p80 page + p83 policy): what the owner can link to, and the links their character has.
+  const [cands, setCands] = useState<CandItem[]>([]);
+  const [links, setLinks] = useState<LinkRow[]>([]);
+  const [linkTarget, setLinkTarget] = useState("");
+  const [linkRel, setLinkRel] = useState("");
+
   useEffect(() => {
     const parts = window.location.pathname.split("/").filter(Boolean); // me / characters / <id>
     setCharId(parts[parts.length - 1] || null);
@@ -77,6 +87,18 @@ export default function CharacterPage() {
     setSummary(character.summary || "");
     setPortraitUrl(character.portrait_url);
     setBlocks(character.blocks && character.blocks.length ? character.blocks : []);
+
+    // Owner-only: the codex items they can link to, and the links already on this character.
+    if (character.profile_id === user.id) {
+      const [{ data: cd }, { data: lk }] = await Promise.all([
+        supabase.rpc("codex_for_campaign", { p_campaign: character.campaign_id }),
+        supabase.from("entity_links")
+          .select("id, source_type, source_id, target_type, target_id, relation")
+          .or(`source_id.eq.${character.id},target_id.eq.${character.id}`),
+      ]);
+      setCands((cd as CandItem[]) || []);
+      setLinks((lk as LinkRow[]) || []);
+    }
 
     const { data: campData } = await supabase.from("campaigns")
       .select("gm_id, public_slug, public_published_at").eq("id", character.campaign_id).maybeSingle();
@@ -163,6 +185,24 @@ export default function CharacterPage() {
     setTimeout(() => setPageSaved(false), 2500);
   };
 
+  const addLink = async () => {
+    if (!ch || !linkTarget) return;
+    const cand = cands.find((c) => c.id === linkTarget);
+    if (!cand) return;
+    // An NPC endpoint is a character row; everything else in the codex is an entry.
+    const target_type = cand.item_kind === "npc" ? "character" : "entry";
+    const { data, error } = await supabase.from("entity_links").insert({
+      campaign_id: ch.campaign_id, source_type: "character", source_id: ch.id,
+      target_type, target_id: cand.id, relation: linkRel.trim() || null,
+    }).select("id, source_type, source_id, target_type, target_id, relation").single();
+    if (error) { setPageError(`Could not add connection: ${error.message}`); return; }
+    if (data) { setLinks((l) => [...l, data as LinkRow]); setLinkTarget(""); setLinkRel(""); }
+  };
+  const removeLink = async (id: string) => {
+    setLinks((l) => l.filter((x) => x.id !== id));
+    await supabase.from("entity_links").delete().eq("id", id);
+  };
+
   const publicUrl =
     camp?.public_slug && camp.public_published_at && ch
       ? `/c/${camp.public_slug}/party/${ch.id}`
@@ -243,6 +283,38 @@ export default function CharacterPage() {
             </button>
             {pageSaved && <span style={{ fontSize: 13, color: C.good }}>Saved.</span>}
             {pageError && <span style={{ fontSize: 12.5, color: C.warn }}>{pageError}</span>}
+          </div>
+
+          <div style={{ marginTop: 20, paddingTop: 16, borderTop: `1px solid ${C.line}` }}>
+            <div style={{ ...label, marginBottom: 8 }}>Connections</div>
+            <p style={{ color: C.muted, fontSize: 12.5, lineHeight: 1.55, margin: "0 0 10px" }}>
+              Link your character to the people, places, and lore you know. A connection shows on the public wiki when both ends are public.
+            </p>
+            {links.length > 0 && (
+              <div style={{ display: "grid", gap: 6, marginBottom: 10 }}>
+                {links.map((l) => {
+                  const otherId = l.source_id === ch.id ? l.target_id : l.source_id;
+                  const t = cands.find((c) => c.id === otherId);
+                  return (
+                    <div key={l.id} style={{ display: "flex", alignItems: "center", gap: 8, background: C.surface2, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "7px 10px" }}>
+                      <span style={{ fontSize: 13.5, color: C.text }}>{t?.title || "Something in the codex"}</span>
+                      {l.relation && <span style={{ fontSize: 12, color: C.muted }}>· {l.relation}</span>}
+                      <button type="button" onClick={() => removeLink(l.id)} style={{ ...ghostBtn, marginLeft: "auto", padding: "4px 9px" }}>Remove</button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <select value={linkTarget} onChange={(e) => setLinkTarget(e.target.value)} style={{ ...field, flex: "1 1 180px" }}>
+                <option value="">Link to…</option>
+                {cands
+                  .filter((c) => c.id !== ch.id && !links.some((l) => l.source_id === c.id || l.target_id === c.id))
+                  .map((c) => <option key={c.id} value={c.id}>{c.title} ({candLabel(c)})</option>)}
+              </select>
+              <input value={linkRel} onChange={(e) => setLinkRel(e.target.value)} placeholder="relation (optional)" maxLength={60} style={{ ...field, flex: "1 1 140px" }} />
+              <button type="button" onClick={addLink} disabled={!linkTarget} style={{ ...primaryBtn, opacity: linkTarget ? 1 : 0.6 }}>Add</button>
+            </div>
           </div>
         </section>
       )}
