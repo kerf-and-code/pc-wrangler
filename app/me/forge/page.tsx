@@ -236,6 +236,17 @@ const TABS: { key: TabKey; label: string; ready: (b: Build) => boolean }[] = [
   { key: "finish",    label: "Finish",    ready: () => true },
 ];
 
+// The systems the Forge can build a character in (the render dispatches on `system`). The picker at the
+// top of the Forge offers all of them for a NEW build - a free workshop, per Terry's call - while an
+// existing character's system is fixed by its saved row. Add a system here when its forge is wired.
+const FORGE_SYSTEMS: [string, string][] = [
+  ["dnd5e", "D&D 5e"],
+  ["pf2e", "Pathfinder 2e"],
+  ["daggerheart", "Daggerheart"],
+  ["drawsteel", "Draw Steel"],
+  ["lancer", "Lancer"],
+];
+
 export default function ForgePage() {
   return (
     <Suspense fallback={null}>
@@ -1232,6 +1243,28 @@ function ForgeInner() {
           <SixAxesNav />
 
           <Header />
+
+          {/* SYSTEM PICKER. A new build can be any system (free workshop); it saves with the build.
+              An existing character's system is fixed, so the picker is shown but locked. */}
+          {status === "ready" && (
+            <div style={{ ...stonePanel(), marginBottom: 20 }}>
+              <label style={forgeLabel}>System</label>
+              <select
+                value={system}
+                disabled={mode !== "new"}
+                onChange={(e) => { setSystem(e.target.value); setSaveState("idle"); }}
+                style={{ ...stoneField(), maxWidth: 320, cursor: mode === "new" ? "pointer" : "default",
+                  opacity: mode === "new" ? 1 : 0.7 }}
+              >
+                {FORGE_SYSTEMS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+              </select>
+              <p style={{ color: STONE.inkFaint, fontSize: 13, marginTop: 8 }}>
+                {mode === "new"
+                  ? "Build a character in any system. Your choice is saved with the build."
+                  : "This character's system is fixed. Start a new build to use another system."}
+              </p>
+            </div>
+          )}
 
           {status === "loading" && <Muted>Stoking the forge&hellip;</Muted>}
           {status === "signedout" && <Muted>Sign in to open the Forge.</Muted>}
