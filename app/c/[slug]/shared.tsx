@@ -16,7 +16,7 @@ export type WikiBlock =
   | { id: string; type: "image"; url: string; caption: string; align: "left" | "center" | "right" | "full"; width?: "full" | "half"; slot?: "body" | "panel" };
 
 export type Item = {
-  item_kind: "entry" | "npc";
+  item_kind: "entry" | "npc" | "pc";
   item_type: string;
   id: string;
   title: string | null;
@@ -36,7 +36,7 @@ export type Campaign = {
 };
 
 // A public connection between two codex items. entity_links types are "entry" | "character";
-// a "character" endpoint is one of the item_kind='npc' rows public_codex returns.
+// a "character" endpoint is one of the item_kind='npc' or 'pc' rows public_codex returns.
 export type Link = {
   source_type: string;
   source_id: string;
@@ -51,6 +51,9 @@ export type Link = {
 export const SECTIONS: { type: string; slug: string; label: string; blurb: string; tag?: string }[] = [
   { type: "location", slug: "places", label: "Places", blurb: "Where the story has been." },
   { type: "npc", slug: "cast", label: "The cast", blurb: "Who the party has met." },
+  // Player characters who opted their page in (characters.is_public, set by the owner). item_type 'pc'
+  // comes from public_codex; the hero image is the Forge portrait and the body is the player's blocks.
+  { type: "pc", slug: "party", label: "The party", blurb: "The heroes at the table." },
   { type: "lore", slug: "factions", label: "Factions", blurb: "The powers and groups in play.", tag: "faction" },
   { type: "lore", slug: "items", label: "Items", blurb: "The objects that matter.", tag: "item" },
   { type: "lore", slug: "lore", label: "Lore", blurb: "History, rumours, and the world itself." },
@@ -98,11 +101,13 @@ export async function load(slug: string) {
 }
 
 // Given the loaded items, resolve the public entries connected to one item, ready to link.
-// entity_links types map to item_kind: "entry" -> "entry", "character" -> "npc".
+// entity_links types map to item_kind: "entry" -> "entry"; "character" -> "npc" OR "pc" (both NPCs and
+// player characters are characters rows, so a character endpoint can resolve to either).
 export function relatedTo(item: Item, links: Link[], items: Item[]): { item: Item; relation: string | null }[] {
-  const selfType = item.item_kind === "npc" ? "character" : "entry";
+  const selfType = item.item_kind === "entry" ? "entry" : "character";
   const byId = new Map(items.map((i) => [i.id, i]));
-  const kindOf = (t: string) => (t === "character" ? "npc" : "entry");
+  const kindMatches = (t: string, k: Item["item_kind"]) =>
+    t === "character" ? (k === "npc" || k === "pc") : k === "entry";
   const out: { item: Item; relation: string | null }[] = [];
   const seen = new Set<string>();
   for (const l of links) {
@@ -111,7 +116,7 @@ export function relatedTo(item: Item, links: Link[], items: Item[]): { item: Ite
     else if (l.target_type === selfType && l.target_id === item.id) { otherType = l.source_type; otherId = l.source_id; }
     if (!otherId || !otherType) continue;
     const found = byId.get(otherId);
-    if (!found || found.item_kind !== kindOf(otherType) || seen.has(found.id)) continue;
+    if (!found || !kindMatches(otherType, found.item_kind) || seen.has(found.id)) continue;
     seen.add(found.id);
     out.push({ item: found, relation: l.relation });
   }
