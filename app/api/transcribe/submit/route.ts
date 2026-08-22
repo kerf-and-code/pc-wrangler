@@ -109,6 +109,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Server is missing transcription configuration." }, { status: 500 });
   }
 
+  // `secret` is non-null past the guard, but TypeScript does not carry that narrowing into the
+  // nested submitTrack() closure below, so capture it as a definitely-string value here.
+  const callbackSecret: string = secret;
+
   // Standing (campaign-wide) consent, given when a player claims their character. These
   // are the same two queries session_consent_ok ran internally, so the rule is unchanged;
   // only its GRANULARITY is.
@@ -238,7 +242,7 @@ export async function POST(req: NextRequest) {
       // Async like Deepgram: create a prediction with a webhook, then /replicate-callback finalizes.
       // If Replicate isn't set up we fall through to the Deepgram path below, so nothing breaks.
       if (t.kind === "room" && replicateReady) {
-        const rcb = `${base}/api/transcribe/replicate-callback?track=${t.id}&k=${encodeURIComponent(secret)}`;
+        const rcb = `${base}/api/transcribe/replicate-callback?track=${t.id}&k=${encodeURIComponent(callbackSecret)}`;
         const rres = await fetch("https://api.replicate.com/v1/predictions", {
           method: "POST",
           headers: { Authorization: `Bearer ${replicateToken}`, "Content-Type": "application/json" },
@@ -257,7 +261,7 @@ export async function POST(req: NextRequest) {
         return { ok: false, track: t.id, reason: `replicate ${rres.status}${detail ? `: ${detail.slice(0, 200)}` : ""}` };
       }
 
-      const cb = `${base}/api/transcribe/callback?track=${t.id}&k=${encodeURIComponent(secret)}`;
+      const cb = `${base}/api/transcribe/callback?track=${t.id}&k=${encodeURIComponent(callbackSecret)}`;
       const params = new URLSearchParams({
         model: "nova-3",
         smart_format: "true",
