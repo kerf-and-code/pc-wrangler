@@ -16,6 +16,7 @@ import { DS_RULES, DS_CLASS_LIST, DS_ANCESTRY_LIST, DS_KIT_LIST, DS_CAREER_LIST 
 import { slotOptions, slotLabel, DS_PERK_GROUP_LABEL, DS_SKILL_GROUPS, DS_SKILL_GROUP_LABEL, type DSSkillSlot } from "@/lib/drawsteel/careers";
 import { abilitiesForClass, abilityExplainer, type DSAbility } from "@/lib/drawsteel/abilities";
 import { DS_DEITIES, domainsForDeity } from "@/lib/drawsteel/deities";
+import { DS_COMPLICATIONS, complicationById } from "@/lib/drawsteel/complications";
 import { STONE, FORGE_FONTS, stonePanel, stoneField, forgeLabel, statTile } from "@/lib/forge-theme";
 
 const sign = (n: number) => (n >= 0 ? `+${n}` : `${n}`);
@@ -89,6 +90,11 @@ export default function DrawSteelForge({
     next[i] = id;
     set({ domainIds: next.slice(0, faithDomains) });
   };
+
+  // Optional complication (one per hero). The catalog is sorted by name for the picker; the selected
+  // one's derived benefit/drawback tags are shown, with the full text left to the SRD.
+  const complications = [...DS_COMPLICATIONS].sort((a, b) => a.name.localeCompare(b.name));
+  const comp = dsBuild.complicationId ? complicationById(dsBuild.complicationId) : undefined;
 
   const ancTraitIds = dsBuild.ancestryTraitIds ?? [];
   const ancSpent = anc ? anc.purchasedTraits.filter((t) => ancTraitIds.includes(t.id)).reduce((s, t) => s + t.cost, 0) : 0;
@@ -465,6 +471,27 @@ export default function DrawSteelForge({
         )}
       </div>
 
+      {/* Complication (optional) */}
+      <div style={stonePanel()}>
+        <div style={forgeLabel}>Complication (optional)</div>
+        <p style={{ color: STONE.inkDim, fontSize: 12, margin: "6px 0 10px" }}>
+          A complication is optional: taking one grants a benefit and a drawback. The full text is on the
+          complication&apos;s page in your SRD; the tags below are a quick hint of its mechanical shape.
+        </p>
+        <Field label="Complication">
+          <select value={dsBuild.complicationId} onChange={(e) => set({ complicationId: e.target.value })} style={selStyle}>
+            <option value="">None</option>
+            {complications.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+        </Field>
+        {comp && (comp.benefit || comp.drawback) && (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
+            {comp.benefit && <span style={chip}>Benefit: {comp.benefit}</span>}
+            {comp.drawback && <span style={chip}>Drawback: {comp.drawback}</span>}
+          </div>
+        )}
+      </div>
+
       {/* Characteristics */}
       <div style={stonePanel()}>
         <div style={forgeLabel}>Characteristics</div>
@@ -602,6 +629,21 @@ export default function DrawSteelForge({
                     : null}
                   {sheet.perkGroup ? <>Perk from the {DS_PERK_GROUP_LABEL[sheet.perkGroup]} group.</> : null}
                 </p>
+              </div>
+            )}
+
+            {/* Complication output */}
+            {sheet.complicationName && (
+              <div style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid ${STONE.hi}` }}>
+                <div style={{ ...forgeLabel, marginBottom: 6 }}>Complication: {sheet.complicationName}</div>
+                {(sheet.complicationBenefit || sheet.complicationDrawback) ? (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                    {sheet.complicationBenefit && <span style={chip}>Benefit: {sheet.complicationBenefit}</span>}
+                    {sheet.complicationDrawback && <span style={chip}>Drawback: {sheet.complicationDrawback}</span>}
+                  </div>
+                ) : (
+                  <span style={{ color: STONE.inkDim, fontSize: 12 }}>See its page in the SRD for the benefit and drawback.</span>
+                )}
               </div>
             )}
           </>

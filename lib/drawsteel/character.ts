@@ -19,6 +19,7 @@ import { slotOptions, DS_SKILL_GROUPS } from "./careers";
 import type { DSSubclass } from "./subclasses";
 import { abilityById } from "./abilities";
 import { deityById, domainName } from "./deities";
+import { complicationById } from "./complications";
 
 export type DSChar = "might" | "agility" | "reason" | "intuition" | "presence";
 export const DS_CHARS: DSChar[] = ["might", "agility", "reason", "intuition", "presence"];
@@ -115,6 +116,7 @@ export interface DSBuild {
   subclassSkill: string;                     // chosen skill when the selected subclass grants a group skill
   deityId: string;                           // chosen deity/saint (Conduit + Censor); "" otherwise
   domainIds: string[];                       // domains picked from the deity's portfolio (Conduit 2, Censor 1)
+  complicationId: string;                    // optional complication (one per hero); "" for none
   abilityIds: string[];                      // class abilities the player has taken (catalog ids)
   characteristics: Record<DSChar, number>;   // the five assigned scores
   // One entry per CHOICE slot on the career (fixed slots are implicit), aligned to the choice-slot order.
@@ -150,6 +152,9 @@ export interface DSSheet {
   deityName: string;                         // chosen deity/saint name ("" if none / class has no faith)
   domainNames: string[];                     // chosen domain names (capped at the class's faithDomains)
   faithDomains: number;                      // how many domains the class picks (0 if it has no faith)
+  complicationName: string;                  // chosen complication name ("" for none)
+  complicationBenefit: string;               // derived benefit tag ("" when it has none)
+  complicationDrawback: string;              // derived drawback tag ("" when it has none)
   // Ancestry-derived:
   ancestryName: string;                      // "" if no ancestry chosen
   ancestryPoints: number;                    // total points available
@@ -171,7 +176,8 @@ export function emptyDSChars(): Record<DSChar, number> {
 export function emptyDSBuild(): DSBuild {
   return {
     level: 1, classId: "", ancestryId: "", kitId: "", careerId: "",
-    ancestryTraitIds: [], subclassIds: [], subclassSkill: "", deityId: "", domainIds: [], abilityIds: [],
+    ancestryTraitIds: [], subclassIds: [], subclassSkill: "", deityId: "", domainIds: [],
+    complicationId: "", abilityIds: [],
     characteristics: emptyDSChars(), careerSkillChoices: [], careerLanguages: [],
   };
 }
@@ -314,6 +320,8 @@ export function deriveDrawSteelSheet(build: DSBuild, rules: DSRules): DSSheet | 
   const faithDomains = cls.faithDomains ?? 0;
   const faith = resolveFaith(build.deityId, build.domainIds, faithDomains);
 
+  const complication = build.complicationId ? complicationById(build.complicationId) : undefined;
+
   return {
     level,
     echelon,
@@ -340,6 +348,9 @@ export function deriveDrawSteelSheet(build: DSBuild, rules: DSRules): DSSheet | 
     deityName: faith.deityName,
     domainNames: faith.domainNames,
     faithDomains,
+    complicationName: complication?.name ?? "",
+    complicationBenefit: complication?.benefit ?? "",
+    complicationDrawback: complication?.drawback ?? "",
     ancestryName: anc?.name ?? "",
     ancestryPoints: anc?.points ?? 0,
     ancestryPointsSpent: traits.spent,
