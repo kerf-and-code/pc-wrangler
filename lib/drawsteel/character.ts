@@ -17,6 +17,7 @@
 import type { DSCareer, DSSkillSlot, DSPerkGroup, DSSkillGroup } from "./careers";
 import { slotOptions, DS_SKILL_GROUPS } from "./careers";
 import type { DSSubclass } from "./subclasses";
+import { abilityById } from "./abilities";
 
 export type DSChar = "might" | "agility" | "reason" | "intuition" | "presence";
 export const DS_CHARS: DSChar[] = ["might", "agility", "reason", "intuition", "presence"];
@@ -59,6 +60,7 @@ export interface DSClass {
   baseStamina: number;                       // starting Stamina at 1st level
   staminaPerLevel: number;                   // Stamina gained at 2nd and higher levels
   recoveries: number;
+  resource: string;                          // the class's heroic resource (Ferocity, Piety, ...)
   subclass?: DSSubclass;                     // the class's subclass concept + selectable options
 }
 
@@ -109,6 +111,7 @@ export interface DSBuild {
   ancestryTraitIds: string[];                // purchased ancestry-trait ids the player bought
   subclassIds: string[];                     // selected subclass option ids (Conduit picks 2, else 1)
   subclassSkill: string;                     // chosen skill when the selected subclass grants a group skill
+  abilityIds: string[];                      // class abilities the player has taken (catalog ids)
   characteristics: Record<DSChar, number>;   // the five assigned scores
   // One entry per CHOICE slot on the career (fixed slots are implicit), aligned to the choice-slot order.
   // "" means that slot is still unfilled. Fixed skills are added by the engine, not stored here.
@@ -138,6 +141,8 @@ export interface DSSheet {
   subclassConcept: string;                   // "" if the class has no subclass modeled
   subclassNames: string[];                   // selected subclass option name(s)
   subclassSkills: string[];                  // skills the subclass grants (specific or chosen group skill)
+  heroicResource: string;                    // the class's heroic resource name ("" if no class)
+  abilityNames: string[];                    // names of the class abilities the player has taken
   // Ancestry-derived:
   ancestryName: string;                      // "" if no ancestry chosen
   ancestryPoints: number;                    // total points available
@@ -159,7 +164,7 @@ export function emptyDSChars(): Record<DSChar, number> {
 export function emptyDSBuild(): DSBuild {
   return {
     level: 1, classId: "", ancestryId: "", kitId: "", careerId: "",
-    ancestryTraitIds: [], subclassIds: [], subclassSkill: "",
+    ancestryTraitIds: [], subclassIds: [], subclassSkill: "", abilityIds: [],
     characteristics: emptyDSChars(), careerSkillChoices: [], careerLanguages: [],
   };
 }
@@ -276,6 +281,14 @@ export function deriveDrawSteelSheet(build: DSBuild, rules: DSRules): DSSheet | 
   const languages = (build.careerLanguages ?? []).map((s) => s.trim()).filter(Boolean);
   const sub = resolveSubclass(cls.subclass, build.subclassIds, build.subclassSkill);
 
+  // Class abilities the player has taken: resolve each id to its catalog entry, keep only those that
+  // belong to this class (or the shared "common" set), and surface their names. The effect text is
+  // never here - the sheet lists what was taken; the numbers are read off the card in the SRD.
+  const abilityNames = (build.abilityIds ?? [])
+    .map((id) => abilityById(id))
+    .filter((a): a is NonNullable<typeof a> => !!a && (a.classId === build.classId || a.classId === "common"))
+    .map((a) => a.name);
+
   return {
     level,
     echelon,
@@ -297,6 +310,8 @@ export function deriveDrawSteelSheet(build: DSBuild, rules: DSRules): DSSheet | 
     subclassConcept: cls.subclass?.concept ?? "",
     subclassNames: sub.names,
     subclassSkills: sub.skills,
+    heroicResource: cls.resource ?? "",
+    abilityNames,
     ancestryName: anc?.name ?? "",
     ancestryPoints: anc?.points ?? 0,
     ancestryPointsSpent: traits.spent,

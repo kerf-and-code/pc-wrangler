@@ -14,6 +14,7 @@ import {
 } from "@/lib/drawsteel/character";
 import { DS_RULES, DS_CLASS_LIST, DS_ANCESTRY_LIST, DS_KIT_LIST, DS_CAREER_LIST } from "@/lib/drawsteel/rules-data";
 import { slotOptions, slotLabel, DS_PERK_GROUP_LABEL, DS_SKILL_GROUPS, DS_SKILL_GROUP_LABEL, type DSSkillSlot } from "@/lib/drawsteel/careers";
+import { abilitiesForClass, abilityExplainer, type DSAbility } from "@/lib/drawsteel/abilities";
 import { STONE, FORGE_FONTS, stonePanel, stoneField, forgeLabel, statTile } from "@/lib/forge-theme";
 
 const sign = (n: number) => (n >= 0 ? `+${n}` : `${n}`);
@@ -59,6 +60,20 @@ export default function DrawSteelForge({
     if (!sc) return;
     set({ subclassIds: [...sc.quick], subclassSkill: sc.quickSkill ?? "" });
   };
+
+  // Class abilities: the catalog for this class up to the character's level, grouped by level. The
+  // player toggles which they have taken; we store the ids and show a mechanics-only explainer. The
+  // effect numbers are on the card in the SRD, never reproduced here.
+  const abilityIds = dsBuild.abilityIds ?? [];
+  const classAbilities = dsBuild.classId ? abilitiesForClass(dsBuild.classId, dsBuild.level) : [];
+  const abilitiesByLevel = classAbilities.reduce<Record<string, DSAbility[]>>((acc, a) => {
+    const k = a.level == null ? "0" : String(a.level);
+    (acc[k] ||= []).push(a);
+    return acc;
+  }, {});
+  const abilityLevels = Object.keys(abilitiesByLevel).sort((a, b) => Number(a) - Number(b));
+  const toggleAbility = (id: string) =>
+    set({ abilityIds: abilityIds.includes(id) ? abilityIds.filter((x) => x !== id) : [...abilityIds, id] });
 
   const ancTraitIds = dsBuild.ancestryTraitIds ?? [];
   const ancSpent = anc ? anc.purchasedTraits.filter((t) => ancTraitIds.includes(t.id)).reduce((s, t) => s + t.cost, 0) : 0;
@@ -207,6 +222,52 @@ export default function DrawSteelForge({
                 </select>
               </Field>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Class abilities */}
+      {cls && classAbilities.length > 0 && (
+        <div style={stonePanel()}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={forgeLabel}>Abilities</div>
+            <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 12, color: STONE.inkDim }}>
+              {cls.resource} · {abilityIds.length} taken
+            </span>
+          </div>
+          <p style={{ color: STONE.inkDim, fontSize: 12, margin: "6px 0 10px" }}>
+            Your heroic resource is <strong style={{ color: STONE.ink }}>{cls.resource}</strong>. Tap the abilities
+            you have taken. Each line shows what an ability is; the exact effect is on its card in your SRD.
+          </p>
+          <div style={{ display: "grid", gap: 12 }}>
+            {abilityLevels.map((lvl) => (
+              <div key={lvl}>
+                <div style={{ fontFamily: FORGE_FONTS.mono, fontSize: 11, color: STONE.inkDim, textTransform: "uppercase", marginBottom: 6 }}>
+                  {lvl === "0" ? "General" : `Level ${lvl}`}
+                </div>
+                <div style={{ display: "grid", gap: 6 }}>
+                  {abilitiesByLevel[lvl].map((a) => {
+                    const on = abilityIds.includes(a.id);
+                    return (
+                      <button key={a.id} type="button" onClick={() => toggleAbility(a.id)}
+                        style={{
+                          ...selStyle, textAlign: "left", padding: "8px 10px", cursor: "pointer",
+                          borderColor: on ? STONE.brassHi : undefined,
+                          background: on ? STONE.shadow : (selStyle.background as string),
+                          display: "grid", gap: 3,
+                        }}>
+                        <span style={{ fontSize: 13.5, color: STONE.ink, fontWeight: 600 }}>
+                          {on ? "✓ " : ""}{a.name}{a.subclass ? ` (${a.subclass})` : ""}
+                        </span>
+                        <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 11, color: STONE.inkDim }}>
+                          {abilityExplainer(a)}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}
@@ -408,6 +469,22 @@ export default function DrawSteelForge({
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                     {sheet.subclassSkills.map((s) => <span key={s} style={chip}>{s}</span>)}
                   </div>
+                )}
+              </div>
+            )}
+
+            {/* Abilities output */}
+            {sheet.heroicResource && (
+              <div style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid ${STONE.hi}` }}>
+                <div style={{ ...forgeLabel, marginBottom: 6 }}>
+                  Abilities · heroic resource: {sheet.heroicResource}
+                </div>
+                {sheet.abilityNames.length > 0 ? (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                    {sheet.abilityNames.map((n) => <span key={n} style={chip}>{n}</span>)}
+                  </div>
+                ) : (
+                  <span style={{ color: STONE.inkDim, fontSize: 12 }}>No abilities taken yet.</span>
                 )}
               </div>
             )}
