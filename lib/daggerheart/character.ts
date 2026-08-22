@@ -189,7 +189,8 @@ export interface DHBuild {
   customWeapon: DHCustomWeapon;      // used when weaponId === "custom"
   advancements: Advancement[];       // every advancement chosen across levels 2..level
   experiences: DHExperience[];       // the character's Experiences (names + running bonus)
-  loadout: string[];                 // freeform domain-card labels the player is tracking (no catalog)
+  loadout: string[];                 // domain card ids in the active loadout (max 5)
+  vault: string[];                   // domain card ids owned but kept in the vault (inactive)
 }
 
 export interface DHExperience {
@@ -242,6 +243,7 @@ export function emptyDHBuild(): DHBuild {
     advancements: [],
     experiences: [{ name: "", bonus: 2 }, { name: "", bonus: 2 }],
     loadout: [],
+    vault: [],
   };
 }
 

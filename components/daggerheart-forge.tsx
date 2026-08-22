@@ -14,6 +14,7 @@ import {
 import {
   DH_RULES, DH_CLASS_LIST, DH_ANCESTRY_LIST, DH_COMMUNITY_LIST, DH_ARMOR_LIST, DH_WEAPON_LIST, subclassesForClass,
 } from "@/lib/daggerheart/rules-data";
+import { cardsForDomains, cardById } from "@/lib/daggerheart/domain-cards";
 import { STONE, FORGE_FONTS, stonePanel, stoneField, forgeLabel, statTile } from "@/lib/forge-theme";
 
 const TRAIT_LABEL: Record<DHTrait, string> = {
@@ -92,10 +93,21 @@ export default function DaggerheartForge({
   const addExperience = () => set({ experiences: [...dbuild.experiences, { name: "", bonus: 2 }] });
   const removeExperience = (i: number) => set({ experiences: dbuild.experiences.filter((_, j) => j !== i) });
 
-  // --- loadout (freeform card labels, no catalog) ---
-  const setLoadout = (i: number, v: string) => set({ loadout: dbuild.loadout.map((c, j) => (j === i ? v : c)) });
-  const addLoadout = () => { if (dbuild.loadout.length < 5) set({ loadout: [...dbuild.loadout, ""] }); };
-  const removeLoadout = (i: number) => set({ loadout: dbuild.loadout.filter((_, j) => j !== i) });
+  // --- domain cards (real catalog): loadout (max 5 active) + vault (owned, inactive) ---
+  const owned = new Set([...dbuild.loadout, ...dbuild.vault]);
+  const available = cls ? cardsForDomains(cls.domains, dbuild.level).filter((c) => !owned.has(c.id)) : [];
+  const cardLabel = (id: string) => {
+    const c = cardById(id);
+    return c ? `${c.name} · L${c.level} · rc${c.recall} · ${c.type}` : id;
+  };
+  const addCard = (id: string) => {
+    if (!id) return;
+    if (dbuild.loadout.length < 5) set({ loadout: [...dbuild.loadout, id] });
+    else set({ vault: [...dbuild.vault, id] });
+  };
+  const cardToVault = (id: string) => set({ loadout: dbuild.loadout.filter((x) => x !== id), vault: [...dbuild.vault, id] });
+  const cardToLoadout = (id: string) => { if (dbuild.loadout.length < 5) set({ loadout: [...dbuild.loadout, id], vault: dbuild.vault.filter((x) => x !== id) }); };
+  const removeCard = (id: string) => set({ loadout: dbuild.loadout.filter((x) => x !== id), vault: dbuild.vault.filter((x) => x !== id) });
 
   return (
     <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 20 }}>
@@ -295,27 +307,51 @@ export default function DaggerheartForge({
           style={{ ...selStyle, cursor: "pointer", padding: "7px 12px", fontSize: 12.5, marginTop: 10 }}>Add Experience</button>
       </div>
 
-      {/* Loadout */}
+      {/* Domain cards */}
       <div style={stonePanel()}>
-        <div style={forgeLabel}>Loadout {sheet ? `(${dbuild.loadout.length} of ${sheet.loadoutMax})` : ""}</div>
+        <div style={forgeLabel}>Domain cards {sheet ? `(loadout ${dbuild.loadout.length} of ${sheet.loadoutMax})` : ""}</div>
         <p style={{ color: STONE.inkDim, fontSize: 12, margin: "4px 0 10px" }}>
-          {cls ? `Domain cards from ${cls.domains.map((d) => DH_RULES.domains[d].name).join(" and ")}. ` : ""}
-          Track card names here; the card catalog is not shipped.
+          {cls ? `Cards from ${cls.domains.map((d) => DH_RULES.domains[d].name).join(" and ")}, up to your level. ` : "Choose a class first. "}
+          The loadout holds up to 5 active cards; the rest wait in your vault. Card effects are printed on the cards in your SRD.
         </p>
-        <div style={{ display: "grid", gap: 8 }}>
-          {dbuild.loadout.map((c, i) => (
-            <div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <input value={c} onChange={(ev) => setLoadout(i, ev.target.value)} placeholder="Domain card"
-                style={{ ...stoneField(), cursor: "text", flex: "1 1 200px" }} />
-              <button type="button" onClick={() => removeLoadout(i)}
-                style={{ ...selStyle, cursor: "pointer", padding: "6px 10px", fontSize: 12 }}>Remove</button>
+
+        <div style={{ fontFamily: FORGE_FONTS.mono, fontSize: 11, color: STONE.inkDim, textTransform: "uppercase", marginBottom: 6 }}>Loadout</div>
+        <div style={{ display: "grid", gap: 6 }}>
+          {dbuild.loadout.length === 0 && <p style={{ color: STONE.inkDim, fontSize: 12 }}>No cards loaded yet.</p>}
+          {dbuild.loadout.map((id) => (
+            <div key={id} style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+              <span style={{ fontSize: 13, color: STONE.ink, flex: "1 1 200px" }}>{cardLabel(id)}</span>
+              <button type="button" onClick={() => cardToVault(id)} style={{ ...selStyle, cursor: "pointer", padding: "5px 9px", fontSize: 12 }}>To vault</button>
+              <button type="button" onClick={() => removeCard(id)} style={{ ...selStyle, cursor: "pointer", padding: "5px 9px", fontSize: 12 }}>Remove</button>
             </div>
           ))}
         </div>
-        {dbuild.loadout.length < 5 && (
-          <button type="button" onClick={addLoadout}
-            style={{ ...selStyle, cursor: "pointer", padding: "7px 12px", fontSize: 12.5, marginTop: 10 }}>Add card</button>
+
+        {dbuild.vault.length > 0 && (
+          <>
+            <div style={{ fontFamily: FORGE_FONTS.mono, fontSize: 11, color: STONE.inkDim, textTransform: "uppercase", margin: "12px 0 6px" }}>Vault</div>
+            <div style={{ display: "grid", gap: 6 }}>
+              {dbuild.vault.map((id) => (
+                <div key={id} style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                  <span style={{ fontSize: 13, color: STONE.inkDim, flex: "1 1 200px" }}>{cardLabel(id)}</span>
+                  <button type="button" onClick={() => cardToLoadout(id)} disabled={dbuild.loadout.length >= 5}
+                    style={{ ...selStyle, cursor: dbuild.loadout.length >= 5 ? "default" : "pointer", padding: "5px 9px", fontSize: 12, opacity: dbuild.loadout.length >= 5 ? 0.5 : 1 }}>To loadout</button>
+                  <button type="button" onClick={() => removeCard(id)} style={{ ...selStyle, cursor: "pointer", padding: "5px 9px", fontSize: 12 }}>Remove</button>
+                </div>
+              ))}
+            </div>
+          </>
         )}
+
+        <div style={{ marginTop: 12 }}>
+          <select value="" disabled={!cls} onChange={(e) => { addCard(e.target.value); e.currentTarget.value = ""; }}
+            style={{ ...selStyle, minWidth: 260 }}>
+            <option value="">{cls ? "Add a domain card…" : "Choose a class first"}</option>
+            {available.map((c) => (
+              <option key={c.id} value={c.id}>{c.name} · L{c.level} · rc{c.recall} · {c.type} · {DH_RULES.domains[c.domain].name}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {/* Live sheet */}
