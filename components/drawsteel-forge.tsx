@@ -13,7 +13,7 @@ import {
   type DSBuild, type DSSheet, type DSChar,
 } from "@/lib/drawsteel/character";
 import { DS_RULES, DS_CLASS_LIST, DS_ANCESTRY_LIST, DS_KIT_LIST, DS_CAREER_LIST } from "@/lib/drawsteel/rules-data";
-import { slotOptions, slotLabel, DS_PERK_GROUP_LABEL, type DSSkillSlot } from "@/lib/drawsteel/careers";
+import { slotOptions, slotLabel, DS_PERK_GROUP_LABEL, DS_SKILL_GROUPS, DS_SKILL_GROUP_LABEL, type DSSkillSlot } from "@/lib/drawsteel/careers";
 import { STONE, FORGE_FONTS, stonePanel, stoneField, forgeLabel, statTile } from "@/lib/forge-theme";
 
 const sign = (n: number) => (n >= 0 ? `+${n}` : `${n}`);
@@ -38,6 +38,27 @@ export default function DrawSteelForge({
 
   // Changing ancestry resets the purchased traits so a stale, now-illegal selection doesn't carry over.
   const setAncestry = (id: string) => set({ ancestryId: id, ancestryTraitIds: [] });
+
+  // Changing class resets the subclass selection (a subclass belongs to one class).
+  const setClass = (id: string) => set({ classId: id, subclassIds: [], subclassSkill: "" });
+
+  // Subclass state. `sc` is the current class's subclass concept (or undefined).
+  const sc = cls?.subclass;
+  const subIds = dsBuild.subclassIds ?? [];
+  const setSubAt = (i: number, id: string) => {
+    const next = [...subIds];
+    while (next.length < (sc?.picks ?? 1)) next.push("");
+    next[i] = id;
+    set({ subclassIds: next.slice(0, sc?.picks ?? 1), subclassSkill: "" });
+  };
+  // The chosen option (across picks) that grants a group skill, if any, drives a skill sub-picker.
+  const groupGrantOption = sc
+    ? sc.options.find((o) => subIds.includes(o.id) && o.grantsSkillFrom)
+    : undefined;
+  const applySubclassQuick = () => {
+    if (!sc) return;
+    set({ subclassIds: [...sc.quick], subclassSkill: sc.quickSkill ?? "" });
+  };
 
   const ancTraitIds = dsBuild.ancestryTraitIds ?? [];
   const ancSpent = anc ? anc.purchasedTraits.filter((t) => ancTraitIds.includes(t.id)).reduce((s, t) => s + t.cost, 0) : 0;
@@ -126,7 +147,7 @@ export default function DrawSteelForge({
               onChange={(e) => set({ level: Math.max(1, Math.min(10, parseInt(e.target.value, 10) || 1)) })} style={stoneField()} />
           </Field>
           <Field label="Class">
-            <select value={dsBuild.classId} onChange={(e) => set({ classId: e.target.value })} style={selStyle}>
+            <select value={dsBuild.classId} onChange={(e) => setClass(e.target.value)} style={selStyle}>
               <option value="">Choose...</option>
               {DS_CLASS_LIST.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
@@ -151,6 +172,44 @@ export default function DrawSteelForge({
           </Field>
         </div>
       </div>
+
+      {/* Subclass */}
+      {sc && (
+        <div style={stonePanel()}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={forgeLabel}>{sc.concept}{sc.picks > 1 ? ` (pick ${sc.picks})` : ""}</div>
+            <button onClick={applySubclassQuick}
+              style={{ ...stoneField(), width: "auto", cursor: "pointer", padding: "4px 12px", fontSize: 12 }}>
+              Quick build
+            </button>
+          </div>
+          <div style={{ marginTop: 10, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10 }}>
+            {Array.from({ length: sc.picks }).map((_, i) => {
+              const taken = new Set(subIds.filter((_v, j) => j !== i && subIds[j]));
+              return (
+                <Field key={i} label={sc.picks > 1 ? `Choice ${i + 1}` : "Subclass"}>
+                  <select value={subIds[i] ?? ""} onChange={(e) => setSubAt(i, e.target.value)} style={selStyle}>
+                    <option value="">Choose...</option>
+                    {sc.options.filter((o) => !taken.has(o.id) || o.id === subIds[i]).map((o) => (
+                      <option key={o.id} value={o.id}>
+                        {o.name}{o.grantsSkill ? ` (${o.grantsSkill})` : o.grantsSkillFrom ? ` (${DS_SKILL_GROUP_LABEL[o.grantsSkillFrom]} skill)` : ""}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+              );
+            })}
+            {groupGrantOption?.grantsSkillFrom && (
+              <Field label={`${groupGrantOption.name} skill (${DS_SKILL_GROUP_LABEL[groupGrantOption.grantsSkillFrom]})`}>
+                <select value={dsBuild.subclassSkill ?? ""} onChange={(e) => set({ subclassSkill: e.target.value })} style={selStyle}>
+                  <option value="">Choose...</option>
+                  {DS_SKILL_GROUPS[groupGrantOption.grantsSkillFrom].map((s) => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </Field>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Ancestry traits */}
       <div style={stonePanel()}>
@@ -338,6 +397,20 @@ export default function DrawSteelForge({
               {" · "}Melee dmg {dmgTriple(sheet.meleeDamage)}{sheet.meleeDistance ? ` · melee dist +${sheet.meleeDistance}` : ""}
               {" · "}Ranged dmg {dmgTriple(sheet.rangedDamage)}{sheet.rangedDistance ? ` · ranged dist +${sheet.rangedDistance}` : ""}
             </p>
+
+            {/* Subclass output */}
+            {sheet.subclassConcept && sheet.subclassNames.length > 0 && (
+              <div style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid ${STONE.hi}` }}>
+                <div style={{ ...forgeLabel, marginBottom: 6 }}>
+                  {sheet.subclassConcept}: {sheet.subclassNames.join(", ")}
+                </div>
+                {sheet.subclassSkills.length > 0 && (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                    {sheet.subclassSkills.map((s) => <span key={s} style={chip}>{s}</span>)}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Ancestry output */}
             {sheet.ancestryName && (

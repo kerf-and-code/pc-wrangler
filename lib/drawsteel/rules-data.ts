@@ -9,21 +9,22 @@
 import type { DSRules, DSClass, DSKit } from "./character";
 import { DS_CAREERS, DS_CAREER_LIST } from "./careers";
 import { DS_ANCESTRIES, DS_ANCESTRY_LIST } from "./ancestries";
+import { DS_SUBCLASSES } from "./subclasses";
 
 // ---- classes -----------------------------------------------------------------------------------
 const A3 = [[2, -1, -1], [1, 1, -1], [1, 0, 0]];                       // 3-value arrays (two fixed chars)
 const A4 = [[2, 2, -1, -1], [2, 1, 1, -1], [2, 1, 0, 0], [1, 1, 1, 0]]; // 4-value arrays (one fixed char)
 
 const CLASSES: Record<string, DSClass> = {
-  censor:       { id: "censor",       name: "Censor",       fixed: { might: 2, presence: 2 },  arrays: A3, keyChar: "presence",  baseStamina: 21, staminaPerLevel: 9, recoveries: 12 },
-  conduit:      { id: "conduit",      name: "Conduit",      fixed: { intuition: 2 },           arrays: A4, keyChar: "intuition", baseStamina: 18, staminaPerLevel: 6, recoveries: 8 },
-  elementalist: { id: "elementalist", name: "Elementalist", fixed: { reason: 2 },              arrays: A4, keyChar: "reason",    baseStamina: 18, staminaPerLevel: 6, recoveries: 8 },
-  fury:         { id: "fury",         name: "Fury",         fixed: { might: 2, agility: 2 },   arrays: A3, keyChar: "might",     baseStamina: 21, staminaPerLevel: 9, recoveries: 10 },
-  null_:        { id: "null_",        name: "Null",         fixed: { agility: 2, intuition: 2 }, arrays: A3, keyChar: "intuition", baseStamina: 21, staminaPerLevel: 9, recoveries: 8 },
-  shadow:       { id: "shadow",       name: "Shadow",       fixed: { agility: 2 },             arrays: A4, keyChar: "agility",   baseStamina: 18, staminaPerLevel: 6, recoveries: 8 },
-  tactician:    { id: "tactician",    name: "Tactician",    fixed: { might: 2, reason: 2 },    arrays: A3, keyChar: "reason",    baseStamina: 21, staminaPerLevel: 9, recoveries: 10 },
-  talent:       { id: "talent",       name: "Talent",       fixed: { reason: 2, presence: 2 }, arrays: A3, keyChar: "reason",    baseStamina: 18, staminaPerLevel: 6, recoveries: 8 },
-  troubadour:   { id: "troubadour",   name: "Troubadour",   fixed: { agility: 2, presence: 2 }, arrays: A3, keyChar: "presence",  baseStamina: 18, staminaPerLevel: 6, recoveries: 8 },
+  censor:       { id: "censor",       name: "Censor",       fixed: { might: 2, presence: 2 },  arrays: A3, keyChar: "presence",  baseStamina: 21, staminaPerLevel: 9, recoveries: 12, subclass: DS_SUBCLASSES.censor },
+  conduit:      { id: "conduit",      name: "Conduit",      fixed: { intuition: 2 },           arrays: A4, keyChar: "intuition", baseStamina: 18, staminaPerLevel: 6, recoveries: 8,  subclass: DS_SUBCLASSES.conduit },
+  elementalist: { id: "elementalist", name: "Elementalist", fixed: { reason: 2 },              arrays: A4, keyChar: "reason",    baseStamina: 18, staminaPerLevel: 6, recoveries: 8,  subclass: DS_SUBCLASSES.elementalist },
+  fury:         { id: "fury",         name: "Fury",         fixed: { might: 2, agility: 2 },   arrays: A3, keyChar: "might",     baseStamina: 21, staminaPerLevel: 9, recoveries: 10, subclass: DS_SUBCLASSES.fury },
+  null_:        { id: "null_",        name: "Null",         fixed: { agility: 2, intuition: 2 }, arrays: A3, keyChar: "intuition", baseStamina: 21, staminaPerLevel: 9, recoveries: 8,  subclass: DS_SUBCLASSES.null_ },
+  shadow:       { id: "shadow",       name: "Shadow",       fixed: { agility: 2 },             arrays: A4, keyChar: "agility",   baseStamina: 18, staminaPerLevel: 6, recoveries: 8,  subclass: DS_SUBCLASSES.shadow },
+  tactician:    { id: "tactician",    name: "Tactician",    fixed: { might: 2, reason: 2 },    arrays: A3, keyChar: "reason",    baseStamina: 21, staminaPerLevel: 9, recoveries: 10, subclass: DS_SUBCLASSES.tactician },
+  talent:       { id: "talent",       name: "Talent",       fixed: { reason: 2, presence: 2 }, arrays: A3, keyChar: "reason",    baseStamina: 18, staminaPerLevel: 6, recoveries: 8,  subclass: DS_SUBCLASSES.talent },
+  troubadour:   { id: "troubadour",   name: "Troubadour",   fixed: { agility: 2, presence: 2 }, arrays: A3, keyChar: "presence",  baseStamina: 18, staminaPerLevel: 6, recoveries: 8,  subclass: DS_SUBCLASSES.troubadour },
 };
 
 // ---- kits (the Kits Table; "-" columns are 0; damage is a tier-1/2/3 triple) --------------------

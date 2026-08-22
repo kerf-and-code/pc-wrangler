@@ -14,8 +14,9 @@
 // average / strong) is the class's key characteristic minus 2 / minus 1 / itself. Every hero also has a
 // career, which grants skills (fixed + chosen), some languages, and one perk group.
 
-import type { DSCareer, DSSkillSlot, DSPerkGroup } from "./careers";
-import { slotOptions } from "./careers";
+import type { DSCareer, DSSkillSlot, DSPerkGroup, DSSkillGroup } from "./careers";
+import { slotOptions, DS_SKILL_GROUPS } from "./careers";
+import type { DSSubclass } from "./subclasses";
 
 export type DSChar = "might" | "agility" | "reason" | "intuition" | "presence";
 export const DS_CHARS: DSChar[] = ["might", "agility", "reason", "intuition", "presence"];
@@ -58,6 +59,7 @@ export interface DSClass {
   baseStamina: number;                       // starting Stamina at 1st level
   staminaPerLevel: number;                   // Stamina gained at 2nd and higher levels
   recoveries: number;
+  subclass?: DSSubclass;                     // the class's subclass concept + selectable options
 }
 
 // A flat, always-on numeric sheet modifier a trait grants. Only traits with a clear passive number set
@@ -105,6 +107,8 @@ export interface DSBuild {
   kitId: string;                             // "" for no kit (casters may run kitless)
   careerId: string;                          // "" until a career is chosen
   ancestryTraitIds: string[];                // purchased ancestry-trait ids the player bought
+  subclassIds: string[];                     // selected subclass option ids (Conduit picks 2, else 1)
+  subclassSkill: string;                     // chosen skill when the selected subclass grants a group skill
   characteristics: Record<DSChar, number>;   // the five assigned scores
   // One entry per CHOICE slot on the career (fixed slots are implicit), aligned to the choice-slot order.
   // "" means that slot is still unfilled. Fixed skills are added by the engine, not stored here.
@@ -130,6 +134,10 @@ export interface DSSheet {
   rangedDistance: number;
   potency: { weak: number; average: number; strong: number };
   keyChar: DSChar;
+  // Subclass-derived:
+  subclassConcept: string;                   // "" if the class has no subclass modeled
+  subclassNames: string[];                   // selected subclass option name(s)
+  subclassSkills: string[];                  // skills the subclass grants (specific or chosen group skill)
   // Ancestry-derived:
   ancestryName: string;                      // "" if no ancestry chosen
   ancestryPoints: number;                    // total points available
@@ -151,7 +159,7 @@ export function emptyDSChars(): Record<DSChar, number> {
 export function emptyDSBuild(): DSBuild {
   return {
     level: 1, classId: "", ancestryId: "", kitId: "", careerId: "",
-    ancestryTraitIds: [],
+    ancestryTraitIds: [], subclassIds: [], subclassSkill: "",
     characteristics: emptyDSChars(), careerSkillChoices: [], careerLanguages: [],
   };
 }
@@ -211,6 +219,25 @@ function sumTraitMods(traits: DSAncestryTrait[]): Required<DSTraitMods> {
   return acc;
 }
 
+// Resolve the selected subclass option(s) into names and the skills they grant. A specific grant is
+// added directly; a group grant adds the player's chosen skill only if it is legal for that group.
+export function resolveSubclass(
+  subclass: DSSubclass | undefined, selectedIds: string[], groupSkill: string,
+): { names: string[]; skills: string[] } {
+  if (!subclass) return { names: [], skills: [] };
+  const wanted = new Set(selectedIds ?? []);
+  const chosen = subclass.options.filter((o) => wanted.has(o.id));
+  const names = chosen.map((o) => o.name);
+  const skills: string[] = [];
+  for (const o of chosen) {
+    if (o.grantsSkill) skills.push(o.grantsSkill);
+    else if (o.grantsSkillFrom && groupSkill && DS_SKILL_GROUPS[o.grantsSkillFrom].includes(groupSkill)) {
+      skills.push(groupSkill);
+    }
+  }
+  return { names, skills };
+}
+
 export function deriveDrawSteelSheet(build: DSBuild, rules: DSRules): DSSheet | null {
   const cls = rules.classes[build.classId];
   if (!cls) return null;
@@ -247,6 +274,7 @@ export function deriveDrawSteelSheet(build: DSBuild, rules: DSRules): DSSheet | 
 
   const skills = resolveCareerSkills(career, build.careerSkillChoices);
   const languages = (build.careerLanguages ?? []).map((s) => s.trim()).filter(Boolean);
+  const sub = resolveSubclass(cls.subclass, build.subclassIds, build.subclassSkill);
 
   return {
     level,
@@ -266,6 +294,9 @@ export function deriveDrawSteelSheet(build: DSBuild, rules: DSRules): DSSheet | 
     rangedDistance: kit?.rangedDistance ?? 0,
     potency,
     keyChar: cls.keyChar,
+    subclassConcept: cls.subclass?.concept ?? "",
+    subclassNames: sub.names,
+    subclassSkills: sub.skills,
     ancestryName: anc?.name ?? "",
     ancestryPoints: anc?.points ?? 0,
     ancestryPointsSpent: traits.spent,
