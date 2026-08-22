@@ -14,7 +14,6 @@ export default function ChatPage() {
   const [code, setCode] = useState<string | null>(null);
   const [uid, setUid] = useState<string | null>(null);
   const [campaignName, setCampaignName] = useState<string | null>(null);
-  const [locked, setLocked] = useState<boolean>(false);
   const [status, setStatus] = useState<"loading" | "ready" | "invalid">("loading");
   const [messages, setMessages] = useState<Msg[]>([]);
   const [name, setName] = useState<string>("");
@@ -28,18 +27,12 @@ export default function ChatPage() {
 
   async function refresh(shareCode: string) {
     const { data: ctx } = await supabase.rpc("chat_context", { code: shareCode });
-    if (ctx && ctx.length) {
-      setCampaignName(ctx[0].campaign_name);
-      setLocked(ctx[0].locked);
-      if (!ctx[0].locked) {
-        const { data: msgs } = await supabase.rpc("chat_fetch", { code: shareCode });
-        setMessages((msgs as Msg[]) || []);
-        const { data: gr } = await supabase.rpc("chat_grants_mine", { code: shareCode });
-        setGrants((gr as Grant[]) || []);
-      } else {
-        setMessages([]);
-      }
-    }
+    if (ctx && ctx.length) setCampaignName(ctx[0].campaign_name);
+    // Party chat stays open during live sessions (p81), so always load messages and grants.
+    const { data: msgs } = await supabase.rpc("chat_fetch", { code: shareCode });
+    setMessages((msgs as Msg[]) || []);
+    const { data: gr } = await supabase.rpc("chat_grants_mine", { code: shareCode });
+    setGrants((gr as Grant[]) || []);
   }
 
   useEffect(() => {
@@ -116,14 +109,7 @@ export default function ChatPage() {
         {status === "loading" && <div style={{ ...box, color: C.muted, fontSize: 14 }}>Loading…</div>}
         {status === "invalid" && <div style={{ ...box, color: C.muted, fontSize: 14 }}>This link looks broken. Ask your GM for the campaign link.</div>}
 
-        {status === "ready" && locked && (
-          <div style={{ ...box, textAlign: "center" }}>
-            <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 6, color: C.warn }}>Chat is closed</div>
-            <div style={{ color: C.muted, fontSize: 14, lineHeight: 1.6 }}>A session is live right now. Eyes up, no table-talk. Chat comes back when the GM wraps the session.</div>
-          </div>
-        )}
-
-        {status === "ready" && !locked && (
+        {status === "ready" && (
           <>
             <div style={{ ...box, marginBottom: 14 }}>
               <div style={{ display: "grid", gap: 10, maxHeight: 420, overflowY: "auto", marginBottom: 12 }}>
