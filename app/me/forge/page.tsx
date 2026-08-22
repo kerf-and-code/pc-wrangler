@@ -299,7 +299,14 @@ function ForgeInner() {
   const [speciesVariant, setSpeciesVariant] = useState<string>("");
   const [portraitUrl, setPortraitUrl] = useState<string | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "picking" | "error" | "signedout">("loading");
-  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  // Starts "saved", NOT "idle". A brand-new build must not auto-persist on load: the first autosave
+  // creates the pc_library row and flips mode 'new' -> 'library', which LOCKS the system picker. When
+  // this started "idle" the flip fired ~1s after the page opened, so the system dropdown was editable
+  // for barely a second and a new build was stuck on its default system. Starting "saved" leaves an
+  // untouched build unsaved until a real edit sets it "idle" (the system picker, a field, anything), so
+  // the picker stays usable until the player actually starts the build. Existing builds also skip a
+  // redundant post-load save this way.
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("saved");
 
   // Catalog + its scoping controls.
   const [catalog, setCatalog] = useState<Catalog | null>(null);
