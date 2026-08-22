@@ -6,8 +6,9 @@
 // Classes with two fixed characteristics (both set to 2) get a 3-value array for the remaining three
 // characteristics; classes with one fixed characteristic get a 4-value array for the remaining four.
 
-import type { DSRules, DSClass, DSKit, DSAncestry } from "./character";
+import type { DSRules, DSClass, DSKit } from "./character";
 import { DS_CAREERS, DS_CAREER_LIST } from "./careers";
+import { DS_ANCESTRIES, DS_ANCESTRY_LIST } from "./ancestries";
 
 // ---- classes -----------------------------------------------------------------------------------
 const A3 = [[2, -1, -1], [1, 1, -1], [1, 0, 0]];                       // 3-value arrays (two fixed chars)
@@ -57,31 +58,15 @@ const KITS: Record<string, DSKit> = {
   "whirlwind":        k("whirlwind",        "Whirlwind",        "None",           "Whip",               0, 3, 0, [1, 1, 1], [0, 0, 0], 1, 0, 1),
 };
 
-// ---- ancestries (base Size/Speed; most are 1M / 5; overrides from the Rules Reference) ----------
-const anc = (id: string, name: string, size = "1M", speed = 5): DSAncestry => ({ id, name, size, speed });
-const ANCESTRIES: Record<string, DSAncestry> = {
-  "devil":         anc("devil",         "Devil"),
-  "dragon-knight": anc("dragon-knight", "Dragon Knight"),
-  "dwarf":         anc("dwarf",         "Dwarf"),
-  "hakaan":        anc("hakaan",        "Hakaan", "1L"),
-  "high-elf":      anc("high-elf",      "High Elf"),
-  "human":         anc("human",         "Human"),
-  "memonek":       anc("memonek",       "Memonek", "1M", 7),
-  "orc":           anc("orc",           "Orc"),
-  "polder":        anc("polder",        "Polder", "1S"),
-  "revenant":      anc("revenant",      "Revenant"),
-  "time-raider":   anc("time-raider",   "Time Raider"),
-  "wode-elf":      anc("wode-elf",      "Wode Elf"),
-};
+// ---- ancestries (base Size/Speed + signature/purchased traits) live in ./ancestries ------------
 
 export const DS_RULES: DSRules = {
   classes: CLASSES,
   kits: KITS,
-  ancestries: ANCESTRIES,
+  ancestries: DS_ANCESTRIES,
   careers: DS_CAREERS,
 };
 
 export const DS_CLASS_LIST: DSClass[] = Object.values(CLASSES);
 export const DS_KIT_LIST: DSKit[] = Object.values(KITS);
-export const DS_ANCESTRY_LIST: DSAncestry[] = Object.values(ANCESTRIES);
-export { DS_CAREER_LIST };
+export { DS_ANCESTRY_LIST, DS_CAREER_LIST };

@@ -60,11 +60,33 @@ export interface DSClass {
   recoveries: number;
 }
 
+// A flat, always-on numeric sheet modifier a trait grants. Only traits with a clear passive number set
+// this; active/triggered/situational traits carry no mods and are name + cost only.
+export interface DSTraitMods {
+  stability?: number;
+  recoveries?: number;
+  speed?: number;
+  staminaPerEchelon?: number;                // added to max Stamina as (value * echelon), e.g. +6/echelon
+  size?: string;                             // rarely used; base size already reflects signature setters
+}
+
+export interface DSAncestryTrait {
+  id: string;                                // unique within its ancestry
+  name: string;
+  cost: number;                              // 0 for signature (automatic), else ancestry-point cost
+  signature?: boolean;                       // true = always on, does not spend points
+  mods?: DSTraitMods;
+}
+
 export interface DSAncestry {
   id: string;
   name: string;
   size: string;                              // "1M" default; e.g. "1L" (Hakaan), "1S" (Polder)
-  speed: number;                             // 5 default; e.g. 7 (Memonek)
+  speed: number;                             // 5 default (Memonek reaches 7 via Lightning Nimbleness)
+  points: number;                            // ancestry points to spend on purchased traits
+  signatureTraits: DSAncestryTrait[];        // automatic (always applied)
+  purchasedTraits: DSAncestryTrait[];        // buyable with ancestry points
+  quickTraits: string[];                     // quick-build recommended purchased-trait ids
 }
 
 export interface DSRules {
@@ -82,6 +104,7 @@ export interface DSBuild {
   ancestryId: string;
   kitId: string;                             // "" for no kit (casters may run kitless)
   careerId: string;                          // "" until a career is chosen
+  ancestryTraitIds: string[];                // purchased ancestry-trait ids the player bought
   characteristics: Record<DSChar, number>;   // the five assigned scores
   // One entry per CHOICE slot on the career (fixed slots are implicit), aligned to the choice-slot order.
   // "" means that slot is still unfilled. Fixed skills are added by the engine, not stored here.
@@ -107,6 +130,12 @@ export interface DSSheet {
   rangedDistance: number;
   potency: { weak: number; average: number; strong: number };
   keyChar: DSChar;
+  // Ancestry-derived:
+  ancestryName: string;                      // "" if no ancestry chosen
+  ancestryPoints: number;                    // total points available
+  ancestryPointsSpent: number;               // sum of selected purchased-trait costs
+  signatureTraitNames: string[];             // automatic traits (always on)
+  purchasedTraitNames: string[];             // selected purchased traits
   // Career-derived:
   careerName: string;                        // "" if no career chosen
   skills: string[];                          // resolved skills (fixed + chosen), deduped, in order
@@ -122,6 +151,7 @@ export function emptyDSChars(): Record<DSChar, number> {
 export function emptyDSBuild(): DSBuild {
   return {
     level: 1, classId: "", ancestryId: "", kitId: "", careerId: "",
+    ancestryTraitIds: [],
     characteristics: emptyDSChars(), careerSkillChoices: [], careerLanguages: [],
   };
 }
@@ -154,6 +184,33 @@ export function resolveCareerSkills(career: DSCareer | undefined, choices: strin
   return out;
 }
 
+// The ancestry traits that apply to a build: all signature traits (automatic) plus the purchased traits
+// the player selected (validated against the ancestry's purchased list). Returns them split so the sheet
+// can list signatures and purchases separately and sum only the purchase costs.
+export function resolveAncestryTraits(
+  anc: DSAncestry | undefined, selectedIds: string[],
+): { signature: DSAncestryTrait[]; purchased: DSAncestryTrait[]; spent: number } {
+  if (!anc) return { signature: [], purchased: [], spent: 0 };
+  const wanted = new Set(selectedIds ?? []);
+  const purchased = anc.purchasedTraits.filter((t) => wanted.has(t.id));
+  const spent = purchased.reduce((s, t) => s + t.cost, 0);
+  return { signature: anc.signatureTraits, purchased, spent };
+}
+
+// Sum the flat numeric mods across a set of traits.
+function sumTraitMods(traits: DSAncestryTrait[]): Required<DSTraitMods> {
+  const acc = { stability: 0, recoveries: 0, speed: 0, staminaPerEchelon: 0, size: "" };
+  for (const t of traits) {
+    if (!t.mods) continue;
+    acc.stability += t.mods.stability ?? 0;
+    acc.recoveries += t.mods.recoveries ?? 0;
+    acc.speed += t.mods.speed ?? 0;
+    acc.staminaPerEchelon += t.mods.staminaPerEchelon ?? 0;
+    if (t.mods.size) acc.size = t.mods.size;
+  }
+  return acc;
+}
+
 export function deriveDrawSteelSheet(build: DSBuild, rules: DSRules): DSSheet | null {
   const cls = rules.classes[build.classId];
   if (!cls) return null;
@@ -166,15 +223,20 @@ export function deriveDrawSteelSheet(build: DSBuild, rules: DSRules): DSSheet | 
   const characteristics = emptyDSChars();
   for (const c of DS_CHARS) characteristics[c] = build.characteristics[c] ?? 0;
 
-  // Stamina: class base + per-level gains + the kit's per-echelon bonus (value * echelon).
+  // Ancestry traits: signatures (always on) + selected purchases, and the flat mods they contribute.
+  const traits = resolveAncestryTraits(anc, build.ancestryTraitIds);
+  const traitMods = sumTraitMods([...traits.signature, ...traits.purchased]);
+
+  // Stamina: class base + per-level gains + the kit's per-echelon bonus + ancestry per-echelon bonus.
   const kitStamina = kit ? kit.staminaPerEchelon * echelon : 0;
-  const stamina = cls.baseStamina + (level - 1) * cls.staminaPerLevel + kitStamina;
+  const ancStamina = traitMods.staminaPerEchelon * echelon;
+  const stamina = cls.baseStamina + (level - 1) * cls.staminaPerLevel + kitStamina + ancStamina;
   const winded = Math.floor(stamina / 2);
   const recoveryValue = Math.floor(stamina / 3);
 
-  const speed = (anc?.speed ?? 5) + (kit?.speed ?? 0);
-  const stability = 0 + (kit?.stability ?? 0);
-  const size = anc?.size ?? "1M";
+  const speed = (anc?.speed ?? 5) + (kit?.speed ?? 0) + traitMods.speed;
+  const stability = 0 + (kit?.stability ?? 0) + traitMods.stability;
+  const size = traitMods.size || anc?.size || "1M";
   const disengage = 1 + (kit?.disengage ?? 0);
 
   const meleeDamage: [number, number, number] = kit ? [...kit.meleeDamage] : [0, 0, 0];
@@ -192,7 +254,7 @@ export function deriveDrawSteelSheet(build: DSBuild, rules: DSRules): DSSheet | 
     characteristics,
     stamina,
     winded,
-    recoveries: cls.recoveries,
+    recoveries: cls.recoveries + traitMods.recoveries,
     recoveryValue,
     speed,
     stability,
@@ -204,6 +266,11 @@ export function deriveDrawSteelSheet(build: DSBuild, rules: DSRules): DSSheet | 
     rangedDistance: kit?.rangedDistance ?? 0,
     potency,
     keyChar: cls.keyChar,
+    ancestryName: anc?.name ?? "",
+    ancestryPoints: anc?.points ?? 0,
+    ancestryPointsSpent: traits.spent,
+    signatureTraitNames: traits.signature.map((t) => t.name),
+    purchasedTraitNames: traits.purchased.map((t) => t.name),
     careerName: career?.name ?? "",
     skills,
     languagesCount: career?.languages ?? 0,

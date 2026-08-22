@@ -31,9 +31,37 @@ export default function DrawSteelForge({
   const set = (p: Partial<DSBuild>) => onChange({ ...dsBuild, ...p });
   const cls = DS_RULES.classes[dsBuild.classId];
   const career = dsBuild.careerId ? DS_RULES.careers[dsBuild.careerId] : undefined;
+  const anc = dsBuild.ancestryId ? DS_RULES.ancestries[dsBuild.ancestryId] : undefined;
   const selStyle = { ...stoneField(), cursor: "pointer" as const };
   const setChar = (c: DSChar, v: number) =>
     set({ characteristics: { ...dsBuild.characteristics, [c]: Math.max(-5, Math.min(5, v)) } });
+
+  // Changing ancestry resets the purchased traits so a stale, now-illegal selection doesn't carry over.
+  const setAncestry = (id: string) => set({ ancestryId: id, ancestryTraitIds: [] });
+
+  const ancTraitIds = dsBuild.ancestryTraitIds ?? [];
+  const ancSpent = anc ? anc.purchasedTraits.filter((t) => ancTraitIds.includes(t.id)).reduce((s, t) => s + t.cost, 0) : 0;
+  const ancRemaining = (anc?.points ?? 0) - ancSpent;
+
+  const toggleTrait = (id: string, cost: number) => {
+    if (ancTraitIds.includes(id)) {
+      set({ ancestryTraitIds: ancTraitIds.filter((t) => t !== id) });
+    } else if (cost <= ancRemaining) {
+      set({ ancestryTraitIds: [...ancTraitIds, id] });
+    }
+  };
+
+  // Quick build: fill purchased traits from the ancestry's recommended set, in order, up to the budget.
+  const applyAncestryQuick = () => {
+    if (!anc) return;
+    let left = anc.points;
+    const picks: string[] = [];
+    for (const id of anc.quickTraits) {
+      const t = anc.purchasedTraits.find((p) => p.id === id);
+      if (t && t.cost <= left) { picks.push(t.id); left -= t.cost; }
+    }
+    set({ ancestryTraitIds: picks });
+  };
 
   // Changing career resets the career-specific choices so stale skills/languages don't carry over.
   const setCareer = (id: string) =>
@@ -104,7 +132,7 @@ export default function DrawSteelForge({
             </select>
           </Field>
           <Field label="Ancestry">
-            <select value={dsBuild.ancestryId} onChange={(e) => set({ ancestryId: e.target.value })} style={selStyle}>
+            <select value={dsBuild.ancestryId} onChange={(e) => setAncestry(e.target.value)} style={selStyle}>
               <option value="">Choose...</option>
               {DS_ANCESTRY_LIST.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
             </select>
@@ -122,6 +150,71 @@ export default function DrawSteelForge({
             </select>
           </Field>
         </div>
+      </div>
+
+      {/* Ancestry traits */}
+      <div style={stonePanel()}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={forgeLabel}>Ancestry traits</div>
+          {anc && anc.purchasedTraits.length > 0 && (
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 12, color: ancRemaining < 0 ? STONE.blood : STONE.inkDim }}>
+                {ancSpent} / {anc.points} pts
+              </span>
+              <button onClick={applyAncestryQuick}
+                style={{ ...stoneField(), width: "auto", cursor: "pointer", padding: "4px 12px", fontSize: 12 }}>
+                Quick build
+              </button>
+            </div>
+          )}
+        </div>
+        {!anc ? (
+          <p style={{ color: STONE.inkDim, fontSize: 12, margin: "6px 0 0" }}>
+            Choose an ancestry to see its signature traits and spend ancestry points on purchased traits.
+          </p>
+        ) : (
+          <div style={{ marginTop: 10, display: "grid", gap: 12 }}>
+            {/* Signature (automatic) */}
+            {anc.signatureTraits.length > 0 && (
+              <div>
+                <div style={{ ...forgeLabel, marginBottom: 4 }}>Signature (automatic)</div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  {anc.signatureTraits.map((t) => (
+                    <span key={t.id} style={chip}>
+                      {t.name}{t.mods ? ` · ${modLabel(t.mods)}` : ""}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Purchased */}
+            <div>
+              <div style={{ ...forgeLabel, marginBottom: 4 }}>Purchased ({anc.points} points)</div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 8 }}>
+                {anc.purchasedTraits.map((t) => {
+                  const on = ancTraitIds.includes(t.id);
+                  const affordable = on || t.cost <= ancRemaining;
+                  return (
+                    <button key={t.id} type="button" onClick={() => toggleTrait(t.id, t.cost)} disabled={!affordable}
+                      style={{
+                        ...selStyle, textAlign: "left", padding: "7px 10px", fontSize: 13,
+                        cursor: affordable ? "pointer" : "default",
+                        opacity: affordable ? 1 : 0.4,
+                        borderColor: on ? STONE.brassHi : undefined,
+                        color: on ? STONE.ink : STONE.inkDim,
+                      }}>
+                      <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 11, color: STONE.inkDim, marginRight: 6 }}>
+                        {on ? "✓" : ""}{t.cost}p
+                      </span>
+                      {t.name}{t.mods ? ` · ${modLabel(t.mods)}` : ""}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Career */}
@@ -246,6 +339,26 @@ export default function DrawSteelForge({
               {" · "}Ranged dmg {dmgTriple(sheet.rangedDamage)}{sheet.rangedDistance ? ` · ranged dist +${sheet.rangedDistance}` : ""}
             </p>
 
+            {/* Ancestry output */}
+            {sheet.ancestryName && (
+              <div style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid ${STONE.hi}` }}>
+                <div style={{ ...forgeLabel, marginBottom: 6 }}>
+                  {sheet.ancestryName} · traits ({sheet.ancestryPointsSpent}/{sheet.ancestryPoints} pts)
+                </div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  {sheet.signatureTraitNames.map((n) => (
+                    <span key={`sig-${n}`} style={{ ...chip, borderStyle: "dashed" }}>{n}</span>
+                  ))}
+                  {sheet.purchasedTraitNames.map((n) => (
+                    <span key={`buy-${n}`} style={chip}>{n}</span>
+                  ))}
+                  {sheet.purchasedTraitNames.length === 0 && (
+                    <span style={{ color: STONE.inkDim, fontSize: 12 }}>No purchased traits yet.</span>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Career output */}
             {sheet.careerName && (
               <div style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid ${STONE.hi}` }}>
@@ -281,6 +394,17 @@ const chip: React.CSSProperties = {
   borderRadius: 6,
   padding: "3px 9px",
 };
+
+// A short label for a trait's flat numeric mod, e.g. "+1 stability", "+6 Stamina/echelon".
+function modLabel(m: { stability?: number; recoveries?: number; speed?: number; staminaPerEchelon?: number; size?: string }): string {
+  const parts: string[] = [];
+  if (m.stability) parts.push(`${m.stability > 0 ? "+" : ""}${m.stability} stability`);
+  if (m.recoveries) parts.push(`${m.recoveries > 0 ? "+" : ""}${m.recoveries} Recoveries`);
+  if (m.speed) parts.push(`${m.speed > 0 ? "+" : ""}${m.speed} speed`);
+  if (m.staminaPerEchelon) parts.push(`+${m.staminaPerEchelon} Stamina/echelon`);
+  if (m.size) parts.push(`size ${m.size}`);
+  return parts.join(", ");
+}
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
