@@ -129,7 +129,7 @@ export interface DHArmor {
   traitMods?: Partial<Record<DHTrait, number>>;  // Very Heavy -1 Agility, Gilded +1 Presence, etc.
 }
 
-export type DHDamageType = "phy" | "mag";
+export type DHDamageType = "phy" | "mag" | "both";
 export type DHBurden = "One-Handed" | "Two-Handed";
 
 export interface DHWeapon {
@@ -144,7 +144,13 @@ export interface DHWeapon {
   damageType: DHDamageType;
   burden: DHBurden;
   magic?: boolean;          // magic weapons require a Spellcast trait to wield
-  feature?: string;
+  feature?: string;         // feature NAME only (e.g. "Massive", "Barrier"); full prose not shipped
+  // Passive numeric feature effects that change a derived number (applied to the sheet when equipped):
+  evasionMod?: number;      // Heavy / Massive / Barrier / Brave: -1 to Evasion
+  armorScoreMod?: number;   // shields: Protective / Barrier / Double Duty
+  severeMod?: number;       // Brave: +N to Severe threshold
+  pairedDamage?: number;    // secondary Paired / Double Duty: +N to primary melee damage (situational)
+  traitMods?: Partial<Record<DHTrait, number>>;  // Cumbersome -1 Finesse, Destructive -1 Agility
 }
 
 // A player-authored weapon for anything not in the shipped Tier 1 list (higher tiers, homebrew).
@@ -187,6 +193,7 @@ export interface DHBuild {
   armorId: string;                   // equipped armor, "" for unarmored
   weaponId: string;                  // equipped primary weapon: "" none, "custom", or a rules.weapons id
   customWeapon: DHCustomWeapon;      // used when weaponId === "custom"
+  secondaryId: string;               // equipped secondary weapon (a rules.weapons id, category secondary), "" for none
   advancements: Advancement[];       // every advancement chosen across levels 2..level
   experiences: DHExperience[];       // the character's Experiences (names + running bonus)
   loadout: string[];                 // domain card ids in the active loadout (max 5)
@@ -217,6 +224,9 @@ export interface DHSheet {
   attackTrait: DHTrait | null;       // the trait the equipped weapon attacks with
   attackMod: number | null;          // that trait's value (the attack modifier)
   damage: string | null;             // Proficiency dice of the weapon die + its flat modifier, e.g. "2d8+1"
+  secondaryName: string | null;      // equipped secondary weapon name
+  secondaryDamage: string | null;    // secondary weapon damage, same Proficiency-dice formula
+  pairedBonus: number;               // situational +N to primary melee damage from a Paired secondary (shown, not auto-added)
   domains: [DHDomainId, DHDomainId];
   subclassTier: number;              // 1 foundation, 2 specialization, 3 mastery
   loadoutMax: number;                // 5
@@ -240,6 +250,7 @@ export function emptyDHBuild(): DHBuild {
     armorId: "",
     weaponId: "",
     customWeapon: { name: "", trait: "strength", range: "Melee", damageDie: "d6", damageBonus: 0, damageType: "phy", burden: "One-Handed" },
+    secondaryId: "",
     advancements: [],
     experiences: [{ name: "", bonus: 2 }, { name: "", bonus: 2 }],
     loadout: [],
@@ -286,6 +297,14 @@ export function deriveDaggerheartSheet(build: DHBuild, rules: DHRules): DHSheet 
   const armor = build.armorId ? rules.armors[build.armorId] : undefined;
   const sub = rules.subclasses[build.subclassId];
 
+  // Equipped weapons whose passive numeric features touch the sheet: a catalog primary (a custom
+  // primary carries no mods) plus a secondary. Their Evasion / Armor Score / Severe / trait effects
+  // are summed and applied below.
+  const primaryCat = build.weaponId && build.weaponId !== "custom" ? rules.weapons[build.weaponId] : undefined;
+  const secondaryW = build.secondaryId ? rules.weapons[build.secondaryId] : undefined;
+  const equipped: DHWeapon[] = [primaryCat, secondaryW].filter((w): w is DHWeapon => Boolean(w));
+  const wSum = (k: "evasionMod" | "armorScoreMod" | "severeMod") => equipped.reduce((n, w) => n + (w[k] ?? 0), 0);
+
   // Proficiency: 1 + automatic tier bumps + any +1 Proficiency advancements + feature bonuses.
   const proficiency = 1 + tierProficiencyBumps(level) + countAdvancements(build, "proficiency") + sumMod(mods, "proficiency");
 
@@ -299,9 +318,10 @@ export function deriveDaggerheartSheet(build: DHBuild, rules: DHRules): DHSheet 
     if (m.traits) for (const t of DH_TRAITS) traits[t] += m.traits[t] ?? 0;
   }
   if (armor?.traitMods) for (const t of DH_TRAITS) traits[t] += armor.traitMods[t] ?? 0;
+  for (const w of equipped) if (w.traitMods) for (const t of DH_TRAITS) traits[t] += w.traitMods[t] ?? 0;
 
-  // Evasion: class base + evasion advancements + feature/armor evasion modifiers.
-  const evasion = cls.evasion + countAdvancements(build, "evasion") + sumMod(mods, "evasion") + (armor?.evasionMod ?? 0);
+  // Evasion: class base + evasion advancements + feature/armor/weapon evasion modifiers.
+  const evasion = cls.evasion + countAdvancements(build, "evasion") + sumMod(mods, "evasion") + (armor?.evasionMod ?? 0) + wSum("evasionMod");
 
   // HP and Stress: base + feature bonuses + slot advancements, each capped at 12.
   const hp = clamp(cls.hp + sumMod(mods, "hp") + countAdvancements(build, "hp"), 0, 12);
@@ -311,13 +331,13 @@ export function deriveDaggerheartSheet(build: DHBuild, rules: DHRules): DHSheet 
   let major = armor ? armor.baseMajor + level : level;
   let severe = armor ? armor.baseSevere + level : 2 * level;
   major += sumMod(mods, "major");
-  severe += sumMod(mods, "severe");
+  severe += sumMod(mods, "severe") + wSum("severeMod");
   if (mods.some((m) => m.thresholdsPlusProficiency)) {
     major += proficiency;
     severe += proficiency;
   }
 
-  const armorScore = clamp((armor?.baseScore ?? 0) + sumMod(mods, "armorScore"), 0, 12);
+  const armorScore = clamp((armor?.baseScore ?? 0) + sumMod(mods, "armorScore") + wSum("armorScoreMod"), 0, 12);
 
   const spellcastTrait = sub?.spellcast ?? null;
   const spellcast = spellcastTrait ? traits[spellcastTrait] + sumMod(mods, "spellcast") + (armor?.spellcastMod ?? 0) : null;
@@ -338,6 +358,14 @@ export function deriveDaggerheartSheet(build: DHBuild, rules: DHRules): DHSheet 
     attackMod = traits[wpn.trait];
     damage = `${proficiency}${wpn.damageDie}${wpn.damageBonus ? `+${wpn.damageBonus}` : ""}`;
   }
+
+  // Secondary weapon: its own damage line (same Proficiency-dice formula). A Paired secondary's
+  // primary-damage bonus is situational ("within Melee range"), so it is surfaced, not auto-added.
+  const secondaryName = secondaryW ? secondaryW.name : null;
+  const secondaryDamage = secondaryW
+    ? `${proficiency}${secondaryW.damageDie}${secondaryW.damageBonus ? `+${secondaryW.damageBonus}` : ""}`
+    : null;
+  const pairedBonus = equipped.reduce((n, w) => n + (w.pairedDamage ?? 0), 0);
 
   const domainCardsKnown = 2 + (level - 1) + countAdvancements(build, "domainCard");
 
@@ -360,6 +388,9 @@ export function deriveDaggerheartSheet(build: DHBuild, rules: DHRules): DHSheet 
     attackTrait,
     attackMod,
     damage,
+    secondaryName,
+    secondaryDamage,
+    pairedBonus,
     domains: cls.domains,
     subclassTier,
     loadoutMax: 5,

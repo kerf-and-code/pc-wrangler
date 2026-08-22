@@ -12,6 +12,7 @@
 import type {
   DHRules, DHClass, DHSubclass, DHAncestry, DHCommunity, DHArmor, DHWeapon, DHDomainDef, DHDomainId,
 } from "./character";
+import { DH_WEAPONS } from "./weapons";
 
 // ---- domains -----------------------------------------------------------------------------------
 const DOMAINS: Record<DHDomainId, DHDomainDef> = {
@@ -148,39 +149,7 @@ const ARMORS: Record<string, DHArmor> = {
                                 traitMods: { agility: -1, strength: -1, finesse: -1, instinct: -1, presence: -1, knowledge: -1 } },
 };
 
-// ---- weapons (SRD Tier 1 primary weapons) -------------------------------------------------------
-// Mechanics only: trait, range, damage die + flat modifier, damage type, and burden. Feature prose is
-// not shipped (Darrington Press content), and weapon-feature effects on Evasion are not applied to the
-// sheet in this pass. Damage rolls a number of the die equal to Proficiency; the modifier is added once.
-const WEAPONS: Record<string, DHWeapon> = {
-  // Physical
-  "broadsword":      { id: "broadsword",      name: "Broadsword",      tier: 1, category: "primary", trait: "agility",   range: "Melee",     damageDie: "d8",  damageBonus: 0, damageType: "phy", burden: "One-Handed" },
-  "longsword":       { id: "longsword",       name: "Longsword",       tier: 1, category: "primary", trait: "agility",   range: "Melee",     damageDie: "d10", damageBonus: 3, damageType: "phy", burden: "Two-Handed" },
-  "battleaxe":       { id: "battleaxe",       name: "Battleaxe",       tier: 1, category: "primary", trait: "strength",  range: "Melee",     damageDie: "d10", damageBonus: 3, damageType: "phy", burden: "Two-Handed" },
-  "greatsword":      { id: "greatsword",      name: "Greatsword",      tier: 1, category: "primary", trait: "strength",  range: "Melee",     damageDie: "d10", damageBonus: 3, damageType: "phy", burden: "Two-Handed" },
-  "mace":            { id: "mace",            name: "Mace",            tier: 1, category: "primary", trait: "strength",  range: "Melee",     damageDie: "d8",  damageBonus: 1, damageType: "phy", burden: "One-Handed" },
-  "warhammer":       { id: "warhammer",       name: "Warhammer",       tier: 1, category: "primary", trait: "strength",  range: "Melee",     damageDie: "d12", damageBonus: 3, damageType: "phy", burden: "Two-Handed" },
-  "dagger":          { id: "dagger",          name: "Dagger",          tier: 1, category: "primary", trait: "finesse",   range: "Melee",     damageDie: "d8",  damageBonus: 1, damageType: "phy", burden: "One-Handed" },
-  "quarterstaff":    { id: "quarterstaff",    name: "Quarterstaff",    tier: 1, category: "primary", trait: "instinct",  range: "Melee",     damageDie: "d10", damageBonus: 3, damageType: "phy", burden: "Two-Handed" },
-  "cutlass":         { id: "cutlass",         name: "Cutlass",         tier: 1, category: "primary", trait: "presence",  range: "Melee",     damageDie: "d8",  damageBonus: 1, damageType: "phy", burden: "One-Handed" },
-  "rapier":          { id: "rapier",          name: "Rapier",          tier: 1, category: "primary", trait: "presence",  range: "Melee",     damageDie: "d8",  damageBonus: 0, damageType: "phy", burden: "One-Handed" },
-  "halberd":         { id: "halberd",         name: "Halberd",         tier: 1, category: "primary", trait: "strength",  range: "Very Close", damageDie: "d10", damageBonus: 2, damageType: "phy", burden: "Two-Handed" },
-  "spear":           { id: "spear",           name: "Spear",           tier: 1, category: "primary", trait: "finesse",   range: "Very Close", damageDie: "d8",  damageBonus: 3, damageType: "phy", burden: "Two-Handed" },
-  "shortbow":        { id: "shortbow",        name: "Shortbow",        tier: 1, category: "primary", trait: "agility",   range: "Far",       damageDie: "d6",  damageBonus: 3, damageType: "phy", burden: "Two-Handed" },
-  "crossbow":        { id: "crossbow",        name: "Crossbow",        tier: 1, category: "primary", trait: "finesse",   range: "Far",       damageDie: "d6",  damageBonus: 1, damageType: "phy", burden: "One-Handed" },
-  "longbow":         { id: "longbow",         name: "Longbow",         tier: 1, category: "primary", trait: "agility",   range: "Very Far",  damageDie: "d8",  damageBonus: 3, damageType: "phy", burden: "Two-Handed" },
-  // Magic (require a Spellcast trait)
-  "arcane-gauntlets":{ id: "arcane-gauntlets",name: "Arcane Gauntlets",tier: 1, category: "primary", trait: "strength",  range: "Melee",     damageDie: "d10", damageBonus: 3, damageType: "mag", burden: "Two-Handed", magic: true },
-  "hallowed-axe":    { id: "hallowed-axe",    name: "Hallowed Axe",    tier: 1, category: "primary", trait: "strength",  range: "Melee",     damageDie: "d8",  damageBonus: 1, damageType: "mag", burden: "One-Handed", magic: true },
-  "glowing-rings":   { id: "glowing-rings",   name: "Glowing Rings",   tier: 1, category: "primary", trait: "agility",   range: "Very Close", damageDie: "d10", damageBonus: 2, damageType: "mag", burden: "Two-Handed", magic: true },
-  "hand-runes":      { id: "hand-runes",      name: "Hand Runes",      tier: 1, category: "primary", trait: "instinct",  range: "Very Close", damageDie: "d10", damageBonus: 0, damageType: "mag", burden: "One-Handed", magic: true },
-  "returning-blade": { id: "returning-blade", name: "Returning Blade", tier: 1, category: "primary", trait: "finesse",   range: "Close",     damageDie: "d8",  damageBonus: 0, damageType: "mag", burden: "One-Handed", magic: true },
-  "shortstaff":      { id: "shortstaff",      name: "Shortstaff",      tier: 1, category: "primary", trait: "instinct",  range: "Close",     damageDie: "d8",  damageBonus: 1, damageType: "mag", burden: "One-Handed", magic: true },
-  "dualstaff":       { id: "dualstaff",       name: "Dualstaff",       tier: 1, category: "primary", trait: "instinct",  range: "Far",       damageDie: "d6",  damageBonus: 3, damageType: "mag", burden: "Two-Handed", magic: true },
-  "scepter":         { id: "scepter",         name: "Scepter",         tier: 1, category: "primary", trait: "presence",  range: "Far",       damageDie: "d6",  damageBonus: 0, damageType: "mag", burden: "Two-Handed", magic: true },
-  "wand":            { id: "wand",            name: "Wand",            tier: 1, category: "primary", trait: "knowledge", range: "Far",       damageDie: "d6",  damageBonus: 1, damageType: "mag", burden: "One-Handed", magic: true },
-  "greatstaff":      { id: "greatstaff",      name: "Greatstaff",      tier: 1, category: "primary", trait: "knowledge", range: "Very Far",  damageDie: "d6",  damageBonus: 0, damageType: "mag", burden: "Two-Handed", magic: true },
-};
+// Weapons (all tiers, primary + secondary) live in ./weapons (DH_WEAPONS).
 
 export const DH_RULES: DHRules = {
   classes: CLASSES,
@@ -188,7 +157,7 @@ export const DH_RULES: DHRules = {
   ancestries: ANCESTRIES,
   communities: COMMUNITIES,
   armors: ARMORS,
-  weapons: WEAPONS,
+  weapons: DH_WEAPONS,
   domains: DOMAINS,
 };
 
@@ -197,7 +166,7 @@ export const DH_CLASS_LIST: DHClass[] = Object.values(CLASSES);
 export const DH_ANCESTRY_LIST: DHAncestry[] = Object.values(ANCESTRIES);
 export const DH_COMMUNITY_LIST: DHCommunity[] = Object.values(COMMUNITIES);
 export const DH_ARMOR_LIST: DHArmor[] = Object.values(ARMORS);
-export const DH_WEAPON_LIST: DHWeapon[] = Object.values(WEAPONS);
+export const DH_WEAPON_LIST: DHWeapon[] = Object.values(DH_WEAPONS);
 
 export function subclassesForClass(classId: string): DHSubclass[] {
   return Object.values(SUBCLASSES).filter((s) => s.classId === classId);

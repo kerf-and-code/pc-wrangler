@@ -204,14 +204,15 @@ export default function DaggerheartForge({
         <div style={forgeLabel}>Weapon</div>
         <p style={{ color: STONE.inkDim, fontSize: 12, margin: "4px 0 8px" }}>
           The attack rolls with the weapon's trait; damage rolls Proficiency dice of the weapon die plus its flat modifier.
-          Tier 1 weapons are listed; use Custom for higher tiers or homebrew.
+          Weapons up to your tier are listed. Equip a primary weapon; a one-handed primary can pair with a secondary.
+          Passive features (shields, Heavy, Cumbersome, Brave) affect the sheet; use Custom for homebrew.
         </p>
-        <Field label="Equipped weapon">
+        <Field label="Primary weapon">
           <select value={dbuild.weaponId} onChange={(e) => set({ weaponId: e.target.value })} style={selStyle}>
             <option value="">None</option>
-            {DH_WEAPON_LIST.filter((w) => w.tier <= tierOf(dbuild.level)).map((w) => (
+            {DH_WEAPON_LIST.filter((w) => w.category === "primary" && w.tier <= tierOf(dbuild.level)).map((w) => (
               <option key={w.id} value={w.id}>
-                {w.name} ({TRAIT_LABEL[w.trait]}, {w.range}, {w.damageDie}{w.damageBonus ? `+${w.damageBonus}` : ""} {w.damageType}{w.magic ? ", magic" : ""})
+                {w.name} ({TRAIT_LABEL[w.trait]}, {w.range}, {w.damageDie}{w.damageBonus ? `+${w.damageBonus}` : ""} {w.damageType}{w.magic ? ", magic" : ""}{w.feature ? `, ${w.feature}` : ""})
               </option>
             ))}
             <option value="custom">Custom weapon…</option>
@@ -244,6 +245,18 @@ export default function DaggerheartForge({
             </Field>
           </div>
         )}
+        <div style={{ marginTop: 10 }}>
+          <Field label="Secondary weapon (one-handed)">
+            <select value={dbuild.secondaryId} onChange={(e) => set({ secondaryId: e.target.value })} style={selStyle}>
+              <option value="">None</option>
+              {DH_WEAPON_LIST.filter((w) => w.category === "secondary" && w.tier <= tierOf(dbuild.level)).map((w) => (
+                <option key={w.id} value={w.id}>
+                  {w.name} ({TRAIT_LABEL[w.trait]}, {w.range}, {w.damageDie}{w.damageBonus ? `+${w.damageBonus}` : ""} {w.damageType}{w.feature ? `, ${w.feature}` : ""})
+                </option>
+              ))}
+            </select>
+          </Field>
+        </div>
       </div>
 
       {/* Advancements */}
@@ -373,7 +386,14 @@ export default function DaggerheartForge({
               <Stat label="Spellcast" value={sheet.spellcast == null ? "-" : sign(sheet.spellcast)} />
               {sheet.attackMod != null && <Stat label="Attack" value={sign(sheet.attackMod)} />}
               {sheet.damage && <Stat label="Damage" value={sheet.damage} />}
+              {sheet.secondaryDamage && <Stat label="2nd dmg" value={sheet.secondaryDamage} />}
             </div>
+            {(sheet.secondaryName || sheet.pairedBonus > 0) && (
+              <p style={{ color: STONE.inkDim, fontSize: 12, marginTop: 8 }}>
+                {sheet.secondaryName ? `Secondary: ${sheet.secondaryName}.` : ""}
+                {sheet.pairedBonus > 0 ? ` Paired: +${sheet.pairedBonus} to primary weapon damage within Melee range.` : ""}
+              </p>
+            )}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 6, marginTop: 12 }}>
               {DH_TRAITS.map((t) => (
                 <div key={t} style={{ textAlign: "center" }}>
