@@ -5,18 +5,28 @@ import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { SAX } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
+import BlockEditor, { type Block } from "@/app/gm/codex/BlockEditor";
+import { PortraitUploader } from "@/components/portrait-uploader";
 
 // app/me/characters/[id]/page.tsx
 //
-// A player-owned character page: the story of one PC, in titled sections the owner writes. Each section
-// is private (just them) or shared (their GM can read it). The owner can hand the GM edit access with a
-// single toggle. The same page serves the GM: they see the shared sections, and can edit only if granted.
+// A player-owned character page with TWO parts:
+//   1. PRIVATE / GM-shared narrative sections (character_wiki_sections, p78). Titled text sections,
+//      each private to the owner or shared with the GM, who may edit only when granted.
+//   2. A PUBLIC wiki page (p80): the same block system the GM uses for entries, opted in per character
+//      via characters.is_public, shown in "The party" section of the campaign's public wiki. Blocks,
+//      a summary, the Forge portrait as the hero image, and (later) connections.
 //
-// Everything reads and writes through RLS with the browser client (see p78-character-wiki.sql), so there
-// is no API route: the policies are the authority.
+// Everything reads and writes through RLS with the browser client, so there is no API route: the
+// policies are the authority. The owner can edit both parts; a GM sees only the shared private sections
+// (and never the public-page editor, which is the player's own).
 
-type Character = { id: string; name: string; campaign_id: string; profile_id: string | null; kind: string };
+type Character = {
+  id: string; name: string; campaign_id: string; profile_id: string | null; kind: string;
+  is_public: boolean; portrait_url: string | null; summary: string | null; blocks: Block[] | null;
+};
 type Section = { id: string; title: string; body: string; visibility: string; position: number };
+type Campaign = { gm_id: string; public_slug: string | null; public_published_at: string | null };
 
 const field: React.CSSProperties = {
   boxSizing: "border-box", width: "100%", background: C.surface2, color: C.text,
@@ -31,10 +41,20 @@ export default function CharacterPage() {
   const [charId, setCharId] = useState<string | null>(null);
   const [me, setMe] = useState<string | null>(null);
   const [ch, setCh] = useState<Character | null>(null);
+  const [camp, setCamp] = useState<Campaign | null>(null);
   const [isGm, setIsGm] = useState(false);
   const [granted, setGranted] = useState(false);
   const [sections, setSections] = useState<Section[]>([]);
   const [status, setStatus] = useState<"loading" | "ready" | "denied" | "error">("loading");
+
+  // Public-page editor state (owner only).
+  const [isPublic, setIsPublic] = useState(false);
+  const [summary, setSummary] = useState("");
+  const [portraitUrl, setPortraitUrl] = useState<string | null>(null);
+  const [blocks, setBlocks] = useState<Block[]>([]);
+  const [pageBusy, setPageBusy] = useState(false);
+  const [pageSaved, setPageSaved] = useState(false);
+  const [pageError, setPageError] = useState<string | null>(null);
 
   useEffect(() => {
     const parts = window.location.pathname.split("/").filter(Boolean); // me / characters / <id>
@@ -48,14 +68,21 @@ export default function CharacterPage() {
     setMe(user.id);
 
     const { data: cData } = await supabase.from("characters")
-      .select("id, name, campaign_id, profile_id, kind").eq("id", charId).maybeSingle();
+      .select("id, name, campaign_id, profile_id, kind, is_public, portrait_url, summary, blocks")
+      .eq("id", charId).maybeSingle();
     const character = cData as Character | null;
     if (!character) { setStatus("denied"); return; }
     setCh(character);
+    setIsPublic(Boolean(character.is_public));
+    setSummary(character.summary || "");
+    setPortraitUrl(character.portrait_url);
+    setBlocks(character.blocks && character.blocks.length ? character.blocks : []);
 
-    const { data: campData } = await supabase.from("campaigns").select("gm_id").eq("id", character.campaign_id).maybeSingle();
-    const gm = (campData as { gm_id: string } | null)?.gm_id === user.id;
-    setIsGm(gm);
+    const { data: campData } = await supabase.from("campaigns")
+      .select("gm_id, public_slug, public_published_at").eq("id", character.campaign_id).maybeSingle();
+    const c = campData as Campaign | null;
+    setCamp(c);
+    setIsGm(c?.gm_id === user.id);
 
     const [{ data: sData }, { data: gData }] = await Promise.all([
       supabase.from("character_wiki_sections").select("id, title, body, visibility, position").eq("character_id", charId).order("position").order("created_at"),
@@ -71,10 +98,9 @@ export default function CharacterPage() {
   const isOwner = Boolean(ch && me && ch.profile_id === me);
   const canEdit = isOwner || (isGm && granted);
 
+  // ---- private sections (p78) ----
   const addSection = async () => {
     const pos = sections.length ? Math.max(...sections.map((s) => s.position)) + 1 : 0;
-    // Owner's new sections start private (theirs to share); a GM editing (only ever on shared sections)
-    // adds shared ones, so RLS does not hide the GM's own new section back from them.
     const { data, error } = await supabase.from("character_wiki_sections")
       .insert({ character_id: charId, title: "", body: "", visibility: isOwner ? "private" : "shared", position: pos })
       .select("id, title, body, visibility, position").single();
@@ -104,6 +130,44 @@ export default function CharacterPage() {
     else { setGranted(true); await supabase.from("character_wiki_gm_edit").insert({ character_id: charId }); }
   };
 
+  // ---- public wiki page (p80) ----
+  // Publish is the owner's own switch: flips characters.is_public, which is what public_codex reads to
+  // show this PC in "The party". It only actually appears once the GM has also published the campaign.
+  const togglePublic = async () => {
+    if (!ch) return;
+    const next = !isPublic;
+    setIsPublic(next);
+    const { error } = await supabase.from("characters").update({ is_public: next }).eq("id", ch.id);
+    if (error) { setIsPublic(!next); setPageError(`Could not change publish state: ${error.message}`); }
+  };
+
+  // Upload a block image to THIS character's own path, gated by the p80 storage policy
+  // (<campaign>/pc/<charId>/blocks/...). Returns the public URL for the block, or null on failure.
+  const uploadBlockImage = useCallback(async (file: File): Promise<string | null> => {
+    if (!ch) return null;
+    const ext = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
+    const path = `${ch.campaign_id}/pc/${ch.id}/blocks/${Math.random().toString(36).slice(2, 10)}.${ext}`;
+    const { error } = await supabase.storage.from("campaign-maps").upload(path, file, { upsert: true, contentType: file.type });
+    if (error) { setPageError(`Image upload failed: ${error.message}`); return null; }
+    const { data } = supabase.storage.from("campaign-maps").getPublicUrl(path);
+    return `${data.publicUrl}?v=${Date.now()}`;
+  }, [supabase, ch]);
+
+  const savePage = async () => {
+    if (!ch) return;
+    setPageBusy(true); setPageError(null); setPageSaved(false);
+    const { error } = await supabase.from("characters").update({ blocks, summary: summary.trim() || null }).eq("id", ch.id);
+    setPageBusy(false);
+    if (error) { setPageError(`Could not save the page: ${error.message}`); return; }
+    setPageSaved(true);
+    setTimeout(() => setPageSaved(false), 2500);
+  };
+
+  const publicUrl =
+    camp?.public_slug && camp.public_published_at && ch
+      ? `/c/${camp.public_slug}/party/${ch.id}`
+      : null;
+
   if (status === "loading") return <PageShell width={760}><p style={{ color: C.muted }}>Loading…</p></PageShell>;
   if (status === "denied") return <PageShell width={760}><p style={{ color: C.muted }}>That character page is not available to you.</p></PageShell>;
 
@@ -115,21 +179,86 @@ export default function CharacterPage() {
       <h1 style={{ fontFamily: SAX.serif, fontSize: 30, fontWeight: 700, margin: "0 0 6px" }}>{ch?.name}</h1>
       <p style={{ color: C.muted, fontSize: 14.5, lineHeight: 1.6, margin: "0 0 20px", maxWidth: 620 }}>
         {isOwner
-          ? "Your character's story, in your words. Mark a section shared to let your GM read it, or keep it private. You can hand your GM edit access whenever you want a second hand."
+          ? "Your character's story, in your words. The public page below is what the world sees; the private sections further down are yours, or shared only with your GM."
           : isGm
-            ? (granted ? "This player has given you edit access to their page." : "The sections this player has shared with you. They keep the pen unless they hand it over.")
+            ? (granted ? "This player has given you edit access to their private sections." : "The sections this player has shared with you. They keep the pen unless they hand it over.")
             : "This player's shared character notes."}
       </p>
 
+      {/* ---- PUBLIC WIKI PAGE (owner only) ---- */}
+      {isOwner && ch && (
+        <section style={{ background: C.surface, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "16px 18px", marginBottom: 24 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
+            <div style={{ fontFamily: SAX.serif, fontSize: 20, fontWeight: 700, color: C.text }}>Public wiki page</div>
+            {publicUrl && isPublic && (
+              <a href={publicUrl} target="_blank" rel="noreferrer" style={{ fontFamily: SAX.mono, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: SAX.brass, textDecoration: "none" }}>
+                View on the wiki ↗
+              </a>
+            )}
+          </div>
+          <p style={{ color: C.muted, fontSize: 13.5, lineHeight: 1.6, margin: "6px 0 14px" }}>
+            A page anyone can read in your campaign&rsquo;s public codex, under The party. Build it with the same
+            blocks the GM uses: text panels (full or half width), images in the body, and images in the side panel.
+          </p>
+
+          <label style={{ display: "flex", alignItems: "center", gap: 10, background: C.surface2, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "11px 13px", marginBottom: 16, cursor: "pointer" }}>
+            <input type="checkbox" checked={isPublic} onChange={togglePublic} style={{ width: 17, height: 17, accentColor: SAX.brass }} />
+            <div>
+              <div style={{ fontSize: 14, color: C.text, fontWeight: 600 }}>Show this character on the public wiki</div>
+              <div style={{ fontSize: 12.5, color: C.muted, marginTop: 2 }}>
+                {camp?.public_published_at
+                  ? "It appears under The party once you save the page below."
+                  : "Your GM has not published the campaign yet, so nothing is public until they do, even with this on."}
+              </div>
+            </div>
+          </label>
+
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ ...label, marginBottom: 6 }}>Portrait</div>
+            <PortraitUploader
+              basePath={`${ch.campaign_id}/portraits/${ch.id}`}
+              currentUrl={portraitUrl}
+              onUploaded={async (url) => {
+                setPortraitUrl(url);
+                await supabase.from("characters").update({ portrait_url: url }).eq("id", ch.id);
+              }}
+              label="Character portrait"
+            />
+            <p style={{ fontSize: 12, color: C.muted, margin: "6px 0 0" }}>This is the same portrait as the Forge, and it is the page&rsquo;s header image.</p>
+          </div>
+
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ ...label, marginBottom: 6 }}>Summary</div>
+            <input value={summary} onChange={(e) => setSummary(e.target.value)} maxLength={280}
+              placeholder="One line under the name, e.g. a half-elf ranger hunting the coven that burned her village."
+              style={field} />
+          </div>
+
+          <div style={{ ...label, marginBottom: 6 }}>The page</div>
+          <BlockEditor blocks={blocks} onChange={setBlocks} onUploadImage={uploadBlockImage} />
+
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 12, flexWrap: "wrap" }}>
+            <button type="button" onClick={savePage} disabled={pageBusy} style={{ ...primaryBtn, opacity: pageBusy ? 0.7 : 1 }}>
+              {pageBusy ? "Saving…" : "Save page"}
+            </button>
+            {pageSaved && <span style={{ fontSize: 13, color: C.good }}>Saved.</span>}
+            {pageError && <span style={{ fontSize: 12.5, color: C.warn }}>{pageError}</span>}
+          </div>
+        </section>
+      )}
+
+      {/* ---- PRIVATE / GM-SHARED SECTIONS (p78) ---- */}
       {isOwner && (
-        <div style={{ display: "flex", alignItems: "center", gap: 10, background: C.surface, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "12px 14px", marginBottom: 20 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, background: C.surface, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "12px 14px", marginBottom: 16 }}>
           <input type="checkbox" checked={granted} onChange={toggleGrant} style={{ width: 17, height: 17, accentColor: SAX.brass }} />
           <div>
-            <div style={{ fontSize: 14, color: C.text, fontWeight: 600 }}>Let my GM edit this page</div>
-            <div style={{ fontSize: 12.5, color: C.muted, marginTop: 2 }}>They can already read anything you mark shared. This lets them add and change sections too.</div>
+            <div style={{ fontSize: 14, color: C.text, fontWeight: 600 }}>Let my GM edit my private sections</div>
+            <div style={{ fontSize: 12.5, color: C.muted, marginTop: 2 }}>They can already read anything you mark shared. This lets them add and change those sections too.</div>
           </div>
         </div>
       )}
+
+      <div style={{ ...label, marginBottom: 10 }}>{isOwner ? "Private sections" : "Shared sections"}</div>
 
       {visibleSections.length === 0 && (
         <p style={{ color: C.muted, fontSize: 14, marginBottom: 18 }}>
