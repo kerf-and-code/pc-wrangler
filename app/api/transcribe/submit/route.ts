@@ -98,7 +98,14 @@ export async function POST(req: NextRequest) {
 
   const dgKey = process.env.DEEPGRAM_API_KEY;
   const secret = process.env.TRANSCRIBE_CALLBACK_SECRET;
-  if (!dgKey || !secret) {
+  // Room (in-person) tracks go to Replicate WhisperX for diarization when it's configured, replacing
+  // Deepgram for the one path that still needed it. Both env vars must be present to use Replicate;
+  // otherwise room falls through to Deepgram, which stays the safety net.
+  const replicateToken = process.env.REPLICATE_API_TOKEN;
+  const replicateVersion = process.env.REPLICATE_MODEL_VERSION;
+  const replicateReady = Boolean(replicateToken && replicateVersion);
+  // Need the callback secret always, and at least one provider that can actually transcribe.
+  if (!secret || (!dgKey && !replicateReady)) {
     return NextResponse.json({ error: "Server is missing transcription configuration." }, { status: 500 });
   }
 
@@ -216,6 +223,33 @@ export async function POST(req: NextRequest) {
         // here looked identical to one that was never in the job.
         failures.push({ track: t.id, reason: sErr?.message ?? "could not sign the audio URL" });
         continue;
+      }
+
+      // ROOM TRACKS -> Replicate WhisperX (diarized), replacing Deepgram for in-person when
+      // configured. One microphone still needs diarization to split speakers, which is the only
+      // reason in-person ever needed Deepgram; WhisperX (Whisper + pyannote) does it off Deepgram.
+      // Async like Deepgram: create a prediction with a webhook, then /replicate-callback finalizes.
+      // If Replicate isn't set up we fall through to the Deepgram path below, so nothing breaks.
+      if (t.kind === "room" && replicateReady) {
+        const rcb = `${base}/api/transcribe/replicate-callback?track=${t.id}&k=${encodeURIComponent(secret)}`;
+        const rres = await fetch("https://api.replicate.com/v1/predictions", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${replicateToken}`, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            version: replicateVersion,
+            input: { file_url: signed.signedUrl, language: "en", group_segments: true },
+            webhook: rcb,
+            webhook_events_filter: ["completed"],
+          }),
+        });
+        if (rres.ok) {
+          submitted += 1;
+          await admin.from("audio_tracks").update({ status: "transcribing" }).eq("id", t.id);
+        } else {
+          const detail = await rres.text().catch(() => "");
+          failures.push({ track: t.id, reason: `replicate ${rres.status}${detail ? `: ${detail.slice(0, 200)}` : ""}` });
+        }
+        continue; // room track handled (or recorded as failed); never also send it to Deepgram.
       }
 
       const cb = `${base}/api/transcribe/callback?track=${t.id}&k=${encodeURIComponent(secret)}`;

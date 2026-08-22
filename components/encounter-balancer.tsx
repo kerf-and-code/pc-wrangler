@@ -290,13 +290,13 @@ export default function EncounterBalancer() {
             <div style={{ textAlign: "right" }}><div style={verdictLabel}>EV spent</div><div style={verdictNum}>{ds.spent}</div><div style={mini}>party strength {ds.bands.es}</div></div>
           </div>
           <div style={tierRow}>
-            <div style={tierCell}><div style={tierLabel}>Trivial</div><div style={tierNum}>{ds.bands.trivialMax}</div></div>
-            <div style={tierCell}><div style={tierLabel}>Easy</div><div style={tierNum}>{ds.bands.standardMin}</div></div>
-            <div style={tierCell}><div style={tierLabel}>Standard</div><div style={tierNum}>{ds.bands.standardMax}</div></div>
-            <div style={tierCell}><div style={tierLabel}>Hard</div><div style={tierNum}>{ds.bands.hardMax}</div></div>
-            <div style={tierCell}><div style={tierLabel}>Extreme</div><div style={tierNum}>{ds.bands.hardMax}+</div></div>
+            <div style={tierCell}><div style={tierLabel}>Trivial</div><div style={tierNum}>&lt;{ds.bands.trivialMax}</div></div>
+            <div style={tierCell}><div style={tierLabel}>Easy</div><div style={tierNum}>{ds.bands.trivialMax}&ndash;{ds.bands.standardMin - 1}</div></div>
+            <div style={tierCell}><div style={tierLabel}>Standard</div><div style={tierNum}>{ds.bands.standardMin}&ndash;{ds.bands.standardMax}</div></div>
+            <div style={tierCell}><div style={tierLabel}>Hard</div><div style={tierNum}>{ds.bands.standardMax + 1}&ndash;{ds.bands.hardMax}</div></div>
+            <div style={tierCell}><div style={tierLabel}>Extreme</div><div style={tierNum}>&gt;{ds.bands.hardMax}</div></div>
           </div>
-          <p style={verdictNote}>Each hero&apos;s strength is 4 + 2 per level; two average Victories add another hero&apos;s worth. The cells show the top EV of each band.</p>
+          <p style={verdictNote}>Each hero&apos;s strength is 4 + 2 per level; two average Victories add another hero&apos;s worth. Each cell shows the EV range that lands in that band.</p>
         </section>
       )}
 

@@ -206,15 +206,19 @@ export default function EncountersPage() {
   const pf2Derived = useMemo(() => {
     const lvls = levelled.map((c) => c.level as number);
     if (!lvls.length) return { level: 1, size: 4 };
-    const counts = new Map<number, number>();
-    for (const l of lvls) counts.set(l, (counts.get(l) ?? 0) + 1);
-    let level = lvls[0], best = 0;
-    for (const [l, c] of counts) if (c > best || (c === best && l > level)) { best = c; level = l; }
+    // Rounded AVERAGE party level, matching the public web tool (components/encounter-balancer.tsx)
+    // so the same party reads the same difficulty in both places. PF2e and Draw Steel each want a
+    // single party level; the average reflects the whole table, which is the standard APL approach
+    // for uneven parties. (Previously this used the most-common level, which disagreed with the
+    // website whenever levels were mixed.)
+    const avg = lvls.reduce((a, b) => a + b, 0) / lvls.length;
+    const level = Math.max(1, Math.min(20, Math.round(avg)));
     return { level, size: lvls.length };
   }, [levelled]);
   useEffect(() => { setPfLevel(pf2Derived.level); setPfSize(pf2Derived.size); }, [pf2Derived]);
   useEffect(() => { setDhSize(levelled.length || 4); }, [levelled.length]);
-  useEffect(() => { setDsLevel(pf2Derived.level); setDsSize(pf2Derived.size); }, [pf2Derived]);
+  // Draw Steel tops out at level 10, so clamp there (the web tool does the same via avgLevel(10)).
+  useEffect(() => { setDsLevel(Math.min(10, pf2Derived.level)); setDsSize(pf2Derived.size); }, [pf2Derived]);
 
   // ---- the party's budget / thresholds ------------------------------------
   useEffect(() => {
