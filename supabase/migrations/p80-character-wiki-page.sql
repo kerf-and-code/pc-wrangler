@@ -2,12 +2,11 @@
 -- p80-character-wiki-page.sql
 -- Public, player-editable character PAGE on the wiki.
 --
--- SUPERSEDES p78-character-wiki.sql. That earlier draft built a private/GM-shared
--- narrative-sections model (character_wiki_sections + character_wiki_gm_edit) that was
--- never wired to any UI (confirmed: no code references it). The direction now is a PUBLIC
--- character page that reuses the SAME block system the GM has for entries, so a player gets
--- text panels (full/half), inserted images, side-panel images, and connections, and opts
--- their own character in. This migration drops the p78 objects and builds the new model.
+-- ADDITIVE and INDEPENDENT of p78-character-wiki.sql. p78 built the player's PRIVATE /
+-- GM-shared narrative sections (character_wiki_sections + character_wiki_gm_edit), surfaced
+-- at app/me/characters/[id]. THIS migration builds a SEPARATE thing: a PUBLIC character page
+-- that reuses the GM's block system (text full/half, inserted images, side-panel images,
+-- connections) and that the player opts in per character. The two coexist and share no tables.
 --
 -- WHY THIS IS SMALL: characters ALREADY has is_public (owner-settable via the existing
 -- "owner or gm edits character" UPDATE policy) and portrait_url. public_codex already
@@ -19,16 +18,7 @@
 -- ============================================================================
 
 -- ---------------------------------------------------------------------------
--- 1. Retire the p78 draft (never wired up, so nothing writes to it and it holds no data).
---    drop-if-exists so this is safe whether or not p78 was ever run.
--- ---------------------------------------------------------------------------
-drop table if exists public.character_wiki_sections cascade;
-drop table if exists public.character_wiki_gm_edit  cascade;
-drop function if exists public.character_wiki_fill()       cascade;
-drop function if exists public.character_wiki_grant_fill() cascade;
-
--- ---------------------------------------------------------------------------
--- 2. The rich body a PC page needs, mirroring entries.blocks / entries.summary.
+-- 1. The rich body a PC page needs, mirroring entries.blocks / entries.summary.
 --    blocks is the ordered block list (text/header/image, width full|half, image align,
 --    slot body|panel) written by the shared BlockEditor; summary is the italic lede.
 --    Nullable: a PC with no page yet simply has null blocks and falls back to description.
@@ -38,7 +28,7 @@ alter table public.characters
   add column if not exists summary text;
 
 -- ---------------------------------------------------------------------------
--- 3. Let a player upload block images for their OWN character.
+-- 2. Let a player upload block images for their OWN character.
 --
 --    PATH CONVENTION:  <campaign_id>/pc/<character_id>/blocks/<random>.<ext>
 --      storage.foldername(name) = { <campaign_id>, 'pc', <character_id>, 'blocks' }
@@ -69,7 +59,7 @@ with check (
 );
 
 -- ---------------------------------------------------------------------------
--- 4. public_codex: also publish opted-in player characters.
+-- 3. public_codex: also publish opted-in player characters.
 --    Return shape is UNCHANGED, so CREATE OR REPLACE keeps the anon EXECUTE grant (no
 --    drop-and-regrant). PCs carry their own summary + blocks; NPCs still do not.
 -- ---------------------------------------------------------------------------
@@ -103,7 +93,7 @@ as $function$
 $function$;
 
 -- ---------------------------------------------------------------------------
--- 5. public_codex_links: include links touching opted-in PCs.
+-- 4. public_codex_links: include links touching opted-in PCs.
 --    entity_links types a PC endpoint as 'character' (same as an NPC, since a PC is a
 --    character row), so the only change is widening the pub set to kind in ('npc','pc').
 --    Return shape unchanged -> CREATE OR REPLACE preserves the grant.
