@@ -30,11 +30,6 @@ export interface DSSubclass {
 const opt = (id: string, name: string, grantsSkill?: string, grantsSkillFrom?: DSSkillGroup): DSSubclassOption =>
   ({ id, name, ...(grantsSkill ? { grantsSkill } : {}), ...(grantsSkillFrom ? { grantsSkillFrom } : {}) });
 
-const DOMAINS = [
-  "Creation", "Death", "Fate", "Knowledge", "Life", "Love",
-  "Nature", "Protection", "Storm", "Sun", "Trickery", "War",
-];
-
 const SUBCLASSES: Record<string, DSSubclass> = {
   censor: {
     concept: "Censor Order", picks: 1,
@@ -46,13 +41,8 @@ const SUBCLASSES: Record<string, DSSubclass> = {
     quick: ["paragon"],
   },
 
-  // The Conduit's subclass is two domains from their deity's portfolio. Domains shape later features and
-  // grant no creation-time skill, so they ship as names only.
-  conduit: {
-    concept: "Domains", picks: 2,
-    options: DOMAINS.map((d) => opt(d.toLowerCase(), d)),
-    quick: ["life", "protection"],
-  },
+  // Note: the Conduit's subclass IS its two domains, which are handled by the Deity & Domains (faith)
+  // model in ./deities + the Forge's Faith panel, not here. So the Conduit has no entry in this map.
 
   elementalist: {
     concept: "Elemental Specialization", picks: 1,

@@ -18,6 +18,7 @@ import type { DSCareer, DSSkillSlot, DSPerkGroup, DSSkillGroup } from "./careers
 import { slotOptions, DS_SKILL_GROUPS } from "./careers";
 import type { DSSubclass } from "./subclasses";
 import { abilityById } from "./abilities";
+import { deityById, domainName } from "./deities";
 
 export type DSChar = "might" | "agility" | "reason" | "intuition" | "presence";
 export const DS_CHARS: DSChar[] = ["might", "agility", "reason", "intuition", "presence"];
@@ -61,6 +62,7 @@ export interface DSClass {
   staminaPerLevel: number;                   // Stamina gained at 2nd and higher levels
   recoveries: number;
   resource: string;                          // the class's heroic resource (Ferocity, Piety, ...)
+  faithDomains?: number;                      // # of domains this class picks from a deity (Conduit 2, Censor 1)
   subclass?: DSSubclass;                     // the class's subclass concept + selectable options
 }
 
@@ -111,6 +113,8 @@ export interface DSBuild {
   ancestryTraitIds: string[];                // purchased ancestry-trait ids the player bought
   subclassIds: string[];                     // selected subclass option ids (Conduit picks 2, else 1)
   subclassSkill: string;                     // chosen skill when the selected subclass grants a group skill
+  deityId: string;                           // chosen deity/saint (Conduit + Censor); "" otherwise
+  domainIds: string[];                       // domains picked from the deity's portfolio (Conduit 2, Censor 1)
   abilityIds: string[];                      // class abilities the player has taken (catalog ids)
   characteristics: Record<DSChar, number>;   // the five assigned scores
   // One entry per CHOICE slot on the career (fixed slots are implicit), aligned to the choice-slot order.
@@ -143,6 +147,9 @@ export interface DSSheet {
   subclassSkills: string[];                  // skills the subclass grants (specific or chosen group skill)
   heroicResource: string;                    // the class's heroic resource name ("" if no class)
   abilityNames: string[];                    // names of the class abilities the player has taken
+  deityName: string;                         // chosen deity/saint name ("" if none / class has no faith)
+  domainNames: string[];                     // chosen domain names (capped at the class's faithDomains)
+  faithDomains: number;                      // how many domains the class picks (0 if it has no faith)
   // Ancestry-derived:
   ancestryName: string;                      // "" if no ancestry chosen
   ancestryPoints: number;                    // total points available
@@ -164,7 +171,7 @@ export function emptyDSChars(): Record<DSChar, number> {
 export function emptyDSBuild(): DSBuild {
   return {
     level: 1, classId: "", ancestryId: "", kitId: "", careerId: "",
-    ancestryTraitIds: [], subclassIds: [], subclassSkill: "", abilityIds: [],
+    ancestryTraitIds: [], subclassIds: [], subclassSkill: "", deityId: "", domainIds: [], abilityIds: [],
     characteristics: emptyDSChars(), careerSkillChoices: [], careerLanguages: [],
   };
 }
@@ -243,6 +250,21 @@ export function resolveSubclass(
   return { names, skills };
 }
 
+// Resolve a build's deity + domains. Domains are kept only if they are in the chosen deity's portfolio,
+// and no more than the class's faithDomains are counted. Returns display names.
+export function resolveFaith(
+  deityId: string, domainIds: string[], faithDomains: number,
+): { deityName: string; domainNames: string[] } {
+  if (faithDomains <= 0) return { deityName: "", domainNames: [] };
+  const deity = deityId ? deityById(deityId) : undefined;
+  const allowed = new Set(deity?.domains ?? []);
+  const domains = (domainIds ?? [])
+    .filter((id) => allowed.has(id))
+    .slice(0, faithDomains)
+    .map(domainName);
+  return { deityName: deity?.name ?? "", domainNames: domains };
+}
+
 export function deriveDrawSteelSheet(build: DSBuild, rules: DSRules): DSSheet | null {
   const cls = rules.classes[build.classId];
   if (!cls) return null;
@@ -289,6 +311,9 @@ export function deriveDrawSteelSheet(build: DSBuild, rules: DSRules): DSSheet | 
     .filter((a): a is NonNullable<typeof a> => !!a && (a.classId === build.classId || a.classId === "common"))
     .map((a) => a.name);
 
+  const faithDomains = cls.faithDomains ?? 0;
+  const faith = resolveFaith(build.deityId, build.domainIds, faithDomains);
+
   return {
     level,
     echelon,
@@ -312,6 +337,9 @@ export function deriveDrawSteelSheet(build: DSBuild, rules: DSRules): DSSheet | 
     subclassSkills: sub.skills,
     heroicResource: cls.resource ?? "",
     abilityNames,
+    deityName: faith.deityName,
+    domainNames: faith.domainNames,
+    faithDomains,
     ancestryName: anc?.name ?? "",
     ancestryPoints: anc?.points ?? 0,
     ancestryPointsSpent: traits.spent,

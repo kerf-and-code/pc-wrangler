@@ -16,8 +16,8 @@ const A3 = [[2, -1, -1], [1, 1, -1], [1, 0, 0]];                       // 3-valu
 const A4 = [[2, 2, -1, -1], [2, 1, 1, -1], [2, 1, 0, 0], [1, 1, 1, 0]]; // 4-value arrays (one fixed char)
 
 const CLASSES: Record<string, DSClass> = {
-  censor:       { id: "censor",       name: "Censor",       fixed: { might: 2, presence: 2 },  arrays: A3, keyChar: "presence",  baseStamina: 21, staminaPerLevel: 9, recoveries: 12, resource: "Wrath",      subclass: DS_SUBCLASSES.censor },
-  conduit:      { id: "conduit",      name: "Conduit",      fixed: { intuition: 2 },           arrays: A4, keyChar: "intuition", baseStamina: 18, staminaPerLevel: 6, recoveries: 8,  resource: "Piety",      subclass: DS_SUBCLASSES.conduit },
+  censor:       { id: "censor",       name: "Censor",       fixed: { might: 2, presence: 2 },  arrays: A3, keyChar: "presence",  baseStamina: 21, staminaPerLevel: 9, recoveries: 12, resource: "Wrath",      faithDomains: 1, subclass: DS_SUBCLASSES.censor },
+  conduit:      { id: "conduit",      name: "Conduit",      fixed: { intuition: 2 },           arrays: A4, keyChar: "intuition", baseStamina: 18, staminaPerLevel: 6, recoveries: 8,  resource: "Piety",      faithDomains: 2 },
   elementalist: { id: "elementalist", name: "Elementalist", fixed: { reason: 2 },              arrays: A4, keyChar: "reason",    baseStamina: 18, staminaPerLevel: 6, recoveries: 8,  resource: "Essence",    subclass: DS_SUBCLASSES.elementalist },
   fury:         { id: "fury",         name: "Fury",         fixed: { might: 2, agility: 2 },   arrays: A3, keyChar: "might",     baseStamina: 21, staminaPerLevel: 9, recoveries: 10, resource: "Ferocity",   subclass: DS_SUBCLASSES.fury },
   null_:        { id: "null_",        name: "Null",         fixed: { agility: 2, intuition: 2 }, arrays: A3, keyChar: "intuition", baseStamina: 21, staminaPerLevel: 9, recoveries: 8,  resource: "Discipline", subclass: DS_SUBCLASSES.null_ },

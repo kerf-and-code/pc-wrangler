@@ -15,6 +15,7 @@ import {
 import { DS_RULES, DS_CLASS_LIST, DS_ANCESTRY_LIST, DS_KIT_LIST, DS_CAREER_LIST } from "@/lib/drawsteel/rules-data";
 import { slotOptions, slotLabel, DS_PERK_GROUP_LABEL, DS_SKILL_GROUPS, DS_SKILL_GROUP_LABEL, type DSSkillSlot } from "@/lib/drawsteel/careers";
 import { abilitiesForClass, abilityExplainer, type DSAbility } from "@/lib/drawsteel/abilities";
+import { DS_DEITIES, domainsForDeity } from "@/lib/drawsteel/deities";
 import { STONE, FORGE_FONTS, stonePanel, stoneField, forgeLabel, statTile } from "@/lib/forge-theme";
 
 const sign = (n: number) => (n >= 0 ? `+${n}` : `${n}`);
@@ -74,6 +75,20 @@ export default function DrawSteelForge({
   const abilityLevels = Object.keys(abilitiesByLevel).sort((a, b) => Number(a) - Number(b));
   const toggleAbility = (id: string) =>
     set({ abilityIds: abilityIds.includes(id) ? abilityIds.filter((x) => x !== id) : [...abilityIds, id] });
+
+  // Deity & Domains (faith). Conduit picks 2 domains, Censor 1; the domain choices are constrained to
+  // the chosen deity's portfolio. Changing deity resets the domains so a stale, off-portfolio pick
+  // can't linger.
+  const faithDomains = cls?.faithDomains ?? 0;
+  const domainIds = dsBuild.domainIds ?? [];
+  const deityDomains = dsBuild.deityId ? domainsForDeity(dsBuild.deityId) : [];
+  const setDeity = (id: string) => set({ deityId: id, domainIds: [] });
+  const setDomainAt = (i: number, id: string) => {
+    const next = [...domainIds];
+    while (next.length < faithDomains) next.push("");
+    next[i] = id;
+    set({ domainIds: next.slice(0, faithDomains) });
+  };
 
   const ancTraitIds = dsBuild.ancestryTraitIds ?? [];
   const ancSpent = anc ? anc.purchasedTraits.filter((t) => ancTraitIds.includes(t.id)).reduce((s, t) => s + t.cost, 0) : 0;
@@ -222,6 +237,49 @@ export default function DrawSteelForge({
                 </select>
               </Field>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Deity & Domains (faith) */}
+      {cls && faithDomains > 0 && (
+        <div style={stonePanel()}>
+          <div style={forgeLabel}>Deity &amp; domains</div>
+          <p style={{ color: STONE.inkDim, fontSize: 12, margin: "6px 0 10px" }}>
+            Choose a deity or saint, then {faithDomains === 1 ? "one domain" : `${faithDomains} domains`} from
+            their portfolio. Each domain grants a piety trigger, a prayer effect, and features as you level;
+            those are printed in your SRD.
+          </p>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10 }}>
+            <Field label="Deity or saint">
+              <select value={dsBuild.deityId} onChange={(e) => setDeity(e.target.value)} style={selStyle}>
+                <option value="">Choose...</option>
+                <optgroup label="Deities">
+                  {DS_DEITIES.filter((x) => x.kind === "deity").map((x) => (
+                    <option key={x.id} value={x.id}>{x.name}</option>
+                  ))}
+                </optgroup>
+                <optgroup label="Saints &amp; heroes">
+                  {DS_DEITIES.filter((x) => x.kind === "saint").map((x) => (
+                    <option key={x.id} value={x.id}>{x.name}</option>
+                  ))}
+                </optgroup>
+              </select>
+            </Field>
+            {Array.from({ length: faithDomains }).map((_, i) => {
+              const taken = new Set(domainIds.filter((_v, j) => j !== i && domainIds[j]));
+              return (
+                <Field key={i} label={faithDomains > 1 ? `Domain ${i + 1}` : "Domain"}>
+                  <select value={domainIds[i] ?? ""} onChange={(e) => setDomainAt(i, e.target.value)}
+                    disabled={!dsBuild.deityId} style={selStyle}>
+                    <option value="">{dsBuild.deityId ? "Choose..." : "Pick a deity first"}</option>
+                    {deityDomains.filter((dm) => !taken.has(dm.id) || dm.id === domainIds[i]).map((dm) => (
+                      <option key={dm.id} value={dm.id}>{dm.name}</option>
+                    ))}
+                  </select>
+                </Field>
+              );
+            })}
           </div>
         </div>
       )}
@@ -469,6 +527,24 @@ export default function DrawSteelForge({
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                     {sheet.subclassSkills.map((s) => <span key={s} style={chip}>{s}</span>)}
                   </div>
+                )}
+              </div>
+            )}
+
+            {/* Faith output */}
+            {sheet.faithDomains > 0 && (
+              <div style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid ${STONE.hi}` }}>
+                <div style={{ ...forgeLabel, marginBottom: 6 }}>
+                  Faith{sheet.deityName ? `: ${sheet.deityName}` : ""}
+                </div>
+                {sheet.domainNames.length > 0 ? (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                    {sheet.domainNames.map((n) => <span key={n} style={chip}>{n}</span>)}
+                  </div>
+                ) : (
+                  <span style={{ color: STONE.inkDim, fontSize: 12 }}>
+                    {sheet.deityName ? `Choose ${sheet.faithDomains} domain${sheet.faithDomains > 1 ? "s" : ""}.` : "Choose a deity and domains."}
+                  </span>
                 )}
               </div>
             )}
