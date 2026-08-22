@@ -8,7 +8,7 @@
 
 import React from "react";
 import {
-  DS_CHARS, DS_CHAR_LABEL,
+  DS_CHARS, DS_CHAR_LABEL, echelonOf,
   careerChoiceSlots,
   type DSBuild, type DSSheet, type DSChar,
 } from "@/lib/drawsteel/character";
@@ -17,6 +17,7 @@ import { slotOptions, slotLabel, DS_PERK_GROUP_LABEL, DS_SKILL_GROUPS, DS_SKILL_
 import { abilitiesForClass, abilityExplainer, type DSAbility } from "@/lib/drawsteel/abilities";
 import { DS_DEITIES, domainsForDeity } from "@/lib/drawsteel/deities";
 import { DS_COMPLICATIONS, complicationById } from "@/lib/drawsteel/complications";
+import { titlesUpToEchelon, type DSTitle } from "@/lib/drawsteel/titles";
 import { STONE, FORGE_FONTS, stonePanel, stoneField, forgeLabel, statTile } from "@/lib/forge-theme";
 
 const sign = (n: number) => (n >= 0 ? `+${n}` : `${n}`);
@@ -95,6 +96,18 @@ export default function DrawSteelForge({
   // one's derived benefit/drawback tags are shown, with the full text left to the SRD.
   const complications = [...DS_COMPLICATIONS].sort((a, b) => a.name.localeCompare(b.name));
   const comp = dsBuild.complicationId ? complicationById(dsBuild.complicationId) : undefined;
+
+  // Titles earned in play, gated to the character's echelon and grouped by echelon for the picker.
+  const echelon = echelonOf(dsBuild.level);
+  const titleIds = dsBuild.titleIds ?? [];
+  const availableTitles = titlesUpToEchelon(echelon);
+  const titlesByEchelon = availableTitles.reduce<Record<string, DSTitle[]>>((acc, t) => {
+    (acc[String(t.echelon)] ||= []).push(t);
+    return acc;
+  }, {});
+  const titleEchelons = Object.keys(titlesByEchelon).sort((a, b) => Number(a) - Number(b));
+  const toggleTitle = (id: string) =>
+    set({ titleIds: titleIds.includes(id) ? titleIds.filter((x) => x !== id) : [...titleIds, id] });
 
   const ancTraitIds = dsBuild.ancestryTraitIds ?? [];
   const ancSpent = anc ? anc.purchasedTraits.filter((t) => ancTraitIds.includes(t.id)).reduce((s, t) => s + t.cost, 0) : 0;
@@ -492,6 +505,48 @@ export default function DrawSteelForge({
         )}
       </div>
 
+      {/* Titles (earned in play) */}
+      <div style={stonePanel()}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={forgeLabel}>Titles</div>
+          <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 12, color: STONE.inkDim }}>
+            echelon {echelon} · {titleIds.length} held
+          </span>
+        </div>
+        <p style={{ color: STONE.inkDim, fontSize: 12, margin: "6px 0 10px" }}>
+          Titles are earned in play and unlock by echelon. Tap any your hero has earned; the tag hints at
+          the effect, and the prerequisite and full effect are on the title&apos;s page in your SRD.
+        </p>
+        <div style={{ display: "grid", gap: 12 }}>
+          {titleEchelons.map((ech) => (
+            <div key={ech}>
+              <div style={{ fontFamily: FORGE_FONTS.mono, fontSize: 11, color: STONE.inkDim, textTransform: "uppercase", marginBottom: 6 }}>
+                {ech === "1" ? "1st" : ech === "2" ? "2nd" : ech === "3" ? "3rd" : "4th"} echelon
+              </div>
+              <div style={{ display: "grid", gap: 6 }}>
+                {titlesByEchelon[ech].map((t) => {
+                  const on = titleIds.includes(t.id);
+                  return (
+                    <button key={t.id} type="button" onClick={() => toggleTitle(t.id)}
+                      style={{
+                        ...selStyle, textAlign: "left", padding: "8px 10px", cursor: "pointer",
+                        borderColor: on ? STONE.brassHi : undefined,
+                        background: on ? STONE.shadow : (selStyle.background as string),
+                        display: "grid", gap: 3,
+                      }}>
+                      <span style={{ fontSize: 13.5, color: STONE.ink, fontWeight: 600 }}>{on ? "✓ " : ""}{t.name}</span>
+                      {t.effect && (
+                        <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 11, color: STONE.inkDim }}>{t.effect}</span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* Characteristics */}
       <div style={stonePanel()}>
         <div style={forgeLabel}>Characteristics</div>
@@ -644,6 +699,16 @@ export default function DrawSteelForge({
                 ) : (
                   <span style={{ color: STONE.inkDim, fontSize: 12 }}>See its page in the SRD for the benefit and drawback.</span>
                 )}
+              </div>
+            )}
+
+            {/* Titles output */}
+            {sheet.titleNames.length > 0 && (
+              <div style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid ${STONE.hi}` }}>
+                <div style={{ ...forgeLabel, marginBottom: 6 }}>Titles</div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  {sheet.titleNames.map((n) => <span key={n} style={chip}>{n}</span>)}
+                </div>
               </div>
             )}
           </>

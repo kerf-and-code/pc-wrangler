@@ -20,6 +20,7 @@ import type { DSSubclass } from "./subclasses";
 import { abilityById } from "./abilities";
 import { deityById, domainName } from "./deities";
 import { complicationById } from "./complications";
+import { titleById } from "./titles";
 
 export type DSChar = "might" | "agility" | "reason" | "intuition" | "presence";
 export const DS_CHARS: DSChar[] = ["might", "agility", "reason", "intuition", "presence"];
@@ -117,6 +118,7 @@ export interface DSBuild {
   deityId: string;                           // chosen deity/saint (Conduit + Censor); "" otherwise
   domainIds: string[];                       // domains picked from the deity's portfolio (Conduit 2, Censor 1)
   complicationId: string;                    // optional complication (one per hero); "" for none
+  titleIds: string[];                        // titles earned in play (echelon-gated); a hero may hold several
   abilityIds: string[];                      // class abilities the player has taken (catalog ids)
   characteristics: Record<DSChar, number>;   // the five assigned scores
   // One entry per CHOICE slot on the career (fixed slots are implicit), aligned to the choice-slot order.
@@ -155,6 +157,7 @@ export interface DSSheet {
   complicationName: string;                  // chosen complication name ("" for none)
   complicationBenefit: string;               // derived benefit tag ("" when it has none)
   complicationDrawback: string;              // derived drawback tag ("" when it has none)
+  titleNames: string[];                      // names of titles the hero holds (echelon-gated to the sheet)
   // Ancestry-derived:
   ancestryName: string;                      // "" if no ancestry chosen
   ancestryPoints: number;                    // total points available
@@ -177,7 +180,7 @@ export function emptyDSBuild(): DSBuild {
   return {
     level: 1, classId: "", ancestryId: "", kitId: "", careerId: "",
     ancestryTraitIds: [], subclassIds: [], subclassSkill: "", deityId: "", domainIds: [],
-    complicationId: "", abilityIds: [],
+    complicationId: "", titleIds: [], abilityIds: [],
     characteristics: emptyDSChars(), careerSkillChoices: [], careerLanguages: [],
   };
 }
@@ -322,6 +325,12 @@ export function deriveDrawSteelSheet(build: DSBuild, rules: DSRules): DSSheet | 
 
   const complication = build.complicationId ? complicationById(build.complicationId) : undefined;
 
+  // Titles the hero holds, kept only if valid and gated to the character's echelon.
+  const titleNames = (build.titleIds ?? [])
+    .map((id) => titleById(id))
+    .filter((t): t is NonNullable<typeof t> => !!t && t.echelon <= echelon)
+    .map((t) => t.name);
+
   return {
     level,
     echelon,
@@ -351,6 +360,7 @@ export function deriveDrawSteelSheet(build: DSBuild, rules: DSRules): DSSheet | 
     complicationName: complication?.name ?? "",
     complicationBenefit: complication?.benefit ?? "",
     complicationDrawback: complication?.drawback ?? "",
+    titleNames,
     ancestryName: anc?.name ?? "",
     ancestryPoints: anc?.points ?? 0,
     ancestryPointsSpent: traits.spent,
