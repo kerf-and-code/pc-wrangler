@@ -1231,15 +1231,18 @@ function ForgeInner() {
   const dsheet = useMemo(() => { try { return deriveDaggerheartSheet(dbuild, DH_RULES); } catch { return null; } }, [dbuild]);
   const steelSheet = useMemo(() => { try { return deriveDrawSteelSheet(steelBuild, DS_RULES); } catch { return null; } }, [steelBuild]);
   const lanSheet = useMemo(() => { try { return deriveLancerSheet(lancerBuild, LANCER_RULES); } catch { return null; } }, [lancerBuild]);
-  // Separate readiness aliases, one per system branch. They MUST stay plain conjunctions:
-  // TypeScript's aliased-condition narrowing is what lets `sheet={sheet}` pass as non-null inside
-  // the D&D body (psheet inside the PF2e body, dsheet inside the Daggerheart body). A ternary in the
-  // alias breaks that narrowing.
+  // Readiness aliases, one per system branch.
+  // D&D KEEPS `&& !!sheet`: its body uses `sheet` INLINE and relies on TypeScript's aliased-condition
+  // narrowing to pass it as non-null. Keep it a plain conjunction (no ternary) or that narrowing breaks.
+  // The other four systems render a SELF-CONTAINED component whose `sheet` prop is already nullable
+  // (<X>Sheet | null) - and their sheet is null until a class is chosen. They must NOT require a
+  // non-null sheet, or the column that CONTAINS the class picker never mounts and the Forge shows blank
+  // on a fresh build. So they gate on the selected system only and pass the (possibly null) sheet.
   const dndReady = status === "ready" && system !== "pf2e" && system !== "daggerheart" && system !== "drawsteel" && system !== "lancer" && !!sheet;
-  const pf2eReady = status === "ready" && system === "pf2e" && !!psheet;
-  const dhReady = status === "ready" && system === "daggerheart" && !!dsheet;
-  const steelReady = status === "ready" && system === "drawsteel" && !!steelSheet;
-  const lanReady = status === "ready" && system === "lancer" && !!lanSheet;
+  const pf2eReady = status === "ready" && system === "pf2e";
+  const dhReady = status === "ready" && system === "daggerheart";
+  const steelReady = status === "ready" && system === "drawsteel";
+  const lanReady = status === "ready" && system === "lancer";
 
   return (
     <div style={shellStyle}>
