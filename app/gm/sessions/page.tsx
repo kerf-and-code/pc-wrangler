@@ -263,7 +263,7 @@ export default function SessionWorkspace() {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) setErr(data?.error || "Could not go live.");
       else {
-        setLifecycleMsg("Session is live. Party chat is hidden and table rolls land here.");
+        setLifecycleMsg("Session is live. Table rolls land here, and party chat stays open for the players.");
         if (campaign) await loadCampaignData(campaign);
       }
     } catch {
@@ -691,7 +691,7 @@ export default function SessionWorkspace() {
                     <span style={{ fontSize: 15, fontWeight: 700, color: C.vellum }}>Session {cur.session_number ?? "?"}</span>
                     <span style={{ fontSize: 11.5, color: STATUS_TONE[cur.status] || C.muted, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "ui-monospace, monospace" }}>{cur.status}</span>
                     {cur.status === "live" && (
-                      <span style={{ fontSize: 11.5, color: C.warn }}>Live, party chat is hidden</span>
+                      <span style={{ fontSize: 11.5, color: C.warn }}>Live, party chat stays open</span>
                     )}
                   </div>
                   <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
@@ -743,7 +743,7 @@ export default function SessionWorkspace() {
                   </div>
                   <div style={{ fontSize: 11.5, color: C.muted, marginTop: 8, lineHeight: 1.5 }}>
                     {isOpen
-                      ? "This session is OPEN: party chat stays locked and D&D Beyond rolls land here. End and process closes it and opens player check-in. Close ends it without processing."
+                      ? "This session is OPEN: D&D Beyond rolls land here, and party chat stays open for the players. End and process closes it and opens player check-in. Close ends it without processing."
                       : "This session is closed. Reopen it to record more into the same session rather than starting a new number."}
                     {canDelete && " Delete removes an empty session created by mistake, and is refused once anything has been recorded or logged."}
                   </div>
