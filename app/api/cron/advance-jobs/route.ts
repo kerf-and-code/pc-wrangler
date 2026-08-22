@@ -77,15 +77,50 @@ export async function GET(request: Request) {
     .limit(20);
 
   const swept: Array<{ job: string; status: string }> = [];
+  // A track 'pending' with audio that never reached Deepgram is invisible to the rest of this
+  // route: the draft path below only touches 'draft' jobs, and this sweep used to skip any job
+  // with a pending track. So a stranded pending track sat on a 'transcribing' job forever, which
+  // is exactly what happened to Cole's track on 2026-08-22. This branch resubmits it.
+  const resubmitted: Array<{ job: string; ok: boolean; detail?: string }> = [];
+  const sweepBase = new URL(request.url).origin;
   for (const sj of (stalledJobs as Array<{ id: string }>) || []) {
     const { data: trk } = await admin
       .from("audio_tracks")
-      .select("status")
+      .select("status, storage_path")
       .eq("job_id", sj.id);
-    const trackRows = (trk as Array<{ status: string }>) || [];
+    const trackRows = (trk as Array<{ status: string; storage_path: string | null }>) || [];
     if (trackRows.length === 0) continue;
-    if (trackRows.some((t) => t.status === "pending" || t.status === "transcribing")) continue;
 
+    // A track still 'transcribing' is genuinely in flight: its callback is expected, and
+    // resubmitting now would re-send it and double-process it. Leave the job and revisit on a
+    // later pass, once every track has resolved to 'done'/'error' or the pending ones are alone.
+    if (trackRows.some((t) => t.status === "transcribing")) continue;
+
+    // A track 'pending' WITH audio never got submitted (the submit route timed out before it).
+    // finalizeJob will never resolve it and this sweep used to skip it. Resubmit the job:
+    // submit's pending filter sends exactly the not-'done' tracks (so only these leftovers),
+    // moving them to 'transcribing' and unsticking the job. Nothing here is 'transcribing' at
+    // this point, so there is no in-flight track to double-send.
+    const stuckPending = trackRows.filter((t) => t.status === "pending" && t.storage_path);
+    if (stuckPending.length > 0) {
+      try {
+        const res = await fetch(`${sweepBase}/api/transcribe/submit`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${secret}` },
+          body: JSON.stringify({ jobId: sj.id }),
+        });
+        const out = await res.json().catch(() => ({}));
+        resubmitted.push({ job: sj.id, ok: res.ok, detail: res.ok ? undefined : (out?.error ?? `http ${res.status}`) });
+        console.log("[advance-jobs] resubmitted %d stranded pending track(s) on job %s (ok=%s)",
+          stuckPending.length, sj.id, res.ok);
+      } catch (e) {
+        resubmitted.push({ job: sj.id, ok: false, detail: e instanceof Error ? e.message : "resubmit failed" });
+      }
+      continue;
+    }
+
+    // Every track resolved (done/error), but the last callback fired while another was still
+    // pending, so finalizeJob never ran. Make the decision it would have.
     const { count } = await admin
       .from("transcript_segments")
       .select("*", { count: "exact", head: true })
@@ -160,7 +195,7 @@ export async function GET(request: Request) {
     // an afternoon of guessing.
     console.log("[advance-jobs] no draft jobs (swept %d stranded, kicked %d idle extraction)",
       swept.length, kicked.length);
-    return NextResponse.json({ ok: true, ready: 0, submitted: 0, swept, kicked });
+    return NextResponse.json({ ok: true, ready: 0, submitted: 0, swept, resubmitted, kicked });
   }
 
   // The guard: the sidecar must have FINISHED with this job. 'done' with a capture_job_id
@@ -198,6 +233,9 @@ export async function GET(request: Request) {
       ok: true,
       ready: 0,
       submitted: 0,
+      swept,
+      resubmitted,
+      kicked,
       // Draft jobs the sidecar has not finished with, or manual uploads awaiting the GM.
       awaitingSidecar: draft.map((j) => j.id),
     });
@@ -255,6 +293,9 @@ export async function GET(request: Request) {
     ok: results.every((r) => r.ok),
     ready: ready.length,
     submitted: results.filter((r) => r.ok).length,
+    swept,
+    resubmitted,
+    kicked,
     // A job with no audio is not an error, but it should be visible rather than silently
     // skipped forever.
     noAudio: finishedJobs.filter((j) => !withAudio.has(j.id)).map((j) => j.id),

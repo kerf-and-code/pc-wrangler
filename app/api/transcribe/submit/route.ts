@@ -204,25 +204,32 @@ export async function POST(req: NextRequest) {
   }
 
   const base = process.env.TRANSCRIBE_CALLBACK_BASE || req.nextUrl.origin;
-  let submitted = 0;
   const failures: Array<{ track: string; reason: string }> = [];
 
-  for (const t of todo as { id: string; storage_path: string; kind?: string | null }[]) {
-    // EVERY iteration is isolated. Previously an exception anywhere in here escaped the
-    // loop entirely (this handler has no outer try/catch around the submission), so one
-    // bad track silently abandoned every track after it, and the failure surfaced as a
-    // generic 500 with no record of which ones never went. A per-track catch means one
-    // failure costs one track.
+  // Submit every eligible track CONCURRENTLY, not one after another.
+  //
+  // Each submission is an async HAND-OFF: the POST just gives Deepgram (or Replicate) a signed
+  // URL and returns; the transcript itself lands later on a callback. Serialized, N tracks meant
+  // N sequential round trips, and this route's 60s cap could expire partway through - which is
+  // exactly how a multi-speaker job stranded its last track at 'pending' with nothing to
+  // resubmit it (a six-track job dropped four on 2026-07-18; a three-track job dropped one on
+  // 2026-08-22). Overlapping the hand-offs means one 60s window covers the whole table instead
+  // of one track at a time.
+  //
+  // Isolation is preserved: each track runs in its own try/catch and returns its own result, so
+  // one bad track still costs exactly one track, never the others. The only behavioural change
+  // is that they no longer wait in line.
+  type SubmitResult = { ok: boolean; track: string; reason?: string };
+  async function submitTrack(
+    t: { id: string; storage_path: string; kind?: string | null },
+  ): Promise<SubmitResult> {
     try {
       const { data: signed, error: sErr } = await admin.storage
         .from("session-audio")
         .createSignedUrl(t.storage_path, 7200);
 
       if (!signed?.signedUrl) {
-        // This used to be a bare `continue`: no log, no error, no trace. A track skipped
-        // here looked identical to one that was never in the job.
-        failures.push({ track: t.id, reason: sErr?.message ?? "could not sign the audio URL" });
-        continue;
+        return { ok: false, track: t.id, reason: sErr?.message ?? "could not sign the audio URL" };
       }
 
       // ROOM TRACKS -> Replicate WhisperX (diarized), replacing Deepgram for in-person when
@@ -243,13 +250,11 @@ export async function POST(req: NextRequest) {
           }),
         });
         if (rres.ok) {
-          submitted += 1;
           await admin.from("audio_tracks").update({ status: "transcribing" }).eq("id", t.id);
-        } else {
-          const detail = await rres.text().catch(() => "");
-          failures.push({ track: t.id, reason: `replicate ${rres.status}${detail ? `: ${detail.slice(0, 200)}` : ""}` });
+          return { ok: true, track: t.id };
         }
-        continue; // room track handled (or recorded as failed); never also send it to Deepgram.
+        const detail = await rres.text().catch(() => "");
+        return { ok: false, track: t.id, reason: `replicate ${rres.status}${detail ? `: ${detail.slice(0, 200)}` : ""}` };
       }
 
       const cb = `${base}/api/transcribe/callback?track=${t.id}&k=${encodeURIComponent(secret)}`;
@@ -277,15 +282,23 @@ export async function POST(req: NextRequest) {
       });
 
       if (res.ok) {
-        submitted += 1;
         await admin.from("audio_tracks").update({ status: "transcribing" }).eq("id", t.id);
-      } else {
-        const detail = await res.text().catch(() => "");
-        failures.push({ track: t.id, reason: `deepgram ${res.status}${detail ? `: ${detail.slice(0, 200)}` : ""}` });
+        return { ok: true, track: t.id };
       }
+      const detail = await res.text().catch(() => "");
+      return { ok: false, track: t.id, reason: `deepgram ${res.status}${detail ? `: ${detail.slice(0, 200)}` : ""}` };
     } catch (e) {
-      failures.push({ track: t.id, reason: e instanceof Error ? e.message : "submit threw" });
+      return { ok: false, track: t.id, reason: e instanceof Error ? e.message : "submit threw" };
     }
+  }
+
+  const results = await Promise.all(
+    (todo as { id: string; storage_path: string; kind?: string | null }[]).map(submitTrack),
+  );
+  let submitted = 0;
+  for (const r of results) {
+    if (r.ok) submitted += 1;
+    else failures.push({ track: r.track, reason: r.reason ?? "unknown" });
   }
 
   if (submitted === 0) {
