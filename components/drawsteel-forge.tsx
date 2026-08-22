@@ -9,9 +9,11 @@
 import React from "react";
 import {
   DS_CHARS, DS_CHAR_LABEL,
+  careerChoiceSlots,
   type DSBuild, type DSSheet, type DSChar,
 } from "@/lib/drawsteel/character";
-import { DS_RULES, DS_CLASS_LIST, DS_ANCESTRY_LIST, DS_KIT_LIST } from "@/lib/drawsteel/rules-data";
+import { DS_RULES, DS_CLASS_LIST, DS_ANCESTRY_LIST, DS_KIT_LIST, DS_CAREER_LIST } from "@/lib/drawsteel/rules-data";
+import { slotOptions, slotLabel, DS_PERK_GROUP_LABEL, type DSSkillSlot } from "@/lib/drawsteel/careers";
 import { STONE, FORGE_FONTS, stonePanel, stoneField, forgeLabel, statTile } from "@/lib/forge-theme";
 
 const sign = (n: number) => (n >= 0 ? `+${n}` : `${n}`);
@@ -28,9 +30,55 @@ export default function DrawSteelForge({
 }) {
   const set = (p: Partial<DSBuild>) => onChange({ ...dsBuild, ...p });
   const cls = DS_RULES.classes[dsBuild.classId];
+  const career = dsBuild.careerId ? DS_RULES.careers[dsBuild.careerId] : undefined;
   const selStyle = { ...stoneField(), cursor: "pointer" as const };
   const setChar = (c: DSChar, v: number) =>
     set({ characteristics: { ...dsBuild.characteristics, [c]: Math.max(-5, Math.min(5, v)) } });
+
+  // Changing career resets the career-specific choices so stale skills/languages don't carry over.
+  const setCareer = (id: string) =>
+    set({ careerId: id, careerSkillChoices: [], careerLanguages: [] });
+
+  const choiceSlots = careerChoiceSlots(career);
+  const choices = dsBuild.careerSkillChoices ?? [];
+  const setChoice = (i: number, v: string) => {
+    const next = [...choices];
+    while (next.length < choiceSlots.length) next.push("");
+    next[i] = v;
+    set({ careerSkillChoices: next.slice(0, choiceSlots.length) });
+  };
+
+  const langs = dsBuild.careerLanguages ?? [];
+  const setLang = (i: number, v: string) => {
+    const next = [...langs];
+    while (next.length < (career?.languages ?? 0)) next.push("");
+    next[i] = v;
+    set({ careerLanguages: next.slice(0, career?.languages ?? 0) });
+  };
+
+  // Fixed skills already granted (so we can gray them out of choice dropdowns and avoid duplicates).
+  const fixedSkills = career ? career.skills.filter((s) => s.fixed).map((s) => s.fixed as string) : [];
+
+  // Quick build: fill each choice slot with the first recommended skill that is legal for it and unused.
+  const applyQuickBuild = () => {
+    if (!career) return;
+    const used = new Set<string>(fixedSkills);
+    const picks: string[] = [];
+    for (const slot of choiceSlots) {
+      const opts = slotOptions(slot);
+      const pick = career.quickSkills.find((s) => opts.includes(s) && !used.has(s)) ?? "";
+      if (pick) used.add(pick);
+      picks.push(pick);
+    }
+    set({ careerSkillChoices: picks });
+  };
+
+  // Options for a choice dropdown: the slot's legal skills, minus anything already taken elsewhere.
+  const optionsFor = (slot: DSSkillSlot, i: number): string[] => {
+    const taken = new Set<string>(fixedSkills);
+    choices.forEach((c, j) => { if (j !== i && c) taken.add(c); });
+    return slotOptions(slot).filter((s) => !taken.has(s) || s === choices[i]);
+  };
 
   return (
     <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 20 }}>
@@ -67,7 +115,83 @@ export default function DrawSteelForge({
               {DS_KIT_LIST.map((kt) => <option key={kt.id} value={kt.id}>{kt.name}</option>)}
             </select>
           </Field>
+          <Field label="Career">
+            <select value={dsBuild.careerId} onChange={(e) => setCareer(e.target.value)} style={selStyle}>
+              <option value="">Choose...</option>
+              {DS_CAREER_LIST.map((cr) => <option key={cr.id} value={cr.id}>{cr.name}</option>)}
+            </select>
+          </Field>
         </div>
+      </div>
+
+      {/* Career */}
+      <div style={stonePanel()}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={forgeLabel}>Career</div>
+          {career && choiceSlots.length > 0 && (
+            <button onClick={applyQuickBuild}
+              style={{ ...stoneField(), width: "auto", cursor: "pointer", padding: "4px 12px", fontSize: 12 }}>
+              Quick build
+            </button>
+          )}
+        </div>
+        {!career ? (
+          <p style={{ color: STONE.inkDim, fontSize: 12, margin: "6px 0 0" }}>
+            Choose a career. Every hero has one — it grants skills, languages, and a perk.
+          </p>
+        ) : (
+          <div style={{ marginTop: 10, display: "grid", gap: 12 }}>
+            {/* Fixed skills */}
+            {fixedSkills.length > 0 && (
+              <div>
+                <div style={{ ...forgeLabel, marginBottom: 4 }}>Granted skills</div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  {fixedSkills.map((s) => (
+                    <span key={s} style={chip}>{s}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Choice skills */}
+            {choiceSlots.length > 0 && (
+              <div>
+                <div style={{ ...forgeLabel, marginBottom: 4 }}>Choose skills</div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10 }}>
+                  {choiceSlots.map((slot, i) => (
+                    <Field key={i} label={slotLabel(slot)}>
+                      <select value={choices[i] ?? ""} onChange={(e) => setChoice(i, e.target.value)} style={selStyle}>
+                        <option value="">Choose...</option>
+                        {optionsFor(slot, i).map((s) => <option key={s} value={s}>{s}</option>)}
+                      </select>
+                    </Field>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Languages */}
+            {career.languages > 0 && (
+              <div>
+                <div style={{ ...forgeLabel, marginBottom: 4 }}>
+                  Languages ({career.languages})
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 10 }}>
+                  {Array.from({ length: career.languages }).map((_, i) => (
+                    <input key={i} value={langs[i] ?? ""} onChange={(e) => setLang(i, e.target.value)}
+                      placeholder={`Language ${i + 1}`} style={{ ...stoneField(), cursor: "text" }} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Perk */}
+            <p style={{ color: STONE.inkDim, fontSize: 12, margin: 0 }}>
+              Perk: one <strong style={{ color: STONE.ink }}>{DS_PERK_GROUP_LABEL[career.perkGroup]}</strong> perk
+              {" "}(quick build: {career.quickPerk}).
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Characteristics */}
@@ -121,12 +245,42 @@ export default function DrawSteelForge({
               {" · "}Melee dmg {dmgTriple(sheet.meleeDamage)}{sheet.meleeDistance ? ` · melee dist +${sheet.meleeDistance}` : ""}
               {" · "}Ranged dmg {dmgTriple(sheet.rangedDamage)}{sheet.rangedDistance ? ` · ranged dist +${sheet.rangedDistance}` : ""}
             </p>
+
+            {/* Career output */}
+            {sheet.careerName && (
+              <div style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid ${STONE.hi}` }}>
+                <div style={{ ...forgeLabel, marginBottom: 6 }}>{sheet.careerName}</div>
+                {sheet.skills.length > 0 ? (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 8 }}>
+                    {sheet.skills.map((s) => <span key={s} style={chip}>{s}</span>)}
+                  </div>
+                ) : (
+                  <p style={{ color: STONE.inkDim, fontSize: 12, margin: "0 0 8px" }}>No skills chosen yet.</p>
+                )}
+                <p style={{ color: STONE.inkDim, fontSize: 12, margin: 0 }}>
+                  {sheet.languagesCount > 0
+                    ? <>Languages: {sheet.languages.length ? sheet.languages.join(", ") : `${sheet.languagesCount} to choose`}. </>
+                    : null}
+                  {sheet.perkGroup ? <>Perk from the {DS_PERK_GROUP_LABEL[sheet.perkGroup]} group.</> : null}
+                </p>
+              </div>
+            )}
           </>
         )}
       </div>
     </div>
   );
 }
+
+const chip: React.CSSProperties = {
+  fontFamily: FORGE_FONTS.mono,
+  fontSize: 12,
+  color: STONE.ink,
+  background: STONE.shadow,
+  border: `1px solid ${STONE.hi}`,
+  borderRadius: 6,
+  padding: "3px 9px",
+};
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (

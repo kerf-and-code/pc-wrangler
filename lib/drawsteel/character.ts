@@ -11,7 +11,11 @@
 // + the kit's Stamina bonus, which is "per echelon" and so scales as (kit value * echelon). Recoveries
 // come from the class; a Recovery restores 1/3 of maximum Stamina; a hero is Winded at 1/2. Speed and
 // stability and disengage and the weapon damage/distance bonuses come from the kit. Potency (weak /
-// average / strong) is the class's key characteristic minus 2 / minus 1 / itself.
+// average / strong) is the class's key characteristic minus 2 / minus 1 / itself. Every hero also has a
+// career, which grants skills (fixed + chosen), some languages, and one perk group.
+
+import type { DSCareer, DSSkillSlot, DSPerkGroup } from "./careers";
+import { slotOptions } from "./careers";
 
 export type DSChar = "might" | "agility" | "reason" | "intuition" | "presence";
 export const DS_CHARS: DSChar[] = ["might", "agility", "reason", "intuition", "presence"];
@@ -67,6 +71,7 @@ export interface DSRules {
   classes: Record<string, DSClass>;
   kits: Record<string, DSKit>;
   ancestries: Record<string, DSAncestry>;
+  careers: Record<string, DSCareer>;
 }
 
 // ---- the build (player choices) + the derived sheet --------------------------------------------
@@ -76,7 +81,12 @@ export interface DSBuild {
   classId: string;
   ancestryId: string;
   kitId: string;                             // "" for no kit (casters may run kitless)
+  careerId: string;                          // "" until a career is chosen
   characteristics: Record<DSChar, number>;   // the five assigned scores
+  // One entry per CHOICE slot on the career (fixed slots are implicit), aligned to the choice-slot order.
+  // "" means that slot is still unfilled. Fixed skills are added by the engine, not stored here.
+  careerSkillChoices: string[];
+  careerLanguages: string[];                 // free-text languages, up to the career's language count
 }
 
 export interface DSSheet {
@@ -97,6 +107,12 @@ export interface DSSheet {
   rangedDistance: number;
   potency: { weak: number; average: number; strong: number };
   keyChar: DSChar;
+  // Career-derived:
+  careerName: string;                        // "" if no career chosen
+  skills: string[];                          // resolved skills (fixed + chosen), deduped, in order
+  languagesCount: number;                    // number of languages the career grants
+  languages: string[];                       // the named languages the player entered (filtered blanks)
+  perkGroup: DSPerkGroup | null;             // perk group the career draws from
 }
 
 export function emptyDSChars(): Record<DSChar, number> {
@@ -104,10 +120,39 @@ export function emptyDSChars(): Record<DSChar, number> {
 }
 
 export function emptyDSBuild(): DSBuild {
-  return { level: 1, classId: "", ancestryId: "", kitId: "", characteristics: emptyDSChars() };
+  return {
+    level: 1, classId: "", ancestryId: "", kitId: "", careerId: "",
+    characteristics: emptyDSChars(), careerSkillChoices: [], careerLanguages: [],
+  };
 }
 
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
+
+// The choice slots of a career, in order (fixed slots excluded). Exposed for the UI so it can render
+// one selector per choice and index into build.careerSkillChoices consistently with the engine.
+export function careerChoiceSlots(career: DSCareer | undefined): DSSkillSlot[] {
+  if (!career) return [];
+  return career.skills.filter((s) => !s.fixed);
+}
+
+// Resolve a career's full skill list from its fixed grants plus the player's choices. A chosen skill is
+// only counted if it is a legal option for its slot and not already granted (no duplicate skills).
+export function resolveCareerSkills(career: DSCareer | undefined, choices: string[]): string[] {
+  if (!career) return [];
+  const out: string[] = [];
+  const seen = new Set<string>();
+  const add = (s: string) => {
+    if (s && !seen.has(s)) { seen.add(s); out.push(s); }
+  };
+  for (const slot of career.skills) if (slot.fixed) add(slot.fixed);
+  const choiceSlots = careerChoiceSlots(career);
+  choiceSlots.forEach((slot, i) => {
+    const picked = choices[i];
+    if (!picked) return;
+    if (slotOptions(slot).includes(picked)) add(picked);
+  });
+  return out;
+}
 
 export function deriveDrawSteelSheet(build: DSBuild, rules: DSRules): DSSheet | null {
   const cls = rules.classes[build.classId];
@@ -116,6 +161,7 @@ export function deriveDrawSteelSheet(build: DSBuild, rules: DSRules): DSSheet | 
   const echelon = echelonOf(level);
   const anc = build.ancestryId ? rules.ancestries[build.ancestryId] : undefined;
   const kit = build.kitId ? rules.kits[build.kitId] : undefined;
+  const career = build.careerId ? rules.careers[build.careerId] : undefined;
 
   const characteristics = emptyDSChars();
   for (const c of DS_CHARS) characteristics[c] = build.characteristics[c] ?? 0;
@@ -137,6 +183,9 @@ export function deriveDrawSteelSheet(build: DSBuild, rules: DSRules): DSSheet | 
   const key = characteristics[cls.keyChar];
   const potency = { weak: key - 2, average: key - 1, strong: key };
 
+  const skills = resolveCareerSkills(career, build.careerSkillChoices);
+  const languages = (build.careerLanguages ?? []).map((s) => s.trim()).filter(Boolean);
+
   return {
     level,
     echelon,
@@ -155,5 +204,10 @@ export function deriveDrawSteelSheet(build: DSBuild, rules: DSRules): DSSheet | 
     rangedDistance: kit?.rangedDistance ?? 0,
     potency,
     keyChar: cls.keyChar,
+    careerName: career?.name ?? "",
+    skills,
+    languagesCount: career?.languages ?? 0,
+    languages,
+    perkGroup: career?.perkGroup ?? null,
   };
 }

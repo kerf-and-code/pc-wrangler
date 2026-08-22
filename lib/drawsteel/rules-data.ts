@@ -1,12 +1,13 @@
 // Draw Steel rules data (MCDM Draw Steel Rules Reference, via the Steel Compendium data set, used under
 // the Draw Steel Creator License). MECHANICS ONLY: class starting characteristics/Stamina/Recoveries,
-// the kit table, and ancestry Size/Speed. No MCDM descriptive prose is stored here. See
-// lib/systems/drawsteel.ts for the required in-app attribution.
+// the kit table, ancestry Size/Speed, and careers (in ./careers). No MCDM descriptive prose is stored
+// here. See lib/systems/drawsteel.ts for the required in-app attribution.
 //
 // Classes with two fixed characteristics (both set to 2) get a 3-value array for the remaining three
 // characteristics; classes with one fixed characteristic get a 4-value array for the remaining four.
 
 import type { DSRules, DSClass, DSKit, DSAncestry } from "./character";
+import { DS_CAREERS, DS_CAREER_LIST } from "./careers";
 
 // ---- classes -----------------------------------------------------------------------------------
 const A3 = [[2, -1, -1], [1, 1, -1], [1, 0, 0]];                       // 3-value arrays (two fixed chars)
@@ -77,8 +78,10 @@ export const DS_RULES: DSRules = {
   classes: CLASSES,
   kits: KITS,
   ancestries: ANCESTRIES,
+  careers: DS_CAREERS,
 };
 
 export const DS_CLASS_LIST: DSClass[] = Object.values(CLASSES);
 export const DS_KIT_LIST: DSKit[] = Object.values(KITS);
 export const DS_ANCESTRY_LIST: DSAncestry[] = Object.values(ANCESTRIES);
+export { DS_CAREER_LIST };
