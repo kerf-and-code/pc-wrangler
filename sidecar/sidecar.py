@@ -101,6 +101,20 @@ TRIM_MAX_SPANS = int(os.environ.get("TRIM_MAX_SPANS", "600"))
 # cross-speaker sync. Off in normal operation to keep logs quiet.
 RTCP_PROBE = bool(os.environ.get("RTCP_PROBE"))
 
+# ---- Transcription provider (Groq Whisper, opt-in; validated against Deepgram). ----------
+# With TRANSCRIBE_PROVIDER=groq the sidecar transcribes each uploaded per-speaker track with
+# Groq Whisper here in finalize(), writes transcript_segments, and moves the job to
+# 'extracting' - so the auto-transcribe cron (which only picks 'draft' jobs) never submits it
+# to Deepgram. Any track Groq can't handle is left 'pending' with the job at 'draft', and the
+# existing cron -> Deepgram path transcribes exactly those, so DEEPGRAM STAYS THE FALLBACK.
+# GROQ REQUIRES TRIMMED AUDIO: Whisper hallucinates on the fabricated silence, so a track with
+# no timeline_map (untrimmed) always falls back to Deepgram rather than being sent to Groq.
+TRANSCRIBE_PROVIDER = os.environ.get("TRANSCRIBE_PROVIDER", "deepgram").strip().lower()
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
+GROQ_MODEL = os.environ.get("GROQ_MODEL", "whisper-large-v3-turbo")
+GROQ_LANGUAGE = os.environ.get("GROQ_LANGUAGE", "en")
+GROQ_URL = "https://api.groq.com/openai/v1/audio/transcriptions"
+
 REST = f"{SUPABASE_URL}/rest/v1"
 STORAGE = f"{SUPABASE_URL}/storage/v1/object"
 HEADERS = {"apikey": SERVICE_KEY, "Authorization": f"Bearer {SERVICE_KEY}"}
@@ -407,6 +421,22 @@ async def trim_silence(src_path: str, out_path: str, total_secs: float):
         return (False, None, total_secs)
 
     return (True, timeline_map, trimmed_off)
+
+
+def remap_ms(trimmed_ms: int, tmap):
+    """Put a Groq timestamp (in TRIMMED time, because the uploaded ogg had its silences
+    removed) back on the real session clock via a track's timeline_map. Ported verbatim from
+    remapMs() in app/api/transcribe/callback so a segment written here lands exactly where the
+    recap builder expects. Untrimmed tracks pass tmap=None and the value is used as-is."""
+    if not tmap:
+        return trimmed_ms
+    if trimmed_ms <= tmap[0]["t0"]:
+        return tmap[0]["r0"]
+    for s in tmap:
+        if trimmed_ms <= s["t0"] + s["d"]:
+            return s["r0"] + (trimmed_ms - s["t0"])
+    last = tmap[-1]
+    return last["r0"] + last["d"]
 
 
 # PCM shape that WaveSink writes, taken from the branch's OpusDecoder: 48 kHz,
@@ -1207,6 +1237,10 @@ class Sidecar(discord.Client):
         refused = 0
         orphaned = 0
         failed = 0
+        # Groq inline-transcription tallies (only used when TRANSCRIBE_PROVIDER=groq).
+        groq_done = 0        # tracks transcribed by Groq and marked 'done' here
+        groq_pending = 0     # tracks left 'pending' for the Deepgram fallback (untrimmed or Groq failed)
+        groq_segments = 0    # total transcript_segments written across the job
         for uid, chunks in rec.speaker_chunks.items():
             # Resolve the GM narrator first: linking a Discord id as narrator is a
             # deliberate, owner-gated act, so it wins over a (possibly stale) PC
@@ -1298,13 +1332,31 @@ class Sidecar(discord.Client):
                 log.error("  LOST SPEAKER: upload failed for %s (%s); their audio for this "
                           "session is gone.", slot, storage_path)
                 continue
-            if await self.insert_track(http, job_id, rec.campaign_id, storage_path, round(total_secs),
+            track_id = await self.insert_track(http, job_id, rec.campaign_id, storage_path, round(total_secs),
                                        character_id=char_id, gm_identity_id=gm_id,
-                                       timeline_map=timeline_map):
+                                       timeline_map=timeline_map)
+            if track_id:
                 uploaded += 1
                 who = f"character={char_id}" if char_id else f"gm_identity={gm_id}"
                 log.info("  uploaded track: %s %.0fs %d KB -> %s",
                          who, total_secs, len(blob) // 1024, storage_path)
+                # GROQ INLINE TRANSCRIPTION (opt-in). Trimmed tracks only: Whisper hallucinates
+                # on the fabricated silence, so an untrimmed track (no timeline_map) is left
+                # 'pending' and the cron -> Deepgram path handles it instead.
+                if TRANSCRIBE_PROVIDER == "groq" and GROQ_API_KEY and timeline_map:
+                    n = await self.groq_and_store(http, job_id, track_id, rec.campaign_id,
+                                                  char_id, upload_path, timeline_map)
+                    if n is None:
+                        groq_pending += 1
+                        log.warning("  groq: track %s failed; left 'pending' for Deepgram.", track_id)
+                    else:
+                        groq_done += 1
+                        groq_segments += n
+                        log.info("  groq: track %s -> %d segment(s).", track_id, n)
+                elif TRANSCRIBE_PROVIDER == "groq":
+                    groq_pending += 1
+                    log.info("  groq: track %s not eligible (untrimmed or no key); Deepgram will handle it.",
+                             track_id)
             else:
                 # The row could not be created after retries, so this file is unreachable:
                 # nothing will transcribe it, and the retention cron cannot see it to
@@ -1323,7 +1375,30 @@ class Sidecar(discord.Client):
                     log.error("  ORPHANED AUDIO: no audio_tracks row for %s. File %s.",
                               storage_path, "deleted" if deleted else "COULD NOT BE DELETED")
 
-        await self.patch_status(http, rec.rid, "done", capture_job_id=job_id, error=note)
+        # GROQ: advance the job past 'draft' ONLY if the sidecar transcribed every uploaded
+        # track. The auto-transcribe cron only submits 'draft' jobs, so 'extracting' makes it
+        # skip this one entirely (no Deepgram). If any track fell back (groq_pending > 0), the
+        # job stays 'draft': the cron then submits exactly the still-'pending' tracks to
+        # Deepgram, while the Groq-done tracks (already 'done') are skipped by submit()'s
+        # filter. No segments anywhere mirrors the callback's "no speech" error. This must run
+        # BEFORE patch_status sets capture_control 'done', so the cron never sees a submittable
+        # (draft + done-control) state for a job Groq already handled.
+        if TRANSCRIBE_PROVIDER == "groq" and groq_done > 0 and groq_pending == 0:
+            if groq_segments > 0:
+                await self.set_job_status(http, job_id, "extracting", None)
+                log.info("  groq: job %s -> extracting (%d segment(s) across %d track(s)); cron will skip it.",
+                         job_id, groq_segments, groq_done)
+            else:
+                await self.set_job_status(http, job_id, "error",
+                                          "No speech detected in any track. Check mic levels and re-record.")
+                log.info("  groq: job %s -> error (no speech in any track).", job_id)
+        elif TRANSCRIBE_PROVIDER == "groq" and groq_pending > 0:
+            log.info("  groq: %d track(s) done via Groq, %d fell back; job %s left 'draft' for the "
+                     "cron to send the rest to Deepgram.", groq_done, groq_pending, job_id)
+
+        # The handoff marker. critical=True so a transient PATCH failure retries and, if it still
+        # fails, screams in the logs instead of silently stranding the whole session at 'draft'.
+        await self.patch_status(http, rec.rid, "done", capture_job_id=job_id, error=note, critical=True)
         # Every speaker the sink heard is accounted for in exactly one bucket, so the
         # numbers add up to the headcount at the table. If uploaded is less than the number
         # of people who were there and every other counter is zero, something is wrong that
@@ -1465,6 +1540,98 @@ class Sidecar(discord.Client):
             log.warning("create_job failed: %r", e)
             return None
 
+    async def set_job_status(self, http, job_id, status, error=None):
+        """Set capture_jobs.status (+ error). The Groq path uses this to move a fully
+        self-transcribed job to 'extracting' so the auto-transcribe cron - which only picks
+        'draft' jobs - never submits it to Deepgram."""
+        try:
+            r = await http.patch(f"{REST}/capture_jobs", params={"id": f"eq.{job_id}"},
+                                 headers=WRITE_HEADERS, json={"status": status, "error": error})
+            r.raise_for_status()
+            return True
+        except Exception as e:
+            log.warning("set_job_status(%s -> %s) failed: %r", job_id, status, e)
+            return False
+
+    async def groq_transcribe(self, http, file_path):
+        """Transcribe one local (trimmed) ogg with Groq Whisper. Returns the verbose_json
+        segment list ([{start,end,text}, in seconds]) or None on any failure - the caller
+        reads None as 'fall back to Deepgram'. One bounded retry: a 429 (free-tier
+        audio-seconds cap) waits briefly then retries once, otherwise the track falls back,
+        so finalize() never blocks for long on rate limits."""
+        try:
+            with open(file_path, "rb") as f:
+                blob = f.read()
+        except OSError as e:
+            log.warning("  groq: cannot read %s: %r", file_path, e)
+            return None
+        files = {"file": ("audio.ogg", blob, "audio/ogg")}
+        data = {"model": GROQ_MODEL, "response_format": "verbose_json", "temperature": "0",
+                "language": GROQ_LANGUAGE, "timestamp_granularities[]": "segment"}
+        headers = {"Authorization": f"Bearer {GROQ_API_KEY}"}
+        for attempt in range(2):
+            try:
+                r = await http.post(GROQ_URL, headers=headers, files=files, data=data, timeout=300)
+            except Exception as e:
+                log.warning("  groq: request error (attempt %d): %r", attempt + 1, e)
+                if attempt == 0:
+                    await asyncio.sleep(1)
+                    continue
+                return None
+            if r.status_code == 429 and attempt == 0:
+                try:
+                    wait = int(r.headers.get("retry-after", "0"))
+                except (TypeError, ValueError):
+                    wait = 0
+                wait = min(max(wait, 5), 30)
+                log.info("  groq: 429 rate cap; waiting %ds then one retry.", wait)
+                await asyncio.sleep(wait)
+                continue
+            if r.status_code >= 400:
+                log.warning("  groq: HTTP %d: %s", r.status_code, (r.text or "")[:200])
+                return None
+            try:
+                return r.json().get("segments") or []
+            except Exception as e:
+                log.warning("  groq: bad json: %r", e)
+                return None
+        return None
+
+    async def groq_and_store(self, http, job_id, track_id, campaign_id, character_id, file_path, tmap):
+        """Groq-transcribe a trimmed track, write transcript_segments (remapped to real session
+        time via tmap), and mark the track 'done'. Returns the number of segments written (>=0)
+        on success, or None to fall back to Deepgram (the track is left 'pending')."""
+        segs = await self.groq_transcribe(http, file_path)
+        if segs is None:
+            return None
+        rows = []
+        for s in segs:
+            text = (s.get("text") or "").strip()
+            if not text:
+                continue
+            rows.append({
+                "job_id": job_id, "track_id": track_id, "campaign_id": campaign_id,
+                "character_id": character_id,
+                "start_ms": remap_ms(round((s.get("start") or 0) * 1000), tmap),
+                "end_ms": remap_ms(round((s.get("end") or 0) * 1000), tmap),
+                "text": text,
+            })
+        if rows:
+            try:
+                r = await http.post(f"{REST}/transcript_segments", headers=WRITE_HEADERS, json=rows)
+                r.raise_for_status()
+            except Exception as e:
+                log.warning("  groq: write transcript_segments failed for track %s: %r", track_id, e)
+                return None
+        try:
+            r = await http.patch(f"{REST}/audio_tracks", params={"id": f"eq.{track_id}"},
+                                 headers=WRITE_HEADERS, json={"status": "done"})
+            r.raise_for_status()
+        except Exception as e:
+            log.warning("  groq: mark-done failed for track %s: %r", track_id, e)
+            return None
+        return len(rows)
+
     async def upload_blob(self, http, path, blob, content_type):
         try:
             r = await http.post(
@@ -1480,7 +1647,8 @@ class Sidecar(discord.Client):
 
     async def insert_track(self, http, job_id, campaign_id, storage_path, duration,
                            character_id=None, gm_identity_id=None, timeline_map=None, attempts=4):
-        """Create the audio_tracks row for an uploaded file. Retries with backoff.
+        """Create the audio_tracks row for an uploaded file. Returns the new track id (str)
+        on success, or False on failure. Retries with backoff.
 
         This row is not bookkeeping, it is the only handle anything downstream has on the
         audio: /api/transcribe/submit reads audio_tracks to find what to send to Deepgram,
@@ -1518,11 +1686,16 @@ class Sidecar(discord.Client):
         delay = 1.0
         for attempt in range(1, attempts + 1):
             try:
-                r = await http.post(f"{REST}/audio_tracks", headers=WRITE_HEADERS, json=body)
+                r = await http.post(f"{REST}/audio_tracks", headers=RETURN_HEADERS, json=body)
                 r.raise_for_status()
+                rows = r.json()
+                new_id = rows[0]["id"] if rows else None
+                if not new_id:
+                    log.warning("insert_track: no id returned for %s", storage_path)
+                    return False
                 if attempt > 1:
                     log.info("insert_track succeeded on attempt %d for %s", attempt, storage_path)
-                return True
+                return new_id
             except Exception as e:
                 status = getattr(getattr(e, "response", None), "status_code", None)
                 permanent = status is not None and 400 <= status < 500 and status not in (408, 409, 425, 429)
@@ -1553,7 +1726,16 @@ class Sidecar(discord.Client):
             log.warning("delete(%s) failed: %r", path, e)
             return False
 
-    async def patch_status(self, http, rid, status, error=None, capture_job_id=None, channel_id=None):
+    async def patch_status(self, http, rid, status, error=None, capture_job_id=None,
+                           channel_id=None, critical=False):
+        # critical=True is for the ONE handoff-defining write: the final 'done' stamp that carries
+        # capture_job_id at the end of finalize(). That marker is the only signal the auto-transcribe
+        # cron waits on, and it used to be written with a single attempt that swallowed any error into
+        # a warning - so a transient blip stranded a fully uploaded session at 'draft' with nothing,
+        # anywhere, saying so (Sunday Candlekeep, 2026-08-23). When critical, retry with backoff and,
+        # if it still fails, log at ERROR naming the job so a lost marker is LOUD, not invisible.
+        # Every other status write (heartbeats, error/abort states, none of which carry
+        # capture_job_id) stays best-effort and single-attempt, exactly as before.
         body = {"status": status, "updated_at": _now_iso()}
         if error is not None:
             body["error"] = str(error)[:500]
@@ -1561,16 +1743,34 @@ class Sidecar(discord.Client):
             body["capture_job_id"] = capture_job_id
         if channel_id is not None:
             body["channel_id"] = channel_id
-        try:
-            r = await http.patch(
-                f"{REST}/capture_control",
-                params={"id": f"eq.{rid}"},
-                headers=WRITE_HEADERS,
-                json=body,
-            )
-            r.raise_for_status()
-        except Exception as e:
-            log.warning("patch %s -> %s failed: %r", rid, status, e)
+        attempts = 4 if critical else 1
+        delay = 1.0
+        for attempt in range(1, attempts + 1):
+            try:
+                r = await http.patch(
+                    f"{REST}/capture_control",
+                    params={"id": f"eq.{rid}"},
+                    headers=WRITE_HEADERS,
+                    json=body,
+                )
+                r.raise_for_status()
+                if critical and attempt > 1:
+                    log.info("patch %s -> %s (capture_job_id=%s) succeeded on attempt %d",
+                             rid, status, capture_job_id, attempt)
+                return
+            except Exception as e:
+                if not critical:
+                    log.warning("patch %s -> %s failed: %r", rid, status, e)
+                    return
+                log.warning("patch %s -> %s (capture_job_id=%s) attempt %d/%d failed: %r",
+                            rid, status, capture_job_id, attempt, attempts, e)
+                if attempt < attempts:
+                    await asyncio.sleep(delay)
+                    delay *= 2
+        log.error("patch_status CRITICAL FAILED after %d attempts: capture_control %s -> %s "
+                  "capture_job_id=%s. The auto-transcribe cron cannot see this job from the marker; "
+                  "the web-side aged-audio fallback should still submit it within a few minutes.",
+                  attempts, rid, status, capture_job_id)
 
     async def get_notify_channel(self, http, campaign_id):
         """The campaign's linked Discord text channel, where GM status notices go.
