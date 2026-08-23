@@ -3,7 +3,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 export const maxDuration = 60;
 
-// Closes the last manual step in the /stop chain.
+// Closes the last manual step in the /stop chain, and is the safety net that keeps a fully
+// recorded session from silently stranding.
 //
 // THE CHAIN, BEFORE THIS:
 //
@@ -11,43 +12,45 @@ export const maxDuration = 60;
 //          ->  sidecar finalizes: uploads one ogg per speaker, inserts audio_tracks,
 //              creates the capture_job as 'draft', then sets capture_control to 'done'
 //              with capture_job_id
-//          ->  [ GM HAS TO CLICK "Transcribe" ON THE CAPTURE PAGE ]   <- the gap
+//          ->  [ GM HAS TO CLICK "Transcribe" ON THE CAPTURE PAGE ]   <- the gap this closes
 //          ->  Deepgram -> callback -> kickExtraction -> 'review'
 //          ->  GM decides the last proposal -> auto-finalize -> recap drafted
 //
-// Everything downstream of that click was already automatic. This route is the click.
+// WHY THE DRAFT-SUBMIT PHASE RUNS FIRST (2026-08-23).
 //
-// THE SIGNAL, AND WHY IT IS SAFE.
+// Getting complete sessions transcribed is this route's PRIMARY job. Recovering stranded
+// 'transcribing' jobs and kicking idle extraction are secondary. They used to run first, and
+// because the stranded-track sweep does AWAITED submit() calls in a loop, a backlog of stranded
+// jobs could consume the whole 60s function budget before the draft phase was ever reached - so a
+// brand-new, fully-uploaded session sat at 'draft' indefinitely with no error anywhere. That is
+// exactly how a Sunday Candlekeep session (2026-08-23) and an older one (2026-08-16) stranded:
+// their tracks fell back to Deepgram (too long to trim -> Groq skipped them), which put them in
+// this phase, and this phase never ran. Groq-inline sessions self-advance in the sidecar, so the
+// failure was invisible until a Deepgram-fallback recap came up short.
 //
-// capture_control.status = 'done' WITH a capture_job_id is the LAST thing the sidecar's
-// finalize() does, after every track is uploaded and every insert_track has returned.
-// It is not a "probably finished" heuristic: it is the sidecar saying nothing more is
-// coming. Kicking transcription on a half-uploaded session would silently drop whoever
-// was still being written, so the guard matters.
+// So: draft-submit first (fresh budget, always runs), then the sweeps under a time guard.
 //
-// A second guard belt-and-braces: the job must still be 'draft' and must have at least
-// one track with a storage_path. A job with no audio has nothing to transcribe, and a
-// job already past 'draft' is somebody else's problem.
+// WHY A DRAFT JOB IS "READY", AND THE AGED-AUDIO FALLBACK.
 //
-// IDEMPOTENT AND SELF-HEALING. submit() moves the job to 'transcribing', so a job is
-// only ever picked up once. If a submit fails, the job stays 'draft' and the next run
-// retries it. If consent is not cleared, submit parks the job at 'blocked_consent' so it
-// stops being retried every minute and the GM sees the real reason on the Capture page.
+// The canonical signal is a capture_control row at 'done' WITH this capture_job_id: the last thing
+// the sidecar's finalize() writes, after every upload and insert_track returns. But that marker is
+// set through a PATCH that fails silently, and depending on one fragile signal is what let whole
+// sessions vanish. So a job is ALSO ready if every uploaded track has audio and the newest track is
+// older than STALE_DRAFT_MIN minutes - the age proves the sidecar is not mid-upload. A marked job
+// submits immediately; an unmarked one submits after a short quiet period. Either way a complete
+// session cannot sit at 'draft' forever.
 //
-// WHY THE SCAN STARTS FROM JOBS, NOT FROM capture_control.
+// A job with no control row at all AND no aged audio is a manual upload the GM submits by hand, or
+// a session still finalizing; both are left alone and reported as awaitingSidecar.
 //
-// It used to read the OLDEST 20 capture_control rows and look up their jobs. That works
-// until the history of finished recordings passes 20, and then it silently stops working
-// forever: every past recording sorts ahead of the newest one, so a fresh job never enters
-// the window and never auto-transcribes. It failed exactly that way on 2026-07-18. Sorting
-// the other way only moves the blind spot, because then an older job that needs a retry
-// falls off the end instead.
-//
-// Scanning capture_jobs at 'draft' removes the blind spot rather than relocating it: that
-// set is bounded by outstanding WORK, not by accumulated history, and it is naturally
-// small. The capture_control lookup stays, but as a GUARD rather than the driver, which is
-// the role it was always right for: a 'done' row with a capture_job_id is the sidecar
-// saying every track is uploaded.
+// IDEMPOTENT AND SELF-HEALING. submit() moves a job to 'transcribing', so each job is picked up
+// once. A failed submit leaves it 'draft' for the next run. If nothing is consented, submit parks
+// the job at 'blocked_consent' so it stops being retried and the GM sees the reason.
+
+const STALE_DRAFT_MIN = 5;                       // a draft job whose newest track is older than this,
+const STALE_DRAFT_MS = STALE_DRAFT_MIN * 60_000; // and which has audio, is submitted even with no marker
+const SWEEP_BUDGET_MS = 45_000;                  // stop sweeping past this so nothing downstream starves
+
 export async function GET(request: Request) {
   const auth = request.headers.get("authorization");
   const secret = process.env.CRON_SECRET;
@@ -56,19 +59,120 @@ export async function GET(request: Request) {
   }
 
   const admin = createAdminClient();
+  const startedAt = Date.now();
+  const base = new URL(request.url).origin;
 
-  // SWEEP: jobs stranded at 'transcribing'.
+  // ==========================================================================================
+  // PHASE 1 - DRAFT SUBMIT (primary; runs first so it can never be starved by the sweeps).
+  // ==========================================================================================
+
+  const { data: draftJobs, error: jErr } = await admin
+    .from("capture_jobs")
+    .select("id, campaign_id, session_id, status")
+    .eq("status", "draft")
+    .order("created_at", { ascending: false })
+    .limit(50);
+
+  if (jErr) {
+    return NextResponse.json({ error: jErr.message, stage: "scan" }, { status: 500 });
+  }
+
+  const draft = (draftJobs as Array<{ id: string; session_id: string }>) || [];
+  const submitResults: Array<{ job: string; ok: boolean; detail?: string }> = [];
+  const awaitingSidecar: string[] = [];
+  const noAudio: string[] = [];
+
+  if (draft.length > 0) {
+    const draftIds = draft.map((j) => j.id);
+
+    // The canonical "sidecar finished" markers.
+    const { data: controls, error: cErr } = await admin
+      .from("capture_control")
+      .select("capture_job_id, status")
+      .in("capture_job_id", draftIds)
+      .eq("status", "done");
+    if (cErr) {
+      return NextResponse.json({ error: cErr.message, stage: "control" }, { status: 500 });
+    }
+    const marked = new Set(
+      ((controls as Array<{ capture_job_id: string | null }>) || [])
+        .map((c) => c.capture_job_id)
+        .filter((v): v is string => v !== null),
+    );
+
+    // Tracks for every draft job, so we can tell "has audio" and "newest track age" for the
+    // aged-audio fallback. created_at is what dates the fallback.
+    const { data: trackRows, error: tErr } = await admin
+      .from("audio_tracks")
+      .select("job_id, storage_path, created_at")
+      .in("job_id", draftIds);
+    if (tErr) {
+      return NextResponse.json({ error: tErr.message, stage: "tracks" }, { status: 500 });
+    }
+    const tracks = (trackRows as Array<{ job_id: string; storage_path: string | null; created_at: string }>) || [];
+
+    // job_id -> newest track-with-audio timestamp (ms). Absent = no uploaded audio at all.
+    const newestAudioAt = new Map<string, number>();
+    for (const t of tracks) {
+      if (!t.storage_path) continue;
+      const ts = Date.parse(t.created_at);
+      if (Number.isNaN(ts)) continue;
+      const prev = newestAudioAt.get(t.job_id) ?? 0;
+      if (ts > prev) newestAudioAt.set(t.job_id, ts);
+    }
+
+    const now = Date.now();
+    const ready: string[] = [];
+    for (const j of draft) {
+      const newest = newestAudioAt.get(j.id);
+      if (newest === undefined) {
+        // No uploaded audio yet. Either mid-finalize or a job that produced nothing.
+        noAudio.push(j.id);
+        continue;
+      }
+      const hasMarker = marked.has(j.id);
+      const aged = now - newest > STALE_DRAFT_MS;
+      if (hasMarker || aged) ready.push(j.id);
+      else awaitingSidecar.push(j.id); // has audio but too fresh and unmarked: give the sidecar a moment
+    }
+
+    console.log(
+      "[advance-jobs] draft=%d marked=%d ready=%d noAudio=%d awaiting=%d readyIds=%s",
+      draft.length, marked.size, ready.length, noAudio.length, awaitingSidecar.length,
+      ready.join(", ") || "(none)",
+    );
+
+    for (const jobId of ready) {
+      try {
+        const res = await fetch(`${base}/api/transcribe/submit`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${secret}` },
+          body: JSON.stringify({ jobId }),
+        });
+        const out = await res.json().catch(() => ({}));
+        submitResults.push({ job: jobId, ok: res.ok, detail: res.ok ? undefined : (out?.error ?? `http ${res.status}`) });
+      } catch (e) {
+        submitResults.push({ job: jobId, ok: false, detail: e instanceof Error ? e.message : "fetch failed" });
+      }
+    }
+  }
+
+  // ==========================================================================================
+  // PHASE 2 - SWEEP jobs stranded at 'transcribing' (secondary; time-guarded).
   //
-  // finalizeJob() lives in the Deepgram callback and only runs when a callback arrives. If
-  // the last callback for a job fires while another track is still 'pending' (because it
-  // never reached Deepgram), nothing will ever re-evaluate that job. It sits at
-  // 'transcribing' forever, and no amount of pressing Transcribe helps, because that route
-  // submits tracks rather than advancing jobs.
+  // finalizeJob() lives in the Deepgram callback and only runs when a callback arrives. If the last
+  // callback for a job fires while another track is still 'pending' (it never reached Deepgram),
+  // nothing re-evaluates the job and it sits at 'transcribing' forever. This resubmits a stranded
+  // pending track, and otherwise makes the decision finalizeJob would have made.
   //
-  // This sweep is the safety net: any job at 'transcribing' whose tracks have ALL resolved
-  // gets the same decision finalizeJob would have made. The logic is deliberately kept in
-  // step with the canonical copy in /api/transcribe/callback: segments present means
-  // proceed to extraction, no segments at all means the recording produced nothing.
+  // Bounded by SWEEP_BUDGET_MS: draft-submit already ran, but this loop does awaited submit() calls,
+  // and a large backlog must never eat so much of the window that Phase 3 cannot run.
+  // ==========================================================================================
+
+  const swept: Array<{ job: string; status: string }> = [];
+  const resubmitted: Array<{ job: string; ok: boolean; detail?: string }> = [];
+  let sweepTruncated = false;
+
   const { data: stalledJobs } = await admin
     .from("capture_jobs")
     .select("id")
@@ -76,35 +180,26 @@ export async function GET(request: Request) {
     .order("created_at", { ascending: false })
     .limit(20);
 
-  const swept: Array<{ job: string; status: string }> = [];
-  // A track 'pending' with audio that never reached Deepgram is invisible to the rest of this
-  // route: the draft path below only touches 'draft' jobs, and this sweep used to skip any job
-  // with a pending track. So a stranded pending track sat on a 'transcribing' job forever, which
-  // is exactly what happened to Cole's track on 2026-08-22. This branch resubmits it.
-  const resubmitted: Array<{ job: string; ok: boolean; detail?: string }> = [];
-  const sweepBase = new URL(request.url).origin;
   for (const sj of (stalledJobs as Array<{ id: string }>) || []) {
+    if (Date.now() - startedAt > SWEEP_BUDGET_MS) { sweepTruncated = true; break; }
+
     const { data: trk } = await admin
       .from("audio_tracks")
       .select("status, storage_path")
       .eq("job_id", sj.id);
-    const trackRows = (trk as Array<{ status: string; storage_path: string | null }>) || [];
-    if (trackRows.length === 0) continue;
+    const rows = (trk as Array<{ status: string; storage_path: string | null }>) || [];
+    if (rows.length === 0) continue;
 
-    // A track still 'transcribing' is genuinely in flight: its callback is expected, and
-    // resubmitting now would re-send it and double-process it. Leave the job and revisit on a
-    // later pass, once every track has resolved to 'done'/'error' or the pending ones are alone.
-    if (trackRows.some((t) => t.status === "transcribing")) continue;
+    // A track still 'transcribing' is genuinely in flight; resubmitting would double-process it.
+    if (rows.some((t) => t.status === "transcribing")) continue;
 
-    // A track 'pending' WITH audio never got submitted (the submit route timed out before it).
-    // finalizeJob will never resolve it and this sweep used to skip it. Resubmit the job:
-    // submit's pending filter sends exactly the not-'done' tracks (so only these leftovers),
-    // moving them to 'transcribing' and unsticking the job. Nothing here is 'transcribing' at
-    // this point, so there is no in-flight track to double-send.
-    const stuckPending = trackRows.filter((t) => t.status === "pending" && t.storage_path);
+    // A 'pending' track WITH audio never got submitted. Resubmit the job: submit()'s pending filter
+    // sends exactly the not-'done' tracks, unsticking the job. Nothing is 'transcribing' here, so
+    // there is no in-flight track to double-send.
+    const stuckPending = rows.filter((t) => t.status === "pending" && t.storage_path);
     if (stuckPending.length > 0) {
       try {
-        const res = await fetch(`${sweepBase}/api/transcribe/submit`, {
+        const res = await fetch(`${base}/api/transcribe/submit`, {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${secret}` },
           body: JSON.stringify({ jobId: sj.id }),
@@ -141,167 +236,55 @@ export async function GET(request: Request) {
     swept.push({ job: sj.id, status: nextStatus });
   }
 
-  // SWEEP: extraction that never started.
+  // ==========================================================================================
+  // PHASE 3 - kick extraction that never started.
   //
-  // /api/extract/run is fired best-effort by the transcribe callback and chains itself
-  // until both cursors reach their totals. If that FIRST kick never lands (the callback
-  // failed, or a human moved a job to 'extracting' by hand) the job sits there with both
-  // cursors at zero and nothing running, and the only way out is a GM opening the Review
-  // page.
-  //
-  // Deliberately conservative: only jobs where BOTH cursors are still 0. A job partway
-  // through extraction has a chain in flight, and kicking it again would run two passes
-  // against the same cursor and propose the same events twice. Cursor-at-zero is the one
-  // state where a second kick is provably safe.
-  const { data: idleExtract } = await admin
-    .from("capture_jobs")
-    .select("id, extract_cursor, gm_extract_cursor")
-    .eq("status", "extracting")
-    .order("created_at", { ascending: false })
-    .limit(10);
+  // /api/extract/run is fired best-effort by the transcribe callback and chains itself until both
+  // cursors reach their totals. If that FIRST kick never lands (callback failed, or a human moved a
+  // job to 'extracting'), the job sits with both cursors at 0 and nothing running. Only jobs where
+  // BOTH cursors are still 0 are kicked - a job partway through has a chain in flight, and a second
+  // kick would double-propose. Cursor-at-zero is the one provably-safe state.
+  // ==========================================================================================
 
   const kicked: string[] = [];
   const extractSecret = process.env.TRANSCRIBE_CALLBACK_SECRET;
   if (extractSecret) {
-    const origin = new URL(request.url).origin;
+    const { data: idleExtract } = await admin
+      .from("capture_jobs")
+      .select("id, extract_cursor, gm_extract_cursor")
+      .eq("status", "extracting")
+      .order("created_at", { ascending: false })
+      .limit(10);
+
     for (const ej of (idleExtract as Array<{ id: string; extract_cursor: number | null; gm_extract_cursor: number | null }>) || []) {
       if ((ej.extract_cursor || 0) !== 0 || (ej.gm_extract_cursor || 0) !== 0) continue;
-      const url = `${origin}/api/extract/run?job=${encodeURIComponent(ej.id)}&k=${encodeURIComponent(extractSecret)}`;
+      const url = `${base}/api/extract/run?job=${encodeURIComponent(ej.id)}&k=${encodeURIComponent(extractSecret)}`;
       void fetch(url, { method: "POST" }).catch(() => {});
       console.log("[advance-jobs] kicked idle extraction for job %s", ej.id);
       kicked.push(ej.id);
     }
   }
 
-  // Jobs still waiting. Anything past 'draft' is already moving.
-  const { data: jobs, error: jErr } = await admin
-    .from("capture_jobs")
-    .select("id, campaign_id, session_id, status")
-    .eq("status", "draft")
-    .order("created_at", { ascending: false })
-    .limit(50);
-
-  if (jErr) {
-    return NextResponse.json({ error: jErr.message, stage: "scan" }, { status: 500 });
-  }
-
-  const draft = (jobs as Array<{ id: string; session_id: string }>) || [];
-  if (draft.length === 0) {
-    // Vercel logs the status code, NOT the response body, so a route that only returns
-    // JSON is invisible in the dashboard: every run reads 200 with no detail. On
-    // 2026-07-20 a job sat unsubmitted overnight while this cron ran 750 times, and the
-    // logs could not say whether it had been seen and skipped or never seen at all.
-    // These console.log lines are the difference between one line in the dashboard and
-    // an afternoon of guessing.
-    console.log("[advance-jobs] no draft jobs (swept %d stranded, kicked %d idle extraction)",
-      swept.length, kicked.length);
-    return NextResponse.json({ ok: true, ready: 0, submitted: 0, swept, resubmitted, kicked });
-  }
-
-  // The guard: the sidecar must have FINISHED with this job. 'done' with a capture_job_id
-  // is the last thing finalize() writes, after every upload and every insert_track has
-  // returned, so it is the sidecar saying nothing more is coming. A job with no control row
-  // at all is a manual upload from the Capture page, which the GM submits by hand and this
-  // route deliberately leaves alone.
-  const { data: controls, error: cErr } = await admin
-    .from("capture_control")
-    .select("capture_job_id, status")
-    .in("capture_job_id", draft.map((j) => j.id))
-    .eq("status", "done");
-
-  if (cErr) {
-    return NextResponse.json({ error: cErr.message, stage: "control" }, { status: 500 });
-  }
-
-  const finalized = new Set(
-    ((controls as Array<{ capture_job_id: string | null }>) || [])
-      .map((c) => c.capture_job_id)
-      .filter((v): v is string => v !== null),
-  );
-
-  const finishedJobs = draft.filter((j) => finalized.has(j.id));
-  if (finishedJobs.length === 0) {
-    // Draft jobs exist but none has a finished capture_control row. Either the sidecar is
-    // still finalizing, or these are manual uploads awaiting the GM. Naming the ids here
-    // is what distinguishes "seen and correctly skipped" from "never seen".
-    console.log(
-      "[advance-jobs] %d draft job(s), none finalized by the sidecar: %s",
-      draft.length,
-      draft.map((j) => j.id).join(", "),
-    );
-    return NextResponse.json({
-      ok: true,
-      ready: 0,
-      submitted: 0,
-      swept,
-      resubmitted,
-      kicked,
-      // Draft jobs the sidecar has not finished with, or manual uploads awaiting the GM.
-      awaitingSidecar: draft.map((j) => j.id),
-    });
-  }
-
-  // A job with no uploaded audio has nothing to transcribe. Submitting it would flip it
-  // to 'transcribing' and strand it there.
-  const { data: tracks } = await admin
-    .from("audio_tracks")
-    .select("job_id, storage_path")
-    .in("job_id", finishedJobs.map((j) => j.id));
-
-  const withAudio = new Set(
-    ((tracks as Array<{ job_id: string; storage_path: string | null }>) || [])
-      .filter((t) => t.storage_path)
-      .map((t) => t.job_id),
-  );
-
-  const ready = finishedJobs.filter((j) => withAudio.has(j.id));
+  const submitted = submitResults.filter((r) => r.ok).length;
   console.log(
-    "[advance-jobs] draft=%d finalized=%d withAudio=%d ready=%s",
-    draft.length,
-    finishedJobs.length,
-    ready.length,
-    ready.map((j) => j.id).join(", ") || "(none)",
+    "[advance-jobs] done: submitted=%d swept=%d resubmitted=%d kicked=%d awaiting=%d noAudio=%d%s",
+    submitted, swept.length, resubmitted.length, kicked.length,
+    awaitingSidecar.length, noAudio.length, sweepTruncated ? " (sweep truncated)" : "",
   );
-
-  const base = new URL(request.url).origin;
-  const results: Array<{ job: string; ok: boolean; detail?: string }> = [];
-
-  for (const j of ready) {
-    try {
-      const res = await fetch(`${base}/api/transcribe/submit`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          // The cron path. submit() checks this, reads the job with the admin client,
-          // and STILL enforces the consent gate. Automation skips the cookie, not consent.
-          Authorization: `Bearer ${secret}`,
-        },
-        body: JSON.stringify({ jobId: j.id }),
-      });
-      const out = await res.json().catch(() => ({}));
-      results.push({
-        job: j.id,
-        ok: res.ok,
-        detail: res.ok ? undefined : (out?.error ?? `http ${res.status}`),
-      });
-    } catch (e) {
-      results.push({ job: j.id, ok: false, detail: e instanceof Error ? e.message : "fetch failed" });
-    }
-  }
 
   return NextResponse.json({
-    ok: results.every((r) => r.ok),
-    ready: ready.length,
-    submitted: results.filter((r) => r.ok).length,
+    ok: submitResults.every((r) => r.ok),
+    ready: submitResults.length,
+    submitted,
+    results: submitResults,
     swept,
     resubmitted,
     kicked,
-    // A job with no audio is not an error, but it should be visible rather than silently
-    // skipped forever.
-    noAudio: finishedJobs.filter((j) => !withAudio.has(j.id)).map((j) => j.id),
-    // Draft jobs the sidecar has not finished with yet, plus manual uploads that are
-    // waiting on the GM. Also not errors, also worth seeing.
-    awaitingSidecar: draft.filter((j) => !finalized.has(j.id)).map((j) => j.id),
-    results,
+    sweepTruncated,
+    // Draft jobs with uploaded audio that are too fresh to submit yet, plus manual uploads awaiting
+    // the GM. Not errors, but visible instead of hidden forever.
+    awaitingSidecar,
+    // Draft jobs the sidecar finished with but that produced no uploaded audio.
+    noAudio,
   });
 }
