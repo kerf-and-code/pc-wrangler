@@ -23,6 +23,8 @@
 // Size, Structure, Reactor Stress, Sensors, and Armor come straight from the frame. The pilot's own body
 // has HP = 6 + Grit, Evasion 10, E-Defense 10, Speed 4, Armor 0, and adds Grit to their attacks.
 
+import { coreBonusById } from "./core-bonuses";
+
 export type MechSkill = "hull" | "agility" | "systems" | "engineering";
 export const MECH_SKILLS: MechSkill[] = ["hull", "agility", "systems", "engineering"];
 export const MECH_SKILL_LABEL: Record<MechSkill, string> = {
@@ -65,6 +67,7 @@ export interface LancerBuild {
   talents: Record<string, number>;        // talentId -> rank (1..3)
   licenses: Record<string, number>;       // frameId (license line) -> rank (1..3)
   skillTriggers: Record<string, number>;  // skillTriggerId -> rank (1..3); rank N = +2N bonus
+  coreBonuses: string[];                   // chosen core-bonus ids (one per 3 license levels)
 }
 
 export interface LancerPilotStats {
@@ -91,10 +94,17 @@ export function emptyMechSkills(): Record<MechSkill, number> {
 }
 
 export function emptyLancerBuild(): LancerBuild {
-  return { level: 0, frameId: "", skills: emptyMechSkills(), weapons: [], mods: [], systems: [], talents: {}, licenses: {}, skillTriggers: {} };
+  return { level: 0, frameId: "", skills: emptyMechSkills(), weapons: [], mods: [], systems: [], talents: {}, licenses: {}, skillTriggers: {}, coreBonuses: [] };
 }
 
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
+
+// Raise a mech's size by a number of increments: 0.5 -> 1 -> 2 -> 3, capped at 3 (Fomorian Frame).
+function incrementSize(size: number, steps: number): number {
+  let s = size;
+  for (let i = 0; i < Math.max(0, steps); i++) s = s < 1 ? 1 : Math.min(3, s + 1);
+  return s;
+}
 
 // Grit: half the pilot's license level, rounded up. 0 at LL0, 1 at LL1-2, ... 6 at LL11-12.
 export function gritOf(level: number): number {
@@ -119,6 +129,18 @@ export function deriveLancerSheet(build: LancerBuild, rules: LancerRules): Lance
 
   const b = frame.base;
 
+  // Core-bonus flat mods: sum the always-on stat changes from the chosen core bonuses (Reinforced
+  // Frame +5 HP, Sloped Plating +1 Armor, Full Subjectivity Sync +2 Evasion, etc.). Bonuses without a
+  // flat mod contribute nothing here; their effects are read off the sheet notes / rulebook.
+  const cb = { hp: 0, armor: 0, evasion: 0, edef: 0, heatCap: 0, saveTarget: 0, size: 0 };
+  for (const id of build.coreBonuses ?? []) {
+    const m = coreBonusById(id)?.mods;
+    if (!m) continue;
+    cb.hp += m.hp ?? 0; cb.armor += m.armor ?? 0; cb.evasion += m.evasion ?? 0;
+    cb.edef += m.edef ?? 0; cb.heatCap += m.heatCap ?? 0; cb.saveTarget += m.saveTarget ?? 0;
+    cb.size += m.size ?? 0;
+  }
+
   const pilot: LancerPilotStats = {
     hp: 6 + grit,
     evasion: 10,
@@ -129,20 +151,20 @@ export function deriveLancerSheet(build: LancerBuild, rules: LancerRules): Lance
   };
 
   const mech: LancerMechStats = {
-    hp: b.hp + grit + 2 * hull,
+    hp: b.hp + grit + 2 * hull + cb.hp,
     repCap: b.repCap + Math.floor(hull / 2),
-    evasion: b.evasion + agility,
+    evasion: b.evasion + agility + cb.evasion,
     speed: b.speed + Math.floor(agility / 2),
-    edef: b.edef + systems,
+    edef: b.edef + systems + cb.edef,
     techAttack: b.techAttack + systems,
     sp: b.sp + grit + Math.floor(systems / 2),
-    heatCap: b.heatCap + engineering,
+    heatCap: b.heatCap + engineering + cb.heatCap,
     limitedBonus: Math.floor(engineering / 2),
-    saveTarget: b.save + grit,
+    saveTarget: b.save + grit + cb.saveTarget,
     attackBonus: grit,
     sensors: b.sensors,
-    armor: b.armor,
-    size: b.size,
+    armor: b.armor + cb.armor,
+    size: incrementSize(b.size, cb.size),
     structure: b.structure,
     stress: b.stress,
   };

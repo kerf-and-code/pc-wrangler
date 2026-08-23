@@ -19,6 +19,10 @@ import {
   skillBonusForRank, MAX_TALENT_RANK, MAX_LICENSE_RANK, MAX_SKILL_RANK,
 } from "@/lib/lancer/pilot";
 import { LANCER_TALENTS, LANCER_SKILL_TRIGGERS } from "@/lib/lancer/pilot-data";
+import {
+  LANCER_CORE_BONUSES, coreBonusById, coreBonusSlots, ranksForManufacturer,
+  coreBonusesAllowedFromManufacturer, coreBonusModLabel,
+} from "@/lib/lancer/core-bonuses";
 import { STONE, FORGE_FONTS, stonePanel, stoneField, forgeLabel, statTile } from "@/lib/forge-theme";
 
 const ROMAN = ["", "I", "II", "III"];
@@ -101,6 +105,15 @@ export default function LancerForge({
   const skillSpent = ranksSpent(skillTriggers);
   const setSkillTrigRank = (id: string, rank: number) => set({ skillTriggers: setRank(skillTriggers, id, rank, MAX_SKILL_RANK) });
   const dropSkillTrig = (id: string) => set({ skillTriggers: removeRank(skillTriggers, id) });
+
+  // Core bonuses: one per 3 license levels (floor(level/3), max 4). GMS always available; other
+  // manufacturers need 3 license ranks each. The add-list shows only bonuses the pilot currently
+  // qualifies for, and the count is capped at the slot budget.
+  const coreBonuses = build.coreBonuses ?? [];
+  const cbSlots = coreBonusSlots(build.level);
+  const takenFromMan = (man: string) => coreBonuses.filter((id) => coreBonusById(id)?.manufacturer === man).length;
+  const addCoreBonus = (id: string) => { if (id && !coreBonuses.includes(id)) set({ coreBonuses: [...coreBonuses, id] }); };
+  const removeCoreBonus = (id: string) => set({ coreBonuses: coreBonuses.filter((x) => x !== id) });
 
   return (
     <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 20 }}>
@@ -446,6 +459,58 @@ export default function LancerForge({
                   {[1, 2, 3].map((r) => <option key={r} value={r}>Rank {ROMAN[r]}</option>)}
                 </select>
                 <button type="button" onClick={() => dropLicense(id)} style={{ background: "none", border: "none", color: STONE.inkDim, cursor: "pointer", fontSize: 16, lineHeight: 1 }}>×</button>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Core bonuses: one per 3 license levels; GMS always available, others need 3 license ranks each. */}
+      <div style={stonePanel()}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
+          <div style={forgeLabel}>Core bonuses</div>
+          <span style={{ flex: 1 }} />
+          <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 13, color: coreBonuses.length > cbSlots ? "#d66" : STONE.ink }}>
+            {coreBonuses.length} / {cbSlots}
+          </span>
+        </div>
+        <p style={{ color: STONE.inkDim, fontSize: 12, margin: "4px 0 0" }}>
+          One core bonus every third license level. GMS is always available; each other manufacturer needs
+          three of its license ranks per bonus. Only bonuses you currently qualify for are listed.
+          {coreBonuses.length > cbSlots ? ` Over by ${coreBonuses.length - cbSlots}.` : ""}
+        </p>
+        <div style={{ marginTop: 10 }}>
+          <Field label="Add a core bonus">
+            <select value="" disabled={coreBonuses.length >= cbSlots}
+              onChange={(e) => { addCoreBonus(e.target.value); e.currentTarget.selectedIndex = 0; }} style={selStyle}>
+              <option value="">{coreBonuses.length >= cbSlots ? "No core-bonus slots left" : "Choose..."}</option>
+              {MANUFACTURERS.map((man) => {
+                const ranks = ranksForManufacturer(build.licenses, LANCER_FRAME_LIST, man);
+                const allowed = coreBonusesAllowedFromManufacturer(man, ranks);
+                if (takenFromMan(man) >= allowed) return null;
+                const opts = LANCER_CORE_BONUSES.filter((c) => c.manufacturer === man && !coreBonuses.includes(c.id));
+                if (!opts.length) return null;
+                return <optgroup key={man} label={man}>{opts.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}{c.mods ? ` (${coreBonusModLabel(c.mods)})` : ""}</option>
+                ))}</optgroup>;
+              })}
+            </select>
+          </Field>
+        </div>
+        <div style={{ display: "grid", gap: 8, marginTop: 12 }}>
+          {coreBonuses.length === 0 && (
+            <p style={{ color: STONE.inkDim, fontSize: 12.5, fontStyle: "italic" }}>No core bonuses taken.</p>
+          )}
+          {coreBonuses.map((id) => {
+            const c = coreBonusById(id);
+            if (!c) return null;
+            return (
+              <div key={id} style={{ display: "flex", gap: 10, alignItems: "center", borderLeft: `2px solid ${STONE.inkFaint}`, paddingLeft: 12 }}>
+                <span style={{ color: STONE.ink, fontSize: 14, flex: 1 }}>
+                  {c.name}
+                  <span style={{ color: STONE.inkDim, fontSize: 11.5 }}>{"  "}{c.manufacturer}{c.mods ? ` · ${coreBonusModLabel(c.mods)}` : ""}</span>
+                </span>
+                <button type="button" onClick={() => removeCoreBonus(id)} style={{ background: "none", border: "none", color: STONE.inkDim, cursor: "pointer", fontSize: 16, lineHeight: 1 }}>×</button>
               </div>
             );
           })}
