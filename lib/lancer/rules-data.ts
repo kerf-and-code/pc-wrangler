@@ -1,10 +1,11 @@
 // Lancer frame data (from the public lancer-data / COMP-CON data set, used under the Lancer Third
 // Party License). MECHANICS ONLY: each frame's base stat block plus its mount layout and license
-// level. No Massif Press descriptive prose (frame fiction, trait text, core-system text) ships here,
-// only the numbers the derivation engine needs. See lib/systems/lancer.ts for the required in-app
+// level. Frame TRAITS and CORE SYSTEMS (names + short in-house notes, no Massif Press prose) live in
+// frame-traits.ts and are merged on by id below. See lib/systems/lancer.ts for the required in-app
 // attribution.
 
 import type { LancerFrame, LancerRules } from "./character";
+import { FRAME_EXTRAS } from "./frame-traits";
 
 // Base stats are the frame's printed values; the engine adds the pilot's mech skills (HASE) and Grit.
 const FRAMES: LancerFrame[] = [
@@ -68,5 +69,11 @@ const FRAMES: LancerFrame[] = [
     base: { size: 1, structure: 4, stress: 4, armor: 0, hp: 6, evasion: 10, edef: 10, heatCap: 4, repCap: 5, sensors: 20, techAttack: 1, save: 10, speed: 6, sp: 6 } },
 ];
 
-export const LANCER_RULES: LancerRules = { frames: FRAMES };
-export const LANCER_FRAME_LIST: LancerFrame[] = FRAMES;
+// Merge each frame's traits + core system (from frame-traits.ts) onto its stat block by id.
+const FRAMES_WITH_EXTRAS: LancerFrame[] = FRAMES.map((f) => {
+  const x = FRAME_EXTRAS[f.id];
+  return x ? { ...f, traits: x.traits, coreSystem: x.coreSystem } : f;
+});
+
+export const LANCER_RULES: LancerRules = { frames: FRAMES_WITH_EXTRAS };
+export const LANCER_FRAME_LIST: LancerFrame[] = FRAMES_WITH_EXTRAS;

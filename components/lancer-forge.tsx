@@ -230,6 +230,56 @@ export default function LancerForge({
         )}
       </div>
 
+      {/* Frame traits + core system: read-only reference from the chosen frame. Mechanics-only names
+          with short in-house notes; full effect text lives in the rulebook. */}
+      {sheet && (sheet.frame.traits?.length || sheet.frame.coreSystem) && (
+        <div style={stonePanel()}>
+          <div style={forgeLabel}>Frame traits &amp; core system</div>
+          <p style={{ color: STONE.inkDim, fontSize: 12, margin: "4px 0 10px" }}>
+            {sheet.frame.manufacturer} {sheet.frame.name} · always-on frame traits and its signature core system.
+          </p>
+
+          {!!sheet.frame.traits?.length && (
+            <div style={{ display: "grid", gap: 8 }}>
+              {sheet.frame.traits.map((tr) => (
+                <div key={tr.name} style={{ borderLeft: `2px solid ${STONE.inkFaint}`, paddingLeft: 12 }}>
+                  <span style={{ color: STONE.ink, fontSize: 14 }}>{tr.name}</span>
+                  <span style={{ display: "block", color: STONE.inkDim, fontSize: 11.5, marginTop: 2 }}>{tr.note}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {sheet.frame.coreSystem && (() => {
+            const cs = sheet.frame.coreSystem;
+            const meta = [cs.activation ? `${cs.activation} action` : "", cs.frequency].filter(Boolean).join(" · ");
+            return (
+              <div style={{ marginTop: 14 }}>
+                <div style={{ fontFamily: FORGE_FONTS.mono, fontSize: 11, color: STONE.inkDim, textTransform: "uppercase", letterSpacing: "0.4px", marginBottom: 6 }}>
+                  Core system
+                </div>
+                <div style={{ borderLeft: `2px solid ${STONE.inkFaint}`, paddingLeft: 12 }}>
+                  <span style={{ color: STONE.ink, fontSize: 15, fontFamily: FORGE_FONTS.display }}>{cs.name}</span>
+                  {meta && <span style={{ color: STONE.inkDim, fontSize: 11.5 }}>{"  "}{meta}</span>}
+                  {cs.passiveName && (
+                    <p style={{ color: STONE.inkDim, fontSize: 12, margin: "6px 0 0" }}>
+                      <span style={{ color: STONE.ink }}>Passive · {cs.passiveName}</span>
+                      {cs.passiveNote ? <>{"  "}{cs.passiveNote}</> : null}
+                    </p>
+                  )}
+                  {cs.activeName && (
+                    <p style={{ color: STONE.inkDim, fontSize: 12, margin: "6px 0 0" }}>
+                      <span style={{ color: STONE.ink }}>Active · {cs.activeName}</span>
+                      {cs.activeNote ? <>{"  "}{cs.activeNote}</> : null}
+                    </p>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
+        </div>
+      )}
+
       {/* Weapons: one per frame mount, filtered to the sizes that mount accepts. Weapons cost no SP. */}
       {sheet && (
         <div style={stonePanel()}>

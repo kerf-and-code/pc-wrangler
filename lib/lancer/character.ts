@@ -45,6 +45,28 @@ export interface LancerFrameStats {
   techAttack: number; save: number; speed: number; sp: number;
 }
 
+// A frame TRAIT: a named passive/always-available frame ability. MECHANICS ONLY - the name plus a short
+// in-house telegraphic summary of what it does; never Massif Press's descriptive prose. Traits are
+// reference data carried on the frame (shown read-only in the Forge); they are NOT auto-applied to the
+// derived stat block because nearly all are conditional, reactive, or active rather than flat always-on
+// modifiers.
+export interface LancerFrameTrait {
+  name: string;
+  note: string;
+}
+
+// A frame's CORE SYSTEM: its signature power. Has a system name and up to an active and/or passive power
+// (with the activation type and any frequency limit), each with a short in-house telegraphic note.
+export interface LancerCoreSystem {
+  name: string;
+  activeName?: string;
+  passiveName?: string;
+  activation?: string;   // "Protocol" | "Quick" | "Full" (action needed to activate)
+  frequency?: string;    // e.g. "1/scene"
+  activeNote?: string;
+  passiveNote?: string;
+}
+
 export interface LancerFrame {
   id: string;
   name: string;
@@ -52,6 +74,8 @@ export interface LancerFrame {
   licenseLevel: number;      // the license level at which the frame unlocks (0 for GMS)
   mounts: string[];          // e.g. ["Main", "Flex", "Heavy"]
   base: LancerFrameStats;
+  traits?: LancerFrameTrait[];   // named frame traits (reference, not auto-applied)
+  coreSystem?: LancerCoreSystem; // the frame's core system (reference)
 }
 
 export interface LancerRules {
