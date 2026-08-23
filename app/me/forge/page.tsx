@@ -51,6 +51,7 @@ import DrawSteelForge from "@/components/drawsteel-forge";
 import { deriveLancerSheet, emptyLancerBuild, type LancerBuild } from "@/lib/lancer/character";
 import { LANCER_RULES } from "@/lib/lancer/rules-data";
 import LancerForge from "@/components/lancer-forge";
+import SystemAttribution from "@/components/system-attribution";
 import { menusFor, type ClassMenu } from "@/lib/class-menus";
 import { casterLevel, multiclassSlots, isMulticlassCaster, type CasterType } from "@/lib/multiclass-slots";
 import { subclassSpellsFor } from "@/lib/subclass-spells";
@@ -1275,6 +1276,10 @@ function ForgeInner() {
               </p>
             </div>
           )}
+
+          {/* License attribution for the active system (mechanics ship under the publisher's license).
+              Renders nothing for systems with no licensed content. Full notices live at /licenses. */}
+          {status === "ready" && <SystemAttribution system={system} />}
 
           {status === "loading" && <Muted>Stoking the forge&hellip;</Muted>}
           {status === "signedout" && <Muted>Sign in to open the Forge.</Muted>}

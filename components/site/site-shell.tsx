@@ -69,6 +69,8 @@ export default function SiteShell({
             <Link href="/privacy" style={link}>Privacy</Link>
             {" · "}
             <Link href="/terms" style={link}>Terms</Link>
+            {" · "}
+            <Link href="/licenses" style={link}>Licenses</Link>
           </span>
         </div>
       </footer>
