@@ -64,6 +64,7 @@ export interface LancerBuild {
   systems: string[];                      // equipped mech system ids (bought with SP)
   talents: Record<string, number>;        // talentId -> rank (1..3)
   licenses: Record<string, number>;       // frameId (license line) -> rank (1..3)
+  skillTriggers: Record<string, number>;  // skillTriggerId -> rank (1..3); rank N = +2N bonus
 }
 
 export interface LancerPilotStats {
@@ -90,7 +91,7 @@ export function emptyMechSkills(): Record<MechSkill, number> {
 }
 
 export function emptyLancerBuild(): LancerBuild {
-  return { level: 0, frameId: "", skills: emptyMechSkills(), weapons: [], mods: [], systems: [], talents: {}, licenses: {} };
+  return { level: 0, frameId: "", skills: emptyMechSkills(), weapons: [], mods: [], systems: [], talents: {}, licenses: {}, skillTriggers: {} };
 }
 
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));

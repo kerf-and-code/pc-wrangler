@@ -15,10 +15,10 @@ import { LANCER_FRAME_LIST } from "@/lib/lancer/rules-data";
 import { fitsMount, systemsSpUsed, modsSpUsed, modFits } from "@/lib/lancer/loadout";
 import { LANCER_WEAPONS, LANCER_SYSTEMS, LANCER_MODS } from "@/lib/lancer/loadout-data";
 import {
-  talentPointsAvailable, licenseRanksAvailable, ranksSpent, setRank, removeRank,
-  MAX_TALENT_RANK, MAX_LICENSE_RANK,
+  talentPointsAvailable, licenseRanksAvailable, skillPointsAvailable, ranksSpent, setRank, removeRank,
+  skillBonusForRank, MAX_TALENT_RANK, MAX_LICENSE_RANK, MAX_SKILL_RANK,
 } from "@/lib/lancer/pilot";
-import { LANCER_TALENTS } from "@/lib/lancer/pilot-data";
+import { LANCER_TALENTS, LANCER_SKILL_TRIGGERS } from "@/lib/lancer/pilot-data";
 import { STONE, FORGE_FONTS, stonePanel, stoneField, forgeLabel, statTile } from "@/lib/forge-theme";
 
 const ROMAN = ["", "I", "II", "III"];
@@ -93,6 +93,14 @@ export default function LancerForge({
   const dropTalent = (id: string) => set({ talents: removeRank(build.talents, id) });
   const setLicenseRank = (id: string, rank: number) => set({ licenses: setRank(build.licenses, id, rank, MAX_LICENSE_RANK) });
   const dropLicense = (id: string) => set({ licenses: removeRank(build.licenses, id) });
+
+  // Pilot skill triggers: 4 points at LL0, +1 per level; a point takes a new trigger (+2) or raises one
+  // a step (+2 -> +4 -> +6). Same ranked-map shape as talents; rank N shows as +2N.
+  const skillTriggers = build.skillTriggers ?? {};
+  const skillAvail = skillPointsAvailable(build.level);
+  const skillSpent = ranksSpent(skillTriggers);
+  const setSkillTrigRank = (id: string, rank: number) => set({ skillTriggers: setRank(skillTriggers, id, rank, MAX_SKILL_RANK) });
+  const dropSkillTrig = (id: string) => set({ skillTriggers: removeRank(skillTriggers, id) });
 
   return (
     <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 20 }}>
@@ -312,6 +320,49 @@ export default function LancerForge({
           </div>
         </div>
       )}
+
+      {/* Pilot skill triggers: ranked +2/+4/+6, 4 + level points. */}
+      <div style={stonePanel()}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
+          <div style={forgeLabel}>Skill triggers</div>
+          <span style={{ flex: 1 }} />
+          <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 13, color: skillSpent > skillAvail ? "#d66" : STONE.ink }}>
+            {skillSpent} / {skillAvail}
+          </span>
+        </div>
+        <p style={{ color: STONE.inkDim, fontSize: 12, margin: "4px 0 0" }}>
+          Four points at LL0, one more each level. Each point takes a new trigger at +2 or raises one to +4, then +6.
+          {skillSpent > skillAvail ? ` Over by ${skillSpent - skillAvail}.` : ""}
+        </p>
+        <div style={{ marginTop: 10 }}>
+          <Field label="Add a skill trigger">
+            <select value="" onChange={(e) => { if (e.target.value) setSkillTrigRank(e.target.value, 1); e.currentTarget.selectedIndex = 0; }} style={selStyle}>
+              <option value="">Choose...</option>
+              {LANCER_SKILL_TRIGGERS.filter((t) => !(t.id in skillTriggers)).map((t) => (
+                <option key={t.id} value={t.id}>{t.name}</option>
+              ))}
+            </select>
+          </Field>
+        </div>
+        <div style={{ display: "grid", gap: 8, marginTop: 12 }}>
+          {Object.keys(skillTriggers).length === 0 && (
+            <p style={{ color: STONE.inkDim, fontSize: 12.5, fontStyle: "italic" }}>No skill triggers taken.</p>
+          )}
+          {Object.entries(skillTriggers).map(([id, rank]) => {
+            const t = LANCER_SKILL_TRIGGERS.find((x) => x.id === id);
+            if (!t) return null;
+            return (
+              <div key={id} style={{ display: "flex", gap: 10, alignItems: "center", borderLeft: `2px solid ${STONE.inkFaint}`, paddingLeft: 12 }}>
+                <span style={{ color: STONE.ink, fontSize: 14, flex: 1 }}>{t.name}</span>
+                <select value={rank} onChange={(e) => setSkillTrigRank(id, parseInt(e.target.value, 10))} style={{ ...selStyle, width: "auto", padding: "4px 8px", fontSize: 13 }}>
+                  {[1, 2, 3].map((r) => <option key={r} value={r}>{sign(skillBonusForRank(r))}</option>)}
+                </select>
+                <button type="button" onClick={() => dropSkillTrig(id)} style={{ background: "none", border: "none", color: STONE.inkDim, cursor: "pointer", fontSize: 16, lineHeight: 1 }}>×</button>
+              </div>
+            );
+          })}
+        </div>
+      </div>
 
       {/* Pilot progression: talents (ranked I to III, 3 + level points) and license ranks (level ranks). */}
       <div style={stonePanel()}>
