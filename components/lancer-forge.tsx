@@ -23,6 +23,10 @@ import {
   LANCER_CORE_BONUSES, coreBonusById, coreBonusSlots, ranksForManufacturer,
   coreBonusesAllowedFromManufacturer, coreBonusModLabel,
 } from "@/lib/lancer/core-bonuses";
+import {
+  LANCER_PILOT_ARMOR, LANCER_PILOT_WEAPONS, LANCER_PILOT_GEAR,
+  pilotArmorById, pilotWeaponById, pilotGearById, MAX_PILOT_WEAPONS, MAX_PILOT_GEAR,
+} from "@/lib/lancer/pilot-gear";
 import { STONE, FORGE_FONTS, stonePanel, stoneField, forgeLabel, statTile } from "@/lib/forge-theme";
 
 const ROMAN = ["", "I", "II", "III"];
@@ -115,6 +119,15 @@ export default function LancerForge({
   const addCoreBonus = (id: string) => { if (id && !coreBonuses.includes(id)) set({ coreBonuses: [...coreBonuses, id] }); };
   const removeCoreBonus = (id: string) => set({ coreBonuses: coreBonuses.filter((x) => x !== id) });
 
+  // Pilot gear: one hardsuit (armor), up to two weapons, up to three other pieces of gear. The chosen
+  // hardsuit feeds the derived pilot body stats above; weapons and gear are carried, not derived.
+  const pilotWeapons = build.pilotWeapons ?? [];
+  const pilotGear = build.pilotGear ?? [];
+  const addPilotWeapon = (id: string) => { if (id && pilotWeapons.length < MAX_PILOT_WEAPONS) set({ pilotWeapons: [...pilotWeapons, id] }); };
+  const removePilotWeapon = (i: number) => set({ pilotWeapons: pilotWeapons.filter((_, j) => j !== i) });
+  const addPilotGear = (id: string) => { if (id && pilotGear.length < MAX_PILOT_GEAR) set({ pilotGear: [...pilotGear, id] }); };
+  const removePilotGear = (i: number) => set({ pilotGear: pilotGear.filter((_, j) => j !== i) });
+
   return (
     <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 20 }}>
       {/* Callsign */}
@@ -183,8 +196,14 @@ export default function LancerForge({
               <Stat label="Evasion" value={`${sheet.pilot.evasion}`} />
               <Stat label="E-Def" value={`${sheet.pilot.edef}`} />
               <Stat label="Speed" value={`${sheet.pilot.speed}`} />
+              <Stat label="Armor" value={`${sheet.pilot.armor}`} />
               <Stat label="Attack" value={sign(sheet.pilot.attackBonus)} />
             </div>
+            <p style={{ color: STONE.inkDim, fontSize: 11.5, margin: "6px 0 0" }}>
+              {sheet.pilot.hardsuit
+                ? `${sheet.pilot.hardsuit}${sheet.pilot.flight ? " · Flight" : ""}${sheet.pilot.invisibility ? " · Invisibility" : ""}`
+                : "Riding naked (no hardsuit)"}
+            </p>
 
             <div style={{ fontFamily: FORGE_FONTS.mono, fontSize: 11, color: STONE.inkDim, textTransform: "uppercase", letterSpacing: "0.4px", margin: "14px 0 6px" }}>Mech</div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(84px, 1fr))", gap: 8 }}>
@@ -514,6 +533,127 @@ export default function LancerForge({
               </div>
             );
           })}
+        </div>
+      </div>
+
+      {/* Pilot gear: one hardsuit, up to two weapons, up to three other pieces of gear. The hardsuit
+          drives the pilot body stats in the sheet above; weapons and gear are carried, not derived. */}
+      <div style={stonePanel()}>
+        <div style={forgeLabel}>Pilot gear</div>
+        <p style={{ color: STONE.inkDim, fontSize: 12, margin: "4px 0 10px" }}>
+          On a mission a pilot takes one hardsuit, up to two weapons, and up to three other pieces of gear.
+          All pilot weapons are pilot-scale and can&apos;t be used by mechs.
+        </p>
+
+        {/* Hardsuit (personal armor) */}
+        <Field label="Hardsuit (personal armor)">
+          <select value={build.pilotArmor ?? ""} onChange={(e) => set({ pilotArmor: e.target.value })} style={selStyle}>
+            <option value="">Riding naked (no hardsuit)</option>
+            {LANCER_PILOT_ARMOR.map((a) => (
+              <option key={a.id} value={a.id}>{a.name} ({a.bonusLabel})</option>
+            ))}
+          </select>
+        </Field>
+        {(() => {
+          const a = build.pilotArmor ? pilotArmorById(build.pilotArmor) : undefined;
+          if (!a) return null;
+          return (
+            <p style={{ color: STONE.inkDim, fontSize: 11.5, margin: "4px 0 0" }}>
+              {a.bonusLabel} · Armor {a.armor} · Evasion {a.evasion} · E-Def {a.edef} · Speed {a.speed}
+            </p>
+          );
+        })()}
+
+        {/* Weapons (up to two) */}
+        <div style={{ marginTop: 14 }}>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
+            <span style={forgeLabel}>Weapons</span>
+            <span style={{ flex: 1 }} />
+            <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 12, color: STONE.inkDim }}>
+              {pilotWeapons.length} / {MAX_PILOT_WEAPONS}
+            </span>
+          </div>
+          <div style={{ marginTop: 8 }}>
+            <select value="" disabled={pilotWeapons.length >= MAX_PILOT_WEAPONS}
+              onChange={(e) => { addPilotWeapon(e.target.value); e.currentTarget.selectedIndex = 0; }} style={selStyle}>
+              <option value="">{pilotWeapons.length >= MAX_PILOT_WEAPONS ? "Two weapons carried" : "Add a weapon..."}</option>
+              {(["Archaic", "Alloy/Composite", "Signature"] as const).map((cat) => (
+                <optgroup key={cat} label={cat}>
+                  {LANCER_PILOT_WEAPONS.filter((w) => w.category === cat).map((w) => (
+                    <option key={w.id} value={w.id}>{w.name}</option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+          </div>
+          <div style={{ display: "grid", gap: 8, marginTop: 10 }}>
+            {pilotWeapons.length === 0 && (
+              <p style={{ color: STONE.inkDim, fontSize: 12.5, fontStyle: "italic" }}>No weapons carried.</p>
+            )}
+            {pilotWeapons.map((id, i) => {
+              const w = pilotWeaponById(id);
+              if (!w) return null;
+              const bits = [
+                w.damage + (w.damageChoice ? " (explosive / energy / kinetic)" : ""),
+                ...w.range,
+                ...w.tags,
+              ].filter(Boolean);
+              return (
+                <div key={`${id}-${i}`} style={{ display: "flex", gap: 10, alignItems: "baseline", borderLeft: `2px solid ${STONE.inkFaint}`, paddingLeft: 12 }}>
+                  <span style={{ color: STONE.ink, fontSize: 14, flex: 1 }}>
+                    {w.name}
+                    <span style={{ color: STONE.inkDim, fontSize: 11.5 }}>{"  "}{bits.join(" · ")}</span>
+                  </span>
+                  <button type="button" onClick={() => removePilotWeapon(i)}
+                    style={{ background: "none", border: "none", color: STONE.inkDim, cursor: "pointer", fontSize: 16, lineHeight: 1 }}>×</button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Other gear (up to three) */}
+        <div style={{ marginTop: 14 }}>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
+            <span style={forgeLabel}>Other gear</span>
+            <span style={{ flex: 1 }} />
+            <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 12, color: STONE.inkDim }}>
+              {pilotGear.length} / {MAX_PILOT_GEAR}
+            </span>
+          </div>
+          <div style={{ marginTop: 8 }}>
+            <select value="" disabled={pilotGear.length >= MAX_PILOT_GEAR}
+              onChange={(e) => { addPilotGear(e.target.value); e.currentTarget.selectedIndex = 0; }} style={selStyle}>
+              <option value="">{pilotGear.length >= MAX_PILOT_GEAR ? "Three pieces carried" : "Add gear..."}</option>
+              {(["Limited", "Utility"] as const).map((grp) => (
+                <optgroup key={grp} label={grp === "Limited" ? "Limited (consumable)" : "Utility"}>
+                  {LANCER_PILOT_GEAR.filter((g) => g.group === grp).map((g) => (
+                    <option key={g.id} value={g.id}>{g.name}{g.tags.length ? ` (${g.tags.join(", ")})` : ""}</option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+          </div>
+          <div style={{ display: "grid", gap: 8, marginTop: 10 }}>
+            {pilotGear.length === 0 && (
+              <p style={{ color: STONE.inkDim, fontSize: 12.5, fontStyle: "italic" }}>No gear carried.</p>
+            )}
+            {pilotGear.map((id, i) => {
+              const g = pilotGearById(id);
+              if (!g) return null;
+              return (
+                <div key={`${id}-${i}`} style={{ display: "flex", gap: 10, alignItems: "baseline", borderLeft: `2px solid ${STONE.inkFaint}`, paddingLeft: 12 }}>
+                  <span style={{ color: STONE.ink, fontSize: 14, flex: 1 }}>
+                    {g.name}
+                    {g.tags.length ? <span style={{ color: STONE.inkDim, fontSize: 11.5 }}>{"  "}{g.tags.join(", ")}</span> : null}
+                    <span style={{ display: "block", color: STONE.inkDim, fontSize: 11.5, marginTop: 2 }}>{g.note}</span>
+                  </span>
+                  <button type="button" onClick={() => removePilotGear(i)}
+                    style={{ background: "none", border: "none", color: STONE.inkDim, cursor: "pointer", fontSize: 16, lineHeight: 1 }}>×</button>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>

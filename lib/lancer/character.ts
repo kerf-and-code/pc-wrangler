@@ -21,9 +21,12 @@
 //   Save Target  = frame Save (10) + Grit
 //   Attack bonus = Grit
 // Size, Structure, Reactor Stress, Sensors, and Armor come straight from the frame. The pilot's own body
-// has HP = 6 + Grit, Evasion 10, E-Defense 10, Speed 4, Armor 0, and adds Grit to their attacks.
+// has HP = 6 + Grit, Evasion 10, E-Defense 10, Speed 4, Armor 0, and adds Grit to their attacks. A worn
+// hardsuit (pilot armor) overrides the pilot's Armor / Evasion / E-Defense / Speed and adds its bonus
+// (extra HP, or a Flight / Invisibility flag); pilot weapons and other gear are carried, not derived.
 
 import { coreBonusById } from "./core-bonuses";
+import { pilotArmorById } from "./pilot-gear";
 
 export type MechSkill = "hull" | "agility" | "systems" | "engineering";
 export const MECH_SKILLS: MechSkill[] = ["hull", "agility", "systems", "engineering"];
@@ -68,10 +71,16 @@ export interface LancerBuild {
   licenses: Record<string, number>;       // frameId (license line) -> rank (1..3)
   skillTriggers: Record<string, number>;  // skillTriggerId -> rank (1..3); rank N = +2N bonus
   coreBonuses: string[];                   // chosen core-bonus ids (one per 3 license levels)
+  pilotArmor: string;                      // one hardsuit id, "" = riding naked
+  pilotWeapons: string[];                  // up to two pilot-weapon ids
+  pilotGear: string[];                     // up to three other pilot-gear ids
 }
 
 export interface LancerPilotStats {
   hp: number; evasion: number; edef: number; speed: number; armor: number; attackBonus: number;
+  hardsuit?: string;       // name of the worn hardsuit, if any
+  flight?: boolean;        // hardsuit grants Flight
+  invisibility?: boolean;  // hardsuit can turn Invisible
 }
 
 export interface LancerMechStats {
@@ -94,7 +103,7 @@ export function emptyMechSkills(): Record<MechSkill, number> {
 }
 
 export function emptyLancerBuild(): LancerBuild {
-  return { level: 0, frameId: "", skills: emptyMechSkills(), weapons: [], mods: [], systems: [], talents: {}, licenses: {}, skillTriggers: {}, coreBonuses: [] };
+  return { level: 0, frameId: "", skills: emptyMechSkills(), weapons: [], mods: [], systems: [], talents: {}, licenses: {}, skillTriggers: {}, coreBonuses: [], pilotArmor: "", pilotWeapons: [], pilotGear: [] };
 }
 
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
@@ -141,14 +150,29 @@ export function deriveLancerSheet(build: LancerBuild, rules: LancerRules): Lance
     cb.size += m.size ?? 0;
   }
 
-  const pilot: LancerPilotStats = {
-    hp: 6 + grit,
-    evasion: 10,
-    edef: 10,
-    speed: 4,
-    armor: 0,
-    attackBonus: grit,
-  };
+  // Pilot body: bare-body defaults, or the worn hardsuit's Armor / Evasion / E-Defense / Speed plus its
+  // bonus (extra HP, or a Flight / Invisibility flag). A pilot always adds Grit to their attacks.
+  const suit = build.pilotArmor ? pilotArmorById(build.pilotArmor) : undefined;
+  const pilot: LancerPilotStats = suit
+    ? {
+        hp: 6 + grit + suit.hpBonus,
+        evasion: suit.evasion,
+        edef: suit.edef,
+        speed: suit.speed,
+        armor: suit.armor,
+        attackBonus: grit,
+        hardsuit: suit.name,
+        ...(suit.flight ? { flight: true } : {}),
+        ...(suit.invisibility ? { invisibility: true } : {}),
+      }
+    : {
+        hp: 6 + grit,
+        evasion: 10,
+        edef: 10,
+        speed: 4,
+        armor: 0,
+        attackBonus: grit,
+      };
 
   const mech: LancerMechStats = {
     hp: b.hp + grit + 2 * hull + cb.hp,
