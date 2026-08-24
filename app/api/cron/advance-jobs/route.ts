@@ -60,7 +60,20 @@ export async function GET(request: Request) {
 
   const admin = createAdminClient();
   const startedAt = Date.now();
-  const base = new URL(request.url).origin;
+
+  // THE INTERNAL BASE MUST BE THE STABLE PUBLIC ORIGIN, NOT request.url. (root cause, 2026-08-24)
+  //
+  // Vercel fires this cron against the deployment's IMMUTABLE URL (pc-wrangler-<hash>.vercel.app),
+  // which sits behind Deployment Protection. Using new URL(request.url).origin as the base made every
+  // internal call below - /api/transcribe/submit and /api/extract/run - target that protected URL, so
+  // Vercel's auth wall bounced them (a ~20ms redirect, never reaching the route). The cron still returned
+  // 200 because it only records the submit failure internally, so the dashboard looked perfectly healthy
+  // while Deepgram-fallback drafts stranded forever. Deepgram callbacks, the Capture page's Transcribe
+  // button, and manual curls all hit the public production domain, which is why those paths always worked
+  // and only cron-dependent sessions vanished. So: use the same public base Deepgram callbacks use
+  // (TRANSCRIBE_CALLBACK_BASE), then the site URL, and only fall back to the request origin if neither is
+  // set. Trailing slash trimmed so `${base}/api/...` never double-slashes.
+  const base = (process.env.TRANSCRIBE_CALLBACK_BASE || process.env.NEXT_PUBLIC_SITE_URL || new URL(request.url).origin).replace(/\/$/, "");
 
   // ==========================================================================================
   // PHASE 1 - DRAFT SUBMIT (primary; runs first so it can never be starved by the sweeps).
@@ -79,6 +92,7 @@ export async function GET(request: Request) {
 
   const draft = (draftJobs as Array<{ id: string; session_id: string }>) || [];
   const submitResults: Array<{ job: string; ok: boolean; detail?: string }> = [];
+  const draftFinalized: Array<{ job: string; status: string }> = [];
   const awaitingSidecar: string[] = [];
   const noAudio: string[] = [];
 
@@ -104,25 +118,32 @@ export async function GET(request: Request) {
     // aged-audio fallback. created_at is what dates the fallback.
     const { data: trackRows, error: tErr } = await admin
       .from("audio_tracks")
-      .select("job_id, storage_path, created_at")
+      .select("job_id, storage_path, created_at, status")
       .in("job_id", draftIds);
     if (tErr) {
       return NextResponse.json({ error: tErr.message, stage: "tracks" }, { status: 500 });
     }
-    const tracks = (trackRows as Array<{ job_id: string; storage_path: string | null; created_at: string }>) || [];
+    const tracks = (trackRows as Array<{ job_id: string; storage_path: string | null; created_at: string; status: string }>) || [];
 
     // job_id -> newest track-with-audio timestamp (ms). Absent = no uploaded audio at all.
     const newestAudioAt = new Map<string, number>();
+    // job_id -> count of SUBMITTABLE tracks (has audio, not yet 'done'). Zero-with-audio means every
+    // track already transcribed, so submit() would 409 "No tracks to transcribe" and the job would sit
+    // at 'draft' forever - it needs finalizing (-> extracting/error), not submitting.
+    const submittableCount = new Map<string, number>();
     for (const t of tracks) {
       if (!t.storage_path) continue;
       const ts = Date.parse(t.created_at);
-      if (Number.isNaN(ts)) continue;
-      const prev = newestAudioAt.get(t.job_id) ?? 0;
-      if (ts > prev) newestAudioAt.set(t.job_id, ts);
+      if (!Number.isNaN(ts)) {
+        const prev = newestAudioAt.get(t.job_id) ?? 0;
+        if (ts > prev) newestAudioAt.set(t.job_id, ts);
+      }
+      if (t.status !== "done") submittableCount.set(t.job_id, (submittableCount.get(t.job_id) ?? 0) + 1);
     }
 
     const now = Date.now();
-    const ready: string[] = [];
+    const ready: string[] = [];      // ready + has submittable tracks -> submit()
+    const readyDone: string[] = [];  // ready but every track already 'done' -> finalize, don't submit
     for (const j of draft) {
       const newest = newestAudioAt.get(j.id);
       if (newest === undefined) {
@@ -132,13 +153,14 @@ export async function GET(request: Request) {
       }
       const hasMarker = marked.has(j.id);
       const aged = now - newest > STALE_DRAFT_MS;
-      if (hasMarker || aged) ready.push(j.id);
-      else awaitingSidecar.push(j.id); // has audio but too fresh and unmarked: give the sidecar a moment
+      if (!(hasMarker || aged)) { awaitingSidecar.push(j.id); continue; } // too fresh + unmarked: wait
+      if ((submittableCount.get(j.id) ?? 0) > 0) ready.push(j.id);
+      else readyDone.push(j.id); // all tracks transcribed but job never left 'draft': finalize it
     }
 
     console.log(
-      "[advance-jobs] draft=%d marked=%d ready=%d noAudio=%d awaiting=%d readyIds=%s",
-      draft.length, marked.size, ready.length, noAudio.length, awaitingSidecar.length,
+      "[advance-jobs] draft=%d marked=%d ready=%d readyDone=%d noAudio=%d awaiting=%d readyIds=%s",
+      draft.length, marked.size, ready.length, readyDone.length, noAudio.length, awaitingSidecar.length,
       ready.join(", ") || "(none)",
     );
 
@@ -154,6 +176,27 @@ export async function GET(request: Request) {
       } catch (e) {
         submitResults.push({ job: jobId, ok: false, detail: e instanceof Error ? e.message : "fetch failed" });
       }
+    }
+
+    // Finalize draft jobs whose tracks are ALL 'done' (submit is a no-op for them). This is the same
+    // decision the Phase 2 sweep makes for stranded 'transcribing' jobs: extracting if there are
+    // segments, else error. Guarded on status='draft' so it can't race a concurrent transition.
+    for (const jobId of readyDone) {
+      const { count } = await admin
+        .from("transcript_segments")
+        .select("*", { count: "exact", head: true })
+        .eq("job_id", jobId);
+      const nextStatus = (count || 0) > 0 ? "extracting" : "error";
+      const nextError = nextStatus === "error"
+        ? "No speech detected in any track. Check mic levels and re-record."
+        : null;
+      await admin
+        .from("capture_jobs")
+        .update({ status: nextStatus, error: nextError })
+        .eq("id", jobId)
+        .eq("status", "draft");
+      console.log("[advance-jobs] finalized done-track draft %s -> %s (%d segments)", jobId, nextStatus, count || 0);
+      draftFinalized.push({ job: jobId, status: nextStatus });
     }
   }
 
@@ -267,8 +310,8 @@ export async function GET(request: Request) {
 
   const submitted = submitResults.filter((r) => r.ok).length;
   console.log(
-    "[advance-jobs] done: submitted=%d swept=%d resubmitted=%d kicked=%d awaiting=%d noAudio=%d%s",
-    submitted, swept.length, resubmitted.length, kicked.length,
+    "[advance-jobs] done: submitted=%d finalized=%d swept=%d resubmitted=%d kicked=%d awaiting=%d noAudio=%d%s",
+    submitted, draftFinalized.length, swept.length, resubmitted.length, kicked.length,
     awaitingSidecar.length, noAudio.length, sweepTruncated ? " (sweep truncated)" : "",
   );
 
@@ -277,6 +320,8 @@ export async function GET(request: Request) {
     ready: submitResults.length,
     submitted,
     results: submitResults,
+    // Draft jobs whose tracks were all already transcribed; advanced past 'draft' here.
+    draftFinalized,
     swept,
     resubmitted,
     kicked,
