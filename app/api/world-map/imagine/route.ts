@@ -147,14 +147,43 @@ const BUILDING_GENRE: Record<string, string> = {
   urban: "modern contemporary",
 };
 
-type Body = { campaignId: string; controlImage: string; scaleHint?: string; style?: string; biomes?: { label: string; color: string }[]; mode?: "world" | "city" | "dungeon" | "building"; centerpiece?: string; promptModifier?: string; buildingType?: string };
+// Bastion renders. The source is one DECK of a bastion plan (see lib/bastion): painted coloured regions
+// on a dark background, each region a placed facility, dark walls around each, and light bars straddling
+// edges for doors (blue-tinted = window). The facility mix varies per bastion, so the legend of placed
+// facilities is sent per-request (like the world map's biomes) rather than baked in. Two structures:
+// a fixed stronghold (traditional) and a single deck of a vessel (ship).
+const BASTION_TRAD_PROMPT =
+  "Transform this bastion plan into ONE cohesive top-down map of a fortified stronghold and its grounds, " +
+  "viewed directly from above. The source is a plan on a dark background: each group of touching cells of " +
+  "one colour is ONE facility - a room, hall, workshop, garden, or courtyard - dark lines are walls drawn " +
+  "around each area, the pale bars straddling wall edges are doors and gateways, and blue-tinted bars are " +
+  "windows. Render each coloured area furnished and floored for its purpose within a great stronghold. Keep " +
+  "every area, wall, and door in the SAME position and shape. Rich top-down battle-map illustration, subtle " +
+  "grid feel. No text, no labels, no numbers.";
+const BASTION_SHIP_PROMPT =
+  "Transform this deck plan into ONE cohesive top-down map of a single DECK of a great vessel, viewed " +
+  "directly from above. The source is a plan on a dark background: each group of touching cells of one " +
+  "colour is ONE compartment or facility, dark lines are the bulkheads drawn around each, the pale bars " +
+  "straddling edges are hatches and doorways, and blue-tinted bars are portholes. Render each coloured area " +
+  "furnished for its purpose as a cabin, hold, workshop, galley, or open deck of the vessel. Keep every " +
+  "compartment, bulkhead, and hatch in the SAME position and shape. Rich top-down deck-map illustration, " +
+  "subtle grid feel. No text, no labels, no numbers.";
+const BASTION_GENRE: Record<string, string> = {
+  fantasy: "hand-painted fantasy medieval",
+  scifi: "clean sci-fi / futuristic, metal and glowing panels",
+  grimdark: "grim, war-worn, oppressive",
+  urban: "modern contemporary",
+};
+
+type Body = { campaignId: string; controlImage: string; scaleHint?: string; style?: string; biomes?: { label: string; color: string }[]; mode?: "world" | "city" | "dungeon" | "building" | "bastion"; centerpiece?: string; promptModifier?: string; buildingType?: string; bastionKind?: "traditional" | "ship"; facilities?: { label: string; color: string }[]; deckLabel?: string };
 
 export async function POST(request: Request) {
   try {
-    const { campaignId, controlImage, scaleHint, style, biomes, mode, centerpiece, promptModifier, buildingType } = (await request.json()) as Body;
+    const { campaignId, controlImage, scaleHint, style, biomes, mode, centerpiece, promptModifier, buildingType, bastionKind, facilities, deckLabel } = (await request.json()) as Body;
     const isCity = mode === "city";
     const isDungeon = mode === "dungeon";
     const isBuilding = mode === "building";
+    const isBastion = mode === "bastion";
     let chosenStyle = "fantasy";
     let basePrompt: string;
     if (isDungeon) {
@@ -162,6 +191,9 @@ export async function POST(request: Request) {
     } else if (isBuilding) {
       chosenStyle = style && BUILDING_GENRE[style] ? style : "fantasy";
       basePrompt = BUILDING_PROMPT;
+    } else if (isBastion) {
+      chosenStyle = style && BASTION_GENRE[style] ? style : "fantasy";
+      basePrompt = bastionKind === "ship" ? BASTION_SHIP_PROMPT : BASTION_TRAD_PROMPT;
     } else {
       const PROMPTS = isCity ? CITY_PROMPTS : STYLE_PROMPTS;
       chosenStyle = style && PROMPTS[style] ? style : "fantasy";
@@ -169,7 +201,7 @@ export async function POST(request: Request) {
     }
     // World-map reinterpretation + biome legend apply only to the world map; the others bake their
     // legends into their prompts (fixed control colours).
-    const enrich = !isCity && !isDungeon && !isBuilding;
+    const enrich = !isCity && !isDungeon && !isBuilding && !isBastion;
     const reinterp = enrich && chosenStyle !== "fantasy" ? STYLE_REINTERP[chosenStyle] ?? "" : "";
     const legend =
       enrich && chosenStyle !== "fantasy" && biomes && biomes.length
@@ -179,10 +211,19 @@ export async function POST(request: Request) {
         : "";
     const cpNote = isCity && centerpiece ? ` The centrepiece landmark is a ${centerpiece}.` : "";
     const buildingNote = isBuilding ? ` The building is a ${buildingType || "house"}, its rooms furnished for that purpose. Style: ${BUILDING_GENRE[chosenStyle]}.` : "";
+    // Bastion: the deck being rendered, the per-facility colour legend, and the genre tint.
+    const bastionDeckNote = isBastion && deckLabel ? ` This is the ${deckLabel}.` : "";
+    const bastionLegend =
+      isBastion && facilities && facilities.length
+        ? " The plan's coloured areas are: " +
+          facilities.map((f) => `${f.label} ${f.color}`).join(", ") +
+          " - render each coloured area as that facility."
+        : "";
+    const bastionNote = isBastion ? `${bastionDeckNote}${bastionLegend} Style: ${BASTION_GENRE[chosenStyle]}.` : "";
     // The GM's free-text flavour, added to every mode.
     const flavour = promptModifier && promptModifier.trim() ? ` ${promptModifier.trim()}.` : "";
     const scale = scaleHint ? ` Cartographic scale: this is ${scaleHint}.` : "";
-    const promptText = `${basePrompt}${reinterp}${legend}${cpNote}${buildingNote}${flavour}${scale}`;
+    const promptText = `${basePrompt}${reinterp}${legend}${cpNote}${buildingNote}${bastionNote}${flavour}${scale}`;
     if (!campaignId || typeof controlImage !== "string") {
       return NextResponse.json({ error: "Missing campaignId or image." }, { status: 400 });
     }
@@ -254,7 +295,7 @@ export async function POST(request: Request) {
     if (up.error) return NextResponse.json({ error: `Upload failed: ${up.error.message}` }, { status: 500 });
     const url = admin.storage.from("campaign-maps").getPublicUrl(path).data.publicUrl;
 
-    if (!isCity && !isDungeon && !isBuilding) {
+    if (!isCity && !isDungeon && !isBuilding && !isBastion) {
       const { data: wm } = await admin.from("world_maps").select("id").eq("campaign_id", campaignId).maybeSingle();
       if (wm) await admin.from("world_maps").update({ ai_image_url: url, ai_image_at: new Date().toISOString(), style: chosenStyle }).eq("id", (wm as { id: string }).id);
     }

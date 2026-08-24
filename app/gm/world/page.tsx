@@ -6,6 +6,7 @@ import PageShell from "@/components/page-shell";
 import CityCreator from "./CityCreator";
 import DungeonCreator from "./DungeonCreator";
 import BuildingCreator from "./BuildingCreator";
+import BastionCreator from "./BastionCreator";
 import { surfaces, ui } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import HexCanvas, { type MapFeature } from "@/components/worldmap/HexCanvas";
@@ -217,7 +218,7 @@ export default function WorldMapPage() {
   // Hex scale override (p85). null = derive from map size via milesPerHex(); a number overrides it, so a
   // GM can set, say, 5 miles/hex on a 100-wide map instead of the derived 15. Persisted on world_maps.
   const [mph, setMph] = useState<number | null>(null);
-  const [tab, setTab] = useState<"world" | "city" | "dungeon" | "building">("world");
+  const [tab, setTab] = useState<"world" | "city" | "dungeon" | "building" | "bastion">("world");
   const [mapModifier, setMapModifier] = useState("");
   const [imagining, setImagining] = useState(false);
   const [imagineMsg, setImagineMsg] = useState<string | null>(null);
@@ -953,6 +954,10 @@ export default function WorldMapPage() {
           style={{ padding: "7px 14px", borderRadius: 8, border: `1px solid ${tab === "building" ? C.sun : C.line}`, background: tab === "building" ? C.surface2 : "transparent", color: tab === "building" ? C.sun : C.muted, fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
           Building
         </button>
+        <button type="button" onClick={() => setTab("bastion")}
+          style={{ padding: "7px 14px", borderRadius: 8, border: `1px solid ${tab === "bastion" ? C.sun : C.line}`, background: tab === "bastion" ? C.surface2 : "transparent", color: tab === "bastion" ? C.sun : C.muted, fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
+          Bastion
+        </button>
       </div>
 
       {tab === "city" && (
@@ -978,6 +983,15 @@ export default function WorldMapPage() {
           <h1 style={{ ...ui.h1, fontSize: 28, margin: "4px 0 10px" }}>Building</h1>
           {campaignId
             ? <BuildingCreator campaignId={campaignId} />
+            : <p style={{ color: C.muted, fontSize: 14 }}>Pick a campaign on the World map tab first.</p>}
+        </>
+      )}
+
+      {tab === "bastion" && (
+        <>
+          <h1 style={{ ...ui.h1, fontSize: 28, margin: "4px 0 10px" }}>Bastion</h1>
+          {campaignId
+            ? <BastionCreator campaignId={campaignId} />
             : <p style={{ color: C.muted, fontSize: 14 }}>Pick a campaign on the World map tab first.</p>}
         </>
       )}
