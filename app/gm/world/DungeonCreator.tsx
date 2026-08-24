@@ -14,6 +14,9 @@ const BRUSHES = [1, 2, 3, 5];
 export default function DungeonCreator({ campaignId }: { campaignId: string }) {
   const supabase = useMemo(() => createClient(), []);
   const [n, setN] = useState<number>(DEFAULT_N);
+  // Scale is set independently of grid size (p84). Defaults to the old derived value (side/5) and is
+  // persisted, so changing the grid dimensions no longer silently rewrites how big each square is.
+  const [fps, setFps] = useState<number>(feetPerSquare(DEFAULT_N));
   const [levels, setLevels] = useState<number[][]>(() => emptyLevels(DEFAULT_N));
   const [level, setLevel] = useState(0);
   const [brush, setBrush] = useState(2); // Room
@@ -30,10 +33,14 @@ export default function DungeonCreator({ campaignId }: { campaignId: string }) {
     let off = false;
     (async () => {
       if (!campaignId) { setLoaded(true); return; }
-      const { data } = await supabase.from("dungeon_maps").select("levels").eq("campaign_id", campaignId).maybeSingle();
+      const { data } = await supabase.from("dungeon_maps").select("levels, feet_per_square").eq("campaign_id", campaignId).maybeSingle();
       if (off) return;
-      const raw = (data as { levels?: unknown } | null)?.levels;
-      if (raw) { const size = gridSizeOf(raw); setN(size); setLevels(normalizeLevels(raw, size)); }
+      const row = data as { levels?: unknown; feet_per_square?: number | null } | null;
+      const raw = row?.levels;
+      if (raw) {
+        const size = gridSizeOf(raw); setN(size); setLevels(normalizeLevels(raw, size));
+        setFps(row?.feet_per_square && row.feet_per_square > 0 ? row.feet_per_square : feetPerSquare(size));
+      }
       setLoaded(true);
     })();
     return () => { off = true; };
@@ -43,12 +50,12 @@ export default function DungeonCreator({ campaignId }: { campaignId: string }) {
     if (!loaded || !campaignId) return;
     const t = setTimeout(() => {
       void supabase.from("dungeon_maps").upsert(
-        { campaign_id: campaignId, levels, updated_at: new Date().toISOString() },
+        { campaign_id: campaignId, levels, feet_per_square: fps, updated_at: new Date().toISOString() },
         { onConflict: "campaign_id" },
       );
     }, 900);
     return () => clearTimeout(t);
-  }, [levels, loaded, campaignId, supabase]);
+  }, [levels, fps, loaded, campaignId, supabase]);
 
   const draw = useCallback(() => {
     const canvas = canvasRef.current; if (!canvas) return;
@@ -99,7 +106,7 @@ export default function DungeonCreator({ campaignId }: { campaignId: string }) {
       const control = renderDungeonLevel(levels[level], n, 1024);
       const res = await fetch("/api/world-map/imagine", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ campaignId, controlImage: control, mode: "dungeon", promptModifier: modifier, scaleHint: `${feetPerSquare(n)} ft per grid square` }),
+        body: JSON.stringify({ campaignId, controlImage: control, mode: "dungeon", promptModifier: modifier, scaleHint: `${fps} ft per grid square` }),
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok && data.url) setRendered(data.url);
@@ -130,7 +137,7 @@ export default function DungeonCreator({ campaignId }: { campaignId: string }) {
           onPointerUp={() => { painting.current = false; }}
           style={{ display: "block", width: "min(560px, 86vw)", height: "auto", aspectRatio: "1 / 1", borderRadius: 8, background: "#0e0b08", cursor: "crosshair", touchAction: "none" }}
         />
-        <p style={{ color: C.muted, fontSize: 12, margin: "8px 2px 0" }}>{n}&times;{n} grid, 1 square = {feetPerSquare(n)} ft.</p>
+        <p style={{ color: C.muted, fontSize: 12, margin: "8px 2px 0" }}>{n}&times;{n} grid, 1 square = {fps} ft &middot; {n * fps}&times;{n * fps} ft across.</p>
         {rendered && (
           <div style={{ marginTop: 12 }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -146,6 +153,18 @@ export default function DungeonCreator({ campaignId }: { campaignId: string }) {
 
         <label style={label}>Grid size</label>
         <div style={{ display: "flex", gap: 6 }}>{SIZES.map((s) => <button key={s} type="button" onClick={() => changeSize(s)} style={seg(n === s)}>{s}</button>)}</div>
+
+        <label style={label}>Feet per square</label>
+        <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+          <input type="number" min={1} max={100} step={1} value={fps}
+            onChange={(e) => { const v = Math.max(1, Math.min(100, Math.round(Number(e.target.value) || 1))); setFps(v); setRendered(null); }}
+            style={{ width: 80, padding: "7px 9px", background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: 7, fontSize: 13 }} />
+          <span style={{ color: C.muted, fontSize: 12 }}>ft / square</span>
+          <button type="button" onClick={() => { setFps(feetPerSquare(n)); setRendered(null); }}
+            style={{ marginLeft: "auto", padding: "6px 9px", background: "transparent", color: C.muted, border: `1px solid ${C.line}`, borderRadius: 7, fontSize: 12, cursor: "pointer" }}>
+            Default ({feetPerSquare(n)})
+          </button>
+        </div>
 
         <label style={label}>Brush</label>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
