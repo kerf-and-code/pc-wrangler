@@ -33,10 +33,10 @@ type Campaign = { id: string; name: string };
 type Biome = { id: number; key: string; label: string; category: string; color: string };
 type MapRow = {
   id: string; name: string; width: number; height: number;
-  origin_col: number; origin_row: number; format_version: number; terrain: string | null; editable_by: string; snapshot_url: string | null; published: boolean; ai_image_url: string | null; style: string | null;
+  origin_col: number; origin_row: number; format_version: number; terrain: string | null; editable_by: string; snapshot_url: string | null; published: boolean; ai_image_url: string | null; style: string | null; miles_per_hex: number | null;
 };
 
-const MAP_COLS = "id, name, width, height, origin_col, origin_row, format_version, terrain, editable_by, snapshot_url, published, ai_image_url, style";
+const MAP_COLS = "id, name, width, height, origin_col, origin_row, format_version, terrain, editable_by, snapshot_url, published, ai_image_url, style, miles_per_hex";
 // icon_keys the world generator emits. A marker on open water with one of these is a spurious
 // auto-placed pin (cohesion flooded its hex); a hand-placed sea marker uses a different icon and is
 // exempt. Kept in sync with bake.ts SETTLE_ICON + POI_ICON + bridge/ford.
@@ -214,6 +214,9 @@ export default function WorldMapPage() {
   const [drawPath, setDrawPath] = useState<[number, number][]>([]);
   const [fantasyView, setFantasyView] = useState(false);
   const [mapStyle, setMapStyle] = useState<string>("fantasy");
+  // Hex scale override (p85). null = derive from map size via milesPerHex(); a number overrides it, so a
+  // GM can set, say, 5 miles/hex on a 100-wide map instead of the derived 15. Persisted on world_maps.
+  const [mph, setMph] = useState<number | null>(null);
   const [tab, setTab] = useState<"world" | "city" | "dungeon" | "building">("world");
   const [mapModifier, setMapModifier] = useState("");
   const [imagining, setImagining] = useState(false);
@@ -311,6 +314,7 @@ export default function WorldMapPage() {
       setMapRow(row);
       if (row) {
         setMapStyle(row.style ?? "fantasy");
+        setMph(row.miles_per_hex ?? null);
         setSizeW(String(row.width));
         setSizeH(String(row.height));
         setTerrain(row.terrain ? decodeTerrain(base64ToBytes(row.terrain)) : createTerrain(row.width, row.height, row.origin_col, row.origin_row));
@@ -487,7 +491,16 @@ export default function WorldMapPage() {
     return m;
   }, [terrain, regionRows, hexesVersion]);
 
-  const mphex = useMemo(() => (terrain ? milesPerHex(Math.max(terrain.meta.width, terrain.meta.height)) : 0), [terrain]);
+  // Effective miles-per-hex: the GM's override if set, else the size-derived default.
+  const mphex = useMemo(
+    () => (terrain ? (mph ?? milesPerHex(Math.max(terrain.meta.width, terrain.meta.height))) : 0),
+    [terrain, mph],
+  );
+  // Persist an override (or clear it back to derived with null), immediately like the other map edits.
+  const setMilesPerHex = useCallback((val: number | null) => {
+    setMph(val);
+    if (mapRow) void supabase.from("world_maps").update({ miles_per_hex: val }).eq("id", mapRow.id);
+  }, [mapRow, supabase]);
 
   const pois = useMemo(() => {
     const out: { id: string; x: number; y: number; name: string; iconId: string; iconSrc: string; locked: boolean }[] = [];
@@ -760,7 +773,7 @@ export default function WorldMapPage() {
         r.readAsDataURL(blob);
       });
       const dim = Math.max(terrain.meta.width, terrain.meta.height);
-      const extentMiles = Math.round(dim * milesPerHex(dim));
+      const extentMiles = Math.round(dim * mphex);
       const scaleHint = extentMiles < 800
         ? `a regional map about ${extentMiles} miles across; render fine regional detail - individual peaks, distinct forests, coves and inlets`
         : extentMiles < 4000
@@ -1086,6 +1099,19 @@ export default function WorldMapPage() {
             </div>
             <p style={{ fontSize: 11, color: C.muted, margin: "6px 0 0", lineHeight: 1.4 }}>
               1 to 250 each. Make it large and place a small map inside if you like. Shrinking drops hexes outside the new area, kept centred.
+            </p>
+          </div>
+
+          <div style={{ marginBottom: 14 }}>
+            <div style={secLabel}>SCALE (MILES PER HEX)</div>
+            <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+              <input type="number" min={1} max={500} value={Math.round(mphex)}
+                onChange={(e) => setMilesPerHex(Math.max(1, Math.min(500, Math.round(Number(e.target.value) || 1))))} style={numInput} />
+              <span style={{ color: C.muted, fontSize: 13 }}>mi / hex</span>
+              <button type="button" onClick={() => setMilesPerHex(null)} style={smallBtn}>Default</button>
+            </div>
+            <p style={{ fontSize: 11, color: C.muted, margin: "6px 0 0", lineHeight: 1.4 }}>
+              {mph === null ? "Auto from map size" : "Custom"} &middot; about {Math.round((terrain ? Math.max(terrain.meta.width, terrain.meta.height) : 0) * mphex).toLocaleString()} miles across. The render and region measurements use this.
             </p>
           </div>
 
