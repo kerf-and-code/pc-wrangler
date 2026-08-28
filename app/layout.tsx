@@ -18,7 +18,12 @@ import SystemThemeProvider from "@/components/system-theme-provider";
 import SystemEffects from "@/components/system-effects";
 import JsonLd from "@/components/json-ld";
 import { organizationSchema, websiteSchema } from "@/lib/seo";
+import Script from "next/script";
 import "./globals.css";
+
+// Google Analytics 4 measurement ID. A measurement ID is public (it ships in the page), so hard-coding
+// it here is fine. Loaded only in production (below) so local dev and the build don't send hits.
+const GA_ID = "G-Q8DMBRWQPM";
 
 // NEXT_PUBLIC_SITE_URL first, and it matters more than it looks.
 //
@@ -100,6 +105,21 @@ export default function RootLayout({
   return (
     <html lang="en" className={fontVars} suppressHydrationWarning>
       <body className={`${geistSans.className} antialiased`}>
+        {/* Google Analytics 4. afterInteractive loads gtag once the page is interactive so it never
+            blocks first paint; it fires a pageview on load and, because Next's App Router does client
+            navigation, GA's SPA page_view tracking follows route changes automatically. Production only,
+            so preview builds and local dev do not skew the numbers. */}
+        {process.env.NODE_ENV === "production" && (
+          <>
+            <Script src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`} strategy="afterInteractive" />
+            <Script id="ga4-init" strategy="afterInteractive">
+              {`window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', '${GA_ID}');`}
+            </Script>
+          </>
+        )}
         {/* Sitewide entity graph: Organization + WebSite. Product/FAQ/breadcrumb schema is added
             per-page (home, /faq, /tools/*). */}
         <JsonLd data={[organizationSchema(), websiteSchema()]} />
