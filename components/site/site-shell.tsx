@@ -24,10 +24,13 @@ export default function SiteShell({
       <style dangerouslySetInnerHTML={{ __html: CSS }} />
 
       <header className="site-top">
-        <Link href="/" className="site-brand">
-          <img src="/six-axes-logo.png" alt="" className="site-mark" aria-hidden />
-          <span className="site-word">Six Axes</span>
-        </Link>
+        <div className="site-brandwrap">
+          <Link href="/" className="site-brand">
+            <img src="/six-axes-logo.png" alt="" className="site-mark" aria-hidden />
+            <span className="site-word">Six Axes</span>
+          </Link>
+          <a href="https://kerfandcode.com" target="_blank" rel="noopener noreferrer" className="site-by">by Kerf &amp; Code &#8599;</a>
+        </div>
         <nav className="site-nav">
           <Link href="/features" className="site-link">Features</Link>
           <Link href="/players" className="site-link">For players</Link>
@@ -100,6 +103,10 @@ ${FORGE_BUTTON_CSS}
 .site-mark { width: 30px; height: 30px; mix-blend-mode: screen; }
 .site-word { font-family: var(--font-cinzel, 'Cinzel', serif); font-weight: 700; letter-spacing: 0.16em;
   text-transform: uppercase; color: ${STONE.ink}; font-size: 16px; }
+.site-brandwrap { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; }
+.site-by { font-family: ${SAX.mono}; font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase;
+  color: ${STONE.inkFaint}; text-decoration: none; padding-left: 40px; line-height: 1; }
+.site-by:hover { color: ${STONE.brassHi}; }
 .site-nav { display: flex; align-items: center; gap: 16px; }
 .site-link { font-family: ${SAX.mono}; font-size: 12.5px; letter-spacing: 0.08em; text-transform: uppercase;
   color: ${STONE.inkDim}; text-decoration: none; }

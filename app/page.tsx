@@ -85,10 +85,13 @@ export default function Home() {
 
       {/* top bar */}
       <header className="home-top">
-        <Link href="/" className="home-brand">
-          <img src="/six-axes-logo.png" alt="" className="brand-mark" aria-hidden />
-          <span className="brand-word">Six Axes</span>
-        </Link>
+        <div className="home-brandwrap">
+          <Link href="/" className="home-brand">
+            <img src="/six-axes-logo.png" alt="" className="brand-mark" aria-hidden />
+            <span className="brand-word">Six Axes</span>
+          </Link>
+          <a href="https://kerfandcode.com" target="_blank" rel="noopener noreferrer" className="home-by">by Kerf &amp; Code &#8599;</a>
+        </div>
         <nav className="home-topnav">
           <Link href="/features" className="topnav-link">Features</Link>
           <Link href="/players" className="topnav-link">For players</Link>
@@ -485,6 +488,10 @@ html { scroll-behavior: smooth; }
 .brand-mark { width: 30px; height: 30px; mix-blend-mode: screen; }
 .brand-word { font-family: var(--font-cinzel, 'Cinzel', serif); font-weight: 700; letter-spacing: 0.16em;
   text-transform: uppercase; color: ${STONE.ink}; font-size: 16px; }
+.home-brandwrap { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; }
+.home-by { font-family: ${SAX.mono}; font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase;
+  color: ${STONE.inkFaint}; text-decoration: none; padding-left: 40px; line-height: 1; }
+.home-by:hover { color: ${STONE.brassHi}; }
 .home-topnav { display: flex; align-items: center; gap: 16px; }
 .topnav-link { font-family: ${SAX.mono}; font-size: 12.5px; letter-spacing: 0.08em; text-transform: uppercase;
   color: ${STONE.inkDim}; text-decoration: none; }

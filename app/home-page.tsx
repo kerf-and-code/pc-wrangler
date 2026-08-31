@@ -40,6 +40,9 @@ export default function Home() {
 
         <header style={{ marginBottom: 44 }}>
           <p style={eyebrow}>Six Axes</p>
+          <p style={{ margin: "2px 0 0", fontSize: 12 }}>
+            <a href="https://kerfandcode.com" target="_blank" rel="noopener noreferrer" style={link}>by Kerf &amp; Code &#8599;</a>
+          </p>
           <h1 style={h1}>Your table already tells the story. This writes it down.</h1>
           <p style={lede}>
             Six Axes sits in your session, transcribes it, and turns it into the work you would do
