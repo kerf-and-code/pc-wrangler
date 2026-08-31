@@ -52,7 +52,7 @@ export default function SiteShell({
 
       <footer className="site-foot">
         <div className="site-foot-inner">
-          <span>Six Axes is made by Kerf and Code.</span>
+          <span>Six Axes is made by <a href="https://kerfandcode.com" target="_blank" rel="noopener noreferrer" style={link}>Kerf and Code ↗</a>, a studio building other tools too.</span>
           <span>
             <Link href="/players" style={link}>For players</Link>
             {" · "}

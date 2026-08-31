@@ -350,7 +350,7 @@ export default function Home() {
       {/* footer */}
       <footer className="home-foot">
         <div className="foot-inner">
-          <span>Six Axes is made by Kerf and Code.</span>
+          <span>Six Axes is made by <a href="https://kerfandcode.com" target="_blank" rel="noopener noreferrer" style={inlineLink}>Kerf and Code ↗</a>, a studio building other tools too.</span>
           <span className="foot-links">
             <Link href="/features" style={inlineLink}>Features</Link>
             {" · "}
