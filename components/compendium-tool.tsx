@@ -9,11 +9,11 @@ import {
 
 // components/compendium-tool.tsx
 //
-// The offline rules compendium: look a term up and get an instant card. This increment is the ENGINE
-// and UI, fed by a typed search box; the voice (Vosk) mic is the next increment and drops into the
-// same match -> addCard path. The listen mode is real today: "Continuous" cards auto-dismiss after
-// 30s (a rolodex, newest on top), "Push to talk" pins them until dismissed. Ruleset toggle swaps the
-// prebuilt index (2014 / 2024 / both). Data is SRD 5.1 (CC-BY); nothing leaves the browser.
+// The offline rules compendium: look a term up and get an instant card. This is the ENGINE and UI, fed
+// by a typed search box; the voice (Vosk) mic is a separate increment and drops into the same match ->
+// addCard path. The listen mode is real: "Continuous" cards auto-dismiss after 30s (a rolodex, newest
+// on top), "Push to talk" pins them until dismissed. Ruleset toggle swaps the prebuilt index
+// (2014 / 2024 / both). Data is SRD 5.1 (CC-BY); nothing leaves the browser.
 
 const AUTO_MS = 30_000;
 const MAX_CARDS = 12;
@@ -61,7 +61,6 @@ export default function CompendiumTool() {
     setCards((prev) => {
       const pinned = listenMode === "push";
       const card: Card = { key: `${entry.id}:${Date.now()}`, entry, pinned, expiresAt: pinned ? null : Date.now() + AUTO_MS };
-      // If the same entry is already on top, refresh it rather than stacking duplicates.
       const withoutDupTop = prev[0]?.entry.id === entry.id ? prev.slice(1) : prev;
       return [card, ...withoutDupTop].slice(0, MAX_CARDS);
     });

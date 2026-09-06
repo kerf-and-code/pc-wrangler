@@ -7,6 +7,8 @@ import CityCreator from "./CityCreator";
 import DungeonCreator from "./DungeonCreator";
 import BuildingCreator from "./BuildingCreator";
 import BastionCreator from "./BastionCreator";
+import TileLibrary from "./TileLibrary";
+import type { CustomTile } from "@/lib/tiles/custom";
 import { surfaces, ui } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import HexCanvas, { type MapFeature } from "@/components/worldmap/HexCanvas";
@@ -34,10 +36,10 @@ type Campaign = { id: string; name: string };
 type Biome = { id: number; key: string; label: string; category: string; color: string };
 type MapRow = {
   id: string; name: string; width: number; height: number;
-  origin_col: number; origin_row: number; format_version: number; terrain: string | null; editable_by: string; snapshot_url: string | null; published: boolean; ai_image_url: string | null; style: string | null; miles_per_hex: number | null;
+  origin_col: number; origin_row: number; format_version: number; terrain: string | null; editable_by: string; snapshot_url: string | null; published: boolean; ai_image_url: string | null; style: string | null; miles_per_hex: number | null; custom_hexes: Record<string, string> | null;
 };
 
-const MAP_COLS = "id, name, width, height, origin_col, origin_row, format_version, terrain, editable_by, snapshot_url, published, ai_image_url, style, miles_per_hex";
+const MAP_COLS = "id, name, width, height, origin_col, origin_row, format_version, terrain, editable_by, snapshot_url, published, ai_image_url, style, miles_per_hex, custom_hexes";
 // icon_keys the world generator emits. A marker on open water with one of these is a spurious
 // auto-placed pin (cohesion flooded its hex); a hand-placed sea marker uses a different icon and is
 // exempt. Kept in sync with bake.ts SETTLE_ICON + POI_ICON + bridge/ford.
@@ -252,6 +254,13 @@ export default function WorldMapPage() {
   const [selectedEntry, setSelectedEntry] = useState<{ title: string | null; body: string | null } | null>(null);
   const [selectedChar, setSelectedChar] = useState<{ name: string } | null>(null);
   const [selected, setSelected] = useState<number | null>(null);
+  // Custom hex tiles (p87/p89): the GM's global world tiles as extra brushes. Placements live in a sparse
+  // map (hex index -> tile id) mutated in place by HexCanvas, like terrain, and persisted to world_maps.
+  const [customTiles, setCustomTiles] = useState<CustomTile[]>([]);
+  const [customBrush, setCustomBrush] = useState<string | null>(null); // tile id, "" = erase custom, null = off
+  const [showCustom, setShowCustom] = useState(true);
+  const customHexesRef = useRef<Record<string, string>>({});
+  const [, setCustomVer] = useState(0);
   const [sizeW, setSizeW] = useState<string>("100");
   const [sizeH, setSizeH] = useState<string>("100");
   const [status, setStatus] = useState<string>("");
@@ -319,6 +328,8 @@ export default function WorldMapPage() {
         setSizeW(String(row.width));
         setSizeH(String(row.height));
         setTerrain(row.terrain ? decodeTerrain(base64ToBytes(row.terrain)) : createTerrain(row.width, row.height, row.origin_col, row.origin_row));
+        customHexesRef.current = row.custom_hexes && typeof row.custom_hexes === "object" ? { ...row.custom_hexes } : {};
+        setCustomVer((v) => v + 1);
         const { data: imgs } = await supabase.from("map_images").select(IMG_COLS).eq("world_map_id", row.id).order("z", { ascending: true });
         if (!cancelled) setImages((imgs as PlacedImage[]) || []);
         const { data: whx } = await supabase.from("world_hexes").select("col, row, region_id").eq("world_map_id", row.id);
@@ -372,6 +383,21 @@ export default function WorldMapPage() {
   }, [supabase, mapRow, terrain]);
 
   const onPaint = useCallback(() => { scheduleSave(); }, [scheduleSave]);
+
+  // Custom hex tiles: clear the custom brush whenever another tool becomes active, and persist the
+  // sparse custom_hexes map (debounced) when HexCanvas paints one in place.
+  useEffect(() => { if (selected !== null || stamp || drawKind || paintRegionId) setCustomBrush(null); }, [selected, stamp, drawKind, paintRegionId]);
+  const customSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const onCustomPaint = useCallback(() => {
+    setCustomVer((v) => v + 1);
+    if (!mapRow) return;
+    if (customSaveTimer.current) clearTimeout(customSaveTimer.current);
+    setStatus("Saving…");
+    customSaveTimer.current = setTimeout(async () => {
+      const { error } = await supabase.from("world_maps").update({ custom_hexes: customHexesRef.current }).eq("id", mapRow.id);
+      setStatus(error ? `Save failed: ${error.message}` : "Saved");
+    }, 800);
+  }, [supabase, mapRow]);
 
   useEffect(() => {
     if (!paintRegionId) { setRegionCells(new Set()); return; }
@@ -745,6 +771,7 @@ export default function WorldMapPage() {
       const blob = await renderWorldSnapshot({
         terrain, colors, biomeArt, images, features,
         pois: pois.map((p) => ({ x: p.x, y: p.y, iconSrc: p.iconSrc })),
+        customHexes: customHexesRef.current, customTiles: customTiles.map((t) => ({ id: t.id, url: t.imageUrl, color: t.color })),
       });
       const fd = new FormData();
       fd.append("campaignId", campaignId);
@@ -759,14 +786,15 @@ export default function WorldMapPage() {
     } finally {
       setPublishing(false);
     }
-  }, [mapRow, terrain, colors, biomeArt, images, pois, campaignId]);
+  }, [mapRow, terrain, colors, biomeArt, images, pois, campaignId, customTiles]);
 
   const generateFantasyView = useCallback(async () => {
     if (!campaignId || !terrain) return;
     setImagining(true);
     setImagineMsg("Painting the world\u2026 this can take up to a minute.");
+    const usedCustomIds = new Set(Object.values(customHexesRef.current));
     try {
-      const blob = await renderWorldSnapshot({ terrain, colors, biomeArt, features, pois: [], images: [], maxPx: 1280, mime: "image/jpeg", quality: 0.8, smooth: true });
+      const blob = await renderWorldSnapshot({ terrain, colors, biomeArt, features, pois: [], images: [], maxPx: 1280, mime: "image/jpeg", quality: 0.8, smooth: true, customHexes: customHexesRef.current, customTiles: customTiles.map((t) => ({ id: t.id, url: t.imageUrl, color: t.color })), customAsColor: true });
       const dataUrl = await new Promise<string>((res, rej) => {
         const r = new FileReader();
         r.onloadend = () => res(String(r.result));
@@ -784,7 +812,7 @@ export default function WorldMapPage() {
         : `a map about ${extentMiles} miles across; render at whole-world scale - continental landmasses, planetary mountain belts, broad climate zones, heavily generalized like a global atlas`;
       const resp = await fetch("/api/world-map/imagine", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ campaignId, controlImage: dataUrl, scaleHint, style: mapStyle, biomes: biomes.map((b) => ({ label: b.label, color: b.color })), promptModifier: mapModifier }),
+        body: JSON.stringify({ campaignId, controlImage: dataUrl, scaleHint, style: mapStyle, biomes: biomes.map((b) => ({ label: b.label, color: b.color })), promptModifier: mapModifier, extraLegend: customTiles.filter((t) => usedCustomIds.has(t.id)).map((t) => ({ label: t.label, color: t.color })) }),
       });
       const json = await resp.json();
       if (!resp.ok) { setImagineMsg(json.error || "Generation failed."); return; }
@@ -796,7 +824,7 @@ export default function WorldMapPage() {
     } finally {
       setImagining(false);
     }
-  }, [campaignId, terrain, colors, biomeArt, images, features, mapStyle, biomes, mapModifier]);
+  }, [campaignId, terrain, colors, biomeArt, images, features, mapStyle, biomes, mapModifier, customTiles]);
 
   // Trace an image back into editable hex tiles: AI vision labels each hex's terrain, and we drop the
   // biome array straight into the current grid. Approximate by nature - it's a starting point to edit,
@@ -1172,6 +1200,41 @@ export default function WorldMapPage() {
             </div>
           ))}
           <div style={{ marginBottom: 12 }}>
+            <div style={secLabel}>CUSTOM TILES</div>
+            {customTiles.length > 0 && (
+              <div style={{ display: "grid", gap: 5, marginBottom: 8 }}>
+                {customTiles.map((t) => {
+                  const on = customBrush === t.id;
+                  return (
+                    <button key={t.id} type="button" title={t.label}
+                      onClick={() => { if (on) { setCustomBrush(null); } else { setCustomBrush(t.id); setSelected(null); setStamp(null); setDrawKind(null); } }}
+                      style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", textAlign: "left", padding: "6px 8px", borderRadius: 7, cursor: "pointer",
+                        border: `1px solid ${on ? C.sun : C.line}`, background: on ? "rgba(200,162,75,0.14)" : C.surface2, color: C.text }}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={t.imageUrl} alt={t.label} style={{ width: 16, height: 16, borderRadius: 3, objectFit: "cover", background: t.color, flexShrink: 0 }} />
+                      <span style={{ fontSize: 12.5, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.label}</span>
+                    </button>
+                  );
+                })}
+                <button type="button"
+                  onClick={() => { if (customBrush === "") { setCustomBrush(null); } else { setCustomBrush(""); setSelected(null); setStamp(null); setDrawKind(null); } }}
+                  style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", textAlign: "left", padding: "6px 8px", borderRadius: 7, cursor: "pointer",
+                    border: `1px solid ${customBrush === "" ? C.sun : C.line}`, background: customBrush === "" ? "rgba(200,162,75,0.14)" : C.surface2, color: C.muted }}>
+                  <span style={{ fontSize: 12.5 }}>Erase custom tile</span>
+                </button>
+              </div>
+            )}
+            <label style={{ display: "flex", alignItems: "center", gap: 8, margin: "0 0 8px", color: C.text, fontSize: 12.5, cursor: "pointer" }}>
+              <input type="checkbox" checked={showCustom} onChange={(e) => setShowCustom(e.target.checked)} style={{ accentColor: C.sun }} />
+              Show custom tiles on the map
+            </label>
+            <p style={{ fontSize: 11, color: C.muted, margin: "0 0 8px", lineHeight: 1.4 }}>
+              Turn off to preview the AI render alone; on to stamp your cropped tiles over it. With the fantasy view off, your tiles sit on the painted terrain.
+            </p>
+            <TileLibrary scope="world" onChange={setCustomTiles} />
+          </div>
+
+          <div style={{ marginBottom: 12 }}>
             <div style={secLabel}>SPECIAL TERRAIN</div>
             <div style={{ fontSize: 11, color: C.muted, margin: "0 0 6px", lineHeight: 1.4 }}>Pick one, then click or drag hexes. Shows with Terrain art on.</div>
             <div style={{ display: "grid", gap: 5 }}>
@@ -1265,6 +1328,7 @@ export default function WorldMapPage() {
               regionRender={selectedLayerId ? regionRender : undefined}
               pois={pois} poiPlaceActive={mode === "pois" && !!armedIcon} onPlacePoi={onPlacePoi} onPoiClick={onPoiClick} onPoiHover={onPoiHover} onMovePoi={onMovePoi}
               labels={labelRows} labelPlaceActive={mode === "pois" && labelPlacing} onPlaceLabel={placeLabel} onMoveLabel={moveLabel}
+              customHexes={customHexesRef.current} customTiles={customTiles.map((t) => ({ id: t.id, imageUrl: t.imageUrl, color: t.color }))} customTileId={customBrush} onCustomPaint={onCustomPaint} showCustom={showCustom}
             />
           ) : (
             <p style={{ color: C.muted, fontSize: 14, padding: 16 }}>Pick a campaign to start its world map.</p>

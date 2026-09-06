@@ -13,6 +13,10 @@ const SQRT3 = Math.sqrt(3);
 type SnapImage = { url: string; x: number; y: number; scale: number; z: number };
 type SnapPoi = { x: number; y: number; iconSrc: string };
 type SnapFeature = { kind: "river" | "road"; klass: number; path: [number, number][]; name?: string | null };
+// A custom tile the GM painted onto hexes: its cropped image URL and average colour, plus the sparse
+// map of hex index -> tile id. Shared by the snapshot renderer and the AI-stamp compositor below.
+type SnapCustomTile = { id: string; url: string; color: string };
+export type CustomHexMap = Record<string, string>;
 
 function loadImage(url: string): Promise<HTMLImageElement | null> {
   return new Promise((resolve) => {
@@ -35,9 +39,15 @@ export async function renderWorldSnapshot(opts: {
   smooth?: boolean;
   mime?: "image/png" | "image/jpeg";
   quality?: number;
+  customHexes?: CustomHexMap;         // hex index -> custom tile id
+  customTiles?: SnapCustomTile[];     // the tiles referenced by customHexes
+  customAsColor?: boolean;            // true: draw custom hexes as flat avg colour (AI control); false: draw the tile image
 }): Promise<Blob> {
-  const { terrain, colors, biomeArt = [], images = [], pois = [], features = [], maxPx = 2048, mime = "image/png", quality = 0.92, smooth = false } = opts;
+  const { terrain, colors, biomeArt = [], images = [], pois = [], features = [], maxPx = 2048, mime = "image/png", quality = 0.92, smooth = false, customHexes = {}, customTiles = [], customAsColor = false } = opts;
   const W = terrain.meta.width, H = terrain.meta.height;
+  const customUrl = new Map<string, string>(), customCol = new Map<string, string>();
+  for (const t of customTiles) { customUrl.set(t.id, t.url); customCol.set(t.id, t.color); }
+  const hasCustom = Object.keys(customHexes).length > 0;
 
   const g = gridPixelSize(W, H, BASE_SIZE);
   const o = gridOrigin();
@@ -66,6 +76,13 @@ export async function renderWorldSnapshot(opts: {
   const imgEls = await Promise.all(images.map((im) => loadImage(im.url)));
   const poiEls = await Promise.all(pois.map((p) => loadImage(p.iconSrc)));
 
+  // Preload the custom-tile images actually used (skipped when drawing them as flat colour).
+  const customImg = new Map<string, HTMLImageElement | null>();
+  if (hasCustom && !customAsColor) {
+    const usedTiles = new Set(Object.values(customHexes));
+    await Promise.all([...usedTiles].map(async (id) => { const u = customUrl.get(id); customImg.set(id, u ? await loadImage(u) : null); }));
+  }
+
   // Placed images first (bottom).
   const order = images.map((im, i) => ({ im, el: imgEls[i] })).sort((a, b) => a.im.z - b.im.z);
   for (const { im, el } of order) {
@@ -76,6 +93,20 @@ export async function renderWorldSnapshot(opts: {
   const bw = SQRT3 * BASE_SIZE, bh = 2 * BASE_SIZE;
   for (let row = 0; row < H; row++) {
     for (let col = 0; col < W; col++) {
+      // Custom tile first: it draws regardless of the underlying biome. As colour for the AI control,
+      // as the cropped image (into a bh x bh box, so the pointy-top hex aligns) for a stamped map.
+      const cTid = hasCustom ? customHexes[String(index(col, row, W))] : undefined;
+      if (cTid) {
+        const center = hexToPixel(col, row, BASE_SIZE);
+        const cimg = customAsColor ? null : customImg.get(cTid) ?? null;
+        if (cimg) { ctx.drawImage(cimg, center.x - bh / 2, center.y - bh / 2, bh, bh); }
+        else {
+          const pts = hexCorners(center, BASE_SIZE);
+          ctx.beginPath(); ctx.moveTo(pts[0].x, pts[0].y); for (let i = 1; i < 6; i++) ctx.lineTo(pts[i].x, pts[i].y); ctx.closePath();
+          ctx.fillStyle = customCol.get(cTid) || "#8a7f68"; ctx.fill();
+        }
+        continue;
+      }
       const b = terrain.biome[index(col, row, W)];
       if (b === BIOME_UNSET || b >= colors.length) continue;
       const center = hexToPixel(col, row, BASE_SIZE);
@@ -183,4 +214,45 @@ export async function renderWorldSnapshot(opts: {
   return await new Promise<Blob>((resolve, reject) => {
     outCanvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("Snapshot toBlob failed."))), mime, quality);
   });
+}
+
+// Draw the GM's custom hex tiles (crisp) over an already-rendered map image (typically the AI fantasy
+// view), aligning them to the same hex geometry. Returns a PNG data URL. Used for the "AI + stamp"
+// render mode: the AI paints the base, the GM's actual cropped images sit on their painted hexes.
+export async function stampCustomHexesOverImage(
+  baseUrl: string,
+  terrain: Terrain,
+  customHexes: CustomHexMap,
+  customTiles: SnapCustomTile[],
+): Promise<string> {
+  const W = terrain.meta.width, H = terrain.meta.height;
+  const base = await loadImage(baseUrl);
+  if (!base) return baseUrl;
+  const g = gridPixelSize(W, H, BASE_SIZE);
+  const o = gridOrigin();
+  const cw = base.naturalWidth || Math.round(g.w), ch = base.naturalHeight || Math.round(g.h);
+  const canvas = document.createElement("canvas");
+  canvas.width = cw; canvas.height = ch;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return baseUrl;
+  ctx.drawImage(base, 0, 0, cw, ch);
+
+  const urlById = new Map<string, string>();
+  for (const t of customTiles) urlById.set(t.id, t.url);
+  const used = new Set(Object.values(customHexes));
+  const imgs = new Map<string, HTMLImageElement | null>();
+  await Promise.all([...used].map(async (id) => { const u = urlById.get(id); imgs.set(id, u ? await loadImage(u) : null); }));
+
+  // Map grid pixel space to the base image: same box (g), scaled to the image, origin at o.
+  const sx = cw / g.w, sy = ch / g.h;
+  ctx.setTransform(sx, 0, 0, sy, -o.x * sx, -o.y * sy);
+  const bh = 2 * BASE_SIZE;
+  for (let row = 0; row < H; row++) for (let col = 0; col < W; col++) {
+    const id = customHexes[String(index(col, row, W))]; if (!id) continue;
+    const im = imgs.get(id); if (!im) continue;
+    const center = hexToPixel(col, row, BASE_SIZE);
+    ctx.drawImage(im, center.x - bh / 2, center.y - bh / 2, bh, bh);
+  }
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  return canvas.toDataURL("image/png");
 }

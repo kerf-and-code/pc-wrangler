@@ -175,11 +175,11 @@ const BASTION_GENRE: Record<string, string> = {
   urban: "modern contemporary",
 };
 
-type Body = { campaignId: string; controlImage: string; scaleHint?: string; style?: string; biomes?: { label: string; color: string }[]; mode?: "world" | "city" | "dungeon" | "building" | "bastion"; centerpiece?: string; promptModifier?: string; buildingType?: string; bastionKind?: "traditional" | "ship"; facilities?: { label: string; color: string }[]; deckLabel?: string };
+type Body = { campaignId: string; controlImage: string; scaleHint?: string; style?: string; biomes?: { label: string; color: string }[]; mode?: "world" | "city" | "dungeon" | "building" | "bastion"; centerpiece?: string; promptModifier?: string; buildingType?: string; bastionKind?: "traditional" | "ship"; facilities?: { label: string; color: string }[]; deckLabel?: string; extraLegend?: { label: string; color: string }[] };
 
 export async function POST(request: Request) {
   try {
-    const { campaignId, controlImage, scaleHint, style, biomes, mode, centerpiece, promptModifier, buildingType, bastionKind, facilities, deckLabel } = (await request.json()) as Body;
+    const { campaignId, controlImage, scaleHint, style, biomes, mode, centerpiece, promptModifier, buildingType, bastionKind, facilities, deckLabel, extraLegend } = (await request.json()) as Body;
     const isCity = mode === "city";
     const isDungeon = mode === "dungeon";
     const isBuilding = mode === "building";
@@ -223,7 +223,12 @@ export async function POST(request: Request) {
     // The GM's free-text flavour, added to every mode.
     const flavour = promptModifier && promptModifier.trim() ? ` ${promptModifier.trim()}.` : "";
     const scale = scaleHint ? ` Cartographic scale: this is ${scaleHint}.` : "";
-    const promptText = `${basePrompt}${reinterp}${legend}${cpNote}${buildingNote}${bastionNote}${flavour}${scale}`;
+    // Custom-tile areas (from the GM's tile library): named colours painted into the plan that the baked
+    // legends don't know about. Sent for any mode; only present when the GM used custom tiles.
+    const extra = extraLegend && extraLegend.length
+      ? " The plan also contains custom areas: " + extraLegend.map((x) => `${x.label} ${x.color}`).join(", ") + " - render each area in the character its name suggests."
+      : "";
+    const promptText = `${basePrompt}${reinterp}${legend}${cpNote}${buildingNote}${bastionNote}${extra}${flavour}${scale}`;
     if (!campaignId || typeof controlImage !== "string") {
       return NextResponse.json({ error: "Missing campaignId or image." }, { status: 400 });
     }

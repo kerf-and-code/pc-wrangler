@@ -78,6 +78,11 @@ export default function HexCanvas({
   drawActive,
   drawPath,
   onDrawPoint,
+  customHexes,
+  customTiles,
+  customTileId,
+  onCustomPaint,
+  showCustom,
   className,
 }: {
   terrain: Terrain;
@@ -116,6 +121,11 @@ export default function HexCanvas({
   drawActive?: boolean;
   drawPath?: readonly [number, number][];
   onDrawPoint?: (col: number, row: number) => void;
+  customHexes?: Record<string, string>;                 // hex index -> custom tile id (mutated in place, like terrain)
+  customTiles?: { id: string; imageUrl: string; color: string }[];
+  customTileId?: string | null;                         // active custom brush: tile id, "" = erase custom, null = not in custom mode
+  onCustomPaint?: (col: number, row: number) => void;   // schedules the parent's save
+  showCustom?: boolean;                                 // draw the custom tiles on the map (off = AI-only preview)
   className?: string;
 }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -167,6 +177,13 @@ export default function HexCanvas({
   const biomeArtRef = useRef(biomeArt);
   const featuresRef = useRef(features);
   const artEnabledRef = useRef<boolean>(artEnabled ?? false);
+  const customHexesRef = useRef<Record<string, string>>(customHexes ?? {});
+  const customTilesRef = useRef(customTiles ?? []);
+  const customTileIdRef = useRef<string | null>(customTileId ?? null);
+  const onCustomPaintRef = useRef(onCustomPaint);
+  const showCustomRef = useRef<boolean>(showCustom ?? true);
+  const customImgCacheRef = useRef<Map<string, HTMLImageElement>>(new Map());
+  const customImgReadyRef = useRef<Set<string>>(new Set());
   const biomeArtCacheRef = useRef<Map<number, HTMLImageElement>>(new Map());
   const biomeArtReadyRef = useRef<Set<number>>(new Set());
   const featTileCacheRef = useRef<Map<string, HTMLImageElement>>(new Map());
@@ -211,6 +228,11 @@ export default function HexCanvas({
   biomeArtRef.current = biomeArt;
   featuresRef.current = features;
   artEnabledRef.current = artEnabled ?? false;
+  customHexesRef.current = customHexes ?? {};
+  customTilesRef.current = customTiles ?? [];
+  customTileIdRef.current = customTileId ?? null;
+  onCustomPaintRef.current = onCustomPaint;
+  showCustomRef.current = showCustom ?? true;
 
   const draw = useCallback(() => {
     rafRef.current = null;
@@ -245,6 +267,21 @@ export default function HexCanvas({
       }
       return featTileReadyRef.current.has(name) ? img : null;
     };
+    // Custom-tile images (the GM's cropped hex art), lazily loaded and cached by tile id.
+    const customImgFor = (tid: string): HTMLImageElement | null => {
+      let img = customImgCacheRef.current.get(tid);
+      if (!img) {
+        const url = customTilesRef.current.find((t) => t.id === tid)?.imageUrl;
+        if (!url) return null;
+        img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => { customImgReadyRef.current.add(tid); redrawRef.current(); };
+        img.src = url;
+        customImgCacheRef.current.set(tid, img);
+      }
+      return customImgReadyRef.current.has(tid) ? img : null;
+    };
+    const customColorFor = (tid: string): string => customTilesRef.current.find((t) => t.id === tid)?.color || "#8a7f68";
 
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, w, h);
@@ -300,6 +337,16 @@ export default function HexCanvas({
         ctx.moveTo(pts[0].x, pts[0].y);
         for (let i = 1; i < 6; i++) ctx.lineTo(pts[i].x, pts[i].y);
         ctx.closePath();
+        // Custom tile: draw the GM's cropped hex image (into a bh x bh box so the pointy-top hex aligns)
+        // and skip biome/art for this cell. Falls back to the tile's flat colour until the image loads.
+        const cTid = showCustomRef.current ? customHexesRef.current[String(index(col, row, width))] : undefined;
+        if (cTid) {
+          const cimg = customImgFor(cTid);
+          if (cimg) { const bh = 2 * BASE_SIZE; ctx.drawImage(cimg, center.x - bh / 2, center.y - bh / 2, bh, bh); }
+          else { ctx.fillStyle = customColorFor(cTid); ctx.fill(); }
+          ctx.stroke();
+          continue;
+        }
         if (baseOn) { ctx.stroke(); continue; }
         const b = t.biome[index(col, row, width)];
         const painted = b !== BIOME_UNSET && b < cols.length;
@@ -732,7 +779,7 @@ export default function HexCanvas({
     img.src = baseImage;
     return () => { img.onload = null; };
   }, [baseImage, scheduleDraw]);
-  useEffect(() => { scheduleDraw(); }, [colors, positionImageId, regionCells, paintRegionId, regionRender, pois, labels, biomeArt, artEnabled, features, drawPath, showBaseImage, scheduleDraw]);
+  useEffect(() => { scheduleDraw(); }, [colors, positionImageId, regionCells, paintRegionId, regionRender, pois, labels, biomeArt, artEnabled, features, drawPath, showBaseImage, customTiles, customTileId, customHexes, showCustom, scheduleDraw]);
 
   const paintAt = useCallback((clientX: number, clientY: number, last: { col: number; row: number } | null) => {
     const canvas = canvasRef.current;
@@ -747,7 +794,30 @@ export default function HexCanvas({
     if (col < 0 || row < 0 || col >= t.meta.width || row >= t.meta.height) return last;
     if (last && last.col === col && last.row === row) return last;
     setBiome(t, col, row, sel);
+    // Painting a biome over a custom-tiled hex clears the custom tile there (the biome now shows).
+    const ckey = String(index(col, row, t.meta.width));
+    if (customHexesRef.current[ckey]) { delete customHexesRef.current[ckey]; onCustomPaintRef.current?.(col, row); }
     onPaintRef.current?.(col, row, sel);
+    scheduleDraw();
+    return { col, row };
+  }, [scheduleDraw]);
+
+  // Paint the active custom tile onto a hex (customTileId = tile id), or erase it (customTileId = "").
+  const customPaintAt = useCallback((clientX: number, clientY: number, last: { col: number; row: number } | null) => {
+    const canvas = canvasRef.current;
+    const tid = customTileIdRef.current;
+    if (!canvas || tid == null) return last;
+    const rect = canvas.getBoundingClientRect();
+    const view = viewRef.current;
+    const wx = (clientX - rect.left - view.tx) / view.scale;
+    const wy = (clientY - rect.top - view.ty) / view.scale;
+    const { col, row } = pixelToHex(wx, wy, BASE_SIZE);
+    const t = terrainRef.current;
+    if (col < 0 || row < 0 || col >= t.meta.width || row >= t.meta.height) return last;
+    if (last && last.col === col && last.row === row) return last;
+    const key = String(index(col, row, t.meta.width));
+    if (tid === "") delete customHexesRef.current[key]; else customHexesRef.current[key] = tid;
+    onCustomPaintRef.current?.(col, row);
     scheduleDraw();
     return { col, row };
   }, [scheduleDraw]);
@@ -812,7 +882,7 @@ export default function HexCanvas({
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    let mode: "none" | "pan" | "paint" | "stamp" | "move" | "region" | "poi-move" | "label-move" = "none";
+    let mode: "none" | "pan" | "paint" | "stamp" | "move" | "region" | "poi-move" | "label-move" | "custom" = "none";
     let lastX = 0, lastY = 0;
     let downClientX = 0, downClientY = 0;
     let lastHoverKey: string | null = null;
@@ -854,6 +924,9 @@ export default function HexCanvas({
       } else if (paintRegionRef.current && e.button === 0) {
         mode = "region";
         lastHex = paintRegionAt(e.clientX, e.clientY, null);
+      } else if (customTileIdRef.current != null && e.button === 0) {
+        mode = "custom";
+        lastHex = customPaintAt(e.clientX, e.clientY, null);
       } else if (selRef.current != null && e.button === 0) {
         mode = "paint";
         lastHex = paintAt(e.clientX, e.clientY, null);
@@ -875,6 +948,8 @@ export default function HexCanvas({
     const onMove = (e: PointerEvent) => {
       if (mode === "paint") {
         lastHex = paintAt(e.clientX, e.clientY, lastHex);
+      } else if (mode === "custom") {
+        lastHex = customPaintAt(e.clientX, e.clientY, lastHex);
       } else if (mode === "stamp") {
         lastHex = stampAt(e.clientX, e.clientY, lastHex);
       } else if (mode === "region") {
@@ -1003,9 +1078,9 @@ export default function HexCanvas({
       canvas.removeEventListener("wheel", onWheel);
       canvas.removeEventListener("mousemove", onHover);
     };
-  }, [paintAt, stampAt, drawAt, paintRegionAt, scheduleDraw]);
+  }, [paintAt, customPaintAt, stampAt, drawAt, paintRegionAt, scheduleDraw]);
 
-  const cursor = positionImageId != null ? "move" : (paintRegionId != null || selectedBiome != null || poiPlaceActive) ? "crosshair" : "grab";
+  const cursor = positionImageId != null ? "move" : (paintRegionId != null || selectedBiome != null || customTileId != null || poiPlaceActive) ? "crosshair" : "grab";
 
   return (
     <canvas
