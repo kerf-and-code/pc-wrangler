@@ -3,20 +3,24 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import { CompendiumMatcher, type RankedMatch } from "@/lib/compendium/match";
+import { useVosk } from "@/lib/compendium/useVosk";
 import {
   type CompendiumEntry, type Ruleset, isSpell, isItem, isGear, isCondition,
 } from "@/lib/compendium/types";
 
 // components/compendium-tool.tsx
 //
-// The offline rules compendium: look a term up and get an instant card. This is the ENGINE and UI, fed
-// by a typed search box; the voice (Vosk) mic is a separate increment and drops into the same match ->
-// addCard path. The listen mode is real: "Continuous" cards auto-dismiss after 30s (a rolodex, newest
-// on top), "Push to talk" pins them until dismissed. Ruleset toggle swaps the prebuilt index
+// The offline rules compendium: look a term up and get an instant card, by typing OR by voice. Voice
+// uses on-device Vosk (see lib/compendium/useVosk); both paths feed the same match -> addCard pipeline.
+// Listen mode is real: "Continuous" cards auto-dismiss after 30s (a rolodex, newest on top),
+// "Push to talk" listens for one phrase and pins the card. Ruleset toggle swaps the prebuilt index
 // (2014 / 2024 / both). Data is SRD 5.1 (CC-BY); nothing leaves the browser.
 
 const AUTO_MS = 30_000;
 const MAX_CARDS = 12;
+// The on-device speech model, served statically. First voice use downloads it (~40MB) then the browser
+// caches it. See the deploy notes for where to place this file.
+const MODEL_URL = "/compendium/model/vosk-model-small-en-us-0.15.tar.gz";
 
 type ListenMode = "push" | "continuous";
 interface Card { key: string; entry: CompendiumEntry; pinned: boolean; expiresAt: number | null }
@@ -24,17 +28,20 @@ interface Card { key: string; entry: CompendiumEntry; pinned: boolean; expiresAt
 export default function CompendiumTool() {
   const [ruleset, setRuleset] = useState<Ruleset>("2014");
   const [entries, setEntries] = useState<CompendiumEntry[]>([]);
+  const [grammarPhrases, setGrammarPhrases] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [candidates, setCandidates] = useState<RankedMatch[]>([]);
   const [cards, setCards] = useState<Card[]>([]);
   const [listenMode, setListenMode] = useState<ListenMode>("continuous");
+  const [grammarOn, setGrammarOn] = useState(false);
+  const [partial, setPartial] = useState("");
   const hoveredRef = useRef<string | null>(null);
 
   const matcher = useMemo(() => (entries.length ? new CompendiumMatcher(entries) : null), [entries]);
 
-  // Load the prebuilt index for the chosen ruleset (public/compendium/index-<ed>.json).
+  // Load the prebuilt index + grammar for the chosen ruleset.
   useEffect(() => {
     let off = false;
     setLoading(true); setLoadError(null);
@@ -42,10 +49,14 @@ export default function CompendiumTool() {
       .then((r) => { if (!r.ok) throw new Error(`index-${ruleset}.json ${r.status}`); return r.json(); })
       .then((data: CompendiumEntry[]) => { if (!off) { setEntries(Array.isArray(data) ? data : []); setLoading(false); } })
       .catch((e) => { if (!off) { setLoadError(e instanceof Error ? e.message : "Could not load the compendium."); setLoading(false); } });
+    fetch(`/compendium/grammar-${ruleset}.json`)
+      .then((r) => (r.ok ? r.json() : []))
+      .then((g: string[]) => { if (!off) setGrammarPhrases(Array.isArray(g) ? g : []); })
+      .catch(() => { if (!off) setGrammarPhrases([]); });
     return () => { off = true; };
   }, [ruleset]);
 
-  // Rolodex expiry sweep: drop unpinned, expired, non-hovered cards.
+  // Rolodex expiry sweep.
   useEffect(() => {
     const t = setInterval(() => {
       setCards((prev) => {
@@ -73,6 +84,29 @@ export default function CompendiumTool() {
     if (results.length) addCard(results[0].entry);
   }, [matcher, addCard]);
 
+  // ---- voice (Vosk) ----
+  const lookupRef = useRef(lookup); lookupRef.current = lookup;
+  const listenModeRef = useRef(listenMode); listenModeRef.current = listenMode;
+  const voskRef = useRef<ReturnType<typeof useVosk> | null>(null);
+
+  const handleVoiceText = useCallback((text: string) => {
+    setPartial("");
+    lookupRef.current(text);
+    if (listenModeRef.current === "push") voskRef.current?.stop();
+  }, []);
+  const handlePartial = useCallback((text: string) => setPartial(text), []);
+
+  const vosk = useVosk({
+    modelUrl: MODEL_URL,
+    onText: handleVoiceText,
+    onPartial: handlePartial,
+    grammar: grammarOn ? grammarPhrases : null,
+  });
+  voskRef.current = vosk;
+
+  const toggleMic = () => { if (vosk.listening) { vosk.stop(); setPartial(""); } else { void vosk.start(); } };
+  useEffect(() => { if (!vosk.listening) setPartial(""); }, [vosk.listening]);
+
   const onSubmit = (e: React.FormEvent) => { e.preventDefault(); const q = query.trim(); if (q) lookup(q); };
 
   const pin = (key: string) => setCards((prev) => prev.map((c) => c.key === key ? { ...c, pinned: !c.pinned, expiresAt: !c.pinned ? null : Date.now() + AUTO_MS } : c));
@@ -86,6 +120,9 @@ export default function CompendiumTool() {
   // ---- styles ----
   const seg = (on: boolean): React.CSSProperties => ({ padding: "7px 12px", background: on ? C.surface2 : "transparent", color: on ? C.sun : C.muted, border: `1px solid ${on ? C.sun : C.line}`, borderRadius: 7, fontWeight: 600, fontSize: 13, cursor: "pointer" });
   const label: React.CSSProperties = { fontSize: 11, letterSpacing: "0.06em", textTransform: "uppercase", color: C.muted };
+
+  const micLabel = vosk.status === "loading" ? "Loading model…" : vosk.listening ? "Stop" : "🎙 Voice";
+  const micActive = vosk.listening;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -118,11 +155,29 @@ export default function CompendiumTool() {
           style={{ flex: 1, minWidth: 0, padding: "11px 13px", background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: 9, fontSize: 15 }}
         />
         <button type="submit" disabled={loading || !!loadError} style={{ padding: "0 16px", background: C.sun, color: "#1b1712", border: "none", borderRadius: 9, fontWeight: 700, fontSize: 14, cursor: "pointer" }}>Look up</button>
-        <button type="button" title="Voice input ships in the next update" disabled
-          style={{ padding: "0 14px", background: "transparent", color: C.muted, border: `1px dashed ${C.line}`, borderRadius: 9, fontSize: 13, cursor: "not-allowed" }}>
-          🎙 Voice (next)
-        </button>
+        {vosk.supported && (
+          <button type="button" onClick={toggleMic} disabled={loading || !!loadError || vosk.status === "loading"}
+            title={listenMode === "push" ? "Listen for one phrase" : "Listen continuously"}
+            style={{ padding: "0 14px", background: micActive ? "#c0603a" : "transparent", color: micActive ? "#fff" : C.text, border: `1px solid ${micActive ? "#c0603a" : C.line}`, borderRadius: 9, fontSize: 13, fontWeight: 600, cursor: vosk.status === "loading" ? "default" : "pointer", whiteSpace: "nowrap" }}>
+            {micLabel}
+          </button>
+        )}
       </form>
+
+      {/* voice status line */}
+      {vosk.supported && (
+        <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", minHeight: 18 }}>
+          {vosk.listening && <span style={{ ...label, color: "#c0603a" }}>● listening{partial ? `: "${partial}"` : "…"}</span>}
+          {vosk.status === "loading" && <span style={label}>downloading the speech model, one time (~40MB)…</span>}
+          {vosk.error && <span style={{ color: "#c98a7a", fontSize: 12.5 }}>Voice error: {vosk.error}</span>}
+          {grammarPhrases.length > 0 && (
+            <label style={{ display: "flex", alignItems: "center", gap: 6, color: C.muted, fontSize: 12, cursor: "pointer" }}>
+              <input type="checkbox" checked={grammarOn} onChange={(e) => setGrammarOn(e.target.checked)} disabled={vosk.listening} style={{ accentColor: C.sun }} />
+              constrain to compendium vocabulary (experimental)
+            </label>
+          )}
+        </div>
+      )}
 
       {loadError && (
         <p style={{ color: "#c98a7a", fontSize: 13 }}>
@@ -149,7 +204,7 @@ export default function CompendiumTool() {
       {/* rolodex */}
       <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 4 }}>
         {cards.length === 0 && !loading && (
-          <p style={{ color: C.muted, fontSize: 14 }}>Look something up and its card appears here. In Continuous mode, cards fade after 30 seconds unless you hover or pin them.</p>
+          <p style={{ color: C.muted, fontSize: 14 }}>Look something up (type or use the mic) and its card appears here. In Continuous mode, cards fade after 30 seconds unless you hover or pin them.</p>
         )}
         {cards.map((c) => (
           <CardView key={c.key} card={c} onPin={() => pin(c.key)} onDismiss={() => dismiss(c.key)} onEnter={() => onEnter(c.key)} onLeave={() => onLeave(c.key)} />
