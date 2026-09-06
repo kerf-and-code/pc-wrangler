@@ -90,3 +90,8 @@ __pycache__/
 # what the module manifest's download URL points at, and Foundry fetches it during an install. The
 # blanket *.zip above exists to keep repo-root working files out, and it caught this by accident.
 !public/foundry/*.zip
+
+# The offline voice-compendium speech model is a shipped asset, not scratch: the compendium tool
+# fetches it at runtime. The blanket *.tar.gz above (for repo-root working archives) caught it by
+# accident, same as the Foundry zip, so it gets the same explicit exception.
+!public/compendium/model/*.tar.gz
