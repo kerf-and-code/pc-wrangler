@@ -11,7 +11,8 @@ import { stonePanel } from "@/lib/forge-theme";
 // groups roll the whole product up into the pillars, each with a live screenshot.
 //
 // SCREENSHOTS referenced (in /public/screens): mechanics.png, codex.png, dispositions.png, forge.png,
-// worldmap.png. The first four line up with the home page's set; forge.png is the only new one.
+// worldmap.png, compendium.png. The first four line up with the home page's set; forge.png and
+// compendium.png are the two added here.
 
 type Feature = {
   key: string;
@@ -83,6 +84,18 @@ const FEATURES: Feature[] = [
     ],
     img: "/screens/worldmap.png",
     imgAlt: "A rendered hex world map with settlements and regions",
+  },
+  {
+    key: "compendium",
+    label: "Rules at the table",
+    title: "Say it, and the rule is on screen",
+    lead: "An offline voice compendium, built for the table.",
+    paras: [
+      "Say a spell, item, or condition, fireball, belt of giant strength, grappled, and its rules card is up before the question finishes. The speech recognition runs on-device and is not an AI model, so nothing leaves the browser and it works with the wifi off. Type it instead when the room is loud.",
+      "Hundreds of SRD spells, magic items, and conditions, with a 2014 or 2024 toggle. Push to talk to pin a card, or leave it listening and let cards fade on their own. It is there so you never stop the game to open a book.",
+    ],
+    img: "/screens/compendium.png",
+    imgAlt: "The rules compendium with the Fireball card open",
   },
 ];
 

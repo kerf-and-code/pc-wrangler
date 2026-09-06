@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 
 export default function FeaturesPage() {
   return (
-    <SiteShell title="What Six Axes does" tagline="Five pillars. Pick one, and see it on its own.">
+    <SiteShell title="What Six Axes does" tagline="Six pillars. Pick one, and see it on its own.">
       <FeaturesExplorer />
 
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 40 }}>
