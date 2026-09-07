@@ -5,7 +5,8 @@ import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import { CompendiumMatcher, type RankedMatch } from "@/lib/compendium/match";
 import { useVosk } from "@/lib/compendium/useVosk";
 import {
-  type CompendiumEntry, type Ruleset, isSpell, isItem, isGear, isCondition, isFeat, isFeature, isRule,
+  type CompendiumEntry, type Ruleset, type MonsterDisplay,
+  isSpell, isItem, isGear, isCondition, isFeat, isFeature, isRule, isMonster,
 } from "@/lib/compendium/types";
 
 // components/compendium-tool.tsx
@@ -305,7 +306,7 @@ function CardBody({ entry, meta }: { entry: CompendiumEntry; meta: React.CSSProp
       : "Class feature";
     return (
       <div>
-        <p style={meta}>{[kindLabel, d.className, d.level != null ? `level ${d.level}` : null].filter(Boolean).join(" · ")}</p>
+        <p style={meta}>{[kindLabel, d.className, d.subclass, d.level != null ? `level ${d.level}` : null].filter(Boolean).join(" · ")}</p>
         {d.description && <p style={body}>{d.description}</p>}
       </div>
     );
@@ -320,5 +321,62 @@ function CardBody({ entry, meta }: { entry: CompendiumEntry; meta: React.CSSProp
       </div>
     );
   }
+  if (isMonster(entry)) {
+    return <MonsterBody d={entry.display} meta={meta} body={body} />;
+  }
   return null;
+}
+
+// Ability modifier, D&D style: floor((score - 10) / 2), shown as "16 (+3)".
+function abilityCell(label: string, score: number | null): string | null {
+  if (score == null) return null;
+  const mod = Math.floor((score - 10) / 2);
+  return `${label} ${score} (${mod >= 0 ? "+" : ""}${mod})`;
+}
+
+function MonsterBody({ d, meta, body }: { d: MonsterDisplay; meta: React.CSSProperties; body: React.CSSProperties }) {
+  const line: React.CSSProperties = { ...meta, margin: "3px 0 0" };
+  const abilities = [
+    abilityCell("STR", d.abilities.str), abilityCell("DEX", d.abilities.dex), abilityCell("CON", d.abilities.con),
+    abilityCell("INT", d.abilities.int), abilityCell("WIS", d.abilities.wis), abilityCell("CHA", d.abilities.cha),
+  ].filter(Boolean).join("   ");
+  const defenses = [
+    d.damageVulnerabilities && `Vulnerabilities: ${d.damageVulnerabilities}`,
+    d.damageResistances && `Resistances: ${d.damageResistances}`,
+    d.damageImmunities && `Damage Immunities: ${d.damageImmunities}`,
+    d.conditionImmunities && `Condition Immunities: ${d.conditionImmunities}`,
+  ].filter(Boolean);
+  const section = (title: string, items: { name: string | null; description: string | null }[]) =>
+    items.length === 0 ? null : (
+      <div style={{ marginTop: 8 }}>
+        <p style={{ ...meta, color: C.sun, textTransform: "uppercase", letterSpacing: "0.06em", fontSize: 11, margin: 0 }}>{title}</p>
+        {items.map((it, i) => (
+          <p key={i} style={{ ...body, margin: "4px 0 0" }}>
+            {it.name && <strong style={{ color: C.text }}>{it.name}. </strong>}{it.description}
+          </p>
+        ))}
+      </div>
+    );
+  return (
+    <div>
+      <p style={meta}>{[d.size, d.type, d.alignment].filter(Boolean).join(" · ")}</p>
+      <p style={line}>{[
+        d.ac != null && `AC ${d.ac}`,
+        d.hp != null && `HP ${d.hp}${d.hitDice ? ` (${d.hitDice})` : ""}`,
+        d.speed && `Speed ${d.speed}`,
+      ].filter(Boolean).join(" · ")}</p>
+      {abilities && <p style={line}>{abilities}</p>}
+      <p style={line}>{[
+        d.senses && `Senses ${d.senses}`,
+        d.languages && `Languages ${d.languages}`,
+        d.cr && `CR ${d.cr}${d.xp != null ? ` (${d.xp.toLocaleString()} XP)` : ""}`,
+      ].filter(Boolean).join(" · ")}</p>
+      {defenses.map((x, i) => <p key={i} style={line}>{x}</p>)}
+      {section("Traits", d.traits)}
+      {section("Actions", d.actions)}
+      {section("Bonus Actions", d.bonusActions)}
+      {section("Reactions", d.reactions)}
+      {section("Legendary Actions", d.legendaryActions)}
+    </div>
+  );
 }

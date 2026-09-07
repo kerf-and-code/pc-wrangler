@@ -50,6 +50,22 @@ function spokenForms(name) {
   return [...set];
 }
 
+// Strip markdown to plain card text. The class-structured data (feature descriptions) and, defensively,
+// monster text carry **bold**, *italic*, _underscores_, links, and em dashes; the cards render plain
+// text, so flatten those. House style: no em-dashes, so em/en dashes become a spaced hyphen. Idempotent
+// on already-clean prose (spells, items, conditions), so it is only applied to the sources that need it.
+function cleanText(s) {
+  if (s == null) return null;
+  let t = String(s);
+  t = t.replace(/<[^>]+>/g, "");                    // stray HTML tags
+  t = t.replace(/\[([^\]]+)\]\([^)]+\)/g, "$1");     // [text](url) -> text
+  t = t.replace(/\*\*/g, "").replace(/\*/g, "");     // bold / italic asterisks
+  t = t.replace(/__/g, "").replace(/_/g, "");        // underscore emphasis
+  t = t.replace(/[—–]/g, " - ");                     // em/en dash -> spaced hyphen
+  t = t.replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n");
+  return t.trim();
+}
+
 // ---- damage summary ------------------------------------------------------------------------------
 function damageSummary(dmg) {
   if (!dmg || typeof dmg !== "object") return null;
@@ -206,7 +222,7 @@ const UMBRELLAS = new Map([
   ["eldritch invocations", "feature"],
   ["fighting style", "feature"],
 ]);
-function featureEntry(kind, name, desc, className, level, ruleset) {
+function featureEntry(kind, name, desc, className, level, ruleset, subclass = null) {
   return {
     id: `feature:${kind}:${slug(name)}`,
     name,
@@ -214,7 +230,7 @@ function featureEntry(kind, name, desc, className, level, ruleset) {
     ruleset,
     source: "srd",
     spoken: spokenForms(name),
-    display: { kind, className: className ?? null, level: level ?? null, description: desc ?? null },
+    display: { kind, className: className ?? null, subclass: subclass ?? null, level: level ?? null, description: cleanText(desc) },
   };
 }
 function extractClassOptions(ed) {
@@ -255,6 +271,95 @@ function extractClassOptions(ed) {
   return out;
 }
 
+// ---- general class + subclass features (Rage, Sneak Attack, Channel Divinity, ...) ---------------
+// Everything in features_by_level that ISN'T a metamagic/invocation/fighting-style option (those are
+// handled above) or pure filler. All SRD content (the structured files carry only the SRD sample
+// subclasses), so source "srd". Deduped by name so shared features (Extra Attack, Spellcasting) card
+// once.
+const FEATURE_SKIP_EXACT = new Set([
+  "ability score improvement", "epic boon",
+  "metamagic", "eldritch invocations", "fighting style", // umbrellas, carded by extractClassOptions
+]);
+function isFillerFeature(name) {
+  const n = norm(name);
+  if (/^(metamagic|eldritch invocation|fighting style):/.test(n)) return true; // options, carded above
+  if (FEATURE_SKIP_EXACT.has(n)) return true;
+  if (/\bsubclass(es)?$/.test(n)) return true;   // "Barbarian Subclass", "Cleric Subclasses"
+  if (/ features?$/.test(n)) return true;         // "Path feature", "Divine Domain feature" placeholders
+  return false;
+}
+function extractClassFeatures(ed) {
+  const seen = new Set();
+  const out = [];
+  const take = (data, hasSubclass) => {
+    if (!Array.isArray(data)) return;
+    for (const entry of data) {
+      const className = hasSubclass ? (entry?.class ?? null) : (entry?.name ?? null);
+      const subclass = hasSubclass ? (entry?.name ?? null) : null;
+      for (const row of (Array.isArray(entry?.features_by_level) ? entry.features_by_level : [])) {
+        const level = row?.level ?? null;
+        for (const f of (Array.isArray(row?.features) ? row.features : [])) {
+          const fname = String(f?.name ?? "");
+          if (!fname || isFillerFeature(fname)) continue;
+          const key = norm(fname);
+          if (seen.has(key)) continue;
+          seen.add(key);
+          out.push(featureEntry("feature", fname, f?.desc ?? f?.description ?? null, className, level, ed, subclass));
+        }
+      }
+    }
+  };
+  take(readMaybe(path.join(SRD_DIR, `classes-${ed}-structured.json`)), false);
+  take(readMaybe(path.join(SRD_DIR, `subclasses-${ed}-structured.json`)), true);
+  return out;
+}
+
+// ---- monsters ------------------------------------------------------------------------------------
+// SRD monsters only: the source files mix in non-SRD bestiaries (Tome of Beasts, A5e, ...), tagged by
+// source_key. We keep only source_key starting "srd" (srd-2024 = 331, srd-2014 = 325). Compact stat
+// block; the action-ish sections become name/description lists.
+function monsterEntry(m, ruleset) {
+  const list = (arr) => (Array.isArray(arr) ? arr : [])
+    .map((a) => ({ name: a?.name ?? null, description: cleanText(a?.desc ?? a?.description ?? null) }))
+    .filter((x) => x.name || x.description);
+  const asStr = (v) => (Array.isArray(v) ? v.filter(Boolean).join(", ") : (v ?? null)) || null;
+  return {
+    id: `monster:${slug(m.name)}`,
+    name: m.name,
+    category: "monster",
+    ruleset,
+    source: "srd",
+    spoken: spokenForms(m.name),
+    display: {
+      size: m.size ?? null,
+      type: m.type ?? null,
+      alignment: m.alignment ?? null,
+      ac: m.ac ?? null,
+      hp: m.hp ?? null,
+      hitDice: m.hit_dice ?? null,
+      speed: m.speed ?? null,
+      senses: m.senses ?? null,
+      languages: m.languages ?? null,
+      cr: m.cr != null ? String(m.cr) : null,
+      xp: m.xp ?? null,
+      abilities: { str: m.str ?? null, dex: m.dex ?? null, con: m.con ?? null, int: m.int ?? null, wis: m.wis ?? null, cha: m.cha ?? null },
+      damageVulnerabilities: asStr(m.damage_vulnerabilities),
+      damageResistances: asStr(m.damage_resistances),
+      damageImmunities: asStr(m.damage_immunities),
+      conditionImmunities: asStr(m.condition_immunities),
+      traits: list(m.special_abilities),
+      actions: list(m.actions),
+      bonusActions: list(m.bonus_actions),
+      reactions: list(m.reactions),
+      legendaryActions: list(m.legendary_actions),
+    },
+  };
+}
+function loadMonsters(ed) {
+  const all = readMaybe(path.join(SRD_DIR, `monsters-${ed}.json`)) || [];
+  return (Array.isArray(all) ? all : []).filter((m) => String(m?.source_key ?? "").startsWith("srd"));
+}
+
 // Item variant tables live in rules-data.json (ITEM_VARIANTS), keyed by item name. We attach only
 // the label + option names (mechanics-only) so a card can show, e.g., the Belt of Giant Strength
 // lineages without duplicating the derivation payload.
@@ -280,6 +385,8 @@ function buildEdition(ed, variantsByName) {
   const conditions = readMaybe(path.join(SRD_DIR, `conditions-${ed}.json`)) || readMaybe(path.join(SRD_DIR, "conditions-2014.json")) || [];
   const feats = readMaybe(path.join(SRD_DIR, `feats-${ed}.json`)) || [];
   const classOptions = extractClassOptions(ed);
+  const classFeatures = extractClassFeatures(ed);
+  const monsters = loadMonsters(ed);
   // No 2014 fallback here (unlike conditions): rules-<ed>.json is edition-specific SRD text.
   const rules = readMaybe(path.join(SRD_DIR, `rules-${ed}.json`)) || [];
   return [
@@ -289,6 +396,8 @@ function buildEdition(ed, variantsByName) {
     ...conditions.map((c) => conditionEntry(c, ed)),
     ...feats.map((f) => featEntry(f, ed)),
     ...classOptions,
+    ...classFeatures,
+    ...monsters.map((m) => monsterEntry(m, ed)),
     ...rules.map((r) => ruleEntry(r, ed)),
   ];
 }
