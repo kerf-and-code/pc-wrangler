@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import { createClient } from "@/lib/supabase/client";
 import { getActiveCampaign, onActiveCampaignChange } from "@/lib/active-campaign";
+import { listModules, getModule, isKnownSystem } from "@/lib/systems/registry";
 import { CompendiumMatcher, type RankedMatch } from "@/lib/compendium/match";
 import { useVosk } from "@/lib/compendium/useVosk";
 import {
@@ -35,6 +36,20 @@ const MAX_CARDS = 12;
 // caches it. See the deploy notes for where to place this file.
 const MODEL_URL = "/compendium/model/vosk-model-small-en-us-0.15.tar.gz";
 
+// Which game systems have a shipped static compendium index. D&D is the only one today; adding another
+// is then a data-only drop of public/compendium/index-<system>.json (+ grammar-<system>.json) plus that
+// system's id here. Systems NOT in this set still work in the tool - they run on the GM's homebrew cards
+// alone until their index is built.
+const COMPENDIUM_READY = new Set<string>(["dnd5e"]);
+// Only D&D splits its index by edition (2014 / 2024 / both); every other system is single-edition, so it
+// keeps no ruleset toggle and its index carries no edition in the filename.
+const hasEditions = (system: string) => system === "dnd5e";
+const indexPath = (system: string, ruleset: Ruleset) =>
+  system === "dnd5e" ? `/compendium/index-${ruleset}.json` : `/compendium/index-${system}.json`;
+const grammarPath = (system: string, ruleset: Ruleset) =>
+  system === "dnd5e" ? `/compendium/grammar-${ruleset}.json` : `/compendium/grammar-${system}.json`;
+const systemLabel = (system: string) => getModule(system).label;
+
 type ListenMode = "push" | "continuous";
 interface Card { key: string; entry: CompendiumEntry; pinned: boolean; expiresAt: number | null }
 
@@ -56,6 +71,7 @@ interface EditState {
 
 export default function CompendiumTool() {
   const [ruleset, setRuleset] = useState<Ruleset>("2014");
+  const [system, setSystem] = useState<string>("dnd5e");
   const [baseEntries, setBaseEntries] = useState<CompendiumEntry[]>([]);
   const [grammarPhrases, setGrammarPhrases] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -79,10 +95,11 @@ export default function CompendiumTool() {
 
   // Merge the GM's applicable custom rows over the static index. Recomputes when the toggle or the
   // active campaign changes, so overrides and campaign-pinned cards appear/disappear correctly.
-  const rs3: Ruleset3 = ruleset;
+  // Non-D&D systems have no edition split, so their custom cards all filter as "both".
+  const effRuleset: Ruleset3 = hasEditions(system) ? (ruleset as Ruleset3) : "both";
   const entries = useMemo(
-    () => mergeCustom(baseEntries, customRows, rs3, activeCampaign?.id ?? null),
-    [baseEntries, customRows, rs3, activeCampaign],
+    () => mergeCustom(baseEntries, customRows, effRuleset, activeCampaign?.id ?? null),
+    [baseEntries, customRows, effRuleset, activeCampaign],
   );
   const matcher = useMemo(() => (entries.length ? new CompendiumMatcher(entries) : null), [entries]);
   // Extra spoken phrases from custom entries, so the (experimental) grammar-constrain path can reach them.
@@ -95,16 +112,23 @@ export default function CompendiumTool() {
   useEffect(() => {
     let off = false;
     setLoading(true); setLoadError(null);
-    fetch(`/compendium/index-${ruleset}.json`)
-      .then((r) => { if (!r.ok) throw new Error(`index-${ruleset}.json ${r.status}`); return r.json(); })
+    const ready = COMPENDIUM_READY.has(system);
+    const ip = indexPath(system, ruleset);
+    fetch(ip)
+      .then((r) => {
+        // A ready system's index must exist -> a miss is a real error. A not-yet-built system simply
+        // has no shipped cards; the tool still runs on the GM's homebrew, so treat its 404 as empty.
+        if (!r.ok) { if (ready) throw new Error(`${ip.split("/").pop()} ${r.status}`); return [] as CompendiumEntry[]; }
+        return r.json();
+      })
       .then((data: CompendiumEntry[]) => { if (!off) { setBaseEntries(Array.isArray(data) ? data : []); setLoading(false); } })
       .catch((e) => { if (!off) { setLoadError(e instanceof Error ? e.message : "Could not load the compendium."); setLoading(false); } });
-    fetch(`/compendium/grammar-${ruleset}.json`)
+    fetch(grammarPath(system, ruleset))
       .then((r) => (r.ok ? r.json() : []))
       .then((g: string[]) => { if (!off) setGrammarPhrases(Array.isArray(g) ? g : []); })
       .catch(() => { if (!off) setGrammarPhrases([]); });
     return () => { off = true; };
-  }, [ruleset]);
+  }, [system, ruleset]);
 
   // Who is signed in (the GM who owns any custom cards) + which campaign is active.
   const refreshCustom = useCallback(async (system = "dnd5e") => {
@@ -116,17 +140,23 @@ export default function CompendiumTool() {
 
   useEffect(() => {
     let off = false;
-    supabase.auth.getUser().then(({ data }) => {
-      if (off) return;
-      const id = data.user?.id ?? null;
-      setGmId(id);
-      if (id) void refreshCustom();
-    }).catch(() => {});
+    supabase.auth.getUser().then(({ data }) => { if (!off) setGmId(data.user?.id ?? null); }).catch(() => {});
     const readActive = () => { const ac = getActiveCampaign(); setActiveCampaign(ac ? { id: ac.id, name: ac.name } : null); };
     readActive();
+    // Seed the system picker from the active campaign once, if it names a system we know. Manual picks
+    // afterward are not overridden (this effect runs once).
+    const ac0 = getActiveCampaign();
+    if (ac0 && isKnownSystem(ac0.system)) setSystem(ac0.system as string);
     const unsub = onActiveCampaignChange(readActive); // fires with no args; re-read the signal
     return () => { off = true; unsub(); };
-  }, [supabase, refreshCustom]);
+  }, [supabase]);
+
+  // The GM's custom cards are per system, so (re)fetch whenever the signed-in GM or the selected system
+  // changes.
+  useEffect(() => {
+    if (gmId) void refreshCustom(system);
+    else setCustomRows([]);
+  }, [gmId, system, refreshCustom]);
 
   // Rolodex expiry sweep.
   useEffect(() => {
@@ -194,7 +224,7 @@ export default function CompendiumTool() {
   };
 
   // ---- editor open/save/delete ----
-  const defaultRuleset = (): Ruleset3 => (ruleset === "both" ? "both" : ruleset);
+  const defaultRuleset = (): Ruleset3 => (!hasEditions(system) ? "both" : ruleset === "both" ? "both" : ruleset);
 
   const openNew = () => {
     setSaveErr(null);
@@ -247,7 +277,7 @@ export default function CompendiumTool() {
     overridesId: e.overridesId,
     campaignId: e.campaignId,
     category: e.category || "custom",
-    system: "dnd5e",
+    system, // the system currently selected in the tool
   });
 
   const saveEditing = async () => {
@@ -257,7 +287,7 @@ export default function CompendiumTool() {
       const draft = draftFrom(editing);
       if (editing.id) await updateCustomEntry(supabase, editing.id, draft);
       else await createCustomEntry(supabase, gmId, draft);
-      await refreshCustom();
+      await refreshCustom(system);
       setEditing(null);
     } catch (e) {
       setSaveErr(e instanceof Error ? e.message : "Could not save this card.");
@@ -269,7 +299,7 @@ export default function CompendiumTool() {
     setSaveErr(null);
     try {
       await deleteCustomEntry(supabase, editing.id);
-      await refreshCustom();
+      await refreshCustom(system);
       setEditing(null);
     } catch (e) {
       setSaveErr(e instanceof Error ? e.message : "Could not delete this card.");
@@ -290,13 +320,24 @@ export default function CompendiumTool() {
       {/* controls */}
       <div style={{ display: "flex", gap: 18, flexWrap: "wrap", alignItems: "flex-end" }}>
         <div>
-          <div style={{ ...label, marginBottom: 6 }}>Ruleset</div>
-          <div style={{ display: "flex", gap: 6 }}>
-            {(["2014", "2024", "both"] as Ruleset[]).map((r) => (
-              <button key={r} type="button" onClick={() => setRuleset(r)} style={seg(ruleset === r)}>{r === "both" ? "Both" : r}</button>
+          <div style={{ ...label, marginBottom: 6 }}>Game system</div>
+          <select value={system} onChange={(e) => setSystem(e.target.value)}
+            style={{ padding: "7px 10px", background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: 7, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+            {listModules().map((m) => (
+              <option key={m.id} value={m.id}>{m.label}{COMPENDIUM_READY.has(m.id) ? "" : " · homebrew only"}</option>
             ))}
-          </div>
+          </select>
         </div>
+        {hasEditions(system) && (
+          <div>
+            <div style={{ ...label, marginBottom: 6 }}>Ruleset</div>
+            <div style={{ display: "flex", gap: 6 }}>
+              {(["2014", "2024", "both"] as Ruleset[]).map((r) => (
+                <button key={r} type="button" onClick={() => setRuleset(r)} style={seg(ruleset === r)}>{r === "both" ? "Both" : r}</button>
+              ))}
+            </div>
+          </div>
+        )}
         <div>
           <div style={{ ...label, marginBottom: 6 }}>Listen mode</div>
           <div style={{ display: "flex", gap: 6 }}>
@@ -355,7 +396,11 @@ export default function CompendiumTool() {
         </p>
       )}
       {!loading && !loadError && (
-        <p style={{ ...label, margin: 0 }}>{entries.length.toLocaleString()} entries loaded · SRD 5.1 / 5.2 (CC-BY), plus original content by Kerf and Code · nothing leaves your browser</p>
+        <p style={{ ...label, margin: 0 }}>
+          {entries.length.toLocaleString()} entries loaded · {system === "dnd5e"
+            ? "SRD 5.1 / 5.2 (CC-BY), plus original content by Kerf and Code"
+            : `${systemLabel(system)}${baseEntries.length === 0 ? " · no shipped cards yet, showing your homebrew" : ""}`} · nothing leaves your browser
+        </p>
       )}
 
       {/* editor */}
@@ -367,6 +412,7 @@ export default function CompendiumTool() {
           onDelete={deleteEditing}
           onCancel={() => setEditing(null)}
           activeCampaign={activeCampaign}
+          editions={hasEditions(system)}
           error={saveErr}
           label={label}
         />
@@ -641,13 +687,14 @@ function MonsterBody({ d, meta, body }: { d: MonsterDisplay; meta: React.CSSProp
 // meta lines, the body, which edition it shows under, whether it is account-wide or pinned to the active
 // campaign, and optional voice aliases. Saving a fresh override of a shipped card writes a shadow row;
 // the shipped index is never touched.
-function EntryEditor({ state, onChange, onSave, onDelete, onCancel, activeCampaign, error, label }: {
+function EntryEditor({ state, onChange, onSave, onDelete, onCancel, activeCampaign, editions, error, label }: {
   state: EditState;
   onChange: (s: EditState) => void;
   onSave: () => void;
   onDelete: () => void;
   onCancel: () => void;
   activeCampaign: { id: string; name?: string } | null;
+  editions: boolean;
   error: string | null;
   label: React.CSSProperties;
 }) {
@@ -672,14 +719,16 @@ function EntryEditor({ state, onChange, onSave, onDelete, onCancel, activeCampai
           <div style={{ ...label, marginBottom: 4 }}>Tag (chip)</div>
           <input value={state.tag} onChange={(e) => set("tag", e.target.value)} placeholder="house rule" style={field} />
         </div>
-        <div>
-          <div style={{ ...label, marginBottom: 4 }}>Shows under</div>
-          <div style={{ display: "flex", gap: 6 }}>
-            {(["2014", "2024", "both"] as Ruleset3[]).map((r) => (
-              <button key={r} type="button" onClick={() => set("ruleset", r)} style={seg(state.ruleset === r)}>{r === "both" ? "Both" : r}</button>
-            ))}
+        {editions && (
+          <div>
+            <div style={{ ...label, marginBottom: 4 }}>Shows under</div>
+            <div style={{ display: "flex", gap: 6 }}>
+              {(["2014", "2024", "both"] as Ruleset3[]).map((r) => (
+                <button key={r} type="button" onClick={() => set("ruleset", r)} style={seg(state.ruleset === r)}>{r === "both" ? "Both" : r}</button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       <div>
