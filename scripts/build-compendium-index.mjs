@@ -385,6 +385,11 @@ function buildEdition(ed, variantsByName) {
   const conditions = readMaybe(path.join(SRD_DIR, `conditions-${ed}.json`)) || readMaybe(path.join(SRD_DIR, "conditions-2014.json")) || [];
   const feats = readMaybe(path.join(SRD_DIR, `feats-${ed}.json`)) || [];
   const classOptions = extractClassOptions(ed);
+  // Extra per-option class features authored from SRD markdown (currently the 2024 metamagic and
+  // eldritch invocation options, which the 2024 structured data does not break out). Shape:
+  // [{kind, name, className, description}].
+  const classOptionExtra = (readMaybe(path.join(SRD_DIR, `class-options-${ed}.json`)) || [])
+    .map((o) => featureEntry(o.kind || "feature", o.name, o.description, o.className ?? null, o.level ?? null, ed));
   const classFeatures = extractClassFeatures(ed);
   const monsters = loadMonsters(ed);
   // No 2014 fallback here (unlike conditions): rules-<ed>.json is edition-specific SRD text.
@@ -396,6 +401,7 @@ function buildEdition(ed, variantsByName) {
     ...conditions.map((c) => conditionEntry(c, ed)),
     ...feats.map((f) => featEntry(f, ed)),
     ...classOptions,
+    ...classOptionExtra,
     ...classFeatures,
     ...monsters.map((m) => monsterEntry(m, ed)),
     ...rules.map((r) => ruleEntry(r, ed)),
