@@ -37,6 +37,46 @@ const readMaybe = (p) => (fs.existsSync(p) ? readJson(p) : null);
 const norm = (s) => String(s || "").toLowerCase().replace(/[’']/g, "'").replace(/\s*\(legacy\)\s*/g, " ").replace(/\s+/g, " ").trim();
 const slug = (s) => norm(s).replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 
+// ---- voice/typed aliases -------------------------------------------------------------------------
+// Shorthand a DM says or types that the entry name alone won't match ("temp hp" -> Temporary Hit
+// Points, "oa" -> Opportunity Attacks, "gwm" -> Great Weapon Master). Keyed by the entry's normalized
+// name; the phrases are merged into that entry's `spoken` list, so both the fuzzy matcher and the Vosk
+// grammar pick them up with no other change. Kept deliberately specific to avoid bad collisions.
+const ALIASES = {
+  "opportunity attacks": ["opportunity attack", "attack of opportunity", "oa", "aoo"],
+  "temporary hit points": ["temp hit points", "temporary hp", "temp hp", "thp"],
+  "critical hit": ["crit", "crit hit"],
+  "death saving throw": ["death save", "death saves", "dying"],
+  "death saving throws": ["death save", "death saves", "dying"],
+  "difficult terrain": ["rough terrain"],
+  "unarmed strike": ["unarmed attack"],
+  "two-weapon fighting": ["dual wield", "dual wielding", "off hand attack"],
+  "grappling": ["grapple", "grab"],
+  "shoving a creature": ["shove"],
+  "spell components": ["components", "verbal somatic material"],
+  "passive perception": ["passive check", "passive"],
+  "sneak attack": ["sneak"],
+  "wild shape": ["wildshape"],
+  "channel divinity": ["channel"],
+  "great weapon master": ["gwm"],
+  "polearm master": ["pam", "pole arm master"],
+  "war caster": ["warcaster"],
+  "sharpshooter": ["sharp shooter"],
+  "mounted combat": ["mount", "mounted"],
+  "underwater combat": ["underwater", "swimming combat"],
+};
+const cleanPhrase = (s) => String(s || "").toLowerCase().replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
+function applyAliases(entries) {
+  for (const e of entries) {
+    const extra = ALIASES[norm(e.name)];
+    if (!extra) continue;
+    const set = new Set(e.spoken);
+    for (const a of extra) { const p = cleanPhrase(a); if (p) set.add(p); }
+    e.spoken = [...set];
+  }
+  return entries;
+}
+
 // Spoken forms Vosk can plausibly produce: the plain-text name, and (when the name opens with a
 // possessive proper noun) its tail. Punctuation and apostrophes are dropped for the spoken form.
 function spokenForms(name) {
@@ -423,7 +463,7 @@ function buildEdition(ed, variantsByName) {
   const species = loadSpecies(ed);
   // No 2014 fallback here (unlike conditions): rules-<ed>.json is edition-specific SRD text.
   const rules = readMaybe(path.join(SRD_DIR, `rules-${ed}.json`)) || [];
-  return [
+  return applyAliases([
     ...spells.map((s) => spellEntry(s, ed)),
     ...items.map((it) => itemEntry(it, ed, variantsByName)),
     ...gear.map((g) => gearEntry(g, ed)),
@@ -435,7 +475,7 @@ function buildEdition(ed, variantsByName) {
     ...monsters.map((m) => monsterEntry(m, ed)),
     ...species.map((s) => speciesEntry(s, ed)),
     ...rules.map((r) => ruleEntry(r, ed)),
-  ];
+  ]);
 }
 
 // Union 2024 + 2014, suffixing " (legacy)" on any 2014 entry whose name collides with a 2024 one,
@@ -459,6 +499,9 @@ function main() {
   let entries;
   if (mode === "both") entries = mergeBoth(buildEdition("2024", variantsByName), buildEdition("2014", variantsByName));
   else entries = buildEdition(mode, variantsByName);
+  // Re-apply aliases on the final list: mergeBoth regenerates `spoken` for legacy-suffixed entries,
+  // which would otherwise drop their aliases. Idempotent for the single-edition modes.
+  applyAliases(entries);
 
   // Grammar: every unique spoken phrase, plus the Vosk unknown token.
   const grammar = new Set();
