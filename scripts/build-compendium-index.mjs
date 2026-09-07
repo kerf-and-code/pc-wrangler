@@ -70,6 +70,7 @@ function spellEntry(s, ruleset) {
     name: s.name,
     category: "spell",
     ruleset,
+    source: "srd",
     spoken: spokenForms(s.name),
     display: {
       level: s.level,
@@ -94,6 +95,7 @@ function itemEntry(it, ruleset, variantsByName) {
     name: it.name,
     category: "magic-item",
     ruleset,
+    source: "srd",
     spoken: spokenForms(it.name),
     display: {
       type: it.category ?? null,
@@ -111,6 +113,7 @@ function gearEntry(g, ruleset) {
     name: g.name,
     category: "equipment",
     ruleset,
+    source: "srd",
     spoken: spokenForms(g.name),
     display: {
       type: g.category ?? g.gear_category ?? null,
@@ -126,9 +129,113 @@ function conditionEntry(c, ruleset) {
     name: c.name,
     category: "condition",
     ruleset,
+    source: "srd",
     spoken: spokenForms(c.name),
     display: { description: c.description ?? null },
   };
+}
+
+// ---- feats ---------------------------------------------------------------------------------------
+// The SRD-open feat set is small: SRD 5.1 (2014) has only Grappler, and SRD 5.2 (2024) ships the
+// short list below. Everything else in feats-<ed>.json is original content authored by Kerf and Code
+// (Terry), so it is credited "kc". Edit these sets if the SRD feat list changes; the footer names
+// both sources regardless, so a miss here only mis-tags one card, it never mislabels the tool.
+const SRD_FEATS = {
+  "2014": new Set(["grappler"]),
+  "2024": new Set([
+    "alert", "magic initiate", "savage attacker", "skilled",
+    "ability score improvement", "grappler",
+    "archery", "defense", "great weapon fighting", "two-weapon fighting",
+    "boon of combat prowess", "boon of dimensional travel", "boon of fate",
+    "boon of irresistible offense", "boon of spell recall", "boon of the night spirit",
+    "boon of truesight",
+  ]),
+};
+function featSource(name, ruleset) {
+  const set = SRD_FEATS[ruleset] || SRD_FEATS["2014"];
+  return set.has(norm(name)) ? "srd" : "kc";
+}
+function featEntry(f, ruleset) {
+  return {
+    id: `feat:${slug(f.name)}`,
+    name: f.name,
+    category: "feat",
+    ruleset,
+    source: featSource(f.name, ruleset),
+    spoken: spokenForms(f.name),
+    display: {
+      featType: f.category ?? null,
+      prerequisite: f.prerequisite ?? null,
+      description: f.description ?? null,
+    },
+  };
+}
+
+// ---- class options (metamagic, eldritch invocations, fighting styles) ----------------------------
+// These live inside the structured class data (classes-<ed>-structured.json) as level features whose
+// name carries a prefix, e.g. "Metamagic: Quickened Spell", "Eldritch Invocation: Agonizing Blast",
+// "Fighting Style: Great Weapon Fighting". We lift each option out as its own lookup entry (the option
+// name becomes the card title), plus the three umbrella entries ("Metamagic", "Eldritch Invocations",
+// "Fighting Style") that explain the mechanic itself. All SRD content, so source "srd". Deduped by
+// kind+name because fighting styles repeat across Fighter/Paladin/Ranger and the umbrellas repeat by
+// level.
+const OPTION_PREFIXES = [
+  { re: /^metamagic:\s*(.+)$/i, kind: "metamagic" },
+  { re: /^eldritch invocation:\s*(.+)$/i, kind: "invocation" },
+  { re: /^fighting style:\s*(.+)$/i, kind: "fighting-style" },
+];
+const UMBRELLAS = new Map([
+  ["metamagic", "metamagic"],
+  ["eldritch invocations", "feature"],
+  ["fighting style", "feature"],
+]);
+function featureEntry(kind, name, desc, className, level, ruleset) {
+  return {
+    id: `feature:${kind}:${slug(name)}`,
+    name,
+    category: "feature",
+    ruleset,
+    source: "srd",
+    spoken: spokenForms(name),
+    display: { kind, className: className ?? null, level: level ?? null, description: desc ?? null },
+  };
+}
+function extractClassOptions(ed) {
+  const classes = readMaybe(path.join(SRD_DIR, `classes-${ed}-structured.json`));
+  if (!Array.isArray(classes)) return [];
+  const seen = new Set(); // kind + normalized name
+  const out = [];
+  for (const cls of classes) {
+    const className = cls?.name ?? null;
+    const rows = Array.isArray(cls?.features_by_level) ? cls.features_by_level : [];
+    for (const row of rows) {
+      const level = row?.level ?? null;
+      for (const f of (Array.isArray(row?.features) ? row.features : [])) {
+        const fname = String(f?.name ?? "");
+        const desc = f?.desc ?? f?.description ?? null;
+        // Option entries: "Metamagic: X" / "Eldritch Invocation: X" / "Fighting Style: X".
+        let matched = false;
+        for (const { re, kind } of OPTION_PREFIXES) {
+          const m = fname.match(re);
+          if (m) {
+            matched = true;
+            const optName = m[1].trim();
+            const key = `${kind}|${norm(optName)}`;
+            if (!seen.has(key)) { seen.add(key); out.push(featureEntry(kind, optName, desc, className, level, ed)); }
+            break;
+          }
+        }
+        if (matched) continue;
+        // Umbrella entries: the mechanic's own explainer, deduped (they repeat across levels).
+        const umb = UMBRELLAS.get(norm(fname));
+        if (umb) {
+          const key = `${umb}|${norm(fname)}`;
+          if (!seen.has(key)) { seen.add(key); out.push(featureEntry(umb, fname, desc, className, level, ed)); }
+        }
+      }
+    }
+  }
+  return out;
 }
 
 // Item variant tables live in rules-data.json (ITEM_VARIANTS), keyed by item name. We attach only
@@ -154,11 +261,15 @@ function buildEdition(ed, variantsByName) {
   const gear = readMaybe(path.join(SRD_DIR, `equipment-${ed}.json`)) || [];
   // Conditions are authored only for 2014 so far; reuse them for 2024 until a 2024 file exists.
   const conditions = readMaybe(path.join(SRD_DIR, `conditions-${ed}.json`)) || readMaybe(path.join(SRD_DIR, "conditions-2014.json")) || [];
+  const feats = readMaybe(path.join(SRD_DIR, `feats-${ed}.json`)) || [];
+  const classOptions = extractClassOptions(ed);
   return [
     ...spells.map((s) => spellEntry(s, ed)),
     ...items.map((it) => itemEntry(it, ed, variantsByName)),
     ...gear.map((g) => gearEntry(g, ed)),
     ...conditions.map((c) => conditionEntry(c, ed)),
+    ...feats.map((f) => featEntry(f, ed)),
+    ...classOptions,
   ];
 }
 

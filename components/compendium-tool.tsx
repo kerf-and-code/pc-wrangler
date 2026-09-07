@@ -5,7 +5,7 @@ import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import { CompendiumMatcher, type RankedMatch } from "@/lib/compendium/match";
 import { useVosk } from "@/lib/compendium/useVosk";
 import {
-  type CompendiumEntry, type Ruleset, isSpell, isItem, isGear, isCondition,
+  type CompendiumEntry, type Ruleset, isSpell, isItem, isGear, isCondition, isFeat, isFeature,
 } from "@/lib/compendium/types";
 
 // components/compendium-tool.tsx
@@ -185,7 +185,7 @@ export default function CompendiumTool() {
         </p>
       )}
       {!loading && !loadError && (
-        <p style={{ ...label, margin: 0 }}>{entries.length.toLocaleString()} entries loaded · SRD 5.1 (CC-BY) · nothing leaves your browser</p>
+        <p style={{ ...label, margin: 0 }}>{entries.length.toLocaleString()} entries loaded · SRD 5.1 / 5.2 (CC-BY), plus original content by Kerf and Code · nothing leaves your browser</p>
       )}
 
       {/* disambiguation chips */}
@@ -195,7 +195,7 @@ export default function CompendiumTool() {
           {candidates.slice(1, 6).map((c) => (
             <button key={c.entry.id} type="button" onClick={() => addCard(c.entry)}
               style={{ padding: "4px 9px", background: "transparent", color: C.text, border: `1px solid ${C.line}`, borderRadius: 999, fontSize: 12, cursor: "pointer" }}>
-              {c.entry.name} <span style={{ color: C.muted }}>· {catLabel(c.entry.category)}</span>
+              {c.entry.name} <span style={{ color: C.muted }}>· {entryTag(c.entry)}</span>
             </button>
           ))}
         </div>
@@ -214,8 +214,14 @@ export default function CompendiumTool() {
   );
 }
 
-function catLabel(cat: CompendiumEntry["category"]): string {
-  return cat === "magic-item" ? "item" : cat;
+// The little category chip. Features carry their flavour (metamagic / invocation / fighting style)
+// rather than the generic "feature", since that is what a DM is actually looking at.
+function entryTag(e: CompendiumEntry): string {
+  if (isFeature(e)) {
+    const k = e.display.kind;
+    return k === "fighting-style" ? "fighting style" : k === "feature" ? "class feature" : k;
+  }
+  return e.category === "magic-item" ? "item" : e.category;
 }
 
 function CardView({ card, onPin, onDismiss, onEnter, onLeave }: {
@@ -230,7 +236,8 @@ function CardView({ card, onPin, onDismiss, onEnter, onLeave }: {
       <div style={{ display: "flex", alignItems: "baseline", gap: 10, justifyContent: "space-between" }}>
         <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
           <span style={{ color: C.text, fontSize: 17, fontWeight: 700 }}>{e.name}</span>
-          <span style={chip}>{catLabel(e.category)}</span>
+          <span style={chip}>{entryTag(e)}</span>
+          {e.source === "kc" && <span style={{ ...chip, borderColor: C.line, color: C.sun }} title="Original content by Kerf and Code">Kerf &amp; Code</span>}
           {!card.pinned && card.expiresAt != null && <span style={{ ...chip, borderColor: "transparent", color: C.muted }}>auto</span>}
         </div>
         <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
@@ -279,6 +286,28 @@ function CardBody({ entry, meta }: { entry: CompendiumEntry; meta: React.CSSProp
   }
   if (isCondition(entry)) {
     return <div>{entry.display.description && <p style={body}>{entry.display.description}</p>}</div>;
+  }
+  if (isFeat(entry)) {
+    const d = entry.display;
+    return (
+      <div>
+        <p style={meta}>{[d.featType, d.prerequisite && `Prerequisite: ${d.prerequisite}`].filter(Boolean).join(" · ")}</p>
+        {d.description && <p style={body}>{d.description}</p>}
+      </div>
+    );
+  }
+  if (isFeature(entry)) {
+    const d = entry.display;
+    const kindLabel = d.kind === "fighting-style" ? "Fighting style"
+      : d.kind === "metamagic" ? "Metamagic"
+      : d.kind === "invocation" ? "Eldritch Invocation"
+      : "Class feature";
+    return (
+      <div>
+        <p style={meta}>{[kindLabel, d.className, d.level != null ? `level ${d.level}` : null].filter(Boolean).join(" · ")}</p>
+        {d.description && <p style={body}>{d.description}</p>}
+      </div>
+    );
   }
   return null;
 }
