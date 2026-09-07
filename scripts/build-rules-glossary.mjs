@@ -1,16 +1,19 @@
 // scripts/build-rules-glossary.mjs
 //
-// Generates lib/srd/rules-2024.json (the 2024 rules-glossary cards for the voice compendium) from the
-// SRD 5.2.1 Rules Glossary markdown. It does NOT hand-transcribe: it reads the source file and copies
-// each whitelisted term's definition verbatim, then strips markdown so the text renders as a plain
-// card. Source: the SRD 5.2.1 "Rules Glossary" chapter (CC-BY 4.0), kept at
-// lib/srd/srd-2024-src/rules-glossary.md (from github.com/downfallx/dnd-5e-srd-markdown).
+// Generates the 2024 compendium data from the SRD 5.2.1 markdown. It does NOT hand-transcribe: it reads
+// the source files and copies each entry's definition verbatim, then strips markdown so the text
+// renders as a plain card. Two outputs:
+//   lib/srd/rules-2024.json       - the rules-glossary cards (grapple, cover, the actions, ...)
+//   lib/srd/conditions-2024.json  - the 2024 conditions (so the compendium stops serving 2014 text
+//                                   under the 2024 toggle; Exhaustion especially is cumulative now)
+// Source: the SRD 5.2.1 "Rules Glossary" and "Playing the Game" chapters (CC-BY 4.0), kept at
+// lib/srd/srd-2024-src/ (from github.com/downfallx/dnd-5e-srd-markdown).
 //
 // Run (from repo root):
 //   node scripts/build-rules-glossary.mjs
-// Overridable: SRD_2024_GLOSSARY (input path), RULES_2024_OUT (output path).
+// Overridable: SRD_2024_GLOSSARY, SRD_2024_PLAYING (inputs); RULES_2024_OUT, CONDITIONS_2024_OUT (outputs).
 //
-// After running, regenerate the compendium indexes so the new rules ship:
+// After running, regenerate the compendium indexes so the new data ships:
 //   node scripts/build-compendium-index.mjs 2024
 //   node scripts/build-compendium-index.mjs both
 
@@ -25,6 +28,7 @@ const SRC = process.env.SRD_2024_GLOSSARY || path.join(ROOT, "lib", "srd", "srd-
 // We pull the ones that are cleanly available there (both use #### headings, same as the glossary).
 const PLAY_SRC = process.env.SRD_2024_PLAYING || path.join(ROOT, "lib", "srd", "srd-2024-src", "playing-the-game.md");
 const OUT = process.env.RULES_2024_OUT || path.join(ROOT, "lib", "srd", "rules-2024.json");
+const COND_OUT = process.env.CONDITIONS_2024_OUT || path.join(ROOT, "lib", "srd", "conditions-2024.json");
 
 // The glossary terms to surface as cards, mapped to a card topic. Order here is the card order.
 // Deliberately excludes the pure conditions (Blinded, Grappled, Prone, ...) - those belong to the
@@ -92,6 +96,16 @@ const PLAY_WHITELIST = [
   ["Range", "Combat", "Ranged Attack Range"],
 ];
 
+// The 2024 conditions, emitted to conditions-2024.json (shape [{name, description}], matching
+// conditions-2014.json) so the compendium's condition category serves correct 2024 text under the 2024
+// toggle instead of falling back to 2014. Same 15 names as 2014; the text is the revised 2024 wording.
+const CONDITION_HEADINGS = [
+  "Blinded [Condition]", "Charmed [Condition]", "Deafened [Condition]", "Exhaustion [Condition]",
+  "Frightened [Condition]", "Grappled [Condition]", "Incapacitated [Condition]", "Invisible [Condition]",
+  "Paralyzed [Condition]", "Petrified [Condition]", "Poisoned [Condition]", "Prone [Condition]",
+  "Restrained [Condition]", "Stunned [Condition]", "Unconscious [Condition]",
+];
+
 // Parse the glossary into { heading: body } using the "#### " term headings.
 function parseGlossary(text) {
   const blocks = {};
@@ -154,7 +168,20 @@ function main() {
   }
   fs.writeFileSync(OUT, JSON.stringify(out, null, 2) + "\n");
   console.log(`[rules-2024] wrote ${path.relative(ROOT, OUT)}: ${out.length} cards`);
+
+  // Conditions -> conditions-2024.json (name + description only).
+  const conditions = [];
+  const condMissing = [];
+  for (const head of CONDITION_HEADINGS) {
+    const body = blocks[head];
+    if (!body) { condMissing.push(head); continue; }
+    conditions.push({ name: cleanName(head), description: cleanBody(body) });
+  }
+  fs.writeFileSync(COND_OUT, JSON.stringify(conditions, null, 2) + "\n");
+  console.log(`[conditions-2024] wrote ${path.relative(ROOT, COND_OUT)}: ${conditions.length} conditions`);
+
   if (missing.length) console.warn(`[rules-2024] WARNING, ${missing.length} whitelisted headings not found: ${missing.join(", ")}`);
+  if (condMissing.length) console.warn(`[conditions-2024] WARNING, ${condMissing.length} conditions not found: ${condMissing.join(", ")}`);
 }
 
 main();
