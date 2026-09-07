@@ -7,7 +7,7 @@
 // for the data itself).
 
 export type CompendiumCategory =
-  | "spell" | "magic-item" | "equipment" | "condition" | "feat" | "feature" | "rule" | "monster";
+  | "spell" | "magic-item" | "equipment" | "condition" | "feat" | "feature" | "rule" | "monster" | "species";
 export type Ruleset = "2014" | "2024" | "both";
 
 // Attribution. "srd" is Open Game Content under CC-BY (SRD 5.1 / 5.2); "kc" is original content
@@ -117,8 +117,17 @@ export interface RuleDisplay {
   description: string | null;
 }
 
+// A playable species/race: the size/speed line plus its named traits (Darkvision, Fey Ancestry, ...).
+export interface SpeciesDisplay {
+  size: string | null;
+  speed: string | null;
+  creatureType: string | null;
+  traits: MonsterTrait[]; // reuses the {name, description} shape
+}
+
 export type CompendiumDisplay =
-  | SpellDisplay | ItemDisplay | GearDisplay | ConditionDisplay | FeatDisplay | FeatureDisplay | RuleDisplay | MonsterDisplay;
+  | SpellDisplay | ItemDisplay | GearDisplay | ConditionDisplay | FeatDisplay | FeatureDisplay
+  | RuleDisplay | MonsterDisplay | SpeciesDisplay;
 
 // One entry per term. This is a DISCRIMINATED UNION keyed on `category`: each category pins its own
 // `display` shape, so a check on `category` narrows `display` exactly. The discriminant is load-bearing
@@ -143,7 +152,8 @@ export type CompendiumEntry =
   | EntryBase<"feat", FeatDisplay>
   | EntryBase<"feature", FeatureDisplay>
   | EntryBase<"rule", RuleDisplay>
-  | EntryBase<"monster", MonsterDisplay>;
+  | EntryBase<"monster", MonsterDisplay>
+  | EntryBase<"species", SpeciesDisplay>;
 
 // Narrowing helpers so the card renderer can read the right fields with no `any`. Each keys on the
 // category discriminant and returns the matching union member via Extract.
@@ -155,3 +165,4 @@ export const isFeat = (e: CompendiumEntry): e is Extract<CompendiumEntry, { cate
 export const isFeature = (e: CompendiumEntry): e is Extract<CompendiumEntry, { category: "feature" }> => e.category === "feature";
 export const isRule = (e: CompendiumEntry): e is Extract<CompendiumEntry, { category: "rule" }> => e.category === "rule";
 export const isMonster = (e: CompendiumEntry): e is Extract<CompendiumEntry, { category: "monster" }> => e.category === "monster";
+export const isSpecies = (e: CompendiumEntry): e is Extract<CompendiumEntry, { category: "species" }> => e.category === "species";

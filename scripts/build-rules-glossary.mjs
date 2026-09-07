@@ -32,6 +32,7 @@ const SRC = process.env.SRD_2024_GLOSSARY || path.join(ROOT, "lib", "srd", "srd-
 const PLAY_SRC = process.env.SRD_2024_PLAYING || path.join(ROOT, "lib", "srd", "srd-2024-src", "playing-the-game.md");
 const CLASS_SRC = process.env.SRD_2024_CLASSES || path.join(ROOT, "lib", "srd", "srd-2024-src", "classes.md");
 const EQUIP_SRC = process.env.SRD_2024_EQUIPMENT || path.join(ROOT, "lib", "srd", "srd-2024-src", "equipment.md");
+const SPELLS_SRC = process.env.SRD_2024_SPELLS || path.join(ROOT, "lib", "srd", "srd-2024-src", "spells.md");
 const OUT = process.env.RULES_2024_OUT || path.join(ROOT, "lib", "srd", "rules-2024.json");
 const COND_OUT = process.env.CONDITIONS_2024_OUT || path.join(ROOT, "lib", "srd", "conditions-2024.json");
 const CLASS_OPTIONS_OUT = process.env.CLASS_OPTIONS_2024_OUT || path.join(ROOT, "lib", "srd", "class-options-2024.json");
@@ -76,6 +77,9 @@ const WHITELIST = [
   ["Jumping", "Movement"],
   ["Falling [Hazard]", "Environment"],
   ["Suffocation [Hazard]", "Environment"],
+  ["Burning [Hazard]", "Environment"],
+  ["Dehydration [Hazard]", "Environment"],
+  ["Malnutrition [Hazard]", "Environment"],
   ["Heavily Obscured", "Environment"],
   ["Lightly Obscured", "Environment"],
   ["Bright Light", "Environment"],
@@ -90,6 +94,7 @@ const WHITELIST = [
   ["Area of Effect", "Spellcasting"],
   ["Spell Attack", "Spellcasting"],
   ["Ritual", "Spellcasting"],
+  ["Attunement", "Magic Item"],
   ["Advantage", "Checks"],
   ["Disadvantage", "Checks"],
   ["Passive Perception", "Checks"],
@@ -141,18 +146,21 @@ function cleanBody(md) {
   s = s.replace(/\*\*/g, "").replace(/__/g, "");  // bold markers
   s = s.replace(/_/g, "");                         // italic markers (run-in labels)
   s = s.replace(/[—–]/g, " - ");        // em/en dashes -> spaced hyphen (house style: no em-dashes)
+  s = s.replace(/^#{1,6}\s+/gm, "");              // sub-headings pulled into a section body -> plain text
   s = s.replace(/[ \t]+\n/g, "\n");               // trailing spaces
   s = s.replace(/\n{3,}/g, "\n\n");               // collapse blank runs
   return s.trim();
 }
 
-// Body of a "### <head>" section, up to the next "### " heading.
-function sectionBody(text, head) {
-  const re = new RegExp("^###\\s+" + head.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\s*$", "m");
+// Body of a "### <head>" section (level defaults to 3), up to the next heading at that level or
+// shallower. Deeper subheadings stay in the body (cleanBody flattens them to plain text).
+function sectionBody(text, head, level = 3) {
+  const h = "#".repeat(level);
+  const re = new RegExp("^" + h + "\\s+" + head.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\s*$", "m");
   const m = text.match(re);
   if (!m) return null;
   const rest = text.slice(m.index + m[0].length);
-  const nxt = rest.match(/^###\s+/m);
+  const nxt = rest.match(new RegExp("^#{1," + level + "}\\s+", "m"));
   return nxt ? rest.slice(0, nxt.index) : rest;
 }
 
@@ -229,6 +237,21 @@ function main() {
       }
     } else { missing.push("Mastery Properties (equipment.md)"); }
   } else { missing.push("equipment.md not found"); }
+  // Spell components (spells.md "## Components", with the V/S/M subsections) as one Spellcasting card.
+  if (fs.existsSync(SPELLS_SRC)) {
+    const comp = sectionBody(fs.readFileSync(SPELLS_SRC, "utf8"), "Components", 2);
+    if (comp) out.push({ name: "Spell Components", topic: "Spellcasting", description: cleanBody(comp) });
+    else missing.push("Components (spells.md)");
+  } else { missing.push("spells.md not found"); }
+  // Mounted and underwater combat are "### " sections in Playing the Game (not #### glossary blocks).
+  if (fs.existsSync(PLAY_SRC)) {
+    const playText = fs.readFileSync(PLAY_SRC, "utf8");
+    for (const head of ["Mounted Combat", "Underwater Combat"]) {
+      const sec = sectionBody(playText, head, 3);
+      if (sec) out.push({ name: head, topic: "Combat", description: cleanBody(sec) });
+      else missing.push(`${head} (playing-the-game.md)`);
+    }
+  }
   fs.writeFileSync(OUT, JSON.stringify(out, null, 2) + "\n");
   console.log(`[rules-2024] wrote ${path.relative(ROOT, OUT)}: ${out.length} cards`);
 

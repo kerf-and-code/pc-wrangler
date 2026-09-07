@@ -6,7 +6,7 @@ import { CompendiumMatcher, type RankedMatch } from "@/lib/compendium/match";
 import { useVosk } from "@/lib/compendium/useVosk";
 import {
   type CompendiumEntry, type Ruleset, type MonsterDisplay,
-  isSpell, isItem, isGear, isCondition, isFeat, isFeature, isRule, isMonster,
+  isSpell, isItem, isGear, isCondition, isFeat, isFeature, isRule, isMonster, isSpecies,
 } from "@/lib/compendium/types";
 
 // components/compendium-tool.tsx
@@ -323,6 +323,19 @@ function CardBody({ entry, meta }: { entry: CompendiumEntry; meta: React.CSSProp
   }
   if (isMonster(entry)) {
     return <MonsterBody d={entry.display} meta={meta} body={body} />;
+  }
+  if (isSpecies(entry)) {
+    const d = entry.display;
+    return (
+      <div>
+        <p style={meta}>{[d.creatureType, d.size, d.speed && `Speed ${d.speed}${/\d$/.test(d.speed) ? " ft" : ""}`].filter(Boolean).join(" · ")}</p>
+        {d.traits.map((t, i) => (
+          <p key={i} style={{ ...body, margin: "4px 0 0" }}>
+            {t.name && <strong style={{ color: C.text }}>{t.name}. </strong>}{t.description}
+          </p>
+        ))}
+      </div>
+    );
   }
   return null;
 }

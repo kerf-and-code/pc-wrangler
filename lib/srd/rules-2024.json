@@ -180,6 +180,21 @@
     "description": "A creature can hold its breath for a number of minutes equal to 1 plus its Constitution modifier (minimum of 30 seconds) before suffocation begins. When a creature runs out of breath or is choking, it gains 1 Exhaustion level at the end of each of its turns. When a creature can breathe again, it removes all levels of Exhaustion it gained from suffocating."
   },
   {
+    "name": "Burning",
+    "topic": "Environment",
+    "description": "A burning creature or object takes 1d4 Fire damage at the start of each of its turns. As an action, you can extinguish fire on yourself by giving yourself the Prone condition and rolling on the ground. The fire also goes out if it is doused, submerged, or suffocated."
+  },
+  {
+    "name": "Dehydration",
+    "topic": "Environment",
+    "description": "A creature requires an amount of water per day based on its size, as shown in the Water Needs per Day table. A creature that drinks less than half the required water for a day gains 1 Exhaustion level at the day's end. Exhaustion caused by dehydration can't be removed until the creature drinks the full amount of water required for a day.\n\nWater Needs per Day"
+  },
+  {
+    "name": "Malnutrition",
+    "topic": "Environment",
+    "description": "A creature needs an amount of food per day based on its size, as shown in the Food Needs per Day table. A creature that eats but consumes less than half the required food for a day must succeed on a DC 10 Constitution saving throw or gain 1 Exhaustion level at the day's end. A creature that eats nothing for 5 days automatically gains 1 Exhaustion level at the end of the fifth day as well as an additional level at the end of each subsequent day without food.\n\nExhaustion caused by malnutrition can't be removed until the creature eats the full amount of food required for a day.\n\nFood Needs per Day"
+  },
+  {
     "name": "Heavily Obscured",
     "topic": "Environment",
     "description": "You have the Blinded condition while trying to see something in a Heavily Obscured space."
@@ -248,6 +263,11 @@
     "name": "Ritual",
     "topic": "Spellcasting",
     "description": "If you have a spell prepared that has the Ritual tag, you can cast that spell as a Ritual. The Ritual version of a spell takes 10 minutes longer to cast than normal. It also doesn't expend a spell slot, which means the ritual version of a spell can't be cast at a higher level."
+  },
+  {
+    "name": "Attunement",
+    "topic": "Magic Item",
+    "description": "Some magic items require a creature to form a bond - called Attunement - with them before the creature can use an item's magical properties. A creature can have Attunement with no more than three magic items at a time."
   },
   {
     "name": "Advantage",
@@ -368,5 +388,20 @@
     "name": "Vex",
     "topic": "Weapon Mastery",
     "description": "If you hit a creature with this weapon and deal damage to the creature, you have Advantage on your next attack roll against that creature before the end of your next turn."
+  },
+  {
+    "name": "Spell Components",
+    "topic": "Spellcasting",
+    "description": "A spell's components are physical requirements the spellcaster must meet to cast the spell. Each spell's description indicates whether it requires Verbal (V), Somatic (S), or Material (M) components. If the spellcaster can't provide one or more of a spell's components, the spellcaster can't cast the spell.\n\nVerbal (V)\n\nA Verbal component is the chanting of esoteric words that sound like nonsense to the uninitiated. The words must be uttered in a normal speaking voice. The words themselves aren't the source of the spell's power; rather, the particular combination of sounds, with specific pitch and resonance, sets the threads of magic in motion. Thus, a creature who is gagged or in an area of magical silence can't cast a spell with a Verbal component.\n\nSomatic (S)\n\nA Somatic component is a forceful gesticulation or an intricate set of gestures. A spellcaster must use at least one of their hands to perform these movements.\n\nMaterial (M)\n\nA Material component is a particular material used in a spell's casting, as specified in parentheses in the Components entry. These materials aren't consumed by the spell unless the spell's description states otherwise. The spellcaster must have a hand free to access them, but it can be the same hand used to perform Somatic components, if any.\n\nIf a spell doesn't consume its materials and doesn't specify a cost for them, a spellcaster can use a Component Pouch (see \"Equipment\") instead of providing the materials specified in the spell, or the\nspellcaster can substitute a Spellcasting Focus if the caster has a feature that allows that substitution. To use a Component Pouch, you must have a hand free to reach into it, and to use a Spellcasting Focus, you must hold it unless its description says otherwise (see \"Equipment\" for descriptions)."
+  },
+  {
+    "name": "Mounted Combat",
+    "topic": "Combat",
+    "description": "A willing creature that is at least one size larger than a rider and that has an appropriate anatomy can serve as a mount, using the following rules.\n\nMounting and Dismounting\n\nDuring your move, you can mount a creature that is within 5 feet of you or dismount. Doing so costs an amount of movement equal to half your Speed (round down). For example, if your Speed is 30 feet, you spend 15 feet of movement to mount a horse.\n\nControlling a Mount\n\nYou can control a mount only if it has been trained to accept a rider. Domesticated horses, mules, and similar creatures have such training.\n\nThe Initiative of a controlled mount changes to match yours when you mount it. It moves on your turn as you direct it, and it has only three action options during that turn: Dash, Disengage, and Dodge. A controlled mount can move and act even on the turn that you mount it.\n\nIn contrast, an independent mount - one that lets you ride but ignores your control - retains its place in the Initiative order and moves and acts as it likes.\n\nFalling Off\n\nIf an effect is about to move your mount against its will while you're on it, you must succeed on a DC 10 Dexterity saving throw or fall off, landing with the Prone condition (see \"Rules Glossary\") in an unoccupied space within 5 feet of the mount.\n\nWhile mounted, you must make the same save if you're knocked Prone or the mount is."
+  },
+  {
+    "name": "Underwater Combat",
+    "topic": "Combat",
+    "description": "A fight underwater follows these rules.\n\nImpeded Weapons\n\nWhen making a melee attack roll with a weapon underwater, a creature that lacks a Swim Speed has Disadvantage on the attack roll unless the weapon deals Piercing damage.\n\nA ranged attack roll with a weapon underwater automatically misses a target beyond the weapon's normal range, and the attack roll has Disadvantage against a target within normal range.\n\nFire Resistance\n\nAnything underwater has Resistance to Fire damage (explained in \"Damage and Healing\")."
   }
 ]

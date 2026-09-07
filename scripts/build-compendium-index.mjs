@@ -360,6 +360,34 @@ function loadMonsters(ed) {
   return (Array.isArray(all) ? all : []).filter((m) => String(m?.source_key ?? "").startsWith("srd"));
 }
 
+// ---- species -------------------------------------------------------------------------------------
+// Playable species with their named traits. species-<ed>.json is { species: [...], variants: [...] };
+// every entry carries a source ("SRD 5.1" / "SRD 5.2.1"), and we keep only the SRD ones.
+function speciesEntry(sp, ruleset) {
+  const traits = (Array.isArray(sp.traits) ? sp.traits : [])
+    .map((t) => ({ name: t?.name ?? null, description: cleanText(t?.desc ?? t?.description ?? null) }))
+    .filter((t) => t.name || t.description);
+  return {
+    id: `species:${slug(sp.name)}`,
+    name: sp.name,
+    category: "species",
+    ruleset,
+    source: "srd",
+    spoken: spokenForms(sp.name),
+    display: {
+      size: cleanText(sp.size != null ? String(sp.size) : null),
+      speed: cleanText(sp.speed != null ? String(sp.speed) : null),
+      creatureType: sp.creature_type ?? sp.type ?? null,
+      traits,
+    },
+  };
+}
+function loadSpecies(ed) {
+  const data = readMaybe(path.join(SRD_DIR, `species-${ed}.json`));
+  const list = Array.isArray(data) ? data : (Array.isArray(data?.species) ? data.species : []);
+  return list.filter((s) => String(s?.source ?? "").toUpperCase().startsWith("SRD"));
+}
+
 // Item variant tables live in rules-data.json (ITEM_VARIANTS), keyed by item name. We attach only
 // the label + option names (mechanics-only) so a card can show, e.g., the Belt of Giant Strength
 // lineages without duplicating the derivation payload.
@@ -392,6 +420,7 @@ function buildEdition(ed, variantsByName) {
     .map((o) => featureEntry(o.kind || "feature", o.name, o.description, o.className ?? null, o.level ?? null, ed));
   const classFeatures = extractClassFeatures(ed);
   const monsters = loadMonsters(ed);
+  const species = loadSpecies(ed);
   // No 2014 fallback here (unlike conditions): rules-<ed>.json is edition-specific SRD text.
   const rules = readMaybe(path.join(SRD_DIR, `rules-${ed}.json`)) || [];
   return [
@@ -404,6 +433,7 @@ function buildEdition(ed, variantsByName) {
     ...classOptionExtra,
     ...classFeatures,
     ...monsters.map((m) => monsterEntry(m, ed)),
+    ...species.map((s) => speciesEntry(s, ed)),
     ...rules.map((r) => ruleEntry(r, ed)),
   ];
 }
