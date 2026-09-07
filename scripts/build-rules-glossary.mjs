@@ -21,6 +21,9 @@ import { fileURLToPath } from "node:url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
 const SRC = process.env.SRD_2024_GLOSSARY || path.join(ROOT, "lib", "srd", "srd-2024-src", "rules-glossary.md");
+// A few disputed mechanics aren't glossary terms in 2024; they live in the "Playing the Game" chapter.
+// We pull the ones that are cleanly available there (both use #### headings, same as the glossary).
+const PLAY_SRC = process.env.SRD_2024_PLAYING || path.join(ROOT, "lib", "srd", "srd-2024-src", "playing-the-game.md");
 const OUT = process.env.RULES_2024_OUT || path.join(ROOT, "lib", "srd", "rules-2024.json");
 
 // The glossary terms to surface as cards, mapped to a card topic. Order here is the card order.
@@ -83,6 +86,12 @@ const WHITELIST = [
   ["Heroic Inspiration", "Checks"],
 ];
 
+// From "Playing the Game" (not glossary terms). Third element is an optional card-name override.
+const PLAY_WHITELIST = [
+  ["Ranged Attacks in Close Combat", "Combat"],
+  ["Range", "Combat", "Ranged Attack Range"],
+];
+
 // Parse the glossary into { heading: body } using the "#### " term headings.
 function parseGlossary(text) {
   const blocks = {};
@@ -91,8 +100,9 @@ function parseGlossary(text) {
     const nl = part.indexOf("\n");
     const head = (nl === -1 ? part : part.slice(0, nl)).trim();
     let body = nl === -1 ? "" : part.slice(nl + 1);
-    // Stop at the next section (## ...) if one bleeds into this block.
-    body = body.split(/^##\s+/m)[0];
+    // Stop at the next heading of any shallower level (#, ##, ###) that bleeds into this block.
+    // (We already split on "#### "; deeper #####+ subheadings are kept as part of the body.)
+    body = body.split(/^#{1,3}\s+/m)[0];
     blocks[head] = body.trim();
   }
   return blocks;
@@ -130,6 +140,17 @@ function main() {
     const body = blocks[head];
     if (!body) { missing.push(head); continue; }
     out.push({ name: cleanName(head), topic, description: cleanBody(body) });
+  }
+  // Supplemental cards from "Playing the Game" (same #### block structure).
+  if (fs.existsSync(PLAY_SRC)) {
+    const playBlocks = parseGlossary(fs.readFileSync(PLAY_SRC, "utf8"));
+    for (const [head, topic, nameOverride] of PLAY_WHITELIST) {
+      const body = playBlocks[head];
+      if (!body) { missing.push(`${head} (playing-the-game)`); continue; }
+      out.push({ name: nameOverride || cleanName(head), topic, description: cleanBody(body) });
+    }
+  } else {
+    missing.push(...PLAY_WHITELIST.map(([h]) => `${h} (playing-the-game.md not found)`));
   }
   fs.writeFileSync(OUT, JSON.stringify(out, null, 2) + "\n");
   console.log(`[rules-2024] wrote ${path.relative(ROOT, OUT)}: ${out.length} cards`);
