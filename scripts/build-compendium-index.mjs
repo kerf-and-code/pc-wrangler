@@ -66,13 +66,26 @@ const ALIASES = {
   "underwater combat": ["underwater", "swimming combat"],
 };
 const cleanPhrase = (s) => String(s || "").toLowerCase().replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
+// Populate each entry's `aliases` from two sources - the ALIASES table (keyed by entry name) and any
+// aliases the entry already carries from its source data (the hook homebrew/authored entries use) -
+// dedupe + clean them, store them on `e.aliases` (omitted when empty), and merge them INTO `spoken` so
+// the fuzzy matcher and the Vosk grammar pick them up with no other change. Idempotent: re-running only
+// re-derives the same set (mergeBoth regenerates `spoken` for legacy entries, so main re-applies).
 function applyAliases(entries) {
   for (const e of entries) {
-    const extra = ALIASES[norm(e.name)];
-    if (!extra) continue;
-    const set = new Set(e.spoken);
-    for (const a of extra) { const p = cleanPhrase(a); if (p) set.add(p); }
-    e.spoken = [...set];
+    const fromTable = ALIASES[norm(e.name)] || [];
+    const fromEntry = Array.isArray(e.aliases) ? e.aliases : [];
+    const set = new Set();
+    for (const a of [...fromEntry, ...fromTable]) { const p = cleanPhrase(a); if (p) set.add(p); }
+    const merged = [...set];
+    if (merged.length) {
+      e.aliases = merged;
+      const spoken = new Set(e.spoken);
+      for (const p of merged) spoken.add(p);
+      e.spoken = [...spoken];
+    } else if ("aliases" in e) {
+      delete e.aliases; // keep the index lean: no empty arrays on the ~1700 alias-less entries
+    }
   }
   return entries;
 }

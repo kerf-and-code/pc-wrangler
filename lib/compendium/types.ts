@@ -153,7 +153,13 @@ interface EntryBase<C extends CompendiumCategory, D> {
   category: C;
   ruleset: string;
   source: CompendiumSource;
+  // Spoken/typed forms the matcher and the Vosk grammar key on. `aliases` are the shorthand phrases
+  // ("oa", "temp hp", "gwm") that a name alone won't match; they are also merged INTO `spoken` at build
+  // time so the matcher and grammar pick them up with no separate lookup. The field is kept on the entry
+  // (optional, omitted when empty) so it is inspectable and so an authored/homebrew entry can declare its
+  // own shorthand in source data and have it flow through to grammar the same way.
   spoken: string[];
+  aliases?: string[];
   display: D;
 }
 
