@@ -135,6 +135,23 @@ function conditionEntry(c, ruleset) {
   };
 }
 
+// ---- rules glossary ------------------------------------------------------------------------------
+// The disputed-mechanics cards (grapple, cover, hiding, death saves, ...). Text is verbatim SRD 5.1
+// (CC-BY), authored into rules-<ed>.json. Only rules-2014.json exists for now, so this category shows
+// under the 2014 and "both" toggles; there is deliberately NO 2014 fallback for 2024, because several
+// 2024 rules (grapple, shove, exhaustion, fighting styles) changed and 2014 text would be wrong there.
+function ruleEntry(r, ruleset) {
+  return {
+    id: `rule:${slug(r.name)}`,
+    name: r.name,
+    category: "rule",
+    ruleset,
+    source: "srd",
+    spoken: spokenForms(r.name),
+    display: { topic: r.topic ?? null, description: r.description ?? null },
+  };
+}
+
 // ---- feats ---------------------------------------------------------------------------------------
 // The SRD-open feat set is small: SRD 5.1 (2014) has only Grappler, and SRD 5.2 (2024) ships the
 // short list below. Everything else in feats-<ed>.json is original content authored by Kerf and Code
@@ -263,6 +280,8 @@ function buildEdition(ed, variantsByName) {
   const conditions = readMaybe(path.join(SRD_DIR, `conditions-${ed}.json`)) || readMaybe(path.join(SRD_DIR, "conditions-2014.json")) || [];
   const feats = readMaybe(path.join(SRD_DIR, `feats-${ed}.json`)) || [];
   const classOptions = extractClassOptions(ed);
+  // No 2014 fallback here (unlike conditions): rules-<ed>.json is edition-specific SRD text.
+  const rules = readMaybe(path.join(SRD_DIR, `rules-${ed}.json`)) || [];
   return [
     ...spells.map((s) => spellEntry(s, ed)),
     ...items.map((it) => itemEntry(it, ed, variantsByName)),
@@ -270,6 +289,7 @@ function buildEdition(ed, variantsByName) {
     ...conditions.map((c) => conditionEntry(c, ed)),
     ...feats.map((f) => featEntry(f, ed)),
     ...classOptions,
+    ...rules.map((r) => ruleEntry(r, ed)),
   ];
 }
 

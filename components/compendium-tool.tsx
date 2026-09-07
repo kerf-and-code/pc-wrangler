@@ -5,7 +5,7 @@ import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import { CompendiumMatcher, type RankedMatch } from "@/lib/compendium/match";
 import { useVosk } from "@/lib/compendium/useVosk";
 import {
-  type CompendiumEntry, type Ruleset, isSpell, isItem, isGear, isCondition, isFeat, isFeature,
+  type CompendiumEntry, type Ruleset, isSpell, isItem, isGear, isCondition, isFeat, isFeature, isRule,
 } from "@/lib/compendium/types";
 
 // components/compendium-tool.tsx
@@ -221,6 +221,7 @@ function entryTag(e: CompendiumEntry): string {
     const k = e.display.kind;
     return k === "fighting-style" ? "fighting style" : k === "feature" ? "class feature" : k;
   }
+  if (isRule(e)) return e.display.topic ? e.display.topic.toLowerCase() : "rule";
   return e.category === "magic-item" ? "item" : e.category;
 }
 
@@ -305,6 +306,15 @@ function CardBody({ entry, meta }: { entry: CompendiumEntry; meta: React.CSSProp
     return (
       <div>
         <p style={meta}>{[kindLabel, d.className, d.level != null ? `level ${d.level}` : null].filter(Boolean).join(" · ")}</p>
+        {d.description && <p style={body}>{d.description}</p>}
+      </div>
+    );
+  }
+  if (isRule(entry)) {
+    const d = entry.display;
+    return (
+      <div>
+        {d.topic && <p style={meta}>{d.topic} rule · SRD 5.1</p>}
         {d.description && <p style={body}>{d.description}</p>}
       </div>
     );
