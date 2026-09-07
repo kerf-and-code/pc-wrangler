@@ -1,0 +1,272 @@
+[
+  {
+    "name": "Action",
+    "topic": "Actions",
+    "description": "On your turn, you can take one action. Choose which action to take from those below or from the special actions provided by your features."
+  },
+  {
+    "name": "Attack",
+    "topic": "Actions",
+    "description": "When you take the Attack action, you can make one attack roll with a weapon or an Unarmed Strike.\n\nEquipping and Unequipping Weapons. You can either equip or unequip one weapon when you make an attack as part of this action. You do so either before or after the attack. If you equip a weapon before an attack, you don't need to use it for that attack. Equipping a weapon includes drawing it from a sheath or picking it up. Unequipping a weapon includes sheathing, stowing, or dropping it.\n\nMoving between Attacks. If you move on your turn and have a feature, such as Extra Attack, that gives you more than one attack as part of the Attack action, you can use some or all of that movement to move between those attacks."
+  },
+  {
+    "name": "Dash",
+    "topic": "Actions",
+    "description": "When you take the Dash action, you gain extra movement for the current turn. The increase equals your Speed after applying any modifiers. With a Speed of 30 feet, for example, you can move up to 60 feet on your turn if you Dash. If your Speed of 30 feet is reduced to 15 feet, you can move up to 30 feet this turn if you Dash.\n\nIf you have a special speed, such as a Fly Speed or Swim Speed, you can use that speed instead of your Speed when you take this action. You choose which speed to use each time you take it."
+  },
+  {
+    "name": "Disengage",
+    "topic": "Actions",
+    "description": "If you take the Disengage action, your movement doesn't provoke Opportunity Attacks for the rest of the current turn."
+  },
+  {
+    "name": "Dodge",
+    "topic": "Actions",
+    "description": "If you take the Dodge action, you gain the following benefits: until the start of your next turn, any attack roll made against you has Disadvantage if you can see the attacker, and you make Dexterity saving throws with Advantage.\n\nYou lose these benefits if you have the Incapacitated condition or if your Speed is 0."
+  },
+  {
+    "name": "Help",
+    "topic": "Actions",
+    "description": "When you take the Help action, you do one of the following.\n\nAssist an Ability Check. Choose one of your skill or tool proficiencies and one ally who is near\nenough for you to assist verbally or physically when they make an ability check. That ally has Advantage on the next ability check they make with the chosen skill or tool. This benefit expires if the ally doesn't use it before the start of your next turn. The GM has final say on whether your assistance is possible.\n\nAssist an Attack Roll. You momentarily distract an enemy within 5 feet of you, giving Advantage to the next attack roll by one of your allies against that enemy. This benefit expires at the start of your next turn."
+  },
+  {
+    "name": "Hide",
+    "topic": "Actions",
+    "description": "With the Hide action, you try to hide yourself. To do so, you must succeed on a DC 15 Dexterity (Stealth) check while you're Heavily Obscured or behind Three-Quarters Cover or Total Cover, and you must be out of any enemy's line of sight; if you can see a creature, you can discern whether it can see you.\n\nOn a successful check, you have the Invisible condition while hidden. Make note of your check's total, which is the DC for a creature to find you with a Wisdom (Perception) check.\n\nYou stop being hidden immediately after any of the following occurs: you make a sound louder than a whisper, an enemy finds you, you make an attack roll, or you cast a spell with a Verbal component."
+  },
+  {
+    "name": "Influence",
+    "topic": "Actions",
+    "description": "With the Influence action, you urge a monster to do something. Describe or roleplay how you're communicating with the monster. Are you trying to deceive, intimidate, amuse, or gently persuade? The GM then determines whether the monster feels willing, unwilling, or hesitant due to your interaction; this determination establishes whether an ability check is necessary, as explained below.\n\nWilling. If your urging aligns with the monster's desires, no ability check is necessary; the monster fulfills your request in a way it prefers.\n\nUnwilling. If your urging is repugnant to the monster or counter to its alignment, no ability check is necessary; it doesn't comply.\n\nHesitant. If you urge the monster to do something that it is hesitant to do, you must make an ability check, which is affected by the monster's attitude: Indifferent, Friendly, or Hostile, each of which is defined in this glossary. The Influence Checks table suggests which ability check to make based on how you're interacting with the monster. The GM chooses the check, which has a default DC equal to 15 or the monster's Intelligence score, whichever is higher. On a successful check, the monster does as urged. On a failed check, you must wait 24 hours (or a duration set by the GM) before urging it in the same way again.\n\nInfluence Checks"
+  },
+  {
+    "name": "Magic",
+    "topic": "Actions",
+    "description": "When you take the Magic action, you cast a spell that has a casting time of an action or use a feature or magic item that requires a Magic action to be activated.\n\nIf you cast a spell that has a casting time of 1 minute or longer, you must take the Magic action on each turn of that casting, and you must maintain Concentration while you do so. If your Concentration is broken, the spell fails, but you don't expend a spell slot."
+  },
+  {
+    "name": "Ready",
+    "topic": "Actions",
+    "description": "You take the Ready action to wait for a particular circumstance before you act. To do so, you take this action on your turn, which lets you act by taking a Reaction before the start of your next turn.\n\nFirst, you decide what perceivable circumstance will trigger your Reaction. Then, you choose the action you will take in response to that trigger, or you choose to move up to your Speed in response to it. Examples include \"If the cultist steps on the\ntrapdoor, I'll pull the lever that opens it,\" and \"If the zombie steps next to me, I move away.\"\n\nWhen the trigger occurs, you can either take your Reaction right after the trigger finishes or ignore the trigger.\n\nWhen you Ready a spell, you cast it as normal (expending any resources used to cast it) but hold its energy, which you release with your Reaction when the trigger occurs. To be readied, a spell must have a casting time of an action, and holding on to the spell's magic requires Concentration, which you can maintain up to the start of your next turn. If your Concentration is broken, the spell dissipates without taking effect."
+  },
+  {
+    "name": "Search",
+    "topic": "Actions",
+    "description": "When you take the Search action, you make a Wisdom check to discern something that isn't obvious. The Search table suggests which skills are applicable when you take this action, depending on what you're trying to detect.\n\nSearch"
+  },
+  {
+    "name": "Study",
+    "topic": "Actions",
+    "description": "When you take the Study action, you make an Intelligence check to study your memory, a book, a clue, or another source of knowledge and call to mind an important piece of information about it.\n\nThe Areas of Knowledge table suggests which skills are applicable to various areas of knowledge.\n\nAreas of Knowledge"
+  },
+  {
+    "name": "Utilize",
+    "topic": "Actions",
+    "description": "You normally interact with an object while doing something else, such as when you draw a sword as part of the Attack action. When an object requires an action for its use, you take the Utilize action."
+  },
+  {
+    "name": "Bonus Action",
+    "topic": "Actions",
+    "description": "A Bonus Action is a special action that you can take on the same turn that you take an action. You can't take more than one Bonus Action on a turn, and you have a Bonus Action to take only if a rule explicitly says so."
+  },
+  {
+    "name": "Reaction",
+    "topic": "Actions",
+    "description": "A Reaction is a special action taken in response to a trigger defined in the Reaction's description. You can take a Reaction on another creature's turn, and if you take it on your turn, you can do so even if you also take an action, a Bonus Action, or both. Once you take a Reaction, you can't take another one until the start of your next turn. The Opportunity Attack is a Reaction available to all creatures."
+  },
+  {
+    "name": "Opportunity Attacks",
+    "topic": "Combat",
+    "description": "You can make an Opportunity Attack when a creature that you can see leaves your reach using its action, its Bonus Action, its Reaction, or one of its speeds. To make the Opportunity Attack, take a Reaction to make one melee attack with a weapon or an Unarmed Strike against the provoking creature. The attack occurs right before the creature leaves your reach."
+  },
+  {
+    "name": "Unarmed Strike",
+    "topic": "Combat",
+    "description": "Instead of using a weapon to make a melee attack, you can use a punch, kick, headbutt, or similar forceful blow. In game terms, this is an Unarmed Strike - a melee attack that involves you using your body to damage, grapple, or shove a target within 5 feet of you.\n\nWhenever you use your Unarmed Strike, choose one of the following options for its effect.\n\nDamage. You make an attack roll against the target. Your bonus to the roll equals your Strength modifier plus your Proficiency Bonus. On a hit, the target takes Bludgeoning damage equal to 1 plus your Strength modifier.\n\nGrapple. The target must succeed on a Strength or Dexterity saving throw (it chooses which), or it has the Grappled condition. The DC for the saving throw and any escape attempts equals 8 plus your Strength modifier and Proficiency Bonus. This grapple is possible only if the target is no more than one size larger than you and if you have a hand free to grab it.\n\nShove. The target must succeed on a Strength or Dexterity saving throw (it chooses which), or you either push it 5 feet away or cause it to have the Prone condition. The DC for the saving throw equals 8 plus your Strength modifier and Proficiency Bonus. This shove is possible only if the target is no more than one size larger than you."
+  },
+  {
+    "name": "Grappling",
+    "topic": "Combat",
+    "description": "A creature can grapple another creature. Characters typically grapple by using an Unarmed Strike. Many monsters have special attacks that allow them to quickly grapple prey. However a grapple is initiated, it follows these rules.\n\nGrappled Condition. Successfully grappling a creature gives it the Grappled condition.\n\nOne Grapple per Hand. A creature must have a hand free to grapple another creature. Some stat blocks and game effects allow a creature to grapple using a tentacle, a maw, or another body part. Whatever part a grappler uses, it can grapple only one creature at a time with that part, and the grappler can't use that part to target another creature unless it ends the grapple.\n\nEnding a Grapple. A Grappled creature can use its action to make a Strength (Athletics) or Dexterity (Acrobatics) check against the grapple's escape DC, ending the condition on itself on a success. The condition also ends if the grappler has the Incapacitated condition or if the distance between the Grappled target and the grappler exceeds the grapple's range. In addition, the grappler can release the target at any time (no action required)."
+  },
+  {
+    "name": "Cover",
+    "topic": "Combat",
+    "description": "Cover provides a degree of protection to a target behind it. There are three degrees of cover, each of which provides a different benefit to a target: Half Cover (+2 bonus to AC and Dexterity saving throws), Three-Quarters Cover (+5 bonus to AC and Dexterity saving throws), and Total Cover (can't be targeted directly). If behind more than one degree of cover, a target benefits only from the most protective degree."
+  },
+  {
+    "name": "Critical Hit",
+    "topic": "Combat",
+    "description": "If you roll a 20 on the d20 for an attack roll, you score a Critical Hit, and the attack hits regardless of any modifiers or the target's AC. A Critical Hit lets you roll extra dice for the attack's damage against the target. Roll all of the attack's damage dice twice and add them together. Then add any relevant modifiers."
+  },
+  {
+    "name": "Resistance",
+    "topic": "Combat",
+    "description": "If you have Resistance to a damage type, damage of that type is halved against you (round down). Resistance is applied only once to an instance of damage."
+  },
+  {
+    "name": "Vulnerability",
+    "topic": "Combat",
+    "description": "If you have Vulnerability to a damage type, damage of that type is doubled against you. Vulnerability is applied only once to an instance of damage."
+  },
+  {
+    "name": "Immunity",
+    "topic": "Combat",
+    "description": "If you have Immunity to a damage type or a condition, it doesn't affect you in any way."
+  },
+  {
+    "name": "Damage Threshold",
+    "topic": "Combat",
+    "description": "A creature or an object that has a damage threshold has Immunity to all damage unless it takes an amount of damage from a single attack or effect equal to or greater than its damage threshold, in which case it takes that entire instance of damage. Any damage that fails to meet or exceed the damage threshold is superficial and doesn't reduce Hit Points. For example, if an object has a damage threshold of 10, the object takes no damage if 9 damage is dealt to it, since that damage fails to exceed the threshold. If the same object is dealt 11 damage, it takes all of that damage."
+  },
+  {
+    "name": "Knocking Out a Creature",
+    "topic": "Combat",
+    "description": "When you would reduce a creature to 0 Hit Points with a melee attack, you can instead reduce the creature to 1 Hit Point. The creature then has the Unconscious condition and starts a Short Rest.\n\nThe creature remains Unconscious until it regains any Hit Points or until someone uses an action to administer first aid to it, which requires a successful DC 10 Wisdom (Medicine) check."
+  },
+  {
+    "name": "Improvised Weapons",
+    "topic": "Combat",
+    "description": "An improvised weapon is an object wielded as a makeshift weapon, such as broken glass, a table leg, or a frying pan. A Simple or Martial weapon also counts as an improvised weapon if it's wielded in a way contrary to its design; if you use a Ranged weapon to make a melee attack or throw a Melee weapon that lacks the Thrown property, the weapon counts as an improvised weapon. An improvised weapon follows the rules below.\n\nProficiency. Don't add your Proficiency Bonus to attack rolls with an improvised weapon.\n\nDamage. On a hit, the weapon deals 1d4 damage of a type the GM thinks is appropriate for the object.\n\nRange. If you throw the weapon, it has a normal range of 20 feet and a long range of 60 feet.\n\nWeapon Equivalents. If an improvised weapon resembles a Simple or Martial weapon, the GM may say it functions as that weapon and uses that weapon's rules. For example, the GM could treat a table leg as a Club."
+  },
+  {
+    "name": "Initiative",
+    "topic": "Combat",
+    "description": "Initiative determines the order of turns during combat. The combat rules in \"Playing the Game\" explain how to roll Initiative.\n\nSometimes a GM might have combatants use their Initiative scores instead of rolling Initiative. Your Initiative score equals 10 plus your Dexterity modifier. If you have Advantage on Initiative rolls, increase your Initiative score by 5. If you have Disadvantage on those rolls, decrease that score by 5."
+  },
+  {
+    "name": "Surprise",
+    "topic": "Combat",
+    "description": "If a creature is caught unawares by the start of combat, that creature is surprised, which causes it to have Disadvantage on its Initiative roll."
+  },
+  {
+    "name": "Bloodied",
+    "topic": "Combat",
+    "description": "A creature is Bloodied while it has half its Hit Points or fewer remaining."
+  },
+  {
+    "name": "Death Saving Throw",
+    "topic": "Combat",
+    "description": "A player character must make a Death Saving Throw (also called a Death Save) if they start their turn with 0 Hit Points."
+  },
+  {
+    "name": "Stable",
+    "topic": "Combat",
+    "description": "A creature is Stable if it has 0 Hit Points but isn't required to make Death Saving Throws."
+  },
+  {
+    "name": "Temporary Hit Points",
+    "topic": "Combat",
+    "description": "Temporary Hit Points are granted by certain effects and act as a buffer against losing real Hit Points."
+  },
+  {
+    "name": "Difficult Terrain",
+    "topic": "Movement",
+    "description": "If a space is Difficult Terrain, every foot of movement in that space costs 1 extra foot. For example, moving 5 feet through Difficult Terrain costs 10 feet of movement. Difficult Terrain isn't cumulative; either a space is Difficult Terrain or it isn't.\n\nA space is Difficult Terrain if the space contains any of the following or something similar:\n\n- A creature that isn't Tiny or your ally\n- Furniture that is sized for creatures of your size or larger\n- Heavy snow, ice, rubble, or undergrowth\n- Liquid that's between shin- and waist-deep\n- A narrow opening sized for a creature one size smaller than you\n- A slope of 20 degrees or more"
+  },
+  {
+    "name": "Jumping",
+    "topic": "Movement",
+    "description": "When you jump, you make either a Long Jump (horizontal) or a High Jump (vertical)."
+  },
+  {
+    "name": "Falling",
+    "topic": "Environment",
+    "description": "A creature that falls takes 1d6 Bludgeoning damage at the end of the fall for every 10 feet it fell, to a maximum of 20d6. When the creature lands, it has the Prone condition unless it avoids taking any damage from the fall.\n\nA creature that falls into water or another liquid can use its Reaction to make a DC 15 Strength (Athletics) or Dexterity (Acrobatics) check to hit the surface head or feet first. On a successful check, any damage resulting from the fall is halved."
+  },
+  {
+    "name": "Suffocation",
+    "topic": "Environment",
+    "description": "A creature can hold its breath for a number of minutes equal to 1 plus its Constitution modifier (minimum of 30 seconds) before suffocation begins. When a creature runs out of breath or is choking, it gains 1 Exhaustion level at the end of each of its turns. When a creature can breathe again, it removes all levels of Exhaustion it gained from suffocating."
+  },
+  {
+    "name": "Heavily Obscured",
+    "topic": "Environment",
+    "description": "You have the Blinded condition while trying to see something in a Heavily Obscured space."
+  },
+  {
+    "name": "Lightly Obscured",
+    "topic": "Environment",
+    "description": "You have Disadvantage on Wisdom (Perception) checks to see something in a Lightly Obscured space."
+  },
+  {
+    "name": "Bright Light",
+    "topic": "Environment",
+    "description": "Bright Light is normal illumination."
+  },
+  {
+    "name": "Dim Light",
+    "topic": "Environment",
+    "description": "An area with Dim Light is Lightly Obscured."
+  },
+  {
+    "name": "Darkness",
+    "topic": "Environment",
+    "description": "An area of Darkness is Heavily Obscured."
+  },
+  {
+    "name": "Darkvision",
+    "topic": "Environment",
+    "description": "If you have Darkvision, you can see in Dim Light within a specified range as if it were Bright Light and in Darkness within that range as if it were Dim Light. You discern colors in that Darkness only as shades of gray."
+  },
+  {
+    "name": "Blindsight",
+    "topic": "Environment",
+    "description": "If you have Blindsight, you can see within a specific range without relying on physical sight. Within that range, you can see anything that isn't behind Total Cover even if you have the Blinded condition or are in Darkness. Moreover, in that range, you can see something that has the Invisible condition."
+  },
+  {
+    "name": "Truesight",
+    "topic": "Environment",
+    "description": "If you have Truesight, your vision is enhanced within a specified range. Within that range, your vision pierces through the following:\n\nDarkness. You can see in normal and magical Darkness.\n\nInvisibility. You see creatures and objects that have the Invisible condition.\n\nVisual Illusions. Visual illusions appear transparent to you, and you automatically succeed on saving throws against them.\n\nTransformations. You discern the true form of any creature or object you see that has been transformed by magic.\n\nEthereal Plane. You see into the Ethereal Plane."
+  },
+  {
+    "name": "Short Rest",
+    "topic": "Rest",
+    "description": "A Short Rest is a 1-hour period of downtime, during which a creature does nothing more strenuous than reading, talking, eating, or standing watch. To start a Short Rest, you must have at least 1 Hit Point.\n\nBenefits of the Rest. When you finish the rest, you gain the following benefits:\n\nSpend Hit Point Dice. You can spend one or more of your Hit Point Dice to regain Hit Points. For each Hit Point Die you spend in this way, roll the die and add your Constitution modifier to it. You regain Hit Points equal to the total (minimum of 1 Hit Point). You can decide to spend an additional Hit Point Die after each roll.\n\nSpecial Feature. Some features are recharged by a Short Rest. If you have such a feature, it recharges in the way specified in its description.\n\nInterrupting the Rest. A Short Rest is stopped by the following interruptions:\n\n- Rolling Initiative\n- Casting a spell other than a cantrip\n- Taking any damage\n\nAn interrupted Short Rest confers no benefits."
+  },
+  {
+    "name": "Long Rest",
+    "topic": "Rest",
+    "description": "A Long Rest is a period of extended downtime - at least 8 hours - available to any creature. During a Long Rest, you sleep for at least 6 hours and perform no more than 2 hours of light activity, such as reading, talking, eating, or standing watch.\n\nDuring sleep, you have the Unconscious condition. After you finish a Long Rest, you must wait at least 16 hours before starting another one.\n\nBenefits of the Rest. To start a Long Rest, you must have at least 1 Hit Point. When you finish the rest, you gain the following benefits:\n\nRegain All HP. You regain all lost Hit Points and all spent Hit Point Dice. If your Hit Point maximum was reduced, it returns to normal.\n\nAbility Scores Restored. If any of your ability scores were reduced, they return to normal.\n\nExhaustion Reduced. If you have the Exhaustion condition, its level decreases by 1.\n\nSpecial Feature. Some features are recharged by a Long Rest. If you have such a feature, it recharges in the way specified in its description.\n\nInterrupting the Rest. A Long Rest is stopped by the following interruptions:\n\n- Rolling Initiative\n- Casting a spell other than a cantrip\n- Taking any damage\n- 1 hour of walking or other physical exertion\n\nIf you rested at least 1 hour before the interruption, you gain the benefits of a Short Rest.\n\nYou can resume a Long Rest immediately after an interruption. If you do so, the rest requires 1 additional hour per interruption to finish."
+  },
+  {
+    "name": "Concentration",
+    "topic": "Spellcasting",
+    "description": "Some spells and other effects require Concentration to remain active, as specified in their descriptions. If the effect's creator loses Concentration, the effect ends. If the effect has a maximum duration, the effect's description specifies how long the creator can concentrate on it: up to 1 minute, 1 hour, or some other duration. The creator can end Concentration at any time (no action required). The following factors break Concentration.\n\nAnother Concentration Effect. You lose Concentration on an effect the moment you start casting a spell that requires Concentration or activate another effect that requires Concentration.\n\nDamage. If you take damage, you must succeed on a Constitution saving throw to maintain Concentration. The DC equals 10 or half the damage taken (round down), whichever number is higher, up to a maximum DC of 30.\n\nIncapacitated or Dead. Your Concentration ends if you have the Incapacitated condition or you die."
+  },
+  {
+    "name": "Area of Effect",
+    "topic": "Spellcasting",
+    "description": "The descriptions of many spells and other features specify that they have an area of effect, which typically has one of six shapes. These shapes are defined elsewhere in this glossary:\n\nAn area of effect has a point of origin, a location from which the effect's energy erupts. The rules for each shape specify how to position its point of origin. If all straight lines extending from the point of origin to a location in the area of effect are blocked, that location isn't included in the area of effect. To block a line, an obstruction must provide Total Cover.\n\nIf the creator of an area of effect places it at an unseen point and an obstruction - such as a wall - is between the creator and that point, the point of origin comes into being on the near side of the obstruction."
+  },
+  {
+    "name": "Spell Attack",
+    "topic": "Spellcasting",
+    "description": "A spell attack is an attack roll made as part of a spell or another magical effect."
+  },
+  {
+    "name": "Ritual",
+    "topic": "Spellcasting",
+    "description": "If you have a spell prepared that has the Ritual tag, you can cast that spell as a Ritual. The Ritual version of a spell takes 10 minutes longer to cast than normal. It also doesn't expend a spell slot, which means the ritual version of a spell can't be cast at a higher level."
+  },
+  {
+    "name": "Advantage",
+    "topic": "Checks",
+    "description": "If you have Advantage on a D20 Test, roll two d20s, and use the higher roll. A roll can't be affected by more than one Advantage, and Advantage and Disadvantage on the same roll cancel each other."
+  },
+  {
+    "name": "Disadvantage",
+    "topic": "Checks",
+    "description": "If you have Disadvantage on a D20 Test, roll two d20s and use the lower roll. A roll can't be affected by more than one Disadvantage, and Advantage and Disadvantage on the same roll cancel each other."
+  },
+  {
+    "name": "Passive Perception",
+    "topic": "Checks",
+    "description": "Passive Perception is a score that reflects a creature's general awareness of its surroundings. The GM uses this score when determining whether a creature notices something without consciously making a Wisdom (Perception) check.\n\nA creature's Passive Perception equals 10 plus the creature's Wisdom (Perception) check bonus. If the creature has Advantage on such checks, increase the score by 5. If the creature has Disadvantage on them, decrease the score by 5. For example, a level 1 character with a Wisdom of 15 and proficiency in Perception has a Passive Perception of 14 (10 + 2 + 2). If that character has Advantage on Wisdom (Perception) checks, the score becomes 19."
+  },
+  {
+    "name": "Heroic Inspiration",
+    "topic": "Checks",
+    "description": "If you (a player character) have Heroic Inspiration, you can expend it to reroll any die immediately after rolling it, and you must use the new roll.\n\nIf you gain Heroic Inspiration but already have it, it's lost unless you give it to a player character who lacks it."
+  }
+]

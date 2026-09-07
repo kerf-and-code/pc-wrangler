@@ -312,9 +312,10 @@ function CardBody({ entry, meta }: { entry: CompendiumEntry; meta: React.CSSProp
   }
   if (isRule(entry)) {
     const d = entry.display;
+    const srd = entry.ruleset === "2024" ? "SRD 5.2" : "SRD 5.1";
     return (
       <div>
-        {d.topic && <p style={meta}>{d.topic} rule · SRD 5.1</p>}
+        {d.topic && <p style={meta}>{d.topic} rule · {srd}</p>}
         {d.description && <p style={body}>{d.description}</p>}
       </div>
     );
