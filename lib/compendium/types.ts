@@ -7,7 +7,7 @@
 // for the data itself).
 
 export type CompendiumCategory =
-  | "spell" | "magic-item" | "equipment" | "condition" | "feat" | "feature" | "rule" | "monster" | "species";
+  | "spell" | "magic-item" | "equipment" | "condition" | "feat" | "feature" | "rule" | "monster" | "species" | "background";
 export type Ruleset = "2014" | "2024" | "both";
 
 // Attribution. "srd" is Open Game Content under CC-BY (SRD 5.1 / 5.2); "kc" is original content
@@ -125,9 +125,22 @@ export interface SpeciesDisplay {
   traits: MonsterTrait[]; // reuses the {name, description} shape
 }
 
+// A character background. The source data is structured (no prose), so the card is field-based. The
+// two editions carry DIFFERENT fields: 2024 grants ability-score choices and an origin feat; 2014
+// grants languages instead and neither of those two - every field is therefore nullable and the card
+// shows only the ones present.
+export interface BackgroundDisplay {
+  abilityScores: string | null; // 2024 only, e.g. "Strength, Constitution, Charisma"
+  feat: string | null;          // 2024 only, the origin feat
+  skillProficiencies: string | null;
+  toolProficiency: string | null;
+  languages: string | null;     // 2014 only
+  equipment: string | null;
+}
+
 export type CompendiumDisplay =
   | SpellDisplay | ItemDisplay | GearDisplay | ConditionDisplay | FeatDisplay | FeatureDisplay
-  | RuleDisplay | MonsterDisplay | SpeciesDisplay;
+  | RuleDisplay | MonsterDisplay | SpeciesDisplay | BackgroundDisplay;
 
 // One entry per term. This is a DISCRIMINATED UNION keyed on `category`: each category pins its own
 // `display` shape, so a check on `category` narrows `display` exactly. The discriminant is load-bearing
@@ -153,7 +166,8 @@ export type CompendiumEntry =
   | EntryBase<"feature", FeatureDisplay>
   | EntryBase<"rule", RuleDisplay>
   | EntryBase<"monster", MonsterDisplay>
-  | EntryBase<"species", SpeciesDisplay>;
+  | EntryBase<"species", SpeciesDisplay>
+  | EntryBase<"background", BackgroundDisplay>;
 
 // Narrowing helpers so the card renderer can read the right fields with no `any`. Each keys on the
 // category discriminant and returns the matching union member via Extract.
@@ -166,3 +180,4 @@ export const isFeature = (e: CompendiumEntry): e is Extract<CompendiumEntry, { c
 export const isRule = (e: CompendiumEntry): e is Extract<CompendiumEntry, { category: "rule" }> => e.category === "rule";
 export const isMonster = (e: CompendiumEntry): e is Extract<CompendiumEntry, { category: "monster" }> => e.category === "monster";
 export const isSpecies = (e: CompendiumEntry): e is Extract<CompendiumEntry, { category: "species" }> => e.category === "species";
+export const isBackground = (e: CompendiumEntry): e is Extract<CompendiumEntry, { category: "background" }> => e.category === "background";

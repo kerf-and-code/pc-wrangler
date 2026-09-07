@@ -6,7 +6,7 @@ import { CompendiumMatcher, type RankedMatch } from "@/lib/compendium/match";
 import { useVosk } from "@/lib/compendium/useVosk";
 import {
   type CompendiumEntry, type Ruleset, type MonsterDisplay,
-  isSpell, isItem, isGear, isCondition, isFeat, isFeature, isRule, isMonster, isSpecies,
+  isSpell, isItem, isGear, isCondition, isFeat, isFeature, isRule, isMonster, isSpecies, isBackground,
 } from "@/lib/compendium/types";
 
 // components/compendium-tool.tsx
@@ -332,6 +332,28 @@ function CardBody({ entry, meta }: { entry: CompendiumEntry; meta: React.CSSProp
         {d.traits.map((t, i) => (
           <p key={i} style={{ ...body, margin: "4px 0 0" }}>
             {t.name && <strong style={{ color: C.text }}>{t.name}. </strong>}{t.description}
+          </p>
+        ))}
+      </div>
+    );
+  }
+  if (isBackground(entry)) {
+    const d = entry.display;
+    // The source data has no prose, so the card is a labelled field list; fields absent in one edition
+    // (ability scores + feat are 2024-only, languages is 2014-only) simply drop out.
+    const rows = ([
+      d.abilityScores && ["Ability Scores", d.abilityScores],
+      d.feat && ["Origin Feat", d.feat],
+      d.skillProficiencies && ["Skill Proficiencies", d.skillProficiencies],
+      d.toolProficiency && ["Tool Proficiency", d.toolProficiency],
+      d.languages && ["Languages", d.languages],
+      d.equipment && ["Equipment", d.equipment],
+    ].filter(Boolean)) as [string, string][];
+    return (
+      <div>
+        {rows.map(([k, v], i) => (
+          <p key={i} style={{ ...body, margin: i === 0 ? "8px 0 0" : "4px 0 0" }}>
+            <strong style={{ color: C.text }}>{k}: </strong>{v}
           </p>
         ))}
       </div>

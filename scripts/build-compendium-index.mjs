@@ -428,6 +428,43 @@ function loadSpecies(ed) {
   return list.filter((s) => String(s?.source ?? "").toUpperCase().startsWith("SRD"));
 }
 
+// ---- backgrounds ---------------------------------------------------------------------------------
+// backgrounds-<ed>.json is the structured (no-prose) background data. The two editions carry different
+// fields: 2024 grants ability-score choices + an origin feat; 2014 grants languages instead and neither
+// of those. The SRD-open background set is tiny - SRD 5.2 ships 4 sample backgrounds (Acolyte, Criminal,
+// Sage, Soldier) and SRD 5.1 ships only Acolyte - so those are tagged "srd" and everything else is
+// Terry's original content, tagged "kc" (repo-wide provenance: anything not from the SRD is self-authored).
+const SRD_BACKGROUNDS = {
+  "2014": new Set(["acolyte"]),
+  "2024": new Set(["acolyte", "criminal", "sage", "soldier"]),
+};
+function backgroundSource(name, ruleset) {
+  const set = SRD_BACKGROUNDS[ruleset] || SRD_BACKGROUNDS["2014"];
+  return set.has(norm(name)) ? "srd" : "kc";
+}
+function backgroundEntry(b, ruleset) {
+  return {
+    id: `background:${slug(b.name)}`,
+    name: b.name,
+    category: "background",
+    ruleset,
+    source: backgroundSource(b.name, ruleset),
+    spoken: spokenForms(b.name),
+    display: {
+      abilityScores: b.ability_scores ?? null,
+      feat: b.feat ?? null,
+      skillProficiencies: b.skill_proficiencies ?? null,
+      toolProficiency: b.tool_proficiency ?? null,
+      languages: b.languages ?? null,
+      equipment: b.equipment ?? null,
+    },
+  };
+}
+function loadBackgrounds(ed) {
+  const data = readMaybe(path.join(SRD_DIR, `backgrounds-${ed}.json`));
+  return Array.isArray(data) ? data : (Array.isArray(data?.backgrounds) ? data.backgrounds : []);
+}
+
 // Item variant tables live in rules-data.json (ITEM_VARIANTS), keyed by item name. We attach only
 // the label + option names (mechanics-only) so a card can show, e.g., the Belt of Giant Strength
 // lineages without duplicating the derivation payload.
@@ -461,6 +498,7 @@ function buildEdition(ed, variantsByName) {
   const classFeatures = extractClassFeatures(ed);
   const monsters = loadMonsters(ed);
   const species = loadSpecies(ed);
+  const backgrounds = loadBackgrounds(ed);
   // No 2014 fallback here (unlike conditions): rules-<ed>.json is edition-specific SRD text.
   const rules = readMaybe(path.join(SRD_DIR, `rules-${ed}.json`)) || [];
   return applyAliases([
@@ -474,6 +512,7 @@ function buildEdition(ed, variantsByName) {
     ...classFeatures,
     ...monsters.map((m) => monsterEntry(m, ed)),
     ...species.map((s) => speciesEntry(s, ed)),
+    ...backgrounds.map((b) => backgroundEntry(b, ed)),
     ...rules.map((r) => ruleEntry(r, ed)),
   ]);
 }
