@@ -2,12 +2,18 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
+import { createClient } from "@/lib/supabase/client";
+import { getActiveCampaign, onActiveCampaignChange } from "@/lib/active-campaign";
 import { CompendiumMatcher, type RankedMatch } from "@/lib/compendium/match";
 import { useVosk } from "@/lib/compendium/useVosk";
 import {
   type CompendiumEntry, type Ruleset, type MonsterDisplay,
-  isSpell, isItem, isGear, isCondition, isFeat, isFeature, isRule, isMonster, isSpecies, isBackground,
+  isSpell, isItem, isGear, isCondition, isFeat, isFeature, isRule, isMonster, isSpecies, isBackground, isCustom,
 } from "@/lib/compendium/types";
+import {
+  type CustomRow, type CustomDraft, type Ruleset3,
+  listCustomEntries, createCustomEntry, updateCustomEntry, deleteCustomEntry, mergeCustom, flattenForOverride,
+} from "@/lib/compendium/custom";
 
 // components/compendium-tool.tsx
 //
@@ -15,7 +21,13 @@ import {
 // uses on-device Vosk (see lib/compendium/useVosk); both paths feed the same match -> addCard pipeline.
 // Listen mode is real: "Continuous" cards auto-dismiss after 30s (a rolodex, newest on top),
 // "Push to talk" listens for one phrase and pins the card. Ruleset toggle swaps the prebuilt index
-// (2014 / 2024 / both). Data is SRD 5.1 (CC-BY); nothing leaves the browser.
+// (2014 / 2024 / both). Data is SRD 5.1/5.2 (CC-BY) plus Kerf and Code originals; nothing leaves the
+// browser.
+//
+// HOMEBREW + OVERRIDES: a signed-in GM can add their own cards and non-destructively override shipped
+// ones. Custom entries are stored per GM (lib/compendium/custom + migration p90), fetched here, and
+// LAYERED over the static index at load time (mergeCustom): an override drops the shipped card by id and
+// replaces it; deleting the custom row reverts. The static index stays the base and is never mutated.
 
 const AUTO_MS = 30_000;
 const MAX_CARDS = 12;
@@ -26,9 +38,25 @@ const MODEL_URL = "/compendium/model/vosk-model-small-en-us-0.15.tar.gz";
 type ListenMode = "push" | "continuous";
 interface Card { key: string; entry: CompendiumEntry; pinned: boolean; expiresAt: number | null }
 
+// The editor's working state. `id` is set when editing an existing custom row; null for a new card or a
+// fresh override of a shipped card. `overridesId` is the shadowed base card's id (null for a new card).
+interface EditState {
+  id: string | null;
+  name: string;
+  tag: string;
+  ruleset: Ruleset3;
+  metaLinesText: string; // one meta line per row in a textarea
+  body: string;
+  aliasesText: string;   // comma-separated
+  overridesId: string | null;
+  campaignId: string | null;
+  category: string;
+  baseLabel: string | null; // "Overriding <name>" hint, or null for a new card
+}
+
 export default function CompendiumTool() {
   const [ruleset, setRuleset] = useState<Ruleset>("2014");
-  const [entries, setEntries] = useState<CompendiumEntry[]>([]);
+  const [baseEntries, setBaseEntries] = useState<CompendiumEntry[]>([]);
   const [grammarPhrases, setGrammarPhrases] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -40,7 +68,28 @@ export default function CompendiumTool() {
   const [partial, setPartial] = useState("");
   const hoveredRef = useRef<string | null>(null);
 
+  // ---- homebrew / overrides ----
+  const supabase = useMemo(() => createClient(), []);
+  const [gmId, setGmId] = useState<string | null>(null);
+  const [customRows, setCustomRows] = useState<CustomRow[]>([]);
+  const [activeCampaign, setActiveCampaign] = useState<{ id: string; name?: string } | null>(null);
+  const [editing, setEditing] = useState<EditState | null>(null);
+  const [manageOpen, setManageOpen] = useState(false);
+  const [saveErr, setSaveErr] = useState<string | null>(null);
+
+  // Merge the GM's applicable custom rows over the static index. Recomputes when the toggle or the
+  // active campaign changes, so overrides and campaign-pinned cards appear/disappear correctly.
+  const rs3: Ruleset3 = ruleset;
+  const entries = useMemo(
+    () => mergeCustom(baseEntries, customRows, rs3, activeCampaign?.id ?? null),
+    [baseEntries, customRows, rs3, activeCampaign],
+  );
   const matcher = useMemo(() => (entries.length ? new CompendiumMatcher(entries) : null), [entries]);
+  // Extra spoken phrases from custom entries, so the (experimental) grammar-constrain path can reach them.
+  const customSpoken = useMemo(
+    () => entries.filter(isCustom).flatMap((e) => e.spoken),
+    [entries],
+  );
 
   // Load the prebuilt index + grammar for the chosen ruleset.
   useEffect(() => {
@@ -48,7 +97,7 @@ export default function CompendiumTool() {
     setLoading(true); setLoadError(null);
     fetch(`/compendium/index-${ruleset}.json`)
       .then((r) => { if (!r.ok) throw new Error(`index-${ruleset}.json ${r.status}`); return r.json(); })
-      .then((data: CompendiumEntry[]) => { if (!off) { setEntries(Array.isArray(data) ? data : []); setLoading(false); } })
+      .then((data: CompendiumEntry[]) => { if (!off) { setBaseEntries(Array.isArray(data) ? data : []); setLoading(false); } })
       .catch((e) => { if (!off) { setLoadError(e instanceof Error ? e.message : "Could not load the compendium."); setLoading(false); } });
     fetch(`/compendium/grammar-${ruleset}.json`)
       .then((r) => (r.ok ? r.json() : []))
@@ -56,6 +105,28 @@ export default function CompendiumTool() {
       .catch(() => { if (!off) setGrammarPhrases([]); });
     return () => { off = true; };
   }, [ruleset]);
+
+  // Who is signed in (the GM who owns any custom cards) + which campaign is active.
+  const refreshCustom = useCallback(async (system = "dnd5e") => {
+    try {
+      const rows = await listCustomEntries(supabase, system);
+      setCustomRows(rows);
+    } catch { /* homebrew is additive; a failure must not break the read-only tool */ }
+  }, [supabase]);
+
+  useEffect(() => {
+    let off = false;
+    supabase.auth.getUser().then(({ data }) => {
+      if (off) return;
+      const id = data.user?.id ?? null;
+      setGmId(id);
+      if (id) void refreshCustom();
+    }).catch(() => {});
+    const readActive = () => { const ac = getActiveCampaign(); setActiveCampaign(ac ? { id: ac.id, name: ac.name } : null); };
+    readActive();
+    const unsub = onActiveCampaignChange(readActive); // fires with no args; re-read the signal
+    return () => { off = true; unsub(); };
+  }, [supabase, refreshCustom]);
 
   // Rolodex expiry sweep.
   useEffect(() => {
@@ -97,11 +168,15 @@ export default function CompendiumTool() {
   }, []);
   const handlePartial = useCallback((text: string) => setPartial(text), []);
 
+  const grammarForVosk = useMemo(
+    () => (grammarPhrases.length || customSpoken.length ? [...grammarPhrases, ...customSpoken] : grammarPhrases),
+    [grammarPhrases, customSpoken],
+  );
   const vosk = useVosk({
     modelUrl: MODEL_URL,
     onText: handleVoiceText,
     onPartial: handlePartial,
-    grammar: grammarOn ? grammarPhrases : null,
+    grammar: grammarOn ? grammarForVosk : null,
   });
   voskRef.current = vosk;
 
@@ -118,12 +193,97 @@ export default function CompendiumTool() {
     setCards((prev) => prev.map((c) => c.key === key && !c.pinned && c.expiresAt != null ? { ...c, expiresAt: Date.now() + AUTO_MS } : c));
   };
 
+  // ---- editor open/save/delete ----
+  const defaultRuleset = (): Ruleset3 => (ruleset === "both" ? "both" : ruleset);
+
+  const openNew = () => {
+    setSaveErr(null);
+    setEditing({
+      id: null, name: "", tag: "house rule", ruleset: defaultRuleset(),
+      metaLinesText: "", body: "", aliasesText: "", overridesId: null,
+      campaignId: null, category: "custom", baseLabel: null,
+    });
+  };
+
+  const openEditRow = (row: CustomRow) => {
+    setSaveErr(null);
+    setEditing({
+      id: row.id, name: row.name, tag: row.tag ?? "", ruleset: row.ruleset,
+      metaLinesText: row.meta_lines.join("\n"), body: row.body ?? "",
+      aliasesText: row.aliases.join(", "), overridesId: row.overrides_id,
+      campaignId: row.campaign_id, category: row.category,
+      baseLabel: row.overrides_id ? `Overriding ${row.overrides_id}` : null,
+    });
+  };
+
+  // Edit a card shown in the rolodex/results. A custom card edits its own row; a shipped card opens a
+  // non-destructive override (reusing an existing override row for it if one exists).
+  const openEdit = (entry: CompendiumEntry) => {
+    if (entry.id.startsWith("custom:")) {
+      const rowId = entry.id.slice("custom:".length);
+      const row = customRows.find((r) => r.id === rowId);
+      if (row) { openEditRow(row); return; }
+    }
+    const existing = customRows.find((r) => r.overrides_id === entry.id);
+    if (existing) { openEditRow(existing); return; }
+    const f = flattenForOverride(entry);
+    setSaveErr(null);
+    setEditing({
+      id: null, name: entry.name, tag: f.tag, ruleset: (["2014", "2024", "both"].includes(entry.ruleset) ? entry.ruleset : "both") as Ruleset3,
+      metaLinesText: f.metaLines.join("\n"), body: f.body, aliasesText: "",
+      overridesId: f.overridesId, campaignId: null, category: f.category,
+      baseLabel: `Overriding ${entry.name}`,
+    });
+  };
+
+  const draftFrom = (e: EditState): CustomDraft => ({
+    name: e.name.trim() || "Untitled",
+    tag: e.tag.trim() || null,
+    ruleset: e.ruleset,
+    metaLines: e.metaLinesText.split("\n").map((s) => s.trim()).filter(Boolean),
+    body: e.body.trim() || null,
+    spoken: [],
+    aliases: e.aliasesText.split(",").map((s) => s.trim()).filter(Boolean),
+    overridesId: e.overridesId,
+    campaignId: e.campaignId,
+    category: e.category || "custom",
+    system: "dnd5e",
+  });
+
+  const saveEditing = async () => {
+    if (!editing || !gmId) return;
+    setSaveErr(null);
+    try {
+      const draft = draftFrom(editing);
+      if (editing.id) await updateCustomEntry(supabase, editing.id, draft);
+      else await createCustomEntry(supabase, gmId, draft);
+      await refreshCustom();
+      setEditing(null);
+    } catch (e) {
+      setSaveErr(e instanceof Error ? e.message : "Could not save this card.");
+    }
+  };
+
+  const deleteEditing = async () => {
+    if (!editing || !editing.id) { setEditing(null); return; }
+    setSaveErr(null);
+    try {
+      await deleteCustomEntry(supabase, editing.id);
+      await refreshCustom();
+      setEditing(null);
+    } catch (e) {
+      setSaveErr(e instanceof Error ? e.message : "Could not delete this card.");
+    }
+  };
+
   // ---- styles ----
   const seg = (on: boolean): React.CSSProperties => ({ padding: "7px 12px", background: on ? C.surface2 : "transparent", color: on ? C.sun : C.muted, border: `1px solid ${on ? C.sun : C.line}`, borderRadius: 7, fontWeight: 600, fontSize: 13, cursor: "pointer" });
   const label: React.CSSProperties = { fontSize: 11, letterSpacing: "0.06em", textTransform: "uppercase", color: C.muted };
 
   const micLabel = vosk.status === "loading" ? "Loading model…" : vosk.listening ? "Stop" : "🎙 Voice";
   const micActive = vosk.listening;
+
+  const myCards = customRows; // already the GM's own (RLS); newest first
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -144,6 +304,15 @@ export default function CompendiumTool() {
             <button type="button" onClick={() => setListenMode("push")} style={seg(listenMode === "push")}>Push to talk (pinned)</button>
           </div>
         </div>
+        {gmId && (
+          <div>
+            <div style={{ ...label, marginBottom: 6 }}>Homebrew</div>
+            <div style={{ display: "flex", gap: 6 }}>
+              <button type="button" onClick={openNew} style={seg(false)}>+ New card</button>
+              <button type="button" onClick={() => setManageOpen((v) => !v)} style={seg(manageOpen)}>My cards{myCards.length ? ` (${myCards.length})` : ""}</button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* search + mic */}
@@ -189,6 +358,44 @@ export default function CompendiumTool() {
         <p style={{ ...label, margin: 0 }}>{entries.length.toLocaleString()} entries loaded · SRD 5.1 / 5.2 (CC-BY), plus original content by Kerf and Code · nothing leaves your browser</p>
       )}
 
+      {/* editor */}
+      {editing && (
+        <EntryEditor
+          state={editing}
+          onChange={setEditing}
+          onSave={saveEditing}
+          onDelete={deleteEditing}
+          onCancel={() => setEditing(null)}
+          activeCampaign={activeCampaign}
+          error={saveErr}
+          label={label}
+        />
+      )}
+
+      {/* my cards manager */}
+      {gmId && manageOpen && !editing && (
+        <div style={{ border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: 12, background: C.surface }}>
+          <div style={{ ...label, marginBottom: 8 }}>Your homebrew and overrides</div>
+          {myCards.length === 0 ? (
+            <p style={{ color: C.muted, fontSize: 13, margin: 0 }}>None yet. Use “+ New card” for a homebrew entry, or open any card and press Edit to override it.</p>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {myCards.map((r) => (
+                <div key={r.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, padding: "6px 8px", border: `1px solid ${C.line}`, borderRadius: 7 }}>
+                  <div style={{ minWidth: 0 }}>
+                    <span style={{ color: C.text, fontSize: 14, fontWeight: 600 }}>{r.name}</span>
+                    <span style={{ color: C.muted, fontSize: 12 }}>
+                      {" · "}{r.overrides_id ? "override" : (r.tag || "custom")}{" · "}{r.ruleset}{r.campaign_id ? " · campaign" : " · all campaigns"}
+                    </span>
+                  </div>
+                  <button type="button" onClick={() => openEditRow(r)} style={{ background: "transparent", border: `1px solid ${C.line}`, borderRadius: 7, color: C.text, cursor: "pointer", fontSize: 12, padding: "3px 10px", flexShrink: 0 }}>Edit</button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* disambiguation chips */}
       {candidates.length > 1 && (
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center" }}>
@@ -208,7 +415,7 @@ export default function CompendiumTool() {
           <p style={{ color: C.muted, fontSize: 14 }}>Look something up (type or use the mic) and its card appears here. In Continuous mode, cards fade after 30 seconds unless you hover or pin them.</p>
         )}
         {cards.map((c) => (
-          <CardView key={c.key} card={c} onPin={() => pin(c.key)} onDismiss={() => dismiss(c.key)} onEnter={() => onEnter(c.key)} onLeave={() => onLeave(c.key)} />
+          <CardView key={c.key} card={c} canEdit={!!gmId} onEdit={() => openEdit(c.entry)} onPin={() => pin(c.key)} onDismiss={() => dismiss(c.key)} onEnter={() => onEnter(c.key)} onLeave={() => onLeave(c.key)} />
         ))}
       </div>
     </div>
@@ -216,22 +423,25 @@ export default function CompendiumTool() {
 }
 
 // The little category chip. Features carry their flavour (metamagic / invocation / fighting style)
-// rather than the generic "feature", since that is what a DM is actually looking at.
+// rather than the generic "feature", since that is what a DM is actually looking at. Custom cards carry
+// the GM's own tag.
 function entryTag(e: CompendiumEntry): string {
   if (isFeature(e)) {
     const k = e.display.kind;
     return k === "fighting-style" ? "fighting style" : k === "feature" ? "class feature" : k;
   }
   if (isRule(e)) return e.display.topic ? e.display.topic.toLowerCase() : "rule";
+  if (isCustom(e)) return e.display.tag || "custom";
   return e.category === "magic-item" ? "item" : e.category;
 }
 
-function CardView({ card, onPin, onDismiss, onEnter, onLeave }: {
-  card: Card; onPin: () => void; onDismiss: () => void; onEnter: () => void; onLeave: () => void;
+function CardView({ card, canEdit, onEdit, onPin, onDismiss, onEnter, onLeave }: {
+  card: Card; canEdit: boolean; onEdit: () => void; onPin: () => void; onDismiss: () => void; onEnter: () => void; onLeave: () => void;
 }) {
   const e = card.entry;
   const chip: React.CSSProperties = { fontSize: 11, color: C.muted, border: `1px solid ${C.line}`, borderRadius: 999, padding: "1px 8px" };
   const meta: React.CSSProperties = { color: C.muted, fontSize: 12.5, margin: "2px 0 0" };
+  const homebrew = isCustom(e);
   return (
     <div onMouseEnter={onEnter} onMouseLeave={onLeave}
       style={{ background: C.surface, border: `1px solid ${card.pinned ? C.sun : C.line}`, borderRadius: FORGE_RADIUS, padding: 14, position: "relative" }}>
@@ -239,10 +449,12 @@ function CardView({ card, onPin, onDismiss, onEnter, onLeave }: {
         <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
           <span style={{ color: C.text, fontSize: 17, fontWeight: 700 }}>{e.name}</span>
           <span style={chip}>{entryTag(e)}</span>
-          {e.source === "kc" && <span style={{ ...chip, borderColor: C.line, color: C.sun }} title="Original content by Kerf and Code">Kerf &amp; Code</span>}
+          {homebrew && <span style={{ ...chip, borderColor: C.sun, color: C.sun }} title="Your homebrew or override">Homebrew</span>}
+          {!homebrew && e.source === "kc" && <span style={{ ...chip, borderColor: C.line, color: C.sun }} title="Original content by Kerf and Code">Kerf &amp; Code</span>}
           {!card.pinned && card.expiresAt != null && <span style={{ ...chip, borderColor: "transparent", color: C.muted }}>auto</span>}
         </div>
         <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+          {canEdit && <button type="button" onClick={onEdit} title={homebrew ? "Edit this card" : "Override this card"} style={{ background: "transparent", border: `1px solid ${C.line}`, borderRadius: 7, color: C.muted, cursor: "pointer", fontSize: 12, padding: "2px 8px" }}>{homebrew ? "Edit" : "Override"}</button>}
           <button type="button" onClick={onPin} title={card.pinned ? "Unpin" : "Pin"} style={{ background: "transparent", border: `1px solid ${C.line}`, borderRadius: 7, color: card.pinned ? C.sun : C.muted, cursor: "pointer", fontSize: 12, padding: "2px 8px" }}>{card.pinned ? "Pinned" : "Pin"}</button>
           <button type="button" onClick={onDismiss} title="Dismiss" style={{ background: "transparent", border: `1px solid ${C.line}`, borderRadius: 7, color: C.muted, cursor: "pointer", fontSize: 14, padding: "2px 8px", lineHeight: 1 }}>&times;</button>
         </div>
@@ -359,6 +571,15 @@ function CardBody({ entry, meta }: { entry: CompendiumEntry; meta: React.CSSProp
       </div>
     );
   }
+  if (isCustom(entry)) {
+    const d = entry.display;
+    return (
+      <div>
+        {d.metaLines.length > 0 && <p style={meta}>{d.metaLines.join(" · ")}</p>}
+        {d.body && <p style={body}>{d.body}</p>}
+      </div>
+    );
+  }
   return null;
 }
 
@@ -412,6 +633,97 @@ function MonsterBody({ d, meta, body }: { d: MonsterDisplay; meta: React.CSSProp
       {section("Bonus Actions", d.bonusActions)}
       {section("Reactions", d.reactions)}
       {section("Legendary Actions", d.legendaryActions)}
+    </div>
+  );
+}
+
+// The homebrew / override editor. One flexible form for every custom card: name, chip tag, the small
+// meta lines, the body, which edition it shows under, whether it is account-wide or pinned to the active
+// campaign, and optional voice aliases. Saving a fresh override of a shipped card writes a shadow row;
+// the shipped index is never touched.
+function EntryEditor({ state, onChange, onSave, onDelete, onCancel, activeCampaign, error, label }: {
+  state: EditState;
+  onChange: (s: EditState) => void;
+  onSave: () => void;
+  onDelete: () => void;
+  onCancel: () => void;
+  activeCampaign: { id: string; name?: string } | null;
+  error: string | null;
+  label: React.CSSProperties;
+}) {
+  const set = <K extends keyof EditState>(k: K, v: EditState[K]) => onChange({ ...state, [k]: v });
+  const field: React.CSSProperties = { width: "100%", padding: "8px 10px", background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: 7, fontSize: 14, boxSizing: "border-box" };
+  const seg = (on: boolean): React.CSSProperties => ({ padding: "6px 11px", background: on ? C.surface2 : "transparent", color: on ? C.sun : C.muted, border: `1px solid ${on ? C.sun : C.line}`, borderRadius: 7, fontWeight: 600, fontSize: 13, cursor: "pointer" });
+  const isOverride = !!state.overridesId;
+  return (
+    <div style={{ border: `1px solid ${C.sun}`, borderRadius: FORGE_RADIUS, padding: 14, background: C.surface, display: "flex", flexDirection: "column", gap: 10 }}>
+      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
+        <span style={{ color: C.text, fontSize: 15, fontWeight: 700 }}>{state.id ? "Edit card" : isOverride ? "Override card" : "New card"}</span>
+        {state.baseLabel && <span style={{ ...label, color: C.muted }}>{state.baseLabel}</span>}
+      </div>
+
+      <div>
+        <div style={{ ...label, marginBottom: 4 }}>Name</div>
+        <input value={state.name} onChange={(e) => set("name", e.target.value)} placeholder="Card title" style={field} />
+      </div>
+
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+        <div style={{ flex: "1 1 160px" }}>
+          <div style={{ ...label, marginBottom: 4 }}>Tag (chip)</div>
+          <input value={state.tag} onChange={(e) => set("tag", e.target.value)} placeholder="house rule" style={field} />
+        </div>
+        <div>
+          <div style={{ ...label, marginBottom: 4 }}>Shows under</div>
+          <div style={{ display: "flex", gap: 6 }}>
+            {(["2014", "2024", "both"] as Ruleset3[]).map((r) => (
+              <button key={r} type="button" onClick={() => set("ruleset", r)} style={seg(state.ruleset === r)}>{r === "both" ? "Both" : r}</button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div style={{ ...label, marginBottom: 4 }}>Meta lines (one per line, shown above the body)</div>
+        <textarea value={state.metaLinesText} onChange={(e) => set("metaLinesText", e.target.value)} rows={2} placeholder={"Level 3 Evocation\nRange 150 ft"} style={{ ...field, resize: "vertical", fontFamily: "inherit" }} />
+      </div>
+
+      <div>
+        <div style={{ ...label, marginBottom: 4 }}>Body</div>
+        <textarea value={state.body} onChange={(e) => set("body", e.target.value)} rows={5} placeholder="The rules text for this card." style={{ ...field, resize: "vertical", fontFamily: "inherit" }} />
+      </div>
+
+      <div>
+        <div style={{ ...label, marginBottom: 4 }}>Voice aliases (comma-separated, optional)</div>
+        <input value={state.aliasesText} onChange={(e) => set("aliasesText", e.target.value)} placeholder="fb, big boom" style={field} />
+      </div>
+
+      <div>
+        <div style={{ ...label, marginBottom: 4 }}>Scope</div>
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+          <button type="button" onClick={() => set("campaignId", null)} style={seg(state.campaignId == null)}>All my campaigns</button>
+          {activeCampaign && (
+            <button type="button" onClick={() => set("campaignId", activeCampaign.id)} style={seg(state.campaignId === activeCampaign.id)}>
+              Only {activeCampaign.name || "this campaign"}
+            </button>
+          )}
+          {!activeCampaign && state.campaignId != null && (
+            <span style={{ ...label, alignSelf: "center" }}>pinned to a campaign</span>
+          )}
+        </div>
+      </div>
+
+      {error && <p style={{ color: "#c98a7a", fontSize: 12.5, margin: 0 }}>{error}</p>}
+
+      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        <button type="button" onClick={onSave} style={{ padding: "8px 16px", background: C.sun, color: "#1b1712", border: "none", borderRadius: 8, fontWeight: 700, fontSize: 14, cursor: "pointer" }}>Save</button>
+        <button type="button" onClick={onCancel} style={{ padding: "8px 14px", background: "transparent", color: C.text, border: `1px solid ${C.line}`, borderRadius: 8, fontSize: 14, cursor: "pointer" }}>Cancel</button>
+        <span style={{ flex: 1 }} />
+        {state.id && (
+          <button type="button" onClick={onDelete} title={isOverride ? "Delete this override (reverts to the shipped card)" : "Delete this card"} style={{ padding: "8px 14px", background: "transparent", color: "#c98a7a", border: `1px solid ${C.line}`, borderRadius: 8, fontSize: 14, cursor: "pointer" }}>
+            {isOverride ? "Delete override (revert)" : "Delete"}
+          </button>
+        )}
+      </div>
     </div>
   );
 }

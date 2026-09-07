@@ -7,7 +7,8 @@
 // for the data itself).
 
 export type CompendiumCategory =
-  | "spell" | "magic-item" | "equipment" | "condition" | "feat" | "feature" | "rule" | "monster" | "species" | "background";
+  | "spell" | "magic-item" | "equipment" | "condition" | "feat" | "feature" | "rule" | "monster" | "species" | "background"
+  | "custom";
 export type Ruleset = "2014" | "2024" | "both";
 
 // Attribution. "srd" is Open Game Content under CC-BY (SRD 5.1 / 5.2); "kc" is original content
@@ -138,9 +139,19 @@ export interface BackgroundDisplay {
   equipment: string | null;
 }
 
+// A homebrew card or a GM's non-destructive override of a shipped card. Every custom entry, whatever
+// it represents, renders through this one flattened shape: a chip label, a few small meta lines, and a
+// body. `tag` carries the chip text (e.g. "house rule", "spell") since custom entries do not use the
+// per-category display shapes. Authored + stored per GM in the compendium_entries table (p90).
+export interface CustomDisplay {
+  tag: string | null;
+  metaLines: string[];
+  body: string | null;
+}
+
 export type CompendiumDisplay =
   | SpellDisplay | ItemDisplay | GearDisplay | ConditionDisplay | FeatDisplay | FeatureDisplay
-  | RuleDisplay | MonsterDisplay | SpeciesDisplay | BackgroundDisplay;
+  | RuleDisplay | MonsterDisplay | SpeciesDisplay | BackgroundDisplay | CustomDisplay;
 
 // One entry per term. This is a DISCRIMINATED UNION keyed on `category`: each category pins its own
 // `display` shape, so a check on `category` narrows `display` exactly. The discriminant is load-bearing
@@ -173,7 +184,8 @@ export type CompendiumEntry =
   | EntryBase<"rule", RuleDisplay>
   | EntryBase<"monster", MonsterDisplay>
   | EntryBase<"species", SpeciesDisplay>
-  | EntryBase<"background", BackgroundDisplay>;
+  | EntryBase<"background", BackgroundDisplay>
+  | EntryBase<"custom", CustomDisplay>;
 
 // Narrowing helpers so the card renderer can read the right fields with no `any`. Each keys on the
 // category discriminant and returns the matching union member via Extract.
@@ -187,3 +199,4 @@ export const isRule = (e: CompendiumEntry): e is Extract<CompendiumEntry, { cate
 export const isMonster = (e: CompendiumEntry): e is Extract<CompendiumEntry, { category: "monster" }> => e.category === "monster";
 export const isSpecies = (e: CompendiumEntry): e is Extract<CompendiumEntry, { category: "species" }> => e.category === "species";
 export const isBackground = (e: CompendiumEntry): e is Extract<CompendiumEntry, { category: "background" }> => e.category === "background";
+export const isCustom = (e: CompendiumEntry): e is Extract<CompendiumEntry, { category: "custom" }> => e.category === "custom";
