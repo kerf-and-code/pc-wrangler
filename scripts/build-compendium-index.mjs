@@ -720,6 +720,55 @@ async function buildLancer() {
   return applyAliases(out);
 }
 
+// ---- Daggerheart (fourth real system) ------------------------------------------------------------
+// lib/daggerheart/*.ts, MECHANICS METADATA ONLY under the Darrington Press Community Gaming License:
+// domain-card names + domain/level/recall/type (their EFFECT TEXT is deliberately not stored), weapon
+// and armor stat lines, class/ancestry/community index. No Critical Role / Darrington Press prose ships.
+// Folds into the generic "custom" card; ids "dh-<type>:", source "srd". rules-data.ts needs the esbuild
+// bundle (extensionless DH_WEAPONS import); domain-cards.ts loads directly (type-only import).
+async function buildDaggerheart() {
+  const dir = path.join(ROOT, "lib", "daggerheart");
+  const DC = await import(pathToFileURL(path.join(dir, "domain-cards.ts")).href);
+  const R = await bundleImport(path.join(dir, "rules-data.ts")); // weapons + classes + ancestries + communities + armor
+  const cap = (s) => (s ? String(s).replace(/^./, (c) => c.toUpperCase()) : s);
+  const DTYPE = { phy: "physical", mag: "magic" };
+  const mk = (type, id, name, metaLines, body) => ({
+    id: `dh-${type.replace(/\s+/g, "-")}:${slug(id || name)}`,
+    name, category: "custom", ruleset: "daggerheart", source: "srd",
+    spoken: spokenForms(name),
+    display: { tag: type, metaLines: (metaLines || []).filter(Boolean), body: body ?? null },
+  });
+  const out = [];
+  for (const c of DC.DH_DOMAIN_CARDS) {
+    out.push(mk("domain card", c.id, c.name, [`${cap(c.domain)} · Level ${c.level} · ${c.type}`, `Recall ${c.recall}`], null));
+  }
+  for (const w of R.DH_WEAPON_LIST) {
+    const dmg = `Damage ${w.damageDie}${w.damageBonus ? `+${w.damageBonus}` : ""} ${DTYPE[w.damageType] || w.damageType || ""}`.trim();
+    out.push(mk("weapon", w.id, w.name, [
+      [w.tier != null && `Tier ${w.tier}`, w.category].filter(Boolean).join(" · "),
+      [cap(w.trait), w.range].filter(Boolean).join(" · "),
+      dmg, w.burden,
+    ], w.feature ? `Feature: ${w.feature}` : null));
+  }
+  for (const cl of R.DH_CLASS_LIST) {
+    out.push(mk("class", cl.id, cl.name, [
+      cl.domains && cl.domains.length && `Domains: ${cl.domains.map(cap).join(", ")}`,
+      cl.evasion != null && `Evasion ${cl.evasion}`, cl.hp != null && `HP ${cl.hp}`,
+    ], null));
+  }
+  for (const a of R.DH_ANCESTRY_LIST) out.push(mk("ancestry", a.id, a.name, [], null));
+  for (const c of R.DH_COMMUNITY_LIST) out.push(mk("community", c.id, c.name, [], null));
+  for (const ar of R.DH_ARMOR_LIST) {
+    out.push(mk("armor", ar.id, ar.name, [
+      ar.tier != null && `Tier ${ar.tier}`,
+      (ar.baseMajor != null && ar.baseSevere != null) && `Thresholds ${ar.baseMajor}/${ar.baseSevere}`,
+      ar.baseScore != null && `Base Score ${ar.baseScore}`,
+      ar.evasionMod ? `Evasion ${ar.evasionMod >= 0 ? "+" : ""}${ar.evasionMod}` : null,
+    ], null));
+  }
+  return applyAliases(out);
+}
+
 async function main() {
   const mode = (process.argv[2] || "2014").trim();
 
@@ -728,6 +777,8 @@ async function main() {
     entries = await buildDrawSteel();
   } else if (mode === "lancer") {
     entries = await buildLancer();
+  } else if (mode === "daggerheart") {
+    entries = await buildDaggerheart();
   } else {
     const variantsByName = loadVariants();
     if (mode === "both") entries = mergeBoth(buildEdition("2024", variantsByName), buildEdition("2014", variantsByName));
