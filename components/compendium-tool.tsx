@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { getActiveCampaign, onActiveCampaignChange } from "@/lib/active-campaign";
 import { listModules, getModule, isKnownSystem } from "@/lib/systems/registry";
 import { attributionFor } from "@/lib/systems/attribution";
+import { resolveSystemVars } from "@/lib/systems/system-theme";
 import { CompendiumMatcher, type RankedMatch } from "@/lib/compendium/match";
 import { useVosk } from "@/lib/compendium/useVosk";
 import {
@@ -130,6 +131,22 @@ export default function CompendiumTool() {
       .catch(() => { if (!off) setGrammarPhrases([]); });
     return () => { off = true; };
   }, [system, ruleset]);
+
+  // Re-skin the whole page to the picked system, the same way SystemThemeProvider skins from the active
+  // campaign: set the per-system CSS vars (and data-system, which the effects overlay keys on) straight on
+  // <html>. This makes selecting a game in the dropdown FEEL like that game, matching the Forge and the
+  // other system pickers. On leaving the tool (or switching selection) we restore the session's active
+  // campaign look so the compendium never leaves a stale theme behind for the rest of the app.
+  useEffect(() => {
+    const root = document.documentElement;
+    const applyVars = (sys: string | null) => {
+      for (const [k, v] of Object.entries(resolveSystemVars(sys))) root.style.setProperty(k, v);
+      if (sys) root.setAttribute("data-system", sys);
+      else root.removeAttribute("data-system");
+    };
+    applyVars(system);
+    return () => applyVars(getActiveCampaign()?.system ?? null);
+  }, [system]);
 
   // Who is signed in (the GM who owns any custom cards) + which campaign is active.
   const refreshCustom = useCallback(async (system = "dnd5e") => {
