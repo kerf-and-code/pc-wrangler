@@ -23,7 +23,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
@@ -544,16 +544,81 @@ function mergeBoth(primary, older) {
   return out;
 }
 
-function main() {
+// ---- Draw Steel (a second real system behind the TTRPG dropdown) ---------------------------------
+// Draw Steel content lives in lib/drawsteel/*.ts (not lib/srd JSON), and it is MECHANICS METADATA ONLY
+// under the DRAW STEEL Creator License - names + derived stat tags + a generated one-line ability
+// explainer, never MCDM's authored effect prose (the same stance the Forge takes; see the data files'
+// headers and lib/systems/attribution.ts). Every content type folds into the generic "custom" card
+// (tag + meta lines + body), so no new category or renderer is needed. Ids are prefixed "ds-<type>:"
+// (NOT "custom:") so the tool treats them as shipped cards, not the GM's homebrew. source "srd" keeps
+// the Kerf-and-Code chip off; the footer surfaces the Creator License line. Classes/kits (rules-data.ts)
+// are deferred: that module's extensionless value imports don't load under a plain `node` run.
+async function buildDrawSteel() {
+  const dsDir = path.join(ROOT, "lib", "drawsteel");
+  const imp = (f) => import(pathToFileURL(path.join(dsDir, f)).href);
+  const [A, An, Ca, Co, De, Su, Ti] = await Promise.all([
+    imp("abilities.ts"), imp("ancestries.ts"), imp("careers.ts"),
+    imp("complications.ts"), imp("deities.ts"), imp("subclasses.ts"), imp("titles.ts"),
+  ]);
+  const clsLabel = (id) => (id === "common" ? "Common" : String(id).replace(/_$/, "").replace(/^./, (c) => c.toUpperCase()));
+  const mk = (type, id, name, metaLines, body) => ({
+    id: `ds-${type}:${slug(id || name)}`,
+    name,
+    category: "custom",
+    ruleset: "drawsteel",
+    source: "srd",
+    spoken: spokenForms(name),
+    display: { tag: type, metaLines: (metaLines || []).filter(Boolean), body: body ?? null },
+  });
+  const out = [];
+  for (const a of A.DS_ABILITIES) {
+    const head = [clsLabel(a.classId), a.level != null ? `level ${a.level}` : null, a.subclass].filter(Boolean).join(" · ");
+    out.push(mk("ability", a.id, a.name, [head], A.abilityExplainer(a)));
+  }
+  for (const an of An.DS_ANCESTRY_LIST) {
+    const sig = (an.signatureTraits || []).map((t) => t.name).filter(Boolean).join(", ");
+    const pur = (an.purchasedTraits || []).map((t) => `${t.name} (${t.cost})`).join(", ");
+    const body = [sig && `Signature: ${sig}.`, pur && `Purchased: ${pur}.`].filter(Boolean).join(" ");
+    out.push(mk("ancestry", an.id, an.name, [`Size ${an.size} · Speed ${an.speed} · ${an.points} points`], body || null));
+  }
+  for (const c of Ca.DS_CAREER_LIST) {
+    const meta = [c.perkGroup && `Perk group: ${c.perkGroup}`, c.languages != null && `Languages: ${c.languages}`,
+      c.quickSkills && c.quickSkills.length && `Skills: ${c.quickSkills.join(", ")}`];
+    out.push(mk("career", c.id, c.name, meta, null));
+  }
+  for (const c of Co.DS_COMPLICATIONS) {
+    out.push(mk("complication", c.id, c.name, [c.benefit && `Benefit: ${c.benefit}`, c.drawback && `Drawback: ${c.drawback}`], null));
+  }
+  for (const d of De.DS_DEITIES) {
+    const domains = (d.domains || []).map((x) => De.domainName(x)).join(", ");
+    out.push(mk(d.kind === "saint" ? "saint" : "deity", d.id, d.name, [domains && `Domains: ${domains}`], null));
+  }
+  for (const [classId, grp] of Object.entries(Su.DS_SUBCLASSES)) {
+    for (const opt of (grp.options || [])) {
+      const meta = [`${clsLabel(classId)}${grp.concept ? ` · ${grp.concept}` : ""}`, opt.grantsSkill && `Grants: ${opt.grantsSkill}`];
+      out.push(mk("subclass", `${classId}-${opt.id}`, opt.name, meta, null));
+    }
+  }
+  for (const t of Ti.DS_TITLES) {
+    out.push(mk("title", t.id, t.name, [`Echelon ${t.echelon}`, t.effect && `Effect: ${t.effect}`], null));
+  }
+  return applyAliases(out);
+}
+
+async function main() {
   const mode = (process.argv[2] || "2014").trim();
-  const variantsByName = loadVariants();
 
   let entries;
-  if (mode === "both") entries = mergeBoth(buildEdition("2024", variantsByName), buildEdition("2014", variantsByName));
-  else entries = buildEdition(mode, variantsByName);
-  // Re-apply aliases on the final list: mergeBoth regenerates `spoken` for legacy-suffixed entries,
-  // which would otherwise drop their aliases. Idempotent for the single-edition modes.
-  applyAliases(entries);
+  if (mode === "drawsteel") {
+    entries = await buildDrawSteel();
+  } else {
+    const variantsByName = loadVariants();
+    if (mode === "both") entries = mergeBoth(buildEdition("2024", variantsByName), buildEdition("2014", variantsByName));
+    else entries = buildEdition(mode, variantsByName);
+    // Re-apply aliases on the final list: mergeBoth regenerates `spoken` for legacy-suffixed entries,
+    // which would otherwise drop their aliases. Idempotent for the single-edition modes.
+    applyAliases(entries);
+  }
 
   // Grammar: every unique spoken phrase, plus the Vosk unknown token.
   const grammar = new Set();
@@ -575,4 +640,4 @@ function main() {
   console.log(`  wrote ${path.relative(ROOT, grammarPath)} (${(fs.statSync(grammarPath).size / 1024).toFixed(0)} KB)`);
 }
 
-main();
+main().catch((e) => { console.error(e); process.exit(1); });

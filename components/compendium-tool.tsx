@@ -5,6 +5,7 @@ import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import { createClient } from "@/lib/supabase/client";
 import { getActiveCampaign, onActiveCampaignChange } from "@/lib/active-campaign";
 import { listModules, getModule, isKnownSystem } from "@/lib/systems/registry";
+import { attributionFor } from "@/lib/systems/attribution";
 import { CompendiumMatcher, type RankedMatch } from "@/lib/compendium/match";
 import { useVosk } from "@/lib/compendium/useVosk";
 import {
@@ -40,7 +41,7 @@ const MODEL_URL = "/compendium/model/vosk-model-small-en-us-0.15.tar.gz";
 // is then a data-only drop of public/compendium/index-<system>.json (+ grammar-<system>.json) plus that
 // system's id here. Systems NOT in this set still work in the tool - they run on the GM's homebrew cards
 // alone until their index is built.
-const COMPENDIUM_READY = new Set<string>(["dnd5e"]);
+const COMPENDIUM_READY = new Set<string>(["dnd5e", "drawsteel"]);
 // Only D&D splits its index by edition (2014 / 2024 / both); every other system is single-edition, so it
 // keeps no ruleset toggle and its index carries no edition in the filename.
 const hasEditions = (system: string) => system === "dnd5e";
@@ -392,14 +393,14 @@ export default function CompendiumTool() {
 
       {loadError && (
         <p style={{ color: "#c98a7a", fontSize: 13 }}>
-          Couldn&apos;t load the compendium data ({loadError}). Run <code>node scripts/build-compendium-index.mjs {ruleset}</code> and confirm <code>public/compendium/index-{ruleset}.json</code> exists.
+          Couldn&apos;t load the compendium data ({loadError}). Run <code>node scripts/build-compendium-index.mjs {hasEditions(system) ? ruleset : system}</code> and confirm <code>public/compendium/index-{hasEditions(system) ? ruleset : system}.json</code> exists.
         </p>
       )}
       {!loading && !loadError && (
         <p style={{ ...label, margin: 0 }}>
           {entries.length.toLocaleString()} entries loaded · {system === "dnd5e"
             ? "SRD 5.1 / 5.2 (CC-BY), plus original content by Kerf and Code"
-            : `${systemLabel(system)}${baseEntries.length === 0 ? " · no shipped cards yet, showing your homebrew" : ""}`} · nothing leaves your browser
+            : `${attributionFor(system)?.short ?? systemLabel(system)}${baseEntries.length === 0 ? " · no shipped cards yet, showing your homebrew" : ""}`} · nothing leaves your browser
         </p>
       )}
 
@@ -487,7 +488,9 @@ function CardView({ card, canEdit, onEdit, onPin, onDismiss, onEnter, onLeave }:
   const e = card.entry;
   const chip: React.CSSProperties = { fontSize: 11, color: C.muted, border: `1px solid ${C.line}`, borderRadius: 999, padding: "1px 8px" };
   const meta: React.CSSProperties = { color: C.muted, fontSize: 12.5, margin: "2px 0 0" };
-  const homebrew = isCustom(e);
+  // "Homebrew" = one of the GM's OWN rows (id "custom:<uuid>"), not merely the custom category: shipped
+  // multi-system cards (e.g. Draw Steel, id "ds-...") are also the custom category but are not homebrew.
+  const homebrew = e.id.startsWith("custom:");
   return (
     <div onMouseEnter={onEnter} onMouseLeave={onLeave}
       style={{ background: C.surface, border: `1px solid ${card.pinned ? C.sun : C.line}`, borderRadius: FORGE_RADIUS, padding: 14, position: "relative" }}>
