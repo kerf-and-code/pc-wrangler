@@ -605,12 +605,74 @@ async function buildDrawSteel() {
   return applyAliases(out);
 }
 
+// ---- Lancer (third real system) ------------------------------------------------------------------
+// lib/lancer/*.ts, MECHANICS METADATA ONLY under the Lancer Third Party License (weapon/system/mod stat
+// lines, pilot gear, and talent + skill-trigger names; no Massif Press prose). Folds into the generic
+// "custom" card like Draw Steel; ids "lc-<type>:", source "srd". FRAMES are deferred: lib/lancer/
+// rules-data.ts (which merges the base frame stats with FRAME_EXTRAS) uses an extensionless value import
+// a plain `node` run can't resolve - unlocking it (and DS classes/kits) means esbuild-bundling that one
+// module, a later pass.
+async function buildLancer() {
+  const dir = path.join(ROOT, "lib", "lancer");
+  const imp = (f) => import(pathToFileURL(path.join(dir, f)).href);
+  const [L, C, P, D] = await Promise.all([
+    imp("loadout-data.ts"), imp("core-bonuses.ts"), imp("pilot-gear.ts"), imp("pilot-data.ts"),
+  ]);
+  const lic = (license, level) => (license ? `License: ${license}${level ? ` ${level}` : ""}` : null);
+  const mk = (type, id, name, metaLines, body) => ({
+    id: `lc-${type.replace(/\s+/g, "-")}:${slug(id || name)}`,
+    name, category: "custom", ruleset: "lancer", source: "srd",
+    spoken: spokenForms(name),
+    display: { tag: type, metaLines: (metaLines || []).filter(Boolean), body: body ?? null },
+  });
+  const out = [];
+  for (const w of L.LANCER_WEAPONS) {
+    out.push(mk("weapon", w.id, w.name, [
+      [w.size, w.type].filter(Boolean).join(" · "),
+      w.damage && w.damage.length && `Damage: ${w.damage.join(", ")}`,
+      w.range && w.range.length && `Range: ${w.range.join(", ")}`,
+      lic(w.license, w.licenseLevel),
+    ], w.tags && w.tags.length ? `Tags: ${w.tags.join(", ")}` : null));
+  }
+  for (const s of L.LANCER_SYSTEMS) {
+    out.push(mk("system", s.id, s.name, [
+      s.type, s.sp != null && `SP ${s.sp}`, lic(s.license, s.licenseLevel),
+    ], s.tags && s.tags.length ? `Tags: ${s.tags.join(", ")}` : null));
+  }
+  for (const m of L.LANCER_MODS) {
+    out.push(mk("mod", m.id, m.name, [
+      m.sp != null && `SP ${m.sp}`,
+      m.allowedTypes && m.allowedTypes.length && `For: ${m.allowedTypes.join(", ")}`,
+      lic(m.license, m.licenseLevel),
+    ], m.addedTags && m.addedTags.length ? `Adds: ${m.addedTags.map((t) => String(t).trim()).join(", ")}` : null));
+  }
+  for (const c of C.LANCER_CORE_BONUSES) out.push(mk("core bonus", c.id, c.name, [c.manufacturer], null));
+  for (const a of P.LANCER_PILOT_ARMOR) {
+    out.push(mk("pilot armor", a.id, a.name, [
+      `Armor ${a.armor} · Evasion ${a.evasion} · E-Def ${a.edef} · Speed ${a.speed}`, a.bonusLabel,
+    ], a.tags && a.tags.length ? `Tags: ${a.tags.join(", ")}` : null));
+  }
+  for (const w of P.LANCER_PILOT_WEAPONS) {
+    out.push(mk("pilot weapon", w.id, w.name, [
+      w.category, w.range && w.range.length && `Range: ${w.range.join(", ")}`, w.damage && `Damage: ${w.damage}`,
+    ], w.tags && w.tags.length ? `Tags: ${w.tags.join(", ")}` : null));
+  }
+  for (const g of P.LANCER_PILOT_GEAR) {
+    out.push(mk("pilot gear", g.id, g.name, [g.group, g.tags && g.tags.length && g.tags.join(", ")], g.note || null));
+  }
+  for (const t of D.LANCER_TALENTS) out.push(mk("talent", t.id, t.name, [], null));
+  for (const st of D.LANCER_SKILL_TRIGGERS) out.push(mk("skill trigger", st.id, st.name, [], null));
+  return applyAliases(out);
+}
+
 async function main() {
   const mode = (process.argv[2] || "2014").trim();
 
   let entries;
   if (mode === "drawsteel") {
     entries = await buildDrawSteel();
+  } else if (mode === "lancer") {
+    entries = await buildLancer();
   } else {
     const variantsByName = loadVariants();
     if (mode === "both") entries = mergeBoth(buildEdition("2024", variantsByName), buildEdition("2014", variantsByName));
