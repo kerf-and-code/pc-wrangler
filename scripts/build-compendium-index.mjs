@@ -22,6 +22,7 @@
 // Overridable for testing: SRD_DIR and OUT_DIR env vars.
 
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
@@ -544,6 +545,20 @@ function mergeBoth(primary, older) {
   return out;
 }
 
+// Import a .ts module that a plain `node` run can't load directly because it uses EXTENSIONLESS
+// relative value imports (e.g. lib/drawsteel/rules-data.ts does `import {DS_CAREERS} from "./careers"`,
+// lib/lancer/rules-data.ts does `import {FRAME_EXTRAS} from "./frame-traits"`). Node's ESM/TS loader
+// won't add the .ts extension; esbuild's bundler does. We bundle the module (esbuild is present via the
+// project's deps) to a temp ESM file, import it, then clean up. Used only for the rules-data modules;
+// the extension-clean data modules load with a direct import().
+async function bundleImport(absPath) {
+  const esbuild = await import("esbuild");
+  const tmp = path.join(os.tmpdir(), `cmp-${path.basename(absPath, ".ts")}-${Date.now()}-${Math.random().toString(36).slice(2)}.mjs`);
+  await esbuild.build({ entryPoints: [absPath], bundle: true, format: "esm", platform: "node", outfile: tmp, logLevel: "silent" });
+  try { return await import(pathToFileURL(tmp).href); }
+  finally { fs.rmSync(tmp, { force: true }); }
+}
+
 // ---- Draw Steel (a second real system behind the TTRPG dropdown) ---------------------------------
 // Draw Steel content lives in lib/drawsteel/*.ts (not lib/srd JSON), and it is MECHANICS METADATA ONLY
 // under the DRAW STEEL Creator License - names + derived stat tags + a generated one-line ability
@@ -560,6 +575,7 @@ async function buildDrawSteel() {
     imp("abilities.ts"), imp("ancestries.ts"), imp("careers.ts"),
     imp("complications.ts"), imp("deities.ts"), imp("subclasses.ts"), imp("titles.ts"),
   ]);
+  const R = await bundleImport(path.join(dsDir, "rules-data.ts")); // classes + kits (extensionless imports)
   const clsLabel = (id) => (id === "common" ? "Common" : String(id).replace(/_$/, "").replace(/^./, (c) => c.toUpperCase()));
   const mk = (type, id, name, metaLines, body) => ({
     id: `ds-${type}:${slug(id || name)}`,
@@ -602,6 +618,29 @@ async function buildDrawSteel() {
   for (const t of Ti.DS_TITLES) {
     out.push(mk("title", t.id, t.name, [`Echelon ${t.echelon}`, t.effect && `Effect: ${t.effect}`], null));
   }
+  for (const cl of R.DS_CLASS_LIST) {
+    const fixed = Object.entries(cl.fixed || {}).map(([k, v]) => `${clsLabel(k)} ${v >= 0 ? "+" : ""}${v}`).join(", ");
+    const meta = [
+      cl.keyChar && `Key: ${clsLabel(cl.keyChar)}`,
+      cl.baseStamina != null && `Stamina ${cl.baseStamina} (+${cl.staminaPerLevel}/lvl)`,
+      cl.recoveries != null && `Recoveries ${cl.recoveries}`,
+      cl.resource && `Heroic resource: ${cl.resource}`,
+    ];
+    const body = [fixed && `Fixed: ${fixed}.`, cl.subclass && cl.subclass.concept && `Subclass: ${cl.subclass.concept}.`].filter(Boolean).join(" ");
+    out.push(mk("class", cl.id, cl.name, meta, body || null));
+  }
+  for (const k of R.DS_KIT_LIST) {
+    const meta = [
+      [k.armor && `Armor ${k.armor}`, k.weapon && `Weapon ${k.weapon}`].filter(Boolean).join(" · "),
+      `Speed +${k.speed} · Stability +${k.stability} · Disengage +${k.disengage}`,
+      k.staminaPerEchelon ? `Stamina +${k.staminaPerEchelon}/echelon` : null,
+    ];
+    const dmg = [
+      k.meleeDamage && `Melee +${k.meleeDamage.join("/")} (distance ${k.meleeDistance})`,
+      k.rangedDamage && `Ranged +${k.rangedDamage.join("/")} (distance ${k.rangedDistance})`,
+    ].filter(Boolean).join("; ");
+    out.push(mk("kit", k.id, k.name, meta, dmg || null));
+  }
   return applyAliases(out);
 }
 
@@ -618,6 +657,7 @@ async function buildLancer() {
   const [L, C, P, D] = await Promise.all([
     imp("loadout-data.ts"), imp("core-bonuses.ts"), imp("pilot-gear.ts"), imp("pilot-data.ts"),
   ]);
+  const R = await bundleImport(path.join(dir, "rules-data.ts")); // frames (extensionless FRAME_EXTRAS import)
   const lic = (license, level) => (license ? `License: ${license}${level ? ` ${level}` : ""}` : null);
   const mk = (type, id, name, metaLines, body) => ({
     id: `lc-${type.replace(/\s+/g, "-")}:${slug(id || name)}`,
@@ -662,6 +702,21 @@ async function buildLancer() {
   }
   for (const t of D.LANCER_TALENTS) out.push(mk("talent", t.id, t.name, [], null));
   for (const st of D.LANCER_SKILL_TRIGGERS) out.push(mk("skill trigger", st.id, st.name, [], null));
+  for (const f of R.LANCER_FRAME_LIST) {
+    const b = f.base || {};
+    const meta = [
+      [f.manufacturer, f.licenseLevel != null && `License ${f.licenseLevel}`].filter(Boolean).join(" · "),
+      `Size ${b.size} · HP ${b.hp} · Armor ${b.armor} · Evasion ${b.evasion} · E-Def ${b.edef}`,
+      `Structure ${b.structure} · Stress ${b.stress} · Heat ${b.heatCap} · Speed ${b.speed} · SP ${b.sp}`,
+      `Save ${b.save} · Sensors ${b.sensors} · Repair ${b.repCap} · Tech Attack ${b.techAttack}`,
+      f.mounts && f.mounts.length && `Mounts: ${f.mounts.join(", ")}`,
+    ];
+    const traitLines = (f.traits || []).map((t) => `${t.name}: ${t.note}`);
+    const cs = f.coreSystem;
+    const csLine = cs ? `Core System - ${cs.name}${cs.activeName ? ` (${cs.activeName})` : ""}: ${cs.activeNote || ""}`.trim() : null;
+    const body = [...traitLines, csLine].filter(Boolean).join("\n");
+    out.push(mk("frame", f.id, f.name, meta, body || null));
+  }
   return applyAliases(out);
 }
 
