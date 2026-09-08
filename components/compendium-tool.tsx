@@ -41,7 +41,7 @@ const MODEL_URL = "/compendium/model/vosk-model-small-en-us-0.15.tar.gz";
 // is then a data-only drop of public/compendium/index-<system>.json (+ grammar-<system>.json) plus that
 // system's id here. Systems NOT in this set still work in the tool - they run on the GM's homebrew cards
 // alone until their index is built.
-const COMPENDIUM_READY = new Set<string>(["dnd5e", "drawsteel", "lancer", "daggerheart"]);
+const COMPENDIUM_READY = new Set<string>(["dnd5e", "drawsteel", "lancer", "daggerheart", "pf2e"]);
 // Only D&D splits its index by edition (2014 / 2024 / both); every other system is single-edition, so it
 // keeps no ruleset toggle and its index carries no edition in the filename.
 const hasEditions = (system: string) => system === "dnd5e";

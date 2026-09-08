@@ -31,13 +31,13 @@ export const SYSTEM_ATTRIBUTIONS: SystemAttribution[] = [
   {
     id: "pf2e",
     system: "Pathfinder Second Edition",
-    license: "Paizo Community Use Policy",
-    short: "Uses trademarks and copyrights owned by Paizo Inc., used under Paizo’s Community Use Policy.",
+    license: "Open Game License 1.0a / ORC License",
+    short: "Includes Open Game Content from Pathfinder Second Edition under the Open Game License 1.0a and the ORC License; not affiliated with, endorsed, or approved by Paizo.",
     notice: [
-      "Six Axes uses trademarks and/or copyrights owned by Paizo Inc., used under Paizo’s Community Use Policy (https://paizo.com/community/communityuse). Six Axes is not published, endorsed, or specifically approved by Paizo. For more information about Paizo Inc. and Paizo products, visit https://paizo.com.",
-      "Pathfinder Second Edition rules mechanics are made available by Paizo under the ORC License; Six Axes ships those mechanics only, not Paizo’s descriptive text.",
+      "This work includes Open Game Content from Pathfinder Second Edition, published by Paizo Inc. Pre-Remaster material is used under the Open Game License version 1.0a; Remaster material (Player Core, GM Core, Monster Core, and later titles) is used under the ORC License, available at https://paizo.com/orclicense. Reproduction of Open Game Content or ORC-licensed content is permitted only in accordance with those licenses.",
+      "Six Axes ships game mechanics and the rules text Paizo released as open content. Paizo trademarks and Product Identity (including the Pathfinder name and logo and Paizo’s proprietary setting material) remain the property of Paizo Inc. and are not used beyond what the open licenses permit. Six Axes is not published, endorsed, sponsored, or specifically approved by Paizo Inc. For more information about Paizo and Paizo products, visit https://paizo.com.",
     ],
-    url: "https://paizo.com/community/communityuse",
+    url: "https://paizo.com/orclicense",
   },
   {
     id: "daggerheart",

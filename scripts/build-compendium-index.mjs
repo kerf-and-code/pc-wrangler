@@ -769,6 +769,41 @@ async function buildDaggerheart() {
   return applyAliases(out);
 }
 
+// ---- Pathfinder Second Edition (fifth real system) -----------------------------------------------
+// Unlike the other extra systems, PF2e content is far too large to hand-author as a .ts module, so it is
+// pre-extracted from the Foundry `pf2e` system packs by scripts/extract-pf2e.mjs into the committed data
+// file lib/pf2e/compendium-data.json (records already cleaned to plain prose, house style applied). Here
+// we only wrap each record into the generic "custom" card. PF2e rules mechanics are Open Game Content
+// (OGL 1.0a for legacy entries, ORC for Remaster entries) - both reusable - so unlike MCDM/Critical Role/
+// Massif we DO ship the rules text PF2e opens, per-entry sourced to its book. AP-specific bestiaries are
+// excluded by the extractor; only Monster Core, Monster Core 2, and NPC Core creatures ship. Ids are
+// "pf-<tag>:" and source "srd" (keeps the homebrew chip off; the footer carries the OGL/ORC line).
+function buildPathfinder() {
+  const dataPath = path.join(ROOT, "lib", "pf2e", "compendium-data.json");
+  if (!fs.existsSync(dataPath)) {
+    throw new Error(`missing ${path.relative(ROOT, dataPath)} - run: PF2E_PACKS=<packs/pf2e> node scripts/extract-pf2e.mjs`);
+  }
+  const data = readJson(dataPath);
+  const usedIds = new Set();
+  const out = data.map((r) => {
+    const meta = [...(r.metaLines || [])];
+    if (r.book) meta.push(`Source: ${r.book}`);
+    let id = `pf-${String(r.tag).replace(/\s+/g, "-")}:${slug(r.name)}`;
+    if (usedIds.has(id)) { let n = 2; while (usedIds.has(`${id}-${n}`)) n++; id = `${id}-${n}`; }
+    usedIds.add(id);
+    return {
+      id,
+      name: r.name,
+      category: "custom",
+      ruleset: "pf2e",
+      source: "srd",
+      spoken: spokenForms(r.name),
+      display: { tag: r.tag, metaLines: meta.filter(Boolean), body: r.body ?? null },
+    };
+  });
+  return applyAliases(out);
+}
+
 async function main() {
   const mode = (process.argv[2] || "2014").trim();
 
@@ -779,6 +814,8 @@ async function main() {
     entries = await buildLancer();
   } else if (mode === "daggerheart") {
     entries = await buildDaggerheart();
+  } else if (mode === "pf2e") {
+    entries = buildPathfinder();
   } else {
     const variantsByName = loadVariants();
     if (mode === "both") entries = mergeBoth(buildEdition("2024", variantsByName), buildEdition("2014", variantsByName));
