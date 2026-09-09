@@ -12,7 +12,11 @@ import { SAX, STONE } from "@/lib/theme";
 
 export default function GmScreenPage() {
   return (
-    <PageShell>
+    // A wide content column so the board can fill the space from the nav to the right edge. PageShell's
+    // `width` is a max, not a fixed size: the column still only grows to the available width (viewport
+    // minus the left nav), so a large value here just removes the usual 920px cap for this page and never
+    // forces page-wide horizontal scroll.
+    <PageShell width={3000}>
       <header style={{ marginBottom: 22 }}>
         <h1
           style={{
