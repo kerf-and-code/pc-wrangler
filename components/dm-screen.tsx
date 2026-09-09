@@ -32,8 +32,10 @@ export default function DmScreen() {
   const [drag, setDrag] = useState<Drag | null>(null);
   const [zoom, setZoom] = useState(1);
   const [viewportH, setViewportH] = useState(640);
+  const [viewportW, setViewportW] = useState<number | null>(null); // null = full column width; a number = explicit px
   const zoomRef = useRef(1);
   zoomRef.current = zoom;
+  const viewportRef = useRef<HTMLDivElement | null>(null); // to measure current width when starting a resize from "full"
   const [loading, setLoading] = useState(true);
   const [renaming, setRenaming] = useState(false);
   const [nameDraft, setNameDraft] = useState("");
@@ -48,24 +50,25 @@ export default function DmScreen() {
     setActiveId(b?.id ?? null);
     setCards(b?.cards ?? []);
     setRenaming(false);
-    // View prefs (canvas height + zoom) are per-board and client-only, remembered in localStorage.
-    let h = 640, z = 1;
+    // View prefs (canvas width + height + zoom) are per-board and client-only, remembered in localStorage.
+    let h = 640, z = 1; let w: number | null = null;
     try {
       if (b?.id) {
         localStorage.setItem("sax_dm_board", b.id);
         const raw = localStorage.getItem(`sax_dm_view_${b.id}`);
-        if (raw) { const v = JSON.parse(raw) as { h?: number; zoom?: number }; if (v.h) h = v.h; if (v.zoom) z = clampZoom(v.zoom); }
+        if (raw) { const v = JSON.parse(raw) as { h?: number; w?: number | null; zoom?: number }; if (v.h) h = v.h; if (typeof v.w === "number") w = v.w; if (v.zoom) z = clampZoom(v.zoom); }
       }
     } catch { /* storage disabled */ }
     setViewportH(h);
+    setViewportW(w);
     setZoom(z);
   }, []);
 
-  // Persist the per-board view prefs whenever the canvas height or zoom changes.
+  // Persist the per-board view prefs whenever the canvas size or zoom changes.
   useEffect(() => {
     if (!activeId) return;
-    try { localStorage.setItem(`sax_dm_view_${activeId}`, JSON.stringify({ h: viewportH, zoom })); } catch { /* storage disabled */ }
-  }, [activeId, viewportH, zoom]);
+    try { localStorage.setItem(`sax_dm_view_${activeId}`, JSON.stringify({ h: viewportH, w: viewportW, zoom })); } catch { /* storage disabled */ }
+  }, [activeId, viewportH, viewportW, zoom]);
 
   const refresh = useCallback(async (preferId?: string | null) => {
     try {
@@ -107,7 +110,7 @@ export default function DmScreen() {
     if (!drag) return;
     const move = (ev: PointerEvent) => {
       const rawDx = ev.clientX - drag.sx, rawDy = ev.clientY - drag.sy;
-      if (drag.mode === "board") { setViewportH(Math.max(320, drag.oh + rawDy)); return; }
+      if (drag.mode === "board") { setViewportW(Math.max(360, drag.ow + rawDx)); setViewportH(Math.max(320, drag.oh + rawDy)); return; }
       // Card coords live in the unscaled world; screen deltas must be divided by the zoom to match.
       const z = zoomRef.current || 1;
       const dx = rawDx / z, dy = rawDy / z;
@@ -134,7 +137,10 @@ export default function DmScreen() {
   const removeCard = (id: string) => { setCards((cs) => cs.filter((c) => c.id !== id)); setTimeout(() => void persist(), 0); };
   const startBoardResize = (e: React.PointerEvent) => {
     e.preventDefault();
-    setDrag({ id: "__board__", mode: "board", sx: e.clientX, sy: e.clientY, ox: 0, oy: 0, ow: 0, oh: viewportH });
+    // When width is "full" (null), measure the board's current pixel width so the drag starts from there
+    // without a jump, then it becomes an explicit width the GM can grow past the page column.
+    const curW = viewportW ?? viewportRef.current?.getBoundingClientRect().width ?? 900;
+    setDrag({ id: "__board__", mode: "board", sx: e.clientX, sy: e.clientY, ox: 0, oy: 0, ow: curW, oh: viewportH });
   };
   const adjustZoom = (delta: number) => setZoom((z) => clampZoom(z + delta));
 
@@ -214,11 +220,14 @@ export default function DmScreen() {
 
       {/* canvas: a fixed-height scrollable viewport over a zoomable "world" that holds the cards */}
       {boards.length > 0 && (
-        <div>
-          <div style={{
-            height: viewportH, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS,
-            background: C.surface, overflow: "auto", touchAction: "none",
-          }}>
+        <div style={{ overflowX: "auto" }}>
+          {/* board sizer: full column by default, or an explicit width the corner handle can grow past the
+              page column; the wrapper above then scrolls horizontally to reach it. */}
+          <div style={{ position: "relative", width: viewportW == null ? "100%" : viewportW, maxWidth: "none" }}>
+            <div ref={viewportRef} style={{
+              height: viewportH, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS,
+              background: C.surface, overflow: "auto", touchAction: "none",
+            }}>
             {/* sizer takes the SCALED dimensions so the scrollbars track the zoomed content */}
             <div style={{ position: "relative", width: worldW * zoom, height: worldH * zoom }}>
               {/* world is at natural size and scaled; the dotted grid scales with it */}
@@ -251,11 +260,12 @@ export default function DmScreen() {
                 ))}
               </div>
             </div>
-          </div>
-          {/* drag this grip to resize the board's height */}
-          <div onPointerDown={startBoardResize} title="Drag to resize the board"
-            style={{ height: 16, marginTop: 2, cursor: "ns-resize", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <div style={{ width: 44, height: 5, borderRadius: 3, background: C.line }} />
+            </div>
+            {/* drag this corner to resize the board: width (it can grow past the page column, and this area
+                scrolls horizontally to reach it) and height */}
+            <div onPointerDown={startBoardResize} title="Drag to resize the board (width and height)"
+              style={{ position: "absolute", right: 2, bottom: 2, width: 20, height: 20, cursor: "nwse-resize",
+                background: `linear-gradient(135deg, transparent 55%, ${C.sun} 55%, ${C.sun} 66%, transparent 66%, transparent 78%, ${C.sun} 78%, ${C.sun} 88%, transparent 88%)` }} />
           </div>
         </div>
       )}
