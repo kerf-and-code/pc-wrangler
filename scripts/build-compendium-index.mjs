@@ -149,7 +149,8 @@ function spellEntry(s, ruleset) {
     name: s.name,
     category: "spell",
     ruleset,
-    source: "srd",
+    // SRD spells are "srd"; the non-SRD spells Terry authored (spells-authored.json) mark themselves "kc".
+    source: s.source === "kc" ? "kc" : "srd",
     spoken: spokenForms(s.name),
     display: {
       level: s.level,
@@ -509,6 +510,12 @@ function loadVariants() {
 // ---- edition assembly ----------------------------------------------------------------------------
 function buildEdition(ed, variantsByName) {
   const spells = readMaybe(path.join(SRD_DIR, `spells-${ed}.json`)) || [];
+  // Non-SRD spells Terry authored (spells-authored.json), routed by their `edition` field: a spell tagged
+  // for this edition, or "both", is included. They carry source "kc" and render through the same spell
+  // card as the SRD spells. In "both" mode a "both"-tagged spell lands in both editions and mergeBoth
+  // legacy-suffixes the 2014 copy, exactly like a cross-edition SRD spell.
+  const authoredSpells = (readMaybe(path.join(SRD_DIR, "spells-authored.json")) || [])
+    .filter((s) => s.edition === ed || s.edition === "both");
   const items = readMaybe(path.join(SRD_DIR, `magic-items-${ed}.json`)) || [];
   const gear = readMaybe(path.join(SRD_DIR, `equipment-${ed}.json`)) || [];
   // Conditions are authored only for 2014 so far; reuse them for 2024 until a 2024 file exists.
@@ -528,6 +535,7 @@ function buildEdition(ed, variantsByName) {
   const rules = readMaybe(path.join(SRD_DIR, `rules-${ed}.json`)) || [];
   return applyAliases([
     ...spells.map((s) => spellEntry(s, ed)),
+    ...authoredSpells.map((s) => spellEntry(s, ed)),
     ...items.map((it) => itemEntry(it, ed, variantsByName)),
     ...gear.map((g) => gearEntry(g, ed)),
     ...conditions.map((c) => conditionEntry(c, ed)),
