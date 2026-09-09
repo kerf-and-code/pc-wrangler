@@ -127,6 +127,7 @@ export default function CompendiumTool() {
   const [editing, setEditing] = useState<EditState | null>(null);
   const [manageOpen, setManageOpen] = useState(false);
   const [saveErr, setSaveErr] = useState<string | null>(null);
+  const [indexOpen, setIndexOpen] = useState(false);
 
   // Merge the GM's applicable custom rows over the static index. Recomputes when the toggle or the
   // active campaign changes, so overrides and campaign-pinned cards appear/disappear correctly.
@@ -415,7 +416,25 @@ export default function CompendiumTool() {
             </div>
           </div>
         )}
+        <div>
+          <div style={{ ...label, marginBottom: 6 }}>Browse</div>
+          <div style={{ display: "flex", gap: 6 }}>
+            <button type="button" onClick={() => setIndexOpen(true)} disabled={!entries.length}
+              style={{ ...seg(false), opacity: entries.length ? 1 : 0.5, cursor: entries.length ? "pointer" : "default" }}>
+              Index{entries.length ? ` (${entries.length.toLocaleString()})` : ""}
+            </button>
+          </div>
+        </div>
       </div>
+
+      {indexOpen && (
+        <IndexModal
+          entries={entries}
+          title={`${systemLabel(system)} index`}
+          onPick={(e) => { addCard(e); setIndexOpen(false); }}
+          onClose={() => setIndexOpen(false)}
+        />
+      )}
 
       {/* search + mic */}
       <form onSubmit={onSubmit} style={{ display: "flex", gap: 8, alignItems: "stretch" }}>
@@ -1047,6 +1066,141 @@ function MonsterForm({ value, onChange, field }: {
       {section("Bonus actions", "bonusActions")}
       {section("Reactions", "reactions")}
       {section("Legendary actions", "legendaryActions")}
+    </div>
+  );
+}
+
+// ---- compendium index (browsable, per-system) ----------------------------------------------------
+// A scrollable popup listing every entry for the CURRENTLY SELECTED system (so PF2e's ~18k never load
+// under D&D). Grouped by top-level type, then subcategory (spell school, creature type, item type, ...),
+// alphabetical within each. A two-level table of contents jumps to any section, and clicking an entry
+// surfaces its card. Taxonomy is best-effort and deliberately simple; unknown subcategories fall to "Other".
+
+const idxTitleCase = (s: string): string =>
+  String(s || "").replace(/[-_]+/g, " ").replace(/\s+/g, " ").trim().replace(/\b\w/g, (c) => c.toUpperCase());
+const idxSlug = (s: string): string => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+
+const IDX_GROUP_LABEL: Record<string, string> = {
+  spell: "Spells", "magic-item": "Magic Items", equipment: "Equipment", condition: "Conditions",
+  feat: "Feats", feature: "Features", rule: "Rules", monster: "Monsters", species: "Species",
+  background: "Backgrounds", reference: "Reference",
+};
+const IDX_GROUP_ORDER = ["Spells", "Magic Items", "Equipment", "Conditions", "Feats", "Features", "Rules", "Reference", "Monsters", "Species", "Backgrounds"];
+const IDX_CREATURE_TYPES = ["aberration", "beast", "celestial", "construct", "dragon", "elemental", "fey", "fiend", "giant", "humanoid", "monstrosity", "ooze", "plant", "undead"];
+
+function idxGroupOf(e: CompendiumEntry): string {
+  if (e.category === "custom") return idxTitleCase(e.display.tag || "custom");
+  return IDX_GROUP_LABEL[e.category] || idxTitleCase(e.category);
+}
+function idxSubOf(e: CompendiumEntry): string | null {
+  switch (e.category) {
+    case "spell": return e.display.school ? idxTitleCase(e.display.school) : "Other";
+    case "monster": {
+      const t = (e.display.type || "").toLowerCase();
+      const hit = IDX_CREATURE_TYPES.find((k) => t.includes(k));
+      return hit ? idxTitleCase(hit) : "Other";
+    }
+    // Item types carry verbose qualifiers ("Armor (any medium or heavy...)"); the base word before the
+    // parenthetical (Armor, Weapon, Wondrous Item, Ring, ...) makes a far tidier subcategory.
+    case "magic-item": return e.display.type ? idxTitleCase(e.display.type.split("(")[0]) : "Other";
+    case "equipment": return e.display.type ? idxTitleCase(e.display.type.split("(")[0]) : "Other";
+    case "feat": return e.display.featType ? idxTitleCase(e.display.featType) : "Other";
+    case "feature": return e.display.className ? idxTitleCase(e.display.className) : (e.display.kind ? idxTitleCase(e.display.kind) : "Other");
+    case "rule": return e.display.topic ? idxTitleCase(e.display.topic) : "Other";
+    default: return null;
+  }
+}
+
+interface IdxSub { sub: string | null; items: CompendiumEntry[] }
+interface IdxGroup { group: string; subs: IdxSub[]; count: number }
+
+function buildCompendiumIndex(entries: CompendiumEntry[]): IdxGroup[] {
+  const map = new Map<string, Map<string, CompendiumEntry[]>>();
+  for (const e of entries) {
+    const g = idxGroupOf(e);
+    const s = idxSubOf(e) ?? "";
+    let sm = map.get(g);
+    if (!sm) { sm = new Map(); map.set(g, sm); }
+    let arr = sm.get(s);
+    if (!arr) { arr = []; sm.set(s, arr); }
+    arr.push(e);
+  }
+  const groups: IdxGroup[] = [];
+  for (const [group, sm] of map) {
+    const subs: IdxSub[] = [];
+    for (const [sub, items] of sm) {
+      items.sort((a, b) => a.name.localeCompare(b.name));
+      subs.push({ sub: sub || null, items });
+    }
+    subs.sort((a, b) => (a.sub || "~").localeCompare(b.sub || "~")); // an unlabeled sub sorts last
+    groups.push({ group, subs, count: subs.reduce((n, s) => n + s.items.length, 0) });
+  }
+  groups.sort((a, b) => {
+    const ia = IDX_GROUP_ORDER.indexOf(a.group), ib = IDX_GROUP_ORDER.indexOf(b.group);
+    if (ia !== -1 || ib !== -1) { if (ia === -1) return 1; if (ib === -1) return -1; return ia - ib; }
+    return a.group.localeCompare(b.group);
+  });
+  return groups;
+}
+
+function IndexModal({ entries, title, onPick, onClose }: {
+  entries: CompendiumEntry[]; title: string; onPick: (e: CompendiumEntry) => void; onClose: () => void;
+}) {
+  const groups = useMemo(() => buildCompendiumIndex(entries), [entries]);
+  useEffect(() => {
+    const onKey = (ev: KeyboardEvent) => { if (ev.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+  const jump = (id: string) => { const el = document.getElementById(id); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); };
+  const gId = (g: string) => `idx-g-${idxSlug(g)}`;
+  const sId = (g: string, s: string) => `idx-s-${idxSlug(g)}-${idxSlug(s)}`;
+  const link: React.CSSProperties = { background: "transparent", border: "none", padding: 0, color: C.sun, cursor: "pointer", fontSize: 13.5, textAlign: "left" };
+  return (
+    <div onClick={onClose}
+      style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+      <div onClick={(e) => e.stopPropagation()}
+        style={{ background: C.surface, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, width: "min(920px, 100%)", maxHeight: "86vh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 10, padding: "14px 16px", borderBottom: `1px solid ${C.line}` }}>
+          <span style={{ color: C.text, fontSize: 16, fontWeight: 700 }}>{title}</span>
+          <span style={{ color: C.muted, fontSize: 12.5, marginLeft: "auto", marginRight: 12 }}>{entries.length.toLocaleString()} entries</span>
+          <button type="button" onClick={onClose} style={{ background: "transparent", border: `1px solid ${C.line}`, borderRadius: 7, color: C.text, cursor: "pointer", fontSize: 14, padding: "3px 10px" }}>Close</button>
+        </div>
+        <div style={{ overflowY: "auto", padding: "14px 16px" }}>
+          <div style={{ marginBottom: 16, paddingBottom: 12, borderBottom: `1px solid ${C.line}` }}>
+            <div style={{ fontSize: 11, letterSpacing: "0.06em", textTransform: "uppercase", color: C.muted, marginBottom: 8 }}>Contents</div>
+            {groups.map((g) => (
+              <div key={g.group} style={{ marginBottom: 6 }}>
+                <button type="button" onClick={() => jump(gId(g.group))} style={{ ...link, fontWeight: 700, color: C.text }}>
+                  {g.group} <span style={{ color: C.muted, fontWeight: 400 }}>({g.count})</span>
+                </button>
+                {(g.subs.length > 1 || (g.subs[0] && g.subs[0].sub)) && (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "2px 14px", margin: "3px 0 0 14px" }}>
+                    {g.subs.map((s, i) => s.sub && (
+                      <button key={i} type="button" onClick={() => jump(sId(g.group, s.sub as string))} style={link}>{s.sub} ({s.items.length})</button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+          {groups.map((g) => (
+            <div key={g.group} style={{ marginBottom: 18 }}>
+              <div id={gId(g.group)} style={{ color: C.sun, fontSize: 15, fontWeight: 700, borderBottom: `1px solid ${C.line}`, paddingBottom: 4, marginBottom: 8, scrollMarginTop: 8 }}>{g.group}</div>
+              {g.subs.map((s, si) => (
+                <div key={si} style={{ marginBottom: 10 }}>
+                  {s.sub && <div id={sId(g.group, s.sub)} style={{ color: C.text, fontSize: 12.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", margin: "6px 0 4px", scrollMarginTop: 8 }}>{s.sub}</div>}
+                  <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                    {s.items.map((e) => (
+                      <button key={e.id} type="button" onClick={() => onPick(e)} style={{ ...link, padding: "2px 0", color: C.text }}>{e.name}</button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
