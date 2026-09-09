@@ -10,7 +10,7 @@ import { resolveSystemVars } from "@/lib/systems/system-theme";
 import { CompendiumMatcher, type RankedMatch } from "@/lib/compendium/match";
 import { useVosk } from "@/lib/compendium/useVosk";
 import {
-  type CompendiumEntry, type Ruleset, type MonsterDisplay, type SpellDisplay, type ItemDisplay,
+  type CompendiumEntry, type Ruleset, type MonsterDisplay, type SpellDisplay, type ItemDisplay, type ReferenceDisplay,
   isSpell, isItem, isGear, isCondition, isFeat, isFeature, isRule, isMonster, isSpecies, isBackground, isReference, isCustom,
 } from "@/lib/compendium/types";
 import {
@@ -20,7 +20,7 @@ import {
 import { sendCardToScreen } from "@/lib/compendium/dm-board";
 
 // Working display shapes the typed editor edits in place. A new typed card starts from these blanks.
-type TypedDisplay = SpellDisplay | ItemDisplay | MonsterDisplay;
+type TypedDisplay = SpellDisplay | ItemDisplay | MonsterDisplay | ReferenceDisplay;
 const emptySpell = (): SpellDisplay => ({
   level: 0, school: null, castingTime: null, range: null, components: null, duration: null,
   concentration: false, ritual: false, attackType: null, classes: [], damage: null, description: null,
@@ -35,12 +35,21 @@ const emptyMonster = (): MonsterDisplay => ({
   damageVulnerabilities: null, damageResistances: null, damageImmunities: null, conditionImmunities: null,
   traits: [], actions: [], bonusActions: [], reactions: [], legendaryActions: [],
 });
+// A Table card starts as a small 2-column, 1-row grid the GM fills in (loot tables, encounter tables,
+// house DCs). It renders through the shared reference-table renderer, so it looks identical to the shipped
+// quick-reference tables.
+const emptyReference = (): ReferenceDisplay => ({ blurb: null, columns: ["", ""], rows: [["", ""]], note: null });
 const emptyDisplayFor = (category: string): TypedDisplay | null =>
-  category === "spell" ? emptySpell() : category === "magic-item" ? emptyItem() : category === "monster" ? emptyMonster() : null;
+  category === "spell" ? emptySpell()
+    : category === "magic-item" ? emptyItem()
+    : category === "monster" ? emptyMonster()
+    : category === "reference" ? emptyReference()
+    : null;
 // The card-type choices offered when creating a NEW homebrew card (an override/edit keeps its category).
+// "Table" authors a reference-category card (columns/rows) for at-a-glance tables.
 const NEW_CARD_TYPES: { id: string; label: string }[] = [
   { id: "custom", label: "Custom" }, { id: "spell", label: "Spell" },
-  { id: "magic-item", label: "Magic item" }, { id: "monster", label: "Monster" },
+  { id: "magic-item", label: "Magic item" }, { id: "monster", label: "Monster" }, { id: "reference", label: "Table" },
 ];
 
 // components/compendium-tool.tsx
@@ -572,7 +581,7 @@ export function entryTag(e: CompendiumEntry): string {
     return k === "fighting-style" ? "fighting style" : k === "feature" ? "class feature" : k;
   }
   if (isRule(e)) return e.display.topic ? e.display.topic.toLowerCase() : "rule";
-  if (isReference(e)) return "quick reference";
+  if (isReference(e)) return e.id.startsWith("custom:") ? "table" : "quick reference";
   if (isCustom(e)) return e.display.tag || "custom";
   return e.category === "magic-item" ? "item" : e.category;
 }
@@ -872,6 +881,8 @@ function EntryEditor({ state, onChange, onSave, onDelete, onCancel, activeCampai
           <SpellForm value={state.display as SpellDisplay} onChange={(d) => set("display", d)} field={field} seg={seg} />
         ) : state.category === "magic-item" ? (
           <ItemForm value={state.display as ItemDisplay} onChange={(d) => set("display", d)} field={field} seg={seg} />
+        ) : state.category === "reference" ? (
+          <TableForm value={state.display as ReferenceDisplay} onChange={(d) => set("display", d)} field={field} />
         ) : (
           <MonsterForm value={state.display as MonsterDisplay} onChange={(d) => set("display", d)} field={field} />
         )
@@ -1083,6 +1094,82 @@ function MonsterForm({ value, onChange, field }: {
       {section("Bonus actions", "bonusActions")}
       {section("Reactions", "reactions")}
       {section("Legendary actions", "legendaryActions")}
+    </div>
+  );
+}
+
+// The "Table" card editor: a live grid for a reference-category card. Columns and rows are added and
+// removed here (a column add/remove keeps every row aligned by adding/removing one cell across the board),
+// so the DM builds a loot/encounter/house-rule table with no free-text formatting. It renders through the
+// same reference-table renderer as the shipped quick-reference cards.
+function TableForm({ value, onChange, field }: {
+  value: ReferenceDisplay; onChange: (d: ReferenceDisplay) => void; field: React.CSSProperties;
+}) {
+  const set = (patch: Partial<ReferenceDisplay>) => onChange({ ...value, ...patch });
+  const cols = value.columns;
+  const rows = value.rows;
+
+  const setColumn = (ci: number, text: string) => { const next = cols.slice(); next[ci] = text; set({ columns: next }); };
+  const addColumn = () => set({ columns: [...cols, ""], rows: rows.map((r) => [...r, ""]) });
+  const removeColumn = (ci: number) => {
+    if (cols.length <= 1) return;
+    set({ columns: cols.filter((_, i) => i !== ci), rows: rows.map((r) => r.filter((_, i) => i !== ci)) });
+  };
+  const setCell = (ri: number, ci: number, text: string) => {
+    const next = rows.map((r) => r.slice());
+    while (next[ri].length < cols.length) next[ri].push(""); // guard ragged rows
+    next[ri][ci] = text;
+    set({ rows: next });
+  };
+  const addRow = () => set({ rows: [...rows, cols.map(() => "")] });
+  const removeRow = (ri: number) => set({ rows: rows.filter((_, i) => i !== ri) });
+
+  const cell: React.CSSProperties = { ...field, padding: "6px 8px", fontSize: 13 };
+  const addBtn: React.CSSProperties = { marginTop: 8, padding: "5px 12px", background: "transparent", color: C.sun, border: `1px solid ${C.line}`, borderRadius: 7, fontSize: 12.5, fontWeight: 600, cursor: "pointer" };
+  const xBtn = (disabled: boolean): React.CSSProperties => ({ padding: "4px 9px", background: "transparent", color: "#c98a7a", border: `1px solid ${C.line}`, borderRadius: 7, fontSize: 13, cursor: disabled ? "default" : "pointer", opacity: disabled ? 0.4 : 1, flex: "0 0 auto" });
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      <div>
+        <div style={fLabel}>Intro (optional, shown above the table)</div>
+        <textarea value={value.blurb ?? ""} onChange={(e) => set({ blurb: orNull(e.target.value) })} rows={2} placeholder="A line of context for this table." style={{ ...field, resize: "vertical", fontFamily: "inherit" }} />
+      </div>
+
+      <div>
+        <div style={fLabel}>Columns</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          {cols.map((c, ci) => (
+            <div key={ci} style={{ display: "flex", gap: 6, alignItems: "center" }}>
+              <input value={c} onChange={(e) => setColumn(ci, e.target.value)} placeholder={`Column ${ci + 1}`} style={{ ...cell, flex: 1 }} />
+              <button type="button" onClick={() => removeColumn(ci)} disabled={cols.length <= 1} title="Remove column" style={xBtn(cols.length <= 1)}>&times;</button>
+            </div>
+          ))}
+        </div>
+        <button type="button" onClick={addColumn} style={addBtn}>+ Add column</button>
+      </div>
+
+      <div>
+        <div style={fLabel}>Rows</div>
+        <div style={{ overflowX: "auto" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6, minWidth: cols.length * 110 }}>
+            {rows.map((r, ri) => (
+              <div key={ri} style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                {cols.map((_, ci) => (
+                  <input key={ci} value={r[ci] ?? ""} onChange={(e) => setCell(ri, ci, e.target.value)} placeholder={cols[ci] || `Col ${ci + 1}`} style={{ ...cell, flex: 1, minWidth: 90 }} />
+                ))}
+                <button type="button" onClick={() => removeRow(ri)} title="Remove row" style={xBtn(false)}>&times;</button>
+              </div>
+            ))}
+            {rows.length === 0 && <p style={{ ...fLabel, marginBottom: 0 }}>No rows yet.</p>}
+          </div>
+        </div>
+        <button type="button" onClick={addRow} style={addBtn}>+ Add row</button>
+      </div>
+
+      <div>
+        <div style={fLabel}>Footnote (optional)</div>
+        <textarea value={value.note ?? ""} onChange={(e) => set({ note: orNull(e.target.value) })} rows={2} placeholder="A note shown under the table." style={{ ...field, resize: "vertical", fontFamily: "inherit" }} />
+      </div>
     </div>
   );
 }

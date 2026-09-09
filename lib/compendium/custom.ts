@@ -1,13 +1,15 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
   CompendiumEntry, CompendiumSource, Ruleset,
-  SpellDisplay, ItemDisplay, MonsterDisplay, CompendiumDisplay,
+  SpellDisplay, ItemDisplay, MonsterDisplay, ReferenceDisplay, CompendiumDisplay,
 } from "@/lib/compendium/types";
 
 // The categories a homebrew card can carry a full TYPED display for (so overriding a shipped spell edits
 // it as a spell and renders through the real spell card, not the generic tag/meta/body shape). Everything
-// else stores and renders through the generic "custom" display.
-export const TYPED_CUSTOM = new Set(["spell", "magic-item", "monster"]);
+// else stores and renders through the generic "custom" display. "reference" is the GM "Table" card type:
+// a columns/rows table (random loot, encounter tables, house DCs) authored in a real grid editor and
+// rendered through the shared reference-table renderer.
+export const TYPED_CUSTOM = new Set(["spell", "magic-item", "monster", "reference"]);
 
 // lib/compendium/custom.ts
 //
@@ -161,6 +163,7 @@ export function rowToEntry(r: CustomRow): CompendiumEntry {
     let typed: CompendiumEntry;
     if (r.category === "spell") typed = { ...base, category: "spell", display: r.display as SpellDisplay };
     else if (r.category === "magic-item") typed = { ...base, category: "magic-item", display: r.display as ItemDisplay };
+    else if (r.category === "reference") typed = { ...base, category: "reference", display: r.display as ReferenceDisplay };
     else typed = { ...base, category: "monster", display: r.display as MonsterDisplay };
     if (r.aliases.length) typed.aliases = r.aliases;
     return typed;
@@ -210,18 +213,20 @@ export function mergeCustom(
 // write. The base id and category are carried so the save becomes a non-destructive override.
 export function flattenForOverride(e: CompendiumEntry): {
   tag: string; metaLines: string[]; body: string; overridesId: string; category: string;
-  display: SpellDisplay | ItemDisplay | MonsterDisplay | null;
+  display: SpellDisplay | ItemDisplay | MonsterDisplay | ReferenceDisplay | null;
 } {
   const tag = e.category === "magic-item" ? "item" : e.category;
   let body = "";
   const meta: string[] = [];
   // The typed categories carry their full display into the editor, so an override edits a spell as a spell
-  // (not a flattened blob). A structural clone keeps the editor from mutating the shipped entry in place.
-  let display: SpellDisplay | ItemDisplay | MonsterDisplay | null = null;
+  // (and a reference/Table as a real table), not a flattened blob. A structural clone keeps the editor from
+  // mutating the shipped entry in place.
+  let display: SpellDisplay | ItemDisplay | MonsterDisplay | ReferenceDisplay | null = null;
   switch (e.category) {
     case "spell": display = structuredClone(e.display); break;
     case "magic-item": display = structuredClone(e.display); break;
     case "monster": display = structuredClone(e.display); break;
+    case "reference": display = structuredClone(e.display); break;
     case "equipment": body = e.display.description ?? ""; break;
     case "condition": body = e.display.description ?? ""; break;
     case "feat": body = e.display.description ?? ""; break;
