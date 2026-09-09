@@ -17,6 +17,7 @@ import {
   type CustomRow, type CustomDraft, type Ruleset3, TYPED_CUSTOM,
   listCustomEntries, createCustomEntry, updateCustomEntry, deleteCustomEntry, mergeCustom, flattenForOverride,
 } from "@/lib/compendium/custom";
+import { sendCardToScreen } from "@/lib/compendium/dm-board";
 
 // Working display shapes the typed editor edits in place. A new typed card starts from these blanks.
 type TypedDisplay = SpellDisplay | ItemDisplay | MonsterDisplay;
@@ -128,6 +129,7 @@ export default function CompendiumTool() {
   const [manageOpen, setManageOpen] = useState(false);
   const [saveErr, setSaveErr] = useState<string | null>(null);
   const [indexOpen, setIndexOpen] = useState(false);
+  const [sentKeys, setSentKeys] = useState<Set<string>>(new Set()); // card keys sent to the DM Screen this session
 
   // Merge the GM's applicable custom rows over the static index. Recomputes when the toggle or the
   // active campaign changes, so overrides and campaign-pinned cards appear/disappear correctly.
@@ -237,6 +239,19 @@ export default function CompendiumTool() {
     setCandidates(results);
     if (results.length) addCard(results[0].entry);
   }, [matcher, addCard]);
+
+  // Send a copy of a card to the GM's DM Screen (a snapshot). Targets the last board used (localStorage),
+  // creating a default board if there is none. Best-effort: a failure never disrupts lookup.
+  const sendToScreen = useCallback(async (entry: CompendiumEntry, key: string) => {
+    if (!gmId) return;
+    let boardId: string | null = null;
+    try { boardId = localStorage.getItem("sax_dm_board"); } catch { /* storage disabled */ }
+    try {
+      const landedOn = await sendCardToScreen(supabase, gmId, boardId, entry);
+      try { localStorage.setItem("sax_dm_board", landedOn); } catch { /* storage disabled */ }
+      setSentKeys((prev) => new Set(prev).add(key));
+    } catch { /* sending is best-effort */ }
+  }, [gmId, supabase]);
 
   // ---- voice (Vosk) ----
   const lookupRef = useRef(lookup); lookupRef.current = lookup;
@@ -541,7 +556,7 @@ export default function CompendiumTool() {
           <p style={{ color: C.muted, fontSize: 14 }}>Look something up (type or use the mic) and its card appears here. In Continuous mode, cards fade after 30 seconds unless you hover or pin them.</p>
         )}
         {cards.map((c) => (
-          <CardView key={c.key} card={c} canEdit={!!gmId} onEdit={() => openEdit(c.entry)} onPin={() => pin(c.key)} onDismiss={() => dismiss(c.key)} onEnter={() => onEnter(c.key)} onLeave={() => onLeave(c.key)} />
+          <CardView key={c.key} card={c} canEdit={!!gmId} onEdit={() => openEdit(c.entry)} onPin={() => pin(c.key)} onDismiss={() => dismiss(c.key)} onEnter={() => onEnter(c.key)} onLeave={() => onLeave(c.key)} onSend={gmId ? () => sendToScreen(c.entry, c.key) : null} sent={sentKeys.has(c.key)} />
         ))}
       </div>
     </div>
@@ -551,7 +566,7 @@ export default function CompendiumTool() {
 // The little category chip. Features carry their flavour (metamagic / invocation / fighting style)
 // rather than the generic "feature", since that is what a DM is actually looking at. Custom cards carry
 // the GM's own tag.
-function entryTag(e: CompendiumEntry): string {
+export function entryTag(e: CompendiumEntry): string {
   if (isFeature(e)) {
     const k = e.display.kind;
     return k === "fighting-style" ? "fighting style" : k === "feature" ? "class feature" : k;
@@ -562,8 +577,9 @@ function entryTag(e: CompendiumEntry): string {
   return e.category === "magic-item" ? "item" : e.category;
 }
 
-function CardView({ card, canEdit, onEdit, onPin, onDismiss, onEnter, onLeave }: {
+function CardView({ card, canEdit, onEdit, onPin, onDismiss, onEnter, onLeave, onSend, sent }: {
   card: Card; canEdit: boolean; onEdit: () => void; onPin: () => void; onDismiss: () => void; onEnter: () => void; onLeave: () => void;
+  onSend: (() => void) | null; sent: boolean;
 }) {
   const e = card.entry;
   const chip: React.CSSProperties = { fontSize: 11, color: C.muted, border: `1px solid ${C.line}`, borderRadius: 999, padding: "1px 8px" };
@@ -583,6 +599,7 @@ function CardView({ card, canEdit, onEdit, onPin, onDismiss, onEnter, onLeave }:
           {!card.pinned && card.expiresAt != null && <span style={{ ...chip, borderColor: "transparent", color: C.muted }}>auto</span>}
         </div>
         <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+          {onSend && <button type="button" onClick={onSend} title="Send a copy of this card to your DM Screen" style={{ background: "transparent", border: `1px solid ${sent ? C.sun : C.line}`, borderRadius: 7, color: sent ? C.sun : C.muted, cursor: "pointer", fontSize: 12, padding: "2px 8px" }}>{sent ? "Sent" : "To DM Screen"}</button>}
           {canEdit && <button type="button" onClick={onEdit} title={homebrew ? "Edit this card" : "Override this card"} style={{ background: "transparent", border: `1px solid ${C.line}`, borderRadius: 7, color: C.muted, cursor: "pointer", fontSize: 12, padding: "2px 8px" }}>{homebrew ? "Edit" : "Override"}</button>}
           <button type="button" onClick={onPin} title={card.pinned ? "Unpin" : "Pin"} style={{ background: "transparent", border: `1px solid ${C.line}`, borderRadius: 7, color: card.pinned ? C.sun : C.muted, cursor: "pointer", fontSize: 12, padding: "2px 8px" }}>{card.pinned ? "Pinned" : "Pin"}</button>
           <button type="button" onClick={onDismiss} title="Dismiss" style={{ background: "transparent", border: `1px solid ${C.line}`, borderRadius: 7, color: C.muted, cursor: "pointer", fontSize: 14, padding: "2px 8px", lineHeight: 1 }}>&times;</button>
@@ -593,7 +610,7 @@ function CardView({ card, canEdit, onEdit, onPin, onDismiss, onEnter, onLeave }:
   );
 }
 
-function CardBody({ entry, meta }: { entry: CompendiumEntry; meta: React.CSSProperties }) {
+export function CardBody({ entry, meta }: { entry: CompendiumEntry; meta: React.CSSProperties }) {
   const body: React.CSSProperties = { color: C.text, fontSize: 14, lineHeight: 1.5, margin: "8px 0 0", whiteSpace: "pre-wrap" };
   if (isSpell(entry)) {
     const d = entry.display;

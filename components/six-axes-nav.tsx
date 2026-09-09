@@ -29,6 +29,7 @@ const GROUPS: Group[] = [
     { href: "/gm/encounters", label: "Encounters", needs: "adversary" },
     { href: "/gm/roll", label: "Roll" },
     { href: "/gm/compendium", label: "Compendium" },
+    { href: "/gm/screen", label: "DM Screen" },
     { href: "/gm/statblock", label: "Monster Maker", needs: "adversary" },
     { href: "/gm/table", label: "Check-in" },
   ] },
