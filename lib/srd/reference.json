@@ -4,14 +4,35 @@
     "edition": "both",
     "source": "kc",
     "blurb": "Set a check's DC by how hard the task is.",
-    "columns": ["Task difficulty", "DC"],
+    "columns": [
+      "Task difficulty",
+      "DC"
+    ],
     "rows": [
-      ["Very easy", "5"],
-      ["Easy", "10"],
-      ["Medium", "15"],
-      ["Hard", "20"],
-      ["Very hard", "25"],
-      ["Nearly impossible", "30"]
+      [
+        "Very easy",
+        "5"
+      ],
+      [
+        "Easy",
+        "10"
+      ],
+      [
+        "Medium",
+        "15"
+      ],
+      [
+        "Hard",
+        "20"
+      ],
+      [
+        "Very hard",
+        "25"
+      ],
+      [
+        "Nearly impossible",
+        "30"
+      ]
     ],
     "note": "When in doubt, call it Medium (15). For a group check, the task succeeds if at least half the group succeeds."
   },
@@ -20,11 +41,31 @@
     "edition": "both",
     "source": "kc",
     "blurb": "How far a party covers on foot, and the trade-off for hurrying or creeping.",
-    "columns": ["Pace", "Per hour", "Per day", "Effect"],
+    "columns": [
+      "Pace",
+      "Per hour",
+      "Per day",
+      "Effect"
+    ],
     "rows": [
-      ["Fast", "4 miles", "30 miles", "-5 to passive Perception"],
-      ["Normal", "3 miles", "24 miles", "no effect"],
-      ["Slow", "2 miles", "18 miles", "can move stealthily"]
+      [
+        "Fast",
+        "4 miles",
+        "30 miles",
+        "-5 to passive Perception"
+      ],
+      [
+        "Normal",
+        "3 miles",
+        "24 miles",
+        "no effect"
+      ],
+      [
+        "Slow",
+        "2 miles",
+        "18 miles",
+        "can move stealthily"
+      ]
     ],
     "note": "Difficult terrain halves the pace. Marching more than 8 hours in a day risks exhaustion: a Constitution save each extra hour, DC 10 + 1 per hour past 8."
   },
@@ -33,13 +74,31 @@
     "edition": "both",
     "source": "kc",
     "blurb": "Which ability score each skill is tied to.",
-    "columns": ["Ability", "Skills"],
+    "columns": [
+      "Ability",
+      "Skills"
+    ],
     "rows": [
-      ["Strength", "Athletics"],
-      ["Dexterity", "Acrobatics, Sleight of Hand, Stealth"],
-      ["Intelligence", "Arcana, History, Investigation, Nature, Religion"],
-      ["Wisdom", "Animal Handling, Insight, Medicine, Perception, Survival"],
-      ["Charisma", "Deception, Intimidation, Performance, Persuasion"]
+      [
+        "Strength",
+        "Athletics"
+      ],
+      [
+        "Dexterity",
+        "Acrobatics, Sleight of Hand, Stealth"
+      ],
+      [
+        "Intelligence",
+        "Arcana, History, Investigation, Nature, Religion"
+      ],
+      [
+        "Wisdom",
+        "Animal Handling, Insight, Medicine, Perception, Survival"
+      ],
+      [
+        "Charisma",
+        "Deception, Intimidation, Performance, Persuasion"
+      ]
     ],
     "note": "A passive score is 10 plus every modifier that would apply to the check, with no roll. Passive Perception is the one you will reach for most."
   },
@@ -48,13 +107,43 @@
     "edition": "both",
     "source": "kc",
     "blurb": "Each source sheds bright light, then dim light beyond it. In dim light, Perception checks that rely on sight are made with disadvantage; in darkness a creature without darkvision is effectively blinded.",
-    "columns": ["Source", "Bright", "Dim (beyond)", "Duration"],
+    "columns": [
+      "Source",
+      "Bright",
+      "Dim (beyond)",
+      "Duration"
+    ],
     "rows": [
-      ["Candle", "5 ft", "+5 ft", "1 hour"],
-      ["Torch", "20 ft", "+20 ft", "1 hour"],
-      ["Lantern, hooded", "30 ft", "+30 ft", "6 hr per flask of oil"],
-      ["Lantern, bullseye", "60-ft cone", "+60 ft", "6 hr per flask of oil"],
-      ["Lamp", "15 ft", "+30 ft", "6 hr per flask of oil"]
+      [
+        "Candle",
+        "5 ft",
+        "+5 ft",
+        "1 hour"
+      ],
+      [
+        "Torch",
+        "20 ft",
+        "+20 ft",
+        "1 hour"
+      ],
+      [
+        "Lantern, hooded",
+        "30 ft",
+        "+30 ft",
+        "6 hr per flask of oil"
+      ],
+      [
+        "Lantern, bullseye",
+        "60-ft cone",
+        "+60 ft",
+        "6 hr per flask of oil"
+      ],
+      [
+        "Lamp",
+        "15 ft",
+        "+30 ft",
+        "6 hr per flask of oil"
+      ]
     ],
     "note": "A hooded lantern can be lowered to shed only dim light in a 5-ft radius. Darkvision lets a creature treat dim light as bright and darkness as dim (in shades of gray) out to its range."
   },
@@ -63,14 +152,35 @@
     "edition": "2014",
     "source": "kc",
     "blurb": "Levels of exhaustion stack, and each level includes the effects of the levels below it. Finishing a long rest, with food and drink, removes one level.",
-    "columns": ["Level", "Effect"],
+    "columns": [
+      "Level",
+      "Effect"
+    ],
     "rows": [
-      ["1", "Disadvantage on ability checks"],
-      ["2", "Speed halved"],
-      ["3", "Disadvantage on attack rolls and saving throws"],
-      ["4", "Hit point maximum halved"],
-      ["5", "Speed reduced to 0"],
-      ["6", "Death"]
+      [
+        "1",
+        "Disadvantage on ability checks"
+      ],
+      [
+        "2",
+        "Speed halved"
+      ],
+      [
+        "3",
+        "Disadvantage on attack rolls and saving throws"
+      ],
+      [
+        "4",
+        "Hit point maximum halved"
+      ],
+      [
+        "5",
+        "Speed reduced to 0"
+      ],
+      [
+        "6",
+        "Death"
+      ]
     ],
     "note": null
   },
@@ -79,10 +189,19 @@
     "edition": "2024",
     "source": "kc",
     "blurb": "The 2024 track is one cumulative penalty rather than six distinct steps. Finishing a long rest removes one level.",
-    "columns": ["Levels", "Effect"],
+    "columns": [
+      "Levels",
+      "Effect"
+    ],
     "rows": [
-      ["Each level", "A cumulative -2 to all d20 tests (ability checks, attack rolls, saving throws) and -5 ft to speed"],
-      ["6", "Death"]
+      [
+        "Each level",
+        "A cumulative -2 to all d20 tests (ability checks, attack rolls, saving throws) and -5 ft to speed"
+      ],
+      [
+        "6",
+        "Death"
+      ]
     ],
     "note": "Example: at 3 levels you take -6 to every d20 test and lose 15 ft of speed."
   },
@@ -91,19 +210,701 @@
     "edition": "both",
     "source": "kc",
     "blurb": "On your turn you move up to your speed and take one action, plus one bonus action if a feature grants one and one free interaction with an object. You also get one reaction each round, which can be used on another creature's turn.",
-    "columns": ["Action", "What it does"],
+    "columns": [
+      "Action",
+      "What it does"
+    ],
     "rows": [
-      ["Attack", "One melee or ranged attack (more if you have Extra Attack)"],
-      ["Dash", "Gain extra movement equal to your speed"],
-      ["Disengage", "Your movement doesn't provoke opportunity attacks this turn"],
-      ["Dodge", "Attacks against you have disadvantage; you make Dex saves with advantage"],
-      ["Help", "Give an ally advantage on one check, or on their next attack against a foe next to you"],
-      ["Hide", "Make a Stealth check to become unseen"],
-      ["Ready", "Prepare an action to trigger on a condition you name (spends your reaction)"],
-      ["Search", "Make a Perception or Investigation check to find something"],
-      ["Cast a Spell", "Cast a spell with a casting time of one action"],
-      ["Use an Object", "Interact with a second object, or use one that needs an action"]
+      [
+        "Attack",
+        "One melee or ranged attack (more if you have Extra Attack)"
+      ],
+      [
+        "Dash",
+        "Gain extra movement equal to your speed"
+      ],
+      [
+        "Disengage",
+        "Your movement doesn't provoke opportunity attacks this turn"
+      ],
+      [
+        "Dodge",
+        "Attacks against you have disadvantage; you make Dex saves with advantage"
+      ],
+      [
+        "Help",
+        "Give an ally advantage on one check, or on their next attack against a foe next to you"
+      ],
+      [
+        "Hide",
+        "Make a Stealth check to become unseen"
+      ],
+      [
+        "Ready",
+        "Prepare an action to trigger on a condition you name (spends your reaction)"
+      ],
+      [
+        "Search",
+        "Make a Perception or Investigation check to find something"
+      ],
+      [
+        "Cast a Spell",
+        "Cast a spell with a casting time of one action"
+      ],
+      [
+        "Use an Object",
+        "Interact with a second object, or use one that needs an action"
+      ]
     ],
     "note": "The 2024 rules add the Influence, Study, Utilize, and Magic actions and fold some of the above into them, but the economy (one action, one bonus action, one reaction, your move, one free object interaction) is unchanged."
+  },
+  {
+    "name": "Object Armor Class and Hit Points",
+    "edition": "both",
+    "source": "kc",
+    "blurb": "Improvised AC and HP for smashing or destroying objects.",
+    "columns": [
+      "Material",
+      "AC"
+    ],
+    "rows": [
+      [
+        "Cloth, paper, rope",
+        "11"
+      ],
+      [
+        "Crystal, glass, ice",
+        "13"
+      ],
+      [
+        "Wood, bone",
+        "15"
+      ],
+      [
+        "Stone",
+        "17"
+      ],
+      [
+        "Iron, steel",
+        "19"
+      ],
+      [
+        "Mithral",
+        "21"
+      ],
+      [
+        "Adamantine",
+        "23"
+      ]
+    ],
+    "note": "HP by size (a resilient object doubles these): Tiny 2d6 (7), Small 3d6 (10), Medium 4d6 (14), Large 5d6 (18). Objects are immune to poison and psychic damage. Big objects (a wall, the ground) are effectively indestructible in a single turn; give them a section with its own HP instead."
+  },
+  {
+    "name": "Improvising Damage",
+    "edition": "both",
+    "source": "kc",
+    "blurb": "Rough damage for hazards and effects you invent on the spot, scaled to land about right for the party.",
+    "columns": [
+      "Severity",
+      "Levels 1-4",
+      "Levels 5-10",
+      "Levels 11-16",
+      "Levels 17-20"
+    ],
+    "rows": [
+      [
+        "Setback",
+        "1d10",
+        "2d10",
+        "4d10",
+        "10d10"
+      ],
+      [
+        "Dangerous",
+        "2d10",
+        "4d10",
+        "10d10",
+        "18d10"
+      ],
+      [
+        "Deadly",
+        "4d10",
+        "10d10",
+        "18d10",
+        "24d10"
+      ]
+    ],
+    "note": "Setback is a nuisance (a caltrop, a shove into a brazier), dangerous is a real threat (a falling chandelier), deadly can drop a character (a plume of lava). Single-source anchors: a torch 1d4 fire, a small fire 1d10, exposure to lava 10d10."
+  },
+  {
+    "name": "Environmental Hazards",
+    "edition": "both",
+    "source": "kc",
+    "blurb": "Quick calls for the common survival threats.",
+    "columns": [
+      "Hazard",
+      "Effect"
+    ],
+    "rows": [
+      [
+        "Falling",
+        "1d6 bludgeoning per 10 ft fallen, to a max of 20d6; you land prone unless you avoid the damage"
+      ],
+      [
+        "Holding breath",
+        "You can hold your breath for 1 + your Constitution modifier minutes (minimum 30 seconds)"
+      ],
+      [
+        "Suffocating",
+        "Once out of breath you last a number of rounds equal to your Con modifier (minimum 1), then drop to 0 HP and are dying"
+      ],
+      [
+        "Extreme cold",
+        "DC 10 Constitution save each hour or gain 1 level of exhaustion; cold resistance or immunity auto-succeeds"
+      ],
+      [
+        "Extreme heat",
+        "DC 5 Con save each hour, rising by 1 per hour, or gain 1 level of exhaustion; disadvantage in medium or heavy armor or without water"
+      ],
+      [
+        "Frigid water",
+        "You can swim in it for a number of minutes equal to your Con score before a DC 10 Con save each minute or gain 1 level of exhaustion"
+      ]
+    ],
+    "note": "Suffocation ignores temporary hit points. A creature dropped to 0 by suffocation is unconscious and dying as usual."
+  },
+  {
+    "name": "Monster Statistics by Challenge Rating",
+    "edition": "both",
+    "source": "kc",
+    "blurb": "Ballpark numbers to invent or reskin a creature on the fly and keep it about the right power for its CR.",
+    "columns": [
+      "CR",
+      "Prof",
+      "AC",
+      "HP",
+      "Attack",
+      "Save DC",
+      "Damage/round",
+      "XP"
+    ],
+    "rows": [
+      [
+        "0",
+        "+2",
+        "13",
+        "1-6",
+        "+3",
+        "13",
+        "0-1",
+        "0 or 10"
+      ],
+      [
+        "1/8",
+        "+2",
+        "13",
+        "7-35",
+        "+3",
+        "13",
+        "2-3",
+        "25"
+      ],
+      [
+        "1/4",
+        "+2",
+        "13",
+        "36-49",
+        "+3",
+        "13",
+        "4-5",
+        "50"
+      ],
+      [
+        "1/2",
+        "+2",
+        "13",
+        "50-70",
+        "+3",
+        "13",
+        "6-8",
+        "100"
+      ],
+      [
+        "1",
+        "+2",
+        "13",
+        "71-85",
+        "+3",
+        "13",
+        "9-14",
+        "200"
+      ],
+      [
+        "2",
+        "+2",
+        "13",
+        "86-100",
+        "+3",
+        "13",
+        "15-20",
+        "450"
+      ],
+      [
+        "3",
+        "+2",
+        "13",
+        "101-115",
+        "+4",
+        "13",
+        "21-26",
+        "700"
+      ],
+      [
+        "4",
+        "+2",
+        "14",
+        "116-130",
+        "+5",
+        "14",
+        "27-32",
+        "1,100"
+      ],
+      [
+        "5",
+        "+3",
+        "15",
+        "131-145",
+        "+6",
+        "15",
+        "33-38",
+        "1,800"
+      ],
+      [
+        "6",
+        "+3",
+        "15",
+        "146-160",
+        "+6",
+        "15",
+        "39-44",
+        "2,300"
+      ],
+      [
+        "7",
+        "+3",
+        "15",
+        "161-175",
+        "+6",
+        "15",
+        "45-50",
+        "2,900"
+      ],
+      [
+        "8",
+        "+3",
+        "16",
+        "176-190",
+        "+7",
+        "16",
+        "51-56",
+        "3,900"
+      ],
+      [
+        "9",
+        "+4",
+        "16",
+        "191-205",
+        "+7",
+        "16",
+        "57-62",
+        "5,000"
+      ],
+      [
+        "10",
+        "+4",
+        "17",
+        "206-220",
+        "+7",
+        "16",
+        "63-68",
+        "5,900"
+      ],
+      [
+        "11",
+        "+4",
+        "17",
+        "221-235",
+        "+8",
+        "17",
+        "69-74",
+        "7,200"
+      ],
+      [
+        "12",
+        "+4",
+        "17",
+        "236-250",
+        "+8",
+        "17",
+        "75-80",
+        "8,400"
+      ],
+      [
+        "13",
+        "+5",
+        "18",
+        "251-265",
+        "+8",
+        "18",
+        "81-86",
+        "10,000"
+      ],
+      [
+        "14",
+        "+5",
+        "18",
+        "266-280",
+        "+8",
+        "18",
+        "87-92",
+        "11,500"
+      ],
+      [
+        "15",
+        "+5",
+        "18",
+        "281-295",
+        "+8",
+        "18",
+        "93-98",
+        "13,000"
+      ],
+      [
+        "16",
+        "+5",
+        "18",
+        "296-310",
+        "+9",
+        "18",
+        "99-104",
+        "15,000"
+      ],
+      [
+        "17",
+        "+6",
+        "19",
+        "311-325",
+        "+10",
+        "19",
+        "105-110",
+        "18,000"
+      ],
+      [
+        "18",
+        "+6",
+        "19",
+        "326-340",
+        "+10",
+        "19",
+        "111-116",
+        "20,000"
+      ],
+      [
+        "19",
+        "+6",
+        "19",
+        "341-355",
+        "+10",
+        "19",
+        "117-122",
+        "22,000"
+      ],
+      [
+        "20",
+        "+6",
+        "19",
+        "356-400",
+        "+10",
+        "19",
+        "123-140",
+        "25,000"
+      ]
+    ],
+    "note": "Ranges are guidance, not hard rules: set AC, attack, and save DC near the CR row, pick HP within the band, and aim total damage per round at the damage column. CR 21-30 continues upward in the DMG (AC to about 23, attack to +14, save DC to 24)."
+  },
+  {
+    "name": "Magic Item Rarity",
+    "edition": "both",
+    "source": "kc",
+    "blurb": "Rarity roughly tracks the tier of play an item suits, and sets a ballpark value.",
+    "columns": [
+      "Rarity",
+      "Suits tier",
+      "Value (gp)"
+    ],
+    "rows": [
+      [
+        "Common",
+        "1st and up",
+        "50 to 100"
+      ],
+      [
+        "Uncommon",
+        "1st and up",
+        "101 to 500"
+      ],
+      [
+        "Rare",
+        "5th and up",
+        "501 to 5,000"
+      ],
+      [
+        "Very rare",
+        "11th and up",
+        "5,001 to 50,000"
+      ],
+      [
+        "Legendary",
+        "17th and up",
+        "50,001 and up"
+      ]
+    ],
+    "note": "Attunement gates the strongest items, and a character can attune to at most 3 at once. Consumables like potions and scrolls are usually worth about half the listed value."
+  },
+  {
+    "name": "Cost of Living and Services",
+    "edition": "both",
+    "source": "kc",
+    "blurb": "Daily lifestyle upkeep and common prices, for downtime and shopping.",
+    "columns": [
+      "Lifestyle (per day)",
+      "Cost"
+    ],
+    "rows": [
+      [
+        "Wretched",
+        "free"
+      ],
+      [
+        "Squalid",
+        "1 sp"
+      ],
+      [
+        "Poor",
+        "2 sp"
+      ],
+      [
+        "Modest",
+        "1 gp"
+      ],
+      [
+        "Comfortable",
+        "2 gp"
+      ],
+      [
+        "Wealthy",
+        "4 gp"
+      ],
+      [
+        "Aristocratic",
+        "10 gp and up"
+      ]
+    ],
+    "note": "Services: skilled hireling 2 gp/day, untrained hireling 2 sp/day, messenger about 2 cp/mile, ships passage about 1 sp/mile, a night at a modest inn about 5 sp, a good meal about 3 sp. Mounts: mule 8 gp, pony 30 gp, draft horse 50 gp, riding horse 75 gp, warhorse 400 gp."
+  },
+  {
+    "name": "Treasure by Challenge Rating",
+    "edition": "both",
+    "source": "kc",
+    "blurb": "Rough treasure to expect, by the CR of what the party overcame. Individual treasure is what a creature carries; a hoard is a stash for a whole lair or milestone.",
+    "columns": [
+      "CR tier",
+      "Individual (typical)",
+      "Hoard coins (typical)",
+      "Magic items"
+    ],
+    "rows": [
+      [
+        "0-4",
+        "a few to a few dozen gp",
+        "hundreds of gp, plus copper and silver",
+        "0 to 2, common or uncommon"
+      ],
+      [
+        "5-10",
+        "tens to low hundreds of gp",
+        "a few thousand gp, some gems and art",
+        "a couple, uncommon to rare"
+      ],
+      [
+        "11-16",
+        "hundreds of gp",
+        "tens of thousands of gp, valuable gems and art",
+        "several, rare to very rare"
+      ],
+      [
+        "17+",
+        "hundreds to thousands of gp",
+        "hundreds of thousands of gp",
+        "several, very rare to legendary"
+      ]
+    ],
+    "note": "These are rough averages for pacing, not the exact DMG roll tables. Most fights yield individual treasure; save hoards for bosses, milestones, and lairs. Scale down for a lower-magic game."
+  },
+  {
+    "name": "XP Thresholds by Level",
+    "edition": "2014",
+    "source": "kc",
+    "blurb": "The per-character XP budget for building an encounter. Add each party members threshold at a difficulty to get the encounters XP cap.",
+    "columns": [
+      "Level",
+      "Easy",
+      "Medium",
+      "Hard",
+      "Deadly"
+    ],
+    "rows": [
+      [
+        "1",
+        "25",
+        "50",
+        "75",
+        "100"
+      ],
+      [
+        "2",
+        "50",
+        "100",
+        "150",
+        "200"
+      ],
+      [
+        "3",
+        "75",
+        "150",
+        "225",
+        "400"
+      ],
+      [
+        "4",
+        "125",
+        "250",
+        "375",
+        "500"
+      ],
+      [
+        "5",
+        "250",
+        "500",
+        "750",
+        "1,100"
+      ],
+      [
+        "6",
+        "300",
+        "600",
+        "900",
+        "1,400"
+      ],
+      [
+        "7",
+        "350",
+        "750",
+        "1,100",
+        "1,700"
+      ],
+      [
+        "8",
+        "450",
+        "900",
+        "1,400",
+        "2,100"
+      ],
+      [
+        "9",
+        "550",
+        "1,100",
+        "1,600",
+        "2,400"
+      ],
+      [
+        "10",
+        "600",
+        "1,200",
+        "1,900",
+        "2,800"
+      ],
+      [
+        "11",
+        "800",
+        "1,600",
+        "2,400",
+        "3,600"
+      ],
+      [
+        "12",
+        "1,000",
+        "2,000",
+        "3,000",
+        "4,500"
+      ],
+      [
+        "13",
+        "1,100",
+        "2,200",
+        "3,400",
+        "5,100"
+      ],
+      [
+        "14",
+        "1,250",
+        "2,500",
+        "3,800",
+        "5,700"
+      ],
+      [
+        "15",
+        "1,400",
+        "2,800",
+        "4,300",
+        "6,400"
+      ],
+      [
+        "16",
+        "1,600",
+        "3,200",
+        "4,800",
+        "7,200"
+      ],
+      [
+        "17",
+        "2,000",
+        "3,900",
+        "5,900",
+        "8,800"
+      ],
+      [
+        "18",
+        "2,100",
+        "4,200",
+        "6,300",
+        "9,500"
+      ],
+      [
+        "19",
+        "2,400",
+        "4,900",
+        "7,300",
+        "10,900"
+      ],
+      [
+        "20",
+        "2,800",
+        "5,700",
+        "8,500",
+        "12,700"
+      ]
+    ],
+    "note": "Before comparing, multiply the monsters total XP by the encounter multiplier: x1.5 for 2 monsters, x2 for 3 to 6, x2.5 for 7 to 10, x3 for 11 to 14, x4 for 15 or more. The built-in Encounters tool does this math for you. (2024 uses a flat XP budget with no multiplier.)"
   }
 ]
