@@ -11,7 +11,7 @@ import { CompendiumMatcher, type RankedMatch } from "@/lib/compendium/match";
 import { useVosk } from "@/lib/compendium/useVosk";
 import {
   type CompendiumEntry, type Ruleset, type MonsterDisplay, type SpellDisplay, type ItemDisplay,
-  isSpell, isItem, isGear, isCondition, isFeat, isFeature, isRule, isMonster, isSpecies, isBackground, isCustom,
+  isSpell, isItem, isGear, isCondition, isFeat, isFeature, isRule, isMonster, isSpecies, isBackground, isReference, isCustom,
 } from "@/lib/compendium/types";
 import {
   type CustomRow, type CustomDraft, type Ruleset3, TYPED_CUSTOM,
@@ -538,6 +538,7 @@ function entryTag(e: CompendiumEntry): string {
     return k === "fighting-style" ? "fighting style" : k === "feature" ? "class feature" : k;
   }
   if (isRule(e)) return e.display.topic ? e.display.topic.toLowerCase() : "rule";
+  if (isReference(e)) return "quick reference";
   if (isCustom(e)) return e.display.tag || "custom";
   return e.category === "magic-item" ? "item" : e.category;
 }
@@ -677,6 +678,31 @@ function CardBody({ entry, meta }: { entry: CompendiumEntry; meta: React.CSSProp
             <strong style={{ color: C.text }}>{k}: </strong>{v}
           </p>
         ))}
+      </div>
+    );
+  }
+  if (isReference(entry)) {
+    const d = entry.display;
+    const th: React.CSSProperties = { textAlign: "left", padding: "4px 10px 4px 0", color: C.sun, fontSize: 12, fontWeight: 700, borderBottom: `1px solid ${C.line}`, whiteSpace: "nowrap" };
+    const td: React.CSSProperties = { padding: "4px 10px 4px 0", color: C.text, fontSize: 13.5, verticalAlign: "top", borderBottom: `1px solid ${C.line}` };
+    return (
+      <div>
+        {d.blurb && <p style={body}>{d.blurb}</p>}
+        {d.columns.length > 0 && d.rows.length > 0 && (
+          <div style={{ overflowX: "auto", marginTop: 8 }}>
+            <table style={{ borderCollapse: "collapse", width: "100%" }}>
+              <thead>
+                <tr>{d.columns.map((c, i) => <th key={i} style={th}>{c}</th>)}</tr>
+              </thead>
+              <tbody>
+                {d.rows.map((row, ri) => (
+                  <tr key={ri}>{row.map((cell, ci) => <td key={ci} style={td}>{cell}</td>)}</tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {d.note && <p style={{ ...meta, marginTop: 8 }}>{d.note}</p>}
       </div>
     );
   }

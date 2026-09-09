@@ -1,0 +1,109 @@
+[
+  {
+    "name": "Difficulty Classes",
+    "edition": "both",
+    "source": "kc",
+    "blurb": "Set a check's DC by how hard the task is.",
+    "columns": ["Task difficulty", "DC"],
+    "rows": [
+      ["Very easy", "5"],
+      ["Easy", "10"],
+      ["Medium", "15"],
+      ["Hard", "20"],
+      ["Very hard", "25"],
+      ["Nearly impossible", "30"]
+    ],
+    "note": "When in doubt, call it Medium (15). For a group check, the task succeeds if at least half the group succeeds."
+  },
+  {
+    "name": "Travel Pace",
+    "edition": "both",
+    "source": "kc",
+    "blurb": "How far a party covers on foot, and the trade-off for hurrying or creeping.",
+    "columns": ["Pace", "Per hour", "Per day", "Effect"],
+    "rows": [
+      ["Fast", "4 miles", "30 miles", "-5 to passive Perception"],
+      ["Normal", "3 miles", "24 miles", "no effect"],
+      ["Slow", "2 miles", "18 miles", "can move stealthily"]
+    ],
+    "note": "Difficult terrain halves the pace. Marching more than 8 hours in a day risks exhaustion: a Constitution save each extra hour, DC 10 + 1 per hour past 8."
+  },
+  {
+    "name": "Skills by Ability",
+    "edition": "both",
+    "source": "kc",
+    "blurb": "Which ability score each skill is tied to.",
+    "columns": ["Ability", "Skills"],
+    "rows": [
+      ["Strength", "Athletics"],
+      ["Dexterity", "Acrobatics, Sleight of Hand, Stealth"],
+      ["Intelligence", "Arcana, History, Investigation, Nature, Religion"],
+      ["Wisdom", "Animal Handling, Insight, Medicine, Perception, Survival"],
+      ["Charisma", "Deception, Intimidation, Performance, Persuasion"]
+    ],
+    "note": "A passive score is 10 plus every modifier that would apply to the check, with no roll. Passive Perception is the one you will reach for most."
+  },
+  {
+    "name": "Light Sources",
+    "edition": "both",
+    "source": "kc",
+    "blurb": "Each source sheds bright light, then dim light beyond it. In dim light, Perception checks that rely on sight are made with disadvantage; in darkness a creature without darkvision is effectively blinded.",
+    "columns": ["Source", "Bright", "Dim (beyond)", "Duration"],
+    "rows": [
+      ["Candle", "5 ft", "+5 ft", "1 hour"],
+      ["Torch", "20 ft", "+20 ft", "1 hour"],
+      ["Lantern, hooded", "30 ft", "+30 ft", "6 hr per flask of oil"],
+      ["Lantern, bullseye", "60-ft cone", "+60 ft", "6 hr per flask of oil"],
+      ["Lamp", "15 ft", "+30 ft", "6 hr per flask of oil"]
+    ],
+    "note": "A hooded lantern can be lowered to shed only dim light in a 5-ft radius. Darkvision lets a creature treat dim light as bright and darkness as dim (in shades of gray) out to its range."
+  },
+  {
+    "name": "Exhaustion Track",
+    "edition": "2014",
+    "source": "kc",
+    "blurb": "Levels of exhaustion stack, and each level includes the effects of the levels below it. Finishing a long rest, with food and drink, removes one level.",
+    "columns": ["Level", "Effect"],
+    "rows": [
+      ["1", "Disadvantage on ability checks"],
+      ["2", "Speed halved"],
+      ["3", "Disadvantage on attack rolls and saving throws"],
+      ["4", "Hit point maximum halved"],
+      ["5", "Speed reduced to 0"],
+      ["6", "Death"]
+    ],
+    "note": null
+  },
+  {
+    "name": "Exhaustion Track",
+    "edition": "2024",
+    "source": "kc",
+    "blurb": "The 2024 track is one cumulative penalty rather than six distinct steps. Finishing a long rest removes one level.",
+    "columns": ["Levels", "Effect"],
+    "rows": [
+      ["Each level", "A cumulative -2 to all d20 tests (ability checks, attack rolls, saving throws) and -5 ft to speed"],
+      ["6", "Death"]
+    ],
+    "note": "Example: at 3 levels you take -6 to every d20 test and lose 15 ft of speed."
+  },
+  {
+    "name": "Actions in Combat",
+    "edition": "both",
+    "source": "kc",
+    "blurb": "On your turn you move up to your speed and take one action, plus one bonus action if a feature grants one and one free interaction with an object. You also get one reaction each round, which can be used on another creature's turn.",
+    "columns": ["Action", "What it does"],
+    "rows": [
+      ["Attack", "One melee or ranged attack (more if you have Extra Attack)"],
+      ["Dash", "Gain extra movement equal to your speed"],
+      ["Disengage", "Your movement doesn't provoke opportunity attacks this turn"],
+      ["Dodge", "Attacks against you have disadvantage; you make Dex saves with advantage"],
+      ["Help", "Give an ally advantage on one check, or on their next attack against a foe next to you"],
+      ["Hide", "Make a Stealth check to become unseen"],
+      ["Ready", "Prepare an action to trigger on a condition you name (spends your reaction)"],
+      ["Search", "Make a Perception or Investigation check to find something"],
+      ["Cast a Spell", "Cast a spell with a casting time of one action"],
+      ["Use an Object", "Interact with a second object, or use one that needs an action"]
+    ],
+    "note": "The 2024 rules add the Influence, Study, Utilize, and Magic actions and fold some of the above into them, but the economy (one action, one bonus action, one reaction, your move, one free object interaction) is unchanged."
+  }
+]

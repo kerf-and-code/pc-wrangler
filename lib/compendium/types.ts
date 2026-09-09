@@ -8,7 +8,7 @@
 
 export type CompendiumCategory =
   | "spell" | "magic-item" | "equipment" | "condition" | "feat" | "feature" | "rule" | "monster" | "species" | "background"
-  | "custom";
+  | "reference" | "custom";
 export type Ruleset = "2014" | "2024" | "both";
 
 // Attribution. "srd" is Open Game Content under CC-BY (SRD 5.1 / 5.2); "kc" is original content
@@ -139,6 +139,17 @@ export interface BackgroundDisplay {
   equipment: string | null;
 }
 
+// An at-a-glance DM-screen reference card: a short blurb, an optional table (column headers + rows), and
+// an optional footnote. The DM-screen tables (typical DCs, travel pace, skills by ability, light sources,
+// the exhaustion track, actions in combat) render through this. Authored by Kerf and Code (numeric fact
+// tables), source "kc".
+export interface ReferenceDisplay {
+  blurb: string | null;
+  columns: string[];     // table header; empty array = no table
+  rows: string[][];      // table body, each row aligned to `columns`
+  note: string | null;
+}
+
 // A homebrew card or a GM's non-destructive override of a shipped card. Every custom entry, whatever
 // it represents, renders through this one flattened shape: a chip label, a few small meta lines, and a
 // body. `tag` carries the chip text (e.g. "house rule", "spell") since custom entries do not use the
@@ -151,7 +162,7 @@ export interface CustomDisplay {
 
 export type CompendiumDisplay =
   | SpellDisplay | ItemDisplay | GearDisplay | ConditionDisplay | FeatDisplay | FeatureDisplay
-  | RuleDisplay | MonsterDisplay | SpeciesDisplay | BackgroundDisplay | CustomDisplay;
+  | RuleDisplay | MonsterDisplay | SpeciesDisplay | BackgroundDisplay | ReferenceDisplay | CustomDisplay;
 
 // One entry per term. This is a DISCRIMINATED UNION keyed on `category`: each category pins its own
 // `display` shape, so a check on `category` narrows `display` exactly. The discriminant is load-bearing
@@ -185,6 +196,7 @@ export type CompendiumEntry =
   | EntryBase<"monster", MonsterDisplay>
   | EntryBase<"species", SpeciesDisplay>
   | EntryBase<"background", BackgroundDisplay>
+  | EntryBase<"reference", ReferenceDisplay>
   | EntryBase<"custom", CustomDisplay>;
 
 // Narrowing helpers so the card renderer can read the right fields with no `any`. Each keys on the
@@ -199,4 +211,5 @@ export const isRule = (e: CompendiumEntry): e is Extract<CompendiumEntry, { cate
 export const isMonster = (e: CompendiumEntry): e is Extract<CompendiumEntry, { category: "monster" }> => e.category === "monster";
 export const isSpecies = (e: CompendiumEntry): e is Extract<CompendiumEntry, { category: "species" }> => e.category === "species";
 export const isBackground = (e: CompendiumEntry): e is Extract<CompendiumEntry, { category: "background" }> => e.category === "background";
+export const isReference = (e: CompendiumEntry): e is Extract<CompendiumEntry, { category: "reference" }> => e.category === "reference";
 export const isCustom = (e: CompendiumEntry): e is Extract<CompendiumEntry, { category: "custom" }> => e.category === "custom";

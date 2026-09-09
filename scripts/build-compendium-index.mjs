@@ -234,6 +234,28 @@ function ruleEntry(r, ruleset) {
   };
 }
 
+// ---- reference cards (at-a-glance DM-screen tables) -----------------------------------------------
+// Authored numeric fact tables (typical DCs, travel pace, skills by ability, light sources, the
+// exhaustion track, actions in combat) from lib/srd/reference.json. Category "reference" renders as a
+// small table card (blurb + column/row grid + footnote). Numeric game facts -> source "kc". Routed by an
+// `edition` field ("2014" | "2024" | "both") the same way authored spells are.
+function referenceEntry(r, ruleset) {
+  return {
+    id: `reference:${slug(r.name)}`,
+    name: r.name,
+    category: "reference",
+    ruleset,
+    source: r.source === "srd" ? "srd" : "kc",
+    spoken: spokenForms(r.name),
+    display: {
+      blurb: r.blurb ?? null,
+      columns: Array.isArray(r.columns) ? r.columns : [],
+      rows: Array.isArray(r.rows) ? r.rows : [],
+      note: r.note ?? null,
+    },
+  };
+}
+
 // ---- feats ---------------------------------------------------------------------------------------
 // The SRD-open feat set is small: SRD 5.1 (2014) has only Grappler, and SRD 5.2 (2024) ships the
 // short list below. Everything else in feats-<ed>.json is original content authored by Kerf and Code
@@ -533,6 +555,9 @@ function buildEdition(ed, variantsByName) {
   const backgrounds = loadBackgrounds(ed);
   // No 2014 fallback here (unlike conditions): rules-<ed>.json is edition-specific SRD text.
   const rules = readMaybe(path.join(SRD_DIR, `rules-${ed}.json`)) || [];
+  // At-a-glance reference tables, edition-routed like the authored spells.
+  const references = (readMaybe(path.join(SRD_DIR, "reference.json")) || [])
+    .filter((r) => r.edition === ed || r.edition === "both");
   return applyAliases([
     ...spells.map((s) => spellEntry(s, ed)),
     ...authoredSpells.map((s) => spellEntry(s, ed)),
@@ -547,6 +572,7 @@ function buildEdition(ed, variantsByName) {
     ...species.map((s) => speciesEntry(s, ed)),
     ...backgrounds.map((b) => backgroundEntry(b, ed)),
     ...rules.map((r) => ruleEntry(r, ed)),
+    ...references.map((r) => referenceEntry(r, ed)),
   ]);
 }
 
