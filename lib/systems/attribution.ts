@@ -70,9 +70,10 @@ export const SYSTEM_ATTRIBUTIONS: SystemAttribution[] = [
     url: "https://massifpress.com/legal",
   },
   {
-    // Dark Matter reuses the open 5e engine (SRD 5.1 CC-BY); it is not offered as its own Forge system,
-    // so it has no compact Forge line, but its SRD attribution belongs on the licenses page.
-    id: "",
+    // Dark Matter reuses the open 5e engine (SRD 5.1 CC-BY). It is now a selectable compendium system
+    // (its compendium reads the shared 2014 SRD index), so it carries its own id for the compact line
+    // shown in the tool footer; the SRD attribution also appears on the licenses page.
+    id: "darkmatter",
     system: "Dark Matter (5e engine)",
     license: "SRD 5.1 (CC BY 4.0)",
     short: "Runs on the D&D 5e SRD engine under CC BY 4.0; Mage Hand Press’s Dark Matter setting content is not shipped.",

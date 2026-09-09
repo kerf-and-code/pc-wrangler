@@ -66,14 +66,22 @@ const MODEL_URL = "/compendium/model/vosk-model-small-en-us-0.15.tar.gz";
 // is then a data-only drop of public/compendium/index-<system>.json (+ grammar-<system>.json) plus that
 // system's id here. Systems NOT in this set still work in the tool - they run on the GM's homebrew cards
 // alone until their index is built.
-const COMPENDIUM_READY = new Set<string>(["dnd5e", "drawsteel", "lancer", "daggerheart", "pf2e"]);
+const COMPENDIUM_READY = new Set<string>(["dnd5e", "drawsteel", "lancer", "daggerheart", "pf2e", "darkmatter"]);
 // Only D&D splits its index by edition (2014 / 2024 / both); every other system is single-edition, so it
 // keeps no ruleset toggle and its index carries no edition in the filename.
 const hasEditions = (system: string) => system === "dnd5e";
+// Dark Matter runs on the open D&D 5e SRD engine (Mage Hand Press's setting content is proprietary and is
+// NOT shipped), so its compendium IS the 5e SRD content: it reads the existing 2014 index rather than a
+// duplicate index-darkmatter.json. The Dark Matter look still applies (theme + footer), only the data is
+// shared. Its own homebrew is still stored per system ("darkmatter") and merged on top.
 const indexPath = (system: string, ruleset: Ruleset) =>
-  system === "dnd5e" ? `/compendium/index-${ruleset}.json` : `/compendium/index-${system}.json`;
+  system === "dnd5e" ? `/compendium/index-${ruleset}.json`
+    : system === "darkmatter" ? `/compendium/index-2014.json`
+    : `/compendium/index-${system}.json`;
 const grammarPath = (system: string, ruleset: Ruleset) =>
-  system === "dnd5e" ? `/compendium/grammar-${ruleset}.json` : `/compendium/grammar-${system}.json`;
+  system === "dnd5e" ? `/compendium/grammar-${ruleset}.json`
+    : system === "darkmatter" ? `/compendium/grammar-2014.json`
+    : `/compendium/grammar-${system}.json`;
 const systemLabel = (system: string) => getModule(system).label;
 
 type ListenMode = "push" | "continuous";
