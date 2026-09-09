@@ -403,5 +403,101 @@
     "name": "Underwater Combat",
     "topic": "Combat",
     "description": "A fight underwater follows these rules.\n\nImpeded Weapons\n\nWhen making a melee attack roll with a weapon underwater, a creature that lacks a Swim Speed has Disadvantage on the attack roll unless the weapon deals Piercing damage.\n\nA ranged attack roll with a weapon underwater automatically misses a target beyond the weapon's normal range, and the attack roll has Disadvantage against a target within normal range.\n\nFire Resistance\n\nAnything underwater has Resistance to Fire damage (explained in \"Damage and Healing\")."
+  },
+  {
+    "name": "Flanking",
+    "topic": "Optional Rule",
+    "source": "kc",
+    "description": "When a creature and at least one ally are on directly opposite sides of an enemy and both are within reach of it, each of them has advantage on melee attack rolls against that enemy. Ranged attackers get no benefit, and a creature that can't see its target can't flank. It speeds fights up, but it makes outnumbering decisive, so turn it on knowing it rewards the side with more bodies."
+  },
+  {
+    "name": "Hitting Cover",
+    "topic": "Optional Rule",
+    "source": "kc",
+    "description": "When a ranged attack misses a target that is behind cover, the DM can rule that the shot strikes the cover instead if the roll would have hit the cover's own AC. Handy for destructible barriers, an ally being used as a shield, or a hostage held in front of a foe."
+  },
+  {
+    "name": "Cleaving Through Creatures",
+    "topic": "Optional Rule",
+    "source": "kc",
+    "description": "When a melee attack reduces an undamaged creature to 0 hit points and damage is left over, that extra damage carries to another creature within reach and range, as though the attack also struck it. No new roll is made. It lets a single heavy blow drop more than one minion."
+  },
+  {
+    "name": "Lingering Injuries",
+    "topic": "Optional Rule",
+    "source": "kc",
+    "description": "When a creature takes a critical hit, drops to 0 hit points without dying outright, or fails a death saving throw by 5 or more, the DM can roll on an injuries table for a lasting wound: a lost eye, a broken limb, internal damage, a scar that hampers checks. It adds grit and consequence; pair it with a way for the injury to heal over time."
+  },
+  {
+    "name": "Massive Damage",
+    "topic": "Optional Rule",
+    "source": "kc",
+    "description": "When a creature takes damage from a single source equal to or greater than half its hit point maximum, it must succeed on a DC 15 Constitution saving throw or suffer a system shock: stunned until the end of its next turn, knocked prone, or left unable to take reactions. It makes one huge hit genuinely frightening."
+  },
+  {
+    "name": "Morale",
+    "topic": "Optional Rule",
+    "source": "kc",
+    "description": "Rather than fighting to the last hit point, creatures may break and flee or surrender when a battle turns against them. The DM can call for a check (often a Wisdom save or a simple flat roll) when a side loses its leader, drops below half its number, or takes a sudden heavy loss. It keeps fights from grinding on after the outcome is decided."
+  },
+  {
+    "name": "Disarm",
+    "topic": "Optional Rule",
+    "source": "kc",
+    "description": "A creature can use one of its attacks to try to knock an object out of a target's grasp. The attacker makes an attack roll contested by the target's Strength (Athletics) or Dexterity (Acrobatics) check. The defender has advantage if it is larger or holds the item in two or more hands, and disadvantage if it is smaller. On a success, the target drops the item."
+  },
+  {
+    "name": "Overrun",
+    "topic": "Optional Rule",
+    "source": "kc",
+    "description": "When a creature wants to move through a hostile creature's space, it can try to force its way through. As part of its move it makes a Strength (Athletics) check contested by the target's Strength (Athletics); the larger of the two has advantage. On a success it can move through the space once this turn."
+  },
+  {
+    "name": "Tumble",
+    "topic": "Optional Rule",
+    "source": "kc",
+    "description": "A creature can try to dive, roll, or slip through a hostile creature's space. Using part of its movement, it makes a Dexterity (Acrobatics) check contested by the target's Dexterity (Acrobatics). On a success it can move through the space once this turn, though that space still counts as difficult terrain."
+  },
+  {
+    "name": "Shove Aside",
+    "topic": "Optional Rule",
+    "source": "kc",
+    "description": "A variant of the shove: instead of pushing a target straight back or knocking it prone, the attacker can shove it 5 feet to one side. Because sidestepping a braced creature is harder, the defender has advantage on the contest. Useful for clearing a doorway or a path past a guard."
+  },
+  {
+    "name": "Mark",
+    "topic": "Optional Rule",
+    "source": "kc",
+    "description": "As a variant, a creature can mark a target it hits with a melee attack. Until the end of the marker's next turn, if the marked target moves out of the marker's reach or attacks anyone else, the marker can make one special melee attack against it as a reaction. It gives frontline martials a way to hold a line and protect allies."
+  },
+  {
+    "name": "Climb onto a Bigger Creature",
+    "topic": "Optional Rule",
+    "source": "kc",
+    "description": "A creature at least one size smaller than a foe can try to climb onto it. It moves into the target's space and makes a Strength (Athletics) or Dexterity (Acrobatics) check contested by the target's Dexterity (Acrobatics). On a success it clings on, moving with the creature and gaining advantage on attacks against it; the target can use an action to try to shake it off."
+  },
+  {
+    "name": "Gritty Realism",
+    "topic": "Optional Rule",
+    "source": "kc",
+    "description": "A rest variant: a short rest is 8 hours and a long rest is 7 days. Recovery slows to a crawl, so a single adventuring day can stretch across a week or more and hit points and spell slots become precious. It suits grounded, survival-flavored campaigns and stretches the in-world calendar."
+  },
+  {
+    "name": "Epic Heroism",
+    "topic": "Optional Rule",
+    "source": "kc",
+    "description": "A rest variant: a short rest is 5 minutes and a long rest is 1 hour. Resources refresh quickly, so a group can face many encounters in a day and lean on its big abilities often. It suits pulpy, high-action games and pushes the challenge toward encounter design rather than attrition."
+  },
+  {
+    "name": "Slow Natural Healing",
+    "topic": "Optional Rule",
+    "source": "kc",
+    "description": "Creatures do not regain lost hit points at the end of a long rest. Instead, at the end of a long rest a creature may spend Hit Dice to heal, the same way it does on a short rest. It keeps wounds meaningful and makes healing magic and downtime matter, without stopping recovery entirely."
+  },
+  {
+    "name": "Encumbrance",
+    "topic": "Optional Rule",
+    "source": "kc",
+    "description": "A variant that tracks weight more strictly. Carrying more than your Strength score times 5 pounds leaves you encumbered: your speed drops by 10 feet. Carrying more than your Strength times 10 pounds leaves you heavily encumbered: your speed drops by 20 feet and you have disadvantage on attack rolls, ability checks, and saving throws that use Strength, Dexterity, or Constitution. It gives loot and heavy gear real weight."
   }
 ]

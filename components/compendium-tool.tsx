@@ -10,13 +10,37 @@ import { resolveSystemVars } from "@/lib/systems/system-theme";
 import { CompendiumMatcher, type RankedMatch } from "@/lib/compendium/match";
 import { useVosk } from "@/lib/compendium/useVosk";
 import {
-  type CompendiumEntry, type Ruleset, type MonsterDisplay,
+  type CompendiumEntry, type Ruleset, type MonsterDisplay, type SpellDisplay, type ItemDisplay,
   isSpell, isItem, isGear, isCondition, isFeat, isFeature, isRule, isMonster, isSpecies, isBackground, isCustom,
 } from "@/lib/compendium/types";
 import {
-  type CustomRow, type CustomDraft, type Ruleset3,
+  type CustomRow, type CustomDraft, type Ruleset3, TYPED_CUSTOM,
   listCustomEntries, createCustomEntry, updateCustomEntry, deleteCustomEntry, mergeCustom, flattenForOverride,
 } from "@/lib/compendium/custom";
+
+// Working display shapes the typed editor edits in place. A new typed card starts from these blanks.
+type TypedDisplay = SpellDisplay | ItemDisplay | MonsterDisplay;
+const emptySpell = (): SpellDisplay => ({
+  level: 0, school: null, castingTime: null, range: null, components: null, duration: null,
+  concentration: false, ritual: false, attackType: null, classes: [], damage: null, description: null,
+});
+const emptyItem = (): ItemDisplay => ({
+  type: null, rarity: null, attunement: false, attunementNote: null, variants: null, description: null,
+});
+const emptyMonster = (): MonsterDisplay => ({
+  size: null, type: null, alignment: null, ac: null, hp: null, hitDice: null, speed: null, senses: null,
+  languages: null, cr: null, xp: null,
+  abilities: { str: null, dex: null, con: null, int: null, wis: null, cha: null },
+  damageVulnerabilities: null, damageResistances: null, damageImmunities: null, conditionImmunities: null,
+  traits: [], actions: [], bonusActions: [], reactions: [], legendaryActions: [],
+});
+const emptyDisplayFor = (category: string): TypedDisplay | null =>
+  category === "spell" ? emptySpell() : category === "magic-item" ? emptyItem() : category === "monster" ? emptyMonster() : null;
+// The card-type choices offered when creating a NEW homebrew card (an override/edit keeps its category).
+const NEW_CARD_TYPES: { id: string; label: string }[] = [
+  { id: "custom", label: "Custom" }, { id: "spell", label: "Spell" },
+  { id: "magic-item", label: "Magic item" }, { id: "monster", label: "Monster" },
+];
 
 // components/compendium-tool.tsx
 //
@@ -62,8 +86,9 @@ interface EditState {
   name: string;
   tag: string;
   ruleset: Ruleset3;
-  metaLinesText: string; // one meta line per row in a textarea
-  body: string;
+  metaLinesText: string; // one meta line per row in a textarea (generic cards only)
+  body: string;          // generic cards only
+  display: TypedDisplay | null; // the typed working display for spell/magic-item/monster, else null
   aliasesText: string;   // comma-separated
   overridesId: string | null;
   campaignId: string | null;
@@ -248,7 +273,7 @@ export default function CompendiumTool() {
     setSaveErr(null);
     setEditing({
       id: null, name: "", tag: "house rule", ruleset: defaultRuleset(),
-      metaLinesText: "", body: "", aliasesText: "", overridesId: null,
+      metaLinesText: "", body: "", display: null, aliasesText: "", overridesId: null,
       campaignId: null, category: "custom", baseLabel: null,
     });
   };
@@ -258,6 +283,7 @@ export default function CompendiumTool() {
     setEditing({
       id: row.id, name: row.name, tag: row.tag ?? "", ruleset: row.ruleset,
       metaLinesText: row.meta_lines.join("\n"), body: row.body ?? "",
+      display: TYPED_CUSTOM.has(row.category) && row.display ? (row.display as TypedDisplay) : null,
       aliasesText: row.aliases.join(", "), overridesId: row.overrides_id,
       campaignId: row.campaign_id, category: row.category,
       baseLabel: row.overrides_id ? `Overriding ${row.overrides_id}` : null,
@@ -278,25 +304,34 @@ export default function CompendiumTool() {
     setSaveErr(null);
     setEditing({
       id: null, name: entry.name, tag: f.tag, ruleset: (["2014", "2024", "both"].includes(entry.ruleset) ? entry.ruleset : "both") as Ruleset3,
-      metaLinesText: f.metaLines.join("\n"), body: f.body, aliasesText: "",
-      overridesId: f.overridesId, campaignId: null, category: f.category,
+      metaLinesText: f.metaLines.join("\n"), body: f.body, display: f.display,
+      aliasesText: "", overridesId: f.overridesId, campaignId: null, category: f.category,
       baseLabel: `Overriding ${entry.name}`,
     });
   };
 
-  const draftFrom = (e: EditState): CustomDraft => ({
-    name: e.name.trim() || "Untitled",
-    tag: e.tag.trim() || null,
-    ruleset: e.ruleset,
-    metaLines: e.metaLinesText.split("\n").map((s) => s.trim()).filter(Boolean),
-    body: e.body.trim() || null,
-    spoken: [],
-    aliases: e.aliasesText.split(",").map((s) => s.trim()).filter(Boolean),
-    overridesId: e.overridesId,
-    campaignId: e.campaignId,
-    category: e.category || "custom",
-    system, // the system currently selected in the tool
-  });
+  const draftFrom = (e: EditState): CustomDraft => {
+    // "Typed" means a spell/magic-item/monster that actually carries a display. A legacy override row
+    // (category "spell" but no display, from before typed editing) stays on the generic body path so its
+    // text is preserved, not wiped.
+    const typed = TYPED_CUSTOM.has(e.category) && e.display != null;
+    return {
+      name: e.name.trim() || "Untitled",
+      // Typed cards render through their own display, not a chip/meta/body, so those generic fields are
+      // cleared for them and the display is what carries the content.
+      tag: typed ? null : (e.tag.trim() || null),
+      ruleset: e.ruleset,
+      metaLines: typed ? [] : e.metaLinesText.split("\n").map((s) => s.trim()).filter(Boolean),
+      body: typed ? null : (e.body.trim() || null),
+      display: typed ? e.display : null,
+      spoken: [],
+      aliases: e.aliasesText.split(",").map((s) => s.trim()).filter(Boolean),
+      overridesId: e.overridesId,
+      campaignId: e.campaignId,
+      category: e.category || "custom",
+      system, // the system currently selected in the tool
+    };
+  };
 
   const saveEditing = async () => {
     if (!editing || !gmId) return;
@@ -722,6 +757,9 @@ function EntryEditor({ state, onChange, onSave, onDelete, onCancel, activeCampai
   const field: React.CSSProperties = { width: "100%", padding: "8px 10px", background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: 7, fontSize: 14, boxSizing: "border-box" };
   const seg = (on: boolean): React.CSSProperties => ({ padding: "6px 11px", background: on ? C.surface2 : "transparent", color: on ? C.sun : C.muted, border: `1px solid ${on ? C.sun : C.line}`, borderRadius: 7, fontWeight: 600, fontSize: 13, cursor: "pointer" });
   const isOverride = !!state.overridesId;
+  // Typed editor iff the category is one of the typed kinds AND a display is present (a legacy override
+  // with no display edits through the generic body form, matching how it renders).
+  const isTyped = TYPED_CUSTOM.has(state.category) && state.display != null;
   return (
     <div style={{ border: `1px solid ${C.sun}`, borderRadius: FORGE_RADIUS, padding: 14, background: C.surface, display: "flex", flexDirection: "column", gap: 10 }}>
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
@@ -734,32 +772,55 @@ function EntryEditor({ state, onChange, onSave, onDelete, onCancel, activeCampai
         <input value={state.name} onChange={(e) => set("name", e.target.value)} placeholder="Card title" style={field} />
       </div>
 
-      <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-        <div style={{ flex: "1 1 160px" }}>
-          <div style={{ ...label, marginBottom: 4 }}>Tag (chip)</div>
-          <input value={state.tag} onChange={(e) => set("tag", e.target.value)} placeholder="house rule" style={field} />
-        </div>
-        {editions && (
-          <div>
-            <div style={{ ...label, marginBottom: 4 }}>Shows under</div>
-            <div style={{ display: "flex", gap: 6 }}>
-              {(["2014", "2024", "both"] as Ruleset3[]).map((r) => (
-                <button key={r} type="button" onClick={() => set("ruleset", r)} style={seg(state.ruleset === r)}>{r === "both" ? "Both" : r}</button>
-              ))}
-            </div>
+      {/* Card type: only for a brand-new card. An override or an existing edit keeps the base category. */}
+      {!state.id && !isOverride && (
+        <div>
+          <div style={{ ...label, marginBottom: 4 }}>Card type</div>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            {NEW_CARD_TYPES.map((t) => (
+              <button key={t.id} type="button"
+                onClick={() => onChange({ ...state, category: t.id, display: emptyDisplayFor(t.id) })}
+                style={seg(state.category === t.id)}>{t.label}</button>
+            ))}
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
-      <div>
-        <div style={{ ...label, marginBottom: 4 }}>Meta lines (one per line, shown above the body)</div>
-        <textarea value={state.metaLinesText} onChange={(e) => set("metaLinesText", e.target.value)} rows={2} placeholder={"Level 3 Evocation\nRange 150 ft"} style={{ ...field, resize: "vertical", fontFamily: "inherit" }} />
-      </div>
+      {editions && (
+        <div>
+          <div style={{ ...label, marginBottom: 4 }}>Shows under</div>
+          <div style={{ display: "flex", gap: 6 }}>
+            {(["2014", "2024", "both"] as Ruleset3[]).map((r) => (
+              <button key={r} type="button" onClick={() => set("ruleset", r)} style={seg(state.ruleset === r)}>{r === "both" ? "Both" : r}</button>
+            ))}
+          </div>
+        </div>
+      )}
 
-      <div>
-        <div style={{ ...label, marginBottom: 4 }}>Body</div>
-        <textarea value={state.body} onChange={(e) => set("body", e.target.value)} rows={5} placeholder="The rules text for this card." style={{ ...field, resize: "vertical", fontFamily: "inherit" }} />
-      </div>
+      {isTyped ? (
+        state.category === "spell" ? (
+          <SpellForm value={state.display as SpellDisplay} onChange={(d) => set("display", d)} field={field} seg={seg} />
+        ) : state.category === "magic-item" ? (
+          <ItemForm value={state.display as ItemDisplay} onChange={(d) => set("display", d)} field={field} seg={seg} />
+        ) : (
+          <MonsterForm value={state.display as MonsterDisplay} onChange={(d) => set("display", d)} field={field} />
+        )
+      ) : (
+        <>
+          <div>
+            <div style={{ ...label, marginBottom: 4 }}>Tag (chip)</div>
+            <input value={state.tag} onChange={(e) => set("tag", e.target.value)} placeholder="house rule" style={field} />
+          </div>
+          <div>
+            <div style={{ ...label, marginBottom: 4 }}>Meta lines (one per line, shown above the body)</div>
+            <textarea value={state.metaLinesText} onChange={(e) => set("metaLinesText", e.target.value)} rows={2} placeholder={"Level 3 Evocation\nRange 150 ft"} style={{ ...field, resize: "vertical", fontFamily: "inherit" }} />
+          </div>
+          <div>
+            <div style={{ ...label, marginBottom: 4 }}>Body</div>
+            <textarea value={state.body} onChange={(e) => set("body", e.target.value)} rows={5} placeholder="The rules text for this card." style={{ ...field, resize: "vertical", fontFamily: "inherit" }} />
+          </div>
+        </>
+      )}
 
       <div>
         <div style={{ ...label, marginBottom: 4 }}>Voice aliases (comma-separated, optional)</div>
@@ -793,6 +854,165 @@ function EntryEditor({ state, onChange, onSave, onDelete, onCancel, activeCampai
           </button>
         )}
       </div>
+    </div>
+  );
+}
+
+// ---- typed homebrew sub-forms --------------------------------------------------------------------
+// Field-based editors for the three categories with a real card layout, so a homebrew or override of a
+// spell / magic item / monster is edited (and then rendered) as that thing rather than a generic blob.
+// They edit a display object in place and hand the whole updated object back through onChange.
+
+const orNull = (s: string): string | null => { const t = s.trim(); return t ? t : null; };
+const toNum = (s: string): number | null => { const t = s.trim(); if (!t) return null; const n = Number(t); return Number.isFinite(n) ? n : null; };
+const csvList = (s: string): string[] => s.split(",").map((x) => x.trim()).filter(Boolean);
+const fLabel: React.CSSProperties = { fontSize: 11, letterSpacing: "0.06em", textTransform: "uppercase", color: C.muted, marginBottom: 4 };
+
+function FieldRow({ children }: { children: React.ReactNode }) {
+  return <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>{children}</div>;
+}
+function Labeled({ label, min = 120, children }: { label: string; min?: number; children: React.ReactNode }) {
+  return (
+    <div style={{ flex: `1 1 ${min}px`, minWidth: min }}>
+      <div style={fLabel}>{label}</div>
+      {children}
+    </div>
+  );
+}
+
+function SpellForm({ value, onChange, field, seg }: {
+  value: SpellDisplay; onChange: (d: SpellDisplay) => void; field: React.CSSProperties; seg: (on: boolean) => React.CSSProperties;
+}) {
+  const set = (patch: Partial<SpellDisplay>) => onChange({ ...value, ...patch });
+  const dmg = value.damage;
+  const setDamage = (base: string, type: string) => {
+    const b = orNull(base);
+    onChange({ ...value, damage: b ? { base: b, type: orNull(type), scaling: dmg?.scaling ?? null } : null });
+  };
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      <FieldRow>
+        <Labeled label="Level (0 = cantrip)"><input type="number" min={0} max={9} value={value.level} onChange={(e) => set({ level: toNum(e.target.value) ?? 0 })} style={field} /></Labeled>
+        <Labeled label="School"><input value={value.school ?? ""} onChange={(e) => set({ school: orNull(e.target.value) })} placeholder="Evocation" style={field} /></Labeled>
+      </FieldRow>
+      <FieldRow>
+        <Labeled label="Casting time"><input value={value.castingTime ?? ""} onChange={(e) => set({ castingTime: orNull(e.target.value) })} placeholder="1 action" style={field} /></Labeled>
+        <Labeled label="Range"><input value={value.range ?? ""} onChange={(e) => set({ range: orNull(e.target.value) })} placeholder="150 feet" style={field} /></Labeled>
+      </FieldRow>
+      <FieldRow>
+        <Labeled label="Components"><input value={value.components ?? ""} onChange={(e) => set({ components: orNull(e.target.value) })} placeholder="V, S, M" style={field} /></Labeled>
+        <Labeled label="Duration"><input value={value.duration ?? ""} onChange={(e) => set({ duration: orNull(e.target.value) })} placeholder="Instantaneous" style={field} /></Labeled>
+      </FieldRow>
+      <FieldRow>
+        <Labeled label="Concentration" min={110}><button type="button" onClick={() => set({ concentration: !value.concentration })} style={seg(value.concentration)}>{value.concentration ? "Yes" : "No"}</button></Labeled>
+        <Labeled label="Ritual" min={110}><button type="button" onClick={() => set({ ritual: !value.ritual })} style={seg(value.ritual)}>{value.ritual ? "Yes" : "No"}</button></Labeled>
+      </FieldRow>
+      <FieldRow>
+        <Labeled label="Damage (e.g. 8d6)"><input value={dmg?.base ?? ""} onChange={(e) => setDamage(e.target.value, dmg?.type ?? "")} placeholder="8d6" style={field} /></Labeled>
+        <Labeled label="Damage type"><input value={dmg?.type ?? ""} onChange={(e) => setDamage(dmg?.base ?? "", e.target.value)} placeholder="fire" style={field} /></Labeled>
+        <Labeled label="Attack type"><input value={value.attackType ?? ""} onChange={(e) => set({ attackType: orNull(e.target.value) })} placeholder="ranged" style={field} /></Labeled>
+      </FieldRow>
+      <div>
+        <div style={fLabel}>Classes (comma-separated)</div>
+        <input value={value.classes.join(", ")} onChange={(e) => set({ classes: csvList(e.target.value) })} placeholder="Wizard, Sorcerer" style={field} />
+      </div>
+      <div>
+        <div style={fLabel}>Description</div>
+        <textarea value={value.description ?? ""} onChange={(e) => set({ description: orNull(e.target.value) })} rows={5} placeholder="What the spell does." style={{ ...field, resize: "vertical", fontFamily: "inherit" }} />
+      </div>
+    </div>
+  );
+}
+
+function ItemForm({ value, onChange, field, seg }: {
+  value: ItemDisplay; onChange: (d: ItemDisplay) => void; field: React.CSSProperties; seg: (on: boolean) => React.CSSProperties;
+}) {
+  const set = (patch: Partial<ItemDisplay>) => onChange({ ...value, ...patch });
+  const v = value.variants;
+  const setVariants = (vlabel: string, opts: string) => {
+    const options = csvList(opts);
+    onChange({ ...value, variants: options.length ? { label: orNull(vlabel), options } : null });
+  };
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      <FieldRow>
+        <Labeled label="Type"><input value={value.type ?? ""} onChange={(e) => set({ type: orNull(e.target.value) })} placeholder="Wondrous item" style={field} /></Labeled>
+        <Labeled label="Rarity"><input value={value.rarity ?? ""} onChange={(e) => set({ rarity: orNull(e.target.value) })} placeholder="rare" style={field} /></Labeled>
+      </FieldRow>
+      <FieldRow>
+        <Labeled label="Attunement" min={140}><button type="button" onClick={() => set({ attunement: !value.attunement })} style={seg(value.attunement)}>{value.attunement ? "Required" : "Not required"}</button></Labeled>
+        <Labeled label="Attunement note"><input value={value.attunementNote ?? ""} onChange={(e) => set({ attunementNote: orNull(e.target.value) })} placeholder="by a spellcaster" style={field} /></Labeled>
+      </FieldRow>
+      <FieldRow>
+        <Labeled label="Variants label"><input value={v?.label ?? ""} onChange={(e) => setVariants(e.target.value, (v?.options ?? []).join(", "))} placeholder="Bonus" style={field} /></Labeled>
+        <Labeled label="Variant options (comma)"><input value={(v?.options ?? []).join(", ")} onChange={(e) => setVariants(v?.label ?? "", e.target.value)} placeholder="+1, +2, +3" style={field} /></Labeled>
+      </FieldRow>
+      <div>
+        <div style={fLabel}>Description</div>
+        <textarea value={value.description ?? ""} onChange={(e) => set({ description: orNull(e.target.value) })} rows={5} placeholder="What the item does." style={{ ...field, resize: "vertical", fontFamily: "inherit" }} />
+      </div>
+    </div>
+  );
+}
+
+type TraitSection = "traits" | "actions" | "bonusActions" | "reactions" | "legendaryActions";
+const traitsToText = (a: MonsterDisplay["traits"]): string => a.map((t) => `${t.name ? t.name + ". " : ""}${t.description ?? ""}`).join("\n");
+const textToTraits = (s: string): MonsterDisplay["traits"] =>
+  s.split("\n").map((l) => l.trim()).filter(Boolean).map((l) => {
+    const m = l.match(/^(.*?)\.\s+([\s\S]*)$/);
+    return m ? { name: m[1], description: m[2] } : { name: null, description: l };
+  });
+
+function MonsterForm({ value, onChange, field }: {
+  value: MonsterDisplay; onChange: (d: MonsterDisplay) => void; field: React.CSSProperties;
+}) {
+  const set = (patch: Partial<MonsterDisplay>) => onChange({ ...value, ...patch });
+  const setAb = (k: keyof MonsterDisplay["abilities"], s: string) => onChange({ ...value, abilities: { ...value.abilities, [k]: toNum(s) } });
+  const section = (labelText: string, key: TraitSection) => (
+    <div>
+      <div style={fLabel}>{labelText} (one per line, &quot;Name. Effect&quot;)</div>
+      <textarea value={traitsToText(value[key])} onChange={(e) => set({ [key]: textToTraits(e.target.value) } as Partial<MonsterDisplay>)} rows={3} style={{ ...field, resize: "vertical", fontFamily: "inherit" }} />
+    </div>
+  );
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      <FieldRow>
+        <Labeled label="Size" min={90}><input value={value.size ?? ""} onChange={(e) => set({ size: orNull(e.target.value) })} placeholder="Large" style={field} /></Labeled>
+        <Labeled label="Type"><input value={value.type ?? ""} onChange={(e) => set({ type: orNull(e.target.value) })} placeholder="dragon" style={field} /></Labeled>
+        <Labeled label="Alignment"><input value={value.alignment ?? ""} onChange={(e) => set({ alignment: orNull(e.target.value) })} placeholder="chaotic evil" style={field} /></Labeled>
+      </FieldRow>
+      <FieldRow>
+        <Labeled label="AC" min={80}><input value={value.ac == null ? "" : String(value.ac)} onChange={(e) => set({ ac: orNull(e.target.value) })} placeholder="18" style={field} /></Labeled>
+        <Labeled label="HP" min={80}><input value={value.hp == null ? "" : String(value.hp)} onChange={(e) => set({ hp: orNull(e.target.value) })} placeholder="152" style={field} /></Labeled>
+        <Labeled label="Hit dice" min={100}><input value={value.hitDice ?? ""} onChange={(e) => set({ hitDice: orNull(e.target.value) })} placeholder="16d10 + 64" style={field} /></Labeled>
+        <Labeled label="Speed"><input value={value.speed ?? ""} onChange={(e) => set({ speed: orNull(e.target.value) })} placeholder="40 ft., fly 80 ft." style={field} /></Labeled>
+      </FieldRow>
+      <FieldRow>
+        <Labeled label="Senses"><input value={value.senses ?? ""} onChange={(e) => set({ senses: orNull(e.target.value) })} placeholder="darkvision 60 ft." style={field} /></Labeled>
+        <Labeled label="Languages"><input value={value.languages ?? ""} onChange={(e) => set({ languages: orNull(e.target.value) })} placeholder="Common, Draconic" style={field} /></Labeled>
+        <Labeled label="CR" min={90}><input value={value.cr ?? ""} onChange={(e) => set({ cr: orNull(e.target.value) })} placeholder="10" style={field} /></Labeled>
+        <Labeled label="XP" min={90}><input type="number" value={value.xp ?? ""} onChange={(e) => set({ xp: toNum(e.target.value) })} placeholder="5900" style={field} /></Labeled>
+      </FieldRow>
+      <FieldRow>
+        {(["str", "dex", "con", "int", "wis", "cha"] as const).map((k) => (
+          <Labeled key={k} label={k.toUpperCase()} min={70}>
+            <input type="number" value={value.abilities[k] ?? ""} onChange={(e) => setAb(k, e.target.value)} style={field} />
+          </Labeled>
+        ))}
+      </FieldRow>
+      <FieldRow>
+        <Labeled label="Vulnerabilities"><input value={value.damageVulnerabilities ?? ""} onChange={(e) => set({ damageVulnerabilities: orNull(e.target.value) })} style={field} /></Labeled>
+        <Labeled label="Resistances"><input value={value.damageResistances ?? ""} onChange={(e) => set({ damageResistances: orNull(e.target.value) })} style={field} /></Labeled>
+      </FieldRow>
+      <FieldRow>
+        <Labeled label="Damage immunities"><input value={value.damageImmunities ?? ""} onChange={(e) => set({ damageImmunities: orNull(e.target.value) })} style={field} /></Labeled>
+        <Labeled label="Condition immunities"><input value={value.conditionImmunities ?? ""} onChange={(e) => set({ conditionImmunities: orNull(e.target.value) })} style={field} /></Labeled>
+      </FieldRow>
+      {section("Traits", "traits")}
+      {section("Actions", "actions")}
+      {section("Bonus actions", "bonusActions")}
+      {section("Reactions", "reactions")}
+      {section("Legendary actions", "legendaryActions")}
     </div>
   );
 }

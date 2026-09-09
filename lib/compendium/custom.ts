@@ -1,5 +1,13 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { CompendiumEntry, CompendiumSource, Ruleset } from "@/lib/compendium/types";
+import type {
+  CompendiumEntry, CompendiumSource, Ruleset,
+  SpellDisplay, ItemDisplay, MonsterDisplay, CompendiumDisplay,
+} from "@/lib/compendium/types";
+
+// The categories a homebrew card can carry a full TYPED display for (so overriding a shipped spell edits
+// it as a spell and renders through the real spell card, not the generic tag/meta/body shape). Everything
+// else stores and renders through the generic "custom" display.
+export const TYPED_CUSTOM = new Set(["spell", "magic-item", "monster"]);
 
 // lib/compendium/custom.ts
 //
@@ -30,6 +38,9 @@ export interface CustomRow {
   tag: string | null;
   meta_lines: string[];
   body: string | null;
+  // A full typed display (SpellDisplay | ItemDisplay | MonsterDisplay), stored as jsonb, for the categories
+  // in TYPED_CUSTOM; null for a generic custom card. Added by migration p91 (nullable, so old rows read null).
+  display: CompendiumDisplay | null;
   spoken: string[];
   aliases: string[];
   created_at: string;
@@ -43,6 +54,7 @@ export interface CustomDraft {
   ruleset: Ruleset3;
   metaLines: string[];
   body: string | null;
+  display: CompendiumDisplay | null; // typed display for spell/magic-item/monster, else null (generic card)
   spoken: string[];
   aliases: string[];
   overridesId: string | null; // base entry id when overriding a shipped card, else null
@@ -56,7 +68,13 @@ const cleanPhrase = (s: string) => String(s || "").toLowerCase().replace(/[^a-z0
 const arr = (v: unknown): string[] => (Array.isArray(v) ? v.map((x) => String(x)).filter(Boolean) : []);
 
 function normalizeRow(r: CustomRow): CustomRow {
-  return { ...r, meta_lines: arr(r.meta_lines), spoken: arr(r.spoken), aliases: arr(r.aliases) };
+  return {
+    ...r,
+    meta_lines: arr(r.meta_lines),
+    spoken: arr(r.spoken),
+    aliases: arr(r.aliases),
+    display: r.display && typeof r.display === "object" ? r.display : null,
+  };
 }
 
 // ---- CRUD (RLS restricts every call to the caller's own rows: gm_id = auth.uid()) ----------------
@@ -86,6 +104,7 @@ export async function createCustomEntry(sb: SupabaseClient, gmId: string, draft:
       tag: draft.tag,
       meta_lines: draft.metaLines,
       body: draft.body,
+      display: draft.display ?? null,
       spoken: draft.spoken,
       aliases: draft.aliases,
     })
@@ -107,6 +126,7 @@ export async function updateCustomEntry(sb: SupabaseClient, id: string, draft: C
       tag: draft.tag,
       meta_lines: draft.metaLines,
       body: draft.body,
+      display: draft.display ?? null,
       spoken: draft.spoken,
       aliases: draft.aliases,
       updated_at: new Date().toISOString(),
@@ -131,6 +151,21 @@ export function rowToEntry(r: CustomRow): CompendiumEntry {
   add(r.name);
   for (const s of r.spoken) add(s);
   for (const a of r.aliases) add(a);
+  const source = (r.source === "srd" ? "srd" : "kc") as CompendiumSource;
+
+  // Typed homebrew: a spell/magic-item/monster row carries a full display, so it renders through the real
+  // per-category card. The id still carries the "custom:" prefix, so the tool tags it Homebrew and lets the
+  // GM edit it, exactly like the generic cards.
+  if (TYPED_CUSTOM.has(r.category) && r.display && typeof r.display === "object") {
+    const base = { id: `custom:${r.id}`, name: r.name, ruleset: r.ruleset as Ruleset, source, spoken: [...spoken] };
+    let typed: CompendiumEntry;
+    if (r.category === "spell") typed = { ...base, category: "spell", display: r.display as SpellDisplay };
+    else if (r.category === "magic-item") typed = { ...base, category: "magic-item", display: r.display as ItemDisplay };
+    else typed = { ...base, category: "monster", display: r.display as MonsterDisplay };
+    if (r.aliases.length) typed.aliases = r.aliases;
+    return typed;
+  }
+
   const entry: Extract<CompendiumEntry, { category: "custom" }> = {
     id: `custom:${r.id}`,
     name: r.name,
@@ -175,20 +210,25 @@ export function mergeCustom(
 // write. The base id and category are carried so the save becomes a non-destructive override.
 export function flattenForOverride(e: CompendiumEntry): {
   tag: string; metaLines: string[]; body: string; overridesId: string; category: string;
+  display: SpellDisplay | ItemDisplay | MonsterDisplay | null;
 } {
   const tag = e.category === "magic-item" ? "item" : e.category;
   let body = "";
   const meta: string[] = [];
+  // The typed categories carry their full display into the editor, so an override edits a spell as a spell
+  // (not a flattened blob). A structural clone keeps the editor from mutating the shipped entry in place.
+  let display: SpellDisplay | ItemDisplay | MonsterDisplay | null = null;
   switch (e.category) {
-    case "spell": body = e.display.description ?? ""; break;
-    case "magic-item": body = e.display.description ?? ""; break;
+    case "spell": display = structuredClone(e.display); break;
+    case "magic-item": display = structuredClone(e.display); break;
+    case "monster": display = structuredClone(e.display); break;
     case "equipment": body = e.display.description ?? ""; break;
     case "condition": body = e.display.description ?? ""; break;
     case "feat": body = e.display.description ?? ""; break;
     case "feature": body = e.display.description ?? ""; break;
     case "rule": body = e.display.description ?? ""; if (e.display.topic) meta.push(e.display.topic); break;
     case "custom": body = e.display.body ?? ""; meta.push(...e.display.metaLines); break;
-    default: body = ""; break; // monster / species / background: no single prose field
+    default: body = ""; break; // species / background: no single prose field
   }
-  return { tag, metaLines: meta, body, overridesId: e.id, category: e.category };
+  return { tag, metaLines: meta, body, overridesId: e.id, category: e.category, display };
 }

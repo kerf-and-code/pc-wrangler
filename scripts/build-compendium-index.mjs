@@ -93,10 +93,19 @@ function applyAliases(entries) {
 
 // Spoken forms Vosk can plausibly produce: the plain-text name, and (when the name opens with a
 // possessive proper noun) its tail. Punctuation and apostrophes are dropped for the spoken form.
+// Fold accented Latin letters to their ASCII base so a name like "Adûn" spokens as "adun" (not "ad n"):
+// Vosk's lexicon and a DM typing at speed both use plain letters, so the spoken/grammar forms must too.
+// NFD splits a letter from its combining accent, then the accents are dropped; a few letters that do not
+// decompose (ø, æ, ß, ...) are mapped by hand. Ids/slugs are deliberately NOT folded, so existing entry
+// ids (and any homebrew override that points at one) are unchanged.
+const LIGATURES = { "ø": "o", "æ": "ae", "œ": "oe", "ð": "d", "þ": "th", "ß": "ss", "ł": "l" };
+const fold = (s) =>
+  String(s).normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[øæœðþßł]/g, (m) => LIGATURES[m] || m);
+
 function spokenForms(name) {
   const set = new Set();
   const base = norm(name);
-  const speak = (s) => s.replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
+  const speak = (s) => fold(s).replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
   const full = speak(base);
   if (full) set.add(full);
   const m = base.match(/^[a-z]+'s\s+(.+)$/); // "tasha's hideous laughter" -> "hideous laughter"
@@ -216,7 +225,9 @@ function ruleEntry(r, ruleset) {
     name: r.name,
     category: "rule",
     ruleset,
-    source: "srd",
+    // Most glossary cards are verbatim SRD (CC-BY) -> "srd". Authored optional/variant rules (flanking,
+    // rest variants, etc.) are original Kerf-and-Code wording and mark themselves "kc" in the source JSON.
+    source: r.source === "kc" ? "kc" : "srd",
     spoken: spokenForms(r.name),
     display: { topic: r.topic ?? null, description: r.description ?? null },
   };

@@ -17,8 +17,15 @@ export interface RankedMatch {
   matched: string;    // the entry phrase that scored best (for debugging / "did you mean")
 }
 
+// Fold accented Latin letters to ASCII so a typed or mis-heard "Adûn" normalizes to "adun" and matches
+// the entry's folded spoken form. Mirrors the fold in scripts/build-compendium-index.mjs (which folds the
+// spoken/grammar side at build time), so both ends of the match agree.
+const LIGATURES: Record<string, string> = { "ø": "o", "æ": "ae", "œ": "oe", "ð": "d", "þ": "th", "ß": "ss", "ł": "l" };
+const fold = (s: string): string =>
+  s.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[øæœðþßł]/g, (m) => LIGATURES[m] || m);
+
 const norm = (s: string): string =>
-  String(s || "").toLowerCase().replace(/[’']/g, "'").replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
+  fold(String(s || "").toLowerCase()).replace(/[’']/g, "'").replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
 
 const tokens = (s: string): string[] => norm(s).split(" ").filter(Boolean);
 
