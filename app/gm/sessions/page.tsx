@@ -219,11 +219,19 @@ export default function SessionWorkspace() {
       });
       const data = await res.json().catch(() => ({}));
       if (res.status === 409 && data?.recording && !force) {
+        // captureAlive means a live sidecar is behind this row: almost always a recording that is
+        // still finishing up (concat + upload), which is normal and just needs a moment, NOT a crash.
+        // Only when the sidecar looks dead do we lead with the "close anyway" framing.
+        const finishing = Boolean(data?.captureAlive);
         const goAhead = window.confirm(
-          "Six Axes still has an open recording for this session (" + String(data.captureStatus) + ").\n\n" +
-          "Run /stop in Discord first if the game is still going.\n\n" +
-          "If the bot crashed and will never finish, close anyway? That also clears the " +
-          "stuck recording so /record works again.",
+          finishing
+            ? "Six Axes is still finishing this recording and saving the audio (" + String(data.captureStatus) + ").\n\n" +
+              "On a long session this can take a minute or two, and it will close on its own once it is done.\n\n" +
+              "Recommended: click Cancel, wait a moment, then Close again. Only force the close now if it has been stuck for several minutes."
+            : "Six Axes still has an open recording for this session (" + String(data.captureStatus) + ").\n\n" +
+              "Run /stop in Discord first if the game is still going.\n\n" +
+              "If the bot crashed and will never finish, close anyway? That also clears the " +
+              "stuck recording so /record works again.",
         );
         setSessionClosing(false);
         if (goAhead) await closeSession(true, process);

@@ -109,6 +109,16 @@ export async function POST(request: Request) {
       );
     }
 
+    // Is a live sidecar behind this row? A fresh heartbeat (or an unknown one) means yes: the same
+    // signal /record and the force path below already trust. It lets the 409 tell a recording that is
+    // still FINISHING (finalizing: concat + upload, which runs for minutes on a long session and keeps
+    // its heartbeat fresh via the sidecar's finalize pinger) apart from a genuinely crashed process, so
+    // the UI can say "give it a moment" rather than "the bot crashed" on a healthy finalize. An unknown
+    // beat counts as alive for the same reason the force path does: it errs toward waiting, not cutting a
+    // live recording off.
+    const beatMs = openCapture?.heartbeat_at ? Date.parse(openCapture.heartbeat_at) : NaN;
+    const captureAlive = Boolean(openCapture) && (Number.isNaN(beatMs) || Date.now() - beatMs < CAPTURE_ALIVE_MS);
+
     if (openCapture && !force) {
       return NextResponse.json(
         {
@@ -117,9 +127,12 @@ export async function POST(request: Request) {
           recording: true,
           captureStatus: openCapture.status,
           captureUpdatedAt: openCapture.updated_at,
-          error:
-            "Six Axes is still recording this session. Run /stop in Discord first. " +
-            "If the bot has crashed and will never finish, close it anyway.",
+          captureAlive,
+          error: captureAlive
+            ? "Six Axes is still finishing this recording and saving the audio. It will close on its " +
+              "own in a moment; give it a few seconds and try Close again."
+            : "Six Axes is still recording this session. Run /stop in Discord first. " +
+              "If the bot has crashed and will never finish, close it anyway.",
         },
         { status: 409 },
       );
@@ -163,8 +176,7 @@ export async function POST(request: Request) {
       // loop picks it up, do_stop finds no recording in any process and retires it within a
       // tick. Retiring a row whose process is alive STRANDS the recorder, which is the exact
       // failure this change exists to prevent. Worst case for the GM is one more click.
-      const beat = openCapture.heartbeat_at ? Date.parse(openCapture.heartbeat_at) : NaN;
-      const alive = Number.isNaN(beat) || Date.now() - beat < CAPTURE_ALIVE_MS;
+      const alive = captureAlive;
 
       if (alive) {
         const { error: stopErr } = await admin

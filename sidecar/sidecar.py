@@ -71,6 +71,12 @@ ORPHAN_STALE_SECONDS = int(os.environ.get("ORPHAN_STALE_SECONDS", "300"))
 # `fly scale show` reports COUNT 2 for this app, so it is not hypothetical.
 OWNER_ID = os.environ.get("FLY_MACHINE_ID") or os.environ.get("FLY_ALLOC_ID") or f"pid-{os.getpid()}"
 STOP_READ_DELAY_SECONDS = int(os.environ.get("STOP_READ_DELAY_SECONDS", "3"))
+# How often to refresh heartbeat_at WHILE a finalize is running. finalize() concats and uploads
+# every speaker track synchronously on the poll loop, so for a long session it holds the loop for
+# minutes and the normal heartbeat cannot fire. Left alone the beat ages past the liveness cutoff
+# the web app uses (CAPTURE_ALIVE_MS = 3 min in /api/session/close and /record), so a recording
+# that is finishing normally reads as a crashed process. This must stay well under that cutoff.
+FINALIZE_BEAT_SECONDS = int(os.environ.get("FINALIZE_BEAT_SECONDS", "45"))
 FLUSH_SECONDS = int(os.environ.get("FLUSH_SECONDS", "60"))
 # When an audio_tracks row cannot be created, keep the uploaded file (1) or delete it
 # (0, default). Keeping it preserves the audio for manual recovery but leaves an object
@@ -1184,8 +1190,51 @@ class Sidecar(discord.Client):
             await self.rotate_chunk(rec, restart=False)
         await self.finalize(http, rec)
 
+    async def _beat_during_finalize(self, http, rid):
+        """Keep heartbeat_at fresh while _finalize_impl() holds the poll loop.
+
+        finalize runs synchronously on the poll loop (concat + upload of every speaker track), which
+        can take minutes on a long session, and that same loop is what normally stamps heartbeat_at.
+        Left alone the beat freezes for the whole finalize, so /api/session/close and /record read the
+        row as a crashed process and offer "close anyway" on a recording that is finishing normally
+        (2026-09-10: a 2h19m session finalized in 2m14s and its beat aged to 178s, ~2s under the
+        3-minute liveness cutoff). This task runs concurrently and refreshes the beat every
+        FINALIZE_BEAT_SECONDS until finalize cancels it. It is filtered to the open statuses, so it is
+        a harmless no-op the instant the row reaches 'done', and a failed beat is ignored exactly like
+        the main heartbeat: a failed request says nothing about whether the row is still open."""
+        try:
+            while True:
+                await asyncio.sleep(FINALIZE_BEAT_SECONDS)
+                try:
+                    await http.patch(
+                        f"{REST}/capture_control",
+                        params={"id": f"eq.{rid}", "status": "in.(requested,active,stopping)"},
+                        headers=WRITE_HEADERS,
+                        json={"heartbeat_at": _now_iso(), "owner": OWNER_ID},
+                    )
+                except Exception as e:
+                    log.warning("finalize heartbeat for %s failed: %r", rid, e)
+        except asyncio.CancelledError:
+            pass
+
     async def finalize(self, http, rec: Recording, note=None):
+        # Pop first: this is the invariant the heartbeat desync guard relies on (it checks membership
+        # before calling finalize) and it prevents finalize being re-entered for the same recording.
         self.recordings.pop(rec.rid, None)
+        # Keep this row's heartbeat fresh for the whole finalize so a long concat/upload is not
+        # mistaken for a dead process by the web app. See _beat_during_finalize. Always cancelled in
+        # the finally, so it can never outlive the finalize or leak.
+        beat_task = asyncio.create_task(self._beat_during_finalize(http, rec.rid))
+        try:
+            await self._finalize_impl(http, rec, note)
+        finally:
+            beat_task.cancel()
+            try:
+                await beat_task
+            except Exception:
+                pass
+
+    async def _finalize_impl(self, http, rec: Recording, note=None):
         try:
             await rec.vc.disconnect()
         except Exception:
