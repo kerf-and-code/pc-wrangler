@@ -1247,62 +1247,167 @@ function buildCompendiumIndex(entries: CompendiumEntry[]): IdxGroup[] {
   return groups;
 }
 
+// Scoped styles for the Index modal. Injected once when the modal mounts. Uses the C palette tokens
+// (CSS-var-backed) so it re-skins per system like everything else. Kept as a class-based block rather
+// than inline styles because the redesign needs :hover, media queries, and sticky positioning that an
+// inline style cannot express.
+const IDX_CSS = `
+.sax-idx-body{ display:flex; min-height:0; flex:1 1 auto; }
+.sax-idx-rail{ flex:0 0 240px; overflow-y:auto; border-right:1px solid ${C.line}; padding:14px 14px 20px; }
+.sax-idx-railhdr{ font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:${C.muted}; margin-bottom:10px; }
+.sax-idx-main{ flex:1 1 auto; overflow-y:auto; padding:14px 18px 28px; position:relative; min-width:0; }
+.sax-idx-grp{ margin-bottom:3px; }
+.sax-idx-glink{ display:flex; align-items:center; justify-content:space-between; gap:8px; width:100%; background:transparent; border:none; border-left:2px solid transparent; border-radius:6px; padding:5px 8px; color:${C.text}; font-size:13.5px; font-weight:700; cursor:pointer; text-align:left; }
+.sax-idx-glink:hover{ background:rgba(255,255,255,0.05); color:${C.sun}; }
+.sax-idx-glink.on{ background:rgba(200,162,75,0.10); color:${C.sun}; border-left-color:${C.sun}; }
+.sax-idx-count{ color:${C.muted}; font-weight:400; font-size:12px; }
+.sax-idx-subs{ display:flex; flex-direction:column; gap:1px; margin:2px 0 7px 10px; padding-left:8px; border-left:1px solid ${C.line}; }
+.sax-idx-slink{ display:flex; align-items:center; justify-content:space-between; gap:6px; background:transparent; border:none; padding:3px 6px; border-radius:5px; color:${C.muted}; font-size:12px; cursor:pointer; text-align:left; }
+.sax-idx-slink:hover{ color:${C.sun}; background:rgba(255,255,255,0.04); }
+.sax-idx-ghead{ display:flex; align-items:center; justify-content:space-between; gap:10px; color:${C.sun}; font-size:15px; font-weight:700; border-bottom:1px solid ${C.line}; padding-bottom:4px; margin-bottom:8px; scroll-margin-top:8px; }
+.sax-idx-shead{ color:${C.text}; font-size:12.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; margin:8px 0 4px; scroll-margin-top:8px; }
+.sax-idx-items{ display:grid; grid-template-columns:repeat(auto-fill, minmax(180px, 1fr)); gap:1px 16px; }
+.sax-idx-item{ background:transparent; border:none; padding:3px 4px 3px 0; color:${C.text}; font-size:13.5px; cursor:pointer; text-align:left; border-radius:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.sax-idx-item:hover{ color:${C.sun}; }
+.sax-idx-mtoc{ display:none; }
+.sax-idx-msum{ cursor:pointer; color:${C.text}; font-weight:700; font-size:13.5px; padding:8px 12px; border:1px solid ${C.line}; border-radius:7px; margin-bottom:12px; list-style:none; }
+.sax-idx-msum::-webkit-details-marker{ display:none; }
+.sax-idx-tophint{ display:none; background:transparent; border:1px solid ${C.line}; border-radius:6px; color:${C.muted}; font-size:11px; padding:2px 8px; cursor:pointer; white-space:nowrap; }
+.sax-idx-tophint:hover{ color:${C.sun}; border-color:${C.sun}; }
+.sax-idx-fab{ position:sticky; bottom:12px; float:right; margin-right:2px; background:${C.surface2}; border:1px solid ${C.sun}; border-radius:999px; color:${C.sun}; font-size:12px; font-weight:600; padding:7px 15px; cursor:pointer; box-shadow:0 4px 14px rgba(0,0,0,0.55); }
+.sax-idx-fab:hover{ filter:brightness(1.1); }
+.sax-idx-focusrow:focus-visible{ outline:2px solid ${C.sun}; outline-offset:2px; }
+@media (max-width:720px){
+  .sax-idx-rail{ display:none; }
+  .sax-idx-mtoc{ display:block; }
+  .sax-idx-tophint{ display:inline-block; }
+  .sax-idx-items{ grid-template-columns:1fr; }
+}
+`;
+
 function IndexModal({ entries, title, onPick, onClose }: {
   entries: CompendiumEntry[]; title: string; onPick: (e: CompendiumEntry) => void; onClose: () => void;
 }) {
   const groups = useMemo(() => buildCompendiumIndex(entries), [entries]);
+  const mainRef = useRef<HTMLDivElement | null>(null);
+  const [active, setActive] = useState<string>("");
+  const [showTop, setShowTop] = useState(false);
+  const [mtocOpen, setMtocOpen] = useState(false);
+
   useEffect(() => {
     const onKey = (ev: KeyboardEvent) => { if (ev.key === "Escape") onClose(); };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
-  const jump = (id: string) => { const el = document.getElementById(id); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); };
+
   const gId = (g: string) => `idx-g-${idxSlug(g)}`;
   const sId = (g: string, s: string) => `idx-s-${idxSlug(g)}-${idxSlug(s)}`;
-  const link: React.CSSProperties = { background: "transparent", border: "none", padding: 0, color: C.sun, cursor: "pointer", fontSize: 13.5, textAlign: "left" };
+
+  // Scrollspy: highlight the group whose section is currently at the top of the entries pane, so the
+  // Contents rail always shows where you are. Observes the group anchors within the scroll pane.
+  useEffect(() => {
+    const root = mainRef.current;
+    if (!root || typeof IntersectionObserver === "undefined") return;
+    const obs = new IntersectionObserver(
+      (ents) => {
+        const vis = ents.filter((e) => e.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+        if (vis[0]) setActive(vis[0].target.id);
+      },
+      { root, rootMargin: "0px 0px -70% 0px", threshold: 0 },
+    );
+    groups.forEach((g) => { const el = document.getElementById(gId(g.group)); if (el) obs.observe(el); });
+    return () => obs.disconnect();
+  }, [groups]);
+
+  // Jump scrolls the entry into the pane; the anchors carry scroll-margin so the header is not clipped.
+  const jump = (id: string) => {
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    setMtocOpen(false);
+  };
+  const toTop = () => { mainRef.current?.scrollTo({ top: 0, behavior: "smooth" }); };
+  const onScroll = () => { const el = mainRef.current; if (el) setShowTop(el.scrollTop > 260); };
+
+  // The Contents list, shared by the desktop rail and the mobile collapsible.
+  const toc = (
+    <nav aria-label="Compendium contents">
+      {groups.map((g) => {
+        const on = active === gId(g.group);
+        const hasSubs = g.subs.length > 1 || Boolean(g.subs[0] && g.subs[0].sub);
+        return (
+          <div key={g.group} className="sax-idx-grp">
+            <button type="button" onClick={() => jump(gId(g.group))} className={`sax-idx-glink${on ? " on" : ""}`}>
+              <span>{g.group}</span><span className="sax-idx-count">{g.count}</span>
+            </button>
+            {hasSubs && (
+              <div className="sax-idx-subs">
+                {g.subs.map((s, i) => s.sub && (
+                  <button key={i} type="button" onClick={() => jump(sId(g.group, s.sub as string))} className="sax-idx-slink">
+                    <span>{s.sub}</span><span className="sax-idx-count">{s.items.length}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </nav>
+  );
+
   return (
-    <div onClick={onClose}
+    <div onClick={onClose} role="dialog" aria-modal="true" aria-label={title}
       style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+      <style>{IDX_CSS}</style>
       <div onClick={(e) => e.stopPropagation()}
-        style={{ background: C.surface, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, width: "min(920px, 100%)", maxHeight: "86vh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+        style={{ background: C.surface, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, width: "min(980px, 100%)", height: "86vh", maxHeight: "86vh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
         <div style={{ display: "flex", alignItems: "baseline", gap: 10, padding: "14px 16px", borderBottom: `1px solid ${C.line}` }}>
           <span style={{ color: C.text, fontSize: 16, fontWeight: 700 }}>{title}</span>
           <span style={{ color: C.muted, fontSize: 12.5, marginLeft: "auto", marginRight: 12 }}>{entries.length.toLocaleString()} entries</span>
           <button type="button" onClick={onClose} style={{ background: "transparent", border: `1px solid ${C.line}`, borderRadius: 7, color: C.text, cursor: "pointer", fontSize: 14, padding: "3px 10px" }}>Close</button>
         </div>
-        <div style={{ overflowY: "auto", padding: "14px 16px" }}>
-          <div style={{ marginBottom: 16, paddingBottom: 12, borderBottom: `1px solid ${C.line}` }}>
-            <div style={{ fontSize: 11, letterSpacing: "0.06em", textTransform: "uppercase", color: C.muted, marginBottom: 8 }}>Contents</div>
+
+        <div className="sax-idx-body">
+          {/* Desktop: a persistent Contents rail, so any section is one click away and there is never
+              a "scroll all the way back up to the ToC" problem. */}
+          <aside className="sax-idx-rail">
+            <div className="sax-idx-railhdr">Contents</div>
+            {toc}
+          </aside>
+
+          {/* Entries pane (its own scroll context, which the scrollspy + jumps operate within). */}
+          <div className="sax-idx-main" ref={mainRef} onScroll={onScroll}>
+            {/* Mobile: the rail is hidden, so Contents collapses in here instead. */}
+            <details className="sax-idx-mtoc" open={mtocOpen} onToggle={(e) => setMtocOpen((e.currentTarget as HTMLDetailsElement).open)}>
+              <summary className="sax-idx-msum">Contents ({groups.length})</summary>
+              <div style={{ padding: "6px 2px 6px" }}>{toc}</div>
+            </details>
+
             {groups.map((g) => (
-              <div key={g.group} style={{ marginBottom: 6 }}>
-                <button type="button" onClick={() => jump(gId(g.group))} style={{ ...link, fontWeight: 700, color: C.text }}>
-                  {g.group} <span style={{ color: C.muted, fontWeight: 400 }}>({g.count})</span>
-                </button>
-                {(g.subs.length > 1 || (g.subs[0] && g.subs[0].sub)) && (
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: "2px 14px", margin: "3px 0 0 14px" }}>
-                    {g.subs.map((s, i) => s.sub && (
-                      <button key={i} type="button" onClick={() => jump(sId(g.group, s.sub as string))} style={link}>{s.sub} ({s.items.length})</button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-          {groups.map((g) => (
-            <div key={g.group} style={{ marginBottom: 18 }}>
-              <div id={gId(g.group)} style={{ color: C.sun, fontSize: 15, fontWeight: 700, borderBottom: `1px solid ${C.line}`, paddingBottom: 4, marginBottom: 8, scrollMarginTop: 8 }}>{g.group}</div>
-              {g.subs.map((s, si) => (
-                <div key={si} style={{ marginBottom: 10 }}>
-                  {s.sub && <div id={sId(g.group, s.sub)} style={{ color: C.text, fontSize: 12.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", margin: "6px 0 4px", scrollMarginTop: 8 }}>{s.sub}</div>}
-                  <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                    {s.items.map((e) => (
-                      <button key={e.id} type="button" onClick={() => onPick(e)} style={{ ...link, padding: "2px 0", color: C.text }}>{e.name}</button>
-                    ))}
-                  </div>
+              <section key={g.group} style={{ marginBottom: 18 }}>
+                <div id={gId(g.group)} className="sax-idx-ghead">
+                  <span>{g.group}</span>
+                  <button type="button" onClick={toTop} className="sax-idx-tophint" aria-label="Back to contents">Contents ↑</button>
                 </div>
-              ))}
-            </div>
-          ))}
+                {g.subs.map((s, si) => (
+                  <div key={si} style={{ marginBottom: 10 }}>
+                    {s.sub && <div id={sId(g.group, s.sub)} className="sax-idx-shead">{s.sub}</div>}
+                    <div className="sax-idx-items">
+                      {s.items.map((e) => (
+                        <button key={e.id} type="button" onClick={() => onPick(e)} className="sax-idx-item sax-idx-focusrow" title={e.name}>{e.name}</button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </section>
+            ))}
+
+            {/* Return-to-contents affordance for the long lists: appears once you have scrolled down,
+                sticks to the bottom of the pane, and returns to the top (the Contents). */}
+            {showTop && (
+              <button type="button" onClick={toTop} className="sax-idx-fab" aria-label="Back to contents">↑ Contents</button>
+            )}
+          </div>
         </div>
       </div>
     </div>

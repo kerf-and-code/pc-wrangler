@@ -376,6 +376,15 @@ export default function Home() {
             <Link href="/terms" style={inlineLink}>Terms</Link>
           </span>
         </div>
+        {/* Groupfinder listing badge: a backlink to the Six Axes entry, tucked in the footer corner
+            (visible, out of the main content). Uses Groupfinder's own brand badge; swap the src to
+            gf-badge-dark.svg / gf-badge-light.svg if you prefer, or self-host the SVG under /public if
+            a stricter image CSP is ever added. */}
+        <div className="foot-badge">
+          <a href="https://groupfinder.gg/library/six-axes" target="_blank" rel="noopener noreferrer" aria-label="Six Axes on Groupfinder">
+            <img src="https://groupfinder.gg/images/badges/gf-badge-red.svg" alt="Listed on Groupfinder" height={40} loading="lazy" />
+          </a>
+        </div>
       </footer>
     </main>
   );
@@ -537,6 +546,9 @@ html { scroll-behavior: smooth; }
   background: linear-gradient(180deg, transparent, rgba(10,7,4,0.5)); }
 .foot-inner { max-width: 1180px; margin: 0 auto; padding: 22px 24px; display: flex; gap: 14px;
   justify-content: space-between; flex-wrap: wrap; font-family: ${SAX.mono}; font-size: 12.5px; color: ${STONE.inkFaint}; }
+.foot-badge { max-width: 1180px; margin: 0 auto; padding: 0 24px 24px; display: flex; justify-content: flex-end; }
+.foot-badge img { height: 40px; width: auto; display: block; opacity: 0.85; transition: opacity 0.15s ease; }
+.foot-badge a:hover img { opacity: 1; }
 
 @media (max-width: 980px) {
   .home-rail { display: none; }
