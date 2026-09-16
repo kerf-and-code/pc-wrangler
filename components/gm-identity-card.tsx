@@ -181,8 +181,8 @@ export default function GmIdentityCard({ campaignId }: { campaignId: string }) {
             Unlink
           </button>
         )}
-        {notice && <span style={{ fontSize: 12.5, color: C.good }}>{notice}</span>}
-        {error && <span style={{ fontSize: 12.5, color: C.warn }}>{error}</span>}
+        {notice && <span role="status" aria-live="polite" style={{ fontSize: 12.5, color: C.good }}>{notice}</span>}
+        {error && <span role="alert" style={{ fontSize: 12.5, color: C.warn }}>{error}</span>}
       </div>
 
       {others.length > 0 && (
@@ -199,7 +199,8 @@ export default function GmIdentityCard({ campaignId }: { campaignId: string }) {
                   type="button"
                   onClick={() => unlink(id.id)}
                   disabled={saving}
-                  style={{ background: "transparent", color: C.muted, border: "none", cursor: "pointer", fontSize: 16, lineHeight: 1 }}
+                  aria-label={`Remove ${id.display_name || "narrator"}`}
+                  style={{ background: "transparent", color: C.muted, border: "none", cursor: "pointer", fontSize: 16, lineHeight: 1, width: 44, height: 44, display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
                 >
                   ×
                 </button>

@@ -148,7 +148,7 @@ export default function MyThreadsPage() {
               {busy ? "Saving..." : "Add"}
             </button>
           </div>
-          {error && <p style={{ color: C.warn, fontSize: 12.5, margin: "10px 0 0" }}>{error}</p>}
+          {error && <p role="alert" style={{ color: C.warn, fontSize: 12.5, margin: "10px 0 0" }}>{error}</p>}
         </div>
 
         {status === "loading" && <Muted>Loading&hellip;</Muted>}
@@ -230,10 +230,11 @@ function Row({
 function IconBtn({ onClick, title, children }: { onClick: () => void; title: string; children: React.ReactNode }) {
   return (
     <button
-      type="button" onClick={onClick} title={title}
+      type="button" onClick={onClick} title={title} aria-label={title}
       style={{
         background: "transparent", border: `1px solid ${C.line}`, color: C.muted,
-        borderRadius: 7, width: 28, height: 28, cursor: "pointer", fontSize: 13, lineHeight: 1,
+        borderRadius: 7, width: 44, height: 44, cursor: "pointer", fontSize: 15, lineHeight: 1,
+        display: "inline-flex", alignItems: "center", justifyContent: "center",
       }}
     >
       {children}

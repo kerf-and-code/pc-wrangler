@@ -142,7 +142,7 @@ async function EntryBody({ params }: P) {
               unvetted image here would be a legibility gamble taken on the GM's behalf. */}
           {item.image_url && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img className="w-hero" src={item.image_url} alt={item.title} />
+            <img className="w-hero" src={item.image_url} alt={item.title || ""} />
           )}
 
           {item.tags && item.tags.length > 0 && (
