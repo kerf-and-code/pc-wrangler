@@ -89,17 +89,18 @@ export default function LoginPage() {
           style={{ display: "block", margin: "0 auto 10px", opacity: 0.92, filter: "drop-shadow(0 2px 6px rgba(0,0,0,0.5))" }}
         />
         <div style={{ textAlign: "center", marginBottom: 6 }}>
-          <span
+          <h1
             style={{
               fontFamily: SAX.serif,
               fontSize: 30,
               fontWeight: 600,
               letterSpacing: "-0.01em",
               color: C.text,
+              margin: 0,
             }}
           >
             Six Axes
-          </span>
+          </h1>
         </div>
         <div
           style={{

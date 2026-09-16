@@ -42,7 +42,7 @@ async function SectionBody({ params }: P) {
     <Shell slug={slug} campaign={campaign} counts={countsOf(items)} current={sec.slug}>
       <div className="ey" style={{ marginBottom: 8 }}>Codex</div>
       <div className="w-sec-head" style={{ marginBottom: 6 }}>
-        <h2 style={{ fontSize: 30 }}>{sec.label}</h2>
+        <h1 style={{ fontSize: 30 }}>{sec.label}</h1>
       </div>
       <p className="w-sec-blurb" style={{ margin: "8px 0 24px" }}>{sec.blurb}</p>
 

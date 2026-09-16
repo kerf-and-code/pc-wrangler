@@ -104,7 +104,7 @@ export function PortraitUploader({
         display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
         {preview
           // eslint-disable-next-line @next/next/no-img-element
-          ? <img src={preview} alt={label} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          ? <img src={preview} alt={`${label} preview`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
           : <span style={{ color: mutedColor, fontSize: 22 }}>◈</span>}
       </div>
 
