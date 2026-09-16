@@ -82,7 +82,7 @@ export default function LoginPage() {
       >
         {/* Brand */}
         <img
-          src="/astrolabe.png"
+          src="/six-axes-logo.png"
           alt=""
           width={46}
           height={46}

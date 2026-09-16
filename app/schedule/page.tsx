@@ -41,7 +41,16 @@ export default function PlayerSchedulePage() {
 
       const { data } = await supabase.rpc("next_scheduled_for_share", { code: shareCode });
       if (!active) return;
-      if (data && data.length) { setSched(data[0]); setStatus("ready"); }
+      if (data && data.length) {
+        setSched(data[0]);
+        setStatus("ready");
+        // Preload any RSVP this player already gave for this session, so a returning player sees
+        // their answer highlighted instead of a blank form. Reads through a SECURITY DEFINER RPC
+        // that mirrors rsvp_for_share; if the RPC is not deployed yet it fails quietly and the
+        // form just starts blank, exactly as before.
+        const { data: prior } = await supabase.rpc("my_rsvp_for_share", { code: shareCode, p_session_id: data[0].session_id });
+        if (active && typeof prior === "string" && prior) setChoice(prior);
+      }
       else setStatus("none");
     })();
     return () => { active = false; };
