@@ -2,6 +2,7 @@ import Link from "next/link";
 import { SAX, STONE } from "@/lib/theme";
 import { C, forgeBackground, forgeVignette, stoneButton, FORGE_BUTTON_CSS } from "@/lib/forge-theme";
 import MobileMenu from "@/components/site/mobile-menu";
+import { SITE_NAV, PILOT_CTA } from "@/lib/marketing/nav";
 
 // components/site/site-shell.tsx
 //
@@ -33,29 +34,14 @@ export default function SiteShell({
           <a href="https://kerfandcode.com" target="_blank" rel="noopener noreferrer" className="site-by">by Kerf &amp; Code &#8599;</a>
         </div>
         <nav className="site-nav">
-          <Link href="/features" className="site-link">Features</Link>
-          <Link href="/players" className="site-link">For players</Link>
-          <Link href="/tools" className="site-link">Free tools</Link>
-          <Link href="/guides" className="site-link">Guides</Link>
-          <Link href="/pricing" className="site-link">Pricing</Link>
-          <Link href="/contact" className="site-link">Contact</Link>
-          <Link href="/enter" className="site-link">Enter</Link>
-          <Link href="/pilot" className="forge-btn is-primary" style={{ ...stoneButton("primary"), padding: "9px 18px", fontSize: 12.5 }}>
-            Join the pilot
+          {SITE_NAV.map((it) => (
+            <Link key={it.href} href={it.href} className="site-link">{it.label}</Link>
+          ))}
+          <Link href={PILOT_CTA.href} className="forge-btn is-primary" style={{ ...stoneButton("primary"), padding: "9px 18px", fontSize: 12.5 }}>
+            {PILOT_CTA.label}
           </Link>
         </nav>
-        <MobileMenu
-          items={[
-            { href: "/features", label: "Features" },
-            { href: "/players", label: "For players" },
-            { href: "/tools", label: "Free tools" },
-            { href: "/guides", label: "Guides" },
-            { href: "/pricing", label: "Pricing" },
-            { href: "/contact", label: "Contact" },
-            { href: "/enter", label: "Enter" },
-          ]}
-          cta={{ href: "/pilot", label: "Join the pilot" }}
-        />
+        <MobileMenu items={SITE_NAV} cta={PILOT_CTA} />
       </header>
 
       <div className="site-body">

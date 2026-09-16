@@ -4,6 +4,7 @@ import {
   C, forgeBackground, forgeVignette, stonePanel, stoneButton, FORGE_BUTTON_CSS, forgeRuleLine, forgeBoss,
 } from "@/lib/forge-theme";
 import MobileMenu from "@/components/site/mobile-menu";
+import { TOOLS_NAV, PILOT_CTA } from "@/lib/marketing/nav";
 
 // components/tools-shell.tsx
 //
@@ -39,25 +40,14 @@ export default function ToolsShell({
           <span className="ts-word">Six Axes</span>
         </Link>
         <nav className="ts-nav">
-          <Link href="/features" className="ts-link">Features</Link>
-          <Link href="/tools" className="ts-link">Free tools</Link>
-          <Link href="/pricing" className="ts-link">Pricing</Link>
-          <Link href="/contact" className="ts-link">Contact</Link>
-          <Link href="/enter" className="ts-link">Enter</Link>
-          <Link href="/pilot" className="forge-btn is-primary" style={{ ...stoneButton("primary"), padding: "9px 18px", fontSize: 12.5 }}>
-            Join the pilot
+          {TOOLS_NAV.map((it) => (
+            <Link key={it.href} href={it.href} className="ts-link">{it.label}</Link>
+          ))}
+          <Link href={PILOT_CTA.href} className="forge-btn is-primary" style={{ ...stoneButton("primary"), padding: "9px 18px", fontSize: 12.5 }}>
+            {PILOT_CTA.label}
           </Link>
         </nav>
-        <MobileMenu
-          items={[
-            { href: "/features", label: "Features" },
-            { href: "/tools", label: "Free tools" },
-            { href: "/pricing", label: "Pricing" },
-            { href: "/contact", label: "Contact" },
-            { href: "/enter", label: "Enter" },
-          ]}
-          cta={{ href: "/pilot", label: "Join the pilot" }}
-        />
+        <MobileMenu items={TOOLS_NAV} cta={PILOT_CTA} />
       </header>
 
       <div className="ts-wrap">

@@ -13,6 +13,7 @@ import JsonLd from "@/components/json-ld";
 import { softwareApplicationSchema } from "@/lib/seo";
 import { FULL_TOOLSET, THEMED_TABLE, PLANNED, systemsDots } from "@/lib/marketing/systems";
 import MobileMenu from "@/components/site/mobile-menu";
+import { LANDING_NAV, PILOT_CTA } from "@/lib/marketing/nav";
 
 // app/page.tsx
 //
@@ -95,25 +96,14 @@ export default function Home() {
           <a href="https://kerfandcode.com" target="_blank" rel="noopener noreferrer" className="home-by">by Kerf &amp; Code &#8599;</a>
         </div>
         <nav className="home-topnav">
-          <Link href="/features" className="topnav-link">Features</Link>
-          <Link href="/players" className="topnav-link">For players</Link>
-          <Link href="/tools" className="topnav-link">Free tools</Link>
-          <Link href="/pricing" className="topnav-link">Pricing</Link>
-          <Link href="/enter" className="topnav-link">Enter</Link>
-          <Link href="/pilot" className="forge-btn is-primary" style={{ ...stoneButton("primary"), padding: "9px 18px", fontSize: 12.5 }}>
-            Join the pilot
+          {LANDING_NAV.map((it) => (
+            <Link key={it.href} href={it.href} className="topnav-link">{it.label}</Link>
+          ))}
+          <Link href={PILOT_CTA.href} className="forge-btn is-primary" style={{ ...stoneButton("primary"), padding: "9px 18px", fontSize: 12.5 }}>
+            {PILOT_CTA.label}
           </Link>
         </nav>
-        <MobileMenu
-          items={[
-            { href: "/features", label: "Features" },
-            { href: "/players", label: "For players" },
-            { href: "/tools", label: "Free tools" },
-            { href: "/pricing", label: "Pricing" },
-            { href: "/enter", label: "Enter" },
-          ]}
-          cta={{ href: "/pilot", label: "Join the pilot" }}
-        />
+        <MobileMenu items={LANDING_NAV} cta={PILOT_CTA} />
       </header>
 
       <div className="home-shell">
