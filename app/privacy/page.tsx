@@ -54,22 +54,24 @@ export default function PrivacyPolicyPage() {
 
       <h2>AI processing and service providers (sub-processors)</h2>
       <p>We rely on the following providers to run Six Axes. They process your data only to perform their function for us, under contracts that restrict their use of it:</p>
-      <table>
-        <thead>
-          <tr><th>Provider</th><th>Purpose</th></tr>
-        </thead>
-        <tbody>
-          <tr><td>Supabase</td><td>Database, authentication, and file (audio) storage</td></tr>
-          <tr><td>Vercel</td><td>Application hosting</td></tr>
-          <tr><td>Fly.io</td><td>Hosting for the Discord voice recorder, which receives and processes session audio</td></tr>
-          <tr><td>Deepgram</td><td>Speech-to-text transcription of session audio</td></tr>
-          <tr><td>Anthropic (Claude)</td><td>AI extraction of events from transcripts and recap drafting</td></tr>
-          <tr><td>Google Cloud</td><td>Statistical computation for disposition modeling</td></tr>
-          <tr><td>Resend</td><td>Transactional and reminder email</td></tr>
-          <tr><td>Discord</td><td>Authentication, and (if enabled) bot and voice features</td></tr>
-          <tr><td>Google</td><td>Authentication</td></tr>
-        </tbody>
-      </table>
+      <div style={{ overflowX: "auto" }}>
+        <table>
+          <thead>
+            <tr><th>Provider</th><th>Purpose</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Supabase</td><td>Database, authentication, and file (audio) storage</td></tr>
+            <tr><td>Vercel</td><td>Application hosting</td></tr>
+            <tr><td>Fly.io</td><td>Hosting for the Discord voice recorder, which receives and processes session audio</td></tr>
+            <tr><td>Deepgram</td><td>Speech-to-text transcription of session audio</td></tr>
+            <tr><td>Anthropic (Claude)</td><td>AI extraction of events from transcripts and recap drafting</td></tr>
+            <tr><td>Google Cloud</td><td>Statistical computation for disposition modeling</td></tr>
+            <tr><td>Resend</td><td>Transactional and reminder email</td></tr>
+            <tr><td>Discord</td><td>Authentication, and (if enabled) bot and voice features</td></tr>
+            <tr><td>Google</td><td>Authentication</td></tr>
+          </tbody>
+        </table>
+      </div>
       <p>Most providers process and store data in the United States. Our AI providers (Deepgram, Anthropic) process your content to perform the service and, under their commercial terms, <strong>do not use it to train their models</strong>. The table above is our current sub-processor list. If it changes, we will update it here.</p>
 
       <h2>Recording and consent</h2>

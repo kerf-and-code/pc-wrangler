@@ -534,7 +534,7 @@ export default function ReliabilityPage() {
                       <thead>
                         <tr>
                           <th style={{ padding: "4px 8px", color: C.muted }}></th>
-                          {agree.cats.map((_, j) => (<th key={j} style={{ padding: "4px 8px", color: C.muted, fontWeight: 600 }}>{j}</th>))}
+                          {agree.cats.map((_, j) => (<th key={j} style={{ padding: "4px 8px", color: C.muted, fontWeight: 600, textAlign: "center", fontVariantNumeric: "tabular-nums" }}>{j}</th>))}
                         </tr>
                       </thead>
                       <tbody>
@@ -545,7 +545,7 @@ export default function ReliabilityPage() {
                               const v = agree.M[i][j];
                               const diag = i === j;
                               return (
-                                <td key={j} style={{ padding: "4px 10px", textAlign: "center", background: diag && v > 0 ? "rgba(93,190,154,0.18)" : "transparent", color: v === 0 ? C.line : C.text, border: `1px solid ${C.line}`, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>{v}</td>
+                                <td key={j} style={{ padding: "4px 10px", textAlign: "center", fontVariantNumeric: "tabular-nums", background: diag && v > 0 ? "rgba(93,190,154,0.18)" : "transparent", color: v === 0 ? C.line : C.text, border: `1px solid ${C.line}`, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>{v}</td>
                               );
                             })}
                           </tr>

@@ -312,9 +312,9 @@ export default function MechanicsPage() {
                 <thead>
                   <tr style={{ color: C.muted, textAlign: "left" }}>
                     <th style={{ padding: "6px 10px" }}>Die</th>
-                    <th style={{ padding: "6px 10px" }}>Rolled</th>
-                    <th style={{ padding: "6px 10px" }}>Average</th>
-                    <th style={{ padding: "6px 10px" }}>Expected</th>
+                    <th style={{ padding: "6px 10px", textAlign: "right" }}>Rolled</th>
+                    <th style={{ padding: "6px 10px", textAlign: "right" }}>Average</th>
+                    <th style={{ padding: "6px 10px", textAlign: "right" }}>Expected</th>
                     <th style={{ padding: "6px 10px" }}>Reading</th>
                   </tr>
                 </thead>
@@ -328,11 +328,11 @@ export default function MechanicsPage() {
                     return (
                       <tr key={d.sides} style={{ borderTop: `1px solid ${C.line}` }}>
                         <td style={{ padding: "9px 10px", fontWeight: 600 }}>d{d.sides}</td>
-                        <td style={{ padding: "9px 10px" }}>{d.n}</td>
-                        <td style={{ padding: "9px 10px", color: !thin && off ? C.warn : C.text }}>
+                        <td style={{ padding: "9px 10px", textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{d.n}</td>
+                        <td style={{ padding: "9px 10px", textAlign: "right", fontVariantNumeric: "tabular-nums", color: !thin && off ? C.warn : C.text }}>
                           {d.mean.toFixed(2)}
                         </td>
-                        <td style={{ padding: "9px 10px", color: C.muted }}>{d.expected.toFixed(2)}</td>
+                        <td style={{ padding: "9px 10px", textAlign: "right", fontVariantNumeric: "tabular-nums", color: C.muted }}>{d.expected.toFixed(2)}</td>
                         <td style={{ padding: "9px 10px", color: C.muted, fontSize: 12.5 }}>
                           {thin
                             ? "too few rolls to say"
@@ -415,21 +415,24 @@ export default function MechanicsPage() {
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13.5 }}>
               <thead>
                 <tr style={{ color: C.muted, fontFamily: "ui-monospace, monospace", fontSize: 11, letterSpacing: "0.06em", textTransform: "uppercase" }}>
-                  {["character", "d20s", "avg d20", "nat 20", "nat 1", "adv", "damage", "hit points"].map((h) => (
-                    <th key={h} style={{ textAlign: "left", padding: "6px 10px", borderBottom: `1px solid ${C.line}` }}>{h}</th>
-                  ))}
+                  {["character", "d20s", "avg d20", "nat 20", "nat 1", "adv", "damage", "hit points"].map((h) => {
+                    const numeric = h !== "character" && h !== "hit points";
+                    return (
+                      <th key={h} style={{ textAlign: numeric ? "right" : "left", padding: "6px 10px", borderBottom: `1px solid ${C.line}` }}>{h}</th>
+                    );
+                  })}
                 </tr>
               </thead>
               <tbody>
                 {stats.rows.map((r) => (
                   <tr key={r.key}>
                     <td style={{ padding: "9px 10px", fontWeight: 600, color: r.linked ? C.text : C.muted }}>{r.label}</td>
-                    <td style={{ padding: "9px 10px" }}>{r.d20Count}</td>
-                    <td style={{ padding: "9px 10px" }}>{r.natCount ? (r.natSum / r.natCount).toFixed(1) : "\u2014"}</td>
-                    <td style={{ padding: "9px 10px", color: r.nat20s ? C.good : C.muted }}>{r.nat20s}</td>
-                    <td style={{ padding: "9px 10px", color: r.nat1s ? C.warn : C.muted }}>{r.nat1s}</td>
-                    <td style={{ padding: "9px 10px" }}>{r.advantage}</td>
-                    <td style={{ padding: "9px 10px" }}>{r.damage}</td>
+                    <td style={{ padding: "9px 10px", textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{r.d20Count}</td>
+                    <td style={{ padding: "9px 10px", textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{r.natCount ? (r.natSum / r.natCount).toFixed(1) : "\u2014"}</td>
+                    <td style={{ padding: "9px 10px", textAlign: "right", fontVariantNumeric: "tabular-nums", color: r.nat20s ? C.good : C.muted }}>{r.nat20s}</td>
+                    <td style={{ padding: "9px 10px", textAlign: "right", fontVariantNumeric: "tabular-nums", color: r.nat1s ? C.warn : C.muted }}>{r.nat1s}</td>
+                    <td style={{ padding: "9px 10px", textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{r.advantage}</td>
+                    <td style={{ padding: "9px 10px", textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{r.damage}</td>
                     <td style={{ padding: "9px 10px" }}><Spark series={r.hpSeries} maxHp={r.maxHp} /></td>
                   </tr>
                 ))}

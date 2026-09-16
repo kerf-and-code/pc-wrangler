@@ -174,7 +174,11 @@ export const ui: Record<string, CSSProperties> = {
     fontFamily: SAX.mono, fontSize: 11, letterSpacing: "0.24em",
     textTransform: "uppercase", color: SAX.brass,
   },
-  h1: { fontFamily: SAX.serif, fontSize: 34, fontWeight: 600, letterSpacing: 0.2, margin: "6px 0 10px" },
+  // Every page that imports ui.h1 spreads it and then overrides fontSize to 28, so the 34
+  // default was dead and the real page-title size is 28. Set the token to what every caller
+  // already uses, so a bare ui.h1 matches the app and the per-page overrides become redundant
+  // (they are removed when a page moves to PageHeader in P3).
+  h1: { fontFamily: SAX.serif, fontSize: 28, fontWeight: 600, letterSpacing: 0.2, margin: "6px 0 10px" },
   label: {
     fontFamily: SAX.mono, fontSize: 10, letterSpacing: "0.16em",
     textTransform: "uppercase", color: STONE.inkDim,
