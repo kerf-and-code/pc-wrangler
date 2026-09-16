@@ -1,5 +1,10 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import type { Metadata } from "next";
 import { Suspense } from "react";
+import AuthShell, { authText, authLink } from "@/components/auth/auth-shell";
+
+export const metadata: Metadata = {
+  title: "Sign-in problem",
+};
 
 async function ErrorContent({
   searchParams,
@@ -10,15 +15,15 @@ async function ErrorContent({
 
   return (
     <>
-      <p className="text-sm text-muted-foreground">
+      <p style={{ ...authText, textAlign: "center", margin: "0 0 16px" }}>
         Your sign-in link didn&apos;t go through. It may have expired or already
         been used. Head back and request a fresh one, then open the newest email.
       </p>
-      <p className="text-sm mt-4">
-        <a href="/auth/login" className="underline">Return to sign in</a>
+      <p style={{ textAlign: "center", margin: 0 }}>
+        <a href="/auth/login" style={authLink}>Return to sign in</a>
       </p>
       {params?.error ? (
-        <p className="text-xs text-muted-foreground mt-4">
+        <p style={{ ...authText, textAlign: "center", fontSize: 12, marginTop: 16 }}>
           Details: {params.error}
         </p>
       ) : null}
@@ -32,23 +37,10 @@ export default function Page({
   searchParams: Promise<{ error: string }>;
 }) {
   return (
-    <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
-      <div className="w-full max-w-sm">
-        <div className="flex flex-col gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-2xl">
-                Sorry, something went wrong.
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Suspense>
-                <ErrorContent searchParams={searchParams} />
-              </Suspense>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    </div>
+    <AuthShell title="Sorry, something went wrong">
+      <Suspense>
+        <ErrorContent searchParams={searchParams} />
+      </Suspense>
+    </AuthShell>
   );
 }
