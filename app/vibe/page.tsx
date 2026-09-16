@@ -163,10 +163,10 @@ export default function VibeCheckPage() {
               </div>
 
               <textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="Anything you want the GM to know? (optional)" rows={3}
-                style={{ width: "100%", boxSizing: "border-box", background: C.surface2, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "10px 12px", color: C.text, fontSize: 14, outline: "none", resize: "vertical", marginBottom: 14, fontFamily: "inherit", boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }} />
+                style={{ width: "100%", boxSizing: "border-box", borderRadius: FORGE_RADIUS, padding: "10px 12px", color: C.text, fontSize: 14, outline: "none", resize: "vertical", marginBottom: 14, fontFamily: "inherit" }} />
               {!anonymous && (
                 <input value={playerName} onChange={(e) => setPlayerName(e.target.value)} placeholder="Your name (so the GM knows who)"
-                  style={{ width: "100%", boxSizing: "border-box", background: C.surface2, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "10px 12px", color: C.text, fontSize: 14, outline: "none", marginBottom: 14, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }} />
+                  style={{ width: "100%", boxSizing: "border-box", borderRadius: FORGE_RADIUS, padding: "10px 12px", color: C.text, fontSize: 14, outline: "none", marginBottom: 14 }} />
               )}
 
               <label style={{ display: "flex", gap: 10, alignItems: "flex-start", cursor: "pointer", marginBottom: 10 }}>

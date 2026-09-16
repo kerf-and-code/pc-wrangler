@@ -230,7 +230,7 @@ export default function RecordPage() {
 
               <label style={{ fontSize: 12, color: C.muted, fontFamily: "ui-monospace, monospace", letterSpacing: "0.1em" }}>YOUR CHARACTER</label>
               <select value={charId} onChange={(e) => chooseChar(e.target.value)} disabled={phase === "recording" || phase === "uploading"}
-                style={{ display: "block", width: "100%", marginTop: 6, marginBottom: 16, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: 9, padding: "11px 12px", fontSize: 15 }}>
+                style={{ display: "block", width: "100%", marginTop: 6, marginBottom: 16, color: C.text, borderRadius: FORGE_RADIUS, padding: "11px 12px", fontSize: 15 }}>
                 <option value="">Pick your character…</option>
                 {roster.map((r) => (<option key={r.character_id} value={r.character_id}>{r.name}</option>))}
               </select>

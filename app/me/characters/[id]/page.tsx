@@ -32,9 +32,11 @@ type CandItem = { id: string; item_kind: string; item_type: string; title: strin
 
 const candLabel = (c: CandItem) => (c.item_kind === "npc" ? "NPC" : c.item_type);
 
+// No inline background/border: PageShell's cascade gives every field the carved look; setting them
+// inline is what left these flat. Radius routed through FORGE_RADIUS too.
 const field: React.CSSProperties = {
-  boxSizing: "border-box", width: "100%", background: C.surface2, color: C.text,
-  border: `1px solid ${C.line}`, borderRadius: 9, padding: "9px 11px", fontSize: 14, outline: "none",
+  boxSizing: "border-box", width: "100%", color: C.text,
+  borderRadius: FORGE_RADIUS, padding: "9px 11px", fontSize: 14, outline: "none",
 };
 const primaryBtn: React.CSSProperties = { background: C.sun, color: SAX.inkDeep, border: "none", borderRadius: 7, padding: "9px 16px", fontWeight: 700, fontSize: 13.5, cursor: "pointer" };
 const ghostBtn: React.CSSProperties = { background: "transparent", color: C.muted, border: `1px solid ${C.line}`, borderRadius: 7, padding: "7px 12px", fontWeight: 600, fontSize: 12.5, cursor: "pointer" };

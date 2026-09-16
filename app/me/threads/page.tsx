@@ -242,9 +242,10 @@ function IconBtn({ onClick, title, children }: { onClick: () => void; title: str
 }
 
 function input(): React.CSSProperties {
+  // No inline background/border: PageShell's cascade gives the field its carved look.
   return {
-    width: "100%", background: C.surface, color: C.text,
-    border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS,
+    width: "100%", color: C.text,
+    borderRadius: FORGE_RADIUS,
     padding: "9px 12px", fontSize: 14, fontFamily: "inherit",
   };
 }

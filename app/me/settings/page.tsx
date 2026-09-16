@@ -144,8 +144,8 @@ export default function MySettingsPage() {
                   onChange={(e) => { setName(e.target.value); setSaved(false); }}
                   placeholder="Your name"
                   style={{
-                    flex: "1 1 200px", background: C.surface, color: C.text,
-                    border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "9px 12px", fontSize: 14, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}
+                    flex: "1 1 200px", color: C.text,
+                    borderRadius: FORGE_RADIUS, padding: "9px 12px", fontSize: 14 }}
                 />
                 <button type="button" onClick={saveName} disabled={saving} style={btn(C.sun, C.ink)}>
                   {saving ? "Saving..." : "Save"}
@@ -225,9 +225,9 @@ export default function MySettingsPage() {
                       onChange={(e) => setConfirmText(e.target.value)}
                       placeholder="DELETE"
                       style={{
-                        flex: "0 1 140px", background: C.surface, color: C.text,
-                        border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "9px 12px",
-                        fontSize: 14, fontFamily: SAX.mono, letterSpacing: "0.1em", boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}
+                        flex: "0 1 140px", color: C.text,
+                        borderRadius: FORGE_RADIUS, padding: "9px 12px",
+                        fontSize: 14, fontFamily: SAX.mono, letterSpacing: "0.1em" }}
                     />
                     <button
                       type="button"
