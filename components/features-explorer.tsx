@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { SAX, STONE } from "@/lib/theme";
 import { stonePanel } from "@/lib/forge-theme";
+import { FULL_TOOLSET, THEMED_TABLE, systemsAnd } from "@/lib/marketing/systems";
 
 // components/features-explorer.tsx
 //
@@ -67,7 +68,7 @@ const FEATURES: Feature[] = [
     title: "One core, a module per game",
     lead: "It reskins and re-rules itself around your table.",
     paras: [
-      "D&D 5e, Pathfinder 2e, Draw Steel, and Daggerheart get the full toolset: a character builder, monsters or NPCs, encounter maths, and system-correct dice. Call of Cthulhu, Lancer, and a generic d10 pool run as a themed table with the right roller, with more on the way.",
+      `${systemsAnd(FULL_TOOLSET)} get the full toolset: a character builder, monsters or NPCs, encounter maths, and system-correct dice. ${systemsAnd(THEMED_TABLE)} run as a themed table with the right roller, with more on the way.`,
       "The record, recap, wiki, and player insight work the same on every system. What changes is the dice and the sheet, not the loop.",
     ],
     img: "/screens/forge.png",

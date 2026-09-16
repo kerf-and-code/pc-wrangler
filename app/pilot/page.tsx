@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import PilotForm from "@/components/pilot-form";
+import { FULL_TOOLSET, THEMED_TABLE, systemsAnd } from "@/lib/marketing/systems";
 
 // app/pilot/page.tsx
 //
@@ -62,9 +63,8 @@ export default function PilotPage() {
             </li>
             <li style={li}>
               <strong>A supported system.</strong> The record, recap, wiki and player insight work on
-              any table. The deeper rules tools vary by system: D&amp;D 5e, Pathfinder 2e, Lancer and
-              Dark Matter have the full toolset; Draw Steel has monsters and encounters; Daggerheart,
-              Call of Cthulhu and a generic d10 pool have a themed table and the right dice. Not sure
+              any table. The deeper rules tools vary by system: {systemsAnd(FULL_TOOLSET)} have the
+              full toolset; {systemsAnd(THEMED_TABLE)} have a themed table and the right dice. Not sure
               where yours lands? Pick "Other or not sure" below and ask.
             </li>
             <li style={li}>

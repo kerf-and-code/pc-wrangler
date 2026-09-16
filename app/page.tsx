@@ -11,6 +11,7 @@ import HowItWorks from "@/components/how-it-works";
 import TrustSection from "@/components/trust-section";
 import JsonLd from "@/components/json-ld";
 import { softwareApplicationSchema } from "@/lib/seo";
+import { FULL_TOOLSET, THEMED_TABLE, PLANNED, systemsDots } from "@/lib/marketing/systems";
 
 // app/page.tsx
 //
@@ -258,17 +259,17 @@ export default function Home() {
               <div style={{ ...stonePanel(), padding: "18px 20px" }}>
                 <div style={forgeLabel}>Full toolset</div>
                 <p style={tierText}>Character builder, monsters or NPCs, encounter maths, system-correct dice.</p>
-                <p style={tierList}>D&amp;D 5e (2014 &amp; 2024) · Pathfinder 2e · Draw Steel · Daggerheart</p>
+                <p style={tierList}>{systemsDots(FULL_TOOLSET)}</p>
               </div>
               <div style={{ ...stonePanel(), padding: "18px 20px" }}>
                 <div style={forgeLabel}>Themed table + dice</div>
                 <p style={tierText}>The right roller and the system&apos;s look, character and monster builders still to come.</p>
-                <p style={tierList}>Call of Cthulhu · Lancer · a generic d10 pool for gothic games</p>
+                <p style={tierList}>{systemsDots(THEMED_TABLE)}</p>
               </div>
               <div style={{ ...stonePanel(), padding: "18px 20px" }}>
                 <div style={forgeLabel}>Planned</div>
                 <p style={tierText}>On the roadmap, waiting on the publisher&apos;s permission before we can ship them.</p>
-                <p style={tierList}>Cyberpunk RED · Vampire: The Masquerade</p>
+                <p style={tierList}>{systemsDots(PLANNED)}</p>
               </div>
             </div>
             <p style={{ ...small, marginTop: 16 }}>

@@ -5,6 +5,7 @@ import { SAX, STONE } from "@/lib/theme";
 import { stonePanel } from "@/lib/forge-theme";
 import JsonLd from "@/components/json-ld";
 import { faqPageSchema } from "@/lib/seo";
+import { FULL_TOOLSET, THEMED_TABLE, systemsAnd } from "@/lib/marketing/systems";
 
 // app/faq/page.tsx
 //
@@ -92,9 +93,9 @@ const FAQ: QA[] = [
     q: "Which systems does it support?",
     a: (
       <>
-        D&amp;D 5e (2014 and 2024), Pathfinder 2e, Draw Steel, and Daggerheart have the full toolset;
-        Call of Cthulhu, Lancer, and a generic d10 pool run as a themed table with the right dice; more
-        are on the way. The recording, recap, wiki, and player insight work the same on every system. See
+        {systemsAnd(FULL_TOOLSET)} have the full toolset; {systemsAnd(THEMED_TABLE)} run as a themed
+        table with the right dice; more are on the way. The recording, recap, wiki, and player insight
+        work the same on every system. See
         the <Link href="/#systems" style={linkS}>systems overview</Link> for the detail.
       </>
     ),
@@ -161,7 +162,7 @@ const FAQ_TEXT: { q: string; a: string }[] = [
   },
   {
     q: "Which systems does it support?",
-    a: "D&D 5e (2014 and 2024), Pathfinder 2e, Draw Steel, and Daggerheart have the full toolset; Call of Cthulhu, Lancer, and a generic d10 pool run as a themed table with the right dice; more are on the way. The recording, recap, wiki, and player insight work the same on every system.",
+    a: `${systemsAnd(FULL_TOOLSET)} have the full toolset; ${systemsAnd(THEMED_TABLE)} run as a themed table with the right dice; more are on the way. The recording, recap, wiki, and player insight work the same on every system.`,
   },
   {
     q: "What does it cost?",
