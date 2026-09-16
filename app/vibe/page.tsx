@@ -137,7 +137,7 @@ export default function VibeCheckPage() {
 
           {status === "ready" && submitted && (
             <div style={{ textAlign: "center", padding: "10px 0" }}>
-              <div style={{ fontSize: 17, fontWeight: 600, marginBottom: 8, color: C.good }}>Thanks{!anonymous && playerName.trim() ? `, ${playerName.trim()}` : ""}!</div>
+              <div role="status" aria-live="polite" style={{ fontSize: 17, fontWeight: 600, marginBottom: 8, color: C.good }}>Thanks{!anonymous && playerName.trim() ? `, ${playerName.trim()}` : ""}!</div>
               <div style={{ color: C.muted, fontSize: 14, lineHeight: 1.6 }}>
                 {anonymous
                   ? "Your check-in is saved, with nothing linking it to you. That also means it cannot be edited now."
@@ -201,7 +201,7 @@ export default function VibeCheckPage() {
                 style={{ width: "100%", background: `linear-gradient(90deg, ${C.sun}, ${C.sunSoft})`, color: C.ink, border: "none", borderRadius: FORGE_RADIUS, padding: "13px 16px", fontSize: 15, fontWeight: 700, letterSpacing: "0.02em", cursor: submitting ? "default" : "pointer", opacity: submitting ? 0.7 : 1 }}>
                 {submitting ? "Saving…" : "Submit check-in"}
               </button>
-              {error && <p style={{ color: C.warn, fontSize: 13, textAlign: "center", marginTop: 14 }}>{error}</p>}
+              {error && <p role="alert" style={{ color: C.warn, fontSize: 13, textAlign: "center", marginTop: 14 }}>{error}</p>}
             </>
           )}
         </div>

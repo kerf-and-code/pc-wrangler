@@ -200,7 +200,7 @@ export function UpgradeAccount({
           Not now
         </button>
         {error && (
-          <p style={{ color: C.warn, fontSize: 12.5, width: "100%", margin: "4px 0 0" }}>{error}</p>
+          <p role="alert" style={{ color: C.warn, fontSize: 12.5, width: "100%", margin: "4px 0 0" }}>{error}</p>
         )}
       </div>
     );
@@ -252,7 +252,7 @@ export function UpgradeAccount({
 
       <div style={{ marginTop: 16, paddingTop: 16, borderTop: `1px solid ${C.line}` }}>
         {sent ? (
-          <p style={{ color: C.good, fontSize: 13.5, margin: 0 }}>
+          <p role="status" aria-live="polite" style={{ color: C.good, fontSize: 13.5, margin: 0 }}>
             Check your email. Click the link to finish, and you will come back to
             everything just as you left it.
           </p>
@@ -280,7 +280,7 @@ export function UpgradeAccount({
         )}
       </div>
 
-      {error && <p style={{ color: C.warn, fontSize: 13, margin: "12px 0 0" }}>{error}</p>}
+      {error && <p role="alert" style={{ color: C.warn, fontSize: 13, margin: "12px 0 0" }}>{error}</p>}
     </section>
   );
 }

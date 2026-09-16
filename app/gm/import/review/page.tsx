@@ -115,8 +115,8 @@ export default function ImportReviewPage() {
       </p>
 
       {loading && <p style={{ color: C.muted }}>Loading…</p>}
-      {result && <div style={{ ...surfaces.slate, borderRadius: FORGE_RADIUS, padding: 14, marginBottom: 18, color: C.good, fontSize: 14 }}>{result}</div>}
-      {error && <div style={{ color: C.warn, fontSize: 13.5, marginBottom: 14 }}>{error}</div>}
+      {result && <div role="status" aria-live="polite" style={{ ...surfaces.slate, borderRadius: FORGE_RADIUS, padding: 14, marginBottom: 18, color: C.good, fontSize: 14 }}>{result}</div>}
+      {error && <div role="alert" style={{ color: C.warn, fontSize: 13.5, marginBottom: 14 }}>{error}</div>}
 
       {!loading && !done && (
         <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 20, flexWrap: "wrap" }}>

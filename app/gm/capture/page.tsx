@@ -321,7 +321,7 @@ export default function CapturePage() {
                     })}
                   </div>
 
-                  {error && <p style={{ color: C.warn, fontSize: 13, marginTop: 12 }}>{error}</p>}
+                  {error && <p role="alert" style={{ color: C.warn, fontSize: 13, marginTop: 12 }}>{error}</p>}
 
                   <div style={{ marginTop: 18, display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
                     {isDraft ? (

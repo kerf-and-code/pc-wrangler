@@ -481,7 +481,7 @@ export default function ReliabilityPage() {
                   <div style={{ fontSize: 12, color: C.muted, marginTop: 6 }}>{recodeProg.processed} / {recodeProg.total} transcript lines</div>
                 </div>
               )}
-              {agreeErr && <p style={{ color: C.warn, fontSize: 13, marginBottom: 10 }}>{agreeErr}</p>}
+              {agreeErr && <p role="alert" style={{ color: C.warn, fontSize: 13, marginBottom: 10 }}>{agreeErr}</p>}
 
               {agree.needRecode && !recoding && (
                 <p style={{ color: C.muted, fontSize: 13 }}>No second coding yet for this session. Run it to compute agreement.</p>

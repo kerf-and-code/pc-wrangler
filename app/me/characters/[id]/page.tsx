@@ -284,8 +284,8 @@ export default function CharacterPage() {
             <button type="button" onClick={savePage} disabled={pageBusy} style={{ ...primaryBtn, opacity: pageBusy ? 0.7 : 1 }}>
               {pageBusy ? "Saving…" : "Save page"}
             </button>
-            {pageSaved && <span style={{ fontSize: 13, color: C.good }}>Saved.</span>}
-            {pageError && <span style={{ fontSize: 12.5, color: C.warn }}>{pageError}</span>}
+            {pageSaved && <span role="status" aria-live="polite" style={{ fontSize: 13, color: C.good }}>Saved.</span>}
+            {pageError && <span role="alert" style={{ fontSize: 12.5, color: C.warn }}>{pageError}</span>}
           </div>
 
           <div style={{ marginTop: 20, paddingTop: 16, borderTop: `1px solid ${C.line}` }}>

@@ -207,7 +207,7 @@ export default function TranscriptsPage() {
         </div>
       )}
 
-      {error && <div style={{ ...box, color: C.warn, marginBottom: 14, fontSize: 13 }}>{error}</div>}
+      {error && <div role="alert" style={{ ...box, color: C.warn, marginBottom: 14, fontSize: 13 }}>{error}</div>}
 
       {loading ? (
         <div style={{ ...box, color: C.muted }}>Loading transcript...</div>

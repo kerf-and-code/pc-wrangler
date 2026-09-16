@@ -408,7 +408,7 @@ export default function GMWorkspace() {
       </div>
 
       {err && (
-        <div style={{ ...box, borderColor: C.missing, color: C.warn, marginBottom: 16, fontSize: 13 }}>
+        <div role="alert" style={{ ...box, borderColor: C.missing, color: C.warn, marginBottom: 16, fontSize: 13 }}>
           {err}
         </div>
       )}

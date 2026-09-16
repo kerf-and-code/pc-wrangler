@@ -105,7 +105,7 @@ export default function Beyond20Setup() {
           <span style={{ width: 12, height: 12, borderRadius: FORGE_RADIUS, flex: "0 0 auto",
             background: status === "rolling" ? C.good : status === "connected" ? C.sun : C.muted,
             boxShadow: status !== "waiting" ? `0 0 10px ${status === "rolling" ? C.good : C.sun}` : "none" }} />
-          <div style={{ fontSize: 14.5 }}>
+          <div role="status" aria-live="polite" style={{ fontSize: 14.5 }}>
             {status === "rolling" && <><b style={{ color: C.good }}>Rolls are flowing!</b> You&rsquo;re fully set up.</>}
             {status === "connected" && <><b style={{ color: C.sun }}>Beyond20 connected.</b> Roll once on your character sheet to confirm rolls come through.</>}
             {status === "waiting" && <>Waiting for Beyond20&hellip; follow the steps below, then reload this page.</>}

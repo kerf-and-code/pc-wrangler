@@ -143,11 +143,11 @@ export default function PlayerSchedulePage() {
             </div>
 
             {saved && (
-              <p style={{ textAlign: "center", color: C.good, fontSize: 14, marginTop: 18 }}>
+              <p role="status" aria-live="polite" style={{ textAlign: "center", color: C.good, fontSize: 14, marginTop: 18 }}>
                 Got it{displayName ? `, ${displayName}` : ""}. You can change your answer anytime.
               </p>
             )}
-            {error && <p style={{ color: C.warn, fontSize: 13, textAlign: "center", marginTop: 14 }}>{error}</p>}
+            {error && <p role="alert" style={{ color: C.warn, fontSize: 13, textAlign: "center", marginTop: 14 }}>{error}</p>}
           </>
         )}
       </div>

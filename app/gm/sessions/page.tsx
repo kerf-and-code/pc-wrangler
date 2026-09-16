@@ -654,7 +654,7 @@ export default function SessionWorkspace() {
       <div className="mono" style={{ fontSize: 11, letterSpacing: "0.22em", color: C.brass, textTransform: "uppercase", marginBottom: 18 }}>
         Session Log
       </div>
-      {err && <div style={{ ...box, borderColor: C.warn, color: C.warn, fontSize: 13 }}>{err}</div>}
+      {err && <div role="alert" style={{ ...box, borderColor: C.warn, color: C.warn, fontSize: 13 }}>{err}</div>}
 
       {/* campaign + session pickers */}
       <div style={box}>

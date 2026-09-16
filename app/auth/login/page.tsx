@@ -268,7 +268,7 @@ export default function LoginPage() {
         )}
 
         {error && (
-          <p style={{ color: C.warn, fontSize: 13, textAlign: "center", marginTop: 16 }}>{error}</p>
+          <p role="alert" style={{ color: C.warn, fontSize: 13, textAlign: "center", marginTop: 16 }}>{error}</p>
         )}
       </div>
     </div>

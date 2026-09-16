@@ -40,7 +40,7 @@ export default function JoinPage() {
       <div style={{ maxWidth: 420 }}>
         {failed ? (
           <>
-            <div style={{ fontFamily: "'Iowan Old Style', Georgia, serif", fontSize: 22, color: C.warn }}>
+            <div role="alert" style={{ fontFamily: "'Iowan Old Style', Georgia, serif", fontSize: 22, color: C.warn }}>
               This invite link isn&rsquo;t valid.
             </div>
             <p style={{ color: C.muted, marginTop: 12, fontSize: 15 }}>Ask your GM to resend your personal link.</p>

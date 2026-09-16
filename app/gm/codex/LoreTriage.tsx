@@ -135,7 +135,7 @@ function TriageRow({ beat, options, onResolved }: {
           <button type="button" disabled={disabled} onClick={doDismiss} style={ghostBtn}>{busy === "dismiss" ? "Dismissing…" : "Dismiss"}</button>
         </div>
       </div>
-      {error && <div style={{ color: C.warn, fontSize: 12.5, marginTop: 10 }}>{error}</div>}
+      {error && <div role="alert" style={{ color: C.warn, fontSize: 12.5, marginTop: 10 }}>{error}</div>}
     </div>
   );
 }
@@ -221,7 +221,7 @@ function BacklogRow({ entry, options, onResolved }: {
           <button type="button" disabled={disabled} onClick={doDelete} style={ghostBtn}>{busy === "delete" ? "Deleting…" : "Delete"}</button>
         </div>
       </div>
-      {error && <div style={{ color: C.warn, fontSize: 12.5, marginTop: 10 }}>{error}</div>}
+      {error && <div role="alert" style={{ color: C.warn, fontSize: 12.5, marginTop: 10 }}>{error}</div>}
     </div>
   );
 }
@@ -291,7 +291,7 @@ export default function LoreTriage({ campaignId, entries, chars, onChanged }: {
         entry, or clear it.
       </p>
 
-      {err && <p style={{ color: C.warn, fontSize: 13, marginBottom: 12 }}>{err}</p>}
+      {err && <p role="alert" style={{ color: C.warn, fontSize: 13, marginBottom: 12 }}>{err}</p>}
       {loading && <p style={{ color: C.muted, fontSize: 13.5 }}>Loading…</p>}
 
       <div style={sectionLabel}>NEW · {beats.length}</div>

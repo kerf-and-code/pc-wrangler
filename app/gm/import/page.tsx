@@ -168,7 +168,7 @@ export default function ImportPage() {
         </div>
       )}
 
-      {error && <div style={{ color: C.warn, fontSize: 13.5, marginBottom: 14 }}>{error}</div>}
+      {error && <div role="alert" style={{ color: C.warn, fontSize: 13.5, marginBottom: 14 }}>{error}</div>}
 
       <button type="button" disabled={busy} onClick={run} style={{ ...primaryBtn, opacity: busy ? 0.6 : 1 }}>
         {status === "parsing" ? "Reading your notes…" : status === "uploading" ? "Extracting…" : "Import and review"}

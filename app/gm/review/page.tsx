@@ -498,13 +498,13 @@ export default function ReviewPage() {
                   <div style={{ fontSize: 12, color: C.muted, marginTop: 6 }}>{progress.processed} / {progress.total} transcript lines</div>
                 </div>
               )}
-              {error && <p style={{ color: C.warn, fontSize: 13, marginTop: 12 }}>{error}</p>}
+              {error && <p role="alert" style={{ color: C.warn, fontSize: 13, marginTop: 12 }}>{error}</p>}
               {gmProposed !== null && (
                 <p style={{ color: C.muted, fontSize: 12.5, marginTop: 10 }}>
                   {gmProposed} GM narration event{gmProposed === 1 ? "" : "s"} captured. Review them in the GM narration tab.
                 </p>
               )}
-              {recapMsg && <p style={{ color: C.good, fontSize: 12.5, marginTop: 10 }}>{recapMsg}</p>}
+              {recapMsg && <p role="status" aria-live="polite" style={{ color: C.good, fontSize: 12.5, marginTop: 10 }}>{recapMsg}</p>}
             </div>
 
             {/* tab switcher */}
@@ -679,7 +679,7 @@ export default function ReviewPage() {
                   </div>
                 </div>
 
-                {gmPlayer.error && <p style={{ color: C.warn, fontSize: 12.5, marginBottom: 10 }}>{gmPlayer.error}</p>}
+                {gmPlayer.error && <p role="alert" style={{ color: C.warn, fontSize: 12.5, marginBottom: 10 }}>{gmPlayer.error}</p>}
 
                 {gmView.length === 0 ? (
                   <div style={{ ...box, color: C.muted, fontSize: 14 }}>

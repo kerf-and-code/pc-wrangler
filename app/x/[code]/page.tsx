@@ -71,7 +71,7 @@ export default function LinkLandingPage({
         >
           {saved ? (
             <>
-              <div style={{ color: C.good, fontWeight: 700, fontSize: 15 }}>
+              <div role="status" aria-live="polite" style={{ color: C.good, fontWeight: 700, fontSize: 15 }}>
                 You&apos;re all set.
               </div>
               <div style={{ color: C.muted, fontSize: 13.5, marginTop: 6, lineHeight: 1.5 }}>

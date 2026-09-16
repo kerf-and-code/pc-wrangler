@@ -715,7 +715,7 @@ export default function CodexPage() {
                     <div style={{ fontSize: 12, color: C.muted, marginBottom: 12 }}>
                       What your GM narration said about {form.name || "this NPC"}, newest first. Approved on Review; nothing here overwrites your description.
                     </div>
-                    {player.error && <p style={{ color: C.warn, fontSize: 12.5, marginBottom: 10 }}>{player.error}</p>}
+                    {player.error && <p role="alert" style={{ color: C.warn, fontSize: 12.5, marginBottom: 10 }}>{player.error}</p>}
                     {beats.length === 0 ? (
                       <p style={{ color: C.muted, fontSize: 13 }}>
                         No narrated beats yet. Approve npc events for this character on Review (use Accept + create NPC) and they gather here.

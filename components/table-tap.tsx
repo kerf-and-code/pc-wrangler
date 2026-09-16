@@ -401,7 +401,7 @@ export default function TableTap({ shareCode }: { shareCode: string }) {
       )}
 
       {lastError && (
-        <div style={{ background: C.surface2, border: `1px solid ${C.warn}`, borderRadius: FORGE_RADIUS, padding: 12, fontSize: 14, marginBottom: 12, color: C.warn }}>
+        <div role="alert" style={{ background: C.surface2, border: `1px solid ${C.warn}`, borderRadius: FORGE_RADIUS, padding: 12, fontSize: 14, marginBottom: 12, color: C.warn }}>
           {lastError}
         </div>
       )}

@@ -222,7 +222,7 @@ export default function PrepPage() {
         </select>
       </div>
 
-      {player.error && <p style={{ color: C.warn, fontSize: 12.5, margin: "10px 0 0" }}>{player.error}</p>}
+      {player.error && <p role="alert" style={{ color: C.warn, fontSize: 12.5, margin: "10px 0 0" }}>{player.error}</p>}
 
       {sectionTitle("Plan the next session", "Jot the scenes and encounters you mean to run, link them to open threads or NPCs, and tick them off as you prep.")}
       <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "-4px 0 10px", flexWrap: "wrap" }}>
@@ -307,7 +307,7 @@ export default function PrepPage() {
       <p style={{ color: C.muted, fontSize: 12.5, margin: "-4px 0 12px" }}>
         Deliberate campaign arcs you track by hand live on the <a href="/gm/timeline" style={{ color: C.plum, textDecoration: "none", borderBottom: `1px solid ${C.plum}` }}>Timeline</a>.
       </p>
-      {error && <p style={{ color: C.warn, fontSize: 13, marginBottom: 10 }}>{error}</p>}
+      {error && <p role="alert" style={{ color: C.warn, fontSize: 13, marginBottom: 10 }}>{error}</p>}
       {threadsEmpty ? (
         empty("No open threads. Approve GM framing, hooks, or quest updates on the Review page and they gather here.")
       ) : (

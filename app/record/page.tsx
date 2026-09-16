@@ -265,7 +265,7 @@ export default function RecordPage() {
                 <div>
                   <div style={{ textAlign: "center", marginBottom: 16 }}>
                     {phase === "uploaded" ? (
-                      <div style={{ fontSize: 16, fontWeight: 700, color: C.good }}>Sent to your GM ✓</div>
+                      <div role="status" aria-live="polite" style={{ fontSize: 16, fontWeight: 700, color: C.good }}>Sent to your GM ✓</div>
                     ) : (
                       <div style={{ fontSize: 15, fontWeight: 600 }}>Recorded {fmt(elapsed)} · {fmtMB(bytes)}</div>
                     )}
@@ -282,7 +282,7 @@ export default function RecordPage() {
                 <div style={{ textAlign: "center", padding: "10px 0", color: C.muted, fontSize: 15 }}>Uploading your track…</div>
               )}
 
-              {error && <p style={{ color: C.warn, fontSize: 13, textAlign: "center", marginTop: 16, lineHeight: 1.5 }}>{error}</p>}
+              {error && <p role="alert" style={{ color: C.warn, fontSize: 13, textAlign: "center", marginTop: 16, lineHeight: 1.5 }}>{error}</p>}
             </>
           )}
         </div>

@@ -364,9 +364,9 @@ export default function RoomRecordPage() {
             Upload to the session
           </button>
         )}
-        {phase === "uploading" && <p style={body}>Uploading. Do not close this tab.</p>}
+        {phase === "uploading" && <p role="status" aria-live="polite" style={body}>Uploading. Do not close this tab.</p>}
         {phase === "done" && (
-          <p style={{ ...body, color: C.good }}>
+          <p role="status" aria-live="polite" style={{ ...body, color: C.good }}>
             Uploaded. Transcription starts on its own. You will map who is who once it finishes.
           </p>
         )}

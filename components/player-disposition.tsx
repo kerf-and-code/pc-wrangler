@@ -220,7 +220,7 @@ export function PlayerDisposition({
         {" \u00B7 "}{new Date(disp.as_of).toLocaleDateString()}
       </p>
 
-      {error && <p style={{ color: C.warn, fontSize: 12.5, margin: "10px 0 0" }}>{error}</p>}
+      {error && <p role="alert" style={{ color: C.warn, fontSize: 12.5, margin: "10px 0 0" }}>{error}</p>}
     </Card>
   );
 }

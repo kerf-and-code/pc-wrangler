@@ -151,8 +151,8 @@ export default function MySettingsPage() {
                   {saving ? "Saving..." : "Save"}
                 </button>
               </div>
-              {saved && <p style={{ color: C.good, fontSize: 12.5, margin: "10px 0 0" }}>Saved.</p>}
-              {error && <p style={{ color: C.warn, fontSize: 12.5, margin: "10px 0 0" }}>{error}</p>}
+              {saved && <p role="status" aria-live="polite" style={{ color: C.good, fontSize: 12.5, margin: "10px 0 0" }}>Saved.</p>}
+              {error && <p role="alert" style={{ color: C.warn, fontSize: 12.5, margin: "10px 0 0" }}>{error}</p>}
             </Card>
 
             <Card>
@@ -249,7 +249,7 @@ export default function MySettingsPage() {
                 </div>
               )}
 
-              {rightsError && <p style={{ color: C.warn, fontSize: 13, margin: "12px 0 0", lineHeight: 1.55 }}>{rightsError}</p>}
+              {rightsError && <p role="alert" style={{ color: C.warn, fontSize: 13, margin: "12px 0 0", lineHeight: 1.55 }}>{rightsError}</p>}
             </Card>
           </>
         )}

@@ -116,7 +116,7 @@ export default function RosterPage() {
                 <span style={{ color: boundCount === chars.length && chars.length > 0 ? C.good : C.sun, fontWeight: 800, fontSize: 18 }}>{boundCount}</span>
                 <span style={{ color: C.muted }}> of {chars.length} characters bound to an inventory</span>
               </div>
-              {error && <span style={{ color: C.warn, fontSize: 13 }}>{error}</span>}
+              {error && <span role="alert" style={{ color: C.warn, fontSize: 13 }}>{error}</span>}
             </div>
 
             {chars.length === 0 ? (
