@@ -5,6 +5,7 @@ import { SYSTEM_ATTRIBUTIONS } from "@/lib/systems/attribution";
 export const metadata: Metadata = {
   title: "Game System Licenses",
   description: "The publisher license notices for the tabletop game systems Six Axes supports.",
+  alternates: { canonical: "/licenses" },
 };
 
 // The user-visible home for the game-system license attributions. Six Axes ships only the game MECHANICS

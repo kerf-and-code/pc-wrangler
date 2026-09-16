@@ -53,7 +53,7 @@ export default function LegalPage({ children }: { children: React.ReactNode }) {
             marketing site, but offers no way into the authenticated app. That is the
             distinction the store cares about: an identifier, not product chrome. */}
         <div className="sax-legal-brand">
-          <span className="name">Six Axes</span>
+          <a href="/" aria-label="Six Axes home"><span className="name">Six Axes</span></a>
           <span className="tag">Kerf and Code, LLC</span>
         </div>
         <article className="sax-legal">{children}</article>

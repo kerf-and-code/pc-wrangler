@@ -4,6 +4,7 @@ import LegalPage from "@/components/legal-page";
 export const metadata: Metadata = {
   title: "AI & Recording Disclosure",
   description: "How recording and AI work in Six Axes, in plain language.",
+  alternates: { canonical: "/ai-recording" },
 };
 
 export default function AiRecordingDisclosurePage() {

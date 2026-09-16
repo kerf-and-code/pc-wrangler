@@ -4,6 +4,7 @@ import LegalPage from "@/components/legal-page";
 export const metadata: Metadata = {
   title: "Privacy Policy",
   description: "How Six Axes collects, uses, and protects your data.",
+  alternates: { canonical: "/privacy" },
 };
 
 export default function PrivacyPolicyPage() {
