@@ -38,10 +38,10 @@ import { getActiveCampaign } from "@/lib/active-campaign";
 import { PortraitUploader } from "@/components/portrait-uploader";
 import {
   STONE, FORGE_FONTS, stonePanel, stoneButton, stoneField,
-  forgeBackground, forgeVignette, forgeLabel, FORGE_BUTTON_CSS,
+  forgeLabel,
 } from "@/lib/forge-theme";
 import { SAX } from "@/lib/theme";
-import SixAxesNav from "@/components/six-axes-nav";
+import PageShell from "@/components/page-shell";
 
 type SrdMode = "2024" | "2014" | "both";
 // source_key is declared explicitly because the index signature types everything else as unknown,
@@ -139,7 +139,7 @@ function StatBlockInner() {
       }
       if (isNew) {
         const asys = getActiveCampaign()?.system;
-        const sys = asys === "pf2e" || asys === "daggerheart" || asys === "drawsteel" || asys === "lancer" ? asys : "dnd5e";
+        const sys = asys === "pf2e" || asys === "daggerheart" || asys === "drawsteel" || asys === "lancer" || asys === "darkmatter" ? asys : "dnd5e";
         setSystem(sys);
         setName("");
         if (sys === "pf2e") setPblock(blankPF2Creature());
@@ -979,12 +979,9 @@ function NumInput({ value, onChange }: { value: number | null; onChange: (v: num
 }
 
 function Shell({ children }: { children: React.ReactNode }) {
-  return (
-    <div style={{ minHeight: "100vh", ...forgeBackground() }}>
-      <style>{FORGE_BUTTON_CSS}</style>
-      <SixAxesNav />
-      <div style={forgeVignette} />
-      <div style={{ position: "relative", padding: "28px 20px 80px" }}>{children}</div>
-    </div>
-  );
+  // Use the shared PageShell so the Monster Maker gets the same 232px desktop
+  // sidebar offset and 100dvh frame as every other page, instead of forking a
+  // local shell that dropped the offset (content underlapped the nav) and used
+  // 100vh. width is generous so the workshop stays effectively full-bleed.
+  return <PageShell width={3000}>{children}</PageShell>;
 }

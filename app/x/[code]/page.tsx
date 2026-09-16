@@ -49,7 +49,7 @@ export default function LinkLandingPage({
           width: "100%",
           maxWidth: 440,
           background: C.panel,
-          border: "1px solid ${C.line}",
+          border: `1px solid ${C.line}`,
           borderRadius: FORGE_RADIUS,
           padding: 28, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}
       >
@@ -116,7 +116,7 @@ export default function LinkLandingPage({
                 Six Axes Capture
               </a>
             ) : (
-              <span style={{ color: C.sun }}>Six Axes Capture</span>
+              <span style={{ color: C.text }}>Six Axes Capture</span>
             )}{" "}
             (sends your rolls to the table).
           </li>

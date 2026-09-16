@@ -44,7 +44,11 @@ export default function RosterPage() {
       const { data } = await supabase.from("campaigns").select("id, name, share_code").order("created_at", { ascending: true });
       const list = (data as Campaign[]) || [];
       setCampaigns(list);
+      // A brand-new GM has no campaigns, so campaignId stays "" and the loader
+      // below never runs. Clear loading here so they see the empty state, not a
+      // permanent "Loading...".
       if (list.length) setCampaignId(list[0].id);
+      else setLoading(false);
     })();
   }, [supabase]);
 
@@ -134,6 +138,10 @@ export default function RosterPage() {
                           style={{ marginTop: 8, marginLeft: 8, background: "transparent", color: C.plum, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "5px 10px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
                           {openSheet === ch.id ? "Hide sheet" : "View sheet"}
                         </button>
+                        <a href={`/me/characters/${ch.id}`} target="_blank" rel="noopener noreferrer"
+                          style={{ marginTop: 8, marginLeft: 8, display: "inline-block", textDecoration: "none", background: "transparent", color: C.plum, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "5px 10px", fontSize: 12, fontWeight: 600 }}>
+                          Character page
+                        </a>
                       </div>
                       {r ? (
                         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>

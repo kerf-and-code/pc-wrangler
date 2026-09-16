@@ -77,6 +77,7 @@ export default function GmIdentityCard({ campaignId }: { campaignId: string }) {
   }
 
   async function unlink(id: string) {
+    if (!window.confirm("Unlink this narrator voice? Recordings will stop attributing this Discord ID as the narrator.")) return;
     setSaving(true);
     setError(null);
     setNotice(null);

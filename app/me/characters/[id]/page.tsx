@@ -133,6 +133,7 @@ export default function CharacterPage() {
     await supabase.from("character_wiki_sections").update(p).eq("id", id);
   };
   const del = async (id: string) => {
+    if (!window.confirm("Delete this section? This can't be undone.")) return;
     setSections((s) => s.filter((x) => x.id !== id));
     await supabase.from("character_wiki_sections").delete().eq("id", id);
   };

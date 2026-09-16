@@ -101,7 +101,10 @@ export default function ReliabilityPage() {
       const lab: Record<string, string> = {};
       ((ets as { key: string; label: string }[]) || []).forEach((e) => { lab[e.key] = e.label; });
       setLabels(lab);
+      // No campaigns: the loader effect below early-returns on the empty
+      // campaignId, so clear loading here or the page shows "Loading..." forever.
       if (list.length) setCampaignId(list[0].id);
+      else setLoading(false);
     })();
   }, [supabase]);
 

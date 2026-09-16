@@ -99,7 +99,7 @@ export default function TableTapCard({ shareCode }: { shareCode: string }) {
             Six Axes Capture
           </a>
         ) : (
-          <span style={{ color: C.sun }}>Six Axes Capture</span>
+          <span style={{ color: C.text }}>Six Axes Capture</span>
         )}{" "}
         and{" "}
         <a href={BEYOND20_URL} target="_blank" rel="noreferrer" style={{ color: C.sun }}>

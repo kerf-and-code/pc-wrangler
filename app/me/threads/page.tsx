@@ -100,6 +100,7 @@ export default function MyThreadsPage() {
   }
 
   async function remove(id: string) {
+    if (!window.confirm("Delete this thread? This can't be undone.")) return;
     setThreads((prev) => prev.filter((t) => t.id !== id));
     const { error: e } = await supabase.from("threads").delete().eq("id", id);
     if (e) load();

@@ -246,7 +246,7 @@ export default function LoginPage() {
               disabled={sending}
               style={{
                 width: "100%",
-                background: `linear-gradient(90deg, ${C.brass}, ${C.sun})`,
+                background: `linear-gradient(180deg, ${C.sunSoft} 0%, ${C.brass} 52%, ${C.brassDim} 100%)`,
                 color: C.inkDeep,
                 border: "none",
                 borderRadius: FORGE_RADIUS,

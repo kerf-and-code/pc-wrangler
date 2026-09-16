@@ -39,7 +39,7 @@ export default function ClaimPage() {
             claim_by_discord and then routes to the player's table. */}
         <DiscordButton next="/me?claimed=1" claim />
 
-        <p style={{ color: C.line, fontSize: 12.5, lineHeight: 1.55, marginTop: 20 }}>
+        <p style={{ color: C.muted, fontSize: 12.5, lineHeight: 1.55, marginTop: 20 }}>
           Use the same Discord you use at the table. That is how we know which characters are
           yours.
         </p>

@@ -10,15 +10,18 @@ async function ErrorContent({
 
   return (
     <>
+      <p className="text-sm text-muted-foreground">
+        Your sign-in link didn&apos;t go through. It may have expired or already
+        been used. Head back and request a fresh one, then open the newest email.
+      </p>
+      <p className="text-sm mt-4">
+        <a href="/auth/login" className="underline">Return to sign in</a>
+      </p>
       {params?.error ? (
-        <p className="text-sm text-muted-foreground">
-          Code error: {params.error}
+        <p className="text-xs text-muted-foreground mt-4">
+          Details: {params.error}
         </p>
-      ) : (
-        <p className="text-sm text-muted-foreground">
-          An unspecified error occurred.
-        </p>
-      )}
+      ) : null}
     </>
   );
 }

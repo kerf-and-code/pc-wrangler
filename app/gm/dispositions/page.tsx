@@ -162,7 +162,10 @@ export default function DispositionsPage() {
       const { data } = await supabase.from("campaigns").select("id, name").order("created_at", { ascending: true });
       const list = (data as Campaign[]) || [];
       setCampaigns(list);
+      // No campaigns: the loader effect below early-returns on the empty
+      // campaignId, so clear loading here or the page shows "Loading..." forever.
       if (list.length) setCampaignId(list[0].id);
+      else setLoading(false);
     })();
   }, [supabase]);
 

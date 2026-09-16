@@ -369,7 +369,7 @@ export default function TableTap({ shareCode }: { shareCode: string }) {
     <section
       style={{
         background: C.panel,
-        border: "1px solid ${C.line}",
+        border: `1px solid ${C.line}`,
         borderRadius: FORGE_RADIUS,
         padding: 16,
         color: C.text,
@@ -393,7 +393,7 @@ export default function TableTap({ shareCode }: { shareCode: string }) {
       </div>
 
       {b20 === "waiting" && (
-        <div style={{ background: C.panel, border: "1px solid ${C.line}", borderRadius: FORGE_RADIUS, padding: 14, fontSize: 14, marginBottom: 12 }}>
+        <div style={{ background: C.panel, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: 14, fontSize: 14, marginBottom: 12 }}>
           <b style={{ color: BRASS }}>One-time setup:</b> in Beyond20&apos;s options, add{" "}
           <code style={{ color: C.good }}>{siteOrigin()}/*</code> to Custom Domains and press
           Apply, then reload this page. For table-accurate numbers, also enable D&D Beyond digital dice.
@@ -418,7 +418,7 @@ export default function TableTap({ shareCode }: { shareCode: string }) {
               <select
                 value={linkSel[ddbId] ?? ""}
                 onChange={(e: any) => setLinkSel((s) => ({ ...s, [ddbId]: e.target.value }))}
-                style={{ background: C.field, color: C.text, border: "1px solid ${C.line}", borderRadius: FORGE_RADIUS, padding: "6px 8px", fontSize: 13 }}
+                style={{ background: C.field, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "6px 8px", fontSize: 13 }}
               >
                 <option value="">Choose a character...</option>
                 {(charOptions ?? []).map((c) => (
@@ -457,7 +457,7 @@ export default function TableTap({ shareCode }: { shareCode: string }) {
               gap: 8,
               padding: "8px 12px",
               background: C.panel,
-              border: "1px solid ${C.line}",
+              border: `1px solid ${C.line}`,
               borderRadius: FORGE_RADIUS,
               marginBottom: 6,
               fontSize: 14,
