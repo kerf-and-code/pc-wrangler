@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { SAX, STONE } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 
 // recharts needs real hex/rgba, not CSS vars; mapped onto the cellar theme.
@@ -13,33 +14,46 @@ const T = {
   plum: C.plum, warn: C.warn, good: C.good,
 };
 
+// The carved-stone plate (matches surfaces.panel / the app's cards) and the brass button gradient,
+// written as literal CSS so the class-based dashboard reads on the same stone language as every other
+// page: serif body, carved translucent panels, FORGE_RADIUS, brass carved controls. The recharts
+// series still reads real hex from the T object above; only the chrome moved onto the stone tokens.
+const PANEL = `background:var(--forge-panel-bg,linear-gradient(160deg,rgba(52,47,39,0.80) 0%,rgba(38,34,28,0.85) 45%,rgba(22,19,15,0.90) 100%));`
+  + `border-radius:${FORGE_RADIUS};`
+  + `box-shadow:inset 1px 1px 0 rgba(255,235,200,0.13),inset -1px -1px 0 rgba(0,0,0,0.6),inset 0 0 46px rgba(0,0,0,0.4),0 5px 14px rgba(0,0,0,0.6),0 0 0 1px ${STONE.mortar};`;
+const BRASS = `background:linear-gradient(180deg,${STONE.brassHi} 0%,${SAX.brass} 52%,${STONE.brassDeep} 100%);color:#241a0d;`;
+
 const CSS = `
 .wg-scope{--bg:${C.ink};--surface:${C.surface};--surface2:rgba(31,27,21,0.92);--line:${C.line};
   --text:${C.text};--muted:${C.muted};--sun:${C.sun};--sunSoft:${C.sun};--plum:${C.plum};--warn:${C.warn};--good:${C.good};
-  color:var(--text);font-family:ui-sans-serif,system-ui,-apple-system,sans-serif;}
-.wg-serif{font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;}
-.wg-mono{font-family:ui-monospace,"SF Mono",Menlo,monospace;}
+  color:var(--text);font-family:${SAX.serif};}
+.wg-serif{font-family:${SAX.serif};}
+.wg-mono{font-family:${SAX.mono};}
 
 .wg-camprow{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:22px;}
-.wg-eyebrow{font-family:ui-monospace,Menlo,monospace;font-size:10.5px;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);}
+.wg-eyebrow{font-family:${SAX.mono};font-size:10.5px;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);}
 .wg-pills{display:flex;gap:8px;flex-wrap:wrap;flex:1;}
-.wg-pill{font-size:14px;background:var(--surface);color:var(--text);border:1px solid var(--line);border-radius:999px;
-  padding:8px 16px;cursor:pointer;transition:all .15s;}
-.wg-pill:hover{color:var(--text);border-color:var(--plum);background:var(--surface2);}
-.wg-pill.on{background:var(--surface2);color:var(--sun);border-color:var(--sun);font-weight:600;}
+.wg-pill{font-family:${SAX.mono};font-size:12px;letter-spacing:0.06em;text-transform:uppercase;
+  background:linear-gradient(180deg,rgba(22,19,15,0.72),rgba(40,36,30,0.72));color:var(--muted);
+  border:1px solid ${STONE.hi};border-radius:999px;padding:8px 15px;cursor:pointer;transition:color .15s,border-color .15s;
+  box-shadow:inset 1px 1px 3px rgba(0,0,0,0.5),inset -1px -1px 0 rgba(255,230,190,0.05);}
+.wg-pill:hover{color:var(--text);border-color:${STONE.brassDeep};}
+.wg-pill.on{${BRASS}border-color:${SAX.brass};font-weight:600;text-shadow:0 1px 0 rgba(255,240,210,0.35);}
 
-.wg-btn{font-size:14px;font-weight:600;background:var(--sun);color:var(--bg);border:none;border-radius:10px;
-  padding:10px 18px;cursor:pointer;text-decoration:none;display:inline-block;transition:background .15s,transform .15s;}
-.wg-btn:hover{background:var(--sunSoft);}
-.wg-btn:active{transform:translateY(1px);}
-.wg-link{color:var(--sun);text-decoration:none;border-bottom:1px solid transparent;transition:border-color .15s;}
-.wg-link:hover{border-bottom-color:var(--sun);}
+.wg-btn{font-family:${SAX.mono};font-size:12px;letter-spacing:0.12em;text-transform:uppercase;font-weight:600;
+  ${BRASS}border:none;border-radius:${FORGE_RADIUS};padding:11px 20px;cursor:pointer;text-decoration:none;display:inline-block;
+  text-shadow:0 1px 0 rgba(255,240,210,0.4);transition:transform .06s ease,box-shadow .06s ease,color .15s;
+  box-shadow:inset 0 1px 0 rgba(255,240,210,0.6),inset 0 -2px 3px rgba(60,35,10,0.55),inset 0 0 0 1px rgba(70,45,15,0.5),0 4px 0 -1px #3a260f,0 5px 7px rgba(0,0,0,0.6);}
+.wg-btn:hover{color:#160f04;}
+.wg-btn:active{transform:translateY(3px);box-shadow:inset 0 2px 6px rgba(60,35,10,0.6),inset 0 0 0 1px rgba(70,45,15,0.6),0 1px 0 -1px #3a260f;}
+.wg-link{color:${STONE.brassHi};text-decoration:none;border-bottom:1px solid transparent;transition:border-color .15s;}
+.wg-link:hover{border-bottom-color:${STONE.brassHi};}
 
-.wg-card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:16px;}
+.wg-card{${PANEL}padding:20px;margin-bottom:16px;}
 .wg-card-h{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;}
-.wg-card-t{font-size:15px;font-weight:600;color:var(--text);}
-.wg-card-s{font-size:12px;color:var(--muted);}
-.wg-err{border-color:var(--warn);color:#F2C6BC;font-size:13px;}
+.wg-card-t{font-family:${SAX.serif};font-size:16px;font-weight:600;color:var(--text);}
+.wg-card-s{font-family:${SAX.mono};font-size:11px;letter-spacing:0.04em;color:var(--muted);}
+.wg-err{box-shadow:none;background:rgba(0,0,0,0.3);border:1px solid var(--warn);color:#F2C6BC;font-size:13px;}
 
 /* health hero */
 .wg-health{border-left:3px solid var(--sun);}
@@ -50,9 +64,9 @@ const CSS = `
 
 /* kpi strip */
 .wg-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px;}
-.wg-kpi{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 18px;}
-.wg-kpi-l{font-size:11px;letter-spacing:0.04em;color:var(--muted);text-transform:uppercase;margin-bottom:8px;}
-.wg-kpi-n{font-family:ui-monospace,Menlo,monospace;font-size:30px;font-weight:600;color:var(--sun);line-height:1;
+.wg-kpi{${PANEL}padding:16px 18px;}
+.wg-kpi-l{font-family:${SAX.mono};font-size:11px;letter-spacing:0.04em;color:var(--muted);text-transform:uppercase;margin-bottom:8px;}
+.wg-kpi-n{font-family:${SAX.mono};font-size:30px;font-weight:600;color:var(--sun);line-height:1;
   display:flex;align-items:baseline;gap:8px;}
 .wg-kpi-sub{font-size:12px;color:var(--muted);margin-top:7px;}
 
@@ -68,7 +82,9 @@ const CSS = `
 .wg-twocol{display:grid;grid-template-columns:1fr;gap:16px;}
 @media(min-width:760px){.wg-twocol{grid-template-columns:1fr 1fr;}.wg-twocol .wg-card{margin-bottom:0;}}
 
-.wg-sel{background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:9px;padding:8px 11px;font-size:13.5px;}
+.wg-sel{background:linear-gradient(180deg,rgba(14,11,8,0.82),rgba(40,36,30,0.82));color:var(--text);border:none;
+  border-radius:${FORGE_RADIUS};padding:8px 11px;font-size:13.5px;color-scheme:dark;font-family:${SAX.serif};
+  box-shadow:inset 1px 1px 4px rgba(0,0,0,0.7),inset 0 0 0 1px rgba(0,0,0,0.35);}
 .wg-empty{color:var(--muted);font-size:14px;line-height:1.6;}
 
 .wg-scope a:focus-visible,.wg-scope button:focus-visible,.wg-scope select:focus-visible{outline:2px solid var(--sun);outline-offset:2px;}
