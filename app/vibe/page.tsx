@@ -69,6 +69,24 @@ export default function VibeCheckPage() {
     return () => { active = false; };
   }, [supabase]);
 
+  // Preload this player's existing check-in for the resolved session, so a returning (attributed)
+  // player sees their prior answers filled in and can edit them instead of a blank form. Reads via a
+  // SECURITY DEFINER RPC that mirrors submit_vibe_check; anonymous check-ins have no profile_id and so
+  // return nothing by design. Fails quietly if the RPC is not deployed yet.
+  useEffect(() => {
+    if (status !== "ready" || sessionNo == null || !code) return;
+    let active = true;
+    (async () => {
+      const { data } = await supabase.rpc("my_vibe_check", { code, p_session_number: sessionNo });
+      if (!active || !Array.isArray(data) || data.length === 0) return;
+      const r = data[0] as { satisfaction: number | null; spotlight_feeling: string | null; note: string | null };
+      if (typeof r.satisfaction === "number") setSatisfaction(r.satisfaction);
+      if (r.spotlight_feeling) setSpotlight(r.spotlight_feeling);
+      if (typeof r.note === "string" && r.note) setNote(r.note);
+    })();
+    return () => { active = false; };
+  }, [status, sessionNo, code, supabase]);
+
   async function submit() {
     if (!code || sessionNo === null) return;
     if (satisfaction === null && spotlight === null && !note.trim()) { setError("Pick at least one answer first."); return; }
