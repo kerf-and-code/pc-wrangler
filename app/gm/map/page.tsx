@@ -333,7 +333,8 @@ export default function MapPage() {
       {!activeMap ? (
         <div style={{ ...box, color: C.muted, fontSize: 14 }}>Upload a map image to begin.</div>
       ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) 280px", gap: 16, alignItems: "start" }}>
+        <div className="gm-map-grid" style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) 280px", gap: 16, alignItems: "start" }}>
+          <style>{`@media (max-width: 760px) { .gm-map-grid { grid-template-columns: 1fr !important; } }`}</style>
           <div style={{ position: "relative", display: "inline-block", maxWidth: "100%", lineHeight: 0 }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={publicUrl(activeMap.image_path)} alt={activeMap.name} onClick={onImageClick}

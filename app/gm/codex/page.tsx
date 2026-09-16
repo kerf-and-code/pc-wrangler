@@ -497,7 +497,8 @@ export default function CodexPage() {
               <p style={{ color: C.muted, fontSize: 14 }}>Pick something on the left, or hit New to start one.</p>
             ) : (
               <>
-                <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) 300px", gap: 18, alignItems: "start" }}>
+                <style>{`@media (max-width: 760px) { .codex-editor-grid { grid-template-columns: 1fr !important; } }`}</style>
+                <div className="codex-editor-grid" style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) 300px", gap: 18, alignItems: "start" }}>
                   {/* content column */}
                   <div>
                 {mode.what === "entry" ? (
@@ -635,7 +636,7 @@ export default function CodexPage() {
                                 {labelOf(oType, oId)}
                                 {l.relation && <span style={{ color: C.muted }}> · {l.relation}</span>}
                               </span>
-                              <button type="button" onClick={() => removeLink(l.id)} style={{ background: "transparent", color: C.muted, border: "none", cursor: "pointer", fontSize: 16, lineHeight: 1 }}>×</button>
+                              <button type="button" onClick={() => removeLink(l.id)} aria-label={`Remove link to ${labelOf(oType, oId)}`} style={{ background: "transparent", color: C.muted, border: "none", cursor: "pointer", fontSize: 16, lineHeight: 1 }}>×</button>
                             </div>
                           );
                         })}
@@ -684,7 +685,7 @@ export default function CodexPage() {
                             return (
                               <div key={r.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, background: C.surface2, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "7px 10px" }}>
                                 <span style={{ fontSize: 13 }}>{pc ? pc.name : "a player"}</span>
-                                <button type="button" onClick={() => revokeReveal(r.id)} style={{ background: "transparent", color: C.muted, border: "none", cursor: "pointer", fontSize: 16, lineHeight: 1 }}>×</button>
+                                <button type="button" onClick={() => revokeReveal(r.id)} aria-label={`Stop revealing to ${pc ? pc.name : "this player"}`} style={{ background: "transparent", color: C.muted, border: "none", cursor: "pointer", fontSize: 16, lineHeight: 1 }}>×</button>
                               </div>
                             );
                           })}
