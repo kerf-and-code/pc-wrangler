@@ -12,6 +12,7 @@ import TrustSection from "@/components/trust-section";
 import JsonLd from "@/components/json-ld";
 import { softwareApplicationSchema } from "@/lib/seo";
 import { FULL_TOOLSET, THEMED_TABLE, PLANNED, systemsDots } from "@/lib/marketing/systems";
+import MobileMenu from "@/components/site/mobile-menu";
 
 // app/page.tsx
 //
@@ -103,6 +104,16 @@ export default function Home() {
             Join the pilot
           </Link>
         </nav>
+        <MobileMenu
+          items={[
+            { href: "/features", label: "Features" },
+            { href: "/players", label: "For players" },
+            { href: "/tools", label: "Free tools" },
+            { href: "/pricing", label: "Pricing" },
+            { href: "/enter", label: "Enter" },
+          ]}
+          cta={{ href: "/pilot", label: "Join the pilot" }}
+        />
       </header>
 
       <div className="home-shell">
@@ -562,6 +573,9 @@ html { scroll-behavior: smooth; }
 }
 @media (max-width: 520px) {
   .tool-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 620px) {
+  .home-topnav { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }

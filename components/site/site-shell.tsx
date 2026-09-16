@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { SAX, STONE } from "@/lib/theme";
 import { C, forgeBackground, forgeVignette, stoneButton, FORGE_BUTTON_CSS } from "@/lib/forge-theme";
+import MobileMenu from "@/components/site/mobile-menu";
 
 // components/site/site-shell.tsx
 //
@@ -43,6 +44,18 @@ export default function SiteShell({
             Join the pilot
           </Link>
         </nav>
+        <MobileMenu
+          items={[
+            { href: "/features", label: "Features" },
+            { href: "/players", label: "For players" },
+            { href: "/tools", label: "Free tools" },
+            { href: "/guides", label: "Guides" },
+            { href: "/pricing", label: "Pricing" },
+            { href: "/contact", label: "Contact" },
+            { href: "/enter", label: "Enter" },
+          ]}
+          cta={{ href: "/pilot", label: "Join the pilot" }}
+        />
       </header>
 
       <div className="site-body">
@@ -117,7 +130,6 @@ ${FORGE_BUTTON_CSS}
 .site-foot-inner { max-width: 820px; margin: 0 auto; padding: 22px 24px; display: flex; gap: 14px;
   justify-content: space-between; flex-wrap: wrap; font-family: ${SAX.mono}; font-size: 12.5px; color: ${STONE.inkFaint}; }
 @media (max-width: 620px) {
-  .site-nav { gap: 12px; }
-  .site-link { display: none; }
+  .site-nav { display: none; }
 }
 `;

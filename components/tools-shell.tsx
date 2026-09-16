@@ -3,6 +3,7 @@ import { SAX, STONE } from "@/lib/theme";
 import {
   C, forgeBackground, forgeVignette, stonePanel, stoneButton, FORGE_BUTTON_CSS, forgeRuleLine, forgeBoss,
 } from "@/lib/forge-theme";
+import MobileMenu from "@/components/site/mobile-menu";
 
 // components/tools-shell.tsx
 //
@@ -47,6 +48,16 @@ export default function ToolsShell({
             Join the pilot
           </Link>
         </nav>
+        <MobileMenu
+          items={[
+            { href: "/features", label: "Features" },
+            { href: "/tools", label: "Free tools" },
+            { href: "/pricing", label: "Pricing" },
+            { href: "/contact", label: "Contact" },
+            { href: "/enter", label: "Enter" },
+          ]}
+          cta={{ href: "/pilot", label: "Join the pilot" }}
+        />
       </header>
 
       <div className="ts-wrap">
@@ -132,5 +143,5 @@ ${FORGE_BUTTON_CSS}
   background: linear-gradient(180deg, transparent, rgba(10,7,4,0.5)); }
 .ts-foot-inner { max-width: 820px; margin: 0 auto; padding: 22px 24px; display: flex; gap: 14px;
   justify-content: space-between; flex-wrap: wrap; font-family: ${SAX.mono}; font-size: 12.5px; color: ${STONE.inkFaint}; }
-@media (max-width: 620px) { .ts-link { display: none; } }
+@media (max-width: 620px) { .ts-nav { display: none; } }
 `;
