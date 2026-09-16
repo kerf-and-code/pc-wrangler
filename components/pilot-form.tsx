@@ -10,6 +10,8 @@
 // accepts and drops the submission. Kept simple on purpose; a pilot form is low volume.
 
 import { useState } from "react";
+import { SAX, STONE } from "@/lib/theme";
+import { stoneButton, FORGE_RADIUS } from "@/lib/forge-theme";
 
 const SYSTEMS = [
   "Dungeons & Dragons 5e",
@@ -124,7 +126,7 @@ export default function PilotForm() {
 
       {status === "error" && <p style={errStyle}>{error}</p>}
 
-      <button type="submit" style={{ ...cta, opacity: status === "sending" ? 0.6 : 1 }} disabled={status === "sending"}>
+      <button type="submit" className="forge-btn is-primary" style={{ ...cta, opacity: status === "sending" ? 0.6 : 1 }} disabled={status === "sending"}>
         {status === "sending" ? "Sending…" : "Apply to the pilot"}
       </button>
       <p style={small}>We use your email only to reply about the pilot. Nothing is stored in an account.</p>
@@ -144,32 +146,32 @@ function Field(
   );
 }
 
-const body: React.CSSProperties = { fontSize: 16.5, lineHeight: 1.72, color: "#3a352c" };
+// Dark forge styling: this form now renders inside SiteShell (dark chrome), not the old cream page.
+const body: React.CSSProperties = { fontSize: 16.5, lineHeight: 1.72, color: STONE.ink };
 const fieldLabel: React.CSSProperties = {
   display: "block", fontSize: 13, letterSpacing: "0.04em", textTransform: "uppercase",
-  color: "#6a6252", marginBottom: 6, fontFamily: "ui-monospace, SFMono-Regular, monospace",
+  color: STONE.inkDim, marginBottom: 6, fontFamily: SAX.mono,
 };
 const fieldHint: React.CSSProperties = {
-  display: "block", fontSize: 13.5, color: "#8a8069", marginBottom: 8, fontStyle: "italic",
-  fontFamily: "'Iowan Old Style', Georgia, serif",
+  display: "block", fontSize: 13.5, color: STONE.inkFaint, marginBottom: 8, fontStyle: "italic",
+  fontFamily: SAX.serif,
 };
 const input: React.CSSProperties = {
-  width: "100%", boxSizing: "border-box", padding: "10px 12px", fontSize: 16,
-  fontFamily: "'Iowan Old Style', Georgia, serif", color: "#2a2620",
-  background: "#fffdf8", border: "1px solid #c9bfa8", borderRadius: 3, colorScheme: "light",
+  width: "100%", boxSizing: "border-box", padding: "11px 12px", fontSize: 16,
+  fontFamily: SAX.serif, color: STONE.ink,
+  background: "linear-gradient(180deg, rgba(14,11,8,0.82), rgba(40,36,30,0.82))",
+  border: "none", borderRadius: FORGE_RADIUS, colorScheme: "dark",
+  boxShadow: "inset 1px 1px 4px rgba(0,0,0,0.7), inset 0 0 0 1px rgba(0,0,0,0.35), inset -1px -1px 0 rgba(255,230,190,0.05)",
 };
-const cta: React.CSSProperties = {
-  display: "inline-block", background: "#3a352c", color: "#f6f2e9",
-  padding: "12px 24px", borderRadius: 3, border: "none", cursor: "pointer",
-  fontFamily: "ui-monospace, monospace", fontSize: 13,
-  letterSpacing: "0.08em", textTransform: "uppercase", marginTop: 4,
-};
-const small: React.CSSProperties = { fontSize: 13, color: "#8a8069", margin: "12px 0 0", lineHeight: 1.6 };
+// The carved brass primary button. Paired with className "forge-btn is-primary" (SiteShell injects
+// FORGE_BUTTON_CSS for the hover/press).
+const cta: React.CSSProperties = { ...stoneButton("primary"), marginTop: 4 };
+const small: React.CSSProperties = { fontSize: 13, color: STONE.inkFaint, margin: "12px 0 0", lineHeight: 1.6 };
 const errStyle: React.CSSProperties = {
-  fontSize: 14.5, color: "#9a3b2e", margin: "4px 0 12px",
-  fontFamily: "'Iowan Old Style', Georgia, serif",
+  fontSize: 14.5, color: STONE.bloodLit, margin: "4px 0 12px",
+  fontFamily: SAX.serif,
 };
 const done: React.CSSProperties = {
-  marginTop: 10, padding: "18px 20px", background: "#fffdf8",
-  border: "1px solid #cfc3a4", borderRadius: 6,
+  marginTop: 10, padding: "18px 20px", background: "rgba(0,0,0,0.28)",
+  border: `1px solid ${STONE.hi}`, borderRadius: FORGE_RADIUS,
 };

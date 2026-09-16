@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import PilotForm from "@/components/pilot-form";
+import SiteShell from "@/components/site/site-shell";
+import { SAX } from "@/lib/theme";
+import { C } from "@/lib/forge-theme";
 import { FULL_TOOLSET, THEMED_TABLE, systemsAnd } from "@/lib/marketing/systems";
 
 // app/pilot/page.tsx
@@ -27,19 +30,10 @@ export const metadata: Metadata = {
 
 export default function PilotPage() {
   return (
-    <main style={page}>
-      <div style={wrap}>
-
-        <header style={{ marginBottom: 40 }}>
-          <p style={eyebrow}>Six Axes · Pilot</p>
-          <h1 style={h1}>Run your table on Six Axes.</h1>
-          <p style={lede}>
-            The pilot is invitation-based while it is small, so we can help each table get set up and
-            hear what breaks. Tell us about your game below and we will get you in. It is free during
-            the pilot, with no card and no commitment.
-          </p>
-        </header>
-
+    <SiteShell
+      title="Run your table on Six Axes."
+      tagline="The pilot is invitation-based while it is small, so we can help each table get set up and hear what breaks. Tell us about your game below and we will get you in. It is free during the pilot, with no card and no commitment."
+    >
         <Section title="Recording other people, done properly" lead="The part worth reading before you sign up.">
           <p style={body}>
             Every player consents once, when they claim their character, and is never asked again
@@ -87,18 +81,7 @@ export default function PilotPage() {
           <p style={sectionLead}>We read every one of these. Nothing here is stored in an account.</p>
           <PilotForm />
         </section>
-
-        <footer style={footer}>
-          <p style={{ margin: 0 }}>
-            <Link href="/" style={link}>Back to the overview</Link>
-            {" · "}
-            <Link href="/privacy" style={link}>Privacy</Link>
-            {" · "}
-            <Link href="/terms" style={link}>Terms</Link>
-          </p>
-        </footer>
-      </div>
-    </main>
+    </SiteShell>
   );
 }
 
@@ -114,28 +97,14 @@ function Section(
   );
 }
 
-const page: React.CSSProperties = {
-  minHeight: "100vh", background: "#f6f2e9", color: "#2a2620",
-  padding: "56px 20px 64px",
-  fontFamily: "'Iowan Old Style', Georgia, 'Times New Roman', serif",
-};
-const wrap: React.CSSProperties = { maxWidth: 720, margin: "0 auto" };
-const eyebrow: React.CSSProperties = {
-  fontFamily: "ui-monospace, SFMono-Regular, monospace", fontSize: 11,
-  letterSpacing: "0.24em", textTransform: "uppercase", color: "#8a7a55", margin: "0 0 10px",
-};
-const h1: React.CSSProperties = { fontSize: 40, lineHeight: 1.14, margin: "0 0 16px", fontWeight: 600 };
-const lede: React.CSSProperties = { fontSize: 18.5, lineHeight: 1.65, color: "#4a443a", margin: 0 };
-const card: React.CSSProperties = { padding: "26px 0", borderTop: "1px solid #ddd4c2" };
-const h2: React.CSSProperties = { fontSize: 26, margin: "0 0 4px", fontWeight: 600, lineHeight: 1.2 };
+// Content styles for the dark forge chrome (SiteShell). The page frame, title, tagline, and footer
+// now come from SiteShell; these style only the body sections.
+const card: React.CSSProperties = { padding: "26px 0", borderTop: `1px solid ${C.line}` };
+const h2: React.CSSProperties = { fontSize: 26, margin: "0 0 4px", fontWeight: 600, lineHeight: 1.2, color: C.text, fontFamily: SAX.serif };
 const sectionLead: React.CSSProperties = {
-  fontSize: 14.5, color: "#8a7a55", margin: "0 0 14px", fontStyle: "italic",
+  fontSize: 14.5, color: C.muted, margin: "0 0 14px", fontStyle: "italic",
 };
-const body: React.CSSProperties = { fontSize: 16.5, lineHeight: 1.72, margin: "0 0 14px", color: "#3a352c" };
+const body: React.CSSProperties = { fontSize: 16.5, lineHeight: 1.72, margin: "0 0 14px", color: C.text };
 const list: React.CSSProperties = { margin: "4px 0 0", paddingLeft: 20 };
-const li: React.CSSProperties = { fontSize: 16.5, lineHeight: 1.72, marginBottom: 10, color: "#3a352c" };
-const link: React.CSSProperties = { color: "#8a6a2f" };
-const footer: React.CSSProperties = {
-  marginTop: 40, paddingTop: 18, borderTop: "1px solid #ddd4c2",
-  fontSize: 13.5, color: "#8a8069",
-};
+const li: React.CSSProperties = { fontSize: 16.5, lineHeight: 1.72, marginBottom: 10, color: C.text };
+const link: React.CSSProperties = { color: C.plum };

@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import SiteShell from "@/components/site/site-shell";
+import { SAX } from "@/lib/theme";
+import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 
 // app/foundry/page.tsx
 //
@@ -25,16 +27,10 @@ const MANIFEST = "https://www.six-axes.com/foundry/module.json";
 
 export default function FoundryPage() {
   return (
-    <main style={page}>
-      <div style={wrap}>
-        <p style={eyebrow}>Foundry VTT</p>
-        <h1 style={h1}>Six Axes for Foundry</h1>
-        <p style={lede}>
-          Sends what your table rolls to Six Axes, so your recap, campaign wiki and encounter maths
-          are built from what actually happened rather than from what anyone remembered to write
-          down.
-        </p>
-
+    <SiteShell
+      title="Six Axes for Foundry"
+      tagline="Sends what your table rolls to Six Axes, so your recap, campaign wiki and encounter maths are built from what actually happened rather than from what anyone remembered to write down."
+    >
         <section style={card}>
           <h2 style={h2}>What it can see</h2>
           <p style={body}>
@@ -125,43 +121,22 @@ export default function FoundryPage() {
           </ul>
         </section>
 
-        <footer style={footer}>
-          <p style={{ margin: 0 }}>
-            <Link href="/" style={link}>Six Axes</Link>
-            {" \u00B7 "}
-            <Link href="/privacy" style={link}>Privacy</Link>
-            {" \u00B7 "}
-            <a href="/foundry/six-axes.zip" style={link}>Download the module directly</a>
-          </p>
-        </footer>
-      </div>
-    </main>
+        <p style={{ ...body, marginTop: 24 }}>
+          Prefer to install by hand? <a href="/foundry/six-axes.zip" style={link}>Download the module directly</a>.
+        </p>
+    </SiteShell>
   );
 }
 
-const page: React.CSSProperties = {
-  minHeight: "100vh", background: "#f6f2e9", color: "#2a2620",
-  padding: "56px 20px 64px",
-  fontFamily: "'Iowan Old Style', Georgia, 'Times New Roman', serif",
-};
-const wrap: React.CSSProperties = { maxWidth: 700, margin: "0 auto" };
-const eyebrow: React.CSSProperties = {
-  fontFamily: "ui-monospace, SFMono-Regular, monospace", fontSize: 11,
-  letterSpacing: "0.24em", textTransform: "uppercase", color: "#8a7a55", margin: "0 0 10px",
-};
-const h1: React.CSSProperties = { fontSize: 38, lineHeight: 1.14, margin: "0 0 14px", fontWeight: 600 };
-const lede: React.CSSProperties = { fontSize: 18, lineHeight: 1.65, color: "#4a443a", margin: "0 0 8px" };
-const card: React.CSSProperties = { padding: "24px 0", borderTop: "1px solid #ddd4c2" };
-const h2: React.CSSProperties = { fontSize: 24, margin: "0 0 10px", fontWeight: 600 };
-const body: React.CSSProperties = { fontSize: 16.5, lineHeight: 1.72, margin: "0 0 14px", color: "#3a352c" };
+// Content styles for the dark forge chrome (SiteShell). The page frame, title, and tagline now come
+// from SiteShell; these style only the body sections.
+const card: React.CSSProperties = { padding: "24px 0", borderTop: `1px solid ${C.line}` };
+const h2: React.CSSProperties = { fontSize: 24, margin: "0 0 10px", fontWeight: 600, color: C.text, fontFamily: SAX.serif };
+const body: React.CSSProperties = { fontSize: 16.5, lineHeight: 1.72, margin: "0 0 14px", color: C.text };
 const list: React.CSSProperties = { margin: "4px 0 14px", paddingLeft: 22 };
-const li: React.CSSProperties = { fontSize: 16.5, lineHeight: 1.72, marginBottom: 10, color: "#3a352c" };
+const li: React.CSSProperties = { fontSize: 16.5, lineHeight: 1.72, marginBottom: 10, color: C.text };
 const code: React.CSSProperties = {
-  fontFamily: "ui-monospace, monospace", fontSize: 13.5, background: "#ece4d2",
-  padding: "10px 12px", borderRadius: 3, margin: "10px 0 0", wordBreak: "break-all",
+  fontFamily: SAX.mono, fontSize: 13.5, background: "rgba(0,0,0,0.32)", color: C.accent,
+  border: `1px solid ${C.line}`, padding: "10px 12px", borderRadius: FORGE_RADIUS, margin: "10px 0 0", wordBreak: "break-all",
 };
-const link: React.CSSProperties = { color: "#8a6a2f" };
-const footer: React.CSSProperties = {
-  marginTop: 36, paddingTop: 18, borderTop: "1px solid #ddd4c2",
-  fontSize: 13.5, color: "#8a8069",
-};
+const link: React.CSSProperties = { color: C.plum };
