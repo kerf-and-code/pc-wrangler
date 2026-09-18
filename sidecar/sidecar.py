@@ -1014,11 +1014,25 @@ class Sidecar(discord.Client):
             return
         g = str(row.get("guild_id"))
         u = str(row.get("requested_by_discord_id"))
+        # Resolve the campaign's linked Discord text channel up front, so EVERY outcome of
+        # /record (waiting, connect failure, start failure, success) can be reported at the
+        # table instead of dying silently in a database row. The DragonCandle session on
+        # 2026-09-16 failed to connect, wrote an error nobody was watching, and the table
+        # played for hours believing they were being recorded. Silence was the whole bug.
+        # notify() is best-effort and a no-op when the campaign has no linked channel.
+        notify_channel = await self.get_notify_channel(http, row.get("campaign_id"))
         chan_id = self.voice_locations.get((g, u))
         if not chan_id:
             if rid not in self.waiting_logged:
                 self.waiting_logged.add(rid)
                 log.info("request %s: user %s not in a voice channel yet; waiting to join.", rid, u)
+                # Tell them once. "I ran /record and nothing happened" is almost always this:
+                # the requester is not actually in a voice channel, so there is nothing to join.
+                await self.notify(
+                    notify_channel,
+                    "⚠️ Six Axes got your /record, but you are not in a voice channel yet. "
+                    "Join the voice channel and recording will start automatically.",
+                )
             return
         channel = self.get_channel(int(chan_id))
         if channel is None:
@@ -1027,10 +1041,19 @@ class Sidecar(discord.Client):
         try:
             vc = await channel.connect(timeout=30.0, reconnect=False)
         except Exception as e:
+            # Include the exception TYPE: a bare connect timeout stringifies to "", which is
+            # how DragonCandle's row ended up saying "connect failed: " with no cause at all.
             log.warning("request %s: connect failed: %r", rid, e)
-            await self.patch_status(http, rid, "error", error=f"connect failed: {e}")
+            await self.patch_status(http, rid, "error", error=f"connect failed: {type(e).__name__}: {e}")
+            await self.notify(
+                notify_channel,
+                "❌ Six Axes could not connect to the voice channel, so nothing is being "
+                "recorded. Please run /record again. If it keeps failing, check that the bot "
+                "is allowed to join that channel.",
+            )
             return
         rec = Recording(rid, vc, chan_id, g, row.get("campaign_id"), row.get("session_id"))
+        rec.notify_channel_id = notify_channel
         rec.sink = TimelineSink()
         try:
             vc.start_recording(rec.sink, _after_record)
@@ -1041,15 +1064,25 @@ class Sidecar(discord.Client):
             except Exception:
                 pass
             rec.cleanup()
-            await self.patch_status(http, rid, "error", error=f"start_recording failed: {e}")
+            await self.patch_status(http, rid, "error", error=f"start_recording failed: {type(e).__name__}: {e}")
+            await self.notify(
+                notify_channel,
+                "❌ Six Axes connected but could not start recording, so nothing is being "
+                "recorded. Please run /record again.",
+            )
             return
-        rec.notify_channel_id = await self.get_notify_channel(http, rec.campaign_id)
         self.recordings[rid] = rec
         self.waiting_logged.discard(rid)
         # Persist the voice channel (Layer 2) so recovery and diagnostics never have
         # to guess it from in-memory voice tracking.
         await self.patch_status(http, rid, "active", channel_id=chan_id)
         log.info("RECORDING started: request %s in channel %s (session %s).", rid, chan_id, row.get("session_id"))
+        # The success confirmation. Just as important as the failure notices: a visible
+        # "recording now" is what lets the table trust that silence later means a problem.
+        await self.notify(
+            notify_channel,
+            "✅ Six Axes is now recording this session. Use /stop when you are done.",
+        )
 
     async def rotate_chunk(self, rec: Recording, restart: bool):
         """Stop the current sink, (optionally) start a fresh one immediately, then read and
