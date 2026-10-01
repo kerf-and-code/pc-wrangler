@@ -82,7 +82,7 @@ export default function AboutPage() {
       </p>
 
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 26 }}>
-        <Link href="/pilot" className="forge-btn is-primary" style={stoneButton("primary")}>Join the pilot</Link>
+        <Link href="/pilot" className="forge-btn is-primary" style={stoneButton("primary")}>Apply to the pilot</Link>
         <Link href="/tools" className="forge-btn is-ghost" style={stoneButton("ghost")}>Try the free tools</Link>
         <Link href="/contact" className="forge-btn" style={stoneButton("stone")}>Contact us</Link>
       </div>

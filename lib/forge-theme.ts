@@ -10,6 +10,12 @@
 // the dungeon color scheme laid over the real /wall-2.png, translucent stone panels so the wall
 // texture reads through, carved buttons with real depth, one brass CTA per view. No generated
 // texture — the weathering is the wall itself.
+//
+// THEMING HOOKS (2026-10): the hard-coded warm surfaces below (button faces and shadows, fields, chips,
+// stat tiles, the panel shadow, the rule line, heading shadow) each read a --forge-* CSS variable whose
+// fallback is the exact original value, so the app renders unchanged. The marketing site's night
+// palette (lib/marketing/night-theme.ts) sets these on its shell root to re-tone every page and tool
+// body without per-page edits.
 
 import type { CSSProperties } from "react";
 import { SAX, STONE, FORGE_RADIUS } from "./theme";
@@ -58,7 +64,7 @@ export function stonePanel(): CSSProperties {
     borderRadius: FORGE_RADIUS,
     padding: "24px 26px",
     position: "relative",
-    boxShadow: [
+    boxShadow: `var(--forge-panel-shadow, ${[
       "inset 1px 1px 0 rgba(255,235,200,0.13)",
       "inset -1px -1px 0 rgba(0,0,0,0.6)",
       "inset 0 0 46px rgba(0,0,0,0.4)",
@@ -66,7 +72,7 @@ export function stonePanel(): CSSProperties {
       `0 0 0 1px ${STONE.mortar}`,
       "0 0 0 2px var(--sax-panel-frame, transparent)",
       "0 0 0 3px rgba(0,0,0,0.4)",
-    ].join(","),
+    ].join(",")})`,
   };
 }
 
@@ -78,10 +84,10 @@ export type StoneButtonVariant = "stone" | "primary" | "danger" | "ghost";
 // style; `variant` picks the material.
 export function stoneButton(variant: StoneButtonVariant = "stone"): CSSProperties {
   const base: CSSProperties = {
-    fontFamily: FORGE_FONTS.display,
-    fontWeight: 600,
-    fontSize: 14,
-    letterSpacing: "0.1em",
+    fontFamily: `var(--forge-btn-font, ${FORGE_FONTS.display})`,
+    fontWeight: "var(--forge-btn-weight, 600)" as CSSProperties["fontWeight"],
+    fontSize: "var(--forge-btn-size, 14px)",
+    letterSpacing: "var(--forge-btn-tracking, 0.1em)",
     color: STONE.ink,
     cursor: "pointer",
     userSelect: "none",
@@ -90,18 +96,18 @@ export function stoneButton(variant: StoneButtonVariant = "stone"): CSSPropertie
     borderRadius: FORGE_RADIUS,
     position: "relative",
     transition: "transform 0.06s ease, box-shadow 0.06s ease, color 0.15s ease",
-    textShadow: "0 -1px 0 rgba(0,0,0,0.7), 0 1px 0 rgba(255,220,180,0.08)",
+    textShadow: "var(--forge-btn-text-shadow, 0 -1px 0 rgba(0,0,0,0.7), 0 1px 0 rgba(255,220,180,0.08))",
   };
   if (variant === "primary") {
     return {
       ...base,
-      color: "#241a0d",
-      background: `linear-gradient(180deg, ${STONE.brassHi} 0%, ${SAX.brass} 52%, ${STONE.brassDeep} 100%)`,
-      boxShadow: [
+      color: "var(--forge-btn-primary-ink, #241a0d)",
+      background: `var(--forge-btn-primary-bg, linear-gradient(180deg, ${STONE.brassHi} 0%, ${SAX.brass} 52%, ${STONE.brassDeep} 100%))`,
+      boxShadow: `var(--forge-btn-primary-shadow, ${[
         "inset 0 1px 0 rgba(255,240,210,0.6)", "inset 0 -2px 3px rgba(60,35,10,0.55)",
         "inset 0 0 0 1px rgba(70,45,15,0.5)", "0 4px 0 -1px #3a260f", "0 5px 7px rgba(0,0,0,0.6)",
-      ].join(","),
-      textShadow: "0 1px 0 rgba(255,240,210,0.4)",
+      ].join(",")})`,
+      textShadow: "var(--forge-btn-text-shadow, 0 1px 0 rgba(255,240,210,0.4))",
     };
   }
   if (variant === "danger") {
@@ -117,21 +123,21 @@ export function stoneButton(variant: StoneButtonVariant = "stone"): CSSPropertie
   if (variant === "ghost") {
     return {
       ...base,
-      color: STONE.inkDim,
-      background: "linear-gradient(180deg, rgba(22,19,15,0.72), rgba(40,36,30,0.72))",
-      boxShadow: [
+      color: `var(--forge-btn-ghost-ink, ${STONE.inkDim})`,
+      background: "var(--forge-btn-ghost-bg, linear-gradient(180deg, rgba(22,19,15,0.72), rgba(40,36,30,0.72)))",
+      boxShadow: `var(--forge-btn-ghost-shadow, ${[
         "inset 1px 1px 3px rgba(0,0,0,0.6)", "inset -1px -1px 0 rgba(255,230,190,0.06)",
         "inset 0 0 0 1px rgba(0,0,0,0.3)",
-      ].join(","),
+      ].join(",")})`,
     };
   }
   return {
     ...base,
-    background: `linear-gradient(180deg, ${STONE.hi} 0%, ${STONE.face} 55%, ${STONE.shadow} 100%)`,
-    boxShadow: [
+    background: `var(--forge-btn-stone-bg, linear-gradient(180deg, ${STONE.hi} 0%, ${STONE.face} 55%, ${STONE.shadow} 100%))`,
+    boxShadow: `var(--forge-btn-stone-shadow, ${[
       "inset 0 1px 0 rgba(255,235,200,0.22)", "inset 0 -2px 3px rgba(0,0,0,0.5)",
       "inset 0 0 0 1px rgba(0,0,0,0.4)", "0 4px 0 -1px #17130d", "0 5px 6px rgba(0,0,0,0.6)",
-    ].join(","),
+    ].join(",")})`,
   };
 }
 
@@ -157,8 +163,8 @@ export function statTile(): CSSProperties {
     textAlign: "center",
     padding: "14px 8px 12px",
     borderRadius: FORGE_RADIUS,
-    background: "linear-gradient(180deg, rgba(14,11,8,0.78), rgba(6,4,3,0.82))",
-    boxShadow: "inset 1px 1px 4px rgba(0,0,0,0.8), inset -1px -1px 0 rgba(255,230,190,0.06)",
+    background: "var(--forge-tile-bg, linear-gradient(180deg, rgba(14,11,8,0.78), rgba(6,4,3,0.82)))",
+    boxShadow: "var(--forge-tile-shadow, inset 1px 1px 4px rgba(0,0,0,0.8), inset -1px -1px 0 rgba(255,230,190,0.06))",
   };
 }
 
@@ -172,11 +178,11 @@ export function stoneField(): CSSProperties {
     padding: "11px 14px",
     border: "none",
     borderRadius: FORGE_RADIUS,
-    background: "linear-gradient(180deg, rgba(14,11,8,0.82), rgba(40,36,30,0.82))",
-    boxShadow: [
+    background: "var(--forge-field-bg, linear-gradient(180deg, rgba(14,11,8,0.82), rgba(40,36,30,0.82)))",
+    boxShadow: `var(--forge-field-shadow, ${[
       "inset 1px 1px 4px rgba(0,0,0,0.7)", "inset 0 0 0 1px rgba(0,0,0,0.35)",
       "inset -1px -1px 0 rgba(255,230,190,0.05)",
-    ].join(","),
+    ].join(",")})`,
     cursor: "pointer",
     appearance: "none",
   };
@@ -194,8 +200,8 @@ export function stoneChip(tone: "brass" | "moss" = "brass"): CSSProperties {
     padding: "5px 11px",
     borderRadius: 2,
     margin: "3px 4px 3px 0",
-    background: "linear-gradient(180deg, rgba(52,47,39,0.88), rgba(22,19,15,0.88))",
-    boxShadow: `inset 0 1px 0 rgba(255,230,190,0.12), inset 0 -1px 2px rgba(0,0,0,0.5), 0 0 0 1px ${STONE.mortar}`,
+    background: "var(--forge-chip-bg, linear-gradient(180deg, rgba(52,47,39,0.88), rgba(22,19,15,0.88)))",
+    boxShadow: `var(--forge-chip-shadow, inset 0 1px 0 rgba(255,230,190,0.12), inset 0 -1px 2px rgba(0,0,0,0.5), 0 0 0 1px ${STONE.mortar})`,
   };
 }
 
@@ -205,7 +211,7 @@ export const forgeHeading: CSSProperties = {
   fontWeight: 700,
   letterSpacing: "0.06em",
   color: STONE.ink,
-  textShadow: "0 -1px 0 rgba(0,0,0,0.95), 0 1px 0 rgba(255,230,190,0.10), 0 3px 8px rgba(0,0,0,0.9)",
+  textShadow: "var(--forge-heading-shadow, 0 -1px 0 rgba(0,0,0,0.95), 0 1px 0 rgba(255,230,190,0.10), 0 3px 8px rgba(0,0,0,0.9))",
 };
 
 // A panel section label (brass, uppercase Cinzel), and the small mono eyebrow.
@@ -222,7 +228,7 @@ export const forgeLabel: CSSProperties = {
 // assembles; use forgeRule as the flex row and forgeBoss as the center diamond.
 export const forgeRuleLine: CSSProperties = {
   height: 2, flex: 1,
-  background: "linear-gradient(90deg, transparent, rgba(110,78,38,1) 30%, rgba(200,162,75,1) 100%)",
+  background: "var(--forge-rule-bg, linear-gradient(90deg, transparent, rgba(110,78,38,1) 30%, rgba(200,162,75,1) 100%))",
 };
 export const forgeBoss: CSSProperties = {
   width: 12, height: 12, transform: "rotate(45deg)",

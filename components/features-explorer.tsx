@@ -162,8 +162,8 @@ const lead: React.CSSProperties = { fontSize: 15, color: SAX.brass, fontStyle: "
 const body: React.CSSProperties = { fontSize: 16, lineHeight: 1.7, color: STONE.inkDim, margin: "0 0 14px", fontFamily: SAX.serif };
 const shotFrame: React.CSSProperties = {
   margin: "8px 0 0", padding: 8, borderRadius: 4, overflow: "hidden",
-  background: "linear-gradient(180deg, rgba(14,11,8,0.6), rgba(6,4,3,0.7))",
-  boxShadow: `inset 1px 1px 4px rgba(0,0,0,0.7), 0 0 0 1px ${STONE.mortar}`,
+  background: "var(--forge-frame-bg, linear-gradient(180deg, rgba(14,11,8,0.6), rgba(6,4,3,0.7)))",
+  boxShadow: `var(--forge-frame-shadow, inset 1px 1px 4px rgba(0,0,0,0.7), 0 0 0 1px ${STONE.mortar})`,
 };
 const shotImg: React.CSSProperties = { display: "block", width: "100%", height: "auto", borderRadius: 3 };
 

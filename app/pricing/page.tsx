@@ -31,7 +31,7 @@ const CARDS = [
     price: "Free",
     note: "While it lasts.",
     body: "The full product during the pilot: recording, recap, the campaign wiki, and player insight. No card, no commitment, and you can take all your data out again.",
-    cta: { href: "/pilot", text: "Join the pilot", variant: "primary" as const },
+    cta: { href: "/pilot", text: "Apply to the pilot", variant: "primary" as const },
   },
   {
     label: "Later",

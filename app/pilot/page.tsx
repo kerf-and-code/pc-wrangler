@@ -21,7 +21,7 @@ import { FULL_TOOLSET, THEMED_TABLE, systemsAnd } from "@/lib/marketing/systems"
 // Server-rendered so the pitch is crawlable; the form itself is the only client island.
 
 export const metadata: Metadata = {
-  title: "Join the pilot",
+  title: "Apply to the pilot",
   description:
     "Apply to run your table on Six Axes during the pilot. Tell us about your game and we will get "
     + "you in.",

@@ -159,9 +159,9 @@ const fieldHint: React.CSSProperties = {
 const input: React.CSSProperties = {
   width: "100%", boxSizing: "border-box", padding: "11px 12px", fontSize: 16,
   fontFamily: SAX.serif, color: STONE.ink,
-  background: "linear-gradient(180deg, rgba(14,11,8,0.82), rgba(40,36,30,0.82))",
+  background: "var(--forge-field-bg, linear-gradient(180deg, rgba(14,11,8,0.82), rgba(40,36,30,0.82)))",
   border: "none", borderRadius: FORGE_RADIUS, colorScheme: "dark",
-  boxShadow: "inset 1px 1px 4px rgba(0,0,0,0.7), inset 0 0 0 1px rgba(0,0,0,0.35), inset -1px -1px 0 rgba(255,230,190,0.05)",
+  boxShadow: "var(--forge-field-shadow, inset 1px 1px 4px rgba(0,0,0,0.7), inset 0 0 0 1px rgba(0,0,0,0.35), inset -1px -1px 0 rgba(255,230,190,0.05))",
 };
 // The carved brass primary button. Paired with className "forge-btn is-primary" (SiteShell injects
 // FORGE_BUTTON_CSS for the hover/press).

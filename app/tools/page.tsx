@@ -121,12 +121,12 @@ export default function ToolsHub() {
 const cardBase: React.CSSProperties = {
   display: "block", padding: "18px 20px 18px 22px", borderRadius: 4,
   borderLeft: `3px solid ${SAX.brass}`,
-  background: "linear-gradient(160deg, rgba(52,47,39,0.82) 0%, rgba(38,34,28,0.86) 45%, rgba(22,19,15,0.9) 100%)",
+  background: "var(--forge-card-bg, linear-gradient(160deg, rgba(52,47,39,0.82) 0%, rgba(38,34,28,0.86) 45%, rgba(22,19,15,0.9) 100%))",
   textDecoration: "none", color: "inherit",
-  boxShadow: [
+  boxShadow: `var(--forge-card-shadow, ${[
     "inset 1px 1px 0 rgba(255,235,200,0.12)", "inset -1px -1px 0 rgba(0,0,0,0.6)",
     "0 4px 0 -1px #17130d", "0 6px 14px rgba(0,0,0,0.55)",
-  ].join(","),
+  ].join(",")})`,
   transition: "transform .08s ease, box-shadow .08s ease",
 };
 const cardLive: React.CSSProperties = {};

@@ -145,7 +145,7 @@ export default function PlayersPage() {
       </div>
 
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 30 }}>
-        <Link href="/pilot" className="forge-btn is-primary" style={stoneButton("primary")}>Join the pilot</Link>
+        <Link href="/pilot" className="forge-btn is-primary" style={stoneButton("primary")}>Apply to the pilot</Link>
         <Link href="/faq" className="forge-btn is-ghost" style={stoneButton("ghost")}>Questions about privacy?</Link>
       </div>
     </SiteShell>
