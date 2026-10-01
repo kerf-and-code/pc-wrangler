@@ -158,7 +158,7 @@ export default function DiceRoller() {
   return (
     <div>
       <div style={panel}>
-        <label style={fieldLabel} htmlFor="rollsys">System</label>
+        <label className="fx-label" style={fieldLabel} htmlFor="rollsys">System</label>
         <select id="rollsys" value={mode} onChange={(e) => setMode(e.target.value as Mode)} style={sel}>
           {MODES.map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}
         </select>
@@ -167,28 +167,28 @@ export default function DiceRoller() {
       <div style={panel}>
         {mode === "dnd" && (
           <>
-            <div style={smallLabel}>Add dice</div>
+            <div className="fx-label" style={smallLabel}>Add dice</div>
             <div style={diceRow}>
               {STD_DICE.map((s) => (
-                <button key={s} type="button" onClick={() => setText(mergeDie(text, s))} style={diceBtn}>d{s}</button>
+                <button key={s} type="button" onClick={() => setText(mergeDie(text, s))} className="fx-die" style={diceBtn}>d{s}</button>
               ))}
-              <button type="button" onClick={() => setText(bumpMod(text, 1))} style={diceBtn}>+1</button>
-              <button type="button" onClick={() => setText(bumpMod(text, -1))} style={diceBtn}>-1</button>
-              <button type="button" onClick={() => setText("")} style={{ ...diceBtn, color: STONE.inkFaint }}>clear</button>
+              <button type="button" onClick={() => setText(bumpMod(text, 1))} className="fx-die" style={diceBtn}>+1</button>
+              <button type="button" onClick={() => setText(bumpMod(text, -1))} className="fx-die" style={diceBtn}>-1</button>
+              <button type="button" onClick={() => setText("")} className="fx-die" style={{ ...diceBtn, color: STONE.inkFaint }}>clear</button>
             </div>
             <label style={{ display: "block", marginTop: 12 }}>
-              <span style={smallLabel}>Or type it</span>
+              <span className="fx-label" style={smallLabel}>Or type it</span>
               <input value={text} onChange={(e) => setText(e.target.value)} placeholder="2d6 + 1d8 + 3, or 4d6kh3"
                 style={{ ...inp, fontFamily: "ui-monospace, monospace" }} />
             </label>
             <div style={{ ...diceRow, marginTop: 12 }}>
               {(["dis", "flat", "adv"] as const).map((m) => (
-                <button key={m} type="button" onClick={() => setAdv(m)} disabled={m !== "flat" && !advMeaningful}
-                  style={{ ...chip, ...(adv === m ? chipOn : null), opacity: m !== "flat" && !advMeaningful ? 0.4 : 1 }}>
+                <button key={m} type="button" aria-pressed={adv === m} onClick={() => setAdv(m)} disabled={m !== "flat" && !advMeaningful}
+                  className="fx-chip" style={{ ...chip, ...(adv === m ? chipOn : null), opacity: m !== "flat" && !advMeaningful ? 0.4 : 1 }}>
                   {m === "adv" ? "Advantage" : m === "dis" ? "Disadvantage" : "Straight"}
                 </button>
               ))}
-              {!advMeaningful && <span style={hintInline}>Advantage needs a single d20.</span>}
+              {!advMeaningful && <span className="fx-hint" style={hintInline}>Advantage needs a single d20.</span>}
             </div>
           </>
         )}
@@ -197,7 +197,7 @@ export default function DiceRoller() {
           <div style={grid2}>
             <Field label="Modifier"><input value={pfMod} onChange={(e) => setPfMod(e.target.value)} placeholder="e.g. 9" style={mono} /></Field>
             <Field label="DC (optional)"><input value={pfDc} onChange={(e) => setPfDc(e.target.value)} placeholder="e.g. 18" style={mono} /></Field>
-            <p style={hint}>Roll 1d20 + modifier. Set a DC to read the degree: crit success at DC+10, crit failure at DC-10; a nat 20 steps up, a nat 1 steps down.</p>
+            <p className="fx-hint" style={hint}>Roll 1d20 + modifier. Set a DC to read the degree: crit success at DC+10, crit failure at DC-10; a nat 20 steps up, a nat 1 steps down.</p>
           </div>
         )}
 
@@ -208,7 +208,7 @@ export default function DiceRoller() {
                 onChange={(e) => setCocTarget(Math.max(1, Math.min(99, Math.round(Number(e.target.value) || 0))))}
                 style={mono} />
             </Field>
-            <p style={hint}>Roll d100 under the skill. 01 is a critical; extreme at a fifth, hard at half; a fumble is 100, or 96-99 when the skill is under 50.</p>
+            <p className="fx-hint" style={hint}>Roll d100 under the skill. 01 is a critical; extreme at a fifth, hard at half; a fumble is 100, or 96-99 when the skill is under 50.</p>
           </div>
         )}
 
@@ -216,14 +216,14 @@ export default function DiceRoller() {
           <div>
             <Field label="Modifier (characteristic + bonuses)"><input value={dsMod} onChange={(e) => setDsMod(e.target.value)} placeholder="e.g. 2" style={mono} /></Field>
             <div style={{ marginTop: 12 }}>
-              <div style={smallLabel}>Edges / banes</div>
+              <div className="fx-label" style={smallLabel}>Edges / banes</div>
               <div style={diceRow}>
-                {[{ v: -2, l: "Bane ×2" }, { v: -1, l: "Bane" }, { v: 0, l: "—" }, { v: 1, l: "Edge" }, { v: 2, l: "Edge ×2" }].map((o) => (
-                  <button key={o.v} type="button" onClick={() => setDsEb(o.v)} style={{ ...chip, ...(dsEb === o.v ? chipOn : null) }}>{o.l}</button>
+                {[{ v: -2, l: "Bane ×2" }, { v: -1, l: "Bane" }, { v: 0, l: "None" }, { v: 1, l: "Edge" }, { v: 2, l: "Edge ×2" }].map((o) => (
+                  <button key={o.v} type="button" aria-pressed={dsEb === o.v} onClick={() => setDsEb(o.v)} className="fx-chip" style={{ ...chip, ...(dsEb === o.v ? chipOn : null) }}>{o.l}</button>
                 ))}
               </div>
             </div>
-            <p style={hint}>Roll 2d10 + modifier against the tiers (11 or lower, 12-16, 17+). An edge is +2 and a double edge bumps the tier; a bane is -2 and a double bane drops it. A natural 19-20 is a critical.</p>
+            <p className="fx-hint" style={hint}>Roll 2d10 + modifier against the tiers (11 or lower, 12-16, 17+). An edge is +2 and a double edge bumps the tier; a bane is -2 and a double bane drops it. A natural 19-20 is a critical.</p>
           </div>
         )}
 
@@ -231,7 +231,7 @@ export default function DiceRoller() {
           <div style={grid2}>
             <Field label="Modifier"><input value={dhMod} onChange={(e) => setDhMod(e.target.value)} placeholder="e.g. 2" style={mono} /></Field>
             <Field label="Difficulty (optional)"><input value={dhDiff} onChange={(e) => setDhDiff(e.target.value)} placeholder="e.g. 14" style={mono} /></Field>
-            <p style={hint}>Roll 2d12 (Hope + Fear) + modifier against the Difficulty. The higher die colours the result, and matching dice are a critical success.</p>
+            <p className="fx-hint" style={hint}>Roll 2d12 (Hope + Fear) + modifier against the Difficulty. The higher die colours the result, and matching dice are a critical success.</p>
           </div>
         )}
 
@@ -242,18 +242,18 @@ export default function DiceRoller() {
                 onChange={(e) => setPoolSize(Math.max(1, Math.min(30, Math.round(Number(e.target.value) || 0))))} style={mono} />
             </Field>
             <Field label="Difficulty (successes, optional)"><input value={poolDiff} onChange={(e) => setPoolDiff(e.target.value)} placeholder="e.g. 3" style={mono} /></Field>
-            <p style={hint}>Roll a pool of d10s. Each 6 or higher is a success; a pair of 10s adds a critical bonus. Set a difficulty to read it as success or failure.</p>
+            <p className="fx-hint" style={hint}>Roll a pool of d10s. Each 6 or higher is a success; a pair of 10s adds a critical bonus. Set a difficulty to read it as success or failure.</p>
           </div>
         )}
 
         <div style={notationPreview}>{invalid ?? `rolling ${finalNotation}`}</div>
 
-        <button type="button" onClick={doRoll} disabled={!!invalid} style={rollBtn}>Roll</button>
+        <button type="button" onClick={doRoll} disabled={!!invalid} className="fx-primary" style={rollBtn}>Roll</button>
       </div>
 
       {log.length > 0 && (
         <div style={panel}>
-          <div style={smallLabel}>Rolls (this session only)</div>
+          <div className="fx-label" style={smallLabel}>Rolls (this session only)</div>
           <div>
             {log.map((e) => (
               <div key={e.id} style={logRow}>
@@ -265,11 +265,14 @@ export default function DiceRoller() {
               </div>
             ))}
           </div>
-          <p style={hint}>Dice in brackets were rolled and dropped by a keep rule. Nothing here is saved; refresh clears it.</p>
+          <p className="fx-hint" style={hint}>
+            {log.some((e) => /k[hl]\d/i.test(e.detail)) ? "Dice in parentheses were rolled and dropped by the keep rule. " : ""}
+            Nothing here is saved; refresh clears it.
+          </p>
         </div>
       )}
 
-      <p style={foot}>
+      <p className="fx-hint" style={foot}>
         The randomness is crypto-grade with modulo bias rejected, the same roller Six Axes uses at the table.
         In the app, every roll is logged against the session so your encounter maths calibrates to real play.
       </p>
@@ -291,7 +294,7 @@ function bumpMod(text: string, delta: number): string {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label style={{ display: "block" }}>
-      <span style={smallLabel}>{label}</span>
+      <span className="fx-label" style={smallLabel}>{label}</span>
       {children}
     </label>
   );
@@ -302,6 +305,8 @@ const TONE_COLOR: Record<Tone, string> = {
 };
 
 // ---- styles (carved dark forge register) ----
+// On the public tool page (inside .sax-night) the fx-* classes on these elements switch them to the
+// night type and controls; inside the app they do nothing and these inline styles apply as before.
 
 const panel: React.CSSProperties = { ...surfaces.panel, padding: "16px 18px", marginBottom: 16 };
 const fieldLabel: React.CSSProperties = {

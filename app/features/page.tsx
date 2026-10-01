@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import SiteShell from "@/components/site/site-shell";
 import FeaturesExplorer from "@/components/features-explorer";
-import { stoneButton } from "@/lib/forge-theme";
 
 // app/features/page.tsx
 //
@@ -18,13 +17,13 @@ export const metadata: Metadata = {
 
 export default function FeaturesPage() {
   return (
-    <SiteShell title="What Six Axes does" tagline="Six pillars. Pick one, and see it on its own.">
-      <FeaturesExplorer />
+    <SiteShell layout="wide" title="What Six Axes does" tagline="Six pillars. Pick one, and see it on its own.">
+      <div data-reveal><FeaturesExplorer /></div>
 
-      <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 40 }}>
-        <Link href="/pilot" className="forge-btn is-primary" style={stoneButton("primary")}>Apply to the pilot</Link>
-        <Link href="/tools" className="forge-btn" style={stoneButton("stone")}>Try the free tools</Link>
-        <Link href="/faq" className="forge-btn is-ghost" style={stoneButton("ghost")}>Questions?</Link>
+      <div className="sn-ctas" style={{ marginTop: 48 }}>
+        <Link href="/pilot" className="sn-btn sn-btn-fill">Apply to the pilot</Link>
+        <Link href="/tools" className="sn-btn sn-btn-ghost">Try the free tools</Link>
+        <Link href="/faq" className="sn-textlink">Questions? Read the FAQ</Link>
       </div>
     </SiteShell>
   );

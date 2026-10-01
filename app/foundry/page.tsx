@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import SiteShell from "@/components/site/site-shell";
-import { SAX } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 
 // app/foundry/page.tsx
@@ -131,12 +130,12 @@ export default function FoundryPage() {
 // Content styles for the dark forge chrome (SiteShell). The page frame, title, and tagline now come
 // from SiteShell; these style only the body sections.
 const card: React.CSSProperties = { padding: "24px 0", borderTop: `1px solid ${C.line}` };
-const h2: React.CSSProperties = { fontSize: 24, margin: "0 0 10px", fontWeight: 600, color: C.text, fontFamily: SAX.serif };
-const body: React.CSSProperties = { fontSize: 16.5, lineHeight: 1.72, margin: "0 0 14px", color: C.text };
+const h2: React.CSSProperties = { fontSize: 26, margin: "0 0 10px", fontWeight: 700, color: C.text, fontFamily: "var(--forge-display, Georgia, serif)", lineHeight: 1.15 };
+const body: React.CSSProperties = { fontSize: 17, lineHeight: 1.65, margin: "0 0 14px", color: C.text };
 const list: React.CSSProperties = { margin: "4px 0 14px", paddingLeft: 22 };
-const li: React.CSSProperties = { fontSize: 16.5, lineHeight: 1.72, marginBottom: 10, color: C.text };
+const li: React.CSSProperties = { fontSize: 17, lineHeight: 1.65, marginBottom: 10, color: C.text };
 const code: React.CSSProperties = {
-  fontFamily: SAX.mono, fontSize: 13.5, background: "rgba(0,0,0,0.32)", color: C.accent,
+  fontFamily: "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace", fontSize: 14, background: "rgba(0,0,0,0.32)", color: C.accent,
   border: `1px solid ${C.line}`, padding: "10px 12px", borderRadius: FORGE_RADIUS, margin: "10px 0 0", wordBreak: "break-all",
 };
 const link: React.CSSProperties = { color: C.plum };

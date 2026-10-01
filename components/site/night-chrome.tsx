@@ -1,15 +1,16 @@
 import Link from "next/link";
 import MobileMenu from "@/components/site/mobile-menu";
-import { PILOT_CTA, type NavItem } from "@/lib/marketing/nav";
+import { LANDING_NAV, PILOT_CTA, type NavItem } from "@/lib/marketing/nav";
 
 // components/site/night-chrome.tsx
 //
-// The top bar and footer shared by SiteShell and ToolsShell, in the night palette. The markup mirrors
-// the home page's header and footer (app/page.tsx) so a visitor moving from the home page to any inner
-// page or tool sees the same chrome. Styles live in NIGHT_CSS (lib/marketing/night-theme.ts), which the
-// shell injects once. Server components, no client state.
+// The top bar and footer shared by SiteShell and ToolsShell, in the night palette. The markup, the nav
+// list (LANDING_NAV) and the column geometry (.sn-wrap) are the home page's own, so moving from the home
+// page to any inner page or tool does not shift the bar. Styles live in NIGHT_CSS
+// (lib/marketing/night-theme.ts), which the shell injects once. Server components, no client state.
 
-export function NightHeader({ items }: { items: NavItem[] }) {
+export function NightHeader({ ctaHref }: { ctaHref?: string }) {
+  const cta: NavItem = ctaHref ? { ...PILOT_CTA, href: ctaHref } : PILOT_CTA;
   return (
     <header className="sn-top">
       <div className="sn-wrap sn-top-in">
@@ -21,18 +22,19 @@ export function NightHeader({ items }: { items: NavItem[] }) {
           <a href="https://kerfandcode.com" target="_blank" rel="noopener noreferrer" className="sn-by">by Kerf and Code &#8599;</a>
         </div>
         <nav className="sn-nav" aria-label="Main">
-          {items.map((it) => (
+          {LANDING_NAV.map((it) => (
             <Link key={it.href} href={it.href} className="sn-navlink">{it.label}</Link>
           ))}
-          <Link href={PILOT_CTA.href} className="sn-btn sn-btn-fill sn-btn-sm">{PILOT_CTA.label}</Link>
+          <Link href={cta.href} className="sn-btn sn-btn-fill sn-btn-sm">{cta.label}</Link>
         </nav>
-        <MobileMenu items={items} cta={PILOT_CTA} />
+        <MobileMenu items={LANDING_NAV} cta={cta} />
       </div>
     </header>
   );
 }
 
-const FOOT_LINKS: NavItem[] = [
+// The same list as the home page footer, with Licenses (the home footer carries it too).
+export const FOOT_LINKS: NavItem[] = [
   { href: "/features", label: "Features" },
   { href: "/players", label: "For players" },
   { href: "/tools", label: "Free tools" },

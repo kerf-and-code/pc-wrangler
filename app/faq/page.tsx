@@ -203,6 +203,6 @@ const summary: React.CSSProperties = {
   fontFamily: "var(--forge-display, 'Cinzel', serif)", color: STONE.ink, fontWeight: 600,
 };
 const answer: React.CSSProperties = {
-  fontSize: 16, lineHeight: 1.68, color: STONE.inkDim, margin: "0 0 14px", fontFamily: SAX.serif,
+  fontSize: 17, lineHeight: 1.65, color: STONE.inkDim, margin: "0 0 14px", fontFamily: SAX.serif,
 };
-const foot: React.CSSProperties = { fontSize: 14.5, lineHeight: 1.6, color: STONE.inkFaint, margin: "22px 0 0", fontFamily: SAX.serif };
+const foot: React.CSSProperties = { fontSize: 15, lineHeight: 1.6, color: STONE.inkFaint, margin: "22px 0 0", fontFamily: SAX.serif };

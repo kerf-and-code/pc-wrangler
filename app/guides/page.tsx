@@ -37,7 +37,7 @@ export default function GuidesIndex() {
 }
 
 const cardTitle: React.CSSProperties = {
-  fontFamily: "var(--forge-display, 'Cinzel', serif)", fontWeight: 600, fontSize: 20, color: STONE.ink,
-  letterSpacing: "0.02em",
+  fontFamily: "var(--forge-display, 'Cinzel', serif)", fontWeight: 700, fontSize: 24, color: STONE.ink,
+  lineHeight: 1.2,
 };
-const cardExcerpt: React.CSSProperties = { fontSize: 15.5, lineHeight: 1.6, color: STONE.inkDim, margin: "7px 0 0", fontFamily: SAX.serif };
+const cardExcerpt: React.CSSProperties = { fontSize: 17, lineHeight: 1.6, color: STONE.inkDim, margin: "7px 0 0", fontFamily: SAX.serif };

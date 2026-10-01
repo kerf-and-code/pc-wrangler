@@ -9,13 +9,18 @@ import { SAX, STONE } from "@/lib/theme";
 //
 // NOTE on schema: we intentionally do NOT emit FAQPage/HowTo JSON-LD here. Google deprecated FAQ rich
 // results (2026) and HowTo rich results earlier, so that markup no longer earns a SERP feature. The
-// value now is the visible, headed content itself - which is what featured snippets and AI Overviews
+// value now is the visible, headed content itself, which is what featured snippets and AI Overviews
 // read. BreadcrumbList schema (which still renders) is added on the page, not here.
+//
+// 2026-10: on wide screens ToolsShell places this block (the last child of each tool page) in the 40%
+// column beside the tool, so it carries no width cap or divider of its own; type follows the marketing
+// site's night register (17px body, EB Garamond headings in ink). The funnel line into the product now
+// lives once, in ToolsShell's pilot card, rather than repeated here.
 
 export type ToolCopyProps = {
   heading: string;            // H2, keyword-bearing
   intro: string[];            // one or more lead paragraphs
-  steps?: string[];           // "how to use it" — ordered
+  steps?: string[];           // "how to use it", ordered
   systemsHeading?: string;    // H3 for the per-system note
   systems?: string[];         // per-system explanation paragraphs
   faq?: { q: string; a: string }[];
@@ -77,34 +82,27 @@ export default function ToolCopy({ heading, intro, steps, systemsHeading, system
         </p>
       )}
 
-      <p style={cta}>
-        These tools come from <strong style={{ color: STONE.ink }}>Six Axes</strong>, which sits in your
-        session and records the table, writes the recap, and builds the campaign wiki automatically.{" "}
-        <Link href="/features" style={link}>See what it does</Link> or{" "}
-        <Link href="/pilot" style={link}>join the pilot</Link>.
-      </p>
     </section>
   );
 }
 
-const wrap: React.CSSProperties = { margin: "40px 0 8px", maxWidth: 760 };
-const rule: React.CSSProperties = {
-  height: 1, background: `linear-gradient(90deg, ${STONE.brassDeep}, transparent)`, margin: "0 0 22px",
-};
+const wrap: React.CSSProperties = { marginBottom: 8 };
+const rule: React.CSSProperties = { display: "none" };
 const h2: React.CSSProperties = {
-  fontFamily: "var(--forge-display, 'Cinzel', serif)", fontWeight: 700, fontSize: 23, color: STONE.ink,
-  margin: "0 0 12px", letterSpacing: "0.02em",
+  fontFamily: "var(--forge-display, 'Cinzel', serif)", fontWeight: 800, fontSize: 30, color: STONE.ink,
+  margin: "0 0 14px", lineHeight: 1.1, letterSpacing: "-0.01em",
 };
 const h3: React.CSSProperties = {
-  fontFamily: "var(--forge-display, 'Cinzel', serif)", fontWeight: 600, fontSize: 17, color: STONE.brassHi,
-  margin: "26px 0 8px", letterSpacing: "0.03em",
+  fontFamily: "var(--forge-display, 'Cinzel', serif)", fontWeight: 700, fontSize: 23, color: STONE.ink,
+  margin: "30px 0 10px", lineHeight: 1.2,
 };
-const body: React.CSSProperties = { fontSize: 16.5, lineHeight: 1.7, color: STONE.inkDim, margin: "0 0 14px", fontFamily: SAX.serif };
+const body: React.CSSProperties = { fontSize: 17, lineHeight: 1.65, color: STONE.inkDim, margin: "0 0 14px", fontFamily: SAX.serif };
 const ol: React.CSSProperties = { margin: "0 0 4px", padding: "0 0 0 22px", display: "grid", gap: 8 };
-const li: React.CSSProperties = { fontSize: 16, lineHeight: 1.6, color: STONE.inkDim, fontFamily: SAX.serif };
-const q: React.CSSProperties = { fontSize: 16, lineHeight: 1.5, color: STONE.ink, fontWeight: 600, margin: "0 0 3px", fontFamily: SAX.serif };
-const a: React.CSSProperties = { fontSize: 15.5, lineHeight: 1.65, color: STONE.inkDim, margin: 0, fontFamily: SAX.serif };
-const relatedRow: React.CSSProperties = { fontSize: 15, lineHeight: 1.7, margin: "28px 0 0", fontFamily: SAX.serif };
-const relatedLabel: React.CSSProperties = { color: STONE.inkFaint, fontFamily: SAX.mono, fontSize: 12.5, textTransform: "uppercase", letterSpacing: "0.06em" };
-const cta: React.CSSProperties = { fontSize: 15.5, lineHeight: 1.7, color: STONE.inkDim, margin: "16px 0 0", fontFamily: SAX.serif };
-const link: React.CSSProperties = { color: STONE.brassHi, textDecoration: "none" };
+const li: React.CSSProperties = { fontSize: 17, lineHeight: 1.6, color: STONE.inkDim, fontFamily: SAX.serif };
+const q: React.CSSProperties = { fontSize: 17, lineHeight: 1.5, color: STONE.ink, fontWeight: 600, margin: "0 0 4px", fontFamily: SAX.serif };
+const a: React.CSSProperties = { fontSize: 17, lineHeight: 1.6, color: STONE.inkDim, margin: 0, fontFamily: SAX.serif };
+const relatedRow: React.CSSProperties = { fontSize: 17, lineHeight: 1.7, margin: "30px 0 0", fontFamily: SAX.serif };
+const relatedLabel: React.CSSProperties = { color: STONE.inkDim, fontWeight: 600 };
+const link: React.CSSProperties = {
+  color: STONE.brassHi, textDecoration: "underline", textDecorationColor: "rgba(236,191,110,0.45)", textUnderlineOffset: 3,
+};

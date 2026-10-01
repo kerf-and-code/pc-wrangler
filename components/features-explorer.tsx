@@ -14,6 +14,10 @@ import { FULL_TOOLSET, THEMED_TABLE, systemsAnd } from "@/lib/marketing/systems"
 // SCREENSHOTS referenced (in /public/screens): mechanics.png, codex.png, dispositions.png, forge.png,
 // worldmap.png, compendium.png. The first four line up with the home page's set; forge.png and
 // compendium.png are the two added here.
+//
+// 2026-10: renders only on /features inside SiteShell (the night palette). Tabs are labels without
+// numbers; the selected tab is ink on slate (amber is kept for actions); from 1200px the card puts the
+// copy in a 40% column beside the capture at 60%. On phones the six tabs are a 2 x 3 grid.
 
 type Feature = {
   key: string;
@@ -117,7 +121,6 @@ export default function FeaturesExplorer() {
             onClick={() => setActive(i)}
             className={i === active ? "feat-tab is-on" : "feat-tab"}
           >
-            <span className="feat-num">{String(i + 1).padStart(2, "0")}</span>
             <span className="feat-lbl">{x.label}</span>
           </button>
         ))}
@@ -135,15 +138,18 @@ export default function FeaturesExplorer() {
             aria-labelledby={`feat-tab-${f.key}`}
             hidden={i !== active}
             className="feat-card"
-            style={{ ...stonePanel(), padding: "26px 28px" }}
+            style={{ ...stonePanel(), padding: "30px 32px" }}
           >
-            <p style={eyebrow}>{f.label}</p>
-            <h2 style={title}>{f.title}</h2>
-            <p style={lead}>{f.lead}</p>
-            {f.paras.map((p, j) => <p key={j} style={body}>{p}</p>)}
-            <figure style={shotFrame}>
-              <img src={f.img} alt={f.imgAlt} style={shotImg} loading="lazy" />
-            </figure>
+            <div className="feat-body">
+              <div>
+                <h2 style={title}>{f.title}</h2>
+                <p style={lead}>{f.lead}</p>
+                {f.paras.map((p, j) => <p key={j} style={body}>{p}</p>)}
+              </div>
+              <figure style={shotFrame}>
+                <img src={f.img} alt={f.imgAlt} style={shotImg} loading="lazy" />
+              </figure>
+            </div>
           </article>
         ))}
       </div>
@@ -151,15 +157,12 @@ export default function FeaturesExplorer() {
   );
 }
 
-const eyebrow: React.CSSProperties = {
-  fontFamily: SAX.mono, fontSize: 11, letterSpacing: "0.22em", textTransform: "uppercase", color: SAX.brass, margin: "0 0 8px",
-};
 const title: React.CSSProperties = {
-  fontFamily: "var(--forge-display, 'Cinzel', serif)", fontWeight: 700, fontSize: 27, color: STONE.ink,
-  margin: "0 0 6px", lineHeight: 1.2, letterSpacing: "0.03em",
+  fontFamily: "var(--forge-display, 'Cinzel', serif)", fontWeight: 800, fontSize: 36, color: STONE.ink,
+  margin: "0 0 12px", lineHeight: 1.08, letterSpacing: "-0.01em",
 };
-const lead: React.CSSProperties = { fontSize: 15, color: SAX.brass, fontStyle: "italic", margin: "0 0 16px", fontFamily: SAX.serif };
-const body: React.CSSProperties = { fontSize: 16, lineHeight: 1.7, color: STONE.inkDim, margin: "0 0 14px", fontFamily: SAX.serif };
+const lead: React.CSSProperties = { fontSize: 19, color: STONE.ink, margin: "0 0 14px", fontFamily: SAX.serif, maxWidth: "34em" };
+const body: React.CSSProperties = { fontSize: 17, lineHeight: 1.65, color: STONE.inkDim, margin: "0 0 14px", fontFamily: SAX.serif, maxWidth: "34em" };
 const shotFrame: React.CSSProperties = {
   margin: "8px 0 0", padding: 8, borderRadius: 4, overflow: "hidden",
   background: "var(--forge-frame-bg, linear-gradient(180deg, rgba(14,11,8,0.6), rgba(6,4,3,0.7)))",
@@ -168,33 +171,25 @@ const shotFrame: React.CSSProperties = {
 const shotImg: React.CSSProperties = { display: "block", width: "100%", height: "auto", borderRadius: 3 };
 
 const CSS = `
-.feat-wrap { display: grid; grid-template-columns: 210px 1fr; gap: 26px; align-items: start; }
-.feat-nav { position: sticky; top: 84px; display: grid; gap: 6px; }
+.feat-wrap { display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 32px; align-items: start; }
+.feat-nav { position: sticky; top: 96px; display: grid; gap: 8px; }
 .feat-tab {
   display: flex; align-items: center; gap: 10px; text-align: left; width: 100%;
-  padding: 12px 14px; cursor: pointer; border: none; border-radius: 4px;
+  padding: 12px 16px; cursor: pointer; border: none; border-radius: 4px;
   font-family: var(--forge-display, 'Cinzel', serif); font-size: 14px; letter-spacing: 0.02em;
   color: ${STONE.inkDim};
   background: linear-gradient(180deg, ${STONE.hi} 0%, ${STONE.face} 55%, ${STONE.shadow} 100%);
-  box-shadow: inset 0 1px 0 rgba(255,235,200,0.16), inset 0 -2px 3px rgba(0,0,0,0.5),
-    inset 0 0 0 1px rgba(0,0,0,0.4), 0 3px 0 -1px #17130d, 0 4px 6px rgba(0,0,0,0.55);
-  transition: transform 0.06s ease, color 0.15s ease;
+  transition: color 0.15s ease, background 0.15s ease;
 }
 .feat-tab:hover { color: ${STONE.brassHi}; }
-.feat-tab.is-on {
-  color: #241a0d;
-  background: linear-gradient(180deg, ${STONE.brassHi} 0%, ${SAX.brass} 52%, ${STONE.brassDeep} 100%);
-  box-shadow: inset 0 1px 0 rgba(255,240,210,0.6), inset 0 -2px 3px rgba(60,35,10,0.55),
-    inset 0 0 0 1px rgba(70,45,15,0.5), 0 3px 0 -1px #3a260f, 0 4px 6px rgba(0,0,0,0.55);
-}
-.feat-num { font-family: ${SAX.mono}; font-size: 11px; opacity: 0.7; }
+.feat-body { display: grid; grid-template-columns: 1fr; gap: 24px; }
+@media (min-width: 1200px) { .feat-body { grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: 40px; align-items: start; } }
 .feat-card { animation: feat-fade 0.28s ease; }
 @keyframes feat-fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
-@media (max-width: 760px) {
+@media (max-width: 860px) {
   .feat-wrap { grid-template-columns: 1fr; }
-  .feat-nav { position: static; grid-auto-flow: column; grid-auto-columns: max-content;
-    overflow-x: auto; padding-bottom: 4px; }
-  .feat-lbl { white-space: nowrap; }
+  .feat-nav { position: static; grid-template-columns: 1fr 1fr; }
+  .feat-tab { min-height: 48px; }
 }
 @media (prefers-reduced-motion: reduce) { .feat-card { animation: none; } }
 `;

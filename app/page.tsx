@@ -85,6 +85,7 @@ const TOOLS: { label: string; href: string }[] = [
 export default function Home() {
   return (
     <main className="nt">
+      <a href="#top" className="nt-skip">Skip to content</a>
       {/* Product entity for the home page (Organization + WebSite come from the root layout). */}
       <JsonLd data={softwareApplicationSchema()} />
       <style dangerouslySetInnerHTML={{ __html: CSS }} />
@@ -418,6 +419,7 @@ export default function Home() {
             <Link href="/contact">Contact</Link>
             <Link href="/privacy">Privacy</Link>
             <Link href="/terms">Terms</Link>
+            <Link href="/licenses">Licenses</Link>
           </span>
         </div>
         {/* Groupfinder listing badge: a backlink to the Six Axes entry, tucked in the footer corner. */}
@@ -512,8 +514,8 @@ html { scroll-behavior: smooth; }
 .home-rail a { display: flex; align-items: center; gap: 10px; padding: 7px 12px; text-decoration: none; font-size: 14px;
   color: #c3c9d2; margin-left: -1px; border-left: 2px solid transparent; }
 .home-rail .rail-dot { width: 6px; height: 6px; border-radius: 50%; background: #4b5463; flex: 0 0 auto; }
-.home-rail li.is-active a { color: var(--nt-amber-hi); border-left-color: var(--nt-amber); }
-.home-rail li.is-active .rail-dot { background: var(--nt-amber); }
+.home-rail li.is-active a { color: var(--nt-ink); border-left-color: var(--nt-ink); }
+.home-rail li.is-active .rail-dot { background: var(--nt-ink); }
 .home-rail a:hover { color: var(--nt-ink); }
 
 /* sections */
@@ -636,7 +638,9 @@ html { scroll-behavior: smooth; }
 .nt .sax-mm-bars span { background: var(--nt-ink); }
 .nt .sax-mm-panel { background: #151b25; border-color: var(--nt-line2); }
 .nt .sax-mm-link { font-family: var(--nt-body); font-size: 17px; letter-spacing: 0; text-transform: none; color: var(--nt-ink); }
-.nt .sax-mm-cta { background: var(--nt-amber) !important; color: var(--nt-amber-ink) !important; font-family: var(--nt-body) !important; min-height: 46px; display: flex; align-items: center; justify-content: center; }
+.nt .sax-mm-cta { background: var(--nt-amber) !important; color: var(--nt-amber-ink) !important; font-family: var(--nt-body) !important; font-size: 17px !important; font-weight: 700 !important; letter-spacing: 0 !important; text-shadow: none !important; box-shadow: none !important; border-radius: 8px !important; min-height: 46px; display: flex; align-items: center; justify-content: center; }
+.nt-skip { position: absolute; left: 12px; top: -80px; z-index: 50; background: var(--nt-amber); color: var(--nt-amber-ink); font-weight: 700; padding: 12px 18px; border-radius: 8px; text-decoration: none; }
+.nt-skip:focus { top: 12px; }
 
 /* reveal (A4): only once JS has marked the page, so nothing is hidden without it */
 .nt-js [data-reveal] { opacity: 0; transform: translateY(24px); transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1), transform 0.7s cubic-bezier(0.22, 1, 0.36, 1); }
@@ -681,7 +685,7 @@ html { scroll-behavior: smooth; }
 /* phone tap targets: 44px for the brand, the byline, footer links and stand-alone text links */
 @media (max-width: 980px) {
   .nt-brand, .nt-by, .nt-foot-links a, .nt-solo, .nt-foot-badge a, .nt-split .nt-link { display: inline-flex; align-items: center; min-height: 44px; min-width: 44px; }
-  .nt-foot-links { gap: 0 20px; }
+  .nt-foot-links { display: grid; grid-template-columns: 1fr 1fr; gap: 0 20px; width: 100%; }
 }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }

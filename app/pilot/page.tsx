@@ -2,8 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import PilotForm from "@/components/pilot-form";
 import SiteShell from "@/components/site/site-shell";
-import { SAX } from "@/lib/theme";
-import { C } from "@/lib/forge-theme";
 import { FULL_TOOLSET, THEMED_TABLE, systemsAnd } from "@/lib/marketing/systems";
 
 // app/pilot/page.tsx
@@ -19,6 +17,11 @@ import { FULL_TOOLSET, THEMED_TABLE, systemsAnd } from "@/lib/marketing/systems"
 // logged-out allowlist in proxy.ts or it 307s to /auth/login.
 //
 // Server-rendered so the pitch is crawlable; the form itself is the only client island.
+//
+// LAYOUT (2026-10): the home page's 40/60 split. The three reading sections sit in the 40% column and the
+// application form in the 60% column, so the form is in the first screen on desktop. On phones the
+// sections stack first, with a jump link to the form under the lead. The header's pilot button points
+// at #apply here, since this page is where it would otherwise go.
 
 export const metadata: Metadata = {
   title: "Apply to the pilot",
@@ -31,80 +34,70 @@ export const metadata: Metadata = {
 export default function PilotPage() {
   return (
     <SiteShell
+      layout="wide"
+      ctaHref="#apply"
       title="Run your table on Six Axes."
-      tagline="The pilot is invitation-based while it is small, so we can help each table get set up and hear what breaks. Tell us about your game below and we will get you in. It is free during the pilot, with no card and no commitment."
+      tagline="The pilot is invitation-based while it is small, so we can help each table get set up and hear what breaks. It is free during the pilot, with no card and no commitment."
     >
-        <Section title="Recording other people, done properly" lead="The part worth reading before you sign up.">
-          <p style={body}>
-            Every player consents once, when they claim their character, and is never asked again
-            mid-game in front of the whole table. If someone present has not consented, the pipeline
-            stops rather than transcribing them anyway. It is not a warning you can click past.
-          </p>
-          <p style={body}>
-            Audio is deleted after 60 days, automatically, and nobody can extend that, including
-            you. The transcript and the moments drawn from it stay; the recording of a
-            person&apos;s voice does not. Any player can export everything held about them, or
-            delete it. See the <Link href="/privacy" style={link}>Privacy</Link> and{" "}
-            <Link href="/ai-recording" style={link}>recording</Link> notes for the full detail.
-          </p>
-        </Section>
+      <p className="sn-mobile-only" style={{ margin: "-12px 0 32px" }}>
+        <a href="#apply" className="sn-btn sn-btn-fill">Apply to the pilot</a>
+      </p>
 
-        <Section title="What you need" lead="Being straight about the requirements.">
-          <ul style={list}>
-            <li style={li}>
-              <strong>A Discord server</strong> if you play online, so each player is recorded on
-              their own track. Or <strong>one microphone in the room</strong> if you play in person.
-            </li>
-            <li style={li}>
-              <strong>A supported system.</strong> The record, recap, wiki and player insight work on
-              any table. The deeper rules tools vary by system: {systemsAnd(FULL_TOOLSET)} have the
-              full toolset; {systemsAnd(THEMED_TABLE)} have a themed table and the right dice. Not sure
-              where yours lands? Pick "Other or not sure" below and ask.
-            </li>
-            <li style={li}>
-              <strong>Nothing from your players.</strong> No accounts and no installs, unless they
-              roll on a supported virtual tabletop and want those rolls captured.
-            </li>
-          </ul>
-        </Section>
+      <div className="sn-split">
+        <div style={{ display: "grid", gap: 48 }} data-reveal>
+          <section>
+            <h2 className="sn-h3">Recording other people, done properly</h2>
+            <p className="sn-p">
+              Every player consents once, when they claim their character, and is never asked again mid-game in
+              front of the whole table. If someone present has not consented, the pipeline stops rather than
+              transcribing them anyway. It is not a warning you can click past.
+            </p>
+            <p className="sn-p">
+              Audio is deleted after 60 days, automatically, and nobody can extend that, including you. The
+              transcript and the moments drawn from it stay; the recording of a person&apos;s voice does not. Any
+              player can export everything held about them, or delete it. See the{" "}
+              <Link href="/privacy">privacy policy</Link> and the <Link href="/ai-recording">recording notes</Link>{" "}
+              for the full detail.
+            </p>
+          </section>
 
-        <Section title="This is early" lead="So you know what you are signing up for.">
-          <p style={body}>
-            It works, it is in use at real tables, and it is not finished. What it needs most is more
-            campaigns and honest feedback, including the unflattering kind. If you want a polished
-            finished product, this is not that yet. If you want to shape one, this is a good moment.
-          </p>
-        </Section>
+          <section>
+            <h2 className="sn-h3">What you need</h2>
+            <ul style={{ margin: 0, paddingLeft: 20, display: "grid", gap: 12, color: "var(--sn-dim)" }}>
+              <li>
+                <strong style={{ color: "var(--sn-ink)" }}>A Discord server</strong> if you play online, so each
+                player is recorded on their own track. Or <strong style={{ color: "var(--sn-ink)" }}>one microphone
+                in the room</strong> if you play in person.
+              </li>
+              <li>
+                <strong style={{ color: "var(--sn-ink)" }}>A supported system.</strong> The record, recap, wiki and
+                player insight work on any table. The deeper rules tools vary by system: {systemsAnd(FULL_TOOLSET)}{" "}
+                have the full toolset; {systemsAnd(THEMED_TABLE)} have a themed table and the right dice. Not sure
+                where yours lands? Pick &quot;Other or not sure&quot; in the form and ask.
+              </li>
+              <li>
+                <strong style={{ color: "var(--sn-ink)" }}>Nothing from your players.</strong> No accounts and no
+                installs, unless they roll on a supported virtual tabletop and want those rolls captured.
+              </li>
+            </ul>
+          </section>
 
-        <section style={card}>
-          <h2 style={h2}>Tell us about your table</h2>
-          <p style={sectionLead}>We read every one of these. Nothing here is stored in an account.</p>
+          <section>
+            <h2 className="sn-h3">This is early</h2>
+            <p className="sn-p">
+              It works, it is in use at real tables, and it is not finished. What it needs most is more campaigns
+              and honest feedback, including the unflattering kind. If you want a polished finished product, this
+              is not that yet. If you want to shape one, this is a good moment.
+            </p>
+          </section>
+        </div>
+
+        <section id="apply" className="sn-card" style={{ scrollMarginTop: 96 }} data-reveal>
+          <h2 style={{ fontSize: 34 }}>Tell us about your table</h2>
+          <p>We read every one of these, and nothing here is stored in an account.</p>
           <PilotForm />
         </section>
+      </div>
     </SiteShell>
   );
 }
-
-function Section(
-  { title, lead, children }: { title: string; lead?: string; children: React.ReactNode },
-) {
-  return (
-    <section style={card}>
-      <h2 style={h2}>{title}</h2>
-      {lead && <p style={sectionLead}>{lead}</p>}
-      {children}
-    </section>
-  );
-}
-
-// Content styles for the dark forge chrome (SiteShell). The page frame, title, tagline, and footer
-// now come from SiteShell; these style only the body sections.
-const card: React.CSSProperties = { padding: "26px 0", borderTop: `1px solid ${C.line}` };
-const h2: React.CSSProperties = { fontSize: 26, margin: "0 0 4px", fontWeight: 600, lineHeight: 1.2, color: C.text, fontFamily: SAX.serif };
-const sectionLead: React.CSSProperties = {
-  fontSize: 14.5, color: C.muted, margin: "0 0 14px", fontStyle: "italic",
-};
-const body: React.CSSProperties = { fontSize: 16.5, lineHeight: 1.72, margin: "0 0 14px", color: C.text };
-const list: React.CSSProperties = { margin: "4px 0 0", paddingLeft: 20 };
-const li: React.CSSProperties = { fontSize: 16.5, lineHeight: 1.72, marginBottom: 10, color: C.text };
-const link: React.CSSProperties = { color: C.plum };

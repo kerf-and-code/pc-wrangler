@@ -81,10 +81,10 @@ export default function AboutPage() {
         He also runs games, and built the thing he wished existed on his side of the screen.
       </p>
 
-      <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 26 }}>
+      <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginTop: 26 }}>
         <Link href="/pilot" className="forge-btn is-primary" style={stoneButton("primary")}>Apply to the pilot</Link>
         <Link href="/tools" className="forge-btn is-ghost" style={stoneButton("ghost")}>Try the free tools</Link>
-        <Link href="/contact" className="forge-btn" style={stoneButton("stone")}>Contact us</Link>
+        <Link href="/contact" className="sn-textlink" style={{ alignSelf: "center" }}>Contact us</Link>
       </div>
     </SiteShell>
   );
@@ -95,4 +95,4 @@ const h2: React.CSSProperties = {
   fontFamily: "var(--forge-display, 'Cinzel', serif)", fontWeight: 700, fontSize: 24, color: STONE.ink,
   margin: "30px 0 4px", letterSpacing: "0.03em",
 };
-const cardBody: React.CSSProperties = { fontSize: 14.5, lineHeight: 1.62, color: STONE.inkDim, margin: "6px 0 0", fontFamily: SAX.serif };
+const cardBody: React.CSSProperties = { fontSize: 16, lineHeight: 1.6, color: STONE.inkDim, margin: "6px 0 0", fontFamily: SAX.serif };

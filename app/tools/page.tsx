@@ -8,7 +8,8 @@ import { SAX, STONE } from "@/lib/theme";
 // app/tools/page.tsx
 //
 // The free-tools hub. No login. Lists the tools; live ones link out, planned ones are shown as such so the
-// page is honest rather than salting it with dead links. Server-rendered for search.
+// page is honest rather than salting it with dead links. Server-rendered for search. Night palette: the
+// cards are flat with a hairline border, two to a row on desktop.
 
 export const metadata: Metadata = {
   title: "Free tabletop RPG tools",
@@ -95,7 +96,7 @@ export default function ToolsHub() {
     >
       <JsonLd data={breadcrumbSchema([{ name: "Home", path: "/" }, { name: "Free tools", path: "/tools" }])} />
       <style dangerouslySetInnerHTML={{ __html: HUB_CSS }} />
-      <div style={{ display: "grid", gap: 14, marginTop: 4 }}>
+      <div className="hub-grid">
         {TOOLS.map((t) => {
           const inner = (
             <>
@@ -108,7 +109,7 @@ export default function ToolsHub() {
             </>
           );
           return t.href ? (
-            <Link key={t.name} href={t.href} className="tool-card" style={{ ...cardBase, ...cardLive }}>{inner}</Link>
+            <Link key={t.name} href={t.href} className="tool-card" style={{ ...cardBase, ...cardLive }} data-reveal>{inner}</Link>
           ) : (
             <div key={t.name} style={{ ...cardBase, ...cardSoon }}>{inner}</div>
           );
@@ -119,31 +120,23 @@ export default function ToolsHub() {
 }
 
 const cardBase: React.CSSProperties = {
-  display: "block", padding: "18px 20px 18px 22px", borderRadius: 4,
-  borderLeft: `3px solid ${SAX.brass}`,
-  background: "var(--forge-card-bg, linear-gradient(160deg, rgba(52,47,39,0.82) 0%, rgba(38,34,28,0.86) 45%, rgba(22,19,15,0.9) 100%))",
+  display: "block", padding: "24px 26px", borderRadius: 10, height: "100%",
+  background: "var(--sn-card, #1b2230)", border: "1px solid var(--sn-line2, rgba(174,180,190,0.16))",
   textDecoration: "none", color: "inherit",
-  boxShadow: `var(--forge-card-shadow, ${[
-    "inset 1px 1px 0 rgba(255,235,200,0.12)", "inset -1px -1px 0 rgba(0,0,0,0.6)",
-    "0 4px 0 -1px #17130d", "0 6px 14px rgba(0,0,0,0.55)",
-  ].join(",")})`,
-  transition: "transform .08s ease, box-shadow .08s ease",
 };
 const cardLive: React.CSSProperties = {};
-const cardSoon: React.CSSProperties = { opacity: 0.6, borderLeftColor: STONE.hi };
+const cardSoon: React.CSSProperties = { opacity: 0.6 };
 
 const HUB_CSS = `
-.tool-card:hover { transform: translateY(-2px);
-  box-shadow: inset 1px 1px 0 rgba(255,235,200,0.14), inset -1px -1px 0 rgba(0,0,0,0.6),
-    0 6px 0 -1px #17130d, 0 12px 22px rgba(0,0,0,0.6); }
-.tool-card:hover .tool-name { color: ${STONE.brassHi}; }
+.hub-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.tool-card { transition: opacity .7s cubic-bezier(0.22, 1, 0.36, 1), transform .7s cubic-bezier(0.22, 1, 0.36, 1), box-shadow .2s ease; }
+.tool-card.is-in:hover { transform: translateY(-2px); transition: transform .15s ease, box-shadow .2s ease; }
+.tool-card:hover .tool-name { text-decoration: underline; text-decoration-color: rgba(232,228,218,0.5); text-underline-offset: 4px; }
+@media (max-width: 860px) { .hub-grid { grid-template-columns: 1fr; gap: 14px; } }
 `;
-const cardName: React.CSSProperties = { fontSize: 20, fontWeight: 600, color: STONE.ink, fontFamily: "var(--forge-display, 'Cinzel', serif)" };
+const cardName: React.CSSProperties = { fontSize: 26, fontWeight: 700, color: STONE.ink, fontFamily: "var(--forge-display, 'Cinzel', serif)", lineHeight: 1.15 };
 const soon: React.CSSProperties = {
-  fontFamily: SAX.mono, fontSize: 10.5, letterSpacing: "0.12em",
-  textTransform: "uppercase", color: SAX.brass, border: `1px solid ${STONE.brassDeep}`, borderRadius: 3, padding: "2px 7px",
+  fontSize: 15, fontWeight: 600, color: STONE.inkDim, border: `1px solid ${STONE.hi}`, borderRadius: 6, padding: "2px 8px",
 };
-const cardBlurb: React.CSSProperties = { fontSize: 15.5, lineHeight: 1.6, color: STONE.inkDim, margin: "8px 0 0", fontFamily: SAX.serif };
-const cardSystems: React.CSSProperties = {
-  fontFamily: SAX.mono, fontSize: 12, color: STONE.inkFaint, margin: "8px 0 0",
-};
+const cardBlurb: React.CSSProperties = { fontSize: 17, lineHeight: 1.6, color: STONE.inkDim, margin: "10px 0 0", fontFamily: SAX.serif };
+const cardSystems: React.CSSProperties = { fontSize: 15, color: STONE.inkFaint, margin: "10px 0 0", fontFamily: SAX.serif };

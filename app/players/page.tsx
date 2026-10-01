@@ -1,15 +1,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import SiteShell from "@/components/site/site-shell";
-import { SAX, STONE } from "@/lib/theme";
-import { FORGE_FONTS, stonePanel, stoneButton, forgeRuleLine, forgeBoss } from "@/lib/forge-theme";
 
 // app/players/page.tsx
 //
-// "For players." The rest of the site sells the GM; this page speaks to the people who actually consent
-// to being recorded, and shows what they get for it. Server-rendered. Screenshots live in
-// /public/screens/players/ (see the shot list handed to the GM). If an image is missing it simply does
-// not render, so the page is safe to ship before every screenshot is in.
+// "For players." The rest of the site sells the GM; this page speaks to the people who consent to being
+// recorded, and shows what they get for it. Server-rendered. Screenshots live in /public/screens/players/.
+//
+// LAYOUT (2026-10, critic round 4): three densities instead of one block repeated seven times.
+//   1. one lead row: the character page, capture in the 60% column (the home page's split);
+//   2. a pair: the recap and journal, and the lore, captures above text;
+//   3. a strip of four: maps, chat, the check-in, every character, each with a short caption.
+// No eyebrow labels and no dividers; space separates the groups, as on the home page.
 
 export const metadata: Metadata = {
   title: "For players",
@@ -20,153 +22,145 @@ export const metadata: Metadata = {
   alternates: { canonical: "/players" },
 };
 
-type Block = { key: string; eyebrow: string; title: string; img: string; alt: string; paras: string[] };
+type Shot = { img: string; w: number; h: number; alt: string; pos?: string; contain?: boolean };
 
-const BLOCKS: Block[] = [
+const LEAD: Shot = {
+  img: "/screens/players/character-page.png", w: 743, h: 835,
+  alt: "A player's character page with written sections, each marked private or shared",
+};
+
+const PAIR: { title: string; shot: Shot; paras: string[] }[] = [
   {
-    key: "character",
-    eyebrow: "Your character",
-    title: "A character page that's yours",
-    img: "/screens/players/character-page.png",
-    alt: "A player's character page with written sections and a shared toggle",
-    paras: [
-      "Write your character's story in your own words: backstory, goals, the bonds that matter, the secrets that don't leave your head. Mark each part private or shared, and hand your GM edit access only when you want a second hand.",
-      "It's your page. The story stops living only in the GM's notes.",
-    ],
-  },
-  {
-    key: "recaps",
-    eyebrow: "Never lose the thread",
     title: "The recap, and your own journal",
-    img: "/screens/players/recaps.png",
-    alt: "A session recap a player can read",
+    shot: { img: "/screens/players/recaps.png", w: 712, h: 908, alt: "A session recap as a player reads it" },
     paras: [
-      "Miss a session, or just forget what happened three weeks ago? Every session gets written up, so you can catch up in a minute instead of asking the table to recap it for you.",
-      "And your own journal is yours alone: private notes on your character, your suspicions, your plans, kept separate from everyone else's.",
+      "Miss a session, or forget what happened three weeks ago? Every session gets written up, so you can catch up in a minute instead of asking the table.",
+      "Your journal is yours alone: private notes on your character, your suspicions, your plans.",
     ],
   },
   {
-    key: "lore",
-    eyebrow: "The world you know",
     title: "The lore you're allowed to see",
-    img: "/screens/players/lore.png",
-    alt: "The shared campaign lore as a player sees it",
+    shot: { img: "/screens/players/lore.png", w: 724, h: 887, alt: "The shared campaign lore as a player sees it" },
     paras: [
-      "Every NPC you've met, every place you've been, every faction and thread, filed and searchable, showing exactly what your character would know, and nothing the GM is still keeping back.",
-      "No more \"wait, who was that again?\" It's the campaign bible, from your seat at the table.",
+      "Every NPC you've met, every place you've been, every faction and thread, filed and searchable, showing exactly what your character would know and nothing the GM is still keeping back.",
     ],
   },
+];
+
+const STRIP: { title: string; shot: Shot; text: string }[] = [
   {
-    key: "maps",
-    eyebrow: "Where you are",
-    title: "The map, and a hand in the world",
-    img: "/screens/players/maps.png",
-    alt: "A shared world or region map",
-    paras: [
-      "See the world, city, and dungeon maps the GM shares, so you always know where you are and where you've been.",
-      "And when the GM opens it up, you can help build the place your characters live in, instead of only ever visiting it.",
-    ],
+    title: "The map",
+    shot: { img: "/screens/worldmap.png", w: 1057, h: 818, alt: "The campaign's hex world map in Six Axes, with settlements and regions", pos: "100% 100%" },
+    text: "See the world map the GM shares, and help build the place when the GM opens it up.",
   },
   {
-    key: "chat",
-    eyebrow: "Between sessions",
-    title: "Keep the table talking",
-    img: "/screens/players/chat.png",
-    alt: "Group chat between sessions",
-    paras: [
-      "Group chat that stays with the campaign: plan the heist, argue about the plan, stay in character or drop out of it, without the thread getting lost in a Discord server with forty other channels.",
-    ],
+    title: "Between sessions",
+    shot: { img: "/screens/players/chat.png", w: 776, h: 500, alt: "The campaign's group chat between sessions", contain: true, pos: "50% 50%" },
+    text: "Group chat that stays with the campaign, not lost in a Discord server with forty other channels.",
   },
   {
-    key: "checkin",
-    eyebrow: "Your voice at the table",
     title: "Show up, and speak up",
-    img: "/screens/players/checkin.png",
-    alt: "The anonymous check-in and scheduling",
-    paras: [
-      "Find the next session time and RSVP in a tap, so the GM isn't chasing five calendars.",
-      "And the check-in lets you tell the GM the truth, anonymously: what landed, what dragged, what you wish you got more of. The thing you'd never say out loud is exactly the thing that makes the next session better.",
-    ],
+    shot: { img: "/screens/players/checkin.png", w: 497, h: 899, alt: "The anonymous check-in a player fills in after a session" },
+    text: "RSVP in a tap, then tell the GM anonymously what landed and what dragged.",
   },
   {
-    key: "characters",
-    eyebrow: "Everyone you've been",
-    title: "Every character, every campaign",
-    img: "/screens/players/characters.png",
-    alt: "A player's characters across campaigns",
-    paras: [
-      "All your characters, across every table you play at, in one place, alongside the campaigns they belong to.",
-      "Build a new one from scratch in the Forge, whatever the system, and it lands here next to the rest.",
-    ],
+    title: "Every character",
+    shot: { img: "/screens/players/characters.png", w: 733, h: 875, alt: "A player's characters across campaigns" },
+    text: "All your characters, across every table you play at, next to the campaigns they belong to.",
   },
 ];
 
 export default function PlayersPage() {
   return (
     <SiteShell
+      layout="wide"
       title="For players"
       tagline="Six Axes isn't only the GM's tool. Here's what it puts in your hands, and why saying yes to being recorded is worth it."
     >
       <style dangerouslySetInnerHTML={{ __html: CSS }} />
 
-      {BLOCKS.map((b, i) => (
-        <div key={b.key}>
-          <section className={`pl-block${i % 2 ? " rev" : ""}`}>
-            <figure className="pl-figure" style={{ ...stonePanel(), padding: 8, margin: 0, overflow: "hidden" }}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={b.img} alt={b.alt} loading="lazy" />
-            </figure>
-            <div>
-              <p style={eyebrow}>{b.eyebrow}</p>
-              <h2 style={title}>{b.title}</h2>
-              {b.paras.map((p, j) => <p key={j} style={body}>{p}</p>)}
-            </div>
-          </section>
-          {i < BLOCKS.length - 1 && (
-            <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "34px 0" }} aria-hidden>
-              <span style={forgeRuleLine} />
-              <span style={forgeBoss} />
-              <span style={{ ...forgeRuleLine, transform: "scaleX(-1)" }} />
-            </div>
-          )}
+      {/* 1. lead row */}
+      <section className="sn-split is-flip pl-lead">
+        <figure className="sn-figure" data-reveal>
+          <img src={LEAD.img} width={LEAD.w} height={LEAD.h} alt={LEAD.alt} />
+        </figure>
+        <div className="pl-lead-text" data-reveal>
+          <h2 className="sn-h2">A character page that&apos;s yours</h2>
+          <p className="sn-p">
+            Write your character&apos;s story in your own words: backstory, goals, the bonds that matter, the secrets
+            that don&apos;t leave your head. Mark each part private or shared, and hand your GM edit access only when
+            you want a second hand.
+          </p>
+          <p className="sn-p">It&apos;s your page. The story stops living only in the GM&apos;s notes.</p>
         </div>
-      ))}
+      </section>
+
+      {/* 2. the pair */}
+      <section className="pl-pair">
+        {PAIR.map((b) => (
+          <div key={b.title} data-reveal>
+            <figure className="sn-figure pl-crop">
+              <img src={b.shot.img} width={b.shot.w} height={b.shot.h} alt={b.shot.alt} loading="lazy" />
+            </figure>
+            <h2 className="sn-h3" style={{ marginTop: 24 }}>{b.title}</h2>
+            {b.paras.map((p, i) => <p key={i} className="sn-p">{p}</p>)}
+          </div>
+        ))}
+      </section>
+
+      {/* 3. the strip */}
+      <section className="pl-strip" aria-label="More for players">
+        {STRIP.map((b) => (
+          <div key={b.title} data-reveal>
+            <figure className="sn-figure pl-thumb">
+              <img src={b.shot.img} width={b.shot.w} height={b.shot.h} alt={b.shot.alt} loading="lazy"
+                style={{ objectPosition: b.shot.pos, objectFit: b.shot.contain ? "contain" : undefined }} />
+            </figure>
+            <h3 className="pl-strip-title">{b.title}</h3>
+            <p className="sn-p" style={{ fontSize: 16 }}>{b.text}</p>
+          </div>
+        ))}
+      </section>
 
       {/* your data is yours */}
-      <div style={{ ...stonePanel(), padding: "22px 24px", marginTop: 40 }}>
-        <p style={eyebrow}>What's yours stays yours</p>
-        <h2 style={{ ...title, marginBottom: 8 }}>Your read, and your data</h2>
-        <p style={{ ...body, margin: 0 }}>
+      <section className="sn-card pl-data" data-reveal>
+        <h2>Your read, and your data</h2>
+        <p>
           You see your own read across the six axes, how you actually play, not a label someone put on you.
-          And everything you put in is yours to take: export it all as a file whenever you want, and deleting
-          your account takes your personal data and recordings with it. The <Link href="/privacy" style={inlineLink}>privacy policy</Link>{" "}
+          Everything you put in is yours to take: export it all as a file whenever you want, and deleting your
+          account takes your personal data and recordings with it. The <Link href="/privacy">privacy policy</Link>{" "}
           spells out exactly who touches your data and for how long.
         </p>
-      </div>
-
-      <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 30 }}>
-        <Link href="/pilot" className="forge-btn is-primary" style={stoneButton("primary")}>Apply to the pilot</Link>
-        <Link href="/faq" className="forge-btn is-ghost" style={stoneButton("ghost")}>Questions about privacy?</Link>
-      </div>
+        <div className="sn-ctas">
+          <Link href="/pilot" className="sn-btn sn-btn-fill">Apply to the pilot</Link>
+          <Link href="/faq" className="sn-btn sn-btn-ghost">Questions about privacy?</Link>
+        </div>
+      </section>
     </SiteShell>
   );
 }
 
-const eyebrow: React.CSSProperties = {
-  fontFamily: SAX.mono, fontSize: 11, letterSpacing: "0.22em", textTransform: "uppercase", color: SAX.brass, margin: "0 0 8px",
-};
-const title: React.CSSProperties = {
-  fontFamily: FORGE_FONTS.display, fontWeight: 700, fontSize: 25, color: STONE.ink, margin: "0 0 10px", lineHeight: 1.2, letterSpacing: "0.02em",
-};
-const body: React.CSSProperties = { fontSize: 15.5, lineHeight: 1.68, color: STONE.inkDim, margin: "0 0 12px", fontFamily: FORGE_FONTS.body };
-const inlineLink: React.CSSProperties = { color: STONE.brassHi, textDecoration: "none" };
-
 const CSS = `
-.pl-block { display: grid; grid-template-columns: 0.92fr 1fr; gap: 30px; align-items: center; }
-.pl-block.rev .pl-figure { order: 2; }
-.pl-figure img { width: 100%; height: auto; display: block; border-radius: 3px; }
-@media (max-width: 680px) {
-  .pl-block { grid-template-columns: 1fr; gap: 18px; }
-  .pl-block.rev .pl-figure { order: 0; }
+.pl-lead { align-items: center; }
+@media (min-width: 981px) { .sn-split.pl-lead { grid-template-columns: minmax(0, 570px) minmax(0, 1fr); } }
+.pl-lead .sn-figure img { max-height: 640px; width: auto; max-width: 100%; margin: 0; }
+.pl-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; margin-top: 112px; }
+.pl-crop { height: 460px; overflow: hidden; border-radius: 10px; border: 1px solid var(--sn-line2); }
+.pl-crop img { height: 100%; width: 100%; object-fit: cover; object-position: 50% 0; border: 0; box-shadow: none; border-radius: 0; }
+.pl-strip { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 32px; margin-top: 112px; }
+.pl-thumb { height: 300px; overflow: hidden; border-radius: 10px; border: 1px solid var(--sn-line2); background: #151b25; }
+.pl-thumb img { height: 100%; width: 100%; object-fit: cover; object-position: 50% 0; border: 0; box-shadow: none; border-radius: 0; }
+.pl-strip-title { font-family: var(--sn-display); font-weight: 700; font-size: 22px; color: var(--sn-ink); margin: 18px 0 6px; }
+.pl-data { margin-top: 112px; max-width: 900px; }
+@media (max-width: 980px) {
+  .pl-pair { grid-template-columns: 1fr; gap: 48px; margin-top: 64px; }
+  .pl-strip { grid-template-columns: 1fr 1fr; gap: 28px 20px; margin-top: 64px; }
+  .pl-thumb { height: 220px; }
+  .pl-crop { height: 380px; }
+  .pl-data { margin-top: 64px; }
+}
+@media (max-width: 520px) {
+  .pl-strip { grid-template-columns: 1fr; }
+  .pl-thumb { height: 260px; }
 }
 `;

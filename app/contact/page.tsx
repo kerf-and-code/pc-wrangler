@@ -17,7 +17,7 @@ export default function ContactPage() {
   return (
     <SiteShell
       title="Contact us"
-      tagline="Questions, pilot access, a bug, or a partnership. Tell us what you need and we will get back to you."
+      tagline="Questions, pilot access, a bug, or a partnership. Terry Mickail, who builds Six Axes, reads every message and replies himself."
     >
       <ContactForm />
     </SiteShell>

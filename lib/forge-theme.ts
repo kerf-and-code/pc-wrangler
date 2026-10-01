@@ -12,7 +12,7 @@
 // texture — the weathering is the wall itself.
 //
 // THEMING HOOKS (2026-10): the hard-coded warm surfaces below (button faces and shadows, fields, chips,
-// stat tiles, the panel shadow, the rule line, heading shadow) each read a --forge-* CSS variable whose
+// stat tiles, the panel shadow, the rule line, heading shadow, the field label) each read a --forge-* CSS variable whose
 // fallback is the exact original value, so the app renders unchanged. The marketing site's night
 // palette (lib/marketing/night-theme.ts) sets these on its shell root to re-tone every page and tool
 // body without per-page edits.
@@ -220,8 +220,11 @@ export const forgePanelTitle: CSSProperties = {
   textTransform: "uppercase", color: SAX.brass, marginBottom: 4,
 };
 export const forgeLabel: CSSProperties = {
-  display: "block", fontFamily: FORGE_FONTS.mono, fontSize: 11, letterSpacing: "0.18em",
-  textTransform: "uppercase", color: STONE.inkDim, marginBottom: 7,
+  display: "block", fontFamily: `var(--forge-label-font, ${FORGE_FONTS.mono})`, fontSize: "var(--forge-label-size, 11px)",
+  fontWeight: "var(--forge-label-weight, inherit)" as CSSProperties["fontWeight"],
+  letterSpacing: "var(--forge-label-tracking, 0.18em)",
+  textTransform: "var(--forge-label-case, uppercase)" as CSSProperties["textTransform"],
+  color: `var(--forge-label-color, ${STONE.inkDim})`, marginBottom: 7,
 };
 
 // The brass divider with a diamond boss (the structural signature). Returns the pieces the page

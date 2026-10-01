@@ -60,13 +60,13 @@ export default function PilotForm() {
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(json?.error || "Something went wrong. Please try again, or email us directly.");
+        setError(json?.error || "Something went wrong. Please try again, or email kncadmin@kerfandcode.com and we will get you in.");
         setStatus("error");
         return;
       }
       setStatus("sent");
     } catch {
-      setError("Could not reach the server. Please try again, or email us directly.");
+      setError("Could not reach the server. Please try again, or email kncadmin@kerfandcode.com and we will get you in.");
       setStatus("error");
     }
   }
@@ -146,15 +146,14 @@ function Field(
   );
 }
 
-// Dark forge styling: this form now renders inside SiteShell (dark chrome), not the old cream page.
-const body: React.CSSProperties = { fontSize: 16.5, lineHeight: 1.72, color: STONE.ink };
+// Styling: this form renders only inside SiteShell (the night palette); labels are sentence case at 15px
+// to match the rest of the marketing site.
+const body: React.CSSProperties = { fontSize: 17, lineHeight: 1.65, color: STONE.ink };
 const fieldLabel: React.CSSProperties = {
-  display: "block", fontSize: 13, letterSpacing: "0.04em", textTransform: "uppercase",
-  color: STONE.inkDim, marginBottom: 6, fontFamily: SAX.mono,
+  display: "block", fontSize: 15, fontWeight: 600, color: STONE.ink, marginBottom: 6, fontFamily: SAX.serif,
 };
 const fieldHint: React.CSSProperties = {
-  display: "block", fontSize: 13.5, color: STONE.inkFaint, marginBottom: 8, fontStyle: "italic",
-  fontFamily: SAX.serif,
+  display: "block", fontSize: 15, color: STONE.inkFaint, marginBottom: 8, fontFamily: SAX.serif,
 };
 const input: React.CSSProperties = {
   width: "100%", boxSizing: "border-box", padding: "11px 12px", fontSize: 16,
@@ -166,12 +165,12 @@ const input: React.CSSProperties = {
 // The carved brass primary button. Paired with className "forge-btn is-primary" (SiteShell injects
 // FORGE_BUTTON_CSS for the hover/press).
 const cta: React.CSSProperties = { ...stoneButton("primary"), marginTop: 4 };
-const small: React.CSSProperties = { fontSize: 13, color: STONE.inkFaint, margin: "12px 0 0", lineHeight: 1.6 };
+const small: React.CSSProperties = { fontSize: 15, color: STONE.inkFaint, margin: "12px 0 0", lineHeight: 1.6 };
 const errStyle: React.CSSProperties = {
-  fontSize: 14.5, color: STONE.bloodLit, margin: "4px 0 12px",
+  fontSize: 15, color: STONE.bloodLit, margin: "4px 0 12px",
   fontFamily: SAX.serif,
 };
 const done: React.CSSProperties = {
-  marginTop: 10, padding: "18px 20px", background: "rgba(0,0,0,0.28)",
+  marginTop: 10, padding: "18px 20px", background: "var(--forge-field-bg, rgba(0,0,0,0.28))",
   border: `1px solid ${STONE.hi}`, borderRadius: FORGE_RADIUS,
 };

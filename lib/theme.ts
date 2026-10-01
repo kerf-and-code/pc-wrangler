@@ -136,27 +136,29 @@ export const surfaces: Record<string, CSSProperties> = {
   panel: {
     background: PANEL_BG,
     borderRadius: FORGE_RADIUS,
-    boxShadow: [
+    // The shadow reads --forge-panel-shadow first (the marketing site's night palette sets it to a flat
+    // hairline); the fallback is the carved value, so the app is unchanged.
+    boxShadow: `var(--forge-panel-shadow, ${[
       "inset 1px 1px 0 rgba(255,235,200,0.13)",
       "inset -1px -1px 0 rgba(0,0,0,0.6)",
       "inset 0 0 46px rgba(0,0,0,0.4)",
       "0 5px 14px rgba(0,0,0,0.6)",
       `0 0 0 1px ${STONE.mortar}`,
       "0 0 0 2px var(--sax-panel-frame, transparent)",
-    ].join(","),
+    ].join(",")})`,
   },
   // Slightly flatter and more opaque, for panels holding charts where a texture behind the data
   // would fight the plot.
   slate: {
     background: SLATE_BG,
     borderRadius: FORGE_RADIUS,
-    boxShadow: [
+    boxShadow: `var(--forge-panel-shadow, ${[
       "inset 1px 1px 0 rgba(255,235,200,0.10)",
       "inset -1px -1px 0 rgba(0,0,0,0.6)",
       "0 5px 14px rgba(0,0,0,0.6)",
       `0 0 0 1px ${STONE.mortar}`,
       "0 0 0 2px var(--sax-panel-frame, transparent)",
-    ].join(","),
+    ].join(",")})`,
   },
   // Unchanged: parchment is a deliberate contrast surface for reading, not a stone panel.
   parchment: {

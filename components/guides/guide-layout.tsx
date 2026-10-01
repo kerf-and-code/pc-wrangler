@@ -54,11 +54,10 @@ export default function GuideLayout({
 }
 
 const meta: React.CSSProperties = {
-  fontFamily: SAX.mono, fontSize: 12.5, letterSpacing: "0.06em", textTransform: "uppercase",
-  color: STONE.inkFaint, margin: "-8px 0 24px",
+  fontFamily: SAX.serif, fontSize: 15, color: STONE.inkFaint, margin: "-8px 0 24px",
 };
 const foot: React.CSSProperties = { marginTop: 36, paddingTop: 18, borderTop: `1px solid ${STONE.mortar}` };
-const link: React.CSSProperties = { color: STONE.brassHi, textDecoration: "none", fontFamily: SAX.serif, fontSize: 15.5 };
+const link: React.CSSProperties = { color: STONE.brassHi, textDecoration: "underline", textDecorationColor: "rgba(236,191,110,0.45)", textUnderlineOffset: 3, fontFamily: SAX.serif, fontSize: 17 };
 
 const PROSE_CSS = `
 .guide-prose { max-width: 720px; }
@@ -76,7 +75,7 @@ const PROSE_CSS = `
 }
 .guide-prose ul, .guide-prose ol { margin: 0 0 16px; padding-left: 22px; display: grid; gap: 8px; }
 .guide-prose li {
-  font-size: 16.5px; line-height: 1.62; color: var(--stone-ink-dim, #a99e86);
+  font-size: 17px; line-height: 1.62; color: var(--stone-ink-dim, #a99e86);
   font-family: var(--forge-body, 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif);
 }
 .guide-prose a { color: var(--sax-accent-hi, #e2b878); text-decoration: none; }

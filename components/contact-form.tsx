@@ -60,7 +60,7 @@ export default function ContactForm() {
   }
 
   return (
-    <form onSubmit={submit} style={{ ...stonePanel(), padding: "24px 26px" }}>
+    <form onSubmit={submit} style={{ ...stonePanel(), padding: "26px 28px", maxWidth: 760 }}>
       {/* honeypot: hidden from people, tempting to bots */}
       <div style={{ position: "absolute", left: "-9999px", top: "auto", width: 1, height: 1, overflow: "hidden" }} aria-hidden>
         <label>Company<input tabIndex={-1} autoComplete="off" value={company} onChange={(e) => setCompany(e.target.value)} /></label>
@@ -87,7 +87,7 @@ export default function ContactForm() {
       <label style={{ display: "block", marginTop: 14 }}>
         <span style={forgeLabel}>Message</span>
         <textarea
-          style={{ ...stoneField(), minHeight: 150, resize: "vertical", lineHeight: 1.55 }}
+          style={{ ...stoneField(), minHeight: 180, resize: "vertical", lineHeight: 1.55 }}
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           maxLength={4000}
@@ -101,13 +101,13 @@ export default function ContactForm() {
           {state.status === "sending" ? "Sending…" : "Send message"}
         </button>
       </div>
-      <p style={fine}>No account needed. This goes straight to the team; nothing is stored on the site.</p>
+      <p style={fine}>No account needed. This goes straight to Terry; nothing is stored on the site.</p>
     </form>
   );
 }
 
 const grid2: React.CSSProperties = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 14 };
 const sentHead: React.CSSProperties = { fontFamily: "var(--forge-display, 'Cinzel', serif)", fontSize: 24, color: STONE.ink, margin: "0 0 8px" };
-const sentBody: React.CSSProperties = { fontSize: 16, lineHeight: 1.6, color: STONE.inkDim, margin: 0, fontFamily: SAX.serif };
-const errText: React.CSSProperties = { color: STONE.bloodLit, fontSize: 14, margin: "14px 0 0", fontFamily: SAX.serif };
-const fine: React.CSSProperties = { fontSize: 12.5, color: STONE.inkFaint, margin: "12px 0 0", fontFamily: SAX.serif };
+const sentBody: React.CSSProperties = { fontSize: 17, lineHeight: 1.6, color: STONE.inkDim, margin: 0, fontFamily: SAX.serif };
+const errText: React.CSSProperties = { color: STONE.bloodLit, fontSize: 15, margin: "14px 0 0", fontFamily: SAX.serif };
+const fine: React.CSSProperties = { fontSize: 15, color: STONE.inkFaint, margin: "12px 0 0", fontFamily: SAX.serif };
