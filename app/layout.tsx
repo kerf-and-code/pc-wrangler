@@ -9,6 +9,7 @@ import {
   Special_Elite,
   Pirata_One,
   EB_Garamond,
+  Source_Sans_3,
   Courier_Prime,
   IM_Fell_English,
   JetBrains_Mono,
@@ -86,7 +87,9 @@ const chakra = Chakra_Petch({ variable: "--font-chakra", weight: ["500", "700"],
 const marcellus = Marcellus({ variable: "--font-marcellus", weight: ["400"], display: "swap", subsets: ["latin"] });
 const specialElite = Special_Elite({ variable: "--font-special-elite", weight: ["400"], display: "swap", subsets: ["latin"] });
 const pirata = Pirata_One({ variable: "--font-pirata", weight: ["400"], display: "swap", subsets: ["latin"] });
-const garamond = EB_Garamond({ variable: "--font-garamond", weight: ["400", "600"], display: "swap", subsets: ["latin"] });
+const garamond = EB_Garamond({ variable: "--font-garamond", weight: ["400", "600", "700", "800"], display: "swap", subsets: ["latin"] });
+// The marketing home page's body face (palette C, Oct 2026): a plain humanist sans under EB Garamond headlines.
+const sourceSans = Source_Sans_3({ variable: "--font-source-sans", weight: ["400", "600", "700"], display: "swap", subsets: ["latin"] });
 const courierPrime = Courier_Prime({ variable: "--font-courier-prime", weight: ["400", "700"], display: "swap", subsets: ["latin"] });
 const imFell = IM_Fell_English({ variable: "--font-imfell", weight: ["400"], display: "swap", subsets: ["latin"] });
 const jetbrains = JetBrains_Mono({ variable: "--font-jetbrains", weight: ["400", "500"], display: "swap", subsets: ["latin"] });
@@ -94,7 +97,7 @@ const jetbrains = JetBrains_Mono({ variable: "--font-jetbrains", weight: ["400",
 const fontVars = [
   geistSans.variable, cinzel.variable, cinzelDec.variable, oswald.variable, chakra.variable,
   marcellus.variable, specialElite.variable, pirata.variable, garamond.variable,
-  courierPrime.variable, imFell.variable, jetbrains.variable,
+  courierPrime.variable, imFell.variable, jetbrains.variable, sourceSans.variable,
 ].join(" ");
 
 export default function RootLayout({

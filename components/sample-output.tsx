@@ -14,7 +14,7 @@ const RECAP = [
 
 const OPEN = "Open threads: the Ashen Hand knows the party was here, Bram is down to his last two healing draughts, and Gnarl still hasn't said how he knew the vault existed.";
 
-const READS = [
+export const READS = [
   "Tharn hasn't had a scene to himself in three sessions.",
   "The party is sitting on 2,400 gp of unspent loot, most of it Kessa's.",
   "That “Moderate” fight left them at a third of their hit points. Your Moderate encounters are landing like Hard ones.",
@@ -31,7 +31,7 @@ export default function SampleOutput() {
         {/* the recap */}
         <div style={{ ...stonePanel(), padding: "22px 24px" }}>
           <div style={cardLabel}>Recap · auto-drafted</div>
-          <h3 style={recapTitle}>Session 7 — The Sunken Vault</h3>
+          <h3 style={recapTitle}>Session 7: The Sunken Vault</h3>
           <div style={recapDate}>Emberhold · Nov 3</div>
           {RECAP.map((p, i) => <p key={i} style={recapBody}>{p}</p>)}
           <p style={{ ...recapBody, color: STONE.inkFaint, fontStyle: "italic", margin: 0 }}>{OPEN}</p>

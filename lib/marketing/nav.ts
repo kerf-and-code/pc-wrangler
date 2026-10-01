@@ -14,11 +14,11 @@ const NAV = {
   guides: { href: "/guides", label: "Guides" },
   pricing: { href: "/pricing", label: "Pricing" },
   contact: { href: "/contact", label: "Contact" },
-  enter: { href: "/enter", label: "Enter" },
+  enter: { href: "/enter", label: "Sign in" },
 } as const;
 
 // The primary conversion CTA, shown alongside every nav.
-export const PILOT_CTA: NavItem = { href: "/pilot", label: "Join the pilot" };
+export const PILOT_CTA: NavItem = { href: "/pilot", label: "Apply to the pilot" };
 
 // Per-surface subsets (unchanged from what each surface showed before; now composed from NAV).
 export const LANDING_NAV: NavItem[] = [NAV.features, NAV.players, NAV.tools, NAV.pricing, NAV.enter];

@@ -10,7 +10,7 @@ import { FORGE_FONTS, stonePanel, forgeHeading } from "@/lib/forge-theme";
 
 type Step = { n: string; title: string; body: string };
 
-const STEPS: Step[] = [
+export const STEPS: Step[] = [
   {
     n: "01",
     title: "Record the session",

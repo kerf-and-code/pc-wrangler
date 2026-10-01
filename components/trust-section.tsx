@@ -11,7 +11,7 @@ import { FORGE_FONTS, forgeHeading } from "@/lib/forge-theme";
 
 type Point = { title: string; body: string };
 
-const POINTS: Point[] = [
+export const POINTS: Point[] = [
   {
     title: "Everyone opts in, every time",
     body: "No one is recorded until they have agreed, and anyone at the table can stop it at any point in the session.",
