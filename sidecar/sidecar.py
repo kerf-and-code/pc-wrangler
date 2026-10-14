@@ -101,7 +101,13 @@ TRIM_MIN_SILENCE = float(os.environ.get("TRIM_MIN_SILENCE", "0.7"))
 TRIM_MIN_SAVED_SECONDS = float(os.environ.get("TRIM_MIN_SAVED_SECONDS", "5"))
 # One aselect expression holds every kept span, so cap the count to keep the ffmpeg command
 # bounded. Past the cap we ship the full file - always safe.
-TRIM_MAX_SPANS = int(os.environ.get("TRIM_MAX_SPANS", "600"))
+# Was 600, which real 2.5h Discord tracks routinely exceed (measured 2026-10-13: 626, 781 and
+# 1017 spans), so long tracks never trimmed and never reached Groq. 3000 keeps the -af argument
+# under Linux's 128 KB single-argument limit (checked again at build time, see TRIM_MAX_AF_CHARS).
+TRIM_MAX_SPANS = int(os.environ.get("TRIM_MAX_SPANS", "3000"))
+# Hard ceiling on the -af string itself. Linux refuses any single argv entry over 131072 bytes
+# (MAX_ARG_STRLEN), so stay clearly under it and fall back to the full file past it.
+TRIM_MAX_AF_CHARS = 120000
 # Opt-in probe: when set, log RTCP Sender Reports (ssrc + NTP/RTP pair) so a test
 # recording can confirm whether Discord emits the reports needed for frame-exact
 # cross-speaker sync. Off in normal operation to keep logs quiet.
@@ -345,6 +351,27 @@ async def _detect_silences(path: str, total_secs: float,
     return sils
 
 
+def _balanced_sum(terms):
+    """Join expression terms with '+' as a balanced, parenthesized tree.
+
+    ["a","b","c","d","e"] -> "(((a+b)+(c+d))+e)". Pairs neighbours level by level, so the
+    nesting depth is ceil(log2(n)) however many terms there are. Order is preserved, which does
+    not matter for a sum but keeps the string readable in logs. Iterative, so no recursion
+    limit either. A single term comes back bare; no terms returns "0" (selects nothing).
+    """
+    level = list(terms)
+    if not level:
+        return "0"
+    while len(level) > 1:
+        nxt = []
+        for i in range(0, len(level) - 1, 2):
+            nxt.append(f"({level[i]}+{level[i + 1]})")
+        if len(level) % 2:
+            nxt.append(level[-1])
+        level = nxt
+    return level[0]
+
+
 async def trim_silence(src_path: str, out_path: str, total_secs: float):
     """Remove silence from `src_path`, writing a shorter ogg to `out_path`.
 
@@ -409,8 +436,19 @@ async def trim_silence(src_path: str, out_path: str, total_secs: float):
     # One aselect expression keeps every span; asetpts rebuilds a continuous clock. Commas
     # inside between() are protected by the single quotes, which ffmpeg's filter parser reads
     # (we pass args directly, no shell in between).
-    select = "+".join(f"between(t,{a:.3f},{b:.3f})" for a, b in kept)
+    #
+    # The sum is built as a BALANCED tree, ((a+b)+(c+d))+..., not a flat a+b+c+... chain.
+    # ffmpeg 7.1 (the Debian build in the sidecar image) refuses a flat chain past about 100
+    # terms ("Error while parsing expression"; measured on the Fly machine 2026-10-13: 100 ok,
+    # 105 fail), which is why trimming failed on almost every real track and nothing reached
+    # Groq. The balanced form nests only log2(n) deep and parsed at 300, 600, 1000 and 2000
+    # terms on the same machine. It selects exactly the same audio.
+    select = _balanced_sum([f"between(t,{a:.3f},{b:.3f})" for a, b in kept])
     af = f"aselect='{select}',asetpts=N/SR/TB"
+    if len(af) > TRIM_MAX_AF_CHARS:
+        log.info("trim: filter is %d chars (limit %d) for %d spans; sending full track.",
+                 len(af), TRIM_MAX_AF_CHARS, len(kept))
+        return (False, None, total_secs)
     try:
         proc = await asyncio.create_subprocess_exec(
             "ffmpeg", "-hide_banner", "-loglevel", "error",
