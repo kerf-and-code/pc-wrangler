@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import {
   Geist,
-  Cinzel,
   Cinzel_Decorative,
   Oswald,
   Chakra_Petch,
@@ -14,6 +13,7 @@ import {
   IM_Fell_English,
   JetBrains_Mono,
 } from "next/font/google";
+import localFont from "next/font/local";
 import { ThemeProvider } from "next-themes";
 import SystemThemeProvider from "@/components/system-theme-provider";
 import SystemEffects from "@/components/system-effects";
@@ -80,7 +80,23 @@ const geistSans = Geist({ variable: "--font-geist-sans", display: "swap", subset
 // provider sets on <html> per active campaign, can reference them (a variable must be defined on the
 // element that reads it or an ancestor). Each system's --forge-display / --forge-body / --forge-mono
 // points at the right one; unthemed D&D uses Cinzel + the system serif exactly as before.
-const cinzel = Cinzel({ variable: "--font-cinzel", weight: ["600", "700"], display: "swap", subsets: ["latin"] });
+//
+// Cinzel is SELF-HOSTED from app/fonts, not fetched from Google at build time. Since Oct 2026 Google
+// serves Cinzel's files from a "fonts.gstatic.com/l/font?k=..." address (a URL with its own query
+// string), and Next 16.2.9's Google font loader rejects it ("next/font/google queries have exactly one
+// entry"), which failed every production build. The files are the Latin 600 and 700 WOFF2 from
+// @fontsource/cinzel 5.3.0 (SIL Open Font License, copy in app/fonts/Cinzel-OFL.txt). Same CSS
+// variable as before, so every theme that reads --font-cinzel is unchanged. Times New Roman is the
+// metric fallback because Cinzel is a serif (the Google loader picked a serif fallback too).
+const cinzel = localFont({
+  src: [
+    { path: "./fonts/cinzel-latin-600-normal.woff2", weight: "600", style: "normal" },
+    { path: "./fonts/cinzel-latin-700-normal.woff2", weight: "700", style: "normal" },
+  ],
+  variable: "--font-cinzel",
+  display: "swap",
+  adjustFontFallback: "Times New Roman",
+});
 const cinzelDec = Cinzel_Decorative({ variable: "--font-cinzel-dec", weight: ["700"], display: "swap", subsets: ["latin"] });
 const oswald = Oswald({ variable: "--font-oswald", weight: ["500", "600"], display: "swap", subsets: ["latin"] });
 const chakra = Chakra_Petch({ variable: "--font-chakra", weight: ["500", "700"], display: "swap", subsets: ["latin"] });
