@@ -43,6 +43,23 @@ export const maxDuration = 60;
 // A job with no control row at all AND no aged audio is a manual upload the GM submits by hand, or
 // a session still finalizing; both are left alone and reported as awaitingSidecar.
 //
+// THE AGED-AUDIO FALLBACK MUST NOT FIRE WHILE THE SIDECAR IS STILL UPLOADING (2026-10-13).
+//
+// "Newest track older than 5 minutes" was meant to prove the sidecar had finished. It does not:
+// finalize() uploads speakers ONE AT A TIME and a single long speaker can take 8 to 10 minutes, so a
+// gap between two uploads routinely passes 5 minutes mid-finalize. The cron then submitted only the
+// tracks that existed so far, those transcribed, the job advanced to extraction and review, and every
+// speaker uploaded afterwards sat at 'pending' forever with nothing left to look at it. Measured:
+// CandleKeep Tuesday 10-13 lost 3 of 7 speakers (submitted 5.5 min after the 4th upload) and Power of
+// Love and Weed 10-11 lost 4 of 6 (submitted 5.8 min after the 2nd).
+//
+// The sidecar keeps its capture_control row OPEN ('stopping') for the whole finalize and beats
+// heartbeat_at every 45s while it works (FINALIZE_BEAT_SECONDS, 2026-09-11). So an open row for the
+// job's campaign with a fresh beat means "still uploading": the aged fallback waits. A marked job (the
+// 'done' stamp with capture_job_id) is unaffected and submits immediately, as before. If the sidecar
+// dies mid-finalize its beat goes stale within CAPTURE_ALIVE_MS and the fallback resumes, so a crashed
+// finalize still cannot strand a session.
+//
 // IDEMPOTENT AND SELF-HEALING. submit() moves a job to 'transcribing', so each job is picked up
 // once. A failed submit leaves it 'draft' for the next run. If nothing is consented, submit parks
 // the job at 'blocked_consent' so it stops being retried and the GM sees the reason.
@@ -50,6 +67,9 @@ export const maxDuration = 60;
 const STALE_DRAFT_MIN = 5;                       // a draft job whose newest track is older than this,
 const STALE_DRAFT_MS = STALE_DRAFT_MIN * 60_000; // and which has audio, is submitted even with no marker
 const SWEEP_BUDGET_MS = 45_000;                  // stop sweeping past this so nothing downstream starves
+// A capture_control beat younger than this means the sidecar process is alive. Same 3-minute window
+// /api/session/close and /record use to judge alive-versus-crashed, so all three agree.
+const CAPTURE_ALIVE_MS = 3 * 60_000;
 
 export async function GET(request: Request) {
   const auth = request.headers.get("authorization");
@@ -90,7 +110,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: jErr.message, stage: "scan" }, { status: 500 });
   }
 
-  const draft = (draftJobs as Array<{ id: string; session_id: string }>) || [];
+  const draft = (draftJobs as Array<{ id: string; campaign_id: string; session_id: string }>) || [];
   const submitResults: Array<{ job: string; ok: boolean; detail?: string }> = [];
   const draftFinalized: Array<{ job: string; status: string }> = [];
   const awaitingSidecar: string[] = [];
@@ -142,6 +162,28 @@ export async function GET(request: Request) {
     }
 
     const now = Date.now();
+
+    // Campaigns whose sidecar is still working: an OPEN capture_control row (requested, active or
+    // stopping) with a beat inside CAPTURE_ALIVE_MS. The beat is heartbeat_at, else updated_at (the
+    // same fallback the sidecar's own orphan check uses). A row with neither readable is treated as
+    // NOT alive, so a malformed row can delay nothing.
+    const draftCampaignIds = [...new Set(draft.map((j) => j.campaign_id).filter(Boolean))];
+    const busyCampaigns = new Set<string>();
+    if (draftCampaignIds.length > 0) {
+      const { data: openRows, error: oErr } = await admin
+        .from("capture_control")
+        .select("campaign_id, status, heartbeat_at, updated_at")
+        .in("campaign_id", draftCampaignIds)
+        .in("status", ["requested", "active", "stopping"]);
+      if (oErr) {
+        return NextResponse.json({ error: oErr.message, stage: "open-controls" }, { status: 500 });
+      }
+      for (const r of (openRows as Array<{ campaign_id: string; heartbeat_at: string | null; updated_at: string | null }>) || []) {
+        const beat = Date.parse(r.heartbeat_at ?? r.updated_at ?? "");
+        if (!Number.isNaN(beat) && now - beat < CAPTURE_ALIVE_MS) busyCampaigns.add(r.campaign_id);
+      }
+    }
+
     const ready: string[] = [];      // ready + has submittable tracks -> submit()
     const readyDone: string[] = [];  // ready but every track already 'done' -> finalize, don't submit
     for (const j of draft) {
@@ -152,8 +194,9 @@ export async function GET(request: Request) {
         continue;
       }
       const hasMarker = marked.has(j.id);
-      const aged = now - newest > STALE_DRAFT_MS;
-      if (!(hasMarker || aged)) { awaitingSidecar.push(j.id); continue; } // too fresh + unmarked: wait
+      // Aged only counts when the sidecar is NOT still finalizing this campaign (see the header).
+      const aged = now - newest > STALE_DRAFT_MS && !busyCampaigns.has(j.campaign_id);
+      if (!(hasMarker || aged)) { awaitingSidecar.push(j.id); continue; } // fresh, or sidecar still uploading: wait
       if ((submittableCount.get(j.id) ?? 0) > 0) ready.push(j.id);
       else readyDone.push(j.id); // all tracks transcribed but job never left 'draft': finalize it
     }
