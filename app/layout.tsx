@@ -1,18 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import {
-  Geist,
-  Cinzel_Decorative,
-  Oswald,
-  Chakra_Petch,
-  Marcellus,
-  Special_Elite,
-  Pirata_One,
-  EB_Garamond,
-  Source_Sans_3,
-  Courier_Prime,
-  IM_Fell_English,
-  JetBrains_Mono,
-} from "next/font/google";
 import localFont from "next/font/local";
 import { ThemeProvider } from "next-themes";
 import SystemThemeProvider from "@/components/system-theme-provider";
@@ -73,21 +59,32 @@ export const viewport: Viewport = {
   colorScheme: "dark",
 };
 
-const geistSans = Geist({ variable: "--font-geist-sans", display: "swap", subsets: ["latin"] });
-
-// Per-system display / body / mono faces, self-hosted by next/font and exposed as CSS variables. They
-// are attached to <html> (below) so the theme variables in lib/systems/system-theme.ts, which the
+// EVERY FONT IS SELF-HOSTED from app/fonts with next/font/local. Nothing is fetched from Google at
+// build time any more.
+//
+// Why: since Oct 2026 Google serves some faces from "fonts.gstatic.com/l/font?k=..." addresses (a URL
+// with its own query string), and Next 16.2.9's Google font loader rejects them ("next/font/google
+// queries have exactly one entry"). It hit Cinzel first, then Source Sans 3 once Cinzel was moved, so
+// it is not one font: any Google face can flip to that address form and fail the production build.
+// Bundling all of them removes the network dependency for good and makes builds reproducible.
+//
+// Files are the Latin WOFF2 from Fontsource 5.3.x (@fontsource/* and @fontsource-variable/geist), the
+// same weights each face requested before, with each font's license beside it (*-OFL.txt /
+// *-LICENSE.txt). The CSS variables are unchanged, so lib/systems/system-theme.ts and every theme that
+// reads them are untouched. adjustFontFallback picks the metric fallback by category: serif faces use
+// Times New Roman, sans and mono faces keep the default (Arial), matching what the Google loader did.
+//
+// They are attached to <html> (below) so the theme variables in lib/systems/system-theme.ts, which the
 // provider sets on <html> per active campaign, can reference them (a variable must be defined on the
 // element that reads it or an ancestor). Each system's --forge-display / --forge-body / --forge-mono
 // points at the right one; unthemed D&D uses Cinzel + the system serif exactly as before.
-//
-// Cinzel is SELF-HOSTED from app/fonts, not fetched from Google at build time. Since Oct 2026 Google
-// serves Cinzel's files from a "fonts.gstatic.com/l/font?k=..." address (a URL with its own query
-// string), and Next 16.2.9's Google font loader rejects it ("next/font/google queries have exactly one
-// entry"), which failed every production build. The files are the Latin 600 and 700 WOFF2 from
-// @fontsource/cinzel 5.3.0 (SIL Open Font License, copy in app/fonts/Cinzel-OFL.txt). Same CSS
-// variable as before, so every theme that reads --font-cinzel is unchanged. Times New Roman is the
-// metric fallback because Cinzel is a serif (the Google loader picked a serif fallback too).
+const geistSans = localFont({
+  src: "./fonts/geist-latin-wght-normal.woff2",
+  weight: "100 900",
+  style: "normal",
+  variable: "--font-geist-sans",
+  display: "swap",
+});
 const cinzel = localFont({
   src: [
     { path: "./fonts/cinzel-latin-600-normal.woff2", weight: "600", style: "normal" },
@@ -97,18 +94,87 @@ const cinzel = localFont({
   display: "swap",
   adjustFontFallback: "Times New Roman",
 });
-const cinzelDec = Cinzel_Decorative({ variable: "--font-cinzel-dec", weight: ["700"], display: "swap", subsets: ["latin"] });
-const oswald = Oswald({ variable: "--font-oswald", weight: ["500", "600"], display: "swap", subsets: ["latin"] });
-const chakra = Chakra_Petch({ variable: "--font-chakra", weight: ["500", "700"], display: "swap", subsets: ["latin"] });
-const marcellus = Marcellus({ variable: "--font-marcellus", weight: ["400"], display: "swap", subsets: ["latin"] });
-const specialElite = Special_Elite({ variable: "--font-special-elite", weight: ["400"], display: "swap", subsets: ["latin"] });
-const pirata = Pirata_One({ variable: "--font-pirata", weight: ["400"], display: "swap", subsets: ["latin"] });
-const garamond = EB_Garamond({ variable: "--font-garamond", weight: ["400", "600", "700", "800"], display: "swap", subsets: ["latin"] });
+const cinzelDec = localFont({
+  src: [{ path: "./fonts/cinzel-decorative-latin-700-normal.woff2", weight: "700", style: "normal" }],
+  variable: "--font-cinzel-dec",
+  display: "swap",
+  adjustFontFallback: "Times New Roman",
+});
+const oswald = localFont({
+  src: [
+    { path: "./fonts/oswald-latin-500-normal.woff2", weight: "500", style: "normal" },
+    { path: "./fonts/oswald-latin-600-normal.woff2", weight: "600", style: "normal" },
+  ],
+  variable: "--font-oswald",
+  display: "swap",
+});
+const chakra = localFont({
+  src: [
+    { path: "./fonts/chakra-petch-latin-500-normal.woff2", weight: "500", style: "normal" },
+    { path: "./fonts/chakra-petch-latin-700-normal.woff2", weight: "700", style: "normal" },
+  ],
+  variable: "--font-chakra",
+  display: "swap",
+});
+const marcellus = localFont({
+  src: [{ path: "./fonts/marcellus-latin-400-normal.woff2", weight: "400", style: "normal" }],
+  variable: "--font-marcellus",
+  display: "swap",
+  adjustFontFallback: "Times New Roman",
+});
+const specialElite = localFont({
+  src: [{ path: "./fonts/special-elite-latin-400-normal.woff2", weight: "400", style: "normal" }],
+  variable: "--font-special-elite",
+  display: "swap",
+});
+const pirata = localFont({
+  src: [{ path: "./fonts/pirata-one-latin-400-normal.woff2", weight: "400", style: "normal" }],
+  variable: "--font-pirata",
+  display: "swap",
+});
+const garamond = localFont({
+  src: [
+    { path: "./fonts/eb-garamond-latin-400-normal.woff2", weight: "400", style: "normal" },
+    { path: "./fonts/eb-garamond-latin-600-normal.woff2", weight: "600", style: "normal" },
+    { path: "./fonts/eb-garamond-latin-700-normal.woff2", weight: "700", style: "normal" },
+    { path: "./fonts/eb-garamond-latin-800-normal.woff2", weight: "800", style: "normal" },
+  ],
+  variable: "--font-garamond",
+  display: "swap",
+  adjustFontFallback: "Times New Roman",
+});
 // The marketing home page's body face (palette C, Oct 2026): a plain humanist sans under EB Garamond headlines.
-const sourceSans = Source_Sans_3({ variable: "--font-source-sans", weight: ["400", "600", "700"], display: "swap", subsets: ["latin"] });
-const courierPrime = Courier_Prime({ variable: "--font-courier-prime", weight: ["400", "700"], display: "swap", subsets: ["latin"] });
-const imFell = IM_Fell_English({ variable: "--font-imfell", weight: ["400"], display: "swap", subsets: ["latin"] });
-const jetbrains = JetBrains_Mono({ variable: "--font-jetbrains", weight: ["400", "500"], display: "swap", subsets: ["latin"] });
+const sourceSans = localFont({
+  src: [
+    { path: "./fonts/source-sans-3-latin-400-normal.woff2", weight: "400", style: "normal" },
+    { path: "./fonts/source-sans-3-latin-600-normal.woff2", weight: "600", style: "normal" },
+    { path: "./fonts/source-sans-3-latin-700-normal.woff2", weight: "700", style: "normal" },
+  ],
+  variable: "--font-source-sans",
+  display: "swap",
+});
+const courierPrime = localFont({
+  src: [
+    { path: "./fonts/courier-prime-latin-400-normal.woff2", weight: "400", style: "normal" },
+    { path: "./fonts/courier-prime-latin-700-normal.woff2", weight: "700", style: "normal" },
+  ],
+  variable: "--font-courier-prime",
+  display: "swap",
+});
+const imFell = localFont({
+  src: [{ path: "./fonts/im-fell-english-latin-400-normal.woff2", weight: "400", style: "normal" }],
+  variable: "--font-imfell",
+  display: "swap",
+  adjustFontFallback: "Times New Roman",
+});
+const jetbrains = localFont({
+  src: [
+    { path: "./fonts/jetbrains-mono-latin-400-normal.woff2", weight: "400", style: "normal" },
+    { path: "./fonts/jetbrains-mono-latin-500-normal.woff2", weight: "500", style: "normal" },
+  ],
+  variable: "--font-jetbrains",
+  display: "swap",
+});
 
 const fontVars = [
   geistSans.variable, cinzel.variable, cinzelDec.variable, oswald.variable, chakra.variable,
