@@ -6,8 +6,15 @@
 // which emails the admin. No auth, no persistence, nothing stored in an account. Styled to match the
 // document register of the landing / pilot pages (cream, serif), not the in-app dungeon chrome.
 //
-// The `company` field is a honeypot: hidden from humans, and if a bot fills it the API silently
+// The `sax_hp_9f3` field is a honeypot: hidden from humans, and if a bot fills it the API silently
 // accepts and drops the submission. Kept simple on purpose; a pilot form is low volume.
+//
+// WHY THE ODD NAME (2026-10-20). It used to be called "company" with a visible-to-the-DOM label
+// "Company". Browser autofill (Chrome especially, and it ignores autoComplete="off" for address-like
+// fields) recognises both and can fill the hidden box from the user's saved address. An applicant who
+// hit that would trip the trap: the API answers ok, the page says "Thanks, that is in", and no email
+// is ever sent. Suspected (not proven) cause of a lost application on 2026-10-20. The name and label are now deliberately meaningless to autofill heuristics, and the
+// password-manager ignore attributes stop 1Password, LastPass and Bitwarden from filling it too.
 
 import { useState } from "react";
 import { SAX, STONE } from "@/lib/theme";
@@ -43,7 +50,7 @@ export default function PilotForm() {
       setting: String(data.get("setting") || "").trim(),
       tables: String(data.get("tables") || "").trim(),
       description: String(data.get("description") || "").trim(),
-      company: String(data.get("company") || ""), // honeypot
+      sax_hp_9f3: String(data.get("sax_hp_9f3") || ""), // honeypot, see the header
     };
     if (!payload.name || !payload.email) {
       setError("Please add your name and email.");
@@ -121,7 +128,7 @@ export default function PilotForm() {
 
       {/* Honeypot: visually hidden, off the tab order, ignored by humans. */}
       <div aria-hidden="true" style={{ position: "absolute", left: "-9999px", top: "auto", height: 0, overflow: "hidden" }}>
-        <label>Company<input name="company" type="text" tabIndex={-1} autoComplete="off" /></label>
+        <label>Leave this empty<input name="sax_hp_9f3" type="text" tabIndex={-1} autoComplete="off" data-1p-ignore="true" data-lpignore="true" data-bwignore="true" /></label>
       </div>
 
       {status === "error" && <p style={errStyle}>{error}</p>}

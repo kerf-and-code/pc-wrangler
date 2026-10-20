@@ -9,8 +9,10 @@ import { NextResponse } from "next/server";
 // Uses the same Resend-over-fetch pattern as app/api/recap/send: RESEND_API_KEY, a from-address on the
 // verified send.kerfandcode.com domain, and reply_to set to the applicant so the admin can just reply.
 //
-// Abuse: no login means no per-user identity, so this leans on a honeypot field (`company`, hidden in
+// Abuse: no login means no per-user identity, so this leans on a honeypot field (`sax_hp_9f3`, hidden in
 // the form) plus length caps and required-field validation. A pilot form is low volume; that is enough.
+// The honeypot used to be named "company", which browser autofill filled from saved addresses and so
+// silently dropped real applications (2026-10-20); see components/pilot-form.tsx.
 
 export const maxDuration = 20;
 
@@ -65,7 +67,7 @@ export async function POST(request: Request) {
     const raw = await request.json().catch(() => ({}));
 
     // Honeypot: a bot filled the hidden field. Accept silently, send nothing.
-    if (clip(raw?.company, 100)) {
+    if (clip(raw?.sax_hp_9f3, 100)) {
       return NextResponse.json({ ok: true });
     }
 
