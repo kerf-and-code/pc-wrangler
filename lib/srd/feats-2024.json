@@ -21,6 +21,20 @@
   }
  },
  {
+  "name": "Abjuration Adept",
+  "category": "General",
+  "prerequisite": "Level 4+, Spellcasting or Pact Magic Feature",
+  "description": "Ability Score Increase. +1 Intelligence, Wisdom, or Charisma (max 20). Additional Spells. Always prepared once you have slots of that level: Shield (1), Lesser Restoration (2), Protection from Energy (3), Banishment (4), Mass Cure Wounds (5). Protective Ward. When you cast an Abjuration spell with a slot, you or a creature within 30 feet gains Temporary Hit Points equal to twice the slot level.",
+  "asi": {
+   "amount": 1,
+   "choice": [
+    "int",
+    "wis",
+    "cha"
+   ]
+  }
+ },
+ {
   "name": "Actor",
   "category": "General",
   "prerequisite": "Level 4+, Charisma 13+",
@@ -47,9 +61,50 @@
   "description": "Initiative Proficiency. When you roll Initiative, you can add your Proficiency Bonus to the roll. Initiative Swap. Immediately after you roll Initiative, you can swap your Initiative with the Initiative of one willing ally in the same combat. You can’t make this swap if you or the ally has the Incapacitated condition."
  },
  {
+  "name": "Arcane Artist",
+  "category": "Origin",
+  "description": "Cantrip. Learn Minor Illusion (Intelligence, Wisdom, or Charisma, chosen with the feat). Inspiring Magic. Once per Long Rest, when you cast an Illusion spell, one ally within 30 feet who can see you gains Heroic Inspiration."
+ },
+ {
+  "name": "Arcane Eloquence",
+  "category": "Origin",
+  "description": "Cantrip. Learn Vicious Mockery (Intelligence, Wisdom, or Charisma, chosen with the feat). Smooth Talker. Add 1d4 to Charisma (Deception, Intimidation, or Persuasion) checks."
+ },
+ {
+  "name": "Arcane Infiltrator",
+  "category": "Origin",
+  "description": "Cantrip. Learn Friends (Intelligence, Wisdom, or Charisma, chosen with the feat). Cunning Diversion. Take the Dodge action as a Bonus Action, Proficiency Bonus times per Long Rest."
+ },
+ {
   "name": "Arcane Infiltrator (DMLS)",
   "category": "Origin",
   "description": "Cantrip. You learn the Friends cantrip. Intelligence, Wisdom, or Charisma is your spellcasting ability for this spell (choose when you select this feat). Cunning Diversion. You can take the Dodge action as a Bonus Action. You can use this benefit a number of times equal to your Proficiency Bonus, and you regain all expended uses when you finish a Long Rest."
+ },
+ {
+  "name": "Arcane Omens",
+  "category": "Origin",
+  "description": "Cantrip. Learn Guidance (Intelligence, Wisdom, or Charisma, chosen with the feat). Helpful Premonition. Reaction when you or a creature within 30 feet fails a save: add 1d4 to it, possibly turning it into a success. Proficiency Bonus times per Long Rest."
+ },
+ {
+  "name": "Arcane Overload",
+  "category": "Origin",
+  "description": "Cantrip. Learn Fire Bolt (Intelligence, Wisdom, or Charisma, chosen with the feat). Power Surge. Once per Long Rest, add your Proficiency Bonus to one damage roll of an Evocation spell."
+ },
+ {
+  "name": "Arcane Safeguard",
+  "category": "Origin",
+  "description": "Cantrip. Learn Resistance (Intelligence, Wisdom, or Charisma, chosen with the feat), and cast it as a Bonus Action Proficiency Bonus times per Long Rest. Sheltering Aid. When you Help an ally's ability check, they gain Temporary Hit Points equal to your Proficiency Bonus."
+ },
+ {
+  "name": "Arcane Undertaker",
+  "category": "Origin",
+  "description": "Cantrip. Learn one Cleric or Wizard Necromancy cantrip (Intelligence, Wisdom, or Charisma, chosen with the feat). Knowledge from the Dead. Add 1d4 to Intelligence (History) and Wisdom (Medicine) checks. Understanding of Death. Once per Long Rest, stabilizing a creature at 0 HP with the Help action gives you Heroic Inspiration."
+ },
+ {
+  "name": "Arcane Warrior",
+  "category": "Fighting Style",
+  "prerequisite": "Fighting Style Feature",
+  "description": "Learn two Wizard cantrips (Intelligence, Wisdom, or Charisma, chosen with the feat). Each time you gain a level, you can swap one for another Wizard cantrip."
  },
  {
   "name": "Archery",
@@ -192,6 +247,20 @@
   }
  },
  {
+  "name": "Boon of Erupting Spellpower",
+  "category": "Epic Boon",
+  "prerequisite": "Level 19+, Spellcasting or Pact Magic Feature",
+  "description": "Ability Score Increase. +1 Intelligence, Wisdom, or Charisma (max 30). Spell Overload. When a slot-cast spell deals damage, treat 1s and 2s on its damage dice as 3s and knock every creature it damaged Prone. Recharges when you roll Initiative or finish a Short or Long Rest.",
+  "asi": {
+   "amount": 1,
+   "choice": [
+    "int",
+    "wis",
+    "cha"
+   ]
+  }
+ },
+ {
   "name": "Boon of Exquisite Radiance",
   "category": "Epic Boon",
   "prerequisite": "Level 19+",
@@ -261,6 +330,20 @@
   "description": "Ability Score Increase. Increase one ability score of your choice by 1, to a maximum of 30. Shadowy Stretch. When you take the Attack action, your reach for your Melee weapon attacks increases by 10 feet until the end of your turn. Dancing Silhouette. You can take the Dodge action as a Bonus Action.",
   "asi": {
    "any": 1
+  }
+ },
+ {
+  "name": "Boon of Magic School Mastery",
+  "category": "Epic Boon",
+  "prerequisite": "Level 19+, Spellcasting or Pact Magic Feature",
+  "description": "Ability Score Increase. +1 Intelligence, Wisdom, or Charisma (max 30). Mastered School. Pick a school. Rote Casting: a level 1 spell of that school from your class list is always prepared and castable with no slot or components. Signature Arcanum: a level 7 or lower spell of that school is always prepared and castable free once per Long Rest. Repeatable with a different school.",
+  "asi": {
+   "amount": 1,
+   "choice": [
+    "int",
+    "wis",
+    "cha"
+   ]
   }
  },
  {
@@ -409,6 +492,15 @@
   }
  },
  {
+  "name": "Boon of the Iron Mind",
+  "category": "Epic Boon",
+  "prerequisite": "Level 19+",
+  "description": "Ability Score Increase. +1 to any ability (max 30). Unshakable Focus. You lose Concentration only by starting another Concentration effect, becoming Petrified or Unconscious, or dying.",
+  "asi": {
+   "any": 1
+  }
+ },
+ {
   "name": "Boon of the Night Spirit",
   "category": "Epic Boon",
   "prerequisite": "Level 19+",
@@ -504,6 +596,20 @@
   }
  },
  {
+  "name": "Conjuration Adept",
+  "category": "General",
+  "prerequisite": "Level 4+, Spellcasting or Pact Magic Feature",
+  "description": "Ability Score Increase. +1 Intelligence, Wisdom, or Charisma (max 20). Additional Spells. Always prepared once you have slots of that level: Entangle (1), Misty Step (2), Conjure Animals (3), Dimension Door (4), Conjure Elemental (5). Persistent Conjuration. Add the increased ability's modifier to Constitution saves to keep Concentration on Conjuration spells.",
+  "asi": {
+   "amount": 1,
+   "choice": [
+    "int",
+    "wis",
+    "cha"
+   ]
+  }
+ },
+ {
   "name": "Crafter",
   "category": "Origin",
   "description": "Tool Proficiency. You gain proficiency with three different Artisan’s Tools of your choice from the Fast Crafting table. Discount. Whenever you buy a nonmagical item, you receive a 20 percent discount on it. Fast Crafting. When you finish a Long Rest, you can craft one piece of gear from the Fast Crafting table, provided you have the Artisan’s Tools associated with that item and have proficiency with those tools. The item lasts until you finish another Long Rest, at which point the item falls apart. Fast Crafting"
@@ -552,6 +658,20 @@
   "description": "Ability Score Increase. Increase one ability score of your choice by 1, to a maximum of 20. Toughened Flesh. Immediately after you take Bludgeoning, Piercing, or Slashing damage, you can take a Reaction to gain Resistance to Bludgeoning, Piercing, and Slashing damage until the start of your next turn. Once you use this benefit, you can’t use it again until you finish a Short or Long Rest.",
   "asi": {
    "any": 1
+  }
+ },
+ {
+  "name": "Divination Adept",
+  "category": "General",
+  "prerequisite": "Level 4+, Spellcasting or Pact Magic Feature",
+  "description": "Ability Score Increase. +1 Intelligence, Wisdom, or Charisma (max 20). Additional Spells. Always prepared once you have slots of that level: Detect Evil and Good (1), Mind Spike (2), Clairvoyance (3), Divination (4), Scrying (5). Prescient Intervention. Reaction: give a creature within 60 feet Advantage or Disadvantage on a D20 Test. Once per Long Rest, recharged by casting a Divination spell with a slot.",
+  "asi": {
+   "amount": 1,
+   "choice": [
+    "int",
+    "wis",
+    "cha"
+   ]
   }
  },
  {
@@ -671,6 +791,15 @@
   }
  },
  {
+  "name": "Elemental Familiar",
+  "category": "General",
+  "prerequisite": "Level 4+, Familiar Friend Feat",
+  "description": "Ability Score Increase. +1 to any ability (max 20). Elemental Energy. When you cast Find Familiar, pick Acid, Cold, Fire, Lightning, or Thunder: the familiar resists it, and as a Bonus Action (familiar within 120 feet, using its Reaction) it pulses a 5-foot Emanation: Dexterity save (DC 8 + your Find Familiar casting modifier + Proficiency Bonus) or 2d4 of that type and Prone if Medium or smaller.",
+  "asi": {
+   "any": 1
+  }
+ },
+ {
   "name": "Elven Accuracy",
   "category": "Feat",
   "prerequisite": "Elf or half-elf",
@@ -705,6 +834,20 @@
   "description": "Speak with Animals. You always have the Speak with Animals spell prepared and can cast it with any spell slots you have. Intelligence, Wisdom, or Charisma is your spellcasting ability for this spell (choose when you select this feat). When you cast this spell as a Ritual, its duration is 8 hours. Tag Team. When you take the Help action, you can switch places with a willing ally within 5 feet of yourself as part of that same action. This movement doesn’t provoke Opportunity Attacks. You can’t use this benefit if the ally has the Incapacitated condition."
  },
  {
+  "name": "Enchantment Adept",
+  "category": "General",
+  "prerequisite": "Level 4+, Spellcasting or Pact Magic Feature",
+  "description": "Ability Score Increase. +1 Intelligence, Wisdom, or Charisma (max 20). Additional Spells. Always prepared once you have slots of that level: Dissonant Whispers (1), Enthrall (2), Hold Person (3), Dominate Beast (4), Modify Memory (5). Subtle Enchantments. Enchantment spells cast with a slot need no Verbal, Somatic, or Material components, except costed or consumed materials.",
+  "asi": {
+   "amount": 1,
+   "choice": [
+    "int",
+    "wis",
+    "cha"
+   ]
+  }
+ },
+ {
   "name": "Enclave Magic",
   "category": "General",
   "prerequisite": "Level 4+, Emerald Enclave Fledgling Feat",
@@ -723,6 +866,20 @@
   "category": "Dark Gift",
   "prerequisite": "Ravenloft Campaign",
   "description": "A second being resides within your body, offering knowledge and assistance while furthering its own agenda. You gain the following features. Entwined Existence. The symbiote can’t be targeted. If you die, so does your symbiote. If you are returned to life, your symbiote also revives."
+ },
+ {
+  "name": "Evocation Adept",
+  "category": "General",
+  "prerequisite": "Level 4+, Spellcasting or Pact Magic Feature",
+  "description": "Ability Score Increase. +1 Intelligence, Wisdom, or Charisma (max 20). Additional Spells. Always prepared once you have slots of that level: Chromatic Orb (1), Shatter (2), Fireball (3), Vitriolic Sphere (4), Wall of Force (5). Fueled Evocation. Once per turn when an Evocation spell deals damage, spend up to two Hit Point Dice and add the roll to one damage roll.",
+  "asi": {
+   "amount": 1,
+   "choice": [
+    "int",
+    "wis",
+    "cha"
+   ]
+  }
  },
  {
   "name": "Fade Away",
@@ -749,6 +906,11 @@
    ],
    "amount": 1
   }
+ },
+ {
+  "name": "Familiar Friend",
+  "category": "Origin",
+  "description": "Faithful Companion. Find Familiar is always prepared (Intelligence, Wisdom, or Charisma); cast it free once per Long Rest with no Material component, or with your slots. Fortified Familiar. Your familiar gains extra HP equal to twice your character level. Helpful Friend. With your familiar within 5 feet, gain Advantage on a proficient skill check, Proficiency Bonus times per Long Rest."
  },
  {
   "name": "Fey Pact",
@@ -1090,6 +1252,20 @@
   }
  },
  {
+  "name": "Illusion Adept",
+  "category": "General",
+  "prerequisite": "Level 4+, Spellcasting or Pact Magic Feature",
+  "description": "Ability Score Increase. +1 Intelligence, Wisdom, or Charisma (max 20). Additional Spells. Always prepared once you have slots of that level: Silent Image (1), Phantasmal Force (2), Major Image (3), Hallucinatory Terrain (4), Seeming (5). Masterful Illusions. Illusion spells cast with a slot need no Verbal, Somatic, or Material components (except costed or consumed), and creatures have Disadvantage on Investigation checks to see through your illusions.",
+  "asi": {
+   "amount": 1,
+   "choice": [
+    "int",
+    "wis",
+    "cha"
+   ]
+  }
+ },
+ {
   "name": "Infernal Bulwark",
   "category": "General",
   "prerequisite": "Level 4+, Infernal Pact Feat",
@@ -1299,6 +1475,20 @@
   }
  },
  {
+  "name": "Magic Connoisseur",
+  "category": "General",
+  "prerequisite": "Level 4+, Magic Initiate Feat",
+  "description": "Ability Score Increase. +1 Intelligence, Wisdom, or Charisma (max 20). Additional Spells. Pick a level 1 and a level 2 spell from your Magic Initiate list; both are always prepared and each can be cast free once per Long Rest, or with slots, using your Magic Initiate ability. Spell Change. On gaining a level, swap one for another of the same level from that list.",
+  "asi": {
+   "amount": 1,
+   "choice": [
+    "int",
+    "wis",
+    "cha"
+   ]
+  }
+ },
+ {
   "name": "Magic Initiate",
   "category": "Origin",
   "description": "Two Cantrips. You learn two cantrips of your choice from the Cleric, Druid, or Wizard spell list. Intelligence, Wisdom, or Charisma is your spellcasting ability for this feat’s spells (choose when you select this feat). Level 1 Spell. Choose a level 1 spell from the same list you selected for this feat’s cantrips. You always have that spell prepared. You can cast it once without a spell slot, and you regain the ability to cast it in that way when you finish a Long Rest. You can also cast the spell using any spell slots you have. Spell Change. Whenever you gain a new level, you can replace one of the spells you chose for this feat with a different spell of the same level from the chosen spell list. Repeatable. You can take this feat more than once, but you must choose a different spell list each time."
@@ -1463,6 +1653,20 @@
   }
  },
  {
+  "name": "Necromancy Adept",
+  "category": "General",
+  "prerequisite": "Level 4+, Spellcasting or Pact Magic Feature",
+  "description": "Ability Score Increase. +1 Intelligence, Wisdom, or Charisma (max 20). Additional Spells. Always prepared once you have slots of that level: Inflict Wounds (1), Ray of Enfeeblement (2), Vampiric Touch (3), Blight (4), Raise Dead (5). Life Manipulation. When you cast a Necromancy spell with a slot, spend up to two Hit Point Dice and heal the roll plus the slot level.",
+  "asi": {
+   "amount": 1,
+   "choice": [
+    "int",
+    "wis",
+    "cha"
+   ]
+  }
+ },
+ {
   "name": "Observant",
   "category": "General",
   "prerequisite": "Level 4+, Intelligence or Wisdom 13+",
@@ -1500,6 +1704,15 @@
     "cha"
    ],
    "amount": 1
+  }
+ },
+ {
+  "name": "Otherworldly Familiar",
+  "category": "General",
+  "prerequisite": "Level 4+, Familiar Friend Feat",
+  "description": "Ability Score Increase. +1 to any ability (max 20). Otherworldly Power. When you cast Find Familiar, it resists your choice of Necrotic, Poison, Psychic, Radiant, or Thunder, and it can pass through creatures and objects as Difficult Terrain (shunted out if it ends a turn inside an object).",
+  "asi": {
+   "any": 1
   }
  },
  {
@@ -1558,6 +1771,11 @@
    ],
    "amount": 1
   }
+ },
+ {
+  "name": "Portal Jumper",
+  "category": "Origin",
+  "description": "Otherworldly Resilience. Resistance to Necrotic, Psychic, or Radiant (choose one). Portal Step. Spend 15 feet of movement to teleport 15 feet to a space you can see, once per turn, Proficiency Bonus times per Long Rest."
  },
  {
   "name": "Potent Dragonmark",
@@ -1800,6 +2018,15 @@
   }
  },
  {
+  "name": "Soothing Familiar",
+  "category": "General",
+  "prerequisite": "Level 4+, Familiar Friend Feat",
+  "description": "Ability Score Increase. +1 to any ability (max 20). Healing Beacon. While your familiar is within 120 feet of you, allies within 5 feet of it treat 1s and 2s on healing dice as 3s.",
+  "asi": {
+   "any": 1
+  }
+ },
+ {
   "name": "Soul of the Storm Giant",
   "category": "Feat",
   "prerequisite": "4th Level, Strike of the Giants (Storm Strike) Feat",
@@ -1830,6 +2057,19 @@
   }
  },
  {
+  "name": "Spell Resistant",
+  "category": "General",
+  "prerequisite": "Level 4+",
+  "description": "Ability Score Increase. +1 Dexterity or Constitution (max 20). Magical Resilience. Resistance to Necrotic, Psychic, Radiant, or Thunder (choose one). Magic Resistant. When you would fail a save against a spell or magical effect, add 1d6, possibly turning it into a success; Proficiency Bonus times per Long Rest.",
+  "asi": {
+   "amount": 1,
+   "choice": [
+    "dex",
+    "con"
+   ]
+  }
+ },
+ {
   "name": "Spell Sniper",
   "category": "General",
   "prerequisite": "Level 4+, Spellcasting or Pact Magic Feature",
@@ -1841,6 +2081,20 @@
     "cha"
    ],
    "amount": 1
+  }
+ },
+ {
+  "name": "Spell Subterfuge",
+  "category": "General",
+  "prerequisite": "Level 4+, Spellcasting or Pact Magic Feature",
+  "description": "Ability Score Increase. +1 Intelligence, Wisdom, or Charisma (max 20). Shrouding Spells. After casting an action spell with a slot, take Dash and Hide together as a Bonus Action; uses equal to the increased ability's modifier per Long Rest. Sneaky Casting. Verbal components and spell attacks don't end your Hide-granted Invisible condition if you end the turn behind Three-Quarters or Total Cover.",
+  "asi": {
+   "amount": 1,
+   "choice": [
+    "int",
+    "wis",
+    "cha"
+   ]
   }
  },
  {
@@ -1977,6 +2231,20 @@
   }
  },
  {
+  "name": "Transmutation Adept",
+  "category": "General",
+  "prerequisite": "Level 4+, Spellcasting or Pact Magic Feature",
+  "description": "Ability Score Increase. +1 Intelligence, Wisdom, or Charisma (max 20). Additional Spells. Always prepared once you have slots of that level: Jump (1), Spider Climb (2), Slow (3), Polymorph (4), Animate Objects (5). Magical Augmentation. When you cast a Transmutation spell with a slot on your turn, gain Speed equal to 5 times the slot level until the turn ends.",
+  "asi": {
+   "amount": 1,
+   "choice": [
+    "int",
+    "wis",
+    "cha"
+   ]
+  }
+ },
+ {
   "name": "Transmutation Adept (DMAU)",
   "category": "General",
   "prerequisite": "Level 4+",
@@ -1988,6 +2256,14 @@
     "cha"
    ],
    "amount": 1
+  }
+ },
+ {
+  "name": "Transmuted Anatomy",
+  "category": "Origin",
+  "description": "Lengthened Stride. Speed +5 feet. Resilient Anatomy. Advantage on saves against being forcibly shape-shifted. When you fail a Constitution save, use a Reaction to add 1d4, possibly turning it into a success; Proficiency Bonus times per Long Rest.",
+  "effects": {
+   "speed": 5
   }
  },
  {
@@ -2057,6 +2333,15 @@
     "cha"
    ],
    "amount": 1
+  }
+ },
+ {
+  "name": "Warlike Familiar",
+  "category": "General",
+  "prerequisite": "Level 4+, Familiar Friend Feat",
+  "description": "Ability Score Increase. +1 to any ability (max 20). Battle Familiar. The Battle Familiar spell is always prepared; cast it free once per Long Rest or with slots, using your Familiar Friend ability. Intercept Attack. When a creature within 5 feet of your familiar is hit, the familiar's Reaction adds your Proficiency Bonus to that creature's AC against the attack.",
+  "asi": {
+   "any": 1
   }
  },
  {

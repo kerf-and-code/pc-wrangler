@@ -880,7 +880,7 @@
       "Wizard"
     ],
     "attack_type": null,
-    "description": "You summon a special familiar that can fight alongside you. It has enhanced combat abilities compared to a standard familiar and remains for the duration.",
+    "description": "Summons a combat familiar (Celestial, Fey, or Fiend) in Brute, Flyer, or Stalker form that rolls its own Initiative. AC, HP, attack count, and Force damage scale with the slot level. If you already have a Find Familiar familiar, it takes the battle form and gains Temporary Hit Points instead.",
     "edition": "2024",
     "source": "kc"
   },
@@ -1017,7 +1017,7 @@
       "Wizard"
     ],
     "attack_type": null,
-    "description": "You play a discordant melody that interferes with concentration. Creatures of your choice within range have disadvantage on Constitution saving throws to maintain concentration.",
+    "description": "20-foot-radius Sphere within 120 feet. Each creature makes a Constitution save; on a failure it loses Concentration and has Disadvantage on Concentration saves while your spell lasts.",
     "edition": "2024",
     "source": "kc"
   },
@@ -1050,9 +1050,19 @@
     "duration": "1 hour",
     "concentration": false,
     "ritual": true,
-    "classes": [],
+    "classes": [
+      "Artificer",
+      "Bard",
+      "Cleric",
+      "Druid",
+      "Paladin",
+      "Ranger",
+      "Sorcerer",
+      "Warlock",
+      "Wizard"
+    ],
     "attack_type": null,
-    "description": "You create a magical arena that forces two creatures into single combat. While inside, they cannot leave easily and outside creatures have difficulty interfering.",
+    "description": "Ritual. A 15-foot-radius ring holds two willing duelists for 1 hour; anyone else entering ends it. A duelist dropped to 0 HP, or hit by an instant-death effect, is Stable and teleported outside instead of dying. One extra duelist per slot level above 2.",
     "edition": "2024",
     "source": "kc"
   },
@@ -1375,12 +1385,12 @@
     "name": "Uncertain Footing",
     "level": 2,
     "school": "Illusion",
-    "casting_time": "Action or Ritual",
+    "casting_time": "Action",
     "range": "120 feet",
     "components": "V, S, M (a distorted lens)",
     "duration": "Concentration, up to 1 minute",
     "concentration": true,
-    "ritual": true,
+    "ritual": false,
     "classes": [
       "Artificer",
       "Bard",
@@ -1388,7 +1398,7 @@
       "Wizard"
     ],
     "attack_type": null,
-    "description": "You warp the perception of the ground in an area so that creatures treat it as difficult terrain and may fall prone if they move carelessly.",
+    "description": "Up to three creatures within 120 feet make an Intelligence save. On a failure a target's Speed is halved and it can't Dash. It repeats the save at the end of each of its turns.",
     "edition": "2024",
     "source": "kc"
   },
@@ -1440,7 +1450,7 @@
       "Wizard"
     ],
     "attack_type": null,
-    "description": "Necromantic energy washes over an area. Creatures of your choice take necrotic damage, while other creatures regain hit points. Plants in the area wither or bloom accordingly.",
+    "description": "10-foot-radius Sphere within 60 feet. Creatures you choose make a Constitution save for 3d6 Necrotic (half on success), and ordinary plants wither. One creature in the area can spend a Hit Point Die to heal that roll plus your spellcasting modifier. Each slot level above 2 adds 1d6 damage and one more Hit Point Die.",
     "edition": "2024",
     "source": "kc"
   },
@@ -1535,7 +1545,7 @@
       "Wizard"
     ],
     "attack_type": null,
-    "description": "You make a calming gesture and up to three willing creatures fall unconscious for 10 minutes, gaining the benefits of a short rest if they remain undisturbed.",
+    "description": "Up to three willing creatures within 30 feet fall Unconscious for 10 minutes. A target that sleeps undisturbed for the full duration gains a Short Rest's benefits, then can't be affected again until a Long Rest. One extra target per slot level above 3.",
     "edition": "both",
     "source": "kc"
   },
@@ -1717,7 +1727,7 @@
       "Wizard"
     ],
     "attack_type": null,
-    "description": "You sow seeds of uncertainty in a creature's mind. On a failed Wisdom save it has disadvantage on attack rolls and ability checks for the duration.",
+    "description": "One creature within 120 feet makes a Wisdom save or has Disadvantage on D20 Tests. It repeats the save at the end of each of its turns.",
     "edition": "2024",
     "source": "kc"
   },
@@ -2086,12 +2096,12 @@
     "name": "Distorted Distance",
     "level": 4,
     "school": "Illusion",
-    "casting_time": "Action or Ritual",
+    "casting_time": "Action",
     "range": "120 feet",
     "components": "V, S",
     "duration": "Concentration, up to 10 minutes",
     "concentration": true,
-    "ritual": true,
+    "ritual": false,
     "classes": [
       "Artificer",
       "Bard",
@@ -2099,7 +2109,7 @@
       "Wizard"
     ],
     "attack_type": null,
-    "description": "You warp space in an area so that distances appear greater or shorter than they are, affecting movement and ranged attacks in complex ways.",
+    "description": "60-foot-radius Sphere within 120 feet. For each creature in it you choose either a stretch (Intelligence save or 2d10 Psychic and Difficult Terrain until its turn ends) or a shortcut (+20 feet Speed until the end of its next turn). Repeats when a creature enters or ends its turn there, once per turn.",
     "edition": "2024",
     "source": "kc"
   },
@@ -2161,12 +2171,12 @@
     "name": "Festering Blast",
     "level": 4,
     "school": "Necromancy",
-    "casting_time": "1 hour or Ritual",
-    "range": "10 feet",
+    "casting_time": "Action",
+    "range": "Self",
     "components": "V, S",
     "duration": "1 minute",
     "concentration": false,
-    "ritual": true,
+    "ritual": false,
     "classes": [
       "Druid",
       "Sorcerer",
@@ -2174,7 +2184,7 @@
       "Wizard"
     ],
     "attack_type": null,
-    "description": "You create a blast of necrotic energy that causes wounds to fester. Creatures in the area take necrotic damage and may have their healing reduced for a time.",
+    "description": "60-foot by 10-foot Line from you. Constitution save: 4d10 Necrotic and Poisoned on a failure. A Poisoned target takes 2d10 Poison at the start of each of its turns and repeats the save at the end of each. +1d10 initial per slot level above 4.",
     "edition": "2024",
     "source": "kc"
   },
@@ -2547,7 +2557,7 @@
     "level": 4,
     "school": "Enchantment",
     "casting_time": "Action",
-    "range": "60 feet",
+    "range": "Self",
     "components": "V, S",
     "duration": "10 minutes",
     "concentration": false,
@@ -2557,7 +2567,7 @@
       "Warlock"
     ],
     "attack_type": null,
-    "description": "You create an area where creatures find it difficult to act hostile. Creatures in the zone have disadvantage on attack rolls against other creatures in the zone and may be compelled to stop fighting.",
+    "description": "For 10 minutes, a 60-foot Emanation around you: when you make an ability check to influence a creature inside it, a d20 roll of 9 or lower counts as a 10.",
     "edition": "2024",
     "source": "kc"
   },
@@ -2739,7 +2749,7 @@
       "Wizard"
     ],
     "attack_type": null,
-    "description": "A tendril of inky darkness reaches out and touches a creature. On a failed Dexterity save it takes necrotic damage and you can use a bonus action on subsequent turns to deal additional necrotic damage automatically while concentration lasts.",
+    "description": "Target within 60 feet makes a Dexterity save: 6d8 Necrotic on a failure, and on later turns a Bonus Action deals 2d8 Necrotic automatically. Half the initial damage on a success, and the spell ends. You heal half the Necrotic damage dealt. Ends if the target leaves range or gains Total Cover. +1d8 initial per slot level above 5.",
     "edition": "both",
     "source": "kc"
   },
@@ -2775,7 +2785,7 @@
       "Wizard"
     ],
     "attack_type": null,
-    "description": "You transform an area of ground into a grave-like terrain that deals necrotic damage to creatures that start their turn there and may hinder movement or impose conditions related to death and decay.",
+    "description": "Up to four contiguous 10-foot squares within 120 feet become Difficult Terrain for enemies. Enemies there, or entering or ending a turn there, make a Strength save (once per turn): 6d6 Necrotic and -1d6 on their damage rolls until the end of their next turn. +1d6 per slot level above 5.",
     "edition": "2024",
     "source": "kc"
   },
@@ -2896,7 +2906,7 @@
       "Wizard"
     ],
     "attack_type": null,
-    "description": "You recall a spell of 5th level or lower that you have previously prepared and already cast today, restoring it to your mind so you can cast it again.",
+    "description": "Recover up to two expended spell slots of level 2 or lower. Cast at level 6 or 7, the cap rises to level 3; at level 8 or higher, to level 4.",
     "edition": "2024",
     "source": "kc"
   },
@@ -2915,7 +2925,7 @@
       "Wizard"
     ],
     "attack_type": null,
-    "description": "You send ribbons of negative energy at a creature. On a hit it takes necrotic damage; if this reduces it to 0 hit points it rises as a zombie under your control (if it was a humanoid).",
+    "description": "One creature within 60 feet. Non-Undead make a Constitution save for 3d10 + 25 Necrotic (half on success); a Humanoid it kills rises next turn as a Zombie that obeys you for 24 hours. An Undead target instead gains 3d10 Temporary Hit Points. +1d10 per slot level above 5.",
     "edition": "both",
     "source": "kc"
   },
@@ -2994,7 +3004,7 @@
     "name": "Spirit Lantern",
     "level": 5,
     "school": "Necromancy",
-    "casting_time": "Bonus Action",
+    "casting_time": "Action",
     "range": "Self",
     "components": "V, S, M (a black lantern)",
     "duration": "10 minutes",
@@ -3007,7 +3017,7 @@
       "Wizard"
     ],
     "attack_type": null,
-    "description": "You create a lantern of spiritual light that can reveal invisible creatures, deal radiant damage to undead, or provide guidance and protection to allies.",
+    "description": "A floating lantern sheds 60 feet of Dim Light for 10 minutes and collects a soul fragment when an enemy dies in it, up to your spellcasting modifier. Bonus Action, spend a fragment: Drain Life (Constitution save, 4d8 + mod Necrotic, half on success), Repair Undead (heal 4d8 + mod), or Ward Ally (attacks against it have Disadvantage until your next turn).",
     "edition": "2024",
     "source": "kc"
   },
@@ -3080,7 +3090,7 @@
       "Ranger"
     ],
     "attack_type": null,
-    "description": "You call forth a plant spirit that takes the form of a dryad-like or treant-like creature. It obeys your commands and can manipulate plant life in the area.",
+    "description": "Summons a Large plant spirit (Fungus, Tree, or Vine) within 90 feet that acts right after you and obeys your commands. AC, HP, and attack count scale with slot level; the Fungus poisons at range, the Tree is armored and wrecks structures, the Vine climbs and can Dash or Disengage as a Bonus Action.",
     "edition": "2024",
     "source": "kc"
   },
@@ -3159,7 +3169,7 @@
     "name": "Waves of Exhaustion",
     "level": 5,
     "school": "Necromancy",
-    "casting_time": "Action",
+    "casting_time": "Bonus Action",
     "range": "Self",
     "components": "V, S, M (a piece of dried meat)",
     "duration": "Concentration, up to 1 minute",
@@ -3171,7 +3181,7 @@
       "Wizard"
     ],
     "attack_type": null,
-    "description": "You emit waves of necrotic energy that drain the vitality of creatures in a cone. On a failed Constitution save they gain levels of exhaustion.",
+    "description": "Bonus Action to start. For up to 1 minute, a Magic action sends out a 60-foot Cone; each creature in it makes a Constitution save or gains 1 Exhaustion level (it can't push anyone past level 4). All Exhaustion from the spell ends when the spell does.",
     "edition": "2024",
     "source": "kc"
   },
@@ -3587,7 +3597,7 @@
       "Druid"
     ],
     "attack_type": null,
-    "description": "You call forth the spirit of a dinosaur that takes a form of your choosing (such as a predator or herbivore of appropriate size). It obeys your commands and has traits matching its species.",
+    "description": "Summons a Huge dinosaur spirit (Ankylosaur, Triceratops, or Tyrannosaur) within 90 feet that acts right after you and obeys your commands. AC, HP, and attack count scale with slot level; the Tyrannosaur bites and grapples, the Triceratops charges to knock Prone, the Ankylosaur is armored and wrecks structures.",
     "edition": "2024",
     "source": "kc"
   },
@@ -3677,7 +3687,7 @@
       "Wizard"
     ],
     "attack_type": null,
-    "description": "You and friendly creatures within 30 feet of you gain the benefits of the Evasion feature, taking no damage on successful Dexterity saves against effects that normally deal half damage on a success.",
+    "description": "30-foot Emanation around you. You and allies inside have Advantage on Dexterity saves, take no damage on a successful save against half-damage effects, and only half on a failed one. Incapacitated creatures get no benefit.",
     "edition": "2024",
     "source": "kc"
   },
@@ -3746,7 +3756,7 @@
       "Wizard"
     ],
     "attack_type": null,
-    "description": "You shatter a creature's perception of reality. On a failed Intelligence save it is overwhelmed by conflicting sensory input, taking psychic damage and suffering disadvantage on attacks and checks.",
+    "description": "One creature within 120 feet makes an Intelligence save: 12d10 Psychic and Disadvantage on D20 Tests on a failure. Half damage on a success, and the spell ends. It repeats the save at the end of each of its turns.",
     "edition": "2024",
     "source": "kc"
   },
@@ -3814,7 +3824,7 @@
     "casting_time": "Action",
     "range": "60 feet",
     "components": "V",
-    "duration": "Instantaneous",
+    "duration": "1 minute",
     "concentration": false,
     "ritual": false,
     "classes": [
@@ -3824,7 +3834,7 @@
       "Wizard"
     ],
     "attack_type": null,
-    "description": "You speak a word of power that causes a creature with 100 hit points or fewer to be wracked with pain. It has disadvantage on attack rolls, ability checks, and saving throws, and its speed is reduced, until it receives magical healing.",
+    "description": "One creature within 60 feet takes 6d8 Force. If it has 100 HP or fewer it is also Charmed for up to 1 minute: Speed capped at 10 feet, Disadvantage on D20 Tests except Constitution saves, and it must pass a Constitution save to cast a spell (a failed cast keeps its slot). It repeats the save at the end of each of its turns.",
     "edition": "both",
     "source": "kc"
   },
@@ -3845,7 +3855,7 @@
       "Wizard"
     ],
     "attack_type": null,
-    "description": "You briefly alter the threads of fate for a creature, allowing it to reroll a failed saving throw or attack roll, or granting it a temporary boon or protection against a specific threat.",
+    "description": "Reaction when a creature within 60 feet fails a D20 Test: it rerolls with Advantage and must use the new roll. On a success it gains 6d10 Temporary Hit Points.",
     "edition": "2024",
     "source": "kc"
   },
@@ -3900,7 +3910,7 @@
       "Wizard"
     ],
     "attack_type": null,
-    "description": "You attempt to transform a creature into a different form. On a failed Constitution save its body and mind are changed, potentially granting it a new creature type, abilities, or appearance for the duration.",
+    "description": "One creature within 60 feet makes a Charisma save or is Charmed and Incapacitated, walking straight toward you and taking 4d8 Psychic if it ends a turn within 5 feet of you. It rerolls before entering harmful terrain. Each later turn, a Magic action targets a new creature. +1d8 per slot level above 7.",
     "edition": "2024",
     "source": "kc"
   },
@@ -3937,7 +3947,7 @@
       "Wizard"
     ],
     "attack_type": null,
-    "description": "You create a set of magical mirrors that can capture the attention of creatures, charm them, or reflect spells and attacks back at their originators.",
+    "description": "Up to three creatures within 90 feet make an Intelligence save: 7d6 Psychic and Stunned with halved Speed on a failure, half damage on a success. A Stunned target repeats the save at the end of each of its turns.",
     "edition": "2024",
     "source": "kc"
   },
@@ -3964,17 +3974,17 @@
     "name": "Illusory Dragon",
     "level": 8,
     "school": "Illusion",
-    "casting_time": "1 minute or Ritual",
+    "casting_time": "Action",
     "range": "120 feet",
     "components": "S",
     "duration": "Concentration, up to 1 minute",
     "concentration": true,
-    "ritual": true,
+    "ritual": false,
     "classes": [
       "Wizard"
     ],
     "attack_type": null,
-    "description": "You create a Huge illusory dragon that appears real. Creatures that fail an Intelligence save believe it is a true dragon and can take psychic damage from its illusory breath weapon; the illusion can move and act convincingly.",
+    "description": "A tangible Huge shadow dragon appears within 120 feet, immune to damage and conditions. Enemies who see it make a Wisdom save or drop what they hold and are Frightened. Bonus Action: move it 60 feet and breathe a 60-foot Cone, Intelligence save for 6d6 of a damage type you chose (half on success). A Study action and Investigation check can reveal it.",
     "edition": "both",
     "source": "kc"
   },
@@ -3982,12 +3992,12 @@
     "name": "Lightning Ring",
     "level": 8,
     "school": "Evocation",
-    "casting_time": "Action or Ritual",
+    "casting_time": "Bonus Action",
     "range": "Self",
     "components": "V, S, M (a bit of fur and a glass ring)",
     "duration": "Concentration, up to 10 minutes",
     "concentration": true,
-    "ritual": true,
+    "ritual": false,
     "classes": [
       "Druid",
       "Sorcerer",
@@ -3995,7 +4005,7 @@
       "Wizard"
     ],
     "attack_type": null,
-    "description": "You create a ring of lightning around yourself or a point. Creatures that enter or start their turn in the ring take lightning damage, and you can expand or contract the ring as a bonus action.",
+    "description": "Bonus Action. A 10-foot Emanation crackles around you; creatures it reaches, or that enter or end a turn in it, can be forced into a Constitution save for 3d6 Lightning plus 3d6 Thunder and Deafened for 1 minute (half damage only on a success). Magic action: a 60-foot Line, Dexterity save for 6d6 Lightning (half on success).",
     "edition": "2024",
     "source": "kc"
   },
@@ -4045,7 +4055,7 @@
       "Wizard"
     ],
     "attack_type": null,
-    "description": "You gain a powerful insight into the immediate future. Once during the duration you can choose to replace one attack roll, saving throw, or ability check you make with a natural 20, or impose a natural 1 on an attack against you.",
+    "description": "Reaction when you fail a D20 Test or are hit by an attack: your roll becomes a 20, or the attacker's roll becomes a 1.",
     "edition": "2024",
     "source": "kc"
   },
@@ -4119,7 +4129,7 @@
       "Wizard"
     ],
     "attack_type": null,
-    "description": "You cause a creature or object that is concentrating on a spell or that contains explosive material to explode. The target takes force damage and the explosion affects nearby creatures.",
+    "description": "Target within 500 feet makes a Constitution save, taking 10d10 Fire (half on success). Then everything else in a 60-foot Emanation around it makes a Dexterity save for 10d10 Fire (half on success), with Disadvantage if the first target dropped to 0 HP. Unattended flammable objects ignite.",
     "edition": "2024",
     "source": "kc"
   },
@@ -4137,7 +4147,7 @@
       "Wizard"
     ],
     "attack_type": null,
-    "description": "You touch a creature or object and gain a vision of significant events that occurred to it in the past, up to a number of days equal to your level or more with higher slots.",
+    "description": "10-minute cast; consumes a 500 GP hourglass. Watch past events within 500 feet over the last 10 years at about a day per second, pausing, rewinding, or skipping as you like.",
     "edition": "2024",
     "source": "kc"
   },
@@ -4147,7 +4157,7 @@
     "school": "Abjuration",
     "casting_time": "Action",
     "range": "Self",
-    "components": "V, S, M (a piece of adamantine worth 500+, GP, which the spell consumes)",
+    "components": "V, S, M (a piece of adamantine worth 500+ GP, which the spell consumes)",
     "duration": "Concentration, up to 10 minutes",
     "concentration": true,
     "ritual": false,
@@ -4155,8 +4165,28 @@
       "Wizard"
     ],
     "attack_type": null,
-    "description": "You gain immunity to all damage for the duration. The spell ends early if you attack or cast a spell.",
+    "description": "You have Immunity to all damage for up to 10 minutes. Consumes a 500 GP piece of adamantine.",
     "edition": "both",
+    "source": "kc"
+  },
+  {
+    "name": "Iron Body",
+    "level": 8,
+    "school": "Transmutation",
+    "casting_time": "Action",
+    "range": "Touch",
+    "components": "V, S, M (diamond dust worth 250+ GP, which the spell consumes)",
+    "duration": "Concentration, up to 1 hour",
+    "concentration": true,
+    "ritual": false,
+    "classes": [
+      "Sorcerer",
+      "Warlock",
+      "Wizard"
+    ],
+    "attack_type": null,
+    "description": "A willing creature you touch becomes living metal for up to 1 hour: its Exhaustion can't increase, it resists Bludgeoning, Fire, Piercing, and Slashing, and it is immune to Poison damage and the Paralyzed, Petrified, and Poisoned conditions, ending any of those it has. Consumes 250 GP of diamond dust.",
+    "edition": "2024",
     "source": "kc"
   },
   {
@@ -4212,7 +4242,7 @@
     "level": 9,
     "school": "Illusion",
     "casting_time": "Action",
-    "range": "150 feet",
+    "range": "120 feet",
     "components": "V, S",
     "duration": "1 minute",
     "concentration": false,
@@ -4224,7 +4254,7 @@
       "Wizard"
     ],
     "attack_type": null,
-    "description": "You create an illusory vision of the passage of vast time in an area. Creatures that fail a Wisdom save are overwhelmed by the sensation of ages passing, taking psychic damage and possibly aging or becoming incapacitated temporarily.",
+    "description": "One creature within 120 feet makes an Intelligence save or takes 10d12 Psychic and is Paralyzed for up to 1 minute. Each failed repeat save at the end of its turns adds an Exhaustion level; a success ends it. Someone within 5 feet can use an action to shake it free.",
     "edition": "2024",
     "source": "kc"
   },
@@ -4233,7 +4263,7 @@
     "level": 9,
     "school": "Necromancy",
     "casting_time": "Action",
-    "range": "120 feet",
+    "range": "60 feet",
     "components": "V",
     "duration": "Instantaneous",
     "concentration": false,
@@ -4244,7 +4274,7 @@
       "Wizard"
     ],
     "attack_type": null,
-    "description": "You emit a mournful wail. Each creature of your choice within 30 feet that can hear you must succeed on a Constitution save or drop to 0 hit points; on a success it takes psychic damage instead.",
+    "description": "Up to ten creatures within 60 feet that can hear you. Any with 50 HP or fewer die. The rest make a Constitution save: 12d10 Psychic and Deafened for 1 hour on a failure, half damage only on a success.",
     "edition": "2024",
     "source": "kc"
   }

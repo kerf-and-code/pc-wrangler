@@ -1,0 +1,517 @@
+[
+ {
+  "class": "Cleric",
+  "name": "Arcana Domain",
+  "key": "kc-au_arcana-domain",
+  "edition": "2024",
+  "source": "kc",
+  "book": "Arcana Unleashed",
+  "features_by_level": [
+   {
+    "level": 3,
+    "features": [
+     {
+      "name": "Arcana Domain Spells",
+      "desc": "Always prepared at Cleric levels: 3 Detect Magic, Magic Missile, Magic Weapon, Nystul's Magic Aura; 5 Counterspell, Dispel Magic; 7 Arcane Eye, Leomund's Secret Chest; 9 Bigby's Hand, Teleportation Circle.",
+      "choice_is_prose": false
+     },
+     {
+      "name": "Modify Magic",
+      "desc": "Spend a Channel Divinity use as you cast a spell (no action). Fortifying Spell: one target gains 2d8 + Cleric level Temporary Hit Points. Tenacious Spell: a creature that succeeds on a save against your spell takes a 1d6 penalty on its first save against the spell's effect.",
+      "choice_is_prose": false
+     },
+     {
+      "name": "Student of Arcana",
+      "desc": "Gain Arcana proficiency (or another level 1 Cleric skill) and two Wizard cantrips; swap one cantrip for another Wizard cantrip whenever you gain a Cleric level.",
+      "choice_is_prose": false
+     }
+    ]
+   },
+   {
+    "level": 6,
+    "features": [
+     {
+      "name": "Dispelling Recovery",
+      "desc": "Right after a slot-cast spell restores HP or ends a condition, cast Dispel Magic as part of the same action, Bonus Action, or Reaction with no slot. Once per Short or Long Rest; a Channel Divinity use recharges it.",
+      "choice_is_prose": false
+     }
+    ]
+   },
+   {
+    "level": 17,
+    "features": [
+     {
+      "name": "Magical Mastery",
+      "desc": "Learn one Wizard spell each of levels 6, 7, 8, and 9; they are always prepared, and you can swap one for another of the same level when you gain a Cleric level.",
+      "choice_is_prose": false
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "class": "Fighter",
+  "name": "Arcane Archer",
+  "key": "kc-au_arcane-archer",
+  "edition": "2024",
+  "source": "kc",
+  "book": "Arcana Unleashed",
+  "features_by_level": [
+   {
+    "level": 3,
+    "features": [
+     {
+      "name": "Arcane Archer Lore",
+      "desc": "Learn Druidcraft or Prestidigitation (Intelligence). Gain Arcana and Nature proficiency, substituting other Fighter skills for any you already have.",
+      "choice_is_prose": false
+     },
+     {
+      "name": "Arcane Shot",
+      "desc": "Know two Arcane Shot options (one more at Fighter 7, 10, 15, and 18, swapping one each time). Once per turn on a damaging ranged hit with an Ammunition weapon, apply an option. Uses equal to Intelligence modifier (min 1) per Short or Long Rest. Arcane Shot Die d6, rising to d8 (10), d10 (15), d12 (18). Save DC 8 + Intelligence modifier + Proficiency Bonus.",
+      "choice_is_prose": false
+     },
+     {
+      "name": "Banishing Shot",
+      "desc": "Arcane Shot option. +1 Arcane Shot Die Psychic; Charisma save or the target is banished, Incapacitated with Speed 0, returning at the end of its next turn.",
+      "choice_is_prose": false
+     },
+     {
+      "name": "Beguiling Shot",
+      "desc": "Arcane Shot option. +2 Arcane Shot Dice Psychic; Wisdom save or Charmed by you or an ally within 30 feet of it until your next turn, ending early if the charmer harms it.",
+      "choice_is_prose": false
+     },
+     {
+      "name": "Bursting Shot",
+      "desc": "Arcane Shot option. The target and every creature in a 10-foot Emanation around it take 2 Arcane Shot Dice of Force damage.",
+      "choice_is_prose": false
+     },
+     {
+      "name": "Enfeebling Shot",
+      "desc": "Arcane Shot option. +2 Arcane Shot Dice Necrotic; Constitution save or Poisoned until the end of its next turn, subtracting 1 Arcane Shot Die from each of its hits' damage.",
+      "choice_is_prose": false
+     },
+     {
+      "name": "Grasping Shot",
+      "desc": "Arcane Shot option. +1 Arcane Shot Die Slashing; Strength save or Restrained for 1 minute. An Athletics check against your DC (as an action) frees it.",
+      "choice_is_prose": false
+     },
+     {
+      "name": "Piercing Shot",
+      "desc": "Arcane Shot option. No attack roll: a 30-foot Line that ignores cover. Dexterity save: normal hit damage plus 2 Arcane Shot Dice Piercing, half on a success.",
+      "choice_is_prose": false
+     },
+     {
+      "name": "Seeking Shot",
+      "desc": "Arcane Shot option. No attack roll: pick a creature seen in the last minute and the shot curves to it, ignoring Half and Three-Quarters Cover. Dexterity save: hit damage plus 2 Arcane Shot Dice Force and you learn its location, half on a success.",
+      "choice_is_prose": false
+     },
+     {
+      "name": "Shadow Shot",
+      "desc": "Arcane Shot option. +1 Arcane Shot Die Psychic; Wisdom save or Blinded until the end of its next turn.",
+      "choice_is_prose": false
+     }
+    ]
+   },
+   {
+    "level": 7,
+    "features": [
+     {
+      "name": "Curving Shot",
+      "desc": "After a ranged Ammunition attack misses, use a Bonus Action to redirect it at another creature within 60 feet of the first target and roll a new attack.",
+      "choice_is_prose": false
+     },
+     {
+      "name": "Magical Ammunition",
+      "desc": "Magic action: fire enchanted ammunition at a surface. Darkening (15-foot shadow, -5 Perception, douses flames, 1 minute), Unlocking (opens one nonmagical lock or bar per object in 15 feet, loudly), or Vine (120-foot climbable vine for 10 minutes). Once per Short or Long Rest, or spend a Second Wind use.",
+      "choice_is_prose": false
+     }
+    ]
+   },
+   {
+    "level": 10,
+    "features": [
+     {
+      "name": "Ever-Ready Shot",
+      "desc": "Regain one expended Arcane Shot use when you roll Initiative.",
+      "choice_is_prose": false
+     }
+    ]
+   },
+   {
+    "level": 15,
+    "features": [
+     {
+      "name": "Indomitable Teleport",
+      "desc": "When Indomitable turns a failed save into a success, teleport up to 60 feet to a space you can see.",
+      "choice_is_prose": false
+     }
+    ]
+   },
+   {
+    "level": 18,
+    "features": [
+     {
+      "name": "Masterful Shots",
+      "desc": "Reaction when a creature misses you: move up to half your Speed without provoking, then make a ranged attack against it if it's in range.",
+      "choice_is_prose": false
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "class": "Monk",
+  "name": "Warrior of the Mystic Arts",
+  "key": "kc-au_warrior-of-the-mystic-arts",
+  "edition": "2024",
+  "source": "kc",
+  "book": "Arcana Unleashed",
+  "features_by_level": [
+   {
+    "level": 3,
+    "features": [
+     {
+      "name": "Spellcasting",
+      "desc": "Third-caster using the Sorcerer list and Wisdom, with an Arcane Focus allowed. Two Sorcerer cantrips (a third at Monk 10). Prepared spells grow from 3 at Monk 3 to 13 at Monk 20, with slots up to level 4 (level 4 at Monk 19). Swap one prepared spell per Monk level. Counts one third of Monk levels for multiclass slots.",
+      "choice_is_prose": false
+     }
+    ]
+   },
+   {
+    "level": 6,
+    "features": [
+     {
+      "name": "Mystic Fighting Style",
+      "desc": "When you take the Attack action, one Unarmed Strike can be replaced with an action-cast Sorcerer cantrip.",
+      "choice_is_prose": false
+     },
+     {
+      "name": "Mystic Focus",
+      "desc": "Expend a spell slot to regain Focus Points equal to its level. On a Short Rest or Uncanny Metabolism, spend Focus Points to recover one slot: level 1 for 2 FP (Monk 6), 2 for 3 FP (Monk 7), 3 for 5 FP (Monk 13), 4 for 6 FP (Monk 19).",
+      "choice_is_prose": false
+     }
+    ]
+   },
+   {
+    "level": 11,
+    "features": [
+     {
+      "name": "Focused Strike",
+      "desc": "A Stunning Strike target, whether it saves or not, has Disadvantage on saves against your spells until the start of your next turn.",
+      "choice_is_prose": false
+     }
+    ]
+   },
+   {
+    "level": 17,
+    "features": [
+     {
+      "name": "Improved Mystic Fighting Style",
+      "desc": "With Flurry of Blows, swap two Unarmed Strikes for an action-cast level 1 or 2 Sorcerer spell, cast as part of that Bonus Action.",
+      "choice_is_prose": false
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "class": "Warlock",
+  "name": "Vestige Patron",
+  "key": "kc-au_vestige-patron",
+  "edition": "2024",
+  "source": "kc",
+  "book": "Arcana Unleashed",
+  "features_by_level": [
+   {
+    "level": 3,
+    "features": [
+     {
+      "name": "Vestige Companion",
+      "desc": "A Small Celestial, Fiend, or Undead companion (AC 13 + Charisma modifier, HP 4 + 4 per Warlock level, Fly 30 hover) acts on your turn. It Dodges unless you spend a Bonus Action, or give up one of your attacks, to have it act. Vestige's Strike: spell-attack, 5 feet or 60 feet, 1d6 + 3 + Charisma modifier damage of its type. Divine Power once per day: Undead curse (Disadvantage attacking you and it), Fiend place-swap within 60 feet, or Celestial heal 2d8 + Charisma modifier and end Blinded, Deafened, or Poisoned. Re-manifest with a 1-minute ceremony; reshape it on a Long Rest.",
+      "choice_is_prose": false
+     },
+     {
+      "name": "Vestige Spells",
+      "desc": "Choose the Life, Light, Trickery, or War domain. Its domain spells count as Warlock spells and are always prepared when your Warlock level reaches the listed Cleric level.",
+      "choice_is_prose": false
+     }
+    ]
+   },
+   {
+    "level": 6,
+    "features": [
+     {
+      "name": "Vestige Power",
+      "desc": "Divine Power recharges on a Short or Long Rest or when you use Magical Cunning. Within 30 feet of the vestige, you share its damage Resistance.",
+      "choice_is_prose": false
+     }
+    ]
+   },
+   {
+    "level": 10,
+    "features": [
+     {
+      "name": "Vestige Recovery",
+      "desc": "Reaction when the vestige would drop to 0 HP: spend a Pact Magic slot to restore it to full HP and teleport it 30 feet. Once per Long Rest.",
+      "choice_is_prose": false
+     }
+    ]
+   },
+   {
+    "level": 14,
+    "features": [
+     {
+      "name": "Semblance of Life",
+      "desc": "Magic action, vestige within 90 feet: for 1 hour it becomes a Celestial, Fiendish, or Undead Spirit from the matching Summon spell at half your Warlock level (max 9), keeping its personality, Divine Power, HP, and Hit Dice, plus Temporary Hit Points equal to the spirit's HP. Once per Long Rest.",
+      "choice_is_prose": false
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "class": "Wizard",
+  "name": "Conjurer",
+  "key": "kc-au_conjurer",
+  "edition": "2024",
+  "source": "kc",
+  "book": "Arcana Unleashed",
+  "features_by_level": [
+   {
+    "level": 3,
+    "features": [
+     {
+      "name": "Benign Transposition",
+      "desc": "Bonus Action: teleport 30 feet, or swap places with a willing Medium or smaller creature in range. Uses equal to Intelligence modifier (min 1) per Long Rest.",
+      "choice_is_prose": false
+     },
+     {
+      "name": "Conjuration Savant",
+      "desc": "Add two Conjuration spells of level 2 or lower to your spellbook free, plus one more each time you gain a new spell slot level.",
+      "choice_is_prose": false
+     }
+    ]
+   },
+   {
+    "level": 6,
+    "features": [
+     {
+      "name": "Distant Transposition",
+      "desc": "Benign Transposition reaches 60 feet, and a level 3+ slot restores one use.",
+      "choice_is_prose": false
+     },
+     {
+      "name": "Durable Summons",
+      "desc": "Creatures you summon or create with a slot-cast Conjuration spell arrive with Temporary Hit Points equal to twice your Wizard level, and resist all damage except Force, Necrotic, Psychic, and Radiant while those last.",
+      "choice_is_prose": false
+     }
+    ]
+   },
+   {
+    "level": 10,
+    "features": [
+     {
+      "name": "Focused Conjuration",
+      "desc": "Taking damage can't break your Concentration on Conjuration spells.",
+      "choice_is_prose": false
+     }
+    ]
+   },
+   {
+    "level": 14,
+    "features": [
+     {
+      "name": "Splintered Summons",
+      "desc": "When a slot-cast spell summons a spirit with its own stat block (Summon Aberration and the like), summon two at half HP each. Once per Long Rest, or restore it with a level 5+ slot.",
+      "choice_is_prose": false
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "class": "Wizard",
+  "name": "Enchanter",
+  "key": "kc-au_enchanter",
+  "edition": "2024",
+  "source": "kc",
+  "book": "Arcana Unleashed",
+  "features_by_level": [
+   {
+    "level": 3,
+    "features": [
+     {
+      "name": "Enchanting Conversationalist",
+      "desc": "Gain Deception, Intimidation, or Persuasion proficiency and add your Intelligence modifier (min +1) to checks with it.",
+      "choice_is_prose": false
+     },
+     {
+      "name": "Enchantment Savant",
+      "desc": "Add two Enchantment spells of level 2 or lower to your spellbook free, plus one more each time you gain a new spell slot level.",
+      "choice_is_prose": false
+     },
+     {
+      "name": "Hypnotic Presence",
+      "desc": "Magic action, creature within 10 feet that can see or hear you: Wisdom save or Charmed, Incapacitated, and Speed 0 for up to 1 minute (ends if it moves beyond 10 feet, loses sight and sound of you, or takes damage). Uses equal to Intelligence modifier (min 1) per Long Rest.",
+      "choice_is_prose": false
+     }
+    ]
+   },
+   {
+    "level": 6,
+    "features": [
+     {
+      "name": "Split Enchantment",
+      "desc": "When slot-casting an Enchantment spell that adds targets at higher levels, treat it as one level higher. Uses equal to Intelligence modifier per Long Rest.",
+      "choice_is_prose": false
+     }
+    ]
+   },
+   {
+    "level": 10,
+    "features": [
+     {
+      "name": "Instinctive Charm",
+      "desc": "Reaction when a creature within 30 feet hits you: Wisdom save or the attack misses and is redirected, with the same roll, to another creature in range of your choice. Once per Long Rest; recharges when you slot-cast an Enchantment spell.",
+      "choice_is_prose": false
+     }
+    ]
+   },
+   {
+    "level": 14,
+    "features": [
+     {
+      "name": "Alter Memories",
+      "desc": "One creature you Charm with a slot-cast Enchantment spell doesn't know it was Charmed. Once during the spell, a Magic action forces an Intelligence save; on a failure it loses up to 1 + Intelligence modifier hours of memory, within the spell's duration.",
+      "choice_is_prose": false
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "class": "Wizard",
+  "name": "Necromancer",
+  "key": "kc-au_necromancer",
+  "edition": "2024",
+  "source": "kc",
+  "book": "Arcana Unleashed",
+  "features_by_level": [
+   {
+    "level": 3,
+    "features": [
+     {
+      "name": "Necromancy Savant",
+      "desc": "Add two Necromancy spells of level 2 or lower to your spellbook free, plus one more each time you gain a new spell slot level.",
+      "choice_is_prose": false
+     },
+     {
+      "name": "Necromancy Spellbook",
+      "desc": "Resistance to Necrotic damage. Find Familiar enters your spellbook with Skeleton or Zombie forms (or any form as Undead), and you can give up an attack for the familiar to attack with its Reaction. Undead Vitality: a slot-cast Necromancy spell heals an Undead within 60 feet for the slot level + your Wizard level.",
+      "choice_is_prose": false
+     }
+    ]
+   },
+   {
+    "level": 6,
+    "features": [
+     {
+      "name": "Grave Power",
+      "desc": "While holding your spellbook: Arcane Recovery also removes 1 Exhaustion level, and your Wizard spells and features ignore Necrotic Resistance.",
+      "choice_is_prose": false
+     },
+     {
+      "name": "Undead Thralls",
+      "desc": "Animate Dead is always prepared, castable free once per Long Rest, and always cast one level higher. While holding your spellbook, undead you create or summon gain extra HP equal to Intelligence modifier + half your Wizard level, and your undead within 60 feet add your Intelligence modifier (min 1) in Necrotic damage to their hits.",
+      "choice_is_prose": false
+     }
+    ]
+   },
+   {
+    "level": 10,
+    "features": [
+     {
+      "name": "Harvest Undead",
+      "desc": "Reaction when damage leaves you Bloodied but above 0 HP: drop one of your visible undead to 0 HP and regain HP equal to your Wizard level.",
+      "choice_is_prose": false
+     }
+    ]
+   },
+   {
+    "level": 14,
+    "features": [
+     {
+      "name": "Death's Master",
+      "desc": "While holding your spellbook. Bolster Undead: once per Long Rest, a Bonus Action gives your necromancy-made undead within 60 feet Temporary Hit Points equal to your Wizard level. Extinguish Undead: an undead you see dropping to 0 HP explodes in a 10-foot Emanation (d6s equal to half its remaining Hit Dice, Dexterity save for half, no Reactions on a failure); one you don't control costs a Reaction and a level 5+ slot.",
+      "choice_is_prose": false
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "class": "Wizard",
+  "name": "Transmuter",
+  "key": "kc-au_transmuter",
+  "edition": "2024",
+  "source": "kc",
+  "book": "Arcana Unleashed",
+  "features_by_level": [
+   {
+    "level": 3,
+    "features": [
+     {
+      "name": "Transmutation Savant",
+      "desc": "Add two Transmutation spells of level 2 or lower to your spellbook free, plus one more each time you gain a new spell slot level.",
+      "choice_is_prose": false
+     },
+     {
+      "name": "Transmuter's Stone",
+      "desc": "On a Long Rest, make a stone (also a Spellcasting Focus). Its bearer gains Constitution save proficiency plus one of: Darkvision 60 feet (or +60), Resistance to Acid, Cold, Fire, Lightning, Poison, or Thunder, or +10 Speed. Change the benefit when you slot-cast a Transmutation spell.",
+      "choice_is_prose": false
+     },
+     {
+      "name": "Wondrous Alteration",
+      "desc": "Alter Self is always prepared and castable free once per Long Rest, with bonuses: Dash as a Bonus Action underwater, Advantage on Deception checks while disguised, or 2d6 natural weapons plus Advantage on Concentration saves.",
+      "choice_is_prose": false
+     }
+    ]
+   },
+   {
+    "level": 6,
+    "features": [
+     {
+      "name": "Empowered Transmutation",
+      "desc": "Slot-cast Transmutation spells that make no attack roll and force no save count as one level higher. Uses equal to Intelligence modifier (min 1) per Long Rest.",
+      "choice_is_prose": false
+     }
+    ]
+   },
+   {
+    "level": 10,
+    "features": [
+     {
+      "name": "Potent Stone",
+      "desc": "Your stone carries two benefits (Resistance can be taken twice for different types), and adds Mighty Build (Advantage on Strength saves, carry as one size larger) and Tremorsense 30 feet to the options.",
+      "choice_is_prose": false
+     },
+     {
+      "name": "Shape-Shifter",
+      "desc": "Polymorph is always prepared and castable free once per Long Rest. Once per Long Rest, polymorphing yourself lets you keep your mind, mental scores, proficiencies, class features, and feats, and cast Transmutation spells without costly or consumed materials.",
+      "choice_is_prose": false
+     }
+    ]
+   },
+   {
+    "level": 14,
+    "features": [
+     {
+      "name": "Master Transmuter",
+      "desc": "Magic action: spend the stone's power (a level 7+ slot keeps it intact). Major Transformation (10 minutes to turn a nonmagical object up to a 10-foot Cube into another of similar size and equal or lesser value), Panacea (heal half max HP, cure magical contagions and curses, end Poisoned and Petrified), Restore Life (free Raise Dead), or Restore Youth (Exhaustion to 0, 3d10 years younger).",
+      "choice_is_prose": false
+     }
+    ]
+   }
+  ]
+ }
+]

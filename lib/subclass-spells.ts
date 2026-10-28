@@ -31,6 +31,23 @@ export const SUBCLASS_SPELLS: Record<string, SubclassSpell[]> = {
     { level: 17, spell: "Commune" },
     { level: 17, spell: "Flame Strike" },
   ],
+  // Arcana Domain (Cleric), Arcana Unleashed revision. Keyed by the CATALOG name ("Arcana"), which is
+  // what the Forge stores in build.meta.subclass. Names follow the 2024 data where it has the spell
+  // (Secret Chest, Arcane Hand); Nystul's Magic Aura has no 2024 SRD name, so the authored one is used.
+  // Vestige Patron is deliberately absent: its spells depend on a domain the player picks (Life,
+  // Light, Trickery, or War), which this table has no way to know.
+  "Arcana": [
+    { level: 3, spell: "Detect Magic" },
+    { level: 3, spell: "Magic Missile" },
+    { level: 3, spell: "Magic Weapon" },
+    { level: 3, spell: "Nystul's Magic Aura" },
+    { level: 5, spell: "Counterspell" },
+    { level: 5, spell: "Dispel Magic" },
+    { level: 7, spell: "Arcane Eye" },
+    { level: 7, spell: "Secret Chest" },
+    { level: 9, spell: "Arcane Hand" },
+    { level: 9, spell: "Teleportation Circle" },
+  ],
 };
 
 /**

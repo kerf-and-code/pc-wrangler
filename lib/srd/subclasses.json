@@ -474,9 +474,9 @@
     "subclass": "Arcana Domain",
     "partnered": false,
     "partner": null,
-    "source": "Sword Coast (SCAG)",
-    "role": "Blaster / Utility",
-    "description": "Wizardly cleric with arcane cantrips and anti-magic.",
+    "source": "Arcana Unleashed",
+    "role": "Support / Controller",
+    "description": "Channel Divinity reshapes spells (temp HP or a save penalty); Wizard cantrips; free Dispel Magic after healing.",
     "coverage": "Complete"
   },
   {
@@ -764,9 +764,9 @@
     "subclass": "Arcane Archer",
     "partnered": false,
     "partner": null,
-    "source": "Xanathar's (XGtE)",
+    "source": "Arcana Unleashed",
     "role": "Striker / Controller",
-    "description": "Magical Arcane Shots add damage and control to the bow.",
+    "description": "Arcane Shots add damage plus banish, charm, restrain, blind, or blast; utility ammunition and evasive returns.",
     "coverage": "Complete"
   },
   {
@@ -967,6 +967,16 @@
     "source": "PHB 2024",
     "role": "Blaster / Controller",
     "description": "Reworked elemental monk with reach and area effects.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Monk",
+    "subclass": "Warrior of the Mystic Arts",
+    "partnered": false,
+    "partner": null,
+    "source": "Arcana Unleashed",
+    "role": "Striker / Blaster",
+    "description": "Sorcerer third-caster; trades strikes for cantrips and spells; converts slots and Focus Points.",
     "coverage": "Complete"
   },
   {
@@ -1720,6 +1730,16 @@
     "coverage": "Complete"
   },
   {
+    "class": "Warlock",
+    "subclass": "Vestige Patron",
+    "partnered": false,
+    "partner": null,
+    "source": "Arcana Unleashed",
+    "role": "Striker / Support",
+    "description": "A dying god's vestige fights, heals, or curses beside you; borrowed Cleric domain spells.",
+    "coverage": "Complete"
+  },
+  {
     "class": "Warmage",
     "subclass": "(7+ subclasses)",
     "partnered": true,
@@ -1814,9 +1834,9 @@
     "subclass": "School of Conjuration",
     "partnered": false,
     "partner": null,
-    "source": "PHB 2014",
+    "source": "Arcana Unleashed",
     "role": "Summoner / Controller",
-    "description": "Summons creatures and conjures useful objects.",
+    "description": "Bonus-action teleports and swaps; tougher, doubled summons; damage can't break Conjuration Concentration.",
     "coverage": "Complete"
   },
   {
@@ -1834,9 +1854,9 @@
     "subclass": "School of Enchantment",
     "partnered": false,
     "partner": null,
-    "source": "PHB 2014",
+    "source": "Arcana Unleashed",
     "role": "Controller / Face",
-    "description": "Charms, hypnosis, and instant domination.",
+    "description": "Hypnotic Presence locks a target down; social skill boost; redirects attacks; erases memories.",
     "coverage": "Complete"
   },
   {
@@ -1864,9 +1884,9 @@
     "subclass": "School of Necromancy",
     "partnered": false,
     "partner": null,
-    "source": "PHB 2014",
+    "source": "Arcana Unleashed",
     "role": "Summoner / Blaster",
-    "description": "Raises and buffs undead armies; necrotic magic.",
+    "description": "Free empowered Animate Dead, harder-hitting undead, necrotic resistance, exploding minions.",
     "coverage": "Complete"
   },
   {
@@ -1874,9 +1894,9 @@
     "subclass": "School of Transmutation",
     "partnered": false,
     "partner": null,
-    "source": "PHB 2014",
+    "source": "Arcana Unleashed",
     "role": "Utility / Support",
-    "description": "Reshapes matter; crafts a Transmuter's Stone.",
+    "description": "Transmuter's Stone party buffs, free Alter Self and Polymorph, upcast utility spells, Panacea.",
     "coverage": "Complete"
   },
   {

@@ -310,13 +310,13 @@ const UMBRELLAS = new Map([
   ["eldritch invocations", "feature"],
   ["fighting style", "feature"],
 ]);
-function featureEntry(kind, name, desc, className, level, ruleset, subclass = null) {
+function featureEntry(kind, name, desc, className, level, ruleset, subclass = null, source = "srd") {
   return {
     id: `feature:${kind}:${slug(name)}`,
     name,
     category: "feature",
     ruleset,
-    source: "srd",
+    source,
     spoken: spokenForms(name),
     display: { kind, className: className ?? null, subclass: subclass ?? null, level: level ?? null, description: cleanText(desc) },
   };
@@ -363,7 +363,9 @@ function extractClassOptions(ed) {
 // Everything in features_by_level that ISN'T a metamagic/invocation/fighting-style option (those are
 // handled above) or pure filler. All SRD content (the structured files carry only the SRD sample
 // subclasses), so source "srd". Deduped by name so shared features (Extra Attack, Spellcasting) card
-// once.
+// once. The one exception is subclasses-authored-<ed>.json: non-SRD subclasses (Arcana Unleashed so
+// far) written in Kerf and Code wording, same shape, read LAST so an SRD feature of the same name
+// wins the dedupe, and carded with the entry's own `source` ("kc") so they never pass as SRD.
 const FEATURE_SKIP_EXACT = new Set([
   "ability score improvement", "epic boon",
   "metamagic", "eldritch invocations", "fighting style", // umbrellas, carded by extractClassOptions
@@ -392,13 +394,15 @@ function extractClassFeatures(ed) {
           const key = norm(fname);
           if (seen.has(key)) continue;
           seen.add(key);
-          out.push(featureEntry("feature", fname, f?.desc ?? f?.description ?? null, className, level, ed, subclass));
+          const source = entry?.source === "kc" ? "kc" : "srd";
+          out.push(featureEntry("feature", fname, f?.desc ?? f?.description ?? null, className, level, ed, subclass, source));
         }
       }
     }
   };
   take(readMaybe(path.join(SRD_DIR, `classes-${ed}-structured.json`)), false);
   take(readMaybe(path.join(SRD_DIR, `subclasses-${ed}-structured.json`)), true);
+  take(readMaybe(path.join(SRD_DIR, `subclasses-authored-${ed}.json`)), true);
   return out;
 }
 
