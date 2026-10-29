@@ -100,6 +100,36 @@
     "coverage": "Complete"
   },
   {
+    "class": "Artificer",
+    "subclass": "Reanimator",
+    "partnered": false,
+    "partner": null,
+    "source": "Ravenloft: The Horrors Within",
+    "role": "Summoner / Support",
+    "description": "A stitched Undead companion with modifications, Jolt to Life revives, free Raise Dead at 15.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Artificer",
+    "subclass": "Forge Adept",
+    "partnered": true,
+    "partner": "Keith Baker",
+    "source": "Exploring Eberron",
+    "role": "",
+    "description": "Tool Proficiency: Proficiency with Smith's Tools (or another Artisan's Tool if you already have it).",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Artificer",
+    "subclass": "Maverick",
+    "partnered": true,
+    "partner": "Keith Baker",
+    "source": "Exploring Eberron",
+    "role": "",
+    "description": "Tool Proficiency: Proficiency with Tinker's Tools (or another Artisan's Tool if you already have it).",
+    "coverage": "Complete"
+  },
+  {
     "class": "Barbarian",
     "subclass": "Path of Booming Magnificence",
     "partnered": true,
@@ -187,7 +217,7 @@
     "source": "Grim Hollow: Player's Guide",
     "role": "Striker / Controller",
     "description": "One of 40 dark-fantasy subclasses; grows stronger as it breaks.",
-    "coverage": "Sample"
+    "coverage": "Complete"
   },
   {
     "class": "Barbarian",
@@ -227,7 +257,7 @@
     "source": "Valda's Spire of Secrets",
     "role": "Striker",
     "description": "Barbarian who insists he's a wizard. Ends in 'I Cast Fist!'",
-    "coverage": "Sample"
+    "coverage": "Complete"
   },
   {
     "class": "Barbarian",
@@ -247,7 +277,7 @@
     "source": "Grim Hollow: Player's Guide",
     "role": "Striker / Summoner",
     "description": "Channels a bound primal spirit of Etharis.",
-    "coverage": "Sample"
+    "coverage": "Complete"
   },
   {
     "class": "Barbarian",
@@ -287,7 +317,7 @@
     "source": "Grim Hollow: Player's Guide",
     "role": "Tank / Striker",
     "description": "Death-touched rage; endures beyond mortal limits.",
-    "coverage": "Sample"
+    "coverage": "Complete"
   },
   {
     "class": "Barbarian",
@@ -297,6 +327,106 @@
     "source": "XGtE / PHB 2024",
     "role": "Striker",
     "description": "Divine fury: bonus radiant/necrotic damage and cheap resurrection.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Barbarian",
+    "subclass": "Path of the Carrion Raven",
+    "partnered": true,
+    "partner": "Grim Hollow",
+    "source": "Grim Hollow: Player Pack",
+    "role": "Striker / Shapeshifter",
+    "description": "Saga maneuvers fueled by a maneuver point pool; Feral Celerity.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Barbarian",
+    "subclass": "Path of the Glacier",
+    "partnered": true,
+    "partner": "Hit Point Press",
+    "source": "The Griffon's Saddlebag: Book One",
+    "role": "Tank / Controller",
+    "description": "Permafrost: +1 AC while unarmored, Resistance to Cold damage, and Con mod times (min 1) per Long Rest you can extend a Rage that would end (no action) unless you are Unconscious.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Barbarian",
+    "subclass": "Path of the Infernal",
+    "partnered": true,
+    "partner": "Hit Point Press",
+    "source": "The Griffon's Saddlebag: Book Two",
+    "role": "Striker / Grappler",
+    "description": "Hellfire Claw: While raging one hand becomes a fiery claw: your first weapon hit each turn with that hand's weapon deals +1d6 fire, or if you dealt no such fire damage, a bonus action unarmed strike with the empty claw (bludgeoning or slashing) adds 1d6 fire.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Barbarian",
+    "subclass": "Path of the Experiment",
+    "partnered": true,
+    "partner": "Avantris Entertainment",
+    "source": "The Crooked Moon Part One",
+    "role": "Striker / Tank",
+    "description": "Alchemical Experiments: Alchemist's Supplies with proficiency; craft Potions of Healing with them instead of an Herbalism Kit.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Barbarian",
+    "subclass": "Shadow Gnawer",
+    "partnered": true,
+    "partner": "Kobold Press",
+    "source": "Book of Ebon Tides",
+    "role": "Striker / Tank",
+    "description": "Shadow Smoke: While raging, smoke fills 10 feet around you; other creatures starting their turn in it have disadvantage on their next attack roll.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Barbarian",
+    "subclass": "Path of the Titan",
+    "partnered": true,
+    "partner": "Kobold Press",
+    "source": "Northlands Worldbook",
+    "role": "Striker / Tank",
+    "description": "Rage of the Giants: When you activate Rage, if smaller than Large you can become Large (with your gear) if there is room.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Barbarian",
+    "subclass": "Path of the Belly Brewer",
+    "partnered": true,
+    "partner": "Hit Point Press",
+    "source": "Obojima: Tales from the Tall Grass",
+    "role": "Tank / Utility",
+    "description": "Belly Concoction: When you rage, pick a concoction (change each rage).",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Barbarian",
+    "subclass": "Path of the Lightning Vessel",
+    "partnered": true,
+    "partner": "MonkeyDM",
+    "source": "Steinhardt's Guide to the Eldritch Hunt Player Pack",
+    "role": "Striker / Controller",
+    "description": "Galvanic Heart: Resistance to Lightning damage (if you already have it, also reduce Lightning damage by d6s equal to your Rage Damage bonus).",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Barbarian",
+    "subclass": "Path of the Spell Scorned",
+    "partnered": true,
+    "partner": "Chaosium",
+    "source": "Cthulhu by Torchlight",
+    "role": "Striker / Anti-caster",
+    "description": "Instinctual Divination: When you take the Study action to make an Arcana or Religion check, you can make it as a Wisdom (Survival) check instead.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Barbarian",
+    "subclass": "Path of the Demonshard",
+    "partnered": true,
+    "partner": "Keith Baker",
+    "source": "Frontiers of Eberron: Quickstone",
+    "role": "",
+    "description": "Demontongue: You speak and understand Abyssal or Infernal (your choice).",
     "coverage": "Complete"
   },
   {
@@ -367,7 +497,7 @@
     "source": "Grim Hollow: Player's Guide",
     "role": "Support / Controller",
     "description": "Songs for the dead; sombre, hymn-driven battlefield control.",
-    "coverage": "Sample"
+    "coverage": "Complete"
   },
   {
     "class": "Bard",
@@ -417,6 +547,166 @@
     "source": "Xanathar's (XGtE)",
     "role": "Face / Striker",
     "description": "Psychic blades, fear, and stealing a slain foe's identity. Sinister.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Bard",
+    "subclass": "College of the Moon",
+    "partnered": false,
+    "partner": null,
+    "source": "Heroes of Faerun (FRHoF)",
+    "role": "Support / Healer",
+    "description": "Inspired Eclipse teleports, Bardic Inspiration added to healing, druid lore and a healing Moonbeam.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Bard",
+    "subclass": "College of Adventurers",
+    "partnered": true,
+    "partner": "Grim Hollow",
+    "source": "Grim Hollow: Player's Guide",
+    "role": "Support / Generalist",
+    "description": "Talented Adventurer: Learn one adventurer's talent, and one more at Bard levels 6 and 14.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Bard",
+    "subclass": "College of Fools",
+    "partnered": true,
+    "partner": "Grim Hollow",
+    "source": "Grim Hollow: Player's Guide",
+    "role": "Controller / Debuffer",
+    "description": "Antagonistic Antics: Learn Vicious Mockery (or another Bard cantrip if you have it; it doesn't count against your cantrips) and always have Dissonant Whispers prepared.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Bard",
+    "subclass": "College of Masks",
+    "partnered": true,
+    "partner": "Mage Hand Press",
+    "source": "Valda's Spire of Secrets: Player Pack 2",
+    "role": "Support / Flex",
+    "description": "Persona Masks: Own three masks (four at Bard 6, five at 14), swapping one per Long Rest; put on or switch one as a Bonus Action; remake a lost one in 8 hours.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Bard",
+    "subclass": "College of Choreography",
+    "partnered": true,
+    "partner": "Hit Point Press",
+    "source": "The Griffon's Saddlebag: Book One",
+    "role": "Support / Skirmisher",
+    "description": "Fast Movement: +10 feet Speed (+15 at Bard 6, +20 at 14).",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Bard",
+    "subclass": "College of Mercantile",
+    "partnered": true,
+    "partner": "Hit Point Press",
+    "source": "The Griffon's Saddlebag: Book Two",
+    "role": "Support / Face",
+    "description": "Coin Flip: A creature using your Bardic Inspiration can flip a coin instead of rolling: heads it counts as the maximum; tails the GM keeps the die to boost a creature of their choice later (lost on your long rest).",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Bard",
+    "subclass": "College of Whistles",
+    "partnered": true,
+    "partner": "Avantris Entertainment",
+    "source": "The Crooked Moon Part One",
+    "role": "Support / Mobility",
+    "description": "Handy Haints: When you give Bardic Inspiration, summon a haint around the target for 1 minute with a 15-foot aura (it ends when you use its Reaction).",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Bard",
+    "subclass": "College of Shadow",
+    "partnered": true,
+    "partner": "Kobold Press",
+    "source": "Book of Ebon Tides",
+    "role": "Support / Controller",
+    "description": "Dancing Shadows: As a bonus action spend a Bardic Inspiration for a 20-foot sphere of shadows around you for 1 minute: allies inside have half cover and outsiders have disadvantage on Perception into it (darkvision doesn't help).",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Bard",
+    "subclass": "College of Fleshweaving",
+    "partnered": true,
+    "partner": "Loot Tavern",
+    "source": "Heliana's Guide to Monster Hunting: Part 1",
+    "role": "Support / Controller",
+    "description": "Malleable Visage: Proficiency with surgeon's tools, which can be your spellcasting focus.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Bard",
+    "subclass": "College of Cuisine",
+    "partnered": true,
+    "partner": "Loot Tavern",
+    "source": "Heliana's Guide to Monster Hunting: Part 2",
+    "role": "Support / Buffer",
+    "description": "Culinary Exploration: Proficiency with cook's utensils, which can be your spellcasting focus; double proficiency bonus on checks using them to prepare food.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Bard",
+    "subclass": "Skald",
+    "partnered": true,
+    "partner": "Kobold Press",
+    "source": "Northlands Worldbook",
+    "role": "Support / Gish",
+    "description": "Poetic Provocation: You always have Vicious Mockery prepared (or learn another cantrip if you know it).",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Bard",
+    "subclass": "College of Masks (Obojima)",
+    "partnered": true,
+    "partner": "Hit Point Press",
+    "source": "Obojima: Tales from the Tall Grass",
+    "role": "Utility / Face",
+    "description": "Tools of Performance: craft theater masks (Fish, Fox, Old Man, Protagonist, and more) that grant abilities while worn.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Bard",
+    "subclass": "College of Drama",
+    "partnered": true,
+    "partner": "Chaosium",
+    "source": "Cthulhu by Torchlight",
+    "role": "Support / Face",
+    "description": "Tragic Hero: When you fail a save, other creatures you choose within 60 feet add your Charisma modifier (minimum +1) to their saves against the same effect.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Bard",
+    "subclass": "College of the Road",
+    "partnered": true,
+    "partner": "Hit Point Press",
+    "source": "Humblewood Campaign Setting",
+    "role": "Support / Flex",
+    "description": "Bonus Proficiencies: Choose three, each once: a gaming set, a martial weapon, Herbalism Kits, Thieves' Tools, a skill, or two languages.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Bard",
+    "subclass": "College of the Dirge Singer",
+    "partnered": true,
+    "partner": "Keith Baker",
+    "source": "Exploring Eberron",
+    "role": "",
+    "description": "Broad Inspiration: Learn Guidance (doesn't count against cantrips).",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Bard",
+    "subclass": "College of Wands",
+    "partnered": true,
+    "partner": "Keith Baker",
+    "source": "Frontiers of Eberron: Quickstone",
+    "role": "",
+    "description": "Bonus Cantrip: Learn one Sorcerer cantrip (it counts as a Bard cantrip but not against your known cantrips), and you can use a Wand, Rod, or Orb as your Bard focus.",
     "coverage": "Complete"
   },
   {
@@ -607,7 +897,7 @@
     "source": "Grim Hollow: Player's Guide",
     "role": "Healer / Striker",
     "description": "Burns out rot and disease, whatever the cost.",
-    "coverage": "Sample"
+    "coverage": "Complete"
   },
   {
     "class": "Cleric",
@@ -647,6 +937,156 @@
     "source": "PHB 2014 / 2024",
     "role": "Striker / Gish",
     "description": "Bonus attacks and combat buffs. The front-line cleric.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Cleric",
+    "subclass": "Eldritch Domain",
+    "partnered": true,
+    "partner": "Grim Hollow",
+    "source": "Grim Hollow: Player's Guide",
+    "role": "Controller",
+    "description": "Eldritch Domain Spells: Always prepared at Cleric levels: 3 Detect Thoughts, Tasha's Hideous Laughter, See Invisibility, Sleep; 5 Fear, Tongues; 7 Confusion, Phantasmal Killer; 9 Contact Other Plane, Dream.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Cleric",
+    "subclass": "Inquisition Domain",
+    "partnered": true,
+    "partner": "Grim Hollow",
+    "source": "Grim Hollow: Player's Guide",
+    "role": "Anti-caster / Striker",
+    "description": "Inquisition Domain Spells: Always prepared at Cleric levels: 3 See Invisibility, Silence; 5 Dispel Magic, Remove Curse; 7 Arcane Eye, Locate Creature; 9 Creation, Hallow.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Cleric",
+    "subclass": "Dragon Domain",
+    "partnered": true,
+    "partner": "Mage Hand Press",
+    "source": "Valda's Spire of Secrets: Player Pack 2",
+    "role": "Blaster / Controller",
+    "description": "Chromatic Affinity: On each Long Rest pick Acid, Cold, Fire, Lightning, or Poison; your Cleric spells and features can deal it instead of Necrotic or Radiant.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Cleric",
+    "subclass": "Astral Domain",
+    "partnered": true,
+    "partner": "Hit Point Press",
+    "source": "The Griffon's Saddlebag: Book One",
+    "role": "Controller / Support",
+    "description": "Astral Domain Spells: Always prepared at Cleric levels: 3 Blur, Guiding Bolt, Invisibility, Longstrider, Starry Wisp; 5 Blink, Slow; 7 Banishment, Dimension Door; 9 Teleportation Circle, Wall of Force.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Cleric",
+    "subclass": "Festus Domain",
+    "partnered": true,
+    "partner": "Hit Point Press",
+    "source": "The Griffon's Saddlebag: Book Two",
+    "role": "Support / Healer",
+    "description": "Festus Domain Spells: Domain spells at cleric levels: 1st goodberry, purify food and drink; 3rd heat metal, protection from poison; 5th create food and water, stinking cloud; 7th blight, control water; 9th cloudkill, contagion.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Cleric",
+    "subclass": "Harvest Domain",
+    "partnered": true,
+    "partner": "Avantris Entertainment",
+    "source": "The Crooked Moon Part One",
+    "role": "Support / Healer",
+    "description": "Community Almanac: Herbalism Kit with proficiency, plus Nature or Survival.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Cleric",
+    "subclass": "Keeper Domain",
+    "partnered": true,
+    "partner": "Kobold Press",
+    "source": "Book of Ebon Tides",
+    "role": "Support / Tank",
+    "description": "Domain Spells: Domain spells at cleric levels: 1st command, hunter's mark; 3rd calm emotions, warding bond; 5th beacon of hope, spirit guardians; 7th death ward, guardian of faith; 9th hallow, telepathic bond.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Cleric",
+    "subclass": "Shadow Domain",
+    "partnered": true,
+    "partner": "Kobold Press",
+    "source": "Book of Ebon Tides",
+    "role": "Controller / Striker",
+    "description": "Domain Spells: Domain spells at cleric levels: 1st bane, false life; 3rd blindness/deafness, darkness; 5th blink, fear; 7th black tentacles, greater invisibility; 9th cone of cold, dream.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Cleric",
+    "subclass": "Hunt Domain",
+    "partnered": true,
+    "partner": "Loot Tavern",
+    "source": "Heliana's Guide to Monster Hunting: Part 2",
+    "role": "Striker / Support",
+    "description": "Domain Spells: Domain spells at cleric levels: 1st entangle, longstrider; 3rd locate animals or plants, pass without trace; 5th conjure animals, haste; 7th freedom of movement, locate creature; 9th commune with nature, hold monster.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Cleric",
+    "subclass": "Nornbound",
+    "partnered": true,
+    "partner": "Kobold Press",
+    "source": "Northlands Worldbook",
+    "role": "Support / Controller",
+    "description": "Domain Spells: Always prepared at Cleric levels: 3 Augury, Bane, Bless, Warding Bond; 5 Bestow Curse, Counterspell; 7 Death Ward, Divination; 9 Commune, Modify Memory.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Cleric",
+    "subclass": "Apocalypse Domain",
+    "partnered": true,
+    "partner": "Chaosium",
+    "source": "Cthulhu by Torchlight",
+    "role": "Support / Debuffer",
+    "description": "Apocalypse Domain Spells: Always prepared at Cleric levels: 3 Darkness, Hellish Rebuke, Phantasmal Force, Thunderwave; 5 Doom, Fear; 7 Blight, Ice Storm; 9 Antilife Shell, Insect Plague.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Cleric",
+    "subclass": "Community Domain",
+    "partnered": true,
+    "partner": "Hit Point Press",
+    "source": "Humblewood Campaign Setting",
+    "role": "Healer / Support",
+    "description": "Domain Spells: Domain spells at cleric levels: 1st bless, goodberry; 3rd aid, heroism; 5th beacon of hope, spirit guardians; 7th banishment, faithful hound; 9th mass cure wounds, telepathic bond.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Cleric",
+    "subclass": "Night Domain",
+    "partnered": true,
+    "partner": "Hit Point Press",
+    "source": "Humblewood Campaign Setting",
+    "role": "Controller / Support",
+    "description": "Domain Spells: Domain spells at cleric levels: 1st sleep, veil of dusk; 3rd darkness, moonbeam; 5th nondetection, globe of twilight; 7th divination, stellar bodies; 9th dream, seeming.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Cleric",
+    "subclass": "Mind Domain",
+    "partnered": true,
+    "partner": "Keith Baker",
+    "source": "Exploring Eberron",
+    "role": "",
+    "description": "Mind Domain Spells: Always prepared: Command, Detect Thoughts, Dissonant Whispers, Mind Spike (3); Clairvoyance, Fear (5); Confusion, Phantasmal Killer (7); Synaptic Static, Telekinesis (9).",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Cleric",
+    "subclass": "Commerce Domain",
+    "partnered": true,
+    "partner": "Keith Baker",
+    "source": "Frontiers of Eberron: Quickstone",
+    "role": "",
+    "description": "Commerce Domain Spells: Always prepared: Augury, Charm Person, Comprehend Languages, Locate Object (3); Glyph of Warding, Tongues (5); Divination, Leomund's Secret Chest (7); Legend Lore, Rary's Telepathic Bond (9).",
     "coverage": "Complete"
   },
   {
@@ -760,6 +1200,166 @@
     "coverage": "Complete"
   },
   {
+    "class": "Druid",
+    "subclass": "Circle of Blood",
+    "partnered": true,
+    "partner": "Grim Hollow",
+    "source": "Grim Hollow: Player's Guide",
+    "role": "Striker / Support",
+    "description": "Circle of Blood Spells: Always prepared at Druid levels: 3 Blood Rush, Crimson Lash, Sense Lifeblood; 5 Blood Bond, Sanguine Poppet; 7 Circle of Scarlet, Dark Sacrament; 9 Dominate Person, Mortality.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Druid",
+    "subclass": "Circle of Entropy",
+    "partnered": true,
+    "partner": "Grim Hollow",
+    "source": "Grim Hollow: Player's Guide",
+    "role": "Striker / Tank",
+    "description": "Catastrophic Power: After each Short or Long Rest pick one until the next rest.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Druid",
+    "subclass": "Circle of Mutation",
+    "partnered": true,
+    "partner": "Grim Hollow",
+    "source": "Grim Hollow: Player's Guide",
+    "role": "Shapeshifter / Striker",
+    "description": "Circle Forms: Wild Shape max CR equals Druid level / 3 (round down), Beast attacks deal +2 damage, and you can Dash, Disengage, or Influence as a Bonus Action.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Druid",
+    "subclass": "Circle of the City",
+    "partnered": true,
+    "partner": "Mage Hand Press",
+    "source": "Valda's Spire of Secrets: Player Pack 2",
+    "role": "Controller / Shapeshifter",
+    "description": "Circle of the City Spells: Always prepared at Druid levels: 3 Grease, Jump, Shatter, Spider Climb; 5 Meld into Stone, Sending; 7 Fabricate, Stone Shape; 9 Animate Objects, Passwall.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Druid",
+    "subclass": "The Unbroken Circle",
+    "partnered": true,
+    "partner": "Hit Point Press",
+    "source": "The Griffon's Saddlebag: Book One",
+    "role": "Gish / Striker",
+    "description": "Improved Shillelagh: Shillelagh works on any melee weapon you hold, which can keep its own damage die, and any proficient weapon can be your Druid Spellcasting Focus.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Druid",
+    "subclass": "Circle of Dragons",
+    "partnered": true,
+    "partner": "Hit Point Press",
+    "source": "The Griffon's Saddlebag: Book Two",
+    "role": "Shapeshifter / Striker",
+    "description": "Draconic Lore: Learn Draconic, and add PB (double if proficient) to History checks about dragons.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Druid",
+    "subclass": "Circle of the Old Ways",
+    "partnered": true,
+    "partner": "Avantris Entertainment",
+    "source": "The Crooked Moon Part One",
+    "role": "Tank / Gish",
+    "description": "Circle of the Old Ways Spells: Always prepared at Druid levels: 3 Ancestral Communion, Barkskin, Shield of Faith, Shillelagh, Spike Growth; 5 Magic Circle, Plant Growth; 7 Freedom of Movement, Private Sanctum; 9 Awaken, Tree Stride.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Druid",
+    "subclass": "Circle of Wicker",
+    "partnered": true,
+    "partner": "Avantris Entertainment",
+    "source": "The Crooked Moon Part One",
+    "role": "Support / Controller",
+    "description": "Bewitched Effigy: As a Bonus Action spend a Wild Shape use to set a Small wicker effigy within 30 feet for 1 minute (AC 15, HP 5 x Druid level, Vulnerable to Fire) with a 30-foot dimly lit aura.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Druid",
+    "subclass": "Circle of Shadows",
+    "partnered": true,
+    "partner": "Kobold Press",
+    "source": "Book of Ebon Tides",
+    "role": "Controller / Shapeshifter",
+    "description": "Umbral Form: As a bonus action spend a Wild Shape use to become smoky shadow for 10 minutes, keeping your statistics: Hide as a bonus action in dim light or darkness, squeeze through 1-inch gaps, and a reaction deals cold damage equal to PB to a creature you see hit you in melee.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Druid",
+    "subclass": "Circle of the Hive",
+    "partnered": true,
+    "partner": "Loot Tavern",
+    "source": "Heliana's Guide to Monster Hunting: Part 1",
+    "role": "Tank / Support",
+    "description": "Circle Spells: You learn the swarm cantrip.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Druid",
+    "subclass": "Circle of Fenris",
+    "partnered": true,
+    "partner": "Kobold Press",
+    "source": "Northlands Worldbook",
+    "role": "Striker / Shapeshifter",
+    "description": "Mantle of the Wolf: As an action, expend a Wild Shape use to manifest a spectral wolf's head for 10 minutes (ends if dismissed, re-manifested, or you are Incapacitated).",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Druid",
+    "subclass": "Circle of the Petal",
+    "partnered": true,
+    "partner": "Hit Point Press",
+    "source": "Obojima: Tales from the Tall Grass",
+    "role": "Support / Controller",
+    "description": "Petal Dance: As a bonus action, spend a Wild Shape use to wrap yourself in a petal cloud for 1 hour: +1 AC; a bonus action ranged spell attack within 30 feet for 1d6 slashing (2d6 at 5th, 3d6 at 11th, 4d6 at 17th); and a reaction to reduce damage to you or a creature within 10 feet by your druid level + Wisdom modifier, which disperses the cloud.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Druid",
+    "subclass": "Circle of Symbiosis",
+    "partnered": true,
+    "partner": "MonkeyDM",
+    "source": "Steinhardt's Guide to the Eldritch Hunt Player Pack",
+    "role": "Tank / Striker",
+    "description": "Circle of Symbiosis Spells: Always prepared at Druid levels: 3 Arm Cannon, Calcified Memories, Fractured Shell, Phalangeal Shot, Shillelagh; 5 Displacing Maw, Osseous Impalement; 7 Dread Scarecrow, Maiden of Bones; 9 Forest of Dread, Tree Stride.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Druid",
+    "subclass": "Circle of the Symbiote",
+    "partnered": true,
+    "partner": "Chaosium",
+    "source": "Cthulhu by Torchlight",
+    "role": "Tank / Support",
+    "description": "Circle of the Symbiote Spells: Always prepared at Druid levels: 3 Barkskin, Entangle, Guidance; 5 Plant Growth; 7 Hallucinatory Terrain; 9 Tree Stride.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Druid",
+    "subclass": "Circle of the Forged",
+    "partnered": true,
+    "partner": "Keith Baker",
+    "source": "Exploring Eberron",
+    "role": "",
+    "description": "Skin of Steel: In Wild Shape: max CR equals Druid level / 3; AC is 15 + Wisdom modifier if higher; Resistance to Poison and Advantage on saves against Poisoned; no Exhaustion from hunger, thirst, or suffocation, no need to sleep, and immune to magical sleep.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Druid",
+    "subclass": "Circle of Cycles",
+    "partnered": true,
+    "partner": "PalaeoGames",
+    "source": "Dr Dhrolin's Dictionary of Dinosaurs",
+    "role": "",
+    "description": "Circle of Cycles Spells: Always prepared: Augury, Evolution/Devolution (3); Clairvoyance, Tongues, Meld into Stone (5); Legend Lore, Contact Other Plane (9); Find the Path, Contingency, Flesh to Stone, Circle of Death (13); Foresight, Glibness, Time Stop (17).",
+    "coverage": "Complete"
+  },
+  {
     "class": "Fighter",
     "subclass": "Arcane Archer",
     "partnered": false,
@@ -817,7 +1417,7 @@
     "source": "Valda's Spire of Secrets",
     "role": "Utility / Skirmisher",
     "description": "Delving specialist; sniffs out danger and kicks down doors.",
-    "coverage": "Sample"
+    "coverage": "Complete"
   },
   {
     "class": "Fighter",
@@ -877,6 +1477,156 @@
     "source": "Xanathar's (XGtE)",
     "role": "Striker",
     "description": "Fighting Spirit grants advantage and temp HP. Relentless.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Fighter",
+    "subclass": "Sorrow Knight",
+    "partnered": false,
+    "partner": null,
+    "source": "D&D Beyond Drops",
+    "role": "Striker / Controller",
+    "description": "Despairing Strike dice add psychic damage and debuffs, a fear-teleport on Tactical Shift, and a damage-negating shade form on Action Surge.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Fighter",
+    "subclass": "Bulwark Warrior",
+    "partnered": true,
+    "partner": "Grim Hollow",
+    "source": "Grim Hollow: Player's Guide",
+    "role": "Tank / Defender",
+    "description": "Protective Taunt: Once per turn when you hit with a melee weapon or Unarmed Strike, the target has Disadvantage on attacks against anyone but you until the start of your next turn (one taunt per creature).",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Fighter",
+    "subclass": "Living Crucible",
+    "partnered": true,
+    "partner": "Grim Hollow",
+    "source": "Grim Hollow: Player's Guide",
+    "role": "Striker / Utility",
+    "description": "Compound Creator: Learn three compounds (two more at Fighter 7, 10, and 15, swapping one each time).",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Fighter",
+    "subclass": "Nightwatcher",
+    "partnered": true,
+    "partner": "Grim Hollow",
+    "source": "Grim Hollow: Player's Guide",
+    "role": "Defender / Scout",
+    "description": "Skilled Guardian: Expertise in one skill you're proficient in, plus proficiency in two of Deception, History, Insight, Intimidation, Investigation, Perception, or Stealth.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Fighter",
+    "subclass": "Blade Breaker",
+    "partnered": true,
+    "partner": "Grim Hollow",
+    "source": "Grim Hollow: Player Pack",
+    "role": "Striker / Controller",
+    "description": "Saga maneuvers fueled by a maneuver point pool; Stance of the Blade Breaker.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Fighter",
+    "subclass": "Couatl Herald",
+    "partnered": true,
+    "partner": "Hit Point Press",
+    "source": "The Griffon's Saddlebag: Book One",
+    "role": "Support / Striker",
+    "description": "Agent of Mercy: Mercy Dice: three d6 (four at Fighter 7, d8s at 10, five at 15, d10s at 18), regained on a Short or Long Rest.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Fighter",
+    "subclass": "Steel Hawk",
+    "partnered": true,
+    "partner": "Hit Point Press",
+    "source": "The Griffon's Saddlebag: Book Two",
+    "role": "Striker / Skirmisher",
+    "description": "Launch: Three times per short or long rest (four at 7th, five at 15th), as a bonus action leap up to 15 feet in any combination of directions (30 at 7th) without provoking, reducing any fall after by 30 feet.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Fighter",
+    "subclass": "Barrow Guard",
+    "partnered": true,
+    "partner": "Avantris Entertainment",
+    "source": "The Crooked Moon Part One",
+    "role": "Tank / Controller",
+    "description": "Death Knight: Draugr Dice: four d6 (six d8 at Fighter 5, eight at 9, eight d10 at 11, ten at 13, twelve d12 at 17); regain one on a Short Rest, all on a Long Rest; save DC 8 + Con mod + PB.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Fighter",
+    "subclass": "Viking",
+    "partnered": true,
+    "partner": "Kobold Press",
+    "source": "Northlands Worldbook",
+    "role": "Striker / Skirmisher",
+    "description": "Seaborne: Advantage on Strength and Dexterity saves and checks to avoid being pushed, knocked Prone, or moved against your will, and on checks to pilot waterborne vehicles.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Fighter",
+    "subclass": "Neko Duelist",
+    "partnered": true,
+    "partner": "Hit Point Press",
+    "source": "Obojima: Tales from Yatamon",
+    "role": "Striker / Skirmisher",
+    "description": "Cat Whisperer: You can understand and talk with felines, use any Influence action skill option with them, and have Advantage on those checks.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Fighter",
+    "subclass": "The Spirit-Fused",
+    "partnered": true,
+    "partner": "Hit Point Press",
+    "source": "Obojima: Tales from the Tall Grass",
+    "role": "Striker / Utility",
+    "description": "Arcane Quirk: Choose harmless quirks from your fused spirit, such as First Age gadgets glitching, coughing bubbles, or floating when unconscious.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Fighter",
+    "subclass": "Blood Hound",
+    "partnered": true,
+    "partner": "MonkeyDM",
+    "source": "Steinhardt's Guide to the Eldritch Hunt Player Pack",
+    "role": "Striker / Controller",
+    "description": "Blood Strike: Learn three Blood Strike options (one more at levels 5, 9, 13, and 17; swap one each time).",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Fighter",
+    "subclass": "Hero",
+    "partnered": true,
+    "partner": "Chaosium",
+    "source": "Cthulhu by Torchlight",
+    "role": "Leader / Striker",
+    "description": "Bolstering Presence: At the start of your turn (no action), creatures of your choice within 30 feet that see or hear you regain 2d6 + half your Fighter level Hit Points.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Fighter",
+    "subclass": "Scofflaw",
+    "partnered": true,
+    "partner": "Hit Point Press",
+    "source": "Humblewood Campaign Setting",
+    "role": "Striker / Controller",
+    "description": "Bonus Proficiency: Proficiency in Deception, Insight, Intimidation, Sleight of Hand, or Stealth, or Thieves' Cant.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Fighter",
+    "subclass": "Bonesmith",
+    "partnered": true,
+    "partner": "PalaeoGames",
+    "source": "Dr Dhrolin's Dictionary of Dinosaurs",
+    "role": "",
+    "description": "Spellcasting: Intelligence-based.",
     "coverage": "Complete"
   },
   {
@@ -1110,6 +1860,116 @@
     "coverage": "Sample"
   },
   {
+    "class": "Monk",
+    "subclass": "Warrior of the Leaden Crown",
+    "partnered": true,
+    "partner": "Grim Hollow",
+    "source": "Grim Hollow: Player's Guide",
+    "role": "Controller / Striker",
+    "description": "Subtle Hand: On your turn your Unarmed Strike reach is +5 feet, and Unarmed Strikes from the Attack action can deal Psychic damage.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Monk",
+    "subclass": "Warrior of Pride",
+    "partnered": true,
+    "partner": "Grim Hollow",
+    "source": "Grim Hollow: Player's Guide",
+    "role": "Striker",
+    "description": "Tall Tales: Proficiency in Deception, Intimidation, Performance, or Persuasion.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Monk",
+    "subclass": "Warrior of Regret",
+    "partnered": true,
+    "partner": "Grim Hollow",
+    "source": "Grim Hollow: Player's Guide",
+    "role": "Striker / Support",
+    "description": "Shade of Regret: Once per turn, spend 1 Focus Point (no action) to create an intangible shade within 10 feet until the end of your next turn.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Monk",
+    "subclass": "Warrior of the Street",
+    "partnered": true,
+    "partner": "Mage Hand Press",
+    "source": "Valda's Spire of Secrets: Player Pack",
+    "role": "Striker",
+    "description": "Combo: When an Unarmed Strike hits and deals damage, spend 1 Focus Point: your Unarmed Strikes get +2 to hit this turn, rising by 2 per further hit (max +6).",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Monk",
+    "subclass": "Warrior of the Celestial",
+    "partnered": true,
+    "partner": "Hit Point Press",
+    "source": "The Griffon's Saddlebag: Book One",
+    "role": "Support / Striker",
+    "description": "Celestial Connection: Telepathy with any creature within 30 feet that knows a language (one-way).",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Monk",
+    "subclass": "Way of the Aether",
+    "partnered": true,
+    "partner": "Hit Point Press",
+    "source": "The Griffon's Saddlebag: Book Two",
+    "role": "Striker / Ranged",
+    "description": "Spirit Strike: Any unarmed strike can instead be a proficient melee spell attack with 30-foot reach using Wis for attack and damage, dealing your Martial Arts die of force.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Monk",
+    "subclass": "Warrior of the Pestilent Haze",
+    "partnered": true,
+    "partner": "Avantris Entertainment",
+    "source": "The Crooked Moon Part One",
+    "role": "Striker / Debuffer",
+    "description": "Contagious Discipline: Your Unarmed Strikes can deal Slashing, and Flurry of Blows hits add a Martial Arts die of Necrotic.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Monk",
+    "subclass": "Way of the Prophet",
+    "partnered": true,
+    "partner": "Kobold Press",
+    "source": "Book of Ebon Tides",
+    "role": "Support / Skirmisher",
+    "description": "Wise Words: Proficiency in Performance and Persuasion, and use Wis instead of Cha for Charisma-based skill checks.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Monk",
+    "subclass": "Sheep Dragon Shepherd",
+    "partnered": true,
+    "partner": "Hit Point Press",
+    "source": "Obojima: Tales from the Tall Grass",
+    "role": "Support / Skirmisher",
+    "description": "Herding Sheep: As a bonus action, spend ki to move a willing creature you can see within 60 feet without provoking opportunity attacks: 15 feet per ki point toward you or 10 feet per point in another direction, up to its speed.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Monk",
+    "subclass": "Warrior of Cosmic Balance",
+    "partnered": true,
+    "partner": "Chaosium",
+    "source": "Cthulhu by Torchlight",
+    "role": "Controller / Support",
+    "description": "Guardian of the Way Technique: Once per turn when a Flurry of Blows Unarmed Strike deals damage: Anchoring Strike (the target can't teleport or travel between planes until the end of your next turn) or Banishing Strike (teleport the target up to 15 feet to a space you can see).",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Monk",
+    "subclass": "Warrior of the Living Weapon",
+    "partnered": true,
+    "partner": "Keith Baker",
+    "source": "Exploring Eberron",
+    "role": "",
+    "description": "Martial Form: At the start of your turn, spend 1 Focus Point to adopt a form for 10 minutes: Forged Heart (Unarmed Strikes crit objects; Flurry hits force a Strength save or push 15 feet), Nightmare Shroud (Deflect Attacks forces a Wisdom save or the attacker is Frightened until the end of its next turn), Traveler's Blade (+10 feet reach), or Weretouched (dropping an adjacent enemy to 0 grants temp HP of a Martial Arts die + Monk level).",
+    "coverage": "Complete"
+  },
+  {
     "class": "Monster Hunter",
     "subclass": "Carver Guild",
     "partnered": true,
@@ -1197,7 +2057,7 @@
     "source": "Grim Hollow: Player's Guide",
     "role": "Striker / Controller",
     "description": "A plague-ridden oath; spreads sickness to enemies.",
-    "coverage": "Sample"
+    "coverage": "Complete"
   },
   {
     "class": "Paladin",
@@ -1241,6 +2101,16 @@
   },
   {
     "class": "Paladin",
+    "subclass": "Oath of the Noble Genies",
+    "partnered": false,
+    "partner": null,
+    "source": "Heroes of Faerun (FRHoF)",
+    "role": "Striker / Tank",
+    "description": "Elemental riders on Divine Smite, Cha-based unarmored AC, elemental resistance aura, flight at 20.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Paladin",
     "subclass": "Oath of the Open Sea",
     "partnered": true,
     "partner": "Critical Role",
@@ -1267,6 +2137,116 @@
     "source": "DMG",
     "role": "Striker / Summoner",
     "description": "Fallen paladin; commands undead under an aura of hate.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Paladin",
+    "subclass": "Oath of Slaughter",
+    "partnered": true,
+    "partner": "Grim Hollow",
+    "source": "Grim Hollow: Player's Guide",
+    "role": "Striker",
+    "description": "Frenzied Slaughter: Spend a Channel Divinity as a Bonus Action to frenzy until the end of your next turn: when you miss with a melee weapon or Unarmed Strike, take a Reaction to attack again, and Advantage on saves against Charmed, Frightened, and Stunned.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Paladin",
+    "subclass": "Oath of Zeal",
+    "partnered": true,
+    "partner": "Grim Hollow",
+    "source": "Grim Hollow: Player's Guide",
+    "role": "Striker / Controller",
+    "description": "Mark of the Heretic: Spend a Channel Divinity as a Bonus Action to mark a creature within 30 feet for 1 minute: your weapon and Unarmed Strike attacks against it crit on 19-20, and when it starts its turn in your reach you can take a Reaction to attack it.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Paladin",
+    "subclass": "Oath of Revelry",
+    "partnered": true,
+    "partner": "Mage Hand Press",
+    "source": "Valda's Spire of Secrets: Player Pack",
+    "role": "Support",
+    "description": "Oath of Revelry Spells: Always prepared at Paladin levels: 3 Charm Person, Hideous Laughter; 5 Enhance Ability, Hangover; 9 Create Food and Water, Hypnotic Pattern; 13 Charm Monster, Freedom of Movement; 17 Geas, Telepathic Bond.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Paladin",
+    "subclass": "Oath of the Hearth",
+    "partnered": true,
+    "partner": "Hit Point Press",
+    "source": "The Griffon's Saddlebag: Book One",
+    "role": "Support / Striker",
+    "description": "Oath of the Hearth Spells: Always prepared at Paladin levels: 3 Burning Hands, Find Familiar; 5 Aid, Continual Flame; 9 Beacon of Hope, Daylight; 13 Fire Shield, Guardian of Faith; 17 Flame Strike, Rary's Telepathic Bond.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Paladin",
+    "subclass": "Oath of the Spelldrinker",
+    "partnered": true,
+    "partner": "Hit Point Press",
+    "source": "The Griffon's Saddlebag: Book Two",
+    "role": "Anti-caster / Support",
+    "description": "Oath Spells: Oath spells at paladin levels: 3rd bane, detect magic; 5th arcanist's magic aura, hold person; 9th dispel magic, slow; 13th dimension door, resilient sphere; 17th dominate person, scrying.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Paladin",
+    "subclass": "Oath of Castigation",
+    "partnered": true,
+    "partner": "Avantris Entertainment",
+    "source": "The Crooked Moon Part One",
+    "role": "Controller / Striker",
+    "description": "Castigate: Spend a Channel Divinity as a Magic action: up to Cha mod creatures within 30 feet make a Str save or are shackled in fire with Speed 0 for up to 1 minute (repeat save each turn); a Bonus Action flares the shackles for 2d6 Fire each.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Paladin",
+    "subclass": "Oath of the Harvest",
+    "partnered": true,
+    "partner": "Loot Tavern",
+    "source": "Heliana's Guide to Monster Hunting: Part 1",
+    "role": "Healer / Support",
+    "description": "Tenets of the Harvest: Share Your Meal, Nurture Over Cure, Permit Prosperity.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Paladin",
+    "subclass": "Oath of Valhalla",
+    "partnered": true,
+    "partner": "Kobold Press",
+    "source": "Northlands Worldbook",
+    "role": "Support / Striker",
+    "description": "Tenets of Valhalla: Protect the worthy dead.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Paladin",
+    "subclass": "Oath of the River",
+    "partnered": true,
+    "partner": "Hit Point Press",
+    "source": "Obojima: Tales from the Tall Grass",
+    "role": "Support / Controller",
+    "description": "Tenets of the River: The River Flows On; The River Quenches or Drowns; The River Rages; The River Seeks the Sea, Always.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Paladin",
+    "subclass": "Oath of the Eldritch Hunt",
+    "partnered": true,
+    "partner": "MonkeyDM",
+    "source": "Steinhardt's Guide to the Eldritch Hunt Player Pack",
+    "role": "Striker / Skirmisher",
+    "description": "Tenets of the Eldritch Hunt: Resolve, Respect, Responsibility.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Paladin",
+    "subclass": "Oath of the Guardian",
+    "partnered": true,
+    "partner": "Chaosium",
+    "source": "Cthulhu by Torchlight",
+    "role": "Tank / Defender",
+    "description": "Tenets of the Guardian: Choose up to four ideals matching your alignment, such as Courage, Sacrifice, Service, Fidelity, Protection, Affinity, Beauty, Freedom, Dominance, Opportunism, or Profit.",
     "coverage": "Complete"
   },
   {
@@ -1317,6 +2297,16 @@
     "source": "Xanathar's (XGtE)",
     "role": "Striker / Skirmisher",
     "description": "Ambush king: massive first-round burst and darkvision.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Ranger",
+    "subclass": "Hollow Warden",
+    "partnered": false,
+    "partner": null,
+    "source": "Ravenloft: The Horrors Within",
+    "role": "Tank / Striker",
+    "description": "Monstrous Favored Enemy transformation with an AC bonus, a frightening aura, retaliatory strikes and self-healing.",
     "coverage": "Complete"
   },
   {
@@ -1377,7 +2367,137 @@
     "source": "Grim Hollow: Player's Guide",
     "role": "Controller / Summoner",
     "description": "Commands diseased rats and swarms for the greater good.",
-    "coverage": "Sample"
+    "coverage": "Complete"
+  },
+  {
+    "class": "Ranger",
+    "subclass": "Winter Walker",
+    "partnered": false,
+    "partner": null,
+    "source": "Heroes of Faerun (FRHoF)",
+    "role": "Striker / Control",
+    "description": "Cold damage that ignores resistance, Hunter's Mark temp HP, stunning reaction, a freezing ghost form.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Ranger",
+    "subclass": "Green Reaper",
+    "partnered": true,
+    "partner": "Grim Hollow",
+    "source": "Grim Hollow: Player's Guide",
+    "role": "Striker / Debuffer",
+    "description": "Envenomed Attack: Wis mod times (min 1) per Long Rest, as a Bonus Action, poison a weapon or up to 20 ammunition for 1 minute: +1d4 Poison on hits.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Ranger",
+    "subclass": "Primordial Archer",
+    "partnered": true,
+    "partner": "Grim Hollow",
+    "source": "Grim Hollow: Player's Guide",
+    "role": "Striker / Controller",
+    "description": "Elemental Arrows: Wis mod times (min 1) per Long Rest, as a Bonus Action imbue a Longbow or Shortbow for 1 minute: it deals Acid, Cold, Fire, Lightning, or Thunder instead of its normal type plus 1d6 of that type.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Ranger",
+    "subclass": "Beastborne",
+    "partnered": true,
+    "partner": "Mage Hand Press",
+    "source": "Valda's Spire of Secrets: Player Pack 2",
+    "role": "Striker",
+    "description": "Lycanthrope: Claws: Unarmed Strikes can use Dex and deal 1d6 + Str or Dex mod Slashing.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Ranger",
+    "subclass": "Winter Trapper",
+    "partnered": true,
+    "partner": "Hit Point Press",
+    "source": "The Griffon's Saddlebag: Book One",
+    "role": "Controller / Striker",
+    "description": "Pin Down: Once per turn on a weapon or Unarmed Strike hit, add 1d6 of the attack's type and cut the target's Speed by 10 feet until your next turn.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Ranger",
+    "subclass": "Rocborne",
+    "partnered": true,
+    "partner": "Hit Point Press",
+    "source": "The Griffon's Saddlebag: Book Two",
+    "role": "Striker / Utility",
+    "description": "Rocborne Magic: Bonus ranger spells known at ranger levels: 3rd feather fall, 5th gust of wind, 9th lightning bolt, 13th ice storm, 17th legend lore.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Ranger",
+    "subclass": "Grim Harbinger",
+    "partnered": true,
+    "partner": "Avantris Entertainment",
+    "source": "The Crooked Moon Part One",
+    "role": "Striker / Summoner",
+    "description": "Grim Harbinger Spells: Always prepared at Ranger levels: 3 Bane; 5 Hold Person; 9 Fear; 13 Intrusive Despair; 17 Dream.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Ranger",
+    "subclass": "Trapper",
+    "partnered": true,
+    "partner": "Loot Tavern",
+    "source": "Heliana's Guide to Monster Hunting: Part 2",
+    "role": "Controller / Striker",
+    "description": "Trapper's Tools: Proficiency with thieves' tools and double proficiency bonus when using them to disarm or manipulate traps.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Ranger",
+    "subclass": "Corrupted Ranger",
+    "partnered": true,
+    "partner": "Hit Point Press",
+    "source": "Obojima: Tales from the Tall Grass",
+    "role": "Striker",
+    "description": "1st Manifestation: Taking damage grants a curse marker (two on a critical hit), lasting until the end of your next turn, up to a maximum of 2 (3 at 5th level, 4 at 11th, 5 at 17th).",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Ranger",
+    "subclass": "Torturer Conclave",
+    "partnered": true,
+    "partner": "MonkeyDM",
+    "source": "Steinhardt's Guide to the Eldritch Hunt Player Pack",
+    "role": "Striker / Debuffer",
+    "description": "Tools of the Trade: Proficiency and Expertise with Torture Tools and Insight.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Ranger",
+    "subclass": "Trail Warden",
+    "partnered": true,
+    "partner": "Chaosium",
+    "source": "Cthulhu by Torchlight",
+    "role": "Support / Leader",
+    "description": "Trail Warden Spells: Always prepared at Ranger levels: 3 Goodberry; 5 Pass Without Trace; 9 Spirit Guardians; 13 Guardian of Faith; 17 Mass Cure Wounds.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Ranger",
+    "subclass": "Bloodhound",
+    "partnered": true,
+    "partner": "Keith Baker",
+    "source": "Frontiers of Eberron: Quickstone",
+    "role": "",
+    "description": "Bloodhound Spells: Always prepared: Alarm (3), Hold Person (5), Clairvoyance (9), Locate Creature (13), Scrying (17).",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Ranger",
+    "subclass": "Big Game Hunter",
+    "partnered": true,
+    "partner": "PalaeoGames",
+    "source": "Dr Dhrolin's Dictionary of Dinosaurs",
+    "role": "",
+    "description": "Ranged Specialist: Training with all ranged weapons (including thrown weapons and firearms), and no Disadvantage on ranged attacks for an enemy within 5 feet.",
+    "coverage": "Complete"
   },
   {
     "class": "Rogue",
@@ -1427,6 +2547,16 @@
     "source": "Tasha's (TCoE)",
     "role": "Striker / Utility",
     "description": "Death-touched; borrows skills and drops spectral tokens.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Rogue",
+    "subclass": "Scion of the Three",
+    "partnered": false,
+    "partner": null,
+    "source": "Heroes of Faerun (FRHoF)",
+    "role": "Striker",
+    "description": "Teleporting strikes on Bloodied enemies, Dead Three resistances, Terrify Cunning Strike, damage aura.",
     "coverage": "Complete"
   },
   {
@@ -1498,6 +2628,126 @@
     "role": "Skirmisher",
     "description": "A 'legally-distinct Spider-Man' rogue with webslinging mobility.",
     "coverage": "Sample"
+  },
+  {
+    "class": "Rogue",
+    "subclass": "Highway Rider",
+    "partnered": true,
+    "partner": "Grim Hollow",
+    "source": "Grim Hollow: Player's Guide",
+    "role": "Striker / Mounted",
+    "description": "Hair Trigger: Proficiency with Blackpowder Pistols.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Rogue",
+    "subclass": "Misfortune Bringer",
+    "partnered": true,
+    "partner": "Grim Hollow",
+    "source": "Grim Hollow: Player's Guide",
+    "role": "Striker / Debuffer",
+    "description": "Evil Eye: As a Bonus Action curse a creature within 60 feet for 1 minute (one at a time); you can Sneak Attack it whenever you don't have Disadvantage.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Rogue",
+    "subclass": "Sanguine Thief",
+    "partnered": true,
+    "partner": "Grim Hollow",
+    "source": "Grim Hollow: Player's Guide",
+    "role": "Striker / Caster",
+    "description": "Spellcasting: Third-caster Wizard spellcasting with Intelligence (Sangromancy spells count as Wizard spells): three cantrips (four at Rogue 10), prepared spells 3 at level 3 rising to 13 at level 20, and slots per the Eldritch Knight-style table (two 1st at level 3 up to one 4th at level 19).",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Rogue",
+    "subclass": "Arachnoid Stalker",
+    "partnered": true,
+    "partner": "Mage Hand Press",
+    "source": "Valda's Spire of Secrets: Player Pack",
+    "role": "Striker / Controller",
+    "description": "Webbing: As a Bonus Action produce webs lasting 1 minute: zip to a point within 30 feet without provoking (or as a Reaction while falling, 10 feet any direction); manipulate or snatch an unattended object under 10 pounds within 30 feet; make an anchored 60-foot rope; or, twice per Long Rest (one back on a Short Rest), cast Web in a 5-foot Cube for 1 minute with DC 8 + Dex mod + PB.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Rogue",
+    "subclass": "Runetagger",
+    "partnered": true,
+    "partner": "Hit Point Press",
+    "source": "The Griffon's Saddlebag: Book One",
+    "role": "Striker / Debuffer",
+    "description": "Impressionist: Expertise with Calligrapher's and Painter's Supplies; conjure either kit plus ink or paint as a Magic action (they vanish if they leave you).",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Rogue",
+    "subclass": "Grim Surgeon",
+    "partnered": true,
+    "partner": "Hit Point Press",
+    "source": "The Griffon's Saddlebag: Book Two",
+    "role": "Striker / Healer",
+    "description": "Medic: Medicine proficiency with double PB.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Rogue",
+    "subclass": "Sinner",
+    "partnered": true,
+    "partner": "Avantris Entertainment",
+    "source": "The Crooked Moon Part One",
+    "role": "Striker / Debuffer",
+    "description": "Hex Slinger: Cha mod times (min 1) per Short Rest, when you deal Sneak Attack damage designate two of the dice; their total sets a jinx until the end of the target's next turn.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Rogue",
+    "subclass": "Umbral Binder",
+    "partnered": true,
+    "partner": "Kobold Press",
+    "source": "Book of Ebon Tides",
+    "role": "Striker / Controller",
+    "description": "Eyes in the Dark: Darkvision 120 feet.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Rogue",
+    "subclass": "Fortune Rogue",
+    "partnered": true,
+    "partner": "Hit Point Press",
+    "source": "Obojima: Tales from Yatamon",
+    "role": "Utility / Striker",
+    "description": "Beyond Coincidence: You have Fortune Dice (d20s) equal to half your Rogue level (round up), regained on a Long Rest.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Rogue",
+    "subclass": "Waxwork Rogue",
+    "partnered": true,
+    "partner": "Hit Point Press",
+    "source": "Obojima: Tales from the Tall Grass",
+    "role": "Utility / Controller",
+    "description": "Conjure Flame: You learn Dancing Lights (as floating candles) and Produce Flame.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Rogue",
+    "subclass": "Blade of Radiance",
+    "partnered": true,
+    "partner": "MonkeyDM",
+    "source": "Steinhardt's Guide to the Eldritch Hunt Player Pack",
+    "role": "Striker / Tank",
+    "description": "Sanctified Champion: Proficiency with Martial weapons and training with Medium armor.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Rogue",
+    "subclass": "Shadow Stalker",
+    "partnered": true,
+    "partner": "Chaosium",
+    "source": "Cthulhu by Torchlight",
+    "role": "Striker / Utility",
+    "description": "Shadowy Reflection: As a Magic action, detach your shadow into a space within 5 feet; later control it as a Magic action or with your Cunning Action, moving it your Speed to manipulate objects, open unlocked doors, or carry up to 10 pounds.",
+    "coverage": "Complete"
   },
   {
     "class": "Sorcerer",
@@ -1581,6 +2831,16 @@
   },
   {
     "class": "Sorcerer",
+    "subclass": "Spellfire Sorcery",
+    "partnered": false,
+    "partner": null,
+    "source": "Heroes of Faerun (FRHoF)",
+    "role": "Healer / Blaster",
+    "description": "Sorcery Point bursts of temp HP or radiant fire, healing spell list, Counterspell that refunds points.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Sorcerer",
     "subclass": "Storm Sorcery",
     "partnered": false,
     "partner": null,
@@ -1597,6 +2857,136 @@
     "source": "PHB 2014 / 2024",
     "role": "Blaster",
     "description": "Chaotic surges; high-variance power and Tides of Chaos.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Sorcerer",
+    "subclass": "Apocalypse Sorcery",
+    "partnered": true,
+    "partner": "Grim Hollow",
+    "source": "Grim Hollow: Player's Guide",
+    "role": "Blaster / Utility",
+    "description": "Apocalyptic Spells: Always prepared at Sorcerer levels: 3 Augury, Comprehend Languages, Hellish Rebuke, Ray of Enfeeblement; 5 Bestow Curse, Revivify; 7 Banishment, Divination; 9 Contagion, Insect Plague.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Sorcerer",
+    "subclass": "Haunted Sorcery",
+    "partnered": true,
+    "partner": "Grim Hollow",
+    "source": "Grim Hollow: Player's Guide",
+    "role": "Caster / Summoner",
+    "description": "Haunted Spells: Always prepared at Sorcerer levels: 3 Bane, Chill Touch, Invisibility, See Invisibility, Unseen Servant; 5 Fly, Speak with Dead; 7 Death Ward, Greater Invisibility; 9 Little Death, Telekinesis.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Sorcerer",
+    "subclass": "Wretched Bloodline Sorcery",
+    "partnered": true,
+    "partner": "Grim Hollow",
+    "source": "Grim Hollow: Player's Guide",
+    "role": "Controller / Debuffer",
+    "description": "Bad Luck Charm: Once per Short or Long Rest (or 1 Sorcery Point), as a Bonus Action a creature within 30 feet has Disadvantage on its next D20 Test before the start of your next turn.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Sorcerer",
+    "subclass": "Heroic Sorcery",
+    "partnered": true,
+    "partner": "Mage Hand Press",
+    "source": "Valda's Spire of Secrets: Player Pack 2",
+    "role": "Gish / Striker",
+    "description": "Heroic Spells: Always prepared at Sorcerer levels: 3 Arc Blade, Burning Blade, Frigid Blade, Heroism, Magic Weapon, Mirror Image, Shield; 5 Haste, Phantom Steed; 7 Death Ward, Stoneskin; 9 Legend Lore, Hold Monster.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Sorcerer",
+    "subclass": "Frost Sorcery",
+    "partnered": true,
+    "partner": "Hit Point Press",
+    "source": "The Griffon's Saddlebag: Book One",
+    "role": "Controller",
+    "description": "Create Ice: Touching a surface, as a Bonus Action ice over five contiguous 5-foot squares as Difficult Terrain until the end of your next turn, plus five more per Sorcery Point.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Sorcerer",
+    "subclass": "Desert Soul",
+    "partnered": true,
+    "partner": "Hit Point Press",
+    "source": "The Griffon's Saddlebag: Book Two",
+    "role": "Controller / Blaster",
+    "description": "Dunetreader: Sand difficult terrain doesn't slow you, and you tolerate heat up to 150 degrees Fahrenheit unprotected.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Sorcerer",
+    "subclass": "Crimson Sorcery",
+    "partnered": true,
+    "partner": "Avantris Entertainment",
+    "source": "The Crooked Moon Part One",
+    "role": "Blaster / Healer",
+    "description": "Blood Well: When you deal damage or restore HP, spend your Blood Well to add 1d8 for one target.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Sorcerer",
+    "subclass": "Light Weaver",
+    "partnered": true,
+    "partner": "Kobold Press",
+    "source": "Book of Ebon Tides",
+    "role": "Blaster / Support",
+    "description": "Trick of the Light: See normally in magical and nonmagical darkness out to 60 feet.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Sorcerer",
+    "subclass": "Skinshifter",
+    "partnered": true,
+    "partner": "Loot Tavern",
+    "source": "Heliana's Guide to Monster Hunting: Part 2",
+    "role": "Gish / Shapeshifter",
+    "description": "Skinshifter Magic: Spells known at sorcerer levels (not counted against spells known): 1st chameleon skin, inflict wounds; 3rd barkskin, protection from poison; 5th vampiric touch, zippit!; 7th freedom of movement, frogskin; 9th feverskin, greater restoration.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Sorcerer",
+    "subclass": "Spirit Caller",
+    "partnered": true,
+    "partner": "Kobold Press",
+    "source": "Northlands Worldbook",
+    "role": "Support / Utility",
+    "description": "Spirit Caller Spells: Always prepared at Sorcerer levels: 3 Bane, Bless, Heroism, Protection from Evil and Good; 5 Augury, Healing Spirit; 7 Speak with Dead, Spirit Guardians; 9 Aura of Life, Death Ward.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Sorcerer",
+    "subclass": "Oni Bloodline",
+    "partnered": true,
+    "partner": "Hit Point Press",
+    "source": "Obojima: Tales from the Tall Grass",
+    "role": "Blaster / Gish",
+    "description": "Arcane Prison: Oni traits manifest by how many sorcery points you are missing (lost again as you regain them), each lasting until a long rest: 0 to 1 Eyes, 2 to 4 Horns, 5 to 9 Skin, 10 to 14 Tongue, 15+ Hair.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Sorcerer",
+    "subclass": "Hungering Dark",
+    "partnered": true,
+    "partner": "Chaosium",
+    "source": "Cthulhu by Torchlight",
+    "role": "Controller",
+    "description": "Innate Darkness Spells: Always prepared at Sorcerer levels: 3 Confounding Shadows, Darkness, Tide of Darkness, Umbral Tendril; 5 Fear, Shadowy Eruption; 7 Black Tentacles, Greater Invisibility; 9 Mislead, Summon Shadow.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Sorcerer",
+    "subclass": "Nemesis Sorcery",
+    "partnered": true,
+    "partner": "Keith Baker",
+    "source": "Frontiers of Eberron: Quickstone",
+    "role": "",
+    "description": "Nemesis Spells: Always prepared: Compelled Duel, Mirror Image, See Invisibility, Shield (3); Counterspell, Slow (5); Fire Shield, Otiluke's Resilient Sphere (7); Circle of Power, Mislead (9).",
     "coverage": "Complete"
   },
   {
@@ -1737,6 +3127,156 @@
     "source": "Arcana Unleashed",
     "role": "Striker / Support",
     "description": "A dying god's vestige fights, heals, or curses beside you; borrowed Cleric domain spells.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Warlock",
+    "subclass": "The Coven",
+    "partnered": true,
+    "partner": "Grim Hollow",
+    "source": "Grim Hollow: Player's Guide",
+    "role": "Controller / Debuffer",
+    "description": "Coven Spells: Always prepared at Warlock levels: 3 Hold Person, Identify, Locate Object, Ray of Sickness; 5 Bestow Curse, Counterspell; 7 Phantasmal Killer, Polymorph; 9 Divination, Locate Creature; 17 Contact Other Plane, Scrying.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Warlock",
+    "subclass": "The First Vampire Patron",
+    "partnered": true,
+    "partner": "Grim Hollow",
+    "source": "Grim Hollow: Player's Guide",
+    "role": "Striker / Drain",
+    "description": "Drain Life: After the Attack or Magic action, make an Unarmed Strike as a Bonus Action dealing 1d6 + Cha mod Necrotic.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Warlock",
+    "subclass": "The Parasite Patron",
+    "partnered": true,
+    "partner": "Grim Hollow",
+    "source": "Grim Hollow: Player's Guide",
+    "role": "Controller / Utility",
+    "description": "Spell Siphon: Right after a creature within 60 feet casts a spell, take a Reaction: it makes a Charisma save or can't cast that spell for 8 hours, and if it was level 1+ and a level you can cast, you have it prepared meanwhile.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Warlock",
+    "subclass": "Future You Patron",
+    "partnered": true,
+    "partner": "Mage Hand Press",
+    "source": "Valda's Spire of Secrets: Player Pack",
+    "role": "Support / Controller",
+    "description": "Future You Spells: Always prepared at Warlock levels: 3 Accelerate/Decelerate, Delay, Enhance Ability, Moment to Think, Recall; 5 Protection from Energy, Slow; 7 Death Ward, Dire Warning; 9 Legend Lore, Telepathic Bond.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Warlock",
+    "subclass": "The Astral Griffon",
+    "partnered": true,
+    "partner": "Hit Point Press",
+    "source": "The Griffon's Saddlebag: Book One",
+    "role": "Utility / Blaster",
+    "description": "Astral Griffon Spells: Always prepared at Warlock levels: 3 Identify, Locate Object, Magic Missile, Rope Trick; 5 Blink, Clairvoyance; 7 Mordenkainen's Private Sanctum, Leomund's Secret Chest; 9 Legend Lore, Passwall.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Warlock",
+    "subclass": "The Many",
+    "partnered": true,
+    "partner": "Hit Point Press",
+    "source": "The Griffon's Saddlebag: Book Two",
+    "role": "Striker / Tank",
+    "description": "Expanded Spell List: Added to your warlock list: 1st entangle, magic missile; 2nd scorching ray, see invisibility; 3rd blink, nondetection; 4th arcane eye, black tentacles; 5th mislead, telepathic bond.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Warlock",
+    "subclass": "Great Fool Patron",
+    "partnered": true,
+    "partner": "Avantris Entertainment",
+    "source": "The Crooked Moon Part One",
+    "role": "Controller / Debuffer",
+    "description": "Great Fool Spells: Always prepared at Warlock levels: 3 Disguise Self, Hideous Laughter, Rope Trick, Spiritual Weapon, Vicious Mockery; 5 Blink, Stinking Cloud; 7 Phantasmal Killer, Puppet Master; 9 Arcane Hand, Mislead.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Warlock",
+    "subclass": "Horned King Patron",
+    "partnered": true,
+    "partner": "Avantris Entertainment",
+    "source": "The Crooked Moon Part One",
+    "role": "Controller / Debuffer",
+    "description": "Horned King Spells: Always prepared at Warlock levels: 3 Animal Friendship, Bane, Spike Growth, Suggestion; 5 Bestow Curse, Fly; 7 Phantasmal Killer, Polymorph; 9 Dominate Person, Scrying.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Warlock",
+    "subclass": "Mother of Sorrows",
+    "partnered": true,
+    "partner": "Kobold Press",
+    "source": "Book of Ebon Tides",
+    "role": "Controller / Debuffer",
+    "description": "Expanded Spell List: Added to your warlock list: 1st detect poison and disease, inflict wounds; 2nd ray of enfeeblement, silence; 3rd stinking cloud, vampiric touch; 4th greater invisibility, phantasmal killer; 5th cloudkill, contagion.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Warlock",
+    "subclass": "The Parasite (Heliana's)",
+    "partnered": true,
+    "partner": "Loot Tavern",
+    "source": "Heliana's Guide to Monster Hunting: Part 2",
+    "role": "Striker / Tank",
+    "description": "Expanded Spell List: Added to your warlock list: 1st heroism, sanctuary; 2nd enhance ability, enlarge/reduce; 3rd haste, spirit guardians; 4th black tentacles, freedom of movement; 5th contagion, dominate person.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Warlock",
+    "subclass": "Trickster",
+    "partnered": true,
+    "partner": "Kobold Press",
+    "source": "Northlands Worldbook",
+    "role": "Controller / Skirmisher",
+    "description": "Context Switch: When a creature makes a melee attack against you, take a Reaction to swap places with a creature within 5 feet (Wisdom save if unwilling); it becomes the target and takes the damage, and an enemy so targeted has Disadvantage on attacks until the start of your next turn.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Warlock",
+    "subclass": "Coven Patron (Obojima)",
+    "partnered": true,
+    "partner": "Hit Point Press",
+    "source": "Obojima: Tales from Yatamon",
+    "role": "Support / Utility",
+    "description": "Your Coven: Choose a coven: Crowsworn, Cloud Cap Coven, Fish Head Coven, League of the Gilded Gourd, Patchwork Robe Coven, or The Tall Hats.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Warlock",
+    "subclass": "The Lantern",
+    "partnered": true,
+    "partner": "Hit Point Press",
+    "source": "Obojima: Tales from the Tall Grass",
+    "role": "Support / Controller",
+    "description": "Expanded Spell List: Added to your warlock list: 1st Faerie Fire, Identify; 2nd Locate Object, Swallow Magic; 3rd Daylight, Nondetection; 4th Guardian of Faith, Locate Creature; 5th Create Spirit Train Stop, Tamh Gon's Fiery Festival Feast.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Warlock",
+    "subclass": "Exalted Assembly of the Feline Court",
+    "partnered": true,
+    "partner": "Chaosium",
+    "source": "Cthulhu by Torchlight",
+    "role": "Utility / Controller",
+    "description": "Feline Spells: Always prepared at Warlock levels: 3 Animal Friendship, Cat's Spring, Feather Fall, Feline Grace, Misty Step, Speak with Animals; 5 Haste, Phantom Panther; 7 Freedom of Movement, Dimension Door; 9 Feline Chaos, Telekinesis.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Warlock",
+    "subclass": "Stone Sovereign Patron",
+    "partnered": true,
+    "partner": "Keith Baker",
+    "source": "Frontiers of Eberron: Quickstone",
+    "role": "",
+    "description": "Eternity in Stone: Once per Short or Long Rest, when you reduce a creature to 0 HP, you can Petrify it and gain 1d10 + Warlock level Temporary Hit Points.",
     "coverage": "Complete"
   },
   {
@@ -1907,6 +3447,136 @@
     "source": "Xanathar's (XGtE)",
     "role": "Blaster / Tank",
     "description": "Balances evocation offense with arcane self-defense.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Wizard",
+    "subclass": "Daemonologist",
+    "partnered": true,
+    "partner": "Grim Hollow",
+    "source": "Grim Hollow: Player's Guide",
+    "role": "Caster / Support",
+    "description": "Fair and Foul: On each Long Rest choose Arch Daemons or Arch Seraphs and you can prepare only that side's free spellbook spells.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Wizard",
+    "subclass": "Plague Doctor",
+    "partnered": true,
+    "partner": "Grim Hollow",
+    "source": "Grim Hollow: Player's Guide",
+    "role": "Support / Healer",
+    "description": "Potion Craft: Proficiency in Medicine, Herbalism Kit, and Alchemist's Supplies.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Wizard",
+    "subclass": "Sangromancer",
+    "partnered": true,
+    "partner": "Grim Hollow",
+    "source": "Grim Hollow: Player's Guide",
+    "role": "Blaster",
+    "description": "Sangromancy Savant: Sangromancy spells count as Wizard spells.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Wizard",
+    "subclass": "Magic Missile Mage",
+    "partnered": true,
+    "partner": "Mage Hand Press",
+    "source": "Valda's Spire of Secrets: Player Pack 2",
+    "role": "Blaster",
+    "description": "Magic Missile Savant: Magic Missile is free in your spellbook.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Wizard",
+    "subclass": "Materializer",
+    "partnered": true,
+    "partner": "Hit Point Press",
+    "source": "The Griffon's Saddlebag: Book One",
+    "role": "Utility / Controller",
+    "description": "Arcane Artisan: Learn Mending (or another Wizard cantrip) for free.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Wizard",
+    "subclass": "Wand Lore",
+    "partnered": true,
+    "partner": "Hit Point Press",
+    "source": "The Griffon's Saddlebag: Book Two",
+    "role": "Caster / Utility",
+    "description": "Core Wand: Craft a personal wand that is your focus and can be summoned to your hand as a bonus action from anywhere (8 hours to remake).",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Wizard",
+    "subclass": "Occultist",
+    "partnered": true,
+    "partner": "Avantris Entertainment",
+    "source": "The Crooked Moon Part One",
+    "role": "Blaster / Controller",
+    "description": "Forbidden Knowledge: Learn Deep Speech or another language, and always have one level 1 Warlock spell prepared (swap on a Long Rest).",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Wizard",
+    "subclass": "Philosopher",
+    "partnered": true,
+    "partner": "Avantris Entertainment",
+    "source": "The Crooked Moon Part One",
+    "role": "Utility / Caster",
+    "description": "Alchemical Knowledge: Alchemist's Supplies with proficiency, usable as an Arcane Focus and to craft any magic item.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Wizard",
+    "subclass": "Shadow Arcane Tradition",
+    "partnered": true,
+    "partner": "Kobold Press",
+    "source": "Book of Ebon Tides",
+    "role": "Controller / Utility",
+    "description": "Shadow Symbiote: Darkvision 60 feet (or +60) and sight through magical darkness to 30 feet, but sunlight sensitivity (disadvantage on attacks and sight-based Perception in sunlight).",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Wizard",
+    "subclass": "School of Biomancy",
+    "partnered": true,
+    "partner": "Loot Tavern",
+    "source": "Heliana's Guide to Monster Hunting: Part 1",
+    "role": "Gish / Utility",
+    "description": "Biomancy Savant: Copying biomancy spells into your spellbook costs half the gold and time.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Wizard",
+    "subclass": "Origami Mage",
+    "partnered": true,
+    "partner": "Hit Point Press",
+    "source": "Obojima: Tales from the Tall Grass",
+    "role": "Utility / Support",
+    "description": "An Arcane Art: As a bonus action, proficiency bonus times per long rest, fold an origami construct bound to you or a creature within 60 feet for hours equal to half your wizard level (AC your spell save DC, destroyed by any damage).",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Wizard",
+    "subclass": "Osteomancer",
+    "partnered": true,
+    "partner": "MonkeyDM",
+    "source": "Steinhardt's Guide to the Eldritch Hunt Player Pack",
+    "role": "Controller / Tank",
+    "description": "Brittle Bone Armor: As an action without armor or Shield, gain Temporary Hit Points equal to twice your Wizard level for 1 hour; while they last you have Resistance to Piercing and Slashing and +2 AC.",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Wizard",
+    "subclass": "Bibliomancy",
+    "partnered": true,
+    "partner": "Chaosium",
+    "source": "Cthulhu by Torchlight",
+    "role": "Blaster / Utility",
+    "description": "Book Learning: Touching a text for 1 minute grants a working knowledge of it unless coded.",
     "coverage": "Complete"
   }
 ]

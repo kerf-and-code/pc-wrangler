@@ -371,5 +371,1340 @@
       "Scrying",
       "Teleportation Circle"
     ]
+  },
+  "Knowledge Domain": {
+    "3": [
+      "Command",
+      "Comprehend Languages",
+      "Detect Magic",
+      "Detect Thoughts",
+      "Identify",
+      "Mind Spike"
+    ],
+    "5": [
+      "Dispel Magic",
+      "Nondetection",
+      "Tongues"
+    ],
+    "7": [
+      "Arcane Eye",
+      "Banishment",
+      "Confusion"
+    ],
+    "9": [
+      "Legend Lore",
+      "Scrying",
+      "Synaptic Static"
+    ]
+  },
+  "Oath of the Noble Genies": {
+    "3": [
+      "Chromatic Orb",
+      "Elementalism",
+      "Thunderous Smite"
+    ],
+    "5": [
+      "Mirror Image",
+      "Phantasmal Force"
+    ],
+    "9": [
+      "Fly",
+      "Gaseous Form"
+    ],
+    "13": [
+      "Conjure Minor Elementals",
+      "Summon Elemental"
+    ],
+    "17": [
+      "Banishing Smite",
+      "Contact Other Plane"
+    ]
+  },
+  "Winter Walker": {
+    "3": [
+      "Ice Knife"
+    ],
+    "5": [
+      "Hold Person"
+    ],
+    "9": [
+      "Remove Curse"
+    ],
+    "13": [
+      "Ice Storm"
+    ],
+    "17": [
+      "Cone of Cold"
+    ]
+  },
+  "Spellfire Sorcery": {
+    "3": [
+      "Cure Wounds",
+      "Guiding Bolt",
+      "Lesser Restoration",
+      "Scorching Ray"
+    ],
+    "5": [
+      "Aura of Vitality",
+      "Dispel Magic"
+    ],
+    "6": [
+      "Counterspell"
+    ],
+    "7": [
+      "Fire Shield",
+      "Wall of Fire"
+    ],
+    "9": [
+      "Greater Restoration",
+      "Flame Strike"
+    ]
+  },
+  "College of the Moon": {
+    "6": [
+      "Moonbeam"
+    ]
+  },
+  "Reanimator": {
+    "3": [
+      "False Life",
+      "Spare the Dying",
+      "Witch Bolt"
+    ],
+    "5": [
+      "Blindness/Deafness",
+      "Enhance Ability"
+    ],
+    "9": [
+      "Animate Dead",
+      "Lightning Bolt"
+    ],
+    "13": [
+      "Blight",
+      "Death Ward"
+    ],
+    "17": [
+      "Antilife Shell",
+      "Raise Dead"
+    ]
+  },
+  "Grave Domain": {
+    "3": [
+      "Detect Evil and Good",
+      "False Life",
+      "Gentle Repose",
+      "Ray of Enfeeblement",
+      "Spare the Dying"
+    ],
+    "5": [
+      "Revivify",
+      "Vampiric Touch"
+    ],
+    "7": [
+      "Blight",
+      "Death Ward"
+    ],
+    "9": [
+      "Dispel Evil and Good",
+      "Raise Dead"
+    ]
+  },
+  "Hollow Warden": {
+    "3": [
+      "Wrathful Smite"
+    ],
+    "5": [
+      "Alter Self"
+    ],
+    "9": [
+      "Phantom Steed"
+    ],
+    "13": [
+      "Dominate Beast"
+    ],
+    "17": [
+      "Steel Wind Strike"
+    ]
+  },
+  "Shadow Sorcery": {
+    "3": [
+      "Bane",
+      "Darkness",
+      "Inflict Wounds",
+      "Pass Without Trace"
+    ],
+    "5": [
+      "Hunger of Hadar",
+      "Nondetection"
+    ],
+    "7": [
+      "Greater Invisibility",
+      "Phantasmal Killer"
+    ],
+    "9": [
+      "Contagion",
+      "Creation"
+    ]
+  },
+  "Undead Patron": {
+    "3": [
+      "Bane",
+      "Blindness/Deafness",
+      "Phantasmal Force",
+      "Ray of Sickness"
+    ],
+    "5": [
+      "Speak with Dead",
+      "Summon Undead"
+    ],
+    "7": [
+      "Greater Invisibility",
+      "Phantasmal Killer"
+    ],
+    "9": [
+      "Antilife Shell",
+      "Cloudkill"
+    ]
+  },
+  "College of Spirits": {
+    "6": [
+      "Spirit Guardians"
+    ]
+  },
+  "Eldritch Domain": {
+    "3": [
+      "Detect Thoughts",
+      "Tasha's Hideous Laughter",
+      "See Invisibility",
+      "Sleep"
+    ],
+    "5": [
+      "Fear",
+      "Tongues"
+    ],
+    "7": [
+      "Confusion",
+      "Phantasmal Killer"
+    ],
+    "9": [
+      "Contact Other Plane",
+      "Dream"
+    ]
+  },
+  "Inquisition Domain": {
+    "3": [
+      "See Invisibility",
+      "Silence"
+    ],
+    "5": [
+      "Dispel Magic",
+      "Remove Curse"
+    ],
+    "7": [
+      "Arcane Eye",
+      "Locate Creature"
+    ],
+    "9": [
+      "Creation",
+      "Hallow"
+    ]
+  },
+  "Purification Domain": {
+    "3": [
+      "Detect Poison and Disease",
+      "Flame Blade"
+    ],
+    "5": [
+      "Fear",
+      "Flash Fever"
+    ],
+    "7": [
+      "Aura of Purity",
+      "Wall of Fire"
+    ],
+    "9": [
+      "Flame Strike",
+      "Hold Monster"
+    ]
+  },
+  "Circle of Blood": {
+    "3": [
+      "Blood Rush",
+      "Crimson Lash",
+      "Sense Lifeblood"
+    ],
+    "5": [
+      "Blood Bond",
+      "Sanguine Poppet"
+    ],
+    "7": [
+      "Circle of Scarlet",
+      "Dark Sacrament"
+    ],
+    "9": [
+      "Dominate Person",
+      "Mortality"
+    ]
+  },
+  "College of Fools": {
+    "3": [
+      "Dissonant Whispers"
+    ]
+  },
+  "College of Requiems": {
+    "6": [
+      "Animate Dead"
+    ]
+  },
+  "Path of the Primal Spirit": {
+    "6": [
+      "Animal Friendship",
+      "Speak with Animals"
+    ]
+  },
+  "Oath of Pestilence": {
+    "3": [
+      "Bane",
+      "Inflict Wounds"
+    ],
+    "5": [
+      "Melf's Acid Arrow",
+      "Ray of Enfeeblement"
+    ],
+    "9": [
+      "Flash Fever",
+      "Stinking Cloud"
+    ],
+    "13": [
+      "Blight",
+      "Confusion"
+    ],
+    "17": [
+      "Contagion",
+      "Insect Plague"
+    ]
+  },
+  "Oath of Slaughter": {
+    "3": [
+      "Crimson Lash",
+      "Inflict Wounds"
+    ],
+    "5": [
+      "Bloodletter",
+      "Shatter"
+    ],
+    "9": [
+      "Fear",
+      "Suffocate"
+    ],
+    "13": [
+      "Consume Mind",
+      "Supernal Smite"
+    ],
+    "17": [
+      "Destructive Wave",
+      "Incite Riot"
+    ]
+  },
+  "Oath of Zeal": {
+    "3": [
+      "Detect Evil and Good",
+      "Hunter's Mark"
+    ],
+    "5": [
+      "Detect Thoughts",
+      "Knock"
+    ],
+    "9": [
+      "Fear",
+      "Tongues"
+    ],
+    "13": [
+      "Divination",
+      "Locate Creature"
+    ],
+    "17": [
+      "Insect Plague",
+      "Scrying"
+    ]
+  },
+  "Green Reaper": {
+    "3": [
+      "Detect Poison and Disease"
+    ],
+    "5": [
+      "Hold Person"
+    ],
+    "9": [
+      "Bestow Curse"
+    ],
+    "13": [
+      "Greater Invisibility"
+    ],
+    "17": [
+      "Cloudkill"
+    ]
+  },
+  "Primordial Archer": {
+    "3": [
+      "Hex"
+    ],
+    "5": [
+      "Blindness/Deafness"
+    ],
+    "9": [
+      "Call Lightning"
+    ],
+    "13": [
+      "Polymorph"
+    ],
+    "17": [
+      "Wall of Stone"
+    ]
+  },
+  "Vermin Lord": {
+    "3": [
+      "Consumption"
+    ],
+    "5": [
+      "Animal Messenger"
+    ],
+    "9": [
+      "Flash Fever"
+    ],
+    "13": [
+      "Freedom of Movement"
+    ],
+    "17": [
+      "Contagion"
+    ]
+  },
+  "Apocalypse Sorcery": {
+    "3": [
+      "Augury",
+      "Comprehend Languages",
+      "Hellish Rebuke",
+      "Ray of Enfeeblement"
+    ],
+    "5": [
+      "Bestow Curse",
+      "Revivify"
+    ],
+    "7": [
+      "Banishment",
+      "Divination"
+    ],
+    "9": [
+      "Contagion",
+      "Insect Plague"
+    ]
+  },
+  "Haunted Sorcery": {
+    "3": [
+      "Bane",
+      "Chill Touch",
+      "Invisibility",
+      "See Invisibility",
+      "Unseen Servant"
+    ],
+    "5": [
+      "Fly",
+      "Speak with Dead"
+    ],
+    "7": [
+      "Death Ward",
+      "Greater Invisibility"
+    ],
+    "9": [
+      "Little Death",
+      "Telekinesis"
+    ]
+  },
+  "Wretched Bloodline Sorcery": {
+    "3": [
+      "Detect Evil and Good"
+    ],
+    "6": [
+      "Bestow Curse"
+    ]
+  },
+  "The Coven": {
+    "3": [
+      "Hold Person",
+      "Identify",
+      "Locate Object",
+      "Ray of Sickness"
+    ],
+    "5": [
+      "Bestow Curse",
+      "Counterspell"
+    ],
+    "7": [
+      "Phantasmal Killer",
+      "Polymorph"
+    ],
+    "9": [
+      "Divination",
+      "Locate Creature"
+    ],
+    "17": [
+      "Contact Other Plane",
+      "Scrying"
+    ]
+  },
+  "The First Vampire Patron": {
+    "3": [
+      "Bane",
+      "Command",
+      "False Life",
+      "Fog Cloud"
+    ],
+    "5": [
+      "Conjure Animals",
+      "Gaseous Form"
+    ],
+    "7": [
+      "Dominate Person",
+      "Seeming"
+    ],
+    "9": [
+      "Little Death",
+      "Telekinesis"
+    ]
+  },
+  "The Parasite Patron": {
+    "10": [
+      "Dominate Person"
+    ]
+  },
+  "Oath of Revelry": {
+    "3": [
+      "Charm Person",
+      "Hideous Laughter"
+    ],
+    "5": [
+      "Enhance Ability",
+      "Hangover"
+    ],
+    "9": [
+      "Create Food and Water",
+      "Hypnotic Pattern"
+    ],
+    "13": [
+      "Charm Monster",
+      "Freedom of Movement"
+    ],
+    "17": [
+      "Geas",
+      "Telepathic Bond"
+    ]
+  },
+  "Future You Patron": {
+    "3": [
+      "Accelerate/Decelerate",
+      "Delay",
+      "Enhance Ability",
+      "Moment to Think",
+      "Recall"
+    ],
+    "5": [
+      "Protection from Energy",
+      "Slow"
+    ],
+    "7": [
+      "Death Ward",
+      "Dire Warning"
+    ],
+    "9": [
+      "Legend Lore",
+      "Telepathic Bond"
+    ]
+  },
+  "Dragon Domain": {
+    "3": [
+      "Chromatic Orb",
+      "Command",
+      "Darkvision",
+      "Dragon's Breath"
+    ],
+    "5": [
+      "Fly",
+      "Protection from Energy"
+    ],
+    "7": [
+      "Banishment",
+      "Charm Monster"
+    ],
+    "9": [
+      "Dominate Person",
+      "Summon Dragon"
+    ]
+  },
+  "Circle of the City": {
+    "3": [
+      "Grease",
+      "Jump",
+      "Shatter",
+      "Spider Climb"
+    ],
+    "5": [
+      "Meld into Stone",
+      "Sending"
+    ],
+    "7": [
+      "Fabricate",
+      "Stone Shape"
+    ],
+    "9": [
+      "Animate Objects",
+      "Passwall"
+    ]
+  },
+  "Heroic Sorcery": {
+    "3": [
+      "Arc Blade",
+      "Burning Blade",
+      "Frigid Blade",
+      "Heroism",
+      "Magic Weapon",
+      "Mirror Image",
+      "Shield"
+    ],
+    "5": [
+      "Haste",
+      "Phantom Steed"
+    ],
+    "7": [
+      "Death Ward",
+      "Stoneskin"
+    ],
+    "9": [
+      "Legend Lore",
+      "Hold Monster"
+    ]
+  },
+  "Astral Domain": {
+    "3": [
+      "Blur",
+      "Guiding Bolt",
+      "Invisibility",
+      "Longstrider",
+      "Starry Wisp"
+    ],
+    "5": [
+      "Blink",
+      "Slow"
+    ],
+    "7": [
+      "Banishment",
+      "Dimension Door"
+    ],
+    "9": [
+      "Teleportation Circle",
+      "Wall of Force"
+    ]
+  },
+  "The Unbroken Circle": {
+    "3": [
+      "Ensnaring Strike",
+      "Shillelagh",
+      "Shining Smite",
+      "True Strike"
+    ],
+    "5": [
+      "Haste"
+    ],
+    "7": [
+      "Fire Shield"
+    ],
+    "9": [
+      "Flame Strike"
+    ]
+  },
+  "Oath of the Hearth": {
+    "3": [
+      "Burning Hands",
+      "Find Familiar"
+    ],
+    "5": [
+      "Aid",
+      "Continual Flame"
+    ],
+    "9": [
+      "Beacon of Hope",
+      "Daylight"
+    ],
+    "13": [
+      "Fire Shield",
+      "Guardian of Faith"
+    ],
+    "17": [
+      "Flame Strike",
+      "Rary's Telepathic Bond"
+    ]
+  },
+  "Winter Trapper": {
+    "3": [
+      "Ice Knife"
+    ],
+    "5": [
+      "Mirror Image"
+    ],
+    "9": [
+      "Sleet Storm"
+    ],
+    "13": [
+      "Hallucinatory Terrain"
+    ],
+    "17": [
+      "Hold Monster"
+    ]
+  },
+  "Frost Sorcery": {
+    "3": [
+      "Blindness/Deafness",
+      "Ice Knife",
+      "Misty Step",
+      "Sleep"
+    ],
+    "5": [
+      "Sleet Storm",
+      "Slow"
+    ],
+    "7": [
+      "Fire Shield",
+      "Ice Storm"
+    ],
+    "9": [
+      "Cone of Cold",
+      "Conjure Elemental"
+    ]
+  },
+  "The Astral Griffon": {
+    "3": [
+      "Identify",
+      "Locate Object",
+      "Magic Missile",
+      "Rope Trick"
+    ],
+    "5": [
+      "Blink",
+      "Clairvoyance"
+    ],
+    "7": [
+      "Mordenkainen's Private Sanctum",
+      "Leomund's Secret Chest"
+    ],
+    "9": [
+      "Legend Lore",
+      "Passwall"
+    ]
+  },
+  "Circle of the Old Ways": {
+    "3": [
+      "Ancestral Communion",
+      "Barkskin",
+      "Shield of Faith",
+      "Shillelagh",
+      "Spike Growth"
+    ],
+    "5": [
+      "Magic Circle",
+      "Plant Growth"
+    ],
+    "7": [
+      "Freedom of Movement",
+      "Private Sanctum"
+    ],
+    "9": [
+      "Awaken",
+      "Tree Stride"
+    ]
+  },
+  "Circle of Wicker": {
+    "3": [
+      "Bane",
+      "Bless",
+      "Summer Winds",
+      "Zone of Truth"
+    ],
+    "5": [
+      "Bestow Curse",
+      "Tiny Hut"
+    ],
+    "7": [
+      "Death Ward",
+      "Sanctum of the Shepherd"
+    ],
+    "9": [
+      "Hold Monster",
+      "Lucky Charm"
+    ]
+  },
+  "Oath of Castigation": {
+    "3": [
+      "Divine Favor",
+      "Inflict Wounds"
+    ],
+    "5": [
+      "Chain of Conviction",
+      "Hold Person"
+    ],
+    "9": [
+      "Counterspell",
+      "Speak with Dead"
+    ],
+    "13": [
+      "Consuming Pyre",
+      "Locate Creature"
+    ],
+    "17": [
+      "Flame Strike",
+      "Hold Monster"
+    ]
+  },
+  "Grim Harbinger": {
+    "3": [
+      "Bane"
+    ],
+    "5": [
+      "Hold Person"
+    ],
+    "9": [
+      "Fear"
+    ],
+    "13": [
+      "Intrusive Despair"
+    ],
+    "17": [
+      "Dream"
+    ]
+  },
+  "Crimson Sorcery": {
+    "3": [
+      "Aid",
+      "Blood Bolt",
+      "Cure Wounds",
+      "Inflict Wounds",
+      "Blood Sacrifice"
+    ],
+    "5": [
+      "Crimson Harvest",
+      "Vampiric Touch"
+    ],
+    "7": [
+      "Death Ward",
+      "Sacrificial Siphon"
+    ],
+    "9": [
+      "Field of Reaping",
+      "Mass Cure Wounds"
+    ]
+  },
+  "Great Fool Patron": {
+    "3": [
+      "Disguise Self",
+      "Hideous Laughter",
+      "Rope Trick",
+      "Spiritual Weapon",
+      "Vicious Mockery"
+    ],
+    "5": [
+      "Blink",
+      "Stinking Cloud"
+    ],
+    "7": [
+      "Phantasmal Killer",
+      "Puppet Master"
+    ],
+    "9": [
+      "Arcane Hand",
+      "Mislead"
+    ]
+  },
+  "Horned King Patron": {
+    "3": [
+      "Animal Friendship",
+      "Bane",
+      "Spike Growth",
+      "Suggestion"
+    ],
+    "5": [
+      "Bestow Curse",
+      "Fly"
+    ],
+    "7": [
+      "Phantasmal Killer",
+      "Polymorph"
+    ],
+    "9": [
+      "Dominate Person",
+      "Scrying"
+    ]
+  },
+  "Nornbound": {
+    "3": [
+      "Augury",
+      "Bane",
+      "Bless",
+      "Warding Bond"
+    ],
+    "5": [
+      "Bestow Curse",
+      "Counterspell"
+    ],
+    "7": [
+      "Death Ward",
+      "Divination"
+    ],
+    "9": [
+      "Commune",
+      "Modify Memory"
+    ]
+  },
+  "Circle of Fenris": {
+    "3": [
+      "Beast Sense",
+      "Enhance Ability",
+      "Ensnaring Strike",
+      "Hunter's Mark"
+    ],
+    "5": [
+      "Conjure Animals",
+      "Fear"
+    ],
+    "7": [
+      "Dominate Beast"
+    ],
+    "9": [
+      "Commune with Nature"
+    ]
+  },
+  "Oath of Valhalla": {
+    "3": [
+      "Heroism",
+      "Searing Smite"
+    ],
+    "5": [
+      "Gentle Repose",
+      "Shining Smite"
+    ],
+    "9": [
+      "Beacon of Hope",
+      "Glyph of Warding"
+    ],
+    "13": [
+      "Aura of Purity",
+      "Guardian of Faith"
+    ],
+    "17": [
+      "Flame Strike",
+      "Hallow"
+    ]
+  },
+  "Spirit Caller": {
+    "3": [
+      "Bane",
+      "Bless",
+      "Heroism",
+      "Protection from Evil and Good"
+    ],
+    "5": [
+      "Augury",
+      "Healing Spirit"
+    ],
+    "7": [
+      "Speak with Dead",
+      "Spirit Guardians"
+    ],
+    "9": [
+      "Aura of Life",
+      "Death Ward"
+    ]
+  },
+  "Trickster": {
+    "3": [
+      "Detect Thoughts",
+      "Disguise Self",
+      "Enlarge/Reduce",
+      "Magic Mouth",
+      "Silent Image"
+    ],
+    "5": [
+      "Nondetection",
+      "Slow"
+    ],
+    "7": [
+      "Compulsion",
+      "Confusion"
+    ],
+    "9": [
+      "Animate Objects",
+      "Modify Memory"
+    ]
+  },
+  "Coven Patron (Obojima)": {
+    "3": [
+      "Animal Friendship",
+      "Bless",
+      "Borrow Magic",
+      "Mirror Image",
+      "Shared Vision"
+    ],
+    "5": [
+      "Bestow Curse",
+      "Clairvoyance"
+    ],
+    "7": [
+      "Pacify Monster",
+      "Polymorph"
+    ],
+    "9": [
+      "Awaken",
+      "Telepathic Bond"
+    ]
+  },
+  "Circle of Symbiosis": {
+    "3": [
+      "Arm Cannon",
+      "Calcified Memories",
+      "Fractured Shell",
+      "Phalangeal Shot",
+      "Shillelagh"
+    ],
+    "5": [
+      "Displacing Maw",
+      "Osseous Impalement"
+    ],
+    "7": [
+      "Dread Scarecrow",
+      "Maiden of Bones"
+    ],
+    "9": [
+      "Forest of Dread",
+      "Tree Stride"
+    ]
+  },
+  "Oath of the Eldritch Hunt": {
+    "3": [
+      "Faerie Fire",
+      "Spectral Slash"
+    ],
+    "5": [
+      "Hold Person",
+      "Moonbeam"
+    ],
+    "9": [
+      "Displacing Maw",
+      "Spectral Fury"
+    ],
+    "13": [
+      "Evard's Black Tentacles",
+      "Maiden of Bones"
+    ],
+    "17": [
+      "Contact Other Plane",
+      "Hold Monster"
+    ]
+  },
+  "Apocalypse Domain": {
+    "3": [
+      "Darkness",
+      "Hellish Rebuke",
+      "Phantasmal Force",
+      "Thunderwave"
+    ],
+    "5": [
+      "Doom",
+      "Fear"
+    ],
+    "7": [
+      "Blight",
+      "Ice Storm"
+    ],
+    "9": [
+      "Antilife Shell",
+      "Insect Plague"
+    ]
+  },
+  "Circle of the Symbiote": {
+    "3": [
+      "Barkskin",
+      "Entangle",
+      "Guidance"
+    ],
+    "5": [
+      "Plant Growth"
+    ],
+    "7": [
+      "Hallucinatory Terrain"
+    ],
+    "9": [
+      "Tree Stride"
+    ]
+  },
+  "Oath of the Guardian": {
+    "3": [
+      "Alarm",
+      "Shield of Faith"
+    ],
+    "5": [
+      "Lesser Restoration",
+      "Warding Bond"
+    ],
+    "9": [
+      "Beacon of Hope",
+      "Protection from Energy"
+    ],
+    "13": [
+      "Death Ward",
+      "Guardian of Faith"
+    ],
+    "17": [
+      "Greater Restoration",
+      "Raise Dead"
+    ]
+  },
+  "Trail Warden": {
+    "3": [
+      "Goodberry"
+    ],
+    "5": [
+      "Pass without Trace"
+    ],
+    "9": [
+      "Spirit Guardians"
+    ],
+    "13": [
+      "Guardian of Faith"
+    ],
+    "17": [
+      "Mass Cure Wounds"
+    ]
+  },
+  "Hungering Dark": {
+    "3": [
+      "Confounding Shadows",
+      "Darkness",
+      "Tide of Darkness",
+      "Umbral Tendril"
+    ],
+    "5": [
+      "Fear",
+      "Shadowy Eruption"
+    ],
+    "7": [
+      "Evard's Black Tentacles",
+      "Greater Invisibility"
+    ],
+    "9": [
+      "Mislead",
+      "Summon Shadow"
+    ]
+  },
+  "Exalted Assembly of the Feline Court": {
+    "3": [
+      "Animal Friendship",
+      "Cat's Spring",
+      "Feather Fall",
+      "Feline Grace",
+      "Misty Step",
+      "Speak with Animals"
+    ],
+    "5": [
+      "Haste",
+      "Phantom Panther"
+    ],
+    "7": [
+      "Freedom of Movement",
+      "Dimension Door"
+    ],
+    "9": [
+      "Feline Chaos",
+      "Telekinesis"
+    ]
+  },
+  "Forge Adept": {
+    "3": [
+      "Armor of Agathys",
+      "Shield of Faith"
+    ],
+    "5": [
+      "Spiritual Weapon",
+      "Warding Bond"
+    ],
+    "9": [
+      "Beacon of Hope",
+      "Remove Curse"
+    ],
+    "13": [
+      "Death Ward",
+      "Fire Shield"
+    ],
+    "17": [
+      "Banishing Smite",
+      "Wall of Force"
+    ]
+  },
+  "Mind Domain": {
+    "3": [
+      "Command",
+      "Detect Thoughts",
+      "Dissonant Whispers",
+      "Mind Spike"
+    ],
+    "5": [
+      "Clairvoyance",
+      "Fear"
+    ],
+    "7": [
+      "Confusion",
+      "Phantasmal Killer"
+    ],
+    "9": [
+      "Synaptic Static",
+      "Telekinesis"
+    ]
+  },
+  "Circle of the Forged": {
+    "3": [
+      "Blade Ward",
+      "Identify",
+      "Mirror Image"
+    ],
+    "5": [
+      "Haste"
+    ],
+    "7": [
+      "Fire Shield"
+    ],
+    "9": [
+      "Animate Objects"
+    ]
+  },
+  "Commerce Domain": {
+    "3": [
+      "Augury",
+      "Charm Person",
+      "Comprehend Languages",
+      "Locate Object"
+    ],
+    "5": [
+      "Glyph of Warding",
+      "Tongues"
+    ],
+    "7": [
+      "Divination",
+      "Leomund's Secret Chest"
+    ],
+    "9": [
+      "Legend Lore",
+      "Rary's Telepathic Bond"
+    ]
+  },
+  "Bloodhound": {
+    "3": [
+      "Alarm"
+    ],
+    "5": [
+      "Hold Person"
+    ],
+    "9": [
+      "Clairvoyance"
+    ],
+    "13": [
+      "Locate Creature"
+    ],
+    "17": [
+      "Scrying"
+    ]
+  },
+  "Nemesis Sorcery": {
+    "3": [
+      "Compelled Duel",
+      "Mirror Image",
+      "See Invisibility",
+      "Shield"
+    ],
+    "5": [
+      "Counterspell",
+      "Slow"
+    ],
+    "7": [
+      "Fire Shield",
+      "Otiluke's Resilient Sphere"
+    ],
+    "9": [
+      "Circle of Power",
+      "Mislead"
+    ]
+  },
+  "Stone Sovereign Patron": {
+    "3": [
+      "Absorb Elements",
+      "Earthbind",
+      "Earth Tremor",
+      "Spike Growth"
+    ],
+    "5": [
+      "Magic Circle",
+      "Slow"
+    ],
+    "7": [
+      "Stone Shape",
+      "Stoneskin"
+    ],
+    "9": [
+      "Bigby's Hand",
+      "Wall of Stone"
+    ]
+  },
+  "Circle of Cycles": {
+    "3": [
+      "Augury",
+      "Evolution/Devolution"
+    ],
+    "5": [
+      "Clairvoyance",
+      "Tongues",
+      "Meld into Stone"
+    ],
+    "9": [
+      "Legend Lore",
+      "Contact Other Plane"
+    ],
+    "13": [
+      "Find the Path",
+      "Contingency",
+      "Flesh to Stone",
+      "Circle of Death"
+    ],
+    "17": [
+      "Foresight",
+      "Glibness",
+      "Time Stop"
+    ]
+  },
+  "Bonesmith": {
+    "3": [
+      "Inflict Wounds",
+      "False Life",
+      "Find Familiar"
+    ],
+    "7": [
+      "Ray of Enfeeblement",
+      "Alter Self",
+      "Protection from Poison"
+    ],
+    "13": [
+      "Speak with Dead",
+      "Animate Dead",
+      "Fear"
+    ],
+    "19": [
+      "Blight",
+      "Fabricate",
+      "Death Ward"
+    ]
   }
 }
