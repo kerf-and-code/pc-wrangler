@@ -39,6 +39,46 @@
     "license": "Kerf and Code",
     "thirdParty": false
   },
+  "kc-motm": {
+    "key": "kc-motm",
+    "title": "Mordenkainen Presents: Monsters of the Multiverse, Kerf and Code wording",
+    "short": "Monsters of the Multiverse",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-bomt": {
+    "key": "kc-bomt",
+    "title": "The Book of Many Things, Kerf and Code wording",
+    "short": "Book of Many Things",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-mm14": {
+    "key": "kc-mm14",
+    "title": "Monster Manual (2014), Kerf and Code wording",
+    "short": "MM 2014",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-vgtm": {
+    "key": "kc-vgtm",
+    "title": "Volo's Guide to Monsters, Kerf and Code wording",
+    "short": "Volo's Guide",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-mtof": {
+    "key": "kc-mtof",
+    "title": "Mordenkainen's Tome of Foes, Kerf and Code wording",
+    "short": "Tome of Foes",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
   "tob": {
     "key": "tob",
     "title": "Tome of Beasts",
@@ -117,5 +157,530 @@
     "thirdParty": true,
     "notice": "ORC NOTICE: This product is licensed under the ORC License, located at the Library of Congress at TX 9-307-067, and available online at various locations including koboldpress.com/orclicense and others. All warranties are disclaimed as set forth therein.",
     "url": "https://koboldpress.com/black-flag-reference-document/"
+  },
+  "kc-rthw": {
+    "key": "kc-rthw",
+    "title": "Ravenloft: The Horrors Within, Kerf and Code wording",
+    "short": "Ravenloft",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-efota": {
+    "key": "kc-efota",
+    "title": "Eberron: Forge of the Artificer, Kerf and Code wording",
+    "short": "Forge of the Artificer",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-erftlw": {
+    "key": "kc-erftlw",
+    "title": "Eberron: Rising from the Last War, Kerf and Code wording",
+    "short": "Eberron (ERftLW)",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-ggtr": {
+    "key": "kc-ggtr",
+    "title": "Guildmasters' Guide to Ravnica, Kerf and Code wording",
+    "short": "Ravnica",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-moot": {
+    "key": "kc-moot",
+    "title": "Mythic Odysseys of Theros, Kerf and Code wording",
+    "short": "Theros",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-sacoc": {
+    "key": "kc-sacoc",
+    "title": "Strixhaven: A Curriculum of Chaos, Kerf and Code wording",
+    "short": "Strixhaven",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-sais": {
+    "key": "kc-sais",
+    "title": "Spelljammer: Adventures in Space, Kerf and Code wording",
+    "short": "Spelljammer",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-sotdq": {
+    "key": "kc-sotdq",
+    "title": "Dragonlance: Shadow of the Dragon Queen, Kerf and Code wording",
+    "short": "Dragonlance",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-paitm": {
+    "key": "kc-paitm",
+    "title": "Planescape: Adventures in the Multiverse, Kerf and Code wording",
+    "short": "Planescape",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-gotg": {
+    "key": "kc-gotg",
+    "title": "Bigby Presents: Glory of the Giants, Kerf and Code wording",
+    "short": "Glory of the Giants",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-ftod": {
+    "key": "kc-ftod",
+    "title": "Fizban's Treasury of Dragons, Kerf and Code wording",
+    "short": "Fizban's Treasury",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-egtw": {
+    "key": "kc-egtw",
+    "title": "Explorer's Guide to Wildemount, Kerf and Code wording",
+    "short": "Wildemount",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-ai": {
+    "key": "kc-ai",
+    "title": "Acquisitions Incorporated, Kerf and Code wording",
+    "short": "Acquisitions Inc.",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-lfl": {
+    "key": "kc-lfl",
+    "title": "Lorwyn: First Light, Kerf and Code wording",
+    "short": "Lorwyn",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-prla": {
+    "key": "kc-prla",
+    "title": "Project Lamordia, Kerf and Code wording",
+    "short": "Project Lamordia",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-ddbd": {
+    "key": "kc-ddbd",
+    "title": "D&D Beyond Drops, Kerf and Code wording",
+    "short": "D&D Beyond Drops",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-vsspp2": {
+    "key": "kc-vsspp2",
+    "title": "Valda's Spire of Secrets: Player Pack 2, Kerf and Code wording",
+    "short": "Valda's Player Pack 2",
+    "publisher": "Mage Hand Press",
+    "license": "Kerf and Code",
+    "thirdParty": true,
+    "partnered": true
+  },
+  "kc-skt": {
+    "key": "kc-skt",
+    "title": "Storm King's Thunder, Kerf and Code wording",
+    "short": "Storm King's Thunder",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-tftyp": {
+    "key": "kc-tftyp",
+    "title": "Tales from the Yawning Portal, Kerf and Code wording",
+    "short": "Yawning Portal",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-rotf": {
+    "key": "kc-rotf",
+    "title": "Icewind Dale: Rime of the Frostmaiden, Kerf and Code wording",
+    "short": "Rime of the Frostmaiden",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-oota": {
+    "key": "kc-oota",
+    "title": "Out of the Abyss, Kerf and Code wording",
+    "short": "Out of the Abyss",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-dotmm": {
+    "key": "kc-dotmm",
+    "title": "Waterdeep: Dungeon of the Mad Mage, Kerf and Code wording",
+    "short": "DotMM",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-gos": {
+    "key": "kc-gos",
+    "title": "Ghosts of Saltmarsh, Kerf and Code wording",
+    "short": "GoS",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-toa": {
+    "key": "kc-toa",
+    "title": "Tomb of Annihilation, Kerf and Code wording",
+    "short": "ToA",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-cos": {
+    "key": "kc-cos",
+    "title": "Curse of Strahd, Kerf and Code wording",
+    "short": "CoS",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-pota": {
+    "key": "kc-pota",
+    "title": "Princes of the Apocalypse, Kerf and Code wording",
+    "short": "PotA",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-wbtw": {
+    "key": "kc-wbtw",
+    "title": "The Wild Beyond the Witchlight, Kerf and Code wording",
+    "short": "WBtW",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-cm": {
+    "key": "kc-cm",
+    "title": "Candlekeep Mysteries, Kerf and Code wording",
+    "short": "CM",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-bgdia": {
+    "key": "kc-bgdia",
+    "title": "Baldur's Gate: Descent into Avernus, Kerf and Code wording",
+    "short": "BGDIA",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-tod": {
+    "key": "kc-tod",
+    "title": "Tyranny of Dragons, Kerf and Code wording",
+    "short": "ToD",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-pabtso": {
+    "key": "kc-pabtso",
+    "title": "Phandelver and Below: The Shattered Obelisk, Kerf and Code wording",
+    "short": "PaBTSO",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-vecna": {
+    "key": "kc-vecna",
+    "title": "Vecna: Eve of Ruin, Kerf and Code wording",
+    "short": "VEoR",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-sja": {
+    "key": "kc-sja",
+    "title": "Spelljammer Academy, Kerf and Code wording",
+    "short": "SJA",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-jttrc": {
+    "key": "kc-jttrc",
+    "title": "Journeys through the Radiant Citadel, Kerf and Code wording",
+    "short": "JttRC",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-wdh": {
+    "key": "kc-wdh",
+    "title": "Waterdeep: Dragon Heist, Kerf and Code wording",
+    "short": "WDH",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-lmop": {
+    "key": "kc-lmop",
+    "title": "Lost Mine of Phandelver, Kerf and Code wording",
+    "short": "LMoP",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-doip": {
+    "key": "kc-doip",
+    "title": "Dragon of Icespire Peak, Kerf and Code wording",
+    "short": "DoIP",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-dosi": {
+    "key": "kc-dosi",
+    "title": "Dragons of Stormwreck Isle, Kerf and Code wording",
+    "short": "DoSI",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-tsoj": {
+    "key": "kc-tsoj",
+    "title": "Descent into the Lost Caverns of Tsojcanth, Kerf and Code wording",
+    "short": "DLCoT",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-xge": {
+    "key": "kc-xge",
+    "title": "Xanathar's Guide to Everything, Kerf and Code wording",
+    "short": "XGtE",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-tce": {
+    "key": "kc-tce",
+    "title": "Tasha's Cauldron of Everything, Kerf and Code wording",
+    "short": "TCoE",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-kftgv": {
+    "key": "kc-kftgv",
+    "title": "Keys from the Golden Vault, Kerf and Code wording",
+    "short": "KftGV",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-llok": {
+    "key": "kc-llok",
+    "title": "Lost Laboratory of Kwalish, Kerf and Code wording",
+    "short": "LLoK",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-qftis": {
+    "key": "kc-qftis",
+    "title": "Quests from the Infinite Staircase, Kerf and Code wording",
+    "short": "QftIS",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-vrgr": {
+    "key": "kc-vrgr",
+    "title": "Van Richten's Guide to Ravenloft, Kerf and Code wording",
+    "short": "VRGtR",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-mcv1": {
+    "key": "kc-mcv1",
+    "title": "Monstrous Compendium Vol. 1: Spelljammer Creatures, Kerf and Code wording",
+    "short": "MCv1",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-mcv2": {
+    "key": "kc-mcv2",
+    "title": "Monstrous Compendium Vol. 2: Dragonlance Creatures, Kerf and Code wording",
+    "short": "MCv2",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-mcv4": {
+    "key": "kc-mcv4",
+    "title": "Monstrous Compendium Vol. 4: Eldraine Creatures, Kerf and Code wording",
+    "short": "MCv4",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-imr": {
+    "key": "kc-imr",
+    "title": "Infernal Machine Rebuild, Kerf and Code wording",
+    "short": "IMR",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-hftt": {
+    "key": "kc-hftt",
+    "title": "Hunt for the Thessalhydra, Kerf and Code wording",
+    "short": "HftT",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-lr": {
+    "key": "kc-lr",
+    "title": "Locathah Rising, Kerf and Code wording",
+    "short": "LR",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-sdw": {
+    "key": "kc-sdw",
+    "title": "Sleeping Dragon's Wake, Kerf and Code wording",
+    "short": "SDW",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-dc": {
+    "key": "kc-dc",
+    "title": "Divine Contention, Kerf and Code wording",
+    "short": "DC",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-slw": {
+    "key": "kc-slw",
+    "title": "Storm Lord's Wrath, Kerf and Code wording",
+    "short": "SLW",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-ttp": {
+    "key": "kc-ttp",
+    "title": "The Tortle Package, Kerf and Code wording",
+    "short": "TTP",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-nf": {
+    "key": "kc-nf",
+    "title": "Netheril's Fall, Kerf and Code wording",
+    "short": "NF",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-hotb": {
+    "key": "kc-hotb",
+    "title": "Heroes of the Borderlands, Kerf and Code wording",
+    "short": "HotB",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-aif": {
+    "key": "kc-aif",
+    "title": "Forgotten Realms: Adventures in Faerûn, Kerf and Code wording",
+    "short": "AiF",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-modk": {
+    "key": "kc-modk",
+    "title": "Monsters of Drakkenheim, Kerf and Code wording",
+    "short": "Monsters of Drakkenheim",
+    "publisher": "Ghostfire Gaming",
+    "license": "Kerf and Code",
+    "thirdParty": true,
+    "partnered": true,
+    "partner": "Ghostfire Gaming"
+  },
+  "kc-dodk": {
+    "key": "kc-dodk",
+    "title": "Dungeons of Drakkenheim, Kerf and Code wording",
+    "short": "Dungeons of Drakkenheim",
+    "publisher": "Ghostfire Gaming",
+    "license": "Kerf and Code",
+    "thirdParty": true,
+    "partnered": true,
+    "partner": "Ghostfire Gaming"
+  },
+  "kc-cm2": {
+    "key": "kc-cm2",
+    "title": "The Crooked Moon Part Two: Monsters & Adventure Campaign, Kerf and Code wording",
+    "short": "Crooked Moon Part Two",
+    "publisher": "Legends of Avantris",
+    "license": "Kerf and Code",
+    "thirdParty": true,
+    "partnered": true,
+    "partner": "Legends of Avantris"
+  },
+  "kc-cm1": {
+    "key": "kc-cm1",
+    "title": "The Crooked Moon Part One: Player Options & Campaign Setting, Kerf and Code wording",
+    "short": "Crooked Moon Part One",
+    "publisher": "Legends of Avantris",
+    "license": "Kerf and Code",
+    "thirdParty": true,
+    "partnered": true,
+    "partner": "Legends of Avantris"
+  },
+  "kc-osw-hap": {
+    "key": "kc-osw-hap",
+    "title": "One-Shot Wonders: Holiday Adventure Pack, Kerf and Code wording",
+    "short": "OSW Holiday",
+    "publisher": "Roll & Play Press",
+    "license": "Kerf and Code",
+    "thirdParty": true,
+    "partnered": true,
+    "partner": "Roll & Play Press"
+  },
+  "kc-dodss": {
+    "key": "kc-dodss",
+    "title": "Dungeons of Drakkenheim: In Search of the Smuggler's Secrets, Kerf and Code wording",
+    "short": "DoD Smuggler",
+    "publisher": "Ghostfire Gaming",
+    "license": "Kerf and Code",
+    "thirdParty": true,
+    "partnered": true,
+    "partner": "Ghostfire Gaming"
   }
 }
