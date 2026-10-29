@@ -645,6 +645,26 @@ function ForgeInner() {
     if (resolvedSpecies?.option && mechNow?.choice) {
       fx.applied.push(`${resolvedSpecies.option} from ${mechNow.choice.label}`);
     }
+    // Fixed species skills (2014 Elf Keen Senses: Perception; Half-Orc Menacing: Intimidation).
+    for (const key of resolvedSpecies?.effects.skillProf || []) {
+      const label = SKILLS.find(([k]) => k === key)?.[1];
+      if (!label) continue;
+      if (!fx.skillProf.includes(key)) fx.skillProf.push(key);
+      fx.applied.push(`${label} proficiency from ${build.meta.species}`);
+    }
+    // Weapon, armor, tool and language grants have no numbers to move on this sheet; they are
+    // listed so Finish shows everything the species gave.
+    {
+      const e = resolvedSpecies?.effects;
+      const list = (xs: string[] | undefined, what: string) => {
+        if (xs?.length) fx.applied.push(`${what}: ${xs.join(", ")} (from ${build.meta.species})`);
+      };
+      list(e?.weaponProf, "Weapon proficiency");
+      list(e?.armorProf, "Armor training");
+      list(e?.toolProf, "Tool proficiency");
+      list(e?.languages, "Languages");
+      if (e?.languagePick) fx.unapplied.push(`${e.languagePick.n} extra language${e.languagePick.n > 1 ? "s" : ""} of your choice (note it on your sheet)`);
+    }
     // Species skill picks are real proficiencies and go where background and class skills go.
     // Tool picks are recorded and listed; the engine has no tool-check numbers to move.
     const spName = build.meta.species || "your species";
@@ -677,6 +697,10 @@ function ForgeInner() {
           ...(base0.species?.[build.meta.species] || {}),
           speed: re.speed, darkvision: re.darkvision, senses: re.senses, speeds: re.speeds,
           resist: re.resist, immune: re.immune, advAgainst: re.advAgainst, acBonus: re.acBonus,
+          advSaves: re.advSaves, advSavesVs: re.advSavesVs,
+          // A 2014 subrace's ability increase (Hill Dwarf +1 WIS) and HP per level ride on the
+          // species mods, which the engine already adds to base scores and hit points.
+          mods: re.mods as Record<string, number> | undefined,
         },
       },
     } : base0;
@@ -4745,7 +4769,9 @@ function SheetPanel({ sheet, name }: {
           <div style={forgeLabel}>Advantage on saves</div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
             {sheet.advSaves.length > 0 && (
-              <span style={stoneChip("brass")}>{sheet.advSaves.map((a) => a.toUpperCase()).join(", ")} saves</span>
+              <span style={stoneChip("brass")}>
+                {sheet.advSaves.map((a) => a.toUpperCase()).join(", ")} saves{sheet.advSavesVs ? ` vs ${sheet.advSavesVs}` : ""}
+              </span>
             )}
             {sheet.advAgainst.map((c) => (
               <span key={c} style={stoneChip("brass")}>vs {c.charAt(0).toUpperCase() + c.slice(1)}</span>

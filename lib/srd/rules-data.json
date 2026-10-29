@@ -376,7 +376,17 @@
           "Draconic Flight",
           "At level 5, a temporary fly speed."
         ]
-      ]
+      ],
+      "editions": {
+        "2014": {
+          "src": "PHB 2014",
+          "darkvision": null,
+          "languages": [
+            "Common",
+            "Draconic"
+          ]
+        }
+      }
     },
     "Dwarf": {
       "src": "PHB 2024",
@@ -406,7 +416,57 @@
           "Stonecunning",
           "Bonus Action Tremorsense 60 ft on stone, Proficiency Bonus times per Long Rest."
         ]
-      ]
+      ],
+      "editions": {
+        "2014": {
+          "src": "PHB 2014",
+          "speed": 25,
+          "darkvision": 60,
+          "mods": null,
+          "advAgainst": [
+            "poison"
+          ],
+          "weaponProf": [
+            "Battleaxe",
+            "Handaxe",
+            "Light Hammer",
+            "Warhammer"
+          ],
+          "toolPick": {
+            "n": 1,
+            "from": [
+              "Smith's Tools",
+              "Brewer's Supplies",
+              "Mason's Tools"
+            ]
+          },
+          "languages": [
+            "Common",
+            "Dwarvish"
+          ],
+          "choice": {
+            "key": "subrace",
+            "label": "Dwarf Subrace",
+            "options": {
+              "Hill Dwarf": {
+                "mods": {
+                  "wis": 1,
+                  "hpPerLevel": 1
+                }
+              },
+              "Mountain Dwarf": {
+                "mods": {
+                  "str": 2
+                },
+                "armorProf": [
+                  "Light",
+                  "Medium"
+                ]
+              }
+            }
+          }
+        }
+      }
     },
     "Elf": {
       "src": "PHB 2024",
@@ -502,7 +562,87 @@
           "Trance",
           "A Long Rest takes 4 hours, spent in a meditative trance."
         ]
-      ]
+      ],
+      "editions": {
+        "2014": {
+          "src": "PHB 2014",
+          "skillPick": null,
+          "skillProf": [
+            "perception"
+          ],
+          "spellAbility": null,
+          "languages": [
+            "Common",
+            "Elvish"
+          ],
+          "choice": {
+            "key": "subrace",
+            "label": "Elf Subrace",
+            "options": {
+              "High Elf": {
+                "mods": {
+                  "int": 1
+                },
+                "weaponProf": [
+                  "Longsword",
+                  "Shortsword",
+                  "Shortbow",
+                  "Longbow"
+                ],
+                "languagePick": {
+                  "n": 1,
+                  "from": "any"
+                },
+                "summary": "One Wizard cantrip of your choice, cast with Intelligence."
+              },
+              "Wood Elf": {
+                "mods": {
+                  "wis": 1
+                },
+                "speed": 35,
+                "weaponProf": [
+                  "Longsword",
+                  "Shortsword",
+                  "Shortbow",
+                  "Longbow"
+                ],
+                "summary": "Mask of the Wild: can hide when only lightly obscured by nature."
+              },
+              "Drow": {
+                "aliases": [
+                  "Dark Elf"
+                ],
+                "mods": {
+                  "cha": 1
+                },
+                "darkvision": 120,
+                "weaponProf": [
+                  "Rapier",
+                  "Shortsword",
+                  "Hand Crossbow"
+                ],
+                "spells": [
+                  {
+                    "spell": "Dancing Lights",
+                    "level": 1
+                  },
+                  {
+                    "spell": "Faerie Fire",
+                    "level": 3,
+                    "free": "1/LR"
+                  },
+                  {
+                    "spell": "Darkness",
+                    "level": 5,
+                    "free": "1/LR"
+                  }
+                ],
+                "summary": "Spells cast with Charisma. Sunlight Sensitivity: Disadvantage on attacks and sight-based Perception in direct sunlight."
+              }
+            }
+          }
+        }
+      }
     },
     "Gnome": {
       "src": "PHB 2024",
@@ -553,7 +693,46 @@
           "Gnomish Cunning",
           "Advantage on Intelligence, Wisdom, and Charisma saving throws."
         ]
-      ]
+      ],
+      "editions": {
+        "2014": {
+          "src": "PHB 2014",
+          "speed": 25,
+          "advSavesVs": "magic",
+          "spellAbility": null,
+          "languages": [
+            "Common",
+            "Gnomish"
+          ],
+          "choice": {
+            "key": "subrace",
+            "label": "Gnome Subrace",
+            "options": {
+              "Rock Gnome": {
+                "mods": {
+                  "con": 1
+                },
+                "toolProf": [
+                  "Tinker's Tools"
+                ],
+                "summary": "Artificer's Lore, and Tinker: build Tiny clockwork devices."
+              },
+              "Forest Gnome": {
+                "mods": {
+                  "dex": 1
+                },
+                "spells": [
+                  {
+                    "spell": "Minor Illusion",
+                    "level": 1
+                  }
+                ],
+                "summary": "Minor Illusion cast with Intelligence. Speak with Small Beasts."
+              }
+            }
+          }
+        }
+      }
     },
     "Goliath": {
       "src": "PHB 2024",
@@ -624,7 +803,46 @@
           "Naturally Stealthy",
           "Hide behind a creature at least one size larger."
         ]
-      ]
+      ],
+      "editions": {
+        "2014": {
+          "src": "PHB 2014",
+          "speed": 25,
+          "languages": [
+            "Common",
+            "Halfling"
+          ],
+          "choice": {
+            "key": "subrace",
+            "label": "Halfling Subrace",
+            "options": {
+              "Lightfoot Halfling": {
+                "aliases": [
+                  "Lightfoot"
+                ],
+                "mods": {
+                  "cha": 1
+                },
+                "summary": "Naturally Stealthy: can hide behind a creature at least one size larger."
+              },
+              "Stout Halfling": {
+                "aliases": [
+                  "Stout"
+                ],
+                "mods": {
+                  "con": 1
+                },
+                "resist": [
+                  "poison"
+                ],
+                "advAgainst": [
+                  "poison"
+                ]
+              }
+            }
+          }
+        }
+      }
     },
     "Human": {
       "src": "PHB 2024",
@@ -649,7 +867,22 @@
           "Versatile",
           "An Origin feat of your choice."
         ]
-      ]
+      ],
+      "editions": {
+        "2014": {
+          "src": "PHB 2014",
+          "size": "Medium",
+          "skillPick": null,
+          "bonusOriginFeat": null,
+          "languages": [
+            "Common"
+          ],
+          "languagePick": {
+            "n": 1,
+            "from": "any"
+          }
+        }
+      }
     },
     "Orc": {
       "src": "PHB 2024",
@@ -759,7 +992,38 @@
           "Otherworldly Presence",
           "You know the Thaumaturgy cantrip."
         ]
-      ]
+      ],
+      "editions": {
+        "2014": {
+          "src": "PHB 2014",
+          "size": "Medium",
+          "spellAbility": "cha",
+          "resist": [
+            "fire"
+          ],
+          "choice": null,
+          "languages": [
+            "Common",
+            "Infernal"
+          ],
+          "spells": [
+            {
+              "spell": "Thaumaturgy",
+              "level": 1
+            },
+            {
+              "spell": "Hellish Rebuke",
+              "level": 3,
+              "free": "1/LR"
+            },
+            {
+              "spell": "Darkness",
+              "level": 5,
+              "free": "1/LR"
+            }
+          ]
+        }
+      }
     },
     "Warforged": {
       "src": "Eberron: Forge of the Artificer",
@@ -801,6 +1065,70 @@
         [
           "Tireless",
           "No Exhaustion from dehydration, malnutrition, or suffocation."
+        ]
+      ]
+    },
+    "Half-Elf": {
+      "src": "PHB 2014",
+      "creatureType": "Humanoid",
+      "size": "Medium",
+      "speed": 30,
+      "darkvision": 60,
+      "advAgainst": [
+        "charmed"
+      ],
+      "skillPick": {
+        "n": 2,
+        "from": "any"
+      },
+      "languages": [
+        "Common",
+        "Elvish"
+      ],
+      "languagePick": {
+        "n": 1,
+        "from": "any"
+      },
+      "traits": [
+        [
+          "Fey Ancestry",
+          "Advantage on saves against being charmed; magic cannot put you to sleep."
+        ],
+        [
+          "Skill Versatility",
+          "Proficiency in two skills of your choice."
+        ],
+        [
+          "Ability Score Increase",
+          "Charisma +2 and two other abilities of your choice +1."
+        ]
+      ]
+    },
+    "Half-Orc": {
+      "src": "PHB 2014",
+      "creatureType": "Humanoid",
+      "size": "Medium",
+      "speed": 30,
+      "darkvision": 60,
+      "skillProf": [
+        "intimidation"
+      ],
+      "languages": [
+        "Common",
+        "Orc"
+      ],
+      "traits": [
+        [
+          "Menacing",
+          "Proficiency in Intimidation."
+        ],
+        [
+          "Relentless Endurance",
+          "Drop to 1 hit point instead of 0, once per Long Rest."
+        ],
+        [
+          "Savage Attacks",
+          "On a melee weapon critical hit, roll one extra weapon damage die."
         ]
       ]
     }

@@ -157,7 +157,7 @@ export function toSpeciesRule(name: string, ruleset: Ruleset): SpeciesRule {
   return {
     speed: e.speed, mods: e.mods as Record<string, number> | undefined, resist: e.resist,
     immune: e.immune, darkvision: e.darkvision, senses: e.senses, speeds: e.speeds,
-    advAgainst: e.advAgainst, advSaves: e.advSaves, acBonus: e.acBonus,
+    advAgainst: e.advAgainst, advSaves: e.advSaves, advSavesVs: e.advSavesVs, acBonus: e.acBonus,
   };
 }
 

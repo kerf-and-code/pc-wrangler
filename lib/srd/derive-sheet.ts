@@ -142,6 +142,7 @@ export type SpeciesRule = {
   speeds?: { fly?: number | "speed"; swim?: number | "speed"; climb?: number | "speed"; burrow?: number | "speed" };
   advAgainst?: string[];
   advSaves?: Ability[];
+  advSavesVs?: string;
   acBonus?: number;
 };
 export type SubclassRule = { casting?: CastRule | null };
@@ -396,6 +397,8 @@ export type DerivedSheet = {
   advAgainst: string[];
   /** Saving throws with Advantage always (Gnomish Cunning). */
   advSaves: Ability[];
+  /** What those save advantages are limited to, if anything ("magic" for the 2014 gnome). */
+  advSavesVs: string;
 };
 
 // How many epic choices a character of the given level has earned, and the ability-score cap
@@ -580,6 +583,6 @@ export function deriveSheet(build: Build, ctx: RulesContext): DerivedSheet {  co
     initiative: init, speed, speedLabel,
     sneakDice: sneak, martialArts, resist,
     immune, senses, otherSpeeds,
-    advAgainst: sp.advAgainst || [], advSaves: sp.advSaves || [],
+    advAgainst: sp.advAgainst || [], advSaves: sp.advSaves || [], advSavesVs: sp.advSavesVs || "",
   };
 }

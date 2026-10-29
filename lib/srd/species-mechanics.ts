@@ -46,6 +46,8 @@ export type SpeciesEffects = {
   advAgainst?: string[];
   /** Saving throws you always have Advantage on (Gnomish Cunning). */
   advSaves?: Ability[];
+  /** When those save advantages only apply against something: "magic" for the 2014 gnome. */
+  advSavesVs?: string;
   acBonus?: number;
   /** hpPerLevel: +N hit points per character level (Dwarven Toughness). Ability increases (2014). */
   mods?: Partial<Record<Ability | "hpPerLevel", number>>;
@@ -66,7 +68,7 @@ export type SpeciesChoice = {
   key: string;
   label: string;
   /** Option name -> only the fields that option adds or changes. */
-  options: Record<string, SpeciesEffects & { summary?: string }>;
+  options: Record<string, SpeciesEffects & { summary?: string; aliases?: string[] }>;
 };
 
 export type SpeciesMechanics = SpeciesEffects & {
@@ -79,5 +81,9 @@ export type SpeciesMechanics = SpeciesEffects & {
   choice?: SpeciesChoice;
   /** [trait name, Kerf and Code summary], for display. */
   traits: [string, string][];
-  editions?: { "2014"?: SpeciesEffects & { size?: string } };
+  /** null REMOVES a base field for that edition (a 2014 dragonborn has no darkvision). */
+  editions?: { "2014"?: EditionOverride };
 };
+
+type Overridable = SpeciesEffects & Pick<SpeciesMechanics, "size" | "spellAbility" | "choice" | "src">;
+export type EditionOverride = { [K in keyof Overridable]?: Overridable[K] | null };

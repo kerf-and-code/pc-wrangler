@@ -39,7 +39,12 @@ export function speciesMechanics(name: string, ruleset: Ruleset): SpeciesMechani
   const base = (rulesData as unknown as { SPECIES: Record<string, SpeciesMechanics> }).SPECIES[name];
   if (!base) return undefined;
   const over = ruleset === "2014" ? base.editions?.["2014"] : undefined;
-  return over ? { ...base, ...over } : base;
+  if (!over) return base;
+  const merged: Record<string, unknown> = { ...base, ...over };
+  // A null in the override removes the field: the 2014 elf has no Keen Senses PICK (it has a fixed
+  // Perception proficiency instead), the 2014 dragonborn has no darkvision.
+  for (const [k, v] of Object.entries(over)) if (v === null) delete merged[k];
+  return merged as SpeciesMechanics;
 }
 
 /** Options for a trait's dropdown when the species has a structured choice for it, else null. */
@@ -58,8 +63,11 @@ export function matchOption(
   const want = norm(raw);
   if (!want) return null;
   const opts = Object.entries(mech.choice.options);
-  // Exact after normalizing first; then "Wood Elf" inside a catalog name like "Elf, Wood Elf".
-  const hit = opts.find(([k]) => norm(k) === want) || opts.find(([k]) => want.includes(norm(k)));
+  // Exact after normalizing (option name or an alias: "Dark Elf" for Drow) first; then "Wood Elf"
+  // inside a catalog name like "Elf, Wood Elf".
+  const names = (k: string, o: { aliases?: string[] }) => [k, ...(o.aliases || [])].map(norm);
+  const hit = opts.find(([k, o]) => names(k, o).includes(want))
+    || opts.find(([k, o]) => names(k, o).some((n) => n && want.includes(n)));
   return hit ? { name: hit[0], effects: hit[1] } : null;
 }
 
@@ -107,6 +115,21 @@ export function resolveSpecies(
     immune: union(mech.immune, o.immune),
     advAgainst: union(mech.advAgainst, o.advAgainst),
     acBonus: (mech.acBonus || 0) + (o.acBonus || 0) || undefined,
+    // Additive: a 2014 subrace's +1 sits on top of anything the base entry carries.
+    mods: (() => {
+      const m: Record<string, number> = { ...(mech.mods || {}) } as Record<string, number>;
+      for (const [k, v] of Object.entries(o.mods || {})) m[k] = (m[k] || 0) + (v || 0);
+      return Object.keys(m).length ? m : undefined;
+    })(),
+    advSaves: o.advSaves ?? mech.advSaves,
+    skillProf: union(mech.skillProf, o.skillProf),
+    weaponProf: union(mech.weaponProf, o.weaponProf),
+    armorProf: union(mech.armorProf, o.armorProf),
+    toolProf: union(mech.toolProf, o.toolProf),
+    languages: union(mech.languages, o.languages),
+    skillPick: o.skillPick ?? mech.skillPick,
+    toolPick: o.toolPick ?? mech.toolPick,
+    languagePick: o.languagePick ?? mech.languagePick,
     spells: [...(mech.spells || []), ...(o.spells || [])] as SpeciesSpell[],
   };
   return { mech, option: opt?.name ?? null, effects };
