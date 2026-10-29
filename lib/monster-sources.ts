@@ -13,6 +13,8 @@
 // second. The notice strings are the copyright lines Open5e publishes for each document
 // (api.open5e.com/v1/documents), copied exactly; titles, publishers and licenses come from the same API.
 
+import monsterSourcesData from "./srd/monster-sources.json";
+
 export type MonsterLicense = "CC BY 4.0" | "OGL 1.0a" | "ORC" | "Kerf and Code";
 
 export interface MonsterSource {
@@ -26,75 +28,9 @@ export interface MonsterSource {
   url?: string;
 }
 
-export const MONSTER_SOURCES: Record<string, MonsterSource> = {
-  "srd-2014": {
-    key: "srd-2014", title: "System Reference Document 5.1", short: "SRD 5.1",
-    publisher: "Wizards of the Coast", license: "CC BY 4.0", thirdParty: false,
-  },
-  "srd-2024": {
-    key: "srd-2024", title: "System Reference Document 5.2", short: "SRD 5.2",
-    publisher: "Wizards of the Coast", license: "CC BY 4.0", thirdParty: false,
-  },
-  "kc-mm24": {
-    key: "kc-mm24", title: "Monster Manual (2024), Kerf and Code wording", short: "MM 2024",
-    publisher: "Kerf and Code", license: "Kerf and Code", thirdParty: false,
-  },
-  "kc-au": {
-    key: "kc-au", title: "Arcana Unleashed, Kerf and Code wording", short: "Arcana Unleashed",
-    publisher: "Kerf and Code", license: "Kerf and Code", thirdParty: false,
-  },
-  "kc-aud": {
-    key: "kc-aud", title: "Arcana Unleashed: Deadfall, Kerf and Code wording", short: "Deadfall",
-    publisher: "Kerf and Code", license: "Kerf and Code", thirdParty: false,
-  },
-  tob: {
-    key: "tob", title: "Tome of Beasts", short: "Tome of Beasts",
-    publisher: "Kobold Press", license: "OGL 1.0a", thirdParty: true,
-    notice: "Tome of Beasts. Copyright 2016, Open Design; Authors Chris Harris, Dan Dillon, Rodrigo Garcia Carmona, and Wolfgang Baur.",
-    url: "https://koboldpress.com/tome-of-beasts/",
-  },
-  "tob-2023": {
-    key: "tob-2023", title: "Tome of Beasts 1 (2023 Edition)", short: "Tome of Beasts 2023",
-    publisher: "Kobold Press", license: "OGL 1.0a", thirdParty: true,
-    notice: "Tome of Beasts. 2023 Open Design LLC. All rights reserved.",
-    url: "https://koboldpress.com/kpstore/product/tome-of-beasts-1-2023-edition-hardcover/",
-  },
-  tob2: {
-    key: "tob2", title: "Tome of Beasts 2", short: "Tome of Beasts 2",
-    publisher: "Kobold Press", license: "OGL 1.0a", thirdParty: true,
-    notice: "Tome of Beasts 2. Copyright 2020 Open Design LLC; Authors Wolfgang Baur, Celeste Conowitch, Darrin Drader, James Introcaso, Philip Larwood, Jeff Lee, Kelly Pawlik, Brian Suskind, Mike Welham.",
-    url: "https://koboldpress.com/tome-of-beasts-2/",
-  },
-  tob3: {
-    key: "tob3", title: "Tome of Beasts 3", short: "Tome of Beasts 3",
-    publisher: "Kobold Press", license: "OGL 1.0a", thirdParty: true,
-    notice: "Tome of Beasts 3. ©2022 Open Design LLC. All rights reserved.",
-    url: "https://koboldpress.com/tome-of-beasts-3/",
-  },
-  ccdx: {
-    key: "ccdx", title: "Creature Codex", short: "Creature Codex",
-    publisher: "Kobold Press", license: "OGL 1.0a", thirdParty: true,
-    notice: "Creature Codex. © 2018 Open Design LLC; Authors Wolfgang Baur, Dan Dillon, Richard Green, James Haeck, Chris Harris, Jeremy Hochhalter, James Introcaso, Chris Lockey, Shawn Merwin, and Jon Sawatsky.",
-    url: "https://koboldpress.com/kpstore/product/creature-codex-for-5th-edition-dnd/",
-  },
-  "a5e-mm": {
-    key: "a5e-mm", title: "Level Up: Advanced 5th Edition Monstrous Menagerie", short: "Monstrous Menagerie (A5E)",
-    publisher: "EN Publishing", license: "OGL 1.0a", thirdParty: true,
-    notice: "Level Up: Advanced 5th Edition Monstrous Menagerie. Copyright 2021, EN Publishing.",
-    url: "https://www.levelup5e.com",
-  },
-  tdcs: {
-    key: "tdcs", title: "Critical Role: Tal’Dorei Campaign Setting", short: "Tal’Dorei",
-    publisher: "Green Ronin Publishing", license: "OGL 1.0a", thirdParty: true,
-    notice: "Critical Role: Tal’Dorei Campaign Setting is ©2017 Green Ronin Publishing, LLC. All rights reserved.",
-  },
-  bfrd: {
-    key: "bfrd", title: "Black Flag Roleplaying Reference Document", short: "Black Flag",
-    publisher: "Kobold Press", license: "ORC", thirdParty: true,
-    notice: "ORC NOTICE: This product is licensed under the ORC License, located at the Library of Congress at TX 9-307-067, and available online at various locations including koboldpress.com/orclicense and others. All warranties are disclaimed as set forth therein.",
-    url: "https://koboldpress.com/black-flag-reference-document/",
-  },
-};
+// The table itself is lib/srd/monster-sources.json, so scripts/build-compendium-index.mjs (plain
+// node, no TypeScript loader) reads the same data the app does.
+export const MONSTER_SOURCES: Record<string, MonsterSource> = monsterSourcesData as Record<string, MonsterSource>;
 
 export function monsterSource(key: string | null | undefined): MonsterSource | undefined {
   return key ? MONSTER_SOURCES[key] : undefined;

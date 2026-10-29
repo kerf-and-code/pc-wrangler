@@ -408,22 +408,38 @@ function extractClassFeatures(ed) {
 }
 
 // ---- monsters ------------------------------------------------------------------------------------
-// SRD monsters, plus Kerf and Code authored ones: the source files mix in non-SRD bestiaries (Tome of
-// Beasts, A5e, ...), tagged by source_key. We keep source_key starting "srd" (srd-2024 = 331, srd-2014 =
-// 325) and "kc-" (Arcana Unleashed / Deadfall creatures: book statistics, our own action wording), which
-// card as source "kc". The third-party bestiaries stay out. Compact stat block; the action-ish sections
-// become name/description lists.
+// Every monster in monsters-<ed>.json, carded by origin (lib/monster-sources.ts is the map):
+//   srd-*   SRD 5.1 / 5.2 (CC BY)                        -> source "srd"
+//   kc-*    Kerf and Code wording of book statistics       -> source "kc"
+//   others  third-party Open5e bestiaries (OGL 1.0a / ORC) -> source "3p", with `book` = the short
+//           book label, which the card shows as a chip (the OGL Section 8 identification).
+// Third-party ids carry the source key (monster:tob2:aboleth) because 651 names repeat across books.
+// Their names are qualified with the book ("Aboleth (Monstrous Menagerie (A5E))") when the plain name
+// is already taken in the edition or repeats among the third-party books, so cards stay tellable apart
+// and an exact voice match on a shared name still lands on the SRD card (the matcher breaks score
+// ties on the shorter name). The plain name stays in `spoken`, so saying it still finds them all.
+// Compact stat block; the action-ish sections become name/description lists.
+let MONSTER_SOURCES = {}; // filled in main() from lib/srd/monster-sources.json before any edition is built
+function monsterOrigin(key) {
+  const k = String(key ?? "");
+  if (k.startsWith("kc-")) return "kc";
+  if (k.startsWith("srd")) return "srd";
+  return MONSTER_SOURCES[k]?.thirdParty ? "3p" : null;
+}
 function monsterEntry(m, ruleset) {
+  const origin = monsterOrigin(m.source_key);
+  const idBase = origin === "3p" ? `monster:${m.source_key}:${slug(m.name)}` : `monster:${slug(m.name)}`;
   const list = (arr) => (Array.isArray(arr) ? arr : [])
     .map((a) => ({ name: a?.name ?? null, description: cleanText(a?.desc ?? a?.description ?? null) }))
     .filter((x) => x.name || x.description);
   const asStr = (v) => (Array.isArray(v) ? v.filter(Boolean).join(", ") : (v ?? null)) || null;
   return {
-    id: `monster:${slug(m.name)}`,
+    id: idBase,
     name: m.name,
     category: "monster",
     ruleset,
-    source: String(m.source_key ?? "").startsWith("kc-") ? "kc" : "srd",
+    source: origin,
+    ...(origin === "3p" ? { book: MONSTER_SOURCES[m.source_key]?.short ?? String(m.source_key) } : {}),
     spoken: spokenForms(m.name),
     display: {
       size: m.size ?? null,
@@ -452,7 +468,35 @@ function monsterEntry(m, ruleset) {
 }
 function loadMonsters(ed) {
   const all = readMaybe(path.join(SRD_DIR, `monsters-${ed}.json`)) || [];
-  return (Array.isArray(all) ? all : []).filter((m) => /^(srd|kc-)/.test(String(m?.source_key ?? "")));
+  // A source_key not in lib/monster-sources.ts is skipped rather than guessed at.
+  return (Array.isArray(all) ? all : []).filter((m) => monsterOrigin(m?.source_key) != null);
+}
+
+// Monster entries for one edition: SRD and kc first, third-party after, so the qualifying pass sees
+// every first-party name before it. `takenNames` holds the normalized names of the edition's other
+// entries (spells, items, ...), which a third-party monster must not shadow either.
+function monsterEntries(monsters, ed, takenNames) {
+  const first = monsters.filter((m) => monsterOrigin(m.source_key) !== "3p").map((m) => monsterEntry(m, ed));
+  const third = monsters.filter((m) => monsterOrigin(m.source_key) === "3p").map((m) => monsterEntry(m, ed));
+  const taken = new Set([...takenNames, ...first.map((e) => norm(e.name))]);
+  const thirdCount = third.reduce((c, e) => c.set(norm(e.name), (c.get(norm(e.name)) || 0) + 1), new Map());
+  const usedIds = new Set(first.map((e) => e.id));
+  for (const e of third) {
+    const key = norm(e.name);
+    if (taken.has(key) || thirdCount.get(key) > 1) {
+      const name = `${e.name} (${e.book})`;
+      e.spoken = [...new Set([...e.spoken, ...spokenForms(name)])];
+      e.name = name;
+    }
+  }
+  for (const e of third) {
+    const src = e.id; // set below from the source key; keep ids unique even within one book
+    let id = src;
+    if (usedIds.has(id)) { let n = 2; while (usedIds.has(`${src}-${n}`)) n++; id = `${src}-${n}`; }
+    usedIds.add(id);
+    e.id = id;
+  }
+  return [...first, ...third];
 }
 
 // ---- species -------------------------------------------------------------------------------------
@@ -565,7 +609,7 @@ function buildEdition(ed, variantsByName) {
   // At-a-glance reference tables, edition-routed like the authored spells.
   const references = (readMaybe(path.join(SRD_DIR, "reference.json")) || [])
     .filter((r) => r.edition === ed || r.edition === "both");
-  return applyAliases([
+  const before = [
     ...spells.map((s) => spellEntry(s, ed)),
     ...authoredSpells.map((s) => spellEntry(s, ed)),
     ...items.map((it) => itemEntry(it, ed, variantsByName)),
@@ -575,12 +619,15 @@ function buildEdition(ed, variantsByName) {
     ...classOptions,
     ...classOptionExtra,
     ...classFeatures,
-    ...monsters.map((m) => monsterEntry(m, ed)),
+  ];
+  const after = [
     ...species.map((s) => speciesEntry(s, ed)),
     ...backgrounds.map((b) => backgroundEntry(b, ed)),
     ...rules.map((r) => ruleEntry(r, ed)),
     ...references.map((r) => referenceEntry(r, ed)),
-  ]);
+  ];
+  const monsterList = monsterEntries(monsters, ed, [...before, ...after].map((e) => norm(e.name)));
+  return applyAliases([...before, ...monsterList, ...after]);
 }
 
 // Union 2024 + 2014, suffixing " (legacy)" on any 2014 entry whose name collides with a 2024 one,
@@ -589,9 +636,19 @@ function mergeBoth(primary, older) {
   const taken = new Set(primary.map((e) => norm(e.name)));
   const out = [...primary];
   for (const e of older) {
+    // A third-party monster that collides with a 2024 name is told apart by its book, not "(legacy)":
+    // it is not an older printing of the 2024 creature.
+    if (taken.has(norm(e.name)) && e.source === "3p" && !e.name.endsWith(`(${e.book})`)) {
+      const name = `${e.name} (${e.book})`;
+      out.push({ ...e, name, spoken: [...new Set([...e.spoken, ...spokenForms(name)])] });
+      continue;
+    }
     if (taken.has(norm(e.name))) {
       const name = `${e.name} (legacy)`;
-      out.push({ ...e, name, id: `${e.category}:${slug(name)}`, spoken: spokenForms(e.name), ruleset: "2014" });
+      // The id is the 2014 entry's own id plus "-legacy", NOT slug(name): norm() strips "(legacy)", so
+      // slug(name) reproduced the 2024 twin's id, and the 1,154 duplicate ids made the matcher (which
+      // keeps one result per id) and the override layer treat the two cards as one.
+      out.push({ ...e, name, id: `${e.id}-legacy`, spoken: spokenForms(e.name), ruleset: "2014" });
     } else out.push(e);
   }
   return out;
@@ -869,12 +926,23 @@ async function main() {
   } else if (mode === "pf2e") {
     entries = buildPathfinder();
   } else {
+    // The monster source table (lib/srd/monster-sources.json), the same one lib/monster-sources.ts reads.
+    MONSTER_SOURCES = readMaybe(path.join(SRD_DIR, "monster-sources.json")) || {};
     const variantsByName = loadVariants();
     if (mode === "both") entries = mergeBoth(buildEdition("2024", variantsByName), buildEdition("2014", variantsByName));
     else entries = buildEdition(mode, variantsByName);
     // Re-apply aliases on the final list: mergeBoth regenerates `spoken` for legacy-suffixed entries,
     // which would otherwise drop their aliases. Idempotent for the single-edition modes.
     applyAliases(entries);
+    // Ids must be unique: the matcher keeps one result per id and overrides shadow by id. The source data
+    // still has the odd exact repeat (the 2014 SRD lists Potion of Healing twice), so a repeat gets -2.
+    const usedIds = new Set();
+    for (const e of entries) {
+      let id = e.id;
+      if (usedIds.has(id)) { let n = 2; while (usedIds.has(`${e.id}-${n}`)) n++; id = `${e.id}-${n}`; }
+      usedIds.add(id);
+      e.id = id;
+    }
   }
 
   // Grammar: every unique spoken phrase, plus the Vosk unknown token.

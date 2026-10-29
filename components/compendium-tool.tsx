@@ -502,7 +502,7 @@ export default function CompendiumTool() {
       {!loading && !loadError && (
         <p style={{ ...label, margin: 0 }}>
           {entries.length.toLocaleString()} entries loaded · {system === "dnd5e"
-            ? "SRD 5.1 / 5.2 (CC-BY), plus original content by Kerf and Code"
+            ? "SRD 5.1 / 5.2 (CC-BY), plus original content by Kerf and Code and third-party open-licensed monsters labeled by book (see /licenses)"
             : `${attributionFor(system)?.short ?? systemLabel(system)}${baseEntries.length === 0 ? " · no shipped cards yet, showing your homebrew" : ""}`} · nothing leaves your browser
         </p>
       )}
@@ -605,6 +605,7 @@ function CardView({ card, canEdit, onEdit, onPin, onDismiss, onEnter, onLeave, o
           <span style={chip}>{entryTag(e)}</span>
           {homebrew && <span style={{ ...chip, borderColor: C.sun, color: C.sun }} title="Your homebrew or override">Homebrew</span>}
           {!homebrew && e.source === "kc" && <span style={{ ...chip, borderColor: C.line, color: C.sun }} title="Original content by Kerf and Code">Kerf &amp; Code</span>}
+          {!homebrew && e.source === "3p" && e.book && <span style={{ ...chip, borderColor: C.line, color: C.muted }} title="Third-party open content (Open Game License 1.0a or ORC), see /licenses">{e.book}</span>}
           {!card.pinned && card.expiresAt != null && <span style={{ ...chip, borderColor: "transparent", color: C.muted }}>auto</span>}
         </div>
         <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>

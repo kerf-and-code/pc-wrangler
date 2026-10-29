@@ -12,9 +12,11 @@ export type CompendiumCategory =
 export type Ruleset = "2014" | "2024" | "both";
 
 // Attribution. "srd" is Open Game Content under CC-BY (SRD 5.1 / 5.2); "kc" is original content
-// authored by Kerf and Code (e.g. the feats beyond the small SRD set). The card surfaces a tag for
-// "kc" so that credit is visible per entry, and the footer names both.
-export type CompendiumSource = "srd" | "kc";
+// authored by Kerf and Code (e.g. the feats beyond the small SRD set); "3p" is a third-party bestiary
+// monster released as open content (OGL 1.0a / ORC) and pulled from Open5e, which always carries
+// `book`. The card surfaces a tag for "kc" and the book for "3p" (the OGL Section 8 identification),
+// and the footer names all three. Notices for "3p" are on /licenses (lib/systems/attribution.ts).
+export type CompendiumSource = "srd" | "kc" | "3p";
 
 export interface SpellDamage {
   type: string | null;
@@ -182,6 +184,8 @@ interface EntryBase<C extends CompendiumCategory, D> {
   // own shorthand in source data and have it flow through to grammar the same way.
   spoken: string[];
   aliases?: string[];
+  // Short label of the source book, set on "3p" entries (lib/srd/monster-sources.json `short`).
+  book?: string;
   display: D;
 }
 
