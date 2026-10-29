@@ -27,6 +27,7 @@
 // ---------------------------------------------------------------------------
 
 import type { Ability, Build, GearEntry, RulesContext } from "./srd/derive-sheet";
+import { aliasPairs } from "./name-aliases";
 
 // ---------------------------------------------------------------------------
 // The parser's output shape (parse_ddb_sheet.py). Everything is optional-ish because a sheet for
@@ -283,6 +284,12 @@ export function ddbToBuild(sheet: DdbSheet, ctx: ImportContext): ImportResult {
   const notes: string[] = [];
   const itemIx = indexNames(ctx.items);
   const spellIx = indexNames(ctx.spells);
+  // D&D Beyond prints the full Player's Handbook names ("Tasha's Hideous Laughter"); the SRD list
+  // has "Hideous Laughter". Point each alternate name at the SRD name when that name is present.
+  for (const [alias, canonical] of aliasPairs("spells")) {
+    const hit = spellIx.get(norm(canonical));
+    if (hit && !spellIx.has(norm(alias))) spellIx.set(norm(alias), hit);
+  }
   const speciesIx = indexNames(ctx.species);
   const subclassIx = indexNames(ctx.subclasses);
   const backgroundIx = indexNames(ctx.backgrounds);

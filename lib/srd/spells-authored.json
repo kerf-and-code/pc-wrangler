@@ -868,44 +868,6 @@
     "source": "kc"
   },
   {
-    "name": "Tasha's Hideous Laughter",
-    "level": 1,
-    "school": "Enchantment",
-    "casting_time": "Action",
-    "range": "30 feet",
-    "components": "V, S, M (a tart and a feather)",
-    "duration": "Concentration, up to 1 minute",
-    "concentration": true,
-    "ritual": false,
-    "classes": [
-      "Bard",
-      "Warlock",
-      "Wizard"
-    ],
-    "attack_type": null,
-    "description": "A creature of your choice is overcome with laughter. On a failed Wisdom save it falls prone, becomes incapacitated, and can't stand up until the spell ends or it takes damage.",
-    "edition": "both",
-    "source": "kc"
-  },
-  {
-    "name": "Tenser's Floating Disk",
-    "level": 1,
-    "school": "Conjuration",
-    "casting_time": "Action or Ritual",
-    "range": "30 feet",
-    "components": "V, S, M (a drop of mercury)",
-    "duration": "1 hour",
-    "concentration": false,
-    "ritual": true,
-    "classes": [
-      "Wizard"
-    ],
-    "attack_type": null,
-    "description": "You create a circular, horizontal plane of force that follows you and can carry up to 500 pounds of weight. It remains for the duration or until you dismiss it.",
-    "edition": "both",
-    "source": "kc"
-  },
-  {
     "name": "Thunderous Smite",
     "level": 1,
     "school": "Evocation",
@@ -1416,24 +1378,6 @@
     "source": "kc"
   },
   {
-    "name": "Melf's Acid Arrow",
-    "level": 2,
-    "school": "Evocation",
-    "casting_time": "1 action",
-    "range": "90 feet",
-    "components": "V, S, M (powdered rhubarb leaf and an adder's stomach)",
-    "duration": "Instantaneous",
-    "concentration": false,
-    "ritual": false,
-    "classes": [
-      "Wizard"
-    ],
-    "attack_type": null,
-    "description": "A shimmering green arrow streaks toward a target and bursts in a spray of acid. On a hit the target takes acid damage immediately and again at the end of its next turn.",
-    "edition": "2014",
-    "source": "kc"
-  },
-  {
     "name": "Mind Spike",
     "level": 2,
     "school": "Divination",
@@ -1488,7 +1432,7 @@
     ],
     "attack_type": null,
     "description": "You place an illusion on a creature or object so that divination spells reveal false information about its magical properties or creature type.",
-    "edition": "both",
+    "edition": "2024",
     "source": "kc"
   },
   {
@@ -2126,25 +2070,6 @@
     "source": "kc"
   },
   {
-    "name": "Leomund's Tiny Hut",
-    "level": 3,
-    "school": "Evocation",
-    "casting_time": "1 minute",
-    "range": "Self (10-foot-radius hemisphere)",
-    "components": "V, S, M (a small crystal bead)",
-    "duration": "8 hours",
-    "concentration": false,
-    "ritual": true,
-    "classes": [
-      "Bard",
-      "Wizard"
-    ],
-    "attack_type": null,
-    "description": "A 10-foot-radius immobile dome of force springs into existence around and above you. The spell fails if a Large or larger creature is inside. Creatures and objects within when you cast can move through freely, but others cannot.",
-    "edition": "2014",
-    "source": "kc"
-  },
-  {
     "name": "Life Transference",
     "level": 3,
     "school": "Necromancy",
@@ -2576,42 +2501,6 @@
     "source": "kc"
   },
   {
-    "name": "Evard's Black Tentacles",
-    "level": 4,
-    "school": "Conjuration",
-    "casting_time": "1 action",
-    "range": "90 feet",
-    "components": "V, S, M (a tentacle)",
-    "duration": "Concentration, up to 1 minute",
-    "concentration": true,
-    "ritual": false,
-    "classes": [
-      "Wizard"
-    ],
-    "attack_type": null,
-    "description": "Tentacles fill a 20-foot square of difficult terrain. A creature entering it for the first time on a turn or starting its turn there makes a Dexterity save or takes 3d6 bludgeoning and is restrained; restrained creatures take 3d6 at the start of each turn and can escape with a Strength or Dexterity check.",
-    "edition": "2014",
-    "source": "kc"
-  },
-  {
-    "name": "Evard's Black Tentacles",
-    "level": 4,
-    "school": "Conjuration",
-    "casting_time": "Action",
-    "range": "90 feet",
-    "components": "V, S, M (a tentacle)",
-    "duration": "Concentration, up to 1 minute",
-    "concentration": true,
-    "ritual": false,
-    "classes": [
-      "Wizard"
-    ],
-    "attack_type": null,
-    "description": "Tentacles fill a 20-foot square of Difficult Terrain. Creatures in it, entering it, or ending a turn there make a Strength save (once per turn) for 3d6 Bludgeoning and Restrained; a Restrained creature can use an action on an Athletics check against your DC to escape.",
-    "edition": "2024",
-    "source": "kc"
-  },
-  {
     "name": "Festering Blast",
     "level": 4,
     "school": "Necromancy",
@@ -2744,101 +2633,6 @@
     "attack_type": null,
     "description": "You transform into a powerful guardian form, either a primal beast or a great tree, gaining enhanced senses, attacks, or defensive abilities for the duration.",
     "edition": "2014",
-    "source": "kc"
-  },
-  {
-    "name": "Leomund's Secret Chest",
-    "level": 4,
-    "school": "Conjuration",
-    "casting_time": "Action",
-    "range": "Touch",
-    "components": "V, S, M (a chest, 3 feet by 2 feet by 2 feet, constructed from rare materials worth 5,000+ GP, and a Tiny replica of the chest made from the same materials worth 50+ GP)",
-    "duration": "Until dispelled",
-    "concentration": false,
-    "ritual": false,
-    "classes": [
-      "Artificer",
-      "Wizard"
-    ],
-    "attack_type": null,
-    "description": "You hide a chest and its contents on the Ethereal Plane. You can use an action to recall the chest, and it remains safe until you do so or the spell ends.",
-    "edition": "both",
-    "source": "kc"
-  },
-  {
-    "name": "Mordenkainen's Faithful Hound",
-    "level": 4,
-    "school": "Conjuration",
-    "casting_time": "Action",
-    "range": "30 feet",
-    "components": "V, S, M (a silver whistle)",
-    "duration": "8 hours",
-    "concentration": false,
-    "ritual": false,
-    "classes": [
-      "Artificer",
-      "Wizard"
-    ],
-    "attack_type": null,
-    "description": "You conjure a phantom watchdog that remains in a 30-foot radius. It becomes visible and attacks any creature that comes within 30 feet of it that is hostile to you, dealing force damage and never being surprised.",
-    "edition": "both",
-    "source": "kc"
-  },
-  {
-    "name": "Mordenkainen's Private Sanctum",
-    "level": 4,
-    "school": "Abjuration",
-    "casting_time": "10 minutes",
-    "range": "120 feet",
-    "components": "V, S, M (a thin sheet of lead)",
-    "duration": "24 hours",
-    "concentration": false,
-    "ritual": false,
-    "classes": [
-      "Artificer",
-      "Wizard"
-    ],
-    "attack_type": null,
-    "description": "You make an area magically secure against scrying, teleportation, planar travel, and sound transmission, with options to customize the protections.",
-    "edition": "both",
-    "source": "kc"
-  },
-  {
-    "name": "Otiluke's Resilient Sphere",
-    "level": 4,
-    "school": "Evocation",
-    "casting_time": "1 action",
-    "range": "30 feet",
-    "components": "V, S, M (a glass sphere)",
-    "duration": "Concentration, up to 1 minute",
-    "concentration": true,
-    "ritual": false,
-    "classes": [
-      "Artificer",
-      "Wizard"
-    ],
-    "attack_type": null,
-    "description": "A sphere of shimmering force encloses a creature or object of Large size or smaller. The sphere is weightless and immune to damage; nothing can pass through it, though the enclosed creature can breathe.",
-    "edition": "2014",
-    "source": "kc"
-  },
-  {
-    "name": "Otiluke's Resilient Sphere",
-    "level": 4,
-    "school": "Abjuration",
-    "casting_time": "Action",
-    "range": "30 feet",
-    "components": "V, S, M (a glass sphere)",
-    "duration": "Concentration, up to 1 minute",
-    "concentration": true,
-    "ritual": false,
-    "classes": [
-      "Artificer",
-      "Wizard"
-    ],
-    "attack_type": null,
-    "description": "A sphere of shimmering force encloses a creature or object of Large size or smaller. The sphere is weightless and immune to damage; nothing can pass through it, though the enclosed creature can breathe.",
-    "edition": "2024",
     "source": "kc"
   },
   {
@@ -3530,24 +3324,6 @@
     "source": "kc"
   },
   {
-    "name": "Rary's Telepathic Bond",
-    "level": 5,
-    "school": "Divination",
-    "casting_time": "1 action",
-    "range": "30 feet",
-    "components": "V, S, M (pieces of eggshell from two different kinds of creatures)",
-    "duration": "1 hour",
-    "concentration": false,
-    "ritual": true,
-    "classes": [
-      "Wizard"
-    ],
-    "attack_type": null,
-    "description": "You forge a telepathic link among up to eight willing creatures of your choice within range. Until the spell ends the targets can communicate telepathically through the bond whether or not they share a language.",
-    "edition": "2014",
-    "source": "kc"
-  },
-  {
     "name": "Skill Empowerment",
     "level": 5,
     "school": "Transmutation",
@@ -3899,24 +3675,6 @@
     "source": "kc"
   },
   {
-    "name": "Drawmij's Instant Summons",
-    "level": 6,
-    "school": "Conjuration",
-    "casting_time": "1 minute or Ritual",
-    "range": "Touch",
-    "components": "V, S, M (a sapphire worth 1,000+ GP)",
-    "duration": "Until dispelled",
-    "concentration": false,
-    "ritual": true,
-    "classes": [
-      "Wizard"
-    ],
-    "attack_type": null,
-    "description": "You touch an object and write a special mark on it. Later you can use an action to speak the object's name and instantly transport it to your hand, regardless of distance (with some limitations if another creature holds it).",
-    "edition": "both",
-    "source": "kc"
-  },
-  {
     "name": "Druid Grove",
     "level": 6,
     "school": "Abjuration",
@@ -4095,44 +3853,6 @@
     "attack_type": null,
     "description": "You attempt to bind a creature within an illusory cell that only it can perceive. On a failed Intelligence save it is trapped, taking psychic damage if it attempts to leave or if the illusion is interacted with in certain ways.",
     "edition": "2014",
-    "source": "kc"
-  },
-  {
-    "name": "Otiluke's Freezing Sphere",
-    "level": 6,
-    "school": "Evocation",
-    "casting_time": "Action",
-    "range": "300 feet",
-    "components": "V, S, M (a small crystal sphere)",
-    "duration": "Instantaneous",
-    "concentration": false,
-    "ritual": false,
-    "classes": [
-      "Sorcerer",
-      "Wizard"
-    ],
-    "attack_type": null,
-    "description": "A frigid globe of cold energy streaks from your fingertips to a point of your choice, where it explodes in a 60-foot-radius sphere. Creatures in the area take cold damage on a failed Constitution save; the globe can also be thrown or used to freeze water.",
-    "edition": "both",
-    "source": "kc"
-  },
-  {
-    "name": "Otto's Irresistible Dance",
-    "level": 6,
-    "school": "Enchantment",
-    "casting_time": "Action",
-    "range": "30 feet",
-    "components": "V",
-    "duration": "Concentration, up to 1 minute",
-    "concentration": true,
-    "ritual": false,
-    "classes": [
-      "Bard",
-      "Wizard"
-    ],
-    "attack_type": null,
-    "description": "You cause a creature to begin a comic dance. On a failed Wisdom save it must use all its movement to dance in place, has disadvantage on Dexterity saves and attack rolls, and other creatures have advantage on attacks against it.",
-    "edition": "2024",
     "source": "kc"
   },
   {
@@ -4386,25 +4106,6 @@
     "attack_type": null,
     "description": "One creature within 120 feet makes an Intelligence save: 12d10 Psychic and Disadvantage on D20 Tests on a failure. Half damage on a success, and the spell ends. It repeats the save at the end of each of its turns.",
     "edition": "2024",
-    "source": "kc"
-  },
-  {
-    "name": "Mordenkainen's Sword",
-    "level": 7,
-    "school": "Evocation",
-    "casting_time": "Action",
-    "range": "90 feet",
-    "components": "V, S, M (a miniature sword worth 250+ GP)",
-    "duration": "Concentration, up to 1 minute",
-    "concentration": true,
-    "ritual": false,
-    "classes": [
-      "Bard",
-      "Wizard"
-    ],
-    "attack_type": null,
-    "description": "You create a sword-shaped plane of force that floats and attacks creatures of your choice within range, dealing force damage on a hit. You can move it as a bonus action.",
-    "edition": "both",
     "source": "kc"
   },
   {

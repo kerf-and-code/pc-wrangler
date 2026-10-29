@@ -66,7 +66,18 @@ const ALIASES = {
   "mounted combat": ["mount", "mounted"],
   "underwater combat": ["underwater", "swimming combat"],
 };
-const cleanPhrase = (s) => String(s || "").toLowerCase().replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
+// Alternate published names (lib/srd/name-aliases.json, shared with lib/name-aliases.ts): the
+// possessive Player's Handbook spell names the SRD prints without the wizard ("Tasha's Hideous
+// Laughter" -> Hideous Laughter). Folded into ALIASES so a DM can say either name.
+{
+  const NAME_ALIASES = readMaybe(path.join(SRD_DIR, "name-aliases.json")) || {};
+  for (const [alias, canonical] of Object.entries(NAME_ALIASES.spells || {})) {
+    const k = norm(canonical);
+    ALIASES[k] = [...(ALIASES[k] || []), alias];
+  }
+}
+// Apostrophes are dropped, not spaced: "Bigby's Hand" -> "bigbys hand", the way it is typed or heard.
+const cleanPhrase = (s) => String(s || "").toLowerCase().replace(/['’]/g, "").replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
 // Populate each entry's `aliases` from two sources - the ALIASES table (keyed by entry name) and any
 // aliases the entry already carries from its source data (the hook homebrew/authored entries use) -
 // dedupe + clean them, store them on `e.aliases` (omitted when empty), and merge them INTO `spoken` so

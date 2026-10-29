@@ -1,0 +1,22 @@
+{
+  "_comment": "Alternate published names that resolve to the name our data uses. Keyed by domain; each map is alternate name -> canonical name. Spells: the possessive Player's Handbook names that the SRD prints without the wizard's name. Read by lib/name-aliases.ts (app) and scripts/build-compendium-index.mjs (compendium voice aliases).",
+  "spells": {
+    "Bigby's Hand": "Arcane Hand",
+    "Drawmij's Instant Summons": "Instant Summons",
+    "Evard's Black Tentacles": "Black Tentacles",
+    "Leomund's Secret Chest": "Secret Chest",
+    "Leomund's Tiny Hut": "Tiny Hut",
+    "Melf's Acid Arrow": "Acid Arrow",
+    "Mordenkainen's Faithful Hound": "Faithful Hound",
+    "Mordenkainen's Magnificent Mansion": "Magnificent Mansion",
+    "Mordenkainen's Private Sanctum": "Private Sanctum",
+    "Mordenkainen's Sword": "Arcane Sword",
+    "Nystul's Magic Aura": "Arcanist's Magic Aura",
+    "Otiluke's Freezing Sphere": "Freezing Sphere",
+    "Otiluke's Resilient Sphere": "Resilient Sphere",
+    "Otto's Irresistible Dance": "Irresistible Dance",
+    "Rary's Telepathic Bond": "Telepathic Bond",
+    "Tasha's Hideous Laughter": "Hideous Laughter",
+    "Tenser's Floating Disk": "Floating Disk"
+  }
+}

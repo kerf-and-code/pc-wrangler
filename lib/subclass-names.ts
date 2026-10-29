@@ -32,6 +32,10 @@ const RENAMES: Record<string, string> = {
   "draconic sorcery": "draconic bloodline", "wild magic sorcery": "wild magic",
   "aberrant sorcery": "aberrant mind", "clockwork sorcery": "clockwork soul",
   "four elements": "elements",
+  // Heroes of Faerun (2024) and the Sword Coast guide name these two differently from the catalog
+  // rows (subclasses.json: "Bladesinging", "Purple Dragon Knight (Banneret)").
+  bladesinger: "bladesinging",
+  "purple dragon knight": "purple dragon knight (banneret)", banneret: "purple dragon knight (banneret)",
 };
 
 export function canonicalSubclass(name: string | null | undefined): string {
