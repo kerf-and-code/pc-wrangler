@@ -1,517 +1,2812 @@
 [
- {
-  "class": "Cleric",
-  "name": "Arcana Domain",
-  "key": "kc-au_arcana-domain",
-  "edition": "2024",
-  "source": "kc",
-  "book": "Arcana Unleashed",
-  "features_by_level": [
-   {
-    "level": 3,
-    "features": [
-     {
-      "name": "Arcana Domain Spells",
-      "desc": "Always prepared at Cleric levels: 3 Detect Magic, Magic Missile, Magic Weapon, Nystul's Magic Aura; 5 Counterspell, Dispel Magic; 7 Arcane Eye, Leomund's Secret Chest; 9 Bigby's Hand, Teleportation Circle.",
-      "choice_is_prose": false
-     },
-     {
-      "name": "Modify Magic",
-      "desc": "Spend a Channel Divinity use as you cast a spell (no action). Fortifying Spell: one target gains 2d8 + Cleric level Temporary Hit Points. Tenacious Spell: a creature that succeeds on a save against your spell takes a 1d6 penalty on its first save against the spell's effect.",
-      "choice_is_prose": false
-     },
-     {
-      "name": "Student of Arcana",
-      "desc": "Gain Arcana proficiency (or another level 1 Cleric skill) and two Wizard cantrips; swap one cantrip for another Wizard cantrip whenever you gain a Cleric level.",
-      "choice_is_prose": false
-     }
+  {
+    "class": "Cleric",
+    "name": "Arcana Domain",
+    "key": "kc-au_arcana-domain",
+    "edition": "2024",
+    "source": "kc",
+    "book": "Arcana Unleashed",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Arcana Domain Spells",
+            "desc": "Always prepared at Cleric levels: 3 Detect Magic, Magic Missile, Magic Weapon, Nystul's Magic Aura; 5 Counterspell, Dispel Magic; 7 Arcane Eye, Leomund's Secret Chest; 9 Bigby's Hand, Teleportation Circle.",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Modify Magic",
+            "desc": "Spend a Channel Divinity use as you cast a spell (no action). Fortifying Spell: one target gains 2d8 + Cleric level Temporary Hit Points. Tenacious Spell: a creature that succeeds on a save against your spell takes a 1d6 penalty on its first save against the spell's effect.",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Student of Arcana",
+            "desc": "Gain Arcana proficiency (or another level 1 Cleric skill) and two Wizard cantrips; swap one cantrip for another Wizard cantrip whenever you gain a Cleric level.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Dispelling Recovery",
+            "desc": "Right after a slot-cast spell restores HP or ends a condition, cast Dispel Magic as part of the same action, Bonus Action, or Reaction with no slot. Once per Short or Long Rest; a Channel Divinity use recharges it.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 17,
+        "features": [
+          {
+            "name": "Magical Mastery",
+            "desc": "Learn one Wizard spell each of levels 6, 7, 8, and 9; they are always prepared, and you can swap one for another of the same level when you gain a Cleric level.",
+            "choice_is_prose": false
+          }
+        ]
+      }
     ]
-   },
-   {
-    "level": 6,
-    "features": [
-     {
-      "name": "Dispelling Recovery",
-      "desc": "Right after a slot-cast spell restores HP or ends a condition, cast Dispel Magic as part of the same action, Bonus Action, or Reaction with no slot. Once per Short or Long Rest; a Channel Divinity use recharges it.",
-      "choice_is_prose": false
-     }
+  },
+  {
+    "class": "Fighter",
+    "name": "Arcane Archer",
+    "key": "kc-au_arcane-archer",
+    "edition": "2024",
+    "source": "kc",
+    "book": "Arcana Unleashed",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Arcane Archer Lore",
+            "desc": "Learn Druidcraft or Prestidigitation (Intelligence). Gain Arcana and Nature proficiency, substituting other Fighter skills for any you already have.",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Arcane Shot",
+            "desc": "Know two Arcane Shot options (one more at Fighter 7, 10, 15, and 18, swapping one each time). Once per turn on a damaging ranged hit with an Ammunition weapon, apply an option. Uses equal to Intelligence modifier (min 1) per Short or Long Rest. Arcane Shot Die d6, rising to d8 (10), d10 (15), d12 (18). Save DC 8 + Intelligence modifier + Proficiency Bonus.",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Banishing Shot",
+            "desc": "Arcane Shot option. +1 Arcane Shot Die Psychic; Charisma save or the target is banished, Incapacitated with Speed 0, returning at the end of its next turn.",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Beguiling Shot",
+            "desc": "Arcane Shot option. +2 Arcane Shot Dice Psychic; Wisdom save or Charmed by you or an ally within 30 feet of it until your next turn, ending early if the charmer harms it.",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Bursting Shot",
+            "desc": "Arcane Shot option. The target and every creature in a 10-foot Emanation around it take 2 Arcane Shot Dice of Force damage.",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Enfeebling Shot",
+            "desc": "Arcane Shot option. +2 Arcane Shot Dice Necrotic; Constitution save or Poisoned until the end of its next turn, subtracting 1 Arcane Shot Die from each of its hits' damage.",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Grasping Shot",
+            "desc": "Arcane Shot option. +1 Arcane Shot Die Slashing; Strength save or Restrained for 1 minute. An Athletics check against your DC (as an action) frees it.",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Piercing Shot",
+            "desc": "Arcane Shot option. No attack roll: a 30-foot Line that ignores cover. Dexterity save: normal hit damage plus 2 Arcane Shot Dice Piercing, half on a success.",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Seeking Shot",
+            "desc": "Arcane Shot option. No attack roll: pick a creature seen in the last minute and the shot curves to it, ignoring Half and Three-Quarters Cover. Dexterity save: hit damage plus 2 Arcane Shot Dice Force and you learn its location, half on a success.",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Shadow Shot",
+            "desc": "Arcane Shot option. +1 Arcane Shot Die Psychic; Wisdom save or Blinded until the end of its next turn.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 7,
+        "features": [
+          {
+            "name": "Curving Shot",
+            "desc": "After a ranged Ammunition attack misses, use a Bonus Action to redirect it at another creature within 60 feet of the first target and roll a new attack.",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Magical Ammunition",
+            "desc": "Magic action: fire enchanted ammunition at a surface. Darkening (15-foot shadow, -5 Perception, douses flames, 1 minute), Unlocking (opens one nonmagical lock or bar per object in 15 feet, loudly), or Vine (120-foot climbable vine for 10 minutes). Once per Short or Long Rest, or spend a Second Wind use.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Ever-Ready Shot",
+            "desc": "Regain one expended Arcane Shot use when you roll Initiative.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 15,
+        "features": [
+          {
+            "name": "Indomitable Teleport",
+            "desc": "When Indomitable turns a failed save into a success, teleport up to 60 feet to a space you can see.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 18,
+        "features": [
+          {
+            "name": "Masterful Shots",
+            "desc": "Reaction when a creature misses you: move up to half your Speed without provoking, then make a ranged attack against it if it's in range.",
+            "choice_is_prose": false
+          }
+        ]
+      }
     ]
-   },
-   {
-    "level": 17,
-    "features": [
-     {
-      "name": "Magical Mastery",
-      "desc": "Learn one Wizard spell each of levels 6, 7, 8, and 9; they are always prepared, and you can swap one for another of the same level when you gain a Cleric level.",
-      "choice_is_prose": false
-     }
+  },
+  {
+    "class": "Monk",
+    "name": "Warrior of the Mystic Arts",
+    "key": "kc-au_warrior-of-the-mystic-arts",
+    "edition": "2024",
+    "source": "kc",
+    "book": "Arcana Unleashed",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Spellcasting",
+            "desc": "Third-caster using the Sorcerer list and Wisdom, with an Arcane Focus allowed. Two Sorcerer cantrips (a third at Monk 10). Prepared spells grow from 3 at Monk 3 to 13 at Monk 20, with slots up to level 4 (level 4 at Monk 19). Swap one prepared spell per Monk level. Counts one third of Monk levels for multiclass slots.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Mystic Fighting Style",
+            "desc": "When you take the Attack action, one Unarmed Strike can be replaced with an action-cast Sorcerer cantrip.",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Mystic Focus",
+            "desc": "Expend a spell slot to regain Focus Points equal to its level. On a Short Rest or Uncanny Metabolism, spend Focus Points to recover one slot: level 1 for 2 FP (Monk 6), 2 for 3 FP (Monk 7), 3 for 5 FP (Monk 13), 4 for 6 FP (Monk 19).",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 11,
+        "features": [
+          {
+            "name": "Focused Strike",
+            "desc": "A Stunning Strike target, whether it saves or not, has Disadvantage on saves against your spells until the start of your next turn.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 17,
+        "features": [
+          {
+            "name": "Improved Mystic Fighting Style",
+            "desc": "With Flurry of Blows, swap two Unarmed Strikes for an action-cast level 1 or 2 Sorcerer spell, cast as part of that Bonus Action.",
+            "choice_is_prose": false
+          }
+        ]
+      }
     ]
-   }
-  ]
- },
- {
-  "class": "Fighter",
-  "name": "Arcane Archer",
-  "key": "kc-au_arcane-archer",
-  "edition": "2024",
-  "source": "kc",
-  "book": "Arcana Unleashed",
-  "features_by_level": [
-   {
-    "level": 3,
-    "features": [
-     {
-      "name": "Arcane Archer Lore",
-      "desc": "Learn Druidcraft or Prestidigitation (Intelligence). Gain Arcana and Nature proficiency, substituting other Fighter skills for any you already have.",
-      "choice_is_prose": false
-     },
-     {
-      "name": "Arcane Shot",
-      "desc": "Know two Arcane Shot options (one more at Fighter 7, 10, 15, and 18, swapping one each time). Once per turn on a damaging ranged hit with an Ammunition weapon, apply an option. Uses equal to Intelligence modifier (min 1) per Short or Long Rest. Arcane Shot Die d6, rising to d8 (10), d10 (15), d12 (18). Save DC 8 + Intelligence modifier + Proficiency Bonus.",
-      "choice_is_prose": false
-     },
-     {
-      "name": "Banishing Shot",
-      "desc": "Arcane Shot option. +1 Arcane Shot Die Psychic; Charisma save or the target is banished, Incapacitated with Speed 0, returning at the end of its next turn.",
-      "choice_is_prose": false
-     },
-     {
-      "name": "Beguiling Shot",
-      "desc": "Arcane Shot option. +2 Arcane Shot Dice Psychic; Wisdom save or Charmed by you or an ally within 30 feet of it until your next turn, ending early if the charmer harms it.",
-      "choice_is_prose": false
-     },
-     {
-      "name": "Bursting Shot",
-      "desc": "Arcane Shot option. The target and every creature in a 10-foot Emanation around it take 2 Arcane Shot Dice of Force damage.",
-      "choice_is_prose": false
-     },
-     {
-      "name": "Enfeebling Shot",
-      "desc": "Arcane Shot option. +2 Arcane Shot Dice Necrotic; Constitution save or Poisoned until the end of its next turn, subtracting 1 Arcane Shot Die from each of its hits' damage.",
-      "choice_is_prose": false
-     },
-     {
-      "name": "Grasping Shot",
-      "desc": "Arcane Shot option. +1 Arcane Shot Die Slashing; Strength save or Restrained for 1 minute. An Athletics check against your DC (as an action) frees it.",
-      "choice_is_prose": false
-     },
-     {
-      "name": "Piercing Shot",
-      "desc": "Arcane Shot option. No attack roll: a 30-foot Line that ignores cover. Dexterity save: normal hit damage plus 2 Arcane Shot Dice Piercing, half on a success.",
-      "choice_is_prose": false
-     },
-     {
-      "name": "Seeking Shot",
-      "desc": "Arcane Shot option. No attack roll: pick a creature seen in the last minute and the shot curves to it, ignoring Half and Three-Quarters Cover. Dexterity save: hit damage plus 2 Arcane Shot Dice Force and you learn its location, half on a success.",
-      "choice_is_prose": false
-     },
-     {
-      "name": "Shadow Shot",
-      "desc": "Arcane Shot option. +1 Arcane Shot Die Psychic; Wisdom save or Blinded until the end of its next turn.",
-      "choice_is_prose": false
-     }
+  },
+  {
+    "class": "Warlock",
+    "name": "Vestige Patron",
+    "key": "kc-au_vestige-patron",
+    "edition": "2024",
+    "source": "kc",
+    "book": "Arcana Unleashed",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Vestige Companion",
+            "desc": "A Small Celestial, Fiend, or Undead companion (AC 13 + Charisma modifier, HP 4 + 4 per Warlock level, Fly 30 hover) acts on your turn. It Dodges unless you spend a Bonus Action, or give up one of your attacks, to have it act. Vestige's Strike: spell-attack, 5 feet or 60 feet, 1d6 + 3 + Charisma modifier damage of its type. Divine Power once per day: Undead curse (Disadvantage attacking you and it), Fiend place-swap within 60 feet, or Celestial heal 2d8 + Charisma modifier and end Blinded, Deafened, or Poisoned. Re-manifest with a 1-minute ceremony; reshape it on a Long Rest.",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Vestige Spells",
+            "desc": "Choose the Life, Light, Trickery, or War domain. Its domain spells count as Warlock spells and are always prepared when your Warlock level reaches the listed Cleric level.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Vestige Power",
+            "desc": "Divine Power recharges on a Short or Long Rest or when you use Magical Cunning. Within 30 feet of the vestige, you share its damage Resistance.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Vestige Recovery",
+            "desc": "Reaction when the vestige would drop to 0 HP: spend a Pact Magic slot to restore it to full HP and teleport it 30 feet. Once per Long Rest.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Semblance of Life",
+            "desc": "Magic action, vestige within 90 feet: for 1 hour it becomes a Celestial, Fiendish, or Undead Spirit from the matching Summon spell at half your Warlock level (max 9), keeping its personality, Divine Power, HP, and Hit Dice, plus Temporary Hit Points equal to the spirit's HP. Once per Long Rest.",
+            "choice_is_prose": false
+          }
+        ]
+      }
     ]
-   },
-   {
-    "level": 7,
-    "features": [
-     {
-      "name": "Curving Shot",
-      "desc": "After a ranged Ammunition attack misses, use a Bonus Action to redirect it at another creature within 60 feet of the first target and roll a new attack.",
-      "choice_is_prose": false
-     },
-     {
-      "name": "Magical Ammunition",
-      "desc": "Magic action: fire enchanted ammunition at a surface. Darkening (15-foot shadow, -5 Perception, douses flames, 1 minute), Unlocking (opens one nonmagical lock or bar per object in 15 feet, loudly), or Vine (120-foot climbable vine for 10 minutes). Once per Short or Long Rest, or spend a Second Wind use.",
-      "choice_is_prose": false
-     }
+  },
+  {
+    "class": "Wizard",
+    "name": "Conjurer",
+    "key": "kc-au_conjurer",
+    "edition": "2024",
+    "source": "kc",
+    "book": "Arcana Unleashed",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Benign Transposition",
+            "desc": "Bonus Action: teleport 30 feet, or swap places with a willing Medium or smaller creature in range. Uses equal to Intelligence modifier (min 1) per Long Rest.",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Conjuration Savant",
+            "desc": "Add two Conjuration spells of level 2 or lower to your spellbook free, plus one more each time you gain a new spell slot level.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Distant Transposition",
+            "desc": "Benign Transposition reaches 60 feet, and a level 3+ slot restores one use.",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Durable Summons",
+            "desc": "Creatures you summon or create with a slot-cast Conjuration spell arrive with Temporary Hit Points equal to twice your Wizard level, and resist all damage except Force, Necrotic, Psychic, and Radiant while those last.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Focused Conjuration",
+            "desc": "Taking damage can't break your Concentration on Conjuration spells.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Splintered Summons",
+            "desc": "When a slot-cast spell summons a spirit with its own stat block (Summon Aberration and the like), summon two at half HP each. Once per Long Rest, or restore it with a level 5+ slot.",
+            "choice_is_prose": false
+          }
+        ]
+      }
     ]
-   },
-   {
-    "level": 10,
-    "features": [
-     {
-      "name": "Ever-Ready Shot",
-      "desc": "Regain one expended Arcane Shot use when you roll Initiative.",
-      "choice_is_prose": false
-     }
+  },
+  {
+    "class": "Wizard",
+    "name": "Enchanter",
+    "key": "kc-au_enchanter",
+    "edition": "2024",
+    "source": "kc",
+    "book": "Arcana Unleashed",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Enchanting Conversationalist",
+            "desc": "Gain Deception, Intimidation, or Persuasion proficiency and add your Intelligence modifier (min +1) to checks with it.",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Enchantment Savant",
+            "desc": "Add two Enchantment spells of level 2 or lower to your spellbook free, plus one more each time you gain a new spell slot level.",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Hypnotic Presence",
+            "desc": "Magic action, creature within 10 feet that can see or hear you: Wisdom save or Charmed, Incapacitated, and Speed 0 for up to 1 minute (ends if it moves beyond 10 feet, loses sight and sound of you, or takes damage). Uses equal to Intelligence modifier (min 1) per Long Rest.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Split Enchantment",
+            "desc": "When slot-casting an Enchantment spell that adds targets at higher levels, treat it as one level higher. Uses equal to Intelligence modifier per Long Rest.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Instinctive Charm",
+            "desc": "Reaction when a creature within 30 feet hits you: Wisdom save or the attack misses and is redirected, with the same roll, to another creature in range of your choice. Once per Long Rest; recharges when you slot-cast an Enchantment spell.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Alter Memories",
+            "desc": "One creature you Charm with a slot-cast Enchantment spell doesn't know it was Charmed. Once during the spell, a Magic action forces an Intelligence save; on a failure it loses up to 1 + Intelligence modifier hours of memory, within the spell's duration.",
+            "choice_is_prose": false
+          }
+        ]
+      }
     ]
-   },
-   {
-    "level": 15,
-    "features": [
-     {
-      "name": "Indomitable Teleport",
-      "desc": "When Indomitable turns a failed save into a success, teleport up to 60 feet to a space you can see.",
-      "choice_is_prose": false
-     }
+  },
+  {
+    "class": "Wizard",
+    "name": "Necromancer",
+    "key": "kc-au_necromancer",
+    "edition": "2024",
+    "source": "kc",
+    "book": "Arcana Unleashed",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Necromancy Savant",
+            "desc": "Add two Necromancy spells of level 2 or lower to your spellbook free, plus one more each time you gain a new spell slot level.",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Necromancy Spellbook",
+            "desc": "Resistance to Necrotic damage. Find Familiar enters your spellbook with Skeleton or Zombie forms (or any form as Undead), and you can give up an attack for the familiar to attack with its Reaction. Undead Vitality: a slot-cast Necromancy spell heals an Undead within 60 feet for the slot level + your Wizard level.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Grave Power",
+            "desc": "While holding your spellbook: Arcane Recovery also removes 1 Exhaustion level, and your Wizard spells and features ignore Necrotic Resistance.",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Undead Thralls",
+            "desc": "Animate Dead is always prepared, castable free once per Long Rest, and always cast one level higher. While holding your spellbook, undead you create or summon gain extra HP equal to Intelligence modifier + half your Wizard level, and your undead within 60 feet add your Intelligence modifier (min 1) in Necrotic damage to their hits.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Harvest Undead",
+            "desc": "Reaction when damage leaves you Bloodied but above 0 HP: drop one of your visible undead to 0 HP and regain HP equal to your Wizard level.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Death's Master",
+            "desc": "While holding your spellbook. Bolster Undead: once per Long Rest, a Bonus Action gives your necromancy-made undead within 60 feet Temporary Hit Points equal to your Wizard level. Extinguish Undead: an undead you see dropping to 0 HP explodes in a 10-foot Emanation (d6s equal to half its remaining Hit Dice, Dexterity save for half, no Reactions on a failure); one you don't control costs a Reaction and a level 5+ slot.",
+            "choice_is_prose": false
+          }
+        ]
+      }
     ]
-   },
-   {
-    "level": 18,
-    "features": [
-     {
-      "name": "Masterful Shots",
-      "desc": "Reaction when a creature misses you: move up to half your Speed without provoking, then make a ranged attack against it if it's in range.",
-      "choice_is_prose": false
-     }
+  },
+  {
+    "class": "Wizard",
+    "name": "Transmuter",
+    "key": "kc-au_transmuter",
+    "edition": "2024",
+    "source": "kc",
+    "book": "Arcana Unleashed",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Transmutation Savant",
+            "desc": "Add two Transmutation spells of level 2 or lower to your spellbook free, plus one more each time you gain a new spell slot level.",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Transmuter's Stone",
+            "desc": "On a Long Rest, make a stone (also a Spellcasting Focus). Its bearer gains Constitution save proficiency plus one of: Darkvision 60 feet (or +60), Resistance to Acid, Cold, Fire, Lightning, Poison, or Thunder, or +10 Speed. Change the benefit when you slot-cast a Transmutation spell.",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Wondrous Alteration",
+            "desc": "Alter Self is always prepared and castable free once per Long Rest, with bonuses: Dash as a Bonus Action underwater, Advantage on Deception checks while disguised, or 2d6 natural weapons plus Advantage on Concentration saves.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Empowered Transmutation",
+            "desc": "Slot-cast Transmutation spells that make no attack roll and force no save count as one level higher. Uses equal to Intelligence modifier (min 1) per Long Rest.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Potent Stone",
+            "desc": "Your stone carries two benefits (Resistance can be taken twice for different types), and adds Mighty Build (Advantage on Strength saves, carry as one size larger) and Tremorsense 30 feet to the options.",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Shape-Shifter",
+            "desc": "Polymorph is always prepared and castable free once per Long Rest. Once per Long Rest, polymorphing yourself lets you keep your mind, mental scores, proficiencies, class features, and feats, and cast Transmutation spells without costly or consumed materials.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Master Transmuter",
+            "desc": "Magic action: spend the stone's power (a level 7+ slot keeps it intact). Major Transformation (10 minutes to turn a nonmagical object up to a 10-foot Cube into another of similar size and equal or lesser value), Panacea (heal half max HP, cure magical contagions and curses, end Poisoned and Petrified), Restore Life (free Raise Dead), or Restore Youth (Exhaustion to 0, 3d10 years younger).",
+            "choice_is_prose": false
+          }
+        ]
+      }
     ]
-   }
-  ]
- },
- {
-  "class": "Monk",
-  "name": "Warrior of the Mystic Arts",
-  "key": "kc-au_warrior-of-the-mystic-arts",
-  "edition": "2024",
-  "source": "kc",
-  "book": "Arcana Unleashed",
-  "features_by_level": [
-   {
-    "level": 3,
-    "features": [
-     {
-      "name": "Spellcasting",
-      "desc": "Third-caster using the Sorcerer list and Wisdom, with an Arcane Focus allowed. Two Sorcerer cantrips (a third at Monk 10). Prepared spells grow from 3 at Monk 3 to 13 at Monk 20, with slots up to level 4 (level 4 at Monk 19). Swap one prepared spell per Monk level. Counts one third of Monk levels for multiclass slots.",
-      "choice_is_prose": false
-     }
+  },
+  {
+    "class": "Barbarian",
+    "name": "Path of the Wild Heart",
+    "key": "kc-phb24_path-of-the-wild-heart",
+    "edition": "2024",
+    "source": "kc",
+    "book": "Player's Handbook",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Animal Speaker",
+            "desc": "Cast Beast Sense and Speak with Animals as Rituals only, using Wisdom.",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Rage of the Wilds",
+            "desc": "Each time you Rage pick one: Bear (Resistance to all damage but Force, Necrotic, Psychic, Radiant), Eagle (Disengage and Dash as part of the Rage Bonus Action, and as a Bonus Action while raging), or Wolf (allies have Advantage on attacks against enemies within 5 feet of you).",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Aspect of the Wilds",
+            "desc": "Pick one, changeable after a Long Rest: Owl (Darkvision 60 feet, or +60 if you have it), Panther (Climb Speed equal to Speed), or Salmon (Swim Speed equal to Speed).",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Nature Speaker",
+            "desc": "Cast Commune with Nature as a Ritual only, using Wisdom.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Power of the Wilds",
+            "desc": "Each time you Rage pick one: Falcon (Fly Speed equal to Speed while unarmored), Lion (enemies within 5 feet have Disadvantage attacking anyone but you), or Ram (melee hits can knock a Large or smaller creature Prone).",
+            "choice_is_prose": false
+          }
+        ]
+      }
     ]
-   },
-   {
-    "level": 6,
-    "features": [
-     {
-      "name": "Mystic Fighting Style",
-      "desc": "When you take the Attack action, one Unarmed Strike can be replaced with an action-cast Sorcerer cantrip.",
-      "choice_is_prose": false
-     },
-     {
-      "name": "Mystic Focus",
-      "desc": "Expend a spell slot to regain Focus Points equal to its level. On a Short Rest or Uncanny Metabolism, spend Focus Points to recover one slot: level 1 for 2 FP (Monk 6), 2 for 3 FP (Monk 7), 3 for 5 FP (Monk 13), 4 for 6 FP (Monk 19).",
-      "choice_is_prose": false
-     }
+  },
+  {
+    "class": "Barbarian",
+    "name": "Path of the World Tree",
+    "key": "kc-phb24_path-of-the-world-tree",
+    "edition": "2024",
+    "source": "kc",
+    "book": "Player's Handbook",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Vitality of the Tree",
+            "desc": "Gain Temporary Hit Points equal to your Barbarian level when you Rage. While raging, at the start of each turn give another creature within 10 feet Temporary Hit Points equal to a number of d6s equal to your Rage Damage bonus; they vanish when the Rage ends.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Branches of the Tree",
+            "desc": "Reaction while raging when a creature starts its turn within 30 feet: Strength save (DC 8 + Strength mod + Proficiency Bonus) or it is teleported next to you, and you can drop its Speed to 0 for the turn.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Battering Roots",
+            "desc": "On your turn, +10 feet reach with Heavy or Versatile melee weapons, and a hit can also apply Push or Topple alongside the weapon's other mastery.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Travel along the Tree",
+            "desc": "Teleport up to 60 feet when you Rage and as a Bonus Action while raging. Once per Rage, make it 150 feet and bring up to six willing creatures within 10 feet.",
+            "choice_is_prose": false
+          }
+        ]
+      }
     ]
-   },
-   {
-    "level": 11,
-    "features": [
-     {
-      "name": "Focused Strike",
-      "desc": "A Stunning Strike target, whether it saves or not, has Disadvantage on saves against your spells until the start of your next turn.",
-      "choice_is_prose": false
-     }
+  },
+  {
+    "class": "Barbarian",
+    "name": "Path of the Zealot",
+    "key": "kc-phb24_path-of-the-zealot",
+    "edition": "2024",
+    "source": "kc",
+    "book": "Player's Handbook",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Divine Fury",
+            "desc": "While raging, the first creature you hit each turn with a weapon or Unarmed Strike takes an extra 1d6 + half your Barbarian level, Necrotic or Radiant.",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Warrior of the Gods",
+            "desc": "A pool of four d12s (5 at level 6, 6 at 12, 7 at 17) to spend as a Bonus Action healing yourself; refills on a Long Rest.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Fanatical Focus",
+            "desc": "Once per Rage, reroll a failed save with a bonus equal to your Rage Damage bonus.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Zealous Presence",
+            "desc": "Bonus Action: up to ten creatures within 60 feet gain Advantage on attacks and saves until your next turn. Once per Long Rest, or restore it by spending a Rage use.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Rage of the Gods",
+            "desc": "When you Rage, become a divine warrior for 1 minute, once per Long Rest: fly and hover at your Speed, Resistance to Necrotic, Psychic and Radiant, and a Reaction plus a Rage use to set a creature within 30 feet dropping to 0 Hit Points to your Barbarian level instead.",
+            "choice_is_prose": false
+          }
+        ]
+      }
     ]
-   },
-   {
-    "level": 17,
-    "features": [
-     {
-      "name": "Improved Mystic Fighting Style",
-      "desc": "With Flurry of Blows, swap two Unarmed Strikes for an action-cast level 1 or 2 Sorcerer spell, cast as part of that Bonus Action.",
-      "choice_is_prose": false
-     }
+  },
+  {
+    "class": "Bard",
+    "name": "College of Dance",
+    "key": "kc-phb24_college-of-dance",
+    "edition": "2024",
+    "source": "kc",
+    "book": "Player's Handbook",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Dazzling Footwork",
+            "desc": "Without armor or a Shield: Advantage on dance Performance checks, AC 10 + DEX + CHA, an Unarmed Strike whenever you spend Bardic Inspiration as part of an action, Bonus Action or Reaction, and Unarmed Strikes that use DEX and deal your Bardic Inspiration die + DEX Bludgeoning.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Inspiring Movement",
+            "desc": "Reaction when an enemy ends its turn within 5 feet: spend Bardic Inspiration to move half your Speed, and an ally within 30 feet can use its Reaction to do the same, without Opportunity Attacks.",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Tandem Footwork",
+            "desc": "When you roll Initiative, spend Bardic Inspiration: you and allies within 30 feet add the die roll to Initiative.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Leading Evasion",
+            "desc": "Dexterity saves for half damage: none on a success, half on a failure, and creatures within 5 feet making the same save share it.",
+            "choice_is_prose": false
+          }
+        ]
+      }
     ]
-   }
-  ]
- },
- {
-  "class": "Warlock",
-  "name": "Vestige Patron",
-  "key": "kc-au_vestige-patron",
-  "edition": "2024",
-  "source": "kc",
-  "book": "Arcana Unleashed",
-  "features_by_level": [
-   {
-    "level": 3,
-    "features": [
-     {
-      "name": "Vestige Companion",
-      "desc": "A Small Celestial, Fiend, or Undead companion (AC 13 + Charisma modifier, HP 4 + 4 per Warlock level, Fly 30 hover) acts on your turn. It Dodges unless you spend a Bonus Action, or give up one of your attacks, to have it act. Vestige's Strike: spell-attack, 5 feet or 60 feet, 1d6 + 3 + Charisma modifier damage of its type. Divine Power once per day: Undead curse (Disadvantage attacking you and it), Fiend place-swap within 60 feet, or Celestial heal 2d8 + Charisma modifier and end Blinded, Deafened, or Poisoned. Re-manifest with a 1-minute ceremony; reshape it on a Long Rest.",
-      "choice_is_prose": false
-     },
-     {
-      "name": "Vestige Spells",
-      "desc": "Choose the Life, Light, Trickery, or War domain. Its domain spells count as Warlock spells and are always prepared when your Warlock level reaches the listed Cleric level.",
-      "choice_is_prose": false
-     }
+  },
+  {
+    "class": "Bard",
+    "name": "College of Glamour",
+    "key": "kc-phb24_college-of-glamour",
+    "edition": "2024",
+    "source": "kc",
+    "book": "Player's Handbook",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Beguiling Magic",
+            "desc": "Charm Person and Mirror Image always prepared. After casting an Enchantment or Illusion spell with a slot, a creature within 60 feet makes a Wisdom save or is Charmed or Frightened for 1 minute (repeats each turn). Once per Long Rest, or restore it with Bardic Inspiration.",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Mantle of Inspiration",
+            "desc": "Bonus Action, spend Bardic Inspiration: up to CHA mod creatures within 60 feet gain Temporary Hit Points equal to twice the die roll and can move their Speed as a Reaction without Opportunity Attacks.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Mantle of Majesty",
+            "desc": "Command always prepared. Bonus Action: cast Command without a slot and keep casting it as a Bonus Action for 1 minute while concentrating; your Charmed targets auto-fail. Once per Long Rest, or restore it with a level 3+ slot.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Unbreakable Majesty",
+            "desc": "Bonus Action for 1 minute: the first attack roll that hits you each turn misses unless the attacker passes a Charisma save. Once per Short or Long Rest.",
+            "choice_is_prose": false
+          }
+        ]
+      }
     ]
-   },
-   {
-    "level": 6,
-    "features": [
-     {
-      "name": "Vestige Power",
-      "desc": "Divine Power recharges on a Short or Long Rest or when you use Magical Cunning. Within 30 feet of the vestige, you share its damage Resistance.",
-      "choice_is_prose": false
-     }
+  },
+  {
+    "class": "Bard",
+    "name": "College of Valor",
+    "key": "kc-phb24_college-of-valor",
+    "edition": "2024",
+    "source": "kc",
+    "book": "Player's Handbook",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Combat Inspiration",
+            "desc": "A creature holding your Bardic Inspiration can add the die to its AC against a hit (Reaction) or to the damage of a hit.",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Martial Training",
+            "desc": "Proficiency with Martial weapons, training with Medium armor and Shields, and Simple or Martial weapons work as a Bard Spellcasting Focus.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Extra Attack",
+            "desc": "Attack twice with the Attack action, and one attack can be an action cantrip.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Battle Magic",
+            "desc": "After casting an action spell, make one weapon attack as a Bonus Action.",
+            "choice_is_prose": false
+          }
+        ]
+      }
     ]
-   },
-   {
-    "level": 10,
-    "features": [
-     {
-      "name": "Vestige Recovery",
-      "desc": "Reaction when the vestige would drop to 0 HP: spend a Pact Magic slot to restore it to full HP and teleport it 30 feet. Once per Long Rest.",
-      "choice_is_prose": false
-     }
+  },
+  {
+    "class": "Cleric",
+    "name": "Light Domain",
+    "key": "kc-phb24_light-domain",
+    "edition": "2024",
+    "source": "kc",
+    "book": "Player's Handbook",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Light Domain Spells",
+            "desc": "Always prepared: Burning Hands, Faerie Fire, Scorching Ray, See Invisibility (3); Daylight, Fireball (5); Arcane Eye, Wall of Fire (7); Flame Strike, Scrying (9).",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Radiance of the Dawn",
+            "desc": "Magic action, spend Channel Divinity: a 30-foot Emanation dispels magical Darkness, and chosen creatures make a Constitution save for 2d10 + Cleric level Radiant, half on a success.",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Warding Flare",
+            "desc": "Reaction: impose Disadvantage on an attack roll by a creature within 30 feet. WIS mod uses per Long Rest.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Improved Warding Flare",
+            "desc": "Warding Flare recharges on a Short Rest too, and its target gains 2d6 + WIS mod Temporary Hit Points.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 17,
+        "features": [
+          {
+            "name": "Corona of Light",
+            "desc": "Magic action: 60-foot Bright Light aura for 1 minute; enemies in it have Disadvantage on saves against Radiance of the Dawn and Fire or Radiant spells. WIS mod uses per Long Rest.",
+            "choice_is_prose": false
+          }
+        ]
+      }
     ]
-   },
-   {
-    "level": 14,
-    "features": [
-     {
-      "name": "Semblance of Life",
-      "desc": "Magic action, vestige within 90 feet: for 1 hour it becomes a Celestial, Fiendish, or Undead Spirit from the matching Summon spell at half your Warlock level (max 9), keeping its personality, Divine Power, HP, and Hit Dice, plus Temporary Hit Points equal to the spirit's HP. Once per Long Rest.",
-      "choice_is_prose": false
-     }
+  },
+  {
+    "class": "Cleric",
+    "name": "Trickery Domain",
+    "key": "kc-phb24_trickery-domain",
+    "edition": "2024",
+    "source": "kc",
+    "book": "Player's Handbook",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Blessing of the Trickster",
+            "desc": "Magic action: you or a willing creature within 30 feet has Advantage on Stealth checks until your next Long Rest or until you use it again.",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Trickery Domain Spells",
+            "desc": "Always prepared: Charm Person, Disguise Self, Invisibility, Pass without Trace (3); Hypnotic Pattern, Nondetection (5); Confusion, Dimension Door (7); Dominate Person, Modify Memory (9).",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Invoke Duplicity",
+            "desc": "Bonus Action, spend Channel Divinity: an illusory double within 30 feet for 1 minute. Cast spells from its space, gain Advantage against creatures within 5 feet of both of you, and move it 30 feet as a Bonus Action.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Trickster's Transposition",
+            "desc": "When you create or move the double, you can swap places with it.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 17,
+        "features": [
+          {
+            "name": "Improved Duplicity",
+            "desc": "You and allies have Advantage attacking creatures within 5 feet of the double, and when it ends you or a creature within 5 feet of it regains Hit Points equal to your Cleric level.",
+            "choice_is_prose": false
+          }
+        ]
+      }
     ]
-   }
-  ]
- },
- {
-  "class": "Wizard",
-  "name": "Conjurer",
-  "key": "kc-au_conjurer",
-  "edition": "2024",
-  "source": "kc",
-  "book": "Arcana Unleashed",
-  "features_by_level": [
-   {
-    "level": 3,
-    "features": [
-     {
-      "name": "Benign Transposition",
-      "desc": "Bonus Action: teleport 30 feet, or swap places with a willing Medium or smaller creature in range. Uses equal to Intelligence modifier (min 1) per Long Rest.",
-      "choice_is_prose": false
-     },
-     {
-      "name": "Conjuration Savant",
-      "desc": "Add two Conjuration spells of level 2 or lower to your spellbook free, plus one more each time you gain a new spell slot level.",
-      "choice_is_prose": false
-     }
+  },
+  {
+    "class": "Cleric",
+    "name": "War Domain",
+    "key": "kc-phb24_war-domain",
+    "edition": "2024",
+    "source": "kc",
+    "book": "Player's Handbook",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Guided Strike",
+            "desc": "Spend Channel Divinity to add +10 to a missed attack roll by you or (as a Reaction) a creature within 30 feet.",
+            "choice_is_prose": false
+          },
+          {
+            "name": "War Domain Spells",
+            "desc": "Always prepared: Guiding Bolt, Magic Weapon, Shield of Faith, Spiritual Weapon (3); Crusader's Mantle, Spirit Guardians (5); Fire Shield, Freedom of Movement (7); Hold Monster, Steel Wind Strike (9).",
+            "choice_is_prose": false
+          },
+          {
+            "name": "War Priest",
+            "desc": "Bonus Action weapon attack or Unarmed Strike, WIS mod uses per Short or Long Rest.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "War God's Blessing",
+            "desc": "Spend Channel Divinity to cast Shield of Faith or Spiritual Weapon without a slot and without Concentration, lasting 1 minute.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 17,
+        "features": [
+          {
+            "name": "Avatar of Battle",
+            "desc": "Resistance to Bludgeoning, Piercing and Slashing damage.",
+            "choice_is_prose": false
+          }
+        ]
+      }
     ]
-   },
-   {
-    "level": 6,
-    "features": [
-     {
-      "name": "Distant Transposition",
-      "desc": "Benign Transposition reaches 60 feet, and a level 3+ slot restores one use.",
-      "choice_is_prose": false
-     },
-     {
-      "name": "Durable Summons",
-      "desc": "Creatures you summon or create with a slot-cast Conjuration spell arrive with Temporary Hit Points equal to twice your Wizard level, and resist all damage except Force, Necrotic, Psychic, and Radiant while those last.",
-      "choice_is_prose": false
-     }
+  },
+  {
+    "class": "Druid",
+    "name": "Circle of the Moon",
+    "key": "kc-phb24_circle-of-the-moon",
+    "edition": "2024",
+    "source": "kc",
+    "book": "Player's Handbook",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Circle Forms",
+            "desc": "Wild Shape forms up to CR Druid level / 3, AC at least 13 + WIS mod, and Temporary Hit Points equal to three times your Druid level.",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Circle of the Moon Spells",
+            "desc": "Always prepared, and castable in Wild Shape: Cure Wounds, Moonbeam, Starry Wisp (3); Conjure Animals (5); Fount of Moonlight (7); Mass Cure Wounds (9).",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Improved Circle Forms",
+            "desc": "In Wild Shape, attacks can deal Radiant instead of their normal type, and add WIS mod to Constitution saves.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Moonlight Step",
+            "desc": "Bonus Action teleport 30 feet with Advantage on your next attack this turn. WIS mod uses per Long Rest; restore one per level 2+ slot.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Lunar Form",
+            "desc": "Once per turn an extra 2d10 Radiant on a Wild Shape hit, and Moonlight Step can bring a willing creature within 10 feet.",
+            "choice_is_prose": false
+          }
+        ]
+      }
     ]
-   },
-   {
-    "level": 10,
-    "features": [
-     {
-      "name": "Focused Conjuration",
-      "desc": "Taking damage can't break your Concentration on Conjuration spells.",
-      "choice_is_prose": false
-     }
+  },
+  {
+    "class": "Druid",
+    "name": "Circle of the Sea",
+    "key": "kc-phb24_circle-of-the-sea",
+    "edition": "2024",
+    "source": "kc",
+    "book": "Player's Handbook",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Circle of the Sea Spells",
+            "desc": "Always prepared: Fog Cloud, Gust of Wind, Ray of Frost, Shatter, Thunderwave (3); Lightning Bolt, Water Breathing (5); Control Water, Ice Storm (7); Conjure Elemental, Hold Monster (9).",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Wrath of the Sea",
+            "desc": "Bonus Action, spend Wild Shape: a 5-foot Emanation for 10 minutes. On creation and as a Bonus Action, a creature in it makes a Constitution save or takes WIS mod d6 Cold and, if Large or smaller, is pushed 15 feet.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Aquatic Affinity",
+            "desc": "The Emanation grows to 10 feet, and you gain a Swim Speed equal to your Speed.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Stormborn",
+            "desc": "While Wrath of the Sea is active: Fly Speed equal to your Speed and Resistance to Cold, Lightning and Thunder.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Oceanic Gift",
+            "desc": "Place the Emanation on a willing creature within 60 feet instead, or on both of you for two Wild Shape uses.",
+            "choice_is_prose": false
+          }
+        ]
+      }
     ]
-   },
-   {
-    "level": 14,
-    "features": [
-     {
-      "name": "Splintered Summons",
-      "desc": "When a slot-cast spell summons a spirit with its own stat block (Summon Aberration and the like), summon two at half HP each. Once per Long Rest, or restore it with a level 5+ slot.",
-      "choice_is_prose": false
-     }
+  },
+  {
+    "class": "Druid",
+    "name": "Circle of the Stars",
+    "key": "kc-phb24_circle-of-the-stars",
+    "edition": "2024",
+    "source": "kc",
+    "book": "Player's Handbook",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Star Map",
+            "desc": "A Tiny star chart that is a Spellcasting Focus. While holding it, Guidance and Guiding Bolt are prepared and Guiding Bolt can be cast without a slot WIS mod times per Long Rest.",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Starry Form",
+            "desc": "Bonus Action, spend Wild Shape: a glowing form for 10 minutes with one constellation. Archer: Bonus Action ranged spell attack for 1d8 + WIS Radiant. Chalice: healing spells also heal a creature within 30 feet for 1d8 + WIS. Dragon: treat 9 or lower as 10 on INT and WIS checks and Concentration saves.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Cosmic Omen",
+            "desc": "After a Long Rest roll a die: even lets you add 1d6 to a D20 Test within 30 feet, odd lets you subtract 1d6, as a Reaction. WIS mod uses per Long Rest.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Twinkling Constellations",
+            "desc": "Archer and Chalice become 2d8, Dragon grants Fly 20 feet with hover, and you can switch constellation at the start of each turn.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Full of Stars",
+            "desc": "In Starry Form, Resistance to Bludgeoning, Piercing and Slashing damage.",
+            "choice_is_prose": false
+          }
+        ]
+      }
     ]
-   }
-  ]
- },
- {
-  "class": "Wizard",
-  "name": "Enchanter",
-  "key": "kc-au_enchanter",
-  "edition": "2024",
-  "source": "kc",
-  "book": "Arcana Unleashed",
-  "features_by_level": [
-   {
-    "level": 3,
-    "features": [
-     {
-      "name": "Enchanting Conversationalist",
-      "desc": "Gain Deception, Intimidation, or Persuasion proficiency and add your Intelligence modifier (min +1) to checks with it.",
-      "choice_is_prose": false
-     },
-     {
-      "name": "Enchantment Savant",
-      "desc": "Add two Enchantment spells of level 2 or lower to your spellbook free, plus one more each time you gain a new spell slot level.",
-      "choice_is_prose": false
-     },
-     {
-      "name": "Hypnotic Presence",
-      "desc": "Magic action, creature within 10 feet that can see or hear you: Wisdom save or Charmed, Incapacitated, and Speed 0 for up to 1 minute (ends if it moves beyond 10 feet, loses sight and sound of you, or takes damage). Uses equal to Intelligence modifier (min 1) per Long Rest.",
-      "choice_is_prose": false
-     }
+  },
+  {
+    "class": "Fighter",
+    "name": "Battle Master",
+    "key": "kc-phb24_battle-master",
+    "edition": "2024",
+    "source": "kc",
+    "book": "Player's Handbook",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Combat Superiority",
+            "desc": "Four d8 Superiority Dice (five at level 7, six at 15), regained on a Short or Long Rest. Learn three maneuvers, two more at levels 7, 10 and 15, swapping one each time. One maneuver per attack; save DC 8 + STR or DEX mod + Proficiency Bonus.",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Student of War",
+            "desc": "Proficiency with one type of Artisan's Tools and one Fighter skill of your choice.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 7,
+        "features": [
+          {
+            "name": "Know Your Enemy",
+            "desc": "Bonus Action: learn a creature's Immunities, Resistances and Vulnerabilities within 30 feet. Once per Long Rest, or restore it with a Superiority Die.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Improved Combat Superiority",
+            "desc": "Superiority Dice become d10s.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 15,
+        "features": [
+          {
+            "name": "Relentless",
+            "desc": "Once per turn, use a d8 for a maneuver instead of spending a Superiority Die.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 18,
+        "features": [
+          {
+            "name": "Ultimate Combat Superiority",
+            "desc": "Superiority Dice become d12s.",
+            "choice_is_prose": false
+          }
+        ]
+      }
     ]
-   },
-   {
-    "level": 6,
-    "features": [
-     {
-      "name": "Split Enchantment",
-      "desc": "When slot-casting an Enchantment spell that adds targets at higher levels, treat it as one level higher. Uses equal to Intelligence modifier per Long Rest.",
-      "choice_is_prose": false
-     }
+  },
+  {
+    "class": "Fighter",
+    "name": "Eldritch Knight",
+    "key": "kc-phb24_eldritch-knight",
+    "edition": "2024",
+    "source": "kc",
+    "book": "Player's Handbook",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Spellcasting",
+            "desc": "Third-caster from the Wizard list using Intelligence: two Wizard cantrips (three at level 10), prepared spells from 3 at level 3 to 13 at level 20, spell slots up to level 4 (level 4 at Fighter 19). Swap a cantrip each Fighter level.",
+            "choice_is_prose": false
+          },
+          {
+            "name": "War Bond",
+            "desc": "A 1-hour ritual bonds up to two weapons: you cannot be disarmed of them unless Incapacitated, and you can summon one to your hand as a Bonus Action from the same plane.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 7,
+        "features": [
+          {
+            "name": "War Magic",
+            "desc": "Replace one attack of the Attack action with an action-cast Wizard cantrip.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Eldritch Strike",
+            "desc": "A weapon hit gives the target Disadvantage on its next save against your spell before the end of your next turn.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 15,
+        "features": [
+          {
+            "name": "Arcane Charge",
+            "desc": "Teleport up to 30 feet when you use Action Surge, before or after the extra action.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 18,
+        "features": [
+          {
+            "name": "Improved War Magic",
+            "desc": "Replace two attacks of the Attack action with an action-cast level 1 or 2 Wizard spell.",
+            "choice_is_prose": false
+          }
+        ]
+      }
     ]
-   },
-   {
-    "level": 10,
-    "features": [
-     {
-      "name": "Instinctive Charm",
-      "desc": "Reaction when a creature within 30 feet hits you: Wisdom save or the attack misses and is redirected, with the same roll, to another creature in range of your choice. Once per Long Rest; recharges when you slot-cast an Enchantment spell.",
-      "choice_is_prose": false
-     }
+  },
+  {
+    "class": "Fighter",
+    "name": "Psi Warrior",
+    "key": "kc-phb24_psi-warrior",
+    "edition": "2024",
+    "source": "kc",
+    "book": "Player's Handbook",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Psionic Power",
+            "desc": "Psionic Energy Dice: four d6 at level 3, six d8 at 5, eight d8 at 9, eight d10 at 11, ten d10 at 13, twelve d12 at 17; regain one on a Short Rest, all on a Long Rest. Protective Field: Reaction, spend a die to cut damage to you or a creature within 30 feet by the roll + INT mod. Psionic Strike: once per turn after a weapon hit within 30 feet, spend a die for roll + INT mod Force. Telekinetic Movement: Magic action, move a Large or smaller loose object or willing creature 30 feet, once per Short Rest or by spending a die.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 7,
+        "features": [
+          {
+            "name": "Telekinetic Adept",
+            "desc": "Psi-Powered Leap: Bonus Action Fly Speed of twice your Speed this turn, once per Short Rest or by spending a die. Telekinetic Thrust: a Psionic Strike target makes a Strength save (DC 8 + INT mod + Proficiency Bonus) or is knocked Prone or moved 10 feet.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Guarded Mind",
+            "desc": "Resistance to Psychic damage, and spend a die at the start of your turn to end Charmed and Frightened effects on you.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 15,
+        "features": [
+          {
+            "name": "Bulwark of Force",
+            "desc": "Bonus Action: up to INT mod creatures within 30 feet gain Half Cover for 1 minute. Once per Long Rest, or restore it with a die.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 18,
+        "features": [
+          {
+            "name": "Telekinetic Master",
+            "desc": "Telekinesis always prepared and castable without slot or components using INT, with a Bonus Action weapon attack each turn while concentrating. Once per Long Rest, or restore it with a die.",
+            "choice_is_prose": false
+          }
+        ]
+      }
     ]
-   },
-   {
-    "level": 14,
-    "features": [
-     {
-      "name": "Alter Memories",
-      "desc": "One creature you Charm with a slot-cast Enchantment spell doesn't know it was Charmed. Once during the spell, a Magic action forces an Intelligence save; on a failure it loses up to 1 + Intelligence modifier hours of memory, within the spell's duration.",
-      "choice_is_prose": false
-     }
+  },
+  {
+    "class": "Monk",
+    "name": "Warrior of Mercy",
+    "key": "kc-phb24_warrior-of-mercy",
+    "edition": "2024",
+    "source": "kc",
+    "book": "Player's Handbook",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Hand of Harm",
+            "desc": "Once per turn on an Unarmed Strike hit, spend 1 Focus Point for an extra Martial Arts die + WIS mod Necrotic.",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Hand of Healing",
+            "desc": "Magic action, 1 Focus Point: touch heals a Martial Arts die + WIS mod. One Flurry of Blows strike can be replaced by a free Hand of Healing.",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Implements of Mercy",
+            "desc": "Proficiency in Insight and Medicine and with the Herbalism Kit.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Physician's Touch",
+            "desc": "Hand of Harm can also Poison until the end of your next turn; Hand of Healing can also end Blinded, Deafened, Paralyzed, Poisoned or Stunned.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 11,
+        "features": [
+          {
+            "name": "Flurry of Healing and Harm",
+            "desc": "With Flurry of Blows, replace each strike with a free Hand of Healing, and apply Hand of Harm free on a Flurry hit (still once per turn). WIS mod uses per Long Rest.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 17,
+        "features": [
+          {
+            "name": "Hand of Ultimate Mercy",
+            "desc": "Magic action, 5 Focus Points: return a creature dead under 24 hours to life with 4d10 + WIS mod Hit Points, clearing those five conditions. Once per Long Rest.",
+            "choice_is_prose": false
+          }
+        ]
+      }
     ]
-   }
-  ]
- },
- {
-  "class": "Wizard",
-  "name": "Necromancer",
-  "key": "kc-au_necromancer",
-  "edition": "2024",
-  "source": "kc",
-  "book": "Arcana Unleashed",
-  "features_by_level": [
-   {
-    "level": 3,
-    "features": [
-     {
-      "name": "Necromancy Savant",
-      "desc": "Add two Necromancy spells of level 2 or lower to your spellbook free, plus one more each time you gain a new spell slot level.",
-      "choice_is_prose": false
-     },
-     {
-      "name": "Necromancy Spellbook",
-      "desc": "Resistance to Necrotic damage. Find Familiar enters your spellbook with Skeleton or Zombie forms (or any form as Undead), and you can give up an attack for the familiar to attack with its Reaction. Undead Vitality: a slot-cast Necromancy spell heals an Undead within 60 feet for the slot level + your Wizard level.",
-      "choice_is_prose": false
-     }
+  },
+  {
+    "class": "Monk",
+    "name": "Warrior of Shadow",
+    "key": "kc-phb24_warrior-of-shadow",
+    "edition": "2024",
+    "source": "kc",
+    "book": "Player's Handbook",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Shadow Arts",
+            "desc": "Spend 1 Focus Point to cast Darkness without components, seeing through it and moving it within 60 feet each turn. Darkvision 60 feet (or +60). Minor Illusion with Wisdom.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Shadow Step",
+            "desc": "In Dim Light or Darkness, Bonus Action teleport 60 feet to another such space, with Advantage on your next melee attack this turn.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 11,
+        "features": [
+          {
+            "name": "Improved Shadow Step",
+            "desc": "Spend 1 Focus Point to ignore the light requirement, and make an Unarmed Strike right after teleporting.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 17,
+        "features": [
+          {
+            "name": "Cloak of Shadows",
+            "desc": "Magic action in dim light or darkness, 3 Focus Points: for 1 minute you are Invisible, move through occupied spaces, and use Flurry of Blows for free.",
+            "choice_is_prose": false
+          }
+        ]
+      }
     ]
-   },
-   {
-    "level": 6,
-    "features": [
-     {
-      "name": "Grave Power",
-      "desc": "While holding your spellbook: Arcane Recovery also removes 1 Exhaustion level, and your Wizard spells and features ignore Necrotic Resistance.",
-      "choice_is_prose": false
-     },
-     {
-      "name": "Undead Thralls",
-      "desc": "Animate Dead is always prepared, castable free once per Long Rest, and always cast one level higher. While holding your spellbook, undead you create or summon gain extra HP equal to Intelligence modifier + half your Wizard level, and your undead within 60 feet add your Intelligence modifier (min 1) in Necrotic damage to their hits.",
-      "choice_is_prose": false
-     }
+  },
+  {
+    "class": "Monk",
+    "name": "Warrior of the Elements",
+    "key": "kc-phb24_warrior-of-the-elements",
+    "edition": "2024",
+    "source": "kc",
+    "book": "Player's Handbook",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Elemental Attunement",
+            "desc": "At the start of your turn spend 1 Focus Point for 10 minutes of: Unarmed Strike reach +10 feet, and hits can deal Acid, Cold, Fire, Lightning or Thunder with a Strength save to move the target 10 feet.",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Manipulate Elements",
+            "desc": "Elementalism cantrip, cast with Wisdom.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Elemental Burst",
+            "desc": "Magic action, 2 Focus Points: 20-foot-radius Sphere within 120 feet, Dexterity save for three Martial Arts dice of a chosen element, half on a success.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 11,
+        "features": [
+          {
+            "name": "Stride of the Elements",
+            "desc": "While attuned, Fly and Swim Speed equal to your Speed.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 17,
+        "features": [
+          {
+            "name": "Elemental Epitome",
+            "desc": "While attuned: Resistance to a chosen element (changeable each turn), Step of the Wind adds 20 feet and deals a Martial Arts die to creatures you pass, and once per turn an Unarmed Strike adds a Martial Arts die.",
+            "choice_is_prose": false
+          }
+        ]
+      }
     ]
-   },
-   {
-    "level": 10,
-    "features": [
-     {
-      "name": "Harvest Undead",
-      "desc": "Reaction when damage leaves you Bloodied but above 0 HP: drop one of your visible undead to 0 HP and regain HP equal to your Wizard level.",
-      "choice_is_prose": false
-     }
+  },
+  {
+    "class": "Paladin",
+    "name": "Oath of Glory",
+    "key": "kc-phb24_oath-of-glory",
+    "edition": "2024",
+    "source": "kc",
+    "book": "Player's Handbook",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Inspiring Smite",
+            "desc": "Right after casting Divine Smite, spend Channel Divinity to share 2d8 + Paladin level Temporary Hit Points among creatures within 30 feet, you included.",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Oath of Glory Spells",
+            "desc": "Always prepared: Guiding Bolt, Heroism (3); Enhance Ability, Magic Weapon (5); Haste, Protection from Energy (9); Compulsion, Freedom of Movement (13); Legend Lore, Yolande's Regal Presence (17).",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Peerless Athlete",
+            "desc": "Bonus Action, spend Channel Divinity: for 1 hour, Advantage on Athletics and Acrobatics and +10 feet to Long and High Jumps.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 7,
+        "features": [
+          {
+            "name": "Aura of Alacrity",
+            "desc": "Speed +10 feet, and an ally entering or starting its turn in your Aura of Protection gets +10 feet Speed until the end of its next turn.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 15,
+        "features": [
+          {
+            "name": "Glorious Defense",
+            "desc": "Reaction when you or a creature within 10 feet is hit: add CHA mod (min +1) to its AC against the attack, and if it misses, attack the attacker. CHA mod uses per Long Rest.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 20,
+        "features": [
+          {
+            "name": "Living Legend",
+            "desc": "Bonus Action for 10 minutes: Advantage on Charisma checks, a Reaction reroll of a failed save, and once per turn a missed weapon attack hits. Once per Long Rest, or restore it with a level 5 slot.",
+            "choice_is_prose": false
+          }
+        ]
+      }
     ]
-   },
-   {
-    "level": 14,
-    "features": [
-     {
-      "name": "Death's Master",
-      "desc": "While holding your spellbook. Bolster Undead: once per Long Rest, a Bonus Action gives your necromancy-made undead within 60 feet Temporary Hit Points equal to your Wizard level. Extinguish Undead: an undead you see dropping to 0 HP explodes in a 10-foot Emanation (d6s equal to half its remaining Hit Dice, Dexterity save for half, no Reactions on a failure); one you don't control costs a Reaction and a level 5+ slot.",
-      "choice_is_prose": false
-     }
+  },
+  {
+    "class": "Paladin",
+    "name": "Oath of the Ancients",
+    "key": "kc-phb24_oath-of-the-ancients",
+    "edition": "2024",
+    "source": "kc",
+    "book": "Player's Handbook",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Nature's Wrath",
+            "desc": "Magic action, spend Channel Divinity: chosen creatures within 15 feet make a Strength save or are Restrained for 1 minute (repeats each turn).",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Oath of the Ancients Spells",
+            "desc": "Always prepared: Ensnaring Strike, Speak with Animals (3); Misty Step, Moonbeam (5); Plant Growth, Protection from Energy (9); Ice Storm, Stoneskin (13); Commune with Nature, Tree Stride (17).",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 7,
+        "features": [
+          {
+            "name": "Aura of Warding",
+            "desc": "You and allies in your Aura of Protection have Resistance to Necrotic, Psychic and Radiant damage.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 15,
+        "features": [
+          {
+            "name": "Undying Sentinel",
+            "desc": "Once per Long Rest, drop to 1 Hit Point instead of 0 and regain three times your Paladin level. You stop aging and cannot be aged magically.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 20,
+        "features": [
+          {
+            "name": "Elder Champion",
+            "desc": "Bonus Action for 1 minute: enemies in your aura have Disadvantage on saves against your spells and Channel Divinity, you regain 10 Hit Points each turn, and action spells can be cast as a Bonus Action. Once per Long Rest, or restore it with a level 5 slot.",
+            "choice_is_prose": false
+          }
+        ]
+      }
     ]
-   }
-  ]
- },
- {
-  "class": "Wizard",
-  "name": "Transmuter",
-  "key": "kc-au_transmuter",
-  "edition": "2024",
-  "source": "kc",
-  "book": "Arcana Unleashed",
-  "features_by_level": [
-   {
-    "level": 3,
-    "features": [
-     {
-      "name": "Transmutation Savant",
-      "desc": "Add two Transmutation spells of level 2 or lower to your spellbook free, plus one more each time you gain a new spell slot level.",
-      "choice_is_prose": false
-     },
-     {
-      "name": "Transmuter's Stone",
-      "desc": "On a Long Rest, make a stone (also a Spellcasting Focus). Its bearer gains Constitution save proficiency plus one of: Darkvision 60 feet (or +60), Resistance to Acid, Cold, Fire, Lightning, Poison, or Thunder, or +10 Speed. Change the benefit when you slot-cast a Transmutation spell.",
-      "choice_is_prose": false
-     },
-     {
-      "name": "Wondrous Alteration",
-      "desc": "Alter Self is always prepared and castable free once per Long Rest, with bonuses: Dash as a Bonus Action underwater, Advantage on Deception checks while disguised, or 2d6 natural weapons plus Advantage on Concentration saves.",
-      "choice_is_prose": false
-     }
+  },
+  {
+    "class": "Paladin",
+    "name": "Oath of Vengeance",
+    "key": "kc-phb24_oath-of-vengeance",
+    "edition": "2024",
+    "source": "kc",
+    "book": "Player's Handbook",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Oath of Vengeance Spells",
+            "desc": "Always prepared: Bane, Hunter's Mark (3); Hold Person, Misty Step (5); Haste, Protection from Energy (9); Banishment, Dimension Door (13); Hold Monster, Scrying (17).",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Vow of Enmity",
+            "desc": "When you take the Attack action, spend Channel Divinity: Advantage on attacks against a creature within 30 feet for 1 minute; move the vow if it drops to 0 Hit Points.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 7,
+        "features": [
+          {
+            "name": "Relentless Avenger",
+            "desc": "An Opportunity Attack hit drops the target's Speed to 0 for the turn, and you can move half your Speed without provoking.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 15,
+        "features": [
+          {
+            "name": "Soul of Vengeance",
+            "desc": "Reaction after your Vow of Enmity target makes an attack roll: make a melee attack against it.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 20,
+        "features": [
+          {
+            "name": "Avenging Angel",
+            "desc": "Bonus Action for 10 minutes: Fly 60 feet with hover, and enemies starting their turn in your aura make a Wisdom save or are Frightened for 1 minute (attacks against them have Advantage). Once per Long Rest, or restore it with a level 5 slot.",
+            "choice_is_prose": false
+          }
+        ]
+      }
     ]
-   },
-   {
-    "level": 6,
-    "features": [
-     {
-      "name": "Empowered Transmutation",
-      "desc": "Slot-cast Transmutation spells that make no attack roll and force no save count as one level higher. Uses equal to Intelligence modifier (min 1) per Long Rest.",
-      "choice_is_prose": false
-     }
+  },
+  {
+    "class": "Ranger",
+    "name": "Beast Master",
+    "key": "kc-phb24_beast-master",
+    "edition": "2024",
+    "source": "kc",
+    "book": "Player's Handbook",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Primal Companion",
+            "desc": "A primal beast (Land, Sea or Sky stat block) that acts on your turn and Dodges unless you spend a Bonus Action to command it, or replace one of your attacks with its Beast's Strike. AC 13 + WIS mod; Hit Points 5 + 5 per Ranger level (Sky: 4 + 4 per level). Revive it within an hour with a Magic action and a spell slot; swap it after a Long Rest.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 7,
+        "features": [
+          {
+            "name": "Exceptional Training",
+            "desc": "When commanded with a Bonus Action, the beast can also Dash, Disengage, Dodge or Help as its Bonus Action, and its hits can deal Force damage.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 11,
+        "features": [
+          {
+            "name": "Bestial Fury",
+            "desc": "Beast's Strike happens twice when commanded, and the first hit each turn on your Hunter's Mark target adds that spell's bonus damage as Force.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 15,
+        "features": [
+          {
+            "name": "Share Spells",
+            "desc": "A spell you cast on yourself also affects the beast if it is within 30 feet.",
+            "choice_is_prose": false
+          }
+        ]
+      }
     ]
-   },
-   {
-    "level": 10,
-    "features": [
-     {
-      "name": "Potent Stone",
-      "desc": "Your stone carries two benefits (Resistance can be taken twice for different types), and adds Mighty Build (Advantage on Strength saves, carry as one size larger) and Tremorsense 30 feet to the options.",
-      "choice_is_prose": false
-     },
-     {
-      "name": "Shape-Shifter",
-      "desc": "Polymorph is always prepared and castable free once per Long Rest. Once per Long Rest, polymorphing yourself lets you keep your mind, mental scores, proficiencies, class features, and feats, and cast Transmutation spells without costly or consumed materials.",
-      "choice_is_prose": false
-     }
+  },
+  {
+    "class": "Ranger",
+    "name": "Fey Wanderer",
+    "key": "kc-phb24_fey-wanderer",
+    "edition": "2024",
+    "source": "kc",
+    "book": "Player's Handbook",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Dreadful Strikes",
+            "desc": "Once per turn per target, a weapon hit deals an extra 1d4 Psychic (1d6 at level 11).",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Fey Wanderer Spells",
+            "desc": "Always prepared: Charm Person (3), Misty Step (5), Summon Fey (9), Dimension Door (13), Mislead (17). Also a cosmetic Feywild gift.",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Otherworldly Glamour",
+            "desc": "Add WIS mod (min +1) to Charisma checks, and gain proficiency in Deception, Performance or Persuasion.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 7,
+        "features": [
+          {
+            "name": "Beguiling Twist",
+            "desc": "Advantage against Charmed and Frightened. Reaction when a creature within 120 feet succeeds against either: another creature makes a Wisdom save or is Charmed or Frightened for 1 minute.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 11,
+        "features": [
+          {
+            "name": "Fey Reinforcements",
+            "desc": "Summon Fey needs no Material component, once per Long Rest without a slot, and can drop Concentration for a 1-minute duration.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 15,
+        "features": [
+          {
+            "name": "Misty Wanderer",
+            "desc": "Misty Step without a slot WIS mod times per Long Rest, bringing a willing creature within 5 feet.",
+            "choice_is_prose": false
+          }
+        ]
+      }
     ]
-   },
-   {
-    "level": 14,
-    "features": [
-     {
-      "name": "Master Transmuter",
-      "desc": "Magic action: spend the stone's power (a level 7+ slot keeps it intact). Major Transformation (10 minutes to turn a nonmagical object up to a 10-foot Cube into another of similar size and equal or lesser value), Panacea (heal half max HP, cure magical contagions and curses, end Poisoned and Petrified), Restore Life (free Raise Dead), or Restore Youth (Exhaustion to 0, 3d10 years younger).",
-      "choice_is_prose": false
-     }
+  },
+  {
+    "class": "Ranger",
+    "name": "Gloom Stalker",
+    "key": "kc-phb24_gloom-stalker",
+    "edition": "2024",
+    "source": "kc",
+    "book": "Player's Handbook",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Dread Ambusher",
+            "desc": "Speed +10 feet on your first turn of combat; add WIS mod to Initiative; once per turn a weapon hit can add 2d6 Psychic, WIS mod uses per Long Rest.",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Gloom Stalker Spells",
+            "desc": "Always prepared: Disguise Self (3), Rope Trick (5), Fear (9), Greater Invisibility (13), Seeming (17).",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Umbral Sight",
+            "desc": "Darkvision 60 feet (or +60), and while in Darkness you are Invisible to creatures relying on Darkvision.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 7,
+        "features": [
+          {
+            "name": "Iron Mind",
+            "desc": "Proficiency in Wisdom saves, or Intelligence or Charisma saves if you already have it.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 11,
+        "features": [
+          {
+            "name": "Stalker's Flurry",
+            "desc": "Dreadful Strike becomes 2d8 and adds Sudden Strike (another attack against a creature within 5 feet of the target) or Mass Fear (the target and creatures within 10 feet make a Wisdom save or are Frightened until your next turn).",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 15,
+        "features": [
+          {
+            "name": "Shadowy Dodge",
+            "desc": "Reaction when attacked: impose Disadvantage, then teleport up to 30 feet.",
+            "choice_is_prose": false
+          }
+        ]
+      }
     ]
-   }
-  ]
- }
+  },
+  {
+    "class": "Rogue",
+    "name": "Arcane Trickster",
+    "key": "kc-phb24_arcane-trickster",
+    "edition": "2024",
+    "source": "kc",
+    "book": "Player's Handbook",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Spellcasting",
+            "desc": "Third-caster from the Wizard list using Intelligence: Mage Hand plus two Wizard cantrips (one more at level 10), prepared spells from 3 at level 3 to 13 at level 20, spell slots up to level 4. Swap one spell or cantrip (not Mage Hand) each Rogue level; Arcane Focus allowed.",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Mage Hand Legerdemain",
+            "desc": "Cast Mage Hand as a Bonus Action, make the hand Invisible, control it as a Bonus Action, and make Sleight of Hand checks through it.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 9,
+        "features": [
+          {
+            "name": "Magical Ambush",
+            "desc": "While Invisible, a creature you cast a spell on has Disadvantage on its saves against that spell this turn.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 13,
+        "features": [
+          {
+            "name": "Versatile Trickster",
+            "desc": "Your Cunning Strike Trip can also hit another creature within 5 feet of your Mage Hand.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 17,
+        "features": [
+          {
+            "name": "Spell Thief",
+            "desc": "Reaction to a spell that targets or includes you: the caster makes an Intelligence save or the spell fails against you and you steal a level 1+ spell you can cast, prepared for 8 hours while the caster loses it. Once per Long Rest.",
+            "choice_is_prose": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Rogue",
+    "name": "Assassin",
+    "key": "kc-phb24_assassin",
+    "edition": "2024",
+    "source": "kc",
+    "book": "Player's Handbook",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Assassinate",
+            "desc": "Advantage on Initiative; in the first round, Advantage on attacks against creatures that have not acted, and a Sneak Attack hit adds damage equal to your Rogue level.",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Assassin's Tools",
+            "desc": "A Disguise Kit and Poisoner's Kit, with proficiency in both.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 9,
+        "features": [
+          {
+            "name": "Infiltration Expertise",
+            "desc": "Mimic speech or handwriting after an hour of study, and Steady Aim no longer drops your Speed to 0.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 13,
+        "features": [
+          {
+            "name": "Envenom Weapons",
+            "desc": "Cunning Strike Poison also deals 2d6 Poison on a failed save, ignoring Resistance.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 17,
+        "features": [
+          {
+            "name": "Death Strike",
+            "desc": "A first-round Sneak Attack hit forces a Constitution save (DC 8 + DEX mod + Proficiency Bonus) or the damage is doubled.",
+            "choice_is_prose": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Rogue",
+    "name": "Soulknife",
+    "key": "kc-phb24_soulknife",
+    "edition": "2024",
+    "source": "kc",
+    "book": "Player's Handbook",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Psionic Power",
+            "desc": "Psionic Energy Dice (four d6 at 3, six d8 at 5, eight d8 at 9, eight d10 at 11, ten d10 at 13, twelve d12 at 17); one back on a Short Rest, all on a Long Rest. Psi-Bolstered Knack: add a die to a failed proficient check, spent only if it then succeeds. Psychic Whispers: Magic action, telepathy with up to Proficiency Bonus creatures for hours equal to a die roll, free once per Long Rest.",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Psychic Blades",
+            "desc": "On the Attack action or an Opportunity Attack, attack with a Psychic Blade: Simple Melee, Finesse, Thrown 60/120, 1d6 Psychic + ability mod, Vex mastery. A second blade as a Bonus Action deals 1d4.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 9,
+        "features": [
+          {
+            "name": "Soul Blades",
+            "desc": "Homing Strikes: add a die to a missed Psychic Blade attack, spent if it hits. Psychic Teleportation: Bonus Action, spend a die and teleport up to 10 times its roll in feet.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 13,
+        "features": [
+          {
+            "name": "Psychic Veil",
+            "desc": "Magic action: Invisible for 1 hour, ending when you deal damage or force a save. Once per Long Rest, or restore it with a die.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 17,
+        "features": [
+          {
+            "name": "Rend Mind",
+            "desc": "Psychic Blade Sneak Attack forces a Wisdom save (DC 8 + DEX mod + Proficiency Bonus) or Stunned for 1 minute (repeats each turn). Once per Long Rest, or restore it with three dice.",
+            "choice_is_prose": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Sorcerer",
+    "name": "Aberrant Sorcery",
+    "key": "kc-phb24_aberrant-sorcery",
+    "edition": "2024",
+    "source": "kc",
+    "book": "Player's Handbook",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Psionic Spells",
+            "desc": "Always prepared: Arms of Hadar, Calm Emotions, Detect Thoughts, Dissonant Whispers, Mind Sliver (3); Hunger of Hadar, Sending (5); Evard's Black Tentacles, Summon Aberration (7); Rary's Telepathic Bond, Telekinesis (9).",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Telepathic Speech",
+            "desc": "Bonus Action: telepathy with a creature within 30 feet, at a range of CHA mod miles, for minutes equal to your Sorcerer level.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Psionic Sorcery",
+            "desc": "Cast a level 1+ Psionic Spell by spending Sorcery Points equal to its level instead of a slot, with no Verbal, Somatic or non-costly Material components.",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Psychic Defenses",
+            "desc": "Resistance to Psychic damage and Advantage against Charmed and Frightened.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Revelation in Flesh",
+            "desc": "Bonus Action, 1+ Sorcery Points for 10 minutes, one benefit per point: Swim at twice Speed and breathe water, Fly at Speed with hover, see Invisible creatures within 60 feet, or squeeze through 1-inch gaps and slip restraints.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 18,
+        "features": [
+          {
+            "name": "Warping Implosion",
+            "desc": "Magic action: teleport up to 120 feet; creatures within 30 feet of where you left make a Strength save or take 3d10 Force and are pulled toward that space (half damage on a success). Once per Long Rest, or restore it with 5 Sorcery Points.",
+            "choice_is_prose": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Sorcerer",
+    "name": "Clockwork Sorcery",
+    "key": "kc-phb24_clockwork-sorcery",
+    "edition": "2024",
+    "source": "kc",
+    "book": "Player's Handbook",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Clockwork Spells",
+            "desc": "Always prepared: Aid, Alarm, Lesser Restoration, Protection from Evil and Good (3); Dispel Magic, Protection from Energy (5); Freedom of Movement, Summon Construct (7); Greater Restoration, Wall of Force (9). Plus a cosmetic manifestation of order.",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Restore Balance",
+            "desc": "Reaction: cancel Advantage and Disadvantage on a d20 roll by a creature within 60 feet. CHA mod uses per Long Rest.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Bastion of Law",
+            "desc": "Magic action, 1 to 5 Sorcery Points: a ward of that many d8s on you or a creature within 30 feet, spent to reduce damage, lasting until your next Long Rest.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Trance of Order",
+            "desc": "Bonus Action for 1 minute: attacks against you cannot have Advantage, and treat d20 rolls of 9 or lower as 10. Once per Long Rest, or restore it with 5 Sorcery Points.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 18,
+        "features": [
+          {
+            "name": "Clockwork Cavalcade",
+            "desc": "Magic action: a 30-foot Cube heals up to 100 Hit Points split as you like, repairs objects, and ends spells of level 6 or lower on chosen targets. Once per Long Rest, or restore it with 7 Sorcery Points.",
+            "choice_is_prose": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Sorcerer",
+    "name": "Wild Magic Sorcery",
+    "key": "kc-phb24_wild-magic-sorcery",
+    "edition": "2024",
+    "source": "kc",
+    "book": "Player's Handbook",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Wild Magic Surge",
+            "desc": "Once per turn after casting a Sorcerer spell with a slot, roll a d20; on a 20, roll on the Wild Magic Surge table in the Player's Handbook.",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Tides of Chaos",
+            "desc": "Give yourself Advantage on one D20 Test. Recharges when you cast a Sorcerer spell with a slot (which triggers a surge roll) or finish a Long Rest.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Bend Luck",
+            "desc": "Reaction, 1 Sorcery Point: add or subtract 1d4 from another creature's d20 roll.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Controlled Chaos",
+            "desc": "Roll twice on the Wild Magic Surge table and pick either.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 18,
+        "features": [
+          {
+            "name": "Tamed Surge",
+            "desc": "After casting a Sorcerer spell with a slot, choose any surge effect but the last row instead of rolling. Once per Long Rest.",
+            "choice_is_prose": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Warlock",
+    "name": "Archfey Patron",
+    "key": "kc-phb24_archfey-patron",
+    "edition": "2024",
+    "source": "kc",
+    "book": "Player's Handbook",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Archfey Spells",
+            "desc": "Always prepared: Calm Emotions, Faerie Fire, Misty Step, Phantasmal Force, Sleep (3); Blink, Plant Growth (5); Dominate Beast, Greater Invisibility (7); Dominate Person, Seeming (9).",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Steps of the Fey",
+            "desc": "Misty Step without a slot CHA mod times per Long Rest, adding Refreshing Step (you or a creature within 10 feet gains 1d10 Temporary Hit Points) or Taunting Step (creatures within 5 feet of where you left make a Wisdom save or have Disadvantage attacking anyone but you).",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Misty Escape",
+            "desc": "Cast Misty Step as a Reaction to taking damage, and add Disappearing Step (Invisible until your next turn or until you attack, deal damage or cast) and Dreadful Step (Wisdom save or 2d10 Psychic near either space).",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Beguiling Defenses",
+            "desc": "Immune to Charmed. Reaction when hit: halve the damage and the attacker makes a Wisdom save or takes the same Psychic damage. Once per Long Rest, or restore it with a Pact Magic slot.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Bewitching Magic",
+            "desc": "After casting an Enchantment or Illusion spell with an action and a slot, cast Misty Step free as part of that action.",
+            "choice_is_prose": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Warlock",
+    "name": "Celestial Patron",
+    "key": "kc-phb24_celestial-patron",
+    "edition": "2024",
+    "source": "kc",
+    "book": "Player's Handbook",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Celestial Spells",
+            "desc": "Always prepared: Aid, Cure Wounds, Guiding Bolt, Lesser Restoration, Light, Sacred Flame (3); Daylight, Revivify (5); Guardian of Faith, Wall of Fire (7); Greater Restoration, Summon Celestial (9).",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Healing Light",
+            "desc": "A pool of d6s equal to 1 + Warlock level; Bonus Action, spend up to CHA mod dice to heal you or a creature within 60 feet. Refills on a Long Rest.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Radiant Soul",
+            "desc": "Resistance to Radiant damage, and once per turn add CHA mod to one target of a Radiant or Fire spell.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Celestial Resilience",
+            "desc": "On Magical Cunning or a Short or Long Rest, gain Temporary Hit Points of Warlock level + CHA mod, and up to five creatures gain half your level + CHA mod.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Searing Vengeance",
+            "desc": "When you or an ally within 60 feet is about to make a Death Saving Throw, it regains half its Hit Point maximum and can stand, and chosen creatures within 30 feet take 2d8 + CHA mod Radiant and are Blinded this turn. Once per Long Rest.",
+            "choice_is_prose": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Warlock",
+    "name": "Great Old One Patron",
+    "key": "kc-phb24_great-old-one-patron",
+    "edition": "2024",
+    "source": "kc",
+    "book": "Player's Handbook",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Awakened Mind",
+            "desc": "Bonus Action: telepathy with a creature within 30 feet, at a range of CHA mod miles, for minutes equal to your Warlock level.",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Great Old One Spells",
+            "desc": "Always prepared: Detect Thoughts, Dissonant Whispers, Phantasmal Force, Tasha's Hideous Laughter (3); Clairvoyance, Hunger of Hadar (5); Confusion, Summon Aberration (7); Modify Memory, Telekinesis (9).",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Psychic Spells",
+            "desc": "Warlock damage spells can deal Psychic instead, and Warlock Enchantment and Illusion spells need no Verbal or Somatic components.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Clairvoyant Combatant",
+            "desc": "When you link with Awakened Mind, the creature makes a Wisdom save or has Disadvantage attacking you while you have Advantage attacking it for the link's duration. Once per Short or Long Rest, or restore it with a Pact Magic slot.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Eldritch Hex",
+            "desc": "Hex always prepared, and its target also has Disadvantage on saves of the chosen ability.",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Thought Shield",
+            "desc": "Your thoughts cannot be read without consent, Resistance to Psychic damage, and creatures that deal Psychic damage to you take the same amount.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Create Thrall",
+            "desc": "Summon Aberration can skip Concentration for a 1-minute duration, gains Temporary Hit Points of Warlock level + CHA mod, and adds your Hex bonus to its first hit each turn on the hexed target.",
+            "choice_is_prose": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Wizard",
+    "name": "Abjurer",
+    "key": "kc-phb24_abjurer",
+    "edition": "2024",
+    "source": "kc",
+    "book": "Player's Handbook",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Abjuration Savant",
+            "desc": "Add two Abjuration Wizard spells of level 2 or lower to your spellbook free, and one more each time you gain a new spell slot level.",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Arcane Ward",
+            "desc": "Casting an Abjuration spell with a slot creates a ward (once per Long Rest) with Hit Points of twice your Wizard level + INT mod that absorbs damage to you. Abjuration spells restore twice the slot level; a Bonus Action and a slot does the same.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Projected Ward",
+            "desc": "Reaction: your Arcane Ward absorbs damage to a creature within 30 feet.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Spell Breaker",
+            "desc": "Counterspell and Dispel Magic always prepared; Dispel Magic as a Bonus Action adding your Proficiency Bonus; a failed attempt keeps the slot.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Spell Resistance",
+            "desc": "Advantage on saves against spells and Resistance to spell damage.",
+            "choice_is_prose": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Wizard",
+    "name": "Diviner",
+    "key": "kc-phb24_diviner",
+    "edition": "2024",
+    "source": "kc",
+    "book": "Player's Handbook",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Divination Savant",
+            "desc": "Add two Divination Wizard spells of level 2 or lower to your spellbook free, and one more each time you gain a new spell slot level.",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Portent",
+            "desc": "After each Long Rest roll two d20s; before any D20 Test by you or a creature you can see, replace the roll with one of them, once per turn.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Expert Divination",
+            "desc": "Casting a Divination spell with a level 2+ slot restores one lower-level expended slot (level 5 or lower).",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "The Third Eye",
+            "desc": "Bonus Action until your next rest, once per Short or Long Rest: Darkvision 120 feet, read any language, or cast See Invisibility without a slot.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Greater Portent",
+            "desc": "Roll three d20s for Portent.",
+            "choice_is_prose": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Wizard",
+    "name": "Illusionist",
+    "key": "kc-phb24_illusionist",
+    "edition": "2024",
+    "source": "kc",
+    "book": "Player's Handbook",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Illusion Savant",
+            "desc": "Add two Illusion Wizard spells of level 2 or lower to your spellbook free, and one more each time you gain a new spell slot level.",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Improved Illusions",
+            "desc": "Illusion spells need no Verbal components and gain 60 feet of range if they reach 10+ feet. Learn Minor Illusion (or another Wizard cantrip) free; it makes sound and image together and can be cast as a Bonus Action.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Phantasmal Creatures",
+            "desc": "Summon Beast and Summon Fey always prepared; cast either as Illusion, once each per Long Rest without a slot at half Hit Points.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Illusory Self",
+            "desc": "Reaction when hit by an attack: it misses. Once per Short or Long Rest, or restore it with a level 2+ slot.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Illusory Reality",
+            "desc": "Bonus Action while an Illusion spell cast with a slot lasts: make one inanimate, nonmagical object in it real for 1 minute; it cannot deal damage or conditions.",
+            "choice_is_prose": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Artificer",
+    "name": "Alchemist",
+    "key": "kc-efota_alchemist",
+    "edition": "2024",
+    "source": "kc",
+    "book": "Eberron: Forge of the Artificer",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Tools of the Trade",
+            "desc": "Proficiency with Alchemist's Supplies and the Herbalism Kit (another Artisan's Tools for each you already have); crafting potions takes half the time.",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Alchemist Spells",
+            "desc": "Always prepared: Healing Word, Ray of Sickness (3); Flaming Sphere, Melf's Acid Arrow (5); Gaseous Form, Mass Healing Word (9); Death Ward, Vitriolic Sphere (13); Cloudkill, Raise Dead (17).",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Experimental Elixir",
+            "desc": "After a Long Rest with Alchemist's Supplies, make two random elixirs (three at level 5, four at 9, five at 15) that vanish at your next Long Rest; drinking or giving one is a Bonus Action. Magic action and a spell slot: make one more, choosing its effect.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 5,
+        "features": [
+          {
+            "name": "Alchemical Savant",
+            "desc": "Spells cast through Alchemist's Supplies add INT mod (min +1) to one healing roll or one Acid, Fire or Poison damage roll.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 9,
+        "features": [
+          {
+            "name": "Restorative Reagents",
+            "desc": "Cast Lesser Restoration through Alchemist's Supplies without a slot or preparing it, INT mod times per Long Rest.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 15,
+        "features": [
+          {
+            "name": "Chemical Mastery",
+            "desc": "Once per turn add 2d8 Force to an Artificer spell's Acid, Fire or Poison damage; Resistance to Acid and Poison and immunity to Poisoned; Tasha's Bubbling Cauldron through Alchemist's Supplies without slot, preparation or Material components once per Long Rest.",
+            "choice_is_prose": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Artificer",
+    "name": "Armorer",
+    "key": "kc-efota_armorer",
+    "edition": "2024",
+    "source": "kc",
+    "book": "Eberron: Forge of the Artificer",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Tools of the Trade",
+            "desc": "Heavy armor training and proficiency with Smith's Tools (or another Artisan's Tools); crafting armor takes half the time.",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Armorer Spells",
+            "desc": "Always prepared: Magic Missile, Thunderwave (3); Mirror Image, Shatter (5); Hypnotic Pattern, Lightning Bolt (9); Fire Shield, Greater Invisibility (13); Passwall, Wall of Force (17).",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Arcane Armor",
+            "desc": "Magic action with Smith's Tools: the armor you wear becomes Arcane Armor, with no Strength requirement, don and doff as a Utilize action, cannot be removed against your will, and works as a spellcasting focus.",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Armor Model",
+            "desc": "Choose a model, changeable on a Short or Long Rest; its weapon uses INT for attack and damage. Dreadnaught: Force Demolisher (Reach, 1d10 Force, push or pull a smaller creature 10 feet) and Giant Stature (Bonus Action: Large and +5 feet reach for 1 minute, INT mod uses per Long Rest). Guardian: Thunder Pulse (1d8 Thunder; the target has Disadvantage attacking others) and Defensive Field (Bonus Action while Bloodied: Temporary Hit Points equal to Artificer level). Infiltrator: Lightning Launcher (ranged 90/300, 1d6 Lightning, +1d6 once per turn), Powered Steps (+5 feet Speed), and Advantage on Stealth.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 5,
+        "features": [
+          {
+            "name": "Extra Attack",
+            "desc": "Attack twice with the Attack action.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 9,
+        "features": [
+          {
+            "name": "Improved Armorer",
+            "desc": "Learn an extra Armor plan and create one extra Armor item with Replicate Magic Item, and +1 to attack and damage with your model weapon.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 15,
+        "features": [
+          {
+            "name": "Perfected Armor",
+            "desc": "Dreadnaught: 2d6 demolisher, Giant Stature reaches 10 feet and Large or Huge with Advantage on Strength checks and saves. Guardian: 1d10 pulse and a Reaction pull of 25 feet toward you with a melee attack if adjacent (INT mod uses per Long Rest). Infiltrator: 2d6 launcher whose targets glow and have Disadvantage attacking you, and a Bonus Action Fly Speed of twice your Speed this turn (INT mod uses per Long Rest).",
+            "choice_is_prose": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Artificer",
+    "name": "Artillerist",
+    "key": "kc-efota_artillerist",
+    "edition": "2024",
+    "source": "kc",
+    "book": "Eberron: Forge of the Artificer",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Tools of the Trade",
+            "desc": "Proficiency with Martial Ranged weapons and Woodcarver's Tools (or another Artisan's Tools); crafting wands takes half the time.",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Artillerist Spells",
+            "desc": "Always prepared: Shield, Thunderwave (3); Scorching Ray, Shatter (5); Fireball, Wind Wall (9); Ice Storm, Wall of Fire (13); Cone of Cold, Wall of Force (17).",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Eldritch Cannon",
+            "desc": "Magic action with Smith's or Woodcarver's Tools: a Small or Tiny cannon (AC 18, Hit Points 5 per Artificer level) for 1 hour, once per Long Rest or by spending a slot. Bonus Action within 60 feet: move it 15 feet and fire Flamethrower (15-foot Cone, Dexterity save, 2d8 Fire), Force Ballista (ranged spell attack within 120 feet, 2d8 Force and push 5 feet), or Protector (it and chosen creatures within 10 feet gain 1d8 + INT mod Temporary Hit Points).",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 5,
+        "features": [
+          {
+            "name": "Arcane Firearm",
+            "desc": "After a Long Rest, carve a Rod, Staff, Wand or Martial Ranged weapon into an Arcane Firearm; spells cast through it add 1d8 to one damage roll.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 9,
+        "features": [
+          {
+            "name": "Explosive Cannon",
+            "desc": "Cannon damage and Protector gain +1d8, and a Reaction when it is damaged detonates it: 20-foot Dexterity save for 3d10 Force, half on a success.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 15,
+        "features": [
+          {
+            "name": "Fortified Position",
+            "desc": "Keep two cannons, created and commanded together, and you and allies within 10 feet of a cannon have Half Cover.",
+            "choice_is_prose": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Artificer",
+    "name": "Battle Smith",
+    "key": "kc-efota_battle-smith",
+    "edition": "2024",
+    "source": "kc",
+    "book": "Eberron: Forge of the Artificer",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Tools of the Trade",
+            "desc": "Proficiency with Smith's Tools (or another Artisan's Tools); crafting weapons takes half the time.",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Battle Smith Spells",
+            "desc": "Always prepared: Heroism, Shield (3); Shining Smite, Warding Bond (5); Aura of Vitality, Conjure Barrage (9); Aura of Purity, Fire Shield (13); Banishing Smite, Mass Cure Wounds (17).",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Battle Ready",
+            "desc": "Use INT for attack and damage with magic weapons, proficiency with Martial weapons, and proficient weapons work as a spellcasting focus.",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Steel Defender",
+            "desc": "A Medium construct companion (AC 12 + INT mod, Hit Points 5 + 5 per Artificer level, Speed 40) that acts on your turn and Dodges unless you command it with a Bonus Action. Force-Empowered Rend: 1d8 + 2 + INT mod Force. Repair three times a day, and Deflect Attack as a Reaction. Revive it within an hour with a Magic action and a slot; rebuild it after a Long Rest with Smith's Tools.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 5,
+        "features": [
+          {
+            "name": "Extra Attack",
+            "desc": "Attack twice with the Attack action; one attack can instead command the Steel Defender to Rend.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 9,
+        "features": [
+          {
+            "name": "Arcane Jolt",
+            "desc": "Once per turn when your magic weapon or Steel Defender hits: an extra 2d6 Force, or heal a creature within 30 feet of the target 2d6. INT mod uses per Long Rest.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 15,
+        "features": [
+          {
+            "name": "Improved Defender",
+            "desc": "Arcane Jolt becomes 4d6, and Deflect Attack deals 1d4 + INT mod Force to the attacker.",
+            "choice_is_prose": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Artificer",
+    "name": "Cartographer",
+    "key": "kc-efota_cartographer",
+    "edition": "2024",
+    "source": "kc",
+    "book": "Eberron: Forge of the Artificer",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Tools of the Trade",
+            "desc": "Proficiency with Calligrapher's Supplies and Cartographer's Tools (another Artisan's Tools for each you already have); scribing Spell Scrolls takes half the time.",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Cartographer Spells",
+            "desc": "Always prepared: Faerie Fire, Guiding Bolt, Healing Word (3); Locate Object, Mind Spike (5); Call Lightning, Clairvoyance (9); Banishment, Locate Creature (13); Scrying, Teleportation Circle (17).",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Adventurer's Atlas",
+            "desc": "After a Long Rest with Cartographer's Tools, give magic maps to 2 to 1 + INT mod creatures (you can be one). Holders add 1d4 to Initiative, know each other's locations on the plane, and can target each other without sight within range.",
+            "choice_is_prose": false
+          },
+          {
+            "name": "Mapping Magic",
+            "desc": "Faerie Fire without a slot INT mod times per Long Rest. Portal Jump: spend half your Speed to teleport 10 feet, or next to a map holder within 30 feet.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 5,
+        "features": [
+          {
+            "name": "Guided Precision",
+            "desc": "Once per turn add INT mod to one damage roll of a Cartographer spell or an attack against a creature under your Faerie Fire, and damage cannot break your Concentration on Faerie Fire.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 9,
+        "features": [
+          {
+            "name": "Ingenious Movement",
+            "desc": "When you use Flash of Genius, you or a willing creature within 30 feet can also teleport 30 feet.",
+            "choice_is_prose": false
+          }
+        ]
+      },
+      {
+        "level": 15,
+        "features": [
+          {
+            "name": "Superior Atlas",
+            "desc": "Safe Haven: a map holder dropping to 0 Hit Points can destroy its map to instead have twice your Artificer level in Hit Points and teleport next to a holder. Unerring Path: cast Find the Path free once per Long Rest while holding a map.",
+            "choice_is_prose": false
+          }
+        ]
+      }
+    ]
+  }
 ]

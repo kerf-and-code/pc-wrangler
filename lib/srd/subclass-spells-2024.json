@@ -1,0 +1,375 @@
+{
+  "Circle of the Moon": {
+    "3": [
+      "Cure Wounds",
+      "Moonbeam",
+      "Starry Wisp"
+    ],
+    "5": [
+      "Conjure Animals"
+    ],
+    "7": [
+      "Fount of Moonlight"
+    ],
+    "9": [
+      "Mass Cure Wounds"
+    ]
+  },
+  "Circle of the Sea": {
+    "3": [
+      "Fog Cloud",
+      "Gust of Wind",
+      "Ray of Frost",
+      "Shatter",
+      "Thunderwave"
+    ],
+    "5": [
+      "Lightning Bolt",
+      "Water Breathing"
+    ],
+    "7": [
+      "Control Water",
+      "Ice Storm"
+    ],
+    "9": [
+      "Conjure Elemental",
+      "Hold Monster"
+    ]
+  },
+  "Circle of the Stars": {
+    "3": [
+      "Guidance",
+      "Guiding Bolt"
+    ]
+  },
+  "Oath of Glory": {
+    "3": [
+      "Guiding Bolt",
+      "Heroism"
+    ],
+    "5": [
+      "Enhance Ability",
+      "Magic Weapon"
+    ],
+    "9": [
+      "Haste",
+      "Protection from Energy"
+    ],
+    "13": [
+      "Compulsion",
+      "Freedom of Movement"
+    ],
+    "17": [
+      "Legend Lore",
+      "Yolande's Regal Presence"
+    ]
+  },
+  "Oath of the Ancients": {
+    "3": [
+      "Ensnaring Strike",
+      "Speak with Animals"
+    ],
+    "5": [
+      "Misty Step",
+      "Moonbeam"
+    ],
+    "9": [
+      "Plant Growth",
+      "Protection from Energy"
+    ],
+    "13": [
+      "Ice Storm",
+      "Stoneskin"
+    ],
+    "17": [
+      "Commune with Nature",
+      "Tree Stride"
+    ]
+  },
+  "Oath of Vengeance": {
+    "3": [
+      "Bane",
+      "Hunter's Mark"
+    ],
+    "5": [
+      "Hold Person",
+      "Misty Step"
+    ],
+    "9": [
+      "Haste",
+      "Protection from Energy"
+    ],
+    "13": [
+      "Banishment",
+      "Dimension Door"
+    ],
+    "17": [
+      "Hold Monster",
+      "Scrying"
+    ]
+  },
+  "Fey Wanderer": {
+    "3": [
+      "Charm Person"
+    ],
+    "5": [
+      "Misty Step"
+    ],
+    "9": [
+      "Summon Fey"
+    ],
+    "13": [
+      "Dimension Door"
+    ],
+    "17": [
+      "Mislead"
+    ]
+  },
+  "Gloom Stalker": {
+    "3": [
+      "Disguise Self"
+    ],
+    "5": [
+      "Rope Trick"
+    ],
+    "9": [
+      "Fear"
+    ],
+    "13": [
+      "Greater Invisibility"
+    ],
+    "17": [
+      "Seeming"
+    ]
+  },
+  "Aberrant Sorcery": {
+    "3": [
+      "Arms of Hadar",
+      "Calm Emotions",
+      "Detect Thoughts",
+      "Dissonant Whispers",
+      "Mind Sliver"
+    ],
+    "5": [
+      "Hunger of Hadar",
+      "Sending"
+    ],
+    "7": [
+      "Evard's Black Tentacles",
+      "Summon Aberration"
+    ],
+    "9": [
+      "Rary's Telepathic Bond",
+      "Telekinesis"
+    ]
+  },
+  "Clockwork Sorcery": {
+    "3": [
+      "Aid",
+      "Alarm",
+      "Lesser Restoration",
+      "Protection from Evil and Good"
+    ],
+    "5": [
+      "Dispel Magic",
+      "Protection from Energy"
+    ],
+    "7": [
+      "Freedom of Movement",
+      "Summon Construct"
+    ],
+    "9": [
+      "Greater Restoration",
+      "Wall of Force"
+    ]
+  },
+  "Archfey Patron": {
+    "3": [
+      "Calm Emotions",
+      "Faerie Fire",
+      "Misty Step",
+      "Phantasmal Force",
+      "Sleep"
+    ],
+    "5": [
+      "Blink",
+      "Plant Growth"
+    ],
+    "7": [
+      "Dominate Beast",
+      "Greater Invisibility"
+    ],
+    "9": [
+      "Dominate Person",
+      "Seeming"
+    ]
+  },
+  "Celestial Patron": {
+    "3": [
+      "Aid",
+      "Cure Wounds",
+      "Guiding Bolt",
+      "Lesser Restoration",
+      "Light",
+      "Sacred Flame"
+    ],
+    "5": [
+      "Daylight",
+      "Revivify"
+    ],
+    "7": [
+      "Guardian of Faith",
+      "Wall of Fire"
+    ],
+    "9": [
+      "Greater Restoration",
+      "Summon Celestial"
+    ]
+  },
+  "Great Old One Patron": {
+    "3": [
+      "Detect Thoughts",
+      "Dissonant Whispers",
+      "Phantasmal Force",
+      "Tasha's Hideous Laughter"
+    ],
+    "5": [
+      "Clairvoyance",
+      "Hunger of Hadar"
+    ],
+    "7": [
+      "Confusion",
+      "Summon Aberration"
+    ],
+    "9": [
+      "Modify Memory",
+      "Telekinesis"
+    ],
+    "10": [
+      "Hex"
+    ]
+  },
+  "Abjurer": {
+    "10": [
+      "Counterspell",
+      "Dispel Magic"
+    ]
+  },
+  "Illusionist": {
+    "6": [
+      "Summon Beast",
+      "Summon Fey"
+    ]
+  },
+  "Alchemist": {
+    "3": [
+      "Healing Word",
+      "Ray of Sickness"
+    ],
+    "5": [
+      "Flaming Sphere",
+      "Melf's Acid Arrow"
+    ],
+    "9": [
+      "Gaseous Form",
+      "Mass Healing Word"
+    ],
+    "13": [
+      "Death Ward",
+      "Vitriolic Sphere"
+    ],
+    "17": [
+      "Cloudkill",
+      "Raise Dead"
+    ]
+  },
+  "Armorer": {
+    "3": [
+      "Magic Missile",
+      "Thunderwave"
+    ],
+    "5": [
+      "Mirror Image",
+      "Shatter"
+    ],
+    "9": [
+      "Hypnotic Pattern",
+      "Lightning Bolt"
+    ],
+    "13": [
+      "Fire Shield",
+      "Greater Invisibility"
+    ],
+    "17": [
+      "Passwall",
+      "Wall of Force"
+    ]
+  },
+  "Artillerist": {
+    "3": [
+      "Shield",
+      "Thunderwave"
+    ],
+    "5": [
+      "Scorching Ray",
+      "Shatter"
+    ],
+    "9": [
+      "Fireball",
+      "Wind Wall"
+    ],
+    "13": [
+      "Ice Storm",
+      "Wall of Fire"
+    ],
+    "17": [
+      "Cone of Cold",
+      "Wall of Force"
+    ]
+  },
+  "Battle Smith": {
+    "3": [
+      "Heroism",
+      "Shield"
+    ],
+    "5": [
+      "Shining Smite",
+      "Warding Bond"
+    ],
+    "9": [
+      "Aura of Vitality",
+      "Conjure Barrage"
+    ],
+    "13": [
+      "Aura of Purity",
+      "Fire Shield"
+    ],
+    "17": [
+      "Banishing Smite",
+      "Mass Cure Wounds"
+    ]
+  },
+  "Cartographer": {
+    "3": [
+      "Faerie Fire",
+      "Guiding Bolt",
+      "Healing Word"
+    ],
+    "5": [
+      "Locate Object",
+      "Mind Spike"
+    ],
+    "9": [
+      "Call Lightning",
+      "Clairvoyance"
+    ],
+    "13": [
+      "Banishment",
+      "Locate Creature"
+    ],
+    "17": [
+      "Scrying",
+      "Teleportation Circle"
+    ]
+  }
+}
