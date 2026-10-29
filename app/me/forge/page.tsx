@@ -56,6 +56,9 @@ import { menusFor, type ClassMenu } from "@/lib/class-menus";
 import { casterLevel, multiclassSlots, isMulticlassCaster, type CasterType } from "@/lib/multiclass-slots";
 import { subclassCasterType, subclassSpellList, subclassCasting, thirdCasterSlots } from "@/lib/subclass-casters";
 import { subclassSpellsFor } from "@/lib/subclass-spells";
+import {
+  resolveSpecies, speciesMechanics, structuredChoiceOptions, SPECIES_ABILITY_KEY, SPECIES_ABILITY_OPTIONS,
+} from "@/lib/srd/species-effects";
 import { choiceEffects, applyToBuild, type ChoiceEffects } from "@/lib/apply-choices";
 import { parseCoreTraits } from "@/lib/core-traits";
 import {
@@ -533,7 +536,15 @@ function ForgeInner() {
     return [...new Set([...base, ...epicAsi])].sort((a, b) => a - b);
   }, [srd.classByName, build.meta.className, build.level]);
 
-  const ctx = useMemo(() => buildRulesContext(edition === "2014" ? "2014" : "2024"), [edition]);
+  const ruleset: "2014" | "2024" = edition === "2014" ? "2014" : "2024";
+  const ctx = useMemo(() => buildRulesContext(ruleset), [ruleset]);
+  // The species with the player's lineage / ancestry / legacy pick layered on. Null for a species
+  // that has no structured entry yet (most catalog species); those keep the trait-text route.
+  const speciesPicks = (build as Build & { speciesChoices?: Record<string, string> }).speciesChoices;
+  const resolvedSpecies = useMemo(
+    () => (build.meta.species ? resolveSpecies(build.meta.species, ruleset, speciesPicks || {}) : null),
+    [build.meta.species, ruleset, speciesPicks],
+  );
 
   // A character imported from a D&D Beyond sheet carries the scores D&D Beyond PRINTS, which
   // already include every item bonus. Build.abilities is otherwise "base before gear" and the engine
@@ -563,7 +574,17 @@ function ForgeInner() {
       .concat(traitList(srd.variantByName[speciesVariant]?.traits));
     const picks = (build as Build & { speciesChoices?: Record<string, string> }).speciesChoices || {};
     const out: { spell: string; from: string; level: number }[] = [];
-    for (const t of traits) {
+    // A species with a structured entry grants its spells from there: the base species' (Light,
+    // Thaumaturgy) and the picked option's. The trait-text route below misses the level 1 cantrip,
+    // because that table cell is a sentence rather than a spell name.
+    if (resolvedSpecies) {
+      for (const g of resolvedSpecies.effects.spells || []) {
+        if (g.level <= (build.level || 1) && !out.some((o) => o.spell === g.spell)) {
+          out.push({ spell: g.spell, from: resolvedSpecies.option || build.meta.species, level: g.level });
+        }
+      }
+    }
+    for (const t of resolvedSpecies ? [] : traits) {
       const chosen = picks[t.name];
       if (!chosen) continue;
       const opt = traitOptions(t.desc).find((o) => o.name === chosen);
@@ -581,13 +602,19 @@ function ForgeInner() {
       out.push({ spell: g.spell, from: build.meta.subclass || "your subclass", level: g.level });
     }
     return out;
-  }, [build, speciesVariant, srd.speciesByName, srd.variantByName]);
+  }, [build, speciesVariant, srd.speciesByName, srd.variantByName, resolvedSpecies]);
 
   const effects: ChoiceEffects = useMemo(() => {
     const traits = traitList(srd.speciesByName[build.meta.species]?.traits)
       .concat(traitList(srd.variantByName[speciesVariant]?.traits));
     const options: Record<string, { name: string; detail?: string }[]> = {};
     for (const t of traits) options[t.name] = traitOptions(t.desc);
+    // A pick a structured species choice owns is applied through resolvedSpecies (deriveCtx), so it
+    // is kept out of the trait-text route, which would otherwise list it as "recorded, not applied".
+    const allPicks = (build as Build & { speciesChoices?: Record<string, string> }).speciesChoices || {};
+    const mechNow = resolvedSpecies?.mech;
+    const textPicks = Object.fromEntries(Object.entries(allPicks).filter(([k]) =>
+      k !== SPECIES_ABILITY_KEY && !structuredChoiceOptions(mechNow, k)));
 
     const cls = build.meta.className || "";
     const expertiseKeys = choicesFor(cls, build.meta.subclass || "", build.level || 1, edition)
@@ -602,21 +629,39 @@ function ForgeInner() {
       : [];
 
     const bgRec = srd.bgByName[build.meta.background];
-    return choiceEffects({
+    const fx = choiceEffects({
       background: bgRec,
       grantedFeat: bgRec?.feat ? srd.featByName[bgRec.feat] : undefined,
       grantedFeatAbility: (build as Build & { bgFeatAbility?: string }).bgFeatAbility,
       speciesTraits: traits,
-      speciesChoices: (build as Build & { speciesChoices?: Record<string, string> }).speciesChoices || {},
+      speciesChoices: textPicks,
       speciesOptions: options,
       classChoices: (build as Build & { classChoices?: Record<string, string[]> }).classChoices || {},
       expertiseKeys,
       skillProfKeys,
     });
-  }, [build, speciesVariant, srd.speciesByName, srd.variantByName, srd.bgByName, srd.featByName]);
+    if (resolvedSpecies?.option && mechNow?.choice) {
+      fx.applied.push(`${resolvedSpecies.option} from ${mechNow.choice.label}`);
+    }
+    return fx;
+  }, [build, speciesVariant, srd.speciesByName, srd.variantByName, srd.bgByName, srd.featByName, resolvedSpecies]);
 
   const deriveCtx = useMemo(() => {
-    const base = printedAbilities ? suppressItemEffects(ctx) : ctx;
+    const base0 = printedAbilities ? suppressItemEffects(ctx) : ctx;
+    // The picked lineage / ancestry / legacy changes the species entry itself (Wood Elf speed 35,
+    // Drow darkvision 120, a legacy's resistance), so it is laid over a COPY of that entry.
+    const re = resolvedSpecies?.option ? resolvedSpecies.effects : null;
+    const base = re && build.meta.species ? {
+      ...base0,
+      species: {
+        ...base0.species,
+        [build.meta.species]: {
+          ...(base0.species?.[build.meta.species] || {}),
+          speed: re.speed, darkvision: re.darkvision, senses: re.senses, speeds: re.speeds,
+          resist: re.resist, immune: re.immune, advAgainst: re.advAgainst, acBonus: re.acBonus,
+        },
+      },
+    } : base0;
     if (!effects.resist.length || !build.meta.species) return base;
     // Resistances reach the sheet through the species entry in the rules context, so a chosen
     // ancestry is patched onto a COPY of that entry rather than into the build. Copying matters:
@@ -632,7 +677,7 @@ function ForgeInner() {
         },
       },
     };
-  }, [ctx, printedAbilities, effects.resist, build.meta.species]);
+  }, [ctx, printedAbilities, effects.resist, build.meta.species, resolvedSpecies]);
 
   // Apply the chosen species' ability bonuses (2014 carry "CON +2"; 2024 carry none) into
   // build.featMods, which the engine adds to the base scores.
@@ -1414,6 +1459,7 @@ function ForgeInner() {
                   speciesRec={srd.speciesByName[build.meta.species]}
                   variantRec={srd.variantByName[speciesVariant]}
                   desc={speciesDesc}
+                  mech={speciesMechanics(build.meta.species, ruleset)}
                   choices={(build as Build & { speciesChoices?: Record<string, string> }).speciesChoices || {}}
                   onSpecies={setSpecies} onVariant={setVariant} onChoice={setSpeciesChoice}
                 />
@@ -2409,15 +2455,17 @@ function RollPanel({ sheet, build, characterId }: {
  * are not in their own description, so they get the prose and a note rather than an empty dropdown
  * under a trait that plainly asks for a decision.
  *
- * THE CHOICE IS RECORDED, NOT APPLIED. Picking Black draconic ancestry does not yet grant acid
- * resistance: the engine has no route from a species choice to a derived effect. Storing it is
- * still worth doing - it is on the sheet, it survives to the table, and it is what a later pass
- * would read - but a panel that implied the number had moved would be lying about the sheet.
+ * A STRUCTURED CHOICE WINS. When rules-data.json has a `choice` for the species (lib/srd/
+ * species-mechanics.ts), its options fill the dropdown and the pick is APPLIED: a lineage's speed,
+ * darkvision, resistance and spells reach the sheet through resolveSpecies. The 2024 SRD text
+ * flattens its tables, so for those species the text route found nothing at all. A species with no
+ * structured entry still gets the text route, and its picks stay recorded rather than applied.
  */
 function SpeciesPanel({
-  build, speciesVariant, speciesOpts, variantOpts, speciesRec, variantRec, desc,
+  build, speciesVariant, speciesOpts, variantOpts, speciesRec, variantRec, desc, mech,
   choices, onSpecies, onVariant, onChoice,
 }: {
+  mech: ReturnType<typeof speciesMechanics>;
   build: Build; speciesVariant: string;
   speciesOpts: { name: string }[];
   variantOpts: { name: string; variant_kind: string }[];
@@ -2468,7 +2516,9 @@ function SpeciesPanel({
           <div style={{ display: "grid", gap: 10 }}>
             {decisions.map((t) => {
               const key = t.name;
-              const opts = traitOptions(t.desc || "");
+              // A structured choice (rules-data) wins over options parsed from the trait text, which
+              // for the 2024 species finds none because the SRD text flattens its tables.
+              const opts = structuredChoiceOptions(mech, t.name) || traitOptions(t.desc || "");
               const picked = choices[key] || "";
               return (
                 <div key={key} style={{ background: "rgba(0,0,0,0.24)", borderRadius: 4,
@@ -2502,6 +2552,17 @@ function SpeciesPanel({
               );
             })}
           </div>
+        </div>
+      )}
+
+      {mech?.spellAbility === "choose" && (
+        <div style={{ marginTop: 12, background: "rgba(0,0,0,0.24)", borderRadius: 4, padding: "10px 12px" }}>
+          <div style={{ fontSize: 14, color: STONE.ink, marginBottom: 6 }}>Spellcasting ability for species spells</div>
+          <select value={choices[SPECIES_ABILITY_KEY] || ""} onChange={(e) => onChoice(SPECIES_ABILITY_KEY, e.target.value)}
+            style={{ ...stoneField(), fontSize: 13.5, padding: "8px 10px" }}>
+            <option value="">Not chosen</option>
+            {SPECIES_ABILITY_OPTIONS.map((a) => <option key={a} value={a}>{a}</option>)}
+          </select>
         </div>
       )}
 
@@ -4593,6 +4654,38 @@ function SheetPanel({ sheet, name }: {
           ))}
         </div>
       </div>
+
+      {(sheet.senses.length > 0 || sheet.otherSpeeds.length > 0) && (
+        <div style={{ marginTop: 14 }}>
+          <div style={forgeLabel}>Senses and movement</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            {[...sheet.senses, ...sheet.otherSpeeds].map((x) => <span key={x} style={stoneChip("brass")}>{x}</span>)}
+          </div>
+        </div>
+      )}
+
+      {(sheet.advAgainst.length > 0 || sheet.advSaves.length > 0) && (
+        <div style={{ marginTop: 14 }}>
+          <div style={forgeLabel}>Advantage on saves</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            {sheet.advSaves.length > 0 && (
+              <span style={stoneChip("brass")}>{sheet.advSaves.map((a) => a.toUpperCase()).join(", ")} saves</span>
+            )}
+            {sheet.advAgainst.map((c) => (
+              <span key={c} style={stoneChip("brass")}>vs {c.charAt(0).toUpperCase() + c.slice(1)}</span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {sheet.immune.length > 0 && (
+        <div style={{ marginTop: 14 }}>
+          <div style={forgeLabel}>Immunities</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            {sheet.immune.map((r) => <span key={r} style={stoneChip("moss")}>{r}</span>)}
+          </div>
+        </div>
+      )}
 
       {sheet.resist.length > 0 && (
         <div style={{ marginTop: 14 }}>

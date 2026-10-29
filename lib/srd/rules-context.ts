@@ -19,6 +19,7 @@ import type {
 } from "./derive-sheet";
 
 import type { SpeciesMechanics } from "./species-mechanics";
+import { resolveSpecies } from "./species-effects";
 import rulesData from "./rules-data.json";
 import equipment2024 from "./equipment-2024.json";
 import equipment2014 from "./equipment-2014.json";
@@ -59,15 +60,26 @@ export const RULES_DATA = rulesData as unknown as RulesData;
 // movement). Built from the SRD equipment + magic-item JSON per ruleset.
 // ---------------------------------------------------------------------------
 
-type EquipRow = { name: string; category?: string; weapon_category?: string; armor_category?: string; armor_class?: string };
+type EquipRow = { name: string; category?: string; weapon_category?: string; armor_category?: string; armor_class?: ArmorClassField };
 type MagicRow = { name: string; category?: string; rarity?: string };
 
 // Parse an armor_class string ("15 + Dex modifier (max 2)", "16", "18", "11 + Dex modifier") into a
 // base AC number and a Dex cap. Dex cap: null = add full DEX (Light armor), a number = cap DEX at
 // that value (Medium = 2), 0 = no DEX (Heavy). Falls back to category when the string is terse.
-function parseArmorClass(acStr: string | undefined, category: string | undefined): { baseAC: number | null; dexCap: number | null } {
+// The 2014 file stores armor_class as an object ({ base, dex_bonus, max_bonus }) where the 2024 file
+// stores a string ("14 + Dex modifier (max 2)"). Until 2026-10 only the string was handled, and
+// building the 2014 rules context threw on the first armor row.
+type ArmorClassField = string | { base?: number; dex_bonus?: boolean; max_bonus?: number | null } | undefined;
+
+function parseArmorClass(acField: ArmorClassField, category: string | undefined): { baseAC: number | null; dexCap: number | null } {
   const cat = (category || "").toLowerCase();
   const byCategory: number | null = cat === "heavy" ? 0 : cat === "medium" ? 2 : null; // light/shield => null (full/na)
+  if (acField && typeof acField === "object") {
+    const baseAC = typeof acField.base === "number" ? acField.base : null;
+    const dexCap = !acField.dex_bonus ? 0 : (typeof acField.max_bonus === "number" ? acField.max_bonus : null);
+    return { baseAC, dexCap };
+  }
+  const acStr = acField as string | undefined;
   if (!acStr) return { baseAC: null, dexCap: byCategory };
   const baseMatch = acStr.match(/^\s*(\d+)/);
   const baseAC = baseMatch ? parseInt(baseMatch[1], 10) : null;
@@ -137,8 +149,16 @@ function toClassRule(name: string, c: ForgeClass): ClassRule {
   return rule;
 }
 
-function toSpeciesRule(s: ForgeSpecies): SpeciesRule {
-  return { speed: s.speed, mods: s.mods, resist: s.resist };
+// The species' standing effects for this ruleset, before any player pick. A picked lineage or
+// ancestry is layered on per character in the Forge (resolveSpecies with the build's picks).
+export function toSpeciesRule(name: string, ruleset: Ruleset): SpeciesRule {
+  const e = resolveSpecies(name, ruleset)?.effects;
+  if (!e) return {};
+  return {
+    speed: e.speed, mods: e.mods as Record<string, number> | undefined, resist: e.resist,
+    immune: e.immune, darkvision: e.darkvision, senses: e.senses, speeds: e.speeds,
+    advAgainst: e.advAgainst, advSaves: e.advSaves, acBonus: e.acBonus,
+  };
 }
 
 function toSubclassRule(s: ForgeSubclass): SubclassRule {
@@ -156,7 +176,7 @@ export function buildRulesContext(ruleset: Ruleset): RulesContext {
   for (const [name, c] of Object.entries(RULES_DATA.CLASSES)) classes[name] = toClassRule(name, c);
 
   const species: Record<string, SpeciesRule> = {};
-  for (const [name, s] of Object.entries(RULES_DATA.SPECIES)) species[name] = toSpeciesRule(s);
+  for (const name of Object.keys(RULES_DATA.SPECIES)) species[name] = toSpeciesRule(name, ruleset);
 
   const subclasses: Record<string, SubclassRule> = {};
   for (const [name, s] of Object.entries(RULES_DATA.SUBCLASS_RULES)) subclasses[name] = toSubclassRule(s);

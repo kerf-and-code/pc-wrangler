@@ -132,7 +132,18 @@ export type ClassRule = {
   casting?: CastRule | null;
   features?: Record<number, [string, string][]>;
 };
-export type SpeciesRule = { speed?: number; mods?: Record<string, number>; resist?: string[] };
+export type SpeciesRule = {
+  speed?: number; mods?: Record<string, number>; resist?: string[];
+  // Standing species effects (lib/srd/species-mechanics.ts). Optional, so a context built without
+  // them derives exactly as before.
+  immune?: string[];
+  darkvision?: number;
+  senses?: { blindsight?: number; tremorsense?: number; truesight?: number };
+  speeds?: { fly?: number | "speed"; swim?: number | "speed"; climb?: number | "speed"; burrow?: number | "speed" };
+  advAgainst?: string[];
+  advSaves?: Ability[];
+  acBonus?: number;
+};
 export type SubclassRule = { casting?: CastRule | null };
 export type CastRule = { ability: Ability };
 export type ItemDef = { kind: string; sub?: string; rarity?: string; baseAC?: number; dexCap?: number | null };
@@ -376,6 +387,15 @@ export type DerivedSheet = {
   sneakDice: number;
   martialArts: number;
   resist: string[];
+  immune: string[];
+  /** "Darkvision 60 ft", "Tremorsense 30 ft" */
+  senses: string[];
+  /** "Fly 30 ft", "Swim 30 ft": movement other than walking. */
+  otherSpeeds: string[];
+  /** Conditions with Advantage on saves to avoid or end them: "poisoned". */
+  advAgainst: string[];
+  /** Saving throws with Advantage always (Gnomish Cunning). */
+  advSaves: Ability[];
 };
 
 // How many epic choices a character of the given level has earned, and the ability-score cap
@@ -454,7 +474,9 @@ export function deriveSheet(build: Build, ctx: RulesContext): DerivedSheet {  co
     : "";
   // A shield adds a flat +2 to AC (5e), stacking on armor or unarmored defense.
   const shieldBonus = worn.shield ? 2 : 0;
-  const ac = acBase + dexToAc + acAbil + build.armorMisc + (em.ac || 0) + gearAcBonus + shieldBonus;
+  // A species AC bonus (Warforged Integrated Protection) applies armored or not.
+  const speciesAc = ctx.species[build.meta.species]?.acBonus || 0;
+  const ac = acBase + dexToAc + acAbil + build.armorMisc + (em.ac || 0) + gearAcBonus + shieldBonus + speciesAc;
 
   const cls = ctx.classes[build.meta.className] || {};
   const hd = cls.hitDie || 8;
@@ -531,7 +553,23 @@ export function deriveSheet(build: Build, ctx: RulesContext): DerivedSheet {  co
 
   const martialArts = build.meta.className === "Monk" ? stepValue(MONK_MA_DIE, build.level) : 0;
   const sneak = sneakDice(build, ctx, epic) + (em.sneakDice || 0);
-  const resist = (ctx.species[build.meta.species]?.resist || []).concat(ep.grants.resist);
+  // Species data is lower case ("poison") and a chosen type arrives capitalized ("Acid"), so the
+  // list is normalized and de-duplicated rather than showing Poison twice.
+  const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+  const resist: string[] = [];
+  for (const r of (ctx.species[build.meta.species]?.resist || []).concat(ep.grants.resist)) {
+    if (r && !resist.includes(cap(r))) resist.push(cap(r));
+  }
+
+  const sp = ctx.species[build.meta.species] || {};
+  const immune = (sp.immune || []).map(cap);
+  const senses: string[] = [];
+  if (sp.darkvision) senses.push(`Darkvision ${sp.darkvision} ft`);
+  for (const [k, v] of Object.entries(sp.senses || {})) if (v) senses.push(`${cap(k)} ${v} ft`);
+  const otherSpeeds: string[] = [];
+  for (const [k, v] of Object.entries(sp.speeds || {})) {
+    if (v) otherSpeeds.push(`${cap(k)} ${v === "speed" ? speed : v} ft`);
+  }
 
   return {
     proficiencyBonus: P,
@@ -541,5 +579,7 @@ export function deriveSheet(build: Build, ctx: RulesContext): DerivedSheet {  co
     isCaster, castAbil, spellDC, spellAttack,
     initiative: init, speed, speedLabel,
     sneakDice: sneak, martialArts, resist,
+    immune, senses, otherSpeeds,
+    advAgainst: sp.advAgainst || [], advSaves: sp.advSaves || [],
   };
 }

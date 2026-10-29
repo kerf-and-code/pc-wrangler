@@ -309,7 +309,7 @@
       "darkvision": 60,
       "choice": {
         "key": "ancestry",
-        "label": "Draconic ancestry",
+        "label": "Draconic Ancestry",
         "options": {
           "Black (acid)": {
             "resist": [
@@ -428,7 +428,7 @@
       "spellAbility": "choose",
       "choice": {
         "key": "lineage",
-        "label": "Elven lineage",
+        "label": "Elven Lineage",
         "options": {
           "Drow": {
             "darkvision": 120,
@@ -518,7 +518,7 @@
       "spellAbility": "choose",
       "choice": {
         "key": "lineage",
-        "label": "Gnomish lineage",
+        "label": "Gnomish Lineage",
         "options": {
           "Forest Gnome": {
             "spells": [
@@ -562,7 +562,7 @@
       "speed": 35,
       "choice": {
         "key": "ancestry",
-        "label": "Giant ancestry",
+        "label": "Giant Ancestry",
         "options": {
           "Cloud's Jaunt": {
             "summary": "Bonus Action teleport up to 30 feet, Proficiency Bonus times per Long Rest."
@@ -683,7 +683,7 @@
       ],
       "choice": {
         "key": "legacy",
-        "label": "Fiendish legacy",
+        "label": "Fiendish Legacy",
         "options": {
           "Abyssal": {
             "resist": [
