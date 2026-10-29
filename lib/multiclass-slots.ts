@@ -20,7 +20,8 @@
 //   at, which errs toward too few slots - the direction that gets noticed and corrected, rather
 //   than the one that quietly inflates a character.
 
-export type CasterType = "FULL" | "HALF" | "THIRD" | "PACT" | "NONE";
+// ARTIFICER is a half caster that rounds UP (Eberron: Forge of the Artificer multiclassing rule).
+export type CasterType = "FULL" | "HALF" | "ARTIFICER" | "THIRD" | "PACT" | "NONE";
 
 /**
  * The multiclass spellcaster table. Row N is caster level N; the array is slots for spell levels
@@ -65,6 +66,7 @@ export function casterLevelFrom(type: CasterType, level: number): number {
   switch (type) {
     case "FULL": return level;
     case "HALF": return Math.floor(level / 2);
+    case "ARTIFICER": return Math.ceil(level / 2);
     case "THIRD": return Math.floor(level / 3);
     default: return 0;   // PACT and NONE contribute nothing
   }

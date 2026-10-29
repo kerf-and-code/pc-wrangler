@@ -1232,5 +1232,97 @@
         "desc": "You can increase the power of your spells. When you cast a Wizard spell with a spell slot of levels 1–5 that deals damage, you can deal maximum damage with that spell on the turn you cast it. The first time you do so, you suffer no adverse ef fect. If you use this feature again before you finish a Long Rest, you take 2d12 Necrotic damage for each level of the spell slot immediately after you cast it. This damage ignores Resistance and Immunity. Each time you use this feature again before finish ing a Long Rest, the Necrotic damage per spell level increases by 1d12."
       }
     ]
+  },
+  {
+    "name": "Artificer",
+    "edition": "2024",
+    "partnered": false,
+    "partner": null,
+    "source": "Eberron: Forge of the Artificer",
+    "primary_ability": "Intelligence",
+    "hit_die": 8,
+    "saving_throws": "Constitution and Intelligence",
+    "features_by_level": [
+      {
+        "level": 1,
+        "name": "Spellcasting",
+        "desc": "Half-caster preparing from the Artificer list with Intelligence, through Thieves' Tools, Tinker's Tools or Artisan's Tools as a focus (an M component). Two cantrips (three at level 10, four at 14), prepared spells from 2 at level 1 to 15 at level 20, slots up to level 5. Change prepared spells and one cantrip after a Long Rest."
+      },
+      {
+        "level": 1,
+        "name": "Tinker's Magic",
+        "desc": "Mending cantrip. Magic action with Tinker's Tools: create a mundane item from a short list of adventuring gear within 5 feet; it lasts until your next Long Rest. INT mod uses per Long Rest."
+      },
+      {
+        "level": 2,
+        "name": "Replicate Magic Item",
+        "desc": "Learn magic item plans (4 at level 2 rising to 8 at 18) from tiered plan tables (levels 2, 6, 10, 14). After a Long Rest with Tinker's Tools, create items from different plans you know, up to the Magic Items column (2 at level 2 rising to 6 at 18); you can attune on creation. Created wands and weapons work as spellcasting focuses. Swap one plan per Artificer level."
+      },
+      {
+        "level": 3,
+        "name": "Artificer Subclass",
+        "desc": "Choose an Artificer subclass: Alchemist, Armorer, Artillerist, Battle Smith, or Cartographer."
+      },
+      {
+        "level": 4,
+        "name": "Ability Score Improvement",
+        "desc": "The Ability Score Improvement feat or another feat you qualify for; again at levels 8, 12, and 16."
+      },
+      {
+        "level": 6,
+        "name": "Magic Item Tinker",
+        "desc": "For items from Replicate Magic Item: Charge (Bonus Action, spend a slot to restore that many charges), Drain (Bonus Action, turn an item into a level 1 or 2 slot, once per Long Rest), and Transmute (Magic action, turn it into another known plan, once per Long Rest)."
+      },
+      {
+        "level": 7,
+        "name": "Flash of Genius",
+        "desc": "Reaction when you or a creature within 30 feet fails an ability check or save: add INT mod (min +1). INT mod uses per Long Rest."
+      },
+      {
+        "level": 8,
+        "name": "Ability Score Improvement",
+        "desc": "The Ability Score Improvement feat or another feat you qualify for."
+      },
+      {
+        "level": 10,
+        "name": "Magic Item Adept",
+        "desc": "Attune to up to four magic items."
+      },
+      {
+        "level": 11,
+        "name": "Spell-Storing Item",
+        "desc": "After a Long Rest, store a level 1 to 3 action Artificer spell in a weapon or focus; a holder can cast it with a Magic action using your modifier, twice INT mod times (min 2), once per turn."
+      },
+      {
+        "level": 12,
+        "name": "Ability Score Improvement",
+        "desc": "The Ability Score Improvement feat or another feat you qualify for."
+      },
+      {
+        "level": 14,
+        "name": "Advanced Artifice",
+        "desc": "Attune to up to five magic items, and regain a Flash of Genius use on a Short Rest."
+      },
+      {
+        "level": 16,
+        "name": "Ability Score Improvement",
+        "desc": "The Ability Score Improvement feat or another feat you qualify for."
+      },
+      {
+        "level": 18,
+        "name": "Magic Item Master",
+        "desc": "Attune to up to six magic items."
+      },
+      {
+        "level": 19,
+        "name": "Epic Boon",
+        "desc": "An Epic Boon feat or another feat you qualify for; Boon of Energy Resistance is suggested."
+      },
+      {
+        "level": 20,
+        "name": "Soul of Artifice",
+        "desc": "Cheat Death: at 0 Hit Points, destroy Uncommon or Rare Replicate items to return at 20 Hit Points per item. Magical Guidance: regain all Flash of Genius uses on a Short Rest while attuned to a magic item."
+      }
+    ]
   }
 ]

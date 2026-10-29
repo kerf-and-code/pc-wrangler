@@ -4985,5 +4985,43 @@
     "description": "Up to ten creatures within 60 feet that can hear you. Any with 50 HP or fewer die. The rest make a Constitution save: 12d10 Psychic and Deafened for 1 hour on a failure, half damage only on a success.",
     "edition": "2024",
     "source": "kc"
+  },
+  {
+    "name": "Dragon's Breath",
+    "level": 2,
+    "school": "Transmutation",
+    "casting_time": "Bonus Action",
+    "range": "Touch",
+    "components": "V, S, M (a hot pepper)",
+    "duration": "Concentration, up to 1 minute",
+    "concentration": true,
+    "ritual": false,
+    "classes": [
+      "Artificer",
+      "Sorcerer",
+      "Wizard"
+    ],
+    "attack_type": null,
+    "description": "A willing creature you touch can, until the spell ends, take a Magic action to exhale a 15-foot Cone of Acid, Cold, Fire, Lightning, or Poison (chosen at casting): Dexterity save for 3d6, half on a success. +1d6 per slot level above 2.",
+    "edition": "2024",
+    "source": "kc"
+  },
+  {
+    "name": "Homunculus Servant",
+    "level": 2,
+    "school": "Conjuration",
+    "casting_time": "1 hour or Ritual",
+    "range": "10 feet",
+    "components": "V, S, M (a gem worth 100+ GP)",
+    "duration": "Instantaneous",
+    "concentration": false,
+    "ritual": true,
+    "classes": [
+      "Artificer"
+    ],
+    "attack_type": null,
+    "description": "Summon a Tiny homunculus (Homunculus Servant stat block) that replaces any earlier one. It acts right after you, obeys you, Dodges if given no orders, and can deliver your touch spells within 120 feet as a Reaction. A higher slot raises its Hit Points and Force Strike.",
+    "edition": "2024",
+    "source": "kc"
   }
 ]
