@@ -32,6 +32,15 @@ export type SpeciesSpell = {
   free?: "1/LR" | "PB/LR";
 };
 
+/**
+ * A 2014-style ability increase the PLAYER chooses.
+ *   fixed:    set amounts, each to a different ability, none of `exclude` (Half-Elf: two +1s, not
+ *             CHA, on top of its fixed +2 CHA in mods).
+ *   flexible: the Monsters of the Multiverse / Van Richten's rule, +2 and +1 or three +1s.
+ * Only ever placed in editions["2014"]: in 2024 rules ability increases come from the background.
+ */
+export type AsiPick = { kind: "fixed"; amounts: number[]; exclude?: Ability[] } | { kind: "flexible" };
+
 export type SpeciesEffects = {
   /** Walking speed in feet. */
   speed?: number;
@@ -51,9 +60,9 @@ export type SpeciesEffects = {
   acBonus?: number;
   /**
    * Natural armor used when wearing no body armor, if it beats the normal calculation: Lizardfolk
-   * 13 + DEX, Tortle 17 flat. A shield still adds.
+   * 13 + DEX, Tortle 17 flat, Loxodon 12 + CON (addAbil). A shield still adds.
    */
-  naturalArmor?: { base: number; addDex: boolean };
+  naturalArmor?: { base: number; addDex: boolean; addAbil?: Ability };
   /** hpPerLevel: +N hit points per character level (Dwarven Toughness). Ability increases (2014). */
   mods?: Partial<Record<Ability | "hpPerLevel", number>>;
   skillProf?: string[];
@@ -65,6 +74,7 @@ export type SpeciesEffects = {
   languages?: string[];
   languagePick?: { n: number; from: string[] | "any" };
   spells?: SpeciesSpell[];
+  asiPick?: AsiPick;
   /** An Origin feat of the player's choice (2024 Human). */
   bonusOriginFeat?: boolean;
 };

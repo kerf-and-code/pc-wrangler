@@ -299,7 +299,14 @@
           "Celestial Revelation",
           "At level 3, a transformation you choose."
         ]
-      ]
+      ],
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "flexible"
+          }
+        }
+      }
     },
     "Dragonborn": {
       "src": "PHB 2024",
@@ -844,7 +851,10 @@
           "resist": [
             "cold"
           ],
-          "choice": null
+          "choice": null,
+          "asiPick": {
+            "kind": "flexible"
+          }
         }
       }
     },
@@ -973,7 +983,10 @@
       "editions": {
         "2014": {
           "src": "Monsters of the Multiverse",
-          "darkvision": 60
+          "darkvision": 60,
+          "asiPick": {
+            "kind": "flexible"
+          }
         }
       }
     },
@@ -1142,7 +1155,23 @@
           "Tireless",
           "No Exhaustion from dehydration, malnutrition, or suffocation."
         ]
-      ]
+      ],
+      "editions": {
+        "2014": {
+          "mods": {
+            "con": 2
+          },
+          "asiPick": {
+            "kind": "fixed",
+            "amounts": [
+              1
+            ],
+            "exclude": [
+              "con"
+            ]
+          }
+        }
+      }
     },
     "Half-Elf": {
       "src": "PHB 2014",
@@ -1178,7 +1207,21 @@
           "Ability Score Increase",
           "Charisma +2 and two other abilities of your choice +1."
         ]
-      ]
+      ],
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "fixed",
+            "amounts": [
+              1,
+              1
+            ],
+            "exclude": [
+              "cha"
+            ]
+          }
+        }
+      }
     },
     "Half-Orc": {
       "src": "PHB 2014",
@@ -1232,7 +1275,14 @@
           "Shape-Shifter",
           "Action: change appearance, voice, and between Medium and Small; Advantage on Charisma checks while shifted."
         ]
-      ]
+      ],
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "flexible"
+          }
+        }
+      }
     },
     "Kalashtar": {
       "src": "Eberron: Forge of the Artificer",
@@ -1263,7 +1313,15 @@
           "Severed from Dreams",
           "Immune to the Dream spell; gain a skill proficiency of your choice after each Long Rest, lasting until the next."
         ]
-      ]
+      ],
+      "editions": {
+        "2014": {
+          "mods": {
+            "wis": 2,
+            "cha": 1
+          }
+        }
+      }
     },
     "Khoravar": {
       "src": "Eberron: Forge of the Artificer",
@@ -1346,7 +1404,14 @@
           "Shifting",
           "Bonus Action: shift for 1 minute and gain Temporary Hit Points equal to twice your Proficiency Bonus, Proficiency Bonus times per Long Rest, plus your chosen option."
         ]
-      ]
+      ],
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "flexible"
+          }
+        }
+      }
     },
     "Dhampir": {
       "src": "Ravenloft: The Horrors Within",
@@ -1373,7 +1438,14 @@
           "Vampiric Bite",
           "Unarmed Strike bite for 1d4 + Constitution Piercing; Proficiency Bonus times per Long Rest, heal or bolster your next check or attack by the damage."
         ]
-      ]
+      ],
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "flexible"
+          }
+        }
+      }
     },
     "Hexblood": {
       "src": "Ravenloft: The Horrors Within",
@@ -1403,7 +1475,14 @@
           "Hex Magic",
           "Disguise Self and Hex always prepared, each castable once per Long Rest without a slot."
         ]
-      ]
+      ],
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "flexible"
+          }
+        }
+      }
     },
     "Lupin": {
       "src": "Ravenloft: The Horrors Within",
@@ -1484,7 +1563,14 @@
           "Strange Endurance",
           "Resistance to Cold, Necrotic, or Poison, your choice."
         ]
-      ]
+      ],
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "flexible"
+          }
+        }
+      }
     },
     "Lorwyn Changeling": {
       "src": "Lorwyn: First Light",
@@ -1597,7 +1683,14 @@
           "Wind Caller",
           "Gust of Wind from level 3, once per Long Rest without a slot."
         ]
-      ]
+      ],
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "flexible"
+          }
+        }
+      }
     },
     "Bugbear": {
       "src": "Monsters of the Multiverse",
@@ -1628,7 +1721,14 @@
           "Surprise Attack",
           "Extra 2d6 damage on a hit against a creature that has not yet taken a turn this combat."
         ]
-      ]
+      ],
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "flexible"
+          }
+        }
+      }
     },
     "Centaur": {
       "src": "Monsters of the Multiverse",
@@ -1661,7 +1761,14 @@
           "Natural Affinity",
           "Proficiency in Animal Handling, Medicine, Nature, or Survival."
         ]
-      ]
+      ],
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "flexible"
+          }
+        }
+      }
     },
     "Deep Gnome": {
       "src": "Monsters of the Multiverse",
@@ -1701,7 +1808,14 @@
           "Svirfneblin Camouflage",
           "Advantage on a Stealth check, Proficiency Bonus times per Long Rest."
         ]
-      ]
+      ],
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "flexible"
+          }
+        }
+      }
     },
     "Duergar": {
       "src": "Monsters of the Multiverse",
@@ -1743,7 +1857,14 @@
           "Psionic Fortitude",
           "Advantage against the Charmed and Stunned conditions."
         ]
-      ]
+      ],
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "flexible"
+          }
+        }
+      }
     },
     "Eladrin": {
       "src": "Monsters of the Multiverse",
@@ -1788,7 +1909,14 @@
           "Trance",
           "4-hour Long Rest; change season and gain two weapon or tool proficiencies until the next one."
         ]
-      ]
+      ],
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "flexible"
+          }
+        }
+      }
     },
     "Fairy": {
       "src": "Monsters of the Multiverse",
@@ -1824,7 +1952,14 @@
           "Flight",
           "Fly Speed equal to your walking speed; not usable in medium or heavy armor."
         ]
-      ]
+      ],
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "flexible"
+          }
+        }
+      }
     },
     "Firbolg": {
       "src": "Monsters of the Multiverse",
@@ -1861,7 +1996,14 @@
           "Speech of Beast and Leaf",
           "Limited speech with Beasts and Plants; Advantage on Charisma checks to influence them."
         ]
-      ]
+      ],
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "flexible"
+          }
+        }
+      }
     },
     "Genasi": {
       "src": "Monsters of the Multiverse",
@@ -1976,7 +2118,14 @@
           "Elemental Heritage",
           "Air, Earth, Fire, or Water, each with its own resistance or movement and spells."
         ]
-      ]
+      ],
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "flexible"
+          }
+        }
+      }
     },
     "Githyanki": {
       "src": "Monsters of the Multiverse",
@@ -2016,7 +2165,14 @@
           "Psychic Resilience",
           "Resistance to psychic damage."
         ]
-      ]
+      ],
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "flexible"
+          }
+        }
+      }
     },
     "Githzerai": {
       "src": "Monsters of the Multiverse",
@@ -2060,7 +2216,14 @@
           "Psychic Resilience",
           "Resistance to psychic damage."
         ]
-      ]
+      ],
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "flexible"
+          }
+        }
+      }
     },
     "Goblin": {
       "src": "Monsters of the Multiverse",
@@ -2080,7 +2243,14 @@
           "Nimble Escape",
           "Disengage or Hide as a Bonus Action."
         ]
-      ]
+      ],
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "flexible"
+          }
+        }
+      }
     },
     "Harengon": {
       "src": "Monsters of the Multiverse",
@@ -2107,7 +2277,14 @@
           "Rabbit Hop",
           "Bonus Action jump of 5 feet times your Proficiency Bonus without provoking, Proficiency Bonus times per Long Rest."
         ]
-      ]
+      ],
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "flexible"
+          }
+        }
+      }
     },
     "Hobgoblin": {
       "src": "Monsters of the Multiverse",
@@ -2127,7 +2304,14 @@
           "Fortune from the Many",
           "After a miss or failed check or save, add up to +3 for allies within 30 feet, Proficiency Bonus times per Long Rest."
         ]
-      ]
+      ],
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "flexible"
+          }
+        }
+      }
     },
     "Kenku": {
       "src": "Monsters of the Multiverse",
@@ -2151,7 +2335,14 @@
           "Mimicry",
           "Mimic sounds and voices; Insight check to see through it."
         ]
-      ]
+      ],
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "flexible"
+          }
+        }
+      }
     },
     "Kobold": {
       "src": "Monsters of the Multiverse",
@@ -2194,7 +2385,14 @@
           "Kobold Legacy",
           "Craftiness, Defiance, or Draconic Sorcery."
         ]
-      ]
+      ],
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "flexible"
+          }
+        }
+      }
     },
     "Lizardfolk": {
       "src": "Monsters of the Multiverse",
@@ -2240,7 +2438,14 @@
           "Nature's Intuition",
           "Two of Animal Handling, Medicine, Nature, Perception, Stealth, or Survival."
         ]
-      ]
+      ],
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "flexible"
+          }
+        }
+      }
     },
     "Minotaur": {
       "src": "Monsters of the Multiverse",
@@ -2264,7 +2469,14 @@
           "Labyrinthine Recall",
           "Always know north; Advantage on Survival checks to navigate or track."
         ]
-      ]
+      ],
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "flexible"
+          }
+        }
+      }
     },
     "Satyr": {
       "src": "Monsters of the Multiverse",
@@ -2307,7 +2519,14 @@
           "Reveler",
           "Proficiency in Performance, Persuasion, and one musical instrument."
         ]
-      ]
+      ],
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "flexible"
+          }
+        }
+      }
     },
     "Sea Elf": {
       "src": "Monsters of the Multiverse",
@@ -2340,7 +2559,14 @@
           "Trance",
           "4-hour Long Rest; two weapon or tool proficiencies until the next one."
         ]
-      ]
+      ],
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "flexible"
+          }
+        }
+      }
     },
     "Shadar-kai": {
       "src": "Monsters of the Multiverse",
@@ -2366,7 +2592,14 @@
           "Trance",
           "4-hour Long Rest; two weapon or tool proficiencies until the next one."
         ]
-      ]
+      ],
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "flexible"
+          }
+        }
+      }
     },
     "Tabaxi": {
       "src": "Monsters of the Multiverse",
@@ -2390,7 +2623,14 @@
           "Feline Agility",
           "Double your speed for a turn; recharges after a turn with no movement."
         ]
-      ]
+      ],
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "flexible"
+          }
+        }
+      }
     },
     "Tortle": {
       "src": "Monsters of the Multiverse",
@@ -2429,7 +2669,14 @@
           "Shell Defense",
           "Action: withdraw for +4 AC and Advantage on Strength and Constitution saves, Prone with Speed 0."
         ]
-      ]
+      ],
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "flexible"
+          }
+        }
+      }
     },
     "Triton": {
       "src": "Monsters of the Multiverse",
@@ -2478,7 +2725,14 @@
           "Guardian of the Depths",
           "Resistance to cold damage."
         ]
-      ]
+      ],
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "flexible"
+          }
+        }
+      }
     },
     "Yuan-ti": {
       "src": "Monsters of the Multiverse",
@@ -2529,6 +2783,656 @@
         [
           "Serpentine Spellcasting",
           "Poison Spray; Animal Friendship on snakes at will; Suggestion from level 3 once per Long Rest without a slot."
+        ]
+      ],
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "flexible"
+          }
+        }
+      }
+    },
+    "Astral Elf": {
+      "src": "Spelljammer: Adventures in Space",
+      "creatureType": "Humanoid",
+      "size": "Medium",
+      "speed": 30,
+      "darkvision": 60,
+      "advAgainst": [
+        "charmed"
+      ],
+      "skillProf": [
+        "perception"
+      ],
+      "spellAbility": "choose",
+      "choice": {
+        "key": "astral-fire",
+        "label": "Astral Fire",
+        "options": {
+          "Dancing Lights": {
+            "spells": [
+              {
+                "spell": "Dancing Lights",
+                "level": 1
+              }
+            ]
+          },
+          "Light": {
+            "spells": [
+              {
+                "spell": "Light",
+                "level": 1
+              }
+            ]
+          },
+          "Sacred Flame": {
+            "spells": [
+              {
+                "spell": "Sacred Flame",
+                "level": 1
+              }
+            ]
+          }
+        }
+      },
+      "traits": [
+        [
+          "Astral Fire",
+          "One cantrip: Dancing Lights, Light, or Sacred Flame."
+        ],
+        [
+          "Starlight Step",
+          "Bonus Action teleport up to 30 feet, Proficiency Bonus times per Long Rest."
+        ],
+        [
+          "Astral Trance",
+          "4-hour Long Rest; one skill and one weapon or tool proficiency until the next one."
+        ]
+      ],
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "flexible"
+          }
+        }
+      }
+    },
+    "Autognome": {
+      "src": "Spelljammer: Adventures in Space",
+      "creatureType": "Construct",
+      "size": "Small",
+      "speed": 30,
+      "naturalArmor": {
+        "base": 13,
+        "addDex": true
+      },
+      "resist": [
+        "poison"
+      ],
+      "advAgainst": [
+        "paralyzed",
+        "poisoned"
+      ],
+      "toolPick": {
+        "n": 2,
+        "from": "any"
+      },
+      "traits": [
+        [
+          "Armored Casing",
+          "Base AC 13 + DEX without armor."
+        ],
+        [
+          "Built for Success",
+          "Add 1d4 to an attack, check, or save after seeing the roll, Proficiency Bonus times per Long Rest."
+        ],
+        [
+          "Healing Machine",
+          "Mending lets you spend a Hit Die to heal; certain healing spells work on you."
+        ],
+        [
+          "Mechanical Nature",
+          "Resistance to poison, immune to disease, Advantage against Paralyzed and Poisoned; no need to eat, drink, or breathe."
+        ],
+        [
+          "Specialized Design",
+          "Two tool proficiencies."
+        ]
+      ],
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "flexible"
+          }
+        }
+      }
+    },
+    "Giff": {
+      "src": "Spelljammer: Adventures in Space",
+      "creatureType": "Humanoid",
+      "size": "Medium",
+      "speed": 30,
+      "speeds": {
+        "swim": "speed"
+      },
+      "advSaves": [
+        "str"
+      ],
+      "weaponProf": [
+        "Firearms"
+      ],
+      "traits": [
+        [
+          "Astral Spark",
+          "Extra Force damage equal to your Proficiency Bonus on a weapon hit, once per turn, Proficiency Bonus times per Long Rest."
+        ],
+        [
+          "Firearms Mastery",
+          "Proficiency with firearms; ignore Loading; no Disadvantage at long range."
+        ],
+        [
+          "Hippo Build",
+          "Advantage on Strength checks and saves; count as one size larger for carrying."
+        ]
+      ],
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "flexible"
+          }
+        }
+      }
+    },
+    "Hadozee": {
+      "src": "Spelljammer: Adventures in Space",
+      "creatureType": "Humanoid",
+      "size": "Medium or Small",
+      "speed": 30,
+      "speeds": {
+        "climb": "speed"
+      },
+      "traits": [
+        [
+          "Dexterous Feet",
+          "Bonus Action object interaction with your feet."
+        ],
+        [
+          "Glide",
+          "Reaction when falling 10 feet or more: glide your Speed horizontally and take no fall damage."
+        ],
+        [
+          "Hadozee Dodge",
+          "Reaction: reduce damage by 1d6 + Proficiency Bonus, Proficiency Bonus times per Long Rest."
+        ]
+      ],
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "flexible"
+          }
+        }
+      }
+    },
+    "Plasmoid": {
+      "src": "Spelljammer: Adventures in Space",
+      "creatureType": "Ooze",
+      "size": "Medium or Small",
+      "speed": 30,
+      "darkvision": 60,
+      "resist": [
+        "acid",
+        "poison"
+      ],
+      "advAgainst": [
+        "poisoned"
+      ],
+      "traits": [
+        [
+          "Amorphous",
+          "Squeeze through a 1-inch gap when carrying nothing; Advantage on checks to start or escape a grapple."
+        ],
+        [
+          "Hold Breath",
+          "Up to 1 hour."
+        ],
+        [
+          "Shape Self",
+          "Reshape limbs; Bonus Action pseudopod to manipulate objects."
+        ]
+      ],
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "flexible"
+          }
+        }
+      }
+    },
+    "Thri-kreen": {
+      "src": "Spelljammer: Adventures in Space",
+      "creatureType": "Monstrosity",
+      "size": "Medium or Small",
+      "speed": 30,
+      "darkvision": 60,
+      "naturalArmor": {
+        "base": 13,
+        "addDex": true
+      },
+      "traits": [
+        [
+          "Chameleon Carapace",
+          "Base AC 13 + DEX without armor; Action to blend in for Advantage on Stealth to hide."
+        ],
+        [
+          "Secondary Arms",
+          "Extra arms that handle objects and Light weapons."
+        ],
+        [
+          "Sleepless",
+          "No sleep needed."
+        ],
+        [
+          "Thri-kreen Telepathy",
+          "Telepathy with willing creatures within 120 feet."
+        ]
+      ],
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "flexible"
+          }
+        }
+      }
+    },
+    "Owlin": {
+      "src": "Strixhaven: A Curriculum of Chaos",
+      "creatureType": "Humanoid",
+      "size": "Medium or Small",
+      "speed": 30,
+      "speeds": {
+        "fly": "speed"
+      },
+      "darkvision": 120,
+      "skillProf": [
+        "stealth"
+      ],
+      "traits": [
+        [
+          "Flight",
+          "Fly Speed equal to your walking speed; not usable in medium or heavy armor."
+        ],
+        [
+          "Silent Feathers",
+          "Proficiency in Stealth."
+        ]
+      ],
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "flexible"
+          }
+        }
+      }
+    },
+    "Leonin": {
+      "src": "Mythic Odysseys of Theros",
+      "creatureType": "Humanoid",
+      "size": "Medium",
+      "speed": 35,
+      "darkvision": 60,
+      "skillPick": {
+        "n": 1,
+        "from": [
+          "athletics",
+          "intimidation",
+          "perception",
+          "survival"
+        ]
+      },
+      "languages": [
+        "Common",
+        "Leonin"
+      ],
+      "editions": {
+        "2014": {
+          "mods": {
+            "con": 2,
+            "str": 1
+          }
+        }
+      },
+      "traits": [
+        [
+          "Claws",
+          "Unarmed Strikes deal 1d4 + Strength Slashing."
+        ],
+        [
+          "Hunter's Instincts",
+          "Proficiency in Athletics, Intimidation, Perception, or Survival."
+        ],
+        [
+          "Daunting Roar",
+          "Bonus Action: creatures within 10 feet make a Wisdom save or are Frightened until your next turn, once per Short or Long Rest."
+        ]
+      ]
+    },
+    "Verdan": {
+      "src": "Acquisitions Incorporated",
+      "creatureType": "Humanoid",
+      "size": "Small",
+      "speed": 30,
+      "advSaves": [
+        "wis",
+        "cha"
+      ],
+      "skillProf": [
+        "persuasion"
+      ],
+      "languages": [
+        "Common",
+        "Goblin"
+      ],
+      "languagePick": {
+        "n": 1,
+        "from": "any"
+      },
+      "editions": {
+        "2014": {
+          "mods": {
+            "cha": 2,
+            "con": 1
+          }
+        }
+      },
+      "traits": [
+        [
+          "Size",
+          "Small at level 1, Medium from level 5."
+        ],
+        [
+          "Black Blood Healing",
+          "Reroll 1s and 2s on Hit Dice spent during a Short Rest."
+        ],
+        [
+          "Limited Telepathy",
+          "Simple telepathy with a creature you can see within 30 feet."
+        ],
+        [
+          "Persuasive",
+          "Proficiency in Persuasion."
+        ],
+        [
+          "Telepathic Insight",
+          "Advantage on Wisdom and Charisma saves."
+        ]
+      ]
+    },
+    "Grung": {
+      "src": "One Grung Above",
+      "creatureType": "Humanoid",
+      "size": "Small",
+      "speed": 25,
+      "speeds": {
+        "climb": 25
+      },
+      "immune": [
+        "poison"
+      ],
+      "skillProf": [
+        "perception"
+      ],
+      "languages": [
+        "Grung"
+      ],
+      "editions": {
+        "2014": {
+          "mods": {
+            "dex": 2,
+            "con": 1
+          }
+        }
+      },
+      "traits": [
+        [
+          "Arboreal Alertness",
+          "Proficiency in Perception."
+        ],
+        [
+          "Amphibious",
+          "Breathe air and water."
+        ],
+        [
+          "Poison Immunity",
+          "Immune to poison damage and the Poisoned condition."
+        ],
+        [
+          "Poisonous Skin",
+          "Contact or coated piercing weapons force a DC 12 Constitution save."
+        ],
+        [
+          "Standing Leap",
+          "Long jump 25 feet, high jump 15 feet, running start or not."
+        ],
+        [
+          "Water Dependency",
+          "A day without an hour in water costs a level of Exhaustion."
+        ]
+      ]
+    },
+    "Locathah": {
+      "src": "Locathah Rising",
+      "creatureType": "Humanoid",
+      "size": "Medium",
+      "speed": 30,
+      "speeds": {
+        "swim": 30
+      },
+      "naturalArmor": {
+        "base": 12,
+        "addDex": true
+      },
+      "skillProf": [
+        "athletics",
+        "perception"
+      ],
+      "advAgainst": [
+        "charmed",
+        "frightened",
+        "paralyzed",
+        "poisoned",
+        "stunned",
+        "magical sleep"
+      ],
+      "languages": [
+        "Aquan",
+        "Common"
+      ],
+      "editions": {
+        "2014": {
+          "mods": {
+            "str": 2,
+            "dex": 1
+          }
+        }
+      },
+      "traits": [
+        [
+          "Natural Armor",
+          "Base AC 12 + DEX without armor."
+        ],
+        [
+          "Observant and Athletic",
+          "Proficiency in Athletics and Perception."
+        ],
+        [
+          "Leviathan Will",
+          "Advantage on saves against being charmed, frightened, paralyzed, poisoned, stunned, or put to sleep."
+        ],
+        [
+          "Limited Amphibiousness",
+          "Breathe air and water; must submerge every 4 hours."
+        ]
+      ]
+    },
+    "Loxodon": {
+      "src": "Guildmasters' Guide to Ravnica",
+      "creatureType": "Humanoid",
+      "size": "Medium",
+      "speed": 30,
+      "advAgainst": [
+        "charmed",
+        "frightened"
+      ],
+      "naturalArmor": {
+        "base": 12,
+        "addDex": false,
+        "addAbil": "con"
+      },
+      "languages": [
+        "Common",
+        "Loxodon"
+      ],
+      "editions": {
+        "2014": {
+          "mods": {
+            "con": 2,
+            "wis": 1
+          }
+        }
+      },
+      "traits": [
+        [
+          "Powerful Build",
+          "Count as one size larger for carrying, pushing, dragging, and lifting."
+        ],
+        [
+          "Loxodon Serenity",
+          "Advantage on saves against being charmed or frightened."
+        ],
+        [
+          "Natural Armor",
+          "Base AC 12 + CON without armor."
+        ],
+        [
+          "Trunk",
+          "Grasp, lift up to five times your Strength in pounds, snorkel, or make an Unarmed Strike."
+        ],
+        [
+          "Keen Smell",
+          "Advantage on smell-based Perception, Survival, and Investigation checks."
+        ]
+      ]
+    },
+    "Simic Hybrid": {
+      "src": "Guildmasters' Guide to Ravnica",
+      "creatureType": "Humanoid",
+      "size": "Medium",
+      "speed": 30,
+      "darkvision": 60,
+      "languages": [
+        "Common"
+      ],
+      "choice": {
+        "key": "enhancement",
+        "label": "Animal Enhancement",
+        "options": {
+          "Manta Glide": {
+            "summary": "Reduce falling damage by up to 100 feet and glide 2 feet sideways per foot fallen."
+          },
+          "Nimble Climber": {
+            "speeds": {
+              "climb": "speed"
+            }
+          },
+          "Underwater Adaptation": {
+            "speeds": {
+              "swim": "speed"
+            },
+            "summary": "Breathe air and water."
+          }
+        }
+      },
+      "editions": {
+        "2014": {
+          "mods": {
+            "con": 2
+          },
+          "asiPick": {
+            "kind": "fixed",
+            "amounts": [
+              1
+            ],
+            "exclude": [
+              "con"
+            ]
+          }
+        }
+      },
+      "traits": [
+        [
+          "Animal Enhancement",
+          "One enhancement at level 1; a second at level 5 (another of these, or Grappling Appendages, Carapace, or Acid Spit)."
+        ],
+        [
+          "Languages",
+          "Common and your choice of Elvish or Vedalken."
+        ]
+      ]
+    },
+    "Vedalken": {
+      "src": "Guildmasters' Guide to Ravnica",
+      "creatureType": "Humanoid",
+      "size": "Medium",
+      "speed": 30,
+      "advSaves": [
+        "int",
+        "wis",
+        "cha"
+      ],
+      "skillPick": {
+        "n": 1,
+        "from": [
+          "arcana",
+          "history",
+          "investigation",
+          "medicine",
+          "performance",
+          "sleight"
+        ]
+      },
+      "toolPick": {
+        "n": 1,
+        "from": "any"
+      },
+      "languages": [
+        "Common",
+        "Vedalken"
+      ],
+      "languagePick": {
+        "n": 1,
+        "from": "any"
+      },
+      "editions": {
+        "2014": {
+          "mods": {
+            "int": 2,
+            "wis": 1
+          }
+        }
+      },
+      "traits": [
+        [
+          "Vedalken Dispassion",
+          "Advantage on Intelligence, Wisdom, and Charisma saves."
+        ],
+        [
+          "Tireless Precision",
+          "One skill from the list and one tool; add 1d4 to checks with either."
+        ],
+        [
+          "Partially Amphibious",
+          "Breathe underwater for up to 1 hour per Long Rest."
         ]
       ]
     }

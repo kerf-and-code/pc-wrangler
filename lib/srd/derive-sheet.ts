@@ -144,7 +144,7 @@ export type SpeciesRule = {
   advSaves?: Ability[];
   advSavesVs?: string;
   acBonus?: number;
-  naturalArmor?: { base: number; addDex: boolean };
+  naturalArmor?: { base: number; addDex: boolean; addAbil?: Ability };
 };
 export type SubclassRule = { casting?: CastRule | null };
 export type CastRule = { ability: Ability };
@@ -485,11 +485,12 @@ export function deriveSheet(build: Build, ctx: RulesContext): DerivedSheet {  co
   // when it comes out higher, which is how the trait is worded.
   const nat = ctx.species[build.meta.species]?.naturalArmor;
   if (nat && !worn.body) {
-    const natAc = nat.base + (nat.addDex ? m.dex : 0) + build.armorMisc + (em.ac || 0) + gearAcBonus
+    const natAc = nat.base + (nat.addDex ? m.dex : 0) + (nat.addAbil ? m[nat.addAbil] : 0)
+      + build.armorMisc + (em.ac || 0) + gearAcBonus
       + shieldBonus + speciesAc;
     if (natAc > ac) {
       ac = natAc;
-      acFormula = `Natural Armor: ${nat.base}${nat.addDex ? " plus DEX" : ""}`;
+      acFormula = `Natural Armor: ${nat.base}${nat.addDex ? " plus DEX" : ""}${nat.addAbil ? ` plus ${nat.addAbil.toUpperCase()}` : ""}`;
     }
   }
 
