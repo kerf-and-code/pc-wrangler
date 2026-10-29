@@ -4706,5 +4706,84 @@
     "description": "Summon a Tiny homunculus (Homunculus Servant stat block) that replaces any earlier one. It acts right after you, obeys you, Dodges if given no orders, and can deliver your touch spells within 120 feet as a Reaction. A higher slot raises its Hit Points and Force Strike.",
     "edition": "2024",
     "source": "kc"
+  },
+  {
+    "name": "Chaos Bolt",
+    "level": 1,
+    "school": "Evocation",
+    "casting_time": "1 action",
+    "range": "120 feet",
+    "components": "V, S",
+    "duration": "Instantaneous",
+    "concentration": false,
+    "ritual": false,
+    "classes": [
+      "Sorcerer"
+    ],
+    "attack_type": "ranged",
+    "description": "Ranged spell attack against one creature: 2d8 + 1d6 damage. Pick one of the d8s; its number sets the type (1 Acid, 2 Cold, 3 Fire, 4 Force, 5 Lightning, 6 Poison, 7 Psychic, 8 Thunder). If both d8s match, the bolt leaps to a different creature of your choice within 30 feet of the target: new attack, new damage, and it can leap again. Each creature can be targeted only once per casting. +1d6 per slot level above 1st, to each target.",
+    "edition": "2014",
+    "source": "kc"
+  },
+  {
+    "name": "Dust Devil",
+    "level": 2,
+    "school": "Conjuration",
+    "casting_time": "1 action",
+    "range": "60 feet",
+    "components": "V, S, M (a pinch of dust)",
+    "duration": "Concentration, up to 1 minute",
+    "concentration": true,
+    "ritual": false,
+    "classes": [
+      "Druid",
+      "Sorcerer",
+      "Wizard"
+    ],
+    "attack_type": null,
+    "description": "A dust devil fills an unoccupied 5-foot cube of air in range. A creature that ends its turn within 5 feet of it makes a Strength save: 1d8 bludgeoning and pushed 10 feet on a failure, half damage and no push on a success. As a bonus action you move it up to 30 feet; passing over sand, dust, loose dirt or small gravel, it raises a 10-foot-radius cloud of debris that heavily obscures the area until the start of your next turn. +1d8 per slot level above 2nd.",
+    "edition": "2014",
+    "source": "kc"
+  },
+  {
+    "name": "Whirlwind",
+    "level": 7,
+    "school": "Evocation",
+    "casting_time": "1 action",
+    "range": "300 feet",
+    "components": "V, M (a piece of straw)",
+    "duration": "Concentration, up to 1 minute",
+    "concentration": true,
+    "ritual": false,
+    "classes": [
+      "Druid",
+      "Sorcerer",
+      "Wizard"
+    ],
+    "attack_type": null,
+    "description": "A 10-foot-radius, 30-foot-high cylinder of wind on the ground in range; your action moves it up to 30 feet along the ground, and it picks up unsecured Medium or smaller objects. A creature makes a Dexterity save the first time on a turn it enters the whirlwind or the whirlwind enters its space: 10d6 bludgeoning, half on a success. A Large or smaller creature that fails also makes a Strength save or is restrained inside, rising 5 feet at the start of each of its turns, moving with it and falling when the spell ends. As an action it can make a Strength or Dexterity check against your spell save DC to break free, then is flung 3d6 x 10 feet in a random direction.",
+    "edition": "2014",
+    "source": "kc"
+  },
+  {
+    "name": "Sword Burst",
+    "level": 0,
+    "school": "Conjuration",
+    "casting_time": "1 action",
+    "range": "Self (5-foot radius)",
+    "components": "V",
+    "duration": "Instantaneous",
+    "concentration": false,
+    "ritual": false,
+    "classes": [
+      "Artificer",
+      "Sorcerer",
+      "Warlock",
+      "Wizard"
+    ],
+    "attack_type": null,
+    "description": "Spectral blades sweep around you: every other creature within 5 feet makes a Dexterity save or takes 1d6 force. The damage rises to 2d6 at 5th level, 3d6 at 11th and 4d6 at 17th.",
+    "edition": "2014",
+    "source": "kc"
   }
 ]

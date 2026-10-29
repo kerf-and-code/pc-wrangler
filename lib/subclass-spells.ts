@@ -30,6 +30,8 @@ import { choiceKey } from "./class-choices";
 // Adding a subclass's list is a JSON edit; the hand-written table below keeps the lists shared with
 // other features (the Cleric domains the Vestige Patron borrows).
 import moreSpells from "./srd/subclass-spells-2024.json";
+// The 2014 subclasses' lists (Xanathar's and later), same shape. Spell names follow the 2014 data.
+import spells2014 from "./srd/subclass-spells-2014.json";
 
 export type SubclassSpell = { level: number; spell: string };
 
@@ -52,7 +54,10 @@ const DOMAIN_SPELLS: Record<"Life" | "Light" | "Trickery" | "War", SubclassSpell
 };
 
 const FROM_JSON: Record<string, SubclassSpell[]> = Object.fromEntries(
-  Object.entries(moreSpells as Record<string, Record<string, string[]>>).map(([name, byLevel]) => [
+  Object.entries({
+    ...(spells2014 as Record<string, Record<string, string[]>>),
+    ...(moreSpells as Record<string, Record<string, string[]>>),
+  }).map(([name, byLevel]) => [
     name, S(Object.entries(byLevel).map(([lv, spells]) => [Number(lv), spells] as [number, string[]])),
   ]),
 );

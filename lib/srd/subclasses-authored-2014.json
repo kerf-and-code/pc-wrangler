@@ -1,0 +1,1549 @@
+[
+  {
+    "class": "Barbarian",
+    "name": "Path of the Ancestral Guardian",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Ancestral Protectors",
+            "desc": "While raging, the first creature you hit on your turn has disadvantage on attacks against anyone but you until the start of your next turn, and anyone else it hits has resistance to that attack's damage. Ends early if your rage ends."
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Spirit Shield",
+            "desc": "While raging, when a creature you can see within 30 feet takes damage, use your reaction to reduce it by 2d6 (3d6 at 10th level, 4d6 at 14th)."
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Consult the Spirits",
+            "desc": "Cast augury or clairvoyance without a slot or material components (Wisdom); clairvoyance summons an invisible ancestral spirit instead of a sensor. Once per short or long rest."
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Vengeful Ancestors",
+            "desc": "When Spirit Shield reduces an attack's damage, the attacker takes force damage equal to the amount prevented."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Barbarian",
+    "name": "Path of the Storm Herald",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Storm Aura",
+            "desc": "While raging, a 10-foot aura activates on entering rage and again as a bonus action each turn; save DC 8 + proficiency + Con. Choose an environment (change on leveling): Desert, other creatures in the aura take 2 fire (3 at 5th, 4 at 10th, 5 at 15th, 6 at 20th); Sea, one creature makes a Dex save, 1d6 lightning, half on success (2d6 at 10th, 3d6 at 15th, 4d6 at 20th); Tundra, chosen creatures gain 2 temporary HP (3 at 5th, 4 at 10th, 5 at 15th, 6 at 20th)."
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Storm Soul",
+            "desc": "Desert: fire resistance, ignore extreme heat, set an unattended flammable object alight with an action. Sea: lightning resistance, breathe underwater, swim speed 30 feet. Tundra: cold resistance, ignore extreme cold, freeze a 5-foot cube of water for 1 minute with an action."
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Shielding Storm",
+            "desc": "Creatures of your choice in your aura share your Storm Soul resistance."
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Raging Storm",
+            "desc": "Desert: after a creature in your aura hits you, reaction for a Dex save or fire damage equal to half your barbarian level. Sea: after you hit a creature in your aura, reaction for a Str save or it falls prone. Tundra: each time the aura activates, one creature in it makes a Str save or its speed is 0 until the start of your next turn."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Barbarian",
+    "name": "Path of the Zealot",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Divine Fury",
+            "desc": "While raging, the first creature you hit with a weapon each turn takes an extra 1d6 + half your barbarian level, necrotic or radiant (chosen when you gain this)."
+          },
+          {
+            "name": "Warrior of the Gods",
+            "desc": "Spells that only restore you to life (not undeath) need no material components."
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Fanatical Focus",
+            "desc": "Once per rage, reroll a failed saving throw and use the new roll."
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Zealous Presence",
+            "desc": "Bonus action: up to ten other creatures of your choice within 60 feet that can hear you have advantage on attacks and saves until the start of your next turn. Once per long rest."
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Rage beyond Death",
+            "desc": "While raging, 0 hit points doesn't knock you unconscious; you still make death saves, but you don't die until your rage ends, and then only if still at 0 HP."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Bard",
+    "name": "College of Glamour",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Mantle of Inspiration",
+            "desc": "Bonus action, spend a Bardic Inspiration: up to Cha mod (min 1) creatures within 60 feet that can see you gain 5 temporary HP (8 at 5th, 11 at 10th, 14 at 15th) and can use a reaction to move their speed without provoking opportunity attacks."
+          },
+          {
+            "name": "Enthralling Performance",
+            "desc": "After performing for 1 minute, up to Cha mod (min 1) humanoids within 60 feet that watched make a Wis save or are charmed for 1 hour, idolizing you; ends if damaged or if you attack them or their allies. Failed targets don't know. Once per short or long rest."
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Mantle of Majesty",
+            "desc": "Bonus action: cast command without a slot, then again as a bonus action each turn for 1 minute (concentration). Creatures charmed by you automatically fail. Once per long rest."
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Unbreakable Majesty",
+            "desc": "Bonus action, 1 minute or until incapacitated: a creature attacking you for the first time on a turn makes a Cha save or must pick another target (or waste the attack); on a success it has disadvantage on saves against your spells on your next turn. Once per short or long rest."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Bard",
+    "name": "College of Swords",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Bonus Proficiencies",
+            "desc": "Medium armor and the scimitar; a proficient simple or martial melee weapon can be your bard spellcasting focus."
+          },
+          {
+            "name": "Fighting Style",
+            "desc": "Choose Dueling or Two-Weapon Fighting."
+          },
+          {
+            "name": "Blade Flourish",
+            "desc": "When you take the Attack action, +10 feet walking speed this turn; once per turn on a weapon hit, spend a Bardic Inspiration die for extra damage equal to the roll plus one flourish: Defensive (add the roll to AC until your next turn), Slashing (same damage to another creature within 5 feet), or Mobile (push 5 feet plus the roll, then reaction to move your speed to a space within 5 feet of the target)."
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Extra Attack",
+            "desc": "Attack twice when you take the Attack action."
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Master's Flourish",
+            "desc": "Roll a d6 for a Blade Flourish instead of spending Bardic Inspiration."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Bard",
+    "name": "College of Whispers",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Psychic Blades",
+            "desc": "Once per round on your turn, on a weapon hit, spend a Bardic Inspiration for an extra 2d6 psychic (3d6 at 5th, 5d6 at 10th, 8d6 at 15th)."
+          },
+          {
+            "name": "Words of Terror",
+            "desc": "After talking 1 minute alone with a humanoid, it makes a Wis save or is frightened of you or another creature you choose for 1 hour or until it or an ally is attacked or damaged. Failed targets don't know. Once per short or long rest."
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Mantle of Whispers",
+            "desc": "Reaction when a humanoid dies within 30 feet: capture its shadow until a long rest. As an action, become a disguise of that person for 1 hour, with what it would share with a casual acquaintance; Insight vs your Deception +5 sees through it. Once per short or long rest."
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Shadow Lore",
+            "desc": "Action, one creature within 30 feet that can hear and understand you makes a Wis save or is charmed for 8 hours (ends if you or allies harm it or force a save), believing you know its deepest secret; it obeys you short of risking its life. Once per long rest."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Cleric",
+    "name": "Forge Domain",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything",
+    "features_by_level": [
+      {
+        "level": 1,
+        "features": [
+          {
+            "name": "Domain Spells",
+            "desc": "Always prepared: identify, searing smite (1st); heat metal, magic weapon (3rd); elemental weapon, protection from energy (5th); fabricate, wall of fire (7th); animate objects, creation (9th)."
+          },
+          {
+            "name": "Bonus Proficiencies",
+            "desc": "Heavy armor and smith's tools."
+          },
+          {
+            "name": "Blessing of the Forge",
+            "desc": "At the end of a long rest, touch a nonmagical suit of armor or simple or martial weapon: it becomes magic (+1 AC, or +1 to attack and damage) until your next long rest or your death."
+          }
+        ]
+      },
+      {
+        "level": 2,
+        "features": [
+          {
+            "name": "Channel Divinity: Artisan's Blessing",
+            "desc": "A 1-hour ritual crafts a nonmagical metal-containing item worth up to 100 gp (weapon, armor, ten ammunition, tools, other metal object), consuming metal or coins of equal value; can duplicate a metal item you hold, such as a key."
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Soul of the Forge",
+            "desc": "Resistance to fire damage; +1 AC while wearing heavy armor."
+          }
+        ]
+      },
+      {
+        "level": 8,
+        "features": [
+          {
+            "name": "Divine Strike",
+            "desc": "Once on each of your turns, a weapon hit deals an extra 1d8 fire (2d8 at 14th level)."
+          }
+        ]
+      },
+      {
+        "level": 17,
+        "features": [
+          {
+            "name": "Saint of Forge and Fire",
+            "desc": "Immunity to fire damage; while wearing heavy armor, resistance to bludgeoning, piercing and slashing from nonmagical attacks."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Cleric",
+    "name": "Grave Domain",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything",
+    "features_by_level": [
+      {
+        "level": 1,
+        "features": [
+          {
+            "name": "Domain Spells",
+            "desc": "Always prepared: bane, false life (1st); gentle repose, ray of enfeeblement (3rd); revivify, vampiric touch (5th); blight, death ward (7th); antilife shell, raise dead (9th)."
+          },
+          {
+            "name": "Circle of Mortality",
+            "desc": "Healing dice from your spells use their maximum on a creature at 0 hit points. You learn spare the dying (not counted against your cantrips), with 30-foot range and castable as a bonus action."
+          },
+          {
+            "name": "Eyes of the Grave",
+            "desc": "Action: until the end of your next turn you know the location of undead within 60 feet not behind total cover or shielded from divination. Wis mod uses (min 1) per long rest."
+          }
+        ]
+      },
+      {
+        "level": 2,
+        "features": [
+          {
+            "name": "Channel Divinity: Path to the Grave",
+            "desc": "Action, curse one creature within 30 feet until the end of your next turn: the next attack by you or an ally that hits it deals vulnerable damage, then the curse ends."
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Sentinel at Death's Door",
+            "desc": "Reaction when you or a creature within 30 feet suffers a critical hit: make it a normal hit, cancelling crit-triggered effects. Wis mod uses (min 1) per long rest."
+          }
+        ]
+      },
+      {
+        "level": 8,
+        "features": [
+          {
+            "name": "Potent Spellcasting",
+            "desc": "Add your Wisdom modifier to cleric cantrip damage."
+          }
+        ]
+      },
+      {
+        "level": 17,
+        "features": [
+          {
+            "name": "Keeper of Souls",
+            "desc": "When an enemy you can see dies within 60 feet, you or a creature within 60 feet regains HP equal to its Hit Dice count, if you aren't incapacitated. Once per turn cycle (until the start of your next turn)."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Druid",
+    "name": "Circle of Dreams",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything",
+    "features_by_level": [
+      {
+        "level": 2,
+        "features": [
+          {
+            "name": "Balm of the Summer Court",
+            "desc": "A pool of d6s equal to your druid level, refilled on a long rest. Bonus action: spend up to half your druid level in dice on a creature within 120 feet; it regains the total in HP plus 1 temporary HP per die."
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Hearth of Moonlight and Shadow",
+            "desc": "At the start of a rest, an invisible 30-foot-radius sphere: you and allies inside have +5 to Stealth and Perception, and firelight inside isn't visible outside. Ends with the rest or if you leave."
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Hidden Paths",
+            "desc": "Bonus action: teleport up to 60 feet; or action: teleport a willing creature you touch up to 30 feet. Wis mod uses (min 1) per long rest."
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Walker in Dreams",
+            "desc": "After a short rest, cast dream (you as messenger), scrying, or teleportation circle without a slot or material components; the circle opens to where you last finished a long rest on this plane. Once per long rest."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Druid",
+    "name": "Circle of the Shepherd",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything",
+    "features_by_level": [
+      {
+        "level": 2,
+        "features": [
+          {
+            "name": "Speech of the Woods",
+            "desc": "You speak, read and write Sylvan; beasts understand you and you can read their noises and motions."
+          },
+          {
+            "name": "Spirit Totem",
+            "desc": "Bonus action: summon a spirit at a point within 60 feet with a 30-foot aura for 1 minute (bonus action moves it 60 feet). Once per short or long rest. Bear: chosen creatures gain 5 + druid level temporary HP, and you and allies have advantage on Str checks and saves in the aura. Hawk: reaction to give advantage on an attack against a target in the aura; you and allies have advantage on Perception there. Unicorn: advantage on checks to detect creatures in the aura, and when your slotted spell heals anyone, chosen creatures in the aura also regain HP equal to your druid level."
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Mighty Summoner",
+            "desc": "Beasts and fey your spells summon or create get 2 extra HP per Hit Die, and their natural weapons count as magical."
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Guardian Spirit",
+            "desc": "A beast or fey you summoned that ends its turn in your Spirit Totem aura regains HP equal to half your druid level."
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Faithful Summons",
+            "desc": "When reduced to 0 HP or incapacitated against your will, gain conjure animals as a 9th-level casting: four beasts of CR 2 or lower within 20 feet protect you for 1 hour, no concentration. Once per long rest."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Fighter",
+    "name": "Arcane Archer",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Arcane Archer Lore",
+            "desc": "Proficiency in Arcana or Nature, and the prestidigitation or druidcraft cantrip."
+          },
+          {
+            "name": "Arcane Shot",
+            "desc": "Learn two Arcane Shot options (one more at 7th, 10th, 15th and 18th). Once per turn, when you fire a shortbow or longbow arrow as part of the Attack action, apply an option (decided on hit unless it has no attack roll). Two uses per short or long rest. Save DC 8 + proficiency + Int. Options, extra damage doubling at 18th: Banishing (Cha save or banished to the Feywild until the end of its next turn; +2d6 force at 18th), Beguiling (+2d6 psychic, Wis save or charmed by an ally within 30 feet until your next turn), Bursting (2d6 force to the target and everything within 10 feet), Enfeebling (+2d6 necrotic, Con save or its weapon damage is halved until your next turn), Grasping (+2d6 poison, speed -10 feet and 2d6 slashing whenever it moves, for 1 minute or until removed with Athletics vs your DC), Piercing (no attack roll: 1-by-30-foot line through cover, Dex save for arrow damage +1d6 piercing, half on success), Seeking (no attack roll: hits a creature seen in the last minute around corners, Dex save for arrow damage +1d6 force and you learn its location, half on success), Shadow (+2d6 psychic, Wis save or it can't see beyond 5 feet until your next turn)."
+          }
+        ]
+      },
+      {
+        "level": 7,
+        "features": [
+          {
+            "name": "Magic Arrow",
+            "desc": "Nonmagical arrows you fire from a shortbow or longbow count as magical."
+          },
+          {
+            "name": "Curving Shot",
+            "desc": "When you miss with a magic arrow, bonus action to reroll against a different target within 60 feet of the first."
+          }
+        ]
+      },
+      {
+        "level": 15,
+        "features": [
+          {
+            "name": "Ever-Ready Shot",
+            "desc": "If you roll initiative with no Arcane Shot uses left, regain one."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Fighter",
+    "name": "Cavalier",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Bonus Proficiency",
+            "desc": "One of Animal Handling, History, Insight, Performance or Persuasion, or one language."
+          },
+          {
+            "name": "Born to the Saddle",
+            "desc": "Advantage on saves to avoid falling off your mount; land on your feet from a fall of 10 feet or less if not incapacitated; mounting or dismounting costs 5 feet of movement."
+          },
+          {
+            "name": "Unwavering Mark",
+            "desc": "When you hit with a melee weapon, mark the creature until the end of your next turn: within 5 feet of you it has disadvantage attacking anyone but you. If it damages someone else, on your next turn a bonus-action melee attack against it has advantage and deals extra damage equal to half your fighter level. Str mod special attacks (min 1) per long rest."
+          }
+        ]
+      },
+      {
+        "level": 7,
+        "features": [
+          {
+            "name": "Warding Maneuver",
+            "desc": "Reaction when you or a creature within 5 feet is hit, while wielding a melee weapon or shield: add 1d8 to the target's AC against it; if it still hits, the target has resistance to that damage. Con mod uses (min 1) per long rest."
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Hold the Line",
+            "desc": "Creatures provoke your opportunity attack when they move 5 feet or more within your reach, and a hit reduces their speed to 0 for the turn."
+          }
+        ]
+      },
+      {
+        "level": 15,
+        "features": [
+          {
+            "name": "Ferocious Charger",
+            "desc": "Once per turn, after moving 10 feet straight before a hit, the target makes a Str save (DC 8 + proficiency + Str) or falls prone."
+          }
+        ]
+      },
+      {
+        "level": 18,
+        "features": [
+          {
+            "name": "Vigilant Defender",
+            "desc": "A special reaction usable once on every other creature's turn, only for an opportunity attack, and not on a turn you use your normal reaction."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Fighter",
+    "name": "Samurai",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Bonus Proficiency",
+            "desc": "One of History, Insight, Performance or Persuasion, or one language."
+          },
+          {
+            "name": "Fighting Spirit",
+            "desc": "Bonus action: advantage on weapon attacks this turn and 5 temporary HP (10 at 10th level, 15 at 15th). Three uses per long rest."
+          }
+        ]
+      },
+      {
+        "level": 7,
+        "features": [
+          {
+            "name": "Elegant Courtier",
+            "desc": "Add your Wisdom modifier to Persuasion checks; proficiency in Wisdom saves (or Intelligence or Charisma if you already have it)."
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Tireless Spirit",
+            "desc": "If you roll initiative with no Fighting Spirit uses left, regain one."
+          }
+        ]
+      },
+      {
+        "level": 15,
+        "features": [
+          {
+            "name": "Rapid Strike",
+            "desc": "Once per turn during the Attack action, give up advantage on one attack to make an extra weapon attack against that target."
+          }
+        ]
+      },
+      {
+        "level": 18,
+        "features": [
+          {
+            "name": "Strength before Death",
+            "desc": "When damage drops you to 0 HP without killing you, reaction: take an extra turn immediately, interrupting the current one; damage at 0 HP still causes death save failures. Fall unconscious after it if still at 0. Once per long rest."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Monk",
+    "name": "Way of the Drunken Master",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Bonus Proficiencies",
+            "desc": "Performance and brewer's supplies."
+          },
+          {
+            "name": "Drunken Technique",
+            "desc": "Flurry of Blows also grants the Disengage action and +10 feet walking speed this turn."
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Tipsy Sway",
+            "desc": "Stand up from prone for 5 feet of movement. When a creature misses you with a melee attack, spend 1 ki as a reaction to have it hit another creature of your choice within 5 feet of you."
+          }
+        ]
+      },
+      {
+        "level": 11,
+        "features": [
+          {
+            "name": "Drunkard's Luck",
+            "desc": "Spend 2 ki to cancel disadvantage on an ability check, attack roll or saving throw."
+          }
+        ]
+      },
+      {
+        "level": 17,
+        "features": [
+          {
+            "name": "Intoxicated Frenzy",
+            "desc": "Flurry of Blows can make up to three more attacks (five total) if each one targets a different creature this turn."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Monk",
+    "name": "Way of the Kensei",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Path of the Kensei",
+            "desc": "Choose one melee and one ranged kensei weapon (simple or martial without heavy or special; longbow allowed), gaining proficiency; they count as monk weapons. One more at 6th, 11th and 17th. Agile Parry: after an unarmed strike in the Attack action while holding a melee kensei weapon, +2 AC until your next turn. Kensei's Shot: bonus action, ranged kensei hits deal +1d4 this turn. Way of the Brush: calligrapher's or painter's supplies."
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "One with the Blade",
+            "desc": "Kensei weapon attacks count as magical. Deft Strike: once per turn on a kensei weapon hit, spend 1 ki for extra damage equal to your Martial Arts die."
+          }
+        ]
+      },
+      {
+        "level": 11,
+        "features": [
+          {
+            "name": "Sharpen the Blade",
+            "desc": "Bonus action: spend up to 3 ki to give a kensei weapon you touch that bonus to attack and damage for 1 minute (not on a weapon that already has a bonus)."
+          }
+        ]
+      },
+      {
+        "level": 17,
+        "features": [
+          {
+            "name": "Unerring Accuracy",
+            "desc": "Once per turn, reroll a missed monk weapon attack."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Monk",
+    "name": "Way of the Sun Soul",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Radiant Sun Bolt",
+            "desc": "A ranged spell attack option in the Attack action: 30 feet, Dex to attack and damage, radiant, Martial Arts die. After using it in the Attack action, spend 1 ki to make it twice as a bonus action. With Extra Attack, any of your attacks can be this."
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Searing Arc Strike",
+            "desc": "Right after the Attack action, spend 2 ki to cast burning hands as a bonus action, +1 spell level per extra ki (max ki half your monk level)."
+          }
+        ]
+      },
+      {
+        "level": 11,
+        "features": [
+          {
+            "name": "Searing Sunburst",
+            "desc": "Action: a 20-foot-radius sphere at a point within 150 feet; Con save or 2d6 radiant (opaque total cover protects). Spend up to 3 ki for +2d6 each."
+          }
+        ]
+      },
+      {
+        "level": 17,
+        "features": [
+          {
+            "name": "Sun Shield",
+            "desc": "Bright light 30 feet and dim 30 more (toggle as a bonus action). While lit, reaction when hit by a melee attack: deal 5 + Wis mod radiant to the attacker."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Paladin",
+    "name": "Oath of Conquest",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Oath Spells",
+            "desc": "Always prepared: armor of Agathys, command (3rd); hold person, spiritual weapon (5th); bestow curse, fear (9th); dominate beast, stoneskin (13th); cloudkill, dominate person (17th)."
+          },
+          {
+            "name": "Channel Divinity",
+            "desc": "Conquering Presence: action, chosen creatures within 30 feet make a Wis save or are frightened for 1 minute, repeating the save each turn. Guided Strike: +10 to an attack roll after seeing the roll."
+          }
+        ]
+      },
+      {
+        "level": 7,
+        "features": [
+          {
+            "name": "Aura of Conquest",
+            "desc": "A 10-foot aura (30 feet at 18th) while not incapacitated: creatures frightened of you have speed 0 in it and take psychic damage equal to half your paladin level when they start their turn there."
+          }
+        ]
+      },
+      {
+        "level": 15,
+        "features": [
+          {
+            "name": "Scornful Rebuke",
+            "desc": "A creature that hits you takes psychic damage equal to your Charisma modifier (min 1), if you aren't incapacitated."
+          }
+        ]
+      },
+      {
+        "level": 20,
+        "features": [
+          {
+            "name": "Invincible Conqueror",
+            "desc": "Action, 1 minute: resistance to all damage, one extra attack in the Attack action, and melee weapon crits on 19 or 20. Once per long rest."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Paladin",
+    "name": "Oath of Redemption",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Oath Spells",
+            "desc": "Always prepared: sanctuary, sleep (3rd); calm emotions, hold person (5th); counterspell, hypnotic pattern (9th); Otiluke's resilient sphere, stoneskin (13th); hold monster, wall of force (17th)."
+          },
+          {
+            "name": "Channel Divinity",
+            "desc": "Emissary of Peace: bonus action, +5 to Persuasion for 10 minutes. Rebuke the Violent: reaction right after an attacker within 30 feet damages someone other than you; it makes a Wis save, taking radiant damage equal to what it dealt, half on a success."
+          }
+        ]
+      },
+      {
+        "level": 7,
+        "features": [
+          {
+            "name": "Aura of the Guardian",
+            "desc": "Reaction when a creature within 10 feet (30 at 18th) takes damage: you take that damage instead; it can't be reduced and no other effects transfer."
+          }
+        ]
+      },
+      {
+        "level": 15,
+        "features": [
+          {
+            "name": "Protective Spirit",
+            "desc": "If you end your turn in combat below half your hit points and aren't incapacitated, regain 1d6 + half your paladin level HP."
+          }
+        ]
+      },
+      {
+        "level": 20,
+        "features": [
+          {
+            "name": "Emissary of Redemption",
+            "desc": "Resistance to all damage dealt by other creatures, and a creature that hits you takes radiant damage equal to half the damage you took. Both stop working against a creature you attack, cast a spell on, or damage, until you finish a long rest."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Ranger",
+    "name": "Gloom Stalker",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Gloom Stalker Magic",
+            "desc": "Known extra spells: disguise self (3rd), rope trick (5th), fear (9th), greater invisibility (13th), seeming (17th)."
+          },
+          {
+            "name": "Dread Ambusher",
+            "desc": "Add Wis mod to initiative. On your first turn of each combat, +10 feet walking speed, and the Attack action includes one extra weapon attack that deals +1d8 on a hit."
+          },
+          {
+            "name": "Umbral Sight",
+            "desc": "Darkvision 60 feet (or +30 feet if you have it). In darkness you are invisible to creatures relying on darkvision to see you."
+          }
+        ]
+      },
+      {
+        "level": 7,
+        "features": [
+          {
+            "name": "Iron Mind",
+            "desc": "Proficiency in Wisdom saves (or Intelligence or Charisma if you already have it)."
+          }
+        ]
+      },
+      {
+        "level": 11,
+        "features": [
+          {
+            "name": "Stalker's Flurry",
+            "desc": "Once per turn, when you miss with a weapon attack, make another weapon attack as part of the same action."
+          }
+        ]
+      },
+      {
+        "level": 15,
+        "features": [
+          {
+            "name": "Shadowy Dodge",
+            "desc": "Reaction, before the result is known, when attacked without advantage: impose disadvantage."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Ranger",
+    "name": "Horizon Walker",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Horizon Walker Magic",
+            "desc": "Known extra spells: protection from evil and good (3rd), misty step (5th), haste (9th), banishment (13th), teleportation circle (17th)."
+          },
+          {
+            "name": "Detect Portal",
+            "desc": "Action: learn the distance and direction to the nearest planar portal within 1 mile. Once per short or long rest."
+          },
+          {
+            "name": "Planar Warrior",
+            "desc": "Bonus action, choose a creature within 30 feet: your next weapon hit on it this turn deals all force damage plus 1d8 force (2d8 at 11th)."
+          }
+        ]
+      },
+      {
+        "level": 7,
+        "features": [
+          {
+            "name": "Ethereal Step",
+            "desc": "Bonus action: cast etherealness without a slot, ending at the end of the turn. Once per short or long rest."
+          }
+        ]
+      },
+      {
+        "level": 11,
+        "features": [
+          {
+            "name": "Distant Strike",
+            "desc": "During the Attack action, teleport up to 10 feet before each attack; if you attack two different creatures, make one extra attack against a third."
+          }
+        ]
+      },
+      {
+        "level": 15,
+        "features": [
+          {
+            "name": "Spectral Defense",
+            "desc": "Reaction when an attack damages you: resistance to all of that attack's damage this turn."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Ranger",
+    "name": "Monster Slayer",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Monster Slayer Magic",
+            "desc": "Known extra spells: protection from evil and good (3rd), zone of truth (5th), magic circle (9th), banishment (13th), hold monster (17th)."
+          },
+          {
+            "name": "Hunter's Sense",
+            "desc": "Action, a creature within 60 feet: learn its damage immunities, resistances and vulnerabilities (none, if it is shielded from divination). Wis mod uses (min 1) per long rest."
+          },
+          {
+            "name": "Slayer's Prey",
+            "desc": "Bonus action, mark a creature within 60 feet until a short or long rest or a new mark: the first weapon hit on it each turn deals +1d6."
+          }
+        ]
+      },
+      {
+        "level": 7,
+        "features": [
+          {
+            "name": "Supernatural Defense",
+            "desc": "Add 1d6 to saves your Slayer's Prey target forces and to checks to escape its grapple."
+          }
+        ]
+      },
+      {
+        "level": 11,
+        "features": [
+          {
+            "name": "Magic-User's Nemesis",
+            "desc": "Reaction when a creature within 60 feet casts a spell or teleports: Wis save against your spell DC or it fails and is wasted. Once per short or long rest."
+          }
+        ]
+      },
+      {
+        "level": 15,
+        "features": [
+          {
+            "name": "Slayer's Counter",
+            "desc": "When your Slayer's Prey target forces a save, reaction: one weapon attack against it first; on a hit you automatically succeed on the save."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Rogue",
+    "name": "Inquisitive",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Ear for Deceit",
+            "desc": "On Insight checks to tell if a creature lies, treat a d20 of 7 or lower as 8."
+          },
+          {
+            "name": "Eye for Detail",
+            "desc": "Bonus action: a Perception check to spot a hidden creature or object, or an Investigation check for clues."
+          },
+          {
+            "name": "Insightful Fighting",
+            "desc": "Bonus action: your Insight vs a visible creature's Deception; on a win you can Sneak Attack it without advantage (not with disadvantage) for 1 minute or until you use this on another target."
+          }
+        ]
+      },
+      {
+        "level": 9,
+        "features": [
+          {
+            "name": "Steady Eye",
+            "desc": "Advantage on Perception and Investigation if you move no more than half your speed this turn."
+          }
+        ]
+      },
+      {
+        "level": 13,
+        "features": [
+          {
+            "name": "Unerring Eye",
+            "desc": "Action: sense illusions, shapechangers in another form, and other deceiving magic within 30 feet, unless blinded or deafened (not what is hidden). Wis mod uses (min 1) per long rest."
+          }
+        ]
+      },
+      {
+        "level": 17,
+        "features": [
+          {
+            "name": "Eye for Weakness",
+            "desc": "Sneak Attack deals +3d6 against your Insightful Fighting target."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Rogue",
+    "name": "Mastermind",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Master of Intrigue",
+            "desc": "Disguise kit, forgery kit, one gaming set and two languages; after 1 minute of listening you can mimic a creature's speech and accent in a language you know."
+          },
+          {
+            "name": "Master of Tactics",
+            "desc": "Help as a bonus action; when you help an ally attack, the target can be within 30 feet of you if it can see or hear you."
+          }
+        ]
+      },
+      {
+        "level": 9,
+        "features": [
+          {
+            "name": "Insightful Manipulator",
+            "desc": "After 1 minute observing or talking to a creature outside combat, learn whether it is your equal, superior or inferior in two of: Int, Wis, Cha, class levels."
+          }
+        ]
+      },
+      {
+        "level": 13,
+        "features": [
+          {
+            "name": "Misdirection",
+            "desc": "Reaction when targeted by an attack while a creature within 5 feet gives you cover: the attack targets that creature instead."
+          }
+        ]
+      },
+      {
+        "level": 17,
+        "features": [
+          {
+            "name": "Soul of Deceit",
+            "desc": "Your thoughts can't be read unless you allow it, and you can present false thoughts (Deception vs Insight). Truth-detecting magic shows you as truthful if you wish, and magic can't compel you to tell the truth."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Rogue",
+    "name": "Scout",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Skirmisher",
+            "desc": "Reaction when an enemy ends its turn within 5 feet: move up to half your speed without provoking."
+          },
+          {
+            "name": "Survivalist",
+            "desc": "Proficiency in Nature and Survival, with double proficiency bonus on checks using them."
+          }
+        ]
+      },
+      {
+        "level": 9,
+        "features": [
+          {
+            "name": "Superior Mobility",
+            "desc": "+10 feet walking speed, and climbing and swimming speeds if you have them."
+          }
+        ]
+      },
+      {
+        "level": 13,
+        "features": [
+          {
+            "name": "Ambush Master",
+            "desc": "Advantage on initiative; attacks against the first creature you hit in the first round have advantage until the start of your next turn."
+          }
+        ]
+      },
+      {
+        "level": 17,
+        "features": [
+          {
+            "name": "Sudden Strike",
+            "desc": "When you take the Attack action, one extra attack as a bonus action; it can Sneak Attack even if you already did this turn, but not the same target twice."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Rogue",
+    "name": "Swashbuckler",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Fancy Footwork",
+            "desc": "A creature you make a melee attack against can't make opportunity attacks against you for the rest of your turn."
+          },
+          {
+            "name": "Rakish Audacity",
+            "desc": "Add Cha mod to initiative. Sneak Attack without advantage when you're within 5 feet of the target, no other creature is within 5 feet of you, and you don't have disadvantage."
+          }
+        ]
+      },
+      {
+        "level": 9,
+        "features": [
+          {
+            "name": "Panache",
+            "desc": "Action: Persuasion vs Insight against a creature that hears and understands you. Hostile: for 1 minute it has disadvantage attacking anyone but you and can only make opportunity attacks against you (ends if an ally attacks or spells it, or you're 60+ feet apart). Not hostile: charmed for 1 minute as a friendly acquaintance, ending if harmed."
+          }
+        ]
+      },
+      {
+        "level": 13,
+        "features": [
+          {
+            "name": "Elegant Maneuver",
+            "desc": "Bonus action: advantage on your next Acrobatics or Athletics check this turn."
+          }
+        ]
+      },
+      {
+        "level": 17,
+        "features": [
+          {
+            "name": "Master Duelist",
+            "desc": "Reroll a missed attack with advantage. Once per short or long rest."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Sorcerer",
+    "name": "Divine Soul",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything",
+    "features_by_level": [
+      {
+        "level": 1,
+        "features": [
+          {
+            "name": "Divine Magic",
+            "desc": "When you learn or replace a sorcerer spell or cantrip, you can pick from the cleric list; it becomes a sorcerer spell. Pick an affinity for a bonus spell that doesn't count against spells known: good cure wounds, evil inflict wounds, law bless, chaos bane, neutrality protection from evil and good."
+          },
+          {
+            "name": "Favored by the Gods",
+            "desc": "When you fail a save or miss an attack, add 2d4 to the total. Once per short or long rest."
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Empowered Healing",
+            "desc": "Once per turn, when you or an ally within 5 feet rolls healing dice for a spell, spend 1 sorcery point to reroll any of them once, if you aren't incapacitated."
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Otherworldly Wings",
+            "desc": "Bonus action: spectral wings give a 30-foot flying speed until you're incapacitated, die or dismiss them."
+          }
+        ]
+      },
+      {
+        "level": 18,
+        "features": [
+          {
+            "name": "Unearthly Recovery",
+            "desc": "Bonus action below half your hit points: regain half your hit point maximum. Once per long rest."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Sorcerer",
+    "name": "Shadow Magic",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything",
+    "features_by_level": [
+      {
+        "level": 1,
+        "features": [
+          {
+            "name": "Eyes of the Dark",
+            "desc": "Darkvision 120 feet. At 3rd level you learn darkness (not counted against spells known) and can cast it for 2 sorcery points, seeing through it when you do."
+          },
+          {
+            "name": "Strength of the Grave",
+            "desc": "When damage drops you to 0 HP, Cha save (DC 5 + damage taken) to drop to 1 HP instead; not against radiant damage or a critical hit. Once per long rest after a success."
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Hound of Ill Omen",
+            "desc": "Bonus action, 3 sorcery points: summon a Medium monstrosity dire wolf within 30 feet of a target you can see within 120 feet, with temporary HP equal to half your sorcerer level. It moves through creatures and objects (5 force if it ends in one), always knows the target's location, moves and attacks only that target, and while within 5 feet the target has disadvantage on saves against your spells. Lasts 5 minutes or until it or the target drops to 0."
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Shadow Walk",
+            "desc": "In dim light or darkness, bonus action: teleport up to 120 feet to a space you can see that is also in dim light or darkness."
+          }
+        ]
+      },
+      {
+        "level": 18,
+        "features": [
+          {
+            "name": "Umbral Form",
+            "desc": "Bonus action, 6 sorcery points, 1 minute: resistance to all damage except force and radiant, and move through creatures and objects (5 force if you end a turn inside one)."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Sorcerer",
+    "name": "Storm Sorcery",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything",
+    "features_by_level": [
+      {
+        "level": 1,
+        "features": [
+          {
+            "name": "Wind Speaker",
+            "desc": "Speak, read and write Primordial (understanding Aquan, Auran, Ignan and Terran)."
+          },
+          {
+            "name": "Tempestuous Magic",
+            "desc": "Bonus action right before or after casting a spell of 1st level or higher: fly up to 10 feet without provoking."
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Heart of the Storm",
+            "desc": "Resistance to lightning and thunder. When you start casting a 1st-level-plus spell that deals lightning or thunder, chosen creatures within 10 feet take lightning or thunder damage equal to half your sorcerer level."
+          },
+          {
+            "name": "Storm Guide",
+            "desc": "Action: stop rain in a 20-foot sphere around you. Bonus action each round: set the wind's direction in a 100-foot sphere until the end of your next turn."
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Storm's Fury",
+            "desc": "Reaction when hit by a melee attack: lightning damage equal to your sorcerer level to the attacker, and a Str save against your spell DC or it is pushed up to 20 feet."
+          }
+        ]
+      },
+      {
+        "level": 18,
+        "features": [
+          {
+            "name": "Wind Soul",
+            "desc": "Immunity to lightning and thunder; magical flying speed 60 feet. Action: drop to 30 feet for 1 hour to give 3 + Cha mod creatures within 30 feet a 30-foot flying speed for 1 hour. Once per short or long rest."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Warlock",
+    "name": "The Celestial",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything",
+    "features_by_level": [
+      {
+        "level": 1,
+        "features": [
+          {
+            "name": "Expanded Spell List",
+            "desc": "Added to your warlock list: cure wounds, guiding bolt (1st); flaming sphere, lesser restoration (2nd); daylight, revivify (3rd); guardian of faith, wall of fire (4th); flame strike, greater restoration (5th)."
+          },
+          {
+            "name": "Bonus Cantrips",
+            "desc": "Light and sacred flame, not counted against cantrips known."
+          },
+          {
+            "name": "Healing Light",
+            "desc": "A pool of 1 + warlock level d6s, refilled on a long rest. Bonus action: heal a creature within 60 feet, spending up to Cha mod dice (min 1)."
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Radiant Soul",
+            "desc": "Resistance to radiant; add Cha mod to one radiant or fire damage roll of your spells against one target."
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Celestial Resilience",
+            "desc": "After a short or long rest, gain temporary HP equal to warlock level + Cha mod, and up to five creatures you can see gain half your warlock level + Cha mod."
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Searing Vengeance",
+            "desc": "Instead of a death save at the start of your turn, regain half your hit point maximum and stand if you like; chosen creatures within 30 feet take 2d8 + Cha mod radiant and are blinded until the end of the turn. Once per long rest."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Warlock",
+    "name": "The Hexblade",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything",
+    "features_by_level": [
+      {
+        "level": 1,
+        "features": [
+          {
+            "name": "Expanded Spell List",
+            "desc": "Added to your warlock list: shield, wrathful smite (1st); blur, branding smite (2nd); blink, elemental weapon (3rd); phantasmal killer, staggering smite (4th); banishing smite, cone of cold (5th)."
+          },
+          {
+            "name": "Hexblade's Curse",
+            "desc": "Bonus action, curse a creature within 30 feet for 1 minute: add proficiency bonus to damage against it, your attacks against it crit on 19 or 20, and if it dies you regain warlock level + Cha mod HP (min 1). Once per short or long rest."
+          },
+          {
+            "name": "Hex Warrior",
+            "desc": "Medium armor, shields and martial weapons. After a long rest, touch a proficient weapon without two-handed: use Cha for its attack and damage until the next long rest; with Pact of the Blade this applies to every pact weapon."
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Accursed Specter",
+            "desc": "When you slay a humanoid, its spirit rises as a specter with temporary HP equal to half your warlock level and a bonus to attacks equal to your Cha mod; it obeys you until your next long rest. Once per long rest."
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Armor of Hexes",
+            "desc": "Reaction when your cursed target hits you: roll a d6, and on 4 or higher the attack misses."
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Master of Hexes",
+            "desc": "When your cursed target dies, move the curse to another creature within 30 feet (without regaining HP from the death)."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Wizard",
+    "name": "War Magic",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything",
+    "features_by_level": [
+      {
+        "level": 2,
+        "features": [
+          {
+            "name": "Arcane Deflection",
+            "desc": "Reaction when hit or when you fail a save: +2 AC against that attack or +4 to that save; then only cantrips until the end of your next turn."
+          },
+          {
+            "name": "Tactical Wit",
+            "desc": "Add Int mod to initiative."
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Power Surge",
+            "desc": "Hold up to Int mod (min 1) power surges; reset to one on a long rest, gain one when you end a spell with dispel magic or counterspell, and one after a short rest if you have none. Once per turn when a wizard spell damages a target, spend one for extra force damage equal to half your wizard level."
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Durable Magic",
+            "desc": "+2 to AC and all saves while concentrating on a spell."
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Deflecting Shroud",
+            "desc": "When you use Arcane Deflection, up to three creatures within 60 feet take force damage equal to half your wizard level."
+          }
+        ]
+      }
+    ]
+  }
+]

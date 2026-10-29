@@ -24,6 +24,7 @@
 import sub2014 from "./srd/subclasses-2014-structured.json";
 import sub2024 from "./srd/subclasses-2024-structured.json";
 import authored2024 from "./srd/subclasses-authored-2024.json";
+import authored2014 from "./srd/subclasses-authored-2014.json";
 import { sameSubclass } from "./subclass-names";
 import type { ClassFeature, ClassRecord } from "./class-progression";
 
@@ -38,7 +39,7 @@ const SRD: Record<"2014" | "2024", SubRec[]> = {
   "2024": sub2024 as unknown as SubRec[],
 };
 const AUTHORED: Record<"2014" | "2024", SubRec[]> = {
-  "2014": [],
+  "2014": authored2014 as unknown as SubRec[],
   "2024": authored2024 as unknown as SubRec[],
 };
 

@@ -1,0 +1,141 @@
+{
+  "Forge Domain": {
+    "1": [
+      "Identify",
+      "Searing Smite"
+    ],
+    "3": [
+      "Heat Metal",
+      "Magic Weapon"
+    ],
+    "5": [
+      "Elemental Weapon",
+      "Protection From Energy"
+    ],
+    "7": [
+      "Fabricate",
+      "Wall of Fire"
+    ],
+    "9": [
+      "Animate Objects",
+      "Creation"
+    ]
+  },
+  "Grave Domain": {
+    "1": [
+      "Bane",
+      "False Life"
+    ],
+    "3": [
+      "Gentle Repose",
+      "Ray of Enfeeblement"
+    ],
+    "5": [
+      "Revivify",
+      "Vampiric Touch"
+    ],
+    "7": [
+      "Blight",
+      "Death Ward"
+    ],
+    "9": [
+      "Antilife Shell",
+      "Raise Dead"
+    ]
+  },
+  "Oath of Conquest": {
+    "3": [
+      "Armor of Agathys",
+      "Command"
+    ],
+    "5": [
+      "Hold Person",
+      "Spiritual Weapon"
+    ],
+    "9": [
+      "Bestow Curse",
+      "Fear"
+    ],
+    "13": [
+      "Dominate Beast",
+      "Stoneskin"
+    ],
+    "17": [
+      "Cloudkill",
+      "Dominate Person"
+    ]
+  },
+  "Oath of Redemption": {
+    "3": [
+      "Sanctuary",
+      "Sleep"
+    ],
+    "5": [
+      "Calm Emotions",
+      "Hold Person"
+    ],
+    "9": [
+      "Counterspell",
+      "Hypnotic Pattern"
+    ],
+    "13": [
+      "Resilient Sphere",
+      "Stoneskin"
+    ],
+    "17": [
+      "Hold Monster",
+      "Wall of Force"
+    ]
+  },
+  "Gloom Stalker": {
+    "3": [
+      "Disguise Self"
+    ],
+    "5": [
+      "Rope Trick"
+    ],
+    "9": [
+      "Fear"
+    ],
+    "13": [
+      "Greater Invisibility"
+    ],
+    "17": [
+      "Seeming"
+    ]
+  },
+  "Horizon Walker": {
+    "3": [
+      "Protection from Evil and Good"
+    ],
+    "5": [
+      "Misty Step"
+    ],
+    "9": [
+      "Haste"
+    ],
+    "13": [
+      "Banishment"
+    ],
+    "17": [
+      "Teleportation Circle"
+    ]
+  },
+  "Monster Slayer": {
+    "3": [
+      "Protection from Evil and Good"
+    ],
+    "5": [
+      "Zone of Truth"
+    ],
+    "9": [
+      "Magic Circle"
+    ],
+    "13": [
+      "Banishment"
+    ],
+    "17": [
+      "Hold Monster"
+    ]
+  }
+}
