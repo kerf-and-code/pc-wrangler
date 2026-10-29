@@ -2077,8 +2077,9 @@ function SpellsPanel({ build, spells, sheet, structuredRec, granted, onToggle, l
             ))}
           </div>
           <p style={{ fontSize: 12, color: STONE.inkFaint, margin: "8px 0 0", lineHeight: 1.5 }}>
-            Free once per Long Rest, or with a spell slot of the right level. These do not count
-            against the numbers below, and there is nothing to pick or unpick.
+            These do not count against the numbers below, and there is nothing to pick or unpick.
+            Spells from your species or lineage can also be cast once per Long Rest without a slot;
+            subclass spells use a slot like any other prepared spell.
           </p>
         </div>
       )}
