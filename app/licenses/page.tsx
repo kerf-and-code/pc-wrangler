@@ -17,7 +17,7 @@ export default function LicensesPage() {
   return (
     <LegalPage>
       <h1>Game System Licenses</h1>
-      <p className="meta">Last updated: August 23, 2026</p>
+      <p className="meta">Last updated: October 28, 2026</p>
 
       <p>
         Six Axes supports several tabletop roleplaying systems. For each, Six Axes ships only that

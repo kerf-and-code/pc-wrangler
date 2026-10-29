@@ -14,6 +14,7 @@ import { DH_ADVERSARY_TYPES, type DHAdversaryType } from "@/lib/daggerheart/adve
 import { dsBands, dsDifficultyOf, dsSpend, dsBenchmarkEV, DS_DIFFICULTY_LABEL, type DSDifficulty } from "@/lib/drawsteel/encounter";
 import { DS_ORGANIZATIONS, type DSOrganization } from "@/lib/drawsteel/adversary";
 import { setActiveCampaign } from "@/lib/active-campaign";
+import { monsterSourceLabel, monsterSourceTitle } from "@/lib/monster-sources";
 
 // ============================================================================
 // THE TWO METHODS ARE GENUINELY DIFFERENT. THIS IS THE WHOLE POINT OF THE TOOL.
@@ -117,7 +118,9 @@ type Char = { id: string; name: string; level: number | null; class: string | nu
 type Foe = { id: string; name: string; cr: string; count: number };
 type Method = "2024" | "2014";
 // A pickable monster from either source: the GM's own saved stat blocks or the SRD library.
-type MonsterSource = { name: string; cr: string; origin: "mine" | "srd" };
+// `source` is the monster file's source_key (srd-2014, tob2, ...), so library rows can show which book
+// they come from; several names (Aboleth, Acolyte) exist in more than one book at different CRs.
+type MonsterSource = { name: string; cr: string; origin: "mine" | "srd"; source?: string };
 type SrdMode = "2024" | "2014" | "both";
 
 let seq = 0;
@@ -300,8 +303,8 @@ export default function EncountersPage() {
     const mine: MonsterSource[] = statBlocks
       .filter((b) => b.cr && CR_XP[b.cr] != null)
       .map((b) => ({ name: b.name, cr: b.cr as string, origin: "mine" }));
-    const srd = (loadSrd("monsters", srdMode) as unknown as Array<{ name: string; cr?: string | number }>)
-      .map((m) => ({ name: m.name, cr: String(m.cr ?? ""), origin: "srd" as const }))
+    const srd = (loadSrd("monsters", srdMode) as unknown as Array<{ name: string; cr?: string | number; source_key?: string }>)
+      .map((m) => ({ name: m.name, cr: String(m.cr ?? ""), origin: "srd" as const, source: m.source_key }))
       .filter((m) => m.cr && CR_XP[m.cr] != null);
     return [...mine, ...srd];
   }, [statBlocks, srdMode]);
@@ -1162,7 +1165,7 @@ function MonsterPicker({ catalog, srdMode, onSrdMode, hasOwn, onAdd, C, inputSty
 
       {hasOwn && (
         <p style={{ color: C.muted, fontSize: 11.5, margin: "0 0 8px" }}>
-          Your own stat blocks are listed first. The rest are SRD monsters for the chosen ruleset.
+          Your own stat blocks are listed first. The rest come from the monster library for the chosen ruleset, labeled by book.
         </p>
       )}
 
@@ -1182,7 +1185,16 @@ function MonsterPicker({ catalog, srdMode, onSrdMode, hasOwn, onAdd, C, inputSty
                   yours
                 </span>
               )}
-              <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.name}</span>
+              <span style={{ minWidth: 0 }}>
+                <span style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.name}</span>
+                {m.origin === "srd" && m.source && (
+                  // The book it comes from (OGL Section 8 identification for the third-party ones).
+                  <span title={monsterSourceTitle(m.source)}
+                    style={{ display: "block", fontFamily: SAX.mono, fontSize: 10, color: C.muted }}>
+                    {monsterSourceLabel(m.source)}
+                  </span>
+                )}
+              </span>
             </span>
             <span style={{ fontFamily: SAX.mono, fontSize: 11, color: C.muted, flexShrink: 0 }}>CR {m.cr}</span>
           </button>

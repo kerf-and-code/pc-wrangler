@@ -42,6 +42,7 @@ import {
 } from "@/lib/forge-theme";
 import { SAX } from "@/lib/theme";
 import PageShell from "@/components/page-shell";
+import { monsterSourceLabel, monsterSourceTitle } from "@/lib/monster-sources";
 
 type SrdMode = "2024" | "2014" | "both";
 // source_key is declared explicitly because the index signature types everything else as unknown,
@@ -672,8 +673,11 @@ function PickerView({ rows, monsters, srdMode, onSrdMode, onNew, onEdit, onPrefi
                 <span style={{ fontSize: 13.5, color: STONE.ink, display: "block" }}>{m.name}</span>
                 {m.source_key && (
                   // Shown because three entries reading "Aboleth CR 10" are unpickable otherwise.
-                  <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 10, color: STONE.inkFaint }}>
-                    {m.source_key}
+                  // Labeled by book, with the full title, publisher and license on hover. For the
+                  // third-party Open5e bestiaries this label is also the OGL Section 8 identification.
+                  <span title={monsterSourceTitle(m.source_key)}
+                    style={{ fontFamily: FORGE_FONTS.mono, fontSize: 10, color: STONE.inkFaint }}>
+                    {monsterSourceLabel(m.source_key)}
                   </span>
                 )}
               </span>
