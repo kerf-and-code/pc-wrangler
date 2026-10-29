@@ -546,6 +546,45 @@
                 "free": "1/LR"
               }
             ]
+          },
+          "Lorwyn Elf": {
+            "spells": [
+              {
+                "spell": "Thorn Whip",
+                "level": 1
+              },
+              {
+                "spell": "Command",
+                "level": 3,
+                "free": "1/LR"
+              },
+              {
+                "spell": "Silence",
+                "level": 5,
+                "free": "1/LR"
+              }
+            ],
+            "summary": "Lorwyn: First Light. The cantrip can be swapped for another Druid cantrip after each Long Rest."
+          },
+          "Shadowmoor Elf": {
+            "darkvision": 120,
+            "spells": [
+              {
+                "spell": "Starry Wisp",
+                "level": 1
+              },
+              {
+                "spell": "Heroism",
+                "level": 3,
+                "free": "1/LR"
+              },
+              {
+                "spell": "Gentle Repose",
+                "level": 5,
+                "free": "1/LR"
+              }
+            ],
+            "summary": "Lorwyn: First Light."
           }
         }
       },
@@ -744,22 +783,40 @@
         "label": "Giant Ancestry",
         "options": {
           "Cloud's Jaunt": {
-            "summary": "Bonus Action teleport up to 30 feet, Proficiency Bonus times per Long Rest."
+            "summary": "Bonus Action teleport up to 30 feet, Proficiency Bonus times per Long Rest.",
+            "aliases": [
+              "Cloud Giant"
+            ]
           },
           "Fire's Burn": {
-            "summary": "On an attack hit, add 1d10 Fire, Proficiency Bonus times per Long Rest."
+            "summary": "On an attack hit, add 1d10 Fire, Proficiency Bonus times per Long Rest.",
+            "aliases": [
+              "Fire Giant"
+            ]
           },
           "Frost's Chill": {
-            "summary": "On an attack hit, add 1d6 Cold and cut its Speed by 10 feet, Proficiency Bonus times per Long Rest."
+            "summary": "On an attack hit, add 1d6 Cold and cut its Speed by 10 feet, Proficiency Bonus times per Long Rest.",
+            "aliases": [
+              "Frost Giant"
+            ]
           },
           "Hill's Tumble": {
-            "summary": "On an attack hit against a Large or smaller creature, knock it Prone, Proficiency Bonus times per Long Rest."
+            "summary": "On an attack hit against a Large or smaller creature, knock it Prone, Proficiency Bonus times per Long Rest.",
+            "aliases": [
+              "Hill Giant"
+            ]
           },
           "Stone's Endurance": {
-            "summary": "Reaction when damaged: reduce it by 1d12 + Constitution modifier, Proficiency Bonus times per Long Rest."
+            "summary": "Reaction when damaged: reduce it by 1d12 + Constitution modifier, Proficiency Bonus times per Long Rest.",
+            "aliases": [
+              "Stone Giant"
+            ]
           },
           "Storm's Thunder": {
-            "summary": "Reaction when damaged by a creature within 60 feet: deal it 1d8 Thunder, Proficiency Bonus times per Long Rest."
+            "summary": "Reaction when damaged by a creature within 60 feet: deal it 1d8 Thunder, Proficiency Bonus times per Long Rest.",
+            "aliases": [
+              "Storm Giant"
+            ]
           }
         }
       },
@@ -1129,6 +1186,366 @@
         [
           "Savage Attacks",
           "On a melee weapon critical hit, roll one extra weapon damage die."
+        ]
+      ]
+    },
+    "Changeling": {
+      "src": "Eberron: Forge of the Artificer",
+      "creatureType": "Fey",
+      "size": "Medium or Small",
+      "speed": 30,
+      "skillPick": {
+        "n": 2,
+        "from": [
+          "deception",
+          "insight",
+          "intimidation",
+          "performance",
+          "persuasion"
+        ]
+      },
+      "traits": [
+        [
+          "Changeling Instincts",
+          "Proficiency in two of Deception, Insight, Intimidation, Performance, or Persuasion."
+        ],
+        [
+          "Shape-Shifter",
+          "Action: change appearance, voice, and between Medium and Small; Advantage on Charisma checks while shifted."
+        ]
+      ]
+    },
+    "Kalashtar": {
+      "src": "Eberron: Forge of the Artificer",
+      "creatureType": "Aberration",
+      "size": "Medium",
+      "speed": 30,
+      "advSaves": [
+        "wis",
+        "cha"
+      ],
+      "resist": [
+        "psychic"
+      ],
+      "traits": [
+        [
+          "Dual Mind",
+          "Advantage on Wisdom and Charisma saves."
+        ],
+        [
+          "Mental Discipline",
+          "Resistance to psychic damage."
+        ],
+        [
+          "Mind Link",
+          "Telepathy out to 10 feet times your level; can let a creature reply for 1 hour."
+        ],
+        [
+          "Severed from Dreams",
+          "Immune to the Dream spell; gain a skill proficiency of your choice after each Long Rest, lasting until the next."
+        ]
+      ]
+    },
+    "Khoravar": {
+      "src": "Eberron: Forge of the Artificer",
+      "creatureType": "Humanoid",
+      "size": "Medium or Small",
+      "speed": 30,
+      "darkvision": 60,
+      "advAgainst": [
+        "charmed"
+      ],
+      "spellAbility": "choose",
+      "spells": [
+        {
+          "spell": "Friends",
+          "level": 1
+        }
+      ],
+      "skillPick": {
+        "n": 1,
+        "from": "any"
+      },
+      "traits": [
+        [
+          "Fey Ancestry",
+          "Advantage on saves against the Charmed condition."
+        ],
+        [
+          "Fey Gift",
+          "Friends cantrip, swappable for a Cleric, Druid, or Wizard cantrip after each Long Rest."
+        ],
+        [
+          "Lethargy Resilience",
+          "Turn a failed save against Unconscious into a success, once per 1d4 Long Rests."
+        ],
+        [
+          "Skill Versatility",
+          "One skill or tool proficiency, swappable after each Long Rest."
+        ]
+      ]
+    },
+    "Shifter": {
+      "src": "Eberron: Forge of the Artificer",
+      "creatureType": "Humanoid",
+      "size": "Medium or Small",
+      "speed": 30,
+      "darkvision": 60,
+      "skillPick": {
+        "n": 1,
+        "from": [
+          "acrobatics",
+          "athletics",
+          "intimidation",
+          "survival"
+        ]
+      },
+      "choice": {
+        "key": "shifting",
+        "label": "Shifting",
+        "options": {
+          "Beasthide": {
+            "summary": "While shifted: 1d6 extra Temporary Hit Points and +1 AC."
+          },
+          "Longtooth": {
+            "summary": "While shifted: Bonus Action bite, 1d6 + Strength Piercing."
+          },
+          "Swiftstride": {
+            "summary": "While shifted: Speed +10 feet and a Reaction move of 10 feet."
+          },
+          "Wildhunt": {
+            "summary": "While shifted: Advantage on Wisdom checks; nothing within 30 feet has Advantage on attacks against you."
+          }
+        }
+      },
+      "traits": [
+        [
+          "Bestial Instincts",
+          "Proficiency in Acrobatics, Athletics, Intimidation, or Survival."
+        ],
+        [
+          "Shifting",
+          "Bonus Action: shift for 1 minute and gain Temporary Hit Points equal to twice your Proficiency Bonus, Proficiency Bonus times per Long Rest, plus your chosen option."
+        ]
+      ]
+    },
+    "Dhampir": {
+      "src": "Ravenloft: The Horrors Within",
+      "creatureType": "Humanoid",
+      "size": "Medium or Small",
+      "speed": 35,
+      "speeds": {
+        "climb": "speed"
+      },
+      "darkvision": 60,
+      "resist": [
+        "necrotic"
+      ],
+      "traits": [
+        [
+          "Spider Climb",
+          "Climb Speed equal to your Speed; from level 3, walk on walls and ceilings hands-free."
+        ],
+        [
+          "Trace of Undeath",
+          "Resistance to necrotic damage."
+        ],
+        [
+          "Vampiric Bite",
+          "Unarmed Strike bite for 1d4 + Constitution Piercing; Proficiency Bonus times per Long Rest, heal or bolster your next check or attack by the damage."
+        ]
+      ]
+    },
+    "Hexblood": {
+      "src": "Ravenloft: The Horrors Within",
+      "creatureType": "Fey",
+      "size": "Medium or Small",
+      "speed": 30,
+      "darkvision": 60,
+      "spellAbility": "choose",
+      "spells": [
+        {
+          "spell": "Disguise Self",
+          "level": 1,
+          "free": "1/LR"
+        },
+        {
+          "spell": "Hex",
+          "level": 1,
+          "free": "1/LR"
+        }
+      ],
+      "traits": [
+        [
+          "Eerie Token",
+          "Bonus Action token for a 25-word telepathic message or 1 minute of remote viewing within 10 miles, once per Long Rest."
+        ],
+        [
+          "Hex Magic",
+          "Disguise Self and Hex always prepared, each castable once per Long Rest without a slot."
+        ]
+      ]
+    },
+    "Lupin": {
+      "src": "Ravenloft: The Horrors Within",
+      "creatureType": "Humanoid",
+      "size": "Medium or Small",
+      "speed": 30,
+      "darkvision": 60,
+      "skillPick": {
+        "n": 1,
+        "from": [
+          "perception",
+          "stealth",
+          "survival"
+        ]
+      },
+      "traits": [
+        [
+          "Feral Pounce",
+          "Unarmed Strikes deal Slashing; once per turn an Attack-action Unarmed Strike can both damage and Shove."
+        ],
+        [
+          "Howl",
+          "Bonus Action: chosen creatures within 15 feet make a Wisdom save or have Disadvantage on attacks and saves until your next turn, Proficiency Bonus times per Long Rest."
+        ],
+        [
+          "Werewolf Instincts",
+          "Proficiency in Perception, Stealth, or Survival."
+        ]
+      ]
+    },
+    "Reborn": {
+      "src": "Ravenloft: The Horrors Within",
+      "creatureType": "Humanoid",
+      "size": "Medium or Small",
+      "speed": 30,
+      "advAgainst": [
+        "death saving throws"
+      ],
+      "skillPick": {
+        "n": 1,
+        "from": "any"
+      },
+      "choice": {
+        "key": "endurance",
+        "label": "Strange Endurance",
+        "options": {
+          "Cold": {
+            "resist": [
+              "cold"
+            ]
+          },
+          "Necrotic": {
+            "resist": [
+              "necrotic"
+            ]
+          },
+          "Poison": {
+            "resist": [
+              "poison"
+            ]
+          }
+        }
+      },
+      "traits": [
+        [
+          "Escaped Death",
+          "Advantage on Death Saving Throws."
+        ],
+        [
+          "Everlasting",
+          "No Exhaustion from dehydration, malnutrition, or suffocation; no sleep needed; 4-hour Long Rest."
+        ],
+        [
+          "Knowledge from a Past Life",
+          "One skill proficiency; add 1d6 to a failed ability check, Proficiency Bonus times per Long Rest."
+        ],
+        [
+          "Strange Endurance",
+          "Resistance to Cold, Necrotic, or Poison, your choice."
+        ]
+      ]
+    },
+    "Lorwyn Changeling": {
+      "src": "Lorwyn: First Light",
+      "creatureType": "Fey",
+      "size": "Medium or Small",
+      "speed": 30,
+      "darkvision": 120,
+      "skillPick": {
+        "n": 1,
+        "from": [
+          "deception",
+          "performance"
+        ]
+      },
+      "traits": [
+        [
+          "Shape Self",
+          "Action: take a two-legged Humanoid or four-legged Beast shape."
+        ],
+        [
+          "Delightful Imitator",
+          "Proficiency in Deception or Performance."
+        ],
+        [
+          "Unpredictable Movement",
+          "When you roll Initiative without Disadvantage, move up to half your Speed."
+        ]
+      ]
+    },
+    "Rimekin": {
+      "src": "Lorwyn: First Light",
+      "creatureType": "Humanoid",
+      "size": "Medium or Small",
+      "speed": 30,
+      "darkvision": 60,
+      "resist": [
+        "cold"
+      ],
+      "spellAbility": "choose",
+      "spells": [
+        {
+          "spell": "Ray of Frost",
+          "level": 1
+        },
+        {
+          "spell": "Ice Knife",
+          "level": 3,
+          "free": "1/LR"
+        },
+        {
+          "spell": "Flame Blade",
+          "level": 5,
+          "free": "1/LR"
+        }
+      ],
+      "traits": [
+        [
+          "Cold Fire Magic",
+          "Ray of Frost; Ice Knife at level 3 and Flame Blade (Cold damage) at level 5, each once per Long Rest without a slot."
+        ],
+        [
+          "Cold Resistance",
+          "Resistance to cold damage."
+        ]
+      ]
+    },
+    "Duskling": {
+      "src": "D&D Beyond Drops",
+      "creatureType": "Fey",
+      "size": "Medium",
+      "speed": 30,
+      "darkvision": 60,
+      "traits": [
+        [
+          "Enhanced Jump",
+          "Running High Jump +2 feet, running Long Jump +10 feet."
+        ],
+        [
+          "Inner Magic",
+          "After a Long Rest pick Ardor, Mobility, or Vigor; switch as a Bonus Action Proficiency Bonus times per Long Rest. Ardor: Advantage on Charisma checks and against Frightened. Mobility: Speed +10, climbing and swimming cost no extra. Vigor: Temporary Hit Points equal to Proficiency Bonus and Advantage on Athletics and Acrobatics."
         ]
       ]
     }

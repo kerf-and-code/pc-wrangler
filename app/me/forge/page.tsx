@@ -2535,7 +2535,20 @@ function SpeciesPanel({
     [speciesRec, variantRec],
   );
 
-  const decisions = traits.filter((t) => traitAsksAChoice(t.desc || ""));
+  // Choices the trait text asks for, plus the species' structured choice when no trait text covers
+  // it. Species outside the SRD (Shifter, Reborn) have no trait text in the app at all, so without
+  // this their choice would have no dropdown.
+  const decisions: TraitEntry[] = useMemo(() => {
+    const fromText = traits.filter((t) => traitAsksAChoice(t.desc || ""));
+    if (mech?.choice && !fromText.some((t) => structuredChoiceOptions(mech, t.name))) {
+      return [...fromText, { name: mech.choice.label, desc: "" } as TraitEntry];
+    }
+    return fromText;
+  }, [traits, mech]);
+  // Trait summaries for display when the SRD files carry none for this species.
+  const shownTraits: TraitEntry[] = traits.length
+    ? traits
+    : (mech?.traits || []).map(([name, desc]) => ({ name, desc }) as TraitEntry);
 
   return (
     <div style={stonePanel()}>
@@ -2666,11 +2679,11 @@ function SpeciesPanel({
         </div>
       )}
 
-      {traits.length > 0 && (
+      {shownTraits.length > 0 && (
         <div style={{ marginTop: 18, paddingTop: 14, borderTop: `1px solid ${STONE.hi}` }}>
           <label style={forgeLabel}>Traits</label>
           <div style={{ display: "grid", gap: 10 }}>
-            {traits.map((t, i) => (
+            {shownTraits.map((t, i) => (
               <div key={`${t.name}-${i}`}>
                 <div style={{ fontSize: 13.5, color: STONE.ink, fontWeight: 600 }}>{t.name}</div>
                 <p style={{ fontSize: 13, color: STONE.inkDim, margin: "3px 0 0", lineHeight: 1.6 }}>
@@ -2682,7 +2695,7 @@ function SpeciesPanel({
         </div>
       )}
 
-      {build.meta.species && traits.length === 0 && (
+      {build.meta.species && shownTraits.length === 0 && (
         <Muted>
           No trait data for this species yet. Catalog entries from partnered content are names only;
           the SRD species carry full traits.
