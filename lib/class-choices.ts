@@ -20,6 +20,8 @@
 //   Anything not listed here falls back to prose, so growing this file is safe and leaving a gap is
 //   safe. Guessing is not.
 
+import { sameSubclass } from "./subclass-names";
+
 export type ChoiceKind = "skill" | "weapon" | "tool" | "spell" | "feat" | "option";
 
 export type ClassChoice = {
@@ -69,6 +71,8 @@ export type ClassChoice = {
     }[];
     /** School of magic, for picks like Evocation Savant. */
     spellSchool?: string;
+    /** Class spell list, for picks like "two Wizard cantrips". Absent means any list. */
+    spellClass?: string;
     /** Spell level bounds, inclusive. 0 is a cantrip. */
     spellLevelMin?: number;
     spellLevelMax?: number;
@@ -182,7 +186,7 @@ export const CLASS_CHOICES: ClassChoice[] = [
   {
     className: "Wizard", subclass: "Evoker", level: 3, feature: "Evocation Savant",
     choose: 2, kind: "spell",
-    filter: { spellSchool: "Evocation", spellLevelMin: 1, spellLevelMax: 2 },
+    filter: { spellSchool: "Evocation", spellClass: "Wizard", spellLevelMin: 1, spellLevelMax: 2 },
   },
   {
     className: "Ranger", subclass: "Hunter", level: 3, feature: "Hunter's Prey", choose: 1,
@@ -390,13 +394,113 @@ export const CLASS_CHOICES: ClassChoice[] = [
     filter: { weaponCategory: ["Simple", "Martial"] },
     note: "Changeable after any Long Rest.",
   },
+
+  // --- Arcana Unleashed (2026) subclasses, 2024 rules ------------------------------------------
+  // Names are facts; summaries are one-line Kerf and Code paraphrases for the picker. Subclass names
+  // are the book's; sameSubclass() matches them to the catalog's short names ("Arcana", "Vestige").
+  {
+    className: "Cleric", subclass: "Arcana Domain", edition: "2024", level: 3,
+    feature: "Student of Arcana (skill)", choose: 1, kind: "skill",
+    filter: { options: ["Arcana", "History", "Insight", "Medicine", "Persuasion", "Religion"] },
+    note: "Arcana, or one of the Cleric's level 1 skills.",
+  },
+  {
+    className: "Cleric", subclass: "Arcana Domain", edition: "2024", level: 3,
+    feature: "Student of Arcana (cantrips)", choose: 2, kind: "spell",
+    filter: { spellClass: "Wizard", spellLevelMin: 0, spellLevelMax: 0 },
+    note: "Swap one for another Wizard cantrip whenever you gain a Cleric level.",
+  },
+  ...[6, 7, 8, 9].map((lv): ClassChoice => ({
+    className: "Cleric", subclass: "Arcana Domain", edition: "2024", level: 17,
+    feature: `Magical Mastery (level ${lv})`, choose: 1, kind: "spell",
+    filter: { spellClass: "Wizard", spellLevelMin: lv, spellLevelMax: lv },
+    note: "Always prepared.",
+  })),
+  {
+    className: "Fighter", subclass: "Arcane Archer", edition: "2024", level: 3,
+    feature: "Arcane Archer Lore (cantrip)", choose: 1, kind: "option",
+    filter: { named: [
+      { name: "Druidcraft", summary: "Minor nature effects; Intelligence is the casting ability" },
+      { name: "Prestidigitation", summary: "Minor magical tricks; Intelligence is the casting ability" },
+    ] },
+  },
+  ...([[3, 2], [7, 1], [10, 1], [15, 1], [18, 1]] as const).map(([lv, n]): ClassChoice => ({
+    className: "Fighter", subclass: "Arcane Archer", edition: "2024", level: lv,
+    feature: `Arcane Shot Options (level ${lv})`, choose: n, kind: "option",
+    filter: { named: [
+      { name: "Banishing Shot", summary: "+1 die Psychic; Cha save or banished, Incapacitated, until its next turn ends" },
+      { name: "Beguiling Shot", summary: "+2 dice Psychic; Wis save or Charmed by you or an ally until your next turn" },
+      { name: "Bursting Shot", summary: "Target and everything within 10 ft take 2 dice of Force" },
+      { name: "Enfeebling Shot", summary: "+2 dice Necrotic; Con save or Poisoned and its hits deal 1 die less" },
+      { name: "Grasping Shot", summary: "+1 die Slashing; Str save or Restrained for 1 minute" },
+      { name: "Piercing Shot", summary: "No attack roll: 30-ft Line through cover, Dex save for hit damage + 2 dice" },
+      { name: "Seeking Shot", summary: "No attack roll: curves to a creature seen this minute, Dex save for hit damage + 2 dice" },
+      { name: "Shadow Shot", summary: "+1 die Psychic; Wis save or Blinded until the end of its next turn" },
+    ] },
+    note: "One you do not already know. You can also swap one known option each time.",
+  })),
+  {
+    className: "Monk", subclass: "Warrior of the Mystic Arts", level: 3,
+    feature: "Mystic Arts Cantrips", choose: 2, kind: "spell",
+    filter: { spellClass: "Sorcerer", spellLevelMin: 0, spellLevelMax: 0 },
+    note: "Blade Ward and Thunderclap are the book's suggestion. Wisdom is your casting ability.",
+  },
+  {
+    className: "Monk", subclass: "Warrior of the Mystic Arts", level: 10,
+    feature: "Mystic Arts Cantrip (level 10)", choose: 1, kind: "spell",
+    filter: { spellClass: "Sorcerer", spellLevelMin: 0, spellLevelMax: 0 },
+  },
+  {
+    className: "Warlock", subclass: "Vestige Patron", level: 3,
+    feature: "Vestige Form", choose: 1, kind: "option",
+    filter: { named: [
+      { name: "Celestial", summary: "Radiant strikes; Divine Power heals and ends Blinded, Deafened, or Poisoned" },
+      { name: "Fiend", summary: "Fire strikes; Divine Power swaps places with you within 60 ft" },
+      { name: "Undead", summary: "Necrotic strikes; Divine Power curses a foe with Disadvantage against you" },
+    ] },
+    note: "Changeable after any Long Rest.",
+  },
+  {
+    className: "Warlock", subclass: "Vestige Patron", level: 3,
+    feature: "Vestige Spells", choose: 1, kind: "option",
+    filter: { named: [
+      { name: "Life", summary: "Aid, Bless, Cure Wounds, Revivify and the healing list" },
+      { name: "Light", summary: "Burning Hands, Faerie Fire, Fireball and the radiant-fire list" },
+      { name: "Trickery", summary: "Charm Person, Invisibility, Hypnotic Pattern and the deception list" },
+      { name: "War", summary: "Guiding Bolt, Spiritual Weapon, Spirit Guardians and the battle list" },
+    ] },
+    note: "That domain's spells become always-prepared Warlock spells at the matching levels.",
+  },
+  ...(["Conjuration", "Enchantment", "Necromancy", "Transmutation"] as const).map((school): ClassChoice => ({
+    className: "Wizard",
+    subclass: { Conjuration: "Conjurer", Enchantment: "Enchanter", Necromancy: "Necromancer", Transmutation: "Transmuter" }[school],
+    level: 3, feature: `${school} Savant`, choose: 2, kind: "spell",
+    filter: { spellSchool: school, spellClass: "Wizard", spellLevelMin: 1, spellLevelMax: 2 },
+    note: "Added to your spellbook free. One more each time you gain a new spell slot level.",
+  })),
+  {
+    className: "Wizard", subclass: "Enchanter", level: 3,
+    feature: "Enchanting Conversationalist", choose: 1, kind: "skill",
+    filter: { options: ["Deception", "Intimidation", "Persuasion"] },
+    note: "Add your Intelligence modifier (min +1) to checks with it.",
+  },
+  {
+    className: "Wizard", subclass: "Transmuter", level: 3,
+    feature: "Transmuter's Stone", choose: 1, kind: "option",
+    filter: { named: [
+      { name: "Darkvision", summary: "Bearer gains Darkvision 60 ft, or +60 ft" },
+      { name: "Resistance", summary: "Bearer resists Acid, Cold, Fire, Lightning, Poison, or Thunder" },
+      { name: "Speed", summary: "Bearer's Speed +10 ft" },
+    ] },
+    note: "Bearer also gains Constitution save proficiency. Changeable when you slot-cast a Transmutation spell.",
+  },
 ];
 
 export type ResolveInput = {
   skills: { key: string; label: string }[];
   weapons: { name: string; weapon_category?: string; weapon_range?: string; mastery?: string }[];
   tools: { name: string }[];
-  spells: { name: string; level: string; school?: string }[];
+  spells: { name: string; level: string; school?: string; classes?: string[] }[];
   /** Skill keys the character is already proficient in, for Expertise. */
   proficientSkills: string[];
   feats: { name: string; category?: string }[];
@@ -467,6 +571,7 @@ export function resolveChoice(choice: ClassChoice, data: ResolveInput): { value:
       const n = parseInt(String(sp.level ?? ""), 10);
       if (!Number.isFinite(n) || n < lo || n > hi) return false;
       if (school && String((sp as { school?: string }).school || "").toLowerCase() !== school) return false;
+      if (f.spellClass && !(sp.classes || []).includes(f.spellClass)) return false;
       return true;
     })
     .map((sp) => ({ value: sp.name, label: sp.name }));
@@ -478,7 +583,7 @@ export function choicesFor(
 ): ClassChoice[] {
   return CLASS_CHOICES
     .filter((c) => c.className === className && c.level <= level)
-    .filter((c) => !c.subclass || c.subclass === subclass)
+    .filter((c) => !c.subclass || sameSubclass(c.subclass, subclass))
     // No edition on the entry means it applies to both. No edition passed in means show everything,
     // which keeps existing callers working rather than silently emptying their lists.
     .filter((c) => !c.edition || !edition || c.edition === edition)
@@ -527,9 +632,10 @@ export const CLASS_ACTIONS: ClassAction[] = [
   // Every one costs a single Channel Divinity use, so they all spend from the same pool the base
   // class already tracks. Subclass-gated, so a Light Domain cleric is not offered a War Domain
   // option they do not have.
-  { className: "Cleric", subclass: "Arcana Domain", level: 2, name: "Arcane Abjuration",
+  // Arcana Unleashed revision: Modify Magic (level 3) replaces the 2014 Arcane Abjuration.
+  { className: "Cleric", subclass: "Arcana Domain", level: 3, name: "Modify Magic",
     cost: { resource: "Channel Divinity", amount: 1 },
-    summary: "Action: It must make a Wisdom save or be turned (and banished if CR is low enough)" },
+    summary: "As you cast: one target gains 2d8 + Cleric level temp HP, or a creature that saves takes -1d6 on its first save against the spell" },
   { className: "Cleric", subclass: "Death Domain", level: 2, name: "Touch of Death",
     cost: { resource: "Channel Divinity", amount: 1 },
     summary: "When you hit a creature with a melee attack: You can use Channel Divinity to deal extra necrotic damage equal to 5 + twice your Cleric level" },
@@ -628,7 +734,7 @@ export const CLASS_ACTIONS: ClassAction[] = [
 export function actionsFor(className: string, subclass: string, level: number): ClassAction[] {
   return CLASS_ACTIONS
     .filter((a) => a.className === className && a.level <= level)
-    .filter((a) => !a.subclass || a.subclass === subclass)
+    .filter((a) => !a.subclass || sameSubclass(a.subclass, subclass))
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 

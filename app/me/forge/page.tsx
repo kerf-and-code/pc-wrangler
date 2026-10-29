@@ -54,6 +54,7 @@ import LancerForge from "@/components/lancer-forge";
 import SystemAttribution from "@/components/system-attribution";
 import { menusFor, type ClassMenu } from "@/lib/class-menus";
 import { casterLevel, multiclassSlots, isMulticlassCaster, type CasterType } from "@/lib/multiclass-slots";
+import { subclassCasterType, thirdCasterSlots } from "@/lib/subclass-casters";
 import { subclassSpellsFor } from "@/lib/subclass-spells";
 import { choiceEffects, applyToBuild, type ChoiceEffects } from "@/lib/apply-choices";
 import { parseCoreTraits } from "@/lib/core-traits";
@@ -575,7 +576,8 @@ function ForgeInner() {
     // A subclass that grants spells does so on exactly the same terms as a lineage - always
     // prepared, free of the limit - so they land in one list rather than as two features the
     // player has to learn are the same thing.
-    for (const g of subclassSpellsFor(build.meta.subclass || "", build.level || 1)) {
+    const classPicks = (build as Build & { classChoices?: Record<string, string[]> }).classChoices || {};
+    for (const g of subclassSpellsFor(build.meta.subclass || "", build.level || 1, classPicks)) {
       out.push({ spell: g.spell, from: build.meta.subclass || "your subclass", level: g.level });
     }
     return out;
@@ -1514,14 +1516,21 @@ function ForgeInner() {
                     const casterOf = (n: string): CasterType =>
                       ((srd.structuredByName[n] as { caster_type?: string } | undefined)?.caster_type
                         || "NONE") as CasterType;
+                    // A subclass caster (Eldritch Knight, Arcane Trickster, Warrior of the Mystic
+                    // Arts) makes a non-casting class a THIRD caster; the class data alone says NONE.
+                    const primaryType = subclassCasterType(build.meta.className || "", build.meta.subclass)
+                      || casterOf(build.meta.className || "");
                     const all = [
-                      { casterType: casterOf(build.meta.className || ""), level: build.level || 1 },
+                      { casterType: primaryType, level: build.level || 1 },
                       ...((build as Build & { multiclass?: { className: string; level: number }[] })
                         .multiclass || []).map((c) => ({
                           casterType: casterOf(c.className), level: c.level || 1,
                         })),
                     ];
-                    return isMulticlassCaster(all) ? multiclassSlots(casterLevel(all)) : [];
+                    if (isMulticlassCaster(all)) return multiclassSlots(casterLevel(all));
+                    // Single-class subclass caster: its class table has no slot columns, so its own
+                    // third-caster table comes through here and replaces the (empty) class row.
+                    return primaryType === "THIRD" && all.length === 1 ? thirdCasterSlots(build.level || 1) : [];
                   })()}
                   costed={[
                     // Automatic first: a monk's Flurry is not a decision they made, and burying it
@@ -2548,7 +2557,9 @@ function ClassChoicesPanel({ build, sheet, weapons, spells, feats, picks, onPick
       weapon_range?: string; mastery?: string }[]).filter((w) => w.category === "Weapon"),
     tools: (weapons as unknown as { name: string; category?: string }[])
       .filter((w) => w.category === "Tools").map((t) => ({ name: t.name })),
-    spells: spells.map((sp) => ({ name: sp.name, level: sp.level })),
+    // school and the class list both feed the resolver's filters (Evocation Savant, "two Wizard
+    // cantrips"). Dropping them here left any school-filtered pick with an empty list.
+    spells: spells.map((sp) => ({ name: sp.name, level: sp.level, school: sp.school, classes: spellClasses(sp) })),
     feats: feats.map((f) => ({ name: f.name, category: (f as { category?: string }).category })),
     // Named options carry a minimum level, so the resolver needs to know the character's.
     characterLevel: build.level || 1,
