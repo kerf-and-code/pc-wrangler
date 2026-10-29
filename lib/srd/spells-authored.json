@@ -1309,7 +1309,7 @@
     ],
     "attack_type": null,
     "description": "Touch a willing creature and pick acid, cold, fire, lightning, or poison. Until the spell ends it can use an action to exhale a 15-foot cone: Dexterity save, 3d6 of that type, half on a success (+1d6 per slot level above 2nd).",
-    "edition": "both",
+    "edition": "2014",
     "source": "kc"
   },
   {
@@ -1394,24 +1394,6 @@
     "attack_type": null,
     "description": "An intangible spirit fills a 5-foot cube. When you or a creature you can see enters its space for the first time on a turn or starts its turn there, you can heal it 1d6 (no action). It can heal 1 + your spellcasting modifier times; a bonus action moves it 30 feet. No effect on constructs or undead.",
     "edition": "2014",
-    "source": "kc"
-  },
-  {
-    "name": "Homunculus Servant",
-    "level": 2,
-    "school": "Conjuration",
-    "casting_time": "1 hour or Ritual",
-    "range": "10 feet",
-    "components": "V, S, M (a gem worth 100+ GP)",
-    "duration": "Instantaneous",
-    "concentration": false,
-    "ritual": true,
-    "classes": [
-      "Artificer"
-    ],
-    "attack_type": null,
-    "description": "You create a tiny homunculus servant that follows your commands. It can deliver touch spells, perform simple tasks, and has a telepathic link with you.",
-    "edition": "2024",
     "source": "kc"
   },
   {
