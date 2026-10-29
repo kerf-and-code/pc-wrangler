@@ -4318,6 +4318,58 @@
           ]
         ]
       }
+    },
+    "Artificer": {
+      "hitDie": 8,
+      "primary": [
+        "int"
+      ],
+      "saves": [
+        "con",
+        "int"
+      ],
+      "skillCount": 2,
+      "skills": [
+        "arcana",
+        "history",
+        "investigation",
+        "medicine",
+        "nature",
+        "perception",
+        "sleight"
+      ],
+      "armor": "Light and medium armor, shields",
+      "weapons": "Simple weapons",
+      "casting": {
+        "type": "artificer",
+        "ability": "int",
+        "list": "artificer"
+      },
+      "subclasses": [
+        "Alchemist",
+        "Armorer",
+        "Artillerist",
+        "Battle Smith",
+        "Cartographer"
+      ],
+      "features": {
+        "1": [
+          [
+            "Spellcasting",
+            "Intelligence-based, prepared from the Artificer list through tools."
+          ],
+          [
+            "Tinker's Magic",
+            "Mending, and conjure simple gear INT mod times per Long Rest."
+          ]
+        ],
+        "2": [
+          [
+            "Replicate Magic Item",
+            "Learn magic item plans and create temporary items after a Long Rest."
+          ]
+        ]
+      }
     }
   },
   "SUBCLASS_RULES": {

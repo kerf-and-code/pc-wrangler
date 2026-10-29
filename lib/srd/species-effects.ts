@@ -17,7 +17,7 @@
 // The JSON directly, not RULES_DATA: rules-context imports this file, and the reverse import would
 // be circular.
 import rulesData from "./rules-data.json";
-import type { SpeciesEffects, SpeciesMechanics, SpeciesSpell } from "./species-mechanics";
+import type { AsiPick, SpeciesEffects, SpeciesMechanics, SpeciesSpell } from "./species-mechanics";
 
 export type Ruleset = "2014" | "2024";
 
@@ -29,7 +29,32 @@ export const SPECIES_ABILITY_OPTIONS = ["Intelligence", "Wisdom", "Charisma"];
 // species granting two skills stores two values in the same Record<string, string> as other picks.
 export const speciesSkillKey = (i: number) => `Species Skill ${i + 1}`;
 export const speciesToolKey = (i: number) => `Species Tool ${i + 1}`;
-export const isSpeciesProfKey = (k: string) => /^Species (Skill|Tool) \d+$/.test(k);
+export const speciesAsiKey = (i: number) => `Species ASI ${i + 1}`;
+export const SPECIES_ASI_PATTERN_KEY = "Species ASI pattern";
+export const ASI_PATTERNS: Record<string, number[]> = { "+2 and +1": [2, 1], "+1, +1 and +1": [1, 1, 1] };
+export const isSpeciesProfKey = (k: string) => /^Species (Skill|Tool|ASI) /.test(k) || k === SPECIES_ASI_PATTERN_KEY;
+
+/** The amounts the player assigns, in order: from a fixed pick, or from the chosen flexible pattern. */
+export function asiAmounts(pick: AsiPick | undefined, picks: Record<string, string>): number[] {
+  if (!pick) return [];
+  if (pick.kind === "fixed") return pick.amounts;
+  return ASI_PATTERNS[picks[SPECIES_ASI_PATTERN_KEY] || ""] || [];
+}
+
+/**
+ * The chosen increases as ability mods. Each slot must name a different ability and none the pick
+ * excludes; an invalid or empty slot contributes nothing rather than a guess.
+ */
+export function speciesAsiMods(pick: AsiPick | undefined, picks: Record<string, string>): Record<string, number> {
+  const out: Record<string, number> = {};
+  const exclude = pick && pick.kind === "fixed" ? pick.exclude || [] : [];
+  asiAmounts(pick, picks).forEach((amt, i) => {
+    const a = picks[speciesAsiKey(i)];
+    if (!a || exclude.includes(a as never) || out[a]) return;
+    out[a] = amt;
+  });
+  return out;
+}
 
 const norm = (s: string) =>
   (s || "").toLowerCase().replace(/\([^)]*\)/g, "").replace(/[‘’']/g, "").replace(/[^a-z0-9]+/g, " ").trim();

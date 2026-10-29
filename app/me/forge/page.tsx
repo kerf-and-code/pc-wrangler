@@ -56,9 +56,11 @@ import { menusFor, type ClassMenu } from "@/lib/class-menus";
 import { casterLevel, multiclassSlots, isMulticlassCaster, type CasterType } from "@/lib/multiclass-slots";
 import { subclassCasterType, subclassSpellList, subclassCasting, thirdCasterSlots } from "@/lib/subclass-casters";
 import { subclassSpellsFor } from "@/lib/subclass-spells";
+import { withSubclass } from "@/lib/subclass-features";
 import {
   resolveSpecies, speciesMechanics, structuredChoiceOptions, matchOption,
   SPECIES_ABILITY_KEY, SPECIES_ABILITY_OPTIONS, speciesSkillKey, speciesToolKey, isSpeciesProfKey,
+  speciesAsiKey, SPECIES_ASI_PATTERN_KEY, ASI_PATTERNS, asiAmounts, speciesAsiMods,
 } from "@/lib/srd/species-effects";
 import { choiceEffects, applyToBuild, type ChoiceEffects } from "@/lib/apply-choices";
 import { parseCoreTraits } from "@/lib/core-traits";
@@ -481,10 +483,24 @@ function ForgeInner() {
     [srd.bgByName, build.meta.background],
   );
 
+  // The class record with the character's OWN subclass in its feature list. The raw class JSON
+  // carries the SRD subclass's features for every character (lib/subclass-features.ts), so every
+  // place that lists class features reads this instead of srd.classByName directly.
+  const subclassOfClass = useCallback((cn: string): string => {
+    if (cn === build.meta.className) return build.meta.subclass || "";
+    const mc = ((build as Build & { multiclass?: { className: string; subclass?: string }[] }).multiclass || [])
+      .find((c) => c.className === cn);
+    return mc?.subclass || "";
+  }, [build]);
+  const classRecWithSub = useCallback(
+    (cn: string) => withSubclass(srd.classByName[cn], cn, subclassOfClass(cn), edition),
+    [srd.classByName, subclassOfClass, edition],
+  );
+
   // Per-level class progression up to the character's current level, for the progression panel.
   const progression = useMemo<LevelGroup[]>(
-    () => classProgression(srd.classByName[build.meta.className], build.level),
-    [srd.classByName, build.meta.className, build.level],
+    () => classProgression(classRecWithSub(build.meta.className), build.level),
+    [classRecWithSub, build.meta.className, build.level],
   );
 
   // Epic-tier (21-30) progression rows, from the real epic table. Empty at level 20 or below.
@@ -513,13 +529,13 @@ function ForgeInner() {
 
   // Class features gained, grouped by level, for the printable sheet's compact roster.
   const classFeatureGroups = useMemo(() => {
-    const rec = srd.classByName[build.meta.className];
+    const rec = classRecWithSub(build.meta.className);
     const byLevel: Record<number, string[]> = {};
     (rec?.features_by_level || []).forEach((f) => {
       if (f.level <= build.level) (byLevel[f.level] = byLevel[f.level] || []).push(f.name);
     });
     return Object.keys(byLevel).map(Number).sort((a, b) => a - b).map((lv) => ({ level: lv, names: byLevel[lv] }));
-  }, [srd.classByName, build.meta.className, build.level]);
+  }, [classRecWithSub, build.meta.className, build.level]);
 
   // Trigger the browser's print dialog (user chooses "Save as PDF"). The print stylesheet in the
   // sheet component hides the editor and reveals the clean sheet.
@@ -665,6 +681,14 @@ function ForgeInner() {
       list(e?.languages, "Languages");
       if (e?.languagePick) fx.unapplied.push(`${e.languagePick.n} extra language${e.languagePick.n > 1 ? "s" : ""} of your choice (note it on your sheet)`);
     }
+    {
+      const asi = speciesAsiMods(resolvedSpecies?.effects.asiPick, allPicks);
+      for (const [a, v] of Object.entries(asi)) fx.applied.push(`+${v} ${a.toUpperCase()} from ${build.meta.species}`);
+      const need = asiAmounts(resolvedSpecies?.effects.asiPick, allPicks).length;
+      if (resolvedSpecies?.effects.asiPick && Object.keys(asi).length < (need || 1)) {
+        fx.unapplied.push(`${build.meta.species}: choose your ability score increases on the Species tab`);
+      }
+    }
     // Species skill picks are real proficiencies and go where background and class skills go.
     // Tool picks are recorded and listed; the engine has no tool-check numbers to move.
     const spName = build.meta.species || "your species";
@@ -728,15 +752,19 @@ function ForgeInner() {
     const bonus = parseAbilityBonuses(mech?.ability_bonuses);
     // ADDITIVE, not spread. The old version overwrote, so a species +2 CON and a background +1 CON
     // came out as +2. Nothing wrote a background bonus before, so the bug had never fired.
+    // The player's own 2014 species increases (Half-Elf two +1s, Monsters of the Multiverse +2/+1),
+    // stored as Species ASI picks and only offered when the 2014 entry carries an asiPick.
+    const spAsi = speciesAsiMods(resolvedSpecies?.effects.asiPick,
+      (build as Build & { speciesChoices?: Record<string, string> }).speciesChoices || {});
     const merged: Record<string, number> = {};
-    for (const src of [build.featMods || {}, build.bgAsi || {}, effects.featMods, bonus]) {
+    for (const src of [build.featMods || {}, build.bgAsi || {}, effects.featMods, bonus, spAsi]) {
       for (const [k, v] of Object.entries(src)) merged[k] = (merged[k] || 0) + Number(v || 0);
     }
     // Granted skills and expertise fold in here, so the engine sees them as though the player had
     // ticked them by hand - which is the point: a proficiency from a background is not a lesser
     // proficiency.
     return applyToBuild({ ...build, featMods: merged }, effects);
-  }, [build, srd.speciesByName, effects]);
+  }, [build, srd.speciesByName, effects, resolvedSpecies]);
 
   const sheet = useMemo(() => {
     try { return deriveSheet(buildForDerive, deriveCtx); } catch { return null; }
@@ -1549,7 +1577,7 @@ function ForgeInner() {
                   build={build} sheet={sheet} edition={edition}
                   activeClass={classTab} onClassTab={setClassTab}
                   epicRows={epicRows}
-                  classRecFor={(cn) => srd.classByName[cn]}
+                  classRecFor={classRecWithSub}
                   structuredFor={(cn) => srd.structuredByName[cn]}
                   subclassFor={(cn) => (catalog ? subclassOptions(catalog, cn, enabledPartners) : [])}
                   weapons={srd.equipment} spells={srd.spells} feats={srd.featList}
@@ -1678,7 +1706,7 @@ function ForgeInner() {
                   species={build.meta.species} speciesRec={srd.speciesByName[build.meta.species]}
                   variantName={speciesVariant} variantRec={srd.variantByName[speciesVariant]}
                   background={build.meta.background} backgroundRec={srd.bgByName[build.meta.background]}
-                  className={build.meta.className} classRec={srd.classByName[build.meta.className]}
+                  className={build.meta.className} classRec={classRecWithSub(build.meta.className)}
                   level={build.level} chosenFeats={chosenFeats}
                 />
               )}
@@ -2629,6 +2657,43 @@ function SpeciesPanel({
           </div>
         </div>
       )}
+
+      {(() => {
+        // 2014 ability increases the player assigns. Each slot is a different ability; an ability
+        // already used in another slot, or one the species excludes, is not offered.
+        const pick = resolved?.effects.asiPick;
+        if (!pick) return null;
+        const amounts = asiAmounts(pick, choices);
+        const exclude = pick.kind === "fixed" ? pick.exclude || [] : [];
+        const box = { marginTop: 12, background: "rgba(0,0,0,0.24)", borderRadius: 4, padding: "10px 12px" };
+        const sel = { ...stoneField(), fontSize: 13.5, padding: "8px 10px", marginTop: 4 };
+        return (
+          <div style={box}>
+            <div style={{ fontSize: 14, color: STONE.ink, marginBottom: 2 }}>
+              Ability score increases from {build.meta.species}
+            </div>
+            {pick.kind === "flexible" && (
+              <select value={choices[SPECIES_ASI_PATTERN_KEY] || ""}
+                onChange={(e) => onChoice(SPECIES_ASI_PATTERN_KEY, e.target.value)} style={sel}>
+                <option value="">Choose a pattern</option>
+                {Object.keys(ASI_PATTERNS).map((k) => <option key={k} value={k}>{k}</option>)}
+              </select>
+            )}
+            {amounts.map((amt, i) => {
+              const taken = amounts.map((_, j) => (j !== i ? choices[speciesAsiKey(j)] : "")).filter(Boolean);
+              return (
+                <select key={i} value={choices[speciesAsiKey(i)] || ""}
+                  onChange={(e) => onChoice(speciesAsiKey(i), e.target.value)} style={sel}>
+                  <option value="">+{amt} to...</option>
+                  {ABILITIES.filter((a) => !exclude.includes(a) && !taken.includes(a)).map((a) => (
+                    <option key={a} value={a}>+{amt} {a.toUpperCase()}</option>
+                  ))}
+                </select>
+              );
+            })}
+          </div>
+        );
+      })()}
 
       {(() => {
         // Skill and tool picks the species grants. Rendered from the structured entry, so Keen
