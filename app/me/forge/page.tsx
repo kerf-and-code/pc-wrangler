@@ -54,7 +54,7 @@ import LancerForge from "@/components/lancer-forge";
 import SystemAttribution from "@/components/system-attribution";
 import { menusFor, type ClassMenu } from "@/lib/class-menus";
 import { casterLevel, multiclassSlots, isMulticlassCaster, type CasterType } from "@/lib/multiclass-slots";
-import { subclassCasterType, subclassSpellList, thirdCasterSlots } from "@/lib/subclass-casters";
+import { subclassCasterType, subclassSpellList, subclassCasting, thirdCasterSlots } from "@/lib/subclass-casters";
 import { subclassSpellsFor } from "@/lib/subclass-spells";
 import { choiceEffects, applyToBuild, type ChoiceEffects } from "@/lib/apply-choices";
 import { parseCoreTraits } from "@/lib/core-traits";
@@ -1432,7 +1432,7 @@ function ForgeInner() {
 
               {tab === "spells" && (
                 <SpellsPanel
-                  build={build} spells={srd.spells} sheet={sheet}
+                  build={build} spells={srd.spells} sheet={sheet} edition={edition}
                   structuredRec={srd.structuredByName[build.meta.className]}
                   granted={grantedSpells}
                   onToggle={toggleSpell}
@@ -1962,8 +1962,9 @@ type SpellLoadout = { name: string; cantrips: string[]; known: string[] };
  *   and a player being told "you cannot prepare that" by a tool that is guessing is worse than no
  *   help at all. It COUNTS instead, and the count is the honest form of the same information.
  */
-function SpellsPanel({ build, spells, sheet, structuredRec, granted, onToggle, loadouts, onSaveLoadout, onApplyLoadout, onDeleteLoadout }: {
+function SpellsPanel({ build, spells, sheet, edition, structuredRec, granted, onToggle, loadouts, onSaveLoadout, onApplyLoadout, onDeleteLoadout }: {
   build: Build;
+  edition: string;
   spells: SpellRecord[];
   structuredRec?: unknown;
   granted: { spell: string; from: string; level: number }[];
@@ -1994,6 +1995,12 @@ function SpellsPanel({ build, spells, sheet, structuredRec, granted, onToggle, l
   }, [build]);
   const cls = myClasses.join(", ");
   const subclassCaster = !!subclassSpellList(build.meta.className || "", build.meta.subclass);
+  // Limits for a SINGLE-CLASS subclass caster. The class table (Fighter, Rogue, Monk) has no spell
+  // columns, so without this the tab offered the whole Wizard list up to level 9 with no count. A
+  // multiclassed character keeps the old behaviour: its other class's list and slots apply too.
+  const isMulti = (((build as Build & { multiclass?: unknown[] }).multiclass) || []).length > 0;
+  const subCasting = isMulti ? null
+    : subclassCasting(build.meta.className || "", build.meta.subclass, build.level || 1, edition);
 
   const chosen = useMemo(() => new Set([...(build.spells?.cantrips || []), ...(build.spells?.known || [])]),
     [build.spells]);
@@ -2006,12 +2013,13 @@ function SpellsPanel({ build, spells, sheet, structuredRec, granted, onToggle, l
       // class happens to be first.
       if (onlyMine && myClasses.length
         && !spellClasses(sp).some((c) => myClasses.some((mine) => c.toLowerCase() === mine.toLowerCase()))) return false;
+      if (onlyMine && subCasting && spellLevel(sp) > subCasting.maxSpellLevel) return false;
       if (lvl !== "" && spellLevel(sp) !== Number(lvl)) return false;
       if (school && (sp.school || "") !== school) return false;
       if (needle && !sp.name.toLowerCase().includes(needle)) return false;
       return true;
     }).sort((a, b) => spellLevel(a) - spellLevel(b) || a.name.localeCompare(b.name));
-  }, [spells, myClasses, lvl, school, q, onlyMine]);
+  }, [spells, myClasses, lvl, school, q, onlyMine, subCasting]);
 
   // Built from the loaded spells rather than a hardcoded list, so a ruleset or partner content that
   // introduces a school shows it without a code change.
@@ -2027,6 +2035,7 @@ function SpellsPanel({ build, spells, sheet, structuredRec, granted, onToggle, l
   // Spells" columns. Nothing is invented: a class whose table has no such column gets no cap, and
   // the panel counts without limiting exactly as it did before.
   const caps = useMemo(() => {
+    if (subCasting) return { cantrips: subCasting.cantrips, spells: subCasting.spells };
     const row = classTable(structuredRec).find((r) => r.level === (build.level || 1));
     const num = (v: string | undefined) => {
       const n = parseInt(String(v ?? ""), 10);
@@ -2036,10 +2045,17 @@ function SpellsPanel({ build, spells, sheet, structuredRec, granted, onToggle, l
       cantrips: num(row?.columns["Cantrips"] ?? row?.columns["Cantrips Known"]),
       spells: num(row?.columns["Prepared Spells"] ?? row?.columns["Spells Known"]),
     };
-  }, [structuredRec, build.level]);
+  }, [structuredRec, build.level, subCasting]);
 
   const atCantripCap = caps.cantrips !== null && cantripCount >= caps.cantrips;
   const atSpellCap = caps.spells !== null && knownCount >= caps.spells;
+
+  // 2014 Eldritch Knight / Arcane Trickster: level 1+ spells from outside their two schools are
+  // limited, not forbidden, so the list still shows them and blocks adding past the allowance.
+  const schoolOf = useMemo(() => new Map(spells.map((sp) => [sp.name, sp.school || ""])), [spells]);
+  const offSchool = (sc: string) => !!subCasting?.schools && !subCasting.schools.includes(sc);
+  const offSchoolCount = (build.spells?.known || []).filter((n) => offSchool(schoolOf.get(n) || "")).length;
+  const atOffSchoolCap = !!subCasting?.schools && offSchoolCount >= subCasting.anySchool;
 
   return (
     <div style={stonePanel()}>
@@ -2155,6 +2171,12 @@ function SpellsPanel({ build, spells, sheet, structuredRec, granted, onToggle, l
         <span style={{ color: atSpellCap ? C.good : undefined }}>
           {knownCount}{caps.spells !== null ? ` of ${caps.spells}` : ""} spell{knownCount === 1 ? "" : "s"}
         </span>
+        {subCasting && <> &middot; up to level {subCasting.maxSpellLevel}</>}
+        {subCasting?.schools && (
+          <span style={{ color: atOffSchoolCap ? C.good : undefined }}>
+            {" "}&middot; {offSchoolCount} of {subCasting.anySchool} outside {subCasting.schools.join("/")}
+          </span>
+        )}
       </div>
 
       <div style={{ maxHeight: 460, overflowY: "auto", display: "grid", gap: 4, paddingRight: 4 }}>
@@ -2166,7 +2188,8 @@ function SpellsPanel({ build, spells, sheet, structuredRec, granted, onToggle, l
           // Full means "cannot add another", never "cannot remove this one" - a player at the cap
           // must still be able to swap, and a picker that locks up entirely at the limit is the
           // most annoying way to be right.
-          const blocked = !on && (cantrip ? atCantripCap : atSpellCap);
+          const offBlocked = !on && !cantrip && atOffSchoolCap && offSchool(sp.school || "");
+          const blocked = (!on && (cantrip ? atCantripCap : atSpellCap)) || offBlocked;
           return (
             <div key={`${sp.name}::${sp.level}`} style={{
               border: `1px solid ${on ? C.sun : STONE.hi}`, borderRadius: 4,
@@ -2174,7 +2197,9 @@ function SpellsPanel({ build, spells, sheet, structuredRec, granted, onToggle, l
             }}>
               <div style={{ display: "flex", gap: 8, alignItems: "baseline", flexWrap: "wrap" }}>
                 <button onClick={() => { if (!blocked) onToggle(sp.name, cantrip); }}
-                  title={blocked ? `You already have ${cantrip ? caps.cantrips : caps.spells} at level ${build.level}. Remove one first.` : undefined}
+                  title={offBlocked
+                    ? `Only ${subCasting?.anySchool} of your spells can come from outside ${subCasting?.schools?.join(" and ")} at level ${build.level}.`
+                    : blocked ? `You already have ${cantrip ? caps.cantrips : caps.spells} at level ${build.level}. Remove one first.` : undefined}
                   style={{ background: "transparent", border: "none",
                     cursor: blocked ? "not-allowed" : "pointer", padding: 0,
                     opacity: blocked ? 0.4 : 1,

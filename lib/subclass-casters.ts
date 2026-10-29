@@ -44,3 +44,54 @@ export function subclassSpellList(className: string, subclass: string | null | u
 export function thirdCasterSlots(level: number): { level: number; slots: number }[] {
   return level >= 3 ? multiclassSlots(Math.ceil(level / 3)) : [];
 }
+
+// What a single-class subclass caster may pick at a given class level. Checked against the books
+// on 2026-10-28: the Eldritch Knight and Arcane Trickster tables in PHB 2024 and the Warrior of the
+// Mystic Arts table in Arcana Unleashed are row-for-row identical (3 spells at level 3 to 13 at
+// level 20), and the 2014 Spells Known column carries the same numbers.
+const THIRD_CASTER_SPELLS = [3, 4, 4, 4, 5, 6, 6, 7, 8, 8, 9, 10, 10, 11, 11, 11, 12, 13];
+
+// Cantrips at level 3, then at level 10. Arcane Trickster's count includes Mage Hand.
+const THIRD_CASTER_CANTRIPS: Record<string, [number, number]> = {
+  "Eldritch Knight": [2, 3],
+  "Arcane Trickster": [3, 4],
+  "Warrior of the Mystic Arts": [2, 3],
+};
+
+// 2014 only: most spells must come from two schools. The level 3 grant allows one spell from any
+// school, and levels 8, 14 and 20 each allow one more. 2024 dropped the restriction.
+const SCHOOLS_2014: Record<string, string[]> = {
+  "Eldritch Knight": ["Abjuration", "Evocation"],
+  "Arcane Trickster": ["Enchantment", "Illusion"],
+};
+
+export type SubclassCasting = {
+  spellList: string;
+  cantrips: number;
+  spells: number;
+  maxSpellLevel: number;
+  /** null when any school is allowed. */
+  schools: string[] | null;
+  /** How many level 1+ spells may come from outside `schools`. */
+  anySchool: number;
+};
+
+/** Limits for a single-class subclass caster, or null (not one, or below level 3). */
+export function subclassCasting(
+  className: string, subclass: string | null | undefined, level: number, edition: string,
+): SubclassCasting | null {
+  const hit = findThird(className, subclass);
+  if (!hit || level < 3) return null;
+  const [, book, spellList] = hit;
+  const [c3, c10] = THIRD_CASTER_CANTRIPS[book];
+  const slots = thirdCasterSlots(level);
+  const schools = edition === "2014" ? SCHOOLS_2014[book] || null : null;
+  return {
+    spellList,
+    cantrips: level >= 10 ? c10 : c3,
+    spells: THIRD_CASTER_SPELLS[Math.min(level, 20) - 3],
+    maxSpellLevel: slots.length ? slots[slots.length - 1].level : 0,
+    schools,
+    anySchool: schools ? (level >= 20 ? 4 : level >= 14 ? 3 : level >= 8 ? 2 : 1) : 0,
+  };
+}
