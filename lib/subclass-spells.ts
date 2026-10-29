@@ -53,14 +53,20 @@ const DOMAIN_SPELLS: Record<"Life" | "Light" | "Trickery" | "War", SubclassSpell
     [7, ["Fire Shield", "Freedom of Movement"]], [9, ["Hold Monster", "Steel Wind Strike"]]]),
 };
 
-const FROM_JSON: Record<string, SubclassSpell[]> = Object.fromEntries(
-  Object.entries({
-    ...(spells2014 as Record<string, Record<string, string[]>>),
-    ...(moreSpells as Record<string, Record<string, string[]>>),
-  }).map(([name, byLevel]) => [
+const fromJson = (table: Record<string, Record<string, string[]>>): Record<string, SubclassSpell[]> =>
+  Object.fromEntries(Object.entries(table).map(([name, byLevel]) => [
     name, S(Object.entries(byLevel).map(([lv, spells]) => [Number(lv), spells] as [number, string[]])),
-  ]),
-);
+  ]));
+const FROM_JSON = fromJson(moreSpells as Record<string, Record<string, string[]>>);
+
+/**
+ * 2014 lists, kept apart from the 2024 ones: several subclasses exist in both books with different
+ * spells (2014 Light Domain has Burning Hands and Faerie Fire at 1st; 2024 has four spells at 3rd), so
+ * one name-keyed table can't serve both. A 2014 build reads this first; a 2024 build only falls back
+ * to it for subclasses that have no 2024 list (Xanathar's, Tasha's).
+ */
+export const SUBCLASS_SPELLS_2014: Record<string, SubclassSpell[]> =
+  fromJson(spells2014 as Record<string, Record<string, string[]>>);
 
 export const SUBCLASS_SPELLS: Record<string, SubclassSpell[]> = {
   ...FROM_JSON,
@@ -95,10 +101,38 @@ const VESTIGE_CHOICE_KEY = choiceKey({
  * and listing the rest as theirs would be wrong rather than early. `picks` is build.classChoices;
  * without it a subclass whose list is chosen (Vestige Patron) grants nothing rather than a guess.
  */
+/**
+ * The spell tables are keyed by subclass name alone, and two classes can share a canonical name:
+ * Druid "Circle of the Moon" and Bard "College of the Moon" (Heroes of Faerun) both reduce to "moon".
+ * Without the class, a Moon bard would pick up the druid's list (or the reverse, by table order).
+ * Keys listed here only match a build of that class; unlisted keys match any class as before.
+ */
+const SPELL_TABLE_CLASS: Record<string, string> = {
+  "Circle of the Moon": "Druid",
+  "College of the Moon": "Bard",
+  // Apothecary (Drakkenheim) also has a Reanimator subclass.
+  Reanimator: "Artificer",
+  // Names that reduce to the same canonical key as another class's subclass ("Shadow Domain" and
+  // the Monk's "Way of Shadow" both become "shadow"), so the table only applies to its own class.
+  "Shadow Domain": "Cleric",
+  "Oath of the Harvest": "Paladin",
+  "Harvest Domain": "Cleric",
+  "Celestial Patron": "Warlock",
+  "Circle of Blood": "Druid",
+  "Dragon Domain": "Cleric",
+  "Blood Domain": "Cleric",
+  "Moon Domain": "Cleric",
+};
+
 export function subclassSpellsFor(
-  subclass: string, level: number, picks: Record<string, string[]> = {},
+  subclass: string, level: number, picks: Record<string, string[]> = {}, edition = "2024", className = "",
 ): SubclassSpell[] {
-  let list = Object.entries(SUBCLASS_SPELLS).find(([k]) => sameSubclass(k, subclass))?.[1] || [];
+  const classOk = (k: string) => !className || !SPELL_TABLE_CLASS[k] || SPELL_TABLE_CLASS[k] === className;
+  const find = (table: Record<string, SubclassSpell[]>) =>
+    Object.entries(table).find(([k]) => classOk(k) && sameSubclass(k, subclass))?.[1];
+  let list = (edition === "2014"
+    ? find(SUBCLASS_SPELLS_2014) ?? find(SUBCLASS_SPELLS)
+    : find(SUBCLASS_SPELLS) ?? find(SUBCLASS_SPELLS_2014)) || [];
   if (sameSubclass("Vestige Patron", subclass)) {
     const domain = (picks[VESTIGE_CHOICE_KEY] || [])[0] as keyof typeof DOMAIN_SPELLS | undefined;
     list = (domain && DOMAIN_SPELLS[domain]) || [];

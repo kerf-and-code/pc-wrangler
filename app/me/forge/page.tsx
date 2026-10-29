@@ -616,11 +616,11 @@ function ForgeInner() {
     // prepared, free of the limit - so they land in one list rather than as two features the
     // player has to learn are the same thing.
     const classPicks = (build as Build & { classChoices?: Record<string, string[]> }).classChoices || {};
-    for (const g of subclassSpellsFor(build.meta.subclass || "", build.level || 1, classPicks)) {
+    for (const g of subclassSpellsFor(build.meta.subclass || "", build.level || 1, classPicks, edition, build.meta.className || "")) {
       out.push({ spell: g.spell, from: build.meta.subclass || "your subclass", level: g.level });
     }
     return out;
-  }, [build, speciesVariant, srd.speciesByName, srd.variantByName, resolvedSpecies]);
+  }, [build, speciesVariant, srd.speciesByName, srd.variantByName, resolvedSpecies, edition]);
 
   const effects: ChoiceEffects = useMemo(() => {
     const traits = traitList(srd.speciesByName[build.meta.species]?.traits)
