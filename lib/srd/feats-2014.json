@@ -598,5 +598,1097 @@
   "description": "One druid cantrip of your choice; longstrider and pass without trace once each per long rest without a slot. Wisdom is the spellcasting ability.",
   "source": "kc",
   "book": "Xanathar's Guide to Everything"
+ },
+ {
+  "name": "Artificer Initiate",
+  "category": "Feat",
+  "description": "One artificer cantrip and one 1st-level artificer spell (Intelligence); cast the 1st-level spell once per long rest without a slot or with your slots. Proficiency with one artisan's tool, usable as a focus for your Intelligence spells.",
+  "source": "kc",
+  "book": "Tasha's Cauldron of Everything"
+ },
+ {
+  "name": "Eldritch Adept",
+  "category": "Feat",
+  "prerequisite": "Spellcasting or Pact Magic feature",
+  "description": "Learn one Eldritch Invocation (Int, Wis or Cha, chosen now); one with a prerequisite only if you're a warlock who meets it. Swap it when you gain a level.",
+  "source": "kc",
+  "book": "Tasha's Cauldron of Everything"
+ },
+ {
+  "name": "Fighting Initiate",
+  "category": "Feat",
+  "prerequisite": "Proficiency with a martial weapon",
+  "description": "Learn one fighter Fighting Style you don't have; swap it at levels that grant an Ability Score Improvement.",
+  "source": "kc",
+  "book": "Tasha's Cauldron of Everything"
+ },
+ {
+  "name": "Gunner",
+  "category": "Feat",
+  "description": "+1 Dex. Proficiency with firearms, ignore their loading property, and no disadvantage on ranged attacks for being within 5 feet of a hostile creature.",
+  "source": "kc",
+  "book": "Tasha's Cauldron of Everything",
+  "asi": {
+   "dex": 1
+  }
+ },
+ {
+  "name": "Metamagic Adept",
+  "category": "Feat",
+  "prerequisite": "Spellcasting or Pact Magic feature",
+  "description": "Learn two sorcerer Metamagic options (one per spell unless an option says otherwise; swap one at Ability Score Improvement levels) and 2 sorcery points usable only on Metamagic, regained on a long rest.",
+  "source": "kc",
+  "book": "Tasha's Cauldron of Everything"
+ },
+ {
+  "name": "Revenant Blade",
+  "category": "Feat",
+  "prerequisite": "Elf",
+  "description": "+1 Strength or Dexterity (max 20). While wielding a double-bladed scimitar with two hands, +1 AC, and it has the finesse property for you.",
+  "source": "kc",
+  "book": "Eberron: Rising from the Last War"
+ },
+ {
+  "name": "Anvilwrought",
+  "category": "Supernatural Gift",
+  "prerequisite": "Theros Campaign",
+  "description": "Forged by Purphoros. Constructed Resilience: advantage on saves against being poisoned and resistance to poison; no need to eat, drink, breathe or sleep; immune to disease; magic can't put you to sleep. Sentry's Rest: a long rest is 6 hours motionless but aware.",
+  "source": "kc",
+  "book": "Mythic Odysseys of Theros"
+ },
+ {
+  "name": "Heroic Destiny",
+  "category": "Supernatural Gift",
+  "prerequisite": "Theros Campaign",
+  "description": "Defy Death: advantage on death saving throws. Hard to Kill: once per long rest, when reduced to 0 HP but not killed outright, drop to 1 HP instead.",
+  "source": "kc",
+  "book": "Mythic Odysseys of Theros"
+ },
+ {
+  "name": "Iconoclast",
+  "category": "Supernatural Gift",
+  "prerequisite": "Theros Campaign",
+  "description": "Enlightened Protection: cast protection from evil and good on yourself once per long rest without material components (Wisdom). Reject the Gods: you can't gain or lose piety. At 5th level cast dispel magic once per long rest; at 11th dispel evil and good once per long rest and dispel magic at 4th level; at 17th antimagic field once per long rest and dispel magic at 5th level.",
+  "source": "kc",
+  "book": "Mythic Odysseys of Theros"
+ },
+ {
+  "name": "Inscrutable",
+  "category": "Supernatural Gift",
+  "prerequisite": "Theros Campaign",
+  "description": "Psychic Shield: resistance to psychic damage. Sphinx's Shroud: immune to effects that sense your emotions or read your thoughts; Insight checks to read your intentions have disadvantage.",
+  "source": "kc",
+  "book": "Mythic Odysseys of Theros"
+ },
+ {
+  "name": "Lifelong Companion",
+  "category": "Supernatural Gift",
+  "prerequisite": "Theros Campaign",
+  "description": "Boon Aura: allies within 5 feet have advantage on saves against being frightened or charmed while you aren't incapacitated. Companion's Protection: once per long rest, reaction when a creature you can see within 5 feet is hit by an attack roll to be hit instead.",
+  "source": "kc",
+  "book": "Mythic Odysseys of Theros"
+ },
+ {
+  "name": "Nyxborn",
+  "category": "Supernatural Gift",
+  "prerequisite": "Theros Campaign",
+  "description": "Cloak of Stars: once per long rest, action to wrap yourself in starlight for 1 minute, giving attack rolls against you disadvantage. Nyxborn Resistance: resistance to necrotic and radiant damage.",
+  "source": "kc",
+  "book": "Mythic Odysseys of Theros"
+ },
+ {
+  "name": "Oracle",
+  "category": "Supernatural Gift",
+  "prerequisite": "Theros Campaign",
+  "description": "Ears of the Oracle: speak, read and write Celestial, and a god can speak through you. Oracle's Insight: once per short or long rest add 1d10 to an ability check (after rolling, before the result). Instead of a god's piety benefits: piety 3+ augury as a ritual, 10+ divination as a ritual, 25+ commune as a ritual and can't be surprised, each once per long rest (Wisdom); 50+ +2 Intelligence or Wisdom and that maximum.",
+  "source": "kc",
+  "book": "Mythic Odysseys of Theros"
+ },
+ {
+  "name": "Pious",
+  "category": "Supernatural Gift",
+  "prerequisite": "Theros Campaign",
+  "description": "Pious Protection: once per long rest, reroll a failed save and use the new roll. Religious Study: advantage on Religion checks about your god. Starting Piety: 3 with your chosen god.",
+  "source": "kc",
+  "book": "Mythic Odysseys of Theros"
+ },
+ {
+  "name": "Unscarred",
+  "category": "Supernatural Gift",
+  "prerequisite": "Theros Campaign",
+  "description": "Unscarred Resilience: once per short or long rest, reaction when you take damage to reduce it by 1d12 + your Constitution modifier.",
+  "source": "kc",
+  "book": "Mythic Odysseys of Theros"
+ },
+ {
+  "name": "Strixhaven Initiate",
+  "category": "Feat",
+  "prerequisite": null,
+  "description": "Choose a Strixhaven college; learn two of its cantrips and one 1st-level spell, castable once per long rest without a slot or with slots (Int, Wis or Cha). Lorehold: two of light, sacred flame, thaumaturgy, plus a 1st-level cleric or wizard spell. Prismari: two of fire bolt, prestidigitation, ray of frost, plus a 1st-level bard or sorcerer spell. Quandrix: two of druidcraft, guidance, mage hand, plus a 1st-level druid or wizard spell. Silverquill: two of sacred flame, thaumaturgy, vicious mockery, plus a 1st-level bard or cleric spell. Witherbloom: two of chill touch, druidcraft, spare the dying, plus a 1st-level druid or wizard spell.",
+  "source": "kc",
+  "book": "Strixhaven: A Curriculum of Chaos"
+ },
+ {
+  "name": "Strixhaven Mascot",
+  "category": "Feat",
+  "prerequisite": "4th level, Strixhaven Initiate feat",
+  "description": "Cast find familiar as a ritual, with your college's mascot as a form (spirit statue, art elemental, fractal, inkling or pest). When you Attack, forgo one attack to let it attack with its reaction. Action: swap places with it within 60 feet, once per long rest or by spending a 2nd-level or higher slot.",
+  "source": "kc",
+  "book": "Strixhaven: A Curriculum of Chaos"
+ },
+ {
+  "name": "Divinely Favored",
+  "category": "Feat",
+  "prerequisite": "4th level, Dragonlance Campaign",
+  "description": "Learn one cleric cantrip, augury, and one 1st-level spell set by your alignment: a warlock spell if evil, a cleric spell if good, a druid spell if neutral. Cast augury and the 1st-level spell once each per long rest without a slot, or with slots. Intelligence, Wisdom or Charisma is the spellcasting ability (chosen with this feat), and you can use a holy symbol as a focus for spells using it.",
+  "source": "kc",
+  "book": "Dragonlance: Shadow of the Dragon Queen"
+ },
+ {
+  "name": "Initiate of High Sorcery",
+  "category": "Feat",
+  "prerequisite": "Dragonlance Campaign, Sorcerer or Wizard class or Mage of High Sorcery background",
+  "description": "Choose a moon of Krynn. Learn one wizard cantrip and two 1st-level spells from its list. Nuitari: dissonant whispers, false life, hex, ray of sickness. Lunitari: color spray, disguise self, feather fall, longstrider. Solinari: comprehend languages, detect evil and good, protection from evil and good, shield. Cast each 1st-level spell once per long rest without a slot, or with any slots. Intelligence, Wisdom or Charisma is the spellcasting ability (chosen with this feat).",
+  "source": "kc",
+  "book": "Dragonlance: Shadow of the Dragon Queen"
+ },
+ {
+  "name": "Adept of the Black Robes",
+  "category": "Feat",
+  "prerequisite": "4th level, Initiate of High Sorcery (Nuitari) feat",
+  "description": "Ambitious Magic: learn one 2nd-level enchantment or necromancy spell, castable once per long rest without a slot or with slots, using your Initiate of High Sorcery ability. Life Channel: when a creature you can see within 60 feet fails a save against a damaging spell you cast, spend Hit Dice equal to the spell's level, roll them, and add the total to its damage.",
+  "source": "kc",
+  "book": "Dragonlance: Shadow of the Dragon Queen"
+ },
+ {
+  "name": "Adept of the Red Robes",
+  "category": "Feat",
+  "prerequisite": "4th level, Initiate of High Sorcery (Lunitari) feat",
+  "description": "Insightful Magic: learn one 2nd-level illusion or transmutation spell, castable once per long rest without a slot or with slots, using your Initiate of High Sorcery ability. Magical Balance: when you roll 9 or lower on the d20 for an attack roll or ability check, treat it as a 10; proficiency bonus times per long rest.",
+  "source": "kc",
+  "book": "Dragonlance: Shadow of the Dragon Queen"
+ },
+ {
+  "name": "Adept of the White Robes",
+  "category": "Feat",
+  "prerequisite": "4th level, Initiate of High Sorcery (Solinari) feat",
+  "description": "Protective Magic: learn one 2nd-level abjuration or divination spell, castable once per long rest without a slot or with slots, using your Initiate of High Sorcery ability. Protective Ward: when you or a creature you can see within 30 feet takes damage, use your reaction and expend a spell slot to reduce the damage by d6s equal to the slot's level plus your spellcasting modifier.",
+  "source": "kc",
+  "book": "Dragonlance: Shadow of the Dragon Queen"
+ },
+ {
+  "name": "Squire of Solamnia",
+  "category": "Feat",
+  "prerequisite": "Dragonlance Campaign, Fighter or Paladin class or Knight of Solamnia background",
+  "description": "Mount Up: mounting or dismounting costs only 5 feet of movement. Precise Strike: once per turn, give a weapon attack roll against a creature advantage; on a hit add 1d8 to the damage. Proficiency bonus uses per long rest, spent only on a hit.",
+  "source": "kc",
+  "book": "Dragonlance: Shadow of the Dragon Queen"
+ },
+ {
+  "name": "Knight of the Crown",
+  "category": "Feat",
+  "prerequisite": "4th level, Squire of Solamnia feat",
+  "description": "+1 Strength, Dexterity or Constitution (max 20). Commanding Rally: as a bonus action, an ally within 30 feet who can see or hear you can make one weapon attack with its reaction, adding 1d8 damage on a hit; proficiency bonus times per long rest. Knights of Solamnia belong to one order at a time but keep every Knight of Solamnia feat they have gained if they change orders.",
+  "source": "kc",
+  "book": "Dragonlance: Shadow of the Dragon Queen",
+  "asi": {
+   "choice": [
+    "str",
+    "dex",
+    "con"
+   ],
+   "amount": 1
+  }
+ },
+ {
+  "name": "Knight of the Rose",
+  "category": "Feat",
+  "prerequisite": "4th level, Squire of Solamnia feat",
+  "description": "+1 Constitution, Wisdom or Charisma (max 20). Bolstering Rally: as a bonus action, a creature you can see within 30 feet (you included) that can see or hear you gains temporary HP equal to 1d8 + your proficiency bonus + the modifier of the score this feat raised; proficiency bonus times per long rest. Knights of Solamnia belong to one order at a time but keep every Knight of Solamnia feat they have gained if they change orders.",
+  "source": "kc",
+  "book": "Dragonlance: Shadow of the Dragon Queen",
+  "asi": {
+   "choice": [
+    "con",
+    "wis",
+    "cha"
+   ],
+   "amount": 1
+  }
+ },
+ {
+  "name": "Knight of the Sword",
+  "category": "Feat",
+  "prerequisite": "4th level, Squire of Solamnia feat",
+  "description": "+1 Intelligence, Wisdom or Charisma (max 20). Demoralizing Strike: once per turn when you hit a creature with a weapon attack, it makes a Wisdom save (DC 8 + proficiency bonus + the modifier of the score this feat raised) or is frightened of you until the end of your next turn; on a success it has disadvantage on its next attack roll before the end of its next turn. Proficiency bonus times per long rest. Knights of Solamnia belong to one order at a time but keep every Knight of Solamnia feat they have gained if they change orders.",
+  "source": "kc",
+  "book": "Dragonlance: Shadow of the Dragon Queen",
+  "asi": {
+   "choice": [
+    "int",
+    "wis",
+    "cha"
+   ],
+   "amount": 1
+  }
+ },
+ {
+  "name": "Scion of the Outer Planes",
+  "category": "Feat",
+  "prerequisite": "Planescape Campaign",
+  "description": "Choose a plane type for a damage resistance and a cantrip (cast without material components; Intelligence, Wisdom or Charisma chosen with this feat). Chaotic: poison, minor illusion. Evil: necrotic, chill touch. Good: radiant, sacred flame. Lawful: force, guidance. The Outlands: psychic, mage hand.",
+  "source": "kc",
+  "book": "Planescape: Adventures in the Multiverse"
+ },
+ {
+  "name": "Agent of Order",
+  "category": "Feat",
+  "prerequisite": "4th level, Scion of the Outer Planes (Lawful) feat",
+  "description": "+1 to one ability score (max 20). Stasis Strike: once per turn when you damage a creature you can see within 60 feet, deal an extra 1d8 force and it makes a Wisdom save (DC 8 + proficiency bonus + your Scion spellcasting modifier) or is restrained until the start of your next turn. Proficiency bonus times per long rest.",
+  "source": "kc",
+  "book": "Planescape: Adventures in the Multiverse",
+  "asi": {
+   "choice": [
+    "str",
+    "dex",
+    "con",
+    "int",
+    "wis",
+    "cha"
+   ],
+   "amount": 1
+  }
+ },
+ {
+  "name": "Baleful Scion",
+  "category": "Feat",
+  "prerequisite": "4th level, Scion of the Outer Planes (Evil) feat",
+  "description": "+1 to one ability score (max 20). Grasp of Avarice: once per turn when you damage a creature you can see within 60 feet, deal an extra 1d6 + proficiency bonus necrotic and regain that many HP. Proficiency bonus times per long rest.",
+  "source": "kc",
+  "book": "Planescape: Adventures in the Multiverse",
+  "asi": {
+   "choice": [
+    "str",
+    "dex",
+    "con",
+    "int",
+    "wis",
+    "cha"
+   ],
+   "amount": 1
+  }
+ },
+ {
+  "name": "Cohort of Chaos",
+  "category": "Feat",
+  "prerequisite": "4th level, Scion of the Outer Planes (Chaotic) feat",
+  "description": "+1 to one ability score (max 20). Chaotic Flare: when you roll a 1 or 20 on an attack roll or save, roll a d4 for a flare lasting until the end of your next turn (one at a time). 1 Battle Fury: a creature you can see has advantage on attacks and disadvantage on ability checks. 2 Disruption Field: creatures starting their turn within 5 feet of you or first entering that area on a turn take 1d8 force. 3 Unbound: you can spend movement to teleport that far to an unoccupied space you can see, once. 4 Wailing Winds: creatures within 15 feet of you, you included, have disadvantage on Wisdom saves.",
+  "source": "kc",
+  "book": "Planescape: Adventures in the Multiverse",
+  "asi": {
+   "choice": [
+    "str",
+    "dex",
+    "con",
+    "int",
+    "wis",
+    "cha"
+   ],
+   "amount": 1
+  }
+ },
+ {
+  "name": "Outlands Envoy",
+  "category": "Feat",
+  "prerequisite": "4th level, Scion of the Outer Planes (The Outlands) feat",
+  "description": "+1 to one ability score (max 20). Crossroads Emissary: learn misty step and tongues; cast each once per long rest without a slot (tongues needs no material components), or with slots, using your Scion spellcasting ability.",
+  "source": "kc",
+  "book": "Planescape: Adventures in the Multiverse",
+  "asi": {
+   "choice": [
+    "str",
+    "dex",
+    "con",
+    "int",
+    "wis",
+    "cha"
+   ],
+   "amount": 1
+  }
+ },
+ {
+  "name": "Planar Wanderer",
+  "category": "Feat",
+  "prerequisite": "4th level, Scion of the Outer Planes feat",
+  "description": "Planar Adaptation: after each long rest, choose resistance to acid, cold or fire until your next long rest. Portal Cracker: as an action, concentrate on a portal within 5 feet and make a DC 20 Int (Arcana) check; on a success force it open or closed for 1 hour (its key works only with a DC 20 Int (Arcana) check as an action), on a failure take 3d8 psychic and can't try that portal again until a long rest. Portal Sense: you know the direction to the last portal you used on the same plane, and once per long rest, as an action, detect portals within 30 feet not behind total cover.",
+  "source": "kc",
+  "book": "Planescape: Adventures in the Multiverse"
+ },
+ {
+  "name": "Righteous Heritor",
+  "category": "Feat",
+  "prerequisite": "4th level, Scion of the Outer Planes (Good) feat",
+  "description": "+1 to one ability score (max 20). Soothe Pain: when you or a creature within 30 feet takes damage, use your reaction to reduce it by 1d10 + proficiency bonus. Proficiency bonus times per long rest.",
+  "source": "kc",
+  "book": "Planescape: Adventures in the Multiverse",
+  "asi": {
+   "choice": [
+    "str",
+    "dex",
+    "con",
+    "int",
+    "wis",
+    "cha"
+   ],
+   "amount": 1
+  }
+ },
+ {
+  "name": "Rune Shaper",
+  "category": "Feat",
+  "prerequisite": "Spellcasting feature or Rune Carver background",
+  "description": "Learn comprehend languages; cast it once per long rest without a slot, or with any slots. Rune Magic: you know runes equal to half your proficiency bonus (rounded down). After each long rest, inscribe each on a nonmagical object you touch and know its 1st-level spell until your next long rest; while carrying a marked object, cast that spell with your slots, or once per long rest per rune without a slot or material components. Intelligence, Wisdom or Charisma is the ability (chosen with this feat). Swap one rune each level. Runes: Cloud fog cloud, Death inflict wounds, Dragon chromatic orb, Enemy disguise self, Fire burning hands, Friend speak with animals, Frost armor of Agathys, Hill goodberry, Journey longstrider, King command, Mountain entangle, Stone sanctuary, Storm thunderwave.",
+  "source": "kc",
+  "book": "Bigby Presents: Glory of the Giants"
+ },
+ {
+  "name": "Strike of the Giants",
+  "category": "Feat",
+  "prerequisite": "Martial weapon proficiency or Giant Foundling background",
+  "description": "Choose one strike. Once per turn when you hit with a melee or thrown weapon attack, add its effect (save DC 8 + proficiency bonus + Str or Con modifier); proficiency bonus uses per long rest. Cloud: +1d4 thunder, and on a failed Wis save you are invisible to the creature until the start of your next turn or until you attack or cast. Fire: +1d10 fire. Frost: +1d6 cold, and on a failed Con save its speed is 0 until the start of your next turn. Hill: +1d6 of the weapon's type, and on a failed Str save it falls prone. Stone: +1d6 force, and on a failed Str save it is pushed 10 feet. Storm: +1d6 lightning, and on a failed Con save it has disadvantage on attacks until the start of your next turn.",
+  "source": "kc",
+  "book": "Bigby Presents: Glory of the Giants"
+ },
+ {
+  "name": "Ember of the Fire Giant",
+  "category": "Feat",
+  "prerequisite": "4th level, Strike of the Giants (Fire Strike) feat",
+  "description": "+1 Strength, Constitution or Wisdom (max 20). Born of Flame: resistance to fire. Searing Ignition: once per turn, replace one attack of your Attack action with a 15-foot burst: chosen creatures make a Dex save (DC 8 + proficiency bonus + the raised ability's modifier), taking 1d8 + proficiency bonus fire and blinded until the start of your next turn, or half damage only on a success. Proficiency bonus times per long rest.",
+  "source": "kc",
+  "book": "Bigby Presents: Glory of the Giants",
+  "asi": {
+   "choice": [
+    "str",
+    "con",
+    "wis"
+   ],
+   "amount": 1
+  }
+ },
+ {
+  "name": "Fury of the Frost Giant",
+  "category": "Feat",
+  "prerequisite": "4th level, Strike of the Giants (Frost Strike) feat",
+  "description": "+1 Strength, Constitution or Wisdom (max 20). Born of Ice: resistance to cold. Frigid Retaliation: right after a creature you can see within 30 feet hits and damages you, use your reaction to force a Con save (DC 8 + proficiency bonus + the raised ability's modifier); on a failure it takes 1d8 + proficiency bonus cold and has speed 0 until the end of its next turn. Proficiency bonus times per long rest.",
+  "source": "kc",
+  "book": "Bigby Presents: Glory of the Giants",
+  "asi": {
+   "choice": [
+    "str",
+    "con",
+    "wis"
+   ],
+   "amount": 1
+  }
+ },
+ {
+  "name": "Guile of the Cloud Giant",
+  "category": "Feat",
+  "prerequisite": "4th level, Strike of the Giants (Cloud Strike) feat",
+  "description": "+1 Strength, Constitution or Charisma (max 20). Cloudy Escape: when a creature you can see hits you with an attack, use your reaction to resist its damage, then teleport up to 30 feet to an unoccupied space you can see. Proficiency bonus times per long rest.",
+  "source": "kc",
+  "book": "Bigby Presents: Glory of the Giants",
+  "asi": {
+   "choice": [
+    "str",
+    "con",
+    "cha"
+   ],
+   "amount": 1
+  }
+ },
+ {
+  "name": "Keenness of the Stone Giant",
+  "category": "Feat",
+  "prerequisite": "4th level, Strike of the Giants (Stone Strike) feat",
+  "description": "+1 Strength, Constitution or Wisdom (max 20). Cavernous Sight: darkvision 60 feet, or +60 feet to existing darkvision. Stone Throw: as a bonus action, make a ranged spell attack with a rock (range 60 feet, using the raised ability): 1d10 force, and the target makes a Str save (DC 8 + proficiency bonus + that modifier) or falls prone. Proficiency bonus times per long rest.",
+  "source": "kc",
+  "book": "Bigby Presents: Glory of the Giants",
+  "asi": {
+   "choice": [
+    "str",
+    "con",
+    "wis"
+   ],
+   "amount": 1
+  }
+ },
+ {
+  "name": "Soul of the Storm Giant",
+  "category": "Feat",
+  "prerequisite": "4th level, Strike of the Giants (Storm Strike) feat",
+  "description": "+1 Strength, Wisdom or Charisma (max 20). Maelstrom Aura: as a bonus action, a 10-foot aura surrounds you until the start of your next turn (or until incapacitated): you resist lightning and thunder, attacks against you have disadvantage, and a creature starting its turn in it can be forced to make a Str save (DC 8 + proficiency bonus + the raised ability's modifier) or have half speed until the start of its next turn. Proficiency bonus times per long rest.",
+  "source": "kc",
+  "book": "Bigby Presents: Glory of the Giants",
+  "asi": {
+   "choice": [
+    "str",
+    "wis",
+    "cha"
+   ],
+   "amount": 1
+  }
+ },
+ {
+  "name": "Vigor of the Hill Giant",
+  "category": "Feat",
+  "prerequisite": "4th level, Strike of the Giants (Hill Strike) feat",
+  "description": "+1 Strength, Constitution or Wisdom (max 20). Bulwark: when an effect would move you 5 feet or more or knock you prone, use your reaction to stay put and standing. Iron Stomach: when you eat during a short rest and spend Hit Dice, regain extra HP equal to your Constitution modifier + proficiency bonus.",
+  "source": "kc",
+  "book": "Bigby Presents: Glory of the Giants",
+  "asi": {
+   "choice": [
+    "str",
+    "con",
+    "wis"
+   ],
+   "amount": 1
+  }
+ },
+ {
+  "name": "Gift of the Chromatic Dragon",
+  "category": "Feat",
+  "prerequisite": null,
+  "description": "Chromatic Infusion: once per long rest, as a bonus action, touch a simple or martial weapon so that for 1 minute it deals an extra 1d4 acid, cold, fire, lightning or poison (your choice) on a hit. Reactive Resistance: when you take acid, cold, fire, lightning or poison damage, use your reaction to resist that instance; proficiency bonus times per long rest.",
+  "source": "kc",
+  "book": "Fizban's Treasury of Dragons"
+ },
+ {
+  "name": "Gift of the Gem Dragon",
+  "category": "Feat",
+  "prerequisite": null,
+  "description": "+1 Intelligence, Wisdom or Charisma (max 20). Telekinetic Reprisal: when a creature within 10 feet damages you, use your reaction to force a Str save (DC 8 + proficiency bonus + the raised ability's modifier): 2d8 force and pushed 10 feet, or half damage and no push on a success. Proficiency bonus times per long rest.",
+  "source": "kc",
+  "book": "Fizban's Treasury of Dragons",
+  "asi": {
+   "choice": [
+    "int",
+    "wis",
+    "cha"
+   ],
+   "amount": 1
+  }
+ },
+ {
+  "name": "Gift of the Metallic Dragon",
+  "category": "Feat",
+  "prerequisite": null,
+  "description": "Draconic Healing: learn cure wounds; cast it once per long rest without a slot, or with slots, using Intelligence, Wisdom or Charisma (chosen with this feat). Protective Wings: when you or a creature you can see within 5 feet is hit by an attack, use your reaction to add your proficiency bonus to its AC against that attack; proficiency bonus times per long rest.",
+  "source": "kc",
+  "book": "Fizban's Treasury of Dragons"
+ },
+ {
+  "name": "Blade Barrier",
+  "category": "Feat",
+  "prerequisite": "Proficiency with twinblades",
+  "description": "When you use a twinblade's Whirl special bonus action, you also make one extra melee attack with it (d4 damage die, same ability modifier), and until the start of your next turn creatures provoke opportunity attacks from you when they enter your reach or make a melee attack against you within it.",
+  "source": "kc",
+  "book": "Heliana's Guide to Monster Hunting: Part 1",
+  "partnered": true,
+  "partner": "Loot Tavern"
+ },
+ {
+  "name": "Cat's Caress",
+  "category": "Feat",
+  "prerequisite": "Proficiency with claws",
+  "description": "After taking the Attack action with a claw in one hand, use a bonus action to make up to two melee attacks with a claw in your other hand (no ability modifier to damage unless negative or you have Two-Weapon Fighting). Advantage on claw attacks against a creature you are grappling. Equip or unequip one claw or a pair as an action or bonus action.",
+  "source": "kc",
+  "book": "Heliana's Guide to Monster Hunting: Part 1",
+  "partnered": true,
+  "partner": "Loot Tavern"
+ },
+ {
+  "name": "Fearsome Flourisher",
+  "category": "Feat",
+  "prerequisite": "Proficiency with nunchaku",
+  "description": "When you take the Attack action with a nunchaku, use a bonus action to make one more melee attack with it (d4 damage die). When you take the Flourish special action with a nunchaku and don't fail the Dexterity check, a bonus action forces one creature in reach to make a Wisdom save (DC 8 + Dexterity modifier, + proficiency bonus if proficient in Intimidation) or be frightened of you until the start of your next turn.",
+  "source": "kc",
+  "book": "Heliana's Guide to Monster Hunting: Part 1",
+  "partnered": true,
+  "partner": "Loot Tavern"
+ },
+ {
+  "name": "Scourge Master",
+  "category": "Feat",
+  "prerequisite": "Proficiency with whips or tetherhooks",
+  "description": "+1 Strength or Dexterity. When you hit with a whip or tetherhook, use a bonus action to try to disarm the target of a shield or held item (your Strength or Dexterity check contested by its Strength); it lands midway between you. You can pull items under 1 pound within your weapon's reach back to you.",
+  "source": "kc",
+  "book": "Heliana's Guide to Monster Hunting: Part 1",
+  "partnered": true,
+  "partner": "Loot Tavern",
+  "asi": {
+   "choice": [
+    "str",
+    "dex"
+   ],
+   "amount": 1
+  }
+ },
+ {
+  "name": "Spray 'n' Pray",
+  "category": "Feat",
+  "prerequisite": "Proficiency with a magitech firearm or tommybow",
+  "description": "Reload firearms and tommybows as an action or bonus action. Being within 5 feet of a hostile creature doesn't impose disadvantage on your ranged attacks. When you attack with a one-handed weapon, use a bonus action to attack with a one-handed firearm or tommybow you hold. After attacking with a tommybow or magitech firearm, use a bonus action to make one or two more ranged attacks with it (-5 to both if you make two; no ability modifier to damage unless negative).",
+  "source": "kc",
+  "book": "Heliana's Guide to Monster Hunting: Part 1",
+  "partnered": true,
+  "partner": "Loot Tavern"
+ },
+ {
+  "name": "Expert Enchanter",
+  "category": "Feat",
+  "prerequisite": null,
+  "description": "+1 Intelligence, Wisdom, or Charisma. Double your proficiency bonus on Enchanting checks with proficient skills, adjust enchanting quirk rolls by up to half your proficiency bonus, and each hour of enchanting counts as 2 hours.",
+  "source": "kc",
+  "book": "Heliana's Guide to Monster Hunting: Part 1",
+  "partnered": true,
+  "partner": "Loot Tavern",
+  "asi": {
+   "choice": [
+    "int",
+    "wis",
+    "cha"
+   ],
+   "amount": 1
+  }
+ },
+ {
+  "name": "Expert Forger",
+  "category": "Feat",
+  "prerequisite": null,
+  "description": "+1 Strength, Dexterity, or Constitution. Double your proficiency bonus on Manufacturing checks with proficient tools, adjust enchanting and manufacturing quirk rolls by up to half your proficiency bonus, and each hour of forging counts as 2 hours.",
+  "source": "kc",
+  "book": "Heliana's Guide to Monster Hunting: Part 1",
+  "partnered": true,
+  "partner": "Loot Tavern",
+  "asi": {
+   "choice": [
+    "str",
+    "dex",
+    "con"
+   ],
+   "amount": 1
+  }
+ },
+ {
+  "name": "Field Cook",
+  "category": "Feat",
+  "prerequisite": null,
+  "description": "Proficiency with cook's utensils. Replace one ingredient type in a recipe with any other. Before rolling quirks, you can replace one boon roll with inspiration for everyone who eats a portion. After rolling quirks, remove one flaw or add a rolled boon.",
+  "source": "kc",
+  "book": "Heliana's Guide to Monster Hunting: Part 1",
+  "partnered": true,
+  "partner": "Loot Tavern"
+ },
+ {
+  "name": "Forgemaster",
+  "category": "Feat",
+  "prerequisite": "Expert Forger",
+  "description": "+1 Strength, Dexterity, or Constitution. Advantage on Manufacturing checks with proficient tools, proficiency with two tools of your choice, and each hour of forging counts as 3 hours.",
+  "source": "kc",
+  "book": "Heliana's Guide to Monster Hunting: Part 1",
+  "partnered": true,
+  "partner": "Loot Tavern",
+  "asi": {
+   "choice": [
+    "str",
+    "dex",
+    "con"
+   ],
+   "amount": 1
+  }
+ },
+ {
+  "name": "Jack of all Tools",
+  "category": "Feat",
+  "prerequisite": null,
+  "description": "+1 Strength, Dexterity, or Constitution. Proficiency with three tools of your choice. Add half your proficiency bonus to Manufacturing checks with unproficient tools, without disadvantage. Each hour of manufacturing counts as 2 hours.",
+  "source": "kc",
+  "book": "Heliana's Guide to Monster Hunting: Part 1",
+  "partnered": true,
+  "partner": "Loot Tavern",
+  "asi": {
+   "choice": [
+    "str",
+    "dex",
+    "con"
+   ],
+   "amount": 1
+  }
+ },
+ {
+  "name": "Weavebonder",
+  "category": "Feat",
+  "prerequisite": "Expert Enchanter",
+  "description": "+1 Intelligence, Wisdom, or Charisma. Advantage on Enchanting checks with proficient skills; roll a quirk's random element twice and choose; each hour of enchanting counts as 3 hours.",
+  "source": "kc",
+  "book": "Heliana's Guide to Monster Hunting: Part 1",
+  "partnered": true,
+  "partner": "Loot Tavern",
+  "asi": {
+   "choice": [
+    "int",
+    "wis",
+    "cha"
+   ],
+   "amount": 1
+  }
+ },
+ {
+  "name": "Expert Harvester",
+  "category": "Feat",
+  "prerequisite": null,
+  "description": "+1 Dexterity or Intelligence. Double your proficiency bonus on Harvesting checks with proficient skills; add your proficiency bonus when you lack the required skill; add your full proficiency bonus when helping; no disadvantage for doing both Assessment and Carving alone.",
+  "source": "kc",
+  "book": "Heliana's Guide to Monster Hunting: Part 1",
+  "partnered": true,
+  "partner": "Loot Tavern",
+  "asi": {
+   "choice": [
+    "dex",
+    "int"
+   ],
+   "amount": 1
+  }
+ },
+ {
+  "name": "Reapmaster",
+  "category": "Feat",
+  "prerequisite": "Expert Harvester",
+  "description": "+1 Dexterity or Intelligence. Proficiency in Arcana, Investigation, Medicine, Nature, Religion, or Survival, and advantage on Harvesting checks with proficient skills.",
+  "source": "kc",
+  "book": "Heliana's Guide to Monster Hunting: Part 1",
+  "partnered": true,
+  "partner": "Loot Tavern",
+  "asi": {
+   "choice": [
+    "dex",
+    "int"
+   ],
+   "amount": 1
+  }
+ },
+ {
+  "name": "Boomerang Expert",
+  "category": "Feat",
+  "prerequisite": null,
+  "description": "Boomerangs deal 1d8 for you, long range doesn't impose disadvantage with them, and you catch a thrown boomerang automatically.",
+  "source": "kc",
+  "book": "Obojima: Tales from the Tall Grass",
+  "partnered": true,
+  "partner": "Hit Point Press"
+ },
+ {
+  "name": "Bumbling Fool",
+  "category": "Feat",
+  "prerequisite": null,
+  "description": "When you fail an ability check with a d20 roll at or below half your level (round up), replace the roll with 15. Three uses per long rest.",
+  "source": "kc",
+  "book": "Obojima: Tales from the Tall Grass",
+  "partnered": true,
+  "partner": "Hit Point Press"
+ },
+ {
+  "name": "Canden and Moon's Master Cut",
+  "category": "Feat",
+  "prerequisite": "Beat a master at Master Canden and Moon's Sword School",
+  "description": "+5 feet speed. After rolling initiative, use your reaction to draw a weapon, move half your speed, and make one melee attack if you end within reach. Once per long rest when hit, use your reaction for +5 AC until the start of your next turn, including against that attack.",
+  "source": "kc",
+  "book": "Obojima: Tales from the Tall Grass",
+  "partnered": true,
+  "partner": "Hit Point Press"
+ },
+ {
+  "name": "Cloud Hopper",
+  "category": "Feat",
+  "prerequisite": null,
+  "description": "While moving, step on conjured clouds through the air for up to 5 times your proficiency bonus feet per move (falling if you end aloft). Fog Cloud and Gust of Wind once each per long rest without a slot, or with slots (Intelligence, Wisdom, or Charisma).",
+  "source": "kc",
+  "book": "Obojima: Tales from the Tall Grass",
+  "partnered": true,
+  "partner": "Hit Point Press"
+ },
+ {
+  "name": "Coven Witch",
+  "category": "Feat",
+  "prerequisite": "Member of a witches' coven",
+  "description": "+1 Intelligence or Wisdom. Learn two random common and uncommon potion recipes, and two 1st-level divination, conjuration, or transmutation spells, each castable once per long rest without a slot or with slots.",
+  "source": "kc",
+  "book": "Obojima: Tales from the Tall Grass",
+  "partnered": true,
+  "partner": "Hit Point Press",
+  "asi": {
+   "choice": [
+    "int",
+    "wis"
+   ],
+   "amount": 1
+  }
+ },
+ {
+  "name": "Forager",
+  "category": "Feat",
+  "prerequisite": null,
+  "description": "+1 Wisdom. Proficiency in Survival (expertise if already proficient). Foraging yields twice the common or uncommon ingredients.",
+  "source": "kc",
+  "book": "Obojima: Tales from the Tall Grass",
+  "partnered": true,
+  "partner": "Hit Point Press",
+  "asi": {
+   "choice": [
+    "wis"
+   ],
+   "amount": 1
+  }
+ },
+ {
+  "name": "Freediver",
+  "category": "Feat",
+  "prerequisite": null,
+  "description": "+1 Constitution. Swim speed equal to twice your Constitution score (rounded up to 5 feet), or +10 feet if you already swim. Triple your Constitution modifier for holding your breath, and resistance to cold damage.",
+  "source": "kc",
+  "book": "Obojima: Tales from the Tall Grass",
+  "partnered": true,
+  "partner": "Hit Point Press",
+  "asi": {
+   "choice": [
+    "con"
+   ],
+   "amount": 1
+  }
+ },
+ {
+  "name": "Group Combatant",
+  "category": "Feat",
+  "prerequisite": null,
+  "description": "Nonmagical bludgeoning, piercing, and slashing damage to you is reduced by 2 (minimum 1); flanking grants no advantage against you; after you provoke one opportunity attack on your turn, your movement provokes no more that turn.",
+  "source": "kc",
+  "book": "Obojima: Tales from the Tall Grass",
+  "partnered": true,
+  "partner": "Hit Point Press"
+ },
+ {
+  "name": "Light Foot",
+  "category": "Feat",
+  "prerequisite": null,
+  "description": "+1 AC when not in heavy armor; forgo one attack of the Attack action to move half your speed; nonmagical difficult terrain costs no extra movement; move through hostile creatures' spaces.",
+  "source": "kc",
+  "book": "Obojima: Tales from the Tall Grass",
+  "partnered": true,
+  "partner": "Hit Point Press"
+ },
+ {
+  "name": "Magically Mischievous",
+  "category": "Feat",
+  "prerequisite": null,
+  "description": "Proficiency in Sleight of Hand (expertise if proficient). When you steal a palm-sized object with Sleight of Hand, make it invisible for 1 minute as by Obscure Object, proficiency bonus times per long rest.",
+  "source": "kc",
+  "book": "Obojima: Tales from the Tall Grass",
+  "partnered": true,
+  "partner": "Hit Point Press"
+ },
+ {
+  "name": "Member of AHA",
+  "category": "Feat",
+  "prerequisite": "Member of AHA",
+  "description": "+1 Intelligence. You learn Jolt, plus Comprehend Languages, Detect Magic, Identify, or Illusory Script, castable once per long rest without a slot or with slots (Intelligence).",
+  "source": "kc",
+  "book": "Obojima: Tales from the Tall Grass",
+  "partnered": true,
+  "partner": "Hit Point Press",
+  "asi": {
+   "choice": [
+    "int"
+   ],
+   "amount": 1
+  }
+ },
+ {
+  "name": "Minor Corruption",
+  "category": "Feat",
+  "prerequisite": null,
+  "description": "+1 AC while below half your hit points. You need no spellcasting focus or uncosted, unconsumed material components. Once per long rest, as a reaction negate up to three times your level in damage; at the end of your next turn and each turn for 1 minute make a Constitution save (DC 10 or a third of the damage, whichever is higher), taking the negated damage on the first failure.",
+  "source": "kc",
+  "book": "Obojima: Tales from the Tall Grass",
+  "partnered": true,
+  "partner": "Hit Point Press"
+ },
+ {
+  "name": "Nakudama's Electric Bloodline",
+  "category": "Feat",
+  "prerequisite": "Nakudama",
+  "description": "Resistance to lightning. Your tongue is a finesse, reach unarmed strike dealing 1d6 + Strength or Dexterity lightning (1d8 at 5th, 1d10 at 11th, 1d12 at 17th). When grappled, use your reaction to force a Constitution save (DC 8 + Con + proficiency bonus) or the grappler takes 1d10 lightning and the grapple ends.",
+  "source": "kc",
+  "book": "Obojima: Tales from the Tall Grass",
+  "partnered": true,
+  "partner": "Hit Point Press"
+ },
+ {
+  "name": "Nakudama's Toxin Bloodline",
+  "category": "Feat",
+  "prerequisite": "Nakudama",
+  "description": "Resistance to poison and advantage against being poisoned. As an action spit poison at up to proficiency bonus creatures within 30 feet: Constitution save (DC 8 + Con + proficiency bonus), 1d8 + proficiency bonus poison or half.",
+  "source": "kc",
+  "book": "Obojima: Tales from the Tall Grass",
+  "partnered": true,
+  "partner": "Hit Point Press"
+ },
+ {
+  "name": "Postal Knight",
+  "category": "Feat",
+  "prerequisite": "Member of the Courier Brigade",
+  "description": "+1 Constitution or Wisdom. Proficiency in Athletics and Survival, and exhaustion doesn't give you disadvantage on ability checks.",
+  "source": "kc",
+  "book": "Obojima: Tales from the Tall Grass",
+  "partnered": true,
+  "partner": "Hit Point Press",
+  "asi": {
+   "choice": [
+    "con",
+    "wis"
+   ],
+   "amount": 1
+  }
+ },
+ {
+  "name": "Potion Brewer",
+  "category": "Feat",
+  "prerequisite": null,
+  "description": "When brewing, you can use the second-highest ingredient attribute number instead of the first, and roll percentile dice: at or under your level, you make two potions.",
+  "source": "kc",
+  "book": "Obojima: Tales from the Tall Grass",
+  "partnered": true,
+  "partner": "Hit Point Press"
+ },
+ {
+  "name": "Tellu and Scale's Master Cut",
+  "category": "Feat",
+  "prerequisite": "Beat a master at Master Tellu and Scale's Sword School",
+  "description": "One-handed versatile weapon: once before your next turn when a creature in reach misses you with a melee attack, it takes damage equal to twice your proficiency bonus. Two-handed: when a creature in reach misses you with a melee weapon attack, use your reaction to force a Dexterity save (DC 8 + Strength + proficiency bonus) or it falls prone.",
+  "source": "kc",
+  "book": "Obojima: Tales from the Tall Grass",
+  "partnered": true,
+  "partner": "Hit Point Press"
+ },
+ {
+  "name": "Toraf and Bolder's Master Cut",
+  "category": "Feat",
+  "prerequisite": "Beat a master at Master Toraf and Bolder's Sword School",
+  "description": "Before a proficient melee weapon attack, take -5 to hit for a strike: Head (target has disadvantage on its next attack), Torso (it can't speak until your next turn, then immune for a minute), or Leg (-10 feet speed, minimum 10, until your next turn). One per attack.",
+  "source": "kc",
+  "book": "Obojima: Tales from the Tall Grass",
+  "partnered": true,
+  "partner": "Hit Point Press"
+ },
+ {
+  "name": "Vocalist Arcanist",
+  "category": "Feat",
+  "prerequisite": null,
+  "description": "When a spell you cast calls for a save or a spell attack, make a Charisma (Performance) check against DC 10 + the spell's level (deciding after the roll); on a success your proficiency bonus is doubled for that attack roll or save DC. Three successes per dawn.",
+  "source": "kc",
+  "book": "Obojima: Tales from the Tall Grass",
+  "partnered": true,
+  "partner": "Hit Point Press"
+ },
+ {
+  "name": "Wetland Explorer",
+  "category": "Feat",
+  "prerequisite": null,
+  "description": "Choose two creature types. Add your proficiency bonus to initiative when hostile creatures of those types are present, +5 to Stealth and Survival checks involving them, and +2 to attack rolls against them.",
+  "source": "kc",
+  "book": "Obojima: Tales from the Tall Grass",
+  "partnered": true,
+  "partner": "Hit Point Press"
+ },
+ {
+  "name": "Aerial Expert",
+  "category": "Feat",
+  "prerequisite": "Glide trait",
+  "description": "No 10-foot run-up for long and high jumps, which can use Strength or Dexterity and double in distance. Dash while gliding to fly an extra distance equal to your speed, and change direction freely while gliding, gaining up to 10 feet of altitude once per descent.",
+  "source": "kc",
+  "book": "Humblewood Campaign Setting",
+  "partnered": true,
+  "partner": "Hit Point Press"
+ },
+ {
+  "name": "Bandit Cunning",
+  "category": "Feat",
+  "prerequisite": null,
+  "description": "Once per long rest, use your reaction to add your Intelligence modifier to a saving throw. In combat, as an action make an Investigation check against DC 10 + the CR of a creature you've seen fight to learn one combat fact (a resistance or immunity, a condition immunity, a damaging or protective ability, an action option, or a special sense).",
+  "source": "kc",
+  "book": "Humblewood Campaign Setting",
+  "partnered": true,
+  "partner": "Hit Point Press"
+ },
+ {
+  "name": "Heavy Glider",
+  "category": "Feat",
+  "prerequisite": "Glide trait",
+  "description": "Glide while holding heavy weapons and wearing heavy armor if not encumbered. You can land a glide on a Large or smaller hostile creature: on a won Strength contest it is pushed 10 feet and knocked prone; otherwise you land nearby.",
+  "source": "kc",
+  "book": "Humblewood Campaign Setting",
+  "partnered": true,
+  "partner": "Hit Point Press"
+ },
+ {
+  "name": "Opportunistic Thief",
+  "category": "Feat",
+  "prerequisite": null,
+  "description": "+1 Dexterity. When a creature misses you with a melee attack, a Sleight of Hand check against 10 + its Dexterity modifier steals an item it isn't holding or wearing. Out of combat, items you steal can be instantly concealed or swapped for another object.",
+  "source": "kc",
+  "book": "Humblewood Campaign Setting",
+  "partnered": true,
+  "partner": "Hit Point Press",
+  "asi": {
+   "choice": [
+    "dex"
+   ],
+   "amount": 1
+  }
+ },
+ {
+  "name": "Perfect Landing",
+  "category": "Feat",
+  "prerequisite": null,
+  "description": "+1 Dexterity. Fall damage uses d4s, you don't fall prone from falling damage, and you ignore the first 30 feet of a fall.",
+  "source": "kc",
+  "book": "Humblewood Campaign Setting",
+  "partnered": true,
+  "partner": "Hit Point Press",
+  "asi": {
+   "choice": [
+    "dex"
+   ],
+   "amount": 1
+  }
+ },
+ {
+  "name": "Speech of the Ancient Beasts",
+  "category": "Feat",
+  "prerequisite": null,
+  "description": "+1 Charisma. Large or larger beasts are friendly unless you attack them, you have advantage on Charisma checks against them, and you speak Giant Eagle, Giant Elk, and Giant Owl and can be understood by any Large or larger beast.",
+  "source": "kc",
+  "book": "Humblewood Campaign Setting",
+  "partnered": true,
+  "partner": "Hit Point Press",
+  "asi": {
+   "choice": [
+    "cha"
+   ],
+   "amount": 1
+  }
+ },
+ {
+  "name": "Woodwise",
+  "category": "Feat",
+  "prerequisite": null,
+  "description": "Proficiency in Survival or Nature, you ignore difficult terrain, and you can't become lost in nature except by magic.",
+  "source": "kc",
+  "book": "Humblewood Campaign Setting",
+  "partnered": true,
+  "partner": "Hit Point Press"
+ },
+ {
+  "name": "Fate-Touched",
+  "category": "Supernatural Gift",
+  "prerequisite": "Granted by the GM",
+  "description": "Fortune's Grace: once per long rest, reroll your own attack roll, ability check, or save before the outcome is known, or force a creature you can see to reroll an attack against you or a save against your spell or feature (rerolling both dice if it had advantage or disadvantage).",
+  "source": "kc",
+  "book": "Tal'Dorei Reborn",
+  "partnered": true,
+  "partner": "Critical Role"
+ },
+ {
+  "name": "Cruel",
+  "category": "Feat",
+  "prerequisite": null,
+  "description": "You have cruelty dice (d6) equal to your proficiency bonus per long rest, one per turn: add one to damage you deal, gain temporary hit points equal to one when you crit, or add one to an Intimidation check.",
+  "source": "kc",
+  "book": "Tal'Dorei Reborn",
+  "partnered": true,
+  "partner": "Critical Role"
+ },
+ {
+  "name": "Flash Recall",
+  "category": "Feat",
+  "prerequisite": "Spellcasting feature from a class that prepares spells",
+  "description": "Once per short or long rest as a bonus action, prepare a spell of 1st level or higher (of a level you have slots for) in place of a prepared spell of equal or higher level.",
+  "source": "kc",
+  "book": "Tal'Dorei Reborn",
+  "partnered": true,
+  "partner": "Critical Role"
+ },
+ {
+  "name": "Mystic Conflux",
+  "category": "Feat",
+  "prerequisite": null,
+  "description": "You can attune to four magic items at once, and cast identify once per long rest without a slot or material components.",
+  "source": "kc",
+  "book": "Tal'Dorei Reborn",
+  "partnered": true,
+  "partner": "Critical Role"
+ },
+ {
+  "name": "Remarkable Recovery",
+  "category": "Feat",
+  "prerequisite": null,
+  "description": "+1 Constitution. When stabilized while dying, regain hit points equal to your Constitution modifier, and regain that much extra whenever a spell, potion, or class feature heals you.",
+  "source": "kc",
+  "book": "Tal'Dorei Reborn",
+  "partnered": true,
+  "partner": "Critical Role",
+  "asi": {
+   "choice": [
+    "con"
+   ],
+   "amount": 1
+  }
+ },
+ {
+  "name": "Spelldriver",
+  "category": "Feat",
+  "prerequisite": "Character level 11 or higher; Spellcasting or Pact Magic feature",
+  "description": "When you cast a 1st-level or higher spell as a bonus action, you can still cast another 1st-level or higher spell with your action, but only one spell that turn can be 3rd level or higher.",
+  "source": "kc",
+  "book": "Tal'Dorei Reborn",
+  "partnered": true,
+  "partner": "Critical Role"
+ },
+ {
+  "name": "Thrown Arms Master",
+  "category": "Feat",
+  "prerequisite": null,
+  "description": "+1 Strength or Dexterity. Simple and martial melee weapons gain the thrown property for you (one-handed 20/60, two-handed 15/30), existing thrown ranges improve by 20/40, and a missed thrown light weapon returns to your hand at the end of your turn.",
+  "source": "kc",
+  "book": "Tal'Dorei Reborn",
+  "partnered": true,
+  "partner": "Critical Role",
+  "asi": {
+   "choice": [
+    "str",
+    "dex"
+   ],
+   "amount": 1
+  }
+ },
+ {
+  "name": "Vital Sacrifice",
+  "category": "Feat",
+  "prerequisite": null,
+  "description": "As a bonus action, take 1d6 unreducible necrotic for a blood boon lasting 1 hour: spend it to add 1d6 to an attack roll, deal +2d6 necrotic on a hit, or subtract 1d4 from a creature's Strength, Dexterity, or Constitution save against you.",
+  "source": "kc",
+  "book": "Tal'Dorei Reborn",
+  "partnered": true,
+  "partner": "Critical Role"
  }
 ]

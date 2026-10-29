@@ -137,5 +137,922 @@
     "17": [
       "Hold Monster"
     ]
+  },
+  "Order Domain": {
+    "1": [
+      "Command",
+      "Heroism"
+    ],
+    "3": [
+      "Hold Person",
+      "Zone of Truth"
+    ],
+    "5": [
+      "Mass Healing Word",
+      "Slow"
+    ],
+    "7": [
+      "Compulsion",
+      "Locate Creature"
+    ],
+    "9": [
+      "Commune",
+      "Dominate Person"
+    ]
+  },
+  "Peace Domain": {
+    "1": [
+      "Heroism",
+      "Sanctuary"
+    ],
+    "3": [
+      "Aid",
+      "Warding Bond"
+    ],
+    "5": [
+      "Beacon of Hope",
+      "Sending"
+    ],
+    "7": [
+      "Aura of Purity",
+      "Resilient Sphere"
+    ],
+    "9": [
+      "Greater Restoration",
+      "Telepathic Bond"
+    ]
+  },
+  "Twilight Domain": {
+    "1": [
+      "Faerie Fire",
+      "Sleep"
+    ],
+    "3": [
+      "Moonbeam",
+      "See Invisibility"
+    ],
+    "5": [
+      "Aura of Vitality",
+      "Tiny Hut"
+    ],
+    "7": [
+      "Aura of Life",
+      "Greater Invisibility"
+    ],
+    "9": [
+      "Circle of Power",
+      "Mislead"
+    ]
+  },
+  "Circle of Spores": {
+    "2": [
+      "Chill Touch"
+    ],
+    "3": [
+      "Blindness/Deafness",
+      "Gentle Repose"
+    ],
+    "5": [
+      "Animate Dead",
+      "Gaseous Form"
+    ],
+    "7": [
+      "Blight",
+      "Confusion"
+    ],
+    "9": [
+      "Cloudkill",
+      "Contagion"
+    ]
+  },
+  "Circle of Stars": {
+    "2": [
+      "Guidance",
+      "Guiding Bolt"
+    ]
+  },
+  "Circle of Wildfire": {
+    "2": [
+      "Burning Hands",
+      "Cure Wounds"
+    ],
+    "3": [
+      "Flaming Sphere",
+      "Scorching Ray"
+    ],
+    "5": [
+      "Plant Growth",
+      "Revivify"
+    ],
+    "7": [
+      "Aura of Life",
+      "Fire Shield"
+    ],
+    "9": [
+      "Flame Strike",
+      "Mass Cure Wounds"
+    ]
+  },
+  "Oath of Glory": {
+    "3": [
+      "Guiding Bolt",
+      "Heroism"
+    ],
+    "5": [
+      "Enhance Ability",
+      "Magic Weapon"
+    ],
+    "9": [
+      "Haste",
+      "Protection From Energy"
+    ],
+    "13": [
+      "Compulsion",
+      "Freedom of Movement"
+    ],
+    "17": [
+      "Commune",
+      "Flame Strike"
+    ]
+  },
+  "Oath of the Watchers": {
+    "3": [
+      "Alarm",
+      "Detect Magic"
+    ],
+    "5": [
+      "Moonbeam",
+      "See Invisibility"
+    ],
+    "9": [
+      "Counterspell",
+      "Nondetection"
+    ],
+    "13": [
+      "Aura of Purity",
+      "Banishment"
+    ],
+    "17": [
+      "Hold Monster",
+      "Scrying"
+    ]
+  },
+  "Fey Wanderer": {
+    "3": [
+      "Charm Person"
+    ],
+    "5": [
+      "Misty Step"
+    ],
+    "9": [
+      "Dispel Magic"
+    ],
+    "13": [
+      "Dimension Door"
+    ],
+    "17": [
+      "Mislead"
+    ]
+  },
+  "Swarmkeeper": {
+    "3": [
+      "Faerie Fire",
+      "Mage Hand"
+    ],
+    "5": [
+      "Web"
+    ],
+    "9": [
+      "Gaseous Form"
+    ],
+    "13": [
+      "Arcane Eye"
+    ],
+    "17": [
+      "Insect Plague"
+    ]
+  },
+  "Aberrant Mind": {
+    "1": [
+      "Arms of Hadar",
+      "Dissonant Whispers",
+      "Mind Sliver"
+    ],
+    "3": [
+      "Calm Emotions",
+      "Detect Thoughts"
+    ],
+    "5": [
+      "Hunger of Hadar",
+      "Sending"
+    ],
+    "7": [
+      "Black Tentacles",
+      "Summon Aberration"
+    ],
+    "9": [
+      "Telepathic Bond",
+      "Telekinesis"
+    ]
+  },
+  "Clockwork Soul": {
+    "1": [
+      "Alarm",
+      "Protection from Evil and Good"
+    ],
+    "3": [
+      "Aid",
+      "Lesser Restoration"
+    ],
+    "5": [
+      "Dispel Magic",
+      "Protection From Energy"
+    ],
+    "7": [
+      "Freedom of Movement",
+      "Summon Construct"
+    ],
+    "9": [
+      "Greater Restoration",
+      "Wall of Force"
+    ]
+  },
+  "Life Domain": {
+    "1": [
+      "Bless",
+      "Cure Wounds"
+    ],
+    "3": [
+      "Lesser Restoration",
+      "Spiritual Weapon"
+    ],
+    "5": [
+      "Beacon of Hope",
+      "Revivify"
+    ],
+    "7": [
+      "Death Ward",
+      "Guardian of Faith"
+    ],
+    "9": [
+      "Mass Cure Wounds",
+      "Raise Dead"
+    ]
+  },
+  "Knowledge Domain": {
+    "1": [
+      "Command",
+      "Identify"
+    ],
+    "3": [
+      "Augury",
+      "Suggestion"
+    ],
+    "5": [
+      "Nondetection",
+      "Speak with Dead"
+    ],
+    "7": [
+      "Arcane Eye",
+      "Confusion"
+    ],
+    "9": [
+      "Legend Lore",
+      "Scrying"
+    ]
+  },
+  "Light Domain": {
+    "1": [
+      "Burning Hands",
+      "Faerie Fire"
+    ],
+    "3": [
+      "Flaming Sphere",
+      "Scorching Ray"
+    ],
+    "5": [
+      "Daylight",
+      "Fireball"
+    ],
+    "7": [
+      "Guardian of Faith",
+      "Wall of Fire"
+    ],
+    "9": [
+      "Flame Strike",
+      "Scrying"
+    ]
+  },
+  "Nature Domain": {
+    "1": [
+      "Animal Friendship",
+      "Speak with Animals"
+    ],
+    "3": [
+      "Barkskin",
+      "Spike Growth"
+    ],
+    "5": [
+      "Plant Growth",
+      "Wind Wall"
+    ],
+    "7": [
+      "Dominate Beast",
+      "Grasping Vine"
+    ],
+    "9": [
+      "Insect Plague",
+      "Tree Stride"
+    ]
+  },
+  "Tempest Domain": {
+    "1": [
+      "Fog Cloud",
+      "Thunderwave"
+    ],
+    "3": [
+      "Gust of Wind",
+      "Shatter"
+    ],
+    "5": [
+      "Call Lightning",
+      "Sleet Storm"
+    ],
+    "7": [
+      "Control Water",
+      "Ice Storm"
+    ],
+    "9": [
+      "Destructive Wave",
+      "Insect Plague"
+    ]
+  },
+  "Trickery Domain": {
+    "1": [
+      "Charm Person",
+      "Disguise Self"
+    ],
+    "3": [
+      "Mirror Image",
+      "Pass Without Trace"
+    ],
+    "5": [
+      "Blink",
+      "Dispel Magic"
+    ],
+    "7": [
+      "Dimension Door",
+      "Polymorph"
+    ],
+    "9": [
+      "Dominate Person",
+      "Modify Memory"
+    ]
+  },
+  "War Domain": {
+    "1": [
+      "Divine Favor",
+      "Shield of Faith"
+    ],
+    "3": [
+      "Magic Weapon",
+      "Spiritual Weapon"
+    ],
+    "5": [
+      "Crusader's Mantle",
+      "Spirit Guardians"
+    ],
+    "7": [
+      "Freedom of Movement",
+      "Stoneskin"
+    ],
+    "9": [
+      "Flame Strike",
+      "Hold Monster"
+    ]
+  },
+  "Oath of Devotion": {
+    "3": [
+      "Protection from Evil and Good",
+      "Sanctuary"
+    ],
+    "5": [
+      "Lesser Restoration",
+      "Zone of Truth"
+    ],
+    "9": [
+      "Beacon of Hope",
+      "Dispel Magic"
+    ],
+    "13": [
+      "Freedom of Movement",
+      "Guardian of Faith"
+    ],
+    "17": [
+      "Commune",
+      "Flame Strike"
+    ]
+  },
+  "Oath of the Ancients": {
+    "3": [
+      "Ensnaring Strike",
+      "Speak with Animals"
+    ],
+    "5": [
+      "Misty Step",
+      "Moonbeam"
+    ],
+    "9": [
+      "Plant Growth",
+      "Protection From Energy"
+    ],
+    "13": [
+      "Ice Storm",
+      "Stoneskin"
+    ],
+    "17": [
+      "Commune With Nature",
+      "Tree Stride"
+    ]
+  },
+  "Oath of Vengeance": {
+    "3": [
+      "Bane",
+      "Hunter's Mark"
+    ],
+    "5": [
+      "Hold Person",
+      "Misty Step"
+    ],
+    "9": [
+      "Haste",
+      "Protection From Energy"
+    ],
+    "13": [
+      "Banishment",
+      "Dimension Door"
+    ],
+    "17": [
+      "Hold Monster",
+      "Scrying"
+    ]
+  },
+  "Death Domain": {
+    "1": [
+      "False Life",
+      "Ray of Sickness"
+    ],
+    "3": [
+      "Blindness/Deafness",
+      "Ray of Enfeeblement"
+    ],
+    "5": [
+      "Animate Dead",
+      "Vampiric Touch"
+    ],
+    "7": [
+      "Blight",
+      "Death Ward"
+    ],
+    "9": [
+      "Antilife Shell",
+      "Cloudkill"
+    ]
+  },
+  "Oathbreaker": {
+    "3": [
+      "Hellish Rebuke",
+      "Inflict Wounds"
+    ],
+    "5": [
+      "Crown of Madness",
+      "Darkness"
+    ],
+    "9": [
+      "Animate Dead",
+      "Bestow Curse"
+    ],
+    "13": [
+      "Blight",
+      "Confusion"
+    ],
+    "17": [
+      "Contagion",
+      "Dominate Person"
+    ]
+  },
+  "Oath of the Crown": {
+    "3": [
+      "Command",
+      "Compelled Duel"
+    ],
+    "5": [
+      "Warding Bond",
+      "Zone of Truth"
+    ],
+    "9": [
+      "Aura of Vitality",
+      "Spirit Guardians"
+    ],
+    "13": [
+      "Banishment",
+      "Guardian of Faith"
+    ],
+    "17": [
+      "Circle of Power",
+      "Geas"
+    ]
+  },
+  "Lunar Sorcery": {
+    "1": [
+      "Shield",
+      "Ray of Sickness",
+      "Color Spray"
+    ],
+    "3": [
+      "Lesser Restoration",
+      "Blindness/Deafness",
+      "Alter Self"
+    ],
+    "5": [
+      "Dispel Magic",
+      "Vampiric Touch",
+      "Phantom Steed"
+    ],
+    "7": [
+      "Death Ward",
+      "Confusion",
+      "Hallucinatory Terrain"
+    ],
+    "9": [
+      "Telepathic Bond",
+      "Hold Monster",
+      "Mislead"
+    ]
+  },
+  "Festus Domain": {
+    "1": [
+      "Goodberry",
+      "Purify Food and Drink"
+    ],
+    "3": [
+      "Heat Metal",
+      "Protection from Poison"
+    ],
+    "5": [
+      "Create Food and Water",
+      "Stinking Cloud"
+    ],
+    "7": [
+      "Blight",
+      "Control Water"
+    ],
+    "9": [
+      "Cloudkill",
+      "Contagion"
+    ]
+  },
+  "Oath of the Spelldrinker": {
+    "3": [
+      "Bane",
+      "Detect Magic"
+    ],
+    "5": [
+      "Arcanist's Magic Aura",
+      "Hold Person"
+    ],
+    "9": [
+      "Dispel Magic",
+      "Slow"
+    ],
+    "13": [
+      "Dimension Door",
+      "Resilient Sphere"
+    ],
+    "17": [
+      "Dominate Person",
+      "Scrying"
+    ]
+  },
+  "Rocborne": {
+    "3": [
+      "Feather Fall"
+    ],
+    "5": [
+      "Gust of Wind"
+    ],
+    "9": [
+      "Lightning Bolt"
+    ],
+    "13": [
+      "Ice Storm"
+    ],
+    "17": [
+      "Legend Lore"
+    ]
+  },
+  "Circle of Shadows": {
+    "2": [
+      "Bane",
+      "False Life"
+    ],
+    "3": [
+      "Darkness",
+      "Darkvision"
+    ],
+    "5": [
+      "Blink",
+      "Fear"
+    ],
+    "7": [
+      "Evard's Black Tentacles",
+      "Greater Invisibility"
+    ],
+    "9": [
+      "Cone of Cold",
+      "Dream"
+    ]
+  },
+  "Keeper Domain": {
+    "1": [
+      "Command",
+      "Hunter's Mark"
+    ],
+    "3": [
+      "Calm Emotions",
+      "Warding Bond"
+    ],
+    "5": [
+      "Beacon of Hope",
+      "Spirit Guardians"
+    ],
+    "7": [
+      "Death Ward",
+      "Guardian of Faith"
+    ],
+    "9": [
+      "Hallow",
+      "Telepathic Bond"
+    ]
+  },
+  "Shadow Domain": {
+    "1": [
+      "Bane",
+      "False Life"
+    ],
+    "3": [
+      "Blindness/Deafness",
+      "Darkness"
+    ],
+    "5": [
+      "Blink",
+      "Fear"
+    ],
+    "7": [
+      "Evard's Black Tentacles",
+      "Greater Invisibility"
+    ],
+    "9": [
+      "Cone of Cold",
+      "Dream"
+    ]
+  },
+  "Circle of the Hive": {
+    "3": [
+      "Blur",
+      "Web"
+    ],
+    "5": [
+      "Fly",
+      "Hypnotic Pattern"
+    ],
+    "7": [
+      "Arcane Eye",
+      "Giant Insect"
+    ],
+    "9": [
+      "Insect Plague",
+      "Mislead"
+    ]
+  },
+  "Oath of the Harvest": {
+    "3": [
+      "Heroism",
+      "Purify Food and Drink"
+    ],
+    "5": [
+      "Prayer of Healing",
+      "Warding Bond"
+    ],
+    "9": [
+      "Beacon of Hope",
+      "Create Food and Water"
+    ],
+    "13": [
+      "Death Ward",
+      "Resilient Sphere"
+    ],
+    "17": [
+      "Greater Restoration",
+      "Mass Cure Wounds"
+    ]
+  },
+  "Hunt Domain": {
+    "1": [
+      "Entangle",
+      "Longstrider"
+    ],
+    "3": [
+      "Locate Animals or Plants",
+      "Pass Without Trace"
+    ],
+    "5": [
+      "Conjure Animals",
+      "Haste"
+    ],
+    "7": [
+      "Freedom of Movement",
+      "Locate Creature"
+    ],
+    "9": [
+      "Commune With Nature",
+      "Hold Monster"
+    ]
+  },
+  "Skinshifter": {
+    "1": [
+      "Chameleon Skin",
+      "Inflict Wounds"
+    ],
+    "3": [
+      "Barkskin",
+      "Protection from Poison"
+    ],
+    "5": [
+      "Vampiric Touch",
+      "Zippit!"
+    ],
+    "7": [
+      "Freedom of Movement",
+      "Frogskin"
+    ],
+    "9": [
+      "Feverskin",
+      "Greater Restoration"
+    ]
+  },
+  "Oath of the River": {
+    "3": [
+      "Bless",
+      "Whelm Weapon"
+    ],
+    "5": [
+      "Find Steed",
+      "Lesser Restoration"
+    ],
+    "9": [
+      "Water Breathing",
+      "Water Walk"
+    ],
+    "13": [
+      "Control Water",
+      "Freedom of Movement"
+    ],
+    "17": [
+      "Mass Cure Wounds",
+      "Submerge"
+    ]
+  },
+  "Community Domain": {
+    "1": [
+      "Bless",
+      "Goodberry"
+    ],
+    "3": [
+      "Aid",
+      "Heroism"
+    ],
+    "5": [
+      "Beacon of Hope",
+      "Spirit Guardians"
+    ],
+    "7": [
+      "Banishment",
+      "Faithful Hound"
+    ],
+    "9": [
+      "Mass Cure Wounds",
+      "Telepathic Bond"
+    ]
+  },
+  "Night Domain": {
+    "1": [
+      "Sleep",
+      "Veil of Dusk"
+    ],
+    "3": [
+      "Darkness",
+      "Moonbeam"
+    ],
+    "5": [
+      "Nondetection",
+      "Globe of Twilight"
+    ],
+    "7": [
+      "Divination",
+      "Stellar Bodies"
+    ],
+    "9": [
+      "Dream",
+      "Seeming"
+    ]
+  },
+  "Blood Domain": {
+    "1": [
+      "False Life",
+      "Sleep"
+    ],
+    "3": [
+      "Hold Person",
+      "Ray of Enfeeblement"
+    ],
+    "5": [
+      "Haste",
+      "Slow"
+    ],
+    "7": [
+      "Blight",
+      "Stoneskin"
+    ],
+    "9": [
+      "Dominate Person",
+      "Hold Monster"
+    ]
+  },
+  "Moon Domain": {
+    "1": [
+      "Faerie Fire",
+      "Silent Image"
+    ],
+    "3": [
+      "Invisibility",
+      "Moonbeam"
+    ],
+    "5": [
+      "Hypnotic Pattern",
+      "Major Image"
+    ],
+    "7": [
+      "Greater Invisibility",
+      "Hallucinatory Terrain"
+    ],
+    "9": [
+      "Dream",
+      "Passwall"
+    ]
+  },
+  "Oath of the Open Sea": {
+    "3": [
+      "Create or Destroy Water",
+      "Expeditious Retreat"
+    ],
+    "5": [
+      "Augury",
+      "Misty Step"
+    ],
+    "9": [
+      "Call Lightning",
+      "Freedom of the Waves"
+    ],
+    "13": [
+      "Control Water",
+      "Freedom of Movement"
+    ],
+    "17": [
+      "Commune With Nature",
+      "Freedom of the Winds"
+    ]
+  },
+  "Runechild": {
+    "1": [
+      "Longstrider",
+      "Protection from Evil and Good"
+    ],
+    "3": [
+      "Lesser Restoration",
+      "Protection from Poison"
+    ],
+    "5": [
+      "Glyph of Warding",
+      "Magic Circle"
+    ],
+    "7": [
+      "Death Ward",
+      "Freedom of Movement"
+    ],
+    "9": [
+      "Greater Restoration",
+      "Telekinesis"
+    ]
   }
 }
