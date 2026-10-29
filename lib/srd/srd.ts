@@ -31,6 +31,10 @@ import classes2014 from "./classes-2014.json";
 import species2024 from "./species-2024.json";
 import species2014 from "./species-2014.json";
 import subclasses from "./subclasses.json";
+// Non-SRD spells written up by Kerf and Code (Xanathar's, Tasha's, Arcana Unleashed, the Artificer
+// extras, ...). Each carries an `edition` of "2014", "2024" or "both". They used to reach only the
+// compendium; reading them here makes them pickable in the Forge and matchable on import.
+import spellsAuthored from "./spells-authored.json";
 // The Open5e / 5e-bits fetch (fetch_srd.py). SEPARATE domains rather than replacing classes-*.json,
 // because the two hold different things: the originals carry the catalog fields the pickers filter
 // on (partnered, partner, source), and these carry the progression TABLE and clean per-level
@@ -66,6 +70,15 @@ function mergeEquipment(existing: Named[], fetched: Named[]): Named[] {
 
 export type Ruleset = "2024" | "2014" | "both";
 
+// The SRD spells for an edition plus the authored spells tagged for it ("both" lands in each). The SRD
+// record wins a name collision; the authored file is kept free of those (see lib/name-aliases.ts).
+function withAuthoredSpells(srd: Named[], ed: "2014" | "2024"): Named[] {
+  const taken = new Set(srd.map((s) => s.name.toLowerCase()));
+  const extra = (spellsAuthored as unknown as (Named & { edition?: string })[])
+    .filter((s) => (s.edition === ed || s.edition === "both") && !taken.has(s.name.toLowerCase()));
+  return [...srd, ...extra];
+}
+
 // Domains that are flat lists keyed on `name`.
 export type FlatDomain =
   | "spells" | "equipment" | "monsters" | "magic-items"
@@ -81,7 +94,10 @@ type SpeciesFile = { species: Named[]; variants: Named[] };
 type Subclass = { subclass: string; class: string; partnered: boolean; partner: string | null;[k: string]: unknown };
 
 const FLAT: Record<FlatDomain, { "2024": Named[]; "2014": Named[] }> = {
-  spells: { "2024": spells2024 as unknown as Named[], "2014": spells2014 as unknown as Named[] },
+  spells: {
+    "2024": withAuthoredSpells(spells2024 as unknown as Named[], "2024"),
+    "2014": withAuthoredSpells(spells2014 as unknown as Named[], "2014"),
+  },
   equipment: {
     "2024": mergeEquipment(
       equipment2024 as unknown as Named[],
@@ -136,7 +152,9 @@ export function loadSrd(domain: Domain, mode: Ruleset): Named[] | SpeciesFile | 
   const pair = FLAT[domain];
   if (mode === "2024") return pair["2024"];
   if (mode === "2014") return pair["2014"];
-  return mergeNamed(pair["2024"], pair["2014"]);
+  // An authored entry tagged edition "both" is already in the 2024 list; dropping it from the 2014
+  // side keeps it from coming back as its own "(legacy)" twin.
+  return mergeNamed(pair["2024"], pair["2014"].filter((x) => x.edition !== "both"));
 }
 
 // Convenience: the partners a campaign has enabled filter partnered content. Pass the
