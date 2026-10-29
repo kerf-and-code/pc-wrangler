@@ -3,6 +3,27 @@
     "name": "Blade Ward",
     "level": 0,
     "school": "Abjuration",
+    "casting_time": "1 action",
+    "range": "Self",
+    "components": "V, S",
+    "duration": "1 round",
+    "concentration": false,
+    "ritual": false,
+    "classes": [
+      "Bard",
+      "Sorcerer",
+      "Warlock",
+      "Wizard"
+    ],
+    "attack_type": null,
+    "description": "Until the end of your next turn you have resistance to bludgeoning, piercing, and slashing damage from weapon attacks.",
+    "edition": "2014",
+    "source": "kc"
+  },
+  {
+    "name": "Blade Ward",
+    "level": 0,
+    "school": "Abjuration",
     "casting_time": "Action",
     "range": "Self",
     "components": "V, S",
@@ -16,8 +37,8 @@
       "Wizard"
     ],
     "attack_type": null,
-    "description": "You trace a protective sigil that causes attackers to take a penalty on their attack rolls against you while you concentrate.",
-    "edition": "both",
+    "description": "For up to 1 minute (Concentration), every attack roll made against you takes a 1d4 penalty.",
+    "edition": "2024",
     "source": "kc"
   },
   {
@@ -26,11 +47,16 @@
     "school": "Evocation",
     "casting_time": "1 action",
     "range": "Self (5-foot radius)",
-    "components": "V, M (a melee weapon worth at least 1 sp)",
+    "components": "S, M (a melee weapon worth at least 1 sp)",
     "duration": "1 round",
     "concentration": false,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Artificer",
+      "Sorcerer",
+      "Warlock",
+      "Wizard"
+    ],
     "attack_type": null,
     "description": "You channel thunderous energy into a melee weapon and strike a creature. If the target then moves away before your next turn, it takes extra thunder damage.",
     "edition": "2014",
@@ -46,7 +72,11 @@
     "duration": "Instantaneous or 1 hour (see below)",
     "concentration": false,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Druid",
+      "Sorcerer",
+      "Wizard"
+    ],
     "attack_type": null,
     "description": "You magically manipulate an existing nonmagical flame within range, expanding, extinguishing, or shaping it, or producing simple shapes and colors of fire.",
     "edition": "2014",
@@ -62,9 +92,36 @@
     "duration": "Concentration, up to 1 minute",
     "concentration": true,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Artificer",
+      "Druid",
+      "Sorcerer",
+      "Warlock",
+      "Wizard"
+    ],
     "attack_type": null,
     "description": "You conjure a magical bonfire in a 5-foot cube. Creatures that enter or start their turn in the fire take fire damage, and it can ignite flammables.",
+    "edition": "2014",
+    "source": "kc"
+  },
+  {
+    "name": "Friends",
+    "level": 0,
+    "school": "Enchantment",
+    "casting_time": "1 action",
+    "range": "Self",
+    "components": "S, M (some makeup)",
+    "duration": "Concentration, up to 1 minute",
+    "concentration": true,
+    "ritual": false,
+    "classes": [
+      "Bard",
+      "Sorcerer",
+      "Warlock",
+      "Wizard"
+    ],
+    "attack_type": null,
+    "description": "For 1 minute you have advantage on Charisma checks against one non-hostile creature. When it ends, the creature knows you used magic on it and turns hostile.",
     "edition": "2014",
     "source": "kc"
   },
@@ -85,8 +142,8 @@
       "Wizard"
     ],
     "attack_type": null,
-    "description": "You magically enhance your charisma toward one creature, granting advantage on Charisma checks against it, but the target becomes hostile when the effect ends.",
-    "edition": "both",
+    "description": "One creature within 10 feet makes a Wisdom save or is Charmed by you for 1 minute. Non-Humanoids, creatures you're fighting, and repeat targets within 24 hours auto-succeed; it ends if the target is hurt or you attack or force a save, and the target then knows it was charmed.",
+    "edition": "2024",
     "source": "kc"
   },
   {
@@ -99,7 +156,13 @@
     "duration": "Instantaneous",
     "concentration": false,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Artificer",
+      "Druid",
+      "Sorcerer",
+      "Warlock",
+      "Wizard"
+    ],
     "attack_type": null,
     "description": "You cause numbing frost to form on a creature you can see. It must succeed on a Constitution save or take cold damage and have disadvantage on its next weapon attack roll.",
     "edition": "2014",
@@ -115,7 +178,12 @@
     "duration": "Instantaneous",
     "concentration": false,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Artificer",
+      "Sorcerer",
+      "Warlock",
+      "Wizard"
+    ],
     "attack_type": null,
     "description": "You brandish a melee weapon and strike a creature, dealing normal damage plus fire. Green fire then leaps to a second nearby creature, dealing fire damage based on your level.",
     "edition": "2014",
@@ -131,7 +199,11 @@
     "duration": "Instantaneous",
     "concentration": false,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Druid",
+      "Sorcerer",
+      "Wizard"
+    ],
     "attack_type": null,
     "description": "You create a brief blast of wind that can push a creature, move a light object, or extinguish unprotected flames.",
     "edition": "2014",
@@ -147,7 +219,12 @@
     "duration": "Instantaneous",
     "concentration": false,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Druid",
+      "Sorcerer",
+      "Warlock",
+      "Wizard"
+    ],
     "attack_type": null,
     "description": "You cause a cloud of mites, fleas, or other parasites to swarm a creature. It takes poison damage and must move in a random direction on a failed save.",
     "edition": "2014",
@@ -163,7 +240,12 @@
     "duration": "Instantaneous",
     "concentration": false,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Artificer",
+      "Sorcerer",
+      "Warlock",
+      "Wizard"
+    ],
     "attack_type": null,
     "description": "You create a lash of lightning that pulls a creature toward you and deals lightning damage if it fails a Strength save.",
     "edition": "2014",
@@ -179,7 +261,11 @@
     "duration": "1 minute",
     "concentration": false,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Artificer",
+      "Druid",
+      "Warlock"
+    ],
     "attack_type": null,
     "description": "You touch up to three pebbles and imbue them with magic. You or a companion can make a ranged spell attack with them, dealing bludgeoning damage.",
     "edition": "2014",
@@ -215,7 +301,11 @@
     "duration": "Instantaneous or 1 hour (see below)",
     "concentration": false,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Druid",
+      "Sorcerer",
+      "Wizard"
+    ],
     "attack_type": null,
     "description": "You manipulate dirt or stone in a 5-foot cube, moving it, shaping it, or creating difficult terrain, or excavating a small amount.",
     "edition": "2014",
@@ -231,7 +321,9 @@
     "duration": "Instantaneous",
     "concentration": false,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Druid"
+    ],
     "attack_type": null,
     "description": "Your teeth or nails sharpen with primal power. You make a melee spell attack that deals acid damage.",
     "edition": "2014",
@@ -247,7 +339,11 @@
     "duration": "Instantaneous or 1 hour (see below)",
     "concentration": false,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Druid",
+      "Sorcerer",
+      "Wizard"
+    ],
     "attack_type": null,
     "description": "You reshape or animate a 5-foot cube of water, freeze it, change its color or opacity, or create simple shapes that last a short time.",
     "edition": "2014",
@@ -264,6 +360,7 @@
     "concentration": false,
     "ritual": false,
     "classes": [
+      "Artificer",
       "Druid"
     ],
     "attack_type": null,
@@ -282,6 +379,7 @@
     "concentration": false,
     "ritual": false,
     "classes": [
+      "Artificer",
       "Bard",
       "Druid",
       "Sorcerer",
@@ -314,24 +412,6 @@
     "source": "kc"
   },
   {
-    "name": "Vicious Mockery",
-    "level": 0,
-    "school": "Enchantment",
-    "casting_time": "Action",
-    "range": "60 feet",
-    "components": "V",
-    "duration": "Instantaneous",
-    "concentration": false,
-    "ritual": false,
-    "classes": [
-      "Bard"
-    ],
-    "attack_type": null,
-    "description": "You unleash a string of insults laced with subtle enchantments. The target must succeed on a Wisdom save or take psychic damage and have disadvantage on its next attack roll.",
-    "edition": "2024",
-    "source": "kc"
-  },
-  {
     "name": "Word of Radiance",
     "level": 0,
     "school": "Evocation",
@@ -359,7 +439,13 @@
     "duration": "1 round",
     "concentration": false,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Artificer",
+      "Druid",
+      "Ranger",
+      "Sorcerer",
+      "Wizard"
+    ],
     "attack_type": null,
     "description": "When you take acid, cold, fire, lightning, or thunder damage, you capture some of the energy. You gain resistance to that damage type until your next turn and can add it to a melee attack.",
     "edition": "2014",
@@ -411,7 +497,10 @@
     "duration": "Concentration, up to 10 minutes",
     "concentration": true,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Druid",
+      "Ranger"
+    ],
     "attack_type": null,
     "description": "You forge a telepathic link with a willing beast. While linked you can communicate with it and it has advantage on attack rolls against creatures within 5 feet of you that you can see.",
     "edition": "2014",
@@ -427,9 +516,13 @@
     "duration": "Instantaneous",
     "concentration": false,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Artificer",
+      "Sorcerer",
+      "Wizard"
+    ],
     "attack_type": null,
-    "description": "You choose an object weighing 1 to 5 pounds and hurl it toward a target. On a hit it deals bludgeoning damage; the object can also be used to attack multiple times if it ricochets.",
+    "description": "An unattended object of 1 to 5 pounds flies up to 90 feet in a line. A creature in its path makes a Dexterity save; on a failure the object hits it, and the object and whatever it hits each take 3d8 bludgeoning damage. Higher slots raise the weight limit and damage.",
     "edition": "2014",
     "source": "kc"
   },
@@ -438,12 +531,15 @@
     "level": 1,
     "school": "Necromancy",
     "casting_time": "1 action",
-    "range": ". A construct or an undead is immune to this effect. The target",
+    "range": "60 feet",
     "components": "V",
     "duration": "Concentration, up to 1 minute",
     "concentration": true,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Warlock",
+      "Wizard"
+    ],
     "attack_type": null,
     "description": "You awaken the sense of mortality in a creature. It must succeed on a Wisdom save or become frightened of you; it can repeat the save at the end of each of its turns.",
     "edition": "2014",
@@ -459,7 +555,10 @@
     "duration": "Instantaneous",
     "concentration": false,
     "ritual": true,
-    "classes": [],
+    "classes": [
+      "Cleric",
+      "Paladin"
+    ],
     "attack_type": null,
     "description": "You perform a special religious ceremony that can provide various benefits such as atonement, blessing a marriage, or dedicating a creature to a god, depending on the rite chosen.",
     "edition": "2014",
@@ -475,9 +574,30 @@
     "duration": "Instantaneous",
     "concentration": false,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Sorcerer",
+      "Wizard"
+    ],
     "attack_type": null,
-    "description": "You hurl a sphere of energy of a type you choose (acid, cold, fire, lightning, poison, or thunder) at a creature. On a hit it takes damage of that type, and you can cause it to leap to additional targets.",
+    "description": "Make a ranged spell attack with a 4-inch orb of acid, cold, fire, lightning, poison, or thunder (your choice): 3d8 damage of that type on a hit, +1d8 per slot level above 1st.",
+    "edition": "2014",
+    "source": "kc"
+  },
+  {
+    "name": "Compelled Duel",
+    "level": 1,
+    "school": "Enchantment",
+    "casting_time": "1 bonus action",
+    "range": "30 feet",
+    "components": "V",
+    "duration": "Concentration, up to 1 minute",
+    "concentration": true,
+    "ritual": false,
+    "classes": [
+      "Paladin"
+    ],
+    "attack_type": null,
+    "description": "One creature makes a Wisdom save or, for up to 1 minute, has disadvantage attacking anyone but you and must pass a Wisdom save to move more than 30 feet from you. Ends if you attack or target another hostile, an ally harms it, or you end a turn more than 30 feet away.",
     "edition": "2014",
     "source": "kc"
   },
@@ -495,8 +615,8 @@
       "Paladin"
     ],
     "attack_type": null,
-    "description": "You attempt to compel a creature into a duel. On a failed Wisdom save it has disadvantage on attacks against creatures other than you and must move toward you if it moves.",
-    "edition": "both",
+    "description": "One creature makes a Wisdom save or, for up to 1 minute, has Disadvantage attacking anyone but you and can't willingly move more than 30 feet from you. Ends if you attack or cast on another enemy, an ally damages it, or you end a turn more than 30 feet away.",
+    "edition": "2024",
     "source": "kc"
   },
   {
@@ -509,7 +629,9 @@
     "duration": "Instantaneous",
     "concentration": false,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Bard"
+    ],
     "attack_type": null,
     "description": "You whisper a discordant melody that only one creature can hear. On a failed Wisdom save it takes psychic damage and must use its reaction to move away from you.",
     "edition": "2014",
@@ -525,7 +647,12 @@
     "duration": "Instantaneous",
     "concentration": false,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Bard",
+      "Druid",
+      "Sorcerer",
+      "Wizard"
+    ],
     "attack_type": null,
     "description": "You cause a tremor in the ground within range. Each creature in the area must succeed on a Dexterity save or take bludgeoning damage and be knocked prone; the ground becomes difficult terrain.",
     "edition": "2014",
@@ -541,9 +668,29 @@
     "duration": "Concentration, up to 1 minute",
     "concentration": true,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Ranger"
+    ],
     "attack_type": null,
     "description": "The next time you hit a creature with a weapon attack before the spell ends, thorny vines wrap around it. It takes piercing damage and is restrained on a failed Strength save.",
+    "edition": "2014",
+    "source": "kc"
+  },
+  {
+    "name": "Hail of Thorns",
+    "level": 1,
+    "school": "Conjuration",
+    "casting_time": "1 bonus action",
+    "range": "Self",
+    "components": "V",
+    "duration": "Concentration, up to 1 minute",
+    "concentration": true,
+    "ritual": false,
+    "classes": [
+      "Ranger"
+    ],
+    "attack_type": null,
+    "description": "Your next ranged weapon hit before the spell ends (Concentration) bursts into thorns: the target and creatures within 5 feet make a Dexterity save for 1d10 piercing, half on a success (+1d10 per slot level, max 6d10).",
     "edition": "2014",
     "source": "kc"
   },
@@ -561,8 +708,8 @@
       "Ranger"
     ],
     "attack_type": null,
-    "description": "The next time you hit a creature with a ranged weapon attack, the projectile bursts into thorns. The target and nearby creatures take piercing damage on a failed Dexterity save.",
-    "edition": "both",
+    "description": "Bonus Action right after a Ranged weapon hit: the target and creatures within 5 feet make a Dexterity save for 1d10 Piercing, half on a success (+1d10 per slot level above 1).",
+    "edition": "2024",
     "source": "kc"
   },
   {
@@ -593,7 +740,11 @@
     "duration": "Instantaneous",
     "concentration": false,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Druid",
+      "Sorcerer",
+      "Wizard"
+    ],
     "attack_type": null,
     "description": "You create a shard of ice and fling it at a creature. On a hit it takes piercing damage, then the shard explodes dealing cold damage to the target and nearby creatures on a failed Dexterity save.",
     "edition": "2014",
@@ -609,7 +760,10 @@
     "duration": "Instantaneous",
     "concentration": false,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Sorcerer",
+      "Wizard"
+    ],
     "attack_type": null,
     "description": "A ray of sickening greenish energy streaks toward a creature. On a hit it takes poison damage and must succeed on a Constitution save or be poisoned until the end of your next turn.",
     "edition": "2014",
@@ -625,9 +779,11 @@
     "duration": "Concentration, up to 1 minute",
     "concentration": true,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Paladin"
+    ],
     "attack_type": null,
-    "description": "The next time you hit a creature with a melee weapon attack, your weapon flares with white-hot intensity. The target takes fire damage and ignites, taking ongoing fire damage until it or a creature uses an action to douse the flames.",
+    "description": "Your next melee weapon hit before the spell ends deals an extra 1d6 fire and sets the target alight. At the start of each of its turns it makes a Constitution save: 1d6 fire on a failure, the spell ends on a success. An action to douse the flames also ends it.",
     "edition": "2014",
     "source": "kc"
   },
@@ -641,7 +797,11 @@
     "duration": "Instantaneous",
     "concentration": false,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Bard",
+      "Sorcerer",
+      "Wizard"
+    ],
     "attack_type": null,
     "description": "You magically distract a creature that succeeds on an attack, check, or save, forcing it to reroll and take the lower result. You can then give advantage to another creature's next roll.",
     "edition": "2014",
@@ -657,7 +817,12 @@
     "duration": "8 hours",
     "concentration": false,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Artificer",
+      "Druid",
+      "Ranger",
+      "Wizard"
+    ],
     "attack_type": null,
     "description": "You create a magical trap using a rope. When a creature steps on the trapped area it must succeed on a Dexterity save or be magically hoisted into the air and restrained.",
     "edition": "2014",
@@ -689,10 +854,14 @@
     "casting_time": "1 action",
     "range": "Self (30-foot line)",
     "components": "V, S, M (a bit of rotten food)",
-    "duration": "or until a creature uses its action to scrape or wash the acid",
-    "concentration": false,
+    "duration": "Concentration, up to 1 minute",
+    "concentration": true,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Artificer",
+      "Sorcerer",
+      "Wizard"
+    ],
     "attack_type": null,
     "description": "A stream of acid gushes from you in a line. Each creature in the line must succeed on a Dexterity save or take acid damage at the start of each of its turns until it uses an action to scrape or wash the acid off.",
     "edition": "2014",
@@ -740,6 +909,24 @@
     "name": "Thunderous Smite",
     "level": 1,
     "school": "Evocation",
+    "casting_time": "1 bonus action",
+    "range": "Self",
+    "components": "V",
+    "duration": "Concentration, up to 1 minute",
+    "concentration": true,
+    "ritual": false,
+    "classes": [
+      "Paladin"
+    ],
+    "attack_type": null,
+    "description": "Your first melee weapon hit before the spell ends (Concentration) booms audibly to 300 feet and deals an extra 2d6 thunder; a creature makes a Strength save or is pushed 10 feet and knocked prone.",
+    "edition": "2014",
+    "source": "kc"
+  },
+  {
+    "name": "Thunderous Smite",
+    "level": 1,
+    "school": "Evocation",
     "casting_time": "Bonus Action, which you take immediately after hitting a target with a Melee weapon or an Unarmed Strike",
     "range": "Self",
     "components": "V",
@@ -750,8 +937,8 @@
       "Paladin"
     ],
     "attack_type": null,
-    "description": "The next time you hit with a melee weapon attack, your weapon rings with thunder. The target takes extra thunder damage and must succeed on a Strength save or be pushed and knocked prone.",
-    "edition": "both",
+    "description": "Bonus Action right after a Melee weapon or Unarmed Strike hit: an extra 2d6 Thunder, audible to 300 feet, and a creature makes a Strength save or is pushed 10 feet and knocked Prone (+1d6 per slot level above 1).",
+    "edition": "2024",
     "source": "kc"
   },
   {
@@ -771,8 +958,28 @@
       "Wizard"
     ],
     "attack_type": null,
-    "description": "You gesture and a force of repulsion pushes a creature away from you. On a failed Strength save it is pushed up to 30 feet and takes force damage if it collides with an object or creature.",
+    "description": "One creature makes a Constitution save (Constructs and Undead auto-succeed): 2d4 Force, half its Speed until your next turn, and only an action or a Bonus Action on its next turn on a failure; half damage only on a success. +2d4 per slot level above 1.",
     "edition": "2024",
+    "source": "kc"
+  },
+  {
+    "name": "Witch Bolt",
+    "level": 1,
+    "school": "Evocation",
+    "casting_time": "1 action",
+    "range": "30 feet",
+    "components": "V, S, M (a twig struck by lightning)",
+    "duration": "Concentration, up to 1 minute",
+    "concentration": true,
+    "ritual": false,
+    "classes": [
+      "Sorcerer",
+      "Warlock",
+      "Wizard"
+    ],
+    "attack_type": null,
+    "description": "Ranged spell attack: 1d12 lightning on a hit, and each turn you can spend your action to deal 1d12 lightning automatically. Ends if you use your action for anything else, or the target leaves range or gains total cover.",
+    "edition": "2014",
     "source": "kc"
   },
   {
@@ -791,8 +998,26 @@
       "Wizard"
     ],
     "attack_type": null,
-    "description": "A beam of crackling blue energy lances toward a creature. On a hit it takes lightning damage and you can use a bonus action on subsequent turns to deal additional lightning damage automatically while concentration lasts and the target remains in range.",
-    "edition": "both",
+    "description": "Ranged spell attack: 2d12 Lightning on a hit. On later turns, a Bonus Action deals 1d12 Lightning automatically, even if the first attack missed. Ends if the target leaves range or gains Total Cover.",
+    "edition": "2024",
+    "source": "kc"
+  },
+  {
+    "name": "Wrathful Smite",
+    "level": 1,
+    "school": "Evocation",
+    "casting_time": "1 bonus action",
+    "range": "Self",
+    "components": "V",
+    "duration": "Concentration, up to 1 minute",
+    "concentration": true,
+    "ritual": false,
+    "classes": [
+      "Paladin"
+    ],
+    "attack_type": null,
+    "description": "Your next melee weapon hit before the spell ends deals an extra 1d6 psychic, and a creature makes a Wisdom save or is frightened of you. It can use an action on a Wisdom check against your DC to end the spell.",
+    "edition": "2014",
     "source": "kc"
   },
   {
@@ -809,8 +1034,8 @@
       "Paladin"
     ],
     "attack_type": null,
-    "description": "The next time you hit with a melee weapon attack, your weapon carries spectral energy. The target takes psychic damage and must succeed on a Wisdom save or be frightened of you until the spell ends.",
-    "edition": "both",
+    "description": "Bonus Action right after a Melee weapon or Unarmed Strike hit: an extra 1d6 Necrotic, and the target makes a Wisdom save or is Frightened, repeating the save at the end of each of its turns (+1d6 per slot level above 1).",
+    "edition": "2024",
     "source": "kc"
   },
   {
@@ -823,7 +1048,9 @@
     "duration": "Concentration, up to 1 minute",
     "concentration": true,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Ranger"
+    ],
     "attack_type": null,
     "description": "You move like the wind. Until the spell ends your movement doesn't provoke opportunity attacks, you gain a bonus to speed, and once before it ends you can make one weapon attack with advantage that deals extra force damage.",
     "edition": "2014",
@@ -839,7 +1066,10 @@
     "duration": "Instantaneous",
     "concentration": false,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Sorcerer",
+      "Wizard"
+    ],
     "attack_type": null,
     "description": "A line of roaring flame 30 feet long and 5 feet wide blasts from you in a direction you choose. Each creature in the line must succeed on a Dexterity save or take fire damage.",
     "edition": "2014",
@@ -856,6 +1086,7 @@
     "concentration": false,
     "ritual": false,
     "classes": [
+      "Artificer",
       "Sorcerer",
       "Wizard"
     ],
@@ -888,6 +1119,25 @@
     "name": "Beast Sense",
     "level": 2,
     "school": "Divination",
+    "casting_time": "1 action",
+    "range": "Touch",
+    "components": "S",
+    "duration": "Concentration, up to 1 hour",
+    "concentration": true,
+    "ritual": true,
+    "classes": [
+      "Druid",
+      "Ranger"
+    ],
+    "attack_type": null,
+    "description": "Touch a willing beast; for the duration you can use your action to see and hear through it (with its special senses), but you are blinded and deafened to your own surroundings until you switch back.",
+    "edition": "2014",
+    "source": "kc"
+  },
+  {
+    "name": "Beast Sense",
+    "level": 2,
+    "school": "Divination",
     "casting_time": "Action or Ritual",
     "range": "Touch",
     "components": "S",
@@ -899,8 +1149,29 @@
       "Ranger"
     ],
     "attack_type": null,
-    "description": "You touch a willing beast and gain the ability to see through its eyes and hear what it hears for the duration, while remaining aware of your own surroundings.",
-    "edition": "both",
+    "description": "Touch a willing Beast; for the duration you perceive through its senses, including any special senses, as well as your own.",
+    "edition": "2024",
+    "source": "kc"
+  },
+  {
+    "name": "Cloud of Daggers",
+    "level": 2,
+    "school": "Conjuration",
+    "casting_time": "1 action",
+    "range": "60 feet",
+    "components": "V, S, M (a sliver of glass)",
+    "duration": "Concentration, up to 1 minute",
+    "concentration": true,
+    "ritual": false,
+    "classes": [
+      "Bard",
+      "Sorcerer",
+      "Warlock",
+      "Wizard"
+    ],
+    "attack_type": null,
+    "description": "A 5-foot cube of spinning daggers: a creature takes 4d4 slashing when it enters the area for the first time on a turn or starts its turn there (+2d4 per slot level above 2nd).",
+    "edition": "2014",
     "source": "kc"
   },
   {
@@ -920,8 +1191,8 @@
       "Wizard"
     ],
     "attack_type": null,
-    "description": "You fill a 5-foot cube with spinning daggers. A creature that enters the area or starts its turn there takes slashing damage. You can move the cloud as a bonus action.",
-    "edition": "both",
+    "description": "A 5-foot Cube of spinning daggers deals 4d4 Slashing to creatures in it, entering it, ending a turn in it, or that it moves onto (once per turn). On later turns a Magic action teleports the Cube up to 30 feet (+2d4 per slot level above 2).",
+    "edition": "2024",
     "source": "kc"
   },
   {
@@ -949,8 +1220,8 @@
     "casting_time": "Action",
     "range": "120 feet",
     "components": "V, S",
-    "duration": ". The creature succeeds automatically if it isn't Humanoid.",
-    "concentration": false,
+    "duration": "Concentration, up to 1 minute",
+    "concentration": true,
     "ritual": false,
     "classes": [
       "Bard",
@@ -978,7 +1249,7 @@
       "Wizard"
     ],
     "attack_type": null,
-    "description": "You touch a creature and surround it with a necrotic shield. It gains temporary hit points, and while they last any creature that hits it with a melee attack takes necrotic damage.",
+    "description": "An inky aura surrounds a creature you touch: it has Advantage on Death Saving Throws, and once per turn a creature within 5 feet that hits it with a melee attack takes 2d4 Necrotic. Consumes a 50 GP onyx.",
     "edition": "2024",
     "source": "kc"
   },
@@ -988,7 +1259,7 @@
     "school": "Conjuration",
     "casting_time": "Action or Ritual",
     "range": "Self",
-    "components": "V, S, M (powdered gemstones worth 100+ GP, which the spell consumes, and one set of Artisan's Tools with which you have proficiency)",
+    "components": "V, S, M (powdered gemstones worth 100+ GP, which the spell consumes, and one set of Artisan’s Tools with which you have proficiency)",
     "duration": "8 hours",
     "concentration": false,
     "ritual": true,
@@ -997,7 +1268,7 @@
       "Wizard"
     ],
     "attack_type": null,
-    "description": "You create several tiny homunculi that perform simple tasks for you using the artisan's tools you provide. They last for the duration and can assist with crafting or other activities.",
+    "description": "Intangible spirit helpers, proficient in Arcana and with the artisan's tools used in the casting, act as one crafting assistant and halve crafting time for the duration. Consumes 100 GP of powdered gemstones.",
     "edition": "2024",
     "source": "kc"
   },
@@ -1032,11 +1303,12 @@
     "concentration": true,
     "ritual": false,
     "classes": [
+      "Artificer",
       "Sorcerer",
       "Wizard"
     ],
     "attack_type": null,
-    "description": "You touch a willing creature and imbue it with the power to exhale elemental energy. As a bonus action the creature can breathe a 15-foot cone of acid, cold, fire, lightning, or poison damage.",
+    "description": "Touch a willing creature and pick acid, cold, fire, lightning, or poison. Until the spell ends it can use an action to exhale a 15-foot cone: Dexterity save, 3d6 of that type, half on a success (+1d6 per slot level above 2nd).",
     "edition": "both",
     "source": "kc"
   },
@@ -1076,7 +1348,12 @@
     "duration": "Concentration, up to 1 minute",
     "concentration": true,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Druid",
+      "Sorcerer",
+      "Warlock",
+      "Wizard"
+    ],
     "attack_type": null,
     "description": "You attempt to bind a flying creature to the ground. On a failed Strength save its flying speed is reduced to 0 for the duration and it descends safely.",
     "edition": "2014",
@@ -1096,7 +1373,7 @@
       "Wizard"
     ],
     "attack_type": null,
-    "description": "You become partially ethereal, gaining resistance to certain damage and the ability to move through objects or creatures with some risk of ending the effect early.",
+    "description": "For the duration you have Advantage on saves against spells and magical effects, and a successful save against one that deals half damage on a success means you take none.",
     "edition": "2024",
     "source": "kc"
   },
@@ -1105,14 +1382,17 @@
     "level": 2,
     "school": "Conjuration",
     "casting_time": "1 bonus action",
-    "range": ". The spirit looks like a transparent beast or fey (your choice).",
+    "range": "60 feet",
     "components": "V, S",
     "duration": "Concentration, up to 1 minute",
     "concentration": true,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Druid",
+      "Ranger"
+    ],
     "attack_type": null,
-    "description": "You call forth a nature spirit that appears in a space you choose. As a bonus action you can move it and heal a creature in its space. The spirit vanishes after healing a number of times equal to 1 + your spellcasting modifier.",
+    "description": "An intangible spirit fills a 5-foot cube. When you or a creature you can see enters its space for the first time on a turn or starts its turn there, you can heal it 1d6 (no action). It can heal 1 + your spellcasting modifier times; a bonus action moves it 30 feet. No effect on constructs or undead.",
     "edition": "2014",
     "source": "kc"
   },
@@ -1120,12 +1400,12 @@
     "name": "Homunculus Servant",
     "level": 2,
     "school": "Conjuration",
-    "casting_time": "Action",
+    "casting_time": "1 hour or Ritual",
     "range": "10 feet",
     "components": "V, S, M (a gem worth 100+ GP)",
     "duration": "Instantaneous",
     "concentration": false,
-    "ritual": false,
+    "ritual": true,
     "classes": [
       "Artificer"
     ],
@@ -1141,31 +1421,16 @@
     "casting_time": "1 action",
     "range": "30 feet",
     "components": "V, S, M (a miniature hand sculpted from clay)",
-    "duration": ".",
-    "concentration": false,
-    "ritual": false,
-    "classes": [],
-    "attack_type": null,
-    "description": "You choose a 5-foot square of unoccupied earth and a Large hand of soil rises. It can grapple a creature, dealing bludgeoning damage, or be moved to attack others.",
-    "edition": "2014",
-    "source": "kc"
-  },
-  {
-    "name": "Melf's Ac1ip Arrow",
-    "level": 2,
-    "school": "Evocation",
-    "casting_time": "Action",
-    "range": "90 feet",
-    "components": "V, S, M (powdered rhubarb leaf)",
-    "duration": "Instantaneous",
-    "concentration": false,
+    "duration": "Concentration, up to 1 minute",
+    "concentration": true,
     "ritual": false,
     "classes": [
+      "Sorcerer",
       "Wizard"
     ],
     "attack_type": null,
-    "description": "A shimmering green arrow streaks toward a target and bursts in a spray of acid. On a hit the target takes acid damage immediately and again at the end of its next turn.",
-    "edition": "2024",
+    "description": "A Medium hand of earth rises in a 5-foot space and grabs a creature within 5 feet of it: Strength save or 2d6 bludgeoning and restrained. As an action you can crush a restrained target (Strength save, 2d6, half on success); breaking free is a Strength check against your DC.",
+    "edition": "2014",
     "source": "kc"
   },
   {
@@ -1178,7 +1443,9 @@
     "duration": "Instantaneous",
     "concentration": false,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Wizard"
+    ],
     "attack_type": null,
     "description": "A shimmering green arrow streaks toward a target and bursts in a spray of acid. On a hit the target takes acid damage immediately and again at the end of its next turn.",
     "edition": "2014",
@@ -1194,25 +1461,13 @@
     "duration": "Concentration, up to 1 hour",
     "concentration": true,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Sorcerer",
+      "Warlock",
+      "Wizard"
+    ],
     "attack_type": null,
     "description": "You reach into the mind of a creature you can see. On a failed Wisdom save it takes psychic damage and you know its location until the spell ends, even if it becomes hidden or invisible.",
-    "edition": "2014",
-    "source": "kc"
-  },
-  {
-    "name": "Mooonbeam",
-    "level": 2,
-    "school": "Evocation",
-    "casting_time": "1 action",
-    "range": "120 feet",
-    "components": "V, S, M (several seeds of any moonseed plant and a piece of opalescent feldspar)",
-    "duration": "Concentration, up to 1 minute",
-    "concentration": true,
-    "ritual": false,
-    "classes": [],
-    "attack_type": null,
-    "description": "A silvery beam of pale light shines down in a 5-foot radius cylinder. Creatures that enter or start their turn in the light take radiant damage, and shapechangers have disadvantage on the save.",
     "edition": "2014",
     "source": "kc"
   },
@@ -1226,7 +1481,11 @@
     "duration": "Concentration, up to 1 minute",
     "concentration": true,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Bard",
+      "Sorcerer",
+      "Wizard"
+    ],
     "attack_type": null,
     "description": "You fill a 20-foot cube with magical effects that randomly cause creatures to laugh uncontrollably, be outlined in faerie fire, or be affected by other mischievous illusions.",
     "edition": "2014",
@@ -1260,7 +1519,11 @@
     "duration": "Concentration, up to 1 minute",
     "concentration": true,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Bard",
+      "Sorcerer",
+      "Wizard"
+    ],
     "attack_type": null,
     "description": "You craft an illusion that takes root in the mind of a creature. On a failed Intelligence save it believes the illusion is real and can take psychic damage from it if the illusion is harmful.",
     "edition": "2014",
@@ -1276,7 +1539,12 @@
     "duration": "Instantaneous",
     "concentration": false,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Artificer",
+      "Bard",
+      "Sorcerer",
+      "Wizard"
+    ],
     "attack_type": null,
     "description": "You cause an area of nonmagical flame to erupt in a dazzling display of fireworks or a thick cloud of smoke that heavily obscures the area.",
     "edition": "2014",
@@ -1288,11 +1556,14 @@
     "school": "Evocation",
     "casting_time": "1 action",
     "range": "Self (30-foot cone)",
-    "components": "§, M (a vial of meltwater)",
+    "components": "S, M (a vial of meltwater)",
     "duration": "Instantaneous",
     "concentration": false,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Sorcerer",
+      "Wizard"
+    ],
     "attack_type": null,
     "description": "A cold wind freezes moisture into ice that covers creatures in a cone. On a failed Constitution save they take cold damage and their speed is reduced to 0 until they or another creature uses an action to break the ice.",
     "edition": "2014",
@@ -1308,7 +1579,11 @@
     "duration": "Concentration, up to 1 minute",
     "concentration": true,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Sorcerer",
+      "Warlock",
+      "Wizard"
+    ],
     "attack_type": null,
     "description": "You weave together threads of shadow to create a sword of solidified gloom in your hand. It deals psychic damage, has the finesse and light properties, and grants advantage in dim light or darkness.",
     "edition": "2014",
@@ -1324,7 +1599,12 @@
     "duration": "Concentration, up to 1 hour",
     "concentration": true,
     "ritual": true,
-    "classes": [],
+    "classes": [
+      "Artificer",
+      "Bard",
+      "Druid",
+      "Wizard"
+    ],
     "attack_type": null,
     "description": "You cause up to ten words to appear in a cloud formation in the sky. The words remain for the duration and can be seen from great distances.",
     "edition": "2014",
@@ -1335,12 +1615,15 @@
     "level": 2,
     "school": "Evocation",
     "casting_time": "1 action",
-    "range": ". Each creature in a 5-foot-radius sphere centered on that point",
+    "range": "90 feet",
     "components": "V, S, M (a piece of ice or a small white rock chip)",
     "duration": "Instantaneous",
     "concentration": false,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Sorcerer",
+      "Wizard"
+    ],
     "attack_type": null,
     "description": "A flurry of magic snowballs erupts from a point you choose. Each creature in a 5-foot-radius sphere must succeed on a Dexterity save or take cold damage.",
     "edition": "2014",
@@ -1375,9 +1658,12 @@
     "duration": "1 round",
     "concentration": false,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Sorcerer",
+      "Wizard"
+    ],
     "attack_type": null,
-    "description": "You lash out at a creature's mind. On a failed Intelligence save it takes psychic damage and can't take a reaction until the end of its next turn; on its next turn it can take only an action or a bonus action, not both.",
+    "description": "One creature makes an Intelligence save: 3d6 psychic, no reactions until the end of its next turn, and on that turn only one of a move, an action, or a bonus action. Half damage only on a success. One extra target per slot level above 2nd.",
     "edition": "2014",
     "source": "kc"
   },
@@ -1412,7 +1698,12 @@
     "duration": "Concentration, up to 10 minutes",
     "concentration": true,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Bard",
+      "Druid",
+      "Sorcerer",
+      "Wizard"
+    ],
     "attack_type": null,
     "description": "A strong wind (20 miles per hour) blows around you in a 10-foot radius. It extinguishes unprotected flames, disperses gases, and imposes disadvantage on ranged weapon attacks that pass through it.",
     "edition": "2014",
@@ -1428,7 +1719,11 @@
     "duration": "Concentration, up to 1 minute",
     "concentration": true,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Sorcerer",
+      "Warlock",
+      "Wizard"
+    ],
     "attack_type": null,
     "description": "You gain the ability to sense the presence of portals and planar rifts within range, and can attempt to identify their destinations.",
     "edition": "2014",
@@ -1464,9 +1759,32 @@
     "duration": "Concentration, up to 1 minute",
     "concentration": true,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Artificer",
+      "Ranger",
+      "Sorcerer",
+      "Wizard"
+    ],
     "attack_type": null,
     "description": "The billowing flames of a dragon cover your feet, granting you a bonus to speed and allowing you to deal fire damage to creatures you move near without provoking opportunity attacks.",
+    "edition": "2014",
+    "source": "kc"
+  },
+  {
+    "name": "Aura of Vitality",
+    "level": 3,
+    "school": "Evocation",
+    "casting_time": "1 action",
+    "range": "Self",
+    "components": "V",
+    "duration": "Concentration, up to 1 minute",
+    "concentration": true,
+    "ritual": false,
+    "classes": [
+      "Paladin"
+    ],
+    "attack_type": null,
+    "description": "For up to 1 minute a 30-foot aura moves with you; as a bonus action you heal one creature in it (including you) for 2d6.",
     "edition": "2014",
     "source": "kc"
   },
@@ -1486,8 +1804,26 @@
       "Paladin"
     ],
     "attack_type": null,
-    "description": "Healing energy radiates from you in a 30-foot aura. As a bonus action you can cause one creature in the aura to regain hit points.",
-    "edition": "both",
+    "description": "For up to 1 minute a 30-foot Emanation surrounds you; when you create it and at the start of each of your turns, you can heal one creature in it for 2d6.",
+    "edition": "2024",
+    "source": "kc"
+  },
+  {
+    "name": "Blinding Smite",
+    "level": 3,
+    "school": "Evocation",
+    "casting_time": "1 bonus action",
+    "range": "Self",
+    "components": "V",
+    "duration": "Concentration, up to 1 minute",
+    "concentration": true,
+    "ritual": false,
+    "classes": [
+      "Paladin"
+    ],
+    "attack_type": null,
+    "description": "Your next melee weapon hit before the spell ends deals an extra 3d8 radiant, and the target makes a Constitution save or is blinded, repeating the save at the end of each of its turns.",
+    "edition": "2014",
     "source": "kc"
   },
   {
@@ -1504,8 +1840,8 @@
       "Paladin"
     ],
     "attack_type": null,
-    "description": "The next time you hit with a melee weapon attack, your weapon flares with bright light. The target takes radiant damage and must succeed on a Constitution save or be blinded until the spell ends.",
-    "edition": "both",
+    "description": "Bonus Action right after a Melee weapon or Unarmed Strike hit: an extra 3d8 Radiant and the target is Blinded, making a Constitution save at the end of each of its turns to end it (+1d8 per slot level above 3).",
+    "edition": "2024",
     "source": "kc"
   },
   {
@@ -1524,7 +1860,7 @@
       "Wizard"
     ],
     "attack_type": null,
-    "description": "You create a mobile shield of thunderous energy around yourself. It deals thunder damage to creatures that enter or start their turn in the area and grants you resistance to thunder damage.",
+    "description": "A 10-foot Emanation of thunder for the duration: creatures it reaches, or that enter or end a turn in it, make a Constitution save (once per turn) for 3d6 Thunder and Deafened until your next turn, half damage only on a success. You can exempt creatures. You also resist Thunder, and ranged attacks against you have Disadvantage. +1d6 per slot level above 3.",
     "edition": "2024",
     "source": "kc"
   },
@@ -1553,6 +1889,24 @@
     "name": "Conjure Barrage",
     "level": 3,
     "school": "Conjuration",
+    "casting_time": "1 action",
+    "range": "Self",
+    "components": "V, S, M (a Melee or Ranged weapon worth at least 1 CP)",
+    "duration": "Instantaneous",
+    "concentration": false,
+    "ritual": false,
+    "classes": [
+      "Ranger"
+    ],
+    "attack_type": null,
+    "description": "Throw a nonmagical weapon or fire a piece of ammunition to make a 60-foot cone of copies: Dexterity save, 3d8 damage of the weapon's type, half on a success.",
+    "edition": "2014",
+    "source": "kc"
+  },
+  {
+    "name": "Conjure Barrage",
+    "level": 3,
+    "school": "Conjuration",
     "casting_time": "Action",
     "range": "Self",
     "components": "V, S, M (a Melee or Ranged weapon worth at least 1 CP)",
@@ -1563,8 +1917,8 @@
       "Ranger"
     ],
     "attack_type": null,
-    "description": "You brandish a weapon and conjure a spectral volley of identical projectiles that rain down in a 60-foot cone. Creatures in the area must succeed on a Dexterity save or take force damage.",
-    "edition": "both",
+    "description": "Spectral copies of the weapon used in the casting fly out in a 60-foot Cone: chosen creatures make a Dexterity save for 5d8 Force, half on a success (+1d8 per slot level above 3).",
+    "edition": "2024",
     "source": "kc"
   },
   {
@@ -1581,7 +1935,7 @@
       "Wizard"
     ],
     "attack_type": null,
-    "description": "You summon constructs of metal and magic that fight for you. They obey your commands and last for the duration.",
+    "description": "Intangible construct spirits fill a Medium space for the duration and move up to 30 feet when you move. On casting and as a Magic action later, they affect one target within 5 feet of them: Clockwork Force (Dexterity save, 3d6 Force, half on success) or Orderly Ward (1d6 + your spellcasting modifier Temporary Hit Points). +1d6 to both per slot level above 3.",
     "edition": "2024",
     "source": "kc"
   },
@@ -1614,6 +1968,7 @@
     "concentration": true,
     "ritual": false,
     "classes": [
+      "Artificer",
       "Druid",
       "Paladin",
       "Ranger"
@@ -1633,9 +1988,14 @@
     "duration": "Concentration, up to 1 minute",
     "concentration": true,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Bard",
+      "Sorcerer",
+      "Warlock",
+      "Wizard"
+    ],
     "attack_type": null,
-    "description": "You reach into the mind of a creature and force it to perceive all other creatures as enemies. On a failed Intelligence save it must attack the nearest creature on its turns.",
+    "description": "One creature makes an Intelligence save (auto-success if immune to fear) or sees every creature as an enemy: it picks targets at random among creatures in range and must take any opportunity attack provoked. It repeats the save each time it takes damage.",
     "edition": "2014",
     "source": "kc"
   },
@@ -1649,7 +2009,11 @@
     "duration": "Instantaneous",
     "concentration": false,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Druid",
+      "Sorcerer",
+      "Wizard"
+    ],
     "attack_type": null,
     "description": "Choose a point on the ground. A fountain of churned earth and stone erupts in a 20-foot cube. Creatures in the area take bludgeoning damage on a failed Dexterity save and the ground becomes difficult terrain.",
     "edition": "2014",
@@ -1686,7 +2050,13 @@
     "duration": "Concentration, up to 1 hour",
     "concentration": true,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Artificer",
+      "Druid",
+      "Ranger",
+      "Sorcerer",
+      "Wizard"
+    ],
     "attack_type": null,
     "description": "You touch a quiver containing arrows or bolts. When a target is hit by a ranged weapon attack using one of those pieces of ammunition, the target takes extra fire damage. The magic ends on a piece of ammunition when it hits or misses.",
     "edition": "2014",
@@ -1741,9 +2111,15 @@
     "duration": "Concentration, up to 1 hour",
     "concentration": true,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Artificer",
+      "Bard",
+      "Sorcerer",
+      "Warlock",
+      "Wizard"
+    ],
     "attack_type": null,
-    "description": "For the duration, you and any willing creatures you designate within range have resistance to psychic damage and advantage on Intelligence, Wisdom, and Charisma saving throws.",
+    "description": "You or one willing creature within range gains resistance to psychic damage and advantage on Intelligence, Wisdom, and Charisma saves for the duration. One extra target per slot level above 3rd (all within 30 feet of each other).",
     "edition": "2014",
     "source": "kc"
   },
@@ -1751,7 +2127,7 @@
     "name": "Laeral's Silver Lance",
     "level": 3,
     "school": "Evocation",
-    "casting_time": "10 minutes",
+    "casting_time": "Action",
     "range": "Self",
     "components": "V, S, M (a silver pin worth 250+ GP)",
     "duration": "Instantaneous",
@@ -1763,7 +2139,7 @@
       "Wizard"
     ],
     "attack_type": null,
-    "description": "You create a shimmering lance of silver force that you can hurl or wield. It deals force damage and can temporarily suppress a creature's ability to teleport or plane shift.",
+    "description": "A 120-foot by 5-foot Line of silver energy: chosen creatures in it make a Strength save for 3d10 Force and Prone, half damage only on a success. +1d10 per slot level above 3. Needs a 250 GP silver pin.",
     "edition": "2024",
     "source": "kc"
   },
@@ -1777,7 +2153,10 @@
     "duration": "8 hours",
     "concentration": false,
     "ritual": true,
-    "classes": [],
+    "classes": [
+      "Bard",
+      "Wizard"
+    ],
     "attack_type": null,
     "description": "A 10-foot-radius immobile dome of force springs into existence around and above you. The spell fails if a Large or larger creature is inside. Creatures and objects within when you cast can move through freely, but others cannot.",
     "edition": "2014",
@@ -1793,9 +2172,30 @@
     "duration": "Instantaneous",
     "concentration": false,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Cleric",
+      "Wizard"
+    ],
     "attack_type": null,
     "description": "You sacrifice some of your own health to mend another creature. You take necrotic damage, and the target regains hit points equal to twice the necrotic damage you take.",
+    "edition": "2014",
+    "source": "kc"
+  },
+  {
+    "name": "Lightning Arrow",
+    "level": 3,
+    "school": "Transmutation",
+    "casting_time": "1 bonus action, which you can take immediately after hitting or missing a target with a ranged attack using a weapon",
+    "range": "Self",
+    "components": "V, S",
+    "duration": "Concentration, up to 1 minute",
+    "concentration": true,
+    "ritual": false,
+    "classes": [
+      "Ranger"
+    ],
+    "attack_type": null,
+    "description": "Your next ranged weapon attack before the spell ends becomes a lightning bolt: 4d8 lightning on a hit (half on a miss) instead of normal damage, and every creature within 10 feet of the target makes a Dexterity save for 2d8, half on a success.",
     "edition": "2014",
     "source": "kc"
   },
@@ -1813,8 +2213,8 @@
       "Ranger"
     ],
     "attack_type": null,
-    "description": "The next time you make a ranged weapon attack during the spell's duration, the weapon's ammunition transforms into a bolt of lightning. The attack deals lightning damage and the lightning leaps to additional targets.",
-    "edition": "both",
+    "description": "Bonus Action right after a ranged weapon attack hits or misses: the target takes 4d8 Lightning on a hit (half on a miss) instead of the attack's effects, and creatures within 10 feet make a Dexterity save for 2d8, half on a success (+1d8 per slot level above 3).",
+    "edition": "2024",
     "source": "kc"
   },
   {
@@ -1827,7 +2227,10 @@
     "duration": "Concentration, up to 10 minutes",
     "concentration": true,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Sorcerer",
+      "Wizard"
+    ],
     "attack_type": null,
     "description": "You create six tiny meteors in your space. As a bonus action you can send one or two streaking toward points you choose, where they explode in a 5-foot radius dealing fire and bludgeoning damage.",
     "edition": "2014",
@@ -1840,10 +2243,15 @@
     "casting_time": "1 bonus action",
     "range": "Self",
     "components": "V, S",
-    "duration": ". The spirits are intangible and invulnerable. Until the spell",
-    "concentration": false,
+    "duration": "Concentration, up to 1 minute",
+    "concentration": true,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Cleric",
+      "Paladin",
+      "Warlock",
+      "Wizard"
+    ],
     "attack_type": null,
     "description": "You call forth spirits of the dead that flit around you. Your attacks deal extra necrotic, radiant, or cold damage, and creatures of your choice within 10 feet have their speed reduced.",
     "edition": "2014",
@@ -1880,7 +2288,10 @@
     "duration": "Concentration, up to 1 hour",
     "concentration": true,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Warlock",
+      "Wizard"
+    ],
     "attack_type": null,
     "description": "You summon one or more demons of challenge rating 1 or lower. They appear in unoccupied spaces and act according to their chaotic nature, though you can try to command them.",
     "edition": "2014",
@@ -1896,7 +2307,10 @@
     "duration": "Concentration, up to 1 hour",
     "concentration": true,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Warlock",
+      "Wizard"
+    ],
     "attack_type": null,
     "description": "You call forth a shadowy spirit that takes a form of your choosing (fury, despair, or fear). It obeys your commands and has abilities matching its chosen emotion.",
     "edition": "2014",
@@ -1945,12 +2359,16 @@
     "level": 3,
     "school": "Conjuration",
     "casting_time": "1 action",
-    "range": ". Immediately after you disappear, a thunderous boom sounds,",
+    "range": "90 feet",
     "components": "V",
     "duration": "Instantaneous",
     "concentration": false,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Sorcerer",
+      "Warlock",
+      "Wizard"
+    ],
     "attack_type": null,
     "description": "You teleport yourself to an unoccupied space within range. A thunderous boom sounds, and each creature within 10 feet of the space you left must succeed on a Constitution save or take thunder damage.",
     "edition": "2014",
@@ -1961,12 +2379,16 @@
     "level": 3,
     "school": "Conjuration",
     "casting_time": "1 action",
-    "range": ". The area can be up to 30 feet long, up to 10 feet wide, and up",
+    "range": "120 feet",
     "components": "V, S, M (a drop of water)",
     "duration": "Instantaneous",
     "concentration": false,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Druid",
+      "Sorcerer",
+      "Wizard"
+    ],
     "attack_type": null,
     "description": "You create a wall of water that crashes down on an area. Creatures in the area must succeed on a Dexterity save or take bludgeoning damage and be knocked prone; the water then spreads and extinguishes flames.",
     "edition": "2014",
@@ -1982,7 +2404,10 @@
     "duration": "8 hours",
     "concentration": false,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Artificer",
+      "Wizard"
+    ],
     "attack_type": null,
     "description": "You touch an object that is not attached or carried and it animates as a tiny construct under your control. It can perform simple tasks and has limited combat ability.",
     "edition": "2014",
@@ -1998,9 +2423,11 @@
     "duration": "Concentration, up to 10 minutes",
     "concentration": true,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Wizard"
+    ],
     "attack_type": null,
-    "description": "You create a wall of swirling sand on the ground. It blocks line of sight, is difficult terrain, and can blind creatures that end their turn in it.",
+    "description": "A wall of swirling sand up to 30 feet long, 10 feet high, and 10 feet thick. It blocks sight but not movement; a creature inside is blinded and spends 3 feet of movement for every 1 foot it moves there.",
     "edition": "2014",
     "source": "kc"
   },
@@ -2009,14 +2436,18 @@
     "level": 3,
     "school": "Evocation",
     "casting_time": "1 action",
-    "range": ". You can make the wall up to 30 feet long, 10 feet high, and 1",
+    "range": "60 feet",
     "components": "V, S, M (a drop of water)",
     "duration": "Concentration, up to 10 minutes",
     "concentration": true,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Druid",
+      "Sorcerer",
+      "Wizard"
+    ],
     "attack_type": null,
-    "description": "You create a wall of water that can be shaped as a sheet or a ring. It heavily obscures the area, extinguishes fire, and deals cold damage to creatures that pass through it in certain conditions.",
+    "description": "A 30-foot-long or 20-foot-ring wall of water, 1 foot thick. Its space is difficult terrain, ranged weapon attacks through it have disadvantage, and fire passing through it deals half damage. Cold damage freezes sections of it solid.",
     "edition": "2014",
     "source": "kc"
   },
@@ -2030,7 +2461,9 @@
     "duration": "Concentration, up to 10 minutes",
     "concentration": true,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Paladin"
+    ],
     "attack_type": null,
     "description": "Life-preserving energy radiates from you in a 30-foot aura. Nonhostile living creatures in the aura have resistance to necrotic damage and their hit point maximum can't be reduced; a creature at 0 hit points that starts its turn there gains 1 hit point.",
     "edition": "2014",
@@ -2051,7 +2484,7 @@
       "Paladin"
     ],
     "attack_type": null,
-    "description": "Purifying energy radiates from you in a 30-foot aura. Nonhostile creatures in the aura can't become diseased, have resistance to poison damage, and have advantage on saving throws against effects that cause certain conditions.",
+    "description": "A 30-foot aura moves with you for up to 10 minutes. You and your allies in it have resistance to poison damage and advantage on saves against effects that blind, charm, deafen, frighten, paralyze, poison, or stun (the 2014 version also blocks disease).",
     "edition": "both",
     "source": "kc"
   },
@@ -2072,7 +2505,7 @@
       "Wizard"
     ],
     "attack_type": null,
-    "description": "When you take damage, you can use your reaction to force the attacker to take force damage equal to the damage you just took (up to a limit).",
+    "description": "Reaction when you take damage: reduce it by 4d6 + your spellcasting modifier, and if a creature within range caused it, that creature makes a Constitution save for 4d6 Force, half on a success. +1d6 to both per slot level above 4.",
     "edition": "2024",
     "source": "kc"
   },
@@ -2086,7 +2519,13 @@
     "duration": "1 hour",
     "concentration": false,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Bard",
+      "Druid",
+      "Sorcerer",
+      "Warlock",
+      "Wizard"
+    ],
     "attack_type": null,
     "description": "You attempt to charm a creature you can see. On a failed Wisdom save it is charmed by you until the spell ends or you or your companions do anything harmful to it.",
     "edition": "2014",
@@ -2117,7 +2556,7 @@
     "name": "Doomtide",
     "level": 4,
     "school": "Conjuration",
-    "casting_time": "Bonus Action",
+    "casting_time": "Action",
     "range": "120 feet",
     "components": "V, S, M (soot and a dried eel)",
     "duration": "Concentration, up to 1 minute",
@@ -2129,7 +2568,7 @@
       "Warlock"
     ],
     "attack_type": null,
-    "description": "You summon a wave of necrotic energy and shadow that washes over an area, dealing necrotic damage and possibly imposing the frightened or other conditions.",
+    "description": "A 20-foot-radius Sphere of magical Darkness fog that drifts 10 feet away from you each turn until a strong wind disperses it. Creatures it touches make a Wisdom save (once per turn): 5d6 Psychic and a 1d6 penalty on saves until the end of their next turn, half damage only on a success. Can be cast as a Circle spell for a 1-mile range and permanent duration.",
     "edition": "2024",
     "source": "kc"
   },
@@ -2143,9 +2582,32 @@
     "duration": "Concentration, up to 1 minute",
     "concentration": true,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Artificer",
+      "Druid",
+      "Warlock",
+      "Wizard"
+    ],
     "attack_type": null,
-    "description": "Choose a creature and an elemental damage type. The target loses resistance to that type and takes extra damage of that type whenever it takes such damage.",
+    "description": "One creature makes a Constitution save or, for the duration, loses resistance to your chosen damage type (acid, cold, fire, lightning, or thunder) and takes an extra 2d6 of that type the first time each turn it takes such damage. One extra target per slot level above 4th.",
+    "edition": "2014",
+    "source": "kc"
+  },
+  {
+    "name": "Evard's Black Tentacles",
+    "level": 4,
+    "school": "Conjuration",
+    "casting_time": "1 action",
+    "range": "90 feet",
+    "components": "V, S, M (a tentacle)",
+    "duration": "Concentration, up to 1 minute",
+    "concentration": true,
+    "ritual": false,
+    "classes": [
+      "Wizard"
+    ],
+    "attack_type": null,
+    "description": "Tentacles fill a 20-foot square of difficult terrain. A creature entering it for the first time on a turn or starting its turn there makes a Dexterity save or takes 3d6 bludgeoning and is restrained; restrained creatures take 3d6 at the start of each turn and can escape with a Strength or Dexterity check.",
     "edition": "2014",
     "source": "kc"
   },
@@ -2163,8 +2625,8 @@
       "Wizard"
     ],
     "attack_type": null,
-    "description": "Squirming, ebony tentacles fill a 20-foot square. Creatures in the area must succeed on a Dexterity save or take bludgeoning damage and be restrained; restrained creatures take damage at the start of their turns.",
-    "edition": "both",
+    "description": "Tentacles fill a 20-foot square of Difficult Terrain. Creatures in it, entering it, or ending a turn there make a Strength save (once per turn) for 3d6 Bludgeoning and Restrained; a Restrained creature can use an action on an Athletics check against your DC to escape.",
+    "edition": "2024",
     "source": "kc"
   },
   {
@@ -2198,7 +2660,9 @@
     "duration": "Instantaneous",
     "concentration": false,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Paladin"
+    ],
     "attack_type": null,
     "description": "You summon a loyal steed of a more powerful type than the standard Find Steed, such as a griffon or pegasus. It serves you as a mount and companion.",
     "edition": "2014",
@@ -2219,7 +2683,7 @@
       "Druid"
     ],
     "attack_type": null,
-    "description": "You become infused with moonlight, shedding bright light and gaining the ability to deal radiant damage with your attacks or to blind creatures that attack you.",
+    "description": "For the duration you shed 20 feet of bright light, resist Radiant damage, and deal an extra 2d6 Radiant on melee hits. Reaction after a creature within 60 feet damages you: it makes a Constitution save or is Blinded until the end of your next turn.",
     "edition": "2024",
     "source": "kc"
   },
@@ -2233,9 +2697,32 @@
     "duration": "24 hours",
     "concentration": false,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Sorcerer",
+      "Warlock",
+      "Wizard"
+    ],
     "attack_type": null,
-    "description": "You permanently seal a planar gate or portal within range, preventing it from being opened by normal means for the duration (or permanently if cast with a higher slot or special components).",
+    "description": "A stationary 30-foot cube: portals in it close and can't open, and planar travel into or out of it (Gate, Plane Shift and the like) fails. At 6th level or higher it lasts until dispelled. Consumes a broken portal key.",
+    "edition": "2014",
+    "source": "kc"
+  },
+  {
+    "name": "Grasping Vine",
+    "level": 4,
+    "school": "Conjuration",
+    "casting_time": "1 bonus action",
+    "range": "30 feet",
+    "components": "V, S",
+    "duration": "Concentration, up to 1 minute",
+    "concentration": true,
+    "ritual": false,
+    "classes": [
+      "Druid",
+      "Ranger"
+    ],
+    "attack_type": null,
+    "description": "A vine sprouts within range. On casting and as a bonus action each turn, it lashes a creature within 30 feet of it: Dexterity save or pulled 20 feet toward the vine.",
     "edition": "2014",
     "source": "kc"
   },
@@ -2254,8 +2741,8 @@
       "Ranger"
     ],
     "attack_type": null,
-    "description": "You cause a vine to sprout from a point within range. You can use a bonus action to direct the vine to grapple a creature or pull it toward the vine's location.",
-    "edition": "both",
+    "description": "A vine sprouts within range and makes a melee spell attack against a creature within 30 feet of it: 4d8 Bludgeoning, pulled 30 feet toward it, and Grappled if Huge or smaller. A Bonus Action on later turns repeats the attack; one more grapple per slot level above 4.",
+    "edition": "2024",
     "source": "kc"
   },
   {
@@ -2268,7 +2755,10 @@
     "duration": "Concentration, up to 1 minute",
     "concentration": true,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Druid",
+      "Ranger"
+    ],
     "attack_type": null,
     "description": "You transform into a powerful guardian form, either a primal beast or a great tree, gaining enhanced senses, attacks, or defensive abilities for the duration.",
     "edition": "2014",
@@ -2280,11 +2770,12 @@
     "school": "Conjuration",
     "casting_time": "Action",
     "range": "Touch",
-    "components": "for the spell. The chest can contain up to 12 cubic feet of nonliving material (3 feet by 2 feet by 2 feet).",
-    "duration": "Instantaneous",
+    "components": "V, S, M (a chest, 3 feet by 2 feet by 2 feet, constructed from rare materials worth 5,000+ GP, and a Tiny replica of the chest made from the same materials worth 50+ GP)",
+    "duration": "Until dispelled",
     "concentration": false,
     "ritual": false,
     "classes": [
+      "Artificer",
       "Wizard"
     ],
     "attack_type": null,
@@ -2303,6 +2794,7 @@
     "concentration": false,
     "ritual": false,
     "classes": [
+      "Artificer",
       "Wizard"
     ],
     "attack_type": null,
@@ -2321,6 +2813,7 @@
     "concentration": false,
     "ritual": false,
     "classes": [
+      "Artificer",
       "Wizard"
     ],
     "attack_type": null,
@@ -2332,6 +2825,25 @@
     "name": "Otiluke's Resilient Sphere",
     "level": 4,
     "school": "Evocation",
+    "casting_time": "1 action",
+    "range": "30 feet",
+    "components": "V, S, M (a glass sphere)",
+    "duration": "Concentration, up to 1 minute",
+    "concentration": true,
+    "ritual": false,
+    "classes": [
+      "Artificer",
+      "Wizard"
+    ],
+    "attack_type": null,
+    "description": "A sphere of shimmering force encloses a creature or object of Large size or smaller. The sphere is weightless and immune to damage; nothing can pass through it, though the enclosed creature can breathe.",
+    "edition": "2014",
+    "source": "kc"
+  },
+  {
+    "name": "Otiluke's Resilient Sphere",
+    "level": 4,
+    "school": "Abjuration",
     "casting_time": "Action",
     "range": "30 feet",
     "components": "V, S, M (a glass sphere)",
@@ -2339,11 +2851,12 @@
     "concentration": true,
     "ritual": false,
     "classes": [
+      "Artificer",
       "Wizard"
     ],
     "attack_type": null,
     "description": "A sphere of shimmering force encloses a creature or object of Large size or smaller. The sphere is weightless and immune to damage; nothing can pass through it, though the enclosed creature can breathe.",
-    "edition": "both",
+    "edition": "2024",
     "source": "kc"
   },
   {
@@ -2356,7 +2869,12 @@
     "duration": "Instantaneous",
     "concentration": false,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Bard",
+      "Sorcerer",
+      "Warlock",
+      "Wizard"
+    ],
     "attack_type": null,
     "description": "You unleash a shimmering lance of psychic energy at a creature you can see or name. On a failed Intelligence save it takes psychic damage and is incapacitated until the start of your next turn.",
     "edition": "2014",
@@ -2372,9 +2890,11 @@
     "duration": "Concentration, up to 1 minute",
     "concentration": true,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Warlock"
+    ],
     "attack_type": null,
-    "description": "Flame-like shadows wreathe your body, turning bright light into dim light and granting you resistance to radiant damage. While the shadows last, creatures that hit you with melee attacks take necrotic damage.",
+    "description": "Shadows wreathe you until the spell ends: you are heavily obscured, light within 10 feet dims a step, you resist radiant damage, and a creature within 10 feet that hits you with an attack takes 2d8 necrotic.",
     "edition": "2014",
     "source": "kc"
   },
@@ -2388,9 +2908,13 @@
     "duration": "Concentration, up to 10 minutes",
     "concentration": true,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Sorcerer",
+      "Warlock",
+      "Wizard"
+    ],
     "attack_type": null,
-    "description": "You create a 30-foot-radius sphere of greenish light. Creatures that start their turn in the light take radiant damage and gain a level of exhaustion on a failed Constitution save; the light also suppresses magical darkness.",
+    "description": "Dim green light fills a 30-foot sphere. A creature entering it for the first time on a turn or starting its turn there makes a Constitution save or takes 4d10 radiant, gains a level of exhaustion, and glows so it can't benefit from invisibility. The glow and exhaustion end with the spell.",
     "edition": "2014",
     "source": "kc"
   },
@@ -2409,8 +2933,26 @@
       "Wizard"
     ],
     "attack_type": null,
-    "description": "You call down a storm of spellfire in an area that deals radiant damage to creatures and can destroy magical effects or force concentration checks.",
+    "description": "A 20-foot-radius, 20-foot-high Cylinder of spellfire: creatures in it, entering it, or ending a turn there make a Constitution save (once per turn) for 4d10 Radiant, half on success. A creature casting a spell inside must pass a Constitution save or the spell fizzles (slot kept). You can exempt creatures. +1d10 per slot level above 4; has a Circle casting option.",
     "edition": "2024",
+    "source": "kc"
+  },
+  {
+    "name": "Staggering Smite",
+    "level": 4,
+    "school": "Evocation",
+    "casting_time": "1 bonus action",
+    "range": "Self",
+    "components": "V",
+    "duration": "Concentration, up to 1 minute",
+    "concentration": true,
+    "ritual": false,
+    "classes": [
+      "Paladin"
+    ],
+    "attack_type": null,
+    "description": "Your next melee weapon hit before the spell ends deals an extra 4d6 psychic, and the target makes a Wisdom save or has disadvantage on attack rolls and ability checks and can't take reactions until the end of its next turn.",
+    "edition": "2014",
     "source": "kc"
   },
   {
@@ -2427,8 +2969,8 @@
       "Paladin"
     ],
     "attack_type": null,
-    "description": "The next time you hit with a melee weapon attack, your weapon strikes with psychic force. The target takes psychic damage and must succeed on a Wisdom save or have disadvantage on attack rolls and ability checks and be unable to take reactions until the end of its next turn.",
-    "edition": "both",
+    "description": "Bonus Action right after a Melee weapon or Unarmed Strike hit: an extra 4d6 Psychic, and the target makes a Wisdom save or is Stunned until the end of your next turn (+1d6 per slot level above 4).",
+    "edition": "2024",
     "source": "kc"
   },
   {
@@ -2441,9 +2983,12 @@
     "duration": "Concentration, up to 1 minute",
     "concentration": true,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Sorcerer",
+      "Wizard"
+    ],
     "attack_type": null,
-    "description": "You create a 20-foot-radius sphere of whirling air. As a bonus action you can cause a bolt of lightning to leap from the sphere toward a creature, dealing lightning damage on a failed Dexterity save. The sphere also makes ranged attacks difficult.",
+    "description": "A 20-foot sphere of whirling air: creatures in it when it appears or ending a turn there make a Strength save or take 2d6 bludgeoning, and it is difficult terrain. Each turn a bonus action sends a lightning bolt (ranged spell attack, advantage against targets inside) for 4d6 lightning at a creature within 60 feet of its center. +1d6 to each per slot level above 4th.",
     "edition": "2014",
     "source": "kc"
   },
@@ -2453,7 +2998,7 @@
     "school": "Conjuration",
     "casting_time": "Action",
     "range": "90 feet",
-    "components": "V, S, M (a pickled tentacle and an eyeball ina platinum-inlaid vial worth 400+ GP)",
+    "components": "V, S, M (a pickled tentacle and an eyeball in a platinum-inlaid vial worth 400+ GP)",
     "duration": "Concentration, up to 1 hour",
     "concentration": true,
     "ritual": false,
@@ -2477,6 +3022,7 @@
     "concentration": true,
     "ritual": false,
     "classes": [
+      "Artificer",
       "Wizard"
     ],
     "attack_type": null,
@@ -2490,7 +3036,7 @@
     "school": "Conjuration",
     "casting_time": "Action",
     "range": "90 feet",
-    "components": "V, S, M (air, a pebble, ash, and water inside a gold- inlaid vial worth 400+ GP)",
+    "components": "V, S, M (air, a pebble, ash, and water inside a gold-inlaid vial worth 400+ GP)",
     "duration": "Concentration, up to 1 hour",
     "concentration": true,
     "ritual": false,
@@ -2514,9 +3060,12 @@
     "duration": "Concentration, up to 1 hour",
     "concentration": true,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Warlock",
+      "Wizard"
+    ],
     "attack_type": null,
-    "description": "You summon a demon of challenge rating 5 or lower. It appears and acts according to its nature; you can attempt to control it with Charisma checks, but it may turn on you if not carefully managed.",
+    "description": "Summon a demon of CR 5 or lower that rolls its own initiative and follows your verbal commands. At the end of each of its turns it makes a Charisma save (disadvantage if you say its true name); on a success it breaks free and attacks the nearest non-demons. A blood circle can trap it.",
     "edition": "2014",
     "source": "kc"
   },
@@ -2530,7 +3079,10 @@
     "duration": "Instantaneous",
     "concentration": false,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Sorcerer",
+      "Wizard"
+    ],
     "attack_type": null,
     "description": "You point at a location and a 1-foot-diameter glowing green orb of acid streaks there and explodes. Creatures in a 20-foot radius take acid damage on a failed Dexterity save, and residual acid continues to burn on a failed save.",
     "edition": "2014",
@@ -2546,7 +3098,11 @@
     "duration": "Concentration, up to 1 minute",
     "concentration": true,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Druid",
+      "Sorcerer",
+      "Wizard"
+    ],
     "attack_type": null,
     "description": "You create a sphere of water that can restrain creatures inside it. You can move the sphere and force it to dash, potentially carrying restrained creatures with it or slamming them into surfaces.",
     "edition": "2014",
@@ -2588,8 +3144,26 @@
       "Wizard"
     ],
     "attack_type": null,
-    "description": "You wrap yourself in a cloak of moonlight that grants you resistance to certain damage types, the ability to hover, and protection from some divination effects.",
+    "description": "A 20-foot Emanation of moonlight: you and allies in it have Half Cover and resist Cold, Lightning, and Radiant. You can end the spell early for Liberation (a Reaction turns a failed save against Frightened, Grappled, or Restrained into a success) or Respite (a Magic action heals you or an ally inside 4d10 + your spellcasting modifier). Needs a 50 GP moonstone.",
     "edition": "2024",
+    "source": "kc"
+  },
+  {
+    "name": "Banishing Smite",
+    "level": 5,
+    "school": "Abjuration",
+    "casting_time": "1 bonus action",
+    "range": "Self",
+    "components": "V",
+    "duration": "Concentration, up to 1 minute",
+    "concentration": true,
+    "ritual": false,
+    "classes": [
+      "Paladin"
+    ],
+    "attack_type": null,
+    "description": "Your next weapon hit before the spell ends deals an extra 5d10 force; if that leaves the target at 50 hit points or fewer it is banished (to its home plane if extraplanar, otherwise to a harmless demiplane, incapacitated) until the spell ends.",
+    "edition": "2014",
     "source": "kc"
   },
   {
@@ -2606,8 +3180,8 @@
       "Paladin"
     ],
     "attack_type": null,
-    "description": "The next time you hit with a melee weapon attack, your weapon crackles with force. The target takes force damage, and if this reduces it to 50 hit points or fewer it is banished to a harmless demiplane until the spell ends.",
-    "edition": "both",
+    "description": "Bonus Action right after a Melee weapon or Unarmed Strike hit: an extra 5d10 Force, and if that leaves the target at 50 HP or fewer it makes a Charisma save or is sent to a harmless demiplane, Incapacitated, until the spell ends.",
+    "edition": "2024",
     "source": "kc"
   },
   {
@@ -2621,6 +3195,7 @@
     "concentration": true,
     "ritual": false,
     "classes": [
+      "Artificer",
       "Cleric",
       "Paladin",
       "Wizard"
@@ -2628,6 +3203,24 @@
     "attack_type": null,
     "description": "Divine energy radiates from you in a 30-foot aura. Creatures of your choice in the aura have advantage on saving throws against spells and other magical effects, and resistance to damage from such effects if they succeed.",
     "edition": "both",
+    "source": "kc"
+  },
+  {
+    "name": "Conjure Volley",
+    "level": 5,
+    "school": "Conjuration",
+    "casting_time": "1 action",
+    "range": "150 feet",
+    "components": "V, S, M (a Melee or Ranged weapon worth at least 1 CP)",
+    "duration": "Instantaneous",
+    "concentration": false,
+    "ritual": false,
+    "classes": [
+      "Ranger"
+    ],
+    "attack_type": null,
+    "description": "Fire a nonmagical piece of ammunition or throw a nonmagical weapon: creatures in a 40-foot-radius, 20-foot-high cylinder make a Dexterity save for 8d8 of the weapon's damage type, half on a success.",
+    "edition": "2014",
     "source": "kc"
   },
   {
@@ -2644,8 +3237,8 @@
       "Ranger"
     ],
     "attack_type": null,
-    "description": "You brandish a weapon and fire a piece of ammunition that multiplies into a volley. Creatures in a 40-foot-radius, 20-foot-high cylinder must succeed on a Dexterity save or take force damage.",
-    "edition": "both",
+    "description": "Spectral copies of the weapon used in the casting rain on a 40-foot-radius, 20-foot-high Cylinder: chosen creatures make a Dexterity save for 8d8 Force, half on a success.",
+    "edition": "2024",
     "source": "kc"
   },
   {
@@ -2653,12 +3246,16 @@
     "level": 5,
     "school": "Transmutation",
     "casting_time": "1 action",
-    "range": ". Choose one of the following effects when you cast the spell.",
+    "range": "300 feet",
     "components": "V, S",
     "duration": "Concentration, up to 1 hour",
     "concentration": true,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Druid",
+      "Sorcerer",
+      "Wizard"
+    ],
     "attack_type": null,
     "description": "You take control of the air in a 100-foot cube, choosing one of several effects: gusts that push creatures, a downdraft that forces flying creatures to the ground, or an updraft that lifts creatures upward.",
     "edition": "2014",
@@ -2674,7 +3271,10 @@
     "duration": "Concentration, up to 1 hour",
     "concentration": true,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Warlock",
+      "Wizard"
+    ],
     "attack_type": null,
     "description": "Threads of dark power leap from your fingers to pierce up to five Small or Medium corpses. Each becomes an undead skeleton or zombie under your control for the duration.",
     "edition": "2014",
@@ -2690,9 +3290,12 @@
     "duration": "Concentration, up to 1 minute",
     "concentration": true,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Cleric",
+      "Wizard"
+    ],
     "attack_type": null,
-    "description": "A cylinder of bright sunlight fills an area. Creatures that start their turn in the light or enter it take radiant damage on a failed Constitution save, and the light suppresses magical darkness and affects undead and oozes particularly.",
+    "description": "A 30-foot-radius, 40-foot-high cylinder of sunlight: creatures in it when it appears or ending a turn there make a Constitution save for 4d10 radiant, half on a success. Within 60 feet of it, a bonus action moves it up to 60 feet.",
     "edition": "2014",
     "source": "kc"
   },
@@ -2710,27 +3313,28 @@
       "Paladin"
     ],
     "attack_type": null,
-    "description": "You strike the ground and send a wave of divine energy outward. Creatures of your choice within 30 feet must succeed on a Constitution save or take thunder or radiant damage and be knocked prone.",
+    "description": "Chosen creatures within 30 feet of you make a Constitution save: 5d6 thunder plus 5d6 radiant or necrotic (your choice) and knocked prone, or half damage only on a success.",
     "edition": "both",
     "source": "kc"
   },
   {
-    "name": "Dispel Evil and Goopd",
+    "name": "Enervation",
     "level": 5,
-    "school": "Abjuration",
-    "casting_time": "Action",
-    "range": "Self",
-    "components": "V, S, M (powdered silver and iron)",
+    "school": "Necromancy",
+    "casting_time": "1 action",
+    "range": "60 feet",
+    "components": "V, S",
     "duration": "Concentration, up to 1 minute",
     "concentration": true,
     "ritual": false,
     "classes": [
-      "Cleric",
-      "Paladin"
+      "Sorcerer",
+      "Warlock",
+      "Wizard"
     ],
     "attack_type": null,
-    "description": "You can end certain magical effects or conditions caused by celestials, elementals, fey, fiends, or undead, or use a melee attack to deal damage and potentially banish such a creature.",
-    "edition": "2024",
+    "description": "A creature within 60 feet makes a Dexterity save: 4d8 necrotic on a failure, and each turn you can spend your action to deal 4d8 necrotic automatically; 2d8 and the spell ends on a success. You heal half the necrotic damage dealt. Ends if you use your action otherwise or the target leaves range or gains total cover. +1d8 per slot level above 5th.",
+    "edition": "2014",
     "source": "kc"
   },
   {
@@ -2750,7 +3354,7 @@
     ],
     "attack_type": null,
     "description": "Target within 60 feet makes a Dexterity save: 6d8 Necrotic on a failure, and on later turns a Bonus Action deals 2d8 Necrotic automatically. Half the initial damage on a success, and the spell ends. You heal half the Necrotic damage dealt. Ends if the target leaves range or gains Total Cover. +1d8 initial per slot level above 5.",
-    "edition": "both",
+    "edition": "2024",
     "source": "kc"
   },
   {
@@ -2763,7 +3367,11 @@
     "duration": "Concentration, up to 1 minute",
     "concentration": true,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Sorcerer",
+      "Warlock",
+      "Wizard"
+    ],
     "attack_type": null,
     "description": "You teleport up to 60 feet to an unoccupied space you can see. On each of your turns before the spell ends you can use a bonus action to teleport in this way again.",
     "edition": "2014",
@@ -2799,7 +3407,10 @@
     "duration": "Concentration, up to 1 hour",
     "concentration": true,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Cleric",
+      "Paladin"
+    ],
     "attack_type": null,
     "description": "You imbue a weapon you touch with holy power. It sheds bright light, deals extra radiant damage on hits, and can burst with radiant energy that blinds nearby enemies when the spell ends.",
     "edition": "2014",
@@ -2815,9 +3426,12 @@
     "duration": "Concentration, up to 1 minute",
     "concentration": true,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Sorcerer",
+      "Wizard"
+    ],
     "attack_type": null,
-    "description": "Flames wreathe a creature you can see. On a failed Dexterity save it takes fire damage and is set ablaze, taking ongoing fire damage at the start of its turns until it or another creature extinguishes the flames.",
+    "description": "One creature makes a Dexterity save: 8d6 fire (half on a success). On a failure it keeps burning, shedding light and taking 4d6 fire on each failed save at the end of its turns until it succeeds. Nonmagical means can't douse it, and a creature it kills turns to ash.",
     "edition": "2014",
     "source": "kc"
   },
@@ -2831,7 +3445,10 @@
     "duration": "Concentration, up to 1 hour",
     "concentration": true,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Warlock",
+      "Wizard"
+    ],
     "attack_type": null,
     "description": "You call forth a devil of challenge rating 6 or lower. It appears and may negotiate service; you must offer a suitable payment or risk it acting against your interests.",
     "edition": "2014",
@@ -2842,7 +3459,7 @@
     "level": 5,
     "school": "Evocation",
     "casting_time": "Action",
-    "range": ". While in this area, creatures have the Blinded and Deafened",
+    "range": "120 feet",
     "components": "V, S, M (a pinch of phosphorus)",
     "duration": "Concentration, up to 1 minute",
     "concentration": true,
@@ -2852,7 +3469,7 @@
       "Wizard"
     ],
     "attack_type": null,
-    "description": "You create a storm of radiant energy in a cylinder that deals radiant damage to creatures inside and can impose the blinded condition.",
+    "description": "A 10-foot-radius, 40-foot-high Cylinder of light and thunder: creatures inside are Blinded and Deafened and can't cast Verbal spells. Creatures in it, entering it, or ending a turn there make a Constitution save (once per turn) for 2d10 Radiant plus 2d10 Thunder, half on success. +1d10 to each per slot level above 5.",
     "edition": "2024",
     "source": "kc"
   },
@@ -2866,30 +3483,12 @@
     "duration": "Concentration, up to 1 minute",
     "concentration": true,
     "ritual": false,
-    "classes": [],
-    "attack_type": null,
-    "description": "A swirling mass of water appears in a 30-foot radius. Creatures in the area must succeed on a Strength save or take bludgeoning damage and be pulled toward the center; the area is difficult terrain.",
-    "edition": "2014",
-    "source": "kc"
-  },
-  {
-    "name": "Masss Cure Wounds",
-    "level": 5,
-    "school": "Abjuration",
-    "casting_time": "Action",
-    "range": ". Choose up to six creatures in a 30-foot-radius Sphere centered",
-    "components": "V, S",
-    "duration": "Instantaneous",
-    "concentration": false,
-    "ritual": false,
     "classes": [
-      "Bard",
-      "Cleric",
       "Druid"
     ],
     "attack_type": null,
-    "description": "A wave of healing energy washes out from a point you choose. Up to six creatures of your choice regain hit points.",
-    "edition": "2024",
+    "description": "A swirling mass of water appears in a 30-foot radius. Creatures in the area must succeed on a Strength save or take bludgeoning damage and be pulled toward the center; the area is difficult terrain.",
+    "edition": "2014",
     "source": "kc"
   },
   {
@@ -2914,6 +3513,25 @@
     "name": "Negative Energy Flood",
     "level": 5,
     "school": "Necromancy",
+    "casting_time": "1 action",
+    "range": "60 feet",
+    "components": "V, M (a broken bone and a square of black silk)",
+    "duration": "Instantaneous",
+    "concentration": false,
+    "ritual": false,
+    "classes": [
+      "Warlock",
+      "Wizard"
+    ],
+    "attack_type": null,
+    "description": "One non-undead creature makes a Constitution save for 5d12 necrotic, half on a success; anything it kills rises next turn as a zombie that attacks the nearest creature it sees. An undead target instead gains half of 5d12 as temporary hit points.",
+    "edition": "2014",
+    "source": "kc"
+  },
+  {
+    "name": "Negative Energy Flood",
+    "level": 5,
+    "school": "Necromancy",
     "casting_time": "Action",
     "range": "60 feet",
     "components": "V, M (a broken bone and a square of black silk)",
@@ -2926,25 +3544,6 @@
     ],
     "attack_type": null,
     "description": "One creature within 60 feet. Non-Undead make a Constitution save for 3d10 + 25 Necrotic (half on success); a Humanoid it kills rises next turn as a Zombie that obeys you for 24 hours. An Undead target instead gains 3d10 Temporary Hit Points. +1d10 per slot level above 5.",
-    "edition": "both",
-    "source": "kc"
-  },
-  {
-    "name": "Rarry'ss Telepathic Bond",
-    "level": 5,
-    "school": "Divination",
-    "casting_time": "Action or Ritual",
-    "range": "30 feet",
-    "components": "V, S, M (two eggs)",
-    "duration": "1 hour",
-    "concentration": false,
-    "ritual": true,
-    "classes": [
-      "Bard",
-      "Wizard"
-    ],
-    "attack_type": null,
-    "description": "You forge a telepathic link among up to eight willing creatures of your choice within range. Until the spell ends the targets can communicate telepathically through the bond whether or not they share a language.",
     "edition": "2024",
     "source": "kc"
   },
@@ -2958,7 +3557,9 @@
     "duration": "1 hour",
     "concentration": false,
     "ritual": true,
-    "classes": [],
+    "classes": [
+      "Wizard"
+    ],
     "attack_type": null,
     "description": "You forge a telepathic link among up to eight willing creatures of your choice within range. Until the spell ends the targets can communicate telepathically through the bond whether or not they share a language.",
     "edition": "2014",
@@ -2974,7 +3575,12 @@
     "duration": "Concentration, up to 1 hour",
     "concentration": true,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Artificer",
+      "Bard",
+      "Sorcerer",
+      "Wizard"
+    ],
     "attack_type": null,
     "description": "Your magic deepens a creature's understanding of its own talent. It gains expertise (double proficiency bonus) in one skill of your choice for the duration.",
     "edition": "2014",
@@ -2985,7 +3591,7 @@
     "level": 5,
     "school": "Transmutation",
     "casting_time": "Action",
-    "range": "120 feet",
+    "range": "Self",
     "components": "V, S, M (a pearl worth 100+ GP)",
     "duration": "Concentration, up to 1 minute",
     "concentration": true,
@@ -2996,7 +3602,7 @@
       "Wizard"
     ],
     "attack_type": null,
-    "description": "You imbue a creature with elemental power of a type you choose, granting it resistance or immunity to that damage type and the ability to deal extra elemental damage with its attacks.",
+    "description": "You gain Resistance to Acid, Cold, Fire, Lightning, or Thunder (your choice) and Fly 30 feet with hover. On casting and at the start of each of your turns, chosen creatures within 15 feet make a Dexterity save: 2d6 damage of a type you pick and Prone, half damage only on a success. As a Circle spell, it lasts longer and extends to more creatures.",
     "edition": "2024",
     "source": "kc"
   },
@@ -3069,7 +3675,11 @@
     "duration": "Concentration, up to 1 hour",
     "concentration": true,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Druid",
+      "Sorcerer",
+      "Wizard"
+    ],
     "attack_type": null,
     "description": "You summon a draconic spirit that takes the form of a chromatic, gem, or metallic dragon of your choice. It has a breath weapon and other traits matching its type.",
     "edition": "2014",
@@ -3143,7 +3753,11 @@
     "duration": "Until dispelled",
     "concentration": false,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Artificer",
+      "Druid",
+      "Wizard"
+    ],
     "attack_type": null,
     "description": "You choose an area of stone or mud and transmute it into the other substance. Stone becomes mud (difficult terrain that can restrain) or mud becomes stone (trapping creatures that fail a Dexterity save).",
     "edition": "2014",
@@ -3159,7 +3773,11 @@
     "duration": "Concentration, up to 10 minutes",
     "concentration": true,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Sorcerer",
+      "Warlock",
+      "Wizard"
+    ],
     "attack_type": null,
     "description": "You create a wall of brilliant light that can be shaped as a line or a ring. Creatures that pass through or start their turn in the wall take radiant damage and may be blinded; the wall also sheds bright light.",
     "edition": "2014",
@@ -3195,7 +3813,10 @@
     "duration": "Concentration, up to 1 minute",
     "concentration": true,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Druid",
+      "Ranger"
+    ],
     "attack_type": null,
     "description": "You call on the spirits of nature to animate trees, vines, rocks, and weather in an area, creating multiple hazards that attack or hinder your enemies each turn.",
     "edition": "2014",
@@ -3216,7 +3837,7 @@
       "Wizard"
     ],
     "attack_type": null,
-    "description": "You surround yourself with an aura of fey majesty. Creatures of your choice that start their turn in the aura must succeed on a Wisdom save or become charmed or frightened, and you gain benefits to Charisma-based interactions.",
+    "description": "A 10-foot Emanation of majesty for the duration: creatures it reaches, or that enter or end a turn in it, can be forced into a Wisdom save (once per turn) for 4d6 Psychic, Prone, and a 10-foot push, or half damage only on a success.",
     "edition": "2024",
     "source": "kc"
   },
@@ -3250,7 +3871,9 @@
     "duration": "Instantaneous",
     "concentration": false,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Druid"
+    ],
     "attack_type": null,
     "description": "You cause up to six pillars of stone to burst from places on the ground that you can see. Each pillar is a cylinder that can lift creatures or crush them against ceilings if they fail a Dexterity save.",
     "edition": "2014",
@@ -3266,7 +3889,9 @@
     "duration": "Instantaneous",
     "concentration": false,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Wizard"
+    ],
     "attack_type": null,
     "description": "You create a homunculus by performing a special ritual with rare materials. The homunculus is permanently bound to you and serves as a loyal companion.",
     "edition": "2014",
@@ -3287,7 +3912,7 @@
       "Cleric"
     ],
     "attack_type": null,
-    "description": "You play or sing a mournful dirge that fills an area with despair. Creatures that hear it must succeed on a Wisdom save or be frightened or have their morale broken, taking psychic damage over time.",
+    "description": "A 60-foot Emanation of deathly power; you can exempt creatures. Others can't regain HP inside it, and when it reaches them or they enter or end a turn there they make a Constitution save (once per turn): 3d10 Necrotic and Prone, or half damage and halved Speed on a success. As a Circle spell it lasts longer and a failed save also adds Exhaustion that a Long Rest won't clear.",
     "edition": "2024",
     "source": "kc"
   },
@@ -3319,7 +3944,9 @@
     "duration": "24 hours",
     "concentration": false,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Druid"
+    ],
     "attack_type": null,
     "description": "You create a protected grove that lasts for an extended period. It provides benefits such as enhanced healing, alarm effects, and the ability to support additional plant or animal allies.",
     "edition": "2014",
@@ -3329,7 +3956,7 @@
     "name": "Elminster's Effulgent Spheres",
     "level": 6,
     "school": "Evocation",
-    "casting_time": "Bonus Action",
+    "casting_time": "Action",
     "range": "Self",
     "components": "V, S, M (an opal worth 1,000 GP+)",
     "duration": "1 hour",
@@ -3341,7 +3968,7 @@
       "Wizard"
     ],
     "attack_type": null,
-    "description": "You create several glowing spheres of force that orbit you. You can use a bonus action to send one streaking toward a target, dealing force damage and possibly imposing conditions.",
+    "description": "Six chromatic spheres orbit you. Reaction when you take Acid, Cold, Fire, Lightning, or Thunder damage: spend one to resist that type until your next turn. Bonus Action: hurl one at a target within 120 feet (ranged spell attack, 3d6 of a type you choose). The spell ends when the last sphere is gone. One more sphere per slot level above 6.",
     "edition": "2024",
     "source": "kc"
   },
@@ -3355,9 +3982,12 @@
     "duration": "Concentration, up to 1 minute",
     "concentration": true,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Sorcerer",
+      "Wizard"
+    ],
     "attack_type": null,
-    "description": "You create a protective field of silvery force around a creature. It gains resistance to certain damage types, half cover, and immunity to the frightened condition while the shield lasts.",
+    "description": "A field of silvery light around a creature (you included) grants half cover, resistance to acid, cold, fire, lightning, and poison, and evasion on Dexterity saves. A bonus action on later turns moves the field to another creature within 60 feet.",
     "edition": "2014",
     "source": "kc"
   },
@@ -3377,7 +4007,7 @@
       "Druid"
     ],
     "attack_type": null,
-    "description": "You bring forth a great feast that takes one hour to consume. Creatures that partake gain temporary hit points, immunity to poison and being frightened, and advantage on Wisdom saves for 24 hours.",
+    "description": "A feast for up to twelve creatures takes 1 hour to eat. For 24 hours afterward each diner resists Poison damage, is immune to the Frightened and Poisoned conditions, and has its HP maximum (and current HP) raised by 2d10. Consumes a 1,000 GP bowl.",
     "edition": "2024",
     "source": "kc"
   },
@@ -3391,7 +4021,12 @@
     "duration": "Concentration, up to 10 minutes",
     "concentration": true,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Druid",
+      "Sorcerer",
+      "Warlock",
+      "Wizard"
+    ],
     "attack_type": null,
     "description": "Flames race across your body, shedding bright light and granting immunity to fire damage. You can use an action to create a line of fire or cause fire damage to creatures that touch or hit you.",
     "edition": "2014",
@@ -3407,7 +4042,12 @@
     "duration": "Concentration, up to 10 minutes",
     "concentration": true,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Druid",
+      "Sorcerer",
+      "Warlock",
+      "Wizard"
+    ],
     "attack_type": null,
     "description": "Ice rimes your body, granting immunity to cold damage and the ability to create a cone of cold or make the ground icy around you.",
     "edition": "2014",
@@ -3423,7 +4063,12 @@
     "duration": "Concentration, up to 10 minutes",
     "concentration": true,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Druid",
+      "Sorcerer",
+      "Warlock",
+      "Wizard"
+    ],
     "attack_type": null,
     "description": "You gain a rocky hide that grants resistance to nonmagical bludgeoning, piercing, and slashing damage, and you can cause the earth to tremble or move through stone.",
     "edition": "2014",
@@ -3439,9 +4084,14 @@
     "duration": "Concentration, up to 10 minutes",
     "concentration": true,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Druid",
+      "Sorcerer",
+      "Warlock",
+      "Wizard"
+    ],
     "attack_type": null,
-    "description": "Winds whirl around you, granting a flying speed and the ability to push creatures or create a blast of wind that disperses gases and extinguishes flames.",
+    "description": "Wind whirls around you: ranged weapon attacks against you have disadvantage and you gain a 60-foot flying speed. As an action, a 15-foot cube of wind within 60 feet forces a Constitution save for 2d10 bludgeoning (half on success), pushing Large or smaller creatures that fail 10 feet.",
     "edition": "2014",
     "source": "kc"
   },
@@ -3455,30 +4105,14 @@
     "duration": "Concentration, up to 1 minute",
     "concentration": true,
     "ritual": false,
-    "classes": [],
-    "attack_type": null,
-    "description": "You attempt to bind a creature within an illusory cell that only it can perceive. On a failed Intelligence save it is trapped, taking psychic damage if it attempts to leave or if the illusion is interacted with in certain ways.",
-    "edition": "2014",
-    "source": "kc"
-  },
-  {
-    "name": "Moove Earth",
-    "level": 6,
-    "school": "Transmutation",
-    "casting_time": "Action",
-    "range": ". You can reshape dirt, sand, or clay in the area in any manner",
-    "components": "V, S, M (a miniature shovel)",
-    "duration": "Concentration, up to 2 hours",
-    "concentration": true,
-    "ritual": false,
     "classes": [
-      "Druid",
       "Sorcerer",
+      "Warlock",
       "Wizard"
     ],
     "attack_type": null,
-    "description": "You choose an area of terrain made of dirt, sand, or clay and reshape it in real time. You can raise or lower the elevation, create trenches, or form walls, but cannot affect stone.",
-    "edition": "2024",
+    "description": "You attempt to bind a creature within an illusory cell that only it can perceive. On a failed Intelligence save it is trapped, taking psychic damage if it attempts to leave or if the illusion is interacted with in certain ways.",
+    "edition": "2014",
     "source": "kc"
   },
   {
@@ -3520,22 +4154,6 @@
     "source": "kc"
   },
   {
-    "name": "Otto'ss Irresistible Dance",
-    "level": 6,
-    "school": "Enchantment",
-    "casting_time": "1 action",
-    "range": "30 feet",
-    "components": "V",
-    "duration": "Concentration, up to 1 minute",
-    "concentration": true,
-    "ritual": false,
-    "classes": [],
-    "attack_type": null,
-    "description": "You cause a creature to begin a comic dance. On a failed Wisdom save it must use all its movement to dance in place, has disadvantage on Dexterity saves and attack rolls, and other creatures have advantage on attacks against it.",
-    "edition": "2014",
-    "source": "kc"
-  },
-  {
     "name": "Primordial Ward",
     "level": 6,
     "school": "Abjuration",
@@ -3545,9 +4163,11 @@
     "duration": "Concentration, up to 1 minute",
     "concentration": true,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Druid"
+    ],
     "attack_type": null,
-    "description": "You gain resistance to acid, cold, fire, lightning, and thunder damage for the duration. As a reaction when you take damage of one of those types you can become immune to that type instead until the start of your next turn.",
+    "description": "You resist acid, cold, fire, lightning, and thunder damage. When you take one of those types, a reaction swaps the resistances for immunity to that type (including the triggering damage) until the end of your next turn, when the spell ends.",
     "edition": "2014",
     "source": "kc"
   },
@@ -3561,9 +4181,13 @@
     "duration": "Instantaneous",
     "concentration": false,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Sorcerer",
+      "Warlock",
+      "Wizard"
+    ],
     "attack_type": null,
-    "description": "You teleport up to five willing creatures you can see within range to new locations within a limited distance that you can also see, rearranging their positions instantly.",
+    "description": "Up to five creatures you can see within range are teleported to unoccupied ground you can see within 120 feet of you; unwilling creatures can resist with a Wisdom save.",
     "edition": "2014",
     "source": "kc"
   },
@@ -3577,7 +4201,10 @@
     "duration": "8 hours",
     "concentration": false,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Warlock",
+      "Wizard"
+    ],
     "attack_type": null,
     "description": "You snatch the soul of a humanoid that dies within range and trap it in a tiny cage. While trapped you can use the soul to ask questions, view its memories, or exploit it for other benefits a limited number of times.",
     "edition": "2014",
@@ -3616,7 +4243,7 @@
       "Wizard"
     ],
     "attack_type": null,
-    "description": "You summon a fiendish spirit that takes the form of a demon, devil, or yugoloth of your choice. It obeys your commands but may have its own agenda if not carefully controlled.",
+    "description": "Summon a fiendish spirit (Demon, Devil, or Yugoloth form) that uses the Fiendish Spirit stat block, acts right after you, and obeys your verbal commands; it Dodges if given none.",
     "edition": "both",
     "source": "kc"
   },
@@ -3635,7 +4262,7 @@
       "Wizard"
     ],
     "attack_type": null,
-    "description": "You create a magical cauldron that produces a number of potions of your choice (from a limited list) over the course of an hour. The potions last for 24 hours or until consumed.",
+    "description": "A fixed cauldron appears beside you, brewing copies of one Common or Uncommon potion of your choice. You or an ally can take one as a Bonus Action, up to your spellcasting modifier in total (minimum 1); the spell ends when the last is taken. Unused potions vanish if you cast it again.",
     "edition": "2024",
     "source": "kc"
   },
@@ -3649,9 +4276,13 @@
     "duration": "Concentration, up to 1 minute",
     "concentration": true,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Sorcerer",
+      "Warlock",
+      "Wizard"
+    ],
     "attack_type": null,
-    "description": "You transform your body to better match a creature of the Outer Planes. You gain temporary hit points, resistance to certain damage, a flying or swimming speed, and the ability to deal extra force or necrotic damage.",
+    "description": "Draw on the Lower or Upper Planes: immunity to fire and poison damage and the poisoned condition (Lower) or radiant and necrotic damage and the charmed condition (Upper), a 40-foot flying speed, +2 AC, magical weapon attacks that can use your spellcasting modifier, and two attacks per Attack action.",
     "edition": "2014",
     "source": "kc"
   },
@@ -3665,7 +4296,9 @@
     "duration": "Concentration, up to 10 minutes",
     "concentration": true,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Wizard"
+    ],
     "attack_type": null,
     "description": "You endow yourself with endurance and martial prowess. You gain temporary hit points, proficiency with martial weapons and armor, extra attacks, and other combat benefits, but cannot cast spells while transformed.",
     "edition": "2014",
@@ -3701,7 +4334,11 @@
     "duration": "1 hour",
     "concentration": false,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Sorcerer",
+      "Warlock",
+      "Wizard"
+    ],
     "attack_type": null,
     "description": "Seven star-like motes of light appear and orbit your head. You can use a bonus action to send one mote streaking toward a creature, making a ranged spell attack that deals radiant damage.",
     "edition": "2014",
@@ -3717,7 +4354,11 @@
     "duration": "Concentration, up to 1 minute",
     "concentration": true,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Druid",
+      "Sorcerer",
+      "Wizard"
+    ],
     "attack_type": null,
     "description": "You channel draconic power, growing spectral wings, gaining a breath weapon, blindsight, and other dragon-like traits for the duration.",
     "edition": "2014",
@@ -3733,7 +4374,12 @@
     "duration": "6 hours",
     "concentration": false,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Bard",
+      "Sorcerer",
+      "Warlock",
+      "Wizard"
+    ],
     "attack_type": null,
     "description": "You and up to eight willing creatures project your minds into a shared dream that allows travel to another world or plane connected by the blue veil, with risks if the dream is disrupted.",
     "edition": "2014",
@@ -3761,33 +4407,14 @@
     "source": "kc"
   },
   {
-    "name": "Mansion",
-    "level": 7,
-    "school": "Conjuration",
-    "casting_time": "1 minute",
-    "range": "300 feet",
-    "components": "V, S, M (a miniature door worth 15+ GP)",
-    "duration": "24 hours",
-    "concentration": false,
-    "ritual": false,
-    "classes": [
-      "Bard",
-      "Wizard"
-    ],
-    "attack_type": null,
-    "description": "You conjure an extradimensional dwelling that has multiple rooms, is furnished and staffed by unseen servants, and remains for the duration. Only creatures you designate can enter.",
-    "edition": "both",
-    "source": "kc"
-  },
-  {
     "name": "Mordenkainen's Sword",
     "level": 7,
     "school": "Evocation",
     "casting_time": "Action",
     "range": "90 feet",
     "components": "V, S, M (a miniature sword worth 250+ GP)",
-    "duration": ".",
-    "concentration": false,
+    "duration": "Concentration, up to 1 minute",
+    "concentration": true,
     "ritual": false,
     "classes": [
       "Bard",
@@ -3813,8 +4440,28 @@
       "Cleric"
     ],
     "attack_type": null,
-    "description": "You speak a word of power that bolsters the defenses of up to six creatures you can see. They gain temporary hit points and possibly other defensive benefits.",
+    "description": "Divide 120 Temporary Hit Points among up to six creatures you can see within range.",
     "edition": "2024",
+    "source": "kc"
+  },
+  {
+    "name": "Power Word Pain",
+    "level": 7,
+    "school": "Enchantment",
+    "casting_time": "1 action",
+    "range": "60 feet",
+    "components": "V",
+    "duration": "Instantaneous",
+    "concentration": false,
+    "ritual": false,
+    "classes": [
+      "Sorcerer",
+      "Warlock",
+      "Wizard"
+    ],
+    "attack_type": null,
+    "description": "One creature with 100 hit points or fewer (not immune to being charmed) is wracked with pain: Speed capped at 10 feet, disadvantage on attacks, checks, and saves other than Constitution, and it must pass a Constitution save to cast a spell. It repeats the save at the end of each of its turns. No damage.",
+    "edition": "2014",
     "source": "kc"
   },
   {
@@ -3835,7 +4482,7 @@
     ],
     "attack_type": null,
     "description": "One creature within 60 feet takes 6d8 Force. If it has 100 HP or fewer it is also Charmed for up to 1 minute: Speed capped at 10 feet, Disadvantage on D20 Tests except Constitution saves, and it must pass a Constitution save to cast a spell (a failed cast keeps its slot). It repeats the save at the end of each of its turns.",
-    "edition": "both",
+    "edition": "2024",
     "source": "kc"
   },
   {
@@ -3865,7 +4512,7 @@
     "school": "Transmutation",
     "casting_time": "Action",
     "range": "Touch",
-    "components": "V, 8S",
+    "components": "V, S",
     "duration": "1 hour",
     "concentration": false,
     "ritual": false,
@@ -3874,7 +4521,7 @@
       "Wizard"
     ],
     "attack_type": null,
-    "description": "You convert a spell slot into healing energy. As an action you can touch a creature and restore hit points based on the level of the slot expended, or use it to cure certain conditions.",
+    "description": "Imbue a creature you touch for the duration: whenever it casts a spell with a slot, it can spend Hit Point Dice equal to the slot level and regain HP equal to the roll plus your spellcasting modifier.",
     "edition": "2024",
     "source": "kc"
   },
@@ -3888,7 +4535,9 @@
     "duration": "24 hours",
     "concentration": false,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Cleric"
+    ],
     "attack_type": null,
     "description": "You create a temple that is protected against certain creature types and provides benefits to worshippers of your deity, including enhanced healing and warding effects that last for an extended period.",
     "edition": "2014",
@@ -3924,9 +4573,12 @@
     "duration": "Instantaneous",
     "concentration": false,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Sorcerer",
+      "Wizard"
+    ],
     "attack_type": null,
-    "description": "You draw moisture from every creature in a 30-foot cube. Each creature must succeed on a Constitution save or take necrotic damage; plants and water elementals have disadvantage on the save and take maximum damage.",
+    "description": "Creatures in a 30-foot cube make a Constitution save for 12d8 necrotic, half on a success; constructs and undead are unaffected, and plants and water elementals save with disadvantage. Ordinary plants there wither and die.",
     "edition": "2014",
     "source": "kc"
   },
@@ -3966,8 +4618,26 @@
       "Wizard"
     ],
     "attack_type": null,
-    "description": "You create a brilliant star of magical force that orbits you. It can absorb incoming spells of a certain level, store them, and later release them or convert the energy into healing or force damage.",
+    "description": "A glowing mote hovers over you, giving you Three-Quarters Cover. On casting and as a Bonus Action later, it fires a bolt at a creature within 120 feet (ranged spell attack, 4d10 + your spellcasting modifier Force or Radiant). When you succeed on a save against a single-target spell of level 7 or lower, a Reaction turns it back on its caster.",
     "edition": "2024",
+    "source": "kc"
+  },
+  {
+    "name": "Illusory Dragon",
+    "level": 8,
+    "school": "Illusion",
+    "casting_time": "1 action",
+    "range": "120 feet",
+    "components": "S",
+    "duration": "Concentration, up to 1 minute",
+    "concentration": true,
+    "ritual": false,
+    "classes": [
+      "Wizard"
+    ],
+    "attack_type": null,
+    "description": "A Huge shadow dragon appears within 120 feet, immune to damage and conditions. Enemies who see it make a Wisdom save or are frightened for 1 minute. As a bonus action you move it 60 feet and can breathe a 60-foot cone: Intelligence save for 7d6 of a damage type chosen at casting, half on a success. An Investigation check reveals the illusion.",
+    "edition": "2014",
     "source": "kc"
   },
   {
@@ -3985,7 +4655,7 @@
     ],
     "attack_type": null,
     "description": "A tangible Huge shadow dragon appears within 120 feet, immune to damage and conditions. Enemies who see it make a Wisdom save or drop what they hold and are Frightened. Bonus Action: move it 60 feet and breathe a 60-foot Cone, Intelligence save for 6d6 of a damage type you chose (half on success). A Study action and Investigation check can reveal it.",
-    "edition": "both",
+    "edition": "2024",
     "source": "kc"
   },
   {
@@ -4019,7 +4689,10 @@
     "duration": "Concentration, up to 10 minutes",
     "concentration": true,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Warlock",
+      "Wizard"
+    ],
     "attack_type": null,
     "description": "Magical darkness spreads from a point you choose, filling a 60-foot-radius sphere. Creatures in the darkness take psychic damage at the start of their turns on a failed Wisdom save, and the darkness can't be illuminated by nonmagical means.",
     "edition": "2014",
@@ -4035,7 +4708,9 @@
     "duration": "Instantaneous",
     "concentration": false,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Wizard"
+    ],
     "attack_type": null,
     "description": "You conjure a fortress of stone that fills a square area. It has multiple floors, defensive features, and remains for seven days or until you dismiss it. Creatures inside are protected from weather and some magical detection.",
     "edition": "2014",
@@ -4082,12 +4757,14 @@
     "level": 8,
     "school": "Conjuration",
     "casting_time": "1 minute",
-    "range": ". You can make the wall up to 300 feet long, 300 feet high, and",
+    "range": "Sight",
     "components": "V, S",
     "duration": "Concentration, up to 6 rounds",
     "concentration": true,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Druid"
+    ],
     "attack_type": null,
     "description": "A wall of water 300 feet long, 300 feet high, and 50 feet thick appears and surges forward. Creatures caught in it must succeed on a Strength save or take bludgeoning damage and be swept away; the water continues moving for several turns.",
     "edition": "2014",
@@ -4097,7 +4774,7 @@
     "name": "Blade of Disaster",
     "level": 9,
     "school": "Conjuration",
-    "casting_time": "Action",
+    "casting_time": "1 bonus action",
     "range": "60 feet",
     "components": "V, S",
     "duration": "Concentration, up to 1 minute",
@@ -4109,8 +4786,28 @@
       "Wizard"
     ],
     "attack_type": null,
-    "description": "You create a blade-shaped planar rift that behaves like a weapon. You can make melee spell attacks with it that deal force damage, and on a critical hit it deals extra damage and can create a temporary rift that damages nearby creatures.",
-    "edition": "both",
+    "description": "A 3-foot planar rift makes two melee spell attacks on casting (4d12 force each, crits on 18 or higher for an extra 8d12) and, as a bonus action each turn, moves 30 feet and attacks twice again. It passes through any barrier, including a wall of force.",
+    "edition": "2014",
+    "source": "kc"
+  },
+  {
+    "name": "Blade of Disaster",
+    "level": 9,
+    "school": "Conjuration",
+    "casting_time": "Bonus Action",
+    "range": "60 feet",
+    "components": "V, S",
+    "duration": "Concentration, up to 1 minute",
+    "concentration": true,
+    "ritual": false,
+    "classes": [
+      "Sorcerer",
+      "Warlock",
+      "Wizard"
+    ],
+    "attack_type": null,
+    "description": "A 3-foot planar rift makes two melee spell attacks on casting (10d6 Force each, Critical Hit on 18 or higher) and, as a Bonus Action on later turns, moves 60 feet and attacks twice again. It passes through any barrier, including Wall of Force.",
+    "edition": "2024",
     "source": "kc"
   },
   {
@@ -4199,7 +4896,11 @@
     "duration": "Concentration, up to 1 hour",
     "concentration": true,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Bard",
+      "Sorcerer",
+      "Wizard"
+    ],
     "attack_type": null,
     "description": "You transform up to ten creatures of your choice within range into new forms of challenge rating equal to or less than their own. Unwilling creatures must succeed on a Wisdom save to resist.",
     "edition": "2014",
@@ -4215,7 +4916,9 @@
     "duration": "Instantaneous",
     "concentration": false,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Bard"
+    ],
     "attack_type": null,
     "description": "A wave of healing energy washes over a creature you can see. It regains all its hit points and is cured of certain conditions such as charmed, frightened, paralyzed, or stunned.",
     "edition": "2014",
@@ -4231,7 +4934,12 @@
     "duration": "Instantaneous",
     "concentration": false,
     "ritual": false,
-    "classes": [],
+    "classes": [
+      "Bard",
+      "Sorcerer",
+      "Warlock",
+      "Wizard"
+    ],
     "attack_type": null,
     "description": "You unleash the power of your mind to blast the intellect of up to ten creatures of your choice that you can see. On a failed Intelligence save a target takes psychic damage and is stunned.",
     "edition": "2014",

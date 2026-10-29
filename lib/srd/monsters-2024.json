@@ -1,5 +1,80 @@
 [
   {
+    "name": "Abjurer Archmage",
+    "size": "Medium or Small",
+    "type": "Humanoid",
+    "subtype": "Wizard",
+    "tags": [],
+    "alignment": "neutral",
+    "ac": 16,
+    "hp": 198,
+    "hit_dice": "36d8 + 36",
+    "speed": "30 ft.",
+    "initiative": 8,
+    "str": 10,
+    "dex": 16,
+    "con": 12,
+    "int": 20,
+    "wis": 15,
+    "cha": 16,
+    "cr": "15",
+    "xp": 13000,
+    "proficiency_bonus": null,
+    "senses": "passive Perception 17",
+    "languages": "Common plus five other languages",
+    "damage_vulnerabilities": [],
+    "damage_resistances": [],
+    "damage_immunities": [
+      "psychic"
+    ],
+    "condition_immunities": [
+      "charmed"
+    ],
+    "special_abilities": [
+      {
+        "name": "Magic Resistance",
+        "desc": "Advantage on saves against spells and other magical effects."
+      }
+    ],
+    "actions": [
+      {
+        "name": "Multiattack",
+        "desc": "Three Arcane Burst attacks."
+      },
+      {
+        "name": "Arcane Burst",
+        "desc": "Melee or ranged spell strike, +10, reach 5 ft. or range 150 ft.; 27 (4d10 + 5) Force."
+      },
+      {
+        "name": "Banishing Blast (Recharge 6)",
+        "desc": "60-ft Cone, DC 18 Cha save: 45 (10d8) Force and banished to a harmless demiplane, Incapacitated, until the archmage's next turn starts; half damage only on a success."
+      },
+      {
+        "name": "Spellcasting",
+        "desc": "Intelligence, save DC 18. At will: Arcane Lock, Detect Magic, Mage Armor, Mage Hand, Prestidigitation. 2/day each: Fireball (level 7), Nondetection, Otiluke's Resilient Sphere. 1/day each: Mind Blank (precast; source of its psychic and charm immunity), Teleport."
+      }
+    ],
+    "bonus_actions": [
+      {
+        "name": "Fortify (Recharge 4-6)",
+        "desc": "Gains 40 Temporary Hit Points."
+      },
+      {
+        "name": "Magic Disruption (2/Day)",
+        "desc": "Casts Dispel Magic or Globe of Invulnerability."
+      }
+    ],
+    "reactions": [
+      {
+        "name": "Counterspell (3/Day)",
+        "desc": "Casts Counterspell."
+      }
+    ],
+    "legendary_actions": [],
+    "source_key": "kc-au",
+    "source_edition": "5th Edition 2024"
+  },
+  {
     "name": "Aboleth",
     "size": "Large",
     "type": "Aberration",
@@ -79,6 +154,82 @@
       }
     ],
     "source_key": "srd-2024",
+    "source_edition": "5th Edition 2024"
+  },
+  {
+    "name": "Abveku",
+    "size": "Medium",
+    "type": "Fiend",
+    "subtype": "Demon",
+    "tags": [],
+    "alignment": "chaotic evil",
+    "ac": 17,
+    "hp": 209,
+    "hit_dice": "22d8 + 110",
+    "speed": "40 ft.",
+    "initiative": 11,
+    "str": 16,
+    "dex": 22,
+    "con": 20,
+    "int": 17,
+    "wis": 18,
+    "cha": 15,
+    "cr": "14",
+    "xp": 11500,
+    "proficiency_bonus": null,
+    "senses": "truesight 120 ft., passive Perception 19",
+    "languages": "Abyssal; telepathy 120 ft.",
+    "damage_vulnerabilities": [],
+    "damage_resistances": [
+      "cold",
+      "fire",
+      "lightning"
+    ],
+    "damage_immunities": [
+      "poison"
+    ],
+    "condition_immunities": [
+      "exhaustion",
+      "poisoned"
+    ],
+    "special_abilities": [
+      {
+        "name": "Demonic Restoration",
+        "desc": "Killed outside the Abyss, it reforms there instantly with full HP."
+      },
+      {
+        "name": "Magic Resistance",
+        "desc": "Advantage on saves against spells and other magical effects."
+      }
+    ],
+    "actions": [
+      {
+        "name": "Multiattack",
+        "desc": "Four Scything Claw attacks, plus Mesmerizing Dance if available."
+      },
+      {
+        "name": "Scything Claw",
+        "desc": "Melee, +11, reach 10 ft.; 19 (3d8 + 6) Slashing."
+      },
+      {
+        "name": "Mesmerizing Dance (Recharge 5-6)",
+        "desc": "20-ft Emanation, DC 18 Wis save or Paralyzed, repeating the save each turn and freed automatically after 1 minute."
+      }
+    ],
+    "bonus_actions": [
+      {
+        "name": "Shadow Stealth",
+        "desc": "In Dim Light or Darkness, takes the Hide action."
+      }
+    ],
+    "reactions": [
+      {
+        "name": "Parry",
+        "desc": "+5 AC against a melee hit, possibly turning it into a miss."
+      }
+    ],
+    "legendary_actions": [],
+    "source_key": "kc-aud",
     "source_edition": "5th Edition 2024"
   },
   {
@@ -2123,6 +2274,82 @@
     "source_edition": "5th Edition 2024"
   },
   {
+    "name": "Arisen Sarrukh",
+    "size": "Medium",
+    "type": "Undead",
+    "subtype": "",
+    "tags": [],
+    "alignment": "neutral evil",
+    "ac": 18,
+    "hp": 273,
+    "hit_dice": "26d8 + 156",
+    "speed": "40 ft.",
+    "initiative": 9,
+    "str": 23,
+    "dex": 17,
+    "con": 22,
+    "int": 18,
+    "wis": 17,
+    "cha": 18,
+    "cr": "18",
+    "xp": 20000,
+    "proficiency_bonus": null,
+    "senses": "truesight 120 ft., passive Perception 19",
+    "languages": "Common, Draconic; telepathy 120 ft.",
+    "damage_vulnerabilities": [],
+    "damage_resistances": [],
+    "damage_immunities": [
+      "fire",
+      "necrotic",
+      "poison"
+    ],
+    "condition_immunities": [
+      "charmed",
+      "exhaustion",
+      "frightened",
+      "poisoned"
+    ],
+    "special_abilities": [
+      {
+        "name": "Legendary Resistance (3/Day)",
+        "desc": "Can turn a failed save into a success."
+      },
+      {
+        "name": "Magic Resistance",
+        "desc": "Advantage on saves against spells and other magical effects."
+      }
+    ],
+    "actions": [
+      {
+        "name": "Multiattack",
+        "desc": "Three attacks, Trident or Necrotic Spit in any mix."
+      },
+      {
+        "name": "Trident",
+        "desc": "Melee, +12, reach 10 ft.; 33 (6d8 + 6) Piercing."
+      },
+      {
+        "name": "Necrotic Spit",
+        "desc": "Ranged, +12, range 90 ft.; 11 (2d10) Poison plus 22 (4d10) Necrotic."
+      }
+    ],
+    "bonus_actions": [
+      {
+        "name": "Venomous Teleport (Recharge 5-6)",
+        "desc": "Teleports up to 120 ft; creatures within 10 ft of where it left or arrived (its choice) make a DC 20 Con save for 22 (4d10) Poison, half on a success."
+      }
+    ],
+    "reactions": [
+      {
+        "name": "Shape Control",
+        "desc": "When a creature it sees shape-shifts, it picks the resulting form or stops the change."
+      }
+    ],
+    "legendary_actions": [],
+    "source_key": "kc-aud",
+    "source_edition": "5th Edition 2024"
+  },
+  {
     "name": "Assassin",
     "size": "Small",
     "type": "Humanoid",
@@ -2441,6 +2668,97 @@
     "reactions": [],
     "legendary_actions": [],
     "source_key": "srd-2024",
+    "source_edition": "5th Edition 2024"
+  },
+  {
+    "name": "Baelnorn",
+    "size": "Medium",
+    "type": "Undead",
+    "subtype": "Wizard",
+    "tags": [],
+    "alignment": "neutral good",
+    "ac": 18,
+    "hp": 255,
+    "hit_dice": "34d8 + 102",
+    "speed": "30 ft.",
+    "initiative": 15,
+    "str": 11,
+    "dex": 16,
+    "con": 16,
+    "int": 21,
+    "wis": 14,
+    "cha": 16,
+    "cr": "18",
+    "xp": 20000,
+    "proficiency_bonus": null,
+    "senses": "truesight 120 ft., passive Perception 18",
+    "languages": "All",
+    "damage_vulnerabilities": [],
+    "damage_resistances": [
+      "lightning",
+      "radiant"
+    ],
+    "damage_immunities": [
+      "necrotic",
+      "poison"
+    ],
+    "condition_immunities": [
+      "charmed",
+      "exhaustion",
+      "frightened",
+      "paralyzed",
+      "poisoned"
+    ],
+    "special_abilities": [
+      {
+        "name": "Legendary Resistance (3/Day, or 4/Day in Lair)",
+        "desc": "Can turn a failed save into a success."
+      },
+      {
+        "name": "Magic Resistance",
+        "desc": "Advantage on saves against spells and other magical effects."
+      }
+    ],
+    "actions": [
+      {
+        "name": "Multiattack",
+        "desc": "Three attacks, Arcane Burst or Paralyzing Touch in any mix; two can be swapped for Lightning Bolt (level 4)."
+      },
+      {
+        "name": "Arcane Burst",
+        "desc": "Melee or ranged spell strike, +11, reach 5 ft. or range 120 ft.; 31 (4d12 + 5) Force."
+      },
+      {
+        "name": "Paralyzing Touch",
+        "desc": "Melee, +11, reach 5 ft.; 10 (2d4 + 5) Cold and Paralyzed until the start of its next turn."
+      },
+      {
+        "name": "Spellcasting",
+        "desc": "Intelligence, save DC 19. At will: Detect Magic, Detect Thoughts, Dispel Magic, Invisibility, Lightning Bolt (level 4), Mage Hand, Prestidigitation. 2/day each: Dimension Door, Scrying. 1/day each: Clone, Guards and Wards."
+      }
+    ],
+    "bonus_actions": [],
+    "reactions": [
+      {
+        "name": "Counterspell",
+        "desc": "Casts Counterspell."
+      }
+    ],
+    "legendary_actions": [
+      {
+        "name": "Frightening Glance",
+        "desc": "Casts Fear; not again until its next turn. (3 uses, 4 in lair.)"
+      },
+      {
+        "name": "Overwhelming Radiance",
+        "desc": "20-ft Emanation, DC 19 Con save (Undead with Disadvantage): 11 (2d10) Radiant, half on a success."
+      },
+      {
+        "name": "Recuperative Teleport",
+        "desc": "Teleports 60 ft and regains 11 (2d10) HP; not again until its next turn."
+      }
+    ],
+    "source_key": "kc-au",
     "source_edition": "5th Edition 2024"
   },
   {
@@ -4283,6 +4601,69 @@
     "source_edition": "5th Edition 2024"
   },
   {
+    "name": "Conjurer Archmage",
+    "size": "Medium or Small",
+    "type": "Humanoid",
+    "subtype": "Wizard",
+    "tags": [],
+    "alignment": "neutral",
+    "ac": 16,
+    "hp": 225,
+    "hit_dice": "41d8 + 41",
+    "speed": "30 ft.",
+    "initiative": 8,
+    "str": 10,
+    "dex": 16,
+    "con": 12,
+    "int": 20,
+    "wis": 15,
+    "cha": 16,
+    "cr": "15",
+    "xp": 13000,
+    "proficiency_bonus": null,
+    "senses": "passive Perception 17",
+    "languages": "Common plus five other languages",
+    "damage_vulnerabilities": [],
+    "damage_resistances": [],
+    "damage_immunities": [],
+    "condition_immunities": [],
+    "special_abilities": [
+      {
+        "name": "Magic Resistance",
+        "desc": "Advantage on saves against spells and other magical effects."
+      }
+    ],
+    "actions": [
+      {
+        "name": "Multiattack",
+        "desc": "Four Arcane Burst attacks."
+      },
+      {
+        "name": "Arcane Burst",
+        "desc": "Melee or ranged spell strike, +10, reach 5 ft. or range 150 ft.; 27 (4d10 + 5) Force."
+      },
+      {
+        "name": "Spellcasting",
+        "desc": "Intelligence, save DC 18. At will: Detect Magic, Find Familiar, Mage Armor, Mage Hand, Prestidigitation, Unseen Servant. 2/day: Dimension Door. 1/day each: Incendiary Cloud, Lightning Bolt (level 8), Plane Shift, Teleport."
+      }
+    ],
+    "bonus_actions": [
+      {
+        "name": "Benign Transposition (3/Day)",
+        "desc": "Teleports 30 ft, or swaps places with a willing creature in range."
+      }
+    ],
+    "reactions": [
+      {
+        "name": "Protective Magic (3/Day)",
+        "desc": "Reaction: casts Counterspell or Shield."
+      }
+    ],
+    "legendary_actions": [],
+    "source_key": "kc-au",
+    "source_edition": "5th Edition 2024"
+  },
+  {
     "name": "Constrictor Snake",
     "size": "Large",
     "type": "Beast",
@@ -4617,6 +4998,66 @@
     "source_edition": "5th Edition 2024"
   },
   {
+    "name": "Darkenbeast",
+    "size": "Medium",
+    "type": "Monstrosity",
+    "subtype": "",
+    "tags": [],
+    "alignment": "neutral evil",
+    "ac": 15,
+    "hp": 60,
+    "hit_dice": "8d8 + 24",
+    "speed": "20 ft., Fly 40 ft.",
+    "initiative": 4,
+    "str": 17,
+    "dex": 14,
+    "con": 16,
+    "int": 5,
+    "wis": 10,
+    "cha": 13,
+    "cr": "4",
+    "xp": 1100,
+    "proficiency_bonus": null,
+    "senses": "darkvision 60 ft., passive Perception 12",
+    "languages": "None",
+    "damage_vulnerabilities": [],
+    "damage_resistances": [],
+    "damage_immunities": [],
+    "condition_immunities": [
+      "frightened"
+    ],
+    "special_abilities": [
+      {
+        "name": "Spell Imprint",
+        "desc": "Its creator can store one action spell of level 5 or lower in it, then cast it componentless from the beast while within 30 ft; the effect originates from the beast, which then dies in purple flame."
+      },
+      {
+        "name": "Sunlight Sensitivity",
+        "desc": "Disadvantage on ability checks and attack rolls in sunlight."
+      }
+    ],
+    "actions": [
+      {
+        "name": "Multiattack",
+        "desc": "Three Rend attacks."
+      },
+      {
+        "name": "Rend",
+        "desc": "Melee, +5, reach 5 ft.; 12 (2d8 + 3) Slashing."
+      }
+    ],
+    "bonus_actions": [
+      {
+        "name": "Shadow Stalker",
+        "desc": "In Dim Light or Darkness, takes Disengage or Hide."
+      }
+    ],
+    "reactions": [],
+    "legendary_actions": [],
+    "source_key": "kc-au",
+    "source_edition": "5th Edition 2024"
+  },
+  {
     "name": "Darkmantle",
     "size": "Small",
     "type": "Aberration",
@@ -4856,6 +5297,64 @@
     "reactions": [],
     "legendary_actions": [],
     "source_key": "srd-2024",
+    "source_edition": "5th Edition 2024"
+  },
+  {
+    "name": "Diviner Archmage",
+    "size": "Medium or Small",
+    "type": "Humanoid",
+    "subtype": "Wizard",
+    "tags": [],
+    "alignment": "neutral",
+    "ac": 16,
+    "hp": 176,
+    "hit_dice": "32d8 + 32",
+    "speed": "30 ft.",
+    "initiative": 8,
+    "str": 10,
+    "dex": 16,
+    "con": 12,
+    "int": 20,
+    "wis": 15,
+    "cha": 16,
+    "cr": "15",
+    "xp": 13000,
+    "proficiency_bonus": null,
+    "senses": "truesight 60 ft., passive Perception 17",
+    "languages": "All",
+    "damage_vulnerabilities": [],
+    "damage_resistances": [],
+    "damage_immunities": [],
+    "condition_immunities": [],
+    "special_abilities": [
+      {
+        "name": "Magic Resistance",
+        "desc": "Advantage on saves against spells and other magical effects."
+      }
+    ],
+    "actions": [
+      {
+        "name": "Multiattack",
+        "desc": "Four Arcane Burst attacks; one can be swapped for Mind Spike (level 4)."
+      },
+      {
+        "name": "Arcane Burst",
+        "desc": "Melee or ranged spell strike, +10, reach 5 ft. or range 150 ft.; 24 (3d12 + 5) Force."
+      },
+      {
+        "name": "Spellcasting",
+        "desc": "Intelligence, save DC 18. At will: Detect Magic, Detect Thoughts, Mage Armor, Mage Hand, Mind Spike (level 4), Prestidigitation. 2/day each: Scrying, Sending. 1/day each: Foresight (precast), Telepathy."
+      }
+    ],
+    "bonus_actions": [],
+    "reactions": [
+      {
+        "name": "Protective Magic (3/Day)",
+        "desc": "Reaction: casts Counterspell or Shield."
+      }
+    ],
+    "legendary_actions": [],
+    "source_key": "kc-au",
     "source_edition": "5th Edition 2024"
   },
   {
@@ -5642,6 +6141,73 @@
     "source_edition": "5th Edition 2024"
   },
   {
+    "name": "Enchanter Archmage",
+    "size": "Medium or Small",
+    "type": "Humanoid",
+    "subtype": "Wizard",
+    "tags": [],
+    "alignment": "neutral",
+    "ac": 16,
+    "hp": 214,
+    "hit_dice": "39d8 + 39",
+    "speed": "30 ft.",
+    "initiative": 8,
+    "str": 10,
+    "dex": 16,
+    "con": 12,
+    "int": 20,
+    "wis": 15,
+    "cha": 16,
+    "cr": "15",
+    "xp": 13000,
+    "proficiency_bonus": null,
+    "senses": "passive Perception 17",
+    "languages": "Common plus five other languages",
+    "damage_vulnerabilities": [],
+    "damage_resistances": [],
+    "damage_immunities": [],
+    "condition_immunities": [],
+    "special_abilities": [
+      {
+        "name": "Magic Resistance",
+        "desc": "Advantage on saves against spells and other magical effects."
+      }
+    ],
+    "actions": [
+      {
+        "name": "Multiattack",
+        "desc": "Four Arcane Burst attacks."
+      },
+      {
+        "name": "Arcane Burst",
+        "desc": "Melee or ranged spell strike, +10, reach 5 ft. or range 150 ft.; 21 (3d10 + 5) Force."
+      },
+      {
+        "name": "Spellcasting",
+        "desc": "Intelligence, save DC 18. At will: Detect Magic, Mage Armor, Mage Hand, Prestidigitation. 2/day each: Fireball (level 7), Geas, Modify Memory."
+      }
+    ],
+    "bonus_actions": [
+      {
+        "name": "Dominate Person (1/Day)",
+        "desc": "Casts Dominate Person."
+      },
+      {
+        "name": "Duplicitous Magic (2/Day)",
+        "desc": "Casts Charm Person, Hold Person, or Sleep."
+      }
+    ],
+    "reactions": [
+      {
+        "name": "Protective Magic (3/Day)",
+        "desc": "Reaction: casts Counterspell or Shield."
+      }
+    ],
+    "legendary_actions": [],
+    "source_key": "kc-au",
+    "source_edition": "5th Edition 2024"
+  },
+  {
     "name": "Erinyes",
     "size": "Medium",
     "type": "Fiend",
@@ -5826,6 +6392,72 @@
     "reactions": [],
     "legendary_actions": [],
     "source_key": "srd-2024",
+    "source_edition": "5th Edition 2024"
+  },
+  {
+    "name": "Evoker Archmage",
+    "size": "Medium or Small",
+    "type": "Humanoid",
+    "subtype": "Wizard",
+    "tags": [],
+    "alignment": "neutral",
+    "ac": 16,
+    "hp": 214,
+    "hit_dice": "39d8 + 39",
+    "speed": "30 ft., Fly 30 ft.",
+    "initiative": 8,
+    "str": 10,
+    "dex": 16,
+    "con": 12,
+    "int": 20,
+    "wis": 15,
+    "cha": 16,
+    "cr": "15",
+    "xp": 13000,
+    "proficiency_bonus": null,
+    "senses": "passive Perception 17",
+    "languages": "Common plus five other languages",
+    "damage_vulnerabilities": [],
+    "damage_resistances": [],
+    "damage_immunities": [],
+    "condition_immunities": [],
+    "special_abilities": [
+      {
+        "name": "Evocation Sculptor",
+        "desc": "Its area spells can spare itself and up to five chosen creatures: they auto-succeed and take no damage on half-damage effects."
+      },
+      {
+        "name": "Magic Resistance",
+        "desc": "Advantage on saves against spells and other magical effects."
+      }
+    ],
+    "actions": [
+      {
+        "name": "Multiattack",
+        "desc": "Four Arcane Burst attacks; one can be swapped for Shatter."
+      },
+      {
+        "name": "Arcane Burst",
+        "desc": "Melee or ranged spell strike, +10, reach 5 ft. or range 150 ft.; 27 (4d10 + 5) Force."
+      },
+      {
+        "name": "Evocation Barrage (Recharge 5-6)",
+        "desc": "Casts Fireball, Ice Storm, or Lightning Bolt twice, in any mix."
+      },
+      {
+        "name": "Spellcasting",
+        "desc": "Intelligence, save DC 18. At will: Detect Magic, Mage Armor, Mage Hand, Prestidigitation, Shatter (level 3)."
+      }
+    ],
+    "bonus_actions": [],
+    "reactions": [
+      {
+        "name": "Protective Magic (3/Day)",
+        "desc": "Reaction: casts Counterspell or Shield."
+      }
+    ],
+    "legendary_actions": [],
+    "source_key": "kc-au",
     "source_edition": "5th Edition 2024"
   },
   {
@@ -8649,6 +9281,163 @@
     "source_edition": "5th Edition 2024"
   },
   {
+    "name": "Groundling Grunt",
+    "size": "Medium",
+    "type": "Monstrosity",
+    "subtype": "",
+    "tags": [],
+    "alignment": "neutral evil",
+    "ac": 14,
+    "hp": 45,
+    "hit_dice": "7d8 + 14",
+    "speed": "30 ft., Burrow 10 ft.",
+    "initiative": 2,
+    "str": 16,
+    "dex": 15,
+    "con": 14,
+    "int": 7,
+    "wis": 10,
+    "cha": 8,
+    "cr": "1",
+    "xp": 200,
+    "proficiency_bonus": null,
+    "senses": "darkvision 120 ft., passive Perception 12",
+    "languages": "Common",
+    "damage_vulnerabilities": [],
+    "damage_resistances": [
+      "poison"
+    ],
+    "damage_immunities": [],
+    "condition_immunities": [],
+    "special_abilities": [],
+    "actions": [
+      {
+        "name": "Claw",
+        "desc": "Melee, +5, reach 5 ft.; 7 (1d8 + 3) Slashing, and a Medium or smaller target is Grappled (escape DC 13, one of two paws)."
+      },
+      {
+        "name": "Sling",
+        "desc": "Ranged, +4, range 30/120 ft.; 7 (2d4 + 2) Bludgeoning."
+      }
+    ],
+    "bonus_actions": [],
+    "reactions": [
+      {
+        "name": "Go to Ground",
+        "desc": "Reaction when hit while on the ground: halves that attack's damage."
+      }
+    ],
+    "legendary_actions": [],
+    "source_key": "kc-au",
+    "source_edition": "5th Edition 2024"
+  },
+  {
+    "name": "Groundling Slayer",
+    "size": "Medium",
+    "type": "Monstrosity",
+    "subtype": "",
+    "tags": [],
+    "alignment": "neutral evil",
+    "ac": 15,
+    "hp": 58,
+    "hit_dice": "9d8 + 18",
+    "speed": "30 ft., Burrow 20 ft.",
+    "initiative": 5,
+    "str": 17,
+    "dex": 16,
+    "con": 15,
+    "int": 10,
+    "wis": 13,
+    "cha": 8,
+    "cr": "3",
+    "xp": 700,
+    "proficiency_bonus": null,
+    "senses": "darkvision 120 ft., passive Perception 13",
+    "languages": "Common",
+    "damage_vulnerabilities": [],
+    "damage_resistances": [
+      "poison"
+    ],
+    "damage_immunities": [],
+    "condition_immunities": [],
+    "special_abilities": [],
+    "actions": [
+      {
+        "name": "Multiattack",
+        "desc": "Two attacks, Claw or Dagger in any mix."
+      },
+      {
+        "name": "Claw",
+        "desc": "Melee, +5, reach 5 ft.; 12 (2d8 + 3) Slashing, and a Medium or smaller target is Grappled (escape DC 13, one of two paws)."
+      },
+      {
+        "name": "Dagger",
+        "desc": "Melee or ranged, +5, reach 5 ft. or range 20/60 ft.; 5 (1d4 + 3) Piercing plus 7 (2d6) Poison."
+      }
+    ],
+    "bonus_actions": [],
+    "reactions": [
+      {
+        "name": "Go to Ground",
+        "desc": "Reaction when hit while on the ground: halves that attack's damage."
+      }
+    ],
+    "legendary_actions": [],
+    "source_key": "kc-au",
+    "source_edition": "5th Edition 2024"
+  },
+  {
+    "name": "Groundling Stalker",
+    "size": "Medium",
+    "type": "Monstrosity",
+    "subtype": "",
+    "tags": [],
+    "alignment": "neutral evil",
+    "ac": 15,
+    "hp": 52,
+    "hit_dice": "8d8 + 16",
+    "speed": "30 ft., Burrow 10 ft.",
+    "initiative": 5,
+    "str": 16,
+    "dex": 16,
+    "con": 14,
+    "int": 8,
+    "wis": 12,
+    "cha": 8,
+    "cr": "2",
+    "xp": 450,
+    "proficiency_bonus": null,
+    "senses": "darkvision 120 ft., passive Perception 13",
+    "languages": "Common",
+    "damage_vulnerabilities": [],
+    "damage_resistances": [
+      "poison"
+    ],
+    "damage_immunities": [],
+    "condition_immunities": [],
+    "special_abilities": [],
+    "actions": [
+      {
+        "name": "Claw",
+        "desc": "Melee, +5, reach 5 ft.; 12 (2d8 + 3) Slashing, and a Medium or smaller target is Grappled (escape DC 13, one of two paws)."
+      },
+      {
+        "name": "Heavy Crossbow",
+        "desc": "Ranged, +5, range 100/400 ft.; 14 (2d10 + 3) Piercing."
+      }
+    ],
+    "bonus_actions": [],
+    "reactions": [
+      {
+        "name": "Go to Ground",
+        "desc": "Reaction when hit while on the ground: halves that attack's damage."
+      }
+    ],
+    "legendary_actions": [],
+    "source_key": "kc-au",
+    "source_edition": "5th Edition 2024"
+  },
+  {
     "name": "Guard",
     "size": "Small",
     "type": "Humanoid",
@@ -9705,6 +10494,69 @@
     "source_edition": "5th Edition 2024"
   },
   {
+    "name": "Illusionist Archmage",
+    "size": "Medium or Small",
+    "type": "Humanoid",
+    "subtype": "Wizard",
+    "tags": [],
+    "alignment": "neutral",
+    "ac": 16,
+    "hp": 220,
+    "hit_dice": "40d8 + 40",
+    "speed": "30 ft.",
+    "initiative": 8,
+    "str": 10,
+    "dex": 16,
+    "con": 12,
+    "int": 20,
+    "wis": 15,
+    "cha": 16,
+    "cr": "15",
+    "xp": 13000,
+    "proficiency_bonus": null,
+    "senses": "passive Perception 17",
+    "languages": "Common plus five other languages",
+    "damage_vulnerabilities": [],
+    "damage_resistances": [],
+    "damage_immunities": [],
+    "condition_immunities": [],
+    "special_abilities": [
+      {
+        "name": "Magic Resistance",
+        "desc": "Advantage on saves against spells and other magical effects."
+      }
+    ],
+    "actions": [
+      {
+        "name": "Multiattack",
+        "desc": "Four Arcane Burst attacks."
+      },
+      {
+        "name": "Arcane Burst",
+        "desc": "Melee or ranged spell strike, +10, reach 5 ft. or range 150 ft.; 21 (3d10 + 5) Force."
+      },
+      {
+        "name": "Spellcasting",
+        "desc": "Intelligence, save DC 18. At will: Detect Magic, Disguise Self, Invisibility, Mage Armor, Mage Hand, Minor Illusion, Prestidigitation. 2/day each: Creation, Major Image, Nystul's Magic Aura, Seeming. 1/day each: Mirage Arcane, Weird."
+      }
+    ],
+    "bonus_actions": [
+      {
+        "name": "Beguiling Spells (2/Day)",
+        "desc": "Casts Hypnotic Pattern or Mirror Image."
+      }
+    ],
+    "reactions": [
+      {
+        "name": "Protective Magic (3/Day)",
+        "desc": "Reaction: casts Counterspell or Shield."
+      }
+    ],
+    "legendary_actions": [],
+    "source_key": "kc-au",
+    "source_edition": "5th Edition 2024"
+  },
+  {
     "name": "Imp",
     "size": "Small",
     "type": "Fiend",
@@ -10501,6 +11353,209 @@
     "reactions": [],
     "legendary_actions": [],
     "source_key": "srd-2024",
+    "source_edition": "5th Edition 2024"
+  },
+  {
+    "name": "Living Cone of Cold",
+    "size": "Large",
+    "type": "Construct",
+    "subtype": "",
+    "tags": [],
+    "alignment": "unaligned",
+    "ac": 15,
+    "hp": 105,
+    "hit_dice": "10d10 + 50",
+    "speed": "25 ft., Fly 25 ft. (hover)",
+    "initiative": 2,
+    "str": 10,
+    "dex": 15,
+    "con": 20,
+    "int": 3,
+    "wis": 11,
+    "cha": 6,
+    "cr": "7",
+    "xp": 2900,
+    "proficiency_bonus": null,
+    "senses": "blindsight 60 ft., passive Perception 10",
+    "languages": "None",
+    "damage_vulnerabilities": [],
+    "damage_resistances": [],
+    "damage_immunities": [
+      "cold"
+    ],
+    "condition_immunities": [
+      "blinded",
+      "charmed",
+      "deafened",
+      "exhaustion",
+      "frightened",
+      "grappled",
+      "poisoned",
+      "prone",
+      "restrained"
+    ],
+    "special_abilities": [
+      {
+        "name": "Amorphous",
+        "desc": "Moves through gaps as narrow as 1 inch at no extra cost."
+      },
+      {
+        "name": "Magic Resistance",
+        "desc": "Advantage on saves against spells and other magical effects."
+      }
+    ],
+    "actions": [
+      {
+        "name": "Multiattack",
+        "desc": "Two Magical Strike attacks."
+      },
+      {
+        "name": "Magical Strike",
+        "desc": "Melee, +8, reach 10 ft.; 27 (5d8 + 5) Cold."
+      },
+      {
+        "name": "Spell Mimicry (Recharge 5-6)",
+        "desc": "60-ft Cone, DC 16 Con save: 36 (8d8) Cold, half on a success."
+      }
+    ],
+    "bonus_actions": [],
+    "reactions": [],
+    "legendary_actions": [],
+    "source_key": "kc-au",
+    "source_edition": "5th Edition 2024"
+  },
+  {
+    "name": "Living Thunderwave",
+    "size": "Medium",
+    "type": "Construct",
+    "subtype": "",
+    "tags": [],
+    "alignment": "unaligned",
+    "ac": 15,
+    "hp": 30,
+    "hit_dice": "4d8 + 12",
+    "speed": "25 ft., Fly 25 ft. (hover)",
+    "initiative": 1,
+    "str": 10,
+    "dex": 13,
+    "con": 16,
+    "int": 3,
+    "wis": 6,
+    "cha": 6,
+    "cr": "1",
+    "xp": 200,
+    "proficiency_bonus": null,
+    "senses": "blindsight 60 ft., passive Perception 8",
+    "languages": "None",
+    "damage_vulnerabilities": [],
+    "damage_resistances": [],
+    "damage_immunities": [
+      "thunder"
+    ],
+    "condition_immunities": [
+      "blinded",
+      "charmed",
+      "deafened",
+      "exhaustion",
+      "frightened",
+      "grappled",
+      "poisoned",
+      "prone",
+      "restrained"
+    ],
+    "special_abilities": [
+      {
+        "name": "Amorphous",
+        "desc": "Moves through gaps as narrow as 1 inch at no extra cost."
+      },
+      {
+        "name": "Magic Resistance",
+        "desc": "Advantage on saves against spells and other magical effects."
+      }
+    ],
+    "actions": [
+      {
+        "name": "Magical Strike",
+        "desc": "Melee, +5, reach 5 ft.; 6 (1d6 + 3) Thunder."
+      },
+      {
+        "name": "Spell Mimicry (Recharge 5-6)",
+        "desc": "15-ft Cube from itself, DC 13 Con save: 9 (2d8) Thunder and pushed 10 ft, half damage only on a success; audible 300 ft away."
+      }
+    ],
+    "bonus_actions": [],
+    "reactions": [],
+    "legendary_actions": [],
+    "source_key": "kc-au",
+    "source_edition": "5th Edition 2024"
+  },
+  {
+    "name": "Living Vitriolic Sphere",
+    "size": "Large",
+    "type": "Construct",
+    "subtype": "",
+    "tags": [],
+    "alignment": "unaligned",
+    "ac": 15,
+    "hp": 76,
+    "hit_dice": "8d10 + 32",
+    "speed": "25 ft., Fly 25 ft. (hover)",
+    "initiative": 2,
+    "str": 10,
+    "dex": 15,
+    "con": 18,
+    "int": 3,
+    "wis": 10,
+    "cha": 6,
+    "cr": "5",
+    "xp": 1800,
+    "proficiency_bonus": null,
+    "senses": "blindsight 60 ft., passive Perception 10",
+    "languages": "None",
+    "damage_vulnerabilities": [],
+    "damage_resistances": [],
+    "damage_immunities": [
+      "acid"
+    ],
+    "condition_immunities": [
+      "blinded",
+      "charmed",
+      "deafened",
+      "exhaustion",
+      "frightened",
+      "grappled",
+      "poisoned",
+      "prone",
+      "restrained"
+    ],
+    "special_abilities": [
+      {
+        "name": "Amorphous",
+        "desc": "Moves through gaps as narrow as 1 inch at no extra cost."
+      },
+      {
+        "name": "Magic Resistance",
+        "desc": "Advantage on saves against spells and other magical effects."
+      }
+    ],
+    "actions": [
+      {
+        "name": "Multiattack",
+        "desc": "Two Magical Strike attacks."
+      },
+      {
+        "name": "Magical Strike",
+        "desc": "Melee, +7, reach 10 ft.; 21 (5d6 + 4) Acid."
+      },
+      {
+        "name": "Spell Mimicry (Recharge 5-6)",
+        "desc": "20-ft-radius Sphere within 150 ft, DC 15 Dex save: 25 (10d4) Acid plus 12 (5d4) at the end of its next turn; half the first hit only on a success."
+      }
+    ],
+    "bonus_actions": [],
+    "reactions": [],
+    "legendary_actions": [],
+    "source_key": "kc-au",
     "source_edition": "5th Edition 2024"
   },
   {
@@ -11511,6 +12566,70 @@
     ],
     "legendary_actions": [],
     "source_key": "srd-2024",
+    "source_edition": "5th Edition 2024"
+  },
+  {
+    "name": "Necromancer Archmage",
+    "size": "Medium or Small",
+    "type": "Humanoid",
+    "subtype": "Wizard",
+    "tags": [],
+    "alignment": "neutral",
+    "ac": 16,
+    "hp": 225,
+    "hit_dice": "41d8 + 41",
+    "speed": "30 ft.",
+    "initiative": 8,
+    "str": 10,
+    "dex": 16,
+    "con": 12,
+    "int": 20,
+    "wis": 15,
+    "cha": 16,
+    "cr": "15",
+    "xp": 13000,
+    "proficiency_bonus": null,
+    "senses": "passive Perception 17",
+    "languages": "Common plus five other languages",
+    "damage_vulnerabilities": [],
+    "damage_resistances": [
+      "necrotic"
+    ],
+    "damage_immunities": [],
+    "condition_immunities": [],
+    "special_abilities": [
+      {
+        "name": "Magic Resistance",
+        "desc": "Advantage on saves against spells and other magical effects."
+      },
+      {
+        "name": "Marshal Undead",
+        "desc": "Chosen Undead within 60 ft have Advantage on attack rolls and saves while it isn't Incapacitated."
+      }
+    ],
+    "actions": [
+      {
+        "name": "Multiattack",
+        "desc": "Four Arcane Burst attacks; one can be swapped for Blight."
+      },
+      {
+        "name": "Arcane Burst",
+        "desc": "Melee or ranged spell strike, +10, reach 5 ft. or range 150 ft.; 21 (3d10 + 5) Force."
+      },
+      {
+        "name": "Spellcasting",
+        "desc": "Intelligence, save DC 18. At will: Blight, Detect Magic, Mage Armor, Mage Hand, Prestidigitation, Speak with Dead. 1/day each: Circle of Death (level 7), Create Undead."
+      }
+    ],
+    "bonus_actions": [],
+    "reactions": [
+      {
+        "name": "Protective Magic (3/Day)",
+        "desc": "Reaction: casts Counterspell or Shield."
+      }
+    ],
+    "legendary_actions": [],
+    "source_key": "kc-au",
     "source_edition": "5th Edition 2024"
   },
   {
@@ -13321,6 +14440,80 @@
     "source_edition": "5th Edition 2024"
   },
   {
+    "name": "Rendelith",
+    "size": "Large",
+    "type": "Fiend",
+    "subtype": "Demon",
+    "tags": [],
+    "alignment": "chaotic evil",
+    "ac": 20,
+    "hp": 294,
+    "hit_dice": "31d10 + 124",
+    "speed": "50 ft.",
+    "initiative": 7,
+    "str": 25,
+    "dex": 12,
+    "con": 19,
+    "int": 20,
+    "wis": 17,
+    "cha": 18,
+    "cr": "18",
+    "xp": 20000,
+    "proficiency_bonus": null,
+    "senses": "passive Perception 19",
+    "languages": "Abyssal; telepathy 120 ft.",
+    "damage_vulnerabilities": [],
+    "damage_resistances": [
+      "cold",
+      "fire",
+      "lightning"
+    ],
+    "damage_immunities": [
+      "poison"
+    ],
+    "condition_immunities": [
+      "poisoned"
+    ],
+    "special_abilities": [
+      {
+        "name": "Demonic Restoration",
+        "desc": "Killed outside the Abyss, it reforms there instantly with full HP."
+      },
+      {
+        "name": "Magic Resistance",
+        "desc": "Advantage on saves against spells and other magical effects."
+      },
+      {
+        "name": "Siege Monster",
+        "desc": "Double damage to objects and structures."
+      }
+    ],
+    "actions": [
+      {
+        "name": "Multiattack",
+        "desc": "Two Stone Hammer attacks, plus Shatter (level 6)."
+      },
+      {
+        "name": "Stone Hammer",
+        "desc": "Melee or ranged, +13, reach 10 ft. or range 120 ft.; 21 (4d6 + 7) Bludgeoning and a Large or smaller target is knocked Prone, or takes an extra 7 (2d6) if already Prone. Returns after a throw."
+      },
+      {
+        "name": "Spellcasting",
+        "desc": "Intelligence, save DC 19, no Material components. At will: Move Earth, Passwall, Shatter (level 6), Wall of Stone."
+      }
+    ],
+    "bonus_actions": [
+      {
+        "name": "Quick Fortifications (Recharge 5-6)",
+        "desc": "Casts Move Earth or Wall of Stone."
+      }
+    ],
+    "reactions": [],
+    "legendary_actions": [],
+    "source_key": "kc-aud",
+    "source_edition": "5th Edition 2024"
+  },
+  {
     "name": "Rhinoceros",
     "size": "Large",
     "type": "Beast",
@@ -13744,6 +14937,90 @@
     "reactions": [],
     "legendary_actions": [],
     "source_key": "srd-2024",
+    "source_edition": "5th Edition 2024"
+  },
+  {
+    "name": "Sarrukh Tyrant",
+    "size": "Medium",
+    "type": "Monstrosity",
+    "subtype": "",
+    "tags": [],
+    "alignment": "neutral evil",
+    "ac": 19,
+    "hp": 256,
+    "hit_dice": "27d8 + 135",
+    "speed": "40 ft.",
+    "initiative": 8,
+    "str": 22,
+    "dex": 15,
+    "con": 20,
+    "int": 23,
+    "wis": 19,
+    "cha": 18,
+    "cr": "17",
+    "xp": 18000,
+    "proficiency_bonus": null,
+    "senses": "truesight 120 ft., passive Perception 20",
+    "languages": "Common, Draconic; telepathy 120 ft.",
+    "damage_vulnerabilities": [],
+    "damage_resistances": [],
+    "damage_immunities": [
+      "fire"
+    ],
+    "condition_immunities": [
+      "charmed",
+      "frightened"
+    ],
+    "special_abilities": [
+      {
+        "name": "Legendary Resistance (3/Day)",
+        "desc": "Can turn a failed save into a success."
+      },
+      {
+        "name": "Magic Resistance",
+        "desc": "Advantage on saves against spells and other magical effects."
+      }
+    ],
+    "actions": [
+      {
+        "name": "Multiattack",
+        "desc": "Two attacks, Bite or Fearsome Fauchard in any mix."
+      },
+      {
+        "name": "Bite",
+        "desc": "Melee, +12, reach 5 ft.; 13 (2d6 + 6) Piercing plus 13 (3d8) Poison."
+      },
+      {
+        "name": "Fearsome Fauchard",
+        "desc": "Melee or ranged, +12, reach 5 ft. or range 20/60 ft.; 17 (2d10 + 6) Piercing and Frightened, or an extra 10 (3d6) Psychic if already Frightened. Returns after a throw."
+      },
+      {
+        "name": "Spellcasting",
+        "desc": "Intelligence, save DC 20, no Material components. At will: Detect Magic, Invisibility, Polymorph. 2/day each: Fireball (level 5), Scrying, Teleport, Wall of Force."
+      }
+    ],
+    "bonus_actions": [],
+    "reactions": [
+      {
+        "name": "Shape Control",
+        "desc": "When a creature it sees shape-shifts, it picks the resulting form or stops the change."
+      }
+    ],
+    "legendary_actions": [
+      {
+        "name": "Fearsome Glance",
+        "desc": "One creature within 30 ft, DC 20 Wis save: 18 (4d8) Psychic and Frightened; half damage only on a success. (3 uses.)"
+      },
+      {
+        "name": "Slither",
+        "desc": "Moves half its Speed without provoking and makes one Bite."
+      },
+      {
+        "name": "Twisted Transformation",
+        "desc": "Casts Polymorph; a failed save also Stuns the target until its next turn ends. Not again until its next turn."
+      }
+    ],
+    "source_key": "kc-aud",
     "source_edition": "5th Edition 2024"
   },
   {
@@ -14490,6 +15767,64 @@
     "reactions": [],
     "legendary_actions": [],
     "source_key": "srd-2024",
+    "source_edition": "5th Edition 2024"
+  },
+  {
+    "name": "Spellguard",
+    "size": "Medium or Small",
+    "type": "Humanoid",
+    "subtype": "",
+    "tags": [],
+    "alignment": "lawful neutral",
+    "ac": 20,
+    "hp": 105,
+    "hit_dice": "14d8 + 42",
+    "speed": "30 ft.",
+    "initiative": 3,
+    "str": 18,
+    "dex": 11,
+    "con": 16,
+    "int": 12,
+    "wis": 13,
+    "cha": 10,
+    "cr": "5",
+    "xp": 1800,
+    "proficiency_bonus": null,
+    "senses": "passive Perception 14",
+    "languages": "Common",
+    "damage_vulnerabilities": [],
+    "damage_resistances": [],
+    "damage_immunities": [],
+    "condition_immunities": [],
+    "special_abilities": [
+      {
+        "name": "Superior Magic Resistance",
+        "desc": "Advantage on saves against magic, and spell attack rolls against it have Disadvantage."
+      }
+    ],
+    "actions": [
+      {
+        "name": "Multiattack",
+        "desc": "Two attacks, Force Flail or Javelin in any mix."
+      },
+      {
+        "name": "Force Flail",
+        "desc": "Melee, +7, reach 5 ft.; 8 (1d8 + 4) Bludgeoning plus 7 (2d6) Force."
+      },
+      {
+        "name": "Javelin",
+        "desc": "Melee or ranged, +7, reach 5 ft. or range 30/120 ft.; 14 (3d6 + 4) Piercing."
+      }
+    ],
+    "bonus_actions": [],
+    "reactions": [
+      {
+        "name": "Defensive Divination",
+        "desc": "When an ally within 5 ft is hit, or fails a save against magic, roll a d20 and optionally replace that roll with it."
+      }
+    ],
+    "legendary_actions": [],
+    "source_key": "kc-au",
     "source_edition": "5th Edition 2024"
   },
   {
@@ -15614,6 +16949,183 @@
     "source_edition": "5th Edition 2024"
   },
   {
+    "name": "Szass Tam",
+    "size": "Medium",
+    "type": "Undead",
+    "subtype": "Wizard",
+    "tags": [],
+    "alignment": "lawful evil",
+    "ac": 20,
+    "hp": 397,
+    "hit_dice": "53d8 + 159",
+    "speed": "30 ft., Fly 30 ft.",
+    "initiative": 16,
+    "str": 12,
+    "dex": 14,
+    "con": 16,
+    "int": 23,
+    "wis": 18,
+    "cha": 19,
+    "cr": "23",
+    "xp": 50000,
+    "proficiency_bonus": null,
+    "senses": "truesight 120 ft., passive Perception 21",
+    "languages": "All",
+    "damage_vulnerabilities": [],
+    "damage_resistances": [
+      "cold",
+      "lightning"
+    ],
+    "damage_immunities": [
+      "necrotic",
+      "poison"
+    ],
+    "condition_immunities": [
+      "charmed",
+      "exhaustion",
+      "frightened",
+      "paralyzed",
+      "poisoned"
+    ],
+    "special_abilities": [
+      {
+        "name": "Legendary Resistance (4/Day, or 5/Day in Lair)",
+        "desc": "Can turn a failed save into a success."
+      },
+      {
+        "name": "Spirit Jar",
+        "desc": "If destroyed while he has a spirit jar, he re-forms with full HP in his lair in 1d10 days."
+      }
+    ],
+    "actions": [
+      {
+        "name": "Multiattack",
+        "desc": "Three attacks, Paralyzing Touch or Soul-Draining Ray in any mix; two can be swapped for Finger of Death."
+      },
+      {
+        "name": "Paralyzing Touch",
+        "desc": "Melee, +13, reach 5 ft.; 16 (3d6 + 6) Cold and Paralyzed until the start of his next turn."
+      },
+      {
+        "name": "Soul-Draining Ray",
+        "desc": "Ranged, +13, range 120 ft.; 25 (3d12 + 6) Necrotic and Disadvantage on attacks and saves until the end of its next turn."
+      },
+      {
+        "name": "Spellcasting",
+        "desc": "Intelligence, save DC 21, +13 to hit. At will: Detect Magic, Detect Thoughts, Finger of Death, Fireball (level 8), Lightning Bolt (level 8), Mage Hand, Prestidigitation. 2/day each: Animate Dead, Dimension Door, Plane Shift. 1/day each: Power Word Kill, Project Image, Scrying, Sending."
+      }
+    ],
+    "bonus_actions": [],
+    "reactions": [
+      {
+        "name": "Protective Magic",
+        "desc": "Casts Counterspell or Shield."
+      }
+    ],
+    "legendary_actions": [
+      {
+        "name": "Deathly Teleport",
+        "desc": "Teleports 60 ft; creatures within 10 ft of where he left take 13 (3d8) Necrotic. (3 uses, 4 in lair.)"
+      },
+      {
+        "name": "Disrupt Life",
+        "desc": "Non-Undead in a 20-ft Emanation, DC 21 Con save: 14 (4d6) Necrotic and that much lost from HP maximum; half damage only on a success. Not again until his next turn."
+      },
+      {
+        "name": "Withering Magic",
+        "desc": "Casts Blight or Dispel Magic."
+      }
+    ],
+    "source_key": "kc-aud",
+    "source_edition": "5th Edition 2024"
+  },
+  {
+    "name": "Taisus",
+    "size": "Huge",
+    "type": "Aberration",
+    "subtype": "",
+    "tags": [],
+    "alignment": "chaotic neutral",
+    "ac": 18,
+    "hp": 310,
+    "hit_dice": "27d12 + 135",
+    "speed": "40 ft., Fly 60 ft. (hover)",
+    "initiative": 10,
+    "str": 17,
+    "dex": 18,
+    "con": 20,
+    "int": 25,
+    "wis": 22,
+    "cha": 19,
+    "cr": "19",
+    "xp": 22000,
+    "proficiency_bonus": null,
+    "senses": "truesight 120 ft., passive Perception 22",
+    "languages": "All; telepathy 120 ft.",
+    "damage_vulnerabilities": [],
+    "damage_resistances": [],
+    "damage_immunities": [
+      "poison"
+    ],
+    "condition_immunities": [
+      "charmed",
+      "exhaustion",
+      "frightened",
+      "grappled",
+      "paralyzed",
+      "petrified",
+      "poisoned",
+      "restrained"
+    ],
+    "special_abilities": [
+      {
+        "name": "Arcane Immortality",
+        "desc": "On death it crumbles to dust and re-forms with full HP in 1d10 days at its chosen site, unless Wish is cast on the remains."
+      },
+      {
+        "name": "Legendary Resistance (4/Day)",
+        "desc": "Can turn a failed save into a success."
+      },
+      {
+        "name": "Magic Resistance",
+        "desc": "Advantage on saves against spells and other magical effects."
+      }
+    ],
+    "actions": [
+      {
+        "name": "Multiattack",
+        "desc": "Two Brain Drain attacks."
+      },
+      {
+        "name": "Brain Drain",
+        "desc": "Melee, +13, reach 20 ft.; 20 (3d8 + 7) Force plus 16 (3d10) Psychic. A target with spell slots makes a DC 21 Con save or loses its highest unexpended slot."
+      },
+      {
+        "name": "Spellcasting",
+        "desc": "Intelligence, save DC 21, no Material components. At will: Detect Magic, Fireball (level 5), Invisibility, Mage Hand. 2/day each: Jallarzi's Storm of Radiance, Plane Shift, Scrying. 1/day each: Befuddlement, Disintegrate."
+      }
+    ],
+    "bonus_actions": [],
+    "reactions": [
+      {
+        "name": "Protective Magic",
+        "desc": "Casts Counterspell or Shield."
+      }
+    ],
+    "legendary_actions": [
+      {
+        "name": "Deadly Drain",
+        "desc": "One Brain Drain attack; not again until its next turn. (3 uses.)"
+      },
+      {
+        "name": "Teleport",
+        "desc": "Teleports itself or a willing creature within 10 ft up to 120 ft."
+      }
+    ],
+    "source_key": "kc-au",
+    "source_edition": "5th Edition 2024"
+  },
+  {
     "name": "Tarrasque",
     "size": "Gargantuan",
     "type": "Monstrosity",
@@ -15854,6 +17366,69 @@
     "reactions": [],
     "legendary_actions": [],
     "source_key": "srd-2024",
+    "source_edition": "5th Edition 2024"
+  },
+  {
+    "name": "Transmuter Archmage",
+    "size": "Medium or Small",
+    "type": "Humanoid",
+    "subtype": "Wizard",
+    "tags": [],
+    "alignment": "neutral",
+    "ac": 16,
+    "hp": 220,
+    "hit_dice": "40d8 + 40",
+    "speed": "40 ft., Fly 30 ft.",
+    "initiative": 8,
+    "str": 10,
+    "dex": 16,
+    "con": 12,
+    "int": 20,
+    "wis": 15,
+    "cha": 16,
+    "cr": "15",
+    "xp": 13000,
+    "proficiency_bonus": null,
+    "senses": "darkvision 60 ft., passive Perception 17",
+    "languages": "Common plus five other languages",
+    "damage_vulnerabilities": [],
+    "damage_resistances": [],
+    "damage_immunities": [],
+    "condition_immunities": [],
+    "special_abilities": [
+      {
+        "name": "Magic Resistance",
+        "desc": "Advantage on saves against spells and other magical effects."
+      }
+    ],
+    "actions": [
+      {
+        "name": "Multiattack",
+        "desc": "Four Arcane Burst attacks."
+      },
+      {
+        "name": "Arcane Burst",
+        "desc": "Melee or ranged spell strike, +10, reach 5 ft. or range 150 ft.; 27 (4d10 + 5) Force."
+      },
+      {
+        "name": "Spellcasting",
+        "desc": "Intelligence, save DC 18. At will: Alter Self, Detect Magic, Knock, Mage Armor, Mage Hand, Polymorph, Prestidigitation. 2/day: Gaseous Form. 1/day: Reverse Gravity."
+      }
+    ],
+    "bonus_actions": [
+      {
+        "name": "Slow (2/Day)",
+        "desc": "Casts Slow."
+      }
+    ],
+    "reactions": [
+      {
+        "name": "Protective Magic (3/Day)",
+        "desc": "Reaction: casts Counterspell or Shield."
+      }
+    ],
+    "legendary_actions": [],
+    "source_key": "kc-au",
     "source_edition": "5th Edition 2024"
   },
   {
@@ -16396,6 +17971,105 @@
     "reactions": [],
     "legendary_actions": [],
     "source_key": "srd-2024",
+    "source_edition": "5th Edition 2024"
+  },
+  {
+    "name": "Venger",
+    "size": "Medium",
+    "type": "Fiend",
+    "subtype": "",
+    "tags": [],
+    "alignment": "neutral evil",
+    "ac": 19,
+    "hp": 202,
+    "hit_dice": "27d8 + 81",
+    "speed": "30 ft., Fly 30 ft.",
+    "initiative": 17,
+    "str": 18,
+    "dex": 20,
+    "con": 16,
+    "int": 17,
+    "wis": 14,
+    "cha": 21,
+    "cr": "17",
+    "xp": 18000,
+    "proficiency_bonus": null,
+    "senses": "darkvision 120 ft. (unimpeded by magical Darkness), passive Perception 18",
+    "languages": "Abyssal, Common, Infernal",
+    "damage_vulnerabilities": [],
+    "damage_resistances": [
+      "cold",
+      "fire",
+      "lightning",
+      "poison"
+    ],
+    "damage_immunities": [],
+    "condition_immunities": [
+      "poisoned"
+    ],
+    "special_abilities": [
+      {
+        "name": "Fiendish Restoration",
+        "desc": "On death he re-forms with full HP in 1d10 days in one of his lairs."
+      },
+      {
+        "name": "Legendary Resistance (3/Day, or 4/Day in Lair)",
+        "desc": "Can turn a failed save into a success."
+      },
+      {
+        "name": "Magic Resistance",
+        "desc": "Advantage on saves against spells and other magical effects."
+      },
+      {
+        "name": "Mounted Adept",
+        "desc": "Mounted, he and his mount have Advantage on Dex saves, and he can redirect attacks on the mount to himself."
+      }
+    ],
+    "actions": [
+      {
+        "name": "Multiattack",
+        "desc": "Three attacks, Crimson Claw or Crimson Blast in any mix."
+      },
+      {
+        "name": "Crimson Claw",
+        "desc": "Melee, +11, reach 5 ft.; 14 (2d8 + 5) Slashing plus 10 (3d6) Fire."
+      },
+      {
+        "name": "Crimson Blast",
+        "desc": "Ranged, +11, range 120 ft.; 24 (3d12 + 5) Force."
+      },
+      {
+        "name": "Spellcasting",
+        "desc": "Charisma, save DC 19. At will: Detect Magic, Invisibility, Mage Hand, Silent Image. 2/day each: Alter Self, Contact Other Plane, Create Undead, Dimension Door. 1/day each: Control Weather, Imprisonment."
+      }
+    ],
+    "bonus_actions": [
+      {
+        "name": "Telekinesis (2/Day)",
+        "desc": "Casts Telekinesis."
+      }
+    ],
+    "reactions": [
+      {
+        "name": "Protective Magic",
+        "desc": "Casts Counterspell or Shield."
+      }
+    ],
+    "legendary_actions": [
+      {
+        "name": "Booming Censure",
+        "desc": "One creature within 60 ft, DC 19 Wis save: 14 (4d6) Psychic and Frightened until its next turn ends; half damage only on a success. (3 uses, 4 in lair.)"
+      },
+      {
+        "name": "Crimson Strike",
+        "desc": "One Crimson Claw or Crimson Blast attack."
+      },
+      {
+        "name": "Magic-Binding Chains",
+        "desc": "One creature within 30 ft, DC 19 Dex save or Restrained and unable to take the Magic action until its next turn ends; not again until his next turn."
+      }
+    ],
+    "source_key": "kc-au",
     "source_edition": "5th Edition 2024"
   },
   {
@@ -17634,6 +19308,68 @@
     "reactions": [],
     "legendary_actions": [],
     "source_key": "srd-2024",
+    "source_edition": "5th Edition 2024"
+  },
+  {
+    "name": "Xelnene Thrul",
+    "size": "Medium",
+    "type": "Humanoid",
+    "subtype": "Wizard",
+    "tags": [],
+    "alignment": "neutral good",
+    "ac": 17,
+    "hp": 208,
+    "hit_dice": "32d8 + 64",
+    "speed": "30 ft.",
+    "initiative": 10,
+    "str": 10,
+    "dex": 18,
+    "con": 15,
+    "int": 21,
+    "wis": 16,
+    "cha": 19,
+    "cr": "17",
+    "xp": 18000,
+    "proficiency_bonus": null,
+    "senses": "passive Perception 19",
+    "languages": "Celestial, Common, Draconic, Infernal",
+    "damage_vulnerabilities": [],
+    "damage_resistances": [],
+    "damage_immunities": [],
+    "condition_immunities": [],
+    "special_abilities": [
+      {
+        "name": "Evocation Sculptor",
+        "desc": "Her area spells can spare herself and up to five chosen creatures: they auto-succeed and take no damage on half-damage effects."
+      },
+      {
+        "name": "Magic Resistance",
+        "desc": "Advantage on saves against spells and other magical effects."
+      }
+    ],
+    "actions": [
+      {
+        "name": "Multiattack",
+        "desc": "Four Arcane Burst attacks; two can be swapped for Fireball or Lightning Bolt (level 5)."
+      },
+      {
+        "name": "Arcane Burst",
+        "desc": "Melee or ranged spell strike, +11, reach 5 ft. or range 120 ft.; 32 (5d10 + 5) Force."
+      },
+      {
+        "name": "Spellcasting",
+        "desc": "Intelligence, save DC 19. At will: Alter Self, Detect Magic, Fireball (level 5), Illusory Script, Lightning Bolt (level 5), Mage Armor, Mage Hand, Prestidigitation. 2/day each: Demiplane, Modify Memory, Scrying, Sending, Teleport. 1/day each: Chain Lightning, Sunburst."
+      }
+    ],
+    "bonus_actions": [],
+    "reactions": [
+      {
+        "name": "Protective Magic (3/Day)",
+        "desc": "Reaction: casts Counterspell or Shield."
+      }
+    ],
+    "legendary_actions": [],
+    "source_key": "kc-aud",
     "source_edition": "5th Edition 2024"
   },
   {

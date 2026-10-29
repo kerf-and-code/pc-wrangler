@@ -175,7 +175,8 @@ function itemEntry(it, ruleset, variantsByName) {
     name: it.name,
     category: "magic-item",
     ruleset,
-    source: "srd",
+    // Non-SRD items (Arcana Unleashed, Deadfall) carry source "kc": book facts, Kerf and Code wording.
+    source: it.source === "kc" ? "kc" : "srd",
     spoken: spokenForms(it.name),
     display: {
       type: it.category ?? null,
@@ -407,9 +408,11 @@ function extractClassFeatures(ed) {
 }
 
 // ---- monsters ------------------------------------------------------------------------------------
-// SRD monsters only: the source files mix in non-SRD bestiaries (Tome of Beasts, A5e, ...), tagged by
-// source_key. We keep only source_key starting "srd" (srd-2024 = 331, srd-2014 = 325). Compact stat
-// block; the action-ish sections become name/description lists.
+// SRD monsters, plus Kerf and Code authored ones: the source files mix in non-SRD bestiaries (Tome of
+// Beasts, A5e, ...), tagged by source_key. We keep source_key starting "srd" (srd-2024 = 331, srd-2014 =
+// 325) and "kc-" (Arcana Unleashed / Deadfall creatures: book statistics, our own action wording), which
+// card as source "kc". The third-party bestiaries stay out. Compact stat block; the action-ish sections
+// become name/description lists.
 function monsterEntry(m, ruleset) {
   const list = (arr) => (Array.isArray(arr) ? arr : [])
     .map((a) => ({ name: a?.name ?? null, description: cleanText(a?.desc ?? a?.description ?? null) }))
@@ -420,7 +423,7 @@ function monsterEntry(m, ruleset) {
     name: m.name,
     category: "monster",
     ruleset,
-    source: "srd",
+    source: String(m.source_key ?? "").startsWith("kc-") ? "kc" : "srd",
     spoken: spokenForms(m.name),
     display: {
       size: m.size ?? null,
@@ -449,7 +452,7 @@ function monsterEntry(m, ruleset) {
 }
 function loadMonsters(ed) {
   const all = readMaybe(path.join(SRD_DIR, `monsters-${ed}.json`)) || [];
-  return (Array.isArray(all) ? all : []).filter((m) => String(m?.source_key ?? "").startsWith("srd"));
+  return (Array.isArray(all) ? all : []).filter((m) => /^(srd|kc-)/.test(String(m?.source_key ?? "")));
 }
 
 // ---- species -------------------------------------------------------------------------------------
