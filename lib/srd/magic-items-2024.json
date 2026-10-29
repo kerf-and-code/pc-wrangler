@@ -914,7 +914,7 @@
     "category": "Wondrous Item",
     "rarity": "Very Rare",
     "attunement": true,
-    "attunement_note": "by a",
+    "attunement_note": "by a Wizard",
     "description": "This pointed hat has the following properties. Spellcasting Focus. While holding the hat, you can use it as a Spellcasting Focus for your Wizard spells. Any spell you cast using the hat gains a spe cial Somatic component: you must reach into the hat and “pull” the spell out of it. Unknown Spell. While holding the hat, you can try to cast a level 1+ spell you don’t know. The spell must be on the Wizard spell list, it must be of a level you can cast, and it can’t have Material components costing more than 1,000 GP. Once you decide on the spell, you must expend a spell slot of the spell’s level. Then, to determine whether you cast the spell, make an Intelligence (Arcana) check (DC 10 plus the spell’s level). On a successful check, you cast the spell using its normal casting time, and you can’t use this property again until you finish a Short or Long Rest. On a failed check, you fail to cast the spell and a random effect occurs instead, deter mined by rolling on the following table. Any spell you cast from the hat uses your spell save DC and spell attack bonus. 1d100 Effect 01–50 You cast a random spell determined by rolling 1d10: on a 1, Enlarge/Reduce (enlarge effect); on a 2, Enlarge/Reduce (reduce effect); on a 3, Faerie Fire; on a 4, Fireball; on a 5, Gust of Wind; on a 6, Invisibility (cast on yourself); on a 7, Lightning Bolt ; on an 8, Phantasmal Force; on a 9, Polymorph; on a 10, Stinking Cloud. 51–55 You have the Stunned condition until the end of your next turn, believing something awe some just happened. 56–60 A harmless swarm of butterflies fills a 10-foot Cube within 30 feet of yourself. The swarm disperses after 1 minute. 61–65 You pull a nonmagical object out of the hat. Roll 1d4 to determine the object: on a 1, a vial of Acid; on a 2, a flask of Alchemist’s Fire; on a 3, a Crowbar; on a 4, a lit Torch. 66–70 You suffer a bout of “magic sickness” and have the Poisoned condition for 1 hour. 71–75 You have the Petrified condition until the end of your next turn. 76–80 You pull a nonmagical object out of the hat. Roll 1d4 to determine the object: on a 1, a Dagger; on a 2, a Rope with a Grappling Hook tied to one end; on a 3, a bag of Caltrops; on a 4, a gem worth 50 GP. 81–85 A creature appears in an unoccupied space as close to you as possible. The creature isn’t under your control and acts as it normally would, and it disappears after 1 hour or when it drops to 0 Hit Points. Roll 1d4 to deter mine the creature: on a 1, a Camel; on a 2, a Constrictor Snake ; on a 3, an Elephant; on a 4, a Mule. 1d100 Effect 86–90 A Hostile Swarm of Bats flies out of the hat, occupies your space, and attacks you. 91–95 A vertical, 10-foot-diameter, two-way portal to another plane of existence opens in an unoccupied space within 30 feet of you and remains open until the end of your next turn. The GM determines where it leads. 96–00 You pull a magic item out of the hat. Roll 1d6 to determine the item’s rarity: on a 1–3, Common; on a 4–5, Uncommon; on a 6, Rare. The GM chooses the item, which dis appears after 1 hour if it’s not consumed or destroyed before then."
   },
   {
@@ -1288,7 +1288,7 @@
     "category": "Wondrous Item",
     "rarity": "Rare",
     "attunement": true,
-    "attunement_note": "by a",
+    "attunement_note": "by a Cleric, Druid, or Paladin",
     "description": "This necklace has 1d4 + 2 magic beads made from aquamarine, black pearl, or topaz. It also has many nonmagical beads made from stones such as amber, bloodstone, citrine, coral, jade, pearl, or quartz. If a magic bead is removed from the necklace, that bead loses its magic. Six types of magic beads exist. The GM decides the type of each bead on the necklace or determines it randomly by rolling on the table below. A necklace can have more than one bead of the same type. To use one, you must be wearing the necklace. Each bead contains a spell that you can cast from it as a Bonus Action (using your spell save DC if a save is necessary). Once a magic bead’s spell is cast, that bead can’t be used again until the next dawn. 1d20 Bead Spell 1–6 Bead of Blessing Bless 7–12 Bead of Curing Cure Wounds (level 2 version) 13–16 Bead of Favor Greater Restoration 17–18 Bead of Smiting Shining Smite 19 Bead of Summons Guardian of Faith 20 Bead of Wind Walking Wind Walk"
   },
   {
@@ -1366,7 +1366,7 @@
     "category": "Wondrous Item",
     "rarity": "Uncommon",
     "attunement": true,
-    "attunement_note": "by",
+    "attunement_note": "by a Spellcaster",
     "description": "While this pearl is on your person, you can take a Magic action to regain one expended spell slot of level 3 or lower. Once you use the pearl, it can’t be used again until the next dawn."
   },
   {
@@ -1860,7 +1860,7 @@
     "category": "Wondrous Item",
     "rarity": "Legendary",
     "attunement": true,
-    "attunement_note": "by a",
+    "attunement_note": "by a Sorcerer, Warlock, or Wizard",
     "description": "This elegant garment is made from exquisite cloth and adorned with runes. You gain these benefits while wearing the robe. Armor. If you aren’t wearing armor, your base Armor Class is 15 plus your Dexterity modifier. Magic Resistance. You have Advantage on saving throws against spells and other magical effects. War Mage. Your spell save DC and spell attack bo nus each increase by 2."
   },
   {
@@ -2286,7 +2286,7 @@
     "category": "Wondrous Item",
     "rarity": "Legendary",
     "attunement": true,
-    "attunement_note": "by a",
+    "attunement_note": "by a Cleric or Paladin",
     "description": "This talisman is a mighty symbol of goodness. A Fiend or an Undead that touches the talisman takes 8d6 Radiant damage and takes the damage again each time it ends its turn holding or carrying the talisman. Holy Symbol. You can use the talisman as a Holy Symbol. You gain a +2 bonus to spell attack rolls while you wear or hold it. Pure Rebuke. The talisman has 7 charges. While wearing or holding the talisman, you can take a Magic action to expend 1 charge and target one creature you can see on the ground within 120 feet of yourself. A flaming fissure opens under the tar get, and the target makes a DC 20 Dexterity saving throw. If the target is a Fiend or an Undead, it has Disadvantage on the save. On a failed save, the tar get falls into the fissure and is destroyed, leaving no remains. On a successful save, the target isn’t cast into the fissure but takes 4d6 Psychic damage from the ordeal. In either case, the fissure then closes, leaving no trace of its existence. When you expend the last charge, the talisman disperses into motes of golden light and is destroyed."
   },
   {
@@ -2528,7 +2528,7 @@
     "category": "Wand",
     "rarity": "Very Rare",
     "attunement": true,
-    "attunement_note": "by a",
+    "attunement_note": "by a Spellcaster",
     "description": "This wand has 7 charges. While holding it, you can expend 1 charge to cast Polymorph (save DC 15) from it. Regaining Charges. The wand regains 1d6 + 1 expended charges daily at dawn. If you expend the wand’s last charge, roll 1d20. On a 1, the wand crumbles into ashes and is destroyed."
   },
   {
@@ -2564,7 +2564,7 @@
     "category": "Wand",
     "rarity": "Uncommon",
     "attunement": true,
-    "attunement_note": "by a",
+    "attunement_note": "by a Spellcaster",
     "description": "This wand has 7 charges. While holding it, you can expend 1 charge to cast Web (save DC 13) from it. Regaining Charges. The wand regains 1d6 + 1 expended charges daily at dawn. If you expend the wand’s last charge, roll 1d20. On a 1, the wand crumbles into ashes and is destroyed."
   },
   {
@@ -2650,5 +2650,955 @@
     "description": "Magic action once per dawn: a ricocheting ball for 1 minute. On activation and each of your turns, creatures in the enclosed space make a Dex save for Bludgeoning damage scaled to room size: 15-ft Cube DC 18, 6d6 + 5; 30-ft DC 17, 4d6 + 4; 50-ft DC 15, 2d6 + 2; 100-ft DC 14, 1d6 + 1. Outdoors it just flies away.",
     "source": "kc",
     "book": "Arcana Unleashed"
+  },
+  {
+    "name": "Adamantine Weapon",
+    "category": "Weapon (Any Ammunition or Melee Weapon)",
+    "rarity": "Uncommon",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "Every hit this weapon or piece of ammunition makes against an object is a Critical Hit.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Alchemy Jug",
+    "category": "Wondrous Item",
+    "rarity": "Uncommon",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "Magic action: name a liquid from its table (acid, basic poison, beer, honey, mayonnaise, oil, vinegar, fresh or salt water, wine) and pour it as a Utilize action, up to 2 gallons a minute. Each liquid has a daily maximum; once it starts a liquid it cannot switch until the next dawn.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Apparatus of Kwalish",
+    "category": "Wondrous Item",
+    "rarity": "Legendary",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "A 500-pound iron barrel (DC 20 Investigation to find the hatch) that two Medium creatures can crew; ten levers turn it into a Large lobster-like vehicle (AC 20, 200 HP, Speed and Swim 30 feet, airtight, dives to 900 feet) with claws, lights and other lever functions.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Armor of Gleaming",
+    "category": "Armor (Any Light, Medium, or Heavy)",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "This armor never gets dirty.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Axe of the Dwarvish Lords",
+    "category": "Weapon (Battleaxe)",
+    "rarity": "Artifact",
+    "attunement": true,
+    "attunement_note": null,
+    "description": "A +3 battleaxe; a natural 20 adds 20 Slashing, it is Thrown (20/60) and returns to your hand, and ranged hits add 1d8 Force (2d8 against Giants). Attuned: Darkvision 60 feet (or +60), Constitution +2 (max 20), proficiency with Brewer's, Mason's and Smith's tools, Immunity to Poison and Resistance to Fire, and maximum damage to objects. Magic action once per dawn: summon an obedient Earth Elemental for 24 hours. Every 3 days, touch dwarven stonework to cast Teleport without mishap underground. Random properties: 2 minor and 1 major beneficial, 2 minor detrimental.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Baba Yaga's Dancing Broom",
+    "category": "Wondrous Item",
+    "rarity": "Uncommon",
+    "attunement": true,
+    "attunement_note": null,
+    "description": "Magic action: the broom becomes an Animated Broom under your control, acting after you; command it mentally within 30 feet and turn it back with a Bonus Action. It regains its Hit Points if reverted before being destroyed.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Bead of Refreshment",
+    "category": "Wondrous Item",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "Dissolves in up to a pint of liquid and turns it into fresh, cold drinking water; no effect on magical liquids or poison.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Blackrazor",
+    "category": "Weapon (Greatsword)",
+    "rarity": "Artifact",
+    "attunement": true,
+    "attunement_note": null,
+    "description": "A sentient +3 greatsword (Chaotic Neutral) that hungers for souls. Hitting Undead costs you 1d10 Necrotic and heals them. While held: Immunity to Charmed and Frightened, Blindsight 30 feet. Dropping a creature to 0 slays it and devours its soul (only Wish restores it), granting Temporary Hit Points equal to its Hit Point maximum. It can cast Haste on you once per dawn, at its own discretion. Three days without a soul brings a conflict with its wielder.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Book of Exalted Deeds",
+    "category": "Wondrous Item",
+    "rarity": "Artifact",
+    "attunement": true,
+    "attunement_note": null,
+    "description": "Only the attuned can open it; Fiends and Undead who read it take 24d6 Radiant. Attuned: Immunity to Charmed and Frightened and Resistance to Psychic. After 80 hours of study: those become permanent, Wisdom +2 (max 24), spell slots count one level higher, and a halo (Bonus Action) gives Advantage on Persuasion and Disadvantage to attacks from Fiends and Undead in its light. Benefits need a kind act every 10 days and no willing evil. Random properties: 2 minor and 2 major beneficial.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Book of Vile Darkness",
+    "category": "Wondrous Item",
+    "rarity": "Artifact",
+    "attunement": true,
+    "attunement_note": null,
+    "description": "Non-Fiend, non-Undead attuners make a DC 17 Charisma save or become a Larva. After 80 hours of study: raise one ability by 2 (max 24) and lower another by 2, Immunity to Exhaustion, cast Animate Dead, Circle of Death, Dominate Monster and Finger of Death once each per dawn (DC 18), Advantage on lore checks about evil, and Vile Speech (Magic action: 1d12 Psychic to you, 3d6 to non-Fiend, non-Undead creatures within 15 feet). Requires an evil act every 10 days. Random properties: 3 minor and 1 major beneficial, 3 minor and 2 major detrimental.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Boots of False Tracks",
+    "category": "Wondrous Item",
+    "rarity": "Common",
+    "attunement": true,
+    "attunement_note": null,
+    "description": "Your tracks can look like those of any Humanoid of your size.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Candle of the Deep",
+    "category": "Wondrous Item",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "Keeps burning underwater, giving normal candle light and heat.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Cap of Water Breathing",
+    "category": "Wondrous Item",
+    "rarity": "Uncommon",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "Underwater, a Magic action creates an air bubble around your head that lets you breathe until you take off the cap or leave the water.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Cast-Off Armor",
+    "category": "Armor (Any Light, Medium, or Heavy)",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "Doff this armor as a Magic action.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Cauldron of Rebirth",
+    "category": "Wondrous Item",
+    "rarity": "Very Rare",
+    "attunement": true,
+    "attunement_note": "by a Druid or Warlock",
+    "description": "Spellcasting focus and a Scrying component. After a Long Rest, brew a Potion of Healing (greater) that lasts 24 hours. Magic action: grow it to hold a Medium creature; a Humanoid corpse covered in 200 pounds of salt for 8 hours returns as by Raise Dead at the next dawn, once every 7 days.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Charlatan's Die",
+    "category": "Wondrous Item",
+    "rarity": "Common",
+    "attunement": true,
+    "attunement_note": null,
+    "description": "You control the number this six-sided die rolls.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Cloak of Billowing",
+    "category": "Wondrous Item",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "Bonus Action: the cloak billows dramatically for 1 minute.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Cloak of Many Fashions",
+    "category": "Wondrous Item",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "Bonus Action: change the cloak's style, color and apparent quality; it stays a cloak and gains no other cloak's magic.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Clockwork Amulet",
+    "category": "Wondrous Item",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "Once per dawn, take a 10 on the d20 of an attack roll instead of rolling.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Clothes of Mending",
+    "category": "Wondrous Item",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "This outfit repairs its own daily wear and tear, though not destroyed pieces.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Cube of Summoning",
+    "category": "Wondrous Item",
+    "rarity": "Rare",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "Magic action once per dawn: wind the crank and a creature appears, from a random Summon spell (Aberration, Beast, Construct, Dragon, Elemental or Fey) cast at level 5 (save DC 17, +9 to hit) without Concentration, with you as caster.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Dark Shard Amulet",
+    "category": "Wondrous Item",
+    "rarity": "Common",
+    "attunement": true,
+    "attunement_note": "by a Warlock",
+    "description": "Spellcasting focus for Warlock spells. Once per Long Rest, a Magic action and a DC 10 Arcana check let you cast a Warlock action cantrip you do not know.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Demonomicon of Iggwilv",
+    "category": "Wondrous Item",
+    "rarity": "Artifact",
+    "attunement": true,
+    "attunement_note": null,
+    "description": "Advantage on demon lore and Abyss Survival checks. Magic action once per dawn: trap a Fiend held in Magic Circle in a blank page (DC 20 Charisma save with Disadvantage); trapped Fiends may try to possess you after Long Rests. Magic Circle and Planar Binding against Fiends cast at level 9 with Disadvantage on their saves, and your spell damage against Fiends is maximized. 8 charges (1d8 back at dawn) for Magic Circle, Magic Jar, Planar Ally, Planar Binding, Plane Shift to the Abyss, Summon Fiend and Tasha's Hideous Laughter (DC 20). Random properties: 2 minor beneficial, 1 minor and 1 major detrimental.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Dread Helm",
+    "category": "Wondrous Item",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "While worn, your eyes glow red and the rest of your face is hidden in shadow.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Driftglobe",
+    "category": "Wondrous Item",
+    "rarity": "Uncommon",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "Within 60 feet, command it to shine as Light or Daylight (Daylight once per dawn). Magic action: it floats up to 5 feet off the ground and follows you within 60 feet until grasped.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Ear Horn of Hearing",
+    "category": "Wondrous Item",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "Held to your ear, it suppresses the Deafened condition on you.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Efreeti Chain",
+    "category": "Armor (Chain Mail or Chain Shirt)",
+    "rarity": "Legendary",
+    "attunement": true,
+    "attunement_note": null,
+    "description": "+3 AC, Immunity to Fire damage, you know Primordial, and you can walk on molten rock.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Enduring Spellbook",
+    "category": "Wondrous Item",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "The book and its writing cannot be harmed by fire or water and do not age.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Enspelled Armor",
+    "category": "Armor (Any Light, Medium, or Heavy)",
+    "rarity": "Rarity Varies",
+    "attunement": true,
+    "attunement_note": null,
+    "description": "Holds an Abjuration or Illusion spell of level 8 or lower; 6 charges (1d6 back at dawn), 1 charge to cast it. Spell level sets rarity and DC: cantrip or 1 Uncommon (DC 13, +5), 2 Rare (13, +5), 3 Rare (15, +7), 4 Very Rare (15, +7), 5 Very Rare (17, +9), 6 Legendary (17, +9), 7 or 8 Legendary (18, +10).",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Enspelled Staff",
+    "category": "Staff",
+    "rarity": "Rarity Varies",
+    "attunement": true,
+    "attunement_note": "by a Spellcaster",
+    "description": "Holds a spell of any school, level 8 or lower; 6 charges (1d6 back at dawn), 1 charge to cast it; spending the last charge risks a 1 in 20 chance it becomes a plain Quarterstaff. Rarity and DC follow the spell level as for Enspelled Armor.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Enspelled Weapon",
+    "category": "Weapon (Any Simple or Martial)",
+    "rarity": "Rarity Varies",
+    "attunement": true,
+    "attunement_note": null,
+    "description": "Holds a Conjuration, Divination, Evocation, Necromancy or Transmutation spell of level 8 or lower; 6 charges (1d6 back at dawn), 1 charge to cast it. Rarity and DC follow the spell level as for Enspelled Armor.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Ersatz Eye",
+    "category": "Wondrous Item",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "Replaces a lost eye and sees like a natural one; insert or remove it as a Magic action, and it cannot be taken from you while alive.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Executioner's Axe",
+    "category": "Weapon (Battleaxe, Greataxe, Halberd, or Handaxe)",
+    "rarity": "Very Rare",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "+1 weapon; a hit on a Humanoid deals an extra 2d6 Slashing and gives you that much in Temporary Hit Points.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Eye and Hand of Vecna",
+    "category": "Wondrous Item",
+    "rarity": "Artifact",
+    "attunement": true,
+    "attunement_note": null,
+    "description": "Two artifacts; attuning grafts the eye or hand on permanently (removal kills you) and makes you Neutral Evil. Eye: Truesight 240 feet, 8 charges (1d4 + 4 at dawn) for Clairvoyance, Crown of Madness, Disintegrate, Dominate Monster and Eyebite (DC 18) with a 5 percent chance per casting that Vecna takes your body, and 1 minute of 30-foot X-ray vision as a Magic action. Hand: Strength 20, an extra 2d8 Cold on melee hits, and 8 charges for Finger of Death, Sleep, Slow and Teleport (DC 18), each casting answered by a Suggestion to do evil. Both: Advantage on Initiative, a 7d6 Necrotic touch (DC 18 Constitution) that turns victims to green slime, Immunity to Poison, regenerate 1d10 a turn, and Wish once per 30 days. Each has 1 minor and 1 major beneficial, 1 minor detrimental random property.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Hag Eye",
+    "category": "Wondrous Item",
+    "rarity": "Uncommon",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "3 charges (all back at dawn): spend 1 to cast Darkvision on yourself or See Invisibility. A hag of the coven that made it can see through it while concentrating.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Hat of Vermin",
+    "category": "Wondrous Item",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "3 charges (all back at dawn): Magic action to summon a Bat, Frog or Rat that is not under your control and vanishes after 1 hour.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Hat of Wizardry",
+    "category": "Wondrous Item",
+    "rarity": "Common",
+    "attunement": true,
+    "attunement_note": "by a Wizard",
+    "description": "Spellcasting focus for Wizard spells. Once per Long Rest, a Magic action and a DC 10 Arcana check let you cast a Wizard action cantrip you do not know.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Heward's Handy Spice Pouch",
+    "category": "Wondrous Item",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "10 charges (1d6 + 4 back at dawn): Magic action to pull out a pinch of any named nonmagical seasoning.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Horn of Silent Alarm",
+    "category": "Wondrous Item",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "4 charges (1d4 back at dawn): Magic action to blow it so that one chosen creature within 600 feet, and no one else, hears it.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Instrument of Illusions",
+    "category": "Wondrous Item",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "While you play it, a Magic action creates harmless, obviously illusory visuals in a 5-foot Emanation (15 feet for a Bard).",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Instrument of Scribing",
+    "category": "Wondrous Item",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "3 charges (all back at dawn): while playing, a Magic action writes a six-word magical message (13 words and glowing for a Bard) on a surface within 30 feet, lasting 24 hours or until dispelled.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Instrument of the Bards",
+    "category": "Wondrous Item",
+    "rarity": "Rarity Varies",
+    "attunement": true,
+    "attunement_note": "by a Bard",
+    "description": "Attuned Bards cast its spells once each per dawn with their own ability and DC; others who play it make a DC 15 Wisdom save or take 2d4 Psychic. All cast Fly, Invisibility, Levitate and Protection from Evil and Good, plus: Doss lute and Fochlucan bandore and Mac-Fuirmidh cittern (Uncommon), Canaith mandolin and Cli lyre (Rare), Anstruth harp (Very Rare), Ollamh harp (Legendary), each with its own spell set.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Keoghtom's Ointment",
+    "category": "Wondrous Item",
+    "rarity": "Uncommon",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "A jar of 1d4 + 1 doses. Utilize action: swallow one or apply it to a creature within 5 feet, which regains 2d8 + 2 Hit Points and stops being Poisoned.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Lock of Trickery",
+    "category": "Wondrous Item",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "An ordinary-looking lock with one key; checks to pick it have Disadvantage.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Lute of Thunderous Thumping",
+    "category": "Weapon (Club)",
+    "rarity": "Very Rare",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "A magic Club that deals an extra 2d8 Thunder on a hit. A Bard who sings or hums while attacking can use Charisma instead of Strength for the attack.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Mariner's Armor",
+    "category": "Armor (Any Light, Medium, or Heavy)",
+    "rarity": "Uncommon",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "Swim Speed equal to your Speed, and once per dawn, starting your turn underwater at 0 Hit Points restores 1d4 Hit Points.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Moon-Touched Sword",
+    "category": "Weapon (Glaive, Greatsword, Longsword, Rapier, Scimitar, or Shortsword)",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "Unsheathed in darkness, the blade sheds Bright Light 15 feet and Dim Light 15 feet beyond.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Moonblade",
+    "category": "Weapon (Greatsword, Longsword, Rapier, Scimitar, or Shortsword)",
+    "rarity": "Legendary",
+    "attunement": true,
+    "attunement_note": "by a Creature of the Weapon's Choice",
+    "description": "A sentient elven blade that chooses its bearer; a rejected attuner is cursed with Disadvantage on D20 Tests for 24 hours. For anyone else it is a plain weapon. Its first rune gives +1, and each further rune (typically 1d6 + 1 in all) adds a property: up to +3, up to 3d6 extra Force, Thrown and returning, crits on 19 to 20, a blinding flash (DC 15 Constitution, once per Short Rest), Ring of Spell Storing, or a Shadow servant. It also has a minor property.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Mystery Key",
+    "category": "Wondrous Item",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "Has a 5 percent chance to open any lock it is put in, then vanishes.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Nature's Mantle",
+    "category": "Wondrous Item",
+    "rarity": "Uncommon",
+    "attunement": true,
+    "attunement_note": "by a Druid or Ranger",
+    "description": "Spellcasting focus for Druid and Ranger spells, and in Lightly Obscured areas you can Hide as a Bonus Action even while observed.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Orb of Direction",
+    "category": "Wondrous Item",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "Arcane focus; a Magic action tells you which way magnetic north lies, where there is one.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Orb of Time",
+    "category": "Wondrous Item",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "Arcane focus; on the Material Plane a Magic action tells you whether it is morning, afternoon, evening or night.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Perfume of Bewitching",
+    "category": "Wondrous Item",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "One use. Magic action to apply: for 1 hour, Advantage on Deception and Persuasion checks to influence creatures within 5 feet.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Pipe of Smoke Monsters",
+    "category": "Wondrous Item",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "While smoking it, a Magic action puffs out a 1-foot smoke creature that loses its shape in a few seconds.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Pole of Angling",
+    "category": "Wondrous Item",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "A Pole that turns into a fishing rod with line and reel, and back, as a Magic action.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Pole of Collapsing",
+    "category": "Wondrous Item",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "A Pole that collapses into a 1-foot rod (same weight), and back, as a Magic action.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Pot of Awakening",
+    "category": "Wondrous Item",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "A shrub grown in it for 30 days becomes an Awakened Shrub, breaking the pot; it is Friendly and obeys you.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Potion of Comprehension",
+    "category": "Potion",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "Grants the effect of Comprehend Languages for 1 hour.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Potion of Fire Breath",
+    "category": "Potion",
+    "rarity": "Uncommon",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "For up to 1 hour, three times: Bonus Action to breathe fire at a target within 30 feet, DC 13 Dexterity save for 4d6 Fire, half on a success.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Potion of Greater Invisibility",
+    "category": "Potion",
+    "rarity": "Very Rare",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "You are Invisible for 1 hour.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Potion of Pugilism",
+    "category": "Potion",
+    "rarity": "Uncommon",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "For 10 minutes, your Unarmed Strikes deal an extra 1d6 Force on a hit.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Prosthetic Limb",
+    "category": "Wondrous Item",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "Replaces a lost limb and works like the original; attach or detach it as a Magic action, and it cannot be removed against your will while alive.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Quaal's Feather Token",
+    "category": "Wondrous Item",
+    "rarity": "Rarity Varies",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "A single-use token of one type: Anchor (Uncommon, a ship cannot move for 24 hours), Bird (Rare, a non-attacking Roc that carries 500 pounds at 16 mph), Fan (Uncommon, fills one ship's sails for 8 hours), Swan Boat (Rare, a 50-foot self-propelled boat for 24 hours), Tree (Uncommon, a 60-foot oak), or Whip (Rare, a floating whip for 1 hour making +9 Bonus Action attacks for 1d6 + 5 Force).",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Quiver of Ehlonna",
+    "category": "Wondrous Item",
+    "rarity": "Uncommon",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "Never weighs more than 2 pounds; holds 60 arrows or bolts, 18 javelins, and 6 long items such as bows, staffs or spears, drawn like a normal quiver.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Rival Coin",
+    "category": "Wondrous Item",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "1 charge per dawn: toss it as a Magic action. Heads, a creature within 60 feet makes a DC 13 Wisdom save or takes 2d4 Psychic and has Disadvantage on its next attack (half damage only on a success); tails, you take 1d4 Psychic.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Rod of the Pact Keeper",
+    "category": "Rod",
+    "rarity": "Uncommon (+1), Rare (+2), or Very Rare (+3)",
+    "attunement": true,
+    "attunement_note": "by a Warlock",
+    "description": "+1, +2 or +3 (Uncommon, Rare, Very Rare) to Warlock spell attacks and save DCs, and once per Long Rest regain one spell slot as a Magic action.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Rope of Mending",
+    "category": "Wondrous Item",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "50 feet of rope; a Magic action rejoins all touching cut pieces. Lost sections stay lost.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Ruby of the War Mage",
+    "category": "Wondrous Item",
+    "rarity": "Common",
+    "attunement": true,
+    "attunement_note": "by a Spellcaster",
+    "description": "Pressed onto a Simple or Martial weapon for 10 minutes, it lets the weapon serve as your spellcasting focus; detach it as a Magic action.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Saddle of the Cavalier",
+    "category": "Wondrous Item",
+    "rarity": "Uncommon",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "While you ride in it: attacks against your mount have Disadvantage, and you cannot be dismounted against your will unless Incapacitated.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Scroll of Protection",
+    "category": "Scroll",
+    "rarity": "Rare",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "Protects against one creature type. Magic action to read: for 5 minutes, creatures of that type cannot enter or affect a 5-foot Emanation around you; one can try to break in with a DC 15 Charisma save. Moving onto them ends it.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Scroll of Titan Summoning",
+    "category": "Scroll",
+    "rarity": "Legendary",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "Magic action to read: a titan (Animal Lord, Blob of Annihilation, Colossus, Elemental Cataclysm, Empyrean, Kraken or Tarrasque) appears within 1 mile, Hostile to everyone, until it drops to 0 Hit Points. Fails if there is no room.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Shield of Expression",
+    "category": "Armor (Shield)",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "Bonus Action: change the expression of the face on the shield.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Silvered Weapon",
+    "category": "Weapon (Any Simple or Martial)",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "Critical Hits against shape-shifted creatures deal one extra damage die.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Smoldering Armor",
+    "category": "Armor (Any Light, Medium, or Heavy)",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "Harmless, odorless smoke rises from the armor while worn.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Spirit Board",
+    "category": "Wondrous Item",
+    "rarity": "Very Rare",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "3 charges (1 back at dawn): spend 1 minute touching the planchette to cast Augury (1 charge) or Commune (3 charges).",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Staff of Adornment",
+    "category": "Staff",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "Up to three Tiny objects of 1 pound or less float above its tip and spin at your will while you hold it.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Staff of Birdcalls",
+    "category": "Staff",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "10 charges (1d6 + 4 at dawn): a Magic action makes one of ten bird calls audible to 120 feet. Spending the last charge gives a 1 in 20 chance it bursts into feathers.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Staff of Flowers",
+    "category": "Staff",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "10 charges (1d6 + 4 at dawn): a Magic action sprouts a harmless flower within 5 feet. Spending the last charge gives a 1 in 20 chance it becomes petals.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Staff of the Adder",
+    "category": "Staff",
+    "rarity": "Uncommon",
+    "attunement": true,
+    "attunement_note": null,
+    "description": "Bonus Action: the head becomes a live snake for 1 minute; one Attack-action attack uses it (Proficiency Bonus + WIS, reach 5 feet) for 1d6 Piercing plus 3d6 Poison. The head has AC 15 and 20 Hit Points; if it drops to 0 the staff is destroyed.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Sword of Answering",
+    "category": "Weapon (Longsword)",
+    "rarity": "Legendary",
+    "attunement": true,
+    "attunement_note": null,
+    "description": "+3 longsword; a Reaction lets you attack with Advantage a creature in reach that damages you, ignoring its Resistance and Immunity.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Sword of Kas",
+    "category": "Weapon (Longsword)",
+    "rarity": "Artifact",
+    "attunement": true,
+    "attunement_note": null,
+    "description": "A sentient +3 longsword (Chaotic Evil) that crits on 19 to 20, deals an extra 2d10 Slashing to Undead, and wants Vecna's ruin. Unblooded within a minute of drawing, it forces a DC 15 Charisma save: 3d6 Psychic, or be dominated until it tastes blood. Casts Call Lightning, Divine Word and Finger of Death once each per dawn (DC 18). Add 1d10 to Initiative, shift its attack bonus to AC, and Resistance to Necrotic. Random properties: 1 minor and 1 major beneficial, 1 minor and 1 major detrimental.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Sword of Vengeance",
+    "category": "Weapon (Glaive, Greatsword, Longsword, Rapier, Scimitar, or Shortsword)",
+    "rarity": "Uncommon",
+    "attunement": true,
+    "attunement_note": null,
+    "description": "+1 weapon carrying a curse: you will not part with it, other weapons attack with Disadvantage, and when damaged in combat you make a DC 15 Wisdom save or must fight that attacker. Banishment on the sword frees the spirit, leaving a plain +1 weapon.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Sylvan Talon",
+    "category": "Weapon (Dagger, Rapier, Scimitar, Shortsword, Sickle, or Spear)",
+    "rarity": "Common",
+    "attunement": true,
+    "attunement_note": null,
+    "description": "You understand the nonwritten communication of Fey and they understand yours; once per dawn, cast Message through it.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Talking Doll",
+    "category": "Wondrous Item",
+    "rarity": "Common",
+    "attunement": true,
+    "attunement_note": null,
+    "description": "During a Short Rest within 5 feet, teach it up to six phrases of six words, each tied to a trigger within 5 feet.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Tankard of Sobriety",
+    "category": "Wondrous Item",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "Nonmagical alcohol drunk from it does not intoxicate you; no effect on magical liquids or poison.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Tentacle Rod",
+    "category": "Rod",
+    "rarity": "Rare",
+    "attunement": true,
+    "attunement_note": null,
+    "description": "Magic action: three tentacles attack creatures within 15 feet at +9, 1d6 Psychic each. All three on one target forces a DC 15 Dexterity save or Restrained, taking 3d6 Psychic each turn (repeats the save each turn).",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Tome of the Stilled Tongue",
+    "category": "Wondrous Item",
+    "rarity": "Legendary",
+    "attunement": true,
+    "attunement_note": "by a Wizard",
+    "description": "A spellbook and arcane focus; once per dawn, cast a spell written in it as a Bonus Action with no slot, Verbal or Somatic components. Removing the tongue erases it. Vecna watches its users.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Veteran's Cane",
+    "category": "Wondrous Item",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "Bonus Action while held: turn it into a plain Longsword or back into a cane.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Walloping Ammunition",
+    "category": "Weapon (Any Ammunition)",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "A creature hit makes a DC 10 Strength save or is knocked Prone.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Wand of Conducting",
+    "category": "Wand",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "3 charges (all at dawn): a Magic action plays orchestral music audible to 120 feet while you wave it. Spending the last charge gives a 1 in 20 chance it crumbles.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Wand of Orcus",
+    "category": "Wand",
+    "rarity": "Artifact",
+    "attunement": true,
+    "attunement_note": null,
+    "description": "Non-Orcus attuners make a DC 17 Constitution save: 10d6 Necrotic on a success, death (and a Zombie, if Humanoid) on a failure. A sentient +3 Mace dealing an extra 2d12 Necrotic, +3 AC while held, destroys Holy Water within 10 feet, 7 charges (1d4 + 3 at dawn) for Animate Dead, Blight, Circle of Death, Finger of Death, Power Word Kill and Speak with Dead (DC 18), and once per dawn calls 15 Skeletons and 15 Zombies until dawn. Random properties: 2 minor and 1 major beneficial, 2 minor and 1 major detrimental.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Wand of Pyrotechnics",
+    "category": "Wand",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "7 charges (1d6 + 1 at dawn): a Magic action makes a harmless burst of colored light within 120 feet, heard to 300 feet. Spending the last charge gives a 1 in 20 chance it is destroyed.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Wave",
+    "category": "Weapon (Trident)",
+    "rarity": "Artifact",
+    "attunement": true,
+    "attunement_note": null,
+    "description": "A sentient +3 trident (Neutral) devoted to sea gods; a natural 20 deals an extra 21 Necrotic. While held: Advantage on Initiative and an air bubble underwater. 3 charges (1d3 at dawn) for Dominate Beast (DC 20) on swimming Beasts, and level 9 Globe of Invulnerability once per dawn.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Whelm",
+    "category": "Weapon (Warhammer)",
+    "rarity": "Artifact",
+    "attunement": true,
+    "attunement_note": "by a Dwarf or a Creature Attuned to a Belt of Dwarvenkind",
+    "description": "A sentient +3 warhammer (Lawful Neutral) for dwarves; Thrown (60/180) and returning, ranged hits add 1d8 Force (4d8 against Constructs, Elementals and Giants). Once per dawn, a Magic action shock wave Stuns chosen creatures on the ground within 60 feet (DC 20 Constitution, repeats each turn). Senses secret doors within 30 feet and casts Detect Evil and Good or Locate Object once per dawn.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
+  },
+  {
+    "name": "Wraps of Unarmed Power",
+    "category": "Wondrous Item",
+    "rarity": "Uncommon (+1), Rare (+2), or Very Rare (+3)",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "+1, +2 or +3 (Uncommon, Rare, Very Rare) to Unarmed Strike attack and damage, which can deal Force instead of their normal type.",
+    "source": "kc",
+    "book": "Dungeon Master's Guide"
   }
 ]
