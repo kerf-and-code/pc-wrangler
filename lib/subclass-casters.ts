@@ -18,15 +18,26 @@
 import { sameSubclass } from "./subclass-names";
 import { multiclassSlots, type CasterType } from "./multiclass-slots";
 
-const THIRD_CASTERS: [className: string, subclass: string][] = [
-  ["Fighter", "Eldritch Knight"],
-  ["Rogue", "Arcane Trickster"],
-  ["Monk", "Warrior of the Mystic Arts"],
+// The third field is the class spell list the subclass casts from. Spells are tagged by class
+// ("Wizard", "Sorcerer"), never by subclass, so without it the Forge's Spells tab filtered an
+// Eldritch Knight on "Fighter" and showed nothing at all.
+const THIRD_CASTERS: [className: string, subclass: string, spellList: string][] = [
+  ["Fighter", "Eldritch Knight", "Wizard"],
+  ["Rogue", "Arcane Trickster", "Wizard"],
+  ["Monk", "Warrior of the Mystic Arts", "Sorcerer"],
 ];
+
+const findThird = (className: string, subclass: string | null | undefined) =>
+  THIRD_CASTERS.find(([c, s]) => c === className && sameSubclass(s, subclass));
 
 /** "THIRD" when this class + subclass is a subclass caster, otherwise null (use the class's own type). */
 export function subclassCasterType(className: string, subclass: string | null | undefined): CasterType | null {
-  return THIRD_CASTERS.some(([c, s]) => c === className && sameSubclass(s, subclass)) ? "THIRD" : null;
+  return findThird(className, subclass) ? "THIRD" : null;
+}
+
+/** The class list a subclass caster picks from ("Wizard" for an Eldritch Knight), otherwise null. */
+export function subclassSpellList(className: string, subclass: string | null | undefined): string | null {
+  return findThird(className, subclass)?.[2] ?? null;
 }
 
 /** Slots for a SINGLE-CLASS third-caster. [] below level 3. */

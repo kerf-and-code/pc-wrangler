@@ -54,7 +54,7 @@ import LancerForge from "@/components/lancer-forge";
 import SystemAttribution from "@/components/system-attribution";
 import { menusFor, type ClassMenu } from "@/lib/class-menus";
 import { casterLevel, multiclassSlots, isMulticlassCaster, type CasterType } from "@/lib/multiclass-slots";
-import { subclassCasterType, thirdCasterSlots } from "@/lib/subclass-casters";
+import { subclassCasterType, subclassSpellList, thirdCasterSlots } from "@/lib/subclass-casters";
 import { subclassSpellsFor } from "@/lib/subclass-spells";
 import { choiceEffects, applyToBuild, type ChoiceEffects } from "@/lib/apply-choices";
 import { parseCoreTraits } from "@/lib/core-traits";
@@ -1987,9 +1987,13 @@ function SpellsPanel({ build, spells, sheet, structuredRec, granted, onToggle, l
   const myClasses = useMemo(() => {
     const extra = ((build as Build & { multiclass?: { className: string }[] }).multiclass || [])
       .map((c) => c.className);
-    return [build.meta.className || "", ...extra].filter(Boolean);
+    // A subclass caster draws from another class's list (Eldritch Knight: Wizard), and spells are
+    // tagged by class, so that list joins the filter alongside the class itself.
+    const subList = subclassSpellList(build.meta.className || "", build.meta.subclass);
+    return [build.meta.className || "", ...(subList ? [subList] : []), ...extra].filter(Boolean);
   }, [build]);
   const cls = myClasses.join(", ");
+  const subclassCaster = !!subclassSpellList(build.meta.className || "", build.meta.subclass);
 
   const chosen = useMemo(() => new Set([...(build.spells?.cantrips || []), ...(build.spells?.known || [])]),
     [build.spells]);
@@ -2043,7 +2047,7 @@ function SpellsPanel({ build, spells, sheet, structuredRec, granted, onToggle, l
 
       {!cls && <Muted>Pick a class on the Identity tab to filter this list.</Muted>}
 
-      {sheet && !sheet.isCaster && cls && (
+      {sheet && !sheet.isCaster && cls && !subclassCaster && (
         <p style={{ color: STONE.inkDim, fontSize: 13, margin: "0 0 12px", lineHeight: 1.6 }}>
           {cls} is not a spellcasting class in this ruleset. You can still pick spells here if a
           feat, subclass or item grants them.
