@@ -144,6 +144,7 @@ export type SpeciesRule = {
   advSaves?: Ability[];
   advSavesVs?: string;
   acBonus?: number;
+  naturalArmor?: { base: number; addDex: boolean };
 };
 export type SubclassRule = { casting?: CastRule | null };
 export type CastRule = { ability: Ability };
@@ -472,14 +473,25 @@ export function deriveSheet(build: Build, ctx: RulesContext): DerivedSheet {  co
   // Medium caps at +2; Heavy adds none (cap 0). Unarmored-defense features add full DEX.
   const dexCap = udRule ? null : (worn.body ? worn.dexCap : null);
   const dexToAc = dexCap === null || dexCap === undefined ? m.dex : Math.min(m.dex, dexCap);
-  const acFormula = udRule
+  let acFormula = udRule
     ? `${udRule.label}: ${udRule.base} plus DEX${udRule.add ? ` plus ${udRule.add.toUpperCase()}` : ""}`
     : "";
   // A shield adds a flat +2 to AC (5e), stacking on armor or unarmored defense.
   const shieldBonus = worn.shield ? 2 : 0;
   // A species AC bonus (Warforged Integrated Protection) applies armored or not.
   const speciesAc = ctx.species[build.meta.species]?.acBonus || 0;
-  const ac = acBase + dexToAc + acAbil + build.armorMisc + (em.ac || 0) + gearAcBonus + shieldBonus + speciesAc;
+  let ac = acBase + dexToAc + acAbil + build.armorMisc + (em.ac || 0) + gearAcBonus + shieldBonus + speciesAc;
+  // Species natural armor (Lizardfolk, Tortle) replaces the base only without body armor, and only
+  // when it comes out higher, which is how the trait is worded.
+  const nat = ctx.species[build.meta.species]?.naturalArmor;
+  if (nat && !worn.body) {
+    const natAc = nat.base + (nat.addDex ? m.dex : 0) + build.armorMisc + (em.ac || 0) + gearAcBonus
+      + shieldBonus + speciesAc;
+    if (natAc > ac) {
+      ac = natAc;
+      acFormula = `Natural Armor: ${nat.base}${nat.addDex ? " plus DEX" : ""}`;
+    }
+  }
 
   const cls = ctx.classes[build.meta.className] || {};
   const hd = cls.hitDie || 8;

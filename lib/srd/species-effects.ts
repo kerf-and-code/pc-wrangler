@@ -122,6 +122,7 @@ export function resolveSpecies(
       return Object.keys(m).length ? m : undefined;
     })(),
     advSaves: o.advSaves ?? mech.advSaves,
+    naturalArmor: o.naturalArmor ?? mech.naturalArmor,
     skillProf: union(mech.skillProf, o.skillProf),
     weaponProf: union(mech.weaponProf, o.weaponProf),
     armorProf: union(mech.armorProf, o.armorProf),

@@ -697,7 +697,7 @@ function ForgeInner() {
           ...(base0.species?.[build.meta.species] || {}),
           speed: re.speed, darkvision: re.darkvision, senses: re.senses, speeds: re.speeds,
           resist: re.resist, immune: re.immune, advAgainst: re.advAgainst, acBonus: re.acBonus,
-          advSaves: re.advSaves, advSavesVs: re.advSavesVs,
+          advSaves: re.advSaves, advSavesVs: re.advSavesVs, naturalArmor: re.naturalArmor,
           // A 2014 subrace's ability increase (Hill Dwarf +1 WIS) and HP per level ride on the
           // species mods, which the engine already adds to base scores and hit points.
           mods: re.mods as Record<string, number> | undefined,

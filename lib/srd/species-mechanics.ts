@@ -49,6 +49,11 @@ export type SpeciesEffects = {
   /** When those save advantages only apply against something: "magic" for the 2014 gnome. */
   advSavesVs?: string;
   acBonus?: number;
+  /**
+   * Natural armor used when wearing no body armor, if it beats the normal calculation: Lizardfolk
+   * 13 + DEX, Tortle 17 flat. A shield still adds.
+   */
+  naturalArmor?: { base: number; addDex: boolean };
   /** hpPerLevel: +N hit points per character level (Dwarven Toughness). Ability increases (2014). */
   mods?: Partial<Record<Ability | "hpPerLevel", number>>;
   skillProf?: string[];

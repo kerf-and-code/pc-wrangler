@@ -833,7 +833,20 @@
           "Powerful Build",
           "Advantage on ability checks to end the Grappled condition, and you count as one size larger for carrying capacity."
         ]
-      ]
+      ],
+      "editions": {
+        "2014": {
+          "src": "Monsters of the Multiverse",
+          "speed": 30,
+          "skillProf": [
+            "athletics"
+          ],
+          "resist": [
+            "cold"
+          ],
+          "choice": null
+        }
+      }
     },
     "Halfling": {
       "src": "PHB 2024",
@@ -956,7 +969,13 @@
           "Relentless Endurance",
           "Drop to 1 hit point instead of 0, once per Long Rest."
         ]
-      ]
+      ],
+      "editions": {
+        "2014": {
+          "src": "Monsters of the Multiverse",
+          "darkvision": 60
+        }
+      }
     },
     "Tiefling": {
       "src": "PHB 2024",
@@ -1546,6 +1565,970 @@
         [
           "Inner Magic",
           "After a Long Rest pick Ardor, Mobility, or Vigor; switch as a Bonus Action Proficiency Bonus times per Long Rest. Ardor: Advantage on Charisma checks and against Frightened. Mobility: Speed +10, climbing and swimming cost no extra. Vigor: Temporary Hit Points equal to Proficiency Bonus and Advantage on Athletics and Acrobatics."
+        ]
+      ]
+    },
+    "Aarakocra": {
+      "src": "Monsters of the Multiverse",
+      "creatureType": "Humanoid",
+      "size": "Medium",
+      "speed": 30,
+      "speeds": {
+        "fly": "speed"
+      },
+      "spellAbility": "choose",
+      "spells": [
+        {
+          "spell": "Gust of Wind",
+          "level": 3,
+          "free": "1/LR"
+        }
+      ],
+      "traits": [
+        [
+          "Flight",
+          "Fly Speed equal to your walking speed; not usable in medium or heavy armor."
+        ],
+        [
+          "Talons",
+          "Unarmed Strikes deal 1d6 + Strength Slashing."
+        ],
+        [
+          "Wind Caller",
+          "Gust of Wind from level 3, once per Long Rest without a slot."
+        ]
+      ]
+    },
+    "Bugbear": {
+      "src": "Monsters of the Multiverse",
+      "creatureType": "Humanoid",
+      "size": "Medium",
+      "speed": 30,
+      "darkvision": 60,
+      "advAgainst": [
+        "charmed"
+      ],
+      "skillProf": [
+        "stealth"
+      ],
+      "traits": [
+        [
+          "Long-Limbed",
+          "Melee reach is 5 feet longer on your turn."
+        ],
+        [
+          "Powerful Build",
+          "Count as one size larger for carrying, pushing, dragging, and lifting."
+        ],
+        [
+          "Sneaky",
+          "Proficiency in Stealth; can occupy a Small-sized space without squeezing."
+        ],
+        [
+          "Surprise Attack",
+          "Extra 2d6 damage on a hit against a creature that has not yet taken a turn this combat."
+        ]
+      ]
+    },
+    "Centaur": {
+      "src": "Monsters of the Multiverse",
+      "creatureType": "Fey",
+      "size": "Medium",
+      "speed": 40,
+      "skillPick": {
+        "n": 1,
+        "from": [
+          "animal",
+          "medicine",
+          "nature",
+          "survival"
+        ]
+      },
+      "traits": [
+        [
+          "Charge",
+          "After moving 30 feet straight and hitting with a melee weapon, Bonus Action hoof attack."
+        ],
+        [
+          "Equine Build",
+          "Count as one size larger for carrying; hand-and-foot climbing costs 4 extra feet per foot."
+        ],
+        [
+          "Hooves",
+          "Unarmed Strikes deal 1d6 + Strength Bludgeoning."
+        ],
+        [
+          "Natural Affinity",
+          "Proficiency in Animal Handling, Medicine, Nature, or Survival."
+        ]
+      ]
+    },
+    "Deep Gnome": {
+      "src": "Monsters of the Multiverse",
+      "creatureType": "Humanoid",
+      "size": "Small",
+      "speed": 30,
+      "darkvision": 120,
+      "advSaves": [
+        "int",
+        "wis",
+        "cha"
+      ],
+      "advSavesVs": "spells",
+      "spellAbility": "choose",
+      "spells": [
+        {
+          "spell": "Disguise Self",
+          "level": 3,
+          "free": "1/LR"
+        },
+        {
+          "spell": "Nondetection",
+          "level": 5,
+          "free": "1/LR"
+        }
+      ],
+      "traits": [
+        [
+          "Gift of the Svirfneblin",
+          "Disguise Self from level 3 and Nondetection from level 5, each once per Long Rest without a slot."
+        ],
+        [
+          "Gnomish Magic Resistance",
+          "Advantage on Intelligence, Wisdom, and Charisma saves against spells."
+        ],
+        [
+          "Svirfneblin Camouflage",
+          "Advantage on a Stealth check, Proficiency Bonus times per Long Rest."
+        ]
+      ]
+    },
+    "Duergar": {
+      "src": "Monsters of the Multiverse",
+      "creatureType": "Humanoid",
+      "size": "Medium",
+      "speed": 30,
+      "darkvision": 120,
+      "resist": [
+        "poison"
+      ],
+      "advAgainst": [
+        "poisoned",
+        "charmed",
+        "stunned"
+      ],
+      "spellAbility": "choose",
+      "spells": [
+        {
+          "spell": "Enlarge/Reduce",
+          "level": 3,
+          "free": "1/LR"
+        },
+        {
+          "spell": "Invisibility",
+          "level": 5,
+          "free": "1/LR"
+        }
+      ],
+      "traits": [
+        [
+          "Duergar Magic",
+          "Enlarge/Reduce (self) from level 3 and Invisibility (self) from level 5, each once per Long Rest without a slot."
+        ],
+        [
+          "Dwarven Resilience",
+          "Resistance to poison; Advantage against the Poisoned condition."
+        ],
+        [
+          "Psionic Fortitude",
+          "Advantage against the Charmed and Stunned conditions."
+        ]
+      ]
+    },
+    "Eladrin": {
+      "src": "Monsters of the Multiverse",
+      "creatureType": "Humanoid",
+      "size": "Medium",
+      "speed": 30,
+      "darkvision": 60,
+      "advAgainst": [
+        "charmed"
+      ],
+      "skillProf": [
+        "perception"
+      ],
+      "choice": {
+        "key": "season",
+        "label": "Eladrin Season",
+        "options": {
+          "Autumn": {
+            "summary": "From level 3, Fey Step can charm up to two creatures within 10 feet."
+          },
+          "Winter": {
+            "summary": "From level 3, Fey Step can frighten one creature within 5 feet."
+          },
+          "Spring": {
+            "summary": "From level 3, Fey Step can teleport a willing creature instead of you."
+          },
+          "Summer": {
+            "summary": "From level 3, Fey Step deals Fire damage equal to your Proficiency Bonus to creatures within 5 feet."
+          }
+        }
+      },
+      "traits": [
+        [
+          "Fey Step",
+          "Bonus Action teleport up to 30 feet, Proficiency Bonus times per Long Rest, with a seasonal effect from level 3."
+        ],
+        [
+          "Keen Senses",
+          "Proficiency in Perception."
+        ],
+        [
+          "Trance",
+          "4-hour Long Rest; change season and gain two weapon or tool proficiencies until the next one."
+        ]
+      ]
+    },
+    "Fairy": {
+      "src": "Monsters of the Multiverse",
+      "creatureType": "Fey",
+      "size": "Small",
+      "speed": 30,
+      "speeds": {
+        "fly": "speed"
+      },
+      "spellAbility": "choose",
+      "spells": [
+        {
+          "spell": "Druidcraft",
+          "level": 1
+        },
+        {
+          "spell": "Faerie Fire",
+          "level": 3,
+          "free": "1/LR"
+        },
+        {
+          "spell": "Enlarge/Reduce",
+          "level": 5,
+          "free": "1/LR"
+        }
+      ],
+      "traits": [
+        [
+          "Fairy Magic",
+          "Druidcraft; Faerie Fire from level 3 and Enlarge/Reduce from level 5, each once per Long Rest without a slot."
+        ],
+        [
+          "Flight",
+          "Fly Speed equal to your walking speed; not usable in medium or heavy armor."
+        ]
+      ]
+    },
+    "Firbolg": {
+      "src": "Monsters of the Multiverse",
+      "creatureType": "Humanoid",
+      "size": "Medium",
+      "speed": 30,
+      "spellAbility": "choose",
+      "spells": [
+        {
+          "spell": "Detect Magic",
+          "level": 1,
+          "free": "1/LR"
+        },
+        {
+          "spell": "Disguise Self",
+          "level": 1,
+          "free": "1/LR"
+        }
+      ],
+      "traits": [
+        [
+          "Firbolg Magic",
+          "Detect Magic and Disguise Self, each once per Long Rest without a slot."
+        ],
+        [
+          "Hidden Step",
+          "Bonus Action invisibility until your next turn, Proficiency Bonus times per Long Rest."
+        ],
+        [
+          "Powerful Build",
+          "Count as one size larger for carrying, pushing, dragging, and lifting."
+        ],
+        [
+          "Speech of Beast and Leaf",
+          "Limited speech with Beasts and Plants; Advantage on Charisma checks to influence them."
+        ]
+      ]
+    },
+    "Genasi": {
+      "src": "Monsters of the Multiverse",
+      "creatureType": "Humanoid",
+      "size": "Medium or Small",
+      "speed": 30,
+      "darkvision": 60,
+      "spellAbility": "choose",
+      "choice": {
+        "key": "element",
+        "label": "Genasi Heritage",
+        "options": {
+          "Air Genasi": {
+            "aliases": [
+              "Air"
+            ],
+            "speed": 35,
+            "resist": [
+              "lightning"
+            ],
+            "spells": [
+              {
+                "spell": "Shocking Grasp",
+                "level": 1
+              },
+              {
+                "spell": "Feather Fall",
+                "level": 3,
+                "free": "1/LR"
+              },
+              {
+                "spell": "Levitate",
+                "level": 5,
+                "free": "1/LR"
+              }
+            ],
+            "summary": "Hold breath indefinitely."
+          },
+          "Earth Genasi": {
+            "aliases": [
+              "Earth"
+            ],
+            "spells": [
+              {
+                "spell": "Blade Ward",
+                "level": 1
+              },
+              {
+                "spell": "Pass without Trace",
+                "level": 5,
+                "free": "1/LR"
+              }
+            ],
+            "summary": "Ignore difficult terrain on the ground; Blade Ward as a Bonus Action Proficiency Bonus times per Long Rest."
+          },
+          "Fire Genasi": {
+            "aliases": [
+              "Fire"
+            ],
+            "resist": [
+              "fire"
+            ],
+            "spells": [
+              {
+                "spell": "Produce Flame",
+                "level": 1
+              },
+              {
+                "spell": "Burning Hands",
+                "level": 3,
+                "free": "1/LR"
+              },
+              {
+                "spell": "Flame Blade",
+                "level": 5,
+                "free": "1/LR"
+              }
+            ]
+          },
+          "Water Genasi": {
+            "aliases": [
+              "Water"
+            ],
+            "speeds": {
+              "swim": "speed"
+            },
+            "resist": [
+              "acid"
+            ],
+            "spells": [
+              {
+                "spell": "Acid Splash",
+                "level": 1
+              },
+              {
+                "spell": "Create or Destroy Water",
+                "level": 3,
+                "free": "1/LR"
+              },
+              {
+                "spell": "Water Walk",
+                "level": 5,
+                "free": "1/LR"
+              }
+            ],
+            "summary": "Breathe air and water."
+          }
+        }
+      },
+      "traits": [
+        [
+          "Elemental Heritage",
+          "Air, Earth, Fire, or Water, each with its own resistance or movement and spells."
+        ]
+      ]
+    },
+    "Githyanki": {
+      "src": "Monsters of the Multiverse",
+      "creatureType": "Humanoid",
+      "size": "Medium",
+      "speed": 30,
+      "resist": [
+        "psychic"
+      ],
+      "spellAbility": "choose",
+      "spells": [
+        {
+          "spell": "Mage Hand",
+          "level": 1
+        },
+        {
+          "spell": "Jump",
+          "level": 3,
+          "free": "1/LR"
+        },
+        {
+          "spell": "Misty Step",
+          "level": 5,
+          "free": "1/LR"
+        }
+      ],
+      "traits": [
+        [
+          "Astral Knowledge",
+          "After each Long Rest, one skill and one weapon or tool proficiency of your choice until the next."
+        ],
+        [
+          "Githyanki Psionics",
+          "Invisible Mage Hand; Jump from level 3 and Misty Step from level 5, each once per Long Rest without a slot."
+        ],
+        [
+          "Psychic Resilience",
+          "Resistance to psychic damage."
+        ]
+      ]
+    },
+    "Githzerai": {
+      "src": "Monsters of the Multiverse",
+      "creatureType": "Humanoid",
+      "size": "Medium",
+      "speed": 30,
+      "resist": [
+        "psychic"
+      ],
+      "advAgainst": [
+        "charmed",
+        "frightened"
+      ],
+      "spellAbility": "choose",
+      "spells": [
+        {
+          "spell": "Mage Hand",
+          "level": 1
+        },
+        {
+          "spell": "Shield",
+          "level": 3,
+          "free": "1/LR"
+        },
+        {
+          "spell": "Detect Thoughts",
+          "level": 5,
+          "free": "1/LR"
+        }
+      ],
+      "traits": [
+        [
+          "Githzerai Psionics",
+          "Invisible Mage Hand; Shield from level 3 and Detect Thoughts from level 5, each once per Long Rest without a slot."
+        ],
+        [
+          "Mental Discipline",
+          "Advantage against the Charmed and Frightened conditions."
+        ],
+        [
+          "Psychic Resilience",
+          "Resistance to psychic damage."
+        ]
+      ]
+    },
+    "Goblin": {
+      "src": "Monsters of the Multiverse",
+      "creatureType": "Humanoid",
+      "size": "Small",
+      "speed": 30,
+      "darkvision": 60,
+      "advAgainst": [
+        "charmed"
+      ],
+      "traits": [
+        [
+          "Fury of the Small",
+          "Extra damage equal to your Proficiency Bonus against a larger creature, once per turn, Proficiency Bonus times per Long Rest."
+        ],
+        [
+          "Nimble Escape",
+          "Disengage or Hide as a Bonus Action."
+        ]
+      ]
+    },
+    "Harengon": {
+      "src": "Monsters of the Multiverse",
+      "creatureType": "Humanoid",
+      "size": "Medium or Small",
+      "speed": 30,
+      "skillProf": [
+        "perception"
+      ],
+      "traits": [
+        [
+          "Hare-Trigger",
+          "Add your Proficiency Bonus to Initiative."
+        ],
+        [
+          "Leporine Senses",
+          "Proficiency in Perception."
+        ],
+        [
+          "Lucky Footwork",
+          "Reaction: add 1d4 to a failed Dexterity save."
+        ],
+        [
+          "Rabbit Hop",
+          "Bonus Action jump of 5 feet times your Proficiency Bonus without provoking, Proficiency Bonus times per Long Rest."
+        ]
+      ]
+    },
+    "Hobgoblin": {
+      "src": "Monsters of the Multiverse",
+      "creatureType": "Humanoid",
+      "size": "Medium",
+      "speed": 30,
+      "darkvision": 60,
+      "advAgainst": [
+        "charmed"
+      ],
+      "traits": [
+        [
+          "Fey Gift",
+          "Help as a Bonus Action, Proficiency Bonus times per Long Rest; from level 3 add Hospitality, Passage, or Spite."
+        ],
+        [
+          "Fortune from the Many",
+          "After a miss or failed check or save, add up to +3 for allies within 30 feet, Proficiency Bonus times per Long Rest."
+        ]
+      ]
+    },
+    "Kenku": {
+      "src": "Monsters of the Multiverse",
+      "creatureType": "Humanoid",
+      "size": "Medium or Small",
+      "speed": 30,
+      "skillPick": {
+        "n": 2,
+        "from": "any"
+      },
+      "traits": [
+        [
+          "Expert Duplication",
+          "Advantage on checks to copy writing or craftwork."
+        ],
+        [
+          "Kenku Recall",
+          "Proficiency in two skills; give yourself Advantage on a proficient skill check, Proficiency Bonus times per Long Rest."
+        ],
+        [
+          "Mimicry",
+          "Mimic sounds and voices; Insight check to see through it."
+        ]
+      ]
+    },
+    "Kobold": {
+      "src": "Monsters of the Multiverse",
+      "creatureType": "Humanoid",
+      "size": "Small",
+      "speed": 30,
+      "darkvision": 60,
+      "choice": {
+        "key": "legacy",
+        "label": "Kobold Legacy",
+        "options": {
+          "Craftiness": {
+            "skillPick": {
+              "n": 1,
+              "from": [
+                "arcana",
+                "investigation",
+                "medicine",
+                "sleight",
+                "survival"
+              ]
+            }
+          },
+          "Defiance": {
+            "advAgainst": [
+              "frightened"
+            ]
+          },
+          "Draconic Sorcery": {
+            "summary": "One Sorcerer cantrip of your choice, cast with Intelligence, Wisdom, or Charisma."
+          }
+        }
+      },
+      "traits": [
+        [
+          "Draconic Cry",
+          "Bonus Action: you and allies have Advantage on attacks against enemies within 10 feet until your next turn, Proficiency Bonus times per Long Rest."
+        ],
+        [
+          "Kobold Legacy",
+          "Craftiness, Defiance, or Draconic Sorcery."
+        ]
+      ]
+    },
+    "Lizardfolk": {
+      "src": "Monsters of the Multiverse",
+      "creatureType": "Humanoid",
+      "size": "Medium",
+      "speed": 30,
+      "speeds": {
+        "swim": "speed"
+      },
+      "naturalArmor": {
+        "base": 13,
+        "addDex": true
+      },
+      "skillPick": {
+        "n": 2,
+        "from": [
+          "animal",
+          "medicine",
+          "nature",
+          "perception",
+          "stealth",
+          "survival"
+        ]
+      },
+      "traits": [
+        [
+          "Bite",
+          "Unarmed Strikes deal 1d6 + Strength Slashing."
+        ],
+        [
+          "Hold Breath",
+          "Up to 15 minutes."
+        ],
+        [
+          "Hungry Jaws",
+          "Bonus Action Bite that grants Temporary Hit Points equal to your Proficiency Bonus on a hit, Proficiency Bonus times per Long Rest."
+        ],
+        [
+          "Natural Armor",
+          "Base AC 13 + DEX without armor."
+        ],
+        [
+          "Nature's Intuition",
+          "Two of Animal Handling, Medicine, Nature, Perception, Stealth, or Survival."
+        ]
+      ]
+    },
+    "Minotaur": {
+      "src": "Monsters of the Multiverse",
+      "creatureType": "Humanoid",
+      "size": "Medium",
+      "speed": 30,
+      "traits": [
+        [
+          "Horns",
+          "Unarmed Strikes deal 1d6 + Strength Piercing."
+        ],
+        [
+          "Goring Rush",
+          "After a Dash of 20 feet or more, Bonus Action horn attack."
+        ],
+        [
+          "Hammering Horns",
+          "After an Attack-action melee hit, Bonus Action shove of 10 feet on a failed Strength save."
+        ],
+        [
+          "Labyrinthine Recall",
+          "Always know north; Advantage on Survival checks to navigate or track."
+        ]
+      ]
+    },
+    "Satyr": {
+      "src": "Monsters of the Multiverse",
+      "creatureType": "Fey",
+      "size": "Medium",
+      "speed": 35,
+      "advSaves": [
+        "str",
+        "dex",
+        "con",
+        "int",
+        "wis",
+        "cha"
+      ],
+      "advSavesVs": "spells",
+      "skillProf": [
+        "performance",
+        "persuasion"
+      ],
+      "toolPick": {
+        "n": 1,
+        "from": [
+          "Musical Instrument"
+        ]
+      },
+      "traits": [
+        [
+          "Ram",
+          "Unarmed Strikes deal 1d6 + Strength Bludgeoning."
+        ],
+        [
+          "Magic Resistance",
+          "Advantage on saves against spells."
+        ],
+        [
+          "Mirthful Leaps",
+          "Add 1d8 feet to long and high jumps."
+        ],
+        [
+          "Reveler",
+          "Proficiency in Performance, Persuasion, and one musical instrument."
+        ]
+      ]
+    },
+    "Sea Elf": {
+      "src": "Monsters of the Multiverse",
+      "creatureType": "Humanoid",
+      "size": "Medium",
+      "speed": 30,
+      "speeds": {
+        "swim": "speed"
+      },
+      "darkvision": 60,
+      "resist": [
+        "cold"
+      ],
+      "advAgainst": [
+        "charmed"
+      ],
+      "skillProf": [
+        "perception"
+      ],
+      "traits": [
+        [
+          "Child of the Sea",
+          "Breathe air and water; resistance to cold."
+        ],
+        [
+          "Friend of the Sea",
+          "Communicate simple ideas to swimming Beasts."
+        ],
+        [
+          "Trance",
+          "4-hour Long Rest; two weapon or tool proficiencies until the next one."
+        ]
+      ]
+    },
+    "Shadar-kai": {
+      "src": "Monsters of the Multiverse",
+      "creatureType": "Humanoid",
+      "size": "Medium",
+      "speed": 30,
+      "darkvision": 60,
+      "resist": [
+        "necrotic"
+      ],
+      "advAgainst": [
+        "charmed"
+      ],
+      "skillProf": [
+        "perception"
+      ],
+      "traits": [
+        [
+          "Blessing of the Raven Queen",
+          "Bonus Action teleport up to 30 feet, Proficiency Bonus times per Long Rest; from level 3, resistance to all damage until your next turn."
+        ],
+        [
+          "Trance",
+          "4-hour Long Rest; two weapon or tool proficiencies until the next one."
+        ]
+      ]
+    },
+    "Tabaxi": {
+      "src": "Monsters of the Multiverse",
+      "creatureType": "Humanoid",
+      "size": "Medium or Small",
+      "speed": 30,
+      "speeds": {
+        "climb": "speed"
+      },
+      "darkvision": 60,
+      "skillProf": [
+        "perception",
+        "stealth"
+      ],
+      "traits": [
+        [
+          "Cat's Claws",
+          "Unarmed Strikes deal 1d6 + Strength Slashing."
+        ],
+        [
+          "Feline Agility",
+          "Double your speed for a turn; recharges after a turn with no movement."
+        ]
+      ]
+    },
+    "Tortle": {
+      "src": "Monsters of the Multiverse",
+      "creatureType": "Humanoid",
+      "size": "Medium or Small",
+      "speed": 30,
+      "naturalArmor": {
+        "base": 17,
+        "addDex": false
+      },
+      "skillPick": {
+        "n": 1,
+        "from": [
+          "animal",
+          "medicine",
+          "nature",
+          "perception",
+          "stealth",
+          "survival"
+        ]
+      },
+      "traits": [
+        [
+          "Claws",
+          "Unarmed Strikes deal 1d6 + Strength Slashing."
+        ],
+        [
+          "Hold Breath",
+          "Up to 1 hour."
+        ],
+        [
+          "Natural Armor",
+          "Base AC 17, no DEX; cannot wear armor, shields still apply."
+        ],
+        [
+          "Shell Defense",
+          "Action: withdraw for +4 AC and Advantage on Strength and Constitution saves, Prone with Speed 0."
+        ]
+      ]
+    },
+    "Triton": {
+      "src": "Monsters of the Multiverse",
+      "creatureType": "Humanoid",
+      "size": "Medium",
+      "speed": 30,
+      "speeds": {
+        "swim": "speed"
+      },
+      "darkvision": 60,
+      "resist": [
+        "cold"
+      ],
+      "spellAbility": "choose",
+      "spells": [
+        {
+          "spell": "Fog Cloud",
+          "level": 1,
+          "free": "1/LR"
+        },
+        {
+          "spell": "Gust of Wind",
+          "level": 3,
+          "free": "1/LR"
+        },
+        {
+          "spell": "Water Walk",
+          "level": 5,
+          "free": "1/LR"
+        }
+      ],
+      "traits": [
+        [
+          "Amphibious",
+          "Breathe air and water."
+        ],
+        [
+          "Control Air and Water",
+          "Fog Cloud; Gust of Wind from level 3 and Water Walk from level 5, each once per Long Rest without a slot."
+        ],
+        [
+          "Emissary of the Sea",
+          "Communicate simple ideas to swimming creatures."
+        ],
+        [
+          "Guardian of the Depths",
+          "Resistance to cold damage."
+        ]
+      ]
+    },
+    "Yuan-ti": {
+      "src": "Monsters of the Multiverse",
+      "creatureType": "Humanoid",
+      "size": "Medium or Small",
+      "speed": 30,
+      "darkvision": 60,
+      "advSaves": [
+        "str",
+        "dex",
+        "con",
+        "int",
+        "wis",
+        "cha"
+      ],
+      "advSavesVs": "spells",
+      "resist": [
+        "poison"
+      ],
+      "advAgainst": [
+        "poisoned"
+      ],
+      "spellAbility": "choose",
+      "spells": [
+        {
+          "spell": "Poison Spray",
+          "level": 1
+        },
+        {
+          "spell": "Animal Friendship",
+          "level": 1
+        },
+        {
+          "spell": "Suggestion",
+          "level": 3,
+          "free": "1/LR"
+        }
+      ],
+      "traits": [
+        [
+          "Magic Resistance",
+          "Advantage on saves against spells."
+        ],
+        [
+          "Poison Resilience",
+          "Resistance to poison; Advantage against the Poisoned condition."
+        ],
+        [
+          "Serpentine Spellcasting",
+          "Poison Spray; Animal Friendship on snakes at will; Suggestion from level 3 once per Long Rest without a slot."
         ]
       ]
     }
