@@ -25,6 +25,12 @@ export type Ruleset = "2014" | "2024";
 export const SPECIES_ABILITY_KEY = "Spellcasting Ability";
 export const SPECIES_ABILITY_OPTIONS = ["Intelligence", "Wisdom", "Charisma"];
 
+// Species skill and tool picks (Keen Senses, Skillful, Specialized Design), one key per pick so a
+// species granting two skills stores two values in the same Record<string, string> as other picks.
+export const speciesSkillKey = (i: number) => `Species Skill ${i + 1}`;
+export const speciesToolKey = (i: number) => `Species Tool ${i + 1}`;
+export const isSpeciesProfKey = (k: string) => /^Species (Skill|Tool) \d+$/.test(k);
+
 const norm = (s: string) =>
   (s || "").toLowerCase().replace(/\([^)]*\)/g, "").replace(/[‘’']/g, "").replace(/[^a-z0-9]+/g, " ").trim();
 

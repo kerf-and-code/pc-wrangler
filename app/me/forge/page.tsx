@@ -58,7 +58,7 @@ import { subclassCasterType, subclassSpellList, subclassCasting, thirdCasterSlot
 import { subclassSpellsFor } from "@/lib/subclass-spells";
 import {
   resolveSpecies, speciesMechanics, structuredChoiceOptions, matchOption,
-  SPECIES_ABILITY_KEY, SPECIES_ABILITY_OPTIONS,
+  SPECIES_ABILITY_KEY, SPECIES_ABILITY_OPTIONS, speciesSkillKey, speciesToolKey, isSpeciesProfKey,
 } from "@/lib/srd/species-effects";
 import { choiceEffects, applyToBuild, type ChoiceEffects } from "@/lib/apply-choices";
 import { parseCoreTraits } from "@/lib/core-traits";
@@ -616,7 +616,7 @@ function ForgeInner() {
     const allPicks = (build as Build & { speciesChoices?: Record<string, string> }).speciesChoices || {};
     const mechNow = resolvedSpecies?.mech;
     const textPicks = Object.fromEntries(Object.entries(allPicks).filter(([k]) =>
-      k !== SPECIES_ABILITY_KEY && !structuredChoiceOptions(mechNow, k)));
+      k !== SPECIES_ABILITY_KEY && !isSpeciesProfKey(k) && !structuredChoiceOptions(mechNow, k)));
 
     const cls = build.meta.className || "";
     const expertiseKeys = choicesFor(cls, build.meta.subclass || "", build.level || 1, edition)
@@ -644,6 +644,22 @@ function ForgeInner() {
     });
     if (resolvedSpecies?.option && mechNow?.choice) {
       fx.applied.push(`${resolvedSpecies.option} from ${mechNow.choice.label}`);
+    }
+    // Species skill picks are real proficiencies and go where background and class skills go.
+    // Tool picks are recorded and listed; the engine has no tool-check numbers to move.
+    const spName = build.meta.species || "your species";
+    const sk = resolvedSpecies?.effects.skillPick;
+    for (let i = 0; sk && i < sk.n; i++) {
+      const key = allPicks[speciesSkillKey(i)];
+      const label = SKILLS.find(([k]) => k === key)?.[1];
+      if (!key || !label) continue;
+      if (!fx.skillProf.includes(key)) fx.skillProf.push(key);
+      fx.applied.push(`${label} proficiency from ${spName}`);
+    }
+    const tp = resolvedSpecies?.effects.toolPick;
+    for (let i = 0; tp && i < tp.n; i++) {
+      const tool = allPicks[speciesToolKey(i)];
+      if (tool) fx.applied.push(`${tool} proficiency from ${spName}`);
     }
     return fx;
   }, [build, speciesVariant, srd.speciesByName, srd.variantByName, srd.bgByName, srd.featByName, resolvedSpecies]);
@@ -755,7 +771,14 @@ function ForgeInner() {
     setSaveState("idle");
   }, []);
 
-  const setSpecies = (v: string) => patch((b) => { b.meta.species = v; return b; });
+  const setSpecies = (v: string) => patch((b) => {
+    // A new species asks different questions, so the old answers (an elf's lineage, its Keen Senses
+    // skill) are cleared rather than left to apply to a species that never offered them. Same rule
+    // as a background change clearing its ability assignment.
+    if (b.meta.species !== v) (b as Build & { speciesChoices?: Record<string, string> }).speciesChoices = {};
+    b.meta.species = v;
+    return b;
+  });
   const setVariant = (v: string) => { setSpeciesVariant(v); setSaveState("idle"); };
   const setBackground = (v: string) => patch((b) => {
     b.meta.background = v;
@@ -1463,6 +1486,8 @@ function ForgeInner() {
                   desc={speciesDesc}
                   mech={speciesMechanics(build.meta.species, ruleset)}
                   resolved={resolvedSpecies}
+                  toolNames={srd.equipment.filter((e) => (e as { category?: string }).category === "Tools")
+                    .map((e) => e.name).concat(["Gaming Set", "Musical Instrument"]).sort()}
                   choices={(build as Build & { speciesChoices?: Record<string, string> }).speciesChoices || {}}
                   onSpecies={setSpecies} onVariant={setVariant} onChoice={setSpeciesChoice}
                 />
@@ -2465,11 +2490,12 @@ function RollPanel({ sheet, build, characterId }: {
  * structured entry still gets the text route, and its picks stay recorded rather than applied.
  */
 function SpeciesPanel({
-  build, speciesVariant, speciesOpts, variantOpts, speciesRec, variantRec, desc, mech, resolved,
+  build, speciesVariant, speciesOpts, variantOpts, speciesRec, variantRec, desc, mech, resolved, toolNames,
   choices, onSpecies, onVariant, onChoice,
 }: {
   mech: ReturnType<typeof speciesMechanics>;
   resolved: ReturnType<typeof resolveSpecies>;
+  toolNames: string[];
   build: Build; speciesVariant: string;
   speciesOpts: { name: string }[];
   variantOpts: { name: string; variant_kind: string }[];
@@ -2566,6 +2592,44 @@ function SpeciesPanel({
           </div>
         </div>
       )}
+
+      {(() => {
+        // Skill and tool picks the species grants. Rendered from the structured entry, so Keen
+        // Senses offers exactly Insight, Perception and Survival and Skillful offers every skill.
+        const sk = resolved?.effects.skillPick;
+        const tp = resolved?.effects.toolPick;
+        if (!sk && !tp) return null;
+        const skillOpts = !sk ? [] : sk.from === "any" ? SKILLS : SKILLS.filter(([k]) => (sk.from as string[]).includes(k));
+        const toolOpts = !tp ? [] : tp.from === "any" ? toolNames : (tp.from as string[]);
+        const box = { marginTop: 12, background: "rgba(0,0,0,0.24)", borderRadius: 4, padding: "10px 12px" };
+        const sel = { ...stoneField(), fontSize: 13.5, padding: "8px 10px", marginTop: 4 };
+        return (
+          <>
+            {sk && Array.from({ length: sk.n }, (_, i) => (
+              <div key={`sk${i}`} style={box}>
+                <div style={{ fontSize: 14, color: STONE.ink, marginBottom: 2 }}>
+                  Skill proficiency{sk.n > 1 ? ` ${i + 1}` : ""} from {build.meta.species}
+                </div>
+                <select value={choices[speciesSkillKey(i)] || ""} onChange={(e) => onChoice(speciesSkillKey(i), e.target.value)} style={sel}>
+                  <option value="">Not chosen</option>
+                  {skillOpts.map(([k, label]) => <option key={k} value={k}>{label}</option>)}
+                </select>
+              </div>
+            ))}
+            {tp && Array.from({ length: tp.n }, (_, i) => (
+              <div key={`tp${i}`} style={box}>
+                <div style={{ fontSize: 14, color: STONE.ink, marginBottom: 2 }}>
+                  Tool proficiency{tp.n > 1 ? ` ${i + 1}` : ""} from {build.meta.species}
+                </div>
+                <select value={choices[speciesToolKey(i)] || ""} onChange={(e) => onChoice(speciesToolKey(i), e.target.value)} style={sel}>
+                  <option value="">Not chosen</option>
+                  {toolOpts.map((t) => <option key={t} value={t}>{t}</option>)}
+                </select>
+              </div>
+            ))}
+          </>
+        );
+      })()}
 
       {mech?.spellAbility === "choose" && (
         <div style={{ marginTop: 12, background: "rgba(0,0,0,0.24)", borderRadius: 4, padding: "10px 12px" }}>
