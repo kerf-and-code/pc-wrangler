@@ -14,6 +14,107 @@
   "equipment": "A holy symbol (a gift to you when you entered the priesthood), a prayer book or prayer wheel, 5 sticks of incense, vestments, a set of common clothes, and a pouch containing 15 gp."
  },
  {
+  "name": "Apprentice Diver",
+  "legacy": true,
+  "skill_proficiencies": "Athletics, Nature",
+  "tool_proficiency": "Diver's armor",
+  "equipment": "An explorer's pack, a chest, a grappling hook, fishing tackle, a faction coin marking your lodge, and 11 gold flowers",
+  "feature": "Once a Member Always a Member: free room and board at either Coastal Diver's Lodge, which helps you as best it can.",
+  "source": "kc",
+  "book": "Obojima: Tales from the Tall Grass",
+  "partnered": true,
+  "partner": "Hit Point Press"
+ },
+ {
+  "name": "Apprentice Witch",
+  "legacy": true,
+  "skill_proficiencies": "Arcana, Survival",
+  "tool_proficiency": "Alchemist's supplies",
+  "equipment": "Alchemist's supplies, 9 common ingredients (attributes known), a hat or robe from your apprenticeship, and 9 gold flowers",
+  "feature": "Sibling Student: a close friend who studied under your witch and joined one of the six main covens acts as your liaison.",
+  "source": "kc",
+  "book": "Obojima: Tales from the Tall Grass",
+  "partnered": true,
+  "partner": "Hit Point Press"
+ },
+ {
+  "name": "Apprentice of AHA",
+  "legacy": true,
+  "skill_proficiencies": "History, Investigation",
+  "tool_proficiency": "One Artisan's Tool of your choice",
+  "equipment": "An explorer's pack, 5 candles, a shovel, a signal whistle, a journal of old research from your apprenticeship, and 13 gold flowers",
+  "feature": "Wise Reputation: from your time in the field you know or are known to many of the intellectuals and creative minds in Obojima's villages.",
+  "source": "kc",
+  "book": "Obojima: Tales from the Tall Grass",
+  "partnered": true,
+  "partner": "Hit Point Press"
+ },
+ {
+  "name": "Ashari",
+  "legacy": true,
+  "skill_proficiencies": "Nature, plus Arcana or Survival",
+  "tool_proficiency": "Herbalism kit",
+  "languages": "Primordial (dialect of your order)",
+  "equipment": "A set of traveler's clothes, a staff carved with symbols of your tribe, an herbalism kit, and a belt pouch containing 10 gp",
+  "feature": "Elemental Harmony: as an action, create minor elemental effects for your order (Pyrah: light or snuff a small flame; Terrah: a coin-sized rock; Vesrah: a cup of hot or cold water; Zephrah: a puff of wind).",
+  "source": "kc",
+  "book": "Tal'Dorei Reborn",
+  "partnered": true,
+  "partner": "Critical Role"
+ },
+ {
+  "name": "Astral Drifter",
+  "legacy": true,
+  "skill_proficiencies": "Insight, Religion",
+  "languages": "Two of your choice",
+  "equipment": "Traveler's clothes, a diary, an ink pen, a bottle of ink, and a pouch with 10 gp",
+  "feature": "Divine Contact: gain the Magic Initiate feat (cleric). A wandering deity you met in the Astral Sea shared one secret of cosmic lore with you. You are also 20d6 years older than you look."
+ },
+ {
+  "name": "Athlete",
+  "legacy": true,
+  "skill_proficiencies": "Acrobatics, Athletics",
+  "tool_proficiency": "Vehicles (land)",
+  "languages": "One of your choice",
+  "equipment": "A bronze discus or leather ball, a lucky charm or past trophy, traveler's clothes, and a pouch with 10 gp"
+ },
+ {
+  "name": "Azorius Functionary",
+  "legacy": true,
+  "skill_proficiencies": "Insight, Intimidation",
+  "languages": "Two of your choice",
+  "equipment": "An Azorius insignia, a scroll with the text of a law important to you, a bottle of blue ink, a pen, fine clothes, and a belt pouch with 10 gp"
+ },
+ {
+  "name": "Bandit Defector",
+  "legacy": true,
+  "skill_proficiencies": "Deception, Survival",
+  "tool_proficiency": "Disguise kit, and one gaming set or musical instrument",
+  "equipment": "A knife, a cooking pot, a winter blanket, an object from your cut of a robbery, a set of common clothes, and a pouch containing 10 gp",
+  "feature": "Bandit Routes: out of combat, you and companions you lead travel between locations through forested areas twice as fast.",
+  "source": "kc",
+  "book": "Humblewood Campaign Setting",
+  "partnered": true,
+  "partner": "Hit Point Press"
+ },
+ {
+  "name": "Boros Legionnaire",
+  "legacy": true,
+  "skill_proficiencies": "Athletics, Intimidation",
+  "tool_proficiency": "One type of gaming set",
+  "languages": "Choose one of Celestial, Draconic, Goblin, or Minotaur",
+  "equipment": "A Boros insignia, an angel's feather, a scrap of a Boros battle banner, common clothes, and a belt pouch with 2 gp"
+ },
+ {
+  "name": "Celebrity Adventurer's Scion",
+  "legacy": true,
+  "skill_proficiencies": "Perception, Performance",
+  "tool_proficiency": "Disguise kit",
+  "languages": "Two of your choice",
+  "equipment": "A disguise kit, fine clothes, and a pouch with 30 gp",
+  "feature": "Name Dropping: you have met many powerful people, some of whom remember you, and might get minor help from a major figure at the DM's discretion; common folk defer to you, and your stories can earn a free meal or bed."
+ },
+ {
   "name": "Charlatan",
   "legacy": true,
   "skill_proficiencies": "Deception, Sleight of Hand",
@@ -26,6 +127,31 @@
   "skill_proficiencies": "Deception, Sleight of Hand",
   "tool_proficiency": "Disguise kit, Forgery kit",
   "equipment": "A set of fine clothes, a disguise kit, tools of the con of your choice (ten stoppered bottles filled with colored liquid, a set of weighted dice, a deck of marked cards, or a signet ring of an imaginary duke), and a pouch containing 15 gp"
+ },
+ {
+  "name": "Clasp Member",
+  "legacy": true,
+  "skill_proficiencies": "Deception, plus Sleight of Hand or Stealth",
+  "tool_proficiency": "Disguise kit, forgery kit, or thieves' tools",
+  "languages": "Thieves' Cant",
+  "equipment": "A set of inconspicuous common clothes, a set of tools with which you're proficient, and a belt pouch containing 10 gp",
+  "feature": "A Favor in Turn: near a Clasp hub, request a favor of up to 20 words (muscle, a loan, a jailbreak); the Clasp will later call in repayment without warning.",
+  "source": "kc",
+  "book": "Tal'Dorei Reborn",
+  "partnered": true,
+  "partner": "Critical Role"
+ },
+ {
+  "name": "Courier Brigade Cadet",
+  "legacy": true,
+  "skill_proficiencies": "Stealth, Survival",
+  "tool_proficiency": "Cobbler's tools",
+  "equipment": "An explorer's pack, cobbler's tools, a climber's kit, a hooded lantern, a lock, an old Courier Brigade uniform, and 11 gold flowers",
+  "feature": "Pocket Map: a worn island map marked with paths known only to the Courier Brigade.",
+  "source": "kc",
+  "book": "Obojima: Tales from the Tall Grass",
+  "partnered": true,
+  "partner": "Hit Point Press"
  },
  {
   "name": "Criminal / Spy",
@@ -42,6 +168,14 @@
   "equipment": "Choose A or B: (A) Greatclub, Leatherworker’s Tools, Bedroll, Blanket, Healer’s Kit, Pole, Rations (3 days’ worth), Tent, Tinderbox, 5 Torches, Traveler’s Clothes, Waterskin, 32 GP; or (B) 50 GP"
  },
  {
+  "name": "Dimir Operative",
+  "legacy": true,
+  "skill_proficiencies": "Deception, Stealth",
+  "tool_proficiency": "Disguise kit",
+  "languages": "One of your choice",
+  "equipment": "A Dimir insignia, three small knives, dark common clothes, and the starting equipment of your secondary guild's background"
+ },
+ {
   "name": "Entertainer",
   "legacy": true,
   "skill_proficiencies": "Acrobatics, Performance",
@@ -54,6 +188,15 @@
   "skill_proficiencies": "Acrobatics, Performance",
   "tool_proficiency": "Disguise kit, one type of musical instrument",
   "equipment": "A musical instrument (one of your choice), the favor of an admirer (love letter, lock of hair, or trinket), a costume, and a pouch containing 15 gp"
+ },
+ {
+  "name": "Failed Merchant",
+  "legacy": true,
+  "skill_proficiencies": "Investigation, Persuasion",
+  "tool_proficiency": "One type of artisan's tools",
+  "languages": "One of your choice",
+  "equipment": "Artisan's tools, a merchant's scale, fine clothes, and a pouch with 10 gp",
+  "feature": "Supply Chain: you keep connections with wholesalers, suppliers and other merchants to call on for goods or information."
  },
  {
   "name": "Folk Hero",
@@ -70,6 +213,31 @@
   "equipment": "A set of artisan’s tools (one of your choice), a shovel, an iron pot, a set of common clothes, and a pouch containing 10 gp"
  },
  {
+  "name": "Gambler",
+  "legacy": true,
+  "skill_proficiencies": "Deception, Insight",
+  "tool_proficiency": "One gaming set",
+  "languages": "One of your choice",
+  "equipment": "A gaming set, a lucky charm, fine clothes, and a pouch with 15 gp",
+  "feature": "Never Tell Me the Odds: during downtime involving chance or plans, you get a solid sense of the likeliest best choice and of offers too good to be true, at the DM's determination."
+ },
+ {
+  "name": "Gate Warden",
+  "legacy": true,
+  "skill_proficiencies": "Persuasion, Survival",
+  "languages": "Two of your choice",
+  "equipment": "A ring of keys to unknown locks, a blank book, an ink pen or quill, a bottle of black ink, traveler's clothes, and a pouch with 10 gp",
+  "feature": "Planar Infusion: gain the Scion of the Outer Planes feat, and you know where to find free modest lodging and food in the community you grew up in."
+ },
+ {
+  "name": "Giant Foundling",
+  "legacy": true,
+  "skill_proficiencies": "Intimidation, Survival",
+  "languages": "Giant and one other of your choice",
+  "equipment": "A backpack, traveler's clothes, a small stone or sprig that reminds you of home, and a pouch with 10 gp",
+  "feature": "Strike of the Giants: gain the Strike of the Giants feat."
+ },
+ {
   "name": "Gladiator",
   "legacy": true,
   "skill_proficiencies": "Acrobatics, Performance",
@@ -83,6 +251,36 @@
   "tool_proficiency": "Poisoner’s kit",
   "languages": "Choose one of Elvish, Giant, or Kraul",
   "equipment": "A Golgari insignia, a poisoner’s kit, a pet beetle or spider, a set of common clothes, and a belt pouch containing 10 gp worth of mixed coins"
+ },
+ {
+  "name": "Grinner",
+  "legacy": true,
+  "skill_proficiencies": "Deception, Performance",
+  "tool_proficiency": "One type of musical instrument, thieves' tools",
+  "languages": "None",
+  "equipment": "Fine clothes, a disguise kit, a musical instrument of your choice, a gold-plated smiling-face ring, and a pouch with 15 gp",
+  "feature": "Ballad of the Grinning Fool: in any city of 10,000 or more on the Menagerie Coast or in the Dwendalian Empire, playing the ballad in a major tavern or inn brings a Golden Grin member who shelters you and companions you vouch for, while it stays safe to do so. Beware: not everyone who knows the ballad is a friend."
+ },
+ {
+  "name": "Grounded",
+  "legacy": true,
+  "skill_proficiencies": "Athletics, Insight",
+  "tool_proficiency": "One type of artisan's tools",
+  "languages": "One of your choice",
+  "equipment": "A set of artisan's tools, a walking stick, a trinket from another culture, traveling clothes, and a belt pouch with 5 gp",
+  "feature": "Find Another Path: you always recall the forest floor's layout, can find a way around obstacles that would require climbing, and can usually find safe shelter for you and up to five others.",
+  "source": "kc",
+  "book": "Humblewood Campaign Setting",
+  "partnered": true,
+  "partner": "Hit Point Press"
+ },
+ {
+  "name": "Gruul Anarch",
+  "legacy": true,
+  "skill_proficiencies": "Animal Handling, Athletics",
+  "tool_proficiency": "Herbalism kit",
+  "languages": "Choose one of Draconic, Giant, Goblin, or Sylvan",
+  "equipment": "A Gruul insignia, a hunting trap, an herbalism kit, a boar skull, a beast-hide cloak, traveler's clothes, and a belt pouch with 10 gp"
  },
  {
   "name": "Guild Artisan / Guild Merchant",
@@ -130,6 +328,14 @@
   "equipment": "A magnifying glass, evidence from a past case (choose one or roll for a trinket from the Horror Trinkets table after this background), a set of common clothes, and 10 gp"
  },
  {
+  "name": "Izzet Engineer",
+  "legacy": true,
+  "skill_proficiencies": "Arcana, Investigation",
+  "tool_proficiency": "One type of artisan's tools",
+  "languages": "Choose one of Draconic, Goblin, or Vedalken",
+  "equipment": "An Izzet insignia, artisan's tools, the remains of a failed experiment, a hammer, a block and tackle, common clothes, and a belt pouch with 5 gp"
+ },
+ {
   "name": "Knight",
   "legacy": true,
   "skill_proficiencies": "History, Persuasion",
@@ -142,7 +348,48 @@
   "legacy": true,
   "skill_proficiencies": "Athletics, Survival",
   "languages": "Two of your choice",
-  "equipment": "An insignia of rank, a deck of cards, a set of common clothes, and a pouch containing 10 gp"
+  "equipment": "An insignia of rank, a deck of cards, a set of common clothes, and a pouch containing 10 gp",
+  "feature": "Squire of Solamnia: gain the Squire of Solamnia feat. The Knights of Solamnia give you free modest lodging and food at their fortresses and encampments."
+ },
+ {
+  "name": "Lorehold Student",
+  "legacy": true,
+  "skill_proficiencies": "History, Religion",
+  "languages": "Two of your choice",
+  "equipment": "Black ink, an ink pen, a hammer, a hooded lantern, a tinderbox, a tome of history, a school uniform, and a pouch with 15 gp",
+  "feature": "Lorehold Initiate: gain the Strixhaven Initiate feat (Lorehold). Spellcasters add to their class list: comprehend languages, identify, borrowed knowledge, locate object, speak with dead, spirit guardians, arcane eye, stone shape, flame strike, legend lore."
+ },
+ {
+  "name": "Lyceum Scholar",
+  "legacy": true,
+  "skill_proficiencies": "Two of Arcana, History, or Persuasion",
+  "languages": "Two of your choice",
+  "equipment": "A set of fine clothes, a student uniform, a writing kit, and a belt pouch containing 10 gp",
+  "feature": "Academic Requisition: at the Lyceum or allied academies, requisition any tool set (alarmed if removed) and get spellcasting services at a 25 percent discount.",
+  "source": "kc",
+  "book": "Tal'Dorei Reborn",
+  "partnered": true,
+  "partner": "Critical Role"
+ },
+ {
+  "name": "Mage of High Sorcery",
+  "legacy": true,
+  "skill_proficiencies": "Arcana, History",
+  "languages": "Two of your choice",
+  "equipment": "A bottle of colored ink, an ink pen, common clothes, and a pouch with 10 gp",
+  "feature": "Initiate of High Sorcery: gain the Initiate of High Sorcery feat. The Mages of High Sorcery give you free modest lodging and food indefinitely at any occupied Tower of High Sorcery, and for one night at a member's home."
+ },
+ {
+  "name": "Mechanic",
+  "legacy": true,
+  "skill_proficiencies": "Mechanics, Salvage",
+  "tool_proficiency": "Three Artisan's Tools of your choice",
+  "equipment": "An abacus, ball bearings (1,000), a block and tackle, a flask of oil, an unfinished mechanical trinket, and 15 gold flowers",
+  "feature": "Machine Whisperer: a few minutes with a machine tells you whether it is sundered, in disrepair, or functioning.",
+  "source": "kc",
+  "book": "Obojima: Tales from the Tall Grass",
+  "partnered": true,
+  "partner": "Hit Point Press"
  },
  {
   "name": "Noble",
@@ -159,6 +406,13 @@
   "tool_proficiency": "One type of gaming set",
   "languages": "One of your choice",
   "equipment": "A set of fine clothes, a signet ring, a scroll of pedigree, and a purse containing 25 gp"
+ },
+ {
+  "name": "Orzhov Representative",
+  "legacy": true,
+  "skill_proficiencies": "Intimidation, Religion",
+  "languages": "Two of your choice",
+  "equipment": "An Orzhov insignia, a foot-long chain of ten gold coins, vestments, fine clothes, and a belt pouch with 1 pp"
  },
  {
   "name": "Outlander",
@@ -192,6 +446,70 @@
   "equipment": "One set of artisan’s tools, fine clothes, 20 gp"
  },
  {
+  "name": "Planar Philosopher",
+  "legacy": true,
+  "skill_proficiencies": "Arcana, plus your faction's skill or one of your choice",
+  "languages": "Two of your choice",
+  "equipment": "A portal key, a manifesto of your philosophy, common clothes in your faction's style, and a pouch with 10 gp in coins from many worlds and planes",
+  "feature": "Conviction: gain the Scion of the Outer Planes feat, and members of your organization give you free modest lodging and food at their holdings and homes. Faction skills: Athar Religion, Bleak Cabal Insight, Doomguard Nature, Fated Intimidation, Fraternity of Order History, Hands of Havoc Stealth, Harmonium Perception, Heralds of Dust Medicine, Mercykillers Survival, Mind's Eye Persuasion, Society of Sensation Performance, Transcendent Order Athletics."
+ },
+ {
+  "name": "Prismari Student",
+  "legacy": true,
+  "skill_proficiencies": "Acrobatics, Performance",
+  "tool_proficiency": "One type of musical instrument or artisan's tools",
+  "languages": "One of your choice",
+  "equipment": "Black ink, an ink pen, artisan's tools or a musical instrument, a school uniform, and a pouch with 10 gp",
+  "feature": "Prismari Initiate: gain the Strixhaven Initiate feat (Prismari). Spellcasters add to their class list: chromatic orb, thunderwave, flaming sphere, kinetic jaunt, haste, water walk, freedom of movement, wall of fire, cone of cold, conjure elemental."
+ },
+ {
+  "name": "Quandrix Student",
+  "legacy": true,
+  "skill_proficiencies": "Arcana, Nature",
+  "tool_proficiency": "One type of artisan's tools",
+  "languages": "One of your choice",
+  "equipment": "Black ink, an ink pen, an abacus, a book of arcane theory, a school uniform, and a pouch with 15 gp",
+  "feature": "Quandrix Initiate: gain the Strixhaven Initiate feat (Quandrix). Spellcasters add to their class list: entangle, guiding bolt, enlarge/reduce, vortex warp, aura of vitality, haste, control water, freedom of movement, circle of power, passwall."
+ },
+ {
+  "name": "Rakdos Cultist",
+  "legacy": true,
+  "skill_proficiencies": "Acrobatics, Performance",
+  "tool_proficiency": "One type of musical instrument",
+  "languages": "Choose either Abyssal or Giant",
+  "equipment": "A Rakdos insignia, a musical instrument, a costume, a wrought-iron hooded lantern, a 10-foot spiked chain, a tinderbox, 10 torches, common clothes, a belt pouch with 10 gp, and a bottle of sweet red juice"
+ },
+ {
+  "name": "Reformed Cultist",
+  "legacy": true,
+  "skill_proficiencies": "Deception, Religion",
+  "languages": "One of your choice",
+  "equipment": "Vestments and a holy symbol of your previous cult, a set of common clothes, and a belt pouch containing 15 gp",
+  "feature": "Fell Teachings: advantage on Religion checks about one Betrayer God's faith, and a secret learned in the cult worked out with your GM.",
+  "source": "kc",
+  "book": "Tal'Dorei Reborn",
+  "partnered": true,
+  "partner": "Critical Role"
+ },
+ {
+  "name": "Rival Intern",
+  "legacy": true,
+  "skill_proficiencies": "History, Investigation",
+  "tool_proficiency": "One type of artisan's tools",
+  "languages": "One of your choice",
+  "equipment": "Artisan's tools, a ledger from your previous employer holding one useful piece of information, fine clothes, and a pouch with 10 gp",
+  "feature": "Inside Informant: you keep contacts at your previous employer and the groups you dealt with, who can share information at the DM's discretion."
+ },
+ {
+  "name": "Rune Carver",
+  "legacy": true,
+  "skill_proficiencies": "History, Perception",
+  "tool_proficiency": "One set of artisan's tools",
+  "languages": "Giant",
+  "equipment": "Artisan's tools of your choice, a small knife, a whetstone, common clothes, and a pouch with 10 gp",
+  "feature": "Rune Shaper: gain the Rune Shaper feat."
+ },
+ {
   "name": "Sage",
   "legacy": true,
   "skill_proficiencies": "Arcana, History",
@@ -220,6 +538,29 @@
   "equipment": "A belaying pin (club), 50 feet of silk rope, a lucky charm such as a rabbit foot or a small stone with a hole in the center (or you may roll for a random trinket on the Trinkets table in chapter 5 of the Player’s Handbook), a set of common clothes, and a pouch containing 10 gp"
  },
  {
+  "name": "Selesnya Initiate",
+  "legacy": true,
+  "skill_proficiencies": "Nature, Persuasion",
+  "tool_proficiency": "One type of artisan's tools or one musical instrument",
+  "languages": "Choose one of Elvish, Loxodon, or Sylvan",
+  "equipment": "A Selesnya insignia, a healer's kit, robes, common clothes, and a belt pouch with 5 gp"
+ },
+ {
+  "name": "Silverquill Student",
+  "legacy": true,
+  "skill_proficiencies": "Intimidation, Persuasion",
+  "languages": "Two of your choice",
+  "equipment": "Black ink, an ink pen, a book of poetry, a school uniform, and a pouch with 15 gp",
+  "feature": "Silverquill Initiate: gain the Strixhaven Initiate feat (Silverquill). Spellcasters add to their class list: dissonant whispers, silvery barbs, calm emotions, darkness, beacon of hope, daylight, compulsion, confusion, dominate person, Rary's telepathic bond."
+ },
+ {
+  "name": "Simic Scientist",
+  "legacy": true,
+  "skill_proficiencies": "Arcana, Medicine",
+  "languages": "Two of your choice",
+  "equipment": "A Simic insignia, common clothes, a book of research notes, an ink pen, a bottle of squid ink, a flask of blubber oil, a vial of acid, vials of fish scales, seaweed and jellyfish stingers, a bottle of unidentified slime, and a belt pouch with 10 gp"
+ },
+ {
   "name": "Soldier",
   "legacy": true,
   "skill_proficiencies": "Athletics, Intimidation",
@@ -234,6 +575,18 @@
   "equipment": "An insignia of rank, a trophy taken from a fallen enemy (a dagger, broken blade, or piece of a banner), a set of bone dice or deck of cards, a set of common clothes, and a pouch containing 10 gp"
  },
  {
+  "name": "Spirit Kin",
+  "legacy": true,
+  "skill_proficiencies": "Mechanics, Persuasion",
+  "languages": "Torum",
+  "equipment": "A bedroll, 10 candles, two different common ingredients linked to your spirit allies, a special gift from a spirit, and 10 gold flowers",
+  "feature": "Connections Beyond Material: you know two spirits by name and can contact them from any distance or plane with a personal ritual using your two chosen ingredients.",
+  "source": "kc",
+  "book": "Obojima: Tales from the Tall Grass",
+  "partnered": true,
+  "partner": "Hit Point Press"
+ },
+ {
   "name": "Urchin",
   "legacy": true,
   "skill_proficiencies": "Sleight of Hand, Stealth",
@@ -246,5 +599,58 @@
   "skill_proficiencies": "Sleight of Hand, Stealth",
   "tool_proficiency": "Disguise kit, thieves’ tools",
   "equipment": "A small knife, a map of the city you grew up in, a pet mouse, a token to remember your parents by, a set of common clothes, and a pouch containing 10 gp"
+ },
+ {
+  "name": "Volstrucker Agent",
+  "legacy": true,
+  "skill_proficiencies": "Deception, Stealth",
+  "tool_proficiency": "Poisoner's kit",
+  "languages": "One of your choice",
+  "equipment": "Common clothes, a black hooded cloak, a poisoner's kit, and a pouch with 10 gp",
+  "feature": "Shadow Network: a letter written in spellbook ink (10 gp per page), addressed to a Volstrucker member and burned in a fire, reappears whole on that agent."
+ },
+ {
+  "name": "Whitestone Rifle Corps",
+  "legacy": true,
+  "skill_proficiencies": "Two of Athletics, Perception, or Survival",
+  "tool_proficiency": "Firearms (weapon proficiency)",
+  "languages": "One of your choice",
+  "equipment": "A musket or a pistol, a set of common clothes, and a pouch containing 10 gp",
+  "feature": "Legacy of Secrecy: your issued firearm marks your status and changes how others treat you; work out your current relationship with the Rifle Corps with your GM.",
+  "source": "kc",
+  "book": "Tal'Dorei Reborn",
+  "partnered": true,
+  "partner": "Critical Role"
+ },
+ {
+  "name": "Wildspacer",
+  "legacy": true,
+  "skill_proficiencies": "Athletics, Survival",
+  "tool_proficiency": "Navigator's tools, vehicles (space)",
+  "languages": "None",
+  "equipment": "A belaying pin (club), traveler's clothes, a grappling hook, 50 feet of hempen rope, and a pouch with 10 gp",
+  "feature": "Wildspace Adaptation: gain the Tough feat, and weightlessness doesn't give you disadvantage on melee attack rolls."
+ },
+ {
+  "name": "Wind-Touched",
+  "legacy": true,
+  "skill_proficiencies": "Acrobatics, Performance",
+  "tool_proficiency": "One type of wind musical instrument",
+  "languages": "Auran (speak and understand)",
+  "equipment": "A wind musical instrument, an ornate cloak, a symbol of the wind, common clothes, and a belt pouch containing 10 gp",
+  "feature": "Supernatural Presence: believers who see you perform feats attributable to the wind support you and may revere you.",
+  "source": "kc",
+  "book": "Humblewood Campaign Setting",
+  "partnered": true,
+  "partner": "Hit Point Press"
+ },
+ {
+  "name": "Witherbloom Student",
+  "legacy": true,
+  "skill_proficiencies": "Nature, Survival",
+  "tool_proficiency": "Herbalism kit",
+  "languages": "One of your choice",
+  "equipment": "Black ink, an ink pen, a plant identification book, an iron pot, an herbalism kit, a school uniform, and a pouch with 15 gp",
+  "feature": "Witherbloom Initiate: gain the Strixhaven Initiate feat (Witherbloom). Spellcasters add to their class list: cure wounds, inflict wounds, lesser restoration, wither and bloom, revivify, vampiric touch, blight, death ward, antilife shell, greater restoration."
  }
 ]
