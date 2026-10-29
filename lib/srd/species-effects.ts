@@ -44,16 +44,34 @@ export function structuredChoiceOptions(
   return Object.entries(mech.choice.options).map(([name, o]) => ({ name, detail: o.summary }));
 }
 
-/** The picked option of the species' choice, matched loosely so older saves still resolve. */
+/** The option of the species' choice that a name refers to ("Black" finds "Black (acid)"). */
+export function matchOption(
+  mech: SpeciesMechanics | undefined, raw: string | undefined,
+): { name: string; effects: SpeciesEffects } | null {
+  if (!mech?.choice || !raw) return null;
+  const want = norm(raw);
+  if (!want) return null;
+  const opts = Object.entries(mech.choice.options);
+  // Exact after normalizing first; then "Wood Elf" inside a catalog name like "Elf, Wood Elf".
+  const hit = opts.find(([k]) => norm(k) === want) || opts.find(([k]) => want.includes(norm(k)));
+  return hit ? { name: hit[0], effects: hit[1] } : null;
+}
+
+/**
+ * The picked option of the species' choice.
+ *
+ * TWO PLACES CAN MAKE THIS PICK. The Species tab records it under the trait name; the Identity tab's
+ * Lineage / Subrace dropdown records a catalog variant ("Wood Elf"). An explicit Species-tab pick
+ * wins; otherwise the variant is used when it names one of the options. Before 2026-10-28 only the
+ * Species tab was read, so a Wood Elf chosen on the Identity tab moved nothing.
+ */
 export function pickedOption(
-  mech: SpeciesMechanics | undefined, picks: Record<string, string>,
+  mech: SpeciesMechanics | undefined, picks: Record<string, string>, variant?: string,
 ): { name: string; effects: SpeciesEffects } | null {
   if (!mech?.choice) return null;
   const label = norm(mech.choice.label);
   const raw = Object.entries(picks).find(([k]) => norm(k) === label)?.[1];
-  if (!raw) return null;
-  const hit = Object.entries(mech.choice.options).find(([k]) => norm(k) === norm(raw));
-  return hit ? { name: hit[0], effects: hit[1] } : null;
+  return matchOption(mech, raw) || matchOption(mech, variant);
 }
 
 const union = (a?: string[], b?: string[]) => {
@@ -67,11 +85,11 @@ const union = (a?: string[], b?: string[]) => {
  * 35, Drow darkvision 120) and ADDS to a list (a legacy's resistance, a lineage's spells).
  */
 export function resolveSpecies(
-  name: string, ruleset: Ruleset, picks: Record<string, string> = {},
+  name: string, ruleset: Ruleset, picks: Record<string, string> = {}, variant?: string,
 ): { mech: SpeciesMechanics; option: string | null; effects: SpeciesEffects } | null {
   const mech = speciesMechanics(name, ruleset);
   if (!mech) return null;
-  const opt = pickedOption(mech, picks);
+  const opt = pickedOption(mech, picks, variant);
   const o = opt?.effects || {};
   const effects: SpeciesEffects = {
     ...mech,

@@ -57,7 +57,8 @@ import { casterLevel, multiclassSlots, isMulticlassCaster, type CasterType } fro
 import { subclassCasterType, subclassSpellList, subclassCasting, thirdCasterSlots } from "@/lib/subclass-casters";
 import { subclassSpellsFor } from "@/lib/subclass-spells";
 import {
-  resolveSpecies, speciesMechanics, structuredChoiceOptions, SPECIES_ABILITY_KEY, SPECIES_ABILITY_OPTIONS,
+  resolveSpecies, speciesMechanics, structuredChoiceOptions, matchOption,
+  SPECIES_ABILITY_KEY, SPECIES_ABILITY_OPTIONS,
 } from "@/lib/srd/species-effects";
 import { choiceEffects, applyToBuild, type ChoiceEffects } from "@/lib/apply-choices";
 import { parseCoreTraits } from "@/lib/core-traits";
@@ -542,8 +543,9 @@ function ForgeInner() {
   // that has no structured entry yet (most catalog species); those keep the trait-text route.
   const speciesPicks = (build as Build & { speciesChoices?: Record<string, string> }).speciesChoices;
   const resolvedSpecies = useMemo(
-    () => (build.meta.species ? resolveSpecies(build.meta.species, ruleset, speciesPicks || {}) : null),
-    [build.meta.species, ruleset, speciesPicks],
+    () => (build.meta.species
+      ? resolveSpecies(build.meta.species, ruleset, speciesPicks || {}, speciesVariant) : null),
+    [build.meta.species, ruleset, speciesPicks, speciesVariant],
   );
 
   // A character imported from a D&D Beyond sheet carries the scores D&D Beyond PRINTS, which
@@ -1460,6 +1462,7 @@ function ForgeInner() {
                   variantRec={srd.variantByName[speciesVariant]}
                   desc={speciesDesc}
                   mech={speciesMechanics(build.meta.species, ruleset)}
+                  resolved={resolvedSpecies}
                   choices={(build as Build & { speciesChoices?: Record<string, string> }).speciesChoices || {}}
                   onSpecies={setSpecies} onVariant={setVariant} onChoice={setSpeciesChoice}
                 />
@@ -2462,10 +2465,11 @@ function RollPanel({ sheet, build, characterId }: {
  * structured entry still gets the text route, and its picks stay recorded rather than applied.
  */
 function SpeciesPanel({
-  build, speciesVariant, speciesOpts, variantOpts, speciesRec, variantRec, desc, mech,
+  build, speciesVariant, speciesOpts, variantOpts, speciesRec, variantRec, desc, mech, resolved,
   choices, onSpecies, onVariant, onChoice,
 }: {
   mech: ReturnType<typeof speciesMechanics>;
+  resolved: ReturnType<typeof resolveSpecies>;
   build: Build; speciesVariant: string;
   speciesOpts: { name: string }[];
   variantOpts: { name: string; variant_kind: string }[];
@@ -2505,7 +2509,12 @@ function SpeciesPanel({
         <div style={{ display: "flex", gap: 16, flexWrap: "wrap", fontFamily: FORGE_FONTS.mono,
           fontSize: 12, color: STONE.inkFaint, margin: "10px 0 4px" }}>
           {speciesRec?.size && <span>size {speciesRec.size}</span>}
-          {speciesRec?.speed && <span>speed {speciesRec.speed}</span>}
+          {/* The structured speed includes the picked lineage (Wood Elf 35); the record's text is the
+              base species only, which read as though the pick had done nothing. */}
+          {resolved?.effects.speed
+            ? <span>speed {resolved.effects.speed} feet{resolved.option ? ` (${resolved.option})` : ""}</span>
+            : speciesRec?.speed && <span>speed {speciesRec.speed}</span>}
+          {resolved?.effects.darkvision ? <span>darkvision {resolved.effects.darkvision} feet</span> : null}
           {speciesRec?.ability_bonuses && <span>{speciesRec.ability_bonuses}</span>}
         </div>
       )}
@@ -2518,8 +2527,11 @@ function SpeciesPanel({
               const key = t.name;
               // A structured choice (rules-data) wins over options parsed from the trait text, which
               // for the 2024 species finds none because the SRD text flattens its tables.
-              const opts = structuredChoiceOptions(mech, t.name) || traitOptions(t.desc || "");
-              const picked = choices[key] || "";
+              const structured = structuredChoiceOptions(mech, t.name);
+              const opts = structured || traitOptions(t.desc || "");
+              // A lineage chosen on the Identity tab counts here too, so the two tabs agree.
+              const picked = choices[key]
+                || (structured ? matchOption(mech, speciesVariant)?.name || "" : "");
               return (
                 <div key={key} style={{ background: "rgba(0,0,0,0.24)", borderRadius: 4,
                   padding: "10px 12px" }}>
