@@ -36,6 +36,14 @@ const RENAMES: Record<string, string> = {
   // rows (subclasses.json: "Bladesinging", "Purple Dragon Knight (Banneret)").
   bladesinger: "bladesinging",
   "purple dragon knight": "purple dragon knight (banneret)", banneret: "purple dragon knight (banneret)",
+  // The catalog keeps one row for the 2014 Totem Warrior and its 2024 successor Wild Heart
+  // ("Path of the Totem Warrior / Wild Heart"). Both book names map onto it; the feature pool still
+  // prefers the build's own edition, so a 2014 build gets Totem Warrior and a 2024 build Wild Heart.
+  "totem warrior": "totem warrior / wild heart", "wild heart": "totem warrior / wild heart",
+  // Heroes of Faerun prints "Spellfire Sorcery"; class_capabilities stores the short name.
+  "spellfire sorcery": "spellfire",
+  // Ravenloft: The Horrors Within (2024) renames Shadow Magic.
+  "shadow sorcery": "shadow magic",
 };
 
 export function canonicalSubclass(name: string | null | undefined): string {
