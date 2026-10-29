@@ -267,9 +267,21 @@
   "SPECIES": {
     "Aasimar": {
       "src": "PHB 2024",
+      "creatureType": "Humanoid",
       "size": "Medium or Small",
       "speed": 30,
       "darkvision": 60,
+      "resist": [
+        "necrotic",
+        "radiant"
+      ],
+      "spellAbility": "cha",
+      "spells": [
+        {
+          "spell": "Light",
+          "level": 1
+        }
+      ],
       "traits": [
         [
           "Celestial Resistance",
@@ -287,35 +299,69 @@
           "Celestial Revelation",
           "At level 3, a transformation you choose."
         ]
-      ],
-      "resist": [
-        "necrotic",
-        "radiant"
-      ],
-      "grantCantrips": [
-        "Light"
       ]
     },
     "Dragonborn": {
       "src": "PHB 2024",
+      "creatureType": "Humanoid",
       "size": "Medium",
       "speed": 30,
       "darkvision": 60,
-      "choose": {
+      "choice": {
         "key": "ancestry",
         "label": "Draconic ancestry",
-        "from": [
-          "Black (acid)",
-          "Blue (lightning)",
-          "Brass (fire)",
-          "Bronze (lightning)",
-          "Copper (acid)",
-          "Gold (fire)",
-          "Green (poison)",
-          "Red (fire)",
-          "Silver (cold)",
-          "White (cold)"
-        ]
+        "options": {
+          "Black (acid)": {
+            "resist": [
+              "acid"
+            ]
+          },
+          "Blue (lightning)": {
+            "resist": [
+              "lightning"
+            ]
+          },
+          "Brass (fire)": {
+            "resist": [
+              "fire"
+            ]
+          },
+          "Bronze (lightning)": {
+            "resist": [
+              "lightning"
+            ]
+          },
+          "Copper (acid)": {
+            "resist": [
+              "acid"
+            ]
+          },
+          "Gold (fire)": {
+            "resist": [
+              "fire"
+            ]
+          },
+          "Green (poison)": {
+            "resist": [
+              "poison"
+            ]
+          },
+          "Red (fire)": {
+            "resist": [
+              "fire"
+            ]
+          },
+          "Silver (cold)": {
+            "resist": [
+              "cold"
+            ]
+          },
+          "White (cold)": {
+            "resist": [
+              "cold"
+            ]
+          }
+        }
       },
       "traits": [
         [
@@ -334,9 +380,19 @@
     },
     "Dwarf": {
       "src": "PHB 2024",
+      "creatureType": "Humanoid",
       "size": "Medium",
       "speed": 30,
       "darkvision": 120,
+      "resist": [
+        "poison"
+      ],
+      "advAgainst": [
+        "poisoned"
+      ],
+      "mods": {
+        "hpPerLevel": 1
+      },
       "traits": [
         [
           "Dwarven Resilience",
@@ -350,30 +406,88 @@
           "Stonecunning",
           "Bonus Action Tremorsense 60 ft on stone, Proficiency Bonus times per Long Rest."
         ]
-      ],
-      "resist": [
-        "poison"
-      ],
-      "advAgainst": [
-        "poisoned"
-      ],
-      "mods": {
-        "hpPerLevel": 1
-      }
+      ]
     },
     "Elf": {
       "src": "PHB 2024",
+      "creatureType": "Humanoid",
       "size": "Medium",
       "speed": 30,
       "darkvision": 60,
-      "choose": {
+      "advAgainst": [
+        "charmed"
+      ],
+      "skillPick": {
+        "n": 1,
+        "from": [
+          "insight",
+          "perception",
+          "survival"
+        ]
+      },
+      "spellAbility": "choose",
+      "choice": {
         "key": "lineage",
         "label": "Elven lineage",
-        "from": [
-          "Drow",
-          "High Elf",
-          "Wood Elf"
-        ]
+        "options": {
+          "Drow": {
+            "darkvision": 120,
+            "spells": [
+              {
+                "spell": "Dancing Lights",
+                "level": 1
+              },
+              {
+                "spell": "Faerie Fire",
+                "level": 3,
+                "free": "1/LR"
+              },
+              {
+                "spell": "Darkness",
+                "level": 5,
+                "free": "1/LR"
+              }
+            ]
+          },
+          "High Elf": {
+            "spells": [
+              {
+                "spell": "Prestidigitation",
+                "level": 1
+              },
+              {
+                "spell": "Detect Magic",
+                "level": 3,
+                "free": "1/LR"
+              },
+              {
+                "spell": "Misty Step",
+                "level": 5,
+                "free": "1/LR"
+              }
+            ],
+            "summary": "The cantrip can be swapped for another Wizard cantrip after each Long Rest."
+          },
+          "Wood Elf": {
+            "speed": 35,
+            "spells": [
+              {
+                "spell": "Druidcraft",
+                "level": 1
+              },
+              {
+                "spell": "Longstrider",
+                "level": 3,
+                "free": "1/LR"
+              },
+              {
+                "spell": "Pass without Trace",
+                "level": 5,
+                "free": "1/LR"
+              }
+            ]
+          }
+        }
       },
       "traits": [
         [
@@ -388,28 +502,51 @@
           "Trance",
           "A Long Rest takes 4 hours, spent in a meditative trance."
         ]
-      ],
-      "skillPick": {
-        "n": 1,
-        "from": [
-          "insight",
-          "perception",
-          "survival"
-        ]
-      }
+      ]
     },
     "Gnome": {
       "src": "PHB 2024",
+      "creatureType": "Humanoid",
       "size": "Small",
       "speed": 30,
       "darkvision": 60,
-      "choose": {
+      "advSaves": [
+        "int",
+        "wis",
+        "cha"
+      ],
+      "spellAbility": "choose",
+      "choice": {
         "key": "lineage",
         "label": "Gnomish lineage",
-        "from": [
-          "Forest Gnome",
-          "Rock Gnome"
-        ]
+        "options": {
+          "Forest Gnome": {
+            "spells": [
+              {
+                "spell": "Minor Illusion",
+                "level": 1
+              },
+              {
+                "spell": "Speak with Animals",
+                "level": 1,
+                "free": "PB/LR"
+              }
+            ]
+          },
+          "Rock Gnome": {
+            "spells": [
+              {
+                "spell": "Mending",
+                "level": 1
+              },
+              {
+                "spell": "Prestidigitation",
+                "level": 1
+              }
+            ],
+            "summary": "Can build up to three Tiny clockwork devices that each hold one Prestidigitation effect."
+          }
+        }
       },
       "traits": [
         [
@@ -420,19 +557,32 @@
     },
     "Goliath": {
       "src": "PHB 2024",
+      "creatureType": "Humanoid",
       "size": "Medium",
       "speed": 35,
-      "choose": {
+      "choice": {
         "key": "ancestry",
         "label": "Giant ancestry",
-        "from": [
-          "Cloud's Jaunt",
-          "Fire's Burn",
-          "Frost's Chill",
-          "Hill's Tumble",
-          "Stone's Endurance",
-          "Storm's Thunder"
-        ]
+        "options": {
+          "Cloud's Jaunt": {
+            "summary": "Bonus Action teleport up to 30 feet, Proficiency Bonus times per Long Rest."
+          },
+          "Fire's Burn": {
+            "summary": "On an attack hit, add 1d10 Fire, Proficiency Bonus times per Long Rest."
+          },
+          "Frost's Chill": {
+            "summary": "On an attack hit, add 1d6 Cold and cut its Speed by 10 feet, Proficiency Bonus times per Long Rest."
+          },
+          "Hill's Tumble": {
+            "summary": "On an attack hit against a Large or smaller creature, knock it Prone, Proficiency Bonus times per Long Rest."
+          },
+          "Stone's Endurance": {
+            "summary": "Reaction when damaged: reduce it by 1d12 + Constitution modifier, Proficiency Bonus times per Long Rest."
+          },
+          "Storm's Thunder": {
+            "summary": "Reaction when damaged by a creature within 60 feet: deal it 1d8 Thunder, Proficiency Bonus times per Long Rest."
+          }
+        }
       },
       "traits": [
         [
@@ -445,14 +595,18 @@
         ],
         [
           "Powerful Build",
-          "Advantage on saves against being Grappled, and you count as one size larger for carrying."
+          "Advantage on ability checks to end the Grappled condition, and you count as one size larger for carrying capacity."
         ]
       ]
     },
     "Halfling": {
       "src": "PHB 2024",
+      "creatureType": "Humanoid",
       "size": "Small",
       "speed": 30,
+      "advAgainst": [
+        "frightened"
+      ],
       "traits": [
         [
           "Brave",
@@ -470,15 +624,18 @@
           "Naturally Stealthy",
           "Hide behind a creature at least one size larger."
         ]
-      ],
-      "advAgainst": [
-        "frightened"
       ]
     },
     "Human": {
       "src": "PHB 2024",
+      "creatureType": "Humanoid",
       "size": "Medium or Small",
       "speed": 30,
+      "skillPick": {
+        "n": 1,
+        "from": "any"
+      },
+      "bonusOriginFeat": true,
       "traits": [
         [
           "Resourceful",
@@ -492,15 +649,11 @@
           "Versatile",
           "An Origin feat of your choice."
         ]
-      ],
-      "skillPick": {
-        "n": 1,
-        "from": "any"
-      },
-      "bonusOriginFeat": true
+      ]
     },
     "Orc": {
       "src": "PHB 2024",
+      "creatureType": "Humanoid",
       "size": "Medium",
       "speed": 30,
       "darkvision": 120,
@@ -517,17 +670,85 @@
     },
     "Tiefling": {
       "src": "PHB 2024",
+      "creatureType": "Humanoid",
       "size": "Medium or Small",
       "speed": 30,
       "darkvision": 60,
-      "choose": {
+      "spellAbility": "choose",
+      "spells": [
+        {
+          "spell": "Thaumaturgy",
+          "level": 1
+        }
+      ],
+      "choice": {
         "key": "legacy",
         "label": "Fiendish legacy",
-        "from": [
-          "Abyssal",
-          "Chthonic",
-          "Infernal"
-        ]
+        "options": {
+          "Abyssal": {
+            "resist": [
+              "poison"
+            ],
+            "spells": [
+              {
+                "spell": "Poison Spray",
+                "level": 1
+              },
+              {
+                "spell": "Ray of Sickness",
+                "level": 3,
+                "free": "1/LR"
+              },
+              {
+                "spell": "Hold Person",
+                "level": 5,
+                "free": "1/LR"
+              }
+            ]
+          },
+          "Chthonic": {
+            "resist": [
+              "necrotic"
+            ],
+            "spells": [
+              {
+                "spell": "Chill Touch",
+                "level": 1
+              },
+              {
+                "spell": "False Life",
+                "level": 3,
+                "free": "1/LR"
+              },
+              {
+                "spell": "Ray of Enfeeblement",
+                "level": 5,
+                "free": "1/LR"
+              }
+            ]
+          },
+          "Infernal": {
+            "resist": [
+              "fire"
+            ],
+            "spells": [
+              {
+                "spell": "Fire Bolt",
+                "level": 1
+              },
+              {
+                "spell": "Hellish Rebuke",
+                "level": 3,
+                "free": "1/LR"
+              },
+              {
+                "spell": "Darkness",
+                "level": 5,
+                "free": "1/LR"
+              }
+            ]
+          }
+        }
       },
       "traits": [
         [
@@ -538,19 +759,32 @@
           "Otherworldly Presence",
           "You know the Thaumaturgy cantrip."
         ]
-      ],
-      "grantCantrips": [
-        "Thaumaturgy"
       ]
     },
     "Warforged": {
       "src": "Eberron: Forge of the Artificer",
-      "size": "Medium",
+      "creatureType": "Construct",
+      "size": "Medium or Small",
       "speed": 30,
+      "resist": [
+        "poison"
+      ],
+      "advAgainst": [
+        "poisoned"
+      ],
+      "acBonus": 1,
+      "skillPick": {
+        "n": 1,
+        "from": "any"
+      },
+      "toolPick": {
+        "n": 1,
+        "from": "any"
+      },
       "traits": [
         [
           "Construct Resilience",
-          "Resistance to poison, Advantage on saves against the Poisoned condition, and no need to eat, drink, or breathe."
+          "Resistance to poison and Advantage on saves against the Poisoned condition."
         ],
         [
           "Integrated Protection",
@@ -563,19 +797,12 @@
         [
           "Specialized Design",
           "One skill proficiency and one tool proficiency."
+        ],
+        [
+          "Tireless",
+          "No Exhaustion from dehydration, malnutrition, or suffocation."
         ]
-      ],
-      "resist": [
-        "poison"
-      ],
-      "advAgainst": [
-        "poisoned"
-      ],
-      "acBonus": 1,
-      "skillPick": {
-        "n": 1,
-        "from": "any"
-      }
+      ]
     }
   },
   "BACKGROUNDS": {

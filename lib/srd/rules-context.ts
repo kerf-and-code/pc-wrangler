@@ -18,6 +18,7 @@ import type {
   ItemEffect, ItemVariant, Ruleset, Ability,
 } from "./derive-sheet";
 
+import type { SpeciesMechanics } from "./species-mechanics";
 import rulesData from "./rules-data.json";
 import equipment2024 from "./equipment-2024.json";
 import equipment2014 from "./equipment-2014.json";
@@ -37,7 +38,8 @@ type ForgeClass = {
   features?: Record<number, [string, string][]>;
   [k: string]: unknown;
 };
-type ForgeSpecies = { speed?: number; resist?: string[]; mods?: Record<string, number>;[k: string]: unknown };
+// Full shape and authoring rules in species-mechanics.ts.
+type ForgeSpecies = SpeciesMechanics;
 type ForgeSubclass = { casting?: ForgeCasting; features?: [string, string][];[k: string]: unknown };
 
 type RulesData = {
