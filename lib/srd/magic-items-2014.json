@@ -2894,5 +2894,485 @@
     "attunement": true,
     "attunement_note": null,
     "description": "While wearing this cloak, you can use an action to speak its command word. This turns the cloak into a pair of bat wings or bird wings on your back for 1 hour or until you repeat the command word as an action. The wings give you a flying speed of 60 feet. When they disappear, you can't use them again for 1d12 hours."
+  },
+  {
+    "name": "Armor of Gleaming",
+    "category": "Armor",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "Medium or heavy armor that never gets dirty.",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything"
+  },
+  {
+    "name": "Bead of Nourishment",
+    "category": "Wondrous Item",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "Dissolves on the tongue and nourishes like 1 day of rations.",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything"
+  },
+  {
+    "name": "Bead of Refreshment",
+    "category": "Wondrous Item",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "Dropped in up to a pint of liquid, turns it into fresh, cold drinking water; no effect on magical liquids or poison.",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything"
+  },
+  {
+    "name": "Boots of False Tracks",
+    "category": "Wondrous Item",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "Humanoid wearer only. You can make your tracks look like those of another kind of humanoid of your size.",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything"
+  },
+  {
+    "name": "Candle of the Deep",
+    "category": "Wondrous Item",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "Its flame stays lit underwater, giving normal candle light and heat.",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything"
+  },
+  {
+    "name": "Cast-Off Armor",
+    "category": "Armor",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "Light, medium or heavy armor you can doff as an action.",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything"
+  },
+  {
+    "name": "Charlatan's Die",
+    "category": "Wondrous Item",
+    "rarity": "Common",
+    "attunement": true,
+    "attunement_note": null,
+    "description": "A six-sided die that rolls whatever number you choose.",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything"
+  },
+  {
+    "name": "Cloak of Billowing",
+    "category": "Wondrous Item",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "Bonus action: the cloak billows dramatically.",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything"
+  },
+  {
+    "name": "Cloak of Many Fashions",
+    "category": "Wondrous Item",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "Bonus action: change its style, color and apparent quality; it stays a cloak and copies no magic cloak's properties.",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything"
+  },
+  {
+    "name": "Clockwork Amulet",
+    "category": "Wondrous Item",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "When you make an attack roll, you can take a 10 instead of rolling the d20. Once per dawn.",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything"
+  },
+  {
+    "name": "Clothes of Mending",
+    "category": "Wondrous Item",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "Traveler's clothes that repair everyday wear; destroyed pieces can't be restored.",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything"
+  },
+  {
+    "name": "Dark Shard Amulet",
+    "category": "Wondrous Item",
+    "rarity": "Common",
+    "attunement": true,
+    "attunement_note": "by a warlock",
+    "description": "Warlock spellcasting focus. Once per long rest, try a warlock cantrip you don't know with a DC 10 Arcana check; on a failure the spell and action are wasted.",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything"
+  },
+  {
+    "name": "Dread Helm",
+    "category": "Wondrous Item",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "A steel helm that makes your eyes glow red and shadows the rest of your face.",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything"
+  },
+  {
+    "name": "Ear Horn of Hearing",
+    "category": "Wondrous Item",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "Held to your ear, it suppresses the deafened condition on you.",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything"
+  },
+  {
+    "name": "Enduring Spellbook",
+    "category": "Wondrous Item",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "Its pages and writing are proof against fire, water and age.",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything"
+  },
+  {
+    "name": "Ersatz Eye",
+    "category": "Wondrous Item",
+    "rarity": "Common",
+    "attunement": true,
+    "attunement_note": null,
+    "description": "Replaces a lost eye and sees normally; only you can remove it.",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything"
+  },
+  {
+    "name": "Hat of Vermin",
+    "category": "Wondrous Item",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "3 charges, regained at dawn. Action, 1 charge: a bat, frog or rat appears in the hat, uncontrolled and fleeing, for 1 hour or until it drops to 0 HP.",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything"
+  },
+  {
+    "name": "Hat of Wizardry",
+    "category": "Wondrous Item",
+    "rarity": "Common",
+    "attunement": true,
+    "attunement_note": "by a wizard",
+    "description": "Wizard spellcasting focus. Once per long rest, try a wizard cantrip you don't know with a DC 10 Arcana check; on a failure the spell and action are wasted.",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything"
+  },
+  {
+    "name": "Heward's Handy Spice Pouch",
+    "category": "Wondrous Item",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "10 charges, 1d6 + 4 regained at dawn. Action, 1 charge: pull out a pinch of any nonmagical seasoning you name.",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything"
+  },
+  {
+    "name": "Horn of Silent Alarm",
+    "category": "Wondrous Item",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "4 charges, 1d4 regained at dawn. Action: blow it so only one chosen creature within 600 feet that isn't deafened hears it.",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything"
+  },
+  {
+    "name": "Instrument of Illusions",
+    "category": "Wondrous Item",
+    "rarity": "Common",
+    "attunement": true,
+    "attunement_note": null,
+    "description": "While played, harmless obvious silent illusions fill a 5-foot-radius sphere (15 feet for a bard).",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything"
+  },
+  {
+    "name": "Instrument of Scribing",
+    "category": "Wondrous Item",
+    "rarity": "Common",
+    "attunement": true,
+    "attunement_note": null,
+    "description": "3 charges, regained at dawn. While playing, action, 1 charge: write a message of up to six words (thirteen and optionally glowing for a bard) on a nonmagical surface within 30 feet; it fades after 24 hours or to dispel magic.",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything"
+  },
+  {
+    "name": "Lock of Trickery",
+    "category": "Wondrous Item",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "An ordinary-looking lock with one key; Dexterity checks to pick it have disadvantage.",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything"
+  },
+  {
+    "name": "Moon-Touched Sword",
+    "category": "Weapon",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "Any sword. Unsheathed in darkness, it sheds bright light 15 feet and dim light 15 feet more.",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything"
+  },
+  {
+    "name": "Mystery Key",
+    "category": "Wondrous Item",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "5 percent chance to open any lock it's put in; it vanishes once it does.",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything"
+  },
+  {
+    "name": "Orb of Direction",
+    "category": "Wondrous Item",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "Action: learn which way is north. Material Plane only.",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything"
+  },
+  {
+    "name": "Orb of Time",
+    "category": "Wondrous Item",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "Action: learn whether it is morning, afternoon, evening or night outside. Material Plane only.",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything"
+  },
+  {
+    "name": "Perfume of Bewitching",
+    "category": "Wondrous Item",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "One use, action to apply, 1 hour: advantage on Charisma checks against humanoids of CR 1 or lower, who don't notice the magic.",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything"
+  },
+  {
+    "name": "Pipe of Smoke Monsters",
+    "category": "Wondrous Item",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "While smoking it, action: puff out smoke shaped like a creature that fits in a 1-foot cube for a few seconds.",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything"
+  },
+  {
+    "name": "Pole of Angling",
+    "category": "Wondrous Item",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "Command word turns this 10-foot pole into a fishing pole with hook, line and reel, and back.",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything"
+  },
+  {
+    "name": "Pole of Collapsing",
+    "category": "Wondrous Item",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "Action and command word: collapse this 10-foot pole to a 1-foot rod (same weight), or extend it as far as space allows.",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything"
+  },
+  {
+    "name": "Pot of Awakening",
+    "category": "Wondrous Item",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "A shrub grown in it for 30 days becomes a friendly awakened shrub, breaking the pot.",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything"
+  },
+  {
+    "name": "Rope of Mending",
+    "category": "Wondrous Item",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "50 feet of hempen rope. Action and command word: cut pieces in contact knit back together. Lost sections shorten it for good.",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything"
+  },
+  {
+    "name": "Ruby of the War Mage",
+    "category": "Wondrous Item",
+    "rarity": "Common",
+    "attunement": true,
+    "attunement_note": "by a spellcaster",
+    "description": "Pressed onto a simple or martial weapon for 10 minutes, makes it your spellcasting focus; it stays on until you remove it as an action, the weapon is destroyed, or your attunement ends.",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything"
+  },
+  {
+    "name": "Shield of Expression",
+    "category": "Armor",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "A shield with a face; bonus action to change its expression.",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything"
+  },
+  {
+    "name": "Smoldering Armor",
+    "category": "Armor",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "Any armor. Harmless, odorless smoke rises from it while worn.",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything"
+  },
+  {
+    "name": "Staff of Adornment",
+    "category": "Staff",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "Up to three objects of 1 pound or less float above its tip while you hold it, and you can make them spin.",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything"
+  },
+  {
+    "name": "Staff of Birdcalls",
+    "category": "Staff",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "10 charges, 1d6 + 4 regained at dawn. Action, 1 charge: make one of ten bird calls audible to 60 feet. Spending the last charge, roll a d20; on a 1 it bursts into feathers and is lost.",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything"
+  },
+  {
+    "name": "Staff of Flowers",
+    "category": "Staff",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "10 charges, 1d6 + 4 regained at dawn. Action, 1 charge: a harmless flower (a daisy unless you choose) sprouts from soil within 5 feet or from the staff. Spending the last charge, roll a d20; on a 1 it turns to petals and is lost.",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything"
+  },
+  {
+    "name": "Talking Doll",
+    "category": "Wondrous Item",
+    "rarity": "Common",
+    "attunement": true,
+    "attunement_note": null,
+    "description": "During a short rest within 5 feet, teach it up to six phrases of six words or fewer, each with a trigger within 5 feet of it. Phrases are lost when attunement ends.",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything"
+  },
+  {
+    "name": "Tankard of Sobriety",
+    "category": "Wondrous Item",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "Nonmagical alcohol drunk from it doesn't intoxicate; no effect on magical liquids or poison.",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything"
+  },
+  {
+    "name": "Unbreakable Arrow",
+    "category": "Weapon",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "An arrow that can't be broken except inside an antimagic field.",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything"
+  },
+  {
+    "name": "Veteran's Cane",
+    "category": "Wondrous Item",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "Bonus action and command word: becomes an ordinary longsword and stops being magical.",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything"
+  },
+  {
+    "name": "Walloping Ammunition",
+    "category": "Weapon",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "Any ammunition. A creature it hits makes a DC 10 Strength save or falls prone.",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything"
+  },
+  {
+    "name": "Wand of Conducting",
+    "category": "Wand",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "3 charges, regained at dawn. Action, 1 charge: orchestral music audible to 60 feet while you wave it. Spending the last charge, roll a d20; on a 1 it crumbles to dust.",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything"
+  },
+  {
+    "name": "Wand of Pyrotechnics",
+    "category": "Wand",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "7 charges, 1d6 + 1 regained at dawn. Action, 1 charge: a harmless, torch-bright burst of colored light at a point within 60 feet, with a crackle audible to 300 feet. Spending the last charge, roll a d20; on a 1 it is destroyed.",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything"
+  },
+  {
+    "name": "Wand of Scowls",
+    "category": "Wand",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "3 charges, regained at dawn. Action, 1 charge: a humanoid within 30 feet makes a DC 10 Charisma save or scowls for 1 minute. Spending the last charge, roll a d20; on a 1 it becomes a wand of smiles.",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything"
+  },
+  {
+    "name": "Wand of Smiles",
+    "category": "Wand",
+    "rarity": "Common",
+    "attunement": false,
+    "attunement_note": null,
+    "description": "3 charges, regained at dawn. Action, 1 charge: a humanoid within 30 feet makes a DC 10 Charisma save or smiles for 1 minute. Spending the last charge, roll a d20; on a 1 it becomes a wand of scowls.",
+    "source": "kc",
+    "book": "Xanathar's Guide to Everything"
   }
 ]

@@ -404,5 +404,199 @@
    ],
    "amount": 1
   }
+ },
+ {
+  "name": "Bountiful Luck",
+  "category": "Feat",
+  "prerequisite": "Halfling",
+  "description": "Reaction when an ally you can see within 30 feet rolls a 1 on an attack, check or save: it rerolls and must use the new roll. You can't use Lucky until the end of your next turn.",
+  "source": "kc",
+  "book": "Xanathar's Guide to Everything"
+ },
+ {
+  "name": "Dragon Fear",
+  "category": "Feat",
+  "prerequisite": "Dragonborn",
+  "description": "+1 Str, Con or Cha. Spend a Breath Weapon use to roar instead: chosen creatures within 30 feet that can see or hear you make a Wis save (DC 8 + proficiency + Cha) or are frightened for 1 minute, repeating the save when they take damage.",
+  "source": "kc",
+  "book": "Xanathar's Guide to Everything",
+  "asi": {
+   "amount": 1,
+   "choice": [
+    "str",
+    "con",
+    "cha"
+   ]
+  }
+ },
+ {
+  "name": "Dragon Hide",
+  "category": "Feat",
+  "prerequisite": "Dragonborn",
+  "description": "+1 Str, Con or Cha. Unarmored AC 13 + Dex (shields allowed). Retractable claws: unarmed strikes deal 1d4 + Str slashing.",
+  "source": "kc",
+  "book": "Xanathar's Guide to Everything",
+  "asi": {
+   "amount": 1,
+   "choice": [
+    "str",
+    "con",
+    "cha"
+   ]
+  }
+ },
+ {
+  "name": "Drow High Magic",
+  "category": "Feat",
+  "prerequisite": "Elf (drow)",
+  "description": "Detect magic at will; levitate and dispel magic once each per long rest without a slot. Charisma is the spellcasting ability.",
+  "source": "kc",
+  "book": "Xanathar's Guide to Everything"
+ },
+ {
+  "name": "Dwarven Fortitude",
+  "category": "Feat",
+  "prerequisite": "Dwarf",
+  "description": "+1 Con. When you take the Dodge action in combat, spend a Hit Die to heal its roll + Con mod (min 1).",
+  "source": "kc",
+  "book": "Xanathar's Guide to Everything",
+  "asi": {
+   "con": 1
+  }
+ },
+ {
+  "name": "Elven Accuracy",
+  "category": "Feat",
+  "prerequisite": "Elf or half-elf",
+  "description": "+1 Dex, Int, Wis or Cha. With advantage on an attack using Dex, Int, Wis or Cha, reroll one of the dice once.",
+  "source": "kc",
+  "book": "Xanathar's Guide to Everything",
+  "asi": {
+   "amount": 1,
+   "choice": [
+    "dex",
+    "int",
+    "wis",
+    "cha"
+   ]
+  }
+ },
+ {
+  "name": "Fade Away",
+  "category": "Feat",
+  "prerequisite": "Gnome",
+  "description": "+1 Dex or Int. Reaction right after taking damage: invisible until the end of your next turn or until you attack, deal damage or force a save. Once per short or long rest.",
+  "source": "kc",
+  "book": "Xanathar's Guide to Everything",
+  "asi": {
+   "amount": 1,
+   "choice": [
+    "dex",
+    "int"
+   ]
+  }
+ },
+ {
+  "name": "Fey Teleportation",
+  "category": "Feat",
+  "prerequisite": "Elf (high)",
+  "description": "+1 Int or Cha. Speak, read and write Sylvan. Misty step once per short or long rest without a slot (Intelligence).",
+  "source": "kc",
+  "book": "Xanathar's Guide to Everything",
+  "asi": {
+   "amount": 1,
+   "choice": [
+    "int",
+    "cha"
+   ]
+  }
+ },
+ {
+  "name": "Flames of Phlegethos",
+  "category": "Feat",
+  "prerequisite": "Tiefling",
+  "description": "+1 Int or Cha. Reroll 1s on your spells' fire damage dice (must keep the reroll). After casting a fire spell, flames wreathe you until the end of your next turn: bright light 30 feet, dim 30 more, and a creature within 5 feet that hits you with a melee attack takes 1d4 fire.",
+  "source": "kc",
+  "book": "Xanathar's Guide to Everything",
+  "asi": {
+   "amount": 1,
+   "choice": [
+    "int",
+    "cha"
+   ]
+  }
+ },
+ {
+  "name": "Infernal Constitution",
+  "category": "Feat",
+  "prerequisite": "Tiefling",
+  "description": "+1 Con. Resistance to cold and poison damage; advantage on saves against being poisoned.",
+  "source": "kc",
+  "book": "Xanathar's Guide to Everything",
+  "asi": {
+   "con": 1
+  }
+ },
+ {
+  "name": "Orcish Fury",
+  "category": "Feat",
+  "prerequisite": "Half-orc",
+  "description": "+1 Str or Con. Once per short or long rest, on a simple or martial weapon hit, roll one weapon damage die again and add it. Right after Relentless Endurance, reaction to make one weapon attack.",
+  "source": "kc",
+  "book": "Xanathar's Guide to Everything",
+  "asi": {
+   "amount": 1,
+   "choice": [
+    "str",
+    "con"
+   ]
+  }
+ },
+ {
+  "name": "Prodigy",
+  "category": "Feat",
+  "prerequisite": "Half-elf, half-orc, or human",
+  "description": "One skill, one tool and one language of your choice, plus expertise in one skill you're proficient in that isn't already doubled.",
+  "source": "kc",
+  "book": "Xanathar's Guide to Everything"
+ },
+ {
+  "name": "Second Chance",
+  "category": "Feat",
+  "prerequisite": "Halfling",
+  "description": "+1 Dex, Con or Cha. Reaction when a creature you can see hits you with an attack: it rerolls. Usable again after you roll initiative or finish a short or long rest.",
+  "source": "kc",
+  "book": "Xanathar's Guide to Everything",
+  "asi": {
+   "amount": 1,
+   "choice": [
+    "dex",
+    "con",
+    "cha"
+   ]
+  }
+ },
+ {
+  "name": "Squat Nimbleness",
+  "category": "Feat",
+  "prerequisite": "Dwarf or a Small race",
+  "description": "+1 Str or Dex. +5 feet walking speed. Proficiency in Acrobatics or Athletics. Advantage on Athletics or Acrobatics checks to escape a grapple.",
+  "source": "kc",
+  "book": "Xanathar's Guide to Everything",
+  "asi": {
+   "amount": 1,
+   "choice": [
+    "str",
+    "dex"
+   ]
+  }
+ },
+ {
+  "name": "Wood Elf Magic",
+  "category": "Feat",
+  "prerequisite": "Elf (wood)",
+  "description": "One druid cantrip of your choice; longstrider and pass without trace once each per long rest without a slot. Wisdom is the spellcasting ability.",
+  "source": "kc",
+  "book": "Xanathar's Guide to Everything"
  }
 ]
