@@ -209,9 +209,10 @@ function StatBlockInner() {
   // When CR changes, offer the standard XP so it stays coherent (GM can still override XP).
   const setCr = (cr: string) => patch({ cr, xp: CR_XP[cr] ?? block.xp });
 
-  const prefillFrom = (monsterName: string) => {
-    const m = monsters.find((x) => x.name === monsterName);
-    if (!m) return;
+  // Takes the exact record the GM clicked. It used to take only the NAME and look it up again with
+  // monsters.find(name), and 641 names repeat across books (three Aboleths), so clicking one book's
+  // monster could load another book's stat block.
+  const prefillFrom = (m: MonsterRec) => {
     setName(m.name);
     setBlock(statBlockFromMonster(m));
     setRowId(null);
@@ -527,7 +528,7 @@ const MONSTER_TYPES = ["Aberration", "Beast", "Celestial", "Construct", "Dragon"
 
 function PickerView({ rows, monsters, srdMode, onSrdMode, onNew, onEdit, onPrefill }: {
   rows: StatBlockRow[]; monsters: MonsterRec[]; srdMode: SrdMode; onSrdMode: (m: SrdMode) => void;
-  onNew: () => void; onEdit: (id: string) => void; onPrefill: (name: string) => void;
+  onNew: () => void; onEdit: (id: string) => void; onPrefill: (m: MonsterRec) => void;
 }) {
   const [q, setQ] = useState("");
   const [type, setType] = useState<string>("");
@@ -706,7 +707,7 @@ function PickerView({ rows, monsters, srdMode, onSrdMode, onNew, onEdit, onPrefi
             // there too as a last resort: the data is a file we do not control, and a key that is
             // "probably unique" is the same bug waiting for a new sourcebook.
             <button key={`${m.name}::${m.source_key ?? ""}::${String(m.cr ?? "")}::${i}`}
-              onClick={() => onPrefill(m.name)}
+              onClick={() => onPrefill(m)}
               style={{ ...stoneButton("stone"), textAlign: "left", display: "flex", justifyContent: "space-between", gap: 8 }}>
               <span style={{ minWidth: 0 }}>
                 <span style={{ fontSize: 13.5, color: STONE.ink, display: "block" }}>{m.name}</span>
