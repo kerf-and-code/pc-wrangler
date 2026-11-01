@@ -768,9 +768,13 @@ export default function WorldMapPage() {
     setPublishing(true);
     setStatus("Rendering snapshot\u2026");
     try {
+      // The snapshot is a PUBLIC image on the wiki, so it carries only markers meant for everyone
+      // ("common"). Player-only, GM-only and private markers stay off it; the players' own map view
+      // (p63 RPC) is what shows "player" markers to the party.
+      const publicIds = new Set(poiRows.filter((r) => r.visibility === "common").map((r) => r.id));
       const blob = await renderWorldSnapshot({
         terrain, colors, biomeArt, images, features,
-        pois: pois.map((p) => ({ x: p.x, y: p.y, iconSrc: p.iconSrc })),
+        pois: pois.filter((p) => publicIds.has(p.id)).map((p) => ({ x: p.x, y: p.y, iconSrc: p.iconSrc })),
         customHexes: customHexesRef.current, customTiles: customTiles.map((t) => ({ id: t.id, url: t.imageUrl, color: t.color })),
       });
       const fd = new FormData();
@@ -786,7 +790,7 @@ export default function WorldMapPage() {
     } finally {
       setPublishing(false);
     }
-  }, [mapRow, terrain, colors, biomeArt, images, pois, campaignId, customTiles]);
+  }, [mapRow, terrain, colors, biomeArt, images, pois, poiRows, campaignId, customTiles]);
 
   const generateFantasyView = useCallback(async () => {
     if (!campaignId || !terrain) return;
