@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
@@ -144,14 +144,36 @@ export default function SessionWorkspace() {
 
   useEffect(() => { if (session) loadEvents(session); else setEvents([]); }, [session, loadEvents]);
 
-  // keep the recap textarea in sync with the selected session
+  // Keep the recap textarea and schedule field in sync with the selected session, WITHOUT wiping
+  // edits. Close, Reopen, Confirm and recurrence all reload `sessions`, and this effect used to
+  // overwrite the textarea every time, throwing away a recap the GM was still typing. Now a field is
+  // replaced only when the selected session changes, or when it still holds what was last synced
+  // (the GM has not touched it).
+  const synced = useRef<{ id: string | null; recap: string; sched: string }>({ id: null, recap: "", sched: "" });
+  const recapNow = useRef(recap); recapNow.current = recap;
+  const schedNow = useRef(schedDraft); schedNow.current = schedDraft;
   useEffect(() => {
     const s = sessions.find((x) => x.id === session);
-    setRecap(s?.recap || "");
-    setSchedDraft(s?.scheduled_at ? toLocalInput(s.scheduled_at) : "");
-    setRecapMsg(null);
-    setSchedMsg(null);
+    const storedRecap = s?.recap || "";
+    const storedSched = s?.scheduled_at ? toLocalInput(s.scheduled_at) : "";
+    const switched = synced.current.id !== session;
+    if (switched || recapNow.current === synced.current.recap) setRecap(storedRecap);
+    if (switched || schedNow.current === synced.current.sched) setSchedDraft(storedSched);
+    if (switched) { setRecapMsg(null); setSchedMsg(null); }
+    synced.current = { id: session, recap: storedRecap, sched: storedSched };
   }, [session, sessions]);
+
+  // An unsaved recap is real writing; warn before the tab closes or navigates away with it.
+  const recapDirty = useMemo(() => {
+    const s = sessions.find((x) => x.id === session);
+    return !!session && recap.trim() !== (s?.recap || "").trim();
+  }, [recap, session, sessions]);
+  useEffect(() => {
+    if (!recapDirty) return;
+    const h = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ""; };
+    window.addEventListener("beforeunload", h);
+    return () => window.removeEventListener("beforeunload", h);
+  }, [recapDirty]);
 
   // load saved recipient list for the selected campaign
   useEffect(() => {
@@ -351,6 +373,7 @@ export default function SessionWorkspace() {
 
   async function generateRecap() {
     if (!session || recapLoading) return;
+    if (recap.trim() && !window.confirm("Replace the recap text with a new draft? Anything you wrote or edited here will be lost.")) return;
     setRecapLoading(true); setRecapMsg(null); setErr(null);
     try {
       const res = await fetch("/api/recap", {
