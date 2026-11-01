@@ -8751,5 +8751,2871 @@
         ]
       }
     ]
+  },
+  {
+    "class": "Illrigger",
+    "name": "Architect of Ruin",
+    "key": "kc-tir_architect-of-ruin",
+    "edition": "2014",
+    "source": "kc",
+    "book": "The Illrigger",
+    "partner": "MCDM",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Asmodeus's Blessing",
+            "desc": "Gain proficiency in your choice of Arcana, History, Nature, or Religion, and you can now read and write the languages from Forked Tongue as well as speak them."
+          },
+          {
+            "name": "Spellcasting",
+            "desc": "You cast illrigger spells from the Architect of Ruin list using Charisma (spell save DC 8 + proficiency bonus + Charisma modifier; attack bonus proficiency bonus + Charisma modifier), with an unholy symbol as a focus (needs a free hand, which can also perform somatic components); slots return on a long rest. Cantrips known: 2 at 3rd, 3 at 10th. Spells known by illrigger level: 3 at 3rd, 4 at 4th, 5 at 7th, 6 at 8th, 7 at 10th, 8 at 11th, 9 at 13th, 10 at 14th, 11 at 16th, 12 at 19th, 13 at 20th; on gaining a level you may swap one known spell for another of a level you have slots for. Slots (1st/2nd/3rd/4th): 3rd 2/0/0/0, 4th to 6th 3/0/0/0, 7th to 9th 4/2/0/0, 10th to 12th 4/3/0/0, 13th to 15th 4/3/2/0, 16th to 18th 4/3/3/0, 19th to 20th 4/3/3/1."
+          },
+          {
+            "name": "Architect of Ruin Spell List",
+            "desc": "Cantrips: chill touch, dancing lights, fire bolt, hellfire, message, minor illusion, ray of frost, shocking grasp, thaumaturgy, vengeful blade, vicious mockery. 1st: bane, burning hands, charm person, color spray, command, detect magic, disguise self, Hell's lash, hellish rebuke, shield, shield of faith, silent image. 2nd: arcanist's magic aura, augury, blur, darkness, detect thoughts, enthrall, heat metal, hold person, infernal challenge, invisibility, lesser restoration, mirror image, ray of enfeeblement, scorching ray, silence, suggestion. 3rd: bestow curse, dispel magic, fear, fly, haste, major image, mote of Hell, phantom steed, remove curse, revivify, slow. 4th: aura of desecration, banishment, blight, compulsion, death ward, dimension door, dominate beast, greater invisibility, hallucinatory terrain, locate creature, maligned weapon, phantasmal killer, wall of death."
+          },
+          {
+            "name": "Invoke Hell",
+            "desc": "You gain two options. Enervating Spell: when an illrigger spell of 1st level or higher damages a creature, expend a seal (no action) to make it vulnerable to that spell's damage, suppressing any resistance or immunity it has to it. Spellblade: as an action, make a melee weapon attack and also cast a known illrigger spell whose casting time is one action."
+          }
+        ]
+      },
+      {
+        "level": 7,
+        "features": [
+          {
+            "name": "Hellish Versatility",
+            "desc": "Once on each of your turns, you can replace one Extra Attack attack with casting one of your illrigger cantrips."
+          },
+          {
+            "name": "Asmodeus's Interdiction",
+            "desc": "You always know these extra interdict boons, which don't count against your boons known. Axiomatic Seals (7th, passive): when you burn seals for damage, add your Charisma modifier (minimum 1) to each seal's damage roll. Spellbreaker (13th): when an interdicted creature you can see within 60 feet casts a spell, use your reaction to burn one or more of its seals for no damage and cast counterspell on it without a slot, at a level 1 higher per seal beyond the first. Hell Mage (18th, passive): when you or an ally within 30 feet succeeds on a save against an enemy's spell or magical effect, you can place up to your proficiency bonus in seals on that enemy at once."
+          }
+        ]
+      },
+      {
+        "level": 11,
+        "features": [
+          {
+            "name": "Submit",
+            "desc": "When you cast a known illrigger spell, you can burn two seals on an interdicted creature (no action) to give it disadvantage on its save against that spell."
+          }
+        ]
+      },
+      {
+        "level": 15,
+        "features": [
+          {
+            "name": "Vile Transmogrification",
+            "desc": "As a bonus action, either expend a spell slot to regain seals equal to its level, or expend seals to regain a spell slot whose level is one-third the seals spent (six seals for a 2nd-level slot). Each option is usable once per long rest."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Illrigger",
+    "name": "Hellspeaker",
+    "key": "kc-tir_hellspeaker",
+    "edition": "2014",
+    "source": "kc",
+    "book": "The Illrigger",
+    "partner": "MCDM",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Moloch's Blessing",
+            "desc": "Gain proficiency in Persuasion or Deception; if already proficient in the chosen skill, double your proficiency bonus for its checks. Forked Tongue gives one more language (three at 3rd level, four at 9th), and when you speak a language from it, you have advantage on Charisma checks to influence creatures who hear and understand you."
+          },
+          {
+            "name": "Charm Enemy",
+            "desc": "When you use your bonus action to place a seal on a Humanoid, it must succeed on a Charisma save against your interdict save DC or be charmed by you, seeing you as a friendly acquaintance, for 1 hour or until you or your companions harm it; it knows afterward that you charmed it. With the same bonus action you can burn seals on other interdicted Humanoids within 30 feet, and each must also save after taking the seal damage or be charmed the same way. Uses equal your Charisma modifier (minimum 1), regained on a long rest."
+          },
+          {
+            "name": "Invoke Hell",
+            "desc": "You gain two options. Honey-Sweet Blades: give yourself advantage on a weapon attack against an interdicted creature (no action), and a hit becomes a critical hit. Turncoat: as an action, up to your proficiency bonus in enemies within 60 feet that can hear you each make a Charisma save (interdict save DC) or use their reaction to make a weapon attack against one target you pick, which can't be themselves."
+          }
+        ]
+      },
+      {
+        "level": 7,
+        "features": [
+          {
+            "name": "Moloch's Interdiction",
+            "desc": "You always know these extra interdict boons, which don't count against your boons known. Red Cant (7th): when you make a Charisma check, expend a seal to treat a d20 roll of 9 or lower as a 10. Slippery Ploy (13th): when a creature targets you with an attack, spell, or other magical effect, use your reaction to place a seal on it; it makes a Charisma save (interdict save DC) or must pick a new target or lose the attack or effect. Incontrovertible (18th, passive): interdicted creatures have disadvantage on Wisdom and Charisma saves."
+          }
+        ]
+      },
+      {
+        "level": 11,
+        "features": [
+          {
+            "name": "Intransigent",
+            "desc": "While you are conscious, you and any creatures you choose within 10 feet are immune to being charmed."
+          },
+          {
+            "name": "Let's Make a Deal",
+            "desc": "As a bonus action, offer a deal to a willing ally within 60 feet that can hear you. Once in the next 10 minutes it can take advantage plus a bonus equal to your proficiency bonus on one attack roll or save; success grants temporary hit points equal to your illrigger level, while failure gives it disadvantage on its next attack roll or save that can't be offset by advantage. A creature can hold only one deal at a time. Uses equal your proficiency bonus, regained on a long rest."
+          }
+        ]
+      },
+      {
+        "level": 15,
+        "features": [
+          {
+            "name": "Quid Pro Quo",
+            "desc": "As an action, a creature you can see within 30 feet makes a Charisma save or is banished to Hell for 1 minute, repeating the save at the end of each of its turns and returning to the nearest unoccupied space to where it left; a creature that succeeds is immune for 24 hours. While it is gone, a devil jurist (Flee, Mortals!) or horned devil appears in its place as your obedient ally until the banishment ends. After a successful banishment, you can't use this again until you finish a long rest."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Illrigger",
+    "name": "Painkiller",
+    "key": "kc-tir_painkiller",
+    "edition": "2014",
+    "source": "kc",
+    "book": "The Illrigger",
+    "partner": "MCDM",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Dispater's Blessing",
+            "desc": "You gain heavy armor proficiency."
+          },
+          {
+            "name": "Devastator",
+            "desc": "As an action, make a weapon attack and choose up to your proficiency bonus in willing creatures you can see within 30 feet; each can use its reaction to make a weapon attack or cast a damaging cantrip with a 1-action casting time. Usable once per short or long rest."
+          },
+          {
+            "name": "Invoke Hell",
+            "desc": "You gain two options. Grand Strategist: with no action, up to your proficiency bonus in creatures within 60 feet that can hear you each immediately move up to half their speed without provoking opportunity attacks. Punishment: when an attack damages you, use your reaction to have the attacker make a Wisdom save (interdict save DC), taking necrotic damage equal to the damage it dealt you on a failure or half as much on a success."
+          }
+        ]
+      },
+      {
+        "level": 7,
+        "features": [
+          {
+            "name": "Dispater's Interdiction",
+            "desc": "You always know these extra interdict boons, which don't count against your boons known. Telekinetic Seal (7th): when a creature you can see moves within 5 feet of you, use your reaction to place a seal on it; it must succeed on a Wisdom save (interdict save DC) or be pushed 15 feet away or knocked prone, your choice. By the Throat (13th): when you use a bonus action to place or move a seal onto a creature no more than one size larger than you, it makes a Wisdom save (interdict save DC) or is restrained until the end of its next turn. Dispater's Supremacy (18th, passive): your attacks against interdicted creatures crit on 18 to 20."
+          }
+        ]
+      },
+      {
+        "level": 11,
+        "features": [
+          {
+            "name": "You Die on My Command!",
+            "desc": "When an ally within 30 feet who can hear you drops to 0 hit points without dying outright, use your reaction to have it drop to 1 hit point instead. Usable once per short or long rest."
+          }
+        ]
+      },
+      {
+        "level": 15,
+        "features": [
+          {
+            "name": "Deathstrike",
+            "desc": "When you hit an interdicted creature with a melee weapon attack, use your reaction to burn one of its seals and make the hit a critical hit, also doubling the burned seal's damage dice. Uses equal your proficiency bonus, regained on a long rest."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Illrigger",
+    "name": "Shadowmaster",
+    "key": "kc-tir_shadowmaster",
+    "edition": "2014",
+    "source": "kc",
+    "book": "The Illrigger",
+    "partner": "MCDM",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Marked for Death",
+            "desc": "Your first attack against an interdicted creature on each of your turns has advantage."
+          },
+          {
+            "name": "Strike from the Dark",
+            "desc": "Once per turn, when you hit an interdicted creature with a melee weapon attack made with advantage, add damage equal to a number of d4s equal to your proficiency bonus, plus 1d4 more if the target is in dim light or darkness."
+          },
+          {
+            "name": "Invoke Hell",
+            "desc": "You gain two options. Master of Disguise: as an action, cast disguise self without a spell slot. No Escape: as a bonus action, a creature you can see within 30 feet makes a Charisma save (interdict save DC), with disadvantage if it is in dim light or darkness; on a failure its speed is halved and it can't willingly move more than 30 feet from you, ending if you are incapacitated or die or it ends up more than 30 feet away."
+          }
+        ]
+      },
+      {
+        "level": 7,
+        "features": [
+          {
+            "name": "Belial's Interdiction",
+            "desc": "You always know these extra interdict boons, which don't count against your boons known. Veil of Lies (7th): as a bonus action, expend a seal to become invisible for 10 minutes or until you attack or cast a spell. Hell's Assassin (13th, passive): reroll any 1 or 2 on seal damage dice or weapon damage dice against interdicted creatures, keeping the new roll. Dark Malediction (18th, passive): interdicted creatures emit darkness in a 10-foot radius that mundane light can't brighten but darkvision sees through; where it overlaps light made by magic or psionics, that light wins."
+          }
+        ]
+      },
+      {
+        "level": 11,
+        "features": [
+          {
+            "name": "Umbral Killer",
+            "desc": "Gain 60 feet of darkvision (or add 60 feet to existing darkvision), +10 feet of speed, and advantage on Dexterity (Stealth) checks to hide. When a Dexterity save would halve damage, you take none on a success and half on a failure."
+          }
+        ]
+      },
+      {
+        "level": 15,
+        "features": [
+          {
+            "name": "Doomed to the Shadows",
+            "desc": "Strike from the Dark now deals a number of d8s equal to your proficiency bonus, plus 2d8 (instead of 1d4) if the target is in dim light or darkness. When you deal Strike from the Dark damage, you can use your reaction to burn a seal on the target to blind it for 1 minute instead of dealing that seal's damage."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Barbarian",
+    "name": "Path of Booming Magnificence",
+    "key": "kc-toh_path-of-booming-magnificence",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Tome of Heroes",
+    "partner": "Kobold Press",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Roar of Defiance",
+            "desc": "When you use your bonus action to start raging, you can also roar: until the start of your next turn, chosen creatures within 30 feet that can hear you have disadvantage on attack rolls against targets other than you. For the rest of the rage, when a creature within 5 feet that heard the roar damages you, you can use your reaction to force a Constitution save (DC 8 + proficiency bonus + Charisma modifier); on a failure it takes 1d6 thunder damage (2d6 at 10th level). Each creature can take this damage from you only once."
+          },
+          {
+            "name": "Running Leap",
+            "desc": "While raging, your standing long jump covers a number of feet equal to your Strength score, and with a 10-foot running start it covers twice your Strength score."
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Lion's Glory",
+            "desc": "When you start raging, pick allies that can see you, up to your Charisma modifier (minimum 1). Until the rage ends, each picked ally adds your current Rage Damage bonus to the damage of its melee weapon attacks. Usable once per long rest."
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Resonant Bellow",
+            "desc": "As a bonus action, you roar to end the frightened condition on yourself and on any creatures you choose within 60 feet that can hear you. Every creature freed this way gains temporary hit points equal to 1d12 + your Charisma modifier (minimum +1), lasting 1 hour. Usable once per short or long rest."
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Victorious Roar",
+            "desc": "If you hit with two or more attacks in one turn, you can use a bonus action to target one creature you can see within 30 feet with a Wisdom save (DC 8 + proficiency bonus + Charisma modifier). On a failure it takes psychic damage equal to your barbarian level and is frightened until the end of its next turn; on a success it takes half and isn't frightened."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Barbarian",
+    "name": "Path of Hellfire",
+    "key": "kc-toh_path-of-hellfire",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Tome of Heroes",
+    "partner": "Kobold Press",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Hellish Aspect",
+            "desc": "Entering a rage gives you cosmetic fiendish traits (you remain your own creature type). While raging, you resist fire damage, and the first creature you hit with a weapon attack on each of your turns takes an extra 1d6 fire damage (2d6 at 10th level)."
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Hell's Vengeance",
+            "desc": "While you are raging, if an ally you can see within 60 feet takes damage, you can use your reaction to deal fire damage equal to your proficiency bonus to the creature that dealt it."
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Hellfire Shield",
+            "desc": "When you start raging, you can wreath yourself in flame as the fire shield spell, but only the warm shield option, and it lasts until the rage ends. Usable once per short or long rest."
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Devilish Essence",
+            "desc": "While raging, you have advantage on saving throws against spells and other magical effects. When a spell damages you during your rage, you can use your reaction to gain temporary hit points equal to your barbarian level."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Barbarian",
+    "name": "Path of the Dragon",
+    "key": "kc-toh_path-of-the-dragon",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Tome of Heroes",
+    "partner": "Kobold Press",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Totem Dragon",
+            "desc": "Choose a dragon to emulate, which sets your damage type: black or copper (acid), blue or bronze (lightning), brass, gold, or red (fire), green (poison), silver or white (cold). You can speak and read Draconic and have resistance to that damage type."
+          },
+          {
+            "name": "Wyrm Teeth",
+            "desc": "While raging, you can use a bonus action to bite one creature you can see within 5 feet; you are proficient with this bite. A hit deals 1d8 + your Strength modifier piercing damage plus extra damage of your totem dragon's type equal to your proficiency bonus."
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Legendary Might",
+            "desc": "When you fail a saving throw, you can turn it into a success. Once per long rest, or twice per long rest once you reach 14th level."
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Aspect of the Dragon",
+            "desc": "Each time you start raging, pick one aspect. Dragon Heart: gain 1d12 + your barbarian level temporary hit points (this aspect then needs a short or long rest before you can pick it again). Dragon Hide: +2 to AC. Dragon Sight: blindsight 60 feet. Dragon Wings: flying speed 30 feet, but not while wearing armor unless it is built to allow wings, and unadapted clothing may be ruined."
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Wyrm Lungs",
+            "desc": "While raging, you can use an action to breathe a 60-foot cone; creatures inside make a Dexterity save (DC 8 + proficiency bonus + Constitution modifier), taking 12d8 damage of your totem dragon's type on a failure or half on a success. Usable once per long rest."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Cleric",
+    "name": "Black Powder Domain",
+    "key": "kc-toh_black-powder-domain",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Tome of Heroes",
+    "partner": "Kobold Press",
+    "features_by_level": [
+      {
+        "level": 1,
+        "features": [
+          {
+            "name": "Black Powder Domain Spells",
+            "desc": "Always prepared at Cleric levels: 1 fog cloud, thunderwave; 3 heat metal, shatter; 5 fireball, stinking cloud; 7 confusion, wall of fire; 9 cloudkill, deadly salvo (a Tome of Heroes spell)."
+          },
+          {
+            "name": "Bonus Proficiencies",
+            "desc": "You gain proficiency with your choice of alchemist's supplies or gunsmith's tools, and with all simple and martial weapons that have the gunpowder property. A thrown item with the gunpowder property, such as a bomb, isn't treated as an improvised weapon for you."
+          },
+          {
+            "name": "Gunpowder Blessing",
+            "desc": "As an action, touch a weapon a willing creature is holding to give it the gunpowder weapon property for 1 minute, or until you use this feature again."
+          }
+        ]
+      },
+      {
+        "level": 2,
+        "features": [
+          {
+            "name": "Channel Divinity: Imbue/Remove Explosivity",
+            "desc": "As an action with your holy symbol, choose one: apply your Gunpowder Blessing for 1 minute to one weapon carried by each creature you choose within 30 feet; or curse up to your proficiency bonus in gunpowder weapons within 30 feet so that for 1 minute they can't burst (remove curse cast on a weapon restores it)."
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Explosive Infusion",
+            "desc": "As a bonus action, spend a 1st-level spell slot to charge a nonmagical, one-handed object you hold or carry (a vial, a ball bearing) for 1 minute; before it expires, use an action to throw it at a point within 20 feet, where creatures within 5 feet make a Dexterity save against your spell save DC, taking 2d6 fire damage on a failure or half on a success. Higher slots add 1d6 per level above 1st, the damage can burst as a gunpowder weapon (counting as one effect no matter how many targets), and spending a Channel Divinity as part of the throw widens the area to 20 feet. If not thrown in time, the charge simply fades."
+          }
+        ]
+      },
+      {
+        "level": 8,
+        "features": [
+          {
+            "name": "Divine Strike",
+            "desc": "Once on each of your turns when you hit a creature with a weapon attack, you can deal an extra 1d8 fire damage (2d8 at 14th level)."
+          }
+        ]
+      },
+      {
+        "level": 17,
+        "features": [
+          {
+            "name": "Greater Explosive Infusion",
+            "desc": "Explosive Infusion can now charge a nonmagical object that isn't worn or carried and fits in a 5-foot cube, for 10 minutes. You can detonate it as an action while within 100 feet, as a reaction to a trigger you define (such as a creature coming within 20 feet), or on a timer of up to 10 minutes (no range limit); creatures within 20 feet of it make the save. Spending a Channel Divinity when you charge it gives creatures disadvantage on that save, and before detonation you can touch it as an action to defuse it and regain the spell slot."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Druid",
+    "name": "Circle of Bees",
+    "key": "kc-toh_circle-of-bees",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Tome of Heroes",
+    "partner": "Kobold Press",
+    "features_by_level": [
+      {
+        "level": 2,
+        "features": [
+          {
+            "name": "Circle Spells",
+            "desc": "You learn the true strike cantrip. Always prepared at Druid levels (not counted against prepared spells, and treated as druid spells): 3 blur, bombardment of stings (a Tome of Heroes spell); 5 fly, haste; 7 giant insect, locate creature; 9 insect plague, telepathic bond."
+          },
+          {
+            "name": "Bee Bond",
+            "desc": "You gain proficiency in Acrobatics or Stealth (your choice), and you can speak and understand Bee Dance; bees won't attack you even under magical compulsion. When a beast other than a bee attacks you with a weapon that deals poison damage, it must pass a Charisma save against your spell save DC or have disadvantage on attacks against you until the start of its next turn."
+          },
+          {
+            "name": "Bee Stinger",
+            "desc": "As an action, spend one use of Wild Shape to grow a stinger for hours equal to half your druid level (rounded down) or until you Wild Shape again. Your unarmed strikes then use Wisdom for the attack and deal 1d4 + Wisdom modifier piercing plus poison damage equal to half your proficiency bonus. From 6th level these strikes count as magical and the poison damage equals your full proficiency bonus; the piercing die becomes 1d6 at 6th, 1d8 at 10th, and 1d10 at 14th level."
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Bumblebee Rush",
+            "desc": "You can take the Dash action as a bonus action, and when you do, attack rolls against you have disadvantage until the start of your next turn. Usable a number of times equal to your proficiency bonus per long rest."
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Hive Mind",
+            "desc": "When you cast telepathic bond, linked creatures have advantage on Intelligence, Wisdom, and Charisma checks if any linked creature is proficient in a skill that applies. If one linked creature succeeds on a Wisdom (Perception) check to spot a hidden creature or a Wisdom (Insight) check, all of them succeed. A linked creature attacking has advantage if another linked creature that can see it spends its reaction to help."
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Mantle of Bees",
+            "desc": "As an action, cloak yourself in bees for 1 hour (dismiss anytime, no action): +2 AC and advantage on Charisma (Intimidation) checks, and a creature within 5 feet that hits you with a melee weapon makes a Constitution save against your spell save DC, taking 1d8 piercing plus 1d8 poison damage and being poisoned until the end of its next turn on a failure, or half damage and no poison on a success. While the mantle lasts, you can use an action to send the swarm to a 10-foot-radius sphere within 60 feet: Constitution save, 4d6 piercing plus 4d6 poison damage and poisoned for 1 minute on a failure, half and not poisoned on a success, after which the mantle ends. Once per short or long rest, or recreate it by expending a spell slot of 5th level or higher."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Fighter",
+    "name": "Pugilist",
+    "key": "kc-toh_pugilist",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Tome of Heroes",
+    "partner": "Kobold Press",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Unarmed Warrior",
+            "desc": "While you wear no heavy armor and wield no weapons or shield, your unarmed strikes deal 1d6 + Strength modifier bludgeoning damage (d8 at 10th level, d10 at 18th level), and when you take the Attack action to make unarmed strikes you can make one more unarmed strike as a bonus action."
+          },
+          {
+            "name": "Resilient Fighter",
+            "desc": "Add your Constitution modifier (minimum 1) to death saving throws. You can use Second Wind a number of times equal to your proficiency bonus, regaining all uses on a short or long rest."
+          }
+        ]
+      },
+      {
+        "level": 7,
+        "features": [
+          {
+            "name": "Uncanny Fortitude",
+            "desc": "When damage that isn't from a critical hit drops you to 0 hit points, you can make a Constitution save (DC 5 + the damage taken) to drop to 1 hit point instead; usable a number of times equal to your proficiency bonus per long rest. Your Second Wind now restores 1d10 + your fighter level + your Constitution modifier hit points."
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Debilitating Blow",
+            "desc": "If you hit the same target with two unarmed strikes in one turn, you can use a bonus action to force a Constitution save (DC 8 + proficiency bonus + Strength modifier). On a failure, the target has disadvantage on its next attack roll, ability check, or saving throw made before the start of your next turn."
+          }
+        ]
+      },
+      {
+        "level": 15,
+        "features": [
+          {
+            "name": "Withstand Death",
+            "desc": "When you drop to 0 hit points, you can use Second Wind as a reaction if you have uses left, either before or after Uncanny Fortitude resolves. A natural 1 on a death saving throw counts as only one failure."
+          }
+        ]
+      },
+      {
+        "level": 18,
+        "features": [
+          {
+            "name": "Opportunistic Brawler",
+            "desc": "You have advantage on initiative rolls. When a creature you can see enters a space within 5 feet of you, you can make an opportunity attack against it with an unarmed strike, and you get reactions each turn equal to your proficiency bonus, usable only for opportunity attacks."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Monk",
+    "name": "Way of the Unerring Arrow",
+    "key": "kc-toh_way-of-the-unerring-arrow",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Tome of Heroes",
+    "partner": "Kobold Press",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Archery Training",
+            "desc": "Shortbows and longbows are monk weapons for you, and having a hostile creature within 5 feet doesn't give you disadvantage on ranged attacks with them. The bonus action unarmed strike from Martial Arts or Flurry of Blows can deal piercing damage instead."
+          },
+          {
+            "name": "Flurry of Deflection",
+            "desc": "You gain extra reactions equal to your proficiency bonus, usable only for Deflect Missiles. If you reduce the missile's damage to 0 and it is bow ammunition, you can spend 1 ki point to fire it back with your shortbow or longbow. From 9th level, Deflect Missiles reduces the damage by 2d10 + Dexterity modifier + monk level."
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Needle Eye of Insight",
+            "desc": "Your shortbow and longbow attacks count as magical for overcoming resistance and immunity to nonmagical damage. When you make a ranged attack with one, you can spend 1 ki point so your ranged attacks ignore half and three-quarters cover until the start of your next turn."
+          }
+        ]
+      },
+      {
+        "level": 11,
+        "features": [
+          {
+            "name": "Steel Rain Blossom",
+            "desc": "While wielding a shortbow or longbow, use an action to target a point you can see within the weapon's normal range: each creature within 15 feet of it makes a Dexterity save or takes piercing damage equal to two rolls of your Martial Arts die (total cover means automatic success). Spend up to 3 ki points to add one Martial Arts die each. You can also replace the bonus action unarmed strike of Martial Arts or Flurry of Blows with a shortbow or longbow ranged attack."
+          }
+        ]
+      },
+      {
+        "level": 17,
+        "features": [
+          {
+            "name": "Improbable Shot",
+            "desc": "When using Needle Eye of Insight, spend 3 ki points to ignore all cover, even solid barriers, against a target you have seen in the past minute that is within normal range. Alternatively, once per long rest, spend 5 ki points to hit a target you have seen within the past minute that is now on another plane or in an extradimensional space."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Rogue",
+    "name": "Soulspy",
+    "key": "kc-toh_soulspy",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Tome of Heroes",
+    "partner": "Kobold Press",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Spellcasting",
+            "desc": "You cast cleric spells using Wisdom (save DC 8 + proficiency bonus + Wisdom modifier, attack bonus proficiency bonus + Wisdom modifier) and regain slots on a long rest. You know 3 cleric cantrips (4 at 10th level) and 3 cleric spells of 1st level at 3rd, rising per the Soulspy Spellcasting table to 13 at 20th, with slots up to 4th level on the third-caster track (2 first-level slots at 3rd; 2nd-level slots from 7th, 3rd-level from 13th, a 4th-level slot at 19th). Spells must be abjuration or necromancy except the ones learned at 3rd (one of the initial three), 8th, 14th, and 20th, and on level up you may swap one known spell under the same rule."
+          },
+          {
+            "name": "Bonus Proficiency",
+            "desc": "You gain proficiency in Religion if you lack it."
+          },
+          {
+            "name": "Divine Symbol",
+            "desc": "As an action, create an intangible, invulnerable Tiny holy symbol that floats within 5 feet for 1 minute (ends early if you die or dismiss it). It is a spellcasting focus for your cleric spells; it sheds bright light 10 feet and dim light another 10 feet, which you can toggle as a bonus action (snuffing one nonmagical light within 10 feet when you douse it); and as a bonus action it can become thieves' tools (losing its other functions) or change back. When created and as an action on each of your turns, it can fire at a creature within 30 feet with a ranged spell attack for 1d8 radiant or necrotic damage, rising to 2d8 at 5th, 3d8 at 11th, and 4d8 at 17th level."
+          }
+        ]
+      },
+      {
+        "level": 9,
+        "features": [
+          {
+            "name": "Sacred Stealth",
+            "desc": "You can apply Sneak Attack to a creature hit by your Divine Symbol if an ally that isn't incapacitated is within 5 feet of the target and you lack disadvantage. Usable a number of times equal to your Wisdom modifier (minimum 1) per short or long rest."
+          }
+        ]
+      },
+      {
+        "level": 13,
+        "features": [
+          {
+            "name": "Touching the Soul",
+            "desc": "Your touch-range cleric spells can be delivered through your Divine Symbol to a creature you can see within 30 feet, after which the symbol vanishes. Sacred Stealth can't apply to spells delivered this way."
+          }
+        ]
+      },
+      {
+        "level": 17,
+        "features": [
+          {
+            "name": "Life Thief",
+            "desc": "When your Divine Symbol attack or a cleric spell or cantrip deals radiant or necrotic damage, a friendly creature you can see within 30 feet (you included) regains hit points equal to half that damage. Once per short or long rest."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Wizard",
+    "name": "School of Black Powder",
+    "key": "kc-toh_school-of-black-powder",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Tome of Heroes",
+    "partner": "Kobold Press",
+    "features_by_level": [
+      {
+        "level": 2,
+        "features": [
+          {
+            "name": "Gun Savant",
+            "desc": "You gain proficiency with simple firearms, the musket, and your choice of alchemist's supplies or gunsmith's tools. You can use Intelligence instead of Dexterity for firearm attack and damage rolls, and a firearm can serve as your spellcasting focus."
+          },
+          {
+            "name": "Arcane Arms",
+            "desc": "As an action with a gun in hand, invoke one effect (silent unless noted), a number of times equal to your proficiency bonus per long rest. Arcane Dusting: 15-foot cone makes magical or spell-affected creatures and objects glow with 5-foot dim light until the end of your next turn. Flare: a light rising up to 100 feet that hovers then drifts down over the next round, visible 1 mile by day or 5 at night, or fired up to 50 feet in another direction so creatures within 5 feet of its path pass a Dexterity save against your spell save DC or have disadvantage on sight-based Wisdom (Perception) checks for 1 minute. Lockbuster: an attack roll against a lock in normal range that destroys it if it meets the lock's pick DC (advantage if magically protected). Smokescreen: heavily obscuring 10-foot-radius sphere (20 feet at 6th level) centered on you until the end of your next turn or until a 10 mph or stronger wind clears it. Starter's Gun: chosen allies within 30 feet gain +10 feet of speed until the start of your next turn (and can Dash as a bonus action from 10th level). Tracer Shot: a firearm attack against a creature within 60 feet that, on a hit, deals normal damage and outlines it as faerie fire until the start of your next turn (1 minute from 10th level)."
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Spell Shot",
+            "desc": "When you cast a spell that uses a melee spell attack, you can fire it through your firearm using the firearm's normal range, a number of times equal to your proficiency bonus per long rest. Your firearm attacks also count as magical for overcoming resistance and immunity to nonmagical damage."
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Improved Arcane Arms",
+            "desc": "Arcane Arms gains new options, and you can spend a spell slot of 2nd level or higher to regain uses equal to half the slot's level. False Shot: a fake shot at a target within 30 feet, Wisdom save against your spell save DC or paralyzed with fear until the start of your next turn, frightened of you instead on a success. Invigorating Burst: you and chosen creatures within 20 feet gain 2d4 temporary hit points for 1 hour. Shot in the Arm: as a bonus action, a friendly creature within 60 feet loses one level of exhaustion, or if it has none gains 5 temporary hit points for 1 hour and advantage on its next ability check, attack roll, or saving throw. Warning Shot: chosen creatures you can see within 30 feet become indifferent to creatures of your choice for 1 minute, ending early if a target is attacked, harmed by a spell, sees an ally harmed, or you invoke another Arcane Arms effect."
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Hand Cannon",
+            "desc": "When you make a ranged attack roll with a firearm, you can spend a spell slot of 1st level or higher to add the slot's level to the attack roll. On a hit, a 30-foot by 5-foot line extends directly away from you starting at the target; creatures in it make a Dexterity save against your spell save DC, taking 1d6 force damage per slot level on a failure or half on a success. This damage can burst as a gunpowder weapon, counted as a single effect."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Rogue",
+    "name": "Webslinger (arachnid archetype)",
+    "key": "kc-vss_webslinger-arachnid-archetype",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Valda's Spire of Secrets",
+    "partner": "Mage Hand Press",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Webbing",
+            "desc": "As a bonus action, shoot a strand of web up to 60 feet that lasts 1 minute: use it as a rope, pull an unattended object, shut a door, or grab a small object under 10 pounds. Aim it at a point you can see within 60 feet to haul yourself there in a straight line (uses movement, provokes opportunity attacks as normal). As a reaction when falling, you can pull yourself up to 10 feet in any direction or anchor a web rope up to 60 feet long to a point of your choice."
+          },
+          {
+            "name": "Venomous Strike",
+            "desc": "When you deal Sneak Attack damage, you can make the Sneak Attack dice d8s that deal poison damage."
+          }
+        ]
+      },
+      {
+        "level": 9,
+        "features": [
+          {
+            "name": "Wall Crawling",
+            "desc": "You gain a climbing speed equal to your walking speed and can move along walls and upside down on ceilings with your hands free. While on a ceiling, you can hide from creatures at least 10 feet below you even without cover."
+          }
+        ]
+      },
+      {
+        "level": 13,
+        "features": [
+          {
+            "name": "Web Walker",
+            "desc": "You can cast web at will with no spell slot or components, with a save DC of 8 + Dexterity modifier + proficiency bonus. Movement restrictions from webbing don't affect you."
+          }
+        ]
+      },
+      {
+        "level": 17,
+        "features": [
+          {
+            "name": "Paralytic Venom",
+            "desc": "When Venomous Strike deals poison Sneak Attack damage, you can force a Constitution save (DC 8 + Dexterity modifier + proficiency bonus); on a failure the target is paralyzed for 1 minute, repeating the save at the end of each of its turns to end it. Once per short or long rest."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Warlock",
+    "name": "Future You (Patron)",
+    "key": "kc-vss_future-you-patron",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Valda's Spire of Secrets",
+    "partner": "Mage Hand Press",
+    "features_by_level": [
+      {
+        "level": 1,
+        "features": [
+          {
+            "name": "Expanded Spell List",
+            "desc": "Added to the warlock list for you, by spell level: 1st accelerate/decelerate, instant replay; 2nd delay, recall; 3rd haste, protection from energy; 4th death ward, dire warning; 5th evasiveness, legend lore (all but haste, protection from energy, death ward, and legend lore are new spells from this book)."
+          },
+          {
+            "name": "Future You Quirks",
+            "desc": "You gain one roleplaying trait from the subclass's d6 quirk table; it has no mechanical effect."
+          },
+          {
+            "name": "It Happened Like This",
+            "desc": "Whenever you finish a short or long rest, the GM secretly rolls a d20 and a d4 and tells you the d20 result, unless the d4 shows 4, in which case you are told a random number from 1 to 20 instead. Once, before rolling, you can replace one attack roll, ability check, or saving throw with the number you were told; if it was false, the GM reveals that after you use it."
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "I Could Do With Fewer Scars",
+            "desc": "When a creature you can see attacks you, you can use your reaction to gain +10 AC against that attack. Once per short or long rest."
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Expect an Ambush",
+            "desc": "You can't be surprised while conscious, and you have advantage on initiative rolls."
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Grandfather Paradox",
+            "desc": "As an action, target a creature that can hear you with an Intelligence save against your warlock spell save DC; on a failure it is stunned for up to 1 minute, repeating the save at the end of each of its turns to end the effect. Once per long rest."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Blood Hunter",
+    "name": "Order of the Ghostslayer",
+    "key": "kc-bh_order-of-the-ghostslayer",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Blood Hunter (D&D Beyond)",
+    "partner": "Critical Role",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Rite of the Dawn",
+            "desc": "You learn this extra crimson rite, which deals radiant damage. While it is active the weapon sheds bright light in a 20-foot radius, you resist necrotic damage, and your hits against undead with that weapon add one more hemocraft die of rite damage."
+          },
+          {
+            "name": "Curse Specialist",
+            "desc": "You gain one additional use of Blood Maledict, and your blood curses can affect creatures that have no blood."
+          }
+        ]
+      },
+      {
+        "level": 7,
+        "features": [
+          {
+            "name": "Aether Walk",
+            "desc": "At the start of your turn, if you aren't incapacitated, you can slip partly into the Ethereal for rounds equal to your Hemocraft modifier (minimum 1): you move through creatures and objects as difficult terrain and can see and affect things on the Ethereal Plane. Ending a turn inside an object deals 1d10 force damage; if the effect ends while you are inside one, you shunt to the nearest unoccupied space and take force damage equal to twice the feet moved. Once per short or long rest, twice starting at 15th level."
+          }
+        ]
+      },
+      {
+        "level": 11,
+        "features": [
+          {
+            "name": "Brand of Sundering",
+            "desc": "Your hits with a crimson-rite weapon add one more hemocraft die of rite damage. A branded creature with Incorporeal Movement or a similar trait can't pass through creatures or objects while the brand lasts."
+          }
+        ]
+      },
+      {
+        "level": 15,
+        "features": [
+          {
+            "name": "Blood Curse of the Exorcist",
+            "desc": "You learn this curse; it doesn't count against curses known. Bonus action: one creature you can see within 30 feet that is charmed, frightened, or possessed is freed of those effects. Amplify: whatever charmed, frightened, or possessed it takes 3d6 psychic damage and must pass a Wisdom save or be stunned until the end of your next turn."
+          }
+        ]
+      },
+      {
+        "level": 18,
+        "features": [
+          {
+            "name": "Rite Revival",
+            "desc": "If you have at least one active crimson rite and drop to 0 hit points without being killed outright, you can end all your active rites to stay at 1 hit point instead."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Blood Hunter",
+    "name": "Order of the Lycan",
+    "key": "kc-bh_order-of-the-lycan",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Blood Hunter (D&D Beyond)",
+    "partner": "Critical Role",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Heightened Senses",
+            "desc": "Advantage on Wisdom (Perception) checks that use hearing or smell."
+          },
+          {
+            "name": "Hybrid Transformation",
+            "desc": "As a bonus action, take a hybrid form for up to 1 hour; you can still speak, use equipment, and wear armor. Revert as a bonus action, and you revert automatically if you fall unconscious or die. Once per short or long rest. This replaces the normal lycanthropy rules."
+          },
+          {
+            "name": "Hybrid Form Benefits",
+            "desc": "Feral Might: advantage on Strength checks and saves, and +1 to melee damage rolls (+2 at 11th level, +3 at 18th). Resilient Hide: resistance to bludgeoning, piercing, and slashing damage from nonmagical attacks that aren't silvered, plus +1 AC while not in heavy armor. Predatory Strikes: your unarmed strikes count as one weapon for Crimson Rite, can use Dexterity for attack and damage, and deal 1d6 bludgeoning or slashing (1d8 at 11th level); after you make an unarmed strike with the Attack action, you can make another as a bonus action. Bloodlust: if you begin your turn below half your hit point maximum, make a DC 8 Wisdom save (automatic failure if you are concentrating or can't concentrate, as while raging); on a failure you move straight at the nearest creature (random if tied) and take the Attack action against it, optionally with Extra Attack, then regain control."
+          }
+        ]
+      },
+      {
+        "level": 7,
+        "features": [
+          {
+            "name": "Stalker's Prowess",
+            "desc": "Your speed increases by 10 feet, your long jump by 10 feet, and your high jump by 3 feet. In hybrid form you gain Improved Predatory Strikes: +1 to unarmed strike attack rolls (+2 at 11th level, +3 at 18th), and with a crimson rite active on them your unarmed strikes count as magical for overcoming resistance and immunity."
+          }
+        ]
+      },
+      {
+        "level": 11,
+        "features": [
+          {
+            "name": "Advanced Transformation",
+            "desc": "Hybrid Transformation can be used twice per short or long rest. Your hybrid form gains Lycan Regeneration: at the start of each turn, if you have at least 1 hit point but less than half your maximum, regain 1 + your Constitution modifier hit points (minimum 1), applied before any bloodlust save."
+          }
+        ]
+      },
+      {
+        "level": 15,
+        "features": [
+          {
+            "name": "Brand of the Voracious",
+            "desc": "In hybrid form you have advantage on bloodlust saves and on attack rolls against a creature you have branded."
+          }
+        ]
+      },
+      {
+        "level": 18,
+        "features": [
+          {
+            "name": "Hybrid Transformation Mastery",
+            "desc": "Hybrid Transformation has unlimited uses and lasts until you revert, fall unconscious, or die."
+          },
+          {
+            "name": "Blood Curse of the Howl",
+            "desc": "You learn this curse; it doesn't count against curses known. Action: every creature within 30 feet that can hear you (except any you choose that you can see) makes a Wisdom save or is frightened of you until the end of your next turn, and is also stunned while frightened this way if it failed by 5 or more. A creature that succeeds is immune to this curse for 24 hours. Amplify: range becomes 60 feet."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Blood Hunter",
+    "name": "Order of the Mutant",
+    "key": "kc-bh_order-of-the-mutant",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Blood Hunter (D&D Beyond)",
+    "partner": "Critical Role",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Mutagencraft",
+            "desc": "When you finish a short or long rest you can brew mutagens that only work on you and go inert if unused by the end of your next short or long rest. Drinking one is a bonus action; its effect and side effect last until your next short or long rest unless noted, and you can use an action to purge all active mutagens. Mutagens per rest / formulas known: 1/4 at 3rd level, 2/5 at 7th, 2/6 at 11th, 3/7 at 15th, 3/8 at 18th. Whenever you learn a formula, you may also swap one you know."
+          },
+          {
+            "name": "Mutagen Formulas",
+            "desc": "A mutagen with a level listed can be learned at that level. Aether (11th level): 20-foot flying speed for 1 hour; disadvantage on Strength and Dexterity checks. Alluring: advantage on Charisma checks; disadvantage on initiative. Celerity: Dexterity and its maximum rise by 3 (4 at 11th level, 5 at 18th); disadvantage on Wisdom saves. Conversant: advantage on Intelligence checks; disadvantage on Wisdom checks. Cruelty (11th level): after taking the Attack action, make one weapon attack as a bonus action; disadvantage on Intelligence, Wisdom, and Charisma saves. Deftness: advantage on Dexterity checks; disadvantage on Wisdom checks. Embers: fire resistance, cold vulnerability. Gelid: cold resistance, fire vulnerability. Impermeable: piercing resistance, slashing vulnerability. Mobility: immune to grappled and restrained (and paralyzed from 11th level); disadvantage on Strength checks. Nighteye: darkvision 60 feet (or +60 feet if you have it); disadvantage on attack rolls and sight-based Wisdom (Perception) checks when you, your target, or what you are looking at is in direct sunlight. Percipient: advantage on Wisdom checks; disadvantage on Charisma checks. Potency: Strength and its maximum rise by 3 (4 at 11th, 5 at 18th); disadvantage on Dexterity saves. Precision (11th level): weapon attacks crit on 19 or 20; disadvantage on Strength saves. Rapidity: speed +10 feet (+5 more at 15th level); disadvantage on Intelligence checks. Reconstruction (7th level): for 1 hour, at the start of each turn with at least 1 but under half your maximum hit points, regain hit points equal to your proficiency bonus; speed reduced by 10 feet. Sagacity: Intelligence and its maximum rise by 3 (4 at 11th, 5 at 18th); disadvantage on Charisma saves. Shielded: slashing resistance, bludgeoning vulnerability. Unbreakable: bludgeoning resistance, piercing vulnerability. Vermillion: one extra Blood Maledict use; disadvantage on death saves."
+          }
+        ]
+      },
+      {
+        "level": 7,
+        "features": [
+          {
+            "name": "Strange Metabolism",
+            "desc": "You are immune to poison damage and the poisoned condition. Once per long rest, as a bonus action, you can suppress one active mutagen's side effect for 1 minute."
+          }
+        ]
+      },
+      {
+        "level": 11,
+        "features": [
+          {
+            "name": "Brand of Axiom",
+            "desc": "Branding a creature ends any illusion or invisibility on it, and it can't benefit from either while branded. If it is in an alternate form (polymorph, Change Shape, Shapechanger, Wild Shape, and the like), it must pass a Wisdom save or revert to its true form and be stunned until the end of your next turn. Any later attempt by a branded creature to change form requires a Wisdom save; on a failure the attempt fails and it is stunned until the end of your next turn."
+          }
+        ]
+      },
+      {
+        "level": 15,
+        "features": [
+          {
+            "name": "Blood Curse of Corrosion",
+            "desc": "You learn this curse; it doesn't count against curses known. Bonus action: one creature within 30 feet is poisoned, repeating a Constitution save at the end of each of its turns to end it. Amplify: it takes 4d6 necrotic damage when cursed and again on each failed save to end the curse."
+          }
+        ]
+      },
+      {
+        "level": 18,
+        "features": [
+          {
+            "name": "Exalted Mutation",
+            "desc": "As a bonus action, end one active mutagen and its side effect and immediately gain the effect of another mutagen whose formula you know. Uses equal your Hemocraft modifier (minimum 1), regained on a long rest."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Blood Hunter",
+    "name": "Order of the Profane Soul",
+    "key": "kc-bh_order-of-the-profane-soul",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Blood Hunter (D&D Beyond)",
+    "partner": "Critical Role",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Otherworldly Patron",
+            "desc": "Bind yourself to a patron: the Archfey, the Fiend, the Great Old One, the Undying, the Celestial, the Hexblade, the Fathomless, the Genie, or the Undead. Your choice shapes Rite Focus, Revealed Arcana, and Unsealed Arcana."
+          },
+          {
+            "name": "Pact Magic",
+            "desc": "You cast warlock spells using your Hemocraft ability (spell save DC 8 + proficiency bonus + Hemocraft modifier; spell attack proficiency bonus + Hemocraft modifier). Cantrips known: 2, rising to 3 at 10th level. Spells known (blood hunter level: count): 3rd 2, 5th 3, 7th 4, 9th 5, 11th 6, 13th 7, 15th 8, 17th 9, 19th 10, 20th 11, chosen from the warlock list at or below your slot level, and you may swap one when you gain a level. Pact slots, all of one level and regained on a short or long rest: one 1st-level slot at 3rd to 5th, two 1st-level slots at 6th, two 2nd-level at 7th to 12th, two 3rd-level at 13th to 18th, two 4th-level at 19th and 20th. With warlock levels, add one-third of your blood hunter levels (rounded down) to your warlock level for slots."
+          },
+          {
+            "name": "Rite Focus",
+            "desc": "While a crimson rite is active, your weapon serves as your warlock spellcasting focus and you gain a patron benefit. Archfey: a creature you damage with the rite weapon gives off a faint glow and gets no benefit from cover or invisibility until the end of your next turn. Celestial: bonus action, spend a Blood Maledict use to heal a creature you can see within 60 feet for one hemocraft die + your Hemocraft modifier (minimum +1). Fathomless: you can breathe underwater, and once per turn a rite-weapon hit can cut the target's speed by 10 feet until the start of your next turn. Fiend: with Rite of the Flame, reroll 1s and 2s on rite damage dice, keeping either result. Genie: bonus action, spend a Blood Maledict use for a 30-foot flying speed for rounds equal to your Hemocraft modifier (minimum 1). Great Old One: when you score a critical hit, the target and any creatures you choose within 10 feet of it are frightened of you until the end of your next turn. Hexblade: after a blood curse affects a creature, your next hit on it while the curse lasts adds damage equal to your proficiency bonus. Undead: reaction to halve necrotic damage you take, and your look reflects your patron while a rite is active. Undying: when you drop a hostile creature of at least mild threat (DM's call) to 0 hit points, regain hit points equal to one hemocraft die roll."
+          }
+        ]
+      },
+      {
+        "level": 7,
+        "features": [
+          {
+            "name": "Mystic Frenzy",
+            "desc": "When you use your action to cast a cantrip, you can make one weapon attack as a bonus action."
+          },
+          {
+            "name": "Revealed Arcana",
+            "desc": "Once per long rest, cast a patron spell using a pact slot: Archfey blur, Celestial lesser restoration, Fathomless gust of wind, Fiend scorching ray, Genie phantasmal force, Great Old One detect thoughts, Hexblade branding smite, Undead blindness/deafness, Undying silence."
+          }
+        ]
+      },
+      {
+        "level": 11,
+        "features": [
+          {
+            "name": "Brand of the Sapping Scar",
+            "desc": "Creatures you have branded have disadvantage on saving throws against your warlock spells."
+          }
+        ]
+      },
+      {
+        "level": 15,
+        "features": [
+          {
+            "name": "Unsealed Arcana",
+            "desc": "Once per long rest, cast a patron spell without spending a slot: Archfey slow, Celestial revivify, Fathomless lightning bolt, Fiend fireball, Genie protection from energy, Great Old One haste, Hexblade blink, Undead speak with dead, Undying bestow curse."
+          }
+        ]
+      },
+      {
+        "level": 18,
+        "features": [
+          {
+            "name": "Blood Curse of the Soul Eater",
+            "desc": "You learn this curse; it doesn't count against curses known. Reaction when a creature other than a construct or undead drops to 0 hit points within 30 feet: until the end of your next turn your attacks have advantage and you resist all damage. Amplify: you also regain one expended warlock spell slot; you can amplify this curse only once per long rest."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Illrigger",
+    "name": "Sanguine Knight",
+    "key": "kc-tir_sanguine-knight",
+    "edition": "2014",
+    "source": "kc",
+    "book": "The Illrigger",
+    "partner": "MCDM",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Exsanguinate",
+            "desc": "When you burn one or more seals on a creature that isn't a construct or undead, you can pick an ally you can see within 30 feet; that ally gains temporary hit points equal to the damage those seals dealt."
+          },
+          {
+            "name": "Sutekh's Blessing",
+            "desc": "You become proficient in Religion. As an action, until the end of your next turn you sense the distance, direction, and creature type of every creature with blood within 120 feet, even unseen; 1 foot of stone, 1 inch of common metal, a thin lead sheet, or 3 feet of wood or dirt blocks it. Usable a number of times equal to your proficiency bonus, regaining all uses on a long rest."
+          },
+          {
+            "name": "Invoke Hell",
+            "desc": "You gain two Invoke Hell options. Embolden Allies: as a bonus action, split healing equal to five times your illrigger level among yourself and any creatures within 30 feet of you. Vitalize: with no action required, chosen creatures within 30 feet of you add your proficiency bonus to ability checks for 1 minute."
+          }
+        ]
+      },
+      {
+        "level": 7,
+        "features": [
+          {
+            "name": "Sutekh's Interdiction",
+            "desc": "You automatically learn these interdict boons at the listed illrigger levels; they are always known and don't count toward your boons known. Foul Interchange (7th level): as an action, expend a seal to end one condition (blinded, charmed, dazed, deafened, frightened, paralyzed, or poisoned) on a creature you can see within 30 feet; a different creature you can see within 60 feet must pass a Constitution save or gain that condition until the end of your next turn (if it is immune, the original creature is still cured). Dazed means a creature can only move, take an action, or take a bonus action on its turn, and becoming dazed on its own turn ends that turn. Sanguine Gift (13th level): when a creature you can see within 30 feet regains hit points, expend a seal (no action) to add hit points equal to your illrigger level. Blood for Blood (18th level, passive): whenever an interdicted creature damages one of your allies, the interdicted creature takes necrotic damage equal to your proficiency bonus."
+          }
+        ]
+      },
+      {
+        "level": 11,
+        "features": [
+          {
+            "name": "Bloodstroke",
+            "desc": "When a melee attack hits an ally who has temporary hit points from your Exsanguinate, the attacker takes cold, fire, or necrotic damage (your choice) equal to your illrigger level."
+          }
+        ]
+      },
+      {
+        "level": 15,
+        "features": [
+          {
+            "name": "Haemal Exchange",
+            "desc": "When an interdicted creature within 60 feet makes an attack roll or saving throw, you can use your reaction to burn one of its seals: it subtracts a d8 roll from that result, and an ally within 30 feet adds a d8 roll to their next attack roll or saving throw."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Investigator",
+    "name": "Antiquarian",
+    "key": "kc-vss_antiquarian",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Valda's Spire of Secrets",
+    "partner": "Mage Hand Press",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Artifact Historian",
+            "desc": "Identify is added to your grimoire, and you cast it without material components."
+          },
+          {
+            "name": "Trinkets",
+            "desc": "Each trinket use casts a spell once with no spell slot or components. Hateful Arrowhead: ray of enfeeblement or scorching ray. Mirrored Prism: blur or mirror image, self only. Razortooth Bandages: cure wounds or inflict wounds, cast at the slot level shown in your Ritual Level column."
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Relics",
+            "desc": "Once per short or long rest, use one relic to cast a spell with no spell slot or components. Antediluvian Dynamo: fireball or lightning bolt. Lich's Deathmask: counterspell or dispel magic. Mortal Coil: animate dead or revivify; casting animate dead this way turns all undead raised by your earlier castings of that spell back into corpses."
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Magic Item Collection",
+            "desc": "You can produce one item from an extradimensional vault, changing the choice after each long rest: carpet of flying, cloak of the bat, flame tongue, gauntlets of ogre power, instant fortress, ring of regeneration, ring of telekinesis, sun blade, or wand of wonder."
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Phylactery",
+            "desc": "You gain a phylactery that is always attuned to you without counting against your attunement limit. It holds 5 charges and recovers 1d4 + 1 each dawn. 1 charge: cast false life at 2nd level with no slot or components. 1 charge: as a bonus action, regain one spent trinket use. 2 charges: as a reaction when dropped to 0 hit points but not killed outright, drop to 1 instead. 3 charges: make a melee spell attack against a creature in reach for 5d6 necrotic damage, regaining hit points equal to the damage dealt."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Investigator",
+    "name": "Archivist",
+    "key": "kc-vss_archivist",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Valda's Spire of Secrets",
+    "partner": "Mage Hand Press",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Trinket",
+            "desc": "Archaic Scroll: you can cast a ritual with Rushed Incantation without spending one of its uses (this spends a trinket use)."
+          },
+          {
+            "name": "Thesis",
+            "desc": "Choose a thesis; its spells are added to your grimoire once you gain access to them and count as investigator spells even if absent from the Investigator Spells list. As an action, you can spend a Rushed Incantation use to cast a thesis spell. Corpus: 1st jump, longstrider; 2nd alter self, heat metal; 3rd gaseous form, meld into stone. Ignis: 1st burning hands, thunderwave; 2nd gust of wind, scorching ray; 3rd call lightning, wind wall. Mortis: 1st bane, false life; 2nd blindness/deafness, darkness; 3rd revivify, vampiric touch. Regis: 1st charm person, hideous laughter; 2nd enthrall, suggestion; 3rd dispel magic, hypnotic pattern."
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Erudite Spell",
+            "desc": "When you cast a spell that calls for a saving throw, one target makes its first save against it with disadvantage. Once per short or long rest."
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Encyclopedic Expertise",
+            "desc": "Whenever you see a spell cast or study a magical effect, you identify the spell, the magic item, or the monster responsible, unless it is unique or otherwise unrecorded in arcane texts."
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Eidetic Memory",
+            "desc": "Any ritual you watch being cast can be copied into your grimoire. Also, once per long rest, when you see a spell of 5th level or lower with a casting time of 1 action cast within the last minute, you can use your action and spend a Rushed Incantation use to cast it yourself with no spell slot; it can't have costly or consumed material components."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Investigator",
+    "name": "Detective",
+    "key": "kc-vss_detective",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Valda's Spire of Secrets",
+    "partner": "Mage Hand Press",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Investigator's Hunch",
+            "desc": "After at least 10 minutes sorting documents and clues, you make Intelligence checks about them with advantage."
+          },
+          {
+            "name": "Trinkets",
+            "desc": "Each trinket use, as a bonus action, casts a spell once with no spell slot or components. Fogstone Periapt: misty step. Glass Medallion: invisibility, self only. Skeleton's Key: knock."
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Predictive Intuition",
+            "desc": "As a bonus action, study a creature you can see within 30 feet. Before the start of your next turn, either add 1d4 to your next attack roll against it or subtract 1d4 from its next attack roll against you."
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Interrogator's Instinct",
+            "desc": "You know whether a creature you hear speaking is charmed, possessed, or otherwise magically forced to speak, and you have advantage on ability checks to detect lies you hear."
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Power of Deduction",
+            "desc": "As an action, study a creature you can see within 30 feet. For 1 minute, you have advantage on attack rolls against it and on Intelligence and Charisma checks to interact with it. Once per short or long rest."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Investigator",
+    "name": "Exterminator",
+    "key": "kc-vss_exterminator",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Valda's Spire of Secrets",
+    "partner": "Mage Hand Press",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Bonus Proficiencies",
+            "desc": "You gain proficiency with medium armor and martial weapons."
+          },
+          {
+            "name": "Trinkets",
+            "desc": "Consecrated Whetstone: as a bonus action, cast magic weapon once with no spell slot or components. Gilded Dragon Scale: as a bonus action, gain resistance to a damage type of your choice for 1 minute. Wyverntooth Necklace: after hitting with a melee weapon attack, use a bonus action to add 2d8 poison damage."
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Monster Slayer",
+            "desc": "When you take the Attack action, you can make one weapon attack as a bonus action. Uses equal your Intelligence modifier (minimum 1), restored on a short or long rest."
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Silvered Edge",
+            "desc": "A creature you damage with a weapon attack can't regain hit points until the start of your next turn. A creature you drop to 0 hit points can't rise as undead or be revived by anything short of wish for 7 days."
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Killer Instinct",
+            "desc": "You can use Exploit Weakness twice per turn, but not twice against the same target."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Investigator",
+    "name": "Inquisitor",
+    "key": "kc-vss_inquisitor",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Valda's Spire of Secrets",
+    "partner": "Mage Hand Press",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Bonus Proficiencies",
+            "desc": "You gain proficiency with medium armor."
+          },
+          {
+            "name": "Exorcist's Doctrines",
+            "desc": "You gain proficiency in Religion and double your proficiency bonus on checks using it."
+          },
+          {
+            "name": "Trinkets",
+            "desc": "Each trinket use takes a bonus action. Alabaster Balm: cast lesser restoration once with no spell slot or components. Hallowed Chalice: create one flask of holy water that turns ordinary after 24 hours; the chalice works five times before it is spent. Reliquary of Doubt: cast detect thoughts once with no spell slot or components, sensing only thoughts tied to negative emotions such as guilt, regret, or fear."
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Divine Strike",
+            "desc": "Once per turn when you hit with a weapon attack, you can add 1d6 radiant damage."
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Rote Piety",
+            "desc": "You can use Opportunistic Piety three times, regaining all uses on a short or long rest."
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Excommunication",
+            "desc": "As an action, mark a creature you can see within 60 feet; it must succeed on a Constitution or Wisdom save (your choice) or be marked for 1 minute. A marked creature can't regain hit points or have advantage on attack rolls or ability checks, and it takes 2d6 radiant damage each time it takes an action. Once per long rest."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Investigator",
+    "name": "Medium",
+    "key": "kc-vss_medium",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Valda's Spire of Secrets",
+    "partner": "Mage Hand Press",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Foretelling",
+            "desc": "After each long rest, roll two d20s and record them. Before an ability check, attack roll, or saving throw by you or a creature you can see, you can swap in a foretold roll (once per turn, each roll used once). As an action you can spend a Rushed Incantation use to add another foretold roll, holding at most three; unused rolls vanish when you finish a long rest."
+          },
+          {
+            "name": "Trinkets",
+            "desc": "Dead Ringer: as an action, cast speak with dead once with no spell slot or components, asking only one question. Heptagonal Spectacles: as a bonus action, cast see invisibility once with no spell slot or components. Lucent Mirror: as a bonus action, partly enter the Ethereal Plane for up to 1 minute, moving through creatures and objects as difficult terrain (1d10 force damage if you end your turn inside one) and resisting all damage; the effect ends once you take damage."
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Forewarning Presence",
+            "desc": "Reroll one of your attack rolls or ability checks and keep the new result. Once per short or long rest."
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Whispers from Beyond",
+            "desc": "Once per long rest, the GM gives you a one-word hint about your best course of action, a promising lead, or similar guidance."
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Third Eye",
+            "desc": "Once per long rest, cast true seeing as a bonus action with no spell slot or components."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Investigator",
+    "name": "Occultist",
+    "key": "kc-vss_occultist",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Valda's Spire of Secrets",
+    "partner": "Mage Hand Press",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Trinket",
+            "desc": "Rune Keeper's Eyeglass: as a bonus action, you can read all writing for 1 hour."
+          },
+          {
+            "name": "Pact Magic",
+            "desc": "You learn two warlock cantrips (a third at 10th level) and two 1st-level warlock spells, learning more per the Occultist Spellcasting table; all slots share one level and return on a short or long rest. Slots: 1 at 3rd-4th (1st level), 2 at 5th-6th (1st), 2 at 7th-12th (2nd), 2 at 13th-18th (3rd), 2 at 19th-20th (4th). Spells known: 2 at 3rd, rising by one every two levels to 10 at 19th, and 11 at 20th; each must be of your slot level or lower, and you can swap one known spell each time you gain an investigator level. Intelligence is your spellcasting ability, using your investigator save DC and attack bonus."
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Eldritch Ruin",
+            "desc": "When you use Exploit Weakness, you can give up its extra damage to cast a cantrip as a bonus action."
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Eyes of Another World",
+            "desc": "You see invisible creatures and objects and those on the Ethereal Plane, perceive the true form of shapechangers and magically altered creatures, and instantly know if a creature you can see is possessed."
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Maleficium",
+            "desc": "When you use Exploit Weakness on a creature, you can cast bestow curse on it as a bonus action with no spell slot or components, and it saves with disadvantage. Once per short or long rest."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Investigator",
+    "name": "Spy",
+    "key": "kc-vss_spy",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Valda's Spire of Secrets",
+    "partner": "Mage Hand Press",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Bravado",
+            "desc": "You gain proficiency in Deception and double your proficiency bonus on checks using it."
+          },
+          {
+            "name": "Trinkets",
+            "desc": "Each trinket use takes a bonus action. Glass Dust: become invisible until the start of your next turn, ending early if you take damage. Horn-Rimmed Glasses: cast disguise self once with no spell slot or components. Martini Glass: cast charm person once with no spell slot or components."
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Cloak and Dagger",
+            "desc": "Attacks against a creature that is surprised or hasn't yet acted in combat treat your weapon's damage dice as rolling their maximum."
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Shaken Not Stirred",
+            "desc": "When you fail a Charisma (Deception) or Charisma (Persuasion) check, reroll it and use the new result. Once per long rest."
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Body Double",
+            "desc": "When you drop a Humanoid to 0 hit points, use your reaction to take on its appearance as with disguise self, while its body and all physical evidence of its death turn invisible for 8 hours. Alternatively, use an action on a Humanoid corpse dead no more than 24 hours for the same effect. Once per long rest."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Warden",
+    "name": "Bloodwrath Guardian",
+    "key": "kc-vss_bloodwrath-guardian",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Valda's Spire of Secrets",
+    "partner": "Mage Hand Press",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Feral Trance",
+            "desc": "As a bonus action, enter a trance for 1 minute: advantage on Strength checks and saves, +10 feet walking speed, advantage on Strength-based melee weapon attacks against a creature you have marked, but attacks against you have advantage. It ends early if you fall unconscious or end a turn without having attacked a hostile creature or taken damage since your last turn, and you can end it as a bonus action. Once per short or long rest."
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Predator's Scent",
+            "desc": "Your marks can last up to 24 hours, and while a creature is marked you know its direction and distance as long as it is on your plane."
+          }
+        ]
+      },
+      {
+        "level": 13,
+        "features": [
+          {
+            "name": "Evasion",
+            "desc": "When an effect lets you make a Dexterity save for half damage, you take none on a success and half on a failure."
+          }
+        ]
+      },
+      {
+        "level": 20,
+        "features": [
+          {
+            "name": "Form of the Primal Beast",
+            "desc": "Once per long rest, as an action, transform for 1 minute: you get all Feral Trance benefits and 40 temporary hit points, and melee weapon hits can inflict bleeding wounds (not on Constructs, Oozes, or Undead). A creature loses 1d8 hit points at the start of each of its turns per wound and can't regain hit points while bleeding, unless it spends an action to stop all its bleeding; it can carry wounds up to your proficiency bonus."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Warden",
+    "name": "Grey Watchman",
+    "key": "kc-vss_grey-watchman",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Valda's Spire of Secrets",
+    "partner": "Mage Hand Press",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Battle Tactics",
+            "desc": "You have battle dice that recharge on a short or long rest or when you roll initiative: 2d8 at 3rd level, 3d8 at 7th, 3d10 at 13th, 4d10 at 19th. Once per turn, spend one to perform a maneuver; maneuver save DC is 8 + proficiency bonus + Strength or Dexterity modifier (your choice). Maneuvers: Bull Rush (after moving 10+ feet straight and making a melee weapon attack, bonus action to add the die to a shove's Athletics check, then knock prone or push up to 10 feet); Bulwark (after a melee hit, bonus action; reduce the next damage that creature deals you before your next turn by the die roll); Cleave (once per turn after dropping a hostile creature to 0 or scoring a melee weapon critical, move up to 15 feet and make another melee weapon attack in the same action, adding the die to damage on a hit); Heel-Cutter (add the die to an opportunity attack roll, and the target must pass a Strength save or have speed 0 until the end of its turn); Reckless Assault (gain advantage on the attack, but attacks against you have advantage until your next turn); Staggering Strike (bonus action with a weapon attack against a Large or smaller creature; on a hit it must pass a Constitution save or be incapacitated until the start of your next turn)."
+          },
+          {
+            "name": "Hold the Line",
+            "desc": "When you use Warden's Grasp, one other creature you choose in the area gains +1 to AC and saving throws until the start of your next turn while it stays in the area."
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Fortification Expert",
+            "desc": "You have advantage on checks to build fortifications, find weak points or entrances in walls and defenses, or climb built walls. Three-quarters cover counts as total cover for you."
+          }
+        ]
+      },
+      {
+        "level": 13,
+        "features": [
+          {
+            "name": "Mettle",
+            "desc": "When an effect lets you make a Constitution save for half damage, you take none on a success and half on a failure."
+          }
+        ]
+      },
+      {
+        "level": 20,
+        "features": [
+          {
+            "name": "Unbreakable Sentinel",
+            "desc": "Once per long rest, as an action, gain for 1 minute: +2 AC, a regained battle die each time you hit a creature you have marked, and one extra reaction per round (still at most one per turn)."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Warden",
+    "name": "Nightgaunt",
+    "key": "kc-vss_nightgaunt",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Valda's Spire of Secrets",
+    "partner": "Mage Hand Press",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Darkvision",
+            "desc": "You gain darkvision 60 feet, or extend existing darkvision by 30 feet. From 13th level, you can see through magical darkness too."
+          },
+          {
+            "name": "Marked for Death",
+            "desc": "If a melee weapon attack against a creature you have marked deals more damage than its remaining hit points, it drops to 0 hit points."
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Undead Empathy",
+            "desc": "An Undead that targets you with an attack must first make a Wisdom save (DC 8 + proficiency bonus + Constitution modifier); on a failure the attack misses, and if its Intelligence is 4 or less it is friendly to you and your allies for 1 minute."
+          }
+        ]
+      },
+      {
+        "level": 13,
+        "features": [
+          {
+            "name": "Evasion",
+            "desc": "When an effect lets you make a Dexterity save for half damage, you take none on a success and half on a failure."
+          }
+        ]
+      },
+      {
+        "level": 20,
+        "features": [
+          {
+            "name": "Gravelord",
+            "desc": "Once per long rest, as an action, take on undeath for 1 minute: immunity to poison damage and the poisoned condition; Undying usable three times per long rest instead of once; and once per turn, when your melee weapon attack damages a hostile creature, add 4d6 necrotic damage and gain that much temporary hit points until the start of your next turn."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Warden",
+    "name": "Soulblood Shaman",
+    "key": "kc-vss_soulblood-shaman",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Valda's Spire of Secrets",
+    "partner": "Mage Hand Press",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Spellcasting",
+            "desc": "You learn two druid cantrips (a third at 10th level) and know three 1st-level druid spells, two of which must be evocation or transmutation. Later spells must be evocation or transmutation except those gained at 8th, 14th, and 20th level, which can be any school; you can swap one known spell per warden level under the same rule. Slots return on a long rest; Wisdom is your spellcasting ability (save DC 8 + proficiency bonus + Wisdom modifier; attack modifier proficiency bonus + Wisdom modifier). Spells known: 3 at 3rd, 4 at 4th-6th, 5 at 7th, 6 at 8th-9th, 7 at 10th, 8 at 11th-12th, 9 at 13th, 10 at 14th-15th, 11 at 16th-18th, 12 at 19th, 13 at 20th. Slots (1st/2nd/3rd/4th): 2 at 3rd; 3 at 4th-6th; 4/2 at 7th-9th; 4/3 at 10th-12th; 4/3/2 at 13th-15th; 4/3/3 at 16th-18th; 4/3/3/1 at 19th-20th."
+          },
+          {
+            "name": "Soulblood",
+            "desc": "When a creature within 5 feet damages you, you can mark it as a reaction."
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Whispers of Beyond",
+            "desc": "Spend 1 minute in contemplation when making an Intelligence or Wisdom check to gain advantage, provided your ancestors could plausibly know the answer."
+          }
+        ]
+      },
+      {
+        "level": 13,
+        "features": [
+          {
+            "name": "Spell Resistance",
+            "desc": "You have advantage on saving throws against spells."
+          }
+        ]
+      },
+      {
+        "level": 20,
+        "features": [
+          {
+            "name": "Ethereal Watcher",
+            "desc": "Once per long rest, as an action, become spirit-like for 1 minute: as a bonus action you can turn ethereal as per etherealness; you can use your bonus action to return when you use Warden's Mark or Warden's Grasp, or when you cast a spell on your turn; on returning, creatures you choose within 10 feet take 4d6 force damage; and you can cast your known 1st- and 2nd-level druid spells without spending slots."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Warden",
+    "name": "Stoneheart Defender",
+    "key": "kc-vss_stoneheart-defender",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Valda's Spire of Secrets",
+    "partner": "Mage Hand Press",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Roots of Rock",
+            "desc": "Using Warden's Grasp gives you +2 AC until the start of your next turn. Also, until you move, hostile effects can't shove or push you unless you allow it, you have advantage on Strength saves against being knocked prone, you can't slip or fall from ledges, and you are immune to fly, levitate, and telekinesis."
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Earthshatter",
+            "desc": "You can use Warden's Grasp as an action instead; each affected creature must pass a Strength save (DC 8 + proficiency bonus + Strength modifier) or fall prone. Uses equal your Strength modifier (minimum 1), restored on a long rest."
+          }
+        ]
+      },
+      {
+        "level": 13,
+        "features": [
+          {
+            "name": "Mettle",
+            "desc": "When an effect lets you make a Constitution save for half damage, you take none on a success and half on a failure."
+          }
+        ]
+      },
+      {
+        "level": 20,
+        "features": [
+          {
+            "name": "Immortal Mountain",
+            "desc": "Once per long rest, as an action, encase yourself in stone for 1 minute: bludgeoning, piercing, and slashing damage you take is reduced by 5, Roots of Rock applies the whole time, and you can leave a 5-foot-wide trail of difficult terrain as you move."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Warden",
+    "name": "Storm Sentinel",
+    "key": "kc-vss_storm-sentinel",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Valda's Spire of Secrets",
+    "partner": "Mage Hand Press",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Thunderblast",
+            "desc": "When you hit a creature you have marked with a melee weapon attack, creatures you choose within 5 feet of it take 1d8 lightning damage."
+          },
+          {
+            "name": "Flash from Above",
+            "desc": "While under open sky, you can use an action to produce a harmless but dramatic lightning bolt or thunderclap, even without clouds."
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Static Burst",
+            "desc": "When you use Warden's Grasp as a bonus action, affected creatures can't take reactions until the start of your next turn."
+          }
+        ]
+      },
+      {
+        "level": 13,
+        "features": [
+          {
+            "name": "Evasion",
+            "desc": "When an effect lets you make a Dexterity save for half damage, you take none on a success and half on a failure."
+          }
+        ]
+      },
+      {
+        "level": 20,
+        "features": [
+          {
+            "name": "Stormlord",
+            "desc": "You gain a flying speed equal to your walking speed. Once per long rest, as an action, call lightning onto yourself for 1 minute: your flying speed doubles, and you can cast call lightning as a bonus action without a slot (DC 8 + proficiency bonus + Constitution modifier), calling later bolts as a bonus action."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Warden",
+    "name": "Verdant Protector",
+    "key": "kc-vss_verdant-protector",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Valda's Spire of Secrets",
+    "partner": "Mage Hand Press",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Green Mark",
+            "desc": "While a creature you have marked is within 30 feet of you, the ground it moves across is difficult terrain."
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Verdant Skin",
+            "desc": "You gain Stealth proficiency if you lack it. As an action, wrap yourself in vines and leaves; until you move, you have advantage on Dexterity (Stealth) checks to hide in vegetation."
+          }
+        ]
+      },
+      {
+        "level": 13,
+        "features": [
+          {
+            "name": "Mettle",
+            "desc": "When an effect lets you make a Constitution save for half damage, you take none on a success and half on a failure."
+          }
+        ]
+      },
+      {
+        "level": 20,
+        "features": [
+          {
+            "name": "Form of the Oak Sentinel",
+            "desc": "Once per long rest, as an action, transform for 1 minute: your AC becomes 20 if lower, your melee attacks have 10-foot reach, and you can use Warden's Grasp as an action to make a separate attack against each affected creature."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Warmage",
+    "name": "House of Bishops",
+    "key": "kc-vss_house-of-bishops",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Valda's Spire of Secrets",
+    "partner": "Mage Hand Press",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Spellcasting",
+            "desc": "You gain Intelligence-based slot spellcasting from the wizard spell list; slots return on a long rest. You start knowing three 1st-level wizard spells, two of which must be conjuration or evocation, and every later spell must be conjuration or evocation except the ones gained at 8th, 14th, and 20th level. Each warmage level you may swap one known wizard spell for another of a level you have slots for (subject to the same school limit). By warmage level (spells known, slots 1st/2nd/3rd/4th): 3: 3 known, slots 2; 4: 4 known, slots 3; 5: 4 known, slots 3; 6: 4 known, slots 3; 7: 5 known, slots 4/2; 8: 6 known, slots 4/2; 9: 6 known, slots 4/2; 10: 7 known, slots 4/3; 11: 8 known, slots 4/3; 12: 8 known, slots 4/3; 13: 9 known, slots 4/3/2; 14: 10 known, slots 4/3/2; 15: 10 known, slots 4/3/2; 16: 11 known, slots 4/3/3; 17: 11 known, slots 4/3/3; 18: 11 known, slots 4/3/3; 19: 12 known, slots 4/3/3/1; 20: 13 known, slots 4/3/3/1. Warmage Edge applies to your leveled warmage spells as if they were cantrips, except magic missile."
+          },
+          {
+            "name": "Arcane Study",
+            "desc": "Gain proficiency in two of Arcana, History, Investigation, Medicine, or Religion."
+          }
+        ]
+      },
+      {
+        "level": 7,
+        "features": [
+          {
+            "name": "Mystical Companion",
+            "desc": "You learn find familiar as a ritual, free of your spells known, and can pick an imp, pseudodragon, quasit, or sprite form in addition to the usual forms."
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Siege Casting",
+            "desc": "Your warmage spells deal double damage to objects and structures. Spells of yours that use a spell attack can reach up to twice their normal range, with disadvantage on the attack beyond normal range."
+          }
+        ]
+      },
+      {
+        "level": 15,
+        "features": [
+          {
+            "name": "Spell Sculpting",
+            "desc": "When your warmage spell affects creatures you can see, choose up to your Intelligence modifier of them: they automatically succeed on their saves and take no damage where a success would normally halve it."
+          }
+        ]
+      },
+      {
+        "level": 18,
+        "features": [
+          {
+            "name": "Arcane Dominance",
+            "desc": "As a bonus action, spend spell slots totaling 6 or more levels to recover one expended use of Arcane Surge."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Warmage",
+    "name": "House of Cards",
+    "key": "kc-vss_house-of-cards",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Valda's Spire of Secrets",
+    "partner": "Mage Hand Press",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Bluff",
+            "desc": "Gain proficiency in Deception and the playing card set (if you lack them), and you can use Intelligence instead of Charisma for Charisma (Deception) checks."
+          },
+          {
+            "name": "Deck of Fate",
+            "desc": "When you roll initiative, shuffle a standard 52-card deck and draw five. When you target a hostile creature with a damaging warmage spell, you can spend your bonus action to play cards from your hand; if they form an exact hand from the table, one chosen target takes extra damage or you gain an effect (aces count as 1). Hands: Straight (any five in sequence) +12 damage; Flush (five of one suit) +10 damage; Three of a Kind +6 damage; Pair +2 damage; two Hearts, temporary hit points equal to your Intelligence modifier; two Spades, +10 feet speed until the start of your next turn; two Diamonds, +1 AC until the start of your next turn; two Clubs, +1 to saving throws until the start of your next turn. Played cards go to the bottom of the deck and you draw back up to five. Unmatched cards do nothing."
+          }
+        ]
+      },
+      {
+        "level": 7,
+        "features": [
+          {
+            "name": "High Stakes",
+            "desc": "On your turn, with no action, put any number of cards from your hand on the bottom of the deck, losing 2 hit points per card, then draw back up to five."
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Dealer's Choice",
+            "desc": "As a bonus action, gain one effect that the GM picks: resistance to all damage until the end of your next turn; teleport to an unoccupied space you can see within 60 feet; or vanish into a safe demiplane until the start of your next turn, returning to the spot you left. Once per short or long rest."
+          }
+        ]
+      },
+      {
+        "level": 15,
+        "features": [
+          {
+            "name": "Card Reading",
+            "desc": "Once per turn when you draw for Deck of Fate, name a suit and look at the top card; if you named it correctly, you can also take the Dash, Disengage, or Use an Object action as part of that bonus action."
+          }
+        ]
+      },
+      {
+        "level": 18,
+        "features": [
+          {
+            "name": "Ace in the Hole",
+            "desc": "Whenever you draw cards, draw twice as many, put half on the bottom of the deck, and keep the rest."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Warmage",
+    "name": "House of Dice",
+    "key": "kc-vss_house-of-dice",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Valda's Spire of Secrets",
+    "partner": "Mage Hand Press",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Bonus Proficiencies",
+            "desc": "Gain proficiency in Sleight of Hand and the dice set if you lack them."
+          },
+          {
+            "name": "Dice of Fate",
+            "desc": "You have four Dice of Fate (d6s). Spend one to add it to an ability check, attack roll, saving throw, or damage roll; spent dice pass to the GM, who can add one to an NPC or monster roll, after which it returns to you. A long rest restores all your dice whether or not the GM used them. At 7th level you gain two more dice and can add two Dice of Fate to damage rolls of your warmage spells."
+          },
+          {
+            "name": "Chaos Roll",
+            "desc": "As an action, spend two Dice of Fate and roll them (2d6): 2, you cast fireball centered on yourself; 3, your AC drops by 2 until the start of your next turn; 4, you fall prone; 5, every other creature within 60 feet can only babble for 1 minute and can't supply verbal components; 6, a 5-foot-radius sphere of butterflies, insects, or doves heavily obscures a point within 60 feet until the start of your next turn; 7, gain 7 temporary hit points and keep both dice instead of giving them to the GM; 8, you turn invisible (as invisibility) until the end of your next turn; 9, a random object within 60 feet explodes, dealing 3d6 fire damage to one creature the GM chooses and none to you or allies; 10, teleport up to 60 feet to a space you can see, and each creature within 5 feet of the destination makes a Dexterity save or takes 2d6 force damage; 11, a creature you can see within 60 feet takes 4d6 necrotic damage and you heal that much; 12, you cast lightning bolt and may add Dice of Fate to its damage."
+          }
+        ]
+      },
+      {
+        "level": 7,
+        "features": [
+          {
+            "name": "Loaded Dice",
+            "desc": "Once per turn when you roll a d6, you can turn it over so the opposite face (7 minus the result) counts instead."
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Twisted Fate",
+            "desc": "When you make an attack roll or ability check with disadvantage on your turn, you can use a bonus action to spend and roll a Die of Fate: on a 5 you ignore the disadvantage, and on a 6 you have advantage instead."
+          }
+        ]
+      },
+      {
+        "level": 15,
+        "features": [
+          {
+            "name": "Roll the Bones",
+            "desc": "When a creature you can see damages you, you can use your reaction and spend two Dice of Fate to make a Chaos Roll."
+          }
+        ]
+      },
+      {
+        "level": 18,
+        "features": [
+          {
+            "name": "Steal Luck",
+            "desc": "When you roll initiative, roll a d6 and reclaim that many Dice of Fate from the GM."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Warmage",
+    "name": "House of Kings",
+    "key": "kc-vss_house-of-kings",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Valda's Spire of Secrets",
+    "partner": "Mage Hand Press",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Bonus Proficiencies",
+            "desc": "Gain proficiency with medium armor, battleaxes, lances, longswords, tridents, and warhammers."
+          },
+          {
+            "name": "Battle Tactics",
+            "desc": "You fuel stratagems with battle dice: 2d8 at 3rd level, 3d8 at 7th, 3d10 at 13th, and 4d10 at 19th. All spent dice return on a short or long rest or when you roll initiative. You can use one stratagem per turn, and stratagem saves use your spell save DC. Stratagems: Blitz (bonus action after hitting with an attack; an ally who can see or hear you can use its reaction to move up to half its speed without provoking opportunity attacks from your target); Check (bonus action after a hit; the target makes a Charisma save, auto-success if immune to charm, or must use its reaction to move up to half its speed directly away from you); Flash of Brilliance (add the die to an Intelligence or Wisdom check, even after rolling but before the result is known); Gambit (after a hit, the next creature other than you to attack the target adds the die to its attack roll); Mystic Counsel (bonus action, a creature within 30 feet that can hear you can add the die to one save against a spell in the next minute); Stalemate (bonus action after a hit; until the end of its next turn the target can't move willingly unless it first Disengages)."
+          }
+        ]
+      },
+      {
+        "level": 7,
+        "features": [
+          {
+            "name": "Lead from the Front",
+            "desc": "You and allies within 120 feet who can see you ignore nonmagical difficult terrain."
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Tactical Master",
+            "desc": "Friendly creatures within 10 feet of you add your Intelligence modifier to saves against damaging spells and magical effects."
+          }
+        ]
+      },
+      {
+        "level": 15,
+        "features": [
+          {
+            "name": "Stratagem: Checkmate",
+            "desc": "New stratagem: after hitting with a weapon or spell attack, use a bonus action and a battle die so an ally who can see or hear you and is within reach of the target can immediately use its reaction to make one weapon attack or cast an attack-roll cantrip, adding the die to that attack's damage."
+          }
+        ]
+      },
+      {
+        "level": 18,
+        "features": [
+          {
+            "name": "Grandmaster",
+            "desc": "When you roll initiative, up to your Intelligence modifier of allies who can see or hear you each get a free battle die (no expenditure). Once within 10 minutes, each can add it to an ability check, attack roll, damage roll, or save, deciding after the roll but before the outcome is declared. A creature can hold only one such die at a time."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Warmage",
+    "name": "House of Knights",
+    "key": "kc-vss_house-of-knights",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Valda's Spire of Secrets",
+    "partner": "Mage Hand Press",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Bonus Proficiencies",
+            "desc": "Gain proficiency with medium armor and martial weapons."
+          },
+          {
+            "name": "Force Breastplate",
+            "desc": "While in light or medium armor or under mage armor, you use your Intelligence modifier in place of Dexterity for your AC."
+          },
+          {
+            "name": "Mystical Weapon",
+            "desc": "You learn force weapon as a bonus cantrip. Whenever you would draw a weapon on your turn, you can instead conjure any simple or martial weapon of force into an empty hand; it counts as magical for overcoming resistance and immunity and disappears if it leaves your hand."
+          }
+        ]
+      },
+      {
+        "level": 7,
+        "features": [
+          {
+            "name": "Flurry of Blades",
+            "desc": "When you cast a cantrip that makes multiple spell attacks (such as force weapon or magic daggers), you can use your bonus action to make one more attack with it."
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Knight's Ward",
+            "desc": "As a bonus action, gain temporary hit points equal to twice your warmage level for 1 minute. Once per short or long rest."
+          }
+        ]
+      },
+      {
+        "level": 15,
+        "features": [
+          {
+            "name": "Tactical Maneuver",
+            "desc": "You can spend all of your movement to teleport up to half your speed to an unoccupied space you can see."
+          }
+        ]
+      },
+      {
+        "level": 18,
+        "features": [
+          {
+            "name": "Field of Blades",
+            "desc": "As an action, make separate melee spell attacks against up to five creatures you can see within 30 feet; each hit deals 2d10 + your Intelligence modifier force damage."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Warmage",
+    "name": "House of Lancers",
+    "key": "kc-vss_house-of-lancers",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Valda's Spire of Secrets",
+    "partner": "Mage Hand Press",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Intercept Technique",
+            "desc": "With no armor and no shield, your AC is 10 + Dexterity modifier + Intelligence modifier; under mage armor it is 13 + your choice of Dexterity or Intelligence modifier. Using a shield removes this benefit."
+          },
+          {
+            "name": "Hand-to-Hand Arcana",
+            "desc": "Your unarmed strikes can use Intelligence for attack and damage rolls, can deal 1d6 in place of their normal damage, and count as melee weapons for warmage spells."
+          },
+          {
+            "name": "Shock Trooper",
+            "desc": "When you make a melee attack on your turn against a creature you can see, you can first lunge up to 15 feet toward it without provoking opportunity attacks, even through the air (you fall after the attack if not on solid ground)."
+          }
+        ]
+      },
+      {
+        "level": 7,
+        "features": [
+          {
+            "name": "Mystical Physicality",
+            "desc": "You can use your Intelligence modifier for Strength, Dexterity, and Constitution checks, and difficult terrain costs you no extra movement."
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Deflect Energy",
+            "desc": "When a ranged spell attack or ranged weapon attack dealing cold, fire, force, lightning, necrotic, or radiant damage hits you, you can use your reaction to reduce the damage by 1d10 + your Intelligence modifier + half your warmage level (rounded down)."
+          }
+        ]
+      },
+      {
+        "level": 15,
+        "features": [
+          {
+            "name": "Improved Shock Trooper",
+            "desc": "Your Shock Trooper lunge reaches 30 feet and becomes a teleport that passes through creatures and objects, though you can't end in an occupied space."
+          }
+        ]
+      },
+      {
+        "level": 18,
+        "features": [
+          {
+            "name": "Flurry of Spells",
+            "desc": "As an action, spend an Arcane Surge use to cast three different cantrips that each take 1 action or 1 bonus action; Arcane Surge can't apply to them. Once per long rest."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Warmage",
+    "name": "House of Pawns",
+    "key": "kc-vss_house-of-pawns",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Valda's Spire of Secrets",
+    "partner": "Mage Hand Press",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Promotion",
+            "desc": "Learn one extra warmage trick that doesn't count against tricks known. Whenever you learn a trick, you can pick ones requiring the House of Bishops, Kings, Knights, or Rooks, provided you meet their other prerequisites."
+          },
+          {
+            "name": "Adaptive Arcanist",
+            "desc": "After each short or long rest, pick a warmage cantrip; you know it (not counted against cantrips known) until you pick another with this feature."
+          }
+        ]
+      },
+      {
+        "level": 7,
+        "features": [
+          {
+            "name": "Pawn Storm",
+            "desc": "A creature you target with a cantrip can't make opportunity attacks against you for the rest of the turn, whether or not the cantrip damaged it."
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Additional Arcane Fighting Style",
+            "desc": "Choose a second option from Arcane Fighting Style."
+          }
+        ]
+      },
+      {
+        "level": 15,
+        "features": [
+          {
+            "name": "Opening Move",
+            "desc": "Add your Intelligence modifier to initiative, and when you roll initiative while not surprised you can move up to your speed."
+          }
+        ]
+      },
+      {
+        "level": 18,
+        "features": [
+          {
+            "name": "Fundamental Mastery",
+            "desc": "Once per turn when rolling damage for a warmage cantrip, treat one damage die as its maximum result."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Warmage",
+    "name": "House of Rooks",
+    "key": "kc-vss_house-of-rooks",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Valda's Spire of Secrets",
+    "partner": "Mage Hand Press",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Rook Strike",
+            "desc": "As a bonus action, gain advantage on your next spell attack roll this turn, or give a creature disadvantage on its save against a warmage spell you cast before your turn ends. Recharges on a short or long rest, or when a cantrip of yours drops a creature to 0 hit points."
+          },
+          {
+            "name": "Rasp",
+            "desc": "You can cast knock at will without a spell slot; cast this way it takes 1 minute and makes no sound."
+          }
+        ]
+      },
+      {
+        "level": 7,
+        "features": [
+          {
+            "name": "Arcane Acrobat",
+            "desc": "Add your Intelligence modifier to every Dexterity check, and when you fall while not incapacitated you can reduce the fall by up to 60 feet for damage purposes."
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Fleeting Decoy",
+            "desc": "When a creature you can see damages you, you can use your reaction so attacks against you have disadvantage until the start of your next turn."
+          }
+        ]
+      },
+      {
+        "level": 15,
+        "features": [
+          {
+            "name": "Elusive Step",
+            "desc": "Once you have moved more than 15 feet on your turn, your further movement that turn doesn't provoke opportunity attacks."
+          }
+        ]
+      },
+      {
+        "level": 18,
+        "features": [
+          {
+            "name": "Flash of Feathers",
+            "desc": "Cast invisibility on yourself only, with no slot or components. While invisible this way your speed doubles, and you can make one attack or cast one warmage cantrip without ending the invisibility. Once per short or long rest."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Witch",
+    "name": "Black Magic",
+    "key": "kc-vss_black-magic",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Valda's Spire of Secrets",
+    "partner": "Mage Hand Press",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Black Magic Spells",
+            "desc": "Learned craft spells (count as witch spells, not against spells known), by spell level: 1st exhume, inflict wounds; 2nd gentle repose, magic weapon; 3rd animate dead, vampiric touch; 4th blight, death ward; 5th cloudkill, contagion."
+          },
+          {
+            "name": "Hex: Decay",
+            "desc": "Action, one creature you can see within 60 feet makes a Constitution save; on a failure at the start of its next turn it suffers 1d4 necrotic damage and its hit point maximum drops by that amount while the hex lasts, killing it if the maximum reaches 0. Ends at the end of your next turn."
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Undeath Command",
+            "desc": "The bonus action you use to command your familiar can also command any Undead you control through animate dead or similar magic."
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Life Tether",
+            "desc": "When a creature you can see damages you, you can use your reaction to split the damage with the sole target of your hex: you take half (rounded down) and it takes the rest. Once per short or long rest."
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Black Sacrifice",
+            "desc": "As an action with your familiar within 10 feet, you sacrifice its bond: creatures you choose within 20 feet of it make a Dexterity save against your spell save DC, taking 8d10 necrotic damage on a failure or half on a success, and their hit point maximum drops by the necrotic damage taken (dying at 0). The familiar can't be summoned again before your next long rest."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Witch",
+    "name": "Blood Magic",
+    "key": "kc-vss_blood-magic",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Valda's Spire of Secrets",
+    "partner": "Mage Hand Press",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Blood Magic Spells",
+            "desc": "Learned craft spells (count as witch spells, not against spells known), by spell level: 1st hellish rebuke, hollowing curse; 2nd acid arrow, hold person; 3rd ruby-eye curse, vampiric touch; 4th blight, dominate beast; 5th cloudkill, dominate person."
+          },
+          {
+            "name": "Hex: Blood Curse",
+            "desc": "Action, one creature you can see within 60 feet makes a Constitution save; on a failure, until the end of your next turn, the moment it is both injured and under twice your witch level in hit points, it falls to 0 hit points."
+          },
+          {
+            "name": "Novice Hemomancy",
+            "desc": "A drop of your blood can replace material components that have no listed cost."
+          },
+          {
+            "name": "Arcane Bloodletting",
+            "desc": "When casting a spell with a casting time of 1 action, lose 5 hit points to cast it as a bonus action instead. Uses equal your Charisma modifier (minimum 1), restored on a long rest."
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Deathseeker",
+            "desc": "You sense the location of any creature within 60 feet that is missing hit points, even when heavily obscured and through most barriers (stopped by a foot of stone, an inch of ordinary metal, a thin lead sheet, or 3 feet of wood or earth). You have advantage on checks to track a creature you or your familiar damaged in the last 24 hours."
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Hemomantic Recovery",
+            "desc": "Once per day after a short rest, spend Hit Dice to regain spell slots of 5th level or lower: 2 Hit Dice for 1st, 3 for 2nd, 5 for 3rd, 6 for 4th, 7 for 5th."
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Sanguine",
+            "desc": "Once per round, when your spell hurts a hostile creature that is your hex's only target, you can lose hit points to add 2d8 necrotic damage per 5 hit points lost, up to 6d8."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Witch",
+    "name": "Green Magic",
+    "key": "kc-vss_green-magic",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Valda's Spire of Secrets",
+    "partner": "Mage Hand Press",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Green Magic Spells",
+            "desc": "Learned craft spells (count as witch spells, not against spells known), by spell level: 1st entangle, goodberry; 2nd barkskin, locate animals or plants; 3rd conjure animals, plant growth; 4th conjure woodland beings, stoneskin; 5th awaken, tree stride."
+          },
+          {
+            "name": "Hex: Elder Tongue",
+            "desc": "As a bonus action, until the end of your next turn you can communicate in a limited way with Beasts and Plants (they can relay simple recent observations) and have advantage on Charisma checks to influence them."
+          },
+          {
+            "name": "Primal Ally",
+            "desc": "Your familiar adds three times your witch level to its hit point maximum instead of twice."
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Twin Familiar",
+            "desc": "When summoned, your familiar can be split into two identical bodies sharing one hit point pool, acting on consecutive turns. Command one to attack with your bonus action and the other with your action; effects that target or dismiss the familiar affect both."
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Vital Nourishment",
+            "desc": "When you finish a long rest, plants within 120 feet grow as if a month of ideal conditions passed, and food-bearing plants yield enough to feed six creatures for a day. Up to six creatures you can see gain temporary hit points of half your witch level + Charisma modifier, and you can end one disease or one blinded, deafened, paralyzed, or poisoned condition on each."
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Sacrificial Familiar",
+            "desc": "When a melee attack targets you with your familiar within 5 feet, you can use your reaction to have the attack target the familiar instead. Uses equal your Charisma modifier (minimum 1), restored on a long rest."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Witch",
+    "name": "Purple Magic",
+    "key": "kc-vss_purple-magic",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Valda's Spire of Secrets",
+    "partner": "Mage Hand Press",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Purple Magic Spells",
+            "desc": "Learned craft spells (count as witch spells, not against spells known), by spell level: 1st charm person, silent image; 2nd enthrall, invisibility; 3rd hypnotic pattern, major image; 4th confusion, private sanctum; 5th modify memory, seeming."
+          },
+          {
+            "name": "Hex: Hallucination",
+            "desc": "Action, one creature you can see within 60 feet makes a Wisdom save (auto-success if immune to charm); on a failure it takes -1 to attack rolls and ability checks, worsening by 1 at the start of each of its turns to a maximum of -5. Lasts until the end of your next turn."
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "False Authority",
+            "desc": "As an action, everyone who sees you perceives you as an authority figure relevant to them for 1 hour (or until you end it); it doesn't survive physical inspection, and a creature can use its action and an Intelligence (Investigation) check against your spell save DC to see through it. Once per short or long rest."
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Deceitful Transposition",
+            "desc": "As a bonus action, make two creatures within 60 feet appear to have swapped places, relocating their sounds, smells, and other cues; they don't perceive the illusion. An observer can use its action and an Intelligence (Investigation) check against your spell save DC to see the truth. Lasts 1 minute, ending early if either takes damage or a physical interaction exposes it. Once per short or long rest."
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Waking Nightmare",
+            "desc": "When a creature fails its save against your Hallucination hex, you can make it treat every creature as an enemy until the hex ends: it picks targets for attacks, spells, and effects at random among creatures in range it can see, and must use its reaction on any opportunity attack offered. Ends after 1 minute. Once per long rest."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Witch",
+    "name": "Red Magic",
+    "key": "kc-vss_red-magic",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Valda's Spire of Secrets",
+    "partner": "Mage Hand Press",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Red Magic Spells",
+            "desc": "Learned craft spells (count as witch spells, not against spells known), by spell level: 1st burning hands, magic missile; 2nd acid arrow, scorching ray; 3rd fireball, protection from energy; 4th ice storm, wall of fire; 5th cone of cold, telekinesis."
+          },
+          {
+            "name": "Hex: Imperil",
+            "desc": "Action, choose a damage type and one creature you can see within 60 feet, which makes a Constitution save; on a failure its resistance to that type is suppressed through the end of your next turn, and immunity to it is downgraded to resistance."
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Convolute Energy",
+            "desc": "Casting a spell that deals acid, cold, fire, lightning, or thunder damage can grant you resistance to that damage type through the end of your next turn."
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Invulnerability",
+            "desc": "When an attacker you can see hits you, use your reaction to reduce the damage by 50. Once per long rest."
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Elemental Annihilation",
+            "desc": "When you cast a witch spell dealing acid, cold, fire, lightning, or thunder damage, you can spend an additional slot of equal or higher level to deal maximum damage. Once per long rest."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Witch",
+    "name": "Steel Magic",
+    "key": "kc-vss_steel-magic",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Valda's Spire of Secrets",
+    "partner": "Mage Hand Press",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Steel Magic Spells",
+            "desc": "Learned craft spells (count as witch spells, not against spells known), by spell level: 1st heroism, shield; 2nd heat metal, magic weapon; 3rd blink, haste; 4th death ward, freedom of movement; 5th flame strike, telekinesis."
+          },
+          {
+            "name": "Bonus Proficiencies",
+            "desc": "Gain proficiency with martial melee weapons that lack the heavy and special properties."
+          },
+          {
+            "name": "Hex: Malevolence",
+            "desc": "As a bonus action, wrap yourself in evil smog until the end of your next turn; damage can't break your concentration on it. While active: AC 12 + Dexterity modifier + Charisma modifier without a shield (usable if better than your armor); use Charisma for attack and damage with melee weapons lacking heavy and special; and a visible creature within 5 feet that damages you can be answered with a melee weapon attack as your reaction."
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Cackling Killer",
+            "desc": "On a turn you use Cackle, you attack twice instead of once when you take the Attack action."
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Soulsword Familiar",
+            "desc": "As a bonus action, dismiss your familiar into your weapon, wreathing it in green flame; it deals an extra 1d8 fire damage on a hit until you resummon the familiar, which you can't do until a short or long rest."
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Shrieking Strike",
+            "desc": "Once per turn when you hit with a melee weapon attack, the target makes a Wisdom save against your spell save DC or is frightened of you for up to 1 minute, repeating the save at the end of each of its turns. Uses equal your Charisma modifier (minimum 1), restored on a long rest."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Witch",
+    "name": "Tea Magic",
+    "key": "kc-vss_tea-magic",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Valda's Spire of Secrets",
+    "partner": "Mage Hand Press",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Tea Magic Spells",
+            "desc": "Learned craft spells (count as witch spells, not against spells known), by spell level: 1st hideous laughter, sanctuary; 2nd augury, calm emotions; 3rd clairvoyance, sending; 4th divination, private sanctum; 5th legend lore, scrying."
+          },
+          {
+            "name": "Hex: Tasseography",
+            "desc": "Action, pick an ally you can see within 60 feet and roll a d20, noting the result. Until the end of your next turn you can substitute that number for one attack roll, saving throw, or ability check the ally makes, chosen before it rolls; the hex then ends."
+          },
+          {
+            "name": "Tea Ceremony",
+            "desc": "During a short or long rest you conjure tea for yourself and allies; each creature that drinks it removes one extra level of exhaustion during that rest."
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Shapes and Omens",
+            "desc": "After a long rest, the GM describes a shape in your tea leaves that hints at upcoming events."
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Herbal Remedy",
+            "desc": "Cast greater restoration without a slot or material components. Once per short or long rest."
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Invigorate",
+            "desc": "As a bonus action, you or an ally you can see within 5 feet gains one extra action on its next turn. Once per long rest."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Witch",
+    "name": "Technicolor Magic",
+    "key": "kc-vss_technicolor-magic",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Valda's Spire of Secrets",
+    "partner": "Mage Hand Press",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Technicolor Magic Spells",
+            "desc": "Learned craft spells (count as witch spells, not against spells known), by spell level: 1st color spray, speak with animals; 2nd animal messenger, warding bond; 3rd fly, sending; 4th freedom of movement, locate creature; 5th telepathic bond, teleportation circle."
+          },
+          {
+            "name": "Hex: Musical Interlude",
+            "desc": "Action, each willing creature within 30 feet that you can see and that can see you gains temporary hit points of half your witch level + Charisma modifier, lasting through the end of your next turn."
+          },
+          {
+            "name": "Animal Friends",
+            "desc": "Advantage on Wisdom (Animal Handling) checks to befriend Beasts, using Charisma instead of Wisdom for Small or smaller ones. You can dismiss an adopted Beast pet into an extradimensional space as you would a familiar."
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Friendship Bracelet",
+            "desc": "As an action, craft a cheap bracelet. You always know the location of a creature wearing one while on the same plane and can aim spells and effects at it without needing sight of it."
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Positivity",
+            "desc": "When an attacker you can see hits you, your reaction adds to your AC one point per friendly creature within 5 feet of you, possibly causing a miss. Once per short or long rest."
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Redemptive Arc",
+            "desc": "When a hostile creature you can see drops to 0 hit points, use your reaction to make it stable and unconscious until it regains hit points; when it wakes, any charm, curse, fright, or possession effect on it ends and it loses one bond or flaw that drove its hostility toward you. Once per long rest."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Witch",
+    "name": "White Magic",
+    "key": "kc-vss_white-magic",
+    "edition": "2014",
+    "source": "kc",
+    "book": "Valda's Spire of Secrets",
+    "partner": "Mage Hand Press",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "White Magic Spells",
+            "desc": "Learned craft spells (count as witch spells, not against spells known), by spell level: 1st bless, cure wounds; 2nd lesser restoration, prayer of healing; 3rd beacon of hope, revivify; 4th death ward, guardian of faith; 5th mass cure wounds, raise dead."
+          },
+          {
+            "name": "Hex: Remedy",
+            "desc": "Action, one creature you can see within 60 feet regains 1d10 + your witch level hit points; it can't benefit again until it finishes a short or long rest."
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Talisman of Protection",
+            "desc": "Spend 1 hour (possible during a short rest) making a talisman; the wearer adds a d4 to all its saving throws. Only one exists at a time; making another makes the old one mundane."
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Benevolent Surge",
+            "desc": "When you, your familiar, or an ally you can see within 30 feet takes damage, use your reaction to have it regain 1d10 + your Charisma modifier hit points. Once per short or long rest."
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Witch's Gift",
+            "desc": "When your spell or hex restores a creature's hit points, it gains +3 AC until the end of your next turn."
+          }
+        ]
+      }
+    ]
   }
 ]

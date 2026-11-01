@@ -9057,5 +9057,4252 @@
     }
    }
   ]
+ },
+ {
+  "name": "Blood Hunter",
+  "index": "blood-hunter",
+  "key": "kc-bh_blood-hunter",
+  "edition": "2014",
+  "source": "kc",
+  "book": "Blood Hunter (D&D Beyond)",
+  "partner": "Critical Role",
+  "hit_die": 10,
+  "saving_throws": [
+   "DEX",
+   "INT"
+  ],
+  "proficiencies": [
+   "Light armor",
+   "Medium armor",
+   "Shields",
+   "Simple Weapons",
+   "Martial Weapons",
+   "Alchemist's Supplies",
+   "Saving Throw: DEX",
+   "Saving Throw: INT"
+  ],
+  "proficiency_choices": [
+   {
+    "desc": "Choose three from Acrobatics, Arcana, Athletics, History, Insight, Investigation, Religion, and Survival",
+    "choose": 3,
+    "type": "proficiencies",
+    "options": [
+     "Skill: Acrobatics",
+     "Skill: Arcana",
+     "Skill: Athletics",
+     "Skill: History",
+     "Skill: Insight",
+     "Skill: Investigation",
+     "Skill: Religion",
+     "Skill: Survival"
+    ],
+    "unstructured": false
+   }
+  ],
+  "starting_equipment": [
+   {
+    "item": "Light Crossbow",
+    "quantity": 1
+   },
+   {
+    "item": "Crossbow Bolt",
+    "quantity": 20
+   },
+   {
+    "item": "Explorer's Pack",
+    "quantity": 1
+   },
+   {
+    "item": "Alchemist's Supplies",
+    "quantity": 1
+   }
+  ],
+  "starting_equipment_options": [
+   {
+    "desc": "(a) a martial weapon or (b) two simple weapons",
+    "choose": 1,
+    "type": "equipment",
+    "options": [],
+    "unstructured": true
+   },
+   {
+    "desc": "(a) studded leather armor or (b) scale mail",
+    "choose": 1,
+    "type": "equipment",
+    "options": [
+     "Studded Leather Armor",
+     "Scale Mail"
+    ],
+    "unstructured": false
+   }
+  ],
+  "subclasses": [
+   "Order of the Ghostslayer",
+   "Order of the Lycan",
+   "Order of the Mutant",
+   "Order of the Profane Soul"
+  ],
+  "spellcasting_ability": null,
+  "hemocraft_ability": "INT or WIS (player's choice)",
+  "multiclass_prerequisite": "Strength or Dexterity 13, and Intelligence 13",
+  "features_by_level": [
+   {
+    "level": 1,
+    "features": [
+     {
+      "name": "Hunter's Bane",
+      "desc": "Advantage on Wisdom (Survival) checks to track fey, fiends, and undead and on Intelligence checks to recall lore about them. Your Hemocraft modifier is Intelligence or Wisdom (your choice), and features that call for a save use Hemocraft save DC = 8 + your proficiency bonus + your Hemocraft modifier.",
+      "choice": null
+     },
+     {
+      "name": "Blood Maledict",
+      "desc": "You know one blood curse, learning another at 6th, 10th, 14th, and 18th level, and you can swap one known curse whenever you learn a new one. When you invoke a curse you may amplify it by taking necrotic damage equal to one hemocraft die roll (this damage can't be reduced) to add its Amplify effect. Creatures without blood are immune to unamplified curses. Uses per short or long rest: 1, rising to 2 at 6th level, 3 at 13th, and 4 at 17th. Four further curses are granted only by orders (see each order).",
+      "choice": {
+       "desc": "Choose blood curses as granted by the Blood Curses Known column",
+       "choose": 1,
+       "type": "feature",
+       "options": [
+        "Blood Curse of the Anxious",
+        "Blood Curse of Binding",
+        "Blood Curse of Bloated Agony",
+        "Blood Curse of Exposure",
+        "Blood Curse of the Eyeless",
+        "Blood Curse of the Fallen Puppet",
+        "Blood Curse of the Marked",
+        "Blood Curse of the Muddled Mind"
+       ],
+       "unstructured": false
+      }
+     },
+     {
+      "name": "Blood Curse of the Anxious",
+      "desc": "Bonus action, one creature within 30 feet: until the end of your next turn, Charisma (Intimidation) checks against it have advantage. Amplify: it has disadvantage on its next Wisdom saving throw before the curse ends.",
+      "choice": null
+     },
+     {
+      "name": "Blood Curse of Binding",
+      "desc": "Bonus action, one Large or smaller creature you can see within 30 feet makes a Strength saving throw; on a failure its speed becomes 0 and it can't take reactions until the end of your next turn. Amplify: works on any size and lasts 1 minute, with a repeat save at the end of each of its turns to end it.",
+      "choice": null
+     },
+     {
+      "name": "Blood Curse of Bloated Agony",
+      "desc": "Bonus action, one creature you can see within 30 feet: until the end of your next turn it has disadvantage on Strength and Dexterity checks and takes 1d8 necrotic damage if it makes more than one attack on its turn. Amplify: lasts 1 minute, and it can end the curse with a Constitution save at the end of each of its turns.",
+      "choice": null
+     },
+     {
+      "name": "Blood Curse of Exposure",
+      "desc": "Reaction when a creature you can see within 30 feet takes damage from an attack or spell: until the end of its next turn it loses resistance to that attack or spell's damage types, including against the triggering damage. Amplify: it instead loses immunity to those types, though it keeps resistance to them until the end of its next turn.",
+      "choice": null
+     },
+     {
+      "name": "Blood Curse of the Eyeless",
+      "desc": "Reaction when a creature you can see within 30 feet attacks: roll a hemocraft die and subtract it from the attack roll, which you may do after seeing the roll but before the outcome is known. Creatures immune to being blinded are immune. Amplify: every attack roll it makes until the end of its turn takes the penalty, rolled separately each time.",
+      "choice": null
+     },
+     {
+      "name": "Blood Curse of the Fallen Puppet",
+      "desc": "Reaction when a creature you can see within 30 feet drops to 0 hit points: it immediately makes one weapon attack against a target of your choice in its reach or range. Amplify: you can first move it up to half its speed, and it adds your Hemocraft modifier (minimum +1) to the attack roll.",
+      "choice": null
+     },
+     {
+      "name": "Blood Curse of the Marked",
+      "desc": "Bonus action, one creature you can see within 30 feet: until the end of your turn, your hits against it with a crimson-rite weapon add one extra hemocraft die of rite damage. Amplify: your next attack roll against it this turn has advantage.",
+      "choice": null
+     },
+     {
+      "name": "Blood Curse of the Muddled Mind",
+      "desc": "Bonus action, one creature you can see within 30 feet that is concentrating: it has disadvantage on its next Constitution save to keep concentration before the end of your next turn. Amplify: disadvantage applies to all such concentration saves until the end of your next turn.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 2,
+    "features": [
+     {
+      "name": "Fighting Style",
+      "desc": "Pick one fighting style; a style can't be taken twice.",
+      "choice": {
+       "desc": "",
+       "choose": 1,
+       "type": "feature",
+       "options": [
+        "Fighting Style: Archery",
+        "Fighting Style: Dueling",
+        "Fighting Style: Great Weapon Fighting",
+        "Fighting Style: Two-Weapon Fighting"
+       ],
+       "unstructured": false
+      }
+     },
+     {
+      "name": "Fighting Style: Archery",
+      "desc": "+2 bonus to attack rolls with ranged weapons.",
+      "choice": null
+     },
+     {
+      "name": "Fighting Style: Dueling",
+      "desc": "+2 bonus to damage rolls with a melee weapon held in one hand when you wield no other weapon.",
+      "choice": null
+     },
+     {
+      "name": "Fighting Style: Great Weapon Fighting",
+      "desc": "With a two-handed or versatile melee weapon held in two hands, reroll 1s and 2s on its damage dice once, keeping the new roll.",
+      "choice": null
+     },
+     {
+      "name": "Fighting Style: Two-Weapon Fighting",
+      "desc": "Add your ability modifier to the damage of the off-hand attack when two-weapon fighting.",
+      "choice": null
+     },
+     {
+      "name": "Crimson Rite",
+      "desc": "As a bonus action, activate a rite you know on one weapon you hold; it lasts until you finish a short or long rest, and activating it costs necrotic damage equal to one hemocraft die roll (can't be reduced). While active, that weapon's attacks are magical and deal an extra hemocraft die of the rite's damage type. A weapon carries one rite at a time and only you gain its benefit. You know one rite, gaining a second at 7th level and a third at 14th.",
+      "choice": {
+       "desc": "",
+       "choose": 1,
+       "type": "feature",
+       "options": [
+        "Rite of the Flame",
+        "Rite of the Frozen",
+        "Rite of the Storm",
+        "Rite of the Dead",
+        "Rite of the Oracle",
+        "Rite of the Roar"
+       ],
+       "unstructured": false
+      }
+     },
+     {
+      "name": "Rite of the Flame",
+      "desc": "Rite damage is fire.",
+      "choice": null
+     },
+     {
+      "name": "Rite of the Frozen",
+      "desc": "Rite damage is cold.",
+      "choice": null
+     },
+     {
+      "name": "Rite of the Storm",
+      "desc": "Rite damage is lightning.",
+      "choice": null
+     },
+     {
+      "name": "Rite of the Dead",
+      "desc": "Rite damage is necrotic. Requires 14th level.",
+      "choice": null
+     },
+     {
+      "name": "Rite of the Oracle",
+      "desc": "Rite damage is psychic. Requires 14th level.",
+      "choice": null
+     },
+     {
+      "name": "Rite of the Roar",
+      "desc": "Rite damage is thunder. Requires 14th level.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 3,
+    "features": [
+     {
+      "name": "Blood Hunter Order",
+      "desc": "Join the Order of the Ghostslayer, Lycan, Mutant, or Profane Soul. The order grants features at 3rd, 7th, 11th, 15th, and 18th level.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 4,
+    "features": [
+     {
+      "name": "Ability Score Improvement",
+      "desc": "Raise one ability score by 2 or two scores by 1 each (maximum 20), or take a feat if that optional rule is used. Repeats at 8th, 12th, 16th, and 19th level.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 5,
+    "features": [
+     {
+      "name": "Extra Attack",
+      "desc": "You attack twice when you take the Attack action on your turn.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 6,
+    "features": [
+     {
+      "name": "Brand of Castigation",
+      "desc": "When you deal damage to a creature with a crimson-rite weapon, you can brand it (no action needed). You always know its direction while it shares your plane, and whenever it damages you or a creature you can see within 5 feet of you, it takes psychic damage equal to your Hemocraft modifier (minimum 1). The brand lasts until you dismiss it or brand another creature; dispel magic can end it, treating it as a spell of half your blood hunter level (maximum 9th). Once per short or long rest.",
+      "choice": null
+     },
+     {
+      "name": "Blood Maledict Improvement",
+      "desc": "Blood Maledict usable twice per short or long rest; you learn a second blood curse.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 7,
+    "features": [
+     {
+      "name": "Crimson Rite Improvement",
+      "desc": "Learn a second crimson rite.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 9,
+    "features": [
+     {
+      "name": "Grim Psychometry",
+      "desc": "Advantage on Intelligence (History) checks to recall the dark or tragic past of an object you touch or the place you are in; a high roll may grant brief visions at the DM's discretion.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 10,
+    "features": [
+     {
+      "name": "Dark Augmentation",
+      "desc": "Your speed rises by 5 feet, and you add your Hemocraft modifier (minimum +1) to Strength, Dexterity, and Constitution saving throws.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 13,
+    "features": [
+     {
+      "name": "Brand of Tethering",
+      "desc": "Brand of Castigation's psychic damage becomes twice your Hemocraft modifier (minimum 2). A branded creature can't Dash, and any attempt it makes to teleport or leave its plane deals 4d6 psychic damage to it and forces a Wisdom save against your Hemocraft save DC; on a failure the attempt fails.",
+      "choice": null
+     },
+     {
+      "name": "Blood Maledict Improvement",
+      "desc": "Blood Maledict usable three times per short or long rest.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 14,
+    "features": [
+     {
+      "name": "Hardened Soul",
+      "desc": "Advantage on saving throws against being charmed or frightened.",
+      "choice": null
+     },
+     {
+      "name": "Crimson Rite Improvement",
+      "desc": "Learn a third crimson rite; the 14th-level rites (Dead, Oracle, Roar) become available.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 17,
+    "features": [
+     {
+      "name": "Blood Maledict Improvement",
+      "desc": "Blood Maledict usable four times per short or long rest.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 20,
+    "features": [
+     {
+      "name": "Sanguine Mastery",
+      "desc": "Once per turn, when a blood hunter feature has you roll a hemocraft die, you may reroll it and pick either result. Scoring a critical hit with a crimson-rite weapon restores one expended Blood Maledict use.",
+      "choice": null
+     }
+    ]
+   }
+  ],
+  "progression": [
+   {
+    "level": 1,
+    "prof_bonus": 2,
+    "features": [
+     "Hunter's Bane",
+     "Blood Maledict"
+    ],
+    "class_specific": {
+     "hemocraft_die": "1d4",
+     "blood_curses_known": 1,
+     "blood_maledict_uses": 1,
+     "crimson_rites_known": 0
+    }
+   },
+   {
+    "level": 2,
+    "prof_bonus": 2,
+    "features": [
+     "Fighting Style",
+     "Crimson Rite"
+    ],
+    "class_specific": {
+     "hemocraft_die": "1d4",
+     "blood_curses_known": 1,
+     "blood_maledict_uses": 1,
+     "crimson_rites_known": 1
+    }
+   },
+   {
+    "level": 3,
+    "prof_bonus": 2,
+    "features": [
+     "Blood Hunter Order"
+    ],
+    "class_specific": {
+     "hemocraft_die": "1d4",
+     "blood_curses_known": 1,
+     "blood_maledict_uses": 1,
+     "crimson_rites_known": 1
+    }
+   },
+   {
+    "level": 4,
+    "prof_bonus": 2,
+    "features": [
+     "Ability Score Improvement"
+    ],
+    "class_specific": {
+     "hemocraft_die": "1d4",
+     "blood_curses_known": 1,
+     "blood_maledict_uses": 1,
+     "crimson_rites_known": 1
+    }
+   },
+   {
+    "level": 5,
+    "prof_bonus": 3,
+    "features": [
+     "Extra Attack"
+    ],
+    "class_specific": {
+     "hemocraft_die": "1d6",
+     "blood_curses_known": 1,
+     "blood_maledict_uses": 1,
+     "crimson_rites_known": 1
+    }
+   },
+   {
+    "level": 6,
+    "prof_bonus": 3,
+    "features": [
+     "Brand of Castigation",
+     "Blood Maledict Improvement"
+    ],
+    "class_specific": {
+     "hemocraft_die": "1d6",
+     "blood_curses_known": 2,
+     "blood_maledict_uses": 2,
+     "crimson_rites_known": 1
+    }
+   },
+   {
+    "level": 7,
+    "prof_bonus": 3,
+    "features": [
+     "Blood Hunter Order feature",
+     "Crimson Rite Improvement"
+    ],
+    "class_specific": {
+     "hemocraft_die": "1d6",
+     "blood_curses_known": 2,
+     "blood_maledict_uses": 2,
+     "crimson_rites_known": 2
+    }
+   },
+   {
+    "level": 8,
+    "prof_bonus": 3,
+    "features": [
+     "Ability Score Improvement"
+    ],
+    "class_specific": {
+     "hemocraft_die": "1d6",
+     "blood_curses_known": 2,
+     "blood_maledict_uses": 2,
+     "crimson_rites_known": 2
+    }
+   },
+   {
+    "level": 9,
+    "prof_bonus": 4,
+    "features": [
+     "Grim Psychometry"
+    ],
+    "class_specific": {
+     "hemocraft_die": "1d6",
+     "blood_curses_known": 2,
+     "blood_maledict_uses": 2,
+     "crimson_rites_known": 2
+    }
+   },
+   {
+    "level": 10,
+    "prof_bonus": 4,
+    "features": [
+     "Dark Augmentation"
+    ],
+    "class_specific": {
+     "hemocraft_die": "1d6",
+     "blood_curses_known": 3,
+     "blood_maledict_uses": 2,
+     "crimson_rites_known": 2
+    }
+   },
+   {
+    "level": 11,
+    "prof_bonus": 4,
+    "features": [
+     "Blood Hunter Order feature"
+    ],
+    "class_specific": {
+     "hemocraft_die": "1d8",
+     "blood_curses_known": 3,
+     "blood_maledict_uses": 2,
+     "crimson_rites_known": 2
+    }
+   },
+   {
+    "level": 12,
+    "prof_bonus": 4,
+    "features": [
+     "Ability Score Improvement"
+    ],
+    "class_specific": {
+     "hemocraft_die": "1d8",
+     "blood_curses_known": 3,
+     "blood_maledict_uses": 2,
+     "crimson_rites_known": 2
+    }
+   },
+   {
+    "level": 13,
+    "prof_bonus": 5,
+    "features": [
+     "Brand of Tethering",
+     "Blood Maledict Improvement"
+    ],
+    "class_specific": {
+     "hemocraft_die": "1d8",
+     "blood_curses_known": 3,
+     "blood_maledict_uses": 3,
+     "crimson_rites_known": 2
+    }
+   },
+   {
+    "level": 14,
+    "prof_bonus": 5,
+    "features": [
+     "Hardened Soul",
+     "Crimson Rite Improvement"
+    ],
+    "class_specific": {
+     "hemocraft_die": "1d8",
+     "blood_curses_known": 4,
+     "blood_maledict_uses": 3,
+     "crimson_rites_known": 3
+    }
+   },
+   {
+    "level": 15,
+    "prof_bonus": 5,
+    "features": [
+     "Blood Hunter Order feature"
+    ],
+    "class_specific": {
+     "hemocraft_die": "1d8",
+     "blood_curses_known": 4,
+     "blood_maledict_uses": 3,
+     "crimson_rites_known": 3
+    }
+   },
+   {
+    "level": 16,
+    "prof_bonus": 5,
+    "features": [
+     "Ability Score Improvement"
+    ],
+    "class_specific": {
+     "hemocraft_die": "1d8",
+     "blood_curses_known": 4,
+     "blood_maledict_uses": 3,
+     "crimson_rites_known": 3
+    }
+   },
+   {
+    "level": 17,
+    "prof_bonus": 6,
+    "features": [
+     "Blood Maledict Improvement"
+    ],
+    "class_specific": {
+     "hemocraft_die": "1d10",
+     "blood_curses_known": 4,
+     "blood_maledict_uses": 4,
+     "crimson_rites_known": 3
+    }
+   },
+   {
+    "level": 18,
+    "prof_bonus": 6,
+    "features": [
+     "Blood Hunter Order feature"
+    ],
+    "class_specific": {
+     "hemocraft_die": "1d10",
+     "blood_curses_known": 5,
+     "blood_maledict_uses": 4,
+     "crimson_rites_known": 3
+    }
+   },
+   {
+    "level": 19,
+    "prof_bonus": 6,
+    "features": [
+     "Ability Score Improvement"
+    ],
+    "class_specific": {
+     "hemocraft_die": "1d10",
+     "blood_curses_known": 5,
+     "blood_maledict_uses": 4,
+     "crimson_rites_known": 3
+    }
+   },
+   {
+    "level": 20,
+    "prof_bonus": 6,
+    "features": [
+     "Sanguine Mastery"
+    ],
+    "class_specific": {
+     "hemocraft_die": "1d10",
+     "blood_curses_known": 5,
+     "blood_maledict_uses": 4,
+     "crimson_rites_known": 3
+    }
+   }
+  ]
+ },
+ {
+  "name": "Illrigger",
+  "index": "illrigger",
+  "edition": "2014",
+  "source": "kc",
+  "key": "kc-tir_illrigger",
+  "partnered": true,
+  "partner": "MCDM",
+  "book": "The Illrigger",
+  "hit_die": 10,
+  "saving_throws": [
+   "CON",
+   "CHA"
+  ],
+  "proficiencies": [
+   "Light armor",
+   "Medium armor",
+   "Shields",
+   "Simple Weapons",
+   "Martial Weapons",
+   "Saving Throw: CON",
+   "Saving Throw: CHA"
+  ],
+  "proficiency_choices": [
+   {
+    "desc": "Choose two from Arcana, Athletics, Deception, Insight, Intimidation, Investigation, Persuasion, Religion, and Stealth",
+    "choose": 2,
+    "type": "proficiencies",
+    "options": [
+     "Skill: Arcana",
+     "Skill: Athletics",
+     "Skill: Deception",
+     "Skill: Insight",
+     "Skill: Intimidation",
+     "Skill: Investigation",
+     "Skill: Persuasion",
+     "Skill: Religion",
+     "Skill: Stealth"
+    ],
+    "unstructured": false
+   }
+  ],
+  "starting_equipment": [
+   {
+    "item": "Javelin",
+    "quantity": 5
+   }
+  ],
+  "starting_equipment_options": [
+   {
+    "desc": "(a) two martial weapons or (b) a martial weapon and a shield",
+    "choose": 1,
+    "type": "equipment",
+    "options": [
+     "Shield"
+    ],
+    "unstructured": true
+   },
+   {
+    "desc": "(a) a chain shirt or (b) leather armor, a longbow, and 20 arrows",
+    "choose": 1,
+    "type": "equipment",
+    "options": [
+     "Chain Shirt",
+     "Leather Armor",
+     "Longbow",
+     "Arrow"
+    ],
+    "unstructured": true
+   },
+   {
+    "desc": "(a) a priest's pack or (b) a dungeoneer's pack",
+    "choose": 1,
+    "type": "equipment",
+    "options": [
+     "Priest's Pack",
+     "Dungeoneer's Pack"
+    ],
+    "unstructured": false
+   },
+   {
+    "desc": "Or skip class and background equipment and start with 5d4 x 10 gp",
+    "choose": 1,
+    "type": "equipment",
+    "options": [],
+    "unstructured": true
+   }
+  ],
+  "multiclassing": {
+   "prerequisites": "Charisma 13 and Strength or Dexterity 13",
+   "proficiencies_gained": [
+    "Light armor",
+    "Medium armor",
+    "Shields",
+    "Simple Weapons",
+    "Martial Weapons"
+   ],
+   "spell_slots": "Architect of Ruin only: add half your illrigger levels (rounded down) when determining multiclass spell slots"
+  },
+  "subclasses": [
+   "Architect of Ruin",
+   "Hellspeaker",
+   "Painkiller",
+   "Sanguine Knight",
+   "Shadowmaster"
+  ],
+  "spellcasting_ability": null,
+  "features_by_level": [
+   {
+    "level": 1,
+    "features": [
+     {
+      "name": "Baleful Interdict",
+      "desc": "Once per turn you can put an invisible magical seal on a creature within 30 feet: either when you hit it with a weapon attack (no action) or as a bonus action on one you can see. A seal lasts 1 minute or until burned, a creature bearing your seals is interdicted, and you can see your seals on it. Your seal count is shown in the Seals column (3 at 1st level, rising to 7 at 18th) and all seals return when you finish a short or long rest; if an interdicted creature dies, you can use a bonus action to shift all its seals to another creature you can see within 30 feet of it, with the remaining duration unchanged. Burning Seals: when an interdicted creature you can see within 30 feet takes damage from any source other than a burned seal, you can burn any number of your seals on it (no action, not while incapacitated) to deal 1d6 fire or necrotic damage (your choice) per seal right after that damage; the per-seal damage becomes 2d6 at 5th level, 3d6 at 11th, and 4d6 at 20th. Interdict save DC = 8 + your proficiency bonus + your Charisma modifier."
+     },
+     {
+      "name": "Forked Tongue",
+      "desc": "You speak, read, and write Infernal, and you can speak (but not read or write) two other languages of your choice. After a long rest you can swap one of those two for another language whose name you know, then must finish another long rest before swapping again. At 9th level you gain a third such language and have advantage on Wisdom (Insight) checks to discern a creature's intentions or sincerity."
+     }
+    ]
+   },
+   {
+    "level": 2,
+    "features": [
+     {
+      "name": "Combat Mastery",
+      "desc": "Pick one mastery. Bravado: with no armor, your AC is 10 + Dexterity modifier + Charisma modifier, and a shield still works with it. Brutal: when you hit a creature no more than one size larger than you with a melee weapon held in two hands, you can push it 5 feet horizontally and then spend movement to step into the vacated space. Inexorable: +1 to saving throws per hostile creature within 5 feet of you, up to +5. Lies: choose one melee weapon type and use Charisma instead of Strength or Dexterity for its attack and damage rolls; you can change the type after a long rest. Lissome: after hitting with a melee weapon attack, you can spend movement to move 5 feet without provoking opportunity attacks. Unfettered: placing and burning seals reaches 60 feet instead of 30, Infernal Conduit (6th level) reaches 30 feet instead of touch, and being within 5 feet of a hostile creature doesn't give you disadvantage on ranged attacks."
+     },
+     {
+      "name": "Interdiction",
+      "desc": "You learn one interdict boon, gaining more as shown in the Interdict Boons column (1 at 2nd level, 2 at 7th, 3 at 13th, 4 at 18th); each must be of a level you can learn, and whenever you gain an illrigger level you can swap one known boon for another eligible one. Passive boons are always on; you can activate only one non-passive boon per turn. Burning a seal deals its normal seal damage plus the boon's effect, while expending a seal spends an unplaced seal from your pool. 2nd-level boons: Abating Seal (reaction, expend a seal when a creature you can see damages you or an ally within 30 feet: reduce the damage by 1d10 + half your illrigger level, rounded down); Bedevil (on burning a seal, no action: the target subtracts your proficiency bonus from its next saving throw before the end of its next turn); Soul Eater (on burning a seal, no action: gain temporary hit points equal to your illrigger level); Styx's Apathy (on burning a seal, use your reaction: the target can't take reactions until the end of its next turn); Swift Retribution (passive: once per round until the start of your next turn, an opportunity attack provoked by an interdicted creature doesn't use your reaction, if you aren't incapacitated). 7th-level boons: Acheron's Chain (when you place or move a seal with a bonus action on a Large or smaller creature, no action: it makes a Strength save or you pull it 10 feet toward you or grapple it until the end of your next turn, escape DC equal to your interdict save DC); Conflagrant Channel (bonus action, expend a seal: teleport up to 60 feet to an unoccupied space you can see); Eyes of the Gate (action, expend one or more seals on a creature you can see within 60 feet: on a failed Wisdom save, which it can choose to fail, you are linked to it for 1 hour per seal or until you use the boon again; while it is within 300 feet you can use an action to perceive through its senses, including special senses, until you use an action to stop, being blind and deaf to your own meanwhile, and you can place, burn, and use boons as if in its space, which alerts it and lets it use an action to repeat the save to end the link); Shadow Shroud (bonus action, expend a seal: you or a creature you touch gains +2 AC for 1 minute); Unleash Hell (when you burn one or more seals, use your reaction: each chosen creature within 5 feet of the target makes a Dexterity save, taking the same amount and type of damage the seals dealt on a failure or half on a success); Vengeful Shot (reaction, expend a seal when a creature makes a ranged attack against you or an ally you can see within 30 feet: make a ranged weapon attack against it that deals extra damage equal to half your illrigger level, rounded down, on a hit). 13th-level boons: Dis's Onslaught (passive: each time you place or move a seal with a bonus action, you can make one weapon attack as part of it); Flash of Brimstone (when you place or move a seal, no action: teleport to an unoccupied space you can see within 5 feet of the target); Hellish Frenzy (at the start of your turn within 30 feet of an interdicted creature, expend a seal: until the start of your next turn your speed doubles, you gain +2 AC, and the Attack action grants one extra weapon attack); Hellsight (action, expend a seal: truesight 60 feet for 1 hour); Impaling Shot (after hitting an interdicted creature with a ranged weapon attack, bonus action and expend a seal: it takes a penalty to AC equal to your proficiency bonus until the end of your next turn); Iron Gaol (action, touch a creature and expend four seals: on a failed Charisma save it is pulled into a prison in Hell; a creature native to Hell or of level or CR 4 or lower stays there and must find its own way out, otherwise it returns to its space or the nearest unoccupied one after 1 minute and can repeat the save at the end of each of its turns to return early); Last Word (when you drop to 0 hit points with unplaced seals, no action: expend up to 3 seals and roll 3d6 per seal; chosen creatures within 30 feet make a Dexterity save, taking that much fire damage on a failure or half on a success, and if at least one creature is damaged you regain hit points equal to the total rolled); Soul's Doom (when you place or move a seal with a bonus action: for 1 minute that creature takes extra damage equal to your proficiency bonus whenever it takes damage)."
+     }
+    ]
+   },
+   {
+    "level": 3,
+    "features": [
+     {
+      "name": "Diabolic Contract",
+      "desc": "You choose your subclass, an archdevil's contract: Architect of Ruin (Asmodeus), Hellspeaker (Moloch), Painkiller (Dispater), Sanguine Knight (Sutekh), or Shadowmaster (Belial). It grants features at 3rd, 7th, 11th, and 15th level."
+     },
+     {
+      "name": "Invoke Hell",
+      "desc": "Your Diabolic Contract gives you two Invoke Hell options. You pick one each time you use this feature, then must finish a short or long rest before using it again. Any saving throw it calls for uses your interdict save DC."
+     }
+    ]
+   },
+   {
+    "level": 4,
+    "features": [
+     {
+      "name": "Ability Score Improvement",
+      "desc": "At 4th, 8th, 12th, 16th, and 19th level, increase one ability score by 2 or two scores by 1, to a maximum of 20 (or take a feat instead if your table uses feats)."
+     }
+    ]
+   },
+   {
+    "level": 5,
+    "features": [
+     {
+      "name": "Extra Attack",
+      "desc": "When you take the Attack action on your turn, you attack twice instead of once."
+     }
+    ]
+   },
+   {
+    "level": 6,
+    "features": [
+     {
+      "name": "Infernal Conduit",
+      "desc": "You have a pool of d10 Infernal Conduit dice (3 at 6th level, rising to 10 at 19th, per the class table) that refills on a long rest. As an action, touch another creature and spend one or more dice; it makes a Constitution save against your interdict save DC (it may fail willingly), and you roll the spent dice and pick an effect. Invigorate: on a failure it regains hit points equal to the roll, on a success half that, and either way you take necrotic damage equal to the full roll that can't be reduced; if this drops you to 0 hit points you fall unconscious but are stable. Devour: on a failure it takes necrotic damage equal to the roll and you regain that many hit points, on a success it takes half and you regain hit points equal to the damage dealt; this damage can't be reduced. Starting at 11th level, a creature that fails its save against this feature also gains one level of exhaustion (removable normally), but no creature can have more than three exhaustion levels total from illriggers' Infernal Conduit."
+     }
+    ]
+   },
+   {
+    "level": 7,
+    "features": [
+     {
+      "name": "Diabolic Contract feature",
+      "desc": "You gain a feature from your Diabolic Contract."
+     }
+    ]
+   },
+   {
+    "level": 9,
+    "features": [
+     {
+      "name": "Forked Tongue improvement",
+      "desc": "You gain a third extra spoken language and advantage on Wisdom (Insight) checks to read a creature's intentions or sincerity (see Forked Tongue)."
+     }
+    ]
+   },
+   {
+    "level": 10,
+    "features": [
+     {
+      "name": "Blood Price",
+      "desc": "When you fail a saving throw, you can spend one Hit Die, roll it, and add the result to the save."
+     }
+    ]
+   },
+   {
+    "level": 11,
+    "features": [
+     {
+      "name": "Diabolic Contract feature",
+      "desc": "You gain a feature from your Diabolic Contract."
+     },
+     {
+      "name": "Infernal Conduit improvement",
+      "desc": "A creature that fails its save against your Infernal Conduit also gains one level of exhaustion, capped at three total levels from all illriggers' Infernal Conduit features."
+     },
+     {
+      "name": "Terrorizing Force",
+      "desc": "Pick cold, fire, necrotic, or poison; your weapon hits deal an extra 1d8 damage of that type. You can change the type after a long rest."
+     }
+    ]
+   },
+   {
+    "level": 14,
+    "features": [
+     {
+      "name": "Superior Interdict",
+      "desc": "Your seal damage ignores the target's damage resistances. Also, when you have no seals left you can use a bonus action to regain one, once per long rest."
+     }
+    ]
+   },
+   {
+    "level": 15,
+    "features": [
+     {
+      "name": "Diabolic Contract feature",
+      "desc": "You gain a feature from your Diabolic Contract."
+     }
+    ]
+   },
+   {
+    "level": 17,
+    "features": [
+     {
+      "name": "Infernal Majesty",
+      "desc": "As a bonus action, once per long rest, you take on a portion of your archdevil's might for 10 minutes: resistance to cold, fire, and necrotic damage; a 60-foot flying speed from wings; Blood Price also deals damage equal to the Hit Die roll to an enemy you can see within 10 feet; and Terrorizing Force deals 2d8 instead of 1d8. If you die during this time you can have your body burn away (leaving your gear), and it reforms somewhere in Hell 1d6 days later, alive with all hit points."
+     }
+    ]
+   },
+   {
+    "level": 20,
+    "features": [
+     {
+      "name": "Master of Hell",
+      "desc": "As an action, once per long rest, you call a hellstorm filling a 50-foot-radius sphere centered on a point you can see within 150 feet, choosing one effect against each enemy in it. Inferno: Dexterity save, 5d10 fire plus 5d10 necrotic damage and burning for 1 minute on a failure (half and no burning on a success); a burning creature repeats the save at the end of each of its turns, taking 1d10 fire plus 1d10 necrotic on a failure or ending the burn on a success, and nonmagical means can't put it out. Pestilence: Constitution save, 5d10 poison plus 5d10 necrotic damage and poisoned for 1 minute on a failure (half and not poisoned on a success). Darkness: Constitution save, 10d10 cold damage on a failure or half on a success, and the gloom lasts 1 minute, blinding enemies in the area for the duration or until they leave it."
+     }
+    ]
+   }
+  ],
+  "progression": [
+   {
+    "level": 1,
+    "prof_bonus": 2,
+    "features": [
+     "Baleful Interdict",
+     "Forked Tongue"
+    ],
+    "class_specific": {
+     "seals": 3,
+     "seal_damage": "1d6",
+     "interdict_boons_known": 0,
+     "infernal_conduit_dice": 0
+    }
+   },
+   {
+    "level": 2,
+    "prof_bonus": 2,
+    "features": [
+     "Combat Mastery",
+     "Interdiction"
+    ],
+    "class_specific": {
+     "seals": 3,
+     "seal_damage": "1d6",
+     "interdict_boons_known": 1,
+     "infernal_conduit_dice": 0
+    }
+   },
+   {
+    "level": 3,
+    "prof_bonus": 2,
+    "features": [
+     "Diabolic Contract",
+     "Invoke Hell"
+    ],
+    "class_specific": {
+     "seals": 4,
+     "seal_damage": "1d6",
+     "interdict_boons_known": 1,
+     "infernal_conduit_dice": 0
+    }
+   },
+   {
+    "level": 4,
+    "prof_bonus": 2,
+    "features": [
+     "Ability Score Improvement"
+    ],
+    "class_specific": {
+     "seals": 4,
+     "seal_damage": "1d6",
+     "interdict_boons_known": 1,
+     "infernal_conduit_dice": 0
+    }
+   },
+   {
+    "level": 5,
+    "prof_bonus": 3,
+    "features": [
+     "Extra Attack"
+    ],
+    "class_specific": {
+     "seals": 4,
+     "seal_damage": "2d6",
+     "interdict_boons_known": 1,
+     "infernal_conduit_dice": 0
+    }
+   },
+   {
+    "level": 6,
+    "prof_bonus": 3,
+    "features": [
+     "Infernal Conduit"
+    ],
+    "class_specific": {
+     "seals": 4,
+     "seal_damage": "2d6",
+     "interdict_boons_known": 1,
+     "infernal_conduit_dice": 3
+    }
+   },
+   {
+    "level": 7,
+    "prof_bonus": 3,
+    "features": [
+     "Diabolic Contract feature"
+    ],
+    "class_specific": {
+     "seals": 5,
+     "seal_damage": "2d6",
+     "interdict_boons_known": 2,
+     "infernal_conduit_dice": 4
+    }
+   },
+   {
+    "level": 8,
+    "prof_bonus": 3,
+    "features": [
+     "Ability Score Improvement"
+    ],
+    "class_specific": {
+     "seals": 5,
+     "seal_damage": "2d6",
+     "interdict_boons_known": 2,
+     "infernal_conduit_dice": 4
+    }
+   },
+   {
+    "level": 9,
+    "prof_bonus": 4,
+    "features": [
+     "Forked Tongue improvement"
+    ],
+    "class_specific": {
+     "seals": 5,
+     "seal_damage": "2d6",
+     "interdict_boons_known": 2,
+     "infernal_conduit_dice": 5
+    }
+   },
+   {
+    "level": 10,
+    "prof_bonus": 4,
+    "features": [
+     "Blood Price"
+    ],
+    "class_specific": {
+     "seals": 5,
+     "seal_damage": "2d6",
+     "interdict_boons_known": 2,
+     "infernal_conduit_dice": 5
+    }
+   },
+   {
+    "level": 11,
+    "prof_bonus": 4,
+    "features": [
+     "Diabolic Contract feature",
+     "Infernal Conduit improvement",
+     "Terrorizing Force"
+    ],
+    "class_specific": {
+     "seals": 5,
+     "seal_damage": "3d6",
+     "interdict_boons_known": 2,
+     "infernal_conduit_dice": 6
+    }
+   },
+   {
+    "level": 12,
+    "prof_bonus": 4,
+    "features": [
+     "Ability Score Improvement"
+    ],
+    "class_specific": {
+     "seals": 5,
+     "seal_damage": "3d6",
+     "interdict_boons_known": 2,
+     "infernal_conduit_dice": 6
+    }
+   },
+   {
+    "level": 13,
+    "prof_bonus": 5,
+    "features": [],
+    "class_specific": {
+     "seals": 6,
+     "seal_damage": "3d6",
+     "interdict_boons_known": 3,
+     "infernal_conduit_dice": 7
+    }
+   },
+   {
+    "level": 14,
+    "prof_bonus": 5,
+    "features": [
+     "Superior Interdict"
+    ],
+    "class_specific": {
+     "seals": 6,
+     "seal_damage": "3d6",
+     "interdict_boons_known": 3,
+     "infernal_conduit_dice": 7
+    }
+   },
+   {
+    "level": 15,
+    "prof_bonus": 5,
+    "features": [
+     "Diabolic Contract feature"
+    ],
+    "class_specific": {
+     "seals": 6,
+     "seal_damage": "3d6",
+     "interdict_boons_known": 3,
+     "infernal_conduit_dice": 8
+    }
+   },
+   {
+    "level": 16,
+    "prof_bonus": 5,
+    "features": [
+     "Ability Score Improvement"
+    ],
+    "class_specific": {
+     "seals": 6,
+     "seal_damage": "3d6",
+     "interdict_boons_known": 3,
+     "infernal_conduit_dice": 8
+    }
+   },
+   {
+    "level": 17,
+    "prof_bonus": 6,
+    "features": [
+     "Infernal Majesty"
+    ],
+    "class_specific": {
+     "seals": 6,
+     "seal_damage": "3d6",
+     "interdict_boons_known": 3,
+     "infernal_conduit_dice": 9
+    }
+   },
+   {
+    "level": 18,
+    "prof_bonus": 6,
+    "features": [],
+    "class_specific": {
+     "seals": 7,
+     "seal_damage": "3d6",
+     "interdict_boons_known": 4,
+     "infernal_conduit_dice": 9
+    }
+   },
+   {
+    "level": 19,
+    "prof_bonus": 6,
+    "features": [
+     "Ability Score Improvement"
+    ],
+    "class_specific": {
+     "seals": 7,
+     "seal_damage": "3d6",
+     "interdict_boons_known": 4,
+     "infernal_conduit_dice": 10
+    }
+   },
+   {
+    "level": 20,
+    "prof_bonus": 6,
+    "features": [
+     "Master of Hell"
+    ],
+    "class_specific": {
+     "seals": 7,
+     "seal_damage": "4d6",
+     "interdict_boons_known": 4,
+     "infernal_conduit_dice": 10
+    }
+   }
+  ]
+ },
+ {
+  "name": "Investigator",
+  "index": "investigator",
+  "key": "kc-vss_investigator",
+  "source": "kc",
+  "edition": "2014",
+  "hit_die": 8,
+  "saving_throws": [
+   "DEX",
+   "INT"
+  ],
+  "proficiencies": [
+   "Light Armor",
+   "Simple Weapons",
+   "Hand Crossbows",
+   "Heavy Crossbows",
+   "Longswords",
+   "Rapiers",
+   "Shortswords",
+   "One gaming set of your choice",
+   "Saving Throw: DEX",
+   "Saving Throw: INT"
+  ],
+  "proficiency_choices": [
+   {
+    "desc": "Choose three from Arcana, Athletics, Deception, History, Insight, Intimidation, Investigation, Medicine, Nature, Perception, Persuasion, Religion, Sleight of Hand, and Stealth",
+    "choose": 3,
+    "type": "proficiencies",
+    "options": [
+     "Skill: Arcana",
+     "Skill: Athletics",
+     "Skill: Deception",
+     "Skill: History",
+     "Skill: Insight",
+     "Skill: Intimidation",
+     "Skill: Investigation",
+     "Skill: Medicine",
+     "Skill: Nature",
+     "Skill: Perception",
+     "Skill: Persuasion",
+     "Skill: Religion",
+     "Skill: Sleight of Hand",
+     "Skill: Stealth"
+    ],
+    "unstructured": false
+   }
+  ],
+  "starting_equipment": [
+   {
+    "item": "Leather Armor",
+    "quantity": 1
+   },
+   {
+    "item": "Dagger",
+    "quantity": 1
+   },
+   {
+    "item": "Grimoire",
+    "quantity": 1
+   },
+   {
+    "item": "Component Pouch",
+    "quantity": 1
+   }
+  ],
+  "starting_equipment_options": [
+   {
+    "desc": "(a) a longsword or (b) a rapier",
+    "choose": 1,
+    "type": "equipment",
+    "options": [
+     "Longsword",
+     "Rapier"
+    ],
+    "unstructured": false
+   },
+   {
+    "desc": "(a) a heavy crossbow and 20 bolts or (b) a hand crossbow and 20 bolts",
+    "choose": 1,
+    "type": "equipment",
+    "options": [],
+    "unstructured": true
+   },
+   {
+    "desc": "(a) a dungeoneer's pack or (b) a priest's pack",
+    "choose": 1,
+    "type": "equipment",
+    "options": [
+     "Dungeoneer's Pack",
+     "Priest's Pack"
+    ],
+    "unstructured": false
+   }
+  ],
+  "subclasses": [
+   "Antiquarian",
+   "Archivist",
+   "Detective",
+   "Exterminator",
+   "Inquisitor",
+   "Medium",
+   "Occultist",
+   "Spy"
+  ],
+  "spellcasting_ability": "INT",
+  "features_by_level": [
+   {
+    "level": 1,
+    "features": [
+     {
+      "name": "Expertise",
+      "desc": "Pick two of your skill proficiencies; you add double your proficiency bonus to ability checks using them. At 6th level, pick two more.",
+      "choice": null
+     },
+     {
+      "name": "Ritualist",
+      "desc": "You keep a grimoire of ritual spells and use Intelligence as your spellcasting ability for them (spell save DC 8 + proficiency bonus + Intelligence modifier; spell attack modifier proficiency bonus + Intelligence modifier). Your saves and attacks for investigator rituals and spells granted by this class's features also use Intelligence. Certain spells marked on the Investigator Spells list count as rituals for you, so you can scribe them and cast them as rituals.",
+      "choice": null
+     },
+     {
+      "name": "Grimoire",
+      "desc": "Your grimoire starts with four 1st-level spells that carry the ritual tag, chosen from any class's lists; you can cast its spells only as rituals unless you know them some other way. Each investigator level adds one free ritual from the Investigator Spells list, capped at the level in the Ritual Level column. Rituals from that list found while adventuring can be copied in if their level is within your cap, costing 2 hours and 50 gp of ink per spell level.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 2,
+    "features": [
+     {
+      "name": "Myths and Legends",
+      "desc": "Intelligence checks made to research creatures, spells, or other ancient or secret lore are made with advantage.",
+      "choice": null
+     },
+     {
+      "name": "Rushed Incantation",
+      "desc": "As a bonus action, you can complete any grimoire ritual whose casting time is 1 action or 1 bonus action, ignoring material components worth 100 gp or less. Uses equal your Intelligence modifier (minimum 1), restored on a long rest; you gain one extra use at 5th, 9th, 13th, and 17th level (up to Intelligence modifier + 4).",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 3,
+    "features": [
+     {
+      "name": "Occult Specialization",
+      "desc": "Choose a specialization, which grants features at 3rd, 6th, 10th, and 14th level. Specializations also grant trinkets: using any trinket spends one use, and you get 1 use per short or long rest, rising to 2 at 5th level, 3 at 11th, and 4 at 17th.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 4,
+    "features": [
+     {
+      "name": "Ability Score Improvement",
+      "desc": "Raise one ability score by 2 or two scores by 1 each, to a maximum of 20. You gain this again at 8th, 12th, 16th, and 19th level.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 5,
+    "features": [
+     {
+      "name": "Exploit Weakness",
+      "desc": "Once per turn when a weapon attack hits, the target counts as vulnerable to that weapon's damage, but only the weapon's damage dice and your ability modifier are doubled (not extra damage from spells, items, feats, or features like Sneak Attack). That attack and every other attack against the target until the start of your next turn count as magical for overcoming resistance and immunity to nonmagical attacks and damage.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 6,
+    "features": [
+     {
+      "name": "Expertise",
+      "desc": "Choose two more skill proficiencies to gain the Expertise benefit.",
+      "choice": null
+     },
+     {
+      "name": "Occult Specialization feature",
+      "desc": "You gain a feature from your Occult Specialization.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 7,
+    "features": [
+     {
+      "name": "Opportunistic Piety",
+      "desc": "Pick one of these effects each time; afterward you need a short or long rest before using the feature again. Banish: cast banishment without a spell slot, and a Fey, Fiend, or Undead that fails the save also takes radiant damage equal to your level. Miracle Healing: as an action, a willing creature you touch regains hit points equal to twice your investigator level (no effect on Undead or Constructs). Warding: as an action, mark a creature within 5 feet; for 1 minute, any Aberration, Celestial, Fey, Fiend, or Undead that touches it or hits it with a melee attack takes 1d12 radiant damage.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 8,
+    "features": [
+     {
+      "name": "Ability Score Improvement",
+      "desc": "Raise one ability score by 2 or two scores by 1 each, to a maximum of 20.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 9,
+    "features": [
+     {
+      "name": "Supernatural Resolve",
+      "desc": "You can't be charmed or possessed, and you resist necrotic and psychic damage.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 10,
+    "features": [
+     {
+      "name": "Occult Specialization feature",
+      "desc": "You gain a feature from your Occult Specialization.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 11,
+    "features": [
+     {
+      "name": "Finisher",
+      "desc": "Once per turn when you take the Attack action and hit with a weapon attack, add 2d8 damage, or 4d8 instead if the target is below half its hit points.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 12,
+    "features": [
+     {
+      "name": "Ability Score Improvement",
+      "desc": "Raise one ability score by 2 or two scores by 1 each, to a maximum of 20.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 13,
+    "features": [
+     {
+      "name": "Enigma Arcane",
+      "desc": "Once per long rest, cast one of mirage arcane, plane shift, reverse gravity, sequester, or teleport without a spell slot.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 14,
+    "features": [
+     {
+      "name": "Occult Specialization feature",
+      "desc": "You gain a feature from your Occult Specialization.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 15,
+    "features": [
+     {
+      "name": "Enigma Arcane improvement",
+      "desc": "Add a second slot-free casting, once per long rest, chosen from antimagic field, glibness, maze, or mind blank.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 16,
+    "features": [
+     {
+      "name": "Ability Score Improvement",
+      "desc": "Raise one ability score by 2 or two scores by 1 each, to a maximum of 20.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 17,
+    "features": [
+     {
+      "name": "Enigma Arcane improvement",
+      "desc": "Add a third slot-free casting, once per long rest, chosen from astral projection, gate, or weird.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 18,
+    "features": [
+     {
+      "name": "Exorcist",
+      "desc": "You can cast protection from evil and good with no spell slot and no material components.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 19,
+    "features": [
+     {
+      "name": "Ability Score Improvement",
+      "desc": "Raise one ability score by 2 or two scores by 1 each, to a maximum of 20.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 20,
+    "features": [
+     {
+      "name": "Spellbinder",
+      "desc": "Designate five grimoire rituals with a casting time of 1 action. You can cast them as a bonus action without spending Rushed Incantation uses and without holding your grimoire, ignoring material components worth 100 gp or less.",
+      "choice": null
+     }
+    ]
+   }
+  ],
+  "progression": [
+   {
+    "level": 1,
+    "prof_bonus": 2,
+    "features": [
+     "Expertise",
+     "Ritualist",
+     "Grimoire"
+    ],
+    "class_specific": {
+     "ritual_level": 1,
+     "trinket_uses": 0,
+     "rushed_incantation_bonus_uses": 0
+    }
+   },
+   {
+    "level": 2,
+    "prof_bonus": 2,
+    "features": [
+     "Myths and Legends",
+     "Rushed Incantation"
+    ],
+    "class_specific": {
+     "ritual_level": 1,
+     "trinket_uses": 0,
+     "rushed_incantation_bonus_uses": 0
+    }
+   },
+   {
+    "level": 3,
+    "prof_bonus": 2,
+    "features": [
+     "Occult Specialization"
+    ],
+    "class_specific": {
+     "ritual_level": 2,
+     "trinket_uses": 1,
+     "rushed_incantation_bonus_uses": 0
+    }
+   },
+   {
+    "level": 4,
+    "prof_bonus": 2,
+    "features": [
+     "Ability Score Improvement"
+    ],
+    "class_specific": {
+     "ritual_level": 2,
+     "trinket_uses": 1,
+     "rushed_incantation_bonus_uses": 0
+    }
+   },
+   {
+    "level": 5,
+    "prof_bonus": 3,
+    "features": [
+     "Exploit Weakness"
+    ],
+    "class_specific": {
+     "ritual_level": 3,
+     "trinket_uses": 2,
+     "rushed_incantation_bonus_uses": 1
+    }
+   },
+   {
+    "level": 6,
+    "prof_bonus": 3,
+    "features": [
+     "Expertise",
+     "Occult Specialization feature"
+    ],
+    "class_specific": {
+     "ritual_level": 3,
+     "trinket_uses": 2,
+     "rushed_incantation_bonus_uses": 1
+    }
+   },
+   {
+    "level": 7,
+    "prof_bonus": 3,
+    "features": [
+     "Opportunistic Piety"
+    ],
+    "class_specific": {
+     "ritual_level": 4,
+     "trinket_uses": 2,
+     "rushed_incantation_bonus_uses": 1
+    }
+   },
+   {
+    "level": 8,
+    "prof_bonus": 3,
+    "features": [
+     "Ability Score Improvement"
+    ],
+    "class_specific": {
+     "ritual_level": 4,
+     "trinket_uses": 2,
+     "rushed_incantation_bonus_uses": 1
+    }
+   },
+   {
+    "level": 9,
+    "prof_bonus": 4,
+    "features": [
+     "Supernatural Resolve"
+    ],
+    "class_specific": {
+     "ritual_level": 5,
+     "trinket_uses": 2,
+     "rushed_incantation_bonus_uses": 2
+    }
+   },
+   {
+    "level": 10,
+    "prof_bonus": 4,
+    "features": [
+     "Occult Specialization feature"
+    ],
+    "class_specific": {
+     "ritual_level": 5,
+     "trinket_uses": 2,
+     "rushed_incantation_bonus_uses": 2
+    }
+   },
+   {
+    "level": 11,
+    "prof_bonus": 4,
+    "features": [
+     "Finisher"
+    ],
+    "class_specific": {
+     "ritual_level": 6,
+     "trinket_uses": 3,
+     "rushed_incantation_bonus_uses": 2
+    }
+   },
+   {
+    "level": 12,
+    "prof_bonus": 4,
+    "features": [
+     "Ability Score Improvement"
+    ],
+    "class_specific": {
+     "ritual_level": 6,
+     "trinket_uses": 3,
+     "rushed_incantation_bonus_uses": 2
+    }
+   },
+   {
+    "level": 13,
+    "prof_bonus": 5,
+    "features": [
+     "Enigma Arcane"
+    ],
+    "class_specific": {
+     "ritual_level": 6,
+     "trinket_uses": 3,
+     "rushed_incantation_bonus_uses": 3
+    }
+   },
+   {
+    "level": 14,
+    "prof_bonus": 5,
+    "features": [
+     "Occult Specialization feature"
+    ],
+    "class_specific": {
+     "ritual_level": 6,
+     "trinket_uses": 3,
+     "rushed_incantation_bonus_uses": 3
+    }
+   },
+   {
+    "level": 15,
+    "prof_bonus": 5,
+    "features": [
+     "Enigma Arcane improvement"
+    ],
+    "class_specific": {
+     "ritual_level": 6,
+     "trinket_uses": 3,
+     "rushed_incantation_bonus_uses": 3
+    }
+   },
+   {
+    "level": 16,
+    "prof_bonus": 5,
+    "features": [
+     "Ability Score Improvement"
+    ],
+    "class_specific": {
+     "ritual_level": 6,
+     "trinket_uses": 3,
+     "rushed_incantation_bonus_uses": 3
+    }
+   },
+   {
+    "level": 17,
+    "prof_bonus": 6,
+    "features": [
+     "Enigma Arcane improvement"
+    ],
+    "class_specific": {
+     "ritual_level": 6,
+     "trinket_uses": 4,
+     "rushed_incantation_bonus_uses": 4
+    }
+   },
+   {
+    "level": 18,
+    "prof_bonus": 6,
+    "features": [
+     "Exorcist"
+    ],
+    "class_specific": {
+     "ritual_level": 6,
+     "trinket_uses": 4,
+     "rushed_incantation_bonus_uses": 4
+    }
+   },
+   {
+    "level": 19,
+    "prof_bonus": 6,
+    "features": [
+     "Ability Score Improvement"
+    ],
+    "class_specific": {
+     "ritual_level": 6,
+     "trinket_uses": 4,
+     "rushed_incantation_bonus_uses": 4
+    }
+   },
+   {
+    "level": 20,
+    "prof_bonus": 6,
+    "features": [
+     "Spellbinder"
+    ],
+    "class_specific": {
+     "ritual_level": 6,
+     "trinket_uses": 4,
+     "rushed_incantation_bonus_uses": 4
+    }
+   }
+  ]
+ },
+ {
+  "name": "Warden",
+  "index": "warden",
+  "key": "kc-vss_warden",
+  "source": "kc",
+  "edition": "2014",
+  "hit_die": 10,
+  "saving_throws": [
+   "STR",
+   "CON"
+  ],
+  "proficiencies": [
+   "Light Armor",
+   "Medium Armor",
+   "Shields",
+   "Simple Weapons",
+   "Martial Weapons",
+   "Saving Throw: STR",
+   "Saving Throw: CON"
+  ],
+  "proficiency_choices": [
+   {
+    "desc": "Choose two from Animal Handling, Athletics, Nature, Perception, and Survival",
+    "choose": 2,
+    "type": "proficiencies",
+    "options": [
+     "Skill: Animal Handling",
+     "Skill: Athletics",
+     "Skill: Nature",
+     "Skill: Perception",
+     "Skill: Survival"
+    ],
+    "unstructured": false
+   }
+  ],
+  "starting_equipment": [
+   {
+    "item": "Shield",
+    "quantity": 1
+   }
+  ],
+  "starting_equipment_options": [
+   {
+    "desc": "any martial weapon",
+    "choose": 1,
+    "type": "equipment",
+    "options": [],
+    "unstructured": true
+   },
+   {
+    "desc": "(a) chain shirt, (b) leather armor and a spear, or (c) chain mail (if proficient)",
+    "choose": 1,
+    "type": "equipment",
+    "options": [],
+    "unstructured": true
+   },
+   {
+    "desc": "(a) two light hammers or (b) any simple melee weapon",
+    "choose": 1,
+    "type": "equipment",
+    "options": [],
+    "unstructured": true
+   },
+   {
+    "desc": "(a) a dungeoneer's pack or (b) an explorer's pack",
+    "choose": 1,
+    "type": "equipment",
+    "options": [
+     "Dungeoneer's Pack",
+     "Explorer's Pack"
+    ],
+    "unstructured": false
+   }
+  ],
+  "subclasses": [
+   "Bloodwrath Guardian",
+   "Grey Watchman",
+   "Nightgaunt",
+   "Soulblood Shaman",
+   "Stoneheart Defender",
+   "Storm Sentinel",
+   "Verdant Protector"
+  ],
+  "spellcasting_ability": null,
+  "features_by_level": [
+   {
+    "level": 1,
+    "features": [
+     {
+      "name": "Sentinel's Stand",
+      "desc": "Choose one option. Armor Proficiency: you gain heavy armor proficiency. Primal Toughness: your hit point maximum rises by 1 + your Constitution modifier, and by 1 more each time you gain a warden level. Stalwart Spirit: you gain proficiency in one saving throw of your choice.",
+      "choice": {
+       "desc": "",
+       "choose": 1,
+       "type": "feature",
+       "options": [
+        "Sentinel's Stand: Armor Proficiency",
+        "Sentinel's Stand: Primal Toughness",
+        "Sentinel's Stand: Stalwart Spirit"
+       ],
+       "unstructured": false
+      }
+     },
+     {
+      "name": "Warden's Grasp",
+      "desc": "As a bonus action, you root yourself: until the start of your next turn you can't move, and each Large or smaller creature you choose within 5 feet can't willingly move away from you unless it takes the Disengage action first. The range becomes 10 feet at 14th level.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 2,
+    "features": [
+     {
+      "name": "Fighting Style",
+      "desc": "Pick one style; you can't pick the same style twice. Crippling: a creature you hit with a melee weapon attack loses 10 feet of speed (minimum 0) until the end of its next turn and can't Dash until the end of its turn. Great Weapon Fighting: reroll 1s and 2s on damage dice for two-handed or versatile melee weapons wielded in two hands, keeping the new roll even if it is a 1 or 2. Protection: while wielding a weapon or shield, use your reaction to impose disadvantage on an attack against another target within 5 feet of you by a creature you can see. Titan Fighting: +2 to melee weapon attack rolls against Large or larger creatures.",
+      "choice": {
+       "desc": "",
+       "choose": 1,
+       "type": "feature",
+       "options": [
+        "Fighting Style: Crippling",
+        "Fighting Style: Great Weapon Fighting",
+        "Fighting Style: Protection",
+        "Fighting Style: Titan Fighting"
+       ],
+       "unstructured": false
+      }
+     },
+     {
+      "name": "Warden's Mark",
+      "desc": "As a bonus action, mark a creature you can see within 30 feet. While it is within 5 feet of you, it has disadvantage on attack rolls that don't target you. The mark lasts 1 minute, ending early if you mark another creature, are incapacitated, or die. From 11th level, when you take the Attack action you can make one extra attack as part of it against a creature you have marked.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 3,
+    "features": [
+     {
+      "name": "Champion's Call",
+      "desc": "Choose a call, which grants features at 3rd, 6th, 13th, and 20th level.",
+      "choice": null
+     },
+     {
+      "name": "Warden's Resolve",
+      "desc": "While below half your hit point maximum, you resist bludgeoning, piercing, and slashing damage. From 17th level, this becomes resistance to all damage other than psychic.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 4,
+    "features": [
+     {
+      "name": "Ability Score Improvement",
+      "desc": "Raise one ability score by 2 or two scores by 1 each, to a maximum of 20. You gain this again at 8th, 12th, 16th, and 19th level.",
+      "choice": null
+     },
+     {
+      "name": "Font of Life",
+      "desc": "As an action, end one disease or one condition on yourself (blinded, charmed, deafened, frightened, paralyzed, or poisoned), even if that condition would normally stop you from acting. Once per short or long rest. From 15th level, using it can also raise your hit points to half your maximum if they were lower, once per long rest.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 5,
+    "features": [
+     {
+      "name": "Extra Attack",
+      "desc": "When you take the Attack action on your turn, you attack twice instead of once.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 6,
+    "features": [
+     {
+      "name": "Call feature",
+      "desc": "You gain a feature from your Champion's Call.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 7,
+    "features": [
+     {
+      "name": "Sentinel's Step",
+      "desc": "Choose one option. Earthstrength: your carrying capacity doubles, and you have advantage on checks and saves against being pushed against your will or knocked prone. Thundering Charge: in the first round of combat, your speed rises by 30 feet and your first melee weapon attack has advantage. Wildblood: you can't be surprised while conscious, and your passive Wisdom (Perception) and passive Intelligence (Investigation) scores gain +5.",
+      "choice": {
+       "desc": "",
+       "choose": 1,
+       "type": "feature",
+       "options": [
+        "Sentinel's Step: Earthstrength",
+        "Sentinel's Step: Thundering Charge",
+        "Sentinel's Step: Wildblood"
+       ],
+       "unstructured": false
+      }
+     }
+    ]
+   },
+   {
+    "level": 8,
+    "features": [
+     {
+      "name": "Ability Score Improvement",
+      "desc": "Raise one ability score by 2 or two scores by 1 each, to a maximum of 20.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 9,
+    "features": [
+     {
+      "name": "Undying",
+      "desc": "Once per long rest, when you drop to 0 hit points without being killed outright, you can drop to 1 hit point instead.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 10,
+    "features": [
+     {
+      "name": "Interrupt",
+      "desc": "When a creature hits you with an attack, you can use your reaction to cost it one of its remaining attacks this turn, if it has any.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 11,
+    "features": [
+     {
+      "name": "Mark improvement",
+      "desc": "Taking the Attack action lets you make one extra attack as part of it against a creature you have marked.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 12,
+    "features": [
+     {
+      "name": "Ability Score Improvement",
+      "desc": "Raise one ability score by 2 or two scores by 1 each, to a maximum of 20.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 13,
+    "features": [
+     {
+      "name": "Call feature",
+      "desc": "You gain a feature from your Champion's Call.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 14,
+    "features": [
+     {
+      "name": "Grasp improvement",
+      "desc": "Warden's Grasp now reaches creatures within 10 feet.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 15,
+    "features": [
+     {
+      "name": "Font of Life improvement",
+      "desc": "Font of Life can also restore your hit points to half your maximum if they were lower, once per long rest.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 16,
+    "features": [
+     {
+      "name": "Ability Score Improvement",
+      "desc": "Raise one ability score by 2 or two scores by 1 each, to a maximum of 20.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 17,
+    "features": [
+     {
+      "name": "Warden's Resolve improvement",
+      "desc": "While below half your hit point maximum, you resist all damage except psychic.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 18,
+    "features": [
+     {
+      "name": "Sentinel's Soul",
+      "desc": "Choose one option. Ageless Guardian: immunity to poison and disease, no need for food or water, no frailty of age and no magical aging (you can still die of old age), plus advantage on Constitution saves. Eyes of the Mountain: tremorsense 15 feet, awareness of hidden or invisible creatures within 30 feet, plus advantage on Dexterity saves. Impenetrable Mind: your thoughts can't be read and you can't be charmed or frightened, plus advantage on Wisdom saves.",
+      "choice": {
+       "desc": "",
+       "choose": 1,
+       "type": "feature",
+       "options": [
+        "Sentinel's Soul: Ageless Guardian",
+        "Sentinel's Soul: Eyes of the Mountain",
+        "Sentinel's Soul: Impenetrable Mind"
+       ],
+       "unstructured": false
+      }
+     }
+    ]
+   },
+   {
+    "level": 19,
+    "features": [
+     {
+      "name": "Ability Score Improvement",
+      "desc": "Raise one ability score by 2 or two scores by 1 each, to a maximum of 20.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 20,
+    "features": [
+     {
+      "name": "Call feature",
+      "desc": "You gain a feature from your Champion's Call.",
+      "choice": null
+     }
+    ]
+   }
+  ],
+  "progression": [
+   {
+    "level": 1,
+    "prof_bonus": 2,
+    "features": [
+     "Sentinel's Stand",
+     "Warden's Grasp"
+    ],
+    "class_specific": {
+     "grasp_range_ft": 5
+    }
+   },
+   {
+    "level": 2,
+    "prof_bonus": 2,
+    "features": [
+     "Fighting Style",
+     "Warden's Mark"
+    ],
+    "class_specific": {
+     "grasp_range_ft": 5
+    }
+   },
+   {
+    "level": 3,
+    "prof_bonus": 2,
+    "features": [
+     "Champion's Call",
+     "Warden's Resolve"
+    ],
+    "class_specific": {
+     "grasp_range_ft": 5
+    }
+   },
+   {
+    "level": 4,
+    "prof_bonus": 2,
+    "features": [
+     "Ability Score Improvement",
+     "Font of Life"
+    ],
+    "class_specific": {
+     "grasp_range_ft": 5
+    }
+   },
+   {
+    "level": 5,
+    "prof_bonus": 3,
+    "features": [
+     "Extra Attack"
+    ],
+    "class_specific": {
+     "grasp_range_ft": 5
+    }
+   },
+   {
+    "level": 6,
+    "prof_bonus": 3,
+    "features": [
+     "Call feature"
+    ],
+    "class_specific": {
+     "grasp_range_ft": 5
+    }
+   },
+   {
+    "level": 7,
+    "prof_bonus": 3,
+    "features": [
+     "Sentinel's Step"
+    ],
+    "class_specific": {
+     "grasp_range_ft": 5
+    }
+   },
+   {
+    "level": 8,
+    "prof_bonus": 3,
+    "features": [
+     "Ability Score Improvement"
+    ],
+    "class_specific": {
+     "grasp_range_ft": 5
+    }
+   },
+   {
+    "level": 9,
+    "prof_bonus": 4,
+    "features": [
+     "Undying"
+    ],
+    "class_specific": {
+     "grasp_range_ft": 5
+    }
+   },
+   {
+    "level": 10,
+    "prof_bonus": 4,
+    "features": [
+     "Interrupt"
+    ],
+    "class_specific": {
+     "grasp_range_ft": 5
+    }
+   },
+   {
+    "level": 11,
+    "prof_bonus": 4,
+    "features": [
+     "Mark improvement"
+    ],
+    "class_specific": {
+     "grasp_range_ft": 5
+    }
+   },
+   {
+    "level": 12,
+    "prof_bonus": 4,
+    "features": [
+     "Ability Score Improvement"
+    ],
+    "class_specific": {
+     "grasp_range_ft": 5
+    }
+   },
+   {
+    "level": 13,
+    "prof_bonus": 5,
+    "features": [
+     "Call feature"
+    ],
+    "class_specific": {
+     "grasp_range_ft": 5
+    }
+   },
+   {
+    "level": 14,
+    "prof_bonus": 5,
+    "features": [
+     "Grasp improvement"
+    ],
+    "class_specific": {
+     "grasp_range_ft": 10
+    }
+   },
+   {
+    "level": 15,
+    "prof_bonus": 5,
+    "features": [
+     "Font of Life improvement"
+    ],
+    "class_specific": {
+     "grasp_range_ft": 10
+    }
+   },
+   {
+    "level": 16,
+    "prof_bonus": 5,
+    "features": [
+     "Ability Score Improvement"
+    ],
+    "class_specific": {
+     "grasp_range_ft": 10
+    }
+   },
+   {
+    "level": 17,
+    "prof_bonus": 6,
+    "features": [
+     "Warden's Resolve improvement"
+    ],
+    "class_specific": {
+     "grasp_range_ft": 10
+    }
+   },
+   {
+    "level": 18,
+    "prof_bonus": 6,
+    "features": [
+     "Sentinel's Soul"
+    ],
+    "class_specific": {
+     "grasp_range_ft": 10
+    }
+   },
+   {
+    "level": 19,
+    "prof_bonus": 6,
+    "features": [
+     "Ability Score Improvement"
+    ],
+    "class_specific": {
+     "grasp_range_ft": 10
+    }
+   },
+   {
+    "level": 20,
+    "prof_bonus": 6,
+    "features": [
+     "Call feature"
+    ],
+    "class_specific": {
+     "grasp_range_ft": 10
+    }
+   }
+  ]
+ },
+ {
+  "name": "Warmage",
+  "index": "warmage",
+  "edition": "2014",
+  "source": "kc",
+  "key": "kc-vss_warmage",
+  "book": "Valda's Spire of Secrets",
+  "partner": "Mage Hand Press",
+  "hit_die": 8,
+  "saving_throws": [
+   "CON",
+   "INT"
+  ],
+  "proficiencies": [
+   "Light Armor",
+   "Simple Weapons",
+   "One artisan's tools of your choice",
+   "One gaming set of your choice",
+   "Saving Throw: CON",
+   "Saving Throw: INT"
+  ],
+  "proficiency_choices": [
+   {
+    "desc": "Choose two from Acrobatics, Animal Handling, Arcana, Athletics, History, Investigation, Medicine, Perception, and Survival",
+    "choose": 2,
+    "type": "proficiencies",
+    "options": [
+     "Skill: Acrobatics",
+     "Skill: Animal Handling",
+     "Skill: Arcana",
+     "Skill: Athletics",
+     "Skill: History",
+     "Skill: Investigation",
+     "Skill: Medicine",
+     "Skill: Perception",
+     "Skill: Survival"
+    ],
+    "unstructured": false
+   }
+  ],
+  "starting_equipment": [
+   {
+    "item": "Leather Armor",
+    "quantity": 1
+   },
+   {
+    "item": "Dagger",
+    "quantity": 1
+   }
+  ],
+  "starting_equipment_options": [
+   {
+    "desc": "any simple weapon",
+    "choose": 1,
+    "type": "equipment",
+    "options": [],
+    "unstructured": true
+   },
+   {
+    "desc": "(a) a component pouch or (b) an arcane focus",
+    "choose": 1,
+    "type": "equipment",
+    "options": [
+     "Component Pouch",
+     "Arcane Focus"
+    ],
+    "unstructured": false
+   },
+   {
+    "desc": "(a) an explorer's pack or (b) a scholar's pack",
+    "choose": 1,
+    "type": "equipment",
+    "options": [
+     "Explorer's Pack",
+     "Scholar's Pack"
+    ],
+    "unstructured": false
+   },
+   {
+    "desc": "a gaming set",
+    "choose": 1,
+    "type": "equipment",
+    "options": [],
+    "unstructured": true
+   }
+  ],
+  "subclasses": [
+   "House of Bishops",
+   "House of Cards",
+   "House of Dice",
+   "House of Kings",
+   "House of Knights",
+   "House of Lancers",
+   "House of Pawns",
+   "House of Rooks"
+  ],
+  "spellcasting_ability": "INT",
+  "features_by_level": [
+   {
+    "level": 1,
+    "features": [
+     {
+      "name": "Spellcasting: Warmage",
+      "desc": "Intelligence is your casting ability; you cast only cantrips through this class. You start with four cantrips from the class spell list and gain more per the Cantrips Known column, and each time you gain a warmage level you may swap one known warmage cantrip for another. Spell save DC is 8 + proficiency bonus + Intelligence modifier; spell attack modifier is proficiency bonus + Intelligence modifier. An arcane focus works as your spellcasting focus.",
+      "choice": null
+     },
+     {
+      "name": "Arcane Initiation",
+      "desc": "Pick the origin of your magic at 1st level; each grants two cantrips that are extra and don't count toward your warmage cantrips known. Options: Adventurer (mage hand and ray of frost); Circus Performer (dancing lights and minor illusion); Eldritch Event (chill touch and message); Mercenary (arc blade and true strike); Self-Taught (fire bolt and light); Survival (druidcraft and shillelagh); Temple (sacred flame and spare the dying); Tower Apprentice (prestidigitation and shocking grasp).",
+      "choice": {
+       "desc": "",
+       "choose": 1,
+       "type": "feature",
+       "options": [
+        "Arcane Initiation: Adventurer",
+        "Arcane Initiation: Circus Performer",
+        "Arcane Initiation: Eldritch Event",
+        "Arcane Initiation: Mercenary",
+        "Arcane Initiation: Self-Taught",
+        "Arcane Initiation: Survival",
+        "Arcane Initiation: Temple",
+        "Arcane Initiation: Tower Apprentice"
+       ],
+       "unstructured": false
+      }
+     },
+     {
+      "name": "Arcane Initiation: Adventurer",
+      "desc": "You gain the mage hand and ray of frost cantrips; they don't count against your warmage cantrips known.",
+      "choice": null
+     },
+     {
+      "name": "Arcane Initiation: Circus Performer",
+      "desc": "You gain the dancing lights and minor illusion cantrips; they don't count against your warmage cantrips known.",
+      "choice": null
+     },
+     {
+      "name": "Arcane Initiation: Eldritch Event",
+      "desc": "You gain the chill touch and message cantrips; they don't count against your warmage cantrips known.",
+      "choice": null
+     },
+     {
+      "name": "Arcane Initiation: Mercenary",
+      "desc": "You gain the arc blade and true strike cantrips; they don't count against your warmage cantrips known.",
+      "choice": null
+     },
+     {
+      "name": "Arcane Initiation: Self-Taught",
+      "desc": "You gain the fire bolt and light cantrips; they don't count against your warmage cantrips known.",
+      "choice": null
+     },
+     {
+      "name": "Arcane Initiation: Survival",
+      "desc": "You gain the druidcraft and shillelagh cantrips; they don't count against your warmage cantrips known.",
+      "choice": null
+     },
+     {
+      "name": "Arcane Initiation: Temple",
+      "desc": "You gain the sacred flame and spare the dying cantrips; they don't count against your warmage cantrips known.",
+      "choice": null
+     },
+     {
+      "name": "Arcane Initiation: Tower Apprentice",
+      "desc": "You gain the prestidigitation and shocking grasp cantrips; they don't count against your warmage cantrips known.",
+      "choice": null
+     },
+     {
+      "name": "Arcane Fighting Style",
+      "desc": "At 1st level choose one magical fighting style: Blaster (Add 1 to the spell save DC of your warmage cantrips); Deflector (With at least one free hand, when a spell attack or ranged weapon attack hits you, you can use your reaction to add your proficiency bonus to your AC against that attack, possibly turning it into a miss); Resistive (You get +1 AC while wearing light armor or while mage armor is on you); Sniper (Your ranged spell attack rolls gain +1, and your warmage cantrips ignore half cover); Striker (When a cantrip that uses a melee attack hits and either beats the target's AC by 5 or more or is a critical hit, you can add your proficiency bonus to the damage).",
+      "choice": {
+       "desc": "",
+       "choose": 1,
+       "type": "feature",
+       "options": [
+        "Arcane Fighting Style: Blaster",
+        "Arcane Fighting Style: Deflector",
+        "Arcane Fighting Style: Resistive",
+        "Arcane Fighting Style: Sniper",
+        "Arcane Fighting Style: Striker"
+       ],
+       "unstructured": false
+      }
+     },
+     {
+      "name": "Arcane Fighting Style: Blaster",
+      "desc": "Add 1 to the spell save DC of your warmage cantrips.",
+      "choice": null
+     },
+     {
+      "name": "Arcane Fighting Style: Deflector",
+      "desc": "With at least one free hand, when a spell attack or ranged weapon attack hits you, you can use your reaction to add your proficiency bonus to your AC against that attack, possibly turning it into a miss.",
+      "choice": null
+     },
+     {
+      "name": "Arcane Fighting Style: Resistive",
+      "desc": "You get +1 AC while wearing light armor or while mage armor is on you.",
+      "choice": null
+     },
+     {
+      "name": "Arcane Fighting Style: Sniper",
+      "desc": "Your ranged spell attack rolls gain +1, and your warmage cantrips ignore half cover.",
+      "choice": null
+     },
+     {
+      "name": "Arcane Fighting Style: Striker",
+      "desc": "When a cantrip that uses a melee attack hits and either beats the target's AC by 5 or more or is a critical hit, you can add your proficiency bonus to the damage.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 2,
+    "features": [
+     {
+      "name": "Warmage Edge",
+      "desc": "Once on each of your turns when a warmage cantrip deals damage, add your Intelligence modifier to one of its damage rolls. From 5th level you also add the extra dice listed in the Cantrip Bonus Dice column (1 at 5th, 2 at 11th, 3 at 17th) to your warmage cantrip damage; for example, a 5th-level warmage's fire bolt deals 3d10 + Intelligence modifier fire damage.",
+      "choice": null
+     },
+     {
+      "name": "Warmage Tricks",
+      "desc": "You know two warmage tricks at 2nd level and learn more per the Tricks Known column (up to 10). Whenever you gain a warmage level you may replace one known trick with another whose prerequisites you meet. Level prerequisites refer to warmage level, and you can take a trick at the same level you meet its prerequisites.",
+      "choice": {
+       "desc": "",
+       "choose": 2,
+       "type": "feature",
+       "options": [
+        "Warmage Trick: Bishop's Maneuver",
+        "Warmage Trick: Blasting Cantrip",
+        "Warmage Trick: Blinding Light",
+        "Warmage Trick: Castle",
+        "Warmage Trick: Chivalrous Presence",
+        "Warmage Trick: Cloak of Feathers",
+        "Warmage Trick: Commander's Steed",
+        "Warmage Trick: Corrosive Cantrip",
+        "Warmage Trick: Directed Momentum",
+        "Warmage Trick: Draining Cantrip",
+        "Warmage Trick: Encryptogram",
+        "Warmage Trick: Explosive Cantrip",
+        "Warmage Trick: Extended Range",
+        "Warmage Trick: Field Medic",
+        "Warmage Trick: Flexible Range",
+        "Warmage Trick: Fold",
+        "Warmage Trick: Gamble",
+        "Warmage Trick: Icy Cantrip",
+        "Warmage Trick: Infinite Variation",
+        "Warmage Trick: Knight's Aegis",
+        "Warmage Trick: Leading Edge Tactics",
+        "Warmage Trick: Lieutenant's Demand",
+        "Warmage Trick: Mage Hand Knack",
+        "Warmage Trick: Minor Shadow Illusion",
+        "Warmage Trick: Mystical Armor",
+        "Warmage Trick: Mystical Athlete",
+        "Warmage Trick: Mystical Vision",
+        "Warmage Trick: Mystical Weaponmaster",
+        "Warmage Trick: Phantom Hookshot",
+        "Warmage Trick: Rapid Fortification",
+        "Warmage Trick: Severe Cantrip",
+        "Warmage Trick: Signature Focus",
+        "Warmage Trick: Silent Cantrip",
+        "Warmage Trick: Snake Eyes",
+        "Warmage Trick: Split Fire",
+        "Warmage Trick: Static Cantrip",
+        "Warmage Trick: Unerring Strike"
+       ],
+       "unstructured": false
+      }
+     },
+     {
+      "name": "Warmage Trick: Bishop's Maneuver",
+      "desc": "Prerequisite: 10th level, House of Bishops. Disengage is a bonus action for you, and when you take it that way your walking speed rises by 10 feet until your turn ends.",
+      "choice": null
+     },
+     {
+      "name": "Warmage Trick: Blasting Cantrip",
+      "desc": "Once per turn, when a warmage cantrip deals force damage to a creature, you can shove it up to 10 feet straight away from you.",
+      "choice": null
+     },
+     {
+      "name": "Warmage Trick: Blinding Light",
+      "desc": "Prerequisite: light cantrip. When you cast light on an object you hold, you can flash it at a creature you can see within 10 feet; it makes a Constitution save against your spell save DC or is blinded until the start of your next turn. A creature that fails gains advantage on saves against this trick for 24 hours.",
+      "choice": null
+     },
+     {
+      "name": "Warmage Trick: Castle",
+      "desc": "Prerequisite: 10th level, House of Rooks. As an action, you and a willing Small or Medium creature you can see within 120 feet teleport to trade places. Once per short or long rest.",
+      "choice": null
+     },
+     {
+      "name": "Warmage Trick: Chivalrous Presence",
+      "desc": "Prerequisite: House of Knights. Gain proficiency in Insight and Persuasion and advantage on ability checks to interact with nobility; other creatures can always tell when you are speaking truthfully.",
+      "choice": null
+     },
+     {
+      "name": "Warmage Trick: Cloak of Feathers",
+      "desc": "Prerequisite: House of Rooks. With no armor and no shield, your AC is 10 + Dexterity modifier + Intelligence modifier.",
+      "choice": null
+     },
+     {
+      "name": "Warmage Trick: Commander's Steed",
+      "desc": "Prerequisite: House of Kings. You can cast find steed at will without a spell slot, and the steed's hit point maximum increases by your warmage level.",
+      "choice": null
+     },
+     {
+      "name": "Warmage Trick: Corrosive Cantrip",
+      "desc": "Once per turn, when a warmage cantrip deals acid damage to a creature, the next attack roll made against it before the start of your next turn treats its AC as reduced by 1d4 for that attack.",
+      "choice": null
+     },
+     {
+      "name": "Warmage Trick: Directed Momentum",
+      "desc": "Prerequisite: 10th level, House of Lancers. Once per turn, when you crit with a melee attack or drop a creature to 0 hit points with one, you can make an unarmed strike against another target (lunging to it if it is within Shock Trooper range); a hit deals an extra 1d8 force damage.",
+      "choice": null
+     },
+     {
+      "name": "Warmage Trick: Draining Cantrip",
+      "desc": "When a warmage cantrip deals necrotic or poison damage to a hostile creature, you gain temporary hit points equal to half your warmage level for 1 minute.",
+      "choice": null
+     },
+     {
+      "name": "Warmage Trick: Encryptogram",
+      "desc": "Prerequisite: cryptogram cantrip. Your cryptogram messages can hold 20 characters instead of 8, and only the intended recipient can read them.",
+      "choice": null
+     },
+     {
+      "name": "Warmage Trick: Explosive Cantrip",
+      "desc": "Once per turn, when a warmage cantrip deals fire damage to a creature, every other creature within 5 feet of it (not you) makes a Dexterity save against your spell save DC or takes half the fire damage the target took.",
+      "choice": null
+     },
+     {
+      "name": "Warmage Trick: Extended Range",
+      "desc": "Warmage cantrips with a range of 5 feet or more have their range doubled.",
+      "choice": null
+     },
+     {
+      "name": "Warmage Trick: Field Medic",
+      "desc": "Prerequisite: House of Bishops. You learn spare the dying as a bonus cantrip. When you cast it on a creature at 0 hit points, it regains 1 hit point and gains temporary hit points equal to your warmage level for 1 minute; a creature can benefit from this healing once per long rest.",
+      "choice": null
+     },
+     {
+      "name": "Warmage Trick: Flexible Range",
+      "desc": "Hostile creatures within 5 feet don't give you disadvantage on ranged spell attacks, and warmage cantrips that use a melee spell attack reach 10 feet.",
+      "choice": null
+     },
+     {
+      "name": "Warmage Trick: Fold",
+      "desc": "Prerequisite: 10th level, House of Cards. When an attack hits you, you can use your reaction and discard your whole Deck of Fate hand to cast shield without a slot. Once per short or long rest.",
+      "choice": null
+     },
+     {
+      "name": "Warmage Trick: Gamble",
+      "desc": "Prerequisite: cheat cantrip, House of Cards or House of Dice. The cheat cantrip is always in effect on you, and once per short or long rest you can reroll an attack roll, ability check, or saving throw.",
+      "choice": null
+     },
+     {
+      "name": "Warmage Trick: Icy Cantrip",
+      "desc": "Once per turn, when a warmage cantrip deals cold damage to a creature, its first attack roll before the end of its next turn takes a 1d4 penalty.",
+      "choice": null
+     },
+     {
+      "name": "Warmage Trick: Infinite Variation",
+      "desc": "Prerequisite: prestidigitation cantrip. Prestidigitation can mimic any non-damaging cantrip, even one off the warmage list, if you pass a DC 15 Intelligence (Arcana) check (otherwise the casting fails). The mimicked cantrip uses Intelligence and counts as a warmage cantrip.",
+      "choice": null
+     },
+     {
+      "name": "Warmage Trick: Knight's Aegis",
+      "desc": "Prerequisite: 10th level, House of Knights, force buckler cantrip. Force buckler can be held with concentration for up to 1 minute and is not ended early by being hit.",
+      "choice": null
+     },
+     {
+      "name": "Warmage Trick: Leading Edge Tactics",
+      "desc": "Prerequisite: House of Lancers. Attacks made against you during the first round of combat have disadvantage.",
+      "choice": null
+     },
+     {
+      "name": "Warmage Trick: Lieutenant's Demand",
+      "desc": "Prerequisite: 10th level, House of Kings. You can cast command at will without a spell slot.",
+      "choice": null
+     },
+     {
+      "name": "Warmage Trick: Mage Hand Knack",
+      "desc": "Prerequisite: mage hand cantrip. When you cast mage hand, and as a bonus action on later turns, the hand can: Press (pushes on a Large or smaller creature within 5 feet; each foot it moves in a direction you pick costs it 1 extra foot, lasting until the spell ends or you switch effects), Punch (melee spell attack against a creature or object within 5 feet for 1d6 force damage), or Seize (a Tiny creature must beat your spell save DC with Strength (Athletics) or Dexterity (Acrobatics) or be grappled until it uses an action to escape, the spell ends, or you switch effects).",
+      "choice": null
+     },
+     {
+      "name": "Warmage Trick: Minor Shadow Illusion",
+      "desc": "Prerequisite: minor illusion cantrip. An object image from minor illusion can be made semi-real (max 5-foot cube, AC 10, 5 hit points, 5 pounds; one at a time, requires concentration). If it depicts something harmful, a creature entering its cube or starting its turn there makes an Intelligence save or takes 1d6 damage of a fitting type, rising to 2d6 at 5th, 3d6 at 11th, and 4d6 at 17th level. This damage can't trigger Warmage Edge or tricks.",
+      "choice": null
+     },
+     {
+      "name": "Warmage Trick: Mystical Armor",
+      "desc": "You can cast mage armor on yourself at will without a spell slot or components.",
+      "choice": null
+     },
+     {
+      "name": "Warmage Trick: Mystical Athlete",
+      "desc": "Prerequisite: quickstep or springheel cantrip. Quickstep grants +20 feet of speed instead of +10, springheel grants +20 feet of jump distance instead of +10, and if you know both you can cast them with the same bonus action.",
+      "choice": null
+     },
+     {
+      "name": "Warmage Trick: Mystical Vision",
+      "desc": "You can cast detect magic at will without a spell slot.",
+      "choice": null
+     },
+     {
+      "name": "Warmage Trick: Mystical Weaponmaster",
+      "desc": "Prerequisite: force weapon or magic daggers cantrip. Once per turn, when you roll a 1 on the d20 for an attack with force weapon or magic daggers, reroll it and use the new result.",
+      "choice": null
+     },
+     {
+      "name": "Warmage Trick: Phantom Hookshot",
+      "desc": "Prerequisite: phantom grapnel cantrip. Phantom grapnel can be cast as a bonus action with its range cut to 15 feet; cast as an action, it pulls creatures an additional 10 feet toward you.",
+      "choice": null
+     },
+     {
+      "name": "Warmage Trick: Rapid Fortification",
+      "desc": "Prerequisite: mending cantrip. Mending can be cast as a bonus action. Cast as an action, it can instead fully restore a nonmagical object up to 10 cubic feet (1 cubic foot if intricate) with at least half its parts present, or build simple fortifications up to 10 cubic feet (sealing a door, boarding a window, a short stone wall) if the materials are on hand.",
+      "choice": null
+     },
+     {
+      "name": "Warmage Trick: Severe Cantrip",
+      "desc": "A creature that rolls a 1 on a save against your warmage cantrip fails automatically and takes double the damage dice, as with a critical hit (only that creature).",
+      "choice": null
+     },
+     {
+      "name": "Warmage Trick: Signature Focus",
+      "desc": "Prerequisite: 5th level. After a long rest, mark a simple weapon as your magical signature focus (until you use the trick again). It works as a warmage spellcasting focus, you can summon it to hand as a bonus action while on the same plane, and you can use Intelligence for attack rolls with it. It holds charges equal to your Intelligence modifier (minimum 1); spend one when it or a cantrip cast through it damages a creature to add 1d8 force damage. Charges return on a long rest.",
+      "choice": null
+     },
+     {
+      "name": "Warmage Trick: Silent Cantrip",
+      "desc": "Once per turn, when a warmage cantrip deals thunder damage to a hostile creature, you can create a 15-foot-diameter sphere of silence (as the silence spell) centered on you or the target, lasting until the start of your next turn.",
+      "choice": null
+     },
+     {
+      "name": "Warmage Trick: Snake Eyes",
+      "desc": "Prerequisite: 10th level, House of Dice. When a Die of Fate you roll shows 1 or 2, you keep it instead of passing it to the GM.",
+      "choice": null
+     },
+     {
+      "name": "Warmage Trick: Split Fire",
+      "desc": "Prerequisite: 5th level. A warmage cantrip that makes a single spell attack can instead target several different creatures, up to the number of its damage dice, with a separate attack roll each; divide the damage dice among them, at least one die per target (fire bolt's 3d10 could be 1d10 x 3, 1d10 + 2d10, or 3d10 on one target).",
+      "choice": null
+     },
+     {
+      "name": "Warmage Trick: Static Cantrip",
+      "desc": "When a warmage cantrip deals lightning damage to a hostile creature, you hold a charge until the start of your next turn; while charged, when a creature you can see within 5 feet damages you, you can use your reaction to deal lightning damage to it equal to half your warmage level.",
+      "choice": null
+     },
+     {
+      "name": "Warmage Trick: Unerring Strike",
+      "desc": "Prerequisite: 10th level, true strike cantrip. You can maintain true strike for a number of rounds equal to your Intelligence modifier, and while you concentrate you have advantage on your first attack roll against the target on each of your turns.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 3,
+    "features": [
+     {
+      "name": "Warmage House",
+      "desc": "Choose a Warmage House at 3rd level: House of Bishops, House of Cards, House of Dice, House of Kings, House of Knights, House of Lancers, House of Pawns, House of Rooks. It grants features at 3rd, 7th, 10th, 15th, and 18th level.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 4,
+    "features": [
+     {
+      "name": "Ability Score Improvement",
+      "desc": "Raise one ability score by 2 or two scores by 1 each, to a maximum of 20.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 5,
+    "features": [
+     {
+      "name": "Arcane Surge",
+      "desc": "On your turn, when a warmage cantrip deals damage, you can double the number of damage dice the spell deals. It can't be used on a critical hit. Once per short or long rest, twice per rest from 11th level.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 6,
+    "features": [
+     {
+      "name": "Tactical Insight",
+      "desc": "Add your Intelligence modifier to saving throws against spells and other magical effects that deal damage.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 7,
+    "features": [
+     {
+      "name": "Warmage House feature",
+      "desc": "You gain a feature from your Warmage House.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 8,
+    "features": [
+     {
+      "name": "Ability Score Improvement",
+      "desc": "Raise one ability score by 2 or two scores by 1 each, to a maximum of 20.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 10,
+    "features": [
+     {
+      "name": "Warmage House feature",
+      "desc": "You gain a feature from your Warmage House.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 11,
+    "features": [
+     {
+      "name": "Arcane Surge improvement",
+      "desc": "You can use Arcane Surge twice between short or long rests.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 12,
+    "features": [
+     {
+      "name": "Ability Score Improvement",
+      "desc": "Raise one ability score by 2 or two scores by 1 each, to a maximum of 20.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 14,
+    "features": [
+     {
+      "name": "Strategic Deflection",
+      "desc": "When a spell that targets you or includes you in its area forces a save to avoid damage and you succeed, you can use your reaction to redirect it: pick another creature you can see within the spell's range or 30 feet of you (whichever is shorter), possibly the caster, which saves against your spell save DC and on a failure suffers the spell as if you had cast it on it. Once per short or long rest.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 15,
+    "features": [
+     {
+      "name": "Warmage House feature",
+      "desc": "You gain a feature from your Warmage House.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 16,
+    "features": [
+     {
+      "name": "Ability Score Improvement",
+      "desc": "Raise one ability score by 2 or two scores by 1 each, to a maximum of 20.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 18,
+    "features": [
+     {
+      "name": "Warmage House feature",
+      "desc": "You gain a feature from your Warmage House.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 19,
+    "features": [
+     {
+      "name": "Ability Score Improvement",
+      "desc": "Raise one ability score by 2 or two scores by 1 each, to a maximum of 20.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 20,
+    "features": [
+     {
+      "name": "Master Warmage",
+      "desc": "A cantrip of yours that would deal 4 damage dice deals 5 instead (not counting cantrip bonus dice), and a cantrip that would make 4 attacks makes 5.",
+      "choice": null
+     }
+    ]
+   }
+  ],
+  "progression": [
+   {
+    "level": 1,
+    "prof_bonus": 2,
+    "features": [
+     "Spellcasting: Warmage",
+     "Arcane Initiation",
+     "Arcane Fighting Style"
+    ],
+    "class_specific": {
+     "cantrip_bonus_dice": 0,
+     "tricks_known": 0
+    },
+    "spellcasting": {
+     "cantrips_known": 4
+    }
+   },
+   {
+    "level": 2,
+    "prof_bonus": 2,
+    "features": [
+     "Warmage Edge",
+     "Warmage Tricks"
+    ],
+    "class_specific": {
+     "cantrip_bonus_dice": 0,
+     "tricks_known": 2
+    },
+    "spellcasting": {
+     "cantrips_known": 4
+    }
+   },
+   {
+    "level": 3,
+    "prof_bonus": 2,
+    "features": [
+     "Warmage House"
+    ],
+    "class_specific": {
+     "cantrip_bonus_dice": 0,
+     "tricks_known": 3
+    },
+    "spellcasting": {
+     "cantrips_known": 5
+    }
+   },
+   {
+    "level": 4,
+    "prof_bonus": 2,
+    "features": [
+     "Ability Score Improvement"
+    ],
+    "class_specific": {
+     "cantrip_bonus_dice": 0,
+     "tricks_known": 3
+    },
+    "spellcasting": {
+     "cantrips_known": 5
+    }
+   },
+   {
+    "level": 5,
+    "prof_bonus": 3,
+    "features": [
+     "Arcane Surge"
+    ],
+    "class_specific": {
+     "cantrip_bonus_dice": 1,
+     "tricks_known": 4
+    },
+    "spellcasting": {
+     "cantrips_known": 6
+    }
+   },
+   {
+    "level": 6,
+    "prof_bonus": 3,
+    "features": [
+     "Tactical Insight"
+    ],
+    "class_specific": {
+     "cantrip_bonus_dice": 1,
+     "tricks_known": 4
+    },
+    "spellcasting": {
+     "cantrips_known": 6
+    }
+   },
+   {
+    "level": 7,
+    "prof_bonus": 3,
+    "features": [
+     "Warmage House feature"
+    ],
+    "class_specific": {
+     "cantrip_bonus_dice": 1,
+     "tricks_known": 5
+    },
+    "spellcasting": {
+     "cantrips_known": 6
+    }
+   },
+   {
+    "level": 8,
+    "prof_bonus": 3,
+    "features": [
+     "Ability Score Improvement"
+    ],
+    "class_specific": {
+     "cantrip_bonus_dice": 1,
+     "tricks_known": 5
+    },
+    "spellcasting": {
+     "cantrips_known": 6
+    }
+   },
+   {
+    "level": 9,
+    "prof_bonus": 4,
+    "features": [],
+    "class_specific": {
+     "cantrip_bonus_dice": 1,
+     "tricks_known": 6
+    },
+    "spellcasting": {
+     "cantrips_known": 7
+    }
+   },
+   {
+    "level": 10,
+    "prof_bonus": 4,
+    "features": [
+     "Warmage House feature"
+    ],
+    "class_specific": {
+     "cantrip_bonus_dice": 1,
+     "tricks_known": 6
+    },
+    "spellcasting": {
+     "cantrips_known": 7
+    }
+   },
+   {
+    "level": 11,
+    "prof_bonus": 4,
+    "features": [
+     "Arcane Surge improvement"
+    ],
+    "class_specific": {
+     "cantrip_bonus_dice": 2,
+     "tricks_known": 7
+    },
+    "spellcasting": {
+     "cantrips_known": 7
+    }
+   },
+   {
+    "level": 12,
+    "prof_bonus": 4,
+    "features": [
+     "Ability Score Improvement"
+    ],
+    "class_specific": {
+     "cantrip_bonus_dice": 2,
+     "tricks_known": 7
+    },
+    "spellcasting": {
+     "cantrips_known": 7
+    }
+   },
+   {
+    "level": 13,
+    "prof_bonus": 5,
+    "features": [],
+    "class_specific": {
+     "cantrip_bonus_dice": 2,
+     "tricks_known": 8
+    },
+    "spellcasting": {
+     "cantrips_known": 8
+    }
+   },
+   {
+    "level": 14,
+    "prof_bonus": 5,
+    "features": [
+     "Strategic Deflection"
+    ],
+    "class_specific": {
+     "cantrip_bonus_dice": 2,
+     "tricks_known": 8
+    },
+    "spellcasting": {
+     "cantrips_known": 8
+    }
+   },
+   {
+    "level": 15,
+    "prof_bonus": 5,
+    "features": [
+     "Warmage House feature"
+    ],
+    "class_specific": {
+     "cantrip_bonus_dice": 2,
+     "tricks_known": 9
+    },
+    "spellcasting": {
+     "cantrips_known": 8
+    }
+   },
+   {
+    "level": 16,
+    "prof_bonus": 5,
+    "features": [
+     "Ability Score Improvement"
+    ],
+    "class_specific": {
+     "cantrip_bonus_dice": 2,
+     "tricks_known": 9
+    },
+    "spellcasting": {
+     "cantrips_known": 8
+    }
+   },
+   {
+    "level": 17,
+    "prof_bonus": 6,
+    "features": [],
+    "class_specific": {
+     "cantrip_bonus_dice": 3,
+     "tricks_known": 10
+    },
+    "spellcasting": {
+     "cantrips_known": 9
+    }
+   },
+   {
+    "level": 18,
+    "prof_bonus": 6,
+    "features": [
+     "Warmage House feature"
+    ],
+    "class_specific": {
+     "cantrip_bonus_dice": 3,
+     "tricks_known": 10
+    },
+    "spellcasting": {
+     "cantrips_known": 9
+    }
+   },
+   {
+    "level": 19,
+    "prof_bonus": 6,
+    "features": [
+     "Ability Score Improvement"
+    ],
+    "class_specific": {
+     "cantrip_bonus_dice": 3,
+     "tricks_known": 10
+    },
+    "spellcasting": {
+     "cantrips_known": 9
+    }
+   },
+   {
+    "level": 20,
+    "prof_bonus": 6,
+    "features": [
+     "Master Warmage"
+    ],
+    "class_specific": {
+     "cantrip_bonus_dice": 3,
+     "tricks_known": 10
+    },
+    "spellcasting": {
+     "cantrips_known": 10
+    }
+   }
+  ]
+ },
+ {
+  "name": "Witch",
+  "index": "witch",
+  "edition": "2014",
+  "source": "kc",
+  "key": "kc-vss_witch",
+  "book": "Valda's Spire of Secrets",
+  "partner": "Mage Hand Press",
+  "hit_die": 8,
+  "saving_throws": [
+   "WIS",
+   "CHA"
+  ],
+  "proficiencies": [
+   "Light Armor",
+   "Simple Weapons",
+   "Blowguns",
+   "Shortswords",
+   "Whips",
+   "Alchemist's Supplies",
+   "Poisoner's Kit",
+   "Saving Throw: WIS",
+   "Saving Throw: CHA"
+  ],
+  "proficiency_choices": [
+   {
+    "desc": "Choose two from Arcana, Deception, Insight, Intimidation, Nature, Persuasion, and Religion",
+    "choose": 2,
+    "type": "proficiencies",
+    "options": [
+     "Skill: Arcana",
+     "Skill: Deception",
+     "Skill: Insight",
+     "Skill: Intimidation",
+     "Skill: Nature",
+     "Skill: Persuasion",
+     "Skill: Religion"
+    ],
+    "unstructured": false
+   }
+  ],
+  "starting_equipment": [
+   {
+    "item": "Leather Armor",
+    "quantity": 1
+   },
+   {
+    "item": "Dagger",
+    "quantity": 1
+   }
+  ],
+  "starting_equipment_options": [
+   {
+    "desc": "(a) a whip and blowgun, (b) a light crossbow and 20 bolts, or (c) any simple weapon",
+    "choose": 1,
+    "type": "equipment",
+    "options": [],
+    "unstructured": true
+   },
+   {
+    "desc": "(a) a component pouch or (b) an arcane focus",
+    "choose": 1,
+    "type": "equipment",
+    "options": [
+     "Component Pouch",
+     "Arcane Focus"
+    ],
+    "unstructured": false
+   },
+   {
+    "desc": "(a) a scholar's pack or (b) a dungeoneer's pack",
+    "choose": 1,
+    "type": "equipment",
+    "options": [
+     "Scholar's Pack",
+     "Dungeoneer's Pack"
+    ],
+    "unstructured": false
+   },
+   {
+    "desc": "any simple weapon",
+    "choose": 1,
+    "type": "equipment",
+    "options": [],
+    "unstructured": true
+   }
+  ],
+  "subclasses": [
+   "Black Magic",
+   "Blood Magic",
+   "Green Magic",
+   "Purple Magic",
+   "Red Magic",
+   "Steel Magic",
+   "Tea Magic",
+   "Technicolor Magic",
+   "White Magic"
+  ],
+  "spellcasting_ability": "CHA",
+  "features_by_level": [
+   {
+    "level": 1,
+    "features": [
+     {
+      "name": "Spellcasting: Witch",
+      "desc": "Charisma-based full spellcasting from the class spell list. You know four cantrips and two 1st-level spells at 1st level, gaining more per the Cantrips Known and Spells Known columns; new spells must be of a level you have slots for, and each witch level you may swap one known spell for another. Slots follow the Witch table and return on a long rest. Spell save DC 8 + proficiency bonus + Charisma modifier; spell attack proficiency bonus + Charisma modifier. You can ritual-cast known witch spells with the ritual tag and use an arcane focus.",
+      "choice": null
+     },
+     {
+      "name": "Witch's Curse",
+      "desc": "Pick the form of your curse at 1st level: Burned (Resistance to fire damage, and you know produce flame as a bonus cantrip); Drowned (You breathe both air and water and have a swimming speed equal to your walking speed); Feral (Proficiency in Survival; with no armor and no shield, your AC is 12 + Dexterity modifier); Hideous (Proficiency in Intimidation. When you roll initiative, one Humanoid you can see makes a Wisdom save against your spell save DC or is frightened of you until the end of your next turn); Hollow (When you or your familiar drops a hostile creature to 0 hit points, you gain temporary hit points of your witch level + Charisma modifier (minimum 1)); Infested (Immune to disease. Your familiar can take the form of a swarm of rats from 2nd level and a swarm of insects from 7th level); Loveless (Immune to being charmed); Possessed (Gain one extra witch spell (of a level you have slots for) at 1st, 4th, 8th, and 12th level; these don't count against spells known); Starving (You need no food or drink (potions still work on you) and are immune to the poisoned condition); Visions (You can add your Charisma modifier to initiative rolls); Whispers (You can speak telepathically with any creature you can see within 30 feet that understands at least one language, shared or not).",
+      "choice": {
+       "desc": "",
+       "choose": 1,
+       "type": "feature",
+       "options": [
+        "Witch's Curse: Burned",
+        "Witch's Curse: Drowned",
+        "Witch's Curse: Feral",
+        "Witch's Curse: Hideous",
+        "Witch's Curse: Hollow",
+        "Witch's Curse: Infested",
+        "Witch's Curse: Loveless",
+        "Witch's Curse: Possessed",
+        "Witch's Curse: Starving",
+        "Witch's Curse: Visions",
+        "Witch's Curse: Whispers"
+       ],
+       "unstructured": false
+      }
+     },
+     {
+      "name": "Witch's Curse: Burned",
+      "desc": "Resistance to fire damage, and you know produce flame as a bonus cantrip.",
+      "choice": null
+     },
+     {
+      "name": "Witch's Curse: Drowned",
+      "desc": "You breathe both air and water and have a swimming speed equal to your walking speed.",
+      "choice": null
+     },
+     {
+      "name": "Witch's Curse: Feral",
+      "desc": "Proficiency in Survival; with no armor and no shield, your AC is 12 + Dexterity modifier.",
+      "choice": null
+     },
+     {
+      "name": "Witch's Curse: Hideous",
+      "desc": "Proficiency in Intimidation. When you roll initiative, one Humanoid you can see makes a Wisdom save against your spell save DC or is frightened of you until the end of your next turn.",
+      "choice": null
+     },
+     {
+      "name": "Witch's Curse: Hollow",
+      "desc": "When you or your familiar drops a hostile creature to 0 hit points, you gain temporary hit points of your witch level + Charisma modifier (minimum 1).",
+      "choice": null
+     },
+     {
+      "name": "Witch's Curse: Infested",
+      "desc": "Immune to disease. Your familiar can take the form of a swarm of rats from 2nd level and a swarm of insects from 7th level.",
+      "choice": null
+     },
+     {
+      "name": "Witch's Curse: Loveless",
+      "desc": "Immune to being charmed.",
+      "choice": null
+     },
+     {
+      "name": "Witch's Curse: Possessed",
+      "desc": "Gain one extra witch spell (of a level you have slots for) at 1st, 4th, 8th, and 12th level; these don't count against spells known.",
+      "choice": null
+     },
+     {
+      "name": "Witch's Curse: Starving",
+      "desc": "You need no food or drink (potions still work on you) and are immune to the poisoned condition.",
+      "choice": null
+     },
+     {
+      "name": "Witch's Curse: Visions",
+      "desc": "You can add your Charisma modifier to initiative rolls.",
+      "choice": null
+     },
+     {
+      "name": "Witch's Curse: Whispers",
+      "desc": "You can speak telepathically with any creature you can see within 30 feet that understands at least one language, shared or not.",
+      "choice": null
+     },
+     {
+      "name": "Hexes",
+      "desc": "You know two hexes at 1st level and more per the Hexes Known column (up to 7); each witch level you may swap one. Hexes use your spell attack bonus and spell save DC, need a verbal or somatic component (your choice), and if they last a duration you concentrate on them. Casting another hex ends concentration on the current hex, but you can concentrate on one hex and one spell together, making a single Constitution save for both. Hexes count as 0-level spells for effects like counterspell and dispel magic and stop working in an antimagic field.",
+      "choice": {
+       "desc": "",
+       "choose": 2,
+       "type": "feature",
+       "options": [
+        "Hex: Abate",
+        "Hex: Apathy",
+        "Hex: Beckon Familiar",
+        "Hex: Bleeding",
+        "Hex: Charm",
+        "Hex: Dire Familiar",
+        "Hex: Disorient",
+        "Hex: Doomward",
+        "Hex: Duplicity",
+        "Hex: Evil Eye",
+        "Hex: Fortune",
+        "Hex: Go Unseen",
+        "Hex: Hobble",
+        "Hex: Knowing",
+        "Hex: Mire",
+        "Hex: Misfortune",
+        "Hex: Obfuscate",
+        "Hex: Peacebond",
+        "Hex: Pox",
+        "Hex: Ruin",
+        "Hex: Scurry",
+        "Hex: Shriek",
+        "Hex: Slumber",
+        "Hex: Slur",
+        "Hex: Tremors",
+        "Hex: Ward"
+       ],
+       "unstructured": false
+      }
+     },
+     {
+      "name": "Hex: Abate",
+      "desc": "Action, one creature you can see within 60 feet makes a Charisma save; on a failure it loses its reactions through the end of your next turn.",
+      "choice": null
+     },
+     {
+      "name": "Hex: Apathy",
+      "desc": "Action, one creature you can see within 60 feet makes a Charisma save; on a failure it is indifferent toward one creature of your choice it is hostile to until the end of your next turn, ending early if that creature attacks or harms it. Afterward it is hostile again unless the GM decides otherwise.",
+      "choice": null
+     },
+     {
+      "name": "Hex: Beckon Familiar",
+      "desc": "Requires the Familiar feature. Cast find familiar as an action with no slot or material components; you can't do so again for 1 minute.",
+      "choice": null
+     },
+     {
+      "name": "Hex: Bleeding",
+      "desc": "Action, one creature you can see within 60 feet makes a Constitution save; on a failure it loses an extra 1d4 hit points each time it takes damage until the end of your next turn.",
+      "choice": null
+     },
+     {
+      "name": "Hex: Charm",
+      "desc": "Action, one creature you can see within 60 feet makes a Wisdom save; on a failure you charm it through the end of your next turn, and it knows afterward that you charmed it.",
+      "choice": null
+     },
+     {
+      "name": "Hex: Dire Familiar",
+      "desc": "Requires the Familiar feature. Action, for 1 minute your familiar's current and maximum hit points rise by twice your witch level and it adds your Charisma modifier to damage rolls. You can cast other hexes while it lasts; you can't reuse it until the familiar is dismissed or the duration ends.",
+      "choice": null
+     },
+     {
+      "name": "Hex: Disorient",
+      "desc": "Action, one creature you can see within 60 feet makes a Constitution save; on a failure it subtracts 1d6 from each attack roll it makes until the end of your next turn.",
+      "choice": null
+     },
+     {
+      "name": "Hex: Doomward",
+      "desc": "Action, one ally other than you within 60 feet: if it would fall to 0 hit points before your next turn ends without being killed outright, it stays at 1. The hex then ends and can't be used on that creature again before you finish a short or long rest.",
+      "choice": null
+     },
+     {
+      "name": "Hex: Duplicity",
+      "desc": "Action, a shadow duplicate guards you until the end of your next turn: when a creature attacks you, roll any die; on an odd result the attack hits the duplicate and misses, ending the hex, and on an even result it targets you normally.",
+      "choice": null
+     },
+     {
+      "name": "Hex: Evil Eye",
+      "desc": "Action, one creature you can see within 60 feet that can see you makes a Wisdom save; on a failure it is frightened of you through the end of your next turn.",
+      "choice": null
+     },
+     {
+      "name": "Hex: Fortune",
+      "desc": "Action, one other ally within 60 feet makes saving throws with advantage through the end of your next turn.",
+      "choice": null
+     },
+     {
+      "name": "Hex: Go Unseen",
+      "desc": "Action, you and your familiar turn invisible (as invisibility) until the end of your next turn or until either of you attacks or casts a spell. Can't be cast again for 1 minute.",
+      "choice": null
+     },
+     {
+      "name": "Hex: Hobble",
+      "desc": "Action, one creature you can see within 60 feet makes a Strength save; on a failure its speed becomes 10 feet until the end of your next turn, and a flying creature falls unless it can hover or is held aloft by magic.",
+      "choice": null
+     },
+     {
+      "name": "Hex: Knowing",
+      "desc": "Action, Wisdom (Insight) checks have advantage for you through the end of your next turn and learn one fact about every creature within 30 feet: whether it can speak a language, whether it is at or below half its hit points, or its lowest ability score. You can learn only one such fact per creature, even with repeated castings.",
+      "choice": null
+     },
+     {
+      "name": "Hex: Mire",
+      "desc": "Action, ground in a 30-foot radius around the point you choose becomes difficult-terrain swamp until the end of your next turn; you and your familiar move through it normally.",
+      "choice": null
+     },
+     {
+      "name": "Hex: Misfortune",
+      "desc": "Action, one creature you can see within 60 feet: until the end of your next turn, any 20 it rolls on a d20 becomes a 1.",
+      "choice": null
+     },
+     {
+      "name": "Hex: Obfuscate",
+      "desc": "Action, a 20-foot-radius sphere of fog centered on you spreads around corners and heavily obscures its area; it lasts through the end of your next turn unless a wind of 10 miles per hour or more blows it away.",
+      "choice": null
+     },
+     {
+      "name": "Hex: Peacebond",
+      "desc": "Action, weapons and ammunition of every creature within 30 feet are locked in their sheaths, quivers, and holsters through the end of your next turn; a creature can use its action and a Strength check against your spell save DC to free its weapon.",
+      "choice": null
+     },
+     {
+      "name": "Hex: Pox",
+      "desc": "Action, one creature you can see within 5 feet makes a Constitution save; on a failure it is poisoned until the end of your next turn.",
+      "choice": null
+     },
+     {
+      "name": "Hex: Ruin",
+      "desc": "Action, one creature you can see within 60 feet makes a Constitution save; on a failure its AC drops by 3 (minimum 10) until the end of your next turn.",
+      "choice": null
+     },
+     {
+      "name": "Hex: Scurry",
+      "desc": "Action, a nonmagical object of up to 10 pounds within 30 feet (not worn as clothing or armor, not held, not wrapped around a body) grows legs, pulls free of its owner, and runs 20 feet in a direction you choose, with you steering it at the start of your turn. It has AC 10 (or its own if higher) and stays animated until the end of your next turn or until picked up.",
+      "choice": null
+     },
+     {
+      "name": "Hex: Shriek",
+      "desc": "Bonus action, you push each chosen Large or smaller creature within 5 feet back 5 feet.",
+      "choice": null
+     },
+     {
+      "name": "Hex: Slumber",
+      "desc": "Action, one creature you can see within 60 feet makes a Wisdom save; on a failure it falls unconscious until it takes damage or the end of your next turn. Undead, creatures immune to charm, and creatures with current hit points above five times your witch level are unaffected.",
+      "choice": null
+     },
+     {
+      "name": "Hex: Slur",
+      "desc": "Action, one creature you can see within 60 feet makes a Charisma save; on a failure it can't speak coherently until the end of your next turn, and when it tries to cast a spell with a verbal component it rolls a d20, failing the casting on an odd result.",
+      "choice": null
+     },
+     {
+      "name": "Hex: Tremors",
+      "desc": "Action, every grounded creature within 10 feet makes a Dexterity save, falling prone on a failure.",
+      "choice": null
+     },
+     {
+      "name": "Hex: Ward",
+      "desc": "Action, one creature other than you within 60 feet reduces each instance of damage it takes by 3 until the end of your next turn.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 2,
+    "features": [
+     {
+      "name": "Cackle",
+      "desc": "As a bonus action (requires a verbal component), extend the hex you are concentrating on by 1 round; it extends only for targets within 60 feet of you.",
+      "choice": null
+     },
+     {
+      "name": "Familiar",
+      "desc": "You learn find familiar, castable as a ritual without material components and free of your spells known. Your familiar acts right before or after you (your choice); once per turn, as an action or bonus action, you can have it use its reaction to attack; it can deliver your spells of any range, not just touch. It uses your spell attack bonus, adds your proficiency bonus to its AC, saves, and damage, and adds twice your witch level to its hit point maximum. Extra forms: death snail, flying book, homunculus, mock, moon jelly, pet rock, pseudodragon, rag doll, sprite, tin soldier, winter wolf pup, and yarn golem.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 3,
+    "features": [
+     {
+      "name": "Witch's Craft",
+      "desc": "Choose a craft at 3rd level: Black Magic, Blood Magic, Green Magic, Purple Magic, Red Magic, Steel Magic, Tea Magic, Technicolor Magic, White Magic. It grants features at 3rd, 6th, 10th, and 14th level. Craft spells count as witch spells but not against spells known, and a hex granted by your craft doesn't count against hexes known.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 4,
+    "features": [
+     {
+      "name": "Ability Score Improvement",
+      "desc": "Raise one ability score by 2 or two scores by 1 each, to a maximum of 20.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 5,
+    "features": [
+     {
+      "name": "Insidious Spell",
+      "desc": "When a witch spell you cast affects a hostile creature that is the only target of your hex, it has disadvantage on its first save against that spell.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 6,
+    "features": [
+     {
+      "name": "Craft feature",
+      "desc": "You gain a feature from your Witch's Craft.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 7,
+    "features": [
+     {
+      "name": "Improved Familiar",
+      "desc": "Your familiar's attacks count as magical for overcoming resistance and immunity, and it can also take the form of a brass dragon wyrmling (no breath weapon), fright, grep, imp, or quasit.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 8,
+    "features": [
+     {
+      "name": "Ability Score Improvement",
+      "desc": "Raise one ability score by 2 or two scores by 1 each, to a maximum of 20.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 9,
+    "features": [
+     {
+      "name": "Dying Curse",
+      "desc": "When a creature drops you to 0 hit points without killing you outright, you can curse it for up to 24 hours: it rolls attacks, ability checks, and saves at disadvantage. Should you wake up or it is targeted by remove curse, the curse ends at the end of its next turn. Once per long rest.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 10,
+    "features": [
+     {
+      "name": "Craft feature",
+      "desc": "You gain a feature from your Witch's Craft.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 11,
+    "features": [
+     {
+      "name": "Grand Hex",
+      "desc": "You learn one grand hex at 11th level and another at 13th, 15th, and 18th. Grand hexes use your spell attack bonus and spell save DC and are not themselves hexes.",
+      "choice": {
+       "desc": "",
+       "choose": 1,
+       "type": "feature",
+       "options": [
+        "Grand Hex: Cauldron",
+        "Grand Hex: Coven",
+        "Grand Hex: Dual Hex",
+        "Grand Hex: Forceful Personality",
+        "Grand Hex: Hybrid",
+        "Grand Hex: Poison Apple",
+        "Grand Hex: Possession",
+        "Grand Hex: War Hex",
+        "Grand Hex: Witch's Broom",
+        "Grand Hex: Witch's Hut"
+       ],
+       "unstructured": false
+      }
+     },
+     {
+      "name": "Grand Hex: Cauldron",
+      "desc": "You have alchemy points equal to half your witch level (rounded down), restored on a long rest. Spend 10 minutes and any number of points to brew potions that stay potent for 24 hours, with saves using your spell save DC. Costs: 1 point for animal friendship, growth, healing, or water breathing; 2 for oil of slipperiness, philter of love, greater healing, heroism, or resistance; 3 for clairvoyance, diminution, or gaseous form.",
+      "choice": null
+     },
+     {
+      "name": "Grand Hex: Coven",
+      "desc": "Through an 8-hour ritual (can be during a long rest) you bind a willing creature with Spellcasting or Pact Magic into your coven, up to two members besides you. While two or more members are within 30 feet of each other they can cast bane, hideous laughter (1st), invisibility, ray of enfeeblement (2nd), bestow curse, counterspell (3rd), banishment, polymorph (4th), and contagion, scrying (5th), and share a pool of five slots (one each of 1st to 5th), restored when all members finish a long rest. Members use their own casting stats and can't use a shared slot for a spell level they couldn't otherwise cast.",
+      "choice": null
+     },
+     {
+      "name": "Grand Hex: Dual Hex",
+      "desc": "A hex that targets one creature other than you can target two instead, and Insidious Spell applies to both while both are hexed.",
+      "choice": null
+     },
+     {
+      "name": "Grand Hex: Forceful Personality",
+      "desc": "Your Charisma rises by 2, and its maximum becomes 22.",
+      "choice": null
+     },
+     {
+      "name": "Grand Hex: Hybrid",
+      "desc": "As a bonus action with your familiar within 5 feet, merge with it for 1 minute (or until you end it, no action): gain temporary hit points equal to its hit points; AC 10 + Dexterity modifier + Charisma modifier without a shield (usable if better than your armor); two proficient natural weapons using Charisma that deal 1d10 bludgeoning, piercing, or slashing (your choice); two attacks per Attack action (not stacking with Extra Attack); and use of the familiar's actions and movement. When it ends the familiar is dismissed and can't be summoned again until a short or long rest.",
+      "choice": null
+     },
+     {
+      "name": "Grand Hex: Poison Apple",
+      "desc": "As an action, create a magic apple. Eating it as an action heals you for twice your witch level + Charisma modifier, one expended slot of 5th level or lower, and ends blinded, deafened, poisoned, or paralyzed (paralysis only if fed to you as an action). Anyone else who eats it gets no benefit and makes a Wisdom save with disadvantage or is poisoned for up to 24 hours, losing 4d8 hit points per hour (unavoidable); if that would drop it to 0 it stays at 1 and sleeps unconscious for up to 7 days unless remove curse or similar wakes it. The apple goes inert after 24 hours. Once per long rest.",
+      "choice": null
+     },
+     {
+      "name": "Grand Hex: Possession",
+      "desc": "As an action, your body dematerializes as you attempt to possess a visible Large or smaller creature within 10 feet; it makes a Charisma save, succeeding automatically if its CR exceeds your witch level. On a failure it is incapacitated and you control it while it stays aware; you can't be targeted, keep your Intelligence, Wisdom, Charisma, and alignment, and use its other statistics but not its knowledge, class features, or proficiencies. You count as an Undead spirit for effects that end possession and reappear within 5 feet if expelled. Lasts 1 hour, until the body hits 0 hit points, or until magic forces you out. Once per long rest.",
+      "choice": null
+     },
+     {
+      "name": "Grand Hex: War Hex",
+      "desc": "After casting a single-target hex, you may spend your bonus action casting a cantrip at that same creature.",
+      "choice": null
+     },
+     {
+      "name": "Grand Hex: Witch's Broom",
+      "desc": "As an action, enchant one mundane object (broom, cauldron, rug) to carry you: a 60-foot flying speed while holding it, unless you wear medium or heavy armor or carry a shield. Enchanting another object ends the previous one.",
+      "choice": null
+     },
+     {
+      "name": "Grand Hex: Witch's Hut",
+      "desc": "A 24-hour ritual animates a structure that fits in a 15-foot cube as a Huge object (as animate objects) that walks on magical legs at your command. Its door opens to an extradimensional dwelling (as magnificent mansion) from which you can steer it; if the structure is destroyed the dwelling survives and occupants are ejected near the entrance. Once per long rest, as an action, teleport the structure to a space you can see within 60 feet. Repeating the ritual moves the enchantment to a new structure.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 12,
+    "features": [
+     {
+      "name": "Ability Score Improvement",
+      "desc": "Raise one ability score by 2 or two scores by 1 each, to a maximum of 20.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 13,
+    "features": [
+     {
+      "name": "Grand Hex",
+      "desc": "You learn an additional grand hex.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 14,
+    "features": [
+     {
+      "name": "Craft feature",
+      "desc": "You gain a feature from your Witch's Craft.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 15,
+    "features": [
+     {
+      "name": "Grand Hex",
+      "desc": "You learn an additional grand hex.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 16,
+    "features": [
+     {
+      "name": "Ability Score Improvement",
+      "desc": "Raise one ability score by 2 or two scores by 1 each, to a maximum of 20.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 18,
+    "features": [
+     {
+      "name": "Grand Hex",
+      "desc": "You learn an additional grand hex.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 19,
+    "features": [
+     {
+      "name": "Ability Score Improvement",
+      "desc": "Raise one ability score by 2 or two scores by 1 each, to a maximum of 20.",
+      "choice": null
+     }
+    ]
+   },
+   {
+    "level": 20,
+    "features": [
+     {
+      "name": "Hexmaster",
+      "desc": "Creatures make their saving throws against your hexes with disadvantage.",
+      "choice": null
+     }
+    ]
+   }
+  ],
+  "progression": [
+   {
+    "level": 1,
+    "prof_bonus": 2,
+    "features": [
+     "Spellcasting: Witch",
+     "Witch's Curse",
+     "Hexes"
+    ],
+    "class_specific": {
+     "hexes_known": 2
+    },
+    "spellcasting": {
+     "cantrips_known": 4,
+     "spells_known": 2,
+     "spell_slots_level_1": 2,
+     "spell_slots_level_2": 0,
+     "spell_slots_level_3": 0,
+     "spell_slots_level_4": 0,
+     "spell_slots_level_5": 0,
+     "spell_slots_level_6": 0,
+     "spell_slots_level_7": 0,
+     "spell_slots_level_8": 0,
+     "spell_slots_level_9": 0
+    }
+   },
+   {
+    "level": 2,
+    "prof_bonus": 2,
+    "features": [
+     "Cackle",
+     "Familiar"
+    ],
+    "class_specific": {
+     "hexes_known": 3
+    },
+    "spellcasting": {
+     "cantrips_known": 4,
+     "spells_known": 3,
+     "spell_slots_level_1": 3,
+     "spell_slots_level_2": 0,
+     "spell_slots_level_3": 0,
+     "spell_slots_level_4": 0,
+     "spell_slots_level_5": 0,
+     "spell_slots_level_6": 0,
+     "spell_slots_level_7": 0,
+     "spell_slots_level_8": 0,
+     "spell_slots_level_9": 0
+    }
+   },
+   {
+    "level": 3,
+    "prof_bonus": 2,
+    "features": [
+     "Witch's Craft"
+    ],
+    "class_specific": {
+     "hexes_known": 3
+    },
+    "spellcasting": {
+     "cantrips_known": 4,
+     "spells_known": 4,
+     "spell_slots_level_1": 4,
+     "spell_slots_level_2": 2,
+     "spell_slots_level_3": 0,
+     "spell_slots_level_4": 0,
+     "spell_slots_level_5": 0,
+     "spell_slots_level_6": 0,
+     "spell_slots_level_7": 0,
+     "spell_slots_level_8": 0,
+     "spell_slots_level_9": 0
+    }
+   },
+   {
+    "level": 4,
+    "prof_bonus": 2,
+    "features": [
+     "Ability Score Improvement"
+    ],
+    "class_specific": {
+     "hexes_known": 3
+    },
+    "spellcasting": {
+     "cantrips_known": 5,
+     "spells_known": 5,
+     "spell_slots_level_1": 4,
+     "spell_slots_level_2": 3,
+     "spell_slots_level_3": 0,
+     "spell_slots_level_4": 0,
+     "spell_slots_level_5": 0,
+     "spell_slots_level_6": 0,
+     "spell_slots_level_7": 0,
+     "spell_slots_level_8": 0,
+     "spell_slots_level_9": 0
+    }
+   },
+   {
+    "level": 5,
+    "prof_bonus": 3,
+    "features": [
+     "Insidious Spell"
+    ],
+    "class_specific": {
+     "hexes_known": 4
+    },
+    "spellcasting": {
+     "cantrips_known": 5,
+     "spells_known": 6,
+     "spell_slots_level_1": 4,
+     "spell_slots_level_2": 3,
+     "spell_slots_level_3": 2,
+     "spell_slots_level_4": 0,
+     "spell_slots_level_5": 0,
+     "spell_slots_level_6": 0,
+     "spell_slots_level_7": 0,
+     "spell_slots_level_8": 0,
+     "spell_slots_level_9": 0
+    }
+   },
+   {
+    "level": 6,
+    "prof_bonus": 3,
+    "features": [
+     "Craft feature"
+    ],
+    "class_specific": {
+     "hexes_known": 4
+    },
+    "spellcasting": {
+     "cantrips_known": 5,
+     "spells_known": 7,
+     "spell_slots_level_1": 4,
+     "spell_slots_level_2": 3,
+     "spell_slots_level_3": 3,
+     "spell_slots_level_4": 0,
+     "spell_slots_level_5": 0,
+     "spell_slots_level_6": 0,
+     "spell_slots_level_7": 0,
+     "spell_slots_level_8": 0,
+     "spell_slots_level_9": 0
+    }
+   },
+   {
+    "level": 7,
+    "prof_bonus": 3,
+    "features": [
+     "Improved Familiar"
+    ],
+    "class_specific": {
+     "hexes_known": 4
+    },
+    "spellcasting": {
+     "cantrips_known": 5,
+     "spells_known": 8,
+     "spell_slots_level_1": 4,
+     "spell_slots_level_2": 3,
+     "spell_slots_level_3": 3,
+     "spell_slots_level_4": 1,
+     "spell_slots_level_5": 0,
+     "spell_slots_level_6": 0,
+     "spell_slots_level_7": 0,
+     "spell_slots_level_8": 0,
+     "spell_slots_level_9": 0
+    }
+   },
+   {
+    "level": 8,
+    "prof_bonus": 3,
+    "features": [
+     "Ability Score Improvement"
+    ],
+    "class_specific": {
+     "hexes_known": 4
+    },
+    "spellcasting": {
+     "cantrips_known": 5,
+     "spells_known": 9,
+     "spell_slots_level_1": 4,
+     "spell_slots_level_2": 3,
+     "spell_slots_level_3": 3,
+     "spell_slots_level_4": 2,
+     "spell_slots_level_5": 0,
+     "spell_slots_level_6": 0,
+     "spell_slots_level_7": 0,
+     "spell_slots_level_8": 0,
+     "spell_slots_level_9": 0
+    }
+   },
+   {
+    "level": 9,
+    "prof_bonus": 4,
+    "features": [
+     "Dying Curse"
+    ],
+    "class_specific": {
+     "hexes_known": 5
+    },
+    "spellcasting": {
+     "cantrips_known": 5,
+     "spells_known": 10,
+     "spell_slots_level_1": 4,
+     "spell_slots_level_2": 3,
+     "spell_slots_level_3": 3,
+     "spell_slots_level_4": 3,
+     "spell_slots_level_5": 1,
+     "spell_slots_level_6": 0,
+     "spell_slots_level_7": 0,
+     "spell_slots_level_8": 0,
+     "spell_slots_level_9": 0
+    }
+   },
+   {
+    "level": 10,
+    "prof_bonus": 4,
+    "features": [
+     "Craft feature"
+    ],
+    "class_specific": {
+     "hexes_known": 5
+    },
+    "spellcasting": {
+     "cantrips_known": 6,
+     "spells_known": 11,
+     "spell_slots_level_1": 4,
+     "spell_slots_level_2": 3,
+     "spell_slots_level_3": 3,
+     "spell_slots_level_4": 3,
+     "spell_slots_level_5": 2,
+     "spell_slots_level_6": 0,
+     "spell_slots_level_7": 0,
+     "spell_slots_level_8": 0,
+     "spell_slots_level_9": 0
+    }
+   },
+   {
+    "level": 11,
+    "prof_bonus": 4,
+    "features": [
+     "Grand Hex"
+    ],
+    "class_specific": {
+     "hexes_known": 5
+    },
+    "spellcasting": {
+     "cantrips_known": 6,
+     "spells_known": 12,
+     "spell_slots_level_1": 4,
+     "spell_slots_level_2": 3,
+     "spell_slots_level_3": 3,
+     "spell_slots_level_4": 3,
+     "spell_slots_level_5": 2,
+     "spell_slots_level_6": 1,
+     "spell_slots_level_7": 0,
+     "spell_slots_level_8": 0,
+     "spell_slots_level_9": 0
+    }
+   },
+   {
+    "level": 12,
+    "prof_bonus": 4,
+    "features": [
+     "Ability Score Improvement"
+    ],
+    "class_specific": {
+     "hexes_known": 5
+    },
+    "spellcasting": {
+     "cantrips_known": 6,
+     "spells_known": 12,
+     "spell_slots_level_1": 4,
+     "spell_slots_level_2": 3,
+     "spell_slots_level_3": 3,
+     "spell_slots_level_4": 3,
+     "spell_slots_level_5": 2,
+     "spell_slots_level_6": 1,
+     "spell_slots_level_7": 0,
+     "spell_slots_level_8": 0,
+     "spell_slots_level_9": 0
+    }
+   },
+   {
+    "level": 13,
+    "prof_bonus": 5,
+    "features": [
+     "Grand Hex"
+    ],
+    "class_specific": {
+     "hexes_known": 6
+    },
+    "spellcasting": {
+     "cantrips_known": 6,
+     "spells_known": 13,
+     "spell_slots_level_1": 4,
+     "spell_slots_level_2": 3,
+     "spell_slots_level_3": 3,
+     "spell_slots_level_4": 3,
+     "spell_slots_level_5": 2,
+     "spell_slots_level_6": 1,
+     "spell_slots_level_7": 1,
+     "spell_slots_level_8": 0,
+     "spell_slots_level_9": 0
+    }
+   },
+   {
+    "level": 14,
+    "prof_bonus": 5,
+    "features": [
+     "Craft feature"
+    ],
+    "class_specific": {
+     "hexes_known": 6
+    },
+    "spellcasting": {
+     "cantrips_known": 6,
+     "spells_known": 13,
+     "spell_slots_level_1": 4,
+     "spell_slots_level_2": 3,
+     "spell_slots_level_3": 3,
+     "spell_slots_level_4": 3,
+     "spell_slots_level_5": 2,
+     "spell_slots_level_6": 1,
+     "spell_slots_level_7": 1,
+     "spell_slots_level_8": 0,
+     "spell_slots_level_9": 0
+    }
+   },
+   {
+    "level": 15,
+    "prof_bonus": 5,
+    "features": [
+     "Grand Hex"
+    ],
+    "class_specific": {
+     "hexes_known": 6
+    },
+    "spellcasting": {
+     "cantrips_known": 6,
+     "spells_known": 14,
+     "spell_slots_level_1": 4,
+     "spell_slots_level_2": 3,
+     "spell_slots_level_3": 3,
+     "spell_slots_level_4": 3,
+     "spell_slots_level_5": 2,
+     "spell_slots_level_6": 1,
+     "spell_slots_level_7": 1,
+     "spell_slots_level_8": 1,
+     "spell_slots_level_9": 0
+    }
+   },
+   {
+    "level": 16,
+    "prof_bonus": 5,
+    "features": [
+     "Ability Score Improvement"
+    ],
+    "class_specific": {
+     "hexes_known": 6
+    },
+    "spellcasting": {
+     "cantrips_known": 6,
+     "spells_known": 14,
+     "spell_slots_level_1": 4,
+     "spell_slots_level_2": 3,
+     "spell_slots_level_3": 3,
+     "spell_slots_level_4": 3,
+     "spell_slots_level_5": 2,
+     "spell_slots_level_6": 1,
+     "spell_slots_level_7": 1,
+     "spell_slots_level_8": 1,
+     "spell_slots_level_9": 0
+    }
+   },
+   {
+    "level": 17,
+    "prof_bonus": 6,
+    "features": [],
+    "class_specific": {
+     "hexes_known": 7
+    },
+    "spellcasting": {
+     "cantrips_known": 6,
+     "spells_known": 15,
+     "spell_slots_level_1": 4,
+     "spell_slots_level_2": 3,
+     "spell_slots_level_3": 3,
+     "spell_slots_level_4": 3,
+     "spell_slots_level_5": 2,
+     "spell_slots_level_6": 1,
+     "spell_slots_level_7": 1,
+     "spell_slots_level_8": 1,
+     "spell_slots_level_9": 1
+    }
+   },
+   {
+    "level": 18,
+    "prof_bonus": 6,
+    "features": [
+     "Grand Hex"
+    ],
+    "class_specific": {
+     "hexes_known": 7
+    },
+    "spellcasting": {
+     "cantrips_known": 6,
+     "spells_known": 15,
+     "spell_slots_level_1": 4,
+     "spell_slots_level_2": 3,
+     "spell_slots_level_3": 3,
+     "spell_slots_level_4": 3,
+     "spell_slots_level_5": 3,
+     "spell_slots_level_6": 1,
+     "spell_slots_level_7": 1,
+     "spell_slots_level_8": 1,
+     "spell_slots_level_9": 1
+    }
+   },
+   {
+    "level": 19,
+    "prof_bonus": 6,
+    "features": [
+     "Ability Score Improvement"
+    ],
+    "class_specific": {
+     "hexes_known": 7
+    },
+    "spellcasting": {
+     "cantrips_known": 6,
+     "spells_known": 15,
+     "spell_slots_level_1": 4,
+     "spell_slots_level_2": 3,
+     "spell_slots_level_3": 3,
+     "spell_slots_level_4": 3,
+     "spell_slots_level_5": 3,
+     "spell_slots_level_6": 2,
+     "spell_slots_level_7": 1,
+     "spell_slots_level_8": 1,
+     "spell_slots_level_9": 1
+    }
+   },
+   {
+    "level": 20,
+    "prof_bonus": 6,
+    "features": [
+     "Hexmaster"
+    ],
+    "class_specific": {
+     "hexes_known": 7
+    },
+    "spellcasting": {
+     "cantrips_known": 6,
+     "spells_known": 15,
+     "spell_slots_level_1": 4,
+     "spell_slots_level_2": 3,
+     "spell_slots_level_3": 3,
+     "spell_slots_level_4": 3,
+     "spell_slots_level_5": 3,
+     "spell_slots_level_6": 2,
+     "spell_slots_level_7": 2,
+     "spell_slots_level_8": 1,
+     "spell_slots_level_9": 1
+    }
+   }
+  ]
  }
 ]

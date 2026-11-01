@@ -3578,5 +3578,525 @@
     "role": "Blaster / Utility",
     "description": "Book Learning: Touching a text for 1 minute grants a working knowledge of it unless coded.",
     "coverage": "Complete"
+  },
+  {
+    "class": "Gunslinger",
+    "subclass": "Deadeye",
+    "partnered": true,
+    "partner": "Mage Hand Press",
+    "source": "The Gunslinger Class: Valda's Spire of Secrets",
+    "role": "Ranged / Striker",
+    "description": "",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Gunslinger",
+    "subclass": "High Roller",
+    "partnered": true,
+    "partner": "Mage Hand Press",
+    "source": "The Gunslinger Class: Valda's Spire of Secrets",
+    "role": "Ranged / Striker",
+    "description": "",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Gunslinger",
+    "subclass": "Secret Agent",
+    "partnered": true,
+    "partner": "Mage Hand Press",
+    "source": "The Gunslinger Class: Valda's Spire of Secrets",
+    "role": "Ranged / Stealth",
+    "description": "",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Gunslinger",
+    "subclass": "Spellslinger",
+    "partnered": true,
+    "partner": "Mage Hand Press",
+    "source": "The Gunslinger Class: Valda's Spire of Secrets",
+    "role": "Ranged / Striker",
+    "description": "",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Gunslinger",
+    "subclass": "Trick Shot",
+    "partnered": true,
+    "partner": "Mage Hand Press",
+    "source": "The Gunslinger Class: Valda's Spire of Secrets",
+    "role": "Ranged / Striker",
+    "description": "",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Gunslinger",
+    "subclass": "White Hat",
+    "partnered": true,
+    "partner": "Mage Hand Press",
+    "source": "The Gunslinger Class: Valda's Spire of Secrets",
+    "role": "Ranged / Support",
+    "description": "",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Illrigger",
+    "subclass": "Sanguine Knight",
+    "partnered": true,
+    "partner": "MCDM",
+    "source": "The Illrigger",
+    "role": "Support / Healing",
+    "description": "",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Investigator",
+    "subclass": "Antiquarian",
+    "partnered": true,
+    "partner": "Mage Hand Press",
+    "source": "Valda's Spire of Secrets",
+    "role": "Utility / Striker",
+    "description": "",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Investigator",
+    "subclass": "Archivist",
+    "partnered": true,
+    "partner": "Mage Hand Press",
+    "source": "Valda's Spire of Secrets",
+    "role": "Utility / Control",
+    "description": "",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Investigator",
+    "subclass": "Detective",
+    "partnered": true,
+    "partner": "Mage Hand Press",
+    "source": "Valda's Spire of Secrets",
+    "role": "Utility / Face",
+    "description": "",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Investigator",
+    "subclass": "Exterminator",
+    "partnered": true,
+    "partner": "Mage Hand Press",
+    "source": "Valda's Spire of Secrets",
+    "role": "Melee / Striker",
+    "description": "",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Investigator",
+    "subclass": "Inquisitor",
+    "partnered": true,
+    "partner": "Mage Hand Press",
+    "source": "Valda's Spire of Secrets",
+    "role": "Melee / Debuffer",
+    "description": "",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Investigator",
+    "subclass": "Medium",
+    "partnered": true,
+    "partner": "Mage Hand Press",
+    "source": "Valda's Spire of Secrets",
+    "role": "Support / Buffer",
+    "description": "",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Investigator",
+    "subclass": "Occultist",
+    "partnered": true,
+    "partner": "Mage Hand Press",
+    "source": "Valda's Spire of Secrets",
+    "role": "Ranged / Striker",
+    "description": "",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Investigator",
+    "subclass": "Spy",
+    "partnered": true,
+    "partner": "Mage Hand Press",
+    "source": "Valda's Spire of Secrets",
+    "role": "Stealth / Face",
+    "description": "",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Magus",
+    "subclass": "Arcane Order",
+    "partnered": true,
+    "partner": "Sterling Vermin",
+    "source": "The Magus Class",
+    "role": "Control / Utility",
+    "description": "",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Magus",
+    "subclass": "Heaven's Guard",
+    "partnered": true,
+    "partner": "Sterling Vermin",
+    "source": "The Magus Class",
+    "role": "Tank / Healing",
+    "description": "",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Magus",
+    "subclass": "Knights Stygian",
+    "partnered": true,
+    "partner": "Sterling Vermin",
+    "source": "The Magus Class",
+    "role": "Striker / Debuffer",
+    "description": "",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Magus",
+    "subclass": "Shadow Court",
+    "partnered": true,
+    "partner": "Sterling Vermin",
+    "source": "The Magus Class",
+    "role": "Stealth / Skirmisher",
+    "description": "",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Magus",
+    "subclass": "Sidereal Cabal",
+    "partnered": true,
+    "partner": "Sterling Vermin",
+    "source": "The Magus Class",
+    "role": "Support / Buffer",
+    "description": "",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Magus",
+    "subclass": "Sylvan Circle",
+    "partnered": true,
+    "partner": "Sterling Vermin",
+    "source": "The Magus Class",
+    "role": "Support / Healing",
+    "description": "",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Pugilist",
+    "subclass": "Dog and Hound",
+    "partnered": true,
+    "partner": "Sterling Vermin",
+    "source": "The Pugilist Class",
+    "role": "Melee / Summoner",
+    "description": "",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Pugilist",
+    "subclass": "Hand of Dread",
+    "partnered": true,
+    "partner": "Sterling Vermin",
+    "source": "The Pugilist Class",
+    "role": "Melee / Striker",
+    "description": "",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Pugilist",
+    "subclass": "Piss and Vinegar",
+    "partnered": true,
+    "partner": "Sterling Vermin",
+    "source": "The Pugilist Class",
+    "role": "Melee / Tank",
+    "description": "",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Pugilist",
+    "subclass": "Street Saint",
+    "partnered": true,
+    "partner": "Sterling Vermin",
+    "source": "The Pugilist Class",
+    "role": "Melee / Healing",
+    "description": "",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Pugilist",
+    "subclass": "Squared Circle",
+    "partnered": true,
+    "partner": "Sterling Vermin",
+    "source": "The Pugilist Class",
+    "role": "Grappler / Control",
+    "description": "",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Pugilist",
+    "subclass": "Sweet Science",
+    "partnered": true,
+    "partner": "Sterling Vermin",
+    "source": "The Pugilist Class",
+    "role": "Melee / Striker",
+    "description": "",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Warden",
+    "subclass": "Bloodwrath Guardian",
+    "partnered": true,
+    "partner": "Mage Hand Press",
+    "source": "Valda's Spire of Secrets",
+    "role": "Melee / Striker",
+    "description": "",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Warden",
+    "subclass": "Grey Watchman",
+    "partnered": true,
+    "partner": "Mage Hand Press",
+    "source": "Valda's Spire of Secrets",
+    "role": "Melee / Tank",
+    "description": "",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Warden",
+    "subclass": "Nightgaunt",
+    "partnered": true,
+    "partner": "Mage Hand Press",
+    "source": "Valda's Spire of Secrets",
+    "role": "Melee / Tank",
+    "description": "",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Warden",
+    "subclass": "Soulblood Shaman",
+    "partnered": true,
+    "partner": "Mage Hand Press",
+    "source": "Valda's Spire of Secrets",
+    "role": "Tank / Utility",
+    "description": "",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Warden",
+    "subclass": "Stoneheart Defender",
+    "partnered": true,
+    "partner": "Mage Hand Press",
+    "source": "Valda's Spire of Secrets",
+    "role": "Tank / Control",
+    "description": "",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Warden",
+    "subclass": "Storm Sentinel",
+    "partnered": true,
+    "partner": "Mage Hand Press",
+    "source": "Valda's Spire of Secrets",
+    "role": "Tank / Striker",
+    "description": "",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Warden",
+    "subclass": "Verdant Protector",
+    "partnered": true,
+    "partner": "Mage Hand Press",
+    "source": "Valda's Spire of Secrets",
+    "role": "Tank / Control",
+    "description": "",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Warmage",
+    "subclass": "House of Bishops",
+    "partnered": true,
+    "partner": "Mage Hand Press",
+    "source": "Valda's Spire of Secrets",
+    "role": "Striker / Ranged",
+    "description": "",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Warmage",
+    "subclass": "House of Cards",
+    "partnered": true,
+    "partner": "Mage Hand Press",
+    "source": "Valda's Spire of Secrets",
+    "role": "Striker / Ranged",
+    "description": "",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Warmage",
+    "subclass": "House of Dice",
+    "partnered": true,
+    "partner": "Mage Hand Press",
+    "source": "Valda's Spire of Secrets",
+    "role": "Striker / Utility",
+    "description": "",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Warmage",
+    "subclass": "House of Kings",
+    "partnered": true,
+    "partner": "Mage Hand Press",
+    "source": "Valda's Spire of Secrets",
+    "role": "Support / Buffer",
+    "description": "",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Warmage",
+    "subclass": "House of Knights",
+    "partnered": true,
+    "partner": "Mage Hand Press",
+    "source": "Valda's Spire of Secrets",
+    "role": "Melee / Tank",
+    "description": "",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Warmage",
+    "subclass": "House of Lancers",
+    "partnered": true,
+    "partner": "Mage Hand Press",
+    "source": "Valda's Spire of Secrets",
+    "role": "Melee / Skirmisher",
+    "description": "",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Warmage",
+    "subclass": "House of Pawns",
+    "partnered": true,
+    "partner": "Mage Hand Press",
+    "source": "Valda's Spire of Secrets",
+    "role": "Ranged / Striker",
+    "description": "",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Warmage",
+    "subclass": "House of Rooks",
+    "partnered": true,
+    "partner": "Mage Hand Press",
+    "source": "Valda's Spire of Secrets",
+    "role": "Stealth / Skirmisher",
+    "description": "",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Witch",
+    "subclass": "Black Magic",
+    "partnered": true,
+    "partner": "Mage Hand Press",
+    "source": "Valda's Spire of Secrets",
+    "role": "Debuffer / Summoner",
+    "description": "",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Witch",
+    "subclass": "Blood Magic",
+    "partnered": true,
+    "partner": "Mage Hand Press",
+    "source": "Valda's Spire of Secrets",
+    "role": "Debuffer / Striker",
+    "description": "",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Witch",
+    "subclass": "Green Magic",
+    "partnered": true,
+    "partner": "Mage Hand Press",
+    "source": "Valda's Spire of Secrets",
+    "role": "Summoner / Support",
+    "description": "",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Witch",
+    "subclass": "Purple Magic",
+    "partnered": true,
+    "partner": "Mage Hand Press",
+    "source": "Valda's Spire of Secrets",
+    "role": "Control / Debuffer",
+    "description": "",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Witch",
+    "subclass": "Red Magic",
+    "partnered": true,
+    "partner": "Mage Hand Press",
+    "source": "Valda's Spire of Secrets",
+    "role": "Striker / Ranged",
+    "description": "",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Witch",
+    "subclass": "Steel Magic",
+    "partnered": true,
+    "partner": "Mage Hand Press",
+    "source": "Valda's Spire of Secrets",
+    "role": "Melee / Striker",
+    "description": "",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Witch",
+    "subclass": "Tea Magic",
+    "partnered": true,
+    "partner": "Mage Hand Press",
+    "source": "Valda's Spire of Secrets",
+    "role": "Support / Utility",
+    "description": "",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Witch",
+    "subclass": "Technicolor Magic",
+    "partnered": true,
+    "partner": "Mage Hand Press",
+    "source": "Valda's Spire of Secrets",
+    "role": "Support / Face",
+    "description": "",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Witch",
+    "subclass": "White Magic",
+    "partnered": true,
+    "partner": "Mage Hand Press",
+    "source": "Valda's Spire of Secrets",
+    "role": "Healing / Support",
+    "description": "",
+    "coverage": "Complete"
+  },
+  {
+    "class": "Fighter",
+    "subclass": "Pugilist",
+    "partnered": true,
+    "partner": "Kobold Press",
+    "source": "Tome of Heroes",
+    "role": "Melee / Tank",
+    "description": "",
+    "coverage": "Complete"
   }
 ]

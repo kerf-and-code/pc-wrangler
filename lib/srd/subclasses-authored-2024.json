@@ -10838,5 +10838,1203 @@
         ]
       }
     ]
+  },
+  {
+    "class": "Monster Hunter",
+    "name": "Carver Guild",
+    "key": "kc-ghpg_carver-guild",
+    "edition": "2024",
+    "source": "kc",
+    "book": "Grim Hollow: Player's Guide",
+    "partner": "Grim Hollow",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Equipped for Battle",
+            "desc": "You become trained with Heavy armor."
+          },
+          {
+            "name": "Close Quarters",
+            "desc": "After you hit a creature with a Melee weapon attack roll, you can take a Reaction to add 2d6 damage of the weapon's type; the target then has Disadvantage on its next attack roll made before the start of your next turn. The extra damage rises to 4d6 at Monster Hunter level 11."
+          }
+        ]
+      },
+      {
+        "level": 7,
+        "features": [
+          {
+            "name": "True Grit",
+            "desc": "Saving throws you make to avoid or end the Frightened condition have Advantage, and creature types in your Monster Grimoire can't give you the Frightened condition at all. Also, whenever an attack you make as part of a Reaction hits, you can end the Frightened condition on yourself or on one creature within 60 feet that can see you."
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Terrorize the Terrors",
+            "desc": "Whenever an attack you make as part of a Reaction hits a creature, you can make it succeed on a Wisdom saving throw (DC 8 + your Intelligence modifier + your Proficiency Bonus) or have the Frightened condition until the end of your next turn."
+          }
+        ]
+      },
+      {
+        "level": 15,
+        "features": [
+          {
+            "name": "Deadly Redirect",
+            "desc": "Close Quarters now deals 6d6 extra damage, and a creature you damage with it has Disadvantage on every attack roll it makes until the end of your next turn."
+          }
+        ]
+      },
+      {
+        "level": 18,
+        "features": [
+          {
+            "name": "Controlled Footwork",
+            "desc": "You can take two Reactions per round rather than one."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Monster Hunter",
+    "name": "Devourer Guild",
+    "key": "kc-ghpg_devourer-guild",
+    "edition": "2024",
+    "source": "kc",
+    "book": "Grim Hollow: Player's Guide",
+    "partner": "Grim Hollow",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Alchemical Gastronomy",
+            "desc": "You gain proficiency with Alchemist's Supplies and Cook's Utensils."
+          },
+          {
+            "name": "Transmuting Metabolism",
+            "desc": "Salvaging: as a Utilize action, harvest one portion from a creature's physical remains (one portion per creature), noting its creature type; the portion spoils when you finish a Long Rest. Consuming: as a Bonus Action, eat a portion and pick a mutation allowed by that creature's type (see Mutations). You can benefit from portions a number of times equal to 1 + your Intelligence modifier (minimum 1), regained on a Long Rest; several mutations can be active at once, but never two copies of the same one."
+          },
+          {
+            "name": "Mutations",
+            "desc": "Acid Blood (Aberration, Ooze, Plant): for 1 minute, a creature within 5 feet that hits you with an attack takes 2d6 Acid damage. Acumen (Celestial, Fiend, Fey): for 1 hour, Advantage on Wisdom (Insight) checks plus Advantage on checks with your choice of Intimidation or Persuasion. Awareness (All): for 10 minutes, you know where creatures of the eaten creature's type are within 60 feet unless they have Total Cover. Flight (Celestial, Dragon, Elemental): for 10 minutes, Fly Speed equal to your Speed; doesn't work while you wear Heavy armor. Infused (Dragon, Elemental, Ooze): for 10 minutes, your hits can deal Acid, Cold, Fire, Lightning, Poison, or Thunder damage (chosen on eating) in place of their normal type. Invisibility (Fey, Fiend, Undead): for 10 minutes, you have the Invisible condition, ending early if you attack, cast a spell, or dismiss it (no action). Might (Beast, Construct, Giant): for 1 minute, Advantage on Strength checks, Strength saving throws, and Strength-based attack rolls, and those attacks deal 1d6 extra damage of the attack's type. Natural Weapons (Beast, Dragon, Monstrosity): for 1 hour, your Unarmed Strikes can deal 1d6 Piercing or Slashing damage (chosen per attack), can use Dexterity in place of Strength, and you can make one as a Bonus Action. Regeneration (Beast, Giant, Monstrosity): regain 2d8 + your Monster Hunter level Hit Points. Resistance (Construct, Elemental, Undead): for 1 minute, Resistance to Bludgeoning, Piercing, and Slashing damage. Telepathy (Aberration, Fiend, Plant): for 1 hour, you can speak telepathically in a language you know to any creature you see within 60 feet (it understands only if it knows that language), and you have Resistance to Psychic damage."
+          }
+        ]
+      },
+      {
+        "level": 7,
+        "features": [
+          {
+            "name": "Synchronized Response",
+            "desc": "Eating a monster portion also gives you, for 1 minute, an extra 1d6 damage (of the weapon's or Unarmed Strike's type) on attacks you make as part of a Reaction."
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Gnawing Hunger",
+            "desc": "When you deal damage with a melee weapon attack or Unarmed Strike, you can gain Temporary Hit Points equal to half the damage, or equal to the full damage if the target's type is in your Monster Grimoire. Usable a number of times equal to your Intelligence modifier (minimum 1), regained on a Short or Long Rest."
+          }
+        ]
+      },
+      {
+        "level": 15,
+        "features": [
+          {
+            "name": "Alchemical Decoctions",
+            "desc": "With Alchemist's Supplies, 1 hour, and 20 GP of alchemical ingredients, you turn a monster portion into a decoction, a magic potion granting that portion's benefits. Up to 4 unconsumed decoctions can exist at once, and you can destroy one as a Utilize action. Another creature can safely drink 1 decoction, but each further decoction it drinks before finishing a Long Rest gives it 1 Exhaustion level."
+          }
+        ]
+      },
+      {
+        "level": 18,
+        "features": [
+          {
+            "name": "Acquired Taste",
+            "desc": "You can safely consume 1 more portion than before, and for 1 minute after eating a portion you have Advantage on attack rolls made as part of a Reaction."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Monster Hunter",
+    "name": "Occultist Guild",
+    "key": "kc-ghpg_occultist-guild",
+    "edition": "2024",
+    "source": "kc",
+    "book": "Grim Hollow: Player's Guide",
+    "partner": "Grim Hollow",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Acolyte of the Occult",
+            "desc": "You gain proficiency in Arcana."
+          },
+          {
+            "name": "Spellcasting",
+            "desc": "You cast Wizard spells using Intelligence, with an Arcane Focus as your Spellcasting Focus, and regain all slots on a Long Rest. Cantrips: two Wizard cantrips (a third at Monster Hunter level 10); swap one when you gain a Monster Hunter level. Prepared spells are Wizard spells of levels you have slots for (Burning Hands, Detect Magic, and Protection from Evil and Good are suggested at the start), and you may swap one per Monster Hunter level gained. Table by Monster Hunter level (prepared spells; slots 1st/2nd/3rd/4th): 3: 3; 2. 4 to 6: 4; 3. 7: 5; 4/2. 8 and 9: 6; 4/2. 10: 7; 4/3. 11 and 12: 8; 4/3. 13: 9; 4/3/2. 14 and 15: 10; 4/3/2. 16: 11; 4/3/2. 17 and 18: 11; 4/3/3. 19: 12; 4/3/3/1. 20: 13; 4/3/3/1."
+          },
+          {
+            "name": "Arcane Interference",
+            "desc": "Spells cast by creature types in your Monster Grimoire give you Advantage on your saving throws against them. Also, when a creature you can see within 60 feet casts a spell or makes a spell attack, you can trigger Studied Response against it before the spell happens."
+          }
+        ]
+      },
+      {
+        "level": 7,
+        "features": [
+          {
+            "name": "Mage Hunter",
+            "desc": "Spellcasting Humanoids count as a creature type in your Monster Grimoire. When you damage a Grimoire creature that is concentrating, it has Disadvantage on the Concentration save."
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Occult Knowledge",
+            "desc": "You can cast any prepared spell with the Ritual tag as a Ritual. You also learn two Ritual-tagged spells from any mix of the Cleric, Druid, and Wizard lists; at Monster Hunter level 14 you can swap one of them for a Ritual-tagged spell from any list."
+          }
+        ]
+      },
+      {
+        "level": 15,
+        "features": [
+          {
+            "name": "Magical Aegis",
+            "desc": "You project an invisible 20-foot Emanation (suppressed while you have the Incapacitated condition) in which you and your allies have Advantage on saving throws against spells cast by creature types in your Monster Grimoire. Counterspell is always prepared for you, and you can cast it once without a slot, regaining that use on a Long Rest."
+          }
+        ]
+      },
+      {
+        "level": 18,
+        "features": [
+          {
+            "name": "Arcane Response",
+            "desc": "Whenever you use Studied Response, you can also cast a spell with a casting time of an action that targets only the triggering creature."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Monster Hunter",
+    "name": "Trapper Guild",
+    "key": "kc-ghpg_trapper-guild",
+    "edition": "2024",
+    "source": "kc",
+    "book": "Grim Hollow: Player's Guide",
+    "partner": "Grim Hollow",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Sneaky and Crafty",
+            "desc": "You gain proficiency in Stealth and with Tinker's Tools."
+          },
+          {
+            "name": "Trapper Gadgets",
+            "desc": "During a Long Rest you can build two gadgets if you have materials and Tinker's Tools, and at other times you can build one with 1 hour of work and 20 GP of materials. Gadget save DC = 8 + your Intelligence modifier + your Proficiency Bonus. Dread Venom: oil for one Slashing or Piercing weapon or up to 10 such pieces of ammunition (1 minute to apply, lasts 8 hours); a creature damaged by it can't regain Hit Points until it finishes a Short or Long Rest. Elemental Ammunition: as a Bonus Action, imbue one piece of Longbow, Shortbow, or Crossbow ammunition with Acid, Cold, Fire, Lightning, Poison, or Thunder; a creature it damages takes 2d6 extra damage of that type; it's spent on a hit, reusable on a miss, and holds its charge 48 hours. Runic Bomb (single use): as a Bonus Action, throw it at a point you see within 60 feet to make a 20-foot-radius Sphere that spreads around corners, is Lightly Obscured, and lasts 1 minute or until strong wind disperses it; Bludgeoning, Piercing, and Slashing damage dealt to creatures inside becomes Force damage. Scorpion Anchor: fired from a Longbow, Shortbow, or Crossbow during an Attack action; on a hit the target has the Restrained condition, and it can take an action for a Strength (Athletics) check against your gadget DC to escape; destroyed when the target escapes or dies."
+          },
+          {
+            "name": "Trapper Gadgets (continued)",
+            "desc": "Terrain Cloak: worn over Light or Medium armor (donned and doffed like Light armor); creatures have Disadvantage on Wisdom (Perception) checks to see you; falls apart when you finish a Long Rest. Weretrap: as a Utilize action, place it in an unoccupied space within 5 feet; creatures within 30 feet need a Wisdom (Perception) check against your gadget DC, made with Disadvantage, to notice it. A creature entering its space makes a Dexterity saving throw, taking 3d10 Bludgeoning damage and the Prone condition on a failure, or half damage only on a success. It can instead be thrown as a Light, Finesse, Thrown ranged weapon (range 20/60 feet) dealing 3d10 Bludgeoning damage and the Prone condition on a hit. It is destroyed once triggered or thrown."
+          }
+        ]
+      },
+      {
+        "level": 7,
+        "features": [
+          {
+            "name": "Ambusher's Advantage",
+            "desc": "Add your Intelligence modifier to Initiative rolls. Enemies that include creature types in your Monster Grimoire can't surprise you."
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Agile Response",
+            "desc": "When a creature makes a melee attack roll against you, you can take a Reaction to give that roll Disadvantage and use Studied Response as part of the same Reaction. Hit or miss, you can then move up to half your Speed without provoking Opportunity Attacks."
+          }
+        ]
+      },
+      {
+        "level": 15,
+        "features": [
+          {
+            "name": "Monster-Hide Armor",
+            "desc": "You can craft Light or Medium armor (your choice) from monster parts; it works as that armor type and carries two modifications, and you can swap one each time you gain a Monster Hunter level. Modifications work only while it is worn. Options: Damage Resistance (Resistance to two of Acid, Cold, Fire, Lightning, Poison, Thunder); Elemental Charge (pick one of those types; your hits can deal that type instead of their normal type plus 1d6 extra of it); Hardened Defense (+2 AC); Phase Leap (Bonus Action teleport up to 60 feet to an unoccupied space you see, 3 uses per Long Rest); Regeneration (a pool of six d10s; as a Bonus Action spend one and heal its roll + your Constitution modifier, pool refills on a Long Rest); Stealthy (no Disadvantage on Dexterity (Stealth) checks from the armor, creatures have Disadvantage on Wisdom (Perception) checks to see you, and you have Advantage on Wisdom (Perception) checks to notice creatures)."
+          }
+        ]
+      },
+      {
+        "level": 18,
+        "features": [
+          {
+            "name": "Rapid Tinkerer",
+            "desc": "Twice per Long Rest, you can build a Trapper Gadget in 1 minute with no GP or components."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Gunslinger",
+    "name": "Deadeye",
+    "key": "kc-tgc_deadeye",
+    "edition": "2024",
+    "source": "kc",
+    "book": "The Gunslinger Class: Valda's Spire of Secrets",
+    "partner": "Mage Hand Press",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Eagle Eye",
+            "desc": "Maneuver. Once per turn when a ranged attack roll misses, spend 1 Risk Die and add it to the roll, which may turn the miss into a hit."
+          },
+          {
+            "name": "Sharpshooter's Stance",
+            "desc": "Being Prone doesn't give you Disadvantage on ranged attack rolls, and standing up from Prone costs you only 5 feet of movement."
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Concealed Position",
+            "desc": "While Prone you can take the Hide action without being Heavily Obscured or behind Three-Quarters or Total Cover; the resulting Invisible condition ends if you stop being Prone. A missed attack roll made while hidden doesn't give away your location."
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Reposition",
+            "desc": "Reaction when a creature misses you with an attack roll: stop being Prone and move up to half your Speed."
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Focused Shot",
+            "desc": "When you take the Attack action, you can make just one ranged weapon attack as a Focused Shot; it has Advantage, and a hit is a Critical Hit."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Gunslinger",
+    "name": "High Roller",
+    "key": "kc-tgc_high-roller",
+    "edition": "2024",
+    "source": "kc",
+    "book": "The Gunslinger Class: Valda's Spire of Secrets",
+    "partner": "Mage Hand Press",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Poker Face",
+            "desc": "Gain proficiency with all Gaming Sets and with one skill of your choice: Deception, Insight or Perception."
+          },
+          {
+            "name": "Liar's Dice",
+            "desc": "Maneuver. When you roll damage with a Ranged weapon, spend 1 Risk Die as a Bonus Action to roll in secret and announce any total. If the GM calls the bluff and you lied, the damage is halved; if you told the truth, it is doubled; if the GM doesn't call it, your announced total stands."
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Risky Business",
+            "desc": "Once per turn, when you make an attack roll against an enemy that doesn't already have Disadvantage, you may impose Disadvantage on it to regain one spent Risk Die."
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Risk Taker",
+            "desc": "Maverick Spirit and Skin of Your Teeth no longer cost a Risk Die for you; when used this way, roll a d6 in place of the Risk Die."
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Double or Nothing",
+            "desc": "After scoring a Critical Hit with a Ranged weapon, you may roll a d20: on 10 or higher roll the attack's damage dice four times in total instead of twice, but on 9 or lower the Critical Hit becomes an ordinary hit."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Gunslinger",
+    "name": "Secret Agent",
+    "key": "kc-tgc_secret-agent",
+    "edition": "2024",
+    "source": "kc",
+    "book": "The Gunslinger Class: Valda's Spire of Secrets",
+    "partner": "Mage Hand Press",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Operative Training",
+            "desc": "You learn the Concealed Shot cantrip (choose Intelligence, Wisdom or Charisma as its spellcasting ability when you take this subclass); it makes a touched Ranged weapon silent and its shots invisible in flight for 1 minute, and a hidden attack against a target 80 or more feet away doesn't reveal you. You also gain a Disguise Kit and Thieves' Tools with proficiency in both, plus proficiency in two of Deception, Investigation, Persuasion, Sleight of Hand or Stealth."
+          },
+          {
+            "name": "Parting Shot",
+            "desc": "Maneuver. After taking the Dash, Disengage or Dodge action on your turn, spend 1 Risk Die to make a ranged weapon attack as a Bonus Action, adding the die to its damage on a hit."
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Fieldcraft",
+            "desc": "With a Disguise Kit you can create and put on a Costume as a Bonus Action. On Charisma (Deception) and Charisma (Persuasion) checks, any d20 roll of 9 or lower counts as a 10."
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Exit Strategy",
+            "desc": "Reaction when you take damage: become Invisible until the start of your next turn and move up to 10 feet right away. Once per Short or Long Rest, or restore it by spending 1 Risk Die (no action)."
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "License to Kill",
+            "desc": "When you deal Ranged weapon damage, spend one or two Risk Dice and add them to the damage. Any die that rolls its maximum is rolled again and added without being spent, repeating on further maximums; the total number of Risk Dice added this way can't exceed your Proficiency Bonus."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Gunslinger",
+    "name": "Spellslinger",
+    "key": "kc-tgc_spellslinger",
+    "edition": "2024",
+    "source": "kc",
+    "book": "The Gunslinger Class: Valda's Spire of Secrets",
+    "partner": "Mage Hand Press",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Spellcasting",
+            "desc": "Intelligence-based Wizard spellcasting, using an Arcane Focus or a Ranged weapon as your focus. You know two Wizard cantrips (three at Gunslinger level 10) and may swap one per level gained. Prepared spells rise from 3 at level 3 to 13 at level 20, chosen from the Wizard list at levels you have slots for, with one swap per level gained. Slots return on a Long Rest and top out at level 4 slots (see the Spellslinger Spellcasting table: level 1 slots 2 at level 3, 3 at 4, 4 from 7; level 2 slots 2 at 7, 3 from 10; level 3 slots 2 at 13, 3 from 16; one level 4 slot at 19)."
+          },
+          {
+            "name": "Bang, You're Dead!",
+            "desc": "You learn the Finger Guns cantrip: as a Bonus Action your hand becomes a Simple Ranged weapon for 1 minute (range 60/240, rising to 90/360, 120/480 and 150/600 at character levels 5, 11 and 17; Slow mastery) that can attack with your spellcasting ability and deals 2d6 Force damage with no ability modifier. When a Finger Guns attack hits, you can spend 1 Risk Die as a Bonus Action to add it to the damage."
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Spellshot",
+            "desc": "When you take the Attack action, one of the attacks can be swapped for casting a Wizard cantrip with a casting time of an action."
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Counter-Mage",
+            "desc": "Your ranged attack rolls suppress, for that attack, spells affecting the target (such as Mage Armor) and the properties of magic items it wears or carries, and the target can't use a Reaction to cast spells like Shield against the attack or its damage. While a Gut Shot projectile from your Critical Hit is lodged, the target can't cast spells or take the Magic action and has Disadvantage on Concentration saves. When you fail a save against a spell or magical effect, you can use your Reaction to add 1d6 to it."
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Magic Bullet",
+            "desc": "Maneuver. When you make a spell attack roll, spend 1 Risk Die as a Bonus Action to make it a ranged weapon attack instead, adding the die to the attack roll; a hit deals the weapon's normal damage on top of the spell attack's effects."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Gunslinger",
+    "name": "Trick Shot",
+    "key": "kc-tgc_trick-shot",
+    "edition": "2024",
+    "source": "kc",
+    "book": "The Gunslinger Class: Valda's Spire of Secrets",
+    "partner": "Mage Hand Press",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Creative Trajectory",
+            "desc": "Half Cover and Three-Quarters Cover don't apply against your ranged weapon attacks."
+          },
+          {
+            "name": "Ricochet",
+            "desc": "Maneuver. When a ranged weapon attack misses, take a Bonus Action and spend 1 Risk Die to reroll the attack, adding the die; the new roll must be used."
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Fancy Gunplay",
+            "desc": "Once per turn on a Charisma (Performance) or Dexterity (Sleight of Hand) check made with one of your Ranged weapons, roll a Risk Die and add it without spending it. On your turn you can reload a weapon with the Reload property without using an action or Bonus Action."
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Deft Deflection",
+            "desc": "Maneuver. While holding a Ranged weapon, when an ally within 30 feet is hit by an attack, use your Reaction and spend 1 Risk Die to give that ally the Skin of Your Teeth benefit against the attack."
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Pinball Shot",
+            "desc": "Once on each of your turns after hitting with a ranged weapon attack, make an attack roll against a different creature within 30 feet of the first; each hit lets you continue to another new target within 30 feet, until you miss or have made five attacks in total, never hitting the same creature twice per use. Once per Short or Long Rest, or restore it by spending two Risk Dice (no action)."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Gunslinger",
+    "name": "White Hat",
+    "key": "kc-tgc_white-hat",
+    "edition": "2024",
+    "source": "kc",
+    "book": "The Gunslinger Class: Valda's Spire of Secrets",
+    "partner": "Mage Hand Press",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Lay Down the Law",
+            "desc": "Maneuver. Bonus Action, spend 1 Risk Die: an ally you can see within 60 feet gains Temporary Hit Points equal to the roll, and until the start of your next turn you can use your Reaction to make a ranged weapon attack against any creature that hits that ally with an attack."
+          },
+          {
+            "name": "Steely-Eyed Aura",
+            "desc": "You project a 10-foot Emanation in which you and your allies have Advantage on saves to avoid or end the Frightened condition. It is inactive while you are Incapacitated."
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Reach for the Skies",
+            "desc": "When you score a Critical Hit, you can demand surrender instead of lodging a projectile: the target must succeed on a Wisdom save against your maneuver save DC or be Frightened and Incapacitated for 1 minute. It repeats the save at the end of each of its turns, and the effect also ends if it takes damage or if you are Incapacitated or die."
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Long Arm of the Law",
+            "desc": "Once per turn when a ranged weapon attack hits a Large or smaller creature, you can hobble it: on its next turn it can't move unless it takes the Disengage action first."
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Gold Star Hero",
+            "desc": "Steely-Eyed Aura extends to 30 feet. Allies targeted by Lay Down the Law also gain Resistance to Bludgeoning, Piercing and Slashing damage until the start of your next turn. Creatures that fail the Reach for the Skies save are Stunned rather than Incapacitated."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Magus",
+    "name": "Arcane Order",
+    "key": "kc-tmc_arcane-order",
+    "edition": "2024",
+    "source": "kc",
+    "book": "The Magus Class",
+    "partner": "Sterling Vermin",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Amethyst Mark",
+            "desc": "Adds to your Mystic Mark. Aegis: Reaction when a willing creature you can see within 30 feet is hit by an attack, teleport to trade places with it; you take the attack instead, with Resistance to its damage. Enspell: once per turn on a weapon or Unarmed Strike hit, the target makes a Charisma save against your spell save DC or is teleported 10 feet horizontally in a direction you pick."
+          },
+          {
+            "name": "Arcane Order Magic",
+            "desc": "An Arcane Focus works as your Magus Spellcasting Focus. Always prepared at Magus levels: 3 Demiplanar Pitch, Shocking Grasp, Find Familiar, Magic Missile; 5 Arcanist's Magic Aura, Misty Step; 9 Dispel Magic, Waypoint; 13 Banishment, Private Sanctum; 17 Reflect Magic, Teleportation Circle."
+          },
+          {
+            "name": "Mystic Insights",
+            "desc": "Learn two Wizard cantrips that count as Magus cantrips but not against your cantrips known. Gain Arcana proficiency, or Expertise if already proficient. Bonus Action: cast Detect Magic or Identify, a number of times equal to your Intelligence modifier (minimum 1) per Long Rest."
+          }
+        ]
+      },
+      {
+        "level": 7,
+        "features": [
+          {
+            "name": "Lesser Spell Surge",
+            "desc": "Once per Long Rest, cast a prepared Magus spell without a slot, treating it as cast with your highest-level slot."
+          },
+          {
+            "name": "Occult Savant",
+            "desc": "Pick two Wizard spells of levels you can cast; they are always prepared for you. Each time you gain a Magus level you may replace one with another Wizard spell of a castable level."
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Arcane Vortex",
+            "desc": "Once per Long Rest, as a Magic action warp a 20-foot-radius Sphere centered on a point you can see within 60 feet. You and allies inside may each teleport up to 30 feet in a direction you choose. Every other creature inside makes a Strength save against your spell save DC: on a failure it takes 6d8 Force damage, is pulled up to 15 feet toward the point, and can't use its Speed to move away from it until the start of your next turn; on a success, half damage only."
+          }
+        ]
+      },
+      {
+        "level": 20,
+        "features": [
+          {
+            "name": "Master of the Arcane",
+            "desc": "Your Spell Surge use can instead cast Chain Lightning or Contingency. Once per Long Rest, finishing a Short Rest restores your use of Arcane Vortex."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Magus",
+    "name": "Heaven's Guard",
+    "key": "kc-tmc_heavens-guard",
+    "edition": "2024",
+    "source": "kc",
+    "book": "The Magus Class",
+    "partner": "Sterling Vermin",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Alabaster Mark",
+            "desc": "Adds to your Mystic Mark. Aegis: Reaction when a willing creature you can see within 30 feet is hit by an attack, guard it until the start of your next turn so attacks against it have Disadvantage. Enspell: once per turn on a weapon or Unarmed Strike hit, the target has Disadvantage on attacks against anyone but you until the start of your next turn."
+          },
+          {
+            "name": "Heaven's Guard Magic",
+            "desc": "A Holy Symbol works as your Magus Spellcasting Focus. Always prepared at Magus levels: 3 Cure Wounds, Give Life, Guiding Bolt, Righteous Incitement; 5 Animate Shield, Gentle Repose; 9 Mass Healing Word, Revivify; 13 Death Ward, Stoneskin; 17 Mass Cure Wounds, Raise Dead."
+          },
+          {
+            "name": "Heavensent",
+            "desc": "Best Offense: +2 to weapon and Unarmed Strike damage rolls while you use a Shield. Gifted Healer: when a spell or Magus feature of yours restores Hit Points, you may spend and roll a Hit Die and add it to the healing. Heaven's Hand: your damaging Magus spells can deal Radiant damage in place of their usual type."
+          }
+        ]
+      },
+      {
+        "level": 7,
+        "features": [
+          {
+            "name": "Guardian's Wings",
+            "desc": "Once per Short or Long Rest, as a Bonus Action fly up to twice your Speed; at the end of that turn, creatures of your choice within 10 feet of you regain Hit Points equal to your Magus level plus your Intelligence modifier."
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Cloak of Radiance",
+            "desc": "Once per Long Rest, as a Bonus Action wrap a creature you can see within 30 feet in light, granting it 5d10 + your Magus level Temporary Hit Points. While any of those remain: attackers without Immunity to Blinded have Disadvantage against it; it sheds Bright Light 30 feet and Dim Light 30 feet beyond; and it can Fly up to 30 feet as a Bonus Action each turn, drifting harmlessly to the ground if it ends that movement airborne."
+          }
+        ]
+      },
+      {
+        "level": 20,
+        "features": [
+          {
+            "name": "Bright as Dawn",
+            "desc": "Your Spell Surge use can instead cast Heal or Sunbeam. Once per Long Rest, finishing a Short Rest restores your use of Cloak of Radiance."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Magus",
+    "name": "Knights Stygian",
+    "key": "kc-tmc_knights-stygian",
+    "edition": "2024",
+    "source": "kc",
+    "book": "The Magus Class",
+    "partner": "Sterling Vermin",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Doombringer",
+            "desc": "Deathsight: you know when creatures you can see are Bloodied, and you can see Bloodied Invisible creatures and ignore the Disadvantage their invisibility would impose on your attacks. Unnatural Vitality: Bonus Action, spend a spell slot to regain expended Hit Dice equal to twice the slot's level. Reaper's Reward: once per turn on a weapon or Unarmed Strike hit, spend and roll a Hit Die; you regain that many Hit Points and the target takes that much extra Necrotic damage."
+          },
+          {
+            "name": "Knights Stygian Magic",
+            "desc": "A Memento Mori works as your Magus Spellcasting Focus. Always prepared at Magus levels: 3 Bitter Wind, Hateful Haunting, Grave Bolt, Grave Grasp; 5 Carrionette, Web; 9 Animate Dead, Mortal Terror; 13 Black Tentacles, Stygian Blast; 17 Contagion, Insect Plague."
+          },
+          {
+            "name": "Obsidian Mark",
+            "desc": "Adds to your Mystic Mark. Aegis: Reaction when a creature you can see within 30 feet is hit by an attack, the attacker makes a Constitution save or takes Necrotic damage equal to half its attack's damage. Enspell: once per turn on a weapon or Unarmed Strike hit, deal an extra 1d4 Necrotic damage, or 2d4 if the target is Bloodied."
+          }
+        ]
+      },
+      {
+        "level": 7,
+        "features": [
+          {
+            "name": "Face of Fear",
+            "desc": "Dreadful Incantation: when you cast a level 1+ Necromancy spell or a Knights Stygian Magic spell, one creature within 60 feet that can see you makes a Wisdom save against your spell save DC or is Frightened until the start of your next turn. Fearless: Immunity to Frightened. Mortal Terror: Necrotic damage from your Magus spells and features can be dealt as Psychic instead."
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Open the Iron Gates",
+            "desc": "Once per Long Rest, as a Bonus Action create a 30-foot Emanation around you for 1 minute. A creature starting its turn inside can take 1d6 Necrotic damage, or 3d6 if Bloodied. As a Bonus Action you can make a Bloodied creature of your choice inside make a Wisdom save against your spell save DC or be Frightened until the start of your next turn."
+          }
+        ]
+      },
+      {
+        "level": 20,
+        "features": [
+          {
+            "name": "Darkest Knight",
+            "desc": "Your Spell Surge use can instead cast Circle of Death or Create Undead. Once per Long Rest, finishing a Short Rest restores your use of Open the Iron Gates."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Magus",
+    "name": "Shadow Court",
+    "key": "kc-tmc_shadow-court",
+    "edition": "2024",
+    "source": "kc",
+    "book": "The Magus Class",
+    "partner": "Sterling Vermin",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Hand and Foot Training",
+            "desc": "Covert Warrior: proficiency in Stealth (Expertise if already proficient) and Thieves' Tools. Enshadowed Equipment: Bonus Action, conjure one item into your hands from Caltrops, Costume, Crowbar, Grappling Hook, Ladder, Net, Parchment, Rope, Signal Whistle, Spyglass, or Thieves' Tools; it lasts until it spends 10 minutes in Bright Light, you dismiss it (no action), or you use this again; uses equal to your Intelligence modifier (minimum 1) per Long Rest. Martial Artist: Unarmed Strikes can use Dexterity for attack and damage and deal 1d6 in place of normal damage, and Dexterity can set the DC of your Grapple and Shove."
+          },
+          {
+            "name": "Jade Mark",
+            "desc": "Adds to your Mystic Mark. Aegis: Reaction when a creature you can see within 30 feet is hit by an attack, it becomes Invisible until the end of its next turn, ending early if it attacks, deals damage, or casts a spell. Enspell: once per turn on a weapon or Unarmed Strike hit, the target is overexposed until the start of your next turn or until it takes a Critical Hit; attacks against an overexposed target crit on a 19 or 20."
+          },
+          {
+            "name": "Shadow Court Magic",
+            "desc": "Parchment works as your Magus Spellcasting Focus, but it is consumed when used for a level 1+ spell. Always prepared at Magus levels: 3 Disguise Self, Forced Hesitation, Phantasmal Feint, Obscuring Prick; 5 Darkness, Invisibility; 9 Hypnotic Pattern, Major Image; 13 Greater Invisibility, Phantasmal Killer; 17 Mislead, Seeming."
+          }
+        ]
+      },
+      {
+        "level": 7,
+        "features": [
+          {
+            "name": "Broken Mirror Jutsu",
+            "desc": "Mirror Image is always prepared. As a Bonus Action you can cast it with no slot; whenever one of these duplicates is destroyed, the attacker makes an Intelligence save against your Magus spell save DC or takes Psychic damage equal to your Magus level plus your Intelligence modifier. Once per Long Rest, or restore the use by spending a level 2+ slot (no action)."
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "False Body Jutsu",
+            "desc": "Once per Long Rest, when an attack hits you, use your Reaction to cut its damage to 1, then teleport to an unoccupied space within 300 feet and become Invisible for 1 minute, leaving a harmless mundane object behind."
+          }
+        ]
+      },
+      {
+        "level": 20,
+        "features": [
+          {
+            "name": "Enshadowed Sifu",
+            "desc": "Your Spell Surge use can instead cast Eyebite or Programmed Illusion. Once per Long Rest, finishing a Short Rest restores your use of False Body Jutsu."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Magus",
+    "name": "Sidereal Cabal",
+    "key": "kc-tmc_sidereal-cabal",
+    "edition": "2024",
+    "source": "kc",
+    "book": "The Magus Class",
+    "partner": "Sterling Vermin",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Selenite Mark",
+            "desc": "Adds to your Mystic Mark. Aegis: Reaction when a willing creature you can see within 30 feet is hit by an attack, the attacker must reroll with Disadvantage and use the new roll. Enspell: once per turn when you miss with a weapon or Unarmed Strike, reroll the attack with Advantage and use the new roll."
+          },
+          {
+            "name": "Sidereal Cabal Magic",
+            "desc": "An Astrolabe or Arcane Focus works as your Magus Spellcasting Focus. Always prepared at Magus levels: 3 Misfortunate Missile, Overexposure, Bane, Bless; 5 Augury, Mind Spike; 9 Haste, Slow; 13 Cascade of Hours, Divination; 17 Dream, Scrying."
+          },
+          {
+            "name": "Starlit Sight",
+            "desc": "Darkvision 60 feet, or +60 feet to existing Darkvision. Mini-Portent: after each Long Rest roll a d20 and record it; once, before a D20 Test by you or a creature you can see is rolled, you can substitute that number; an unused roll is lost at your next Long Rest. Gain Perception proficiency, or Expertise if already proficient."
+          }
+        ]
+      },
+      {
+        "level": 7,
+        "features": [
+          {
+            "name": "Celestial Clockwork Control",
+            "desc": "After a creature you can see within 60 feet makes a D20 Test, spend a spell slot to raise or lower the result by the slot's level, which can flip success and failure. Usable once per round (recharges at the start of your next turn)."
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Seal Fate",
+            "desc": "Once per Short or Long Rest, when a creature you can see within 60 feet rolls with Advantage or Disadvantage, it rolls three d20s instead of two, keeping the highest with Advantage or the lowest with Disadvantage."
+          }
+        ]
+      },
+      {
+        "level": 20,
+        "features": [
+          {
+            "name": "Starfinder",
+            "desc": "Your Spell Surge use can instead cast First Speech or True Seeing. Seal Fate gains three uses, one returning on a Short Rest and all on a Long Rest."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Magus",
+    "name": "Sylvan Circle",
+    "key": "kc-tmc_sylvan-circle",
+    "edition": "2024",
+    "source": "kc",
+    "book": "The Magus Class",
+    "partner": "Sterling Vermin",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Agrestal Spirit",
+            "desc": "Learn two extra Magus or Druid cantrips that count as Magus cantrips but not against your cantrips known. Gain Nature proficiency, or Expertise if already proficient. Wild Instincts: Disengage as a Bonus Action, and until your turn ends gain +15 feet Speed and Advantage on Strength (Athletics) and Dexterity (Acrobatics) checks; uses equal to your Intelligence modifier (minimum 1) per Long Rest."
+          },
+          {
+            "name": "Emerald Mark",
+            "desc": "Adds to your Mystic Mark. Aegis: Reaction when you or a willing creature you can see within 30 feet fails a save, add your Intelligence modifier (minimum +1) to it, possibly turning it into a success. Enspell: once per turn on a weapon or Unarmed Strike hit, every space counts as Difficult Terrain for the target until the end of its next turn."
+          },
+          {
+            "name": "Sylvan Circle Spells",
+            "desc": "A Druidic Focus works as your Magus Spellcasting Focus. Always prepared at Magus levels: 3 Entangle, Speak with Animals, Thorn Whip, Thornhold; 5 Lesser Restoration, Moonbeam; 9 Conjure Animals, Speak with Plants; 13 Conjure Woodland Beings, Polymorph; 17 Greater Restoration, Reincarnate."
+          }
+        ]
+      },
+      {
+        "level": 7,
+        "features": [
+          {
+            "name": "Nature's Mask",
+            "desc": "Polymorph is always prepared. Once per Short or Long Rest you can cast it on yourself with no slot; cast this way it needs no Concentration, lasts 8 hours, and you can end it at any time (no action)."
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Font of Life",
+            "desc": "Once per Long Rest, as a Bonus Action project a 15-foot Emanation for 1 minute (ends early if you dismiss it, no action, or are Incapacitated). When it appears and at the start of each of your later turns, chosen creatures inside regain 1d8 + your Intelligence modifier Hit Points (minimum 1), and chosen creatures inside have Advantage on saving throws."
+          }
+        ]
+      },
+      {
+        "level": 20,
+        "features": [
+          {
+            "name": "Sylvan Savant",
+            "desc": "Your Spell Surge use can instead cast Conjure Fey or Wall of Thorns. Once per Long Rest, finishing a Short Rest restores your use of Font of Life."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Pugilist",
+    "name": "Dog and Hound",
+    "key": "kc-tpc_dog-and-hound",
+    "edition": "2024",
+    "source": "kc",
+    "book": "The Pugilist Class",
+    "partner": "Sterling Vermin",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Brawler's Best Friend",
+            "desc": "You bond with a dog that uses the Hound stat block: Medium Beast, AC 12 + your CON mod, HP 5 + 5 times your Pugilist level (Pugilist level d8 Hit Dice), Speed 40 ft., STR 14 DEX 14 CON 15 INT 3 WIS 12 CHA 13, Darkvision 60 ft., Passive Perception 11, understands your languages, adds your Proficiency Bonus to its ability checks and saves. Bite: to-hit equals your CON mod + PB, reach 5 ft., 2d4 + 2 + your CON mod Piercing; a Large or smaller target must pass a Strength save (DC 8 + your CON mod + PB) or you pick Grappled, Prone, or pushed 5 feet. It is Friendly, obeys you, flees if you die, and acts on your turn: it moves and reacts freely but only Dodges unless you spend a Bonus Action to command another action or give up one of your Attack action attacks to have it Bite; if you are Incapacitated it acts freely. If it died within the last hour, a Magic action touch and 2 Moxie Points revive it at full HP after 1 minute; after a Long Rest you can bond a new dog within 5 feet, replacing the old one."
+          },
+          {
+            "name": "Mutt With Moxie",
+            "desc": "Your Moxie options also aid the hound: Brace Up gives it the same Temporary Hit Points you gain; One-Two Punch lets it make either or both strikes in your place; Stick and Move lets it take the Dash, Disengage, or Help action (your pick)."
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Coordinated Attack",
+            "desc": "When you attack a creature within 5 feet of your hound, the hound can use its Reaction to grant Advantage; if that attack hits, it deals an extra 3d4 damage. The hound's damaging attack hits can deal Force or their normal type."
+          }
+        ]
+      },
+      {
+        "level": 11,
+        "features": [
+          {
+            "name": "Hound's Best Friend",
+            "desc": "Reaction when a creature damages your hound with an attack: move up to half your Speed and make one melee Unarmed Strike or Pugilist weapon attack against that creature."
+          }
+        ]
+      },
+      {
+        "level": 17,
+        "features": [
+          {
+            "name": "Off The Chain",
+            "desc": "Reaction when your hound becomes Bloodied from damage or takes damage while Bloodied: it gains Temporary Hit Points equal to 5 times your Pugilist level and, for 1 minute, +15 feet of Speed and you can command its Bite with no Bonus Action. Once per Long Rest, or restore it by spending 3 Moxie Points (no action)."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Pugilist",
+    "name": "Hand of Dread",
+    "key": "kc-tpc_hand-of-dread",
+    "edition": "2024",
+    "source": "kc",
+    "book": "The Pugilist Class",
+    "partner": "Sterling Vermin",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Black Magic",
+            "desc": "You learn two Warlock cantrips and choose one level 1 Warlock spell that is always prepared; you can cast that spell once per Long Rest without a slot or with any slots you have. Constitution is your spellcasting ability for these. On gaining a level, you can swap one of these spells for another Warlock spell of the same level."
+          },
+          {
+            "name": "Dread Hand",
+            "desc": "When you take the Attack action, you can transform a limb for 1 minute, once per Short or Long Rest. During it: Reaction to make an Unarmed Strike against a creature in reach that hit you with a melee attack; on an Unarmed Strike hit, roll damage dice twice and pick either result; and your first Unarmed Strike miss each turn can be rerolled (new roll must be used)."
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Deal with the Devil",
+            "desc": "Pick one option, changeable after a Long Rest: Cloak of Shadows (cast Invisibility without a slot once per Short or Long Rest), Mask of Many Faces (cast Disguise Self without a slot, at will), or Otherworldly Walk (cast Misty Step without a slot once per Short or Long Rest)."
+          }
+        ]
+      },
+      {
+        "level": 11,
+        "features": [
+          {
+            "name": "Grotesque Growth",
+            "desc": "When you use Dread Hand, you can also gain the Enlarge effect of Enlarge/Reduce and 10-foot reach. Once per Long Rest, or take 1 Exhaustion level (no action) to restore the use."
+          }
+        ]
+      },
+      {
+        "level": 17,
+        "features": [
+          {
+            "name": "Fountain of Viscera",
+            "desc": "Magic action, 6 Moxie Points: a creature in reach makes a Dexterity save (DC 8 + your STR mod + PB), taking 100 Piercing damage on a failure or 50 on a success. If this drops it to 0 Hit Points it dies, and creatures you choose in a 30-foot Emanation must pass a Wisdom save (same DC) or be Frightened for 1 minute, repeating the save at the end of each of their turns. Once per Long Rest."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Pugilist",
+    "name": "Piss and Vinegar",
+    "key": "kc-tpc_piss-and-vinegar",
+    "edition": "2024",
+    "source": "kc",
+    "book": "The Pugilist Class",
+    "partner": "Sterling Vermin",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Bad Attitude",
+            "desc": "Gain Intimidation proficiency if you lack it, and add your Strength modifier (minimum +1) to Intimidation checks."
+          },
+          {
+            "name": "Salty Salute",
+            "desc": "Bonus Action: a creature within 60 feet that can see or hear you makes a Wisdom save or takes Psychic damage equal to your Fisticuffs die + your CON mod and has Disadvantage on attacks against anyone but you until the start of your next turn. This subclass's save DC is 8 + your CON mod + PB."
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Dirty Tricks",
+            "desc": "One Dirty Trick per turn, each usable once per Short or Long Rest. Heelstomper: when your Unarmed Strike or Pugilist weapon deals damage, the target makes a Dexterity save or has Speed 0 for 1 minute (save repeats at end of each of its turns). Low Blow: on the same trigger, the target makes a Strength save or attacks against it have Advantage until the end of your next turn. Pocket Sand: Bonus Action, a creature within 10 feet makes a Constitution save or is Blinded until the end of its next turn."
+          }
+        ]
+      },
+      {
+        "level": 11,
+        "features": [
+          {
+            "name": "Mean Old Cuss",
+            "desc": "Bonus Action: up to a number of creatures equal to your Pugilist level within 30 feet that can see or hear you each make a Wisdom save or take Psychic damage equal to your Fisticuffs die + your CON mod and have Disadvantage on attacks against anyone but you until the start of your next turn. Once per Short or Long Rest, or restore it by spending 3 Moxie Points (no action)."
+          }
+        ]
+      },
+      {
+        "level": 17,
+        "features": [
+          {
+            "name": "Dirtier Tricks",
+            "desc": "Two more Dirty Tricks (same one-per-turn and once per Short or Long Rest limits). Rabbit Punch: on an Unarmed Strike or Pugilist weapon hit, until the end of your next turn the target loses any Psychic Resistance and has Disadvantage on saving throws. Sucker Punch: turn such a hit into a Critical Hit that rolls the damage dice three times instead of twice."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Pugilist",
+    "name": "Street Saint",
+    "key": "kc-tpc_street-saint",
+    "edition": "2024",
+    "source": "kc",
+    "book": "The Pugilist Class",
+    "partner": "Sterling Vermin",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Channel Divinity",
+            "desc": "Use this subclass's Channel Divinity once per Short or Long Rest, choosing an effect. Fists of Faith: Bonus Action, for 1 minute your Unarmed Strikes deal an extra 1d4 Radiant damage (2d4 against Fiends and Undead). Grace of the Gods: Bonus Action, for 1 minute you have Resistance to Necrotic damage and can add 1d4 to your saving throws."
+          },
+          {
+            "name": "Lay On Hands",
+            "desc": "You have a healing pool of 3 times your Pugilist level Hit Points, refilled on a Long Rest. Bonus Action: touch a creature (or yourself) and restore any amount from the pool, or spend 5 points to end the Poisoned condition on it (those points heal nothing)."
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Ravaged But Resolute",
+            "desc": "When you use Bloodied But Unbowed, you can refill your Lay On Hands pool completely. Once per Long Rest."
+          }
+        ]
+      },
+      {
+        "level": 11,
+        "features": [
+          {
+            "name": "Aura of Resilience",
+            "desc": "When you use Dig Deep, you can project a 10-foot Emanation for 10 minutes granting allies inside Resistance to Bludgeoning, Piercing, and Slashing damage; it shuts off while you are Incapacitated. Once per Long Rest."
+          }
+        ]
+      },
+      {
+        "level": 17,
+        "features": [
+          {
+            "name": "Hallowed Hands",
+            "desc": "Once on each of your turns when an Unarmed Strike or Pugilist weapon hits, spend Lay On Hands points (up to your Pugilist level) to deal that much extra Radiant damage, doubled against Fiends and Undead."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Pugilist",
+    "name": "Squared Circle",
+    "key": "kc-tpc_squared-circle",
+    "edition": "2024",
+    "source": "kc",
+    "book": "The Pugilist Class",
+    "partner": "Sterling Vermin",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Groundwork",
+            "desc": "Compression Lock: if you start your turn grappling creatures, each takes Bludgeoning damage equal to your Fisticuffs die + your STR mod (no action). Inescapable: spend 1 Moxie Point to impose Disadvantage on a save or check a creature makes against your grapple or shove DC. Stop and Drop: on an Unarmed Strike hit where you use no mastery property, you can apply both Grapple and Shove."
+          },
+          {
+            "name": "Muscle Mass",
+            "desc": "Choose Acrobatics or Athletics: gain proficiency in it, or Expertise if already proficient."
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Meat Shield",
+            "desc": "While grappling a creature, you have Half Cover against attacks from creatures you aren't grappling. Reaction and 1 Moxie Point when such a creature misses you with an attack roll: it must reroll that attack against a creature you are grappling."
+          }
+        ]
+      },
+      {
+        "level": 11,
+        "features": [
+          {
+            "name": "Heavyweight",
+            "desc": "You count as one size larger for Grapple and Shove, and moving a grappled creature of your size or smaller costs no extra movement."
+          }
+        ]
+      },
+      {
+        "level": 17,
+        "features": [
+          {
+            "name": "Clean Finish",
+            "desc": "Reaction when a creature you are grappling ends its turn: it makes a Constitution save against your grapple escape DC or is Incapacitated until the end of its next turn. If it is Bloodied and already Incapacitated by this feature, it drops to 0 Hit Points instead; after reducing a creature to 0 this way, you can't use the feature again until you finish a Long Rest."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "class": "Pugilist",
+    "name": "Sweet Science",
+    "key": "kc-tpc_sweet-science",
+    "edition": "2024",
+    "source": "kc",
+    "book": "The Pugilist Class",
+    "partner": "Sterling Vermin",
+    "features_by_level": [
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Bare Knuckle Boxer",
+            "desc": "Your Unarmed Strike attack rolls score a Critical Hit on a 19 or 20."
+          },
+          {
+            "name": "Cross Counter",
+            "desc": "Reaction and 1 Moxie Point when a melee attack damages you: reduce the damage by 1d10 + your STR mod + your Pugilist level. If it drops to 0, you can make an Unarmed Strike or Pugilist weapon attack against a creature in reach as part of that Reaction."
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Combo Maker",
+            "desc": "When your Unarmed Strike damages a creature, you can forgo Heavy Hitter's Grapple or Shove to gain Advantage on your attack rolls against that target until the start of your next turn."
+          }
+        ]
+      },
+      {
+        "level": 11,
+        "features": [
+          {
+            "name": "Combo Breaker",
+            "desc": "When Cross Counter reduces the damage to 0, regain 1 Moxie Point."
+          }
+        ]
+      },
+      {
+        "level": 17,
+        "features": [
+          {
+            "name": "Knock Out",
+            "desc": "Coldcock: a creature you score a Critical Hit against makes a Constitution save (DC 8 + your STR mod + PB) or is Unconscious for 1 minute or until it takes damage. Uppercut: Reaction and 1 Moxie Point when an Unarmed Strike hits, making it a Critical Hit; once per Short or Long Rest."
+          }
+        ]
+      }
+    ]
   }
 ]

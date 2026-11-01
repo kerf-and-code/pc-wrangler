@@ -4823,5 +4823,1269 @@
         }
       }
     ]
+  },
+  {
+    "core_traits": "|||\n|---|---|\n|Primary Ability|Dexterity|\n|Hit Point Die|D8 per Gunslinger level|\n|Saving Throw Proficiencies|Dexterity and Charisma|\n|Skill Proficiencies|Choose 2: Acrobatics, Animal Handling, Athletics, Deception, Insight, Intimidation, Perception, Persuasion, Sleight of Hand, or Stealth|\n|Weapon Proficiencies|Simple weapons and Martial Ranged weapons|\n|Armor Training|Light armor|\n|Starting Equipment|Choose A or B: (A) Leather Armor, 2 Daggers, Revolver, 50 Bullets, Explorer's Pack, and 11 GP; or (B) 175 GP|\n|Multiclass|Gain the Hit Point Die and Martial Ranged weapon proficiency, plus level 1 features|",
+    "class": "Gunslinger",
+    "name": "Gunslinger",
+    "key": "kc-tgc_gunslinger",
+    "edition": "2024",
+    "source": "kc",
+    "book": "The Gunslinger Class: Valda's Spire of Secrets",
+    "partner": "Mage Hand Press",
+    "hit_dice": "D8",
+    "hit_points_at_1st_level": "8 + your Constitution modifier",
+    "hit_points_at_higher_levels": "1D8 (or 5) + your Constitution modifier per gunslinger level after 1st",
+    "caster_type": "NONE",
+    "primary_abilities": [
+      "Dexterity"
+    ],
+    "saving_throws": [
+      "Dexterity",
+      "Charisma"
+    ],
+    "subclasses": [
+      {
+        "name": "Deadeye",
+        "key": "kc-tgc_deadeye"
+      },
+      {
+        "name": "High Roller",
+        "key": "kc-tgc_high-roller"
+      },
+      {
+        "name": "Secret Agent",
+        "key": "kc-tgc_secret-agent"
+      },
+      {
+        "name": "Spellslinger",
+        "key": "kc-tgc_spellslinger"
+      },
+      {
+        "name": "Trick Shot",
+        "key": "kc-tgc_trick-shot"
+      },
+      {
+        "name": "White Hat",
+        "key": "kc-tgc_white-hat"
+      }
+    ],
+    "features_by_level": [
+      {
+        "level": 1,
+        "features": [
+          {
+            "name": "Fighting Style",
+            "desc": "Take a Fighting Style feat of your choice. Feats that normally require a Melee weapon held in one or two hands (such as Great Weapon Fighting) work with Ranged weapons for you. Each time you gain a Gunslinger level you may swap the feat for another Fighting Style feat."
+          }
+        ]
+      },
+      {
+        "level": 1,
+        "features": [
+          {
+            "name": "Quick Draw",
+            "desc": "You roll Initiative with Advantage. You can also draw or stow two weapons without the Two-Handed property in the time it normally takes to draw or stow one."
+          }
+        ]
+      },
+      {
+        "level": 1,
+        "features": [
+          {
+            "name": "Weapon Mastery",
+            "desc": "Use the mastery properties of two kinds of Simple or Martial Ranged weapons you choose; swap one choice after a Long Rest. The number of kinds rises to 3 at Gunslinger level 4 and 4 at level 10 (Weapon Mastery column)."
+          }
+        ]
+      },
+      {
+        "level": 1,
+        "features": [
+          {
+            "name": "Firearms",
+            "desc": "The class is built around the book's firearm rules. Firearms come in three eras the GM picks from: Renaissance (Blunderbuss 1d12, Musket 1d12, Pistol 1d10; all Martial with Loading), Industrial Age (Simple: Double-Barrel Shotgun 2d6, Hunting Rifle 2d6, Parlor Gun 2d4, Revolver 2d6; Martial: Cannon 2d8 Fire, Gatling Gun 2d6, Magnum 2d8) and Modern (Simple: Flare Gun 2d6 Fire, Handgun 2d4; Martial: Assault Rifle 2d6, Pump Shotgun 2d8, Sniper Rifle 2d8, Submachine Gun 2d4). New properties: Firearm (no ability modifier added to damage unless a rule says otherwise; ammunition is destroyed when fired), Recoil (after attacking with it you can't make ranged attacks past its normal range for the rest of the turn), and Reload (N) (N attacks between reloads; reloading takes an Action or, if proficient, a Bonus Action). New masteries: Automatic (make two attacks in place of one, both always at Disadvantage, can't be replaced, double ammunition), Explode (once per turn replace an attack with a 5-foot-radius Sphere within normal range, Dexterity save DC 8 + Strength or Dexterity modifier + Proficiency Bonus, weapon damage without a positive modifier, half on a success), Scatter (no Disadvantage on ranged attacks for having an enemy within 5 feet), and Sighted (long range imposes no Disadvantage, and on a long-range hit you may reroll any damage dice, keeping the new result)."
+          }
+        ]
+      },
+      {
+        "level": 2,
+        "features": [
+          {
+            "name": "Critical Shot",
+            "desc": "Ranged weapon attacks score a Critical Hit on a d20 roll of 19 or 20; this widens to 18 to 20 at Gunslinger level 9 and 17 to 20 at level 17."
+          }
+        ]
+      },
+      {
+        "level": 2,
+        "features": [
+          {
+            "name": "Risk",
+            "desc": "You gain Risk Dice that fuel maneuvers: four d8s at level 2, five d8s at 6, five d10s at 10, six d10s at 14, and six d12s at 18. A die is spent when used, and all spent dice return on a Short or Long Rest. A maneuver that calls for a save uses DC 8 + your Dexterity modifier + your Proficiency Bonus."
+          }
+        ]
+      },
+      {
+        "level": 2,
+        "features": [
+          {
+            "name": "Maneuver Options",
+            "desc": "You know all of these maneuvers. Bite the Bullet: Bonus Action, spend 1 die to gain Temporary Hit Points equal to the roll plus your Gunslinger level. Blindfire: Bonus Action, spend 1 die for 30-foot Blindsight until the end of the turn. Dodge Roll: Bonus Action, spend 1 die to move up to 15 feet, ignoring Difficult Terrain and without provoking Opportunity Attacks, and reload any Ranged weapon you hold. Grazing Shot: once per turn when a ranged weapon attack misses, spend 1 die (no action) to deal the die roll plus your Dexterity modifier (minimum 1) of the weapon's damage type to the target; only a higher ability modifier can raise this damage. Maverick Spirit: once per turn when you fail an Intelligence, Wisdom or Charisma check or save, spend 1 die and add it to the roll. Skin of Your Teeth: Reaction when a creature you can see hits you with an attack roll, spend 1 die and add the roll to your AC against that attack."
+          }
+        ]
+      },
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Gunslinger Subclass",
+            "desc": "Choose a Gunslinger subclass: Deadeye, High Roller, Secret Agent, Spellslinger, Trick Shot or White Hat. You gain its features at levels 3, 6, 10 and 14."
+          }
+        ]
+      },
+      {
+        "level": 4,
+        "features": [
+          {
+            "name": "Ability Score Improvement",
+            "desc": "Take the Ability Score Improvement feat or another feat you qualify for; this repeats at levels 8, 12 and 16."
+          }
+        ]
+      },
+      {
+        "level": 5,
+        "features": [
+          {
+            "name": "Extra Attack",
+            "desc": "Taking the Attack action on your turn lets you attack twice."
+          }
+        ]
+      },
+      {
+        "level": 5,
+        "features": [
+          {
+            "name": "Gut Shot",
+            "desc": "When you land a Critical Hit with a ranged weapon attack on a Large or smaller creature, the projectile stays lodged: for 1 minute the target's Speed is halved and it attacks with Disadvantage. The effect ends early if the target gives up one of its attacks to pull the projectile out."
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Subclass Feature",
+            "desc": "You gain a feature from your Gunslinger subclass."
+          }
+        ]
+      },
+      {
+        "level": 7,
+        "features": [
+          {
+            "name": "Evasion",
+            "desc": "On a Dexterity save against an effect that deals half damage on a success, you take no damage if you succeed and half if you fail. This doesn't work while you are Incapacitated."
+          }
+        ]
+      },
+      {
+        "level": 8,
+        "features": [
+          {
+            "name": "Ability Score Improvement",
+            "desc": "Take the Ability Score Improvement feat or another feat you qualify for."
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Subclass Feature",
+            "desc": "You gain a feature from your Gunslinger subclass."
+          }
+        ]
+      },
+      {
+        "level": 11,
+        "features": [
+          {
+            "name": "Overkill",
+            "desc": "Ranged weapon damage that wouldn't include your ability modifier (such as Firearm weapons) adds it anyway. If the damage already includes the modifier, the target instead takes an extra 1d8 damage of the weapon's type."
+          }
+        ]
+      },
+      {
+        "level": 12,
+        "features": [
+          {
+            "name": "Ability Score Improvement",
+            "desc": "Take the Ability Score Improvement feat or another feat you qualify for."
+          }
+        ]
+      },
+      {
+        "level": 13,
+        "features": [
+          {
+            "name": "Cheat Death",
+            "desc": "When you drop to 0 Hit Points without being killed outright, you can go to 1 Hit Point instead and then regain Hit Points equal to your Gunslinger level. Once per Short or Long Rest."
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Subclass Feature",
+            "desc": "You gain a feature from your Gunslinger subclass."
+          }
+        ]
+      },
+      {
+        "level": 15,
+        "features": [
+          {
+            "name": "Dire Gambit",
+            "desc": "You regain one spent Risk Die each time you roll Initiative or score a Critical Hit."
+          }
+        ]
+      },
+      {
+        "level": 16,
+        "features": [
+          {
+            "name": "Ability Score Improvement",
+            "desc": "Take the Ability Score Improvement feat or another feat you qualify for."
+          }
+        ]
+      },
+      {
+        "level": 18,
+        "features": [
+          {
+            "name": "Deft Maneuver",
+            "desc": "Once on each of your turns you get an extra Bonus Action that can be used only for a maneuver."
+          }
+        ]
+      },
+      {
+        "level": 19,
+        "features": [
+          {
+            "name": "Epic Boon",
+            "desc": "Take an Epic Boon feat or another feat you qualify for; Boon of Irresistible Offense is suggested."
+          }
+        ]
+      },
+      {
+        "level": 20,
+        "features": [
+          {
+            "name": "Headshot",
+            "desc": "When you score a Critical Hit with a Ranged weapon, you may declare it a Headshot: a target with fewer than 100 Hit Points dies, and any other target takes an extra 10d10 damage of the weapon's type. Once per Short or Long Rest, or restore the use by spending three Risk Dice (no action)."
+          }
+        ]
+      }
+    ],
+    "class_table": [
+      {
+        "name": "Proficiency Bonus",
+        "type": "PROFICIENCY_BONUS",
+        "by_level": {
+          "1": "+2",
+          "2": "+2",
+          "3": "+2",
+          "4": "+2",
+          "5": "+3",
+          "6": "+3",
+          "7": "+3",
+          "8": "+3",
+          "9": "+4",
+          "10": "+4",
+          "11": "+4",
+          "12": "+4",
+          "13": "+5",
+          "14": "+5",
+          "15": "+5",
+          "16": "+5",
+          "17": "+6",
+          "18": "+6",
+          "19": "+6",
+          "20": "+6"
+        }
+      },
+      {
+        "name": "Risk Dice",
+        "type": "CLASS_TABLE_DATA",
+        "by_level": {
+          "1": "-",
+          "2": "4d8",
+          "3": "4d8",
+          "4": "4d8",
+          "5": "4d8",
+          "6": "5d8",
+          "7": "5d8",
+          "8": "5d8",
+          "9": "5d8",
+          "10": "5d10",
+          "11": "5d10",
+          "12": "5d10",
+          "13": "5d10",
+          "14": "6d10",
+          "15": "6d10",
+          "16": "6d10",
+          "17": "6d10",
+          "18": "6d12",
+          "19": "6d12",
+          "20": "6d12"
+        }
+      },
+      {
+        "name": "Weapon Mastery",
+        "type": "CLASS_TABLE_DATA",
+        "by_level": {
+          "1": "2",
+          "2": "2",
+          "3": "2",
+          "4": "3",
+          "5": "3",
+          "6": "3",
+          "7": "3",
+          "8": "3",
+          "9": "3",
+          "10": "4",
+          "11": "4",
+          "12": "4",
+          "13": "4",
+          "14": "4",
+          "15": "4",
+          "16": "4",
+          "17": "4",
+          "18": "4",
+          "19": "4",
+          "20": "4"
+        }
+      }
+    ]
+  },
+  {
+    "core_traits": "|||\n|---|---|\n|Primary Ability|Intelligence|\n|Hit Point Die|D8 per Magus level|\n|Saving Throw Proficiencies|Constitution and Intelligence|\n|Skill Proficiencies|Choose 2: Acrobatics, Arcana, Athletics, History, Insight, Investigation, Nature, Perception, or Religion|\n|Weapon Proficiencies|Simple and Martial weapons|\n|Armor Training|Light and Medium armor and Shields|\n|Starting Equipment|Choose A or B: (A) Studded Leather Armor, Longbow, 20 Arrows, Quiver, Rapier, Component Pouch, Diamond worth 50 GP, and 4 GP; or (B) 200 GP|",
+    "class": "Magus",
+    "name": "Magus",
+    "key": "kc-tmc_magus",
+    "edition": "2024",
+    "source": "kc",
+    "book": "The Magus Class",
+    "partner": "Sterling Vermin",
+    "hit_dice": "D8",
+    "hit_points_at_1st_level": "8 + your Constitution modifier",
+    "hit_points_at_higher_levels": "1D8 (or 5) + your Constitution modifier per magus level after 1st",
+    "caster_type": "HALF",
+    "primary_abilities": [
+      "Intelligence"
+    ],
+    "saving_throws": [
+      "Constitution",
+      "Intelligence"
+    ],
+    "subclasses": [
+      {
+        "name": "Arcane Order",
+        "key": "kc-tmc_arcane-order"
+      },
+      {
+        "name": "Heaven's Guard",
+        "key": "kc-tmc_heavens-guard"
+      },
+      {
+        "name": "Knights Stygian",
+        "key": "kc-tmc_knights-stygian"
+      },
+      {
+        "name": "Shadow Court",
+        "key": "kc-tmc_shadow-court"
+      },
+      {
+        "name": "Sidereal Cabal",
+        "key": "kc-tmc_sidereal-cabal"
+      },
+      {
+        "name": "Sylvan Circle",
+        "key": "kc-tmc_sylvan-circle"
+      }
+    ],
+    "features_by_level": [
+      {
+        "level": 1,
+        "features": [
+          {
+            "name": "Esoteric Eye",
+            "desc": "Bonus Action: study a creature you can see. Through the end of your next turn, your Magus spell attacks against it have Advantage and it makes saves against your Magus spells at Disadvantage. Uses equal to your Intelligence modifier (minimum 1); one use returns on a Short Rest and all return on a Long Rest."
+          },
+          {
+            "name": "Spellcasting",
+            "desc": "Half-caster preparing from the Magus spell list with Intelligence. Two cantrips (three at level 10, four at 14), swapping one cantrip whenever you gain a Magus level. Prepared level 1+ spells run from 2 at level 1 to 20 at level 19, slots up to level 5 (see the class table), all slots back on a Long Rest. On each Magus level you may swap one prepared spell for another Magus spell you have slots for; always-prepared spells from Magus features don't count against your total."
+          },
+          {
+            "name": "Weapon Mastery",
+            "desc": "Use the mastery properties of two kinds of weapons you are proficient with. You can change both choices after each Long Rest."
+          }
+        ]
+      },
+      {
+        "level": 2,
+        "features": [
+          {
+            "name": "Fighting Style",
+            "desc": "Take a Fighting Style feat, or instead the Mystic Warrior option: add your Intelligence modifier (minimum +1) to Constitution saves to keep Concentration, and when you fail such a save you gain Temporary Hit Points equal to twice the spell's level plus your Intelligence modifier."
+          },
+          {
+            "name": "Mystic Mark",
+            "desc": "Bonus Action: pick a prepared level 1+ Magus spell whose casting time is an action or Bonus Action, spend a slot of at least its level, and choose Force or one damage type the spell deals. Gain one benefit: Aegis (Resistance to that type) or Enspell (your weapon and Unarmed Strike damage can become that type). You can hold at most one Aegis and one Enspell at once. While a mark is active, a Bonus Action releases it and casts the stored spell; the mark and benefit last 1 hour or until the spell is released."
+          }
+        ]
+      },
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Magus Subclass",
+            "desc": "Choose a Magus subclass (an order); it grants features at Magus levels 3, 7, 14, and 20."
+          }
+        ]
+      },
+      {
+        "level": 4,
+        "features": [
+          {
+            "name": "Ability Score Improvement",
+            "desc": "Take the Ability Score Improvement feat or another feat you qualify for. Gained again at Magus levels 8, 12, and 16."
+          }
+        ]
+      },
+      {
+        "level": 5,
+        "features": [
+          {
+            "name": "Arcane Ability",
+            "desc": "After failing an ability check, add your Intelligence modifier plus the level of your highest unexpended spell slot to it, which can make it succeed. Once per Short or Long Rest, or restore the use by spending a spell slot (no action)."
+          },
+          {
+            "name": "Sword and Sorcery",
+            "desc": "When you take the Attack action without benefiting from Extra Attack, you can also cast an action-time Magus cantrip as part of it. When you take the Magic action on your turn, you can make one weapon attack as a Bonus Action."
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Magical Recovery",
+            "desc": "Once per Long Rest, when you finish a Short Rest, recover expended slots whose levels total up to half your Magus level (round up); none can be level 6 or higher."
+          }
+        ]
+      },
+      {
+        "level": 8,
+        "features": [
+          {
+            "name": "Ability Score Improvement",
+            "desc": "Take the Ability Score Improvement feat or another feat you qualify for."
+          }
+        ]
+      },
+      {
+        "level": 9,
+        "features": [
+          {
+            "name": "Rite of Return",
+            "desc": "If your Mystic Mark expires without the spell being released, you get the spent slot back. You can also end the mark as a Bonus Action and regain that slot."
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "All-Seeing Eye",
+            "desc": "Once per Long Rest, as a Bonus Action spend an Esoteric Eye use to gain Truesight to 60 feet for 10 minutes; during that time Esoteric Eye's Bonus Action costs no uses."
+          }
+        ]
+      },
+      {
+        "level": 11,
+        "features": [
+          {
+            "name": "Sigil Surge",
+            "desc": "Mystic Mark improves. Aegis: at the start of each of your turns gain Temporary Hit Points equal to the spent slot's level plus your Intelligence modifier. Enspell: your weapon and Unarmed Strike damage deals an extra 1d6 of the chosen type."
+          }
+        ]
+      },
+      {
+        "level": 12,
+        "features": [
+          {
+            "name": "Ability Score Improvement",
+            "desc": "Take the Ability Score Improvement feat or another feat you qualify for."
+          }
+        ]
+      },
+      {
+        "level": 15,
+        "features": [
+          {
+            "name": "Sorcerous Shielding",
+            "desc": "Magic Resistance: Resistance to one of Force, Necrotic, Psychic, or Radiant, and you can switch the type at the start of each of your turns. Spell Parry: Advantage on saves against spells, and spell attacks against you have Disadvantage."
+          }
+        ]
+      },
+      {
+        "level": 16,
+        "features": [
+          {
+            "name": "Ability Score Improvement",
+            "desc": "Take the Ability Score Improvement feat or another feat you qualify for."
+          }
+        ]
+      },
+      {
+        "level": 18,
+        "features": [
+          {
+            "name": "Spell Surge",
+            "desc": "Pick one level 6 Magus spell as your surge spell. Once per Long Rest you can cast it with no slot, and doing so also restores one expended slot of level 5 or lower of your choice."
+          }
+        ]
+      },
+      {
+        "level": 19,
+        "features": [
+          {
+            "name": "Epic Boon",
+            "desc": "Take an Epic Boon feat or another feat you qualify for (Boon of Spell Recall suggested)."
+          }
+        ]
+      },
+      {
+        "level": 20,
+        "features": [
+          {
+            "name": "Archmagus",
+            "desc": "Intelligence and your choice of Strength or Dexterity each rise by 2, to a maximum of 23. Magical Recovery can be used twice, both uses returning on a Long Rest."
+          }
+        ]
+      }
+    ],
+    "class_table": [
+      {
+        "name": "Proficiency Bonus",
+        "type": "PROFICIENCY_BONUS",
+        "by_level": {
+          "1": "+2",
+          "2": "+2",
+          "3": "+2",
+          "4": "+2",
+          "5": "+3",
+          "6": "+3",
+          "7": "+3",
+          "8": "+3",
+          "9": "+4",
+          "10": "+4",
+          "11": "+4",
+          "12": "+4",
+          "13": "+5",
+          "14": "+5",
+          "15": "+5",
+          "16": "+5",
+          "17": "+6",
+          "18": "+6",
+          "19": "+6",
+          "20": "+6"
+        }
+      },
+      {
+        "name": "Cantrips",
+        "type": "CLASS_TABLE_DATA",
+        "by_level": {
+          "1": "2",
+          "2": "2",
+          "3": "2",
+          "4": "2",
+          "5": "2",
+          "6": "2",
+          "7": "2",
+          "8": "2",
+          "9": "2",
+          "10": "3",
+          "11": "3",
+          "12": "3",
+          "13": "3",
+          "14": "4",
+          "15": "4",
+          "16": "4",
+          "17": "4",
+          "18": "4",
+          "19": "4",
+          "20": "4"
+        }
+      },
+      {
+        "name": "Prepared Spells",
+        "type": "CLASS_TABLE_DATA",
+        "by_level": {
+          "1": "2",
+          "2": "3",
+          "3": "4",
+          "4": "5",
+          "5": "6",
+          "6": "7",
+          "7": "8",
+          "8": "9",
+          "9": "10",
+          "10": "11",
+          "11": "12",
+          "12": "13",
+          "13": "14",
+          "14": "15",
+          "15": "16",
+          "16": "17",
+          "17": "18",
+          "18": "19",
+          "19": "20",
+          "20": "20"
+        }
+      },
+      {
+        "name": "1st",
+        "type": "SPELL_SLOTS",
+        "by_level": {
+          "1": "2",
+          "2": "2",
+          "3": "3",
+          "4": "3",
+          "5": "4",
+          "6": "4",
+          "7": "4",
+          "8": "4",
+          "9": "4",
+          "10": "4",
+          "11": "4",
+          "12": "4",
+          "13": "4",
+          "14": "4",
+          "15": "4",
+          "16": "4",
+          "17": "4",
+          "18": "4",
+          "19": "4",
+          "20": "4"
+        }
+      },
+      {
+        "name": "2nd",
+        "type": "SPELL_SLOTS",
+        "by_level": {
+          "5": "2",
+          "6": "2",
+          "7": "3",
+          "8": "3",
+          "9": "3",
+          "10": "3",
+          "11": "3",
+          "12": "3",
+          "13": "3",
+          "14": "3",
+          "15": "3",
+          "16": "3",
+          "17": "3",
+          "18": "3",
+          "19": "3",
+          "20": "3"
+        }
+      },
+      {
+        "name": "3rd",
+        "type": "SPELL_SLOTS",
+        "by_level": {
+          "9": "2",
+          "10": "2",
+          "11": "3",
+          "12": "3",
+          "13": "3",
+          "14": "3",
+          "15": "3",
+          "16": "3",
+          "17": "3",
+          "18": "3",
+          "19": "3",
+          "20": "3"
+        }
+      },
+      {
+        "name": "4th",
+        "type": "SPELL_SLOTS",
+        "by_level": {
+          "13": "1",
+          "14": "1",
+          "15": "2",
+          "16": "2",
+          "17": "3",
+          "18": "3",
+          "19": "3",
+          "20": "3"
+        }
+      },
+      {
+        "name": "5th",
+        "type": "SPELL_SLOTS",
+        "by_level": {
+          "17": "1",
+          "18": "1",
+          "19": "2",
+          "20": "2"
+        }
+      }
+    ]
+  },
+  {
+    "core_traits": "|||\n|---|---|\n|Primary Ability|Strength or Dexterity, and Intelligence|\n|Hit Point Die|D10 per Monster Hunter level|\n|Saving Throw Proficiencies|Dexterity and Intelligence|\n|Skill Proficiencies|Choose 3: Athletics, History, Investigation, Medicine, Nature, Perception, Religion, or Survival|\n|Weapon Proficiencies|Simple and Martial weapons|\n|Armor Training|Light and Medium armor and Shields|\n|Starting Equipment|Choose A, B, or C: (A) Scale Mail, Longsword, Light Crossbow, 20 Bolts, Dungeoneer's Pack, and 5 GP; (B) Studded Leather Armor, Scimitar, Shortsword, Longbow, 20 Arrows, Quiver, Dungeoneer's Pack, and 10 GP; or (C) 160 GP|",
+    "class": "Monster Hunter",
+    "name": "Monster Hunter",
+    "key": "kc-ghpg_monster-hunter",
+    "edition": "2024",
+    "source": "kc",
+    "book": "Grim Hollow: Player's Guide",
+    "partner": "Grim Hollow",
+    "hit_dice": "D10",
+    "hit_points_at_1st_level": "10 + your Constitution modifier",
+    "hit_points_at_higher_levels": "1D10 (or 6) + your Constitution modifier per Monster Hunter level after 1st",
+    "caster_type": "NONE",
+    "primary_abilities": [
+      "Strength or Dexterity",
+      "Intelligence"
+    ],
+    "saving_throws": [
+      "Dexterity",
+      "Intelligence"
+    ],
+    "subclasses": [
+      {
+        "name": "Carver Guild",
+        "key": "kc-ghpg_carver-guild"
+      },
+      {
+        "name": "Devourer Guild",
+        "key": "kc-ghpg_devourer-guild"
+      },
+      {
+        "name": "Occultist Guild",
+        "key": "kc-ghpg_occultist-guild"
+      },
+      {
+        "name": "Trapper Guild",
+        "key": "kc-ghpg_trapper-guild"
+      }
+    ],
+    "features_by_level": [
+      {
+        "level": 1,
+        "features": [
+          {
+            "name": "Monster Grimoire",
+            "desc": "You keep a personal grimoire of monster lore. Pick two creature types from Aberrations, Beasts, Celestials, Constructs, Dragons, Elementals, Fey, Fiends, Giants, Monstrosities, Oozes, Plants, or Undead; you add your Proficiency Bonus to Intelligence and Wisdom checks about those types, or double it if you are already proficient in the skill involved. You also learn one language from the monster-type chart (Aberration or Ooze: Deep Speech or Undercommon; Beast, Fey, or Plant: Sylvan; Celestial: Celestial; Construct or Dragon: Draconic; Elemental: Primordial; Fiend or Undead: Abyssal or Infernal; Giant: Giant; Monstrosity: Deep Speech). If the grimoire is lost you keep its benefits, but you can't add to it or gain Monster Hunter levels until you rebuild it with 8 hours of work and 50 GP of materials."
+          },
+          {
+            "name": "Weapon Mastery",
+            "desc": "Choose two kinds of weapons you are proficient with; you can use their mastery properties. After a Long Rest you may swap one choice. The number of kinds rises per the Weapon Mastery column (3 at level 5, 4 at level 11, 5 at level 17)."
+          }
+        ]
+      },
+      {
+        "level": 2,
+        "features": [
+          {
+            "name": "Fighting Style",
+            "desc": "Gain one Fighting Style feat of your choice."
+          },
+          {
+            "name": "Studied Response",
+            "desc": "When a creature you can see within 60 feet makes a melee or ranged attack against you or someone else, you can use your Reaction before the roll to make one weapon or Unarmed Strike attack against that creature. On a miss, your Reaction is restored."
+          }
+        ]
+      },
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Monster Hunter Subclass: Hunting Guild",
+            "desc": "Choose a guild subclass (Carver, Devourer, Occultist, or Trapper). It grants features at Monster Hunter levels 3, 7, 10, 15, and 18."
+          }
+        ]
+      },
+      {
+        "level": 4,
+        "features": [
+          {
+            "name": "Ability Score Improvement",
+            "desc": "Take the Ability Score Improvement feat or another feat you qualify for. You get this again at levels 8, 12, and 16."
+          }
+        ]
+      },
+      {
+        "level": 5,
+        "features": [
+          {
+            "name": "Expert Strike",
+            "desc": "Add your Intelligence modifier to attack and damage rolls with your weapons and Unarmed Strikes."
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Improved Monster Grimoire",
+            "desc": "Add a third creature type you haven't already picked to your grimoire; all grimoire benefits extend to it. Your weapon and Unarmed Strike attacks against grimoire creature types now score a Critical Hit on a 19 or 20."
+          }
+        ]
+      },
+      {
+        "level": 9,
+        "features": [
+          {
+            "name": "Knowledgeable Defense",
+            "desc": "When a creature of a type in your grimoire forces you to make a saving throw, you can roll an Intelligence saving throw in its place."
+          }
+        ]
+      },
+      {
+        "level": 11,
+        "features": [
+          {
+            "name": "Extra Attack",
+            "desc": "When you take the Attack action on your turn, you can attack twice."
+          }
+        ]
+      },
+      {
+        "level": 13,
+        "features": [
+          {
+            "name": "Improved Monster Grimoire",
+            "desc": "Add a fourth, previously unchosen creature type to your grimoire, gaining all grimoire benefits against it."
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Lair Sense",
+            "desc": "You have Advantage on saving throws against, and Resistance to damage from, any creature's lair actions and regional effects. You gain the same Advantage and Resistance against the Legendary Actions of creature types in your grimoire."
+          }
+        ]
+      },
+      {
+        "level": 17,
+        "features": [
+          {
+            "name": "Slayer's Aid",
+            "desc": "When you use Studied Response, pick a Friendly creature that can see or hear you; it can spend its Reaction on one weapon or Unarmed Strike attack against the triggering creature, resolved after your attack but before the enemy's attack roll. If that ally has already used its Reaction, it regains it but must spend it on this attack. The ability renews at the start of your turn."
+          }
+        ]
+      },
+      {
+        "level": 19,
+        "features": [
+          {
+            "name": "Epic Boon",
+            "desc": "Gain an Epic Boon feat or another feat you qualify for."
+          }
+        ]
+      },
+      {
+        "level": 20,
+        "features": [
+          {
+            "name": "Grave Strike",
+            "desc": "Your weapon and Unarmed Strike attacks against grimoire creature types score a Critical Hit on an 18 to 20. When you land such a Critical Hit, the target makes a Constitution saving throw with a DC equal to the damage dealt (maximum DC 30): on a failure it drops to 0 Hit Points, on a success it just takes the damage. Uses equal your Intelligence modifier (minimum 1), regained on a Long Rest."
+          }
+        ]
+      }
+    ],
+    "class_table": [
+      {
+        "name": "Proficiency Bonus",
+        "type": "PROFICIENCY_BONUS",
+        "by_level": {
+          "1": "+2",
+          "2": "+2",
+          "3": "+2",
+          "4": "+2",
+          "5": "+3",
+          "6": "+3",
+          "7": "+3",
+          "8": "+3",
+          "9": "+4",
+          "10": "+4",
+          "11": "+4",
+          "12": "+4",
+          "13": "+5",
+          "14": "+5",
+          "15": "+5",
+          "16": "+5",
+          "17": "+6",
+          "18": "+6",
+          "19": "+6",
+          "20": "+6"
+        }
+      },
+      {
+        "name": "Weapon Mastery",
+        "type": "CLASS_TABLE_DATA",
+        "by_level": {
+          "1": "2",
+          "2": "2",
+          "3": "2",
+          "4": "2",
+          "5": "3",
+          "6": "3",
+          "7": "3",
+          "8": "3",
+          "9": "3",
+          "10": "3",
+          "11": "4",
+          "12": "4",
+          "13": "4",
+          "14": "4",
+          "15": "4",
+          "16": "4",
+          "17": "5",
+          "18": "5",
+          "19": "5",
+          "20": "5"
+        }
+      }
+    ]
+  },
+  {
+    "core_traits": "|||\n|---|---|\n|Primary Ability|Strength|\n|Hit Point Die|D10 per Pugilist level|\n|Saving Throw Proficiencies|Strength and Constitution|\n|Skill Proficiencies|Choose 2: Acrobatics, Athletics, Deception, Intimidation, Perception, Sleight of Hand, or Stealth|\n|Weapon Proficiencies|Simple and improvised weapons|\n|Tool Proficiencies|One type of Gaming Set of your choice|\n|Armor Training|Light armor|\n|Starting Equipment|Choose A or B: (A) Club, Handaxe, Gaming Set (the one chosen above), Dungeoneer's Pack, and 31 GP; or (B) 50 GP|",
+    "class": "Pugilist",
+    "name": "Pugilist",
+    "key": "kc-tpc_pugilist",
+    "edition": "2024",
+    "source": "kc",
+    "book": "The Pugilist Class",
+    "partner": "Sterling Vermin",
+    "hit_dice": "D10",
+    "hit_points_at_1st_level": "10 + your Constitution modifier",
+    "hit_points_at_higher_levels": "1D10 (or 6) + your Constitution modifier per pugilist level after 1st",
+    "caster_type": "NONE",
+    "primary_abilities": [
+      "Strength"
+    ],
+    "saving_throws": [
+      "Strength",
+      "Constitution"
+    ],
+    "subclasses": [
+      {
+        "name": "Dog and Hound",
+        "key": "kc-tpc_dog-and-hound"
+      },
+      {
+        "name": "Hand of Dread",
+        "key": "kc-tpc_hand-of-dread"
+      },
+      {
+        "name": "Piss and Vinegar",
+        "key": "kc-tpc_piss-and-vinegar"
+      },
+      {
+        "name": "Street Saint",
+        "key": "kc-tpc_street-saint"
+      },
+      {
+        "name": "Squared Circle",
+        "key": "kc-tpc_squared-circle"
+      },
+      {
+        "name": "Sweet Science",
+        "key": "kc-tpc_sweet-science"
+      }
+    ],
+    "class_table": [
+      {
+        "name": "Proficiency Bonus",
+        "type": "PROFICIENCY_BONUS",
+        "by_level": {
+          "1": "+2",
+          "2": "+2",
+          "3": "+2",
+          "4": "+2",
+          "5": "+3",
+          "6": "+3",
+          "7": "+3",
+          "8": "+3",
+          "9": "+4",
+          "10": "+4",
+          "11": "+4",
+          "12": "+4",
+          "13": "+5",
+          "14": "+5",
+          "15": "+5",
+          "16": "+5",
+          "17": "+6",
+          "18": "+6",
+          "19": "+6",
+          "20": "+6"
+        }
+      },
+      {
+        "name": "Fisticuffs",
+        "type": "CLASS_TABLE_DATA",
+        "by_level": {
+          "1": "1d8",
+          "2": "1d8",
+          "3": "1d8",
+          "4": "1d8",
+          "5": "1d10",
+          "6": "1d10",
+          "7": "1d10",
+          "8": "1d10",
+          "9": "1d10",
+          "10": "1d10",
+          "11": "1d12",
+          "12": "1d12",
+          "13": "1d12",
+          "14": "1d12",
+          "15": "1d12",
+          "16": "1d12",
+          "17": "2d6",
+          "18": "2d6",
+          "19": "2d6",
+          "20": "2d6"
+        }
+      },
+      {
+        "name": "Moxie Points",
+        "type": "CLASS_TABLE_DATA",
+        "by_level": {
+          "1": "-",
+          "2": "2",
+          "3": "2",
+          "4": "3",
+          "5": "3",
+          "6": "4",
+          "7": "4",
+          "8": "5",
+          "9": "5",
+          "10": "6",
+          "11": "6",
+          "12": "7",
+          "13": "7",
+          "14": "8",
+          "15": "8",
+          "16": "9",
+          "17": "9",
+          "18": "10",
+          "19": "11",
+          "20": "12"
+        }
+      }
+    ],
+    "features_by_level": [
+      {
+        "level": 1,
+        "features": [
+          {
+            "name": "Fisticuffs",
+            "desc": "Pugilist weapons are Simple Melee weapons and improvised weapons. While unarmed or holding only Pugilist weapons, in Light or no armor and without a Shield: you can make an Unarmed Strike as a Bonus Action; you may roll your Fisticuffs die (1d8, rising to 1d10 at level 5, 1d12 at 11, 2d6 at 17) instead of the normal damage of Unarmed Strikes and Pugilist weapons; and you can use mastery properties of improvised weapons, all of which have the Sap mastery for you."
+          },
+          {
+            "name": "Iron Chin",
+            "desc": "In Light or no armor and without a Shield, your base AC is 12 + your Constitution modifier."
+          }
+        ]
+      },
+      {
+        "level": 2,
+        "features": [
+          {
+            "name": "Moxie",
+            "desc": "You have Moxie Points equal to the Moxie Points column (2 at level 2 rising to 12 at level 20), all regained on a Short or Long Rest. Brace Up (Bonus Action, 1 point): gain Temporary Hit Points equal to a Fisticuffs die roll + your Pugilist level + your Constitution modifier, lasting up to 10 minutes. One-Two Punch (1 point): make two Unarmed Strikes as a Bonus Action. Stick and Move (Bonus Action, 1 point): make one Unarmed Strike and take the Dash or Disengage action."
+          },
+          {
+            "name": "Bloodied But Unbowed",
+            "desc": "Reaction when you take damage: regain every expended Moxie Point. If you are Bloodied at the time, also gain Temporary Hit Points equal to 4 times your Pugilist level, which last until you finish a Short Rest. Once per Short or Long Rest."
+          },
+          {
+            "name": "Swagger Streak",
+            "desc": "After failing a Strength, Dexterity, Constitution, or Charisma check, spend 1 Moxie Point to roll your Fisticuffs die and add it to the total. If the check still fails, the point is refunded but this feature is unusable until you finish a Short or Long Rest."
+          }
+        ]
+      },
+      {
+        "level": 3,
+        "features": [
+          {
+            "name": "Heavy Hitter",
+            "desc": "On an Unarmed Strike hit, you can apply the Damage option and also either the Grapple or the Shove option."
+          },
+          {
+            "name": "Pugilist Subclass",
+            "desc": "Choose a Pugilist subclass: Dog and Hound, Hand of Dread, Piss and Vinegar, Street Saint, Squared Circle, or Sweet Science. Subclass features arrive at levels 3, 6, 11, and 17."
+          }
+        ]
+      },
+      {
+        "level": 4,
+        "features": [
+          {
+            "name": "Ability Score Improvement",
+            "desc": "The Ability Score Improvement feat or another feat you qualify for; again at levels 8, 12, and 16."
+          },
+          {
+            "name": "Dig Deep",
+            "desc": "Bonus Action: for 10 minutes you have Resistance to Bludgeoning, Piercing, and Slashing damage and ignore the effects of Exhaustion below level 6. Once per Long Rest, or take 1 Exhaustion level (no action) to restore the use."
+          }
+        ]
+      },
+      {
+        "level": 5,
+        "features": [
+          {
+            "name": "Extra Attack",
+            "desc": "Attack twice, instead of once, when you take the Attack action on your turn."
+          },
+          {
+            "name": "Haymaker",
+            "desc": "When attacking with an Unarmed Strike or Pugilist weapon, spend 1 Moxie Point: if the attack hits, it deals maximum damage and the point is refunded."
+          }
+        ]
+      },
+      {
+        "level": 6,
+        "features": [
+          {
+            "name": "Moxie-Fueled Fists",
+            "desc": "Damage from your Unarmed Strikes and improvised weapon attacks can be Force or its normal type, your choice."
+          }
+        ]
+      },
+      {
+        "level": 7,
+        "features": [
+          {
+            "name": "Down But Not Out",
+            "desc": "When you use Bloodied But Unbowed while Bloodied, for 1 minute your Unarmed Strikes and Pugilist weapon attacks gain a damage bonus equal to your Constitution modifier + your Exhaustion levels. Once per Long Rest."
+          }
+        ]
+      },
+      {
+        "level": 8,
+        "features": [
+          {
+            "name": "Ability Score Improvement",
+            "desc": "The Ability Score Improvement feat or another feat you qualify for."
+          }
+        ]
+      },
+      {
+        "level": 9,
+        "features": [
+          {
+            "name": "School of Hard Knocks",
+            "desc": "Once per turn, an Unarmed Strike or Pugilist weapon hit deals an extra 1d12 damage of the attack's type. Instead of the extra damage you can choose Endanger (the next attack to hit the target deals maximum damage dice) or Provoke (the target has Disadvantage on attacks against anyone but you until the end of your next turn)."
+          }
+        ]
+      },
+      {
+        "level": 10,
+        "features": [
+          {
+            "name": "Herculean",
+            "desc": "Your Strength counts double for carrying capacity, your Unarmed Strike hits against objects are Critical Hits, and your jump distance doubles."
+          },
+          {
+            "name": "Shake It Off",
+            "desc": "At the start of your turn (no action), remove 1 Exhaustion level or end one of these on yourself: Blinded, Charmed, Deafened, Frightened, Paralyzed, Poisoned, Restrained, or Stunned. Once per Long Rest, or take 1 Exhaustion level (no action) to restore the use."
+          }
+        ]
+      },
+      {
+        "level": 12,
+        "features": [
+          {
+            "name": "Ability Score Improvement",
+            "desc": "The Ability Score Improvement feat or another feat you qualify for."
+          }
+        ]
+      },
+      {
+        "level": 13,
+        "features": [
+          {
+            "name": "Dig Deeper",
+            "desc": "Bonus Action: for 1 minute you get all Dig Deep benefits and can use School of Hard Knocks twice per turn. Once per Long Rest; twice per Long Rest from level 20."
+          }
+        ]
+      },
+      {
+        "level": 14,
+        "features": [
+          {
+            "name": "Unbreakable",
+            "desc": "Advantage on Strength, Dexterity, and Constitution saving throws. After failing any save, you can spend 1 Moxie Point to reroll it and must keep the new result."
+          }
+        ]
+      },
+      {
+        "level": 15,
+        "features": [
+          {
+            "name": "Pugnacious",
+            "desc": "On rolling Initiative, you can remove 1 Exhaustion level and regain your uses of Dig Deep, Down But Not Out, and Shake It Off. Once per Long Rest."
+          }
+        ]
+      },
+      {
+        "level": 16,
+        "features": [
+          {
+            "name": "Ability Score Improvement",
+            "desc": "The Ability Score Improvement feat or another feat you qualify for."
+          }
+        ]
+      },
+      {
+        "level": 18,
+        "features": [
+          {
+            "name": "Fighting Spirit",
+            "desc": "When dropped to 0 Hit Points without dying outright, you can go to 1 Hit Point instead, gaining Temporary Hit Points equal to half your Hit Point maximum, all expended Moxie Points, and Resistance to all damage but Force for 1 minute. Once per Long Rest."
+          }
+        ]
+      },
+      {
+        "level": 19,
+        "features": [
+          {
+            "name": "Epic Boon",
+            "desc": "An Epic Boon feat or another feat you qualify for; Boon of Combat Prowess is suggested."
+          }
+        ]
+      },
+      {
+        "level": 20,
+        "features": [
+          {
+            "name": "Peak Physical Condition",
+            "desc": "Strength and Constitution each rise by 2, to a maximum of 23. Finishing a Long Rest removes all Exhaustion levels. Finishing a Short Rest restores Hit Points equal to twice your Pugilist level."
+          }
+        ]
+      }
+    ]
   }
 ]

@@ -41,6 +41,27 @@ const OGL_SECTION_15: string[] = [
   "END OF LICENSE",
 ];
 
+// Partnered publishers and the works Six Axes draws on, for the attribution entry below.
+export const PARTNER_WORKS: { publisher: string; works: string[] }[] = [
+  { publisher: "Hit Point Press", works: ["The Griffon's Saddlebag: Book One", "The Griffon's Saddlebag: Book Two", "Humblewood Campaign Setting", "Humblewood Tales", "The Field Guide to Floral Dragons"] },
+  { publisher: "1985 Games", works: ["Obojima: Tales from the Tall Grass", "Obojima: Tales from Yatamon"] },
+  { publisher: "Ghostfire Gaming", works: ["Grim Hollow: Player's Guide", "Grim Hollow: Player Pack", "Grim Hollow: Campaign Guide", "Grim Hollow: Lairs of Etharis", "Dungeons of Drakkenheim", "Monsters of Drakkenheim"] },
+  { publisher: "Kobold Press", works: ["Book of Ebon Tides", "Tome of Heroes", "Tome of Beasts 1", "Northlands Worldbook", "Northlands Sagas", "Tales from the Shadows"] },
+  { publisher: "Loot Tavern", works: ["Heliana's Guide to Monster Hunting: Part 1", "Heliana's Guide to Monster Hunting: Part 2"] },
+  { publisher: "MonkeyDM", works: ["Steinhardt's Guide to the Eldritch Hunt Player Pack"] },
+  { publisher: "Critical Role (Darrington Press)", works: ["Tal'Dorei Campaign Setting Reborn", "Blood Hunter"] },
+  { publisher: "Legends of Avantris", works: ["The Crooked Moon Part One"] },
+  { publisher: "Chaosium", works: ["Cthulhu by Torchlight"] },
+  { publisher: "Keith Baker", works: ["Exploring Eberron", "Frontiers of Eberron: Quickstone"] },
+  { publisher: "PalaeoGames", works: ["Dr Dhrolin's Dictionary of Dinosaurs"] },
+  { publisher: "MCDM Productions", works: ["The Illrigger", "Flee, Mortals!", "Where Evil Lives"] },
+  { publisher: "Mage Hand Press", works: ["Valda's Spire of Secrets", "Valda's Spire of Secrets: Player Pack", "Valda's Spire of Secrets: Player Pack 2", "The Gunslinger Class: Valda's Spire of Secrets"] },
+  { publisher: "Sterling Vermin Adventuring Co.", works: ["The Magus Class", "The Pugilist Class"] },
+  { publisher: "Roll & Play Press", works: ["One-Shot Wonders: Holiday Adventure Pack"] },
+  { publisher: "Beadle & Grimm's", works: ["Faster, Purple Worm! Everybody Dies, Vol. 1"] },
+  { publisher: "Paizo", works: ["Abomination Vaults"] },
+];
+
 export interface SystemAttribution {
   id: string;        // systemId (matches lib/systems/<id>.ts); "" for entries not tied to one forge system
   system: string;    // display name of the system
@@ -144,6 +165,20 @@ export const SYSTEM_ATTRIBUTIONS: SystemAttribution[] = [
       MONSTER_SOURCES.bfrd.notice ?? "",
     ],
     url: "https://koboldpress.com/orclicense",
+  },
+  {
+    // Partnered 5e publishers whose player options, monsters and magic items ship in Six Axes by
+    // agreement. The agreement requires attribution and a statement that each publisher owns all rights
+    // to its content. Six Axes describes every rule in its own words; none of the publishers' text is
+    // reproduced. Not a selectable system, so id "" keeps it off the in-Forge line; it lists on /licenses.
+    id: "",
+    system: "D&D 5e partnered publishers",
+    license: "Used with permission",
+    short: "Includes partnered 5e content used with permission; all rights belong to the respective publishers.",
+    notice: [
+      "Six Axes includes classes, subclasses, species, backgrounds, monsters and magic items from the partnered publishers and works listed below, used with their permission. Each publisher owns all rights, title and interest in and to its content, including its classes, subclasses, species and other character options, their names, and their game mechanics. Six Axes describes those mechanics in its own words and does not reproduce the publishers' text, artwork or setting material. Six Axes is an independent product and is not published or endorsed by any of these publishers.",
+      ...PARTNER_WORKS.map((p) => p.publisher + ": " + p.works.join("; ") + "."),
+    ],
   },
 ];
 
