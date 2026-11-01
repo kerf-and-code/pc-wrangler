@@ -79,6 +79,9 @@ export default function ReliabilityPage() {
   const [labels, setLabels] = useState<Record<string, string>>({});
   const [rows, setRows] = useState<PE[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  // Set when paging stopped early, so the numbers are visibly marked as partial rather than
+  // presented as the whole campaign (the very failure the pageAll comment below exists to prevent).
+  const [partial, setPartial] = useState<string | null>(null);
 
   // double-coding state
   const [jobs, setJobs] = useState<JobRow[]>([]);
@@ -133,10 +136,11 @@ export default function ReliabilityPage() {
       const { data, error } = await apply(supabase.from(table).select(columns))
         .order("id", { ascending: true })
         .range(from, from + PAGE - 1);
-      if (error) break;
+      if (error) { setPartial(`Only ${out.length} rows of ${table.replace(/_/g, " ")} loaded (${error.message}). The figures below are computed from part of the data; reload to try again.`); break; }
       const rows = (data as T[]) || [];
       out.push(...rows);
       if (rows.length < PAGE) break;
+      if (page === 99) setPartial(`Stopped after ${out.length} rows of ${table.replace(/_/g, " ")}. The figures below are computed from part of the data.`);
     }
     return out;
   }
@@ -146,6 +150,7 @@ export default function ReliabilityPage() {
     if (!campaignId) return;
     let active = true;
     setLoading(true);
+    setPartial(null);
     (async () => {
       const [pe, { data: jb }] = await Promise.all([
         pageAll<PE>(
@@ -382,6 +387,7 @@ export default function ReliabilityPage() {
           </select>
         </div>
 
+        {partial && !loading && <p role="alert" style={{ color: C.warn, fontSize: 13, margin: "0 0 12px" }}>{partial}</p>}
         {loading ? (
           <div style={{ ...box, color: C.muted, fontSize: 14 }}>Loading…</div>
         ) : stats.reviewed === 0 ? (

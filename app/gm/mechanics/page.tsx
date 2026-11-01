@@ -100,6 +100,7 @@ export default function MechanicsPage() {
   const [events, setEvents] = useState<VttEvent[]>([]);
   const [charNames, setCharNames] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState<boolean>(true);
+  const [loadErr, setLoadErr] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -132,13 +133,27 @@ export default function MechanicsPage() {
   useEffect(() => {
     if (!sessionId) return;
     (async () => {
-      setLoading(true);
-      const { data } = await supabase
-        .from("vtt_events")
-        .select("id, character_id, actor_name, event_type, name, rolls, state, fidelity, rolled_at, received_at, source")
-        .eq("session_id", sessionId)
-        .order("rolled_at", { ascending: true });
-      setEvents((data as VttEvent[]) || []);
+      setLoading(true); setLoadErr(null);
+      // Paged: an unbounded select stops at PostgREST's 1000-row cap, so a long session's dice
+      // stats were computed from its first 1000 rolls and presented as the whole night. Ordered by
+      // rolled_at then id so paging is stable when two rolls share a timestamp.
+      const PAGE = 1000;
+      const all: VttEvent[] = [];
+      for (let page = 0; page < 100; page++) {
+        const from = page * PAGE;
+        const { data, error } = await supabase
+          .from("vtt_events")
+          .select("id, character_id, actor_name, event_type, name, rolls, state, fidelity, rolled_at, received_at, source")
+          .eq("session_id", sessionId)
+          .order("rolled_at", { ascending: true })
+          .order("id", { ascending: true })
+          .range(from, from + PAGE - 1);
+        if (error) { setLoadErr(`Only ${all.length} rolls loaded (${error.message}). The numbers below cover part of the session.`); break; }
+        const rows = (data as VttEvent[]) || [];
+        all.push(...rows);
+        if (rows.length < PAGE) break;
+      }
+      setEvents(all);
       setLoading(false);
     })();
   }, [sessionId, supabase]);
@@ -288,6 +303,7 @@ export default function MechanicsPage() {
         </select>
       </div>
 
+      {loadErr && !loading && <p role="alert" style={{ color: C.warn, fontSize: 13, margin: "0 0 12px" }}>{loadErr}</p>}
       {loading ? (
         <div style={{ ...box, color: C.muted, fontSize: 14 }}>Loading...</div>
       ) : events.length === 0 ? (
