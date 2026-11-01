@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { PortraitUploader } from "@/components/portrait-uploader";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
@@ -188,8 +188,25 @@ export default function CodexPage() {
   };
   const [form, setForm] = useState<{ title: string; body: string; name: string; description: string; visibility: string; tags: string; summary: string }>(blankForm);
   const [saving, setSaving] = useState<boolean>(false);
+  const [saveErr, setSaveErr] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState<boolean>(false);
   const [blocks, setBlocks] = useState<Block[]>([]);
+
+  // ---- unsaved-changes guard ----
+  // The editor's form + blocks as they were when the item was opened or last saved. Switching to
+  // another item, tab or campaign used to drop unsaved edits silently; now any of those asks first,
+  // and closing the tab warns too.
+  const baseline = useRef<string>("");
+  const snap = (f: typeof form, b: Block[]) => JSON.stringify([f, b]);
+  const markClean = (f: typeof form, b: Block[]) => { baseline.current = snap(f, b); };
+  const dirty = !!mode && snap(form, blocks) !== baseline.current;
+  const okToLeave = () => !dirty || window.confirm("You have unsaved changes in the editor. Discard them?");
+  useEffect(() => {
+    if (!dirty) return;
+    const h = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ""; };
+    window.addEventListener("beforeunload", h);
+    return () => window.removeEventListener("beforeunload", h);
+  }, [dirty]);
   const [linkPick, setLinkPick] = useState<string>("");
   const [linkRel, setLinkRel] = useState<string>("");
   const [sessions, setSessions] = useState<Sess[]>([]);
@@ -244,27 +261,33 @@ export default function CodexPage() {
 
   // ---- open / new ----
   function openEntry(e: Entry) {
+    if (!okToLeave()) return;
+    const f = { title: e.title, body: e.body || "", name: "", description: "", visibility: e.visibility, tags: (e.tags || []).join(", "), summary: e.summary || "" };
+    const b = e.blocks && e.blocks.length ? e.blocks : bodyToBlocks(e.body);
     setMode({ what: "entry", type: e.type, tag: tabDef(tab)?.tag ?? null, id: e.id });
-    setForm({ title: e.title, body: e.body || "", name: "", description: "", visibility: e.visibility, tags: (e.tags || []).join(", "), summary: e.summary || "" });
-    setBlocks(e.blocks && e.blocks.length ? e.blocks : bodyToBlocks(e.body));
+    setForm(f); setBlocks(b); markClean(f, b); setSaveErr(null);
   }
   function openChar(c: Char) {
+    if (!okToLeave()) return;
+    const f = { title: "", body: "", name: c.name, description: c.description || "", visibility: c.visibility, tags: (c.tags || []).join(", "), summary: "" };
     setMode({ what: "character", id: c.id });
-    setForm({ title: "", body: "", name: c.name, description: c.description || "", visibility: c.visibility, tags: (c.tags || []).join(", "), summary: "" });
-    setBlocks([]);
+    setForm(f); setBlocks([]); markClean(f, []); setSaveErr(null);
   }
   function newItem() {
     if (tab === "pc") return;
-    setBlocks([]);
+    if (!okToLeave()) return;
+    setBlocks([]); setSaveErr(null);
     if (tab === "npc") {
+      const f = { ...blankForm, visibility: "player" };
       setMode({ what: "character", id: null });
-      setForm({ ...blankForm, visibility: "player" });
+      setForm(f); markClean(f, []);
     } else {
       const d = tabDef(tab);
       setMode({ what: "entry", type: d?.type || tab, tag: d?.tag ?? null, id: null });
       // Seed the tags field with the tab's reserved tag so the GM can see why the entry
       // will land where it does, and can add their own alongside it.
-      setForm({ ...blankForm, visibility: tab === "note" ? "gm" : "player", tags: d?.tag || "" });
+      const f = { ...blankForm, visibility: tab === "note" ? "gm" : "player", tags: d?.tag || "" };
+      setForm(f); markClean(f, []);
     }
   }
 
@@ -275,10 +298,12 @@ export default function CodexPage() {
   // ---- save ----
   async function save() {
     if (!mode || !campaignId) return;
-    setSaving(true);
+    setSaving(true); setSaveErr(null);
+    // Every write's error is checked: a failed save used to look exactly like a successful one.
+    let failed: string | null = null;
     const tags = parseTags(form.tags);
     if (mode.what === "entry") {
-      if (!form.title.trim()) { setSaving(false); return; }
+      if (!form.title.trim()) { setSaving(false); setSaveErr("Give it a title before saving."); return; }
       // Re-apply the tab's reserved tag if it was edited away. Without this, clearing the
       // tags field on a faction silently demotes it to plain lore and it vanishes from the
       // tab it was created in, which reads as data loss rather than a tag change.
@@ -290,32 +315,42 @@ export default function CodexPage() {
       const body = flat || form.body;
       const summary = form.summary.trim() || body.slice(0, 200);
       if (mode.id) {
-        await supabase.from("entries").update({ title: form.title.trim(), body, blocks, summary, visibility: form.visibility, tags: entryTags }).eq("id", mode.id);
+        const { error } = await supabase.from("entries").update({ title: form.title.trim(), body, blocks, summary, visibility: form.visibility, tags: entryTags }).eq("id", mode.id);
+        if (error) failed = error.message;
       } else {
-        const { data } = await supabase.from("entries")
+        const { data, error } = await supabase.from("entries")
           .insert({ campaign_id: campaignId, type: mode.type, title: form.title.trim(), body, blocks, summary, visibility: form.visibility, tags: entryTags })
           .select("id, type, title, body, visibility, tags, image_url, slug, summary, blocks").single();
-        if (data) setMode({ what: "entry", type: (data as Entry).type, tag: mode.tag ?? null, id: (data as Entry).id });
+        if (error) failed = error.message;
+        else if (data) setMode({ what: "entry", type: (data as Entry).type, tag: mode.tag ?? null, id: (data as Entry).id });
       }
     } else {
+      if (!form.name.trim()) { setSaving(false); setSaveErr("Give the NPC a name before saving."); return; }
       if (mode.id) {
-        await supabase.from("characters").update({ name: form.name.trim(), description: form.description, visibility: form.visibility, tags }).eq("id", mode.id);
+        const { error } = await supabase.from("characters").update({ name: form.name.trim(), description: form.description, visibility: form.visibility, tags }).eq("id", mode.id);
+        if (error) failed = error.message;
       } else {
-        if (!form.name.trim()) { setSaving(false); return; }
-        const { data } = await supabase.from("characters")
+        const { data, error } = await supabase.from("characters")
           .insert({ campaign_id: campaignId, kind: "npc", name: form.name.trim(), description: form.description, visibility: form.visibility, tags })
           .select("id, name, kind, description, visibility, tags, class, subclass").single();
-        if (data) setMode({ what: "character", id: (data as Char).id });
+        if (error) failed = error.message;
+        else if (data) setMode({ what: "character", id: (data as Char).id });
       }
     }
+    if (failed) { setSaveErr(`Not saved: ${failed}`); setSaving(false); return; }
+    markClean(form, blocks);
     await reload(campaignId);
     setSaving(false);
   }
 
   async function remove() {
     if (!mode || !mode.id) return;
+    const label = mode.what === "entry" ? (form.title.trim() || "this entry") : (form.name.trim() || "this NPC");
+    if (!window.confirm(`Delete "${label}"? Its links and reveals go with it. This cannot be undone.`)) return;
     const table = mode.what === "entry" ? "entries" : "characters";
-    await supabase.from(table).delete().eq("id", mode.id);
+    const { error } = await supabase.from(table).delete().eq("id", mode.id);
+    if (error) { setSaveErr(`Not deleted: ${error.message}`); return; }
+    markClean(blankForm, []);
     setMode(null);
     await reload(campaignId);
   }
@@ -407,7 +442,7 @@ export default function CodexPage() {
 
         {/* campaign + tabs */}
         <div style={{ ...box, marginBottom: 16 }}>
-          <select value={campaignId} onChange={(e) => setCampaignId(e.target.value)} style={{ ...input }}>
+          <select value={campaignId} onChange={(e) => { if (okToLeave()) { markClean(blankForm, []); setCampaignId(e.target.value); } }} style={{ ...input }}>
             {campaigns.length === 0 && <option value="">No campaigns yet</option>}
             {campaigns.map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}
           </select>
@@ -440,7 +475,7 @@ export default function CodexPage() {
             {TABS.map((t) => {
               const on = tab === t.key;
               return (
-                <button key={t.key} type="button" onClick={() => { setTab(t.key); setMode(null); }}
+                <button key={t.key} type="button" onClick={() => { if (!okToLeave()) return; markClean(blankForm, []); setTab(t.key); setMode(null); }}
                   style={{ padding: "8px 14px", borderRadius: FORGE_RADIUS, border: `1px solid ${on ? C.sun : C.line}`,
                     background: on ? C.sun : C.surface2, color: on ? SAX.inkDeep : C.text, fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
                   {t.label}
@@ -582,6 +617,8 @@ export default function CodexPage() {
                       Delete
                     </button>
                   )}
+                  {dirty && !saving && !saveErr && <span role="status" style={{ color: C.muted, fontSize: 12.5 }}>Unsaved changes</span>}
+                  {saveErr && <span role="alert" style={{ color: C.warn, fontSize: 12.5 }}>{saveErr}</span>}
                 </div>
                   </div>
                   {/* right rail: summary, images, connections, reveals */}
