@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { surfaces, ui } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
+import { pickCurrentSession } from "@/lib/current-session";
 
 type Campaign = { id: string; name: string; share_code: string };
 type Sess = { id: string; session_number: number | null; status: string; recap: string | null };
@@ -79,7 +80,7 @@ export default function CheckInPage() {
       const sList = (sess as Sess[]) || [];
       setSessions(sList);
       setChars((ch as Char[]) || []);
-      setSelected(sList.length ? sList[0] : null);
+      setSelected(pickCurrentSession(sList) ?? null);
       loadChat(campaignId);
     })();
     return () => { active = false; };

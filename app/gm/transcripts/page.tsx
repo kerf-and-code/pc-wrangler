@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { surfaces, ui } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
+import { pickCurrentSession } from "@/lib/current-session";
 
 type Campaign = { id: string; name: string };
 type Sess = { id: string; session_number: number | null; status: string };
@@ -61,7 +62,7 @@ export default function TranscriptsPage() {
       if (!active) return;
       const sList = (sess as Sess[]) || [];
       setSessions(sList);
-      setSessionId(sList.length ? sList[0].id : "");
+      setSessionId(pickCurrentSession(sList)?.id ?? "");
       const cm: Record<string, string> = {};
       ((chs as { id: string; name: string }[]) || []).forEach((c) => { cm[c.id] = c.name; });
       setCharName(cm);

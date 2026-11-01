@@ -6,6 +6,7 @@ import PageShell from "@/components/page-shell";
 import GmIdentityCard from "@/components/gm-identity-card";
 import { surfaces, ui } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
+import { pickCurrentSession } from "@/lib/current-session";
 
 type Campaign = { id: string; name: string };
 type Sess = { id: string; session_number: number | null; status: string };
@@ -67,7 +68,7 @@ export default function CapturePage() {
       const sList = (sess as Sess[]) || [];
       setSessions(sList);
       setChars((ch as Char[]) || []);
-      setSessionId(sList.length ? sList[0].id : "");
+      setSessionId(pickCurrentSession(sList)?.id ?? "");
     })();
     return () => { active = false; };
   }, [campaignId, supabase]);
