@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { surfaces, ui } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
+import { initialCampaignId, useRememberCampaign, gmHref } from "@/lib/campaign-context";
 
 type Campaign = { id: string; name: string };
 type Sess = { id: string; session_number: number | null; status: string; started_at: string | null; scheduled_at: string | null };
@@ -22,6 +23,7 @@ export default function TimelinePage() {
   const supabase = useMemo(() => createClient(), []);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [campaignId, setCampaignId] = useState<string>("");
+  useRememberCampaign(campaignId, campaigns);
   const [sessions, setSessions] = useState<Sess[]>([]);
   const [arcs, setArcs] = useState<Arc[]>([]);
   const [touches, setTouches] = useState<Touch[]>([]);
@@ -36,10 +38,10 @@ export default function TimelinePage() {
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase.from("campaigns").select("id, name").order("created_at");
+      const { data } = await supabase.from("campaigns").select("id, name, system").order("created_at");
       const list = (data as Campaign[]) || [];
       setCampaigns(list);
-      if (list.length) setCampaignId(list[0].id);
+      if (list.length) setCampaignId(initialCampaignId(list));
     })();
   }, [supabase]);
 
@@ -166,8 +168,12 @@ export default function TimelinePage() {
 
   // Entities render as chips rather than bulleted Rows on purpose: a busy session can name
   // a dozen of them, and a dozen more bullets would bury the arcs and loot underneath.
-  const Chip = ({ color, children }: { color: string; children: React.ReactNode }) => (
-    <span style={{
+  // A chip with an href opens what it names in the Codex.
+  const Chip = ({ color, children, href }: { color: string; children: React.ReactNode; href?: string }) => (
+    <span onClick={href ? () => { window.location.href = href; } : undefined} role={href ? "link" : undefined}
+      tabIndex={href ? 0 : undefined} onKeyDown={href ? (e) => { if (e.key === "Enter") window.location.href = href; } : undefined}
+      title={href ? "Open in the Codex" : undefined}
+      style={{ cursor: href ? "pointer" : undefined,
       display: "inline-block", fontSize: 12, lineHeight: 1.4, padding: "2px 8px",
       borderRadius: 999, border: `1px solid ${color}55`, background: `${color}14`, color, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>{children}</span>
   );
@@ -246,7 +252,7 @@ export default function TimelinePage() {
                   <div style={{ position: "absolute", left: -17, top: 18, width: 11, height: 11, borderRadius: FORGE_RADIUS, background: C.sun, border: `2px solid ${C.bg}` }} />
                   <div style={box}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
-                      <span style={{ fontSize: 16, fontWeight: 700 }}>Session {s.session_number ?? "?"}</span>
+                      <a href={gmHref("/gm/sessions", { campaign: campaignId, session: s.id })} style={{ fontSize: 16, fontWeight: 700, color: "inherit", textDecoration: "none" }} title="Open in the Session Log">Session {s.session_number ?? "?"}</a>
                       <span style={{ fontSize: 12, color: C.muted }}>{dateOf(s)}{dateOf(s) ? " · " : ""}{s.status}</span>
                     </div>
                     {opened.length === 0 && touched.length === 0 && grants.length === 0
@@ -255,17 +261,17 @@ export default function TimelinePage() {
                     )}
                     {places.length > 0 && (
                       <ChipRow label="Where" color={C.sun}>
-                        {places.map((id) => (<Chip key={id} color={C.sun}>{titleOf(id)}</Chip>))}
+                        {places.map((id) => (<Chip key={id} color={C.sun} href={gmHref("/gm/codex", { campaign: campaignId, entry: id })}>{titleOf(id)}</Chip>))}
                       </ChipRow>
                     )}
                     {met.length > 0 && (
                       <ChipRow label="Met" color={C.plum}>
-                        {met.map((id) => (<Chip key={id} color={C.plum}>{nameOf(id)}</Chip>))}
+                        {met.map((id) => (<Chip key={id} color={C.plum} href={gmHref("/gm/codex", { campaign: campaignId, character: id })}>{nameOf(id)}</Chip>))}
                       </ChipRow>
                     )}
                     {factions.length > 0 && (
                       <ChipRow label="Factions" color={C.warn}>
-                        {factions.map((id) => (<Chip key={id} color={C.warn}>{titleOf(id)}</Chip>))}
+                        {factions.map((id) => (<Chip key={id} color={C.warn} href={gmHref("/gm/codex", { campaign: campaignId, entry: id })}>{titleOf(id)}</Chip>))}
                       </ChipRow>
                     )}
                     {opened.map((a) => (

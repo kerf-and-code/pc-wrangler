@@ -5,6 +5,10 @@ import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { surfaces, ui } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
+import { initialCampaignId, useRememberCampaign, gmHref } from "@/lib/campaign-context";
+
+// Result titles open the thing they name (Codex entry, NPC/PC, session) instead of being plain text.
+const resultLink: React.CSSProperties = { color: "inherit", textDecoration: "underline", textDecorationColor: "rgba(200,162,75,0.55)", textUnderlineOffset: 3 };
 
 type Campaign = { id: string; name: string };
 type Entry = { id: string; type: string; title: string; body: string | null; visibility: string; tags: string[] };
@@ -28,6 +32,7 @@ export default function SearchPage() {
   const supabase = useMemo(() => createClient(), []);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [campaignId, setCampaignId] = useState<string>("");
+  useRememberCampaign(campaignId, campaigns);
   const [entries, setEntries] = useState<Entry[]>([]);
   const [chars, setChars] = useState<Char[]>([]);
   const [sessions, setSessions] = useState<Sess[]>([]);
@@ -42,10 +47,10 @@ export default function SearchPage() {
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase.from("campaigns").select("id, name").order("created_at");
+      const { data } = await supabase.from("campaigns").select("id, name, system").order("created_at");
       const list = (data as Campaign[]) || [];
       setCampaigns(list);
-      if (list.length) setCampaignId(list[0].id);
+      if (list.length) setCampaignId(initialCampaignId(list));
     })();
   }, [supabase]);
 
@@ -221,7 +226,7 @@ export default function SearchPage() {
           <div style={{ display: "grid", gap: 10 }}>
             {cHits.map((c) => (
               <div key={c.id} style={cardInner}>
-                <div style={{ fontSize: 14, fontWeight: 600 }}>{c.name} <span style={{ color: C.muted, fontWeight: 400, fontSize: 12 }}>· {c.kind === "pc" ? "PC" : "NPC"}</span></div>
+                <div style={{ fontSize: 14, fontWeight: 600 }}><a href={gmHref("/gm/codex", { campaign: campaignId, character: c.id })} style={resultLink}>{c.name}</a> <span style={{ color: C.muted, fontWeight: 400, fontSize: 12 }}>· {c.kind === "pc" ? "PC" : "NPC"}</span></div>
                 {c.description && <div style={{ fontSize: 13, color: C.muted, marginTop: 4 }}>{snippet(c.description)}</div>}
                 <Chips items={connectionsOf("character", c.id)} />
               </div>
@@ -236,7 +241,7 @@ export default function SearchPage() {
           <div style={{ display: "grid", gap: 10 }}>
             {eHits.map((e) => (
               <div key={e.id} style={cardInner}>
-                <div style={{ fontSize: 14, fontWeight: 600 }}>{e.title} <span style={{ color: C.muted, fontWeight: 400, fontSize: 12 }}>· {TYPE_LABEL[e.type] || e.type}</span></div>
+                <div style={{ fontSize: 14, fontWeight: 600 }}><a href={gmHref("/gm/codex", { campaign: campaignId, entry: e.id })} style={resultLink}>{e.title}</a> <span style={{ color: C.muted, fontWeight: 400, fontSize: 12 }}>· {TYPE_LABEL[e.type] || e.type}</span></div>
                 {e.body && <div style={{ fontSize: 13, color: C.muted, marginTop: 4 }}>{snippet(e.body)}</div>}
                 <Chips items={connectionsOf("entry", e.id)} />
               </div>
@@ -282,7 +287,7 @@ export default function SearchPage() {
           <div style={{ display: "grid", gap: 10 }}>
             {sHits.map((s) => (
               <div key={s.id} style={cardInner}>
-                <div style={{ fontSize: 14, fontWeight: 600 }}>Session {s.session_number ?? "?"} <span style={{ color: C.muted, fontWeight: 400, fontSize: 12 }}>· {s.status}</span></div>
+                <div style={{ fontSize: 14, fontWeight: 600 }}><a href={gmHref("/gm/sessions", { campaign: campaignId, session: s.id })} style={resultLink}>Session {s.session_number ?? "?"}</a> <span style={{ color: C.muted, fontWeight: 400, fontSize: 12 }}>· {s.status}</span></div>
                 {s.notes && <div style={{ fontSize: 13, color: C.muted, marginTop: 4 }}>{snippet(s.notes)}</div>}
               </div>
             ))}

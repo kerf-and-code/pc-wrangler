@@ -10,6 +10,7 @@ import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import LoreTriage from "./LoreTriage";
 import BlockEditor, { blocksToPlainText, bodyToBlocks, type Block } from "./BlockEditor";
 import EntryPreview from "./EntryPreview";
+import { initialCampaignId, useRememberCampaign, urlParam, setUrlParam } from "@/lib/campaign-context";
 
 type Campaign = { id: string; name: string; public_slug?: string | null; codex_cover_url?: string | null };
 type Entry = {
@@ -122,6 +123,7 @@ export default function CodexPage() {
   const supabase = useMemo(() => createClient(), []);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [campaignId, setCampaignId] = useState<string>("");
+  useRememberCampaign(campaignId, campaigns);
   const [entries, setEntries] = useState<Entry[]>([]);
   const [chars, setChars] = useState<Char[]>([]);
   const [links, setLinks] = useState<Link[]>([]);
@@ -230,10 +232,10 @@ export default function CodexPage() {
   // ---- load ----
   useEffect(() => {
     (async () => {
-      const { data } = await supabase.from("campaigns").select("id, name, public_slug, codex_cover_url").order("created_at", { ascending: true });
+      const { data } = await supabase.from("campaigns").select("id, name, public_slug, codex_cover_url, system").order("created_at", { ascending: true });
       const list = (data as Campaign[]) || [];
       setCampaigns(list);
-      if (list.length) setCampaignId(list[0].id);
+      if (list.length) setCampaignId(initialCampaignId(list));
     })();
   }, [supabase]);
 
@@ -260,11 +262,11 @@ export default function CodexPage() {
   }, [campaignId]);
 
   // ---- open / new ----
-  function openEntry(e: Entry) {
+  function openEntry(e: Entry, inTab: string = tab) {
     if (!okToLeave()) return;
     const f = { title: e.title, body: e.body || "", name: "", description: "", visibility: e.visibility, tags: (e.tags || []).join(", "), summary: e.summary || "" };
     const b = e.blocks && e.blocks.length ? e.blocks : bodyToBlocks(e.body);
-    setMode({ what: "entry", type: e.type, tag: tabDef(tab)?.tag ?? null, id: e.id });
+    setMode({ what: "entry", type: e.type, tag: tabDef(inTab)?.tag ?? null, id: e.id });
     setForm(f); setBlocks(b); markClean(f, b); setSaveErr(null);
   }
   function openChar(c: Char) {
@@ -294,6 +296,35 @@ export default function CodexPage() {
   function parseTags(s: string): string[] {
     return s.split(",").map((t) => t.trim()).filter((t) => t.length > 0);
   }
+
+  // ---- deep links ----
+  // /gm/codex?entry=<id> or ?character=<id> opens that item on its own tab, which is how Search,
+  // Timeline, Prep and both maps link here. Runs once, after the campaign's data has loaded. After
+  // that the URL follows the open item, so a reload or a copied link lands on the same entry.
+  const deepLinked = useRef(false);
+  useEffect(() => {
+    if (deepLinked.current || !campaignId || (!entries.length && !chars.length)) return;
+    deepLinked.current = true;
+    const eid = urlParam("entry");
+    const cid = urlParam("character");
+    if (eid) {
+      const e = entries.find((x) => x.id === eid);
+      if (e) {
+        const key = TABS.find((t) => t.type && matchesTab(e, t.key))?.key ?? "note";
+        setTab(key);
+        openEntry(e, key);
+      }
+    } else if (cid) {
+      const c = chars.find((x) => x.id === cid);
+      if (c) { setTab(c.kind === "pc" ? "pc" : "npc"); openChar(c); }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [campaignId, entries, chars]);
+  useEffect(() => {
+    if (!deepLinked.current) return;
+    setUrlParam("entry", mode?.what === "entry" && mode.id ? mode.id : null);
+    setUrlParam("character", mode?.what === "character" && mode.id ? mode.id : null);
+  }, [mode]);
 
   // ---- save ----
   async function save() {
