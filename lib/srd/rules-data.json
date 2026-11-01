@@ -3435,6 +3435,5489 @@
           "Breathe underwater for up to 1 hour per Long Rest."
         ]
       ]
+    },
+    "Kender": {
+      "src": "Dragonlance: Shadow of the Dragon Queen",
+      "creatureType": "Humanoid",
+      "size": "Small",
+      "speed": 30,
+      "advAgainst": [
+        "frightened"
+      ],
+      "skillPick": {
+        "n": 1,
+        "from": [
+          "insight",
+          "investigation",
+          "sleight",
+          "stealth",
+          "survival"
+        ]
+      },
+      "traits": [
+        [
+          "Fearless",
+          "Advantage on saves to avoid or end Frightened; once per Long Rest, turn a failed one into a success."
+        ],
+        [
+          "Kender Aptitude",
+          "Proficiency in Insight, Investigation, Sleight of Hand, Stealth, or Survival."
+        ],
+        [
+          "Taunt",
+          "Bonus Action: a creature within 60 feet that can hear and understand you makes a Wisdom save (DC 8 + Proficiency Bonus + Int, Wis or Cha modifier, chosen with this species) or has Disadvantage on attacks against anyone but you until your next turn; Proficiency Bonus times per Long Rest."
+        ]
+      ],
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "flexible"
+          }
+        }
+      }
+    },
+    "Chromatic Dragonborn": {
+      "src": "Fizban's Treasury of Dragons",
+      "creatureType": "Humanoid",
+      "size": "Medium",
+      "speed": 30,
+      "choice": {
+        "key": "ancestry",
+        "label": "Chromatic Ancestry",
+        "options": {
+          "Black (acid)": {
+            "resist": [
+              "acid"
+            ]
+          },
+          "Blue (lightning)": {
+            "resist": [
+              "lightning"
+            ]
+          },
+          "Green (poison)": {
+            "resist": [
+              "poison"
+            ]
+          },
+          "Red (fire)": {
+            "resist": [
+              "fire"
+            ]
+          },
+          "White (cold)": {
+            "resist": [
+              "cold"
+            ]
+          }
+        }
+      },
+      "traits": [
+        [
+          "Breath Weapon",
+          "Replace one attack with a 30 ft by 5 ft line of your ancestry's damage, Dex save (DC 8 + Con + Proficiency Bonus), 1d10 rising to 4d10 by level 17; Proficiency Bonus uses per Long Rest."
+        ],
+        [
+          "Draconic Resistance",
+          "Resistance to your ancestry's damage type."
+        ],
+        [
+          "Chromatic Warding",
+          "From level 5, once per Long Rest, an action grants immunity to your ancestry's damage type for 1 minute."
+        ]
+      ],
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "flexible"
+          }
+        }
+      }
+    },
+    "Gem Dragonborn": {
+      "src": "Fizban's Treasury of Dragons",
+      "creatureType": "Humanoid",
+      "size": "Medium",
+      "speed": 30,
+      "choice": {
+        "key": "ancestry",
+        "label": "Gem Ancestry",
+        "options": {
+          "Amethyst (force)": {
+            "resist": [
+              "force"
+            ]
+          },
+          "Crystal (radiant)": {
+            "resist": [
+              "radiant"
+            ]
+          },
+          "Emerald (psychic)": {
+            "resist": [
+              "psychic"
+            ]
+          },
+          "Sapphire (thunder)": {
+            "resist": [
+              "thunder"
+            ]
+          },
+          "Topaz (necrotic)": {
+            "resist": [
+              "necrotic"
+            ]
+          }
+        }
+      },
+      "traits": [
+        [
+          "Breath Weapon",
+          "Replace one attack with a 15 ft cone of your ancestry's damage, Dex save (DC 8 + Con + Proficiency Bonus), 1d10 rising to 4d10 by level 17; Proficiency Bonus uses per Long Rest."
+        ],
+        [
+          "Draconic Resistance",
+          "Resistance to your ancestry's damage type."
+        ],
+        [
+          "Psionic Mind",
+          "Telepathic messages to a creature you can see within 30 feet that knows a language."
+        ],
+        [
+          "Gem Flight",
+          "From level 5, once per Long Rest, a Bonus Action grants spectral wings: fly speed equal to walking speed (hover) for 1 minute."
+        ]
+      ],
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "flexible"
+          }
+        }
+      }
+    },
+    "Metallic Dragonborn": {
+      "src": "Fizban's Treasury of Dragons",
+      "creatureType": "Humanoid",
+      "size": "Medium",
+      "speed": 30,
+      "choice": {
+        "key": "ancestry",
+        "label": "Metallic Ancestry",
+        "options": {
+          "Brass (fire)": {
+            "resist": [
+              "fire"
+            ]
+          },
+          "Bronze (lightning)": {
+            "resist": [
+              "lightning"
+            ]
+          },
+          "Copper (acid)": {
+            "resist": [
+              "acid"
+            ]
+          },
+          "Gold (fire)": {
+            "resist": [
+              "fire"
+            ]
+          },
+          "Silver (cold)": {
+            "resist": [
+              "cold"
+            ]
+          }
+        }
+      },
+      "traits": [
+        [
+          "Breath Weapon",
+          "Replace one attack with a 15 ft cone of your ancestry's damage, Dex save (DC 8 + Con + Proficiency Bonus), 1d10 rising to 4d10 by level 17; Proficiency Bonus uses per Long Rest."
+        ],
+        [
+          "Draconic Resistance",
+          "Resistance to your ancestry's damage type."
+        ],
+        [
+          "Metallic Breath Weapon",
+          "From level 5, once per Long Rest, replace one attack with a 15 ft cone: Enervating (Con save or Incapacitated until your next turn) or Repulsion (Str save or pushed 20 feet and Prone)."
+        ]
+      ],
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "flexible"
+          }
+        }
+      }
+    },
+    "Wechselkind": {
+      "src": "Grim Hollow: Player Pack",
+      "creatureType": "Humanoid",
+      "size": "Small",
+      "speed": 25,
+      "resist": [
+        "poison"
+      ],
+      "advAgainst": [
+        "poisoned"
+      ],
+      "skillProf": [
+        "acrobatics"
+      ],
+      "spells": [
+        {
+          "spell": "Disguise Self",
+          "level": 1
+        }
+      ],
+      "spellAbility": "cha",
+      "languages": [
+        "Sylvan"
+      ],
+      "languagePick": {
+        "n": 1,
+        "from": "any"
+      },
+      "traits": [
+        [
+          "Artificial Form",
+          "Advantage on saves against poison, resistance to poison damage, immune to disease, and no need to eat, drink, sleep, or breathe; still a humanoid. Immune to magical aging."
+        ],
+        [
+          "Faerie Glamour",
+          "Once per long rest cast disguise self, only to look like the child you replaced (Charisma)."
+        ],
+        [
+          "Childish Agility",
+          "Move through the space of any creature larger than you; proficiency in Acrobatics."
+        ]
+      ],
+      "editions": {
+        "2014": {
+          "mods": {
+            "con": 2,
+            "cha": 1
+          }
+        }
+      },
+      "partnered": true,
+      "partner": "Grim Hollow"
+    },
+    "Disembodied": {
+      "src": "Grim Hollow: Player Pack",
+      "creatureType": "Humanoid",
+      "size": "Medium or Small",
+      "speed": 30,
+      "skillProf": [
+        "arcana"
+      ],
+      "spells": [
+        {
+          "spell": "Feather Fall",
+          "level": 1
+        },
+        {
+          "spell": "Blur",
+          "level": 3
+        },
+        {
+          "spell": "Blink",
+          "level": 5
+        }
+      ],
+      "spellAbility": "int",
+      "languagePick": {
+        "n": 2,
+        "from": "any"
+      },
+      "traits": [
+        [
+          "Fade Away",
+          "Once per long rest, as an action slip into the Ethereal Plane for 1 minute (end it with a bonus action): you can move and hear and see in grey, but can't affect or be affected by the Material Plane."
+        ],
+        [
+          "Planar Outcast",
+          "Once per day each, on yourself: feather fall; blur from 3rd level; blink from 5th level (Intelligence)."
+        ],
+        [
+          "Arcane Origins",
+          "Proficiency in Arcana. You keep your former species' appearance and height at a quarter of its weight."
+        ]
+      ],
+      "editions": {
+        "2014": {
+          "mods": {
+            "int": 2,
+            "dex": 1
+          }
+        }
+      },
+      "partnered": true,
+      "partner": "Grim Hollow"
+    },
+    "Geppettin": {
+      "src": "Valda's Spire of Secrets: Player Pack",
+      "creatureType": "Construct",
+      "size": "Small or Medium",
+      "speed": 30,
+      "darkvision": 60,
+      "skillPick": {
+        "n": 1,
+        "from": [
+          "intimidation",
+          "performance",
+          "persuasion"
+        ]
+      },
+      "traits": [
+        [
+          "Construct Nature",
+          "No need for food, drink, air, or sleep; magic can't put you to sleep; a Long Rest takes 4 motionless, conscious hours."
+        ],
+        [
+          "Handcrafted Quality",
+          "Proficiency in Intimidation, Performance, or Persuasion."
+        ],
+        [
+          "Geppettin Construction",
+          "Bisque: weapon hits on your first turn of combat deal extra damage equal to PB. Marionette (may be Medium): +5 feet reach on your turn with melee weapons lacking Reach, Two-Handed, and Versatile. Plushie: Reaction to resist Bludgeoning damage, being knocked 5 feet away from its source."
+        ]
+      ],
+      "partnered": true,
+      "partner": "Mage Hand Press"
+    },
+    "Mandrake": {
+      "src": "Valda's Spire of Secrets: Player Pack",
+      "creatureType": "Plant",
+      "size": "Medium",
+      "speed": 30,
+      "skillPick": {
+        "n": 1,
+        "from": [
+          "nature",
+          "survival"
+        ]
+      },
+      "spells": [
+        {
+          "spell": "Shillelagh",
+          "level": 1
+        },
+        {
+          "spell": "Goodberry",
+          "level": 3
+        },
+        {
+          "spell": "Barkskin",
+          "level": 5
+        }
+      ],
+      "traits": [
+        [
+          "Plant Nature",
+          "No need to eat with 4 hours of daily sunlight; you breathe through leaves and drink through your feet."
+        ],
+        [
+          "Natural Connection",
+          "Proficiency in Nature or Survival."
+        ],
+        [
+          "Root Magic",
+          "Shillelagh, usable on your own limb as a Club. Goodberry at level 3 and Barkskin at level 5, each once per Long Rest without a slot, or with slots (Int, Wis, or Cha)."
+        ],
+        [
+          "Entangling Vines",
+          "PB times per Long Rest, as a Bonus Action a Large or smaller creature within 30 feet has Speed 0 until the end of its next turn (it can give up an attack to free itself). From level 3 your harvest season adds: Spring, pull a flier within 30 feet of the ground down; Summer, move it 10 feet; Autumn, also affect a second creature within 5 feet; Winter, Cold damage equal to PB."
+        ]
+      ],
+      "partnered": true,
+      "partner": "Mage Hand Press"
+    },
+    "Feathren": {
+      "src": "The Griffon's Saddlebag: Book One",
+      "creatureType": "Humanoid",
+      "size": "Medium",
+      "speed": 30,
+      "darkvision": 60,
+      "toolPick": {
+        "n": 2,
+        "from": [
+          "Artisan's Tools"
+        ]
+      },
+      "spells": [
+        {
+          "spell": "Identify",
+          "level": 1
+        },
+        {
+          "spell": "Enhance Ability",
+          "level": 5
+        }
+      ],
+      "traits": [
+        [
+          "Feathren Ancestry",
+          "Pick an avian ancestry for a cantrip (jay, owl, or raven: Thaumaturgy; eagle, falcon, or hawk: Message; cardinal, mockingbird, or parrot: Prestidigitation) and a feline ancestry for a level 3 spell (lion, panther, or sabertooth: Detect Evil and Good; cheetah, serval, or tiger: Detect Poison and Disease; jaguar, lynx, or snow leopard: Detect Magic). You also know Identify, and Enhance Ability at level 5. Each leveled spell once per Long Rest without a slot or Material component, or with slots (Int, Wis, or Cha)."
+        ],
+        [
+          "Kindred Speech",
+          "Communicate simple ideas to Large or smaller birds and cats, including griffons; Advantage on Animal Handling and Charisma checks to influence them."
+        ],
+        [
+          "Natural Creator",
+          "Proficiency with two Artisan's Tools, and you learn new tools in half the time."
+        ],
+        [
+          "Talons",
+          "Unarmed Strikes can deal 1d6 Piercing."
+        ]
+      ],
+      "partnered": true,
+      "partner": "Hit Point Press"
+    },
+    "Etherean": {
+      "src": "The Griffon's Saddlebag: Book Two",
+      "creatureType": "Humanoid",
+      "size": "Medium or Small",
+      "speed": 30,
+      "darkvision": 60,
+      "languages": [
+        "Common"
+      ],
+      "languagePick": {
+        "n": 1,
+        "from": "any"
+      },
+      "traits": [
+        [
+          "Misty Sight",
+          "You always see to your normal range on the Ethereal Plane. Once per short or long rest, as a bonus action, see invisible things and into the Ethereal Plane for up to 1 minute (concentration)."
+        ],
+        [
+          "Veil Shift",
+          "Once per long rest, as an action cross between the Material and Ethereal Planes until the start of your next turn, unseen by and unable to affect the other plane. Speed 35 feet on the Ethereal Plane."
+        ]
+      ],
+      "editions": {
+        "2014": {
+          "mods": {
+            "cha": 2
+          },
+          "asiPick": {
+            "kind": "fixed",
+            "amounts": [
+              1
+            ],
+            "exclude": [
+              "cha"
+            ]
+          }
+        }
+      },
+      "partnered": true,
+      "partner": "Hit Point Press"
+    },
+    "Geleton": {
+      "src": "The Griffon's Saddlebag: Book Two",
+      "creatureType": "Humanoid",
+      "size": "Medium or Small",
+      "speed": 30,
+      "darkvision": 30,
+      "resist": [
+        "acid"
+      ],
+      "languages": [
+        "Common"
+      ],
+      "languagePick": {
+        "n": 1,
+        "from": "any"
+      },
+      "traits": [
+        [
+          "Limited Blindsight",
+          "Blindsight 5 feet."
+        ],
+        [
+          "Symbiotic Fortitude",
+          "You don't need to breathe, have resistance to acid damage, and are immune to disease."
+        ],
+        [
+          "Wakeful",
+          "Four hours of sleep do the work of eight, and you stay aware of your immediate surroundings while asleep."
+        ]
+      ],
+      "editions": {
+        "2014": {
+          "mods": {
+            "con": 2
+          },
+          "asiPick": {
+            "kind": "fixed",
+            "amounts": [
+              1
+            ],
+            "exclude": [
+              "con"
+            ]
+          }
+        }
+      },
+      "partnered": true,
+      "partner": "Hit Point Press"
+    },
+    "Ashborn": {
+      "creatureType": "Fiend",
+      "size": "Small",
+      "speed": 30,
+      "darkvision": 60,
+      "spells": [
+        {
+          "spell": "Minor Illusion",
+          "level": 1
+        },
+        {
+          "spell": "Charm Person",
+          "level": 3
+        },
+        {
+          "spell": "Invisibility",
+          "level": 5
+        }
+      ],
+      "traits": [
+        [
+          "Ashen Legacy",
+          "Minor Illusion; Charm Person at level 3 and Invisibility at level 5, each once per Long Rest without a slot, or with slots (Int, Wis, or Cha)."
+        ],
+        [
+          "Fiendish Fortune",
+          "Once per Short or Long Rest, when a non-critical attack hits you, take a Reaction to make it miss and deal Force damage equal to PB to a creature within 5 feet."
+        ],
+        [
+          "Scorpion Sting",
+          "Tail Unarmed Strikes using Str or Dex for 1d4 Piercing; PB times per Long Rest (one back on a Short Rest) add 1d6 Poison (2d6 from level 10)."
+        ]
+      ],
+      "src": "The Crooked Moon Part One",
+      "partnered": true,
+      "partner": "Avantris Entertainment"
+    },
+    "Azureborn": {
+      "creatureType": "Humanoid",
+      "size": "Medium",
+      "speed": 30,
+      "speeds": {
+        "fly": 30
+      },
+      "darkvision": 60,
+      "spells": [
+        {
+          "spell": "Guidance",
+          "level": 1
+        },
+        {
+          "spell": "Augury",
+          "level": 3
+        }
+      ],
+      "traits": [
+        [
+          "Azure Legacy",
+          "Guidance; Augury at level 3, once per Long Rest without a slot or Material components, or with slots (Int, Wis, or Cha)."
+        ],
+        [
+          "Flight",
+          "Fly Speed equal to your Speed."
+        ],
+        [
+          "Glimpse Fate",
+          "Once per Short or Long Rest, when you roll Initiative and aren't surprised, up to PB creatures you can see have Advantage on Initiative."
+        ],
+        [
+          "Winds of Magic",
+          "PB times per Long Rest, Dash as a Bonus Action and gain +10 feet Fly Speed this turn."
+        ]
+      ],
+      "src": "The Crooked Moon Part One",
+      "partnered": true,
+      "partner": "Avantris Entertainment"
+    },
+    "Bogborn": {
+      "creatureType": "Giant",
+      "size": "Medium",
+      "speed": 30,
+      "darkvision": 60,
+      "skillPick": {
+        "n": 1,
+        "from": [
+          "perception",
+          "survival"
+        ]
+      },
+      "traits": [
+        [
+          "Bog Bulk",
+          "Advantage on checks to escape a grapple; count one size larger for carrying."
+        ],
+        [
+          "Guiding Bond",
+          "PB times per Long Rest, as a Bonus Action mark a creature within 60 feet for 1 minute and add 1d4 to your checks and attacks against it."
+        ],
+        [
+          "Keen Senses",
+          "Proficiency in Perception or Survival."
+        ],
+        [
+          "Regeneration",
+          "As a Bonus Action spend and roll a Hit Die to heal it + Con mod (min 1); doesn't work until the end of your next turn after Acid or Fire damage."
+        ]
+      ],
+      "src": "The Crooked Moon Part One",
+      "partnered": true,
+      "partner": "Avantris Entertainment"
+    },
+    "Curseborn": {
+      "creatureType": "Humanoid",
+      "size": "Medium",
+      "speed": 35,
+      "darkvision": 60,
+      "skillPick": {
+        "n": 1,
+        "from": [
+          "investigation",
+          "perception",
+          "survival"
+        ]
+      },
+      "traits": [
+        [
+          "Cursed Claws",
+          "Claw Unarmed Strikes (Str or Dex) for 1d6 Slashing. PB times per Long Rest, a claw hit curses the target until your next turn: Disadvantage on D20 Tests."
+        ],
+        [
+          "Grey Balance",
+          "Once per Long Rest, turn a failed save into a success with a Reaction, then have Disadvantage on D20 Tests until the end of your next turn."
+        ],
+        [
+          "Lupine Sense",
+          "Proficiency in Investigation, Perception, or Survival."
+        ]
+      ],
+      "src": "The Crooked Moon Part One",
+      "partnered": true,
+      "partner": "Avantris Entertainment"
+    },
+    "Deepborn": {
+      "creatureType": "Aberration",
+      "size": "Medium",
+      "speed": 30,
+      "speeds": {
+        "swim": 30
+      },
+      "darkvision": 60,
+      "traits": [
+        [
+          "Amphibious",
+          "Breathe air and water; Swim Speed equal to your Speed."
+        ],
+        [
+          "Eldritch Gibbering",
+          "You speak Deep Speech. As a Magic action, chosen creatures in a 30-foot Emanation make a Wis save (DC 8 + PB + Int, Wis, or Cha mod) or until your next turn suffer a d6 effect: 1-2 Disadvantage on attacks, 3-4 Speed 0, 5-6 no Reactions. Once any target fails, not again until a Short or Long Rest."
+        ],
+        [
+          "Endless Hunger",
+          "Once per Short or Long Rest, as a Bonus Action sense every non-Construct, non-Undead creature within 60 feet until your next turn, and your attacks against them can't have Disadvantage."
+        ]
+      ],
+      "src": "The Crooked Moon Part One",
+      "partnered": true,
+      "partner": "Avantris Entertainment"
+    },
+    "Gnarlborn": {
+      "creatureType": "Plant",
+      "size": "Medium",
+      "speed": 30,
+      "traits": [
+        [
+          "Deep Roots",
+          "Advantage on checks and saves against forced movement and being knocked Prone."
+        ],
+        [
+          "Elderwood Whispers",
+          "After each Long Rest gain a skill, tool, or language until the next."
+        ],
+        [
+          "Grasping Branches",
+          "Once per Short or Long Rest, as a Bonus Action a Large or smaller creature within 30 feet makes a Str save (DC 8 + Con mod + PB) or is Restrained for 1 minute (repeat save), or on success its Speed is halved until its next turn ends."
+        ],
+        [
+          "Root Sense",
+          "Once per Short or Long Rest, as a Bonus Action gain Tremorsense 60 feet for 10 minutes."
+        ],
+        [
+          "Towering Size",
+          "Advantage on checks to escape a grapple; count one size larger for carrying."
+        ]
+      ],
+      "src": "The Crooked Moon Part One",
+      "partnered": true,
+      "partner": "Avantris Entertainment"
+    },
+    "Graveborn": {
+      "creatureType": "Undead",
+      "size": "Medium",
+      "speed": 30,
+      "darkvision": 60,
+      "resist": [
+        "cold"
+      ],
+      "traits": [
+        [
+          "Devour Corpse",
+          "Eat rotten food safely. Once per Short or Long Rest, a minute eating a Small or larger non-Construct corpse lets you roll a Hit Die without spending it and heal it + Con mod."
+        ],
+        [
+          "Frozen Waste",
+          "Resistance to Cold damage."
+        ],
+        [
+          "Infused Drakkonite",
+          "Once per Short or Long Rest, when you damage a creature, ignore its Resistances and add Necrotic equal to PB."
+        ]
+      ],
+      "src": "The Crooked Moon Part One",
+      "partnered": true,
+      "partner": "Avantris Entertainment"
+    },
+    "Harvestborn": {
+      "creatureType": "Construct",
+      "size": "Medium",
+      "speed": 30,
+      "spells": [
+        {
+          "spell": "Dancing Lights",
+          "level": 1
+        }
+      ],
+      "traits": [
+        [
+          "Culling",
+          "PB times per Long Rest, add 1d12 Necrotic when you damage a Bloodied creature."
+        ],
+        [
+          "Gift of the Green",
+          "PB times per Long Rest (one back on a Short Rest), as a Bonus Action touching the ground, a grounded creature within 30 feet can spend and roll a Hit Die to heal it + your PB."
+        ],
+        [
+          "Jack-O-Lantern",
+          "Dancing Lights cantrip (Int, Wis, or Cha)."
+        ],
+        [
+          "Scarecrow Nature",
+          "No need for air, food, or drink."
+        ],
+        [
+          "Watchful Rest",
+          "No sleep needed and immune to magical sleep; a Long Rest takes 4 motionless, conscious hours."
+        ]
+      ],
+      "src": "The Crooked Moon Part One",
+      "partnered": true,
+      "partner": "Avantris Entertainment"
+    },
+    "Plagueborn": {
+      "creatureType": "Humanoid",
+      "size": "Medium or Small",
+      "speed": 30,
+      "speeds": {
+        "climb": 30
+      },
+      "darkvision": 60,
+      "skillPick": {
+        "n": 1,
+        "from": [
+          "deception",
+          "stealth"
+        ]
+      },
+      "advAgainst": [
+        "poisoned"
+      ],
+      "traits": [
+        [
+          "Born in Filth",
+          "Advantage on saves against Poisoned and magical contagions."
+        ],
+        [
+          "Infected Cunning",
+          "Proficiency in Deception or Stealth."
+        ],
+        [
+          "Plague Bearer",
+          "Once per Long Rest, when you hit with an attack roll, the target makes a Con save (DC 8 + Con mod + PB) or is plagued for 1 minute: Disadvantage on attacks and checks and 1d4 Poison each turn, repeating the save each turn."
+        ]
+      ],
+      "src": "The Crooked Moon Part One",
+      "partnered": true,
+      "partner": "Avantris Entertainment"
+    },
+    "Relicborn": {
+      "creatureType": "Undead",
+      "size": "Medium",
+      "speed": 30,
+      "traits": [
+        [
+          "Dance of Death",
+          "As a Bonus Action make a DC 15 Performance or instrument check: success gives Advantage on your next attack this turn; beating it by 5 also grants temp HP equal to a Hit Die roll (not spent)."
+        ],
+        [
+          "Eternal Party",
+          "No sleep needed; a Long Rest takes 4 hours of revelry."
+        ],
+        [
+          "Moment of Remembrance",
+          "When a creature within 30 feet fails a D20 Test, take a Reaction to add 1d4; once it turns a failure into a success, not again until a Short or Long Rest."
+        ],
+        [
+          "Soul of Revelry",
+          "Proficiency in Performance or one musical instrument."
+        ]
+      ],
+      "src": "The Crooked Moon Part One",
+      "partnered": true,
+      "partner": "Avantris Entertainment"
+    },
+    "Silkborn": {
+      "creatureType": "Humanoid",
+      "size": "Medium",
+      "speed": 30,
+      "speeds": {
+        "climb": 30
+      },
+      "darkvision": 60,
+      "spells": [
+        {
+          "spell": "Thaumaturgy",
+          "level": 1
+        },
+        {
+          "spell": "Find Familiar",
+          "level": 3
+        },
+        {
+          "spell": "Web",
+          "level": 5
+        }
+      ],
+      "traits": [
+        [
+          "Bejeweled Carapace",
+          "Once per Short or Long Rest, a Reaction adds PB to your AC against a hit."
+        ],
+        [
+          "Silken Legacy",
+          "Thaumaturgy; Find Familiar (a jeweled insect or arachnid) at level 3 and Web at level 5, each once per Long Rest without a slot or Material components, or with slots (Int, Wis, or Cha)."
+        ],
+        [
+          "Spider Climb",
+          "Climb difficult surfaces and ceilings hands-free without checks."
+        ]
+      ],
+      "src": "The Crooked Moon Part One",
+      "partnered": true,
+      "partner": "Avantris Entertainment"
+    },
+    "Stoneborn": {
+      "creatureType": "Construct",
+      "size": "Medium or Small",
+      "speed": 30,
+      "speeds": {
+        "fly": 15
+      },
+      "skillPick": {
+        "n": 1,
+        "from": [
+          "insight",
+          "perception",
+          "survival"
+        ]
+      },
+      "traits": [
+        [
+          "Argent Gleam",
+          "Once per Long Rest, as a Bonus Action either cast Bless without Material components or Dash and add 2d6 Radiant to your next attack roll's target this turn, hit or miss."
+        ],
+        [
+          "Flight",
+          "Fly Speed equal to half your Speed."
+        ],
+        [
+          "Silver Bulwark",
+          "Once per Short or Long Rest, when you take B/P/S damage, a Reaction gives Resistance to all three until your next turn."
+        ],
+        [
+          "Watchful Senses",
+          "Proficiency in Insight, Perception, or Survival."
+        ]
+      ],
+      "src": "The Crooked Moon Part One",
+      "partnered": true,
+      "partner": "Avantris Entertainment"
+    },
+    "Threadborn": {
+      "creatureType": "Construct",
+      "size": "Medium or Small",
+      "speed": 30,
+      "resist": [
+        "psychic"
+      ],
+      "spells": [
+        {
+          "spell": "Guidance",
+          "level": 1
+        },
+        {
+          "spell": "Sanctuary",
+          "level": 3
+        },
+        {
+          "spell": "Calm Emotions",
+          "level": 5
+        }
+      ],
+      "traits": [
+        [
+          "Ball-Jointed",
+          "Move through 1-foot gaps as Difficult Terrain."
+        ],
+        [
+          "Innocent Mind",
+          "Resistance to Psychic damage."
+        ],
+        [
+          "Sewn Nature",
+          "No need for air, food, or drink."
+        ],
+        [
+          "Soothing Heart",
+          "Guidance; Sanctuary at level 3 and Calm Emotions (any creature type) at level 5, each once per Long Rest without a slot, or with slots (Int, Wis, or Cha)."
+        ],
+        [
+          "You've Got a Friend",
+          "PB times per Long Rest, when a creature within 30 feet fails a skill check, take a Reaction to Guidance it at range and add the 1d4."
+        ]
+      ],
+      "src": "The Crooked Moon Part One",
+      "partnered": true,
+      "partner": "Avantris Entertainment"
+    },
+    "Cnidaran": {
+      "src": "Heliana's Guide to Monster Hunting: Part 1",
+      "creatureType": "Humanoid",
+      "size": "Medium",
+      "speed": 30,
+      "speeds": {
+        "swim": "speed"
+      },
+      "languages": [
+        "Common"
+      ],
+      "languagePick": {
+        "n": 1,
+        "from": "any"
+      },
+      "choice": {
+        "key": "species-option",
+        "label": "Species Options",
+        "options": {
+          "Nematocyst": {
+            "mods": {
+              "dex": 1,
+              "con": 1
+            },
+            "resist": [
+              "poison"
+            ],
+            "advAgainst": [
+              "poisoned"
+            ],
+            "summary": "+1 Dex and +1 Con. Barbed appendage: Dex-based unarmed strikes for 1d4 + Str or Dex piercing. Neurotoxin (PB per long rest): bonus action coat a weapon or ammo for 1 hour, or inject on a nematocyst hit; Con save (DC 8 + Con + PB) or paralyzed until the start of its next turn. Advantage against poison and resistance to poison damage."
+          },
+          "Shimmerskin": {
+            "mods": {
+              "cha": 2
+            },
+            "spells": [
+              {
+                "spell": "Minor Illusion",
+                "level": 1
+              },
+              {
+                "spell": "Charm Person",
+                "level": 3
+              },
+              {
+                "spell": "Suggestion",
+                "level": 5
+              }
+            ],
+            "summary": "+2 Cha. Bonus action once per long rest: shimmer for 10 minutes, advantage on Charisma checks. Minor illusion; charm person at 3rd and suggestion at 5th once each per long rest or with slots (Cha, no material or somatic components)."
+          }
+        }
+      },
+      "spellAbility": "cha",
+      "traits": [
+        [
+          "Amphibious",
+          "Breathe air and water; swim speed equal to walking speed."
+        ],
+        [
+          "Species Options",
+          "Choose a morph: Nematocyst or Shimmerskin."
+        ]
+      ],
+      "editions": {
+        "2014": {
+          "mods": {
+            "con": 1
+          }
+        }
+      },
+      "partnered": true,
+      "partner": "Loot Tavern"
+    },
+    "Cyclopian": {
+      "src": "Heliana's Guide to Monster Hunting: Part 1",
+      "creatureType": "Humanoid",
+      "size": "Medium",
+      "speed": 30,
+      "darkvision": 60,
+      "speeds": {
+        "climb": 20
+      },
+      "languages": [
+        "Common",
+        "Undercommon"
+      ],
+      "languagePick": {
+        "n": 1,
+        "from": "any"
+      },
+      "skillPick": {
+        "n": 2,
+        "from": [
+          "arcana",
+          "history",
+          "insight",
+          "investigation",
+          "medicine",
+          "perception",
+          "religion",
+          "stealth"
+        ]
+      },
+      "traits": [
+        [
+          "Creature Type",
+          "Humanoid, also counts as an aberration for prerequisites and effects."
+        ],
+        [
+          "Knowledge Seeker",
+          "Proficiency in two of Arcana, History, Insight, Investigation, Medicine, Perception, Religion, and Stealth."
+        ],
+        [
+          "Savant of Secrets",
+          "Action, once per long rest: a 1-minute cyclotrance gives advantage on Perception, Investigation, and Insight checks."
+        ],
+        [
+          "Thought for Food",
+          "A day you discover significant new information, you need half the food and water and have advantage on Constitution saves until a long rest."
+        ],
+        [
+          "Top Shelf",
+          "Climb speed 20 feet."
+        ]
+      ],
+      "editions": {
+        "2014": {
+          "mods": {
+            "int": 2
+          },
+          "asiPick": {
+            "kind": "fixed",
+            "amounts": [
+              1
+            ],
+            "exclude": [
+              "str",
+              "con",
+              "int",
+              "cha"
+            ]
+          }
+        }
+      },
+      "partnered": true,
+      "partner": "Loot Tavern"
+    },
+    "Gobboc": {
+      "src": "Heliana's Guide to Monster Hunting: Part 1",
+      "creatureType": "Humanoid",
+      "size": "Small",
+      "speed": 25,
+      "languages": [
+        "Common"
+      ],
+      "languagePick": {
+        "n": 1,
+        "from": "any"
+      },
+      "spells": [
+        {
+          "spell": "Polymorph",
+          "level": 1
+        }
+      ],
+      "spellAbility": "cha",
+      "traits": [
+        [
+          "Commune with Fowl Folk",
+          "Feathered beasts and monstrosities understand you; advantage on checks to influence them."
+        ],
+        [
+          "Coward's Creed",
+          "After a melee hit, Disengage as a bonus action."
+        ],
+        [
+          "Feathered",
+          "Half damage from falling."
+        ],
+        [
+          "Gallus Domesticus",
+          "Once per long rest, cast polymorph on yourself, always becoming a Tiny chicken (AC 12, 1 hp, speed 40, Peck +4 for 1 piercing, Nimble Escape)."
+        ],
+        [
+          "Headless Chicken",
+          "When reduced to 0 hit points but not killed, move up to your speed without provoking opportunity attacks before falling unconscious."
+        ]
+      ],
+      "editions": {
+        "2014": {
+          "mods": {
+            "dex": 2
+          },
+          "asiPick": {
+            "kind": "fixed",
+            "amounts": [
+              1
+            ],
+            "exclude": [
+              "str",
+              "dex",
+              "con",
+              "int"
+            ]
+          }
+        }
+      },
+      "partnered": true,
+      "partner": "Loot Tavern"
+    },
+    "Golynn": {
+      "src": "Heliana's Guide to Monster Hunting: Part 1",
+      "creatureType": "Humanoid",
+      "size": "Medium",
+      "speed": 30,
+      "speeds": {
+        "burrow": 15
+      },
+      "naturalArmor": {
+        "base": 13,
+        "addDex": true
+      },
+      "languages": [
+        "Common"
+      ],
+      "languagePick": {
+        "n": 1,
+        "from": "any"
+      },
+      "traits": [
+        [
+          "Natural Armour",
+          "AC 13 + Dexterity modifier without armor; a shield still applies."
+        ],
+        [
+          "Powerful Build",
+          "Count as one size larger for carrying, pushing, dragging, and lifting."
+        ],
+        [
+          "Shovel Talons",
+          "Burrow speed 15 feet through soft earth or loose stone."
+        ],
+        [
+          "Drill Dervish",
+          "Burrowing under a Large or smaller creature standing on the ground forces a Strength save (DC 8 + Str + PB) or it falls prone."
+        ],
+        [
+          "Tremorsense",
+          "Tremorsense 5 feet; as an action, 20 feet until the end of your next turn."
+        ]
+      ],
+      "editions": {
+        "2014": {
+          "mods": {
+            "con": 2,
+            "str": 1
+          }
+        }
+      },
+      "partnered": true,
+      "partner": "Loot Tavern"
+    },
+    "Rakin": {
+      "src": "Heliana's Guide to Monster Hunting: Part 1",
+      "creatureType": "Humanoid",
+      "size": "Small",
+      "speed": 30,
+      "darkvision": 60,
+      "speeds": {
+        "climb": "speed"
+      },
+      "languages": [
+        "Common"
+      ],
+      "languagePick": {
+        "n": 1,
+        "from": "any"
+      },
+      "spellAbility": "cha",
+      "choice": {
+        "key": "species-option",
+        "label": "Species Options",
+        "options": {
+          "Urkin": {
+            "skillPick": {
+              "n": 1,
+              "from": [
+                "sleight of hand",
+                "stealth"
+              ]
+            },
+            "languages": [
+              "Thieves' Cant"
+            ],
+            "summary": "+1 Cha or Int. Sleight of Hand or Stealth, and thieves' cant. Nimble Dodge (once per short rest): reaction for advantage on a Dexterity save against an effect you can see, then move up to your speed without provoking."
+          },
+          "Posskin": {
+            "resist": [
+              "poison"
+            ],
+            "advAgainst": [
+              "poisoned",
+              "disease"
+            ],
+            "summary": "+1 Con. Bite: unarmed strikes for 1d6 + Str slashing. Scavenger: advantage against disease and poison, resistance to poison damage. Play Dead (once per short rest): reaction when dropped to half hit points or lower; you appear dead for up to 1 hour (Investigation contested by your Constitution (Deception) sees through it)."
+          },
+          "Tanukin": {
+            "skillPick": {
+              "n": 1,
+              "from": [
+                "deception",
+                "persuasion"
+              ]
+            },
+            "spells": [
+              {
+                "spell": "Minor Illusion",
+                "level": 1
+              },
+              {
+                "spell": "Disguise Self",
+                "level": 3
+              },
+              {
+                "spell": "Alter Self",
+                "level": 5
+              }
+            ],
+            "summary": "+1 Cha or Wis. Deception or Persuasion. Speak simply with beasts. Minor illusion; disguise self at 3rd and alter self at 5th once each per long rest or with slots (Cha or Wis)."
+          }
+        }
+      },
+      "traits": [
+        [
+          "Deft Climber",
+          "Climb speed equal to walking speed."
+        ],
+        [
+          "Species Options",
+          "Choose Urkin, Posskin, or Tanukin. Pick the option's +1 (Urkin Cha or Int, Posskin Con, Tanukin Cha or Wis) as your Species ASI."
+        ]
+      ],
+      "editions": {
+        "2014": {
+          "mods": {
+            "dex": 2
+          },
+          "asiPick": {
+            "kind": "fixed",
+            "amounts": [
+              1
+            ],
+            "exclude": [
+              "str",
+              "dex"
+            ]
+          }
+        }
+      },
+      "partnered": true,
+      "partner": "Loot Tavern"
+    },
+    "Lotol": {
+      "src": "Heliana's Guide to Monster Hunting: Part 2",
+      "creatureType": "Humanoid",
+      "size": "Medium",
+      "speed": 30,
+      "advSaves": [
+        "wis"
+      ],
+      "languages": [
+        "Common"
+      ],
+      "languagePick": {
+        "n": 1,
+        "from": "any"
+      },
+      "spellAbility": "con",
+      "traits": [
+        [
+          "Oblivious",
+          "Advantage on Wisdom saving throws."
+        ],
+        [
+          "Slippery Skin",
+          "Advantage on checks and saves to avoid or end being grappled or restrained."
+        ],
+        [
+          "Adaptive Polymorphism",
+          "Choose two adaptations (swap one on gaining a level): Aqueous Adaptation (swim speed equal to walking speed, breathe water); Gecko Cling (climb 20 feet, advantage to maintain grapples and avoid being disarmed); Darkvision 60 feet; Prehensile Tongue (bonus action pull a Tiny unattended object under 10 pounds from 20 feet); Shocking Skin (shocking grasp, Con; reaction cast against a melee attacker within 5 feet, PB times per long rest)."
+        ]
+      ],
+      "editions": {
+        "2014": {
+          "mods": {
+            "wis": 2,
+            "con": 1
+          }
+        }
+      },
+      "partnered": true,
+      "partner": "Loot Tavern"
+    },
+    "Mycelian": {
+      "src": "Heliana's Guide to Monster Hunting: Part 2",
+      "creatureType": "Humanoid",
+      "size": "Small or Medium",
+      "speed": 30,
+      "languages": [
+        "Common"
+      ],
+      "languagePick": {
+        "n": 1,
+        "from": "any"
+      },
+      "traits": [
+        [
+          "Creature Type",
+          "Humanoid, also counts as a plant. Size and speed follow your host corpse's species."
+        ],
+        [
+          "Symbiotic Assimilation",
+          "Choose two adaptations your host species had: a damage resistance, darkvision 60 feet, Dwarven Resilience, Halfling Nimbleness, Muscle Memory (a skill; repeatable), a natural weapon, Powerful Build, or Relentless Endurance."
+        ],
+        [
+          "Spore Spray",
+          "Reaction when hit by a melee attack from within 10 feet: Con save (DC 8 + Con + PB) or 1d8 poison (2d8 at 5th level) and poisoned until the end of its next turn. PB times per long rest."
+        ],
+        [
+          "Insporeation",
+          "On dying within 100 feet of a humanoid corpse dead under 24 hours, roll percentile dice; at or above the distance in feet, you rise in it in 2d6 days with new adaptations."
+        ]
+      ],
+      "editions": {
+        "2014": {
+          "mods": {
+            "con": 2
+          },
+          "asiPick": {
+            "kind": "fixed",
+            "amounts": [
+              1
+            ],
+            "exclude": [
+              "con"
+            ]
+          }
+        }
+      },
+      "partnered": true,
+      "partner": "Loot Tavern"
+    },
+    "Ombrask": {
+      "src": "Heliana's Guide to Monster Hunting: Part 2",
+      "creatureType": "Humanoid",
+      "size": "Small or Medium",
+      "speed": 30,
+      "darkvision": 60,
+      "resist": [
+        "radiant"
+      ],
+      "advAgainst": [
+        "blinded"
+      ],
+      "skillProf": [
+        "stealth"
+      ],
+      "languages": [
+        "Common",
+        "Undercommon"
+      ],
+      "spells": [
+        {
+          "spell": "Invisibility",
+          "level": 5
+        }
+      ],
+      "spellAbility": "con",
+      "traits": [
+        [
+          "Former Species",
+          "+1 to an ability set by your former species (for example Dwarf Con, Elf Int, Wis, or Cha, Human any but Dex)."
+        ],
+        [
+          "Fade Away",
+          "From 5th level, cast invisibility on yourself once per long rest without material components, or with slots (Con)."
+        ],
+        [
+          "Lightbender",
+          "Advantage on saves against being blinded and resistance to radiant damage."
+        ],
+        [
+          "Trackless",
+          "Proficiency in Stealth."
+        ],
+        [
+          "Voice Thief",
+          "You read and write Common and Undercommon but are mute. Once per long rest, as a reaction when a speaking creature dies within 30 feet, absorb its voice and mimic it perfectly; hold up to PB voices."
+        ]
+      ],
+      "editions": {
+        "2014": {
+          "mods": {
+            "dex": 2
+          },
+          "asiPick": {
+            "kind": "fixed",
+            "amounts": [
+              1
+            ],
+            "exclude": [
+              "dex"
+            ]
+          }
+        }
+      },
+      "partnered": true,
+      "partner": "Loot Tavern"
+    },
+    "Oozekin": {
+      "src": "Heliana's Guide to Monster Hunting: Part 2",
+      "creatureType": "Humanoid",
+      "size": "Small or Medium",
+      "speed": 30,
+      "darkvision": 60,
+      "resist": [
+        "acid"
+      ],
+      "languages": [
+        "Common"
+      ],
+      "languagePick": {
+        "n": 1,
+        "from": "any"
+      },
+      "spells": [
+        {
+          "spell": "Acid Splash",
+          "level": 1
+        }
+      ],
+      "spellAbility": "con",
+      "traits": [
+        [
+          "Creature Type",
+          "Humanoid, also counts as an ooze. When Medium, you can shed a piece as an action to become Small; you regrow to Medium over 2d4 days."
+        ],
+        [
+          "Acidic Flesh",
+          "Resistance to acid; you know acid splash (Con), and a creature you are grappling or grappled by automatically fails its save."
+        ],
+        [
+          "Reshapeable",
+          "From 3rd level, once per long rest as an action, become a cube or puddle for up to 1 hour (no talking, attacks, spells, or object use). Cube: half speed, 5-foot cube that stores your gear, gives three-quarters cover behind it, and can Engulf a creature your size or smaller (Dex save, DC 8 + Str + PB, or grappled, restrained, and taking acid splash damage each turn). Puddle: half speed, drop your gear, attacks from beyond 5 feet have disadvantage, spider climb, and fit through 1-inch gaps."
+        ]
+      ],
+      "editions": {
+        "2014": {
+          "mods": {
+            "con": 2,
+            "str": 1
+          }
+        }
+      },
+      "partnered": true,
+      "partner": "Loot Tavern"
+    },
+    "Opteran": {
+      "src": "Heliana's Guide to Monster Hunting: Part 2",
+      "creatureType": "Humanoid",
+      "size": "Small",
+      "speed": 25,
+      "languages": [
+        "Common"
+      ],
+      "languagePick": {
+        "n": 1,
+        "from": "any"
+      },
+      "choice": {
+        "key": "life-stage",
+        "label": "Metamorphosis",
+        "options": {
+          "Larval": {
+            "summary": "Small, speed 25. Many-Footed: advantage on balance checks and against being knocked prone. String Shot (PB per short rest): action, Dex save (DC 8 + Con + PB) or restrained for 1 minute (Strength check to escape)."
+          },
+          "Adult": {
+            "speed": 30,
+            "speeds": {
+              "fly": 20
+            },
+            "summary": "From 5th level (automatic at 6th), after a 24-hour metamorphosis: Medium, speed 30, fly 20 feet without medium or heavy armor, and advantage on all Charisma checks. Lose Many-Footed and String Shot."
+          }
+        }
+      },
+      "traits": [
+        [
+          "Creature Type",
+          "Humanoid, also counts as a fey."
+        ],
+        [
+          "Metamorphosis",
+          "Larval at 1st level; from 5th level you can pupate over 24 hours into an adult (automatic at 6th)."
+        ]
+      ],
+      "editions": {
+        "2014": {
+          "mods": {
+            "cha": 2
+          }
+        }
+      },
+      "partnered": true,
+      "partner": "Loot Tavern"
+    },
+    "Bearfolk": {
+      "src": "Northlands Worldbook",
+      "creatureType": "Humanoid",
+      "size": "Medium",
+      "speed": 30,
+      "resist": [
+        "cold"
+      ],
+      "choice": {
+        "key": "lineage",
+        "label": "Bearfolk Lineage",
+        "options": {
+          "Andari": {
+            "summary": "Nature's Gift: you know one Druid cantrip (Wisdom)."
+          },
+          "Garhamr": {
+            "summary": "Bear Hug: after you hit and deal damage with an attack roll, make an Unarmed Strike as a Bonus Action, Constitution modifier (minimum 1) times per Long Rest."
+          }
+        }
+      },
+      "traits": [
+        [
+          "Apex Predator",
+          "Add your Strength or Constitution modifier (chosen at creation) to a Charisma check, Proficiency Bonus times per Long Rest."
+        ],
+        [
+          "Bearfolk Lineage",
+          "Andari or Garhamr."
+        ],
+        [
+          "Wild Heart",
+          "You and allies within 5 feet have Advantage on saves against Frightened while you are conscious and not Incapacitated."
+        ],
+        [
+          "Thick Coat",
+          "Resistance to Cold damage and Immunity to extreme cold."
+        ]
+      ],
+      "partnered": true,
+      "partner": "Kobold Press"
+    },
+    "Beastkin": {
+      "src": "Northlands Worldbook",
+      "creatureType": "Humanoid",
+      "size": "Medium or Small",
+      "speed": 30,
+      "skillPick": {
+        "n": 1,
+        "from": [
+          "perception",
+          "survival"
+        ]
+      },
+      "choice": {
+        "key": "adaptation",
+        "label": "Natural Adaptation",
+        "options": {
+          "Avian": {
+            "speeds": {
+              "fly": "speed"
+            },
+            "summary": "Fly Speed equal to your Speed, not in Medium or Heavy armor."
+          },
+          "Agile": {
+            "speeds": {
+              "climb": "speed"
+            },
+            "summary": "Climb Speed equal to your Speed and Advantage on saves to avoid the Prone condition."
+          },
+          "Aquatic": {
+            "speeds": {
+              "swim": "speed"
+            },
+            "summary": "Swim Speed equal to your Speed; hold your breath for 20 minutes."
+          },
+          "Sturdy": {
+            "naturalArmor": {
+              "base": 13,
+              "addDex": true
+            },
+            "summary": "AC 13 + Dexterity modifier without armor, and count as one size larger for carrying, dragging, lifting, and pushing."
+          }
+        }
+      },
+      "traits": [
+        [
+          "Animal Instinct",
+          "Proficiency in Perception or Survival."
+        ],
+        [
+          "Natural Weapons",
+          "Unarmed Strikes with your natural weapon deal 1d6 + Strength or Dexterity modifier (chosen at creation) Bludgeoning, Piercing, or Slashing."
+        ],
+        [
+          "Natural Adaptation",
+          "Avian, Agile, Aquatic, or Sturdy."
+        ]
+      ],
+      "partnered": true,
+      "partner": "Kobold Press"
+    },
+    "Giantkin": {
+      "src": "Northlands Worldbook",
+      "creatureType": "Humanoid",
+      "size": "Medium",
+      "speed": 30,
+      "choice": {
+        "key": "ancestry",
+        "label": "Giantkin Ancestry",
+        "options": {
+          "Cloud": {
+            "spells": [
+              {
+                "spell": "Feather Fall",
+                "level": 1
+              }
+            ],
+            "summary": "Immune to extreme cold and high altitude. Feather Fall at will (self only). Windcall: Bonus Action to push a Medium or smaller creature 5 feet, move an unattended object 10 feet, or make a harmless wind effect within 30 feet."
+          },
+          "Fire": {
+            "summary": "Immune to extreme heat. Burning Blood: Reaction when you take Piercing or Slashing damage, a creature within 5 feet makes a Dexterity save or takes 1d6 Fire (scales at levels 5, 11, 17), Proficiency Bonus times per Long Rest."
+          },
+          "Frost": {
+            "advAgainst": [
+              "stunned"
+            ],
+            "summary": "Immune to extreme cold, Advantage against Stunned. Iceshaper: as an action, move or shape a 1-foot cube of ice, snow, or water within 30 feet for 1 hour. Snowsight: see through wintry precipitation and immune to snow-blindness."
+          },
+          "Hill": {
+            "advAgainst": [
+              "poisoned",
+              "stunned"
+            ],
+            "summary": "Advantage against Poisoned and Stunned. Bulky: Advantage against Grappled, and on a success push the grappler 10 feet. Iron Stomach: 2 pounds of organic matter counts as a day's rations."
+          },
+          "Stone": {
+            "darkvision": 60,
+            "advAgainst": [
+              "prone",
+              "petrified"
+            ],
+            "summary": "Advantage against Prone and Petrified. Stonepulse: Advantage on Initiative when you and all foes touch solid ground. Darkvision 60 feet."
+          },
+          "Storm": {
+            "spells": [
+              {
+                "spell": "Levitate",
+                "level": 1
+              }
+            ],
+            "summary": "Advantage on saves against Lightning damage and immune to high altitude. Levitate at will (self only) under open sky. Stormsight: see through clouds, fog, rain, and storms; immune to snow-blindness."
+          }
+        }
+      },
+      "traits": [
+        [
+          "Catch and Throw",
+          "When hit by a ranged weapon attack, use your Reaction for +3 AC; if it then misses, catch a projectile or small thrown weapon and throw it back with your normal attack and damage."
+        ],
+        [
+          "Giantkin Ancestry",
+          "Cloud, Fire, Frost, Hill, Stone, or Storm. Save DCs are 8 + Intelligence, Wisdom, or Charisma modifier + Proficiency Bonus."
+        ],
+        [
+          "Powerful Build",
+          "Advantage on saves to end Grappled, and count as one size larger for carrying capacity."
+        ]
+      ],
+      "partnered": true,
+      "partner": "Kobold Press"
+    },
+    "Trollkin": {
+      "src": "Northlands Worldbook",
+      "creatureType": "Humanoid",
+      "size": "Medium",
+      "speed": 30,
+      "darkvision": 120,
+      "choice": {
+        "key": "ancestry",
+        "label": "Natural Adaptation",
+        "options": {
+          "Fey": {
+            "summary": "Add 1d6 to a Charisma check, Charisma modifier times per Long Rest."
+          },
+          "Ogre": {
+            "summary": "Advantage on checks and saves to avoid or escape grapples, and count as one size larger for carrying capacity."
+          },
+          "Troll": {
+            "advAgainst": [
+              "stunned"
+            ],
+            "summary": "Advantage against Stunned, and count as one size larger for carrying capacity."
+          }
+        }
+      },
+      "traits": [
+        [
+          "Natural Adaptation",
+          "Fey, Ogre, or Troll ancestor."
+        ],
+        [
+          "Natural Weapon",
+          "Unarmed Strikes deal 1d6 + Strength or Dexterity modifier (chosen at creation) Bludgeoning, Piercing, or Slashing."
+        ],
+        [
+          "Trollish Regeneration",
+          "As a Bonus Action, spend up to Proficiency Bonus Hit Dice to heal. Acid or Fire damage disables this until a Short Rest."
+        ]
+      ],
+      "partnered": true,
+      "partner": "Kobold Press"
+    },
+    "Werekin": {
+      "src": "Northlands Worldbook",
+      "creatureType": "Humanoid",
+      "size": "Medium",
+      "speed": 30,
+      "darkvision": 60,
+      "skillPick": {
+        "n": 1,
+        "from": [
+          "athletics",
+          "intimidation",
+          "perception",
+          "survival"
+        ]
+      },
+      "traits": [
+        [
+          "Claws",
+          "Unarmed Strikes deal 1d6 + Strength modifier Slashing."
+        ],
+        [
+          "Predatory Prowess",
+          "Proficiency in Athletics, Intimidation, Perception, or Survival."
+        ],
+        [
+          "Scent",
+          "Advantage on Perception checks for scents and tracking."
+        ],
+        [
+          "Shift Aspect",
+          "Once per Long Rest as a Bonus Action, transform for 1 minute with one option: Bestial Strength (Temporary Hit Points equal to twice your Proficiency Bonus and Advantage on Strength checks and against grapples); Primal Savagery (now and as a Bonus Action each turn, roar: non-allies within 10 feet make a Charisma save, DC 8 + Charisma + Proficiency Bonus, or are Frightened until the end of your next turn); or Swift Hunter (+10 feet Speed and Advantage on Athletics and Survival checks)."
+        ]
+      ],
+      "partnered": true,
+      "partner": "Kobold Press"
+    },
+    "Baugsmidr Dwarf": {
+      "src": "Northlands Worldbook",
+      "creatureType": "Humanoid",
+      "size": "Medium",
+      "speed": 30,
+      "darkvision": 120,
+      "resist": [
+        "poison"
+      ],
+      "advAgainst": [
+        "poisoned"
+      ],
+      "traits": [
+        [
+          "Arcane Lore",
+          "Advantage on Intelligence (Arcana) checks."
+        ],
+        [
+          "Dwarven Resilience",
+          "Resistance to Poison and Advantage on saves against Poisoned."
+        ],
+        [
+          "Magical Crafter",
+          "Advantage on checks to create magic items."
+        ],
+        [
+          "Sense Magic",
+          "As a Bonus Action, until the end of your next turn sense magic within 120 feet (auras and schools) and the location of Aberrations, Celestials, Fey, Fiends, and Undead; blocked by 1 foot of solid material. Proficiency Bonus uses per Long Rest."
+        ]
+      ],
+      "partnered": true,
+      "partner": "Kobold Press"
+    },
+    "Fjord Dwarf": {
+      "src": "Northlands Worldbook",
+      "creatureType": "Humanoid",
+      "size": "Medium",
+      "speed": 30,
+      "darkvision": 90,
+      "speeds": {
+        "swim": "speed"
+      },
+      "mods": {
+        "hpPerLevel": 1
+      },
+      "traits": [
+        [
+          "Dwarven Toughness",
+          "Your Hit Point maximum increases by 1 per level."
+        ],
+        [
+          "Fjord Warrior",
+          "No attack roll penalties while balancing or climbing."
+        ],
+        [
+          "Wavecunning",
+          "Swim Speed equal to your Speed, and you hold your breath twice as long."
+        ]
+      ],
+      "partnered": true,
+      "partner": "Kobold Press"
+    },
+    "Northlands Elf": {
+      "src": "Northlands Worldbook",
+      "creatureType": "Humanoid",
+      "size": "Medium",
+      "speed": 30,
+      "darkvision": 60,
+      "advAgainst": [
+        "charmed"
+      ],
+      "skillPick": {
+        "n": 2,
+        "from": [
+          "insight",
+          "perception",
+          "survival"
+        ]
+      },
+      "choice": {
+        "key": "lineage",
+        "label": "Elven Lineage",
+        "options": {
+          "Alfar (Hidden Elf)": {
+            "aliases": [
+              "Alfar",
+              "Hidden Elf"
+            ],
+            "spells": [
+              {
+                "spell": "Minor Illusion",
+                "level": 1
+              },
+              {
+                "spell": "Silent Image",
+                "level": 3
+              },
+              {
+                "spell": "Blur",
+                "level": 5
+              }
+            ],
+            "summary": "Minor Illusion; Advantage on Stealth in forests. Silent Image at level 3 and Blur at level 5, once each per Long Rest or with slots."
+          },
+          "Ice Elf": {
+            "spells": [
+              {
+                "spell": "Ray of Frost",
+                "level": 1
+              },
+              {
+                "spell": "Ice Knife",
+                "level": 3
+              },
+              {
+                "spell": "Gust of Wind",
+                "level": 5
+              }
+            ],
+            "summary": "Ray of Frost; Advantage on Stealth in icy or snowy conditions. Ice Knife at level 3 and Gust of Wind at level 5, once each per Long Rest or with slots."
+          }
+        }
+      },
+      "traits": [
+        [
+          "Elven Lineage",
+          "Alfar or Ice Elf; Intelligence, Wisdom, or Charisma is your spellcasting ability."
+        ],
+        [
+          "Fey Ancestry",
+          "Advantage on saves to avoid or end Charmed."
+        ],
+        [
+          "Keen Senses",
+          "Proficiency in two of Insight, Perception, and Survival."
+        ],
+        [
+          "Trance",
+          "No sleep needed; a Long Rest takes 4 hours of trance."
+        ]
+      ],
+      "partnered": true,
+      "partner": "Kobold Press"
+    },
+    "Dara": {
+      "src": "Obojima: Tales from the Tall Grass",
+      "creatureType": "Humanoid",
+      "size": "Small or Medium",
+      "speed": 30,
+      "languages": [
+        "Common"
+      ],
+      "languagePick": {
+        "n": 1,
+        "from": "any"
+      },
+      "skillPick": {
+        "n": 3,
+        "from": "any"
+      },
+      "choice": {
+        "key": "color",
+        "label": "The Color of Dara",
+        "options": {
+          "Blue Dara": {
+            "aliases": [
+              "Blue"
+            ],
+            "summary": "Medium, speed 30. Knowledge Talisman (once per long rest): its holder can add 1d6 to an ability check, before or after rolling."
+          },
+          "Red Dara": {
+            "aliases": [
+              "Red"
+            ],
+            "speed": 25,
+            "summary": "Small, speed 25. Might Talisman (once per long rest): its holder can add 1d6 to a saving throw, before or after rolling."
+          }
+        }
+      },
+      "traits": [
+        [
+          "Awakened Skills",
+          "Proficiency in three skills of your choice."
+        ],
+        [
+          "Create Talisman",
+          "Once per long rest as an action, make a paper talisman lasting 1 hour: Sun (bonus action Dash or Disengage), Earth (drop to 1 hit point instead of 0 once), or Moon (placed on a weapon, its next hit deals extra radiant equal to your level)."
+        ],
+        [
+          "Sacred Revelation",
+          "As an action, absorb the knowledge stored in a dara glyph, which only dara can see."
+        ],
+        [
+          "Impart Knowledge",
+          "From 10th level, as an action create your own glyph storing a spoken message for other dara."
+        ],
+        [
+          "The Color of Dara",
+          "Blue or Red."
+        ]
+      ],
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "flexible"
+          }
+        }
+      },
+      "partnered": true,
+      "partner": "Hit Point Press"
+    },
+    "Obojiman Elf": {
+      "src": "Obojima: Tales from the Tall Grass",
+      "creatureType": "Humanoid",
+      "size": "Medium",
+      "speed": 30,
+      "darkvision": 60,
+      "languages": [
+        "Common"
+      ],
+      "spellAbility": "cha",
+      "choice": {
+        "key": "oaka",
+        "label": "Oaka Birthmark",
+        "options": {
+          "Courage": {
+            "spells": [
+              {
+                "spell": "Resistance",
+                "level": 1
+              },
+              {
+                "spell": "Heroism",
+                "level": 3
+              }
+            ],
+            "summary": "Resistance cantrip; Heroism (2nd level) once per long rest from 3rd level."
+          },
+          "Fury": {
+            "spells": [
+              {
+                "spell": "Sacred Flame",
+                "level": 1
+              },
+              {
+                "spell": "Shatter",
+                "level": 3
+              }
+            ],
+            "summary": "Sacred Flame; Shatter once per long rest from 3rd level."
+          },
+          "Harmony": {
+            "spells": [
+              {
+                "spell": "Guidance",
+                "level": 1
+              },
+              {
+                "spell": "Calm Emotions",
+                "level": 3
+              }
+            ],
+            "summary": "Guidance; Calm Emotions once per long rest from 3rd level."
+          },
+          "Nature": {
+            "spells": [
+              {
+                "spell": "Dancing Lights",
+                "level": 1
+              },
+              {
+                "spell": "Animal Messenger",
+                "level": 3
+              }
+            ],
+            "summary": "Dancing Lights; Animal Messenger once per long rest from 3rd level."
+          },
+          "Purity": {
+            "spells": [
+              {
+                "spell": "Spare the Dying",
+                "level": 1
+              },
+              {
+                "spell": "Lesser Restoration",
+                "level": 3
+              }
+            ],
+            "summary": "Spare the Dying; Lesser Restoration once per long rest from 3rd level."
+          },
+          "Selflessness": {
+            "spells": [
+              {
+                "spell": "Resilient Friendship",
+                "level": 1
+              },
+              {
+                "spell": "Gift",
+                "level": 3
+              }
+            ],
+            "summary": "Resilient Friendship; Gift once per long rest from 3rd level."
+          }
+        }
+      },
+      "traits": [
+        [
+          "Ethereal Sight",
+          "As an action, see creatures in the Spirit Realm as glowing outlines for 1 hour, proficiency bonus times per long rest."
+        ],
+        [
+          "Oaka Birthmark",
+          "Choose a mark granting a cantrip and a 3rd-level spell (Charisma)."
+        ]
+      ],
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "flexible"
+          }
+        }
+      },
+      "partnered": true,
+      "partner": "Hit Point Press"
+    },
+    "Nakudama": {
+      "src": "Obojima: Tales from the Tall Grass",
+      "creatureType": "Humanoid",
+      "size": "Small",
+      "speed": 25,
+      "speeds": {
+        "swim": 30
+      },
+      "languages": [
+        "Common",
+        "Naku Naku"
+      ],
+      "traits": [
+        [
+          "Amphibious",
+          "Breathe air and water."
+        ],
+        [
+          "Standing Leap",
+          "Long jump up to 20 feet and high jump up to 15 feet, with or without a running start."
+        ],
+        [
+          "Grasping Tongue",
+          "As a bonus action, pull an object of 5 pounds or less within 15 feet to you (a contested Strength check if worn or carried)."
+        ],
+        [
+          "Latching Tongue",
+          "As a bonus action, latch onto a surface or creature at least one size larger within 15 feet and pull yourself to it."
+        ]
+      ],
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "flexible"
+          }
+        }
+      },
+      "partnered": true,
+      "partner": "Hit Point Press"
+    },
+    "Manikin": {
+      "src": "Steinhardt's Guide to the Eldritch Hunt Player Pack",
+      "creatureType": "Construct",
+      "size": "Small or Medium",
+      "speed": 30,
+      "resist": [
+        "lightning"
+      ],
+      "immune": [
+        "poisoned"
+      ],
+      "choice": {
+        "key": "service",
+        "label": "Service Model",
+        "options": {
+          "Custodian": {
+            "summary": "Advantage on checks to end Grappled, count one size larger for carrying, and a Reaction (Proficiency Bonus per Long Rest) to swap places with a willing creature within 5 feet and become the target of an attack."
+          },
+          "Handler": {
+            "skillProf": [
+              "stealth"
+            ],
+            "toolProf": [
+              "Disguise Kit"
+            ],
+            "summary": "Proficiency in Stealth and the Disguise Kit, and up to two Finesse or Light melee weapons embedded in your body (swap over an hour; you can't be disarmed of them)."
+          },
+          "Thespian": {
+            "skillProf": [
+              "performance"
+            ],
+            "summary": "Proficiency in Performance. Once per Short or Long Rest, a Bonus Action links you to a willing creature within 30 feet for 1 hour; when it ends its turn with movement left, use a Reaction to move that much."
+          }
+        }
+      },
+      "traits": [
+        [
+          "Born to Serve",
+          "Disadvantage on Wisdom (Insight) checks."
+        ],
+        [
+          "Electric Heart",
+          "Resistance to Lightning damage."
+        ],
+        [
+          "Integrated Gold Plating",
+          "Armor gives you no AC (Shields still do). Choose a preset: Infiltrator (AC 11 + Dex, counts as unarmored, Advantage on Stealth), Sentinel (AC 13 + Dex max 2 or Str max 3, counts as Medium armor), or Tormentor (AC 16 + Str max 2, counts as Heavy armor, Disadvantage on Stealth)."
+        ],
+        [
+          "Living Material",
+          "No need to eat, drink, or breathe; Immunity to Poisoned."
+        ],
+        [
+          "Service Model",
+          "Custodian, Handler, or Thespian."
+        ]
+      ],
+      "partnered": true,
+      "partner": "MonkeyDM"
+    },
+    "Scourgeborne": {
+      "src": "Steinhardt's Guide to the Eldritch Hunt Player Pack",
+      "creatureType": "Monstrosity",
+      "size": "Medium",
+      "speed": 30,
+      "choice": {
+        "key": "lineage",
+        "label": "Monstrous Lineage",
+        "options": {
+          "Aranea": {
+            "speeds": {
+              "climb": 30
+            },
+            "summary": "Climb 30 feet; Disadvantage on checks and attacks in water. Level 3: spider climb for 1 minute per Long Rest (Proficiency Bonus minutes from level 5)."
+          },
+          "Belua": {
+            "summary": "Advantage on hearing- and smell-based Perception; take 1d4 Psychic when you Bloody a creature. Level 3: Bonus Action Unarmed Strike that heals you by the damage, once per Long Rest (Proficiency Bonus times from level 5)."
+          },
+          "Cervus": {
+            "speed": 40,
+            "summary": "Speed 40; standing from Prone costs 5 more feet. Level 3: after a 20-foot charge and melee hit, Strength save (DC 8 + Str + PB) or Prone and a Bonus Action attack, once per Long Rest (Proficiency Bonus times from level 5)."
+          },
+          "Vespertilio": {
+            "summary": "Blindsight 30 feet, Disadvantage on sight-based checks and attacks beyond it. Level 3: Bonus Action Fly Speed 30 until the end of your turn, once per Short or Long Rest (Proficiency Bonus times from level 5)."
+          }
+        }
+      },
+      "traits": [
+        [
+          "Born of Madness",
+          "Good: Advantage on saves against Charmed, Disadvantage on Intimidation. Evil: add your Proficiency Bonus to Dexterity saves, Disadvantage on saves against Charmed."
+        ],
+        [
+          "Eldritch Curse",
+          "Immune to spells that alter your form, such as Alter Self and Polymorph."
+        ],
+        [
+          "Feral Limbs",
+          "Unarmed Strikes deal 1d6 + Strength Piercing (1d8 if Evil)."
+        ],
+        [
+          "Monstrous Lineage",
+          "Aranea, Belua, Cervus, or Vespertilio, improving at levels 3 and 5."
+        ]
+      ],
+      "partnered": true,
+      "partner": "MonkeyDM"
+    },
+    "Corvum": {
+      "editions": {
+        "2014": {
+          "mods": {
+            "int": 2
+          }
+        }
+      },
+      "src": "Humblewood Campaign Setting",
+      "creatureType": "Humanoid",
+      "size": "Medium",
+      "speed": 30,
+      "languages": [
+        "Birdfolk"
+      ],
+      "skillPick": {
+        "n": 1,
+        "from": [
+          "arcana",
+          "history",
+          "nature",
+          "religion"
+        ]
+      },
+      "choice": {
+        "key": "subrace",
+        "label": "Corvum Subrace",
+        "options": {
+          "Dusk Corvum": {
+            "aliases": [
+              "Dusk"
+            ],
+            "mods": {
+              "dex": 1
+            },
+            "skillProf": [
+              "insight"
+            ],
+            "summary": "+1 Dex. Advantage on Stealth in dim light or darkness; proficiency in Insight."
+          },
+          "Kindled Corvum": {
+            "aliases": [
+              "Kindled"
+            ],
+            "mods": {
+              "cha": 1
+            },
+            "skillPick": {
+              "n": 1,
+              "from": [
+                "deception",
+                "persuasion"
+              ]
+            },
+            "languagePick": {
+              "n": 1,
+              "from": "any"
+            },
+            "summary": "+1 Cha. Deception or Persuasion, advantage on Charisma checks to convince others of your expertise in your Learned skill, one extra language, one tool, and perfect recall of the past month."
+          }
+        }
+      },
+      "traits": [
+        [
+          "Glide",
+          "When falling, use your reaction to descend 60 feet per round taking no fall damage; after falling 10 feet you can glide up to your speed horizontally. Not with heavy weapons, a shield, heavy armor, or while encumbered."
+        ],
+        [
+          "Talons",
+          "Unarmed strikes deal 1d4 piercing, and advantage on Athletics checks to climb surfaces your talons can grip."
+        ],
+        [
+          "Learned",
+          "Proficiency in Arcana, History, Nature, or Religion."
+        ],
+        [
+          "Appraising Eye",
+          "As an action once per short or long rest, learn an object's magical properties, how to use them, and its market value."
+        ],
+        [
+          "Languages",
+          "Birdfolk; you understand but can't speak Auran."
+        ]
+      ],
+      "partnered": true,
+      "partner": "Hit Point Press"
+    },
+    "Gallus": {
+      "editions": {
+        "2014": {
+          "mods": {
+            "wis": 2
+          }
+        }
+      },
+      "src": "Humblewood Campaign Setting",
+      "creatureType": "Humanoid",
+      "size": "Medium",
+      "speed": 30,
+      "languages": [
+        "Birdfolk"
+      ],
+      "weaponProf": [
+        "Simple"
+      ],
+      "toolPick": {
+        "n": 1,
+        "from": [
+          "Brewer's Supplies",
+          "Carpenter's Tools",
+          "Smith's Tools"
+        ]
+      },
+      "choice": {
+        "key": "subrace",
+        "label": "Gallus Subrace",
+        "options": {
+          "Bright Gallus": {
+            "aliases": [
+              "Bright"
+            ],
+            "mods": {
+              "cha": 1
+            },
+            "skillProf": [
+              "insight"
+            ],
+            "summary": "+1 Cha. Inspiring: as an action, an ally who sees and hears you adds a d4 to its next ability check, attack, or save. Proficiency in Insight."
+          },
+          "Huden Gallus": {
+            "aliases": [
+              "Huden"
+            ],
+            "mods": {
+              "dex": 1
+            },
+            "skillProf": [
+              "nature"
+            ],
+            "summary": "+1 Dex. Proficiency in Nature, and Seedspeech: communicate simple ideas with living plants."
+          }
+        }
+      },
+      "traits": [
+        [
+          "Glide",
+          "When falling, use your reaction to descend 60 feet per round taking no fall damage; after falling 10 feet you can glide up to your speed horizontally. Not with heavy weapons, a shield, heavy armor, or while encumbered."
+        ],
+        [
+          "Wing Flap",
+          "As a bonus action, propel yourself upward half your movement speed (can combine with a jump, not while gliding)."
+        ],
+        [
+          "Communal",
+          "History checks about your people count as proficient with double proficiency bonus."
+        ],
+        [
+          "Militia Training",
+          "Proficiency with simple weapons."
+        ],
+        [
+          "Of the People",
+          "Proficiency with brewer's supplies, carpenter's tools, or smith's tools."
+        ]
+      ],
+      "partnered": true,
+      "partner": "Hit Point Press"
+    },
+    "Luma": {
+      "editions": {
+        "2014": {
+          "mods": {
+            "cha": 2
+          }
+        }
+      },
+      "src": "Humblewood Campaign Setting",
+      "creatureType": "Humanoid",
+      "size": "Small",
+      "speed": 25,
+      "languages": [
+        "Birdfolk"
+      ],
+      "spellAbility": "cha",
+      "choice": {
+        "key": "subrace",
+        "label": "Luma Subrace",
+        "options": {
+          "Sable Luma": {
+            "aliases": [
+              "Sable"
+            ],
+            "mods": {
+              "con": 1
+            },
+            "resist": [
+              "poison"
+            ],
+            "advAgainst": [
+              "poisoned"
+            ],
+            "summary": "+1 Con. Insight checks against you have disadvantage and you have advantage on Deception against non-lumas; advantage against poison and poison resistance."
+          },
+          "Sera Luma": {
+            "aliases": [
+              "Sera"
+            ],
+            "mods": {
+              "wis": 1
+            },
+            "skillProf": [
+              "performance"
+            ],
+            "spells": [
+              {
+                "spell": "Charm Person",
+                "level": 1
+              }
+            ],
+            "summary": "+1 Wis. Proficiency in Performance; cast charm person once per long rest without somatic components (Cha)."
+          }
+        }
+      },
+      "traits": [
+        [
+          "Glide",
+          "When falling, use your reaction to descend 60 feet per round taking no fall damage; after falling 10 feet you can glide up to your speed horizontally. Not with heavy weapons, a shield, heavy armor, or while encumbered."
+        ],
+        [
+          "Wing Flap",
+          "As a bonus action, propel yourself upward half your movement speed (can combine with a jump, not while gliding)."
+        ],
+        [
+          "Touched",
+          "You know one sorcerer cantrip (Charisma)."
+        ],
+        [
+          "Fated",
+          "Once per long rest, reroll an attack roll, skill check, or saving throw before the outcome is known."
+        ]
+      ],
+      "partnered": true,
+      "partner": "Hit Point Press"
+    },
+    "Raptor": {
+      "editions": {
+        "2014": {
+          "mods": {
+            "dex": 2
+          }
+        }
+      },
+      "src": "Humblewood Campaign Setting",
+      "creatureType": "Humanoid",
+      "size": "Small",
+      "speed": 25,
+      "languages": [
+        "Birdfolk"
+      ],
+      "skillProf": [
+        "perception"
+      ],
+      "weaponProf": [
+        "Longbow",
+        "Shortbow",
+        "Spear"
+      ],
+      "choice": {
+        "key": "subrace",
+        "label": "Raptor Subrace",
+        "options": {
+          "Maran Raptor": {
+            "aliases": [
+              "Maran"
+            ],
+            "mods": {
+              "int": 1
+            },
+            "speeds": {
+              "swim": 25
+            },
+            "summary": "+1 Int. Swim speed 25 feet; advantage on the first attack roll or check of a readied action."
+          },
+          "Mistral Raptor": {
+            "aliases": [
+              "Mistral"
+            ],
+            "mods": {
+              "wis": 1
+            },
+            "skillProf": [
+              "acrobatics"
+            ],
+            "summary": "+1 Wis. Proficiency in Acrobatics; attacks against you while you fall, glide, or jump have disadvantage."
+          }
+        }
+      },
+      "traits": [
+        [
+          "Glide",
+          "When falling, use your reaction to descend 60 feet per round taking no fall damage; after falling 10 feet you can glide up to your speed horizontally. Not with heavy weapons, a shield, heavy armor, or while encumbered."
+        ],
+        [
+          "Talons",
+          "Unarmed strikes deal 1d4 piercing, and advantage on Athletics checks to climb surfaces your talons can grip."
+        ],
+        [
+          "Keen Senses",
+          "Proficiency in Perception."
+        ],
+        [
+          "Woodland Hunter",
+          "Treat three-quarters cover as half and half cover as none."
+        ],
+        [
+          "Hunter's Training",
+          "Proficiency with longbow, shortbow, and spear; the longbow isn't heavy for you."
+        ]
+      ],
+      "partnered": true,
+      "partner": "Hit Point Press"
+    },
+    "Strig": {
+      "editions": {
+        "2014": {
+          "mods": {
+            "str": 2
+          }
+        }
+      },
+      "src": "Humblewood Campaign Setting",
+      "creatureType": "Humanoid",
+      "size": "Medium",
+      "speed": 30,
+      "darkvision": 60,
+      "languages": [
+        "Birdfolk"
+      ],
+      "choice": {
+        "key": "subrace",
+        "label": "Strig Subrace",
+        "options": {
+          "Stout Strig": {
+            "aliases": [
+              "Stout"
+            ],
+            "mods": {
+              "con": 1
+            },
+            "skillProf": [
+              "intimidation"
+            ],
+            "summary": "+1 Con. Proficiency in Intimidation; after a talon hit, grapple the target as a bonus action."
+          },
+          "Swift Strig": {
+            "aliases": [
+              "Swift"
+            ],
+            "mods": {
+              "dex": 1
+            },
+            "speed": 35,
+            "skillProf": [
+              "survival"
+            ],
+            "summary": "+1 Dex. Speed 35 feet; proficiency in Survival."
+          }
+        }
+      },
+      "traits": [
+        [
+          "Glide",
+          "When falling, use your reaction to descend 60 feet per round taking no fall damage; after falling 10 feet you can glide up to your speed horizontally. Not with heavy weapons, a shield, heavy armor, or while encumbered."
+        ],
+        [
+          "Talons",
+          "Unarmed strikes deal 1d4 piercing, and advantage on Athletics checks to climb surfaces your talons can grip."
+        ],
+        [
+          "Patterned Feathers",
+          "Advantage on Stealth checks to hide in a forest."
+        ]
+      ],
+      "partnered": true,
+      "partner": "Hit Point Press"
+    },
+    "Cervan": {
+      "editions": {
+        "2014": {
+          "mods": {
+            "con": 2
+          }
+        }
+      },
+      "src": "Humblewood Campaign Setting",
+      "creatureType": "Humanoid",
+      "size": "Medium",
+      "speed": 30,
+      "languages": [
+        "Birdfolk",
+        "Cervan"
+      ],
+      "skillPick": {
+        "n": 1,
+        "from": [
+          "athletics",
+          "medicine",
+          "nature",
+          "survival"
+        ]
+      },
+      "choice": {
+        "key": "subrace",
+        "label": "Cervan Subrace",
+        "options": {
+          "Grove Cervan": {
+            "aliases": [
+              "Grove"
+            ],
+            "mods": {
+              "dex": 1
+            },
+            "speed": 35,
+            "summary": "+1 Dex. Speed 35; standing long jump 30 feet and high jump 15 feet; opportunity attacks against you have disadvantage."
+          },
+          "Pronghorn Cervan": {
+            "aliases": [
+              "Pronghorn"
+            ],
+            "mods": {
+              "str": 1
+            },
+            "summary": "+1 Str. Double carrying capacity. Antler unarmed strikes deal 1d6 + Str piercing; after moving 20 feet straight at a foe, a bonus action charge adds 1d6 and a Large or smaller target makes a Strength save (DC 8 + PB + Str) or is pushed 10 feet."
+          }
+        }
+      },
+      "traits": [
+        [
+          "Practical",
+          "Proficiency in Athletics, Medicine, Nature, or Survival."
+        ],
+        [
+          "Surge of Vigor",
+          "Once per long rest, when an attack deals over half your current hit points, immediately regain 1d12 + Constitution modifier hit points."
+        ]
+      ],
+      "partnered": true,
+      "partner": "Hit Point Press"
+    },
+    "Hedge": {
+      "editions": {
+        "2014": {
+          "mods": {
+            "cha": 2,
+            "wis": 1
+          }
+        }
+      },
+      "src": "Humblewood Campaign Setting",
+      "creatureType": "Humanoid",
+      "size": "Small",
+      "speed": 25,
+      "speeds": {
+        "burrow": 15
+      },
+      "naturalArmor": {
+        "base": 14,
+        "addDex": true
+      },
+      "languages": [
+        "Birdfolk",
+        "Hedge"
+      ],
+      "spellAbility": "cha",
+      "spells": [
+        {
+          "spell": "Druidcraft",
+          "level": 1
+        },
+        {
+          "spell": "Animal Messenger",
+          "level": 1
+        }
+      ],
+      "traits": [
+        [
+          "Spiny Quills",
+          "You can't wear armor; base AC 14 + Dexterity modifier (shields still apply)."
+        ],
+        [
+          "Curl Up",
+          "As an action, curl up: AC 19 (no Dex), can't move, attack, or cast somatic spells; melee misses deal 2d4 piercing to the attacker, and a hit knocks you prone at the end of the turn."
+        ],
+        [
+          "Forest Magic",
+          "Druidcraft, and animal messenger (2nd level) once per short or long rest (Cha)."
+        ],
+        [
+          "Speak With Bugs",
+          "Communicate simple ideas with insects, spiders, worms, and similar beasts."
+        ],
+        [
+          "Natural Burrowers",
+          "Burrow speed 15 feet."
+        ]
+      ],
+      "partnered": true,
+      "partner": "Hit Point Press"
+    },
+    "Jerbeen": {
+      "editions": {
+        "2014": {
+          "mods": {
+            "dex": 2,
+            "cha": 1
+          }
+        }
+      },
+      "src": "Humblewood Campaign Setting",
+      "creatureType": "Humanoid",
+      "size": "Small",
+      "speed": 30,
+      "languages": [
+        "Birdfolk",
+        "Jerbeen"
+      ],
+      "traits": [
+        [
+          "Standing Leap",
+          "Long jump 30 feet and high jump 15 feet, with or without a running start."
+        ],
+        [
+          "Nimbleness",
+          "Move through the space of any larger creature."
+        ],
+        [
+          "Take Heart",
+          "Advantage on Strength saves and saves against being frightened while within 5 feet of an ally who can see and hear you and isn't frightened or incapacitated."
+        ],
+        [
+          "Team Tactics",
+          "Help as a bonus action."
+        ]
+      ],
+      "partnered": true,
+      "partner": "Hit Point Press"
+    },
+    "Mapach": {
+      "editions": {
+        "2014": {
+          "mods": {
+            "wis": 2,
+            "con": 1
+          }
+        }
+      },
+      "src": "Humblewood Campaign Setting",
+      "creatureType": "Humanoid",
+      "size": "Medium",
+      "speed": 30,
+      "darkvision": 60,
+      "speeds": {
+        "climb": 20
+      },
+      "resist": [
+        "poison"
+      ],
+      "advAgainst": [
+        "poisoned"
+      ],
+      "toolProf": [
+        "Tinker's Tools"
+      ],
+      "languages": [
+        "Birdfolk",
+        "Mapach"
+      ],
+      "traits": [
+        [
+          "Expert Climbers",
+          "Climb speed 20 feet."
+        ],
+        [
+          "Resilience",
+          "Advantage against poison and resistance to poison damage."
+        ],
+        [
+          "Scroungecraft",
+          "Tinker's tools proficiency; in 10 minutes craft a crude working tool or gear worth 30 gp or less from surroundings that lasts 1 hour (or until used once), or spend 8 hours making it permanent."
+        ],
+        [
+          "Skulker",
+          "Advantage on Stealth in dim light and darkness."
+        ]
+      ],
+      "partnered": true,
+      "partner": "Hit Point Press"
+    },
+    "Vulpin": {
+      "editions": {
+        "2014": {
+          "mods": {
+            "int": 2,
+            "cha": 1
+          }
+        }
+      },
+      "src": "Humblewood Campaign Setting",
+      "creatureType": "Humanoid",
+      "size": "Medium",
+      "speed": 30,
+      "darkvision": 60,
+      "languages": [
+        "Birdfolk",
+        "Vulpin"
+      ],
+      "spellAbility": "int",
+      "spells": [
+        {
+          "spell": "Charm Person",
+          "level": 1
+        },
+        {
+          "spell": "Ambush Prey",
+          "level": 3
+        },
+        {
+          "spell": "Fear",
+          "level": 5
+        }
+      ],
+      "traits": [
+        [
+          "Bite",
+          "Unarmed strikes can bite for 1d6 piercing, using Strength or Dexterity."
+        ],
+        [
+          "Evasive",
+          "Add your Intelligence modifier to Dexterity saving throws."
+        ],
+        [
+          "Bewitching Guile",
+          "Charm person, ambush prey at 3rd level, and fear at 5th level, each once per long rest (Int)."
+        ]
+      ],
+      "partnered": true,
+      "partner": "Hit Point Press"
+    },
+    "Fernian Aasimar": {
+      "src": "Exploring Eberron",
+      "creatureType": "Humanoid",
+      "size": "Medium or Small",
+      "speed": 30,
+      "darkvision": 60,
+      "resist": [
+        "fire",
+        "necrotic"
+      ],
+      "spellAbility": "choose",
+      "spells": [
+        {
+          "spell": "Produce Flame",
+          "level": 1
+        }
+      ],
+      "traits": [
+        [
+          "Fernian Resistance",
+          "Resistance to Fire and Necrotic damage."
+        ],
+        [
+          "Healing Hands",
+          "Heal a number of d4s equal to your Proficiency Bonus, once per Long Rest."
+        ],
+        [
+          "Flame Bearer",
+          "You know Produce Flame (Intelligence, Wisdom, or Charisma)."
+        ],
+        [
+          "Celestial Revelation",
+          "At level 3, a transformation you choose, wreathed in otherworldly fire; Inner Radiance deals Fire instead of Radiant."
+        ]
+      ],
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "flexible"
+          }
+        }
+      },
+      "partnered": true,
+      "partner": "Keith Baker"
+    },
+    "Mabaran Aasimar": {
+      "src": "Exploring Eberron",
+      "creatureType": "Humanoid",
+      "size": "Medium or Small",
+      "speed": 30,
+      "darkvision": 60,
+      "resist": [
+        "necrotic",
+        "radiant"
+      ],
+      "spellAbility": "choose",
+      "spells": [
+        {
+          "spell": "Toll the Dead",
+          "level": 1
+        }
+      ],
+      "traits": [
+        [
+          "Celestial Resistance",
+          "Resistance to Necrotic and Radiant damage."
+        ],
+        [
+          "Healing Hands",
+          "Heal a number of d4s equal to your Proficiency Bonus, once per Long Rest."
+        ],
+        [
+          "Herald of Death",
+          "You know Toll the Dead (Intelligence, Wisdom, or Charisma)."
+        ],
+        [
+          "Celestial Revelation",
+          "At level 3: Heavenly Wings, Necrotic Shroud, or Inner Darkness (Bright Light within 20 feet becomes Dim, and each creature within 10 feet takes Necrotic equal to your Proficiency Bonus at the end of your turns)."
+        ]
+      ],
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "flexible"
+          }
+        }
+      },
+      "partnered": true,
+      "partner": "Keith Baker"
+    },
+    "Dhakaani Ghaal'dar": {
+      "src": "Exploring Eberron",
+      "creatureType": "Humanoid",
+      "size": "Medium",
+      "speed": 30,
+      "darkvision": 60,
+      "advAgainst": [
+        "charmed"
+      ],
+      "skillPick": {
+        "n": 2,
+        "from": [
+          "athletics",
+          "history",
+          "intimidation",
+          "performance"
+        ]
+      },
+      "traits": [
+        [
+          "Discipline",
+          "Advantage on saves to avoid or end Charmed."
+        ],
+        [
+          "Strength in Unity",
+          "When you fail a D20 Test, add the number of allies you can see within 30 feet (max +5), once per Short or Long Rest."
+        ],
+        [
+          "War and Peace",
+          "Proficiency in two of Athletics, History, Intimidation, or Performance."
+        ]
+      ],
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "flexible"
+          }
+        }
+      },
+      "partnered": true,
+      "partner": "Keith Baker"
+    },
+    "Dhakaani Golin'dar": {
+      "src": "Exploring Eberron",
+      "creatureType": "Humanoid",
+      "size": "Small",
+      "speed": 35,
+      "darkvision": 60,
+      "advAgainst": [
+        "charmed"
+      ],
+      "traits": [
+        [
+          "Discipline",
+          "Advantage on saves to avoid or end Charmed."
+        ],
+        [
+          "Naturally Stealthy",
+          "Hide when obscured only by a creature at least one size larger."
+        ],
+        [
+          "Nimbleness",
+          "Move through the space of a larger creature (without stopping there)."
+        ]
+      ],
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "flexible"
+          }
+        }
+      },
+      "partnered": true,
+      "partner": "Keith Baker"
+    },
+    "Dhakaani Guul'dar": {
+      "src": "Exploring Eberron",
+      "creatureType": "Humanoid",
+      "size": "Medium",
+      "speed": 30,
+      "darkvision": 60,
+      "advAgainst": [
+        "frightened"
+      ],
+      "traits": [
+        [
+          "Brave",
+          "Advantage on saves to avoid or end Frightened."
+        ],
+        [
+          "Long-Limbed",
+          "Melee reach is 5 feet longer on your turn."
+        ],
+        [
+          "Powerful Build",
+          "Advantage on checks to end Grappled, and count as one size larger for carrying capacity."
+        ],
+        [
+          "Stand by the Strong",
+          "When an ally within 30 feet who can see you fails a save against Frightened, use your Reaction to let them reroll."
+        ]
+      ],
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "flexible"
+          }
+        }
+      },
+      "partnered": true,
+      "partner": "Keith Baker"
+    },
+    "Gnoll": {
+      "src": "Exploring Eberron",
+      "creatureType": "Humanoid",
+      "size": "Medium",
+      "speed": 30,
+      "darkvision": 60,
+      "skillPick": {
+        "n": 1,
+        "from": [
+          "perception",
+          "stealth",
+          "survival"
+        ]
+      },
+      "traits": [
+        [
+          "Bite",
+          "Unarmed Strikes can deal 1d6 + Strength Piercing."
+        ],
+        [
+          "Hunter's Senses",
+          "Proficiency in Perception, Stealth, or Survival."
+        ],
+        [
+          "Rampage",
+          "When you Bite or drop a creature to 0 HP with an attack, use a Bonus Action to move half your Speed and make one weapon attack or Bite."
+        ]
+      ],
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "flexible"
+          }
+        }
+      },
+      "partnered": true,
+      "partner": "Keith Baker"
+    },
+    "Jhorgun'taal": {
+      "src": "Exploring Eberron",
+      "creatureType": "Humanoid",
+      "size": "Medium",
+      "speed": 30,
+      "darkvision": 60,
+      "bonusOriginFeat": true,
+      "traits": [
+        [
+          "Relentless Endurance",
+          "Drop to 1 hit point instead of 0, once per Long Rest."
+        ],
+        [
+          "Versatile",
+          "You gain an Origin feat of your choice."
+        ]
+      ],
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "flexible"
+          }
+        }
+      },
+      "partnered": true,
+      "partner": "Keith Baker"
+    },
+    "Kalamer Landwalker": {
+      "src": "Exploring Eberron",
+      "creatureType": "Elemental",
+      "size": "Medium",
+      "speed": 10,
+      "speeds": {
+        "swim": 40
+      },
+      "darkvision": 60,
+      "skillPick": {
+        "n": 1,
+        "from": [
+          "nature",
+          "performance",
+          "survival"
+        ]
+      },
+      "traits": [
+        [
+          "Amphibious",
+          "Breathe air and water."
+        ],
+        [
+          "Blessing of the Sea",
+          "As a Magic action, switch between merfolk form (Speed 10, Swim 40) and landwalker form (Speed 30, no Swim Speed)."
+        ],
+        [
+          "Karakala Lore",
+          "Proficiency in Nature, Performance, or Survival."
+        ]
+      ],
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "flexible"
+          }
+        }
+      },
+      "partnered": true,
+      "partner": "Keith Baker"
+    },
+    "Ruinbound": {
+      "src": "Exploring Eberron",
+      "creatureType": "Humanoid",
+      "size": "Medium or Small",
+      "speed": 30,
+      "darkvision": 120,
+      "resist": [
+        "poison"
+      ],
+      "advAgainst": [
+        "poisoned"
+      ],
+      "spellAbility": "choose",
+      "traits": [
+        [
+          "Personal Symbiont",
+          "Know one cantrip, swappable on a Long Rest: Acid Splash, Guidance (self), Light, Mage Hand, Mind Sliver, Poison Spray, Resistance (self), Shocking Grasp, or Thorn Whip (Intelligence, Wisdom, or Charisma)."
+        ],
+        [
+          "Symbiont Mastery",
+          "Attune to one Symbiotic Nature item without it counting against your limit, and you can end attunement to such items after a Long Rest without Remove Curse."
+        ],
+        [
+          "Unnatural Resilience",
+          "Resistance to Poison damage and Advantage on saves against Poisoned."
+        ]
+      ],
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "flexible"
+          }
+        }
+      },
+      "partnered": true,
+      "partner": "Keith Baker"
+    },
+    "Sahuagin": {
+      "src": "Exploring Eberron",
+      "creatureType": "Humanoid",
+      "size": "Medium",
+      "speed": 30,
+      "speeds": {
+        "swim": "speed"
+      },
+      "darkvision": 120,
+      "naturalArmor": {
+        "base": 12,
+        "addDex": true
+      },
+      "traits": [
+        [
+          "Blood Frenzy",
+          "As a Bonus Action, for 1 minute gain Advantage on attacks against creatures missing any Hit Points; Proficiency Bonus times per Long Rest."
+        ],
+        [
+          "Natural Armor",
+          "Base AC 12 + Dexterity without armor; shields still apply."
+        ],
+        [
+          "Limited Amphibiousness",
+          "Breathe air and water, but must submerge at least once every 4 hours."
+        ],
+        [
+          "Swift Swimmer",
+          "Swim Speed equal to your Speed."
+        ]
+      ],
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "flexible"
+          }
+        }
+      },
+      "partnered": true,
+      "partner": "Keith Baker"
+    },
+    "Gargoyle": {
+      "src": "Frontiers of Eberron: Quickstone",
+      "creatureType": "Elemental",
+      "size": "Medium",
+      "speed": 30,
+      "darkvision": 60,
+      "resist": [
+        "poison"
+      ],
+      "advAgainst": [
+        "poisoned"
+      ],
+      "naturalArmor": {
+        "base": 13,
+        "addDex": true
+      },
+      "traits": [
+        [
+          "Elemental Resilience",
+          "Resistance to Poison and Advantage on saves against Poisoned."
+        ],
+        [
+          "False Appearance",
+          "Advantage on checks to Hide while holding still."
+        ],
+        [
+          "Immutable Form",
+          "Immune to magical contagions and can't be Petrified against your will."
+        ],
+        [
+          "Sentry's Rest",
+          "No sleep needed and immune to magical sleep; a Long Rest takes 6 motionless, conscious hours."
+        ],
+        [
+          "Stoneskin",
+          "Base AC 13 + Dexterity without armor; shields still apply."
+        ],
+        [
+          "Tireless",
+          "No Exhaustion from dehydration, malnutrition, or suffocation."
+        ]
+      ],
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "flexible"
+          }
+        }
+      },
+      "partnered": true,
+      "partner": "Keith Baker"
+    },
+    "Harpy": {
+      "src": "Frontiers of Eberron: Quickstone",
+      "creatureType": "Humanoid",
+      "size": "Medium",
+      "speed": 30,
+      "speeds": {
+        "fly": "speed"
+      },
+      "skillProf": [
+        "performance"
+      ],
+      "spellAbility": "choose",
+      "spells": [
+        {
+          "spell": "Friends",
+          "level": 1
+        }
+      ],
+      "traits": [
+        [
+          "Flight",
+          "Fly Speed equal to your Speed when not in Medium or Heavy armor."
+        ],
+        [
+          "Songbird",
+          "Proficiency in Performance."
+        ],
+        [
+          "Harpy's Charms",
+          "You know Friends, cast with only Verbal components (Intelligence, Wisdom, or Charisma)."
+        ],
+        [
+          "Shadow's Magic",
+          "If you have Spellcasting or Pact Magic, add Charm Person, Suggestion, Enemies Abound, Charm Monster, and Dominate Person to your list, cast with only Verbal components."
+        ]
+      ],
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "flexible"
+          }
+        }
+      },
+      "partnered": true,
+      "partner": "Keith Baker"
+    },
+    "Medusa": {
+      "src": "Frontiers of Eberron: Quickstone",
+      "creatureType": "Monstrosity",
+      "size": "Medium",
+      "speed": 30,
+      "darkvision": 60,
+      "skillProf": [
+        "intimidation"
+      ],
+      "spellAbility": "choose",
+      "spells": [
+        {
+          "spell": "Gray Gaze",
+          "level": 1
+        }
+      ],
+      "traits": [
+        [
+          "Fearsome Presence",
+          "Proficiency in Intimidation."
+        ],
+        [
+          "Serpentine",
+          "You know Serpentine, a sign language of your snake mane."
+        ],
+        [
+          "Petrifying Gaze",
+          "You know Gray Gaze, cast without components (Intelligence, Wisdom, or Charisma); a creature it drops to 0 HP can be Petrified."
+        ],
+        [
+          "Medusa's Gift",
+          "Proficiency Bonus times per Long Rest, augment Gray Gaze: a failed save Restrains the target for 1 minute (Concentration; Constitution save ends each turn)."
+        ],
+        [
+          "Shadow's Magic",
+          "If you have Spellcasting or Pact Magic, add Ensnaring Strike, Hold Person, Hypnotic Pattern, Stoneskin, and Hold Monster to your list, cast without Material components."
+        ]
+      ],
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "flexible"
+          }
+        }
+      },
+      "partnered": true,
+      "partner": "Keith Baker"
+    },
+    "Worg": {
+      "src": "Frontiers of Eberron: Quickstone",
+      "creatureType": "Monstrosity",
+      "size": "Medium",
+      "speed": 40,
+      "darkvision": 60,
+      "skillProf": [
+        "perception"
+      ],
+      "naturalArmor": {
+        "base": 13,
+        "addDex": true
+      },
+      "traits": [
+        [
+          "Keen Senses",
+          "Proficiency in Perception, and Advantage on Perception checks using hearing or smell."
+        ],
+        [
+          "Bite",
+          "Unarmed Strikes deal 1d8 + Strength Piercing."
+        ],
+        [
+          "For the Pack",
+          "Help as a Bonus Action."
+        ],
+        [
+          "Natural Armor",
+          "Base AC 13 + Dexterity without armor."
+        ],
+        [
+          "Quadruped",
+          "No hands: you can't hold items or wield weapons or shields (except Steel Jaws, 2d6 Piercing, Finesse, Topple), and have Disadvantage on fine manipulation; carry a Medium rider and count as one size larger for carrying; wear barding (4x cost, 2x weight); hand climbs cost 4 extra feet per foot."
+        ]
+      ],
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "flexible"
+          }
+        }
+      },
+      "partnered": true,
+      "partner": "Keith Baker"
+    },
+    "Eberron Tiefling": {
+      "src": "Frontiers of Eberron: Quickstone",
+      "creatureType": "Humanoid",
+      "size": "Medium or Small",
+      "speed": 30,
+      "darkvision": 60,
+      "spellAbility": "choose",
+      "spells": [
+        {
+          "spell": "Thaumaturgy",
+          "level": 1
+        }
+      ],
+      "choice": {
+        "key": "legacy",
+        "label": "Fiendish Legacy",
+        "options": {
+          "Dolurrhi": {
+            "resist": [
+              "psychic"
+            ],
+            "spells": [
+              {
+                "spell": "Vicious Mockery",
+                "level": 1
+              },
+              {
+                "spell": "Dissonant Whispers",
+                "level": 3,
+                "free": "1/LR"
+              },
+              {
+                "spell": "Blur",
+                "level": 5,
+                "free": "1/LR"
+              }
+            ],
+            "summary": "Resistance to Psychic; Vicious Mockery, Dissonant Whispers (3), Blur (5)."
+          },
+          "Fernian": {
+            "resist": [
+              "fire"
+            ],
+            "spells": [
+              {
+                "spell": "Produce Flame",
+                "level": 1
+              },
+              {
+                "spell": "Burning Hands",
+                "level": 3,
+                "free": "1/LR"
+              },
+              {
+                "spell": "Heat Metal",
+                "level": 5,
+                "free": "1/LR"
+              }
+            ],
+            "summary": "Resistance to Fire; Produce Flame, Burning Hands (3), Heat Metal (5)."
+          },
+          "Kythrian": {
+            "spells": [
+              {
+                "spell": "Shocking Grasp",
+                "level": 1
+              },
+              {
+                "spell": "Chromatic Orb",
+                "level": 3,
+                "free": "1/LR"
+              },
+              {
+                "spell": "Shatter",
+                "level": 5,
+                "free": "1/LR"
+              }
+            ],
+            "summary": "Resistance to Acid, Cold, Fire, or Lightning, rerolled randomly each Long Rest; Shocking Grasp, Chromatic Orb (3), Shatter (5)."
+          },
+          "Mabaran": {
+            "resist": [
+              "necrotic"
+            ],
+            "spells": [
+              {
+                "spell": "Chill Touch",
+                "level": 1
+              },
+              {
+                "spell": "Inflict Wounds",
+                "level": 3,
+                "free": "1/LR"
+              },
+              {
+                "spell": "Blindness/Deafness",
+                "level": 5,
+                "free": "1/LR"
+              }
+            ],
+            "summary": "Resistance to Necrotic; Chill Touch, Inflict Wounds (3), Blindness/Deafness (5)."
+          },
+          "Risian": {
+            "resist": [
+              "cold"
+            ],
+            "spells": [
+              {
+                "spell": "Ray of Frost",
+                "level": 1
+              },
+              {
+                "spell": "Armor of Agathys",
+                "level": 3,
+                "free": "1/LR"
+              },
+              {
+                "spell": "Hold Person",
+                "level": 5,
+                "free": "1/LR"
+              }
+            ],
+            "summary": "Resistance to Cold; Ray of Frost, Armor of Agathys (3), Hold Person (5)."
+          },
+          "Sakah": {
+            "spells": [
+              {
+                "spell": "Mage Hand",
+                "level": 1
+              },
+              {
+                "spell": "Disguise Self",
+                "level": 3,
+                "free": "1/LR"
+              },
+              {
+                "spell": "Detect Thoughts",
+                "level": 5,
+                "free": "1/LR"
+              }
+            ],
+            "summary": "Advantage on Wisdom saves against magic; Mage Hand, Disguise Self (3), Detect Thoughts (5)."
+          },
+          "Shavaran": {
+            "spells": [
+              {
+                "spell": "Blade Ward",
+                "level": 1
+              },
+              {
+                "spell": "Heroism",
+                "level": 3,
+                "free": "1/LR"
+              },
+              {
+                "spell": "Spiritual Weapon",
+                "level": 5,
+                "free": "1/LR"
+              }
+            ],
+            "summary": "Light and Medium armor and Shield training; Blade Ward, Heroism (3), Spiritual Weapon (5)."
+          }
+        }
+      },
+      "traits": [
+        [
+          "Fiendish Legacy",
+          "A planar or Sakah legacy sets your resistance and spells; level 3 and 5 spells are free once per Long Rest."
+        ],
+        [
+          "Otherworldly Presence",
+          "You know the Thaumaturgy cantrip."
+        ]
+      ],
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "flexible"
+          }
+        }
+      },
+      "partnered": true,
+      "partner": "Keith Baker"
+    },
+    "Pluvenn": {
+      "src": "Dr Dhrolin's Dictionary of Dinosaurs",
+      "creatureType": "Humanoid",
+      "size": "Small or Medium",
+      "speed": 30,
+      "darkvision": 60,
+      "languages": [
+        "Common",
+        "Archosauric"
+      ],
+      "traits": [
+        [
+          "Razormaw",
+          "Unarmed Strikes can deal 1d4 + Dexterity Piercing."
+        ],
+        [
+          "Grappleclaws",
+          "Creatures have Disadvantage on saves against your Grapple, Advantage on Athletics to climb, and a Bonus Action deals 1d4 + PB Piercing to a creature you grapple."
+        ],
+        [
+          "Nocturnal/Diurnal",
+          "Darkvision 60 feet, and a Long Rest takes 4 hours."
+        ],
+        [
+          "Pneumatised and Feathered",
+          "Resistance to falling damage unless Incapacitated."
+        ],
+        [
+          "Dinosaur",
+          "Counts as a dinosaur for prerequisites and effects."
+        ]
+      ],
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "flexible"
+          }
+        }
+      },
+      "partnered": true,
+      "partner": "PalaeoGames"
+    },
+    "Manyhorn": {
+      "src": "Dr Dhrolin's Dictionary of Dinosaurs",
+      "creatureType": "Humanoid",
+      "size": "Small or Medium",
+      "speed": 30,
+      "skillProf": [
+        "intimidation"
+      ],
+      "languages": [
+        "Common",
+        "Archosauric"
+      ],
+      "traits": [
+        [
+          "Musclebound",
+          "Count as one size larger for carrying capacity."
+        ],
+        [
+          "Guild Connections",
+          "In a new settlement roll 1d4: free lodging, 10 percent discounts, lenient guards, or one NPC shares uncommon information."
+        ],
+        [
+          "Head Crest",
+          "Proficiency in Intimidation; a Bonus Action flush gives Advantage on Intimidation for 1 minute."
+        ],
+        [
+          "Horned Repose",
+          "When an enemy within 5 feet misses you with a melee attack, use your Reaction for a horn attack (Finesse, 1d6 + Str or Dex Piercing, +PB from level 10)."
+        ],
+        [
+          "Dinosaur",
+          "Counts as a dinosaur for prerequisites and effects."
+        ]
+      ],
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "flexible"
+          }
+        }
+      },
+      "partnered": true,
+      "partner": "PalaeoGames"
+    },
+    "Jeholrak": {
+      "src": "Dr Dhrolin's Dictionary of Dinosaurs",
+      "creatureType": "Humanoid",
+      "size": "Small",
+      "speed": 30,
+      "spellAbility": "choose",
+      "spells": [
+        {
+          "spell": "Charm Person",
+          "level": 1,
+          "free": "1/LR"
+        },
+        {
+          "spell": "Suggestion",
+          "level": 5,
+          "free": "1/LR"
+        },
+        {
+          "spell": "Animal Friendship",
+          "level": 1
+        }
+      ],
+      "languages": [
+        "Common",
+        "Archosauric"
+      ],
+      "traits": [
+        [
+          "Power of Persuasion",
+          "Pheromone magic: Charm Person (level 1) and Suggestion (level 5), each once per Long Rest without slot or components (Charisma, Constitution, or Wisdom); no effect on Jeholrak."
+        ],
+        [
+          "Cutthroat Society",
+          "Advantage on Sleight of Hand; as a Bonus Action hide a small one-handed item on you (Investigation DC 8 + Dex + PB to find)."
+        ],
+        [
+          "Subdue Beast",
+          "Advantage on Animal Handling and cast Animal Friendship Proficiency Bonus times per Long Rest without a slot."
+        ],
+        [
+          "Dinosaur",
+          "Counts as a dinosaur for prerequisites and effects."
+        ]
+      ],
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "flexible"
+          }
+        }
+      },
+      "partnered": true,
+      "partner": "PalaeoGames"
+    },
+    "Ankylier": {
+      "src": "Dr Dhrolin's Dictionary of Dinosaurs",
+      "creatureType": "Humanoid",
+      "size": "Medium",
+      "speed": 25,
+      "naturalArmor": {
+        "base": 17,
+        "addDex": false
+      },
+      "toolProf": [
+        "Smith's Tools"
+      ],
+      "languages": [
+        "Common",
+        "Archosauric"
+      ],
+      "traits": [
+        [
+          "Musclebound",
+          "Count as Large for carrying capacity."
+        ],
+        [
+          "Clubbed Tail",
+          "Replace any attack with a tail strike (proficient, Strength, 1d6 + Str Bludgeoning, +PB from level 10)."
+        ],
+        [
+          "Metalworker",
+          "Proficiency with Smith's Tools and Medium armor training; craft one mundane shield, weapon, or medium armor over a Long Rest with a forge (counts as a Short Rest)."
+        ],
+        [
+          "Osteoderms",
+          "Unarmored AC 17 without Dexterity (or +3 AC without Dexterity, by agreement with your DM)."
+        ],
+        [
+          "Dinosaur",
+          "Counts as a dinosaur for prerequisites and effects."
+        ]
+      ],
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "flexible"
+          }
+        }
+      },
+      "partnered": true,
+      "partner": "PalaeoGames"
+    },
+    "Limukin": {
+      "src": "Dr Dhrolin's Dictionary of Dinosaurs",
+      "creatureType": "Humanoid",
+      "size": "Small or Medium",
+      "speed": 35,
+      "darkvision": 60,
+      "resist": [
+        "poison"
+      ],
+      "advAgainst": [
+        "poisoned"
+      ],
+      "languages": [
+        "Common",
+        "Archosauric"
+      ],
+      "traits": [
+        [
+          "Hunter-Gatherer",
+          "Advantage on Stealth and Survival in heavily vegetated areas, and forage twice as much in familiar ones."
+        ],
+        [
+          "Envenomed Weapons",
+          "Once per Long Rest as an Action, coat a weapon or 5 ammunition for 1 minute: damaged creatures make a Constitution save (DC 10 + PB) or take 2d4 Poison (3d4 at level 5) and are Poisoned for 1 minute."
+        ],
+        [
+          "Innate Toxicology",
+          "Resistance to Poison and Advantage against Poisoned."
+        ],
+        [
+          "Dinosaur",
+          "Counts as a dinosaur for prerequisites and effects."
+        ]
+      ],
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "flexible"
+          }
+        }
+      },
+      "partnered": true,
+      "partner": "PalaeoGames"
+    },
+    "Children of Seth": {
+      "src": "Dr Dhrolin's Dictionary of Dinosaurs",
+      "creatureType": "Humanoid",
+      "size": "Medium",
+      "speed": 30,
+      "speeds": {
+        "fly": 30
+      },
+      "skillProf": [
+        "athletics"
+      ],
+      "skillPick": {
+        "n": 2,
+        "from": [
+          "arcana",
+          "religion",
+          "history"
+        ]
+      },
+      "languages": [
+        "Common",
+        "Archosauric"
+      ],
+      "languagePick": {
+        "n": 1,
+        "from": "any"
+      },
+      "traits": [
+        [
+          "Flight",
+          "Fly Speed 30 feet (20 in Medium or Heavy armor)."
+        ],
+        [
+          "Global Migrators",
+          "Proficiency in Athletics, and you always know north while you can see the sky."
+        ],
+        [
+          "Verbal Culture",
+          "Proficiency in two of Arcana, Religion, or History (or Expertise in one); you remember everyone you've met."
+        ],
+        [
+          "Well-Travelled",
+          "Know the value of familiar trade goods at a glance."
+        ],
+        [
+          "Dinosaur",
+          "Counts as a dinosaur and pterosaur for prerequisites and effects."
+        ]
+      ],
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "flexible"
+          }
+        }
+      },
+      "partnered": true,
+      "partner": "PalaeoGames"
+    },
+    "Snowborn": {
+      "src": "One-Shot Wonders: Holiday Adventure Pack",
+      "creatureType": "Construct",
+      "size": "Small or Medium",
+      "speed": 30,
+      "resist": [
+        "cold"
+      ],
+      "spellAbility": "choose",
+      "spells": [
+        {
+          "spell": "Ray of Frost",
+          "level": 1
+        },
+        {
+          "spell": "False Life",
+          "level": 1,
+          "free": "1/LR"
+        }
+      ],
+      "traits": [
+        [
+          "Chilled Anatomy",
+          "Resistance to Cold, and you know Ray of Frost."
+        ],
+        [
+          "Compacted Snow",
+          "Move through the space of a larger creature, and squeeze through gaps sized for one size smaller without penalty."
+        ],
+        [
+          "Frigid Construct",
+          "No need to sleep, eat, drink, or breathe, immune to magical sleep; a Long Rest takes 4 motionless, conscious hours looking like a snowman."
+        ],
+        [
+          "Glacial Form",
+          "Once per Long Rest, cast False Life without a slot or materials as you harden into ice."
+        ]
+      ],
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "flexible"
+          }
+        }
+      },
+      "partnered": true,
+      "partner": "Roll & Play Press"
+    },
+    "Tarandus": {
+      "src": "One-Shot Wonders: Holiday Adventure Pack",
+      "creatureType": "Humanoid",
+      "size": "Medium",
+      "speed": 35,
+      "skillPick": {
+        "n": 1,
+        "from": [
+          "perception",
+          "survival"
+        ]
+      },
+      "traits": [
+        [
+          "Guiding Light",
+          "As a Bonus Action, your nose sheds Dim Light in a 20-foot radius (Bonus Action to end)."
+        ],
+        [
+          "Antler Defence",
+          "Once per Short Rest as a Reaction, +2 AC against melee attacks until the start of your next turn."
+        ],
+        [
+          "Hooves",
+          "Unarmed Strikes can deal 1d4 + Strength Bludgeoning."
+        ],
+        [
+          "Born to Navigate",
+          "Proficiency in Perception or Survival."
+        ]
+      ],
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "flexible"
+          }
+        }
+      },
+      "partnered": true,
+      "partner": "Roll & Play Press"
+    },
+    "Hederan": {
+      "src": "One-Shot Wonders: Holiday Adventure Pack",
+      "creatureType": "Humanoid",
+      "size": "Small or Medium",
+      "speed": 30,
+      "darkvision": 60,
+      "spellAbility": "choose",
+      "spells": [
+        {
+          "spell": "Beast Bond",
+          "level": 1,
+          "free": "1/LR"
+        }
+      ],
+      "traits": [
+        [
+          "Outdoor Adept",
+          "Difficult terrain of earth or foliage costs no extra movement."
+        ],
+        [
+          "Protected by Nature",
+          "Hide when only lightly obscured by foliage, heavy rain or snow, mist, or similar."
+        ],
+        [
+          "Friend of Fauna",
+          "Once per Long Rest, cast Beast Bond without a slot or materials."
+        ]
+      ],
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "flexible"
+          }
+        }
+      },
+      "partnered": true,
+      "partner": "Roll & Play Press"
+    },
+    "Canisar": {
+      "src": "One-Shot Wonders: Holiday Adventure Pack",
+      "creatureType": "Humanoid",
+      "size": "Small",
+      "speed": 30,
+      "speeds": {
+        "burrow": 10
+      },
+      "darkvision": 120,
+      "skillPick": {
+        "n": 1,
+        "from": [
+          "nature",
+          "survival",
+          "stealth"
+        ]
+      },
+      "traits": [
+        [
+          "Hind Leg Dash",
+          "+10 feet of Speed this turn when you Dash or Disengage."
+        ],
+        [
+          "Fanged Jaws",
+          "Unarmed Strikes can deal 1d4 + Strength Piercing."
+        ],
+        [
+          "Hunter Gatherer",
+          "Proficiency in Nature, Survival, or Stealth."
+        ],
+        [
+          "Ancestral Blessing",
+          "Once per Short Rest as an Action, cast Guidance on yourself."
+        ]
+      ],
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "flexible"
+          }
+        }
+      },
+      "partnered": true,
+      "partner": "Roll & Play Press"
+    },
+    "Dreamer": {
+      "src": "Grim Hollow: Player's Guide",
+      "creatureType": "Humanoid",
+      "partnered": true,
+      "partner": "Grim Hollow",
+      "size": "Medium",
+      "speed": 30,
+      "darkvision": 60,
+      "skillProf": [
+        "perception"
+      ],
+      "traits": [
+        [
+          "Heritage Traits",
+          "The traits below are this heritage's eight traditional traits. Any of them can be swapped for another trait from the Grim Hollow trait list, or a trait can be taken a second time for its stronger version."
+        ],
+        [
+          "Quick Initiative",
+          "Add your Proficiency Bonus to Initiative rolls."
+        ],
+        [
+          "Stalwart Reserves",
+          "After you hit with a melee attack, take a Reaction to roll d4s equal to your Proficiency Bonus and gain that many Temporary Hit Points; Proficiency Bonus uses per Long Rest."
+        ],
+        [
+          "Darkvision",
+          "Darkvision out to 60 feet."
+        ],
+        [
+          "Helping Hand",
+          "You can take the Help action as a Bonus Action to aid an ally's ability check."
+        ],
+        [
+          "Power Nap",
+          "During a Short Rest you can sleep for 1 hour; if you do, you also lose one Exhaustion level and recover one Hit Point Die."
+        ],
+        [
+          "Dreamwalking",
+          "Advantage on an ability check to recall lore or knowledge, Proficiency Bonus times per Long Rest."
+        ],
+        [
+          "Improviser",
+          "As a Bonus Action, become proficient in one skill or tool you lack for 1 hour; once per Long Rest."
+        ],
+        [
+          "Inborn Perception",
+          "Proficiency in Perception."
+        ]
+      ]
+    },
+    "Grudgel": {
+      "src": "Grim Hollow: Player's Guide",
+      "creatureType": "Humanoid",
+      "partnered": true,
+      "partner": "Grim Hollow",
+      "size": "Medium",
+      "speed": 30,
+      "darkvision": 60,
+      "traits": [
+        [
+          "Heritage Traits",
+          "The traits below are this heritage's eight traditional traits. Any of them can be swapped for another trait from the Grim Hollow trait list, or a trait can be taken a second time for its stronger version."
+        ],
+        [
+          "Battlefield Control",
+          "Creatures that move into your reach provoke Opportunity Attacks from you, as well as those that leave it."
+        ],
+        [
+          "Centered",
+          "As a Bonus Action, give yourself Advantage on one attack roll or ability check made before the start of your next turn; Proficiency Bonus uses per Long Rest."
+        ],
+        [
+          "Darkvision",
+          "Darkvision out to 60 feet."
+        ],
+        [
+          "Powerful Build",
+          "You count as one size larger for carrying capacity and for what you can push, drag, or lift; if Small, you can wield Heavy weapons you are proficient with."
+        ],
+        [
+          "Tireless",
+          "Advantage on saving throws tied to gaining or removing Exhaustion."
+        ],
+        [
+          "Artisanal Focus",
+          "Proficiency with one Artisan's Tool of your choice."
+        ],
+        [
+          "Impromptu Artisan",
+          "With proficient Artisan's Tools, suitable materials, and the GM's approval, spend a Short Rest making one rough nonmagical item worth 10 GP or less (gear, a weapon or Shield, or a simple gadget); it normally can't be sold."
+        ],
+        [
+          "Magical Savvy",
+          "Learn one cantrip from any spell list, cast with that list's ability (Intelligence for Wizard, Wisdom for Cleric or Druid, Charisma for Bard, Sorcerer, or Warlock)."
+        ]
+      ]
+    },
+    "Laneshi": {
+      "src": "Grim Hollow: Player's Guide",
+      "creatureType": "Humanoid",
+      "partnered": true,
+      "partner": "Grim Hollow",
+      "size": "Medium",
+      "speed": 30,
+      "speeds": {
+        "swim": 30
+      },
+      "darkvision": 60,
+      "resist": [
+        "psychic"
+      ],
+      "skillProf": [
+        "animal handling"
+      ],
+      "traits": [
+        [
+          "Swim Speed",
+          "Base Swim Speed of 30 feet."
+        ],
+        [
+          "Heritage Traits",
+          "The traits below are this heritage's eight traditional traits. Any of them can be swapped for another trait from the Grim Hollow trait list, or a trait can be taken a second time for its stronger version."
+        ],
+        [
+          "Awakened Mind",
+          "You automatically succeed on saves against magical effects that would make you Incapacitated, Stunned, or Unconscious (not Unconscious from dropping to 0 Hit Points)."
+        ],
+        [
+          "Psychic Spirit",
+          "Resistance to Psychic damage."
+        ],
+        [
+          "Amphibious",
+          "You can breathe both air and water."
+        ],
+        [
+          "Darkvision",
+          "Darkvision out to 60 feet."
+        ],
+        [
+          "Swimmer",
+          "Swim Speed equal to your Speed (already matched by the base Swim Speed)."
+        ],
+        [
+          "Animal Friend",
+          "Proficiency in Animal Handling."
+        ],
+        [
+          "Magical Savvy",
+          "Learn one cantrip from any spell list (traditionally a Necromancy cantrip), cast with that list's ability (Intelligence for Wizard, Wisdom for Cleric or Druid, Charisma for Bard, Sorcerer, or Warlock)."
+        ],
+        [
+          "Nature's Voice",
+          "Through sounds and gestures you can trade simple ideas (such as hunger) with Beasts and Plants; this grants no control and no detailed information."
+        ]
+      ]
+    },
+    "Ogresh": {
+      "src": "Grim Hollow: Player's Guide",
+      "creatureType": "Humanoid",
+      "partnered": true,
+      "partner": "Grim Hollow",
+      "size": "Medium",
+      "speed": 30,
+      "advAgainst": [
+        "charmed"
+      ],
+      "skillProf": [
+        "insight",
+        "persuasion"
+      ],
+      "traits": [
+        [
+          "Heritage Traits",
+          "The traits below are this heritage's eight traditional traits. Any of them can be swapped for another trait from the Grim Hollow trait list, or a trait can be taken a second time for its stronger version."
+        ],
+        [
+          "Enemy in Motion",
+          "When you attack a creature, or save against its attack, spell, or ability, and it has moved since the end of your last turn, take a Reaction to gain Advantage; Proficiency Bonus uses per Long Rest."
+        ],
+        [
+          "Focused Mind",
+          "Advantage on saves against the Charmed condition."
+        ],
+        [
+          "Environmental Awareness",
+          "Pick an environment (arctic, coastal, desert, forest, grassland, hill and mountain, swamp, subterranean, or underwater). There, checks to assess structures, monuments, or natural features, find food or water, or track count as proficient and add double your Proficiency Bonus."
+        ],
+        [
+          "Natural Movement",
+          "Pick an environment from the same list as Environmental Awareness. There, nonmagical Difficult Terrain costs you no extra movement and checks to track you have Disadvantage."
+        ],
+        [
+          "Powerful Build",
+          "You count as one size larger for carrying capacity and for what you can push, drag, or lift; if Small, you can wield Heavy weapons you are proficient with."
+        ],
+        [
+          "Calculating Listener",
+          "After 1 minute of talk with a nonhostile creature, it makes a Wisdom save (DC 8 + your Charisma modifier + Proficiency Bonus) or is Charmed for 1 hour, and the GM may reveal one related thing it knows; it never notices the attempt. Once per Short or Long Rest."
+        ],
+        [
+          "Commanding Insight",
+          "Proficiency in Insight."
+        ],
+        [
+          "Persuasive Knack",
+          "Proficiency in Persuasion."
+        ]
+      ]
+    },
+    "Accursed": {
+      "src": "Grim Hollow: Player's Guide",
+      "creatureType": "Humanoid",
+      "partnered": true,
+      "partner": "Grim Hollow",
+      "size": "Medium or Small",
+      "speed": 30,
+      "traits": [
+        [
+          "Freeform Heritage",
+          "No traditional traits: choose any eight traits from the Grim Hollow trait list (repeats allowed for a trait's stronger version) to build a one-of-a-kind character."
+        ],
+        [
+          "Small Trade",
+          "If you are Small, you can drop your Speed by 5 feet to gain one extra trait."
+        ]
+      ]
+    },
+    "Arisen": {
+      "src": "Grim Hollow: Player's Guide",
+      "creatureType": "Construct",
+      "partnered": true,
+      "partner": "Grim Hollow",
+      "size": "Medium or Small",
+      "speed": 30,
+      "skillProf": [
+        "history",
+        "arcana"
+      ],
+      "mods": {
+        "hpPerLevel": 1
+      },
+      "traits": [
+        [
+          "Heritage Traits",
+          "The traits below are this heritage's eight traditional traits. Any of them can be swapped for another trait from the Grim Hollow trait list, or a trait can be taken a second time for its stronger version."
+        ],
+        [
+          "Magical Fortification",
+          "Choose one ability; you have Advantage on saves with it against spells and other magical effects."
+        ],
+        [
+          "Tenacious",
+          "Advantage on Death Saving Throws."
+        ],
+        [
+          "Toughness",
+          "Your Hit Point maximum rises by 1 for each character level."
+        ],
+        [
+          "Artificial Form",
+          "You are a Construct, though healing spells and spending Hit Dice still restore you. You don't eat, drink, sleep, or breathe, but a Long Rest still needs 8 hours of inactivity."
+        ],
+        [
+          "Inured to the Elements",
+          "Advantage on Constitution saves against extreme cold and extreme heat."
+        ],
+        [
+          "Embrace the Past",
+          "Proficiency in History."
+        ],
+        [
+          "Magical Insight",
+          "Proficiency in Arcana."
+        ],
+        [
+          "Unnatural Healer",
+          "A Long Rest reverses Grievous Wounds and lets you reattach severed body parts, or graft matching parts from a creature of similar anatomy; unusual grafts give no extra mechanical benefit."
+        ],
+        [
+          "Small Trade",
+          "If you are Small, you can drop your Speed by 5 feet to gain one extra trait."
+        ]
+      ]
+    },
+    "Downcast": {
+      "src": "Grim Hollow: Player's Guide",
+      "creatureType": "Humanoid",
+      "partnered": true,
+      "partner": "Grim Hollow",
+      "size": "Medium",
+      "speed": 30,
+      "resist": [
+        "necrotic"
+      ],
+      "skillProf": [
+        "religion"
+      ],
+      "spellAbility": "wis",
+      "spells": [
+        {
+          "spell": "Thaumaturgy",
+          "level": 1
+        }
+      ],
+      "traits": [
+        [
+          "Heritage Traits",
+          "The traits below are this heritage's eight traditional traits. Any of them can be swapped for another trait from the Grim Hollow trait list, or a trait can be taken a second time for its stronger version."
+        ],
+        [
+          "Divine Sangromancy",
+          "When an ally within 30 feet regains Hit Points, you can spend a Hit Die and add its roll to the amount healed."
+        ],
+        [
+          "Touch of Life",
+          "Resistance to Necrotic damage."
+        ],
+        [
+          "Inured to the Elements",
+          "Advantage on Constitution saves against extreme cold and extreme heat."
+        ],
+        [
+          "Meditative Rest",
+          "Four hours of conscious meditation gives you the benefit of 8 hours of sleep."
+        ],
+        [
+          "Tireless",
+          "Advantage on saving throws tied to gaining or removing Exhaustion."
+        ],
+        [
+          "Magical Savant",
+          "Learn a level 1 spell from the Cleric list from the same list as your Magical Savvy cantrip; cast it once per Long Rest without a slot, and it is always prepared if you have levels in that class."
+        ],
+        [
+          "Magical Savvy",
+          "You know the Thaumaturgy cantrip (Wisdom, as a Cleric spell)."
+        ],
+        [
+          "Moved by Faith",
+          "Proficiency in Religion."
+        ]
+      ]
+    },
+    "Wulven": {
+      "src": "Grim Hollow: Player's Guide",
+      "creatureType": "Humanoid",
+      "partnered": true,
+      "partner": "Grim Hollow",
+      "size": "Medium or Small",
+      "speed": 30,
+      "speeds": {
+        "climb": "speed"
+      },
+      "skillProf": [
+        "athletics",
+        "perception"
+      ],
+      "traits": [
+        [
+          "Heritage Traits",
+          "The traits below are this heritage's eight traditional traits. Any of them can be swapped for another trait from the Grim Hollow trait list, or a trait can be taken a second time for its stronger version."
+        ],
+        [
+          "Hunter's Instinct",
+          "Each Long Rest grants d8s equal to your Proficiency Bonus; add one to the attack or damage roll of a weapon attack or Unarmed Strike (you can roll it after the d20, before the result is known)."
+        ],
+        [
+          "Natural Attack",
+          "Claws: your Unarmed Strikes deal 1d6 + your Strength or Dexterity modifier, as Bludgeoning, Piercing, or Slashing damage to match your natural weapons."
+        ],
+        [
+          "Pack Hunter",
+          "Take a Reaction to give Advantage to an ally within 10 feet who is about to make an attack roll or saving throw; Proficiency Bonus uses per Long Rest."
+        ],
+        [
+          "Burst of Speed",
+          "On your turn, add 30 feet to your Speed until the turn ends; Proficiency Bonus uses per Long Rest."
+        ],
+        [
+          "Climber",
+          "Climb Speed equal to your Speed."
+        ],
+        [
+          "Athlete's Spirit",
+          "Proficiency in Athletics."
+        ],
+        [
+          "Inborn Perception",
+          "Proficiency in Perception."
+        ],
+        [
+          "Nature's Voice",
+          "Through sounds and gestures you can trade simple ideas (such as hunger) with Beasts and Plants; this grants no control and no detailed information."
+        ],
+        [
+          "Small Trade",
+          "If you are Small, you can drop your Speed by 5 feet to gain one extra trait."
+        ]
+      ]
+    },
+    "Darakhul": {
+      "src": "Book of Ebon Tides",
+      "creatureType": "Humanoid",
+      "editions": {
+        "2014": {
+          "mods": {
+            "con": 1
+          }
+        }
+      },
+      "size": "Medium or Small",
+      "speed": 30,
+      "darkvision": 60,
+      "resist": [
+        "necrotic",
+        "poison"
+      ],
+      "advAgainst": [
+        "charmed",
+        "poisoned"
+      ],
+      "languages": [
+        "Darakhul",
+        "Umbral"
+      ],
+      "choice": {
+        "key": "heritage",
+        "label": "Darakhul Heritage Subrace",
+        "options": {
+          "Bearfolk Heritage": {
+            "aliases": [
+              "Bearfolk"
+            ],
+            "mods": {
+              "str": 2
+            },
+            "languagePick": {
+              "n": 1,
+              "from": [
+                "Common",
+                "Umbral"
+              ]
+            },
+            "summary": "+2 Str, Medium, speed 30. Your bite deals 1d6 + Str piercing. Once per long rest, when dropped to 0 hit points but not killed outright, you drop to 1 instead. Common (mortal lands) or Umbral (Shadow Realm native)."
+          },
+          "Shadow Goblin Heritage": {
+            "aliases": [
+              "Shadow Goblin"
+            ],
+            "mods": {
+              "dex": 2
+            },
+            "languages": [
+              "Goblin"
+            ],
+            "summary": "+2 Dex, Small, speed 30. Dark Deed: as an action, one creature within 30 feet that can see and hear you makes a Wisdom save (DC 10 + your Cha modifier) or is frightened of you until the end of its turn. Goblin."
+          }
+        }
+      },
+      "traits": [
+        [
+          "Hunger for Flesh",
+          "Eat 1 pound of raw meat daily; after 24 hours without it you gain a level of exhaustion, and while you have exhaustion from this you can't heal or remove exhaustion until you spend 1 hour eating 10 pounds of raw meat."
+        ],
+        [
+          "Imperfect Undeath",
+          "You are a humanoid, yet effects that target undead (such as Turn Undead) work on you; healing spells still work, and being raised returns you as a darakhul unless it is true resurrection or wish."
+        ],
+        [
+          "Powerful Jaw",
+          "Bite unarmed strikes deal 1d4 + Str piercing instead of the usual bludgeoning."
+        ],
+        [
+          "Sunlight Sensitivity",
+          "Disadvantage on attack rolls and sight-based Wisdom (Perception) checks when you, your target, or what you are looking at is in direct sunlight."
+        ],
+        [
+          "Undead Resilience",
+          "Resistance to necrotic and poison damage, immunity to disease, and advantage on saves against being charmed or poisoned. A short rest removes one exhaustion level if you have eaten 1 pound of raw meat in the last 24 hours."
+        ],
+        [
+          "Undead Vitality",
+          "You don't breathe; instead of sleeping you lie semiconscious and dormant for 6 hours (disadvantage on Wisdom (Perception) checks meanwhile), which counts as 8 hours of sleep."
+        ],
+        [
+          "Heritage Subrace",
+          "Pick the people you were before turning; it sets your size, speed, one language, and extra traits."
+        ]
+      ],
+      "partnered": true,
+      "partner": "Kobold Press"
+    },
+    "Shadow Fey": {
+      "src": "Book of Ebon Tides",
+      "creatureType": "Humanoid",
+      "size": "Medium",
+      "speed": 30,
+      "darkvision": 60,
+      "skillProf": [
+        "perception"
+      ],
+      "advAgainst": [
+        "charmed"
+      ],
+      "languages": [
+        "Elvish",
+        "Umbral"
+      ],
+      "spellAbility": "cha",
+      "weaponProf": [
+        "Rapier",
+        "Shortsword",
+        "Shortbow",
+        "Longbow"
+      ],
+      "traits": [
+        [
+          "Fey Ancestry",
+          "Advantage on saves against being charmed, and magic can't put you to sleep (base elf trait)."
+        ],
+        [
+          "Keen Senses",
+          "Proficiency in Perception (base elf trait)."
+        ],
+        [
+          "Trance",
+          "Four hours of meditation replaces 8 hours of sleep (base elf trait)."
+        ],
+        [
+          "Shadow Fey Weapon Training",
+          "Proficiency with the rapier, shortsword, shortbow, and longbow."
+        ],
+        [
+          "Path of Shadows",
+          "While in darkness, dim light, or a shadow big enough to hide your body, cast misty step (Charisma); uses per day equal to your Cha modifier (minimum 1), all back on a long rest."
+        ],
+        [
+          "Sunlight Sensitivity",
+          "Disadvantage on attack rolls and sight-based Wisdom (Perception) checks when you, your target, or what you are looking at is in direct sunlight."
+        ],
+        [
+          "Traveler in Darkness",
+          "Advantage on Intelligence (Arcana) checks to learn about a particular shadow road and how it works."
+        ]
+      ],
+      "partnered": true,
+      "partner": "Kobold Press",
+      "editions": {
+        "2014": {
+          "mods": {
+            "dex": 2,
+            "cha": 1
+          }
+        }
+      }
+    },
+    "Lunar Elf": {
+      "src": "Book of Ebon Tides",
+      "creatureType": "Humanoid",
+      "size": "Medium",
+      "speed": 30,
+      "darkvision": 60,
+      "skillProf": [
+        "perception"
+      ],
+      "advAgainst": [
+        "charmed"
+      ],
+      "languages": [
+        "Elvish",
+        "Umbral"
+      ],
+      "spellAbility": "wis",
+      "weaponProf": [
+        "Rapier",
+        "Shortsword",
+        "Shortbow",
+        "Longbow"
+      ],
+      "traits": [
+        [
+          "Fey Ancestry",
+          "Advantage on saves against being charmed, and magic can't put you to sleep (base elf trait)."
+        ],
+        [
+          "Keen Senses",
+          "Proficiency in Perception (base elf trait)."
+        ],
+        [
+          "Trance",
+          "Four hours of meditation replaces 8 hours of sleep (base elf trait)."
+        ],
+        [
+          "Shadow Fey Weapon Training",
+          "Proficiency with the rapier, shortsword, shortbow, and longbow."
+        ],
+        [
+          "Luminous",
+          "You shed bright light in a 15-foot radius and dim light 15 feet beyond; at no action cost you can dim it to a 15-foot radius of dim light, switch it off, or restore it. The light counts as a spell of level equal to your proficiency bonus and dispels overlapping magical darkness of that level or lower."
+        ],
+        [
+          "Moon Child",
+          "While in darkness, dim light, or a shadow big enough to hide your body, cast moonbeam (Wisdom); uses per day equal to your Wis modifier (minimum 1), all back on a long rest."
+        ],
+        [
+          "Sunlight Sensitivity",
+          "Disadvantage on attack rolls and sight-based Wisdom (Perception) checks when you, your target, or what you are looking at is in direct sunlight."
+        ]
+      ],
+      "partnered": true,
+      "partner": "Kobold Press",
+      "editions": {
+        "2014": {
+          "mods": {
+            "dex": 2,
+            "wis": 1
+          }
+        }
+      }
+    },
+    "Sable Elf": {
+      "src": "Book of Ebon Tides",
+      "creatureType": "Humanoid",
+      "size": "Medium",
+      "speed": 30,
+      "darkvision": 60,
+      "skillProf": [
+        "perception"
+      ],
+      "advAgainst": [
+        "charmed"
+      ],
+      "languages": [
+        "Elvish",
+        "Umbral"
+      ],
+      "spellAbility": "int",
+      "traits": [
+        [
+          "Fey Ancestry",
+          "Advantage on saves against being charmed, and magic can't put you to sleep (base elf trait)."
+        ],
+        [
+          "Keen Senses",
+          "Proficiency in Perception (base elf trait)."
+        ],
+        [
+          "Trance",
+          "Four hours of meditation replaces 8 hours of sleep (base elf trait)."
+        ],
+        [
+          "Blood Affinity",
+          "Pick a school of magic: learn one cantrip from it, a 1st-level spell from it at 3rd level, and a 3rd-level spell from it at 5th level. Each leveled spell can be cast once per long rest at its lowest level with this trait (Intelligence)."
+        ]
+      ],
+      "partnered": true,
+      "partner": "Kobold Press",
+      "editions": {
+        "2014": {
+          "mods": {
+            "dex": 1,
+            "int": 2
+          }
+        }
+      }
+    },
+    "Shadow Goblin": {
+      "src": "Book of Ebon Tides",
+      "creatureType": "Humanoid",
+      "editions": {
+        "2014": {
+          "mods": {
+            "dex": 2,
+            "cha": 1
+          }
+        }
+      },
+      "size": "Small",
+      "speed": 30,
+      "darkvision": 60,
+      "skillProf": [
+        "deception",
+        "insight"
+      ],
+      "advAgainst": [
+        "charmed"
+      ],
+      "languages": [
+        "Goblin",
+        "Umbral"
+      ],
+      "traits": [
+        [
+          "Quick Wit",
+          "Proficiency in Deception and Insight."
+        ],
+        [
+          "Shadow Camouflage",
+          "Advantage on Dexterity (Stealth) checks to hide in dim light or darkness."
+        ],
+        [
+          "Stink Eye",
+          "As an action, one creature within 30 feet that can see and hear you makes a Charisma save (DC 8 + Cha modifier + proficiency bonus) or has disadvantage on its next ability check, attack roll, or save before the start of your next turn."
+        ],
+        [
+          "Sunlight Sensitivity",
+          "Disadvantage on attack rolls and sight-based Wisdom (Perception) checks when you, your target, or what you are looking at is in direct sunlight."
+        ],
+        [
+          "Unseelie Blessing",
+          "Advantage on saves against being charmed, and magic can't put you to sleep."
+        ]
+      ],
+      "partnered": true,
+      "partner": "Kobold Press"
+    },
+    "Umbral Human": {
+      "src": "Book of Ebon Tides",
+      "creatureType": "Humanoid",
+      "editions": {
+        "2014": {
+          "asiPick": {
+            "kind": "fixed",
+            "amounts": [
+              2,
+              1
+            ]
+          }
+        }
+      },
+      "size": "Medium",
+      "speed": 30,
+      "darkvision": 60,
+      "resist": [
+        "cold"
+      ],
+      "languages": [
+        "Common",
+        "Umbral"
+      ],
+      "choice": {
+        "key": "subrace",
+        "label": "Umbral Human Subtype",
+        "options": {
+          "Changeling": {
+            "mods": {
+              "cha": 1
+            },
+            "skillPick": {
+              "n": 1,
+              "from": [
+                "deception",
+                "persuasion"
+              ]
+            },
+            "summary": "+1 Cha. Proficiency in Deception or Persuasion, and you can cast disguise self at will as an action."
+          },
+          "Gifted": {
+            "mods": {
+              "wis": 1
+            },
+            "resist": [
+              "necrotic"
+            ],
+            "summary": "+1 Wis and resistance to necrotic damage. Shadow Gift: choose one bargain (or work one out with the GM): expertise-style advantage in one chosen skill but disadvantage in another; no need to eat or breathe and 4-hour long rests, but one permanent exhaustion level; halve your walking speed to gain a fly, swim, or climb speed of the new value; +6 to one ability (max 20) and -2 to two others; or temporary hit points equal to your Con score each dawn but no healing from hit dice on short rests."
+          }
+        }
+      },
+      "traits": [
+        [
+          "Ability Score Increase",
+          "+2 to one ability and +1 to a different one."
+        ],
+        [
+          "Dark Infusion",
+          "Resistance to cold damage."
+        ],
+        [
+          "Fade Away",
+          "While perfectly still, use an action to turn invisible until you move or act; proficiency bonus uses per day."
+        ],
+        [
+          "Subtype",
+          "Changeling or Gifted."
+        ]
+      ],
+      "partnered": true,
+      "partner": "Kobold Press"
+    },
+    "Quickstep": {
+      "src": "Book of Ebon Tides",
+      "creatureType": "Humanoid",
+      "editions": {
+        "2014": {
+          "mods": {
+            "dex": 2,
+            "cha": 1
+          }
+        }
+      },
+      "size": "Small",
+      "speed": 50,
+      "darkvision": 60,
+      "advAgainst": [
+        "charmed"
+      ],
+      "skillProf": [
+        "acrobatics",
+        "sleight of hand"
+      ],
+      "languages": [
+        "Elvish",
+        "Umbral"
+      ],
+      "traits": [
+        [
+          "Fey Ancestry",
+          "Advantage on saves against being charmed, and magic can't put you to sleep."
+        ],
+        [
+          "Nimble",
+          "Proficiency in Acrobatics and Sleight of Hand."
+        ],
+        [
+          "Startling Speed",
+          "If you move 10 feet or more on your turn, attacks against you have disadvantage until your next turn starts (not while incapacitated or restrained); usable for a number of rounds per day equal to your level."
+        ]
+      ],
+      "partnered": true,
+      "partner": "Kobold Press"
+    },
+    "Ratatosk": {
+      "src": "Book of Ebon Tides",
+      "creatureType": "Humanoid",
+      "editions": {
+        "2014": {
+          "mods": {
+            "dex": 2,
+            "str": -2
+          }
+        }
+      },
+      "size": "Tiny or Small",
+      "speed": 25,
+      "speeds": {
+        "climb": 10
+      },
+      "darkvision": 60,
+      "languages": [
+        "Celestial",
+        "Common"
+      ],
+      "spellAbility": "cha",
+      "choice": {
+        "key": "subrace",
+        "label": "Ratatosk Subrace",
+        "options": {
+          "Ekorre": {
+            "aliases": [
+              "Clever Tusk"
+            ],
+            "spells": [
+              {
+                "spell": "Message",
+                "level": 1
+              },
+              {
+                "spell": "Vicious Mockery",
+                "level": 1
+              },
+              {
+                "spell": "Mirror Image",
+                "level": 5,
+                "free": "1/LR"
+              }
+            ],
+            "summary": "+1 Int or Cha, size Tiny. Blessing of Yggdrasil: message and vicious mockery, plus mirror image from 5th level once per long rest (Charisma). Diminutive Weapons: light or finesse weapons work normally; other weapons are two-handed and attack at disadvantage, and heavy weapons can't be used, unless made for Tiny wielders."
+          },
+          "Tradvakt": {
+            "aliases": [
+              "Tree Protector"
+            ],
+            "mods": {
+              "con": 1
+            },
+            "summary": "+1 Con, size Small. War Chatter: as a bonus action, one non-ratatosk creature within 30 feet that can hear you makes a Charisma save (DC 8 + proficiency bonus + Con modifier) or has disadvantage on attack rolls until your next turn starts; once per short or long rest."
+          }
+        }
+      },
+      "traits": [
+        [
+          "Grounded Celestial",
+          "You are a humanoid but still count as a celestial for effects that target celestials."
+        ],
+        [
+          "Sharp Tusks",
+          "Tusk unarmed strikes deal 1 piercing plus 1d4 psychic damage."
+        ],
+        [
+          "Telepathic",
+          "Speak telepathically to a creature you can see within 10 feet times your level, if it knows at least one language."
+        ],
+        [
+          "Languages",
+          "You understand, read, and write Celestial and Common, but speak only through telepathy."
+        ],
+        [
+          "Subrace",
+          "Ekorre (Tiny) or Tradvakt (Small)."
+        ]
+      ],
+      "partnered": true,
+      "partner": "Kobold Press"
+    },
+    "Spiritfarer Erina": {
+      "src": "Book of Ebon Tides",
+      "creatureType": "Humanoid",
+      "editions": {
+        "2014": {
+          "mods": {
+            "wis": 2
+          }
+        }
+      },
+      "size": "Small",
+      "speed": 25,
+      "speeds": {
+        "burrow": 20
+      },
+      "darkvision": 60,
+      "languages": [
+        "Erina",
+        "Umbral"
+      ],
+      "languagePick": {
+        "n": 1,
+        "from": [
+          "Common",
+          "Elvish",
+          "Sylvan"
+        ]
+      },
+      "spellAbility": "wis",
+      "spells": [
+        {
+          "spell": "Message",
+          "level": 1
+        },
+        {
+          "spell": "Charm Person",
+          "level": 3,
+          "free": "1/LR"
+        },
+        {
+          "spell": "Enthrall",
+          "level": 5,
+          "free": "1/LR"
+        }
+      ],
+      "traits": [
+        [
+          "Ability Score Increase",
+          "+2 Wis, and +1 to your choice of Dex or Cha."
+        ],
+        [
+          "Digger",
+          "Burrow speed of 20 feet, through earth and sand only (not mud, ice, or rock)."
+        ],
+        [
+          "Quills",
+          "A successful melee attack against a target within 5 feet deals an extra 3 (1d6) piercing damage."
+        ],
+        [
+          "Sharp Instincts",
+          "You can't be surprised unless incapacitated by something other than nonmagical sleep."
+        ],
+        [
+          "Spirit Tongue",
+          "message; charm person (undead targets only) from 3rd level and enthrall from 5th, each once per long rest (Wisdom)."
+        ]
+      ],
+      "partnered": true,
+      "partner": "Kobold Press"
+    },
+    "Stygian Shade": {
+      "src": "Book of Ebon Tides",
+      "creatureType": "Humanoid",
+      "editions": {
+        "2014": {
+          "mods": {
+            "con": 2
+          },
+          "asiPick": {
+            "kind": "fixed",
+            "amounts": [
+              1
+            ],
+            "exclude": [
+              "con"
+            ]
+          }
+        }
+      },
+      "size": "Medium or Small",
+      "speed": 30,
+      "darkvision": 60,
+      "resist": [
+        "necrotic"
+      ],
+      "advAgainst": [
+        "poisoned"
+      ],
+      "languages": [
+        "Umbral"
+      ],
+      "languagePick": {
+        "n": 1,
+        "from": "any"
+      },
+      "traits": [
+        [
+          "Death Mask",
+          "As an action, every non-undead creature within 30 feet that sees you makes a DC 13 Wisdom save or is frightened for 1 minute, repeating the save at the end of each of its turns; a creature that saves or recovers is immune for 24 hours. Uses per day equal to your Con modifier."
+        ],
+        [
+          "Ghostly Flesh",
+          "From 3rd level, as an action become spectral for 1 minute (end it as a bonus action): fly speed 30 with hover, resistance to nonmagical, non-silvered bludgeoning, piercing, and slashing, advantage to escape grapples and resist restraint, and move through creatures and objects as difficult terrain (1d10 force if you end a turn inside one). Once per long rest."
+        ],
+        [
+          "Imperfect Undeath",
+          "You are a humanoid, yet effects that target undead work on you; healing spells still work, and being raised returns you as a shade unless it is true resurrection or wish."
+        ],
+        [
+          "Mysterious Origin",
+          "You remember almost nothing of your past life; pick one question about it (name, home, loved ones, death, or unfinished business) you know the answer to."
+        ],
+        [
+          "Spectral Resilience",
+          "Advantage on saves against poison and disease, and resistance to necrotic damage."
+        ]
+      ],
+      "partnered": true,
+      "partner": "Kobold Press"
+    },
+    "Sublime Ravenfolk": {
+      "src": "Book of Ebon Tides",
+      "creatureType": "Humanoid",
+      "editions": {
+        "2014": {
+          "mods": {
+            "dex": 2,
+            "cha": 1
+          }
+        }
+      },
+      "size": "Medium",
+      "speed": 30,
+      "advAgainst": [
+        "charmed",
+        "frightened"
+      ],
+      "skillProf": [
+        "performance"
+      ],
+      "languages": [
+        "Common",
+        "Ravenfolk",
+        "Umbral"
+      ],
+      "traits": [
+        [
+          "Constant Tune",
+          "Advantage on saves against being charmed or frightened."
+        ],
+        [
+          "Cosmic Musician",
+          "Proficiency in Performance and one musical instrument of your choice."
+        ],
+        [
+          "Sublime Chord",
+          "As an action, each creature within 30 feet that can hear you makes a DC 13 Charisma save (with advantage if you or allies are fighting it) or is charmed by you for 10 minutes, treating you as a casual friend. Once per long rest."
+        ]
+      ],
+      "partnered": true,
+      "partner": "Kobold Press"
+    },
+    "Unbound Satarre": {
+      "src": "Book of Ebon Tides",
+      "creatureType": "Humanoid",
+      "editions": {
+        "2014": {
+          "mods": {
+            "con": 2,
+            "wis": 1
+          }
+        }
+      },
+      "size": "Medium",
+      "speed": 30,
+      "darkvision": 60,
+      "skillProf": [
+        "arcana"
+      ],
+      "skillPick": {
+        "n": 1,
+        "from": [
+          "history",
+          "insight",
+          "religion"
+        ]
+      },
+      "languages": [
+        "Umbral"
+      ],
+      "languagePick": {
+        "n": 1,
+        "from": [
+          "Abyssal",
+          "Infernal",
+          "Void Speech"
+        ]
+      },
+      "traits": [
+        [
+          "Keeper of Secrets",
+          "Proficiency in Arcana with advantage on Arcana checks about the planes and planar travel, plus proficiency in History, Insight, or Religion."
+        ],
+        [
+          "Portal Sense",
+          "In a confined space you know the direction and distance to the nearest nonmagical way in or out, and you have advantage on Investigation or Perception checks to find secret or invisible doors and magical portals."
+        ],
+        [
+          "Unraveling Touch",
+          "As an action, a creature you can see within 30 feet makes a Constitution save (DC 8 + Con modifier + proficiency bonus); on a failure it must spend its action each turn repeating the save until it succeeds. Once per long rest."
+        ]
+      ],
+      "partnered": true,
+      "partner": "Kobold Press"
+    },
+    "Wyrd Gnome": {
+      "src": "Book of Ebon Tides",
+      "creatureType": "Humanoid",
+      "editions": {
+        "2014": {
+          "mods": {
+            "int": 2,
+            "wis": 1
+          }
+        }
+      },
+      "size": "Small",
+      "speed": 25,
+      "darkvision": 60,
+      "advSaves": [
+        "int",
+        "wis",
+        "cha"
+      ],
+      "advSavesVs": "magic",
+      "languages": [
+        "Common",
+        "Gnomish"
+      ],
+      "spellAbility": "wis",
+      "spells": [
+        {
+          "spell": "Guidance",
+          "level": 1
+        },
+        {
+          "spell": "Identify",
+          "level": 3,
+          "free": "1/LR"
+        },
+        {
+          "spell": "Augury",
+          "level": 5,
+          "free": "1/LR"
+        }
+      ],
+      "traits": [
+        [
+          "Gnome Cunning",
+          "Advantage on Intelligence, Wisdom, and Charisma saves against magic (base gnome trait)."
+        ],
+        [
+          "Natural Diviner",
+          "guidance; identify (no material components) from 3rd level and augury from 5th, each once per long rest (Wisdom)."
+        ],
+        [
+          "Prescience",
+          "After each long rest, roll a d20 and keep the result; before your next long rest, swap it in for one attack roll, save, or ability check by you or a creature you can see, declared before the roll. The kept roll gains +1 if 20 wyrd gnomes are within half a mile, +1 more each time that count doubles, up to +5."
+        ]
+      ],
+      "partnered": true,
+      "partner": "Kobold Press"
+    },
+    "Floral Dragonborn": {
+      "src": "The Field Guide to Floral Dragons",
+      "creatureType": "Humanoid",
+      "size": "Medium or Small",
+      "speed": 30,
+      "languages": [
+        "Common",
+        "Draconic"
+      ],
+      "languagePick": {
+        "n": 1,
+        "from": "any"
+      },
+      "choice": {
+        "key": "legacy",
+        "label": "Floral Legacy",
+        "options": {
+          "Beauty": {
+            "skillProf": [
+              "persuasion"
+            ],
+            "summary": "Persuasion. Breath: failed savers are charmed by you until the end of their next turn. Advantage on saves against magical sleep."
+          },
+          "Guardian": {
+            "skillProf": [
+              "perception"
+            ],
+            "advAgainst": [
+              "frightened"
+            ],
+            "summary": "Perception. Breath: failed savers have disadvantage on attacks against anyone but you until the end of their next turn. Advantage on saves against frightened."
+          },
+          "Healer": {
+            "skillProf": [
+              "medicine"
+            ],
+            "advAgainst": [
+              "exhaustion"
+            ],
+            "summary": "Medicine. Breath: one creature of your choice within 15 feet regains hit points equal to half the damage dealt to failed savers. Advantage on saves against exhaustion."
+          },
+          "Poisoner": {
+            "skillProf": [
+              "intimidation"
+            ],
+            "advAgainst": [
+              "poisoned"
+            ],
+            "summary": "Intimidation. Breath: failed savers are poisoned until the end of their next turn. Advantage on saves against poisoned."
+          },
+          "Waterplant": {
+            "skillProf": [
+              "athletics"
+            ],
+            "advAgainst": [
+              "restrained"
+            ],
+            "summary": "Athletics. Breath: failed savers are knocked prone. Advantage on saves against restrained."
+          },
+          "Wildflower": {
+            "skillProf": [
+              "acrobatics"
+            ],
+            "advAgainst": [
+              "charmed"
+            ],
+            "summary": "Acrobatics. Breath: if at least one creature fails, you can move without provoking opportunity attacks until the end of your next turn. Advantage on saves against charmed."
+          }
+        }
+      },
+      "traits": [
+        [
+          "Plant Kin",
+          "You are a humanoid that also counts as a plant for magic."
+        ],
+        [
+          "Floral Legacy",
+          "Pick a legacy; it sets one skill proficiency, your breath weapon's rider, and the condition your Floral Fortitude guards against."
+        ],
+        [
+          "Floral Breath Weapon",
+          "Replace one attack of the Attack action with a 15-foot cone of petals: Constitution save (DC 8 + Cha modifier + proficiency bonus), 1d8 magical slashing and your legacy's rider on a failure, half damage and no rider on a success. Damage becomes 2d8 at 5th level, 3d8 at 11th, 4d8 at 17th. Proficiency bonus uses per long rest."
+        ],
+        [
+          "Floral Fortitude",
+          "Advantage on saves against your legacy's condition."
+        ],
+        [
+          "Draconic Blossoming",
+          "From 5th level, as a bonus action for 1 minute: regain 1d4 hit points at the start of each of your turns, and anyone attacking you must first pass a Charisma save (DC 8 + Cha modifier + proficiency bonus) or pick another target. Once per long rest."
+        ]
+      ],
+      "partnered": true,
+      "partner": "Hit Point Press"
     }
   },
   "BACKGROUNDS": {

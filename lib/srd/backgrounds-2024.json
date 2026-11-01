@@ -16,6 +16,18 @@
   "equipment": "Choose A or B: (A) Calligrapher's Supplies, Book (prayers), Holy Symbol, Parchment (10 sheets), Robe, 8 GP; or (B) 50 GP"
  },
  {
+  "name": "Agent of the Augustine",
+  "ability_scores": "Intelligence, Wisdom, Charisma",
+  "feat": "Insightful Collector",
+  "skill_proficiencies": "History, Persuasion",
+  "tool_proficiency": "Forgery Kit",
+  "equipment": "Choose A or B: (A) Forgery Kit, Book (history), Magnifying Glass, Parchment (10 sheets), Robe, 8 GP; or (B) 50 GP.",
+  "source": "kc",
+  "book": "Grim Hollow: Player's Guide",
+  "partnered": true,
+  "partner": "Grim Hollow"
+ },
+ {
   "name": "Agent of the Ninth Quill",
   "ability_scores": "Dexterity, Intelligence, Charisma",
   "feat": "Arcane Infiltrator",
@@ -32,9 +44,33 @@
   "equipment": "Choose A or B: (A) Dagger, Light Hammer, Thieves’ Tools, Iron Spikes, Rope, Traveler’s Clothes, 17 GP; or (B) 50 GP"
  },
  {
+  "name": "Amnesiac",
+  "ability_scores": "Any: +2 and +1, or +1 to three",
+  "feat": "Memory Starved",
+  "skill_proficiencies": "Two of your choice, recalled during play",
+  "tool_proficiency": "One of your choice, recalled during play",
+  "equipment": "Choose A or B: (A) Book (personal notes), Ink, Ink Pen, Traveler's Clothes, 11 GP; or (B) 50 GP.",
+  "source": "kc",
+  "book": "The Crooked Moon Part One",
+  "partnered": true,
+  "partner": "Avantris Entertainment"
+ },
+ {
   "name": "Anthropologist",
   "skill_proficiencies": "Insight, Religion",
   "equipment": "A leather-bound diary, a bottle of ink, an ink pen, a set of traveler’s clothes, one trinket of special significance, and a pouch containing 10 gp"
+ },
+ {
+  "name": "Antiquarian",
+  "ability_scores": "Dexterity, Constitution, Intelligence",
+  "feat": "Skilled",
+  "skill_proficiencies": "Arcana, History",
+  "tool_proficiency": "Tinker's Tools",
+  "equipment": "Choose A or B: (A) Dagger, Tinker's Tools, Ancient Maps, Parchment (10 sheets), Robe, 8 GP; or (B) 50 GP.",
+  "source": "kc",
+  "book": "Grim Hollow: Player's Guide",
+  "partnered": true,
+  "partner": "Grim Hollow"
  },
  {
   "name": "Archaeologist",
@@ -69,6 +105,30 @@
   "equipment": "An Azorius insignia, a scroll containing the text of a law important to you, a bottle of blue ink, a pen, a set of fine clothes, and a belt pouch containing 10 gp (Azorius-minted 1-zino coins)"
  },
  {
+  "name": "Beast Hunter",
+  "ability_scores": "Strength, Dexterity, Intelligence",
+  "feat": "Blood Hound",
+  "skill_proficiencies": "Animal Handling, Survival",
+  "tool_proficiency": "Leatherworker's Tools",
+  "equipment": "Choose A or B: (A) Dagger, Spear, Leatherworker's Tools, Hunting Trap, Traveler's Clothes, 5 GP; or (B) 50 GP.",
+  "source": "kc",
+  "book": "Grim Hollow: Player's Guide",
+  "partnered": true,
+  "partner": "Grim Hollow"
+ },
+ {
+  "name": "Beggar",
+  "ability_scores": "Strength, Dexterity, Wisdom",
+  "feat": "Survivor",
+  "skill_proficiencies": "Insight, Persuasion",
+  "tool_proficiency": "Disguise Kit",
+  "equipment": "Choose A or B: (A) Dagger, Disguise Kit, Robe, 12 GP; or (B) 50 GP.",
+  "source": "kc",
+  "book": "Grim Hollow: Player's Guide",
+  "partnered": true,
+  "partner": "Grim Hollow"
+ },
+ {
   "name": "Bejeweled Conclave Spy",
   "ability_scores": "Dexterity, Wisdom, Charisma",
   "feat": "Arcane Eloquence",
@@ -95,6 +155,30 @@
   "skill_proficiencies": "Perception, Performance",
   "tool_proficiency": "Disguise kit",
   "equipment": "Disguise kit, a set of fine clothes, and a belt pouch containing 30 gp"
+ },
+ {
+  "name": "Changeling Traveler",
+  "ability_scores": "Dexterity, Wisdom, Charisma",
+  "feat": "Focused Personas",
+  "skill_proficiencies": "Deception, Sleight of Hand",
+  "tool_proficiency": "Thieves' Tools",
+  "equipment": "Choose A or B: (A) 2 Daggers, Thieves' Tools, Bedroll, 2 Pouches, Shiftweave clothing, 10 GP; or (B) 50 GP.",
+  "source": "kc",
+  "book": "Exploring Eberron",
+  "partnered": true,
+  "partner": "Keith Baker"
+ },
+ {
+  "name": "Chapter Knight",
+  "ability_scores": "Strength, Wisdom, Charisma",
+  "feat": "Savage Attacker",
+  "skill_proficiencies": "Animal Handling, Athletics",
+  "tool_proficiency": "Choose one kind of Musical Instrument",
+  "equipment": "Choose A or B: (A) Dagger, Shield, Musical Instrument (same as above), Traveler's Clothes, 6 GP; or (B) 50 GP.",
+  "source": "kc",
+  "book": "Grim Hollow: Player's Guide",
+  "partnered": true,
+  "partner": "Grim Hollow"
  },
  {
   "name": "Charlatan",
@@ -164,6 +248,30 @@
   "equipment": "A crowbar, a set of dark common clothes including a hood, and a pouch containing 15 gp"
  },
  {
+  "name": "Crimson Aspirant",
+  "ability_scores": "Any: +2 and +1, or +1 to three",
+  "feat": "Crimson Ritualist",
+  "skill_proficiencies": "Arcana, Medicine",
+  "tool_proficiency": "Herbalism Kit",
+  "equipment": "Choose A or B: (A) Herbalism Kit, Dagger, Fine Clothes, Healer's Kit, 3 Vials, 10 GP; or (B) 50 GP.",
+  "source": "kc",
+  "book": "The Crooked Moon Part One",
+  "partnered": true,
+  "partner": "Avantris Entertainment"
+ },
+ {
+  "name": "Crossroads Gambler",
+  "ability_scores": "Any: +2 and +1, or +1 to three",
+  "feat": "Fate Gambler",
+  "skill_proficiencies": "Deception, Insight",
+  "tool_proficiency": "Choose one kind of Gaming Set",
+  "equipment": "Choose A or B: (A) Gaming Set (same as above), Caltrops, Fine Clothes, Fine Wine (bottle), 23 GP; or (B) 50 GP.",
+  "source": "kc",
+  "book": "The Crooked Moon Part One",
+  "partnered": true,
+  "partner": "Avantris Entertainment"
+ },
+ {
   "name": "Crucible Storm Chaser",
   "ability_scores": "Strength, Constitution, Intelligence",
   "feat": "Arcane Overload",
@@ -172,10 +280,67 @@
   "equipment": "Choose A or B: (A) Glassblower's Tools, Backpack, Rope, Traveler’s Clothes, 15 GP; or (B) 50 GP"
  },
  {
+  "name": "Cultist",
+  "ability_scores": "Any: +2 and +1, or +1 to three",
+  "feat": "Cult Initiate",
+  "skill_proficiencies": "Arcana, and one by patron (Perception, Religion, or Nature)",
+  "tool_proficiency": "Calligrapher's Supplies",
+  "equipment": "Choose A or B: (A) Calligrapher's Supplies, Costume (cult garb), Holy Symbol (cult amulet), Traveler's Clothes, 10 GP; or (B) 50 GP.",
+  "languages": "One, by patron (Deep Speech, Celestial, Abyssal, Infernal, or Sylvan)",
+  "source": "kc",
+  "book": "The Crooked Moon Part One",
+  "partnered": true,
+  "partner": "Avantris Entertainment"
+ },
+ {
+  "name": "Dancing Bear Guide",
+  "ability_scores": "Strength, Dexterity, Wisdom",
+  "feat": "Alert",
+  "skill_proficiencies": "Persuasion, Survival",
+  "tool_proficiency": "Vehicles (Land)",
+  "equipment": "Choose A or B: (A) Map Case containing 1 Map, a hunting trap, Tent, Traveler's Clothes, 8 GP; or (B) 50 GP.",
+  "source": "kc",
+  "book": "Northlands Worldbook",
+  "partnered": true,
+  "partner": "Kobold Press"
+ },
+ {
   "name": "Dimir Operative",
   "skill_proficiencies": "Deception, Stealth",
   "tool_proficiency": "Disguise kit",
   "equipment": "A Dimir insignia, three small knives, a set of dark-colored common clothes, and the starting equipment of the background described in this chapter for your secondary guild"
+ },
+ {
+  "name": "Discredited Neural Tuner",
+  "ability_scores": "Strength, Dexterity, Intelligence",
+  "feat": "Gathered Whispers or a Dark Gift feat of your choice",
+  "skill_proficiencies": "Medicine, Nature",
+  "tool_proficiency": "Tinker's Tools (an engineer's toolkit)",
+  "equipment": "Choose A or B: (A) Tinker's Tools; or (B) 50 GP"
+ },
+ {
+  "name": "Disgraced Raider",
+  "ability_scores": "Strength, Constitution, Wisdom",
+  "feat": "Savage Attacker",
+  "skill_proficiencies": "Athletics, Nature",
+  "tool_proficiency": "Navigator's Tools",
+  "equipment": "Choose A or B: (A) Spear, Navigator's Tools, Dilapidated Rowboat, Traveler's Clothes, 8 GP; or (B) 50 GP.",
+  "source": "kc",
+  "book": "Grim Hollow: Player's Guide",
+  "partnered": true,
+  "partner": "Grim Hollow"
+ },
+ {
+  "name": "Doomed",
+  "ability_scores": "Intelligence, Wisdom, Charisma",
+  "feat": "Alert",
+  "skill_proficiencies": "Athletics, Persuasion",
+  "tool_proficiency": "Choose one kind of Artisan's Tools",
+  "equipment": "Choose A or B: (A) Book (History of Northlands Legends), Hooded Lantern, Tent, Traveler's Clothes, 8 GP; or (B) 50 GP.",
+  "source": "kc",
+  "book": "Northlands Worldbook",
+  "partnered": true,
+  "partner": "Kobold Press"
  },
  {
   "name": "Dragon Cultist",
@@ -184,6 +349,54 @@
   "skill_proficiencies": "Deception, Stealth",
   "tool_proficiency": "Calligrapher's Supplies",
   "equipment": "Choose A or B: (A) Calligrapher’s Supplies, Dagger, Glass Bottle, Lamp, Manacles, Oil (5 flasks), 2 Pouches, Robe, Rope, 30 GP; or (B) 50 GP"
+ },
+ {
+  "name": "Dragonmarked Bravo",
+  "ability_scores": "Strength, Dexterity, Charisma",
+  "feat": "Any Dragonmark feat",
+  "skill_proficiencies": "Athletics, Intimidation",
+  "tool_proficiency": "By dragonmark (Gaming Set, Leatherworker's Tools, Herbalism Kit, Brewer's Supplies or Cook's Utensils, Artisan's Tools, Calligrapher's Supplies, Navigator's Tools, or Thieves' Tools)",
+  "equipment": "Choose A or B: (A) Spear, Light Crossbow, 20 Bolts, Quiver, Traveler's Clothes, Dragonmarked Signet, your dragonmark tool, 12 GP; or (B) 50 GP.",
+  "source": "kc",
+  "book": "Frontiers of Eberron: Quickstone",
+  "partnered": true,
+  "partner": "Keith Baker"
+ },
+ {
+  "name": "Dragonmarked Foundling",
+  "ability_scores": "Dexterity, Constitution, Charisma",
+  "feat": "Any Dragonmark feat",
+  "skill_proficiencies": "Insight, Stealth",
+  "tool_proficiency": "Thieves' Tools",
+  "equipment": "Choose A or B: (A) 2 Daggers, Thieves' Tools, 2 Pouches, Traveler's Clothes, 18 GP; or (B) 50 GP.",
+  "source": "kc",
+  "book": "Frontiers of Eberron: Quickstone",
+  "partnered": true,
+  "partner": "Keith Baker"
+ },
+ {
+  "name": "Dragonmarked Scion",
+  "ability_scores": "Intelligence, Wisdom, Charisma",
+  "feat": "Any Dragonmark feat",
+  "skill_proficiencies": "Arcana, Persuasion",
+  "tool_proficiency": "By dragonmark (Gaming Set, Leatherworker's Tools, Herbalism Kit, Brewer's Supplies or Cook's Utensils, Artisan's Tools, Calligrapher's Supplies, Navigator's Tools, or Thieves' Tools)",
+  "equipment": "Choose A or B: (A) Quarterstaff, Fine Clothes, Dragonmarked Signet, your dragonmark tool, 24 GP; or (B) 50 GP.",
+  "source": "kc",
+  "book": "Frontiers of Eberron: Quickstone",
+  "partnered": true,
+  "partner": "Keith Baker"
+ },
+ {
+  "name": "Druskenvald Dweller",
+  "ability_scores": "Any: +2 and +1, or +1 to three",
+  "feat": "Choose one Origin feat",
+  "skill_proficiencies": "Survival, and one by home province",
+  "tool_proficiency": "One by home province",
+  "equipment": "Choose A or B: (A) Artisan's Tools (same as above), Map (Druskenvald's provinces), Traveler's Clothes, 10 GP; or (B) 50 GP.",
+  "source": "kc",
+  "book": "The Crooked Moon Part One",
+  "partnered": true,
+  "partner": "Avantris Entertainment"
  },
  {
   "name": "Emerald Enclave Caretaker",
@@ -200,6 +413,74 @@
   "skill_proficiencies": "Acrobatics, Performance",
   "tool_proficiency": "Choose one kind of Musical Instrument",
   "equipment": "Choose A or B: (A) Musical Instrument (same as above), 2 Costumes, Mirror, Perfume, Traveler’s Clothes, 11 GP; or (B) 50 GP"
+ },
+ {
+  "name": "Envoy",
+  "ability_scores": "Strength, Constitution, Charisma",
+  "feat": "Skilled",
+  "skill_proficiencies": "Insight, Persuasion",
+  "tool_proficiency": "Calligrapher's Supplies",
+  "equipment": "Choose A or B: (A) Dagger, Calligrapher's Supplies, Diplomatic Papers, Fine Clothes, Signet Ring, 10 GP; or (B) 50 GP.",
+  "source": "kc",
+  "book": "Grim Hollow: Player's Guide",
+  "partnered": true,
+  "partner": "Grim Hollow"
+ },
+ {
+  "name": "Executioner",
+  "ability_scores": "Strength, Constitution, Intelligence",
+  "feat": "Deathbound",
+  "skill_proficiencies": "Athletics, Medicine",
+  "tool_proficiency": "Smith's Tools",
+  "equipment": "Choose A or B: (A) Dagger, Smith's Tools, Someone Else's Journal, Traveler's Clothes, 10 GP; or (B) 50 GP.",
+  "source": "kc",
+  "book": "Grim Hollow: Player's Guide",
+  "partnered": true,
+  "partner": "Grim Hollow"
+ },
+ {
+  "name": "Experiment",
+  "ability_scores": "Any: +2 and +1, or +1 to three",
+  "feat": "Altered",
+  "skill_proficiencies": "Intimidation, Medicine",
+  "tool_proficiency": "Alchemist's Supplies",
+  "equipment": "Choose A or B: (A) Alchemist's Supplies, Manacles, Perfume, Traveler's Clothes (hooded cloak), 5 GP; or (B) 50 GP.",
+  "source": "kc",
+  "book": "The Crooked Moon Part One",
+  "partnered": true,
+  "partner": "Avantris Entertainment"
+ },
+ {
+  "name": "Explorer",
+  "ability_scores": "Strength, Constitution, Wisdom",
+  "feat": "Alert",
+  "skill_proficiencies": "Athletics, Survival",
+  "tool_proficiency": "Navigator's Tools",
+  "equipment": "Choose A or B: (A) Dagger, Navigator's Tools, Maps, Traveler's Clothes, 8 GP; or (B) 50 GP.",
+  "source": "kc",
+  "book": "Grim Hollow: Player's Guide",
+  "partnered": true,
+  "partner": "Grim Hollow"
+ },
+ {
+  "name": "Exterminator",
+  "ability_scores": "Dexterity, Constitution, Intelligence",
+  "feat": "Magic Initiate (Druid)",
+  "skill_proficiencies": "Animal Handling, Medicine",
+  "tool_proficiency": "Poisoner's Kit",
+  "equipment": "Choose A or B: (A) Dagger, Poisoner's Kit, Hunting Trap, Traveler's Clothes, 8 GP; or (B) 50 GP.",
+  "source": "kc",
+  "book": "Grim Hollow: Player's Guide",
+  "partnered": true,
+  "partner": "Grim Hollow"
+ },
+ {
+  "name": "Fabricated Mind",
+  "ability_scores": "Dexterity, Intelligence, Charisma",
+  "feat": "Echoing Soul or a Dark Gift feat of your choice",
+  "skill_proficiencies": "Deception, Insight",
+  "tool_proficiency": "Forgery Kit",
+  "equipment": "Choose A or B: (A) Forgery Kit, Fine Clothes, Ink, 2 Ink Pens, 3 Iron Spikes, 7 GP; or (B) 50 GP"
  },
  {
   "name": "Faceless",
@@ -241,6 +522,18 @@
   "equipment": "Choose A or B: (A) Sickle, Carpenter's Tools, Healer's Kit, Iron Pot, Shovel, Traveler’s Clothes, 30 GP; or (B) 50 GP"
  },
  {
+  "name": "Fey-Blessed",
+  "ability_scores": "Dexterity, Constitution, Charisma",
+  "feat": "Magic Initiate (Wizard)",
+  "skill_proficiencies": "Arcana, Performance",
+  "tool_proficiency": "Choose one kind of Musical Instrument",
+  "equipment": "Choose A or B: (A) Dagger, Musical Instrument (same as above), Traveler's Clothes, 8 GP; or (B) 50 GP.",
+  "source": "kc",
+  "book": "Grim Hollow: Player's Guide",
+  "partnered": true,
+  "partner": "Grim Hollow"
+ },
+ {
   "name": "Feylost",
   "skill_proficiencies": "Deception, Survival",
   "tool_proficiency": "One type of musical instrument",
@@ -260,6 +553,30 @@
   "equipment": "Choose A or B: (A) Mace, Smith’s Tools, Fine Clothes, Manacles, Portable Ram, 4 GP; or (B) 50 GP"
  },
  {
+  "name": "Former Captive",
+  "ability_scores": "Dexterity, Wisdom, Charisma",
+  "feat": "Skilled",
+  "skill_proficiencies": "Insight, Persuasion",
+  "tool_proficiency": "Tinker's Tools",
+  "equipment": "Choose A or B: (A) Bedroll, 5 days of Rations, Tinker's Tools, Traveler's Clothes, Waterskin, 6 GP; or (B) 50 GP.",
+  "source": "kc",
+  "book": "Northlands Worldbook",
+  "partnered": true,
+  "partner": "Kobold Press"
+ },
+ {
+  "name": "Free Swords Mercenary",
+  "ability_scores": "Strength, Dexterity, Constitution",
+  "feat": "Free Sword Mercenary's Will",
+  "skill_proficiencies": "Acrobatics, Athletics",
+  "tool_proficiency": "Gaming Set (your choice)",
+  "equipment": "Choose A or B: (A) Dagger, Spear, Gaming Set (same as above), Robe, 10 GP; or (B) 50 GP.",
+  "source": "kc",
+  "book": "Grim Hollow: Player's Guide",
+  "partnered": true,
+  "partner": "Grim Hollow"
+ },
+ {
   "name": "Gambler",
   "skill_proficiencies": "Deception, Insight",
   "tool_proficiency": "One gaming set",
@@ -277,6 +594,32 @@
   "skill_proficiencies": "Perception, Persuasion",
   "tool_proficiency": "Glassblower’s Tools",
   "equipment": "Choose A or B: (A) Light Hammer, Glassblower’s Tools, Fine Clothes, Lamp, Oil (3 flasks), Waterskin, 2 GP; or (B) 50 GP"
+ },
+ {
+  "name": "Geologist",
+  "ability_scores": "Constitution, Strength, Intelligence",
+  "feat": "Tough or Miner",
+  "skill_proficiencies": "History, Nature",
+  "tool_proficiency": "Mason's Tools, Cartographer's Tools, Excavator's Tools, Analysis Tools",
+  "languages": "Primordial",
+  "equipment": "Choose A or B: (A) Shovel, Miner's Pick, hammer and chisel, reinforced backpack (+20 lb. carry), gemstones (25 GP), 10 GP; or (B) 50 GP.",
+  "feature": "Eye for Faults: Burrow Speed 5 feet through rock. Rock Knowledge: identify any rock or gemstone and its value at a glance.",
+  "source": "kc",
+  "book": "Dr Dhrolin's Dictionary of Dinosaurs",
+  "partnered": true,
+  "partner": "PalaeoGames"
+ },
+ {
+  "name": "Ghostlight Passenger",
+  "ability_scores": "Any: +2 and +1, or +1 to three",
+  "feat": "Ghostlight Medium",
+  "skill_proficiencies": "Insight, Persuasion",
+  "tool_proficiency": "Smith's Tools",
+  "equipment": "Choose A or B: (A) Smith's Tools, Bullseye Lantern, Fine Clothes, Oil (3 flasks), 5 GP; or (B) 50 GP.",
+  "source": "kc",
+  "book": "The Crooked Moon Part One",
+  "partnered": true,
+  "partner": "Avantris Entertainment"
  },
  {
   "name": "Giant Foundling",
@@ -318,6 +661,18 @@
   "skill_proficiencies": "Arcana, Survival",
   "tool_proficiency": "Choose one kind of Gaming Set",
   "equipment": "Choose A or B: (A) Gaming Set (same as above), Crowbar, Holy Water (1 flask), Mirror, Oil(2 flasks), Signal Whistle, Tinderbox, Traveler’s Clothes, 5 Torches, Waterskin, and 14 GP; or (B) 50 GP"
+ },
+ {
+  "name": "Heretic",
+  "ability_scores": "Strength, Dexterity, Wisdom",
+  "feat": "Magic Initiate (Cleric)",
+  "skill_proficiencies": "Deception, Religion",
+  "tool_proficiency": "Disguise Kit",
+  "equipment": "Choose A or B: (A) Disguise Kit, Heretical Text, Holy Symbol, Traveler's Clothes, 10 GP; or (B) 50 GP.",
+  "source": "kc",
+  "book": "Grim Hollow: Player's Guide",
+  "partnered": true,
+  "partner": "Grim Hollow"
  },
  {
   "name": "Hermit",
@@ -534,6 +889,18 @@
   "equipment": "Choose A or B: (A) Woodcarver’s Tools, Basket, Block and Tackle, Bucket, Chain, Hunting Trap, Net, Pole, Rations (3 days’ worth), Rope, Traveler’s Clothes, 32 GP; or (B) 50 GP"
  },
  {
+  "name": "Ice Nomad",
+  "ability_scores": "Dexterity, Intelligence, Wisdom",
+  "feat": "Snowrunner",
+  "skill_proficiencies": "Nature, Survival",
+  "tool_proficiency": "Cartographer's Tools",
+  "equipment": "Choose A or B: (A) Bedroll, Rope, Skis or Snowshoes, Tent, Traveler's Clothes, 8 GP; or (B) 50 GP.",
+  "source": "kc",
+  "book": "Northlands Worldbook",
+  "partnered": true,
+  "partner": "Kobold Press"
+ },
+ {
   "name": "Inheritor",
   "skill_proficiencies": "Survival, plus one from among Arcana, History,, Religion",
   "tool_proficiency": "Your choice of a gaming set or a musical instrument",
@@ -546,6 +913,30 @@
   "skill_proficiencies": "Insight, Investigation",
   "tool_proficiency": "Thieves’ Tools",
   "equipment": "Choose A or B: (A) Thieves’ Tools, Bullseye Lantern, Crowbar, Oil (10 flasks), Traveler’s Clothes, 10 GP; or (B) 50 GP"
+ },
+ {
+  "name": "Inquisitor",
+  "ability_scores": "Strength, Wisdom, Charisma",
+  "feat": "Faithful",
+  "skill_proficiencies": "Intimidation, Religion",
+  "tool_proficiency": "Torture Tools",
+  "equipment": "Choose A or B: (A) Book (prayer), Holy Symbol, Manacles, Traveler's Clothes, Torture Tools, 10 GP; or (B) 50 GP.",
+  "source": "kc",
+  "book": "Steinhardt's Guide to the Eldritch Hunt Player Pack",
+  "partnered": true,
+  "partner": "MonkeyDM"
+ },
+ {
+  "name": "Inquisitor of the Faithful",
+  "ability_scores": "Strength, Wisdom, Charisma",
+  "feat": "Convincing Inquisitor",
+  "skill_proficiencies": "Intimidation, Religion",
+  "tool_proficiency": "Navigator's Tools",
+  "equipment": "Choose A or B: (A) Club, Navigator's Tools, Book of Holy Rites, Holy Symbol, Interrogator's Tools, Manacles, Traveler's Clothes, 10 GP; or (B) 50 GP.",
+  "source": "kc",
+  "book": "Grim Hollow: Player's Guide",
+  "partnered": true,
+  "partner": "Grim Hollow"
  },
  {
   "name": "Investigator",
@@ -576,6 +967,18 @@
   "equipment": "One set of traveler’s clothes, a signet, banner or seal representing your place or rank in the order, and a pouch containing 10 gp"
  },
  {
+  "name": "Lapsed Inquisitor",
+  "ability_scores": "Strength, Wisdom, Charisma",
+  "feat": "Convincing Inquisitor",
+  "skill_proficiencies": "Persuasion, Religion",
+  "tool_proficiency": "Navigator's Tools",
+  "equipment": "Choose A or B: (A) Club, Navigator's Tools, Disguise Kit, Traveler's Clothes, 8 GP; or (B) 50 GP.",
+  "source": "kc",
+  "book": "Grim Hollow: Player's Guide",
+  "partnered": true,
+  "partner": "Grim Hollow"
+ },
+ {
   "name": "Lords’ Alliance Vassal",
   "ability_scores": "Strength, Intelligence, Charisma",
   "feat": "Lords’ Alliance Agent",
@@ -602,10 +1005,46 @@
   "equipment": "A bottle of colored ink, an ink pen, a set of common clothes, and a pouch containing 10 gp"
  },
  {
+  "name": "Magewright",
+  "ability_scores": "Constitution, Intelligence, Wisdom",
+  "feat": "Magic Initiate (Wizard)",
+  "skill_proficiencies": "Arcana, Insight",
+  "tool_proficiency": "Choose one kind of Artisan's Tools",
+  "equipment": "Choose A or B: (A) Artisan's Tools (same as above), 2 Pouches, Traveler's Clothes, 32 GP; or (B) 50 GP.",
+  "source": "kc",
+  "book": "Frontiers of Eberron: Quickstone",
+  "partnered": true,
+  "partner": "Keith Baker"
+ },
+ {
+  "name": "Malenti",
+  "ability_scores": "Dexterity, Intelligence, Charisma",
+  "feat": "Aquatic Adaptation",
+  "skill_proficiencies": "Deception, Insight",
+  "tool_proficiency": "Choose Thieves' Tools, Poisoner's Kit, or Forgery Kit",
+  "equipment": "Choose A or B: (A) the equipment of a background tied to the person you replaced; or (B) 50 GP.",
+  "source": "kc",
+  "book": "Exploring Eberron",
+  "partnered": true,
+  "partner": "Keith Baker"
+ },
+ {
   "name": "Marine",
   "skill_proficiencies": "Athletics, Survival",
   "tool_proficiency": "Vehicles (water, land)",
   "equipment": "A dagger that belonged to a fallen comrade, a folded flag emblazoned with the symbol of your ship or company, a set of traveler’s clothes, and a belt pouch containing 10 gp"
+ },
+ {
+  "name": "Marked for Death",
+  "ability_scores": "Strength, Dexterity, Constitution",
+  "feat": "Grizzled",
+  "skill_proficiencies": "Arcana, Survival",
+  "tool_proficiency": "None",
+  "equipment": "Choose A or B: (A) Dagger, Flare, Paper (50 sheets), Sacrificial Brand, Traveler's Clothes, 40 GP; or (B) Sacrificial Brand, 50 GP.",
+  "source": "kc",
+  "book": "Steinhardt's Guide to the Eldritch Hunt Player Pack",
+  "partnered": true,
+  "partner": "MonkeyDM"
  },
  {
   "name": "Mercenary Veteran",
@@ -646,6 +1085,14 @@
   "equipment": "Choose A or B: (A) Dagger, Light Hammer, Mason's Tools, Backpack, Bedroll, Crowbar, Ladder, Pole, 2 Pouches, Rope, String, Tinderbox, 5 Torches, Traveler’s Clothes, Waterskin 26 GP; or (B) 50 GP"
  },
  {
+  "name": "Mutated Commuter",
+  "ability_scores": "Constitution, Wisdom, Charisma",
+  "feat": "Aberrant Anatomy or a Dark Gift feat of your choice",
+  "skill_proficiencies": "Arcana, Investigation",
+  "tool_proficiency": "Choose one kind of Gaming Set",
+  "equipment": "Choose A or B: (A) Gaming Set (same as above), Book (horror novel), Flask, Lock, Signal Whistle, Traveler's Clothes, 11 GP; or (B) 50 GP"
+ },
+ {
   "name": "Mythalkeeper",
   "ability_scores": "Intelligence, Wisdom, Charisma",
   "feat": "Crafter",
@@ -654,12 +1101,60 @@
   "equipment": "Choose A or B: (A) Quarterstaff, Jeweler’s Tools, Perfume, Pouch, Robe, Shovel, String, Waterskin, 16 GP; or (B) 50 GP"
  },
  {
+  "name": "Mythos Investigator",
+  "ability_scores": "Any (increase one by 2 and another by 1, or three by 1)",
+  "feat": "Any Origin feat",
+  "skill_proficiencies": "Two of your choice",
+  "tool_proficiency": "One tool of your choice",
+  "equipment": "50 GP.",
+  "source": "kc",
+  "book": "Cthulhu by Torchlight",
+  "partnered": true,
+  "partner": "Chaosium"
+ },
+ {
+  "name": "Night Stalker",
+  "ability_scores": "Any: +2 and +1, or +1 to three",
+  "feat": "Hunter of Hunters",
+  "skill_proficiencies": "Stealth, plus Arcana, History, Religion, or Nature",
+  "tool_proficiency": "Leatherworker's Tools",
+  "equipment": "Choose A or B: (A) Leatherworker's Tools, Book (one creature type), Hooded Lantern, Hunting Trap, Oil (3 flasks), Traveler's Clothes, 8 GP; or (B) 50 GP.",
+  "source": "kc",
+  "book": "The Crooked Moon Part One",
+  "partnered": true,
+  "partner": "Avantris Entertainment"
+ },
+ {
   "name": "Noble",
   "ability_scores": "Strength, Intelligence, Charisma",
   "feat": "Skilled",
   "skill_proficiencies": "History, Persuasion",
   "tool_proficiency": "Choose one kind of Gaming Set",
   "equipment": "Choose A or B: (A) Gaming Set (same as above), Fine Clothes, Perfume, 29 GP; or (B) 50 GP"
+ },
+ {
+  "name": "Northlands Reaver",
+  "ability_scores": "Strength, Constitution, Wisdom",
+  "feat": "Savage Attacker",
+  "skill_proficiencies": "Athletics, Survival",
+  "tool_proficiency": "Navigator's Tools",
+  "equipment": "Choose A or B: (A) Handaxe, Longbow, Arrows (20), Traveler's Clothes, Quiver, 5 GP; or (B) 50 GP.",
+  "source": "kc",
+  "book": "Northlands Worldbook",
+  "partnered": true,
+  "partner": "Kobold Press"
+ },
+ {
+  "name": "One of the Taken",
+  "ability_scores": "Dexterity, Wisdom, Charisma",
+  "feat": "Magic Initiate (Druid)",
+  "skill_proficiencies": "Arcana, Nature",
+  "tool_proficiency": "Woodcarver's Tools",
+  "equipment": "Choose A or B: (A) Woodcarver's Tools, Herbalism Kit, Traveler's Clothes, 8 GP; or (B) 50 GP.",
+  "source": "kc",
+  "book": "Grim Hollow: Player's Guide",
+  "partnered": true,
+  "partner": "Grim Hollow"
  },
  {
   "name": "Orzhov Representative",
@@ -675,6 +1170,20 @@
   "equipment": "Choose A or B: (A) Book, Calligrapher’s Supplies, Ink, Ink Pen, Parchment (10 sheets), Traveler’s Clothes, 2 GP; or (B) 50 GP."
  },
  {
+  "name": "Palaeontologist",
+  "ability_scores": "Wisdom, Intelligence, Constitution",
+  "feat": "Naturalist or Miner",
+  "skill_proficiencies": "Animal Handling, Nature",
+  "tool_proficiency": "Mason's Tools, Cartographer's Tools, Research Scrolls",
+  "languages": "One of your choice",
+  "equipment": "Choose A or B: (A) Shovel, Miner's Pick, brush, plaster and bandages, a fist-sized fossil, Backpack, Tankard, 20 GP; or (B) 50 GP.",
+  "feature": "Natural Historian: Advantage on History checks about animals or the natural world. Hazard Training: add your Proficiency Bonus to saves against geological hazards.",
+  "source": "kc",
+  "book": "Dr Dhrolin's Dictionary of Dinosaurs",
+  "partnered": true,
+  "partner": "PalaeoGames"
+ },
+ {
   "name": "Phantasmic Circus Trouper",
   "ability_scores": "Dexterity, Constitution, Charisma",
   "feat": "Arcane Artist",
@@ -683,15 +1192,87 @@
   "equipment": "Choose A or B: (A) Disguise Kit, Gaming Set (any), Costume, Mirror, Traveler’s Clothes, 12 GP; or (B) 50 GP"
  },
  {
+  "name": "Physician",
+  "ability_scores": "Dexterity, Intelligence, Wisdom",
+  "feat": "Triage Expert",
+  "skill_proficiencies": "Medicine, Nature",
+  "tool_proficiency": "Herbalism Kit",
+  "equipment": "Choose A or B: (A) Dagger (scalpel), Healer's Kit, Herbalism Kit, Bandages, Book of Remedies, Jar of Leeches, Robe, 10 GP; or (B) 50 GP.",
+  "source": "kc",
+  "book": "Grim Hollow: Player's Guide",
+  "partnered": true,
+  "partner": "Grim Hollow"
+ },
+ {
+  "name": "Pioneer",
+  "ability_scores": "Strength, Constitution, Wisdom",
+  "feat": "Survivor",
+  "skill_proficiencies": "Athletics, Survival",
+  "tool_proficiency": "Carpenter's or Mason's Tools",
+  "equipment": "Choose A or B: (A) Dagger, Carpenter's or Mason's Tools (same as above), Mule and Cart, Traveler's Clothes, 8 GP; or (B) 50 GP.",
+  "source": "kc",
+  "book": "Grim Hollow: Player's Guide",
+  "partnered": true,
+  "partner": "Grim Hollow"
+ },
+ {
+  "name": "Pit Fighter",
+  "ability_scores": "Strength, Dexterity, Charisma",
+  "feat": "Savage Attacker",
+  "skill_proficiencies": "Athletics, Performance",
+  "tool_proficiency": "Gaming Set (your choice)",
+  "equipment": "Choose A or B: (A) Dagger, Spear, Gaming Set (same as above), Robe, 10 GP; or (B) 50 GP.",
+  "source": "kc",
+  "book": "Grim Hollow: Player's Guide",
+  "partnered": true,
+  "partner": "Grim Hollow"
+ },
+ {
   "name": "Planar Philosopher",
   "skill_proficiencies": "Arcana, the skill associated with your faction (see the Sigil Faction Affinities table) or one skill of your choice",
   "equipment": "A portal key (such as a bag of golden tea leaves or the tooth of a planar beast), a manifesto of your guiding philosophy, a set of common clothes in your faction’s style, and a pouch containing 10 gp worth of coins from different worlds and planes"
+ },
+ {
+  "name": "Pox-Touched",
+  "ability_scores": "Constitution, Intelligence, Wisdom",
+  "feat": "Triage Expert",
+  "skill_proficiencies": "Intimidation, Medicine",
+  "tool_proficiency": "Herbalism Kit",
+  "equipment": "Choose A or B: (A) Herbalism Kit, Traveler's Clothes, 8 GP; or (B) 50 GP.",
+  "source": "kc",
+  "book": "Grim Hollow: Player's Guide",
+  "partnered": true,
+  "partner": "Grim Hollow"
+ },
+ {
+  "name": "Preordained Hero",
+  "ability_scores": "Strength, Intelligence, Charisma",
+  "feat": "A Blessing Origin feat of your choice",
+  "skill_proficiencies": "Athletics, Persuasion",
+  "tool_proficiency": "Choose one kind of Gaming Set",
+  "equipment": "Choose A or B: (A) Gaming Set (same as above), Fine Clothes, Handaxe, Shortbow, Arrows (20), Quiver, Traveler's Clothes, 20 GP; or (B) 50 GP.",
+  "source": "kc",
+  "book": "Northlands Worldbook",
+  "partnered": true,
+  "partner": "Kobold Press"
  },
  {
   "name": "Prismari Student",
   "skill_proficiencies": "Acrobatics, Performance",
   "tool_proficiency": "One type of musical instrument or artisan’s tools",
   "equipment": "A bottle of black ink, an ink pen, a set of artisan’s tools or a musical instrument (one of your choice), a school uniform, and a pouch containing 10 gp"
+ },
+ {
+  "name": "Prisoner",
+  "ability_scores": "Dexterity, Constitution, Charisma",
+  "feat": "Alert",
+  "skill_proficiencies": "Deception, Sleight of Hand",
+  "tool_proficiency": "Thieves' Tools",
+  "equipment": "Choose A or B: (A) Dagger (shiv), Thieves' Tools, Traveler's Clothes, 8 GP; or (B) 50 GP.",
+  "source": "kc",
+  "book": "Grim Hollow: Player's Guide",
+  "partnered": true,
+  "partner": "Grim Hollow"
  },
  {
   "name": "Purple Dragon Squire",
@@ -708,6 +1289,18 @@
   "equipment": "A bottle of black ink, an ink pen, an abacus, a book of arcane theory, a school uniform, and a pouch containing 15 gp"
  },
  {
+  "name": "Raised by Cats",
+  "ability_scores": "Dexterity, Wisdom, Charisma",
+  "feat": "Feline Instincts",
+  "skill_proficiencies": "Arcana, Stealth",
+  "tool_proficiency": "Carpenter's Tools",
+  "equipment": "Choose A or B: (A) Carpenter's Tools, Climber's Kit, Perfume, String Ball (10 feet), Traveler's Clothes, 9 GF; or (B) 50 GF.",
+  "source": "kc",
+  "book": "Obojima: Tales from Yatamon",
+  "partnered": true,
+  "partner": "Hit Point Press"
+ },
+ {
   "name": "Rakdos Cultist",
   "skill_proficiencies": "Acrobatics, Performance",
   "tool_proficiency": "One type of musical instrument",
@@ -720,6 +1313,75 @@
   "skill_proficiencies": "Intimidation, Perception",
   "tool_proficiency": "Cartographer’s Tools",
   "equipment": "Choose A or B: (A) Cartographer’s Tools, Backpack, Bedroll, Hooded Lantern, Oil (3 flasks), Rope, Tinderbox, Traveler’s Clothes, Waterskin, 23 GP; or (B) 50 GP"
+ },
+ {
+  "name": "Reconstructed Runaway",
+  "ability_scores": "Strength, Constitution, Wisdom",
+  "feat": "Symbiotic Being or a Dark Gift feat of your choice",
+  "skill_proficiencies": "Athletics, Medicine",
+  "tool_proficiency": "Smith's Tools (welding tools)",
+  "equipment": "Choose A or B: (A) Smith's Tools, Bullseye Lantern (a flashlight), Caltrops, Chain, Crowbar, Grappling Hook, Oil (3 flasks; flashlight batteries), 9 GP; or (B) 50 GP"
+ },
+ {
+  "name": "Reflected Wanderer",
+  "ability_scores": "Any: +2 and +1, or +1 to three",
+  "feat": "Unreflected",
+  "skill_proficiencies": "Deception, Investigation",
+  "tool_proficiency": "Disguise Kit",
+  "equipment": "Choose A or B: (A) Disguise Kit, Mirror, Traveler's Clothes, 16 GP; or (B) 50 GP.",
+  "source": "kc",
+  "book": "The Crooked Moon Part One",
+  "partnered": true,
+  "partner": "Avantris Entertainment"
+ },
+ {
+  "name": "Released Thrall",
+  "ability_scores": "Constitution, Intelligence, Wisdom",
+  "feat": "Survivor",
+  "skill_proficiencies": "Perception, Stealth",
+  "tool_proficiency": "Artisan's Tools (your choice)",
+  "equipment": "Choose A or B: (A) Dagger, Artisan's Tools (same as above), Bag of Trinkets, Traveler's Clothes, 8 GP; or (B) 50 GP.",
+  "source": "kc",
+  "book": "Grim Hollow: Player's Guide",
+  "partnered": true,
+  "partner": "Grim Hollow"
+ },
+ {
+  "name": "Reporter",
+  "ability_scores": "Intelligence, Wisdom, Charisma",
+  "feat": "Skilled",
+  "skill_proficiencies": "Insight, Investigation",
+  "tool_proficiency": "Calligrapher's Supplies",
+  "equipment": "Choose A or B: (A) Calligrapher's Supplies, Backpack, Book (trusted contacts), Lamp, Oil (5 flasks), Paper (5 sheets), Traveler's Clothes, 9 GF; or (B) 50 GF.",
+  "source": "kc",
+  "book": "Obojima: Tales from Yatamon",
+  "partnered": true,
+  "partner": "Hit Point Press"
+ },
+ {
+  "name": "Rest Warden",
+  "ability_scores": "Any: +2 and +1, or +1 to three",
+  "feat": "Grave Keeper",
+  "skill_proficiencies": "Religion, Survival",
+  "tool_proficiency": "Mason's Tools",
+  "equipment": "Choose A or B: (A) Mason's Tools, Hooded Lantern, Oil (3 flasks), Shovel, Soap, Traveler's Clothes (gloves and hood), 10 GP; or (B) 50 GP.",
+  "source": "kc",
+  "book": "The Crooked Moon Part One",
+  "partnered": true,
+  "partner": "Avantris Entertainment"
+ },
+ {
+  "name": "Reveler",
+  "ability_scores": "Any: +2 and +1, or +1 to three",
+  "feat": "Reveling Fool",
+  "skill_proficiencies": "Performance, Stealth",
+  "tool_proficiency": "Choose one kind of Musical Instrument",
+  "equipment": "Choose A or B: (A) Musical Instrument (same as above), Ball Bearings, Costume (laughing mask), Hunting Trap, Manacles, 3 Torches, Traveler's Clothes, 10 GP; or (B) 50 GP.",
+  "languages": "One (Abyssal suggested)",
+  "source": "kc",
+  "book": "The Crooked Moon Part One",
+  "partnered": true,
+  "partner": "Avantris Entertainment"
  },
  {
   "name": "Rewarded",
@@ -762,12 +1424,61 @@
   "equipment": "Choose A or B: (A) Dagger, Navigator's Tools, Rope, Traveler’s Clothes, 20 GP; or (B) 50 GP"
  },
  {
+  "name": "Scholar of the Forbidden",
+  "ability_scores": "Any: +2 and +1, or +1 to three",
+  "feat": "Dread Speech",
+  "skill_proficiencies": "Arcana, Intimidation",
+  "tool_proficiency": "Calligrapher's Supplies",
+  "equipment": "Choose A or B: (A) Calligrapher's Supplies, Book (arcane topic), Ink, Ink Pen, Lamp, Oil (3 flasks), Paper (10 sheets), 2 GP; or (B) 50 GP.",
+  "languages": "One (Deep Speech suggested)",
+  "source": "kc",
+  "book": "The Crooked Moon Part One",
+  "partnered": true,
+  "partner": "Avantris Entertainment"
+ },
+ {
+  "name": "Scion of the Thaumaturge",
+  "ability_scores": "Intelligence, Wisdom, Charisma",
+  "feat": "Fortune of the Thaumaturge",
+  "skill_proficiencies": "Arcana, Insight",
+  "tool_proficiency": "Cartographer's Tools",
+  "equipment": "Choose A or B: (A) Cartographer's Tools, Ink and Pen, Parchment, Robe, 8 GP; or (B) 50 GP.",
+  "source": "kc",
+  "book": "Grim Hollow: Player's Guide",
+  "partnered": true,
+  "partner": "Grim Hollow"
+ },
+ {
   "name": "Scribe",
   "ability_scores": "Dexterity, Intelligence, Wisdom",
   "feat": "Skilled",
   "skill_proficiencies": "Investigation, Perception",
   "tool_proficiency": "Calligrapher's Supplies",
   "equipment": "Choose A or B: (A) Calligrapher's Supplies, Fine Clothes, Lamp, Oil, Parchment (12 sheets), 23 GP; or (B) 50 GP"
+ },
+ {
+  "name": "Seafarer",
+  "ability_scores": "Strength, Dexterity, Charisma",
+  "feat": "Fisher or Northern Raider",
+  "skill_proficiencies": "Acrobatics, Athletics",
+  "tool_proficiency": "Navigator's Tools",
+  "equipment": "Choose A or B: (A) Handaxe, Map, Shortbow, Arrows (20), Quiver, Traveler's Clothes, 12 GP; or (B) 50 GP.",
+  "source": "kc",
+  "book": "Northlands Worldbook",
+  "partnered": true,
+  "partner": "Kobold Press"
+ },
+ {
+  "name": "Seer",
+  "ability_scores": "Constitution, Intelligence, Wisdom",
+  "feat": "Norn-Touched",
+  "skill_proficiencies": "Arcana, Religion",
+  "tool_proficiency": "Alchemist's Supplies",
+  "equipment": "Choose A or B: (A) Candles (2), Crystal, Fine Clothes, Flask, Oil, Pouches (2); or (B) 50 GP.",
+  "source": "kc",
+  "book": "Northlands Worldbook",
+  "partnered": true,
+  "partner": "Kobold Press"
  },
  {
   "name": "Seer Apprentice",
@@ -846,6 +1557,44 @@
   "equipment": "Choose A or B: (A) Dagger, Gaming Set (same as above), Basket, Bell, 8 Candles, Ink, Ink Pen, Paper (5 sheets), Tinderbox, Traveler’s Clothes, and 32 GP; or (B) 50 GP"
  },
  {
+  "name": "Syndicate Smuggler",
+  "ability_scores": "Dexterity, Intelligence, Charisma",
+  "feat": "Resolution of the Syndicate",
+  "skill_proficiencies": "History, Stealth",
+  "tool_proficiency": "Forgery Kit",
+  "equipment": "Choose A or B: (A) Forgery Kit, Chest (false bottom), Parchment, Costume, 8 GP; or (B) 50 GP.",
+  "source": "kc",
+  "book": "Grim Hollow: Player's Guide",
+  "partnered": true,
+  "partner": "Grim Hollow"
+ },
+ {
+  "name": "Time-Lost",
+  "ability_scores": "Constitution, Wisdom, Strength",
+  "feat": "Alert or Naturalist",
+  "skill_proficiencies": "Survival, Nature",
+  "tool_proficiency": "Leatherworker's Tools, Survivalist's Kit",
+  "languages": "Archosauric",
+  "equipment": "Choose A or B: (A) Bone Dagger, Club, loincloth, Herbalism Kit, gold necklace (30 GP), pair of gold bracelets (7 GP); or (B) 50 GP.",
+  "feature": "Way of the Wild: in an environment matching your origin (jungle, forest, desert, tundra, mountain, riverside, sea, or plains), its Difficult Terrain doesn't slow you.",
+  "source": "kc",
+  "book": "Dr Dhrolin's Dictionary of Dinosaurs",
+  "partnered": true,
+  "partner": "PalaeoGames"
+ },
+ {
+  "name": "Tournament Competitor",
+  "ability_scores": "Strength, Constitution, Charisma",
+  "feat": "Skilled",
+  "skill_proficiencies": "Athletics, Performance",
+  "tool_proficiency": "Choose one kind of Gaming Set",
+  "equipment": "Choose A or B: (A) 2 Javelins, Light Hammer, Gaming Set (same as above), Ball Bearings, Bedroll, 2 Chains, Healer's Kit, Iron Spikes, Net, 2 Pouches, Traveler's Clothes, 24 GF; or (B) 50 GF.",
+  "source": "kc",
+  "book": "Obojima: Tales from Yatamon",
+  "partnered": true,
+  "partner": "Hit Point Press"
+ },
+ {
   "name": "Urban Bounty Hunter",
   "skill_proficiencies": "Choose two from among Deception, Insight, Persuasion,, Stealth",
   "tool_proficiency": "Choose two from among one type of gaming set, one musical instrument, and thieves’ tools",
@@ -874,6 +1623,18 @@
   "equipment": "Choose A or B: (A) Woodcarver’s Tools, Crowbar, Hooded Lantern, Holy Symbol (reliquary), Holy Water, Mirror, Oil (3 flasks), Tinderbox, Traveler’s Clothes, Waterskin, 4 GP; or (B) 50 GP"
  },
  {
+  "name": "Wandslinger",
+  "ability_scores": "Dexterity, Intelligence, Charisma",
+  "feat": "Magic Initiate (Wizard)",
+  "skill_proficiencies": "Intimidation, Sleight of Hand",
+  "tool_proficiency": "Choose one kind of Gaming Set or Woodcarver's Tools",
+  "equipment": "Choose A or B: (A) Arcane Focus, Gaming Set, 2 Pouches, Traveler's Clothes, 16 GP; or (B) 50 GP.",
+  "source": "kc",
+  "book": "Frontiers of Eberron: Quickstone",
+  "partnered": true,
+  "partner": "Keith Baker"
+ },
+ {
   "name": "Ward of the Sheltering Hands",
   "ability_scores": "Constitution, Wisdom, Charisma",
   "feat": "Arcane Safeguard",
@@ -894,6 +1655,19 @@
   "skill_proficiencies": "Insight, Stealth",
   "tool_proficiency": "Thieves’ Tools",
   "equipment": "Choose A or B: (A) 2 Daggers, Thieves' Tools, Gaming Set (any), Bedroll, 2 Pouches, Traveler’s Clothes, 16 GP; or (B) 50 GP"
+ },
+ {
+  "name": "Wicker Weaver",
+  "ability_scores": "Any: +2 and +1, or +1 to three",
+  "feat": "Charm Twister",
+  "skill_proficiencies": "Insight, Nature",
+  "tool_proficiency": "Weaver's Tools",
+  "equipment": "Choose A or B: (A) Quarterstaff, Weaver's Tools, Basket of reeds, Book (druidic lore), Iron Pot, Traveler's Clothes, 19 GP; or (B) 50 GP.",
+  "languages": "Sylvan",
+  "source": "kc",
+  "book": "The Crooked Moon Part One",
+  "partnered": true,
+  "partner": "Avantris Entertainment"
  },
  {
   "name": "Wildspacer",
