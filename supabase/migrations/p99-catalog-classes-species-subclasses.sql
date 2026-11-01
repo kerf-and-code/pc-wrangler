@@ -13,16 +13,15 @@
 -- rules for them; classes carry the edition their authored data was written for.
 --
 -- Safe to re-run: classes and species use ON CONFLICT on their (system, name) keys;
--- class_capabilities has no unique key, so its insert is guarded by NOT EXISTS on the canonical name.
+-- class_capabilities has no unique key, so its insert is guarded by NOT EXISTS on the canonical name,
+-- checked against rows of ANY system value (partnered seed rows use system 'partner').
+-- Self-contained, no helper function, so the whole script runs as one paste in the Supabase SQL editor.
+-- (Revised: the first version defined a temporary function, and the live run stopped after Before.)
 
-create or replace function pg_temp.sx_canon(n text) returns text language sql immutable as $f$
-  select btrim(regexp_replace(regexp_replace(btrim(regexp_replace(regexp_replace(
-    btrim(regexp_replace(lower(replace(coalesce(n, ''), '’', '''')), '\s+', ' ', 'g')),
-    '^(oath of (the )?|circle of (the )?|college of (the )?|school of |way of (the )?|path of (the )?|warrior of (the )?|the )', ''),
-    '( domain| patron| \(legacy\))$', '')),
-    '^(oath of (the )?|circle of (the )?|college of (the )?|school of |way of (the )?|path of (the )?|warrior of (the )?|the )', ''),
-    '( domain| patron| \(legacy\))$', ''))
-$f$;
+-- Canonical subclass name, inline (no helper function, so it runs in any SQL editor): lower case,
+-- curly apostrophe folded, the "Path of the" / "Oath of" / ... prefix and " Domain" / " Patron" suffix removed
+-- twice, matching lib/subclass-names.ts canonicalSubclass().
+
 
 -- Before
 select 'classes' as tbl, count(*) as existing from public.classes where system = '5e' and name in ('Gunslinger','Illrigger','Investigator','Magus','Monster Hunter','Pugilist','Warden','Warmage','Witch')
@@ -302,8 +301,11 @@ from (values
   ('Wizard', 'Bibliomancy', array['aoe','utility']::text[], 'Chaosium')
 ) as v(class, subclass, caps, partner)
 where not exists (
+  -- any system value: the seed stores partnered rows under system 'partner', not '5e'
   select 1 from public.class_capabilities c
-  where c.system = '5e' and c.class = v.class and pg_temp.sx_canon(c.subclass) = pg_temp.sx_canon(v.subclass)
+  where c.class = v.class
+    and btrim(regexp_replace(regexp_replace(btrim(regexp_replace(regexp_replace(btrim(regexp_replace(lower(replace(coalesce(c.subclass, ''), '’', '''')), '\s+', ' ', 'g')), '^(oath of (the )?|circle of (the )?|college of (the )?|school of |way of (the )?|path of (the )?|warrior of (the )?|the )', ''), '( domain| patron| \(legacy\))$', '')), '^(oath of (the )?|circle of (the )?|college of (the )?|school of |way of (the )?|path of (the )?|warrior of (the )?|the )', ''), '( domain| patron| \(legacy\))$', ''))
+      = btrim(regexp_replace(regexp_replace(btrim(regexp_replace(regexp_replace(btrim(regexp_replace(lower(replace(coalesce(v.subclass, ''), '’', '''')), '\s+', ' ', 'g')), '^(oath of (the )?|circle of (the )?|college of (the )?|school of |way of (the )?|path of (the )?|warrior of (the )?|the )', ''), '( domain| patron| \(legacy\))$', '')), '^(oath of (the )?|circle of (the )?|college of (the )?|school of |way of (the )?|path of (the )?|warrior of (the )?|the )', ''), '( domain| patron| \(legacy\))$', ''))
 );
 
 -- 4. tag repair (map each non-standard tag onto the coverage vocabulary, then drop duplicates)

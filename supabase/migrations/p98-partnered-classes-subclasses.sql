@@ -69,8 +69,9 @@ from (values
   ('Fighter', 'Pugilist', array['melee','tank','single_target'], 'Kobold Press')
 ) as v(class, subclass, caps, partner)
 where not exists (
+  -- any system value: the seed stores partnered rows under system 'partner', not '5e'
   select 1 from public.class_capabilities c
-  where c.system = '5e' and c.class = v.class and c.subclass = v.subclass
+  where c.class = v.class and c.subclass = v.subclass
 );
 
 -- After: expect 52 rows.
