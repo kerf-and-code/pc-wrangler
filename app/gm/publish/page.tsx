@@ -21,6 +21,7 @@ import { createClient } from "@/lib/supabase/client";
 import { PortraitUploader } from "@/components/portrait-uploader";
 import { C, FORGE_RADIUS, STONE } from "@/lib/forge-theme";
 import { SAX } from "@/lib/theme";
+import { initialCampaignId, useRememberCampaign } from "@/lib/campaign-context";
 
 type Campaign = {
   id: string; name: string;
@@ -41,6 +42,7 @@ export default function PublishPage() {
   const supabase = useMemo(() => createClient(), []);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [campaignId, setCampaignId] = useState("");
+  useRememberCampaign(campaignId, campaigns);
   const [items, setItems] = useState<Item[]>([]);
   const [blurb, setBlurb] = useState("");
   const [listed, setListed] = useState(false);
@@ -70,11 +72,11 @@ export default function PublishPage() {
       if (!user) return;
       const { data } = await supabase
         .from("campaigns")
-        .select("id, name, public_slug, public_published_at, public_blurb, public_listed, codex_cover_url")
+        .select("id, name, public_slug, public_published_at, public_blurb, public_listed, codex_cover_url, system")
         .eq("gm_id", user.id).order("name");
       const rows = (data as Campaign[]) ?? [];
       setCampaigns(rows);
-      if (rows.length === 1) setCampaignId(rows[0].id);
+      if (rows.length) setCampaignId(initialCampaignId(rows));
     })();
   }, [supabase]);
 
@@ -132,6 +134,7 @@ export default function PublishPage() {
   }, [items, campaignId, supabase, loadItems]);
 
   const clearAll = useCallback(async () => {
+    if (!window.confirm("Make every item private again? Each one comes off the public page, and you would have to re-pick them one by one.")) return;
     setBusy(true); setNote(null);
     try {
       await Promise.all([
@@ -171,6 +174,7 @@ export default function PublishPage() {
 
   const togglePublished = useCallback(async () => {
     if (!campaign) return;
+    if (published && !window.confirm("Unpublish this campaign? The public page disappears immediately for anyone with the link. Your item choices are kept for when you publish again.")) return;
     setBusy(true); setNote(null);
     try {
       let slug = campaign.public_slug;

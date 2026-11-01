@@ -25,6 +25,7 @@ import {
   type Terrain, createTerrain, decodeTerrain, encodeTerrain, base64ToBytes, bytesToBase64, expandTerrain, BIOME_UNSET,
 } from "@/lib/worldmap/hex";
 import { fitImageToGrid, pixelToHex, BASE_SIZE, type PlacedImage } from "@/lib/worldmap/layout";
+import { initialCampaignId, useRememberCampaign, gmHref } from "@/lib/campaign-context";
 
 // The GM's world map. Paint biomes (Erase clears a hex), set the grid size in hex units, and place
 // one or more uploaded map images that you can move (drag) and scale (scroll) to line up or stitch
@@ -210,6 +211,7 @@ export default function WorldMapPage() {
   const supabase = useMemo(() => createClient(), []);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [campaignId, setCampaignId] = useState<string>("");
+  useRememberCampaign(campaignId, campaigns);
   const [biomes, setBiomes] = useState<Biome[]>([]);
   const [artEnabled, setArtEnabled] = useState(false);
   const [stamp, setStamp] = useState<{ flag: number; biome: number | null } | null>(null);
@@ -290,14 +292,14 @@ export default function WorldMapPage() {
     let cancelled = false;
     (async () => {
       const [{ data: camps }, { data: bs }] = await Promise.all([
-        supabase.from("campaigns").select("id, name").order("created_at", { ascending: true }),
+        supabase.from("campaigns").select("id, name, system").order("created_at", { ascending: true }),
         supabase.from("biomes").select("id, key, label, category, color").order("sort", { ascending: true }),
       ]);
       if (cancelled) return;
       const cs = (camps as Campaign[]) || [];
       setCampaigns(cs);
       setBiomes((bs as Biome[]) || []);
-      if (cs[0]) setCampaignId(cs[0].id);
+      if (cs[0]) setCampaignId(initialCampaignId(cs));
     })();
     return () => { cancelled = true; };
   }, [supabase]);
@@ -714,10 +716,12 @@ export default function WorldMapPage() {
   }, [selectedPoi, poiRows, supabase]);
 
   const removePoi = useCallback(async (id: string) => {
+    const name = poiRows.find((r) => r.id === id)?.name;
+    if (!window.confirm(`Delete the marker${name ? ` "${name}"` : ""}? This cannot be undone.`)) return;
     const { error } = await supabase.from("map_pois").delete().eq("id", id);
     if (error) { setStatus(error.message); return; }
     setPoiRows((prev) => prev.filter((r) => r.id !== id));
-  }, [supabase]);
+  }, [supabase, poiRows]);
 
   const onMovePoi = useCallback(async (id: string, x: number, y: number) => {
     const { col, row } = pixelToHex(x, y, BASE_SIZE);
@@ -923,6 +927,7 @@ export default function WorldMapPage() {
   }, [supabase]);
 
   const removeImage = useCallback(async (id: string) => {
+    if (!window.confirm("Remove this image from the map? This cannot be undone.")) return;
     const { error } = await supabase.from("map_images").delete().eq("id", id);
     if (error) { setStatus(`Failed: ${error.message}`); return; }
     setImages((prev) => prev.filter((i) => i.id !== id));
@@ -1364,6 +1369,12 @@ export default function WorldMapPage() {
                   <div style={{ fontSize: 12, color: C.muted, fontStyle: "italic" }}>No description yet.</div>
                 )}
                 {selectedChar && <div style={{ fontSize: 12, color: C.sun, marginTop: 8 }}>Linked character: {selectedChar.name}</div>}
+                {(poi.entry_id || poi.character_id) && (
+                  <div style={{ display: "flex", gap: 10, marginTop: 8, flexWrap: "wrap" }}>
+                    {poi.entry_id && <a href={gmHref("/gm/codex", { campaign: campaignId, entry: poi.entry_id })} style={{ fontSize: 12, color: C.sun }}>Open entry in the Codex</a>}
+                    {poi.character_id && <a href={gmHref("/gm/codex", { campaign: campaignId, character: poi.character_id })} style={{ fontSize: 12, color: C.sun }}>Open character in the Codex</a>}
+                  </div>
+                )}
               </div>
             );
           })()}

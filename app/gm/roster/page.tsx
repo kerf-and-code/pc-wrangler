@@ -8,6 +8,7 @@ import BoundariesCard from "@/components/boundaries-card";
 import { surfaces, ui } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import CharacterSheetPeek, { type Build } from "@/components/character-sheet-peek";
+import { initialCampaignId, useRememberCampaign } from "@/lib/campaign-context";
 
 type Campaign = { id: string; name: string; share_code: string | null };
 type Char = { id: string; name: string; profile_id: string | null; invite_code: string | null; build: Build };
@@ -19,6 +20,7 @@ export default function RosterPage() {
   const [rotating, setRotating] = useState<boolean>(false);
   const [rotateMsg, setRotateMsg] = useState<string | null>(null);
   const [campaignId, setCampaignId] = useState<string>("");
+  useRememberCampaign(campaignId, campaigns);
   const [chars, setChars] = useState<Char[]>([]);
   const [responses, setResponses] = useState<Resp[]>([]);
   const [counts, setCounts] = useState<Record<string, number>>({});
@@ -41,13 +43,13 @@ export default function RosterPage() {
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase.from("campaigns").select("id, name, share_code").order("created_at", { ascending: true });
+      const { data } = await supabase.from("campaigns").select("id, name, share_code, system").order("created_at", { ascending: true });
       const list = (data as Campaign[]) || [];
       setCampaigns(list);
       // A brand-new GM has no campaigns, so campaignId stays "" and the loader
       // below never runs. Clear loading here so they see the empty state, not a
       // permanent "Loading...".
-      if (list.length) setCampaignId(list[0].id);
+      if (list.length) setCampaignId(initialCampaignId(list));
       else setLoading(false);
     })();
   }, [supabase]);
@@ -148,10 +150,17 @@ export default function RosterPage() {
                           <span style={{ fontSize: 13 }}>
                             <span style={{ color: C.muted }}>inventory:</span> <span style={{ color: C.good, fontWeight: 600 }}>{respLabel(r)}</span>
                           </span>
-                          <button type="button" onClick={() => unbind(r.id)} disabled={busy} style={{ background: "transparent", color: C.warn, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600 }}>Unbind</button>
+                          <button type="button" onClick={() => { if (window.confirm(`Unbind ${respLabel(r)} from ${ch.name}? The inventory stays, but it stops showing on this character until you bind it again.`)) unbind(r.id); }} disabled={busy} style={{ background: "transparent", color: C.warn, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600 }}>Unbind</button>
                         </div>
                       ) : unassigned.length > 0 ? (
-                        <select defaultValue="" disabled={busy} onChange={(e) => { if (e.target.value) bind(e.target.value, ch.id); }}
+                        <select defaultValue="" disabled={busy} onChange={(e) => {
+                          const id = e.target.value;
+                          if (!id) return;
+                          const u = unassigned.find((x) => x.id === id);
+                          // Binding takes effect on pick, so a misclick in the list used to bind the wrong inventory.
+                          if (window.confirm(`Bind ${u ? respLabel(u) : "this inventory"} to ${ch.name}?`)) bind(id, ch.id);
+                          else e.target.value = "";
+                        }}
                           style={{ background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "9px 12px", fontSize: 13, minWidth: 200, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
                           <option value="">Bind an inventory…</option>
                           {unassigned.map((u) => (<option key={u.id} value={u.id}>{respLabel(u)}</option>))}

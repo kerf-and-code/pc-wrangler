@@ -7,6 +7,7 @@ import BoundariesCard from "@/components/boundaries-card";
 import { useMomentPlayer, MomentButton } from "@/components/moment-player";
 import { surfaces, ui } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
+import { initialCampaignId, useRememberCampaign, gmHref } from "@/lib/campaign-context";
 
 type Campaign = { id: string; name: string };
 type Sess = { id: string; session_number: number | null };
@@ -47,6 +48,7 @@ export default function PrepPage() {
   const supabase = useMemo(() => createClient(), []);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [campaignId, setCampaignId] = useState<string>("");
+  useRememberCampaign(campaignId, campaigns);
   const [sessions, setSessions] = useState<Sess[]>([]);
   const [threads, setThreads] = useState<GmEvent[]>([]);
   const [recent, setRecent] = useState<GmEvent[]>([]);
@@ -66,10 +68,10 @@ export default function PrepPage() {
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase.from("campaigns").select("id, name").order("created_at");
+      const { data } = await supabase.from("campaigns").select("id, name, system").order("created_at");
       const list = (data as Campaign[]) || [];
       setCampaigns(list);
-      if (list.length) setCampaignId(list[0].id);
+      if (list.length) setCampaignId(initialCampaignId(list));
     })();
   }, [supabase]);
 
@@ -122,6 +124,8 @@ export default function PrepPage() {
   }
 
   async function removePlanItem(id: string) {
+    const it = plan.find((p) => p.id === id);
+    if (!window.confirm(`Remove ${it?.title ? `"${it.title}"` : "this item"} from the plan? This cannot be undone.`)) return;
     await supabase.from("session_plan_items").delete().eq("id", id);
     setPlan((arr) => arr.filter((p) => p.id !== id));
   }
@@ -361,7 +365,15 @@ export default function PrepPage() {
             const gone = n.kind === "npc_departed";
             return (
               <div key={n.id} style={{ ...box, padding: "12px 16px" }}>
-                <span style={{ fontSize: 14, fontWeight: 700, color: gone ? C.muted : C.text }}>{n.npc_name}</span>
+                {(() => {
+                  // Narration stores the NPC by name; link it when exactly one Codex NPC has that name.
+                  const key = (n.npc_name || "").trim().toLowerCase();
+                  const hits = npcChars.filter((c) => c.name.trim().toLowerCase() === key);
+                  const style = { fontSize: 14, fontWeight: 700, color: gone ? C.muted : C.text };
+                  return hits.length === 1
+                    ? <a href={gmHref("/gm/codex", { campaign: campaignId, character: hits[0].id })} title="Open in the Codex" style={{ ...style, textDecoration: "underline", textDecorationColor: "rgba(200,162,75,0.55)", textUnderlineOffset: 3 }}>{n.npc_name}</a>
+                    : <span style={style}>{n.npc_name}</span>;
+                })()}
                 {gone && <span style={{ fontSize: 11, color: C.warn, marginLeft: 8, fontFamily: "ui-monospace, monospace" }}>left</span>}
                 <span style={{ fontSize: 12, color: C.muted, marginLeft: 8 }}>{sessNo(n.session_id)}</span>
                 <div style={{ fontSize: 13, color: C.muted, marginTop: 4, lineHeight: 1.5 }}>{n.summary}</div>

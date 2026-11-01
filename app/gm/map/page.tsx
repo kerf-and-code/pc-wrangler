@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import MapFog from "@/components/map-fog";
+import { initialCampaignId, useRememberCampaign, gmHref } from "@/lib/campaign-context";
 
 const VIS: { v: string; l: string }[] = [
   { v: "common", l: "Common knowledge" },
@@ -41,6 +42,7 @@ export default function MapPage() {
   const supabase = useMemo(() => createClient(), []);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [campaignId, setCampaignId] = useState<string>("");
+  useRememberCampaign(campaignId, campaigns);
   const [maps, setMaps] = useState<MapRow[]>([]);
   const [activeMap, setActiveMap] = useState<MapRow | null>(null);
   const [pins, setPins] = useState<Pin[]>([]);
@@ -62,10 +64,10 @@ export default function MapPage() {
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase.from("campaigns").select("id, name").order("created_at");
+      const { data } = await supabase.from("campaigns").select("id, name, system").order("created_at");
       const list = (data as Campaign[]) || [];
       setCampaigns(list);
-      if (list.length) setCampaignId(list[0].id);
+      if (list.length) setCampaignId(initialCampaignId(list));
     })();
   }, [supabase]);
 
@@ -157,6 +159,8 @@ export default function MapPage() {
   }
 
   async function deleteMap(id: string) {
+    const m = maps.find((x) => x.id === id);
+    if (!window.confirm(`Delete ${m?.name ? `"${m.name}"` : "this map"} and every pin on it? This cannot be undone.`)) return;
     await supabase.from("maps").delete().eq("id", id);
     setMaps((arr) => {
       const next = arr.filter((m) => m.id !== id);
@@ -402,6 +406,10 @@ export default function MapPage() {
                     {chars.filter((c) => c.kind === "npc").map((c) => <option key={c.id} value={`character:${c.id}`}>{c.name}</option>)}
                   </optgroup>
                 </select>
+                {sel.linked_type && sel.linked_id && (
+                  <a href={gmHref("/gm/codex", { campaign: campaignId, [sel.linked_type === "character" ? "character" : "entry"]: sel.linked_id })}
+                    style={{ display: "inline-block", marginTop: 6, fontSize: 12.5, color: C.sun }}>Open in the Codex</a>
+                )}
 
                 <label style={{ fontSize: 11, color: C.muted, display: "block", marginTop: 12 }}>Who can see this pin</label>
                 <select value={sel.visibility} onChange={(e) => updatePin(sel.id, { visibility: e.target.value })} style={sel2}>

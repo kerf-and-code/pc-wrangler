@@ -134,7 +134,28 @@ export default function DmScreen() {
     e.preventDefault(); e.stopPropagation();
     setDrag({ id: card.id, mode: "resize", sx: e.clientX, sy: e.clientY, ox: card.x, oy: card.y, ow: card.w, oh: card.h });
   };
-  const removeCard = (id: string) => { setCards((cs) => cs.filter((c) => c.id !== id)); setTimeout(() => void persist(), 0); };
+  // Removing a card is a frequent at-the-table action, so it does not ask first; it offers an Undo for
+  // a few seconds instead (the card goes back where it was, at its old position in the stack).
+  const [undo, setUndo] = useState<{ card: PlacedCard; index: number } | null>(null);
+  const removeCard = (id: string) => {
+    setCards((cs) => {
+      const index = cs.findIndex((c) => c.id === id);
+      if (index >= 0) setUndo({ card: cs[index], index });
+      return cs.filter((c) => c.id !== id);
+    });
+    setTimeout(() => void persist(), 0);
+  };
+  const undoRemove = () => {
+    if (!undo) return;
+    setCards((cs) => { const next = [...cs]; next.splice(Math.min(undo.index, next.length), 0, undo.card); return next; });
+    setUndo(null);
+    setTimeout(() => void persist(), 0);
+  };
+  useEffect(() => {
+    if (!undo) return;
+    const t = setTimeout(() => setUndo(null), 8000);
+    return () => clearTimeout(t);
+  }, [undo]);
   const startBoardResize = (e: React.PointerEvent) => {
     e.preventDefault();
     // When width is "full" (null), measure the board's current pixel width so the drag starts from there
@@ -211,11 +232,17 @@ export default function DmScreen() {
       </div>
 
       {err && <p style={{ color: "#c98a7a", fontSize: 12.5, margin: 0 }}>{err}</p>}
+      {undo && (
+        <div role="status" style={{ display: "flex", gap: 10, alignItems: "center", fontSize: 13, color: C.text }}>
+          <span>Removed {undo.card.entry.name}.</span>
+          <button type="button" onClick={undoRemove} style={{ background: "transparent", color: C.sun, border: `1px solid ${C.sun}`, borderRadius: FORGE_RADIUS, padding: "2px 10px", fontSize: 12.5, cursor: "pointer" }}>Undo</button>
+        </div>
+      )}
 
       {boards.length === 0 ? (
-        <p style={{ color: C.muted, fontSize: 14 }}>No boards yet. Create one, then send cards over from the Rules compendium with the “To DM Screen” button.</p>
+        <p style={{ color: C.muted, fontSize: 14 }}>No boards yet. Create one, then send cards over from the <a href="/gm/compendium" style={{ color: C.sun }}>Rules compendium</a> with the “To DM Screen” button.</p>
       ) : cards.length === 0 ? (
-        <p style={{ color: C.muted, fontSize: 14 }}>This board is empty. Open the Rules compendium, look something up, and press “To DM Screen” to place it here.</p>
+        <p style={{ color: C.muted, fontSize: 14 }}>This board is empty. Open the <a href="/gm/compendium" style={{ color: C.sun }}>Rules compendium</a>, look something up, and press “To DM Screen” to place it here.</p>
       ) : null}
 
       {/* canvas: a fixed-height scrollable viewport over a zoomable "world" that holds the cards */}

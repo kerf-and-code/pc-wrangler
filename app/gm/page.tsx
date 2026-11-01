@@ -6,9 +6,9 @@ import PageShell from "@/components/page-shell";
 import { AXES, type AxisKey } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import { listModules } from "@/lib/systems/registry";
-import { setActiveCampaign } from "@/lib/active-campaign";
 import { getRosterFields, type RosterSpec } from "@/lib/systems/roster-fields";
 import { computeCoverage, rolesForClass, classesForRole, ROLE_LABEL, type CoverageSystem } from "@/lib/party/coverage";
+import { initialCampaignId, useRememberCampaign } from "@/lib/campaign-context";
 
 // Palette mapped onto the shared cellar theme.
 
@@ -111,6 +111,9 @@ export default function GMWorkspace() {
       if (!active) return;
       if (e1) setErr(e1.message);
       setCampaigns(camps || []);
+      // Open on the campaign the GM was last working in (URL, then this tab, then the last one used),
+      // instead of a blank page that waits for a click.
+      if (camps && camps.length) setSelected(initialCampaignId(camps));
       setCaps(capRows || []);
       setSpeciesList((spRows as SpeciesRow[]) || []);
       setVariants((varRows as VariantRow[]) || []);
@@ -134,10 +137,7 @@ export default function GMWorkspace() {
   useEffect(() => { if (selected) loadCharacters(selected); }, [selected, loadCharacters]);
 
   // ---- mutations ----
-  useEffect(() => {
-    const c = campaigns.find((x) => x.id === selected);
-    if (c) setActiveCampaign({ id: c.id, name: c.name, system: c.system ?? null });
-  }, [selected, campaigns]);
+  useRememberCampaign(selected, campaigns);
 
   // The selected campaign's system decides the roster shape. D&D and its 5e-compatible settings return
   // null and keep the rich D&D roster below (species/variant/subclass catalog + coverage); a non-D&D
@@ -146,6 +146,8 @@ export default function GMWorkspace() {
   const rosterSpec = useMemo(() => getRosterFields(activeSystem), [activeSystem]);
 
   async function changeSystem(id: string, system: string) {
+    const name = campaigns.find((c) => c.id === id)?.name ?? "this campaign";
+    if (!window.confirm(`Switch ${name} to a different game system? The roster, tools and rules shown change to match. Existing characters stay, but fields the new system doesn't use are hidden.`)) return;
     setBusy(true); setErr(null);
     const { error } = await supabase.from("campaigns").update({ system }).eq("id", id);
     if (error) setErr(error.message);
@@ -217,6 +219,8 @@ export default function GMWorkspace() {
   }
 
   async function removeCharacter(id: string) {
+    const name = characters.find((c) => c.id === id)?.name ?? "this character";
+    if (!window.confirm(`Remove ${name} from the party? They drop off the roster and party coverage. Their history (events, rolls, recaps) is kept.`)) return;
     setErr(null);
     const { error } = await supabase.from("characters").update({ active: false }).eq("id", id);
     if (error) setErr(error.message); else if (selected) await loadCharacters(selected);

@@ -6,7 +6,7 @@ import PageShell from "@/components/page-shell";
 import GmIdentityCard from "@/components/gm-identity-card";
 import { surfaces, ui } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
-import { pickCurrentSession } from "@/lib/current-session";
+import { initialCampaignId, useRememberCampaign, initialSessionId, useRememberSession } from "@/lib/campaign-context";
 
 type Campaign = { id: string; name: string };
 type Sess = { id: string; session_number: number | null; status: string };
@@ -31,8 +31,10 @@ export default function CapturePage() {
   const supabase = useMemo(() => createClient(), []);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [campaignId, setCampaignId] = useState<string>("");
+  useRememberCampaign(campaignId, campaigns);
   const [sessions, setSessions] = useState<Sess[]>([]);
   const [sessionId, setSessionId] = useState<string>("");
+  useRememberSession(campaignId, sessionId);
   const [chars, setChars] = useState<Char[]>([]);
   const [blanket, setBlanket] = useState<Record<string, boolean>>({});
   const [optout, setOptout] = useState<Record<string, boolean>>({});
@@ -49,10 +51,10 @@ export default function CapturePage() {
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase.from("campaigns").select("id, name").order("created_at", { ascending: true });
+      const { data } = await supabase.from("campaigns").select("id, name, system").order("created_at", { ascending: true });
       const list = (data as Campaign[]) || [];
       setCampaigns(list);
-      if (list.length) setCampaignId(list[0].id);
+      if (list.length) setCampaignId(initialCampaignId(list));
     })();
   }, [supabase]);
 
@@ -68,7 +70,7 @@ export default function CapturePage() {
       const sList = (sess as Sess[]) || [];
       setSessions(sList);
       setChars((ch as Char[]) || []);
-      setSessionId(pickCurrentSession(sList)?.id ?? "");
+      setSessionId(initialSessionId(campaignId, sList));
     })();
     return () => { active = false; };
   }, [campaignId, supabase]);
@@ -155,6 +157,7 @@ export default function CapturePage() {
 
   async function removeTrack(t: Track) {
     if (!job) return;
+    if (!window.confirm("Remove this track? The audio file is deleted from storage and cannot be recovered.")) return;
     if (t.storage_path) await supabase.storage.from("session-audio").remove([t.storage_path]);
     await supabase.from("audio_tracks").delete().eq("id", t.id);
     loadTracks(job.id);
@@ -339,7 +342,7 @@ export default function CapturePage() {
                         <span style={{ fontSize: 13, color: C.muted }}>
                           Queued. Each track is being transcribed; when that finishes, proposed events appear on the Review page automatically.
                         </span>
-                        <button type="button" onClick={() => setJobStatus("draft")} style={{ background: "transparent", color: C.plum, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "8px 14px", fontSize: 12, cursor: "pointer" }}>Back to draft</button>
+                        <button type="button" onClick={() => { if (window.confirm("Send this job back to draft? Transcription in progress stops, and you will need to queue it again.")) void setJobStatus("draft"); }} style={{ background: "transparent", color: C.plum, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "8px 14px", fontSize: 12, cursor: "pointer" }}>Back to draft</button>
                       </>
                     )}
                   </div>

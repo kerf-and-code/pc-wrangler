@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from "react"
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
+import { initialCampaignId, useRememberCampaign, initialSessionId, useRememberSession } from "@/lib/campaign-context";
 
 const STATUS_TONE: Record<string, string> = {
   scheduled: C.muted, live: C.warn, completed: C.sun, processed: C.good, cancelled: C.muted,
@@ -72,9 +73,11 @@ export default function SessionWorkspace() {
   const [campaigns, setCampaigns] = useState<any[]>([]);
   const [eventTypes, setEventTypes] = useState<any[]>([]);
   const [campaign, setCampaign] = useState<string | null>(null);
+  useRememberCampaign(campaign, campaigns);
   const [characters, setCharacters] = useState<any[]>([]);
   const [sessions, setSessions] = useState<any[]>([]);
   const [session, setSession] = useState<string | null>(null);
+  useRememberSession(campaign, session);
   const [events, setEvents] = useState<any[]>([]);
   const [arcs, setArcs] = useState<any[]>([]);
   const [loot, setLoot] = useState<any[]>([]);
@@ -99,6 +102,7 @@ export default function SessionWorkspace() {
       ]);
       if (!active) return;
       setCampaigns(camps || []);
+      if (camps && camps.length) setCampaign(initialCampaignId(camps));
       setEventTypes(types || []);
       setLoading(false);
     })();
@@ -116,6 +120,9 @@ export default function SessionWorkspace() {
     ]);
     setCharacters(chars || []);
     setSessions(sess || []);
+    // Keep the current pick if it still exists, otherwise open the shared session (URL, then the one
+    // last used for this campaign, then the session being played) instead of nothing selected.
+    setSession((cur) => (cur && (sess || []).some((x: { id: string }) => x.id === cur)) ? cur : (initialSessionId(campaignId, sess || []) || null));
     setArcs(arcRows || []);
   }, [supabase]);
 
@@ -305,6 +312,7 @@ export default function SessionWorkspace() {
   // End and process: close the session AND open it for player check-in, in one guarded
   // write so status, ended_at, and processed_at can never disagree.
   async function endAndProcess() {
+    if (!window.confirm("End this session and open player check-in? Players can then rate the session, and the recap pipeline starts. You can reopen the session later if you need to.")) return;
     await closeSession(false, true);
   }
 
@@ -498,7 +506,7 @@ export default function SessionWorkspace() {
     const [{ data: polls }, { data: chs }, { data: camp }] = await Promise.all([
       supabase.from("session_polls").select("id, slots, recurring, status").eq("campaign_id", cid).eq("status", "open").order("created_at", { ascending: false }).limit(1),
       supabase.from("characters").select("id, name").eq("campaign_id", cid),
-      supabase.from("campaigns").select("recur_rule").eq("id", cid).maybeSingle(),
+      supabase.from("campaigns").select("recur_rule, system").eq("id", cid).maybeSingle(),
     ]);
     const nm: Record<string, string> = {};
     ((chs as { id: string; name: string }[]) || []).forEach((c) => { nm[c.id] = c.name; });
@@ -601,6 +609,7 @@ export default function SessionWorkspace() {
   }
 
   async function deleteEvent(id: string) {
+    if (!window.confirm("Delete this logged event? It also leaves the session's stats and recap inputs. This cannot be undone.")) return;
     const { error } = await supabase.from("events").delete().eq("id", id);
     if (error) setErr(error.message); else if (session) loadEvents(session);
   }
@@ -621,6 +630,7 @@ export default function SessionWorkspace() {
   }
 
   async function removeLoot(id: string) {
+    if (!window.confirm("Remove this loot entry? It also leaves the loot-fairness numbers. This cannot be undone.")) return;
     const { error } = await supabase.from("loot_grants").delete().eq("id", id);
     if (error) setErr(error.message); else if (session) loadEvents(session);
   }
