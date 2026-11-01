@@ -249,9 +249,15 @@ export default function GMWorkspace() {
     if (selected === id) { setSelected(null); setCharacters([]); }
   }
 
+  // Partner chips come from every catalog table, not just class_capabilities: a partner can ship
+  // species or a class with no subclass rows (The Field Guide to Floral Dragons is species only), and
+  // a partner missing from this list could never be toggled on, so its rows would stay hidden.
   const partnerList = useMemo(
-    () => [...new Set(caps.filter((r: any) => r.partner).map((r: any) => r.partner as string))].sort(),
-    [caps]
+    () => [...new Set(
+      [...caps.map((r: any) => r.partner), ...speciesList.map((r) => r.partner), ...variants.map((r) => r.partner), ...classList.map((r) => r.partner)]
+        .filter((p): p is string => Boolean(p)),
+    )].sort(),
+    [caps, speciesList, variants, classList]
   );
   const partnerOn = (p: string | null | undefined) => !p || enabledPartners.has(p);
 

@@ -67,9 +67,14 @@ export async function loadCatalog(supabase: SupabaseClient): Promise<Catalog> {
 }
 
 // The set of partner names that appear anywhere in the catalog, for rendering the partner chips.
-// Sourced from class_capabilities (the richest partner set) the same way the GM page does it.
+// Drawn from all four tables, the same way the GM page does it: a partner can ship species or a class
+// with no subclass rows, and a partner missing from this list could never be toggled on.
 export function partnerList(cat: Catalog): string[] {
-  return [...new Set(cat.caps.filter((r) => r.partner).map((r) => r.partner as string))].sort();
+  return [...new Set(
+    [...cat.caps, ...cat.species, ...cat.variants, ...cat.classes]
+      .map((r) => r.partner)
+      .filter((p): p is string => Boolean(p)),
+  )].sort();
 }
 
 // The two filter predicates. A row with no partner is core and always allowed; a partnered row is
