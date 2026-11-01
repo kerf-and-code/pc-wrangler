@@ -901,5 +901,175 @@
     "thirdParty": true,
     "partnered": true,
     "partner": "Loot Tavern"
+  },
+  "kc-hgmh2": {
+    "key": "kc-hgmh2",
+    "title": "Heliana's Guide to Monster Hunting: Part 2, Kerf and Code wording",
+    "short": "Heliana's 2",
+    "publisher": "Loot Tavern",
+    "license": "Kerf and Code",
+    "thirdParty": true,
+    "partnered": true,
+    "partner": "Loot Tavern"
+  },
+  "kc-nwb": {
+    "key": "kc-nwb",
+    "title": "Northlands Worldbook, Kerf and Code wording",
+    "short": "Northlands Worldbook",
+    "publisher": "Kobold Press",
+    "license": "Kerf and Code",
+    "thirdParty": true,
+    "partnered": true,
+    "partner": "Kobold Press"
+  },
+  "kc-nls": {
+    "key": "kc-nls",
+    "title": "Northlands Sagas, Kerf and Code wording",
+    "short": "Northlands Sagas",
+    "publisher": "Kobold Press",
+    "license": "Kerf and Code",
+    "thirdParty": true,
+    "partnered": true,
+    "partner": "Kobold Press"
+  },
+  "kc-tdr": {
+    "key": "kc-tdr",
+    "title": "Tal'Dorei Campaign Setting Reborn, Kerf and Code wording",
+    "short": "Tal'Dorei Reborn",
+    "publisher": "Darrington Press",
+    "license": "Kerf and Code",
+    "thirdParty": true,
+    "partnered": true,
+    "partner": "Critical Role"
+  },
+  "kc-hwcs": {
+    "key": "kc-hwcs",
+    "title": "Humblewood Campaign Setting, Kerf and Code wording",
+    "short": "Humblewood",
+    "publisher": "Hit Point Press",
+    "license": "Kerf and Code",
+    "thirdParty": true,
+    "partnered": true,
+    "partner": "Hit Point Press"
+  },
+  "kc-bet": {
+    "key": "kc-bet",
+    "title": "Book of Ebon Tides, Kerf and Code wording",
+    "short": "Book of Ebon Tides",
+    "publisher": "Kobold Press",
+    "license": "Kerf and Code",
+    "thirdParty": true,
+    "partnered": true,
+    "partner": "Kobold Press"
+  },
+  "kc-ghcg": {
+    "key": "kc-ghcg",
+    "title": "Grim Hollow: Campaign Guide, Kerf and Code wording",
+    "short": "Grim Hollow Campaign Guide",
+    "publisher": "Ghostfire Gaming",
+    "license": "Kerf and Code",
+    "thirdParty": true,
+    "partnered": true,
+    "partner": "Grim Hollow"
+  },
+  "kc-ghpg": {
+    "key": "kc-ghpg",
+    "title": "Grim Hollow: Player's Guide, Kerf and Code wording",
+    "short": "Grim Hollow Player's Guide",
+    "publisher": "Ghostfire Gaming",
+    "license": "Kerf and Code",
+    "thirdParty": true,
+    "partnered": true,
+    "partner": "Grim Hollow"
+  },
+  "kc-tob1": {
+    "key": "kc-tob1",
+    "title": "Tome of Beasts 1, Kerf and Code wording",
+    "short": "Tome of Beasts 1",
+    "publisher": "Kobold Press",
+    "license": "Kerf and Code",
+    "thirdParty": true,
+    "partnered": true,
+    "partner": "Kobold Press"
+  },
+  "kc-fgfd": {
+    "key": "kc-fgfd",
+    "title": "The Field Guide to Floral Dragons, Kerf and Code wording",
+    "short": "Floral Dragons",
+    "publisher": "Hit Point Press",
+    "license": "Kerf and Code",
+    "thirdParty": true,
+    "partnered": true,
+    "partner": "Hit Point Press"
+  },
+  "kc-tfts": {
+    "key": "kc-tfts",
+    "title": "Tales from the Shadows, Kerf and Code wording",
+    "short": "Tales from the Shadows",
+    "publisher": "Kobold Press",
+    "license": "Kerf and Code",
+    "thirdParty": true,
+    "partnered": true,
+    "partner": "Kobold Press"
+  },
+  "kc-cbt": {
+    "key": "kc-cbt",
+    "title": "Cthulhu by Torchlight, Kerf and Code wording",
+    "short": "Cthulhu by Torchlight",
+    "publisher": "Chaosium",
+    "license": "Kerf and Code",
+    "thirdParty": true,
+    "partnered": true,
+    "partner": "Chaosium"
+  },
+  "kc-foeq": {
+    "key": "kc-foeq",
+    "title": "Frontiers of Eberron: Quickstone, Kerf and Code wording",
+    "short": "Frontiers of Eberron",
+    "publisher": "Keith Baker",
+    "license": "Kerf and Code",
+    "thirdParty": true,
+    "partnered": true,
+    "partner": "Keith Baker"
+  },
+  "kc-exeb": {
+    "key": "kc-exeb",
+    "title": "Exploring Eberron (2024), Kerf and Code wording",
+    "short": "Exploring Eberron",
+    "publisher": "Keith Baker",
+    "license": "Kerf and Code",
+    "thirdParty": true,
+    "partnered": true,
+    "partner": "Keith Baker"
+  },
+  "kc-gsb1": {
+    "key": "kc-gsb1",
+    "title": "The Griffon's Saddlebag: Book One, Kerf and Code wording",
+    "short": "Griffon's Saddlebag 1",
+    "publisher": "Hit Point Press",
+    "license": "Kerf and Code",
+    "thirdParty": true,
+    "partnered": true,
+    "partner": "Hit Point Press"
+  },
+  "kc-gsb2": {
+    "key": "kc-gsb2",
+    "title": "The Griffon's Saddlebag: Book Two, Kerf and Code wording",
+    "short": "Griffon's Saddlebag 2",
+    "publisher": "Hit Point Press",
+    "license": "Kerf and Code",
+    "thirdParty": true,
+    "partnered": true,
+    "partner": "Hit Point Press"
+  },
+  "kc-pug": {
+    "key": "kc-pug",
+    "title": "The Pugilist Class (2024), Kerf and Code wording",
+    "short": "The Pugilist",
+    "publisher": "Sterling Vermin",
+    "license": "Kerf and Code",
+    "thirdParty": true,
+    "partnered": true,
+    "partner": "Sterling Vermin"
   }
 }
