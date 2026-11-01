@@ -293,7 +293,8 @@
     "publisher": "Mage Hand Press",
     "license": "Kerf and Code",
     "thirdParty": true,
-    "partnered": true
+    "partnered": true,
+    "partner": "Mage Hand Press"
   },
   "kc-skt": {
     "key": "kc-skt",
@@ -682,5 +683,223 @@
     "thirdParty": true,
     "partnered": true,
     "partner": "Ghostfire Gaming"
+  },
+  "kc-aatm": {
+    "key": "kc-aatm",
+    "title": "Adventure Atlas: The Mortuary, Kerf and Code wording",
+    "short": "The Mortuary",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-abh": {
+    "key": "kc-abh",
+    "title": "Astarion's Book of Hungers, Kerf and Code wording",
+    "short": "Astarion's Book of Hungers",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-cotn": {
+    "key": "kc-cotn",
+    "title": "Critical Role: Call of the Netherdeep, Kerf and Code wording",
+    "short": "Call of the Netherdeep",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-dmls": {
+    "key": "kc-dmls",
+    "title": "Dungeon Masters: Living Spells Play-Along Pack, Kerf and Code wording",
+    "short": "DM Living Spells Pack",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-dmrpa": {
+    "key": "kc-dmrpa",
+    "title": "Dungeon Masters: Ravenloft Play-Along Pack, Kerf and Code wording",
+    "short": "DM Ravenloft Pack",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-dmwow": {
+    "key": "kc-dmwow",
+    "title": "Dungeon Masters: World of Warcraft Play-Along Pack, Kerf and Code wording",
+    "short": "DM World of Warcraft Pack",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-dod": {
+    "key": "kc-dod",
+    "title": "Domains of Delight: A Feywild Accessory, Kerf and Code wording",
+    "short": "Domains of Delight",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-fpw": {
+    "key": "kc-fpw",
+    "title": "Faster, Purple Worm! Everybody Dies, Vol. 1, Kerf and Code wording",
+    "short": "Faster, Purple Worm!",
+    "publisher": "Beadle & Grimm's",
+    "license": "Kerf and Code",
+    "thirdParty": true,
+    "partnered": true,
+    "partner": "Beadle & Grimm's"
+  },
+  "kc-gotsf": {
+    "key": "kc-gotsf",
+    "title": "Giants of the Star Forge, Kerf and Code wording",
+    "short": "Giants of the Star Forge",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-jim": {
+    "key": "kc-jim",
+    "title": "Jimothy, Kerf and Code wording",
+    "short": "Jimothy",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-mcv3": {
+    "key": "kc-mcv3",
+    "title": "Monstrous Compendium Vol. 3: Minecraft Creatures, Kerf and Code wording",
+    "short": "MCv3",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-mff1": {
+    "key": "kc-mff1",
+    "title": "Mordenkainen's Fiendish Folio Volume 1, Kerf and Code wording",
+    "short": "Fiendish Folio 1",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-mmv1": {
+    "key": "kc-mmv1",
+    "title": "Misplaced Monsters: Volume One, Kerf and Code wording",
+    "short": "Misplaced Monsters 1",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-mom": {
+    "key": "kc-mom",
+    "title": "The Malady of Minarrh, Kerf and Code wording",
+    "short": "Malady of Minarrh",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-rwg": {
+    "key": "kc-rwg",
+    "title": "Red Wizards' Gambit, Kerf and Code wording",
+    "short": "Red Wizards' Gambit",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-stwhc": {
+    "key": "kc-stwhc",
+    "title": "Stranger Things: Welcome to the Hellfire Club, Kerf and Code wording",
+    "short": "Hellfire Club",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-tg": {
+    "key": "kc-tg",
+    "title": "Thieves' Gallery, Kerf and Code wording",
+    "short": "Thieves' Gallery",
+    "publisher": "Kerf and Code",
+    "license": "Kerf and Code",
+    "thirdParty": false
+  },
+  "kc-fm": {
+    "key": "kc-fm",
+    "title": "Flee, Mortals!, Kerf and Code wording",
+    "short": "Flee, Mortals!",
+    "publisher": "MCDM",
+    "license": "Kerf and Code",
+    "thirdParty": true,
+    "partnered": true,
+    "partner": "MCDM"
+  },
+  "kc-wel": {
+    "key": "kc-wel",
+    "title": "Where Evil Lives, Kerf and Code wording",
+    "short": "Where Evil Lives",
+    "publisher": "MCDM",
+    "license": "Kerf and Code",
+    "thirdParty": true,
+    "partnered": true,
+    "partner": "MCDM"
+  },
+  "kc-ddd": {
+    "key": "kc-ddd",
+    "title": "Dr Dhrolin's Dictionary of Dinosaurs, Kerf and Code wording",
+    "short": "Dhrolin's Dinosaurs",
+    "publisher": "PalaeoGames",
+    "license": "Kerf and Code",
+    "thirdParty": true,
+    "partnered": true,
+    "partner": "PalaeoGames"
+  },
+  "kc-hwt": {
+    "key": "kc-hwt",
+    "title": "Humblewood Tales, Kerf and Code wording",
+    "short": "Humblewood Tales",
+    "publisher": "Hit Point Press",
+    "license": "Kerf and Code",
+    "thirdParty": true,
+    "partnered": true,
+    "partner": "Hit Point Press"
+  },
+  "kc-loe": {
+    "key": "kc-loe",
+    "title": "Lairs of Etharis, Kerf and Code wording",
+    "short": "Lairs of Etharis",
+    "publisher": "Ghostfire Gaming",
+    "license": "Kerf and Code",
+    "thirdParty": true,
+    "partnered": true,
+    "partner": "Grim Hollow"
+  },
+  "kc-av": {
+    "key": "kc-av",
+    "title": "Abomination Vaults, Kerf and Code wording",
+    "short": "Abomination Vaults",
+    "publisher": "Paizo",
+    "license": "Kerf and Code",
+    "thirdParty": true,
+    "partnered": true,
+    "partner": "Paizo"
+  },
+  "kc-obo": {
+    "key": "kc-obo",
+    "title": "Obojima: Tales from the Tall Grass, Kerf and Code wording",
+    "short": "Obojima",
+    "publisher": "Hit Point Press",
+    "license": "Kerf and Code",
+    "thirdParty": true,
+    "partnered": true,
+    "partner": "Hit Point Press"
+  },
+  "kc-hgmh1": {
+    "key": "kc-hgmh1",
+    "title": "Heliana's Guide to Monster Hunting: Part 1, Kerf and Code wording",
+    "short": "Heliana's 1",
+    "publisher": "Loot Tavern",
+    "license": "Kerf and Code",
+    "thirdParty": true,
+    "partnered": true,
+    "partner": "Loot Tavern"
   }
 }
