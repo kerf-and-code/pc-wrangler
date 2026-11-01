@@ -11,10 +11,15 @@ export type ActiveCampaign = { id: string; name?: string; system: string | null 
 const KEY = "sax_active_campaign";
 const EVT = "sax-active-campaign";
 
+// The tab's choice lives in sessionStorage (each tab can work in its own campaign). The last choice is
+// ALSO kept in localStorage, so a new tab or tomorrow's visit opens where the GM left off instead of on
+// whatever campaign happens to sort first. getActiveCampaign prefers the tab's own value.
+const LAST_KEY = "sax_last_campaign";
+
 export function setActiveCampaign(c: ActiveCampaign | null): void {
   if (typeof window === "undefined") return;
   try {
-    if (c && c.id) sessionStorage.setItem(KEY, JSON.stringify(c));
+    if (c && c.id) { sessionStorage.setItem(KEY, JSON.stringify(c)); localStorage.setItem(LAST_KEY, JSON.stringify(c)); }
     else sessionStorage.removeItem(KEY);
     window.dispatchEvent(new CustomEvent(EVT));
   } catch { /* storage disabled; the nav just won't gate */ }
@@ -23,7 +28,7 @@ export function setActiveCampaign(c: ActiveCampaign | null): void {
 export function getActiveCampaign(): ActiveCampaign | null {
   if (typeof window === "undefined") return null;
   try {
-    const raw = sessionStorage.getItem(KEY);
+    const raw = sessionStorage.getItem(KEY) ?? localStorage.getItem(LAST_KEY);
     return raw ? (JSON.parse(raw) as ActiveCampaign) : null;
   } catch {
     return null;

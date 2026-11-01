@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { surfaces, ui, AXES, type AxisKey } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
+import { initialCampaignId, useRememberCampaign } from "@/lib/campaign-context";
 
 type Campaign = { id: string; name: string };
 type PE = { status: string; event_type: string; axis: string | null; confidence: number | null; extractor_version: string | null };
@@ -76,6 +77,7 @@ export default function ReliabilityPage() {
   const supabase = useMemo(() => createClient(), []);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [campaignId, setCampaignId] = useState<string>("");
+  useRememberCampaign(campaignId, campaigns);
   const [labels, setLabels] = useState<Record<string, string>>({});
   const [rows, setRows] = useState<PE[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -96,7 +98,7 @@ export default function ReliabilityPage() {
   useEffect(() => {
     (async () => {
       const [{ data: camps }, { data: ets }] = await Promise.all([
-        supabase.from("campaigns").select("id, name").order("created_at", { ascending: true }),
+        supabase.from("campaigns").select("id, name, system").order("created_at", { ascending: true }),
         supabase.from("event_types").select("key, label"),
       ]);
       const list = (camps as Campaign[]) || [];
@@ -106,7 +108,7 @@ export default function ReliabilityPage() {
       setLabels(lab);
       // No campaigns: the loader effect below early-returns on the empty
       // campaignId, so clear loading here or the page shows "Loading..." forever.
-      if (list.length) setCampaignId(list[0].id);
+      if (list.length) setCampaignId(initialCampaignId(list));
       else setLoading(false);
     })();
   }, [supabase]);

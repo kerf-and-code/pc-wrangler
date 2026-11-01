@@ -8,6 +8,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
+import { initialCampaignId, useRememberCampaign, initialSessionId, useRememberSession } from "@/lib/campaign-context";
 
 type Campaign = { id: string; name: string };
 type Session = { id: string; session_number: number | null; created_at: string; scheduled_at: string | null };
@@ -95,8 +96,10 @@ export default function MechanicsPage() {
   const supabase = useMemo(() => createClient(), []);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [campaignId, setCampaignId] = useState<string>("");
+  useRememberCampaign(campaignId, campaigns);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [sessionId, setSessionId] = useState<string>("");
+  useRememberSession(campaignId, sessionId);
   const [events, setEvents] = useState<VttEvent[]>([]);
   const [charNames, setCharNames] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState<boolean>(true);
@@ -104,10 +107,10 @@ export default function MechanicsPage() {
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase.from("campaigns").select("id, name").order("created_at", { ascending: true });
+      const { data } = await supabase.from("campaigns").select("id, name, system").order("created_at", { ascending: true });
       const list = (data as Campaign[]) || [];
       setCampaigns(list);
-      if (list.length) setCampaignId(list[0].id);
+      if (list.length) setCampaignId(initialCampaignId(list));
       else setLoading(false);
     })();
   }, [supabase]);
@@ -117,7 +120,7 @@ export default function MechanicsPage() {
     (async () => {
       setLoading(true);
       const [{ data: sess }, { data: chars }] = await Promise.all([
-        supabase.from("sessions").select("id, session_number, created_at, scheduled_at").eq("campaign_id", campaignId).order("created_at", { ascending: false }),
+        supabase.from("sessions").select("id, session_number, created_at, scheduled_at, status").eq("campaign_id", campaignId).order("created_at", { ascending: false }),
         supabase.from("characters").select("id, name").eq("campaign_id", campaignId),
       ]);
       const list = (sess as Session[]) || [];
@@ -125,7 +128,8 @@ export default function MechanicsPage() {
       const names: Record<string, string> = {};
       ((chars as { id: string; name: string }[]) || []).forEach((c) => { names[c.id] = c.name; });
       setCharNames(names);
-      setSessionId(list.length ? list[0].id : "");
+      // Not list[0]: newest-created is often the empty future session weekly recurrence adds.
+      setSessionId(initialSessionId(campaignId, list));
       if (!list.length) { setEvents([]); setLoading(false); }
     })();
   }, [campaignId, supabase]);

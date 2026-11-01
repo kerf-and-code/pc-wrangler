@@ -6,6 +6,7 @@ import PageShell from "@/components/page-shell";
 import { PlayerDisposition } from "@/components/player-disposition";
 import { SAX, surfaces, ui } from "@/lib/theme";
 import { C, STONE, FORGE_RADIUS } from "@/lib/forge-theme";
+import { initialCampaignId, useRememberCampaign } from "@/lib/campaign-context";
 
 // The self-report series. Kept OFF the chrome palette on purpose: prior and posterior encode
 // DATA, exactly like AXIS_COLOR, and the shared C.plum/C.sun are now two values of one gold,
@@ -150,6 +151,7 @@ export default function DispositionsPage() {
   const supabase = useMemo(() => createClient(), []);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [campaignId, setCampaignId] = useState<string>("");
+  useRememberCampaign(campaignId, campaigns);
   const [rows, setRows] = useState<Built[]>([]);
   // The people behind the characters. A player-level disposition belongs to a PERSON,
   // not to a campaign, so these rows are fetched by profile and carry no campaign_id.
@@ -159,12 +161,12 @@ export default function DispositionsPage() {
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase.from("campaigns").select("id, name").order("created_at", { ascending: true });
+      const { data } = await supabase.from("campaigns").select("id, name, system").order("created_at", { ascending: true });
       const list = (data as Campaign[]) || [];
       setCampaigns(list);
       // No campaigns: the loader effect below early-returns on the empty
       // campaignId, so clear loading here or the page shows "Loading..." forever.
-      if (list.length) setCampaignId(list[0].id);
+      if (list.length) setCampaignId(initialCampaignId(list));
       else setLoading(false);
     })();
   }, [supabase]);

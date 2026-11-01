@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { surfaces, ui } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
-import { pickCurrentSession } from "@/lib/current-session";
+import { initialCampaignId, useRememberCampaign, initialSessionId, useRememberSession } from "@/lib/campaign-context";
 
 type Campaign = { id: string; name: string; share_code: string };
 type Sess = { id: string; session_number: number | null; status: string; recap: string | null };
@@ -44,9 +44,11 @@ export default function CheckInPage() {
   const supabase = useMemo(() => createClient(), []);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [campaignId, setCampaignId] = useState<string>("");
+  useRememberCampaign(campaignId, campaigns);
   const [sessions, setSessions] = useState<Sess[]>([]);
   const [chars, setChars] = useState<Char[]>([]);
   const [selected, setSelected] = useState<Sess | null>(null);
+  useRememberSession(campaignId, selected?.id);
   const [att, setAtt] = useState<Record<string, string>>({});
   const [vibes, setVibes] = useState<Vibe[]>([]);
   const [copied, setCopied] = useState<boolean>(false);
@@ -56,10 +58,10 @@ export default function CheckInPage() {
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase.from("campaigns").select("id, name, share_code").order("created_at", { ascending: true });
+      const { data } = await supabase.from("campaigns").select("id, name, share_code, system").order("created_at", { ascending: true });
       const list = (data as Campaign[]) || [];
       setCampaigns(list);
-      if (list.length) setCampaignId(list[0].id);
+      if (list.length) setCampaignId(initialCampaignId(list));
     })();
   }, [supabase]);
 
@@ -80,7 +82,8 @@ export default function CheckInPage() {
       const sList = (sess as Sess[]) || [];
       setSessions(sList);
       setChars((ch as Char[]) || []);
-      setSelected(pickCurrentSession(sList) ?? null);
+      const sid = initialSessionId(campaignId, sList);
+      setSelected(sList.find((x) => x.id === sid) ?? null);
       loadChat(campaignId);
     })();
     return () => { active = false; };

@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { surfaces, ui } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
-import { pickCurrentSession } from "@/lib/current-session";
+import { initialCampaignId, useRememberCampaign, initialSessionId, useRememberSession } from "@/lib/campaign-context";
 
 type Campaign = { id: string; name: string };
 type Sess = { id: string; session_number: number | null; status: string };
@@ -28,8 +28,10 @@ export default function TranscriptsPage() {
   const supabase = useMemo(() => createClient(), []);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [campaignId, setCampaignId] = useState<string>("");
+  useRememberCampaign(campaignId, campaigns);
   const [sessions, setSessions] = useState<Sess[]>([]);
   const [sessionId, setSessionId] = useState<string>("");
+  useRememberSession(campaignId, sessionId);
   const [charName, setCharName] = useState<Record<string, string>>({});
   const [gmName, setGmName] = useState<Record<string, string>>({});
   const [tracks, setTracks] = useState<Track[]>([]);
@@ -42,10 +44,10 @@ export default function TranscriptsPage() {
   // Campaigns (RLS scopes this to the signed-in GM, same as every other page).
   useEffect(() => {
     (async () => {
-      const { data } = await supabase.from("campaigns").select("id, name").order("created_at");
+      const { data } = await supabase.from("campaigns").select("id, name, system").order("created_at");
       const list = (data as Campaign[]) || [];
       setCampaigns(list);
-      if (list.length) setCampaignId(list[0].id);
+      if (list.length) setCampaignId(initialCampaignId(list));
     })();
   }, [supabase]);
 
@@ -62,7 +64,7 @@ export default function TranscriptsPage() {
       if (!active) return;
       const sList = (sess as Sess[]) || [];
       setSessions(sList);
-      setSessionId(pickCurrentSession(sList)?.id ?? "");
+      setSessionId(initialSessionId(campaignId, sList));
       const cm: Record<string, string> = {};
       ((chs as { id: string; name: string }[]) || []).forEach((c) => { cm[c.id] = c.name; });
       setCharName(cm);

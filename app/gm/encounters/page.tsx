@@ -13,8 +13,8 @@ import { dhBattlePoints, dhAdjustedBudget, dhSpend, DH_ADJUSTMENTS, DH_BP_COST, 
 import { DH_ADVERSARY_TYPES, type DHAdversaryType } from "@/lib/daggerheart/adversary";
 import { dsBands, dsDifficultyOf, dsSpend, dsBenchmarkEV, DS_DIFFICULTY_LABEL, type DSDifficulty } from "@/lib/drawsteel/encounter";
 import { DS_ORGANIZATIONS, type DSOrganization } from "@/lib/drawsteel/adversary";
-import { setActiveCampaign } from "@/lib/active-campaign";
 import { monsterSourceLabel, monsterSourceTitle } from "@/lib/monster-sources";
+import { initialCampaignId, useRememberCampaign } from "@/lib/campaign-context";
 
 // ============================================================================
 // THE TWO METHODS ARE GENUINELY DIFFERENT. THIS IS THE WHOLE POINT OF THE TOOL.
@@ -130,6 +130,7 @@ export default function EncountersPage() {
   const supabase = createClient();
   const [campaigns, setCampaigns] = useState<Array<{ id: string; name: string; system: string | null }>>([]);
   const [campaignId, setCampaignId] = useState("");
+  useRememberCampaign(campaignId, campaigns);
   const [chars, setChars] = useState<Char[]>([]);
   const [present, setPresent] = useState<Record<string, boolean>>({});
   const [method, setMethod] = useState<Method>("2024");
@@ -175,7 +176,7 @@ export default function EncountersPage() {
       setCampaigns(list);
       setCaps((cp as Array<{ class: string; subclass: string | null; capabilities: string[] }>) || []);
       setStatBlocks(blocks);
-      if (list.length) setCampaignId(list[0].id);
+      if (list.length) setCampaignId(initialCampaignId(list));
       setLoading(false);
     })();
   }, [supabase]);
@@ -224,10 +225,6 @@ export default function EncountersPage() {
   useEffect(() => { setDsLevel(Math.min(10, pf2Derived.level)); setDsSize(pf2Derived.size); }, [pf2Derived]);
 
   // ---- the party's budget / thresholds ------------------------------------
-  useEffect(() => {
-    const c = campaigns.find((x) => x.id === campaignId);
-    if (c) setActiveCampaign({ id: c.id, name: c.name, system: c.system });
-  }, [campaignId, campaigns]);
 
   const budget = useMemo(() => {
     if (levelled.length === 0) return null;

@@ -6,6 +6,7 @@ import PageShell from "@/components/page-shell";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { SAX, STONE } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
+import { initialCampaignId, useRememberCampaign, initialSessionId, useRememberSession } from "@/lib/campaign-context";
 
 // recharts needs real hex/rgba, not CSS vars; mapped onto the cellar theme.
 const T = {
@@ -105,12 +106,14 @@ export default function Dashboard() {
 
   const [campaigns, setCampaigns] = useState<any[]>([]);
   const [campaign, setCampaign] = useState<string | null>(null);
+  useRememberCampaign(campaign, campaigns);
   const [sessions, setSessions] = useState<any[]>([]);
   const [equity, setEquity] = useState<any[]>([]);
   const [spotlight, setSpotlight] = useState<any[]>([]);
   const [arcs, setArcs] = useState<any[]>([]);
   const [loot, setLoot] = useState<any[]>([]);
   const [selectedSession, setSelectedSession] = useState<string | null>(null);
+  useRememberSession(campaign, selectedSession);
   const [advanced, setAdvanced] = useState(false);
 
   useEffect(() => {
@@ -121,7 +124,7 @@ export default function Dashboard() {
       const { data: camps } = await supabase.from("campaigns").select("id,name,system").order("created_at", { ascending: false });
       if (!active) return;
       setCampaigns(camps || []);
-      if (camps && camps.length === 1) setCampaign(camps[0].id);
+      if (camps && camps.length) setCampaign(initialCampaignId(camps));
       setLoading(false);
     })();
     return () => { active = false; };
@@ -144,7 +147,7 @@ export default function Dashboard() {
     setSpotlight(sp.data || []);
     setArcs(ar.data || []);
     setLoot(lt.data || []);
-    setSelectedSession((sessRows[0] && sessRows[0].id) || null);
+    setSelectedSession(initialSessionId(id, sessRows) || null);
   }, [supabase]);
 
   useEffect(() => { if (campaign) loadCampaign(campaign); }, [campaign, loadCampaign]);

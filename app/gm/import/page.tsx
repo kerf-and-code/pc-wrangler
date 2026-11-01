@@ -9,6 +9,7 @@ import { SAX } from "@/lib/theme";
 import { parseAndIngest, parsePasted, type InputFile } from "@/lib/backfill/parse-client";
 import type { SessionMode } from "@/lib/backfill/ingest";
 import type { NormalizedImport } from "@/lib/backfill/types";
+import { initialCampaignId, useRememberCampaign } from "@/lib/campaign-context";
 
 // app/gm/import/page.tsx
 //
@@ -37,6 +38,7 @@ export default function ImportPage() {
   const router = useRouter();
   const [camps, setCamps] = useState<Campaign[]>([]);
   const [campaignId, setCampaignId] = useState("");
+  useRememberCampaign(campaignId, camps);
   const [files, setFiles] = useState<File[]>([]);
   const [pasted, setPasted] = useState("");
   const [sessionMode, setSessionMode] = useState<SessionMode>("auto");
@@ -50,10 +52,10 @@ export default function ImportPage() {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const { data } = await supabase.from("campaigns").select("id, name").eq("gm_id", user.id).order("created_at");
+      const { data } = await supabase.from("campaigns").select("id, name, system").eq("gm_id", user.id).order("created_at");
       const list = (data as Campaign[]) || [];
       setCamps(list);
-      if (list[0]) setCampaignId(list[0].id);
+      if (list[0]) setCampaignId(initialCampaignId(list));
     })();
   }, [supabase]);
 

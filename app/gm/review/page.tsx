@@ -6,6 +6,7 @@ import PageShell from "@/components/page-shell";
 import { useMomentPlayer, MomentButton } from "@/components/moment-player";
 import { surfaces, ui, AXES, type AxisKey } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
+import { initialCampaignId, useRememberCampaign, preferredSessionId, useRememberSession } from "@/lib/campaign-context";
 
 type Campaign = { id: string; name: string };
 type JobRow = { id: string; status: string; extract_cursor: number; session_id: string; session: { session_number: number | null } | null };
@@ -33,8 +34,10 @@ export default function ReviewPage() {
   const supabase = useMemo(() => createClient(), []);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [campaignId, setCampaignId] = useState<string>("");
+  useRememberCampaign(campaignId, campaigns);
   const [jobs, setJobs] = useState<JobRow[]>([]);
   const [jobId, setJobId] = useState<string>("");
+  useRememberSession(campaignId, jobs.find((j) => j.id === jobId)?.session_id);
   const [labels, setLabels] = useState<Record<string, string>>({});
   const [props, setProps] = useState<Prop[]>([]);
   const [counts, setCounts] = useState<{ accepted: number; rejected: number }>({ accepted: 0, rejected: 0 });
@@ -69,7 +72,7 @@ export default function ReviewPage() {
   useEffect(() => {
     (async () => {
       const [{ data: camps }, { data: ets }, { data: gks }] = await Promise.all([
-        supabase.from("campaigns").select("id, name").order("created_at", { ascending: true }),
+        supabase.from("campaigns").select("id, name, system").order("created_at", { ascending: true }),
         supabase.from("event_types").select("key, label"),
         supabase.from("gm_event_kinds").select("kind, category, label, sort").order("sort", { ascending: true }),
       ]);
@@ -79,7 +82,7 @@ export default function ReviewPage() {
       ((ets as { key: string; label: string }[]) || []).forEach((e) => { lab[e.key] = e.label; });
       setLabels(lab);
       setGmKinds((gks as GmKind[]) || []);
-      if (list.length) setCampaignId(list[0].id);
+      if (list.length) setCampaignId(initialCampaignId(list));
     })();
   }, [supabase]);
 
@@ -92,7 +95,9 @@ export default function ReviewPage() {
       .order("created_at", { ascending: false });
     const list = (data as unknown as JobRow[]) || [];
     setJobs(list);
-    setJobId(list.length ? list[0].id : "");
+    // Open the review for the session the GM is working on (shared across pages), else the newest.
+    const pref = preferredSessionId(cid);
+    setJobId((list.find((j) => j.session_id === pref) ?? list[0])?.id ?? "");
   }
 
   useEffect(() => { if (campaignId) loadJobs(campaignId); }, [campaignId]); // eslint-disable-line react-hooks/exhaustive-deps

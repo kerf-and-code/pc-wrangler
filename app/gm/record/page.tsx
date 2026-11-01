@@ -27,7 +27,7 @@ import PageShell from "@/components/page-shell";
 import { createClient } from "@/lib/supabase/client";
 import { C, FORGE_RADIUS, STONE } from "@/lib/forge-theme";
 import { SAX } from "@/lib/theme";
-import { pickCurrentSession } from "@/lib/current-session";
+import { initialCampaignId, useRememberCampaign, initialSessionId, useRememberSession } from "@/lib/campaign-context";
 
 type Phase = "idle" | "armed" | "recording" | "stopped" | "uploading" | "done" | "error";
 type Campaign = { id: string; name: string };
@@ -107,8 +107,10 @@ export default function RoomRecordPage() {
   const supabase = useMemo(() => createClient(), []);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [campaignId, setCampaignId] = useState("");
+  useRememberCampaign(campaignId, campaigns);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [sessionId, setSessionId] = useState("");
+  useRememberSession(campaignId, sessionId);
   const [consent, setConsent] = useState(false);
   const [phase, setPhase] = useState<Phase>("idle");
   const [elapsed, setElapsed] = useState(0);
@@ -127,9 +129,9 @@ export default function RoomRecordPage() {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const { data } = await supabase.from("campaigns").select("id, name").eq("gm_id", user.id).order("name");
+      const { data } = await supabase.from("campaigns").select("id, name, system").eq("gm_id", user.id).order("name");
       setCampaigns((data as Campaign[]) ?? []);
-      if (data?.length === 1) setCampaignId(data[0].id);
+      if (data?.length) setCampaignId(initialCampaignId(data));
       const left = await all().catch(() => []);
       if (left.length) { setRecovered(left.length); setRecoveredMeta(loadMeta()); }
     })();
@@ -151,7 +153,7 @@ export default function RoomRecordPage() {
       setSessions(rows);
       // Default to the session being played (live, then open, then the last one played), never the
       // future "scheduled" session that weekly recurrence keeps at the top. Visible in the picker.
-      setSessionId(pickCurrentSession(rows)?.id ?? "");
+      setSessionId(initialSessionId(campaignId, rows));
     })();
   }, [campaignId, supabase]);
 
