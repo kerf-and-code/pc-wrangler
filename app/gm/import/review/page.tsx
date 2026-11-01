@@ -135,19 +135,29 @@ export default function ImportReviewPage() {
           <div key={k} style={{ marginBottom: 22 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
               <div style={label}>{KIND_LABEL[k] || k} · {rows.length}</div>
-              {!done && (
+              {!done && k !== "pc" && (
                 <div style={{ display: "flex", gap: 6 }}>
-                  <button type="button" onClick={() => setCandDecision(ids, k === "pc" ? "rejected" : "approved")} style={ghostBtn}>Include all</button>
+                  <button type="button" onClick={() => setCandDecision(ids, "approved")} style={ghostBtn}>Include all</button>
                   <button type="button" onClick={() => setCandDecision(ids, "rejected")} style={ghostBtn}>Skip all</button>
                 </div>
               )}
             </div>
+            {/* The import never creates player characters (lib/backfill/commit-map.ts: a PC is a real
+                person's character, linked to their profile). The "Include all" here used to set
+                "rejected", which matched that rule but said the opposite; now the group says what
+                actually happens and points to where PCs are added. */}
+            {k === "pc" && (
+              <p style={{ fontSize: 12.5, color: C.muted, lineHeight: 1.5, margin: "0 0 8px" }}>
+                Listed for reference only: an import never creates player characters, because each one belongs to
+                a real player. Add them on the <a href="/gm/roster" style={{ color: C.sun }}>Roster</a> and invite the player to claim theirs.
+              </p>
+            )}
             <div style={{ display: "grid", gap: 8 }}>
               {rows.map((c) => {
                 const on = included(c.decision);
                 return (
-                  <div key={c.id} style={{ ...surfaces.slate, borderRadius: FORGE_RADIUS, padding: "11px 13px", display: "flex", gap: 12, alignItems: "flex-start", opacity: on ? 1 : 0.5 }}>
-                    {!done && (
+                  <div key={c.id} style={{ ...surfaces.slate, borderRadius: FORGE_RADIUS, padding: "11px 13px", display: "flex", gap: 12, alignItems: "flex-start", opacity: on || k === "pc" ? 1 : 0.5 }}>
+                    {!done && k !== "pc" && (
                       <input type="checkbox" checked={on} onChange={() => toggleCand(c)} style={{ marginTop: 3, width: 16, height: 16, accentColor: SAX.brass }} />
                     )}
                     <div style={{ flex: 1, minWidth: 0 }}>
