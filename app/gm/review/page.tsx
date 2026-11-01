@@ -287,6 +287,21 @@ export default function ReviewPage() {
     await finalize(false);
   }
 
+  // Reject a set of GM beats in sequence (used for "Reject all table-talk"), then reload + finalize
+  // once. Table-talk ("meta") rows are hidden by default but still count as undecided, so the
+  // recap was held back by rows the GM could not see. Stops on the first error.
+  async function rejectGmSet(targets: GmProp[]) {
+    if (targets.length === 0) return;
+    setBusy(true); setError(null);
+    for (const p of targets) {
+      const res = await fetch("/api/gm-review", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "reject", id: p.id }) });
+      if (!res.ok) { const out = await res.json().catch(() => ({})); setError(out.error || "Could not reject table-talk."); break; }
+    }
+    setBusy(false);
+    await loadGmProps(jobId);
+    await finalize(false);
+  }
+
   // Finalize the review job. Server-side, in /api/review/finalize:
   // the job flips to done, the recap auto-drafts, and the disposition fit kicks.
   //
@@ -420,6 +435,7 @@ export default function ReviewPage() {
   };
 
   const gmView = gmProps.filter((p) => showMeta || p.kind !== "meta");
+  const hiddenMeta = showMeta ? [] : gmProps.filter((p) => p.kind === "meta");
   const playerEligible = props.filter((p) => Math.round((p.confidence || 0) * 100) >= threshold).length;
 
   // Group the GM queue by the category each kind belongs to (from gm_event_kinds). This
@@ -664,7 +680,13 @@ export default function ReviewPage() {
                             <input type="checkbox" checked={bulkCreates} onChange={(e) => setBulkCreates(e.target.checked)} style={{ width: 15, height: 15, accentColor: C.sun, cursor: "pointer" }} />
                             Create entities
                           </label>
-                          <button type="button" onClick={() => acceptGmSet(gmView, bulkCreates)} disabled={busy}
+                          <button type="button" disabled={busy}
+                            onClick={() => {
+                              const msg = bulkCreates
+                                ? `Accept all ${gmView.length} beats and create the NPCs, places, factions, items and lore they name? Accepted beats cannot be un-accepted here.`
+                                : `Accept all ${gmView.length} beats? Accepted beats cannot be un-accepted here.`;
+                              if (window.confirm(msg)) void acceptGmSet(gmView, bulkCreates);
+                            }}
                             title={bulkCreates ? "Accept every beat below and create the entities they name" : "Accept every beat below without creating entities"}
                             style={{ ...btn(C.sun, C.ink), opacity: busy ? 0.55 : 1, cursor: busy ? "default" : "pointer" }}>
                             Accept all {gmView.length}
@@ -678,6 +700,28 @@ export default function ReviewPage() {
                     </div>
                   </div>
                 </div>
+
+                {/* Hidden table-talk still blocks the recap, so say so on this tab and offer the one
+                    action that clears it, instead of leaving undecided rows the GM cannot see. */}
+                {hiddenMeta.length > 0 && (
+                  <div style={{ background: "rgba(200,162,75,0.10)", border: `1px solid ${C.sun}`, borderRadius: FORGE_RADIUS, padding: "10px 14px", marginBottom: 12, display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+                    <span style={{ fontSize: 13, color: C.text, flex: "1 1 260px" }}>
+                      {hiddenMeta.length} table-talk {hiddenMeta.length === 1 ? "row is" : "rows are"} hidden but still undecided
+                      {job.status === "review" ? ", so the recap waits on them." : "."}
+                    </span>
+                    <button type="button" onClick={() => setShowMeta(true)} style={{ background: "transparent", color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "7px 12px", fontSize: 12.5, cursor: "pointer" }}>Show them</button>
+                    <button type="button" disabled={busy} onClick={() => void rejectGmSet(hiddenMeta)}
+                      style={{ ...btn(C.sun, C.ink), opacity: busy ? 0.55 : 1, cursor: busy ? "default" : "pointer" }}>
+                      Reject all {hiddenMeta.length} table-talk
+                    </button>
+                  </div>
+                )}
+                {job.status === "review" && remaining !== null && remaining > 0 && hiddenMeta.length < remaining && (
+                  <p style={{ fontSize: 12.5, color: C.muted, margin: "0 0 12px" }}>
+                    {remaining} proposal{remaining === 1 ? " is" : "s are"} still undecided across both tabs, so this session has no recap yet.
+                    The Player events tab lists them and has Finish anyway.
+                  </p>
+                )}
 
                 {gmPlayer.error && <p role="alert" style={{ color: C.warn, fontSize: 12.5, marginBottom: 10 }}>{gmPlayer.error}</p>}
 
