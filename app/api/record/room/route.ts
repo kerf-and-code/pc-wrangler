@@ -13,11 +13,18 @@ import { createAdminClient } from "@/lib/supabase/admin";
 //   table three hours of audio on 2026-07-31. There is no bot in an in-person session, so this
 //   creates the capture_job and the audio_track directly and leaves that table alone entirely.
 //
-// TWO ACTIONS, ONE FILE
-//   start  - verify GM, verify consent was affirmed, find or open a job, hand back a signed upload
-//            URL. Called once, before recording begins, so the GM learns about a problem BEFORE
-//            they run a four-hour session rather than after.
+// THREE ACTIONS, ONE FILE
+//   start  - verify GM, verify consent was affirmed, find or open a job, hand back the storage path
+//            (and a signed upload URL, kept for older clients). Called once, before recording
+//            begins, so the GM learns about a problem BEFORE they run a four-hour session.
+//   sign   - mint a FRESH signed upload URL for a path start() issued. Called at upload time.
 //   finish - register the uploaded object as a room track.
+//
+// WHY "sign" EXISTS
+//   Supabase signed upload URLs are valid for 2 hours. The token used to be minted at start and
+//   used at stop, so any session longer than 2 hours (most of them) failed to upload, and a
+//   recovered recording failed too because the token only lived in page memory. The page now
+//   asks for a token at the moment it uploads.
 //
 // The upload itself goes browser-to-storage on a signed URL and never passes through here. A
 // session's audio is tens of megabytes and a serverless function is the wrong place for it.
@@ -25,7 +32,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 export const maxDuration = 30;
 
 type Body = {
-  action?: "start" | "finish";
+  action?: "start" | "sign" | "finish";
   campaignId?: string;
   sessionId?: string;
   ext?: string;
@@ -57,6 +64,7 @@ export async function POST(req: Request) {
   }
 
   if (b.action === "start") return start(admin, user.id, camp.id, b);
+  if (b.action === "sign") return sign(admin, camp.id, b);
   if (b.action === "finish") return finish(admin, camp.id, b);
   return NextResponse.json({ error: "Unknown action." }, { status: 400 });
 }
@@ -139,6 +147,33 @@ async function start(
   }
 
   return NextResponse.json({ jobId, path: signed.path, token: signed.token });
+}
+
+async function sign(
+  admin: ReturnType<typeof createAdminClient>,
+  campaignId: string,
+  b: Body,
+) {
+  // Only a path start() minted for THIS campaign: "<campaignId>/<jobId>/room-<ms>.<ext>", whose job
+  // is an in-person job of this campaign. The GM check above already proved the caller owns it.
+  const parts = (b.path ?? "").split("/");
+  if (parts.length !== 3 || parts[0] !== campaignId || !/^room-\d+\.[a-z0-9]{2,5}$/.test(parts[2])) {
+    return NextResponse.json({ error: "That upload path is not one of ours." }, { status: 400 });
+  }
+  const { data: job } = await admin
+    .from("capture_jobs")
+    .select("id")
+    .eq("id", parts[1])
+    .eq("campaign_id", campaignId)
+    .eq("source", "in_person")
+    .maybeSingle();
+  if (!job) return NextResponse.json({ error: "The recording's capture job was not found." }, { status: 404 });
+
+  const { data: signed, error } = await admin.storage.from("session-audio").createSignedUploadUrl(b.path as string);
+  if (error || !signed) {
+    return NextResponse.json({ error: error?.message ?? "Could not prepare the upload." }, { status: 500 });
+  }
+  return NextResponse.json({ path: signed.path, token: signed.token });
 }
 
 async function finish(

@@ -27,10 +27,11 @@ import PageShell from "@/components/page-shell";
 import { createClient } from "@/lib/supabase/client";
 import { C, FORGE_RADIUS, STONE } from "@/lib/forge-theme";
 import { SAX } from "@/lib/theme";
+import { pickCurrentSession } from "@/lib/current-session";
 
 type Phase = "idle" | "armed" | "recording" | "stopped" | "uploading" | "done" | "error";
 type Campaign = { id: string; name: string };
-type Session = { id: string; session_number: number | null; ended_at: string | null };
+type Session = { id: string; session_number: number | null; ended_at: string | null; status: string | null };
 
 const DB = "six-axes-room-capture";
 const STORE = "chunks";
@@ -76,6 +77,19 @@ async function clear() {
   db.close();
 }
 
+// What an upload needs besides the audio, saved when recording starts so a reload or a crash can
+// still finish the job: which campaign and storage path start() issued, the recorder's mime type,
+// and when recording began. The upload TOKEN is deliberately not stored: it expires after 2 hours,
+// so a fresh one is requested at upload time (POST action "sign").
+type UploadMeta = { campaignId: string; sessionId: string; path: string; mime: string; startedAt: number };
+const META_KEY = "sax_room_capture_meta";
+function saveMeta(m: UploadMeta | null) {
+  try { if (m) localStorage.setItem(META_KEY, JSON.stringify(m)); else localStorage.removeItem(META_KEY); } catch { /* storage disabled */ }
+}
+function loadMeta(): UploadMeta | null {
+  try { const raw = localStorage.getItem(META_KEY); return raw ? (JSON.parse(raw) as UploadMeta) : null; } catch { return null; }
+}
+
 function pickMime(): string {
   if (typeof MediaRecorder === "undefined") return "";
   for (const m of ["audio/webm;codecs=opus", "audio/webm", "audio/ogg;codecs=opus", "audio/mp4"]) {
@@ -101,6 +115,7 @@ export default function RoomRecordPage() {
   const [level, setLevel] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [recovered, setRecovered] = useState(0);
+  const [recoveredMeta, setRecoveredMeta] = useState<UploadMeta | null>(null);
 
   const mrRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -116,7 +131,7 @@ export default function RoomRecordPage() {
       setCampaigns((data as Campaign[]) ?? []);
       if (data?.length === 1) setCampaignId(data[0].id);
       const left = await all().catch(() => []);
-      if (left.length) setRecovered(left.length);
+      if (left.length) { setRecovered(left.length); setRecoveredMeta(loadMeta()); }
     })();
   }, [supabase]);
 
@@ -129,14 +144,14 @@ export default function RoomRecordPage() {
     if (!campaignId) { setSessions([]); setSessionId(""); return; }
     (async () => {
       const { data } = await supabase
-        .from("sessions").select("id, session_number, ended_at")
+        .from("sessions").select("id, session_number, ended_at, status")
         .eq("campaign_id", campaignId)
         .order("session_number", { ascending: false }).limit(12);
       const rows = (data as Session[]) ?? [];
       setSessions(rows);
-      // Default to the newest OPEN session, which is right almost every time, and visibly so.
-      const open = rows.find((r) => !r.ended_at);
-      setSessionId(open?.id ?? rows[0]?.id ?? "");
+      // Default to the session being played (live, then open, then the last one played), never the
+      // future "scheduled" session that weekly recurrence keeps at the top. Visible in the picker.
+      setSessionId(pickCurrentSession(rows)?.id ?? "");
     })();
   }, [campaignId, supabase]);
 
@@ -151,6 +166,20 @@ export default function RoomRecordPage() {
     return () => window.removeEventListener("beforeunload", h);
   }, [phase]);
 
+  // Keep the screen awake while recording: a laptop or tablet that sleeps mid-session stops the
+  // microphone. Re-acquired when the tab becomes visible again (the browser drops it on hide).
+  useEffect(() => {
+    if (phase !== "recording") return;
+    type Lock = { release: () => Promise<void> };
+    const nav = navigator as unknown as { wakeLock?: { request: (t: "screen") => Promise<Lock> } };
+    let lock: Lock | null = null;
+    const acquire = () => { nav.wakeLock?.request("screen").then((l) => { lock = l; }).catch(() => { /* unsupported or denied */ }); };
+    const onVis = () => { if (document.visibilityState === "visible") acquire(); };
+    acquire();
+    document.addEventListener("visibilitychange", onVis);
+    return () => { document.removeEventListener("visibilitychange", onVis); void lock?.release().catch(() => {}); };
+  }, [phase]);
+
   useEffect(() => {
     if (phase !== "recording") return;
     const t = setInterval(() => setElapsed((Date.now() - startedAt.current) / 1000), 500);
@@ -162,9 +191,18 @@ export default function RoomRecordPage() {
     if (!consent) { setError("Confirm the table has agreed before starting."); return; }
     if (!campaignId) { setError("Pick a campaign."); return; }
 
+    // Never start over audio that has not been uploaded: starting clears the store, which used to
+    // erase the first half of a night if the GM pressed Stop, then Start again after a break.
+    const pending = await all().catch(() => [] as Blob[]);
+    if (pending.length) {
+      setError("There is an earlier recording on this device that has not been uploaded yet. Upload it or discard it first.");
+      setRecovered(pending.length); setRecoveredMeta(loadMeta());
+      return;
+    }
+
     // Ask the server FIRST, before touching the microphone. If the session is closed or consent was
     // not affirmed, the GM finds out now rather than after running a four-hour session.
-    let signed: { path: string; token: string };
+    let signed: { path: string; token?: string };
     try {
       const res = await fetch("/api/record/room", {
         method: "POST", headers: { "Content-Type": "application/json" },
@@ -178,7 +216,6 @@ export default function RoomRecordPage() {
       signed = out;
     } catch { setError("Could not reach the server. Check your connection and try again."); return; }
 
-    (window as unknown as { __sixAxesUpload?: unknown }).__sixAxesUpload = signed;
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -208,6 +245,7 @@ export default function RoomRecordPage() {
       await clear();
       const mime = pickMime();
       mimeRef.current = mime;
+      saveMeta({ campaignId, sessionId, path: signed.path, mime, startedAt: Date.now() });
       const mr = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
       mr.ondataavailable = (e) => { if (e.data && e.data.size) void put(e.data); };
       mr.start(15000);   // flush to IndexedDB every 15s
@@ -221,6 +259,7 @@ export default function RoomRecordPage() {
   }, [campaignId, consent, sessionId]);
 
   const stopRecording = useCallback(() => {
+    if (!window.confirm("Stop recording? You can upload what was recorded, but you cannot add more to this recording afterwards.")) return;
     mrRef.current?.stop();
     streamRef.current?.getTracks().forEach((t) => t.stop());
     audioCtxRef.current?.close();
@@ -229,38 +268,58 @@ export default function RoomRecordPage() {
     setPhase("stopped");
   }, []);
 
+  // Works for a just-stopped recording and for one recovered after a reload or crash: everything it
+  // needs comes from the saved meta, and the upload token is requested fresh (they last 2 hours).
   const upload = useCallback(async () => {
     setPhase("uploading");
     setError(null);
     try {
+      const meta = loadMeta();
+      if (!meta) {
+        setError("This device has audio but not the details of which session it belongs to (it was recorded before this fix). Keep it for now and contact support, or discard it.");
+        setPhase("error");
+        return;
+      }
       const parts = await all();
       if (!parts.length) { setError("There is nothing recorded to upload."); setPhase("error"); return; }
-      const blob = new Blob(parts, { type: mimeRef.current || "audio/webm" });
+      const blob = new Blob(parts, { type: meta.mime || mimeRef.current || "audio/webm" });
 
-      const signed = (window as unknown as { __sixAxesUpload?: { path: string; token: string } }).__sixAxesUpload;
-      if (!signed) { setError("Lost the upload token. Reload and use Recover."); setPhase("error"); return; }
+      const sres = await fetch("/api/record/room", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "sign", campaignId: meta.campaignId, path: meta.path }),
+      });
+      const signed = await sres.json();
+      if (!sres.ok) { setError(signed.error ?? "Could not prepare the upload."); setPhase("error"); return; }
 
       const { error: upErr } = await supabase.storage
         .from("session-audio").uploadToSignedUrl(signed.path, signed.token, blob);
-      if (upErr) { setError(`Upload failed: ${upErr.message}`); setPhase("error"); return; }
+      // A retry after the upload landed but registration failed finds the object already there; that
+      // is success for the upload step, so carry on to "finish" instead of failing forever.
+      if (upErr && /exist|duplicate/i.test(upErr.message)) { /* already uploaded */ }
+      else if (upErr) { setError(`Upload failed: ${upErr.message}. The audio is still on this device; try again below.`); setRecovered(parts.length); setRecoveredMeta(meta); setPhase("error"); return; }
 
       const res = await fetch("/api/record/room", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          action: "finish", campaignId, path: signed.path, durationSeconds: elapsed,
+          // A just-stopped recording knows its length; a recovered one does not, so the server
+          // stores null rather than a guess.
+          action: "finish", campaignId: meta.campaignId, path: signed.path,
+          durationSeconds: elapsed > 0 ? elapsed : undefined,
         }),
       });
       const out = await res.json();
       if (!res.ok) { setError(out.error ?? "Could not register the recording."); setPhase("error"); return; }
 
       await clear();
+      saveMeta(null);
       setRecovered(0);
+      setRecoveredMeta(null);
       setPhase("done");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Upload failed.");
       setPhase("error");
     }
-  }, [campaignId, elapsed, supabase]);
+  }, [elapsed, supabase]);
 
   const busy = phase === "recording" || phase === "uploading";
 
@@ -274,16 +333,21 @@ export default function RoomRecordPage() {
         device somewhere central and leave this tab open.
       </p>
 
-      {recovered > 0 && phase === "idle" && (
+      {recovered > 0 && (phase === "idle" || phase === "error") && (
         <Card tone="warn">
           <Label>Unfinished recording found</Label>
           <p style={body}>
-            {recovered} piece{recovered === 1 ? "" : "s"} of audio from a previous recording are still
-            on this device, which means the tab closed before it uploaded. Nothing has been lost.
+            About {Math.max(1, Math.round((recovered * 15) / 60))} minute{Math.round((recovered * 15) / 60) === 1 ? "" : "s"} of
+            audio from an earlier recording {recoveredMeta
+              ? <>for {campaigns.find((c) => c.id === recoveredMeta.campaignId)?.name ?? "one of your campaigns"} (started {new Date(recoveredMeta.startedAt).toLocaleString()})</>
+              : null} is still on this device and has not been uploaded. Nothing has been lost.
           </p>
           <button style={btn(true)} onClick={() => void upload()}>Upload it now</button>
           <button style={{ ...btn(false), marginLeft: 8 }}
-            onClick={() => { void clear(); setRecovered(0); }}>Discard it</button>
+            onClick={() => {
+              if (!window.confirm("Discard this recording? It has not been uploaded, and it cannot be recovered afterwards.")) return;
+              void clear(); saveMeta(null); setRecovered(0); setRecoveredMeta(null);
+            }}>Discard it</button>
         </Card>
       )}
 
@@ -352,7 +416,7 @@ export default function RoomRecordPage() {
             : "The meter should move when someone speaks. If it does not, the wrong input is selected."}
         </p>
 
-        {phase !== "recording" && phase !== "uploading" && phase !== "done" && (
+        {phase !== "recording" && phase !== "uploading" && phase !== "done" && phase !== "stopped" && (
           <button style={btn(true)} disabled={!consent || !campaignId || !sessionId}
             onClick={() => void startRecording()}>Start recording</button>
         )}
@@ -367,7 +431,8 @@ export default function RoomRecordPage() {
         {phase === "uploading" && <p role="status" aria-live="polite" style={body}>Uploading. Do not close this tab.</p>}
         {phase === "done" && (
           <p role="status" aria-live="polite" style={{ ...body, color: C.good }}>
-            Uploaded. Transcription starts on its own. You will map who is who once it finishes.
+            Uploaded. Transcription starts on its own. Once it finishes, map who is who on the{" "}
+            <a href="/gm/speakers" style={{ color: C.sun }}>Speakers</a> page.
           </p>
         )}
       </Card>
