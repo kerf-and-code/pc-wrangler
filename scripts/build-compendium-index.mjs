@@ -127,6 +127,8 @@ function spokenForms(name) {
   if (full) set.add(full);
   const m = base.match(/^[a-z]+'s\s+(.+)$/); // "tasha's hideous laughter" -> "hideous laughter"
   if (m) { const tail = speak(m[1]); if (tail.length >= 3) set.add(tail); }
+  // Paired names ("Accelerate/Decelerate", "Enlarge/Reduce") are said by either half.
+  if (base.includes("/")) for (const part of base.split("/")) { const p = speak(part); if (p.length >= 3) set.add(p); }
   return [...set];
 }
 
@@ -1262,6 +1264,27 @@ function writeSplit(entries, mode) {
   return { light, shards: shard };
 }
 
+// A single-edition index also carries the OTHER edition's book content that has no counterpart in this
+// one: a spell, item, subclass, feat or monster published only for 2024 is still the thing a 2014 table
+// looks up (Valda's Accelerate/Decelerate, Griffon's Saddlebag Book One, Northlands). Each keeps its own
+// `ruleset`, which the card and chips show. SRD cards are NOT carried: the toggle exists to pick which
+// SRD printing you get, and both printings of an SRD card always exist. Features match on class,
+// subclass and name, so a 2024-only subclass's "Bonus Proficiencies" still comes across.
+function withCrossEdition(own, other) {
+  const key = (e) => e.category === "feature"
+    ? `feature|${norm(e.display?.className ?? "")}|${norm(e.display?.subclass ?? "")}|${norm(e.name)}`
+    : `${e.category}|${norm(e.name)}`;
+  const have = new Set(own.map(key));
+  const ids = new Set(own.map((e) => e.id));
+  const extra = [];
+  for (const e of other) {
+    if (e.source === "srd" || have.has(key(e))) continue;
+    have.add(key(e));
+    extra.push(ids.has(e.id) ? { ...e, id: `${e.id}-${e.ruleset}` } : e);
+  }
+  return [...own, ...extra];
+}
+
 async function main() {
   const mode = (process.argv[2] || "2014").trim();
 
@@ -1279,7 +1302,7 @@ async function main() {
     MONSTER_SOURCES = readMaybe(path.join(SRD_DIR, "monster-sources.json")) || {};
     const variantsByName = loadVariants();
     if (mode === "both") entries = mergeBoth(buildEdition("2024", variantsByName), buildEdition("2014", variantsByName));
-    else entries = buildEdition(mode, variantsByName);
+    else entries = withCrossEdition(buildEdition(mode, variantsByName), buildEdition(mode === "2014" ? "2024" : "2014", variantsByName));
     // Re-apply aliases on the final list: mergeBoth regenerates `spoken` for legacy-suffixed entries,
     // which would otherwise drop their aliases. Idempotent for the single-edition modes.
     applyAliases(entries);

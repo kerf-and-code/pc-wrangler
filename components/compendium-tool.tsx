@@ -672,7 +672,7 @@ export default function CompendiumTool() {
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center" }}>
           <span style={{ ...label }}>Also:</span>
           {candidates.slice(1, 11).map((c) => (
-            <AltChip key={c.entry.id} entry={c.entry} showEdition={ruleset === "both" && hasEditions(system)} onPick={() => void addCard(c.entry)} />
+            <AltChip key={c.entry.id} entry={c.entry} showEdition={hasEditions(system) && (ruleset === "both" || c.entry.ruleset !== ruleset)} onPick={() => void addCard(c.entry)} />
           ))}
           {versions.length > 1 && versions.some((v) => !candidates.slice(0, 11).some((c) => c.entry.id === v.id)) && (
             <button type="button" onClick={() => setVersionsOpen((o) => !o)}
@@ -685,7 +685,7 @@ export default function CompendiumTool() {
       {versionsOpen && versions.length > 1 && (
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6, padding: 10, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, background: C.surface }}>
           {versions.slice(0, 60).map((v) => (
-            <AltChip key={v.id} entry={v} showEdition={ruleset === "both" && hasEditions(system)} onPick={() => void addCard(v)} />
+            <AltChip key={v.id} entry={v} showEdition={hasEditions(system) && (ruleset === "both" || v.ruleset !== ruleset)} onPick={() => void addCard(v)} />
           ))}
           {versions.length > 60 && <span style={{ color: C.muted, fontSize: 12 }}>+{versions.length - 60} more: narrow with the Source filter</span>}
         </div>
@@ -697,7 +697,7 @@ export default function CompendiumTool() {
           <p style={{ color: C.muted, fontSize: 14 }}>Look something up (type or use the mic) and its card appears here. In Continuous mode, cards fade after 30 seconds unless you hover or pin them.</p>
         )}
         {cards.map((c) => (
-          <CardView key={c.key} card={c} canEdit={!!gmId} onEdit={() => openEdit(c.entry)} onPin={() => pin(c.key)} onDismiss={() => dismiss(c.key)} onEnter={() => onEnter(c.key)} onLeave={() => onLeave(c.key)} onSend={gmId ? () => sendToScreen(c.entry, c.key) : null} sent={sentKeys.has(c.key)} />
+          <CardView key={c.key} card={c} otherEdition={hasEditions(system) && ruleset !== "both" && (c.entry.ruleset === "2014" || c.entry.ruleset === "2024") && c.entry.ruleset !== ruleset} canEdit={!!gmId} onEdit={() => openEdit(c.entry)} onPin={() => pin(c.key)} onDismiss={() => dismiss(c.key)} onEnter={() => onEnter(c.key)} onLeave={() => onLeave(c.key)} onSend={gmId ? () => sendToScreen(c.entry, c.key) : null} sent={sentKeys.has(c.key)} />
         ))}
       </div>
     </div>
@@ -733,8 +733,10 @@ function AltChip({ entry, showEdition, onPick }: { entry: CompendiumEntry; showE
   );
 }
 
-function CardView({ card, canEdit, onEdit, onPin, onDismiss, onEnter, onLeave, onSend, sent }: {
-  card: Card; canEdit: boolean; onEdit: () => void; onPin: () => void; onDismiss: () => void; onEnter: () => void; onLeave: () => void;
+function CardView({ card, otherEdition, canEdit, onEdit, onPin, onDismiss, onEnter, onLeave, onSend, sent }: {
+  // True when this card was published for the other edition only and is shown here because nothing in
+  // the selected edition covers it (see withCrossEdition in scripts/build-compendium-index.mjs).
+  card: Card; otherEdition: boolean; canEdit: boolean; onEdit: () => void; onPin: () => void; onDismiss: () => void; onEnter: () => void; onLeave: () => void;
   onSend: (() => void) | null; sent: boolean;
 }) {
   const e = card.entry;
@@ -756,6 +758,7 @@ function CardView({ card, canEdit, onEdit, onPin, onDismiss, onEnter, onLeave, o
             : <span style={{ ...chip, borderColor: C.line, color: C.sun }} title="Original content by Kerf and Code">Kerf &amp; Code</span>)}
           {!homebrew && e.source === "3p" && e.book && <span style={{ ...chip, borderColor: C.line, color: C.muted }} title="Third-party open content (Open Game License 1.0a or ORC), see /licenses">{e.book}</span>}
           {!homebrew && e.source === "srd" && e.book && <span style={{ ...chip, borderColor: C.line, color: C.muted }} title="System Reference Document, CC BY 4.0">{e.book}</span>}
+          {otherEdition && <span style={{ ...chip, borderColor: C.sun, color: C.sun }} title="Published for the other edition only; shown because this edition has no version of it">{e.ruleset} rules</span>}
           {!card.pinned && card.expiresAt != null && <span style={{ ...chip, borderColor: "transparent", color: C.muted }}>auto</span>}
         </div>
         <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
