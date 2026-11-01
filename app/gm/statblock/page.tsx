@@ -42,7 +42,7 @@ import {
 } from "@/lib/forge-theme";
 import { SAX } from "@/lib/theme";
 import PageShell from "@/components/page-shell";
-import { monsterSourceLabel, monsterSourceTitle } from "@/lib/monster-sources";
+import { monsterSourceLabel, monsterSourceTitle, monsterSource } from "@/lib/monster-sources";
 
 type SrdMode = "2024" | "2014" | "both";
 // source_key is declared explicitly because the index signature types everything else as unknown,
@@ -533,7 +533,27 @@ function PickerView({ rows, monsters, srdMode, onSrdMode, onNew, onEdit, onPrefi
   const [type, setType] = useState<string>("");
   const [crMin, setCrMin] = useState<string>("");
   const [crMax, setCrMax] = useState<string>("");
-  const filtersOn = Boolean(type || crMin || crMax);
+  const [source, setSource] = useState<string>("");
+  const filtersOn = Boolean(type || crMin || crMax || source);
+
+  // Source filter options: only books that actually have monsters in the loaded ruleset, grouped the
+  // way the licenses page groups them, each with its count so an empty pick is never offered.
+  const sourceGroups = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const m of monsters) if (m.source_key) counts.set(m.source_key, (counts.get(m.source_key) ?? 0) + 1);
+    const groups: { label: string; opts: { key: string; title: string; n: number }[] }[] = [
+      { label: "SRD (open)", opts: [] },
+      { label: "Sourcebooks", opts: [] },
+      { label: "Third-party open content", opts: [] },
+    ];
+    for (const [key, n] of counts) {
+      const src = monsterSource(key);
+      const g = key.startsWith("srd") ? 0 : src?.thirdParty ? 2 : 1;
+      groups[g].opts.push({ key, title: src?.title ?? key, n });
+    }
+    for (const g of groups) g.opts.sort((a, b) => a.title.localeCompare(b.title));
+    return groups.filter((g) => g.opts.length > 0);
+  }, [monsters]);
 
   // The FULL list, unsliced. An empty search used to show only the first 60 of 3,210, which made
   // the picker look like a short list with a search box rather than the whole bestiary.
@@ -542,7 +562,12 @@ function PickerView({ rows, monsters, srdMode, onSrdMode, onNew, onEdit, onPrefi
     const lo = crMin ? crValue(crMin) : Number.NEGATIVE_INFINITY;
     const hi = crMax ? crValue(crMax) : Number.POSITIVE_INFINITY;
     return monsters.filter((m) => {
-      if (s && !m.name.toLowerCase().includes(s)) return false;
+      // The search box also matches the book (short label or full title), so "tome of beasts" or
+      // "mm 2024" narrows the list the same way picking it in the Source dropdown does.
+      if (s && !m.name.toLowerCase().includes(s)
+        && !monsterSourceLabel(m.source_key).toLowerCase().includes(s)
+        && !monsterSourceTitle(m.source_key).toLowerCase().includes(s)) return false;
+      if (source && m.source_key !== source) return false;
       if (type && String(m.type ?? "") !== type) return false;
       if (crMin || crMax) {
         const v = crValue(m.cr);
@@ -553,7 +578,7 @@ function PickerView({ rows, monsters, srdMode, onSrdMode, onNew, onEdit, onPrefi
       }
       return true;
     });
-  }, [q, monsters, type, crMin, crMax]);
+  }, [q, monsters, type, crMin, crMax, source]);
 
   // Rendering 3,210 buttons at once is a visible stall on the first paint and makes the scroll
   // stutter afterwards, so the pane fills in as you reach the bottom. This is windowing rather than
@@ -567,7 +592,11 @@ function PickerView({ rows, monsters, srdMode, onSrdMode, onNew, onEdit, onPrefi
 
   // Back to the top of the list whenever the query changes, or a search would start part-way down
   // a previous result set.
-  useEffect(() => { setShown(PAGE); }, [q, srdMode, type, crMin, crMax]);
+  useEffect(() => { setShown(PAGE); }, [q, srdMode, type, crMin, crMax, source]);
+  // A book picked under one ruleset may have nothing in the next; drop it rather than show an empty list.
+  useEffect(() => {
+    if (source && !monsters.some((m) => m.source_key === source)) setSource("");
+  }, [monsters, source]);
 
   useEffect(() => {
     const el = sentinel.current;
@@ -623,6 +652,16 @@ function PickerView({ rows, monsters, srdMode, onSrdMode, onNew, onEdit, onPrefi
             {MONSTER_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
           </select>
 
+          <select value={source} onChange={(e) => setSource(e.target.value)} aria-label="Source"
+            style={{ ...stoneField(), width: "auto", minWidth: 170, maxWidth: 260, padding: "7px 10px", fontSize: 13 }}>
+            <option value="">Any source</option>
+            {sourceGroups.map((g) => (
+              <optgroup key={g.label} label={g.label}>
+                {g.opts.map((o) => <option key={o.key} value={o.key}>{o.title} ({o.n})</option>)}
+              </optgroup>
+            ))}
+          </select>
+
           <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 11, color: STONE.inkFaint }}>CR</span>
           <select value={crMin} onChange={(e) => setCrMin(e.target.value)}
             style={{ ...stoneField(), width: "auto", minWidth: 76, padding: "7px 10px", fontSize: 13 }}>
@@ -637,7 +676,7 @@ function PickerView({ rows, monsters, srdMode, onSrdMode, onNew, onEdit, onPrefi
           </select>
 
           {(filtersOn || q.trim()) && (
-            <button onClick={() => { setType(""); setCrMin(""); setCrMax(""); setQ(""); }}
+            <button onClick={() => { setType(""); setCrMin(""); setCrMax(""); setSource(""); setQ(""); }}
               style={{ ...stoneButton("stone"), padding: "7px 12px", fontSize: 12.5 }}>
               Clear
             </button>
@@ -690,7 +729,7 @@ function PickerView({ rows, monsters, srdMode, onSrdMode, onNew, onEdit, onPrefi
         {monsters.length === 0 && <p style={{ color: STONE.inkFaint, fontSize: 13 }}>No monsters loaded for this ruleset.</p>}
         {monsters.length > 0 && filtered.length === 0 && (
           <p style={{ color: STONE.inkFaint, fontSize: 13, marginTop: 8 }}>
-            Nothing matches. Widen the CR range, pick a different type, or switch ruleset above.
+            Nothing matches. Widen the CR range, pick a different type or source, or switch ruleset above.
           </p>
         )}
       </div>

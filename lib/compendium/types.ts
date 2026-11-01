@@ -8,7 +8,7 @@
 
 export type CompendiumCategory =
   | "spell" | "magic-item" | "equipment" | "condition" | "feat" | "feature" | "rule" | "monster" | "species" | "background"
-  | "reference" | "custom";
+  | "class" | "subclass" | "reference" | "custom";
 export type Ruleset = "2014" | "2024" | "both";
 
 // Attribution. "srd" is Open Game Content under CC-BY (SRD 5.1 / 5.2); "kc" is original content
@@ -126,6 +126,26 @@ export interface SpeciesDisplay {
   speed: string | null;
   creatureType: string | null;
   traits: MonsterTrait[]; // reuses the {name, description} shape
+  facts?: string[];       // builder-derived one-liners (darkvision, resistances, skills, 2014 ability scores)
+}
+
+// A class overview: the level table (Level, PB, resource columns, spell slots, Features) plus the
+// headline traits. Each feature named in the table is also its own "feature" card.
+export interface ClassDisplay {
+  hitDie: string | null;
+  primaryAbility: string | null;      // 2024 data
+  savingThrows: string | null;
+  proficiencies: string | null;       // 2014 data
+  spellcastingAbility: string | null;
+  columns: string[];
+  rows: string[][];
+  subclasses: string[];
+}
+
+// A subclass overview: every feature it grants, grouped by the class level it arrives at.
+export interface SubclassDisplay {
+  className: string;
+  levels: { level: number | null; features: MonsterTrait[] }[];
 }
 
 // A character background. The source data is structured (no prose), so the card is field-based. The
@@ -164,7 +184,7 @@ export interface CustomDisplay {
 
 export type CompendiumDisplay =
   | SpellDisplay | ItemDisplay | GearDisplay | ConditionDisplay | FeatDisplay | FeatureDisplay
-  | RuleDisplay | MonsterDisplay | SpeciesDisplay | BackgroundDisplay | ReferenceDisplay | CustomDisplay;
+  | RuleDisplay | MonsterDisplay | SpeciesDisplay | BackgroundDisplay | ClassDisplay | SubclassDisplay | ReferenceDisplay | CustomDisplay;
 
 // One entry per term. This is a DISCRIMINATED UNION keyed on `category`: each category pins its own
 // `display` shape, so a check on `category` narrows `display` exactly. The discriminant is load-bearing
@@ -184,8 +204,20 @@ interface EntryBase<C extends CompendiumCategory, D> {
   // own shorthand in source data and have it flow through to grammar the same way.
   spoken: string[];
   aliases?: string[];
-  // Short label of the source book, set on "3p" entries (lib/srd/monster-sources.json `short`).
+  // The source book, on every shipped entry: "SRD 5.1"/"SRD 5.2" for SRD cards, the full title for
+  // book content, and the short label for third-party monsters (lib/srd/monster-sources.json `short`).
   book?: string;
+  // Search-list facets written by scripts/build-compendium-index.mjs, so the page can search, browse and
+  // label look-alikes before any card text is downloaded: tag = type chip, sub = browse subgroup,
+  // stat = one key fact (CR, spell level, rarity...), s = the card shard that holds `display`.
+  tag?: string;
+  sub?: string;
+  stat?: string;
+  s?: number;
+  // INVARIANT: an entry straight from the split search list has NO display at runtime (it arrives with
+  // `s` instead); hydrateEntry() in components/compendium-tool.tsx fills it from the shard. Everything
+  // that renders card text (CardBody, the editor, the DM Screen) only ever receives hydrated entries.
+  // Use hasDisplay() before reading display on an entry that may come from the search list.
   display: D;
 }
 
@@ -200,6 +232,8 @@ export type CompendiumEntry =
   | EntryBase<"monster", MonsterDisplay>
   | EntryBase<"species", SpeciesDisplay>
   | EntryBase<"background", BackgroundDisplay>
+  | EntryBase<"class", ClassDisplay>
+  | EntryBase<"subclass", SubclassDisplay>
   | EntryBase<"reference", ReferenceDisplay>
   | EntryBase<"custom", CustomDisplay>;
 
@@ -216,4 +250,8 @@ export const isMonster = (e: CompendiumEntry): e is Extract<CompendiumEntry, { c
 export const isSpecies = (e: CompendiumEntry): e is Extract<CompendiumEntry, { category: "species" }> => e.category === "species";
 export const isBackground = (e: CompendiumEntry): e is Extract<CompendiumEntry, { category: "background" }> => e.category === "background";
 export const isReference = (e: CompendiumEntry): e is Extract<CompendiumEntry, { category: "reference" }> => e.category === "reference";
+export const isClass = (e: CompendiumEntry): e is Extract<CompendiumEntry, { category: "class" }> => e.category === "class";
+export const isSubclass = (e: CompendiumEntry): e is Extract<CompendiumEntry, { category: "subclass" }> => e.category === "subclass";
+/** True once an entry carries its card text (homebrew rows always do; search-list entries after hydration). */
+export const hasDisplay = (e: CompendiumEntry): boolean => (e as { display?: unknown }).display != null;
 export const isCustom = (e: CompendiumEntry): e is Extract<CompendiumEntry, { category: "custom" }> => e.category === "custom";

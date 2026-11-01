@@ -64,13 +64,32 @@ function ratio(a: string, b: string): number {
 
 interface Candidate { phrase: string; tokens: Set<string>; entry: CompendiumEntry }
 
+export interface MatcherOptions {
+  // The edition the GM is playing ("2014" | "2024"). On a score tie its cards win; "both" or unset
+  // means no edition preference beyond preferring the current printing over a "(legacy)" copy.
+  preferRuleset?: string;
+}
+
+// Tie-break rank, lower is better: the GM's edition first, then a current printing over a legacy copy,
+// then official and book content over third-party open content. Only consulted when scores tie, so a
+// better textual match always wins regardless of source.
+function tieRank(e: CompendiumEntry, prefer: string | undefined): number {
+  let r = 0;
+  if (prefer && prefer !== "both" && e.ruleset !== prefer) r += 4;
+  if (/\(legacy\)$/i.test(e.name)) r += 2;
+  if (e.source === "3p") r += 1;
+  return r;
+}
+
 export class CompendiumMatcher {
   private candidates: Candidate[] = [];
   private exact = new Map<string, CompendiumEntry[]>();
+  private prefer: string | undefined;
 
-  constructor(entries: CompendiumEntry[]) {
+  constructor(entries: CompendiumEntry[], opts: MatcherOptions = {}) {
+    this.prefer = opts.preferRuleset;
     for (const entry of entries) {
-      const phrases = new Set<string>([norm(entry.name), ...entry.spoken.map(norm)]);
+      const phrases = new Set<string>([norm(entry.name), ...(entry.spoken ?? []).map(norm)]);
       for (const phrase of phrases) {
         if (!phrase) continue;
         this.candidates.push({ phrase, tokens: new Set(phrase.split(" ")), entry });
@@ -120,7 +139,10 @@ export class CompendiumMatcher {
     }
 
     return [...best.values()]
-      .sort((a, b) => b.score - a.score || a.entry.name.length - b.entry.name.length || a.entry.name.localeCompare(b.entry.name))
+      .sort((a, b) => b.score - a.score
+        || tieRank(a.entry, this.prefer) - tieRank(b.entry, this.prefer)
+        || a.entry.name.length - b.entry.name.length
+        || a.entry.name.localeCompare(b.entry.name))
       .slice(0, limit);
   }
 }

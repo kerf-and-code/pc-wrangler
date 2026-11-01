@@ -12,6 +12,7 @@ import { useVosk } from "@/lib/compendium/useVosk";
 import {
   type CompendiumEntry, type Ruleset, type MonsterDisplay, type SpellDisplay, type ItemDisplay, type ReferenceDisplay,
   isSpell, isItem, isGear, isCondition, isFeat, isFeature, isRule, isMonster, isSpecies, isBackground, isReference, isCustom,
+  isClass, isSubclass, hasDisplay,
 } from "@/lib/compendium/types";
 import {
   type CustomRow, type CustomDraft, type Ruleset3, TYPED_CUSTOM,
@@ -93,6 +94,28 @@ const grammarPath = (system: string, ruleset: Ruleset) =>
     : system === "darkmatter" ? `/compendium/grammar-2014.json`
     : `/compendium/grammar-${system}.json`;
 const systemLabel = (system: string) => getModule(system).label;
+// Card text shards written next to the split search list (scripts/build-compendium-index.mjs writeSplit).
+const cardsDir = (system: string, ruleset: Ruleset) =>
+  system === "dnd5e" ? `/compendium/cards/${ruleset}` : system === "darkmatter" ? `/compendium/cards/2014` : `/compendium/cards/${system}`;
+
+// Category filter chips. Each chip covers one or more index categories; "Classes" spans the class and
+// subclass overviews and the individual features, "Rules" the glossary, conditions and quick reference.
+const CAT_FILTERS: { id: string; label: string; cats: string[] }[] = [
+  { id: "", label: "All", cats: [] },
+  { id: "spell", label: "Spells", cats: ["spell"] },
+  { id: "monster", label: "Monsters", cats: ["monster"] },
+  { id: "item", label: "Magic items", cats: ["magic-item"] },
+  { id: "gear", label: "Equipment", cats: ["equipment"] },
+  { id: "class", label: "Classes", cats: ["class", "subclass", "feature"] },
+  { id: "species", label: "Species", cats: ["species"] },
+  { id: "background", label: "Backgrounds", cats: ["background"] },
+  { id: "feat", label: "Feats", cats: ["feat"] },
+  { id: "rule", label: "Rules", cats: ["rule", "condition", "reference"] },
+];
+const SOURCE_GROUP_LABEL: Record<string, string> = { srd: "SRD (open)", kc: "Sourcebooks", "3p": "Third-party open content" };
+// The name with any trailing parenthetical dropped: "Basilisk (Black Flag)" and "Basilisk (legacy)"
+// share the base "basilisk", which is how the versions list finds every printing of one thing.
+const baseName = (n: string) => n.replace(/\s*\([^)]*\)\s*$/g, "").trim().toLowerCase();
 
 type ListenMode = "push" | "continuous";
 interface Card { key: string; entry: CompendiumEntry; pinned: boolean; expiresAt: number | null }
@@ -139,6 +162,10 @@ export default function CompendiumTool() {
   const [saveErr, setSaveErr] = useState<string | null>(null);
   const [indexOpen, setIndexOpen] = useState(false);
   const [sentKeys, setSentKeys] = useState<Set<string>>(new Set()); // card keys sent to the DM Screen this session
+  const [catFilter, setCatFilter] = useState<string>("");   // CAT_FILTERS id, "" = all
+  const [srcFilter, setSrcFilter] = useState<string>("");   // a book title, or "" = any
+  const [versionsOpen, setVersionsOpen] = useState(false);  // the "all versions" list under the alternates
+  const [cardErr, setCardErr] = useState<string | null>(null); // a card shard that failed to load
 
   // Merge the GM's applicable custom rows over the static index. Recomputes when the toggle or the
   // active campaign changes, so overrides and campaign-pinned cards appear/disappear correctly.
@@ -148,7 +175,39 @@ export default function CompendiumTool() {
     () => mergeCustom(baseEntries, customRows, effRuleset, activeCampaign?.id ?? null),
     [baseEntries, customRows, effRuleset, activeCampaign],
   );
-  const matcher = useMemo(() => (entries.length ? new CompendiumMatcher(entries) : null), [entries]);
+  // The filters narrow what the matcher can return, so "fireball" under Monsters finds nothing rather than
+  // the spell, and a picked book limits every lookup to that book.
+  const filteredEntries = useMemo(() => {
+    const cats = CAT_FILTERS.find((c) => c.id === catFilter)?.cats ?? [];
+    if (!cats.length && !srcFilter) return entries;
+    return entries.filter((e) => (!cats.length || cats.includes(e.category)) && (!srcFilter || e.book === srcFilter));
+  }, [entries, catFilter, srcFilter]);
+  const matcher = useMemo(
+    () => (filteredEntries.length ? new CompendiumMatcher(filteredEntries, { preferRuleset: hasEditions(system) ? ruleset : undefined }) : null),
+    [filteredEntries, system, ruleset],
+  );
+  // Source dropdown: every book present in the loaded entries (after the category filter), grouped by
+  // kind, with counts, so an option never leads to an empty result.
+  const sourceGroups = useMemo(() => {
+    const cats = CAT_FILTERS.find((c) => c.id === catFilter)?.cats ?? [];
+    const counts = new Map<string, { n: number; src: string }>();
+    for (const e of entries) {
+      if (!e.book || (cats.length && !cats.includes(e.category))) continue;
+      const c = counts.get(e.book);
+      if (c) c.n++; else counts.set(e.book, { n: 1, src: e.source });
+    }
+    const groups: { label: string; opts: { book: string; n: number }[] }[] = [];
+    for (const src of ["srd", "kc", "3p"]) {
+      const opts = [...counts.entries()].filter(([, v]) => v.src === src).map(([book, v]) => ({ book, n: v.n }))
+        .sort((a, b) => a.book.localeCompare(b.book));
+      if (opts.length) groups.push({ label: SOURCE_GROUP_LABEL[src] ?? src, opts });
+    }
+    return groups;
+  }, [entries, catFilter]);
+  // A picked book that the category filter has emptied is dropped rather than left matching nothing.
+  useEffect(() => {
+    if (srcFilter && !sourceGroups.some((g) => g.opts.some((o) => o.book === srcFilter))) setSrcFilter("");
+  }, [sourceGroups, srcFilter]);
   // Extra spoken phrases from custom entries, so the (experimental) grammar-constrain path can reach them.
   const customSpoken = useMemo(
     () => entries.filter(isCustom).flatMap((e) => e.spoken),
@@ -168,7 +227,13 @@ export default function CompendiumTool() {
         if (!r.ok) { if (ready) throw new Error(`${ip.split("/").pop()} ${r.status}`); return [] as CompendiumEntry[]; }
         return r.json();
       })
-      .then((data: CompendiumEntry[]) => { if (!off) { setBaseEntries(Array.isArray(data) ? data : []); setLoading(false); } })
+      .then((data: CompendiumEntry[]) => {
+        if (off) return;
+        // The split search list omits `spoken` when it only repeats the name (the matcher indexes the
+        // name itself), so default it here for everything downstream.
+        setBaseEntries(Array.isArray(data) ? data.map((e) => (e.spoken ? e : { ...e, spoken: [] })) : []);
+        setLoading(false);
+      })
       .catch((e) => { if (!off) { setLoadError(e instanceof Error ? e.message : "Could not load the compendium."); setLoading(false); } });
     fetch(grammarPath(system, ruleset))
       .then((r) => (r.ok ? r.json() : []))
@@ -233,21 +298,52 @@ export default function CompendiumTool() {
     return () => clearInterval(t);
   }, []);
 
-  const addCard = useCallback((entry: CompendiumEntry) => {
+  // Card text lives in shards (cards/<mode>/<s>.json). Each shard is fetched once per mode and cached;
+  // an entry that already carries display (homebrew, older all-in-one indexes) needs no fetch.
+  const shardCache = useRef(new Map<string, Promise<Record<string, unknown>>>());
+  const hydrateEntry = useCallback(async (entry: CompendiumEntry): Promise<CompendiumEntry> => {
+    if (hasDisplay(entry) || entry.s == null) return entry;
+    const url = `${cardsDir(system, ruleset)}/${entry.s}.json`;
+    let p = shardCache.current.get(url);
+    if (!p) {
+      p = fetch(url).then((r) => { if (!r.ok) throw new Error(`${url} ${r.status}`); return r.json(); });
+      shardCache.current.set(url, p);
+      p.catch(() => shardCache.current.delete(url)); // a failed fetch is retried on the next open
+    }
+    const shard = await p;
+    return { ...entry, display: shard[entry.id] } as CompendiumEntry;
+  }, [system, ruleset]);
+
+  const addCard = useCallback(async (raw: CompendiumEntry) => {
+    let entry: CompendiumEntry;
+    try { entry = await hydrateEntry(raw); } catch { setCardErr(`Could not load "${raw.name}". Check your connection and try again.`); return; }
+    if (!hasDisplay(entry)) { setCardErr(`"${raw.name}" has no card text in this build. Rebuild the compendium index.`); return; }
+    setCardErr(null);
     setCards((prev) => {
       const pinned = listenMode === "push";
       const card: Card = { key: `${entry.id}:${Date.now()}`, entry, pinned, expiresAt: pinned ? null : Date.now() + AUTO_MS };
       const withoutDupTop = prev[0]?.entry.id === entry.id ? prev.slice(1) : prev;
       return [card, ...withoutDupTop].slice(0, MAX_CARDS);
     });
-  }, [listenMode]);
+  }, [listenMode, hydrateEntry]);
 
   const lookup = useCallback((raw: string) => {
     if (!matcher) return;
-    const results = matcher.match(raw, 6);
+    const results = matcher.match(raw, 11);
     setCandidates(results);
-    if (results.length) addCard(results[0].entry);
+    setVersionsOpen(false);
+    if (results.length) void addCard(results[0].entry);
   }, [matcher, addCard]);
+
+  // Every printing of the top result: same category, same base name, across editions and books. Shown as
+  // "All N versions" when there are more than the alternates row already lists.
+  const versions = useMemo(() => {
+    const top = candidates[0]?.entry;
+    if (!top) return [];
+    const b = baseName(top.name);
+    return filteredEntries.filter((e) => e.category === top.category && baseName(e.name) === b)
+      .sort((x, y) => x.name.localeCompare(y.name));
+  }, [candidates, filteredEntries]);
 
   // Send a copy of a card to the GM's DM Screen (a snapshot). Targets the last board used (localStorage),
   // creating a default board if there is none. Best-effort: a failure never disrupts lookup.
@@ -465,7 +561,7 @@ export default function CompendiumTool() {
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder={loading ? "Loading compendium…" : "Type a spell, item, or condition (e.g. fireball, belt of giant strength, grappled)"}
+          placeholder={loading ? "Loading compendium…" : "Type anything: spell, monster, item, class, subclass, species, feat, rule (e.g. fireball, path of the glacier, grappled)"}
           disabled={loading || !!loadError}
           style={{ flex: 1, minWidth: 0, padding: "11px 13px", background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: 9, fontSize: 15 }}
         />
@@ -478,6 +574,31 @@ export default function CompendiumTool() {
           </button>
         )}
       </form>
+
+      {/* filters: narrow lookups to a category and/or one book */}
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+        {CAT_FILTERS.map((c) => (
+          <button key={c.id || "all"} type="button" onClick={() => setCatFilter(c.id)} style={{ ...seg(catFilter === c.id), padding: "4px 10px", fontSize: 12 }}>{c.label}</button>
+        ))}
+        {sourceGroups.length > 0 && (
+          <select value={srcFilter} onChange={(e) => setSrcFilter(e.target.value)} aria-label="Source book"
+            style={{ padding: "5px 8px", background: C.surface2, color: srcFilter ? C.sun : C.text, border: `1px solid ${srcFilter ? C.sun : C.line}`, borderRadius: 7, fontSize: 12, maxWidth: 280 }}>
+            <option value="">Any source</option>
+            {sourceGroups.map((g) => (
+              <optgroup key={g.label} label={g.label}>
+                {g.opts.map((o) => <option key={o.book} value={o.book}>{o.book} ({o.n.toLocaleString()})</option>)}
+              </optgroup>
+            ))}
+          </select>
+        )}
+        {(catFilter || srcFilter) && (
+          <>
+            <span style={{ color: C.muted, fontSize: 12 }}>{filteredEntries.length.toLocaleString()} of {entries.length.toLocaleString()}</span>
+            <button type="button" onClick={() => { setCatFilter(""); setSrcFilter(""); }} style={{ background: "transparent", border: "none", color: C.muted, fontSize: 12, cursor: "pointer", textDecoration: "underline" }}>clear</button>
+          </>
+        )}
+      </div>
+      {cardErr && <p style={{ color: "#c98a7a", fontSize: 13, margin: 0 }}>{cardErr}</p>}
 
       {/* voice status line */}
       {vosk.supported && (
@@ -502,7 +623,7 @@ export default function CompendiumTool() {
       {!loading && !loadError && (
         <p style={{ ...label, margin: 0 }}>
           {entries.length.toLocaleString()} entries loaded · {system === "dnd5e"
-            ? "SRD 5.1 / 5.2 (CC-BY), plus original content by Kerf and Code and third-party open-licensed monsters labeled by book (see /licenses)"
+            ? "SRD 5.1 / 5.2 (CC-BY), book content in Kerf and Code wording (partnered content used with permission), and third-party open-licensed monsters, each labeled by book (see /licenses)"
             : `${attributionFor(system)?.short ?? systemLabel(system)}${baseEntries.length === 0 ? " · no shipped cards yet, showing your homebrew" : ""}`} · nothing leaves your browser
         </p>
       )}
@@ -550,12 +671,23 @@ export default function CompendiumTool() {
       {candidates.length > 1 && (
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center" }}>
           <span style={{ ...label }}>Also:</span>
-          {candidates.slice(1, 6).map((c) => (
-            <button key={c.entry.id} type="button" onClick={() => addCard(c.entry)}
-              style={{ padding: "4px 9px", background: "transparent", color: C.text, border: `1px solid ${C.line}`, borderRadius: 999, fontSize: 12, cursor: "pointer" }}>
-              {c.entry.name} <span style={{ color: C.muted }}>· {entryTag(c.entry)}</span>
-            </button>
+          {candidates.slice(1, 11).map((c) => (
+            <AltChip key={c.entry.id} entry={c.entry} showEdition={ruleset === "both" && hasEditions(system)} onPick={() => void addCard(c.entry)} />
           ))}
+          {versions.length > 1 && versions.some((v) => !candidates.slice(0, 11).some((c) => c.entry.id === v.id)) && (
+            <button type="button" onClick={() => setVersionsOpen((o) => !o)}
+              style={{ padding: "4px 9px", background: "transparent", color: C.sun, border: `1px solid ${C.sun}`, borderRadius: 999, fontSize: 12, cursor: "pointer" }}>
+              {versionsOpen ? "Hide versions" : `All ${versions.length} versions of ${candidates[0].entry.name.replace(/\s*\([^)]*\)\s*$/, "")}`}
+            </button>
+          )}
+        </div>
+      )}
+      {versionsOpen && versions.length > 1 && (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, padding: 10, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, background: C.surface }}>
+          {versions.slice(0, 60).map((v) => (
+            <AltChip key={v.id} entry={v} showEdition={ruleset === "both" && hasEditions(system)} onPick={() => void addCard(v)} />
+          ))}
+          {versions.length > 60 && <span style={{ color: C.muted, fontSize: 12 }}>+{versions.length - 60} more: narrow with the Source filter</span>}
         </div>
       )}
 
@@ -576,6 +708,8 @@ export default function CompendiumTool() {
 // rather than the generic "feature", since that is what a DM is actually looking at. Custom cards carry
 // the GM's own tag.
 export function entryTag(e: CompendiumEntry): string {
+  // A search-list entry has no card text yet; the build precomputed its tag with the same rules.
+  if (!hasDisplay(e)) return e.tag ?? (e.category === "magic-item" ? "item" : e.category);
   if (isFeature(e)) {
     const k = e.display.kind;
     return k === "fighting-style" ? "fighting style" : k === "feature" ? "class feature" : k;
@@ -584,6 +718,19 @@ export function entryTag(e: CompendiumEntry): string {
   if (isReference(e)) return e.id.startsWith("custom:") ? "table" : "quick reference";
   if (isCustom(e)) return e.display.tag || "custom";
   return e.category === "magic-item" ? "item" : e.category;
+}
+
+// One alternative in the "Also" row: name, type, the key fact (CR, spell level, rarity, class...), the
+// edition when both are loaded, and the book, so look-alikes can be told apart without opening each.
+function AltChip({ entry, showEdition, onPick }: { entry: CompendiumEntry; showEdition: boolean; onPick: () => void }) {
+  const bits = [entryTag(entry), entry.stat, showEdition ? entry.ruleset : null].filter(Boolean);
+  return (
+    <button type="button" onClick={onPick} title={entry.book ? `${entry.name} · ${entry.book}` : entry.name}
+      style={{ padding: "4px 9px", background: "transparent", color: C.text, border: `1px solid ${C.line}`, borderRadius: 999, fontSize: 12, cursor: "pointer", textAlign: "left", maxWidth: 360 }}>
+      {entry.name} <span style={{ color: C.muted }}>· {bits.join(" · ")}</span>
+      {entry.book && <span style={{ color: C.sun, opacity: 0.85 }}> · {entry.book}</span>}
+    </button>
+  );
 }
 
 function CardView({ card, canEdit, onEdit, onPin, onDismiss, onEnter, onLeave, onSend, sent }: {
@@ -604,8 +751,11 @@ function CardView({ card, canEdit, onEdit, onPin, onDismiss, onEnter, onLeave, o
           <span style={{ color: C.text, fontSize: 17, fontWeight: 700 }}>{e.name}</span>
           <span style={chip}>{entryTag(e)}</span>
           {homebrew && <span style={{ ...chip, borderColor: C.sun, color: C.sun }} title="Your homebrew or override">Homebrew</span>}
-          {!homebrew && e.source === "kc" && <span style={{ ...chip, borderColor: C.line, color: C.sun }} title="Original content by Kerf and Code">Kerf &amp; Code</span>}
+          {!homebrew && e.source === "kc" && (e.book
+            ? <span style={{ ...chip, borderColor: C.line, color: C.sun }} title="Book facts in Kerf and Code wording; rights belong to the publisher, see /licenses">{e.book}</span>
+            : <span style={{ ...chip, borderColor: C.line, color: C.sun }} title="Original content by Kerf and Code">Kerf &amp; Code</span>)}
           {!homebrew && e.source === "3p" && e.book && <span style={{ ...chip, borderColor: C.line, color: C.muted }} title="Third-party open content (Open Game License 1.0a or ORC), see /licenses">{e.book}</span>}
+          {!homebrew && e.source === "srd" && e.book && <span style={{ ...chip, borderColor: C.line, color: C.muted }} title="System Reference Document, CC BY 4.0">{e.book}</span>}
           {!card.pinned && card.expiresAt != null && <span style={{ ...chip, borderColor: "transparent", color: C.muted }}>auto</span>}
         </div>
         <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
@@ -697,10 +847,51 @@ export function CardBody({ entry, meta }: { entry: CompendiumEntry; meta: React.
     return (
       <div>
         <p style={meta}>{[d.creatureType, d.size, d.speed && `Speed ${d.speed}${/\d$/.test(d.speed) ? " ft" : ""}`].filter(Boolean).join(" · ")}</p>
+        {(d.facts ?? []).map((f, i) => <p key={`f${i}`} style={{ ...meta, margin: i === 0 ? "6px 0 0" : "2px 0 0" }}>{f}</p>)}
         {d.traits.map((t, i) => (
           <p key={i} style={{ ...body, margin: "4px 0 0" }}>
             {t.name && <strong style={{ color: C.text }}>{t.name}. </strong>}{t.description}
           </p>
+        ))}
+      </div>
+    );
+  }
+  if (isClass(entry)) {
+    const d = entry.display;
+    const th: React.CSSProperties = { textAlign: "left", padding: "3px 8px 3px 0", color: C.sun, fontSize: 11.5, fontWeight: 700, borderBottom: `1px solid ${C.line}`, whiteSpace: "nowrap" };
+    const td: React.CSSProperties = { padding: "3px 8px 3px 0", color: C.text, fontSize: 12.5, verticalAlign: "top", borderBottom: `1px solid ${C.line}` };
+    const head = [d.hitDie && `Hit die ${d.hitDie}`, d.primaryAbility && `Primary: ${d.primaryAbility}`, d.savingThrows && `Saves: ${d.savingThrows}`,
+      d.spellcastingAbility && `Spellcasting: ${d.spellcastingAbility}`].filter(Boolean).join(" · ");
+    return (
+      <div>
+        {head && <p style={meta}>{head}</p>}
+        {d.proficiencies && <p style={{ ...meta, marginTop: 2 }}>Proficiencies: {d.proficiencies}</p>}
+        {d.rows.length > 0 && (
+          <div style={{ overflowX: "auto", marginTop: 8 }}>
+            <table style={{ borderCollapse: "collapse", width: "100%" }}>
+              <thead><tr>{d.columns.map((c, i) => <th key={i} style={th}>{c}</th>)}</tr></thead>
+              <tbody>{d.rows.map((row, ri) => <tr key={ri}>{row.map((cell, ci) => <td key={ci} style={{ ...td, whiteSpace: ci === row.length - 1 ? "normal" : "nowrap" }}>{cell}</td>)}</tr>)}</tbody>
+            </table>
+          </div>
+        )}
+        {d.subclasses.length > 0 && <p style={{ ...meta, marginTop: 8 }}>Subclasses: {d.subclasses.join(", ")}</p>}
+      </div>
+    );
+  }
+  if (isSubclass(entry)) {
+    const d = entry.display;
+    return (
+      <div>
+        <p style={meta}>{d.className} subclass</p>
+        {d.levels.map((lv, li) => (
+          <div key={li} style={{ marginTop: 8 }}>
+            <div style={{ color: C.sun, fontSize: 12, fontWeight: 700 }}>{lv.level != null ? `Level ${lv.level}` : "Features"}</div>
+            {lv.features.map((t, i) => (
+              <p key={i} style={{ ...body, margin: "3px 0 0" }}>
+                {t.name && <strong style={{ color: C.text }}>{t.name}. </strong>}{t.description}
+              </p>
+            ))}
+          </div>
         ))}
       </div>
     );
@@ -1188,16 +1379,18 @@ const idxSlug = (s: string): string => s.toLowerCase().replace(/[^a-z0-9]+/g, "-
 const IDX_GROUP_LABEL: Record<string, string> = {
   spell: "Spells", "magic-item": "Magic Items", equipment: "Equipment", condition: "Conditions",
   feat: "Feats", feature: "Features", rule: "Rules", monster: "Monsters", species: "Species",
-  background: "Backgrounds", reference: "Reference",
+  background: "Backgrounds", reference: "Reference", class: "Classes", subclass: "Subclasses",
 };
-const IDX_GROUP_ORDER = ["Spells", "Magic Items", "Equipment", "Conditions", "Feats", "Features", "Rules", "Reference", "Monsters", "Species", "Backgrounds"];
+const IDX_GROUP_ORDER = ["Spells", "Magic Items", "Equipment", "Conditions", "Feats", "Classes", "Subclasses", "Features", "Rules", "Reference", "Monsters", "Species", "Backgrounds"];
 const IDX_CREATURE_TYPES = ["aberration", "beast", "celestial", "construct", "dragon", "elemental", "fey", "fiend", "giant", "humanoid", "monstrosity", "ooze", "plant", "undead"];
 
 function idxGroupOf(e: CompendiumEntry): string {
-  if (e.category === "custom") return idxTitleCase(e.display.tag || "custom");
+  if (e.category === "custom") return idxTitleCase((hasDisplay(e) ? e.display.tag : e.tag) || "custom");
   return IDX_GROUP_LABEL[e.category] || idxTitleCase(e.category);
 }
 function idxSubOf(e: CompendiumEntry): string | null {
+  // Search-list entries carry the subgroup the build computed with these same rules.
+  if (!hasDisplay(e)) return e.sub ? idxTitleCase(e.sub) : null;
   switch (e.category) {
     case "spell": return e.display.school ? idxTitleCase(e.display.school) : "Other";
     case "monster": {

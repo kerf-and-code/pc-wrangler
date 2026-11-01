@@ -15,6 +15,12 @@
 // stripped for the spoken form and kept only for display. The runtime fuzzy-matches whatever Vosk
 // returns back to these `spoken` phrases.
 //
+// SPLIT OUTPUT (so the page loads fast). index-<mode>.json is the SEARCH LIST only: id, name,
+// category, ruleset, source, book, spoken/aliases, plus three precomputed facets the UI needs without
+// the card text (tag = the type chip, sub = the browse subgroup, stat = one key fact for the
+// disambiguation chips) and `s` = the shard number. The card text (`display`) lives in
+// cards/<mode>/<s>.json as { [id]: display }, fetched the first time a card from that shard opens.
+//
 // Run (from the repo root):
 //   node scripts/build-compendium-index.mjs 2014
 //   node scripts/build-compendium-index.mjs 2024
@@ -153,6 +159,9 @@ function damageSummary(dmg) {
   return type || base || map ? { type, base, scaling: map } : null;
 }
 
+// The SRD document an SRD card comes from, shown as its book chip so every card names a source.
+const srdBook = (ed) => (ed === "2024" ? "SRD 5.2" : "SRD 5.1");
+
 // ---- per-domain entry builders -------------------------------------------------------------------
 function spellEntry(s, ruleset) {
   return {
@@ -162,6 +171,7 @@ function spellEntry(s, ruleset) {
     ruleset,
     // SRD spells are "srd"; the non-SRD spells Terry authored (spells-authored.json) mark themselves "kc".
     source: s.source === "kc" ? "kc" : "srd",
+    book: s.source === "kc" ? (s.book ?? null) : srdBook(ruleset),
     spoken: spokenForms(s.name),
     display: {
       level: s.level,
@@ -188,6 +198,7 @@ function itemEntry(it, ruleset, variantsByName) {
     ruleset,
     // Non-SRD items (Arcana Unleashed, Deadfall) carry source "kc": book facts, Kerf and Code wording.
     source: it.source === "kc" ? "kc" : "srd",
+    book: it.source === "kc" ? (it.book ?? null) : srdBook(ruleset),
     spoken: spokenForms(it.name),
     display: {
       type: it.category ?? null,
@@ -206,6 +217,7 @@ function gearEntry(g, ruleset) {
     category: "equipment",
     ruleset,
     source: "srd",
+    book: srdBook(ruleset),
     spoken: spokenForms(g.name),
     display: {
       type: g.category ?? g.gear_category ?? null,
@@ -222,6 +234,7 @@ function conditionEntry(c, ruleset) {
     category: "condition",
     ruleset,
     source: "srd",
+    book: srdBook(ruleset),
     spoken: spokenForms(c.name),
     display: { description: c.description ?? null },
   };
@@ -241,6 +254,7 @@ function ruleEntry(r, ruleset) {
     // Most glossary cards are verbatim SRD (CC-BY) -> "srd". Authored optional/variant rules (flanking,
     // rest variants, etc.) are original Kerf-and-Code wording and mark themselves "kc" in the source JSON.
     source: r.source === "kc" ? "kc" : "srd",
+    book: r.source === "kc" ? (r.book ?? null) : srdBook(ruleset),
     spoken: spokenForms(r.name),
     display: { topic: r.topic ?? null, description: r.description ?? null },
   };
@@ -258,6 +272,7 @@ function referenceEntry(r, ruleset) {
     category: "reference",
     ruleset,
     source: r.source === "srd" ? "srd" : "kc",
+    book: r.source === "srd" ? srdBook(ruleset) : (r.book ?? null),
     spoken: spokenForms(r.name),
     display: {
       blurb: r.blurb ?? null,
@@ -295,6 +310,7 @@ function featEntry(f, ruleset) {
     category: "feat",
     ruleset,
     source: featSource(f.name, ruleset),
+    book: f.book ?? (featSource(f.name, ruleset) === "srd" ? srdBook(ruleset) : null),
     spoken: spokenForms(f.name),
     display: {
       featType: f.category ?? null,
@@ -322,13 +338,14 @@ const UMBRELLAS = new Map([
   ["eldritch invocations", "feature"],
   ["fighting style", "feature"],
 ]);
-function featureEntry(kind, name, desc, className, level, ruleset, subclass = null, source = "srd") {
+function featureEntry(kind, name, desc, className, level, ruleset, subclass = null, source = "srd", book = null) {
   return {
     id: `feature:${kind}:${slug(name)}`,
     name,
     category: "feature",
     ruleset,
     source,
+    book: book ?? (source === "srd" ? srdBook(ruleset) : null),
     spoken: spokenForms(name),
     display: { kind, className: className ?? null, subclass: subclass ?? null, level: level ?? null, description: cleanText(desc) },
   };
@@ -390,24 +407,38 @@ function isFillerFeature(name) {
   if (/ features?$/.test(n)) return true;         // "Path feature", "Divine Domain feature" placeholders
   return false;
 }
+// Deduped on name AND text, not name alone: many classes and subclasses share a feature NAME
+// ("Bonus Proficiencies", "Spellcasting", "Expanded Spell List") with different rules, and a name-only
+// dedupe kept the first and silently dropped every other version. Only a true repeat (same name, same
+// text, e.g. Extra Attack) collapses. The first card of a name keeps the plain id so existing overrides
+// and DM-screen snapshots still resolve; later versions are qualified by their subclass or class.
 function extractClassFeatures(ed) {
   const seen = new Set();
+  const usedIds = new Set();
   const out = [];
+  // Partnered classes carry their book on the simple class record.
+  const classBook = new Map((readMaybe(path.join(SRD_DIR, `classes-${ed}.json`)) || []).map((c) => [c.name, c.book ?? null]));
   const take = (data, hasSubclass) => {
     if (!Array.isArray(data)) return;
     for (const entry of data) {
       const className = hasSubclass ? (entry?.class ?? null) : (entry?.name ?? null);
       const subclass = hasSubclass ? (entry?.name ?? null) : null;
+      const book = entry?.book ?? (hasSubclass ? null : classBook.get(className) ?? null);
       for (const row of (Array.isArray(entry?.features_by_level) ? entry.features_by_level : [])) {
         const level = row?.level ?? null;
         for (const f of (Array.isArray(row?.features) ? row.features : [])) {
           const fname = String(f?.name ?? "");
           if (!fname || isFillerFeature(fname)) continue;
-          const key = norm(fname);
+          const desc = f?.desc ?? f?.description ?? null;
+          const key = `${norm(fname)}|${norm(cleanText(desc) ?? "")}`;
           if (seen.has(key)) continue;
           seen.add(key);
           const source = entry?.source === "kc" ? "kc" : "srd";
-          out.push(featureEntry("feature", fname, f?.desc ?? f?.description ?? null, className, level, ed, subclass, source));
+          const e = featureEntry("feature", fname, desc, className, level, ed, subclass, source, book);
+          if (usedIds.has(e.id)) e.id = `feature:feature:${slug(subclass || className || "x")}:${slug(fname)}`;
+          if (usedIds.has(e.id)) e.id = `feature:feature:${slug(className || "x")}:${slug(subclass || "base")}:${slug(fname)}:${level ?? 0}`;
+          usedIds.add(e.id);
+          out.push(e);
         }
       }
     }
@@ -450,7 +481,13 @@ function monsterEntry(m, ruleset) {
     category: "monster",
     ruleset,
     source: origin,
-    ...(origin === "3p" ? { book: MONSTER_SOURCES[m.source_key]?.short ?? String(m.source_key) } : {}),
+    // Every monster names its book: third-party by the short label (it doubles as the OGL Section 8
+    // identification and qualifies repeated names), first-party by the full title.
+    book: origin === "3p"
+      ? (MONSTER_SOURCES[m.source_key]?.short ?? String(m.source_key))
+      : origin === "srd" ? srdBook(ruleset)
+      // kc titles carry a ", Kerf and Code wording" note for the licenses page; the chip shows the book.
+      : String(MONSTER_SOURCES[m.source_key]?.title ?? m.source_key).replace(/,\s*Kerf and Code wording$/i, ""),
     spoken: spokenForms(m.name),
     display: {
       size: m.size ?? null,
@@ -523,6 +560,7 @@ function speciesEntry(sp, ruleset) {
     category: "species",
     ruleset,
     source: "srd",
+    book: srdBook(ruleset),
     spoken: spokenForms(sp.name),
     display: {
       size: cleanText(sp.size != null ? String(sp.size) : null),
@@ -559,6 +597,7 @@ function backgroundEntry(b, ruleset) {
     category: "background",
     ruleset,
     source: backgroundSource(b.name, ruleset),
+    book: b.book ?? (backgroundSource(b.name, ruleset) === "srd" ? srdBook(ruleset) : null),
     spoken: spokenForms(b.name),
     display: {
       abilityScores: b.ability_scores ?? null,
@@ -573,6 +612,186 @@ function backgroundEntry(b, ruleset) {
 function loadBackgrounds(ed) {
   const data = readMaybe(path.join(SRD_DIR, `backgrounds-${ed}.json`));
   return Array.isArray(data) ? data : (Array.isArray(data?.backgrounds) ? data.backgrounds : []);
+}
+
+
+// ---- classes -------------------------------------------------------------------------------------
+// One overview card per class: hit die, saves, proficiencies, the level table (proficiency bonus,
+// every resource column the book's table has, and spell slots), and the features gained at each level
+// by name (each feature is its own card). Built from classes-<ed>.json (features, book) plus the
+// structured file (the table). SRD classes keep SRD text; partnered classes are Kerf and Code wording.
+const prettyKey = (k) => String(k).replace(/_/g, " ").replace(/\bspell slots level (\d)\b/, "slot $1").replace(/^./, (c) => c.toUpperCase());
+function classTable2024(st) {
+  const cols = Array.isArray(st?.class_table) ? st.class_table : [];
+  if (!cols.length) return null;
+  const ordered = [...cols.filter((c) => c.type === "PROFICIENCY_BONUS"), ...cols.filter((c) => c.type === "CLASS_TABLE_DATA"), ...cols.filter((c) => c.type === "SPELL_SLOTS")];
+  return { columns: ordered.map((c) => (c.type === "PROFICIENCY_BONUS" ? "PB" : c.type === "SPELL_SLOTS" ? `Slot ${c.name}` : c.name)),
+    cell: (lvl) => ordered.map((c) => String(c.by_level?.[String(lvl)] ?? "-")) };
+}
+function classTable2014(st) {
+  const prog = Array.isArray(st?.progression) ? st.progression : [];
+  if (!prog.length) return null;
+  const csKeys = [...new Set(prog.flatMap((p) => Object.keys(p.class_specific || {})))];
+  const scKeys = [...new Set(prog.flatMap((p) => Object.keys(p.spellcasting || {})))]
+    .filter((k) => prog.some((p) => Number(p.spellcasting?.[k] ?? 0) !== 0));
+  const byLvl = new Map(prog.map((p) => [p.level, p]));
+  const fmt = (v) => (v == null ? "-" : typeof v === "object" ? Object.entries(v).map(([a, b]) => `${a} ${b}`).join(", ") : String(v));
+  return { columns: ["PB", ...csKeys.map(prettyKey), ...scKeys.map(prettyKey)],
+    cell: (lvl) => { const p = byLvl.get(lvl) || {}; return [p.prof_bonus != null ? `+${p.prof_bonus}` : "-", ...csKeys.map((k) => fmt(p.class_specific?.[k])),
+      ...scKeys.map((k) => (/^spell_slots_level_/.test(k) && Number(p.spellcasting?.[k] ?? 0) === 0 ? "-" : fmt(p.spellcasting?.[k])))]; } };
+}
+function classEntries(ed) {
+  const simple = readMaybe(path.join(SRD_DIR, `classes-${ed}.json`)) || [];
+  const structured = readMaybe(path.join(SRD_DIR, `classes-${ed}-structured.json`)) || [];
+  const subs = [...(readMaybe(path.join(SRD_DIR, `subclasses-${ed}-structured.json`)) || []), ...(readMaybe(path.join(SRD_DIR, `subclasses-authored-${ed}.json`)) || [])];
+  const out = [];
+  for (const c of simple) {
+    const st = structured.find((x) => x.name === c.name);
+    const table = ed === "2024" ? classTable2024(st) : classTable2014(st);
+    const feats = new Map();
+    for (const f of (Array.isArray(c.features_by_level) ? c.features_by_level : [])) {
+      if (!f?.name || isFillerFeature(f.name)) continue;
+      const lv = Number(f.level) || 0;
+      if (!feats.has(lv)) feats.set(lv, []);
+      if (!feats.get(lv).includes(f.name)) feats.get(lv).push(f.name);
+    }
+    const subNames = [...new Set([...(Array.isArray(c.subclasses) ? c.subclasses.map((x) => (typeof x === "string" ? x : x?.name)) : []),
+      ...subs.filter((x) => x.class === c.name).map((x) => x.name)].filter(Boolean))].sort();
+    const listOrStr = (v) => (Array.isArray(v) ? v.map((x) => (typeof x === "string" ? x : x?.name ?? "")).filter(Boolean).join(", ") : (v ?? null));
+    const rows = [];
+    for (let lvl = 1; lvl <= 20; lvl++) rows.push([String(lvl), ...(table ? table.cell(lvl) : []), (feats.get(lvl) || []).join(", ") || "-"]);
+    const partnered = c.source === "kc" || c.partnered;
+    out.push({
+      id: `class:${slug(c.name)}`,
+      name: c.name,
+      category: "class",
+      ruleset: ed,
+      source: partnered ? "kc" : "srd",
+      book: partnered ? (c.book ?? null) : srdBook(ed),
+      spoken: spokenForms(c.name),
+      display: {
+        hitDie: c.hit_die != null ? `d${c.hit_die}` : null,
+        primaryAbility: c.primary_ability ?? null,
+        savingThrows: listOrStr(c.saving_throws),
+        proficiencies: listOrStr(c.proficiencies),
+        spellcastingAbility: c.spellcasting_ability ?? null,
+        columns: ["Level", ...(table ? table.columns : []), "Features"],
+        rows,
+        subclasses: subNames,
+      },
+    });
+  }
+  return out;
+}
+
+// ---- subclasses ----------------------------------------------------------------------------------
+// One overview card per subclass with every feature by level, so saying "Path of the Glacier" brings up
+// the whole subclass. The features also stay individual cards for a direct lookup of one feature.
+function subclassEntries(ed) {
+  const out = [];
+  const seen = new Set();
+  const take = (list) => {
+    for (const sc of (Array.isArray(list) ? list : [])) {
+      if (!sc?.name || !sc?.class) continue;
+      const key = `${norm(sc.class)}|${norm(sc.name)}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      const levels = (Array.isArray(sc.features_by_level) ? sc.features_by_level : [])
+        .map((row) => ({ level: row?.level ?? null,
+          features: (Array.isArray(row?.features) ? row.features : []).filter((f) => f?.name && !isFillerFeature(f.name))
+            .map((f) => ({ name: f.name, description: cleanText(f.desc ?? f.description ?? null) })) }))
+        .filter((r) => r.features.length);
+      if (!levels.length) continue;
+      const kc = sc.source === "kc";
+      out.push({
+        id: `subclass:${slug(sc.class)}:${slug(sc.name)}`,
+        name: sc.name,
+        category: "subclass",
+        ruleset: ed,
+        source: kc ? "kc" : "srd",
+        book: kc ? (sc.book ?? null) : srdBook(ed),
+        spoken: spokenForms(sc.name),
+        display: { className: sc.class, levels },
+      });
+    }
+  };
+  take(readMaybe(path.join(SRD_DIR, `subclasses-${ed}-structured.json`)));
+  take(readMaybe(path.join(SRD_DIR, `subclasses-authored-${ed}.json`)));
+  return out;
+}
+
+// ---- species from the builder's mechanics (rules-data.json SPECIES) -------------------------------
+// Every species the Forge can build, not just the 9 SRD ones: Kerf and Code wording throughout. The SRD
+// species keep their SRD card (same name is skipped here). One card covers both editions (the 2014
+// ability score rule is a line on it), so it is tagged `edAgnostic` and "both" mode keeps one copy.
+const ABIL = { str: "Str", dex: "Dex", con: "Con", int: "Int", wis: "Wis", cha: "Cha" };
+const titleWords = (s) => String(s).replace(/\b\w/g, (c) => c.toUpperCase());
+function speciesSpells(list) {
+  return (Array.isArray(list) ? list : []).map((sp) => {
+    const bits = [sp.level > 1 ? `level ${sp.level}` : null,
+      sp.free === "1/LR" ? "once per Long Rest" : sp.free === "PB/LR" ? "Proficiency Bonus times per Long Rest" : null].filter(Boolean);
+    return `${sp.spell}${bits.length ? ` (${bits.join(", ")})` : ""}`;
+  }).join(", ");
+}
+function speciesFacts(v) {
+  const facts = [];
+  if (v.darkvision) facts.push(`Darkvision ${v.darkvision} ft.`);
+  if (v.senses) for (const [k, n] of Object.entries(v.senses)) facts.push(`${titleWords(k)} ${n} ft.`);
+  if (Array.isArray(v.resist) && v.resist.length) facts.push(`Resistance: ${v.resist.join(", ")}`);
+  if (Array.isArray(v.immune) && v.immune.length) facts.push(`Immunity: ${v.immune.join(", ")}`);
+  if (Array.isArray(v.advAgainst) && v.advAgainst.length) facts.push(`Advantage on saves against: ${v.advAgainst.join(", ")}`);
+  if (Array.isArray(v.skillProf) && v.skillProf.length) facts.push(`Skills: ${v.skillProf.map(titleWords).join(", ")}`);
+  if (v.skillPick) {
+    const from = Array.isArray(v.skillPick.from) ? v.skillPick.from.map(titleWords).join(", ") : "any skill";
+    facts.push(`Skill choice: ${v.skillPick.n ?? 1} of ${from}`);
+  }
+  if (Array.isArray(v.weaponProf) && v.weaponProf.length) facts.push(`Weapons: ${v.weaponProf.join(", ")}`);
+  if (Array.isArray(v.toolProf) && v.toolProf.length) facts.push(`Tools: ${v.toolProf.join(", ")}`);
+  if (Array.isArray(v.languages) && v.languages.length) facts.push(`Languages: ${v.languages.join(", ")}`);
+  if (Array.isArray(v.spells) && v.spells.length) facts.push(`Spells: ${speciesSpells(v.spells)}${v.spellAbility && v.spellAbility !== "choose" ? ` (${ABIL[v.spellAbility] ?? v.spellAbility})` : v.spellAbility === "choose" ? " (Int, Wis or Cha, your choice)" : ""}`);
+  const e14 = v.editions?.["2014"] || {};
+  const mods = e14.mods || v.mods;
+  const parts = [];
+  if (mods) parts.push(Object.entries(mods).map(([a, n]) => `${n >= 0 ? "+" : ""}${n} ${ABIL[a] ?? a}`).join(", "));
+  if (e14.asiPick) parts.push(e14.asiPick.kind === "flexible" ? "+2 and +1, or three +1s, to abilities of your choice"
+    : `${e14.asiPick.amounts.map((n) => `+${n}`).join(" and ")} to different abilities of your choice${e14.asiPick.exclude ? ` (not ${e14.asiPick.exclude.map((a) => ABIL[a] ?? a).join(", ")})` : ""}`);
+  if (parts.length) facts.push(`Ability scores (2014 rules): ${parts.join("; ")}. 2024 rules: from your background.`);
+  return facts;
+}
+function speciesFromRules(ed, srdNames) {
+  const rd = readMaybe(path.join(SRD_DIR, "rules-data.json"));
+  const out = [];
+  for (const [name, v] of Object.entries(rd?.SPECIES || {})) {
+    if (srdNames.has(norm(name))) continue;
+    const speeds = Object.entries(v.speeds || {}).map(([k, n]) => `${k} ${n === "speed" ? "equal to Speed" : `${n} ft.`}`);
+    const traits = (Array.isArray(v.traits) ? v.traits : []).map((t) => (Array.isArray(t) ? { name: t[0] ?? null, description: t[1] ?? null } : { name: t?.name ?? null, description: t?.desc ?? null }));
+    if (v.choice?.options) {
+      for (const [opt, o] of Object.entries(v.choice.options)) {
+        const bits = [o.summary, o.darkvision && `Darkvision ${o.darkvision} ft.`, o.speed && `Speed ${o.speed} ft.`,
+          Array.isArray(o.resist) && o.resist.length && `Resistance: ${o.resist.join(", ")}`,
+          Array.isArray(o.spells) && o.spells.length && `Spells: ${speciesSpells(o.spells)}`].filter(Boolean);
+        traits.push({ name: `${v.choice.label ?? "Option"}: ${opt}`, description: bits.join(" ") || null });
+      }
+    }
+    out.push({
+      id: `species:${slug(name)}`,
+      name,
+      category: "species",
+      ruleset: ed,
+      source: "kc",
+      book: v.src ?? null,
+      edAgnostic: true,
+      spoken: spokenForms(name),
+      display: {
+        size: v.size ?? null,
+        speed: `${v.speed ?? 30} ft.${speeds.length ? `, ${speeds.join(", ")}` : ""}`,
+        creatureType: v.creatureType ?? null,
+        traits,
+        facts: speciesFacts(v),
+      },
+    });
+  }
+  return out;
 }
 
 // Item variant tables live in rules-data.json (ITEM_VARIANTS), keyed by item name. We attach only
@@ -631,8 +850,12 @@ function buildEdition(ed, variantsByName) {
     ...classOptionExtra,
     ...classFeatures,
   ];
+  const srdSpecies = species.map((s) => speciesEntry(s, ed));
   const after = [
-    ...species.map((s) => speciesEntry(s, ed)),
+    ...classEntries(ed),
+    ...subclassEntries(ed),
+    ...srdSpecies,
+    ...speciesFromRules(ed, new Set(species.map((s) => norm(s.name)))),
     ...backgrounds.map((b) => backgroundEntry(b, ed)),
     ...rules.map((r) => ruleEntry(r, ed)),
     ...references.map((r) => referenceEntry(r, ed)),
@@ -643,10 +866,29 @@ function buildEdition(ed, variantsByName) {
 
 // Union 2024 + 2014, suffixing " (legacy)" on any 2014 entry whose name collides with a 2024 one,
 // matching lib/srd/srd.ts's rule so the two agree.
+// A 2014 card is a legacy copy only of a 2024 card of the SAME category: a 2014 Witch class is not an
+// older printing of a 2024 Witch subclass. (The third-party book qualifier below still looks across
+// categories, since a monster must not shadow any other card's name.)
 function mergeBoth(primary, older) {
   const taken = new Set(primary.map((e) => norm(e.name)));
+  const takenCat = new Set(primary.map((e) => `${e.category}|${norm(e.name)}`));
+  // Features: "legacy" only when the 2024 data has the same feature of the same class and subclass. A
+  // 2014-only subclass's "Bonus Proficiencies" is not an old printing of another subclass's feature; it
+  // keeps its name (the chip shows subclass and edition) and only its id is told apart.
+  const featKey = (e) => `${norm(e.display?.className ?? "")}|${norm(e.display?.subclass ?? "")}|${norm(e.name)}`;
+  const takenFeat = new Set(primary.filter((e) => e.category === "feature").map(featKey));
+  const usedIds = new Set(primary.map((e) => e.id));
+  // "(legacy)" claims the 2014 card is an older printing of the 2024 one. That holds for the SRD 5.1/5.2
+  // pair and for a book reprinted under the same title; two different books that happen to share a
+  // name (Obojima's Witch and Northlands' Witch) are told apart by book instead.
+  const primaryBook = new Map(primary.map((e) => [`${e.category}|${norm(e.name)}`, e.book ?? null]));
+  const isSrdBook = (b) => /^SRD /.test(String(b ?? ""));
+  const allNames = new Set([...primary, ...older].map((e) => `${e.category}|${norm(e.name)}`));
   const out = [...primary];
+  const agnostic = new Set(primary.filter((e) => e.edAgnostic).map((e) => e.id));
   for (const e of older) {
+    // One card already covers both editions (rules-data species): keep the single copy.
+    if (e.edAgnostic && agnostic.has(e.id)) continue;
     // A third-party monster that collides with a 2024 name is told apart by its book, not "(legacy)":
     // it is not an older printing of the 2024 creature.
     if (taken.has(norm(e.name)) && e.source === "3p" && !e.name.endsWith(`(${e.book})`)) {
@@ -654,7 +896,18 @@ function mergeBoth(primary, older) {
       out.push({ ...e, name, spoken: [...new Set([...e.spoken, ...spokenForms(name)])] });
       continue;
     }
-    if (taken.has(norm(e.name))) {
+    if (e.category === "feature" && takenCat.has(`feature|${norm(e.name)}`) && !takenFeat.has(featKey(e))) {
+      out.push(usedIds.has(e.id) ? { ...e, id: `${e.id}-2014` } : e);
+      continue;
+    }
+    const pb = primaryBook.get(`${e.category}|${norm(e.name)}`);
+    if (takenCat.has(`${e.category}|${norm(e.name)}`) && e.book && pb && e.book !== pb && !(isSrdBook(e.book) && isSrdBook(pb))
+      && !allNames.has(`${e.category}|${norm(`${e.name} (${e.book})`)}`)) {
+      const name = `${e.name} (${e.book})`;
+      out.push({ ...e, name, id: usedIds.has(e.id) ? `${e.id}-2014` : e.id, spoken: [...new Set([...e.spoken, ...spokenForms(name)])], ruleset: "2014" });
+      continue;
+    }
+    if (takenCat.has(`${e.category}|${norm(e.name)}`)) {
       const name = `${e.name} (legacy)`;
       // The id is the 2014 entry's own id plus "-legacy", NOT slug(name): norm() strips "(legacy)", so
       // slug(name) reproduced the 2024 twin's id, and the 1,154 duplicate ids made the matcher (which
@@ -924,6 +1177,91 @@ function buildPathfinder() {
   return applyAliases(out);
 }
 
+
+// ---- search-list facets + card shards ------------------------------------------------------------
+// tag/sub mirror entryTag() and idxSubOf() in components/compendium-tool.tsx (sub is title-cased on the
+// client), stat is the one fact a disambiguation chip shows. Computed here so the page can search,
+// browse and tell look-alikes apart from the search list alone, without downloading card text.
+function facetTag(e) {
+  const d = e.display || {};
+  switch (e.category) {
+    case "feature": return d.kind === "fighting-style" ? "fighting style" : d.kind === "feature" ? "class feature" : d.kind;
+    case "rule": return d.topic ? String(d.topic).toLowerCase() : "rule";
+    case "reference": return "quick reference";
+    case "custom": return d.tag || "custom";
+    case "magic-item": return "item";
+    default: return e.category;
+  }
+}
+function facetSub(e) {
+  const d = e.display || {};
+  const head = (t) => (t ? String(t).split("(")[0].trim() : "Other");
+  switch (e.category) {
+    case "spell": return d.school || "Other";
+    case "monster": {
+      const t = String(d.type || "").toLowerCase();
+      const hit = ["aberration", "beast", "celestial", "construct", "dragon", "elemental", "fey", "fiend", "giant", "humanoid", "monstrosity", "ooze", "plant", "undead"].find((k) => t.includes(k));
+      return hit || "Other";
+    }
+    case "magic-item": return head(d.type);
+    case "equipment": return head(d.type);
+    case "feat": return d.featType || "Other";
+    case "feature": return d.className || d.kind || "Other";
+    case "rule": return d.topic || "Other";
+    case "subclass": return d.className || "Other";
+    default: return null;
+  }
+}
+function facetStat(e) {
+  const d = e.display || {};
+  switch (e.category) {
+    case "spell": return d.level === 0 ? "cantrip" : d.level != null ? `level ${d.level}` : null;
+    case "monster": return d.cr != null ? `CR ${d.cr}` : null;
+    case "magic-item": return d.rarity || null;
+    case "feature": return [d.subclass || d.className, d.level != null ? `lvl ${d.level}` : null].filter(Boolean).join(" ") || null;
+    case "subclass": return d.className || null;
+    case "class": return d.hitDie || null;
+    case "species": return d.size || null;
+    case "feat": return d.featType || null;
+    case "equipment": return d.cost || null;
+    case "background": return d.feat || null;
+    default: return null;
+  }
+}
+const SHARD_BYTES = 1200 * 1024;
+// The client matcher (lib/compendium/match.ts) always indexes norm(name) itself, so a spoken phrase equal
+// to it is redundant in the search list (it stays in the grammar, which is built before the split). This
+// replicates that norm exactly; anything it does not reproduce byte for byte is kept.
+const clientNorm = (s) => fold(String(s || "").toLowerCase()).replace(/[’']/g, "'").replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
+function writeSplit(entries, mode) {
+  const cardDir = path.join(OUT_DIR, "cards", mode);
+  fs.rmSync(cardDir, { recursive: true, force: true });
+  fs.mkdirSync(cardDir, { recursive: true });
+  const light = [];
+  let shard = 0, size = 0, bucket = {};
+  const flush = () => {
+    if (!Object.keys(bucket).length) return;
+    fs.writeFileSync(path.join(cardDir, `${shard}.json`), JSON.stringify(bucket));
+    shard++; size = 0; bucket = {};
+  };
+  for (const e of entries) {
+    const disp = JSON.stringify(e.display ?? null);
+    if (size + disp.length > SHARD_BYTES) flush();
+    bucket[e.id] = e.display ?? null;
+    size += disp.length + e.id.length + 4;
+    const { display, edAgnostic, ...rest } = e; // eslint-disable-line no-unused-vars
+    const tag = facetTag(e), sub = facetSub(e), stat = facetStat(e);
+    const own = clientNorm(rest.name);
+    const spoken = (rest.spoken || []).filter((p) => p !== own);
+    const row = { ...rest, tag, ...(sub ? { sub } : {}), ...(stat ? { stat } : {}), s: shard };
+    if (spoken.length) row.spoken = spoken; else delete row.spoken;
+    if (row.book == null) delete row.book; // keep the list lean: no null books
+    light.push(row);
+  }
+  flush();
+  return { light, shards: shard };
+}
+
 async function main() {
   const mode = (process.argv[2] || "2014").trim();
 
@@ -965,7 +1303,8 @@ async function main() {
   fs.mkdirSync(OUT_DIR, { recursive: true });
   const indexPath = path.join(OUT_DIR, `index-${mode}.json`);
   const grammarPath = path.join(OUT_DIR, `grammar-${mode}.json`);
-  fs.writeFileSync(indexPath, JSON.stringify(entries));
+  const { light, shards } = writeSplit(entries, mode);
+  fs.writeFileSync(indexPath, JSON.stringify(light));
   fs.writeFileSync(grammarPath, JSON.stringify(grammarArr));
 
   const byCat = entries.reduce((m, e) => ((m[e.category] = (m[e.category] || 0) + 1), m), {});
@@ -974,6 +1313,7 @@ async function main() {
   console.log(`  grammar phrases: ${grammarArr.length - 1} (+[unk])`);
   console.log(`  wrote ${path.relative(ROOT, indexPath)} (${(fs.statSync(indexPath).size / 1024).toFixed(0)} KB)`);
   console.log(`  wrote ${path.relative(ROOT, grammarPath)} (${(fs.statSync(grammarPath).size / 1024).toFixed(0)} KB)`);
+  console.log(`  wrote ${shards} card shard(s) to ${path.relative(ROOT, path.join(OUT_DIR, "cards", mode))}`);
 }
 
 main().catch((e) => { console.error(e); process.exit(1); });
