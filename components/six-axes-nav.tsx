@@ -31,6 +31,7 @@ const GROUPS: Group[] = [
     { href: "/gm/speakers", label: "Speakers" },
     { href: "/gm/transcripts", label: "Transcripts" },
     { href: "/gm/encounters", label: "Encounters", needs: "adversary" },
+    { href: "/gm/combat", label: "Combat", needs: "adversary" },
     { href: "/gm/roll", label: "Roll" },
     { href: "/gm/compendium", label: "Compendium" },
     { href: "/gm/screen", label: "DM Screen" },
@@ -100,6 +101,7 @@ const PLAYER_SESSION: PGroup = {
   label: "Session", href: "/schedule", scoped: true,
   children: [
     { href: "/schedule", label: "Schedule" },
+    { href: "/initiative", label: "Initiative" },
     { href: "/record", label: "Record" },
     { href: "/vibe", label: "Check-in" },
   ],
