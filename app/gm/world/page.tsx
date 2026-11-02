@@ -1038,6 +1038,7 @@ export default function WorldMapPage() {
       <h1 style={{ ...ui.h1, fontSize: 28, margin: "4px 0 4px" }}>World map</h1>
       <p style={{ color: C.muted, fontSize: 14, margin: "0 0 16px" }}>
         Paint biomes across the world, or upload one or more maps and place them. Pick a biome and drag to paint, Erase to clear, or Pan to move the view. Scroll to zoom.
+        {" "}Just need to pin places on a map image you already have? Use <a href="/gm/map" style={{ color: C.sun }}>Image Maps</a>.
       </p>
 
       <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginBottom: 14 }}>

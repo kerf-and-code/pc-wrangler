@@ -252,7 +252,7 @@ export default function SearchPage() {
 
       {aHits.length > 0 && (
         <div style={{ ...box, marginBottom: 14 }}>
-          <div style={sectionLabel}>STORY THREADS</div>
+          <div style={sectionLabel}>STORY ARCS</div>
           <div style={{ display: "grid", gap: 10 }}>
             {aHits.map((a) => (
               <div key={a.id} style={cardInner}>

@@ -24,7 +24,11 @@ const GROUPS: Group[] = [
   { label: "Play", href: "/gm/sessions", children: [
     { href: "/gm/sessions", label: "Sessions" },
     { href: "/gm/capture", label: "Capture" },
+    // In-person capture used to be reachable only by typing the URL. Record (one microphone in the
+    // room) and Speakers (map diarized voices to characters) follow the order a GM uses them.
+    { href: "/gm/record", label: "Record in person" },
     { href: "/gm/review", label: "Review" },
+    { href: "/gm/speakers", label: "Speakers" },
     { href: "/gm/transcripts", label: "Transcripts" },
     { href: "/gm/encounters", label: "Encounters", needs: "adversary" },
     { href: "/gm/roll", label: "Roll" },
@@ -38,8 +42,11 @@ const GROUPS: Group[] = [
     { href: "/gm/import", label: "Import" },
     { href: "/gm/prep", label: "Prep" },
     { href: "/gm/timeline", label: "Timeline" },
-    { href: "/gm/map", label: "Map" },
-    { href: "/gm/world", label: "World Map" },
+    // Named for what they are: "Map" and "World Map" did not say which was the uploaded image with
+    // pins and which was the painted hex world (which also holds the City, Dungeon, Building and
+    // Bastion tools).
+    { href: "/gm/map", label: "Image Maps" },
+    { href: "/gm/world", label: "World Builder" },
     { href: "/gm/search", label: "Search" },
     { href: "/gm/publish", label: "Publish" },
   ] },

@@ -292,9 +292,12 @@ export default function MapPage() {
   return (
     <PageShell width={1000}>
       <div style={eyebrow}>Story</div>
-      <h1 style={{ fontFamily: "'Iowan Old Style', Georgia, serif", fontSize: 30, fontWeight: 700, margin: "0 0 8px" }}>Map</h1>
+      <h1 style={{ fontFamily: "'Iowan Old Style', Georgia, serif", fontSize: 30, fontWeight: 700, margin: "0 0 8px" }}>Image maps</h1>
       <p style={{ color: C.muted, fontSize: 14.5, lineHeight: 1.6, margin: "0 0 18px", maxWidth: 620 }}>
         Your campaign map. Upload the world, drop pins, and link each to a place, NPC, or piece of lore. If a map IS somewhere, say so above and it stops asking you to pin it to itself. Places your sessions have named show up below ready to be placed. Click the map to add a pin; players see only the pins you make party-visible.
+      </p>
+      <p style={{ color: C.muted, fontSize: 13, margin: "-10px 0 18px" }}>
+        Want to paint a hex world, or generate cities and dungeons? That is the <a href="/gm/world" style={{ color: C.sun }}>World Builder</a>.
       </p>
 
       <div style={{ ...box, display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
