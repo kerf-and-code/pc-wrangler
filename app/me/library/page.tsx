@@ -85,7 +85,7 @@ export default function LibraryPage() {
     <div style={shellStyle}>
       <FontsAndCss />
       <div style={forgeVignette} />
-      <div style={{ position: "relative", zIndex: 1 }}>
+      <div className="sax-navpad" style={{ position: "relative", zIndex: 1 }}>
         <div style={{ maxWidth: 920, margin: "0 auto", padding: "28px 20px 64px" }}>
           <SixAxesNav />
 

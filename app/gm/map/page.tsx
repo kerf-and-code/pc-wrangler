@@ -308,7 +308,7 @@ export default function MapPage() {
   return (
     <PageShell width={1000}>
       <div style={eyebrow}>World</div>
-      <h1 style={{ fontFamily: "'Iowan Old Style', Georgia, serif", fontSize: 30, fontWeight: 700, margin: "0 0 8px" }}>Image maps</h1>
+      <h1 style={{ fontFamily: "'Iowan Old Style', Georgia, serif", fontSize: 30, fontWeight: 700, margin: "0 0 8px" }}>Maps</h1>
       {writeErr && (
         <div role="alert" style={{ position: "sticky", top: 8, zIndex: 5, display: "flex", gap: 10, alignItems: "center", background: C.panel, border: `1px solid ${C.warn}`, borderRadius: FORGE_RADIUS, padding: "8px 12px", margin: "0 0 14px", color: C.warn, fontSize: 13.5 }}>
           <span style={{ flex: 1 }}>{writeErr}</span>

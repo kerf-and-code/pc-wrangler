@@ -12,6 +12,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { SAX } from "@/lib/theme";
+import { STONE, FORGE_FONTS } from "@/lib/forge-theme";
 import { createClient } from "@/lib/supabase/client";
 import { getActiveCampaign, onActiveCampaignChange } from "@/lib/active-campaign";
 import { gmHref } from "@/lib/campaign-context";
@@ -186,14 +187,14 @@ export default function CommandPalette({ pages }: { pages: PalettePage[] }) {
     <div role="presentation" onMouseDown={(e) => { if (e.target === e.currentTarget) setOpen(false); }}
       style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.55)", display: "flex", justifyContent: "center", alignItems: "flex-start", padding: "12vh 16px 16px" }}>
       <div role="dialog" aria-modal="true" aria-label="Command palette" onKeyDown={onKeyDown}
-        style={{ width: "100%", maxWidth: 600, background: SAX.inkDeep, border: `1px solid ${SAX.line}`, borderRadius: 12, boxShadow: "0 24px 60px rgba(0,0,0,0.6)", overflow: "hidden", fontFamily: "ui-sans-serif,system-ui,-apple-system,sans-serif" }}>
+        style={{ width: "100%", maxWidth: 600, background: STONE.shadow, border: `1px solid ${STONE.hi}`, borderRadius: 12, boxShadow: "0 24px 60px rgba(0,0,0,0.6)", overflow: "hidden", fontFamily: FORGE_FONTS.body }}>
         <input ref={inputRef} value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search pages, Codex, NPCs and sessions"
           placeholder={campaign ? `Search pages, Codex, NPCs, sessions in ${campaign.name || "this campaign"}…` : "Search pages…"}
           role="combobox" aria-expanded="true" aria-controls="sax-palette-list" aria-activedescendant={items[sel] ? `sax-pal-${sel}` : undefined}
-          style={{ width: "100%", boxSizing: "border-box", background: "transparent", border: "none", borderBottom: `1px solid ${SAX.line}`, color: SAX.text, fontSize: 16, padding: "14px 16px", outline: "none" }} />
+          style={{ width: "100%", boxSizing: "border-box", background: "transparent", border: "none", borderBottom: `1px solid ${STONE.hi}`, color: STONE.ink, fontSize: 16, padding: "14px 16px", outline: "none" }} />
         {err && <div role="alert" style={{ color: "#e08a7a", fontSize: 13, padding: "8px 16px" }}>{err}</div>}
         <div ref={listRef} id="sax-palette-list" role="listbox" style={{ maxHeight: "50vh", overflowY: "auto", padding: 6 }}>
-          {items.length === 0 && <div style={{ color: SAX.muted, fontSize: 13.5, padding: "10px 12px" }}>Nothing matches.</div>}
+          {items.length === 0 && <div style={{ color: STONE.inkDim, fontSize: 13.5, padding: "10px 12px" }}>Nothing matches.</div>}
           {items.map((it, idx) => {
             const on = idx === sel;
             return (
@@ -201,15 +202,15 @@ export default function CommandPalette({ pages }: { pages: PalettePage[] }) {
                 onMouseMove={() => { if (sel !== idx) setSel(idx); }} onClick={() => choose(it)}
                 style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", borderRadius: 8, cursor: "pointer", background: on ? "rgba(200,162,75,0.14)" : "transparent" }}>
                 {it.kind !== "action"
-                  ? <span style={{ fontFamily: SAX.mono, fontSize: 10, letterSpacing: "0.08em", textTransform: "uppercase", color: SAX.muted, minWidth: 58 }}>{KIND_LABEL[it.kind]}</span>
+                  ? <span style={{ fontFamily: SAX.mono, fontSize: 10, letterSpacing: "0.08em", textTransform: "uppercase", color: STONE.inkDim, minWidth: 58 }}>{KIND_LABEL[it.kind]}</span>
                   : <span aria-hidden="true" style={{ minWidth: 58, color: SAX.brass, fontSize: 13 }}>{"→"}</span>}
-                <span style={{ color: on ? SAX.text : SAX.text, fontSize: 14, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{it.label}</span>
-                {it.sub && <span style={{ color: SAX.muted, fontSize: 12 }}>{it.sub}</span>}
+                <span style={{ color: on ? STONE.ink : STONE.ink, fontSize: 14, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{it.label}</span>
+                {it.sub && <span style={{ color: STONE.inkDim, fontSize: 12 }}>{it.sub}</span>}
               </div>
             );
           })}
         </div>
-        <div style={{ borderTop: `1px solid ${SAX.line}`, padding: "7px 14px", color: SAX.muted, fontSize: 11.5, fontFamily: SAX.mono, display: "flex", gap: 14, flexWrap: "wrap" }}>
+        <div style={{ borderTop: `1px solid ${STONE.hi}`, padding: "7px 14px", color: STONE.inkDim, fontSize: 11.5, fontFamily: SAX.mono, display: "flex", gap: 14, flexWrap: "wrap" }}>
           <span>{"↑↓"} move</span><span>Enter open</span><span>Esc close</span>
           {busy && <span style={{ color: SAX.brass }}>Saving…</span>}
         </div>

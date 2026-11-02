@@ -133,7 +133,7 @@ export default function ImportPage() {
     <div style={{ minHeight: "100vh", position: "relative", ...forgeBackground() }}>
       <style>{FORGE_BUTTON_CSS}</style>
       <div style={forgeVignette} />
-      <div style={{ position: "relative", zIndex: 1 }}>
+      <div className="sax-navpad" style={{ position: "relative", zIndex: 1 }}>
         <SixAxesNav />
         <main style={{ maxWidth: 900, margin: "0 auto", padding: "28px 20px 64px", ...FORGE_FONTS }}>
           <h1 style={{ ...forgeHeading, fontSize: 28, marginBottom: 4 }}>Import from D&amp;D Beyond</h1>
