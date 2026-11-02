@@ -152,6 +152,10 @@ function findLeaf(groups: Group[], pathname: string): { g: Group; l: Leaf } | nu
 
 // The page wall (PageShell's forgeBackground), reused where a menu surface must be opaque.
 const WALL = String(forgeBackground().background);
+// A dark, warm, slightly see-through wash for the menu: the wall still shows through, but the busy
+// stone no longer competes with the labels. Mixed from the theme's mortar colour, so it follows each
+// system's palette. (Fully transparent was hard to read over the brighter stones.)
+const SIDE_TINT = `color-mix(in srgb, ${STONE.mortar} 78%, transparent)`;
 
 const NAV_CSS = `
 .sax-navroot{font-family:${FORGE_FONTS.body};color:${STONE.ink};}
@@ -200,7 +204,7 @@ const NAV_CSS = `
   position:sticky;left:0;z-index:1;padding-right:8px;background:${WALL};background-attachment:fixed;}
 .sax-navroot a.sax-chip{flex:none;font-size:13.5px;color:${STONE.inkDim};text-decoration:none;padding:9px 12px;border-radius:999px;border:1px solid ${STONE.hi};min-height:44px;box-sizing:border-box;display:inline-flex;align-items:center;}
 .sax-navroot a.sax-chip[aria-current="page"]{color:${STONE.mortar};background:${SAX.brass};border-color:${SAX.brass};font-weight:700;}
-.sax-navroot .sax-tabs{position:fixed;left:0;right:0;bottom:0;z-index:60;display:flex;background:${WALL};background-attachment:fixed;border-top:1px solid ${STONE.hi};
+.sax-navroot .sax-tabs{position:fixed;left:0;right:0;bottom:0;z-index:60;display:flex;background:linear-gradient(${SIDE_TINT}, ${SIDE_TINT}), ${WALL};background-attachment:fixed;border-top:1px solid ${STONE.hi};
   padding-bottom:env(safe-area-inset-bottom);}
 .sax-navroot .sax-tab{flex:1 1 0;min-height:56px;background:transparent;border:none;border-top:3px solid transparent;cursor:pointer;
   color:${STONE.inkDim};font-size:12.5px;font-family:inherit;letter-spacing:0.02em;text-decoration:none;display:flex;align-items:center;justify-content:center;}
@@ -224,7 +228,8 @@ const NAV_CSS = `
 @media (min-width:1024px){
   .sax-navroot .sax-narrow{display:none;}
   .sax-navroot .sax-side{display:flex;flex-direction:column;gap:12px;position:fixed;left:0;top:0;bottom:0;width:220px;
-    padding:20px 12px 14px;overflow-y:auto;background:transparent;border-right:1px solid ${STONE.hi};z-index:10;}
+    padding:20px 12px 14px;overflow-y:auto;border-right:1px solid ${STONE.hi};z-index:10;
+    background:${SIDE_TINT};backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);}
 }
 `;
 
