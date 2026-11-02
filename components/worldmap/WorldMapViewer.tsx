@@ -255,6 +255,13 @@ export default function WorldMapViewer({ campaignId, shareCode }: { campaignId?:
   return (
     <div style={{ height: "100vh", display: "flex", flexDirection: "column", background: "#171310" }}>
       <div style={{ display: "flex", gap: 12, alignItems: "center", padding: "10px 16px", borderBottom: `1px solid ${C.line}` }}>
+        {/* The player World Map fills the screen and has no menu, so without this it was a dead end
+            that only the browser's back button left. */}
+        {shareCode && (
+          <a href={`/me?share=${encodeURIComponent(shareCode)}`} style={{ fontSize: 13, color: C.sun, textDecoration: "none", padding: "6px 4px", minHeight: 32, display: "inline-flex", alignItems: "center" }}>
+            {"\u2190"} Back to your table
+          </a>
+        )}
         <span style={{ fontSize: 15, fontWeight: 700, color: C.text }}>World map</span>
         <button type="button" onClick={() => setArtEnabled((v) => !v)}
           style={{ fontSize: 12, padding: "4px 9px", borderRadius: 7, cursor: "pointer", border: `1px solid ${artEnabled ? C.sun : C.line}`, background: artEnabled ? "rgba(200,162,75,0.14)" : C.surface2, color: C.text }}>

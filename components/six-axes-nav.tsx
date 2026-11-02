@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import { SAX } from "@/lib/theme";
 import LogoutButton from "@/components/logout-button";
 import { getModule } from "@/lib/systems/registry";
@@ -125,6 +126,13 @@ const PLAYER_YOU: PGroup = {
     { href: "/me/settings", label: "Settings" },
   ],
 };
+
+// Routes that only exist for players. Known from the path alone, so the server renders the right
+// menu: deciding after mount meant players first saw the GM menu, which then swapped and pushed the
+// page down (measured layout shift 0.28 on a phone). /play is the one shared route (the GM's "Your
+// play style" too), so it is a player page only when it carries a ?share=.
+const PLAYER_ROUTES = ["/recaps", "/lore", "/map", "/world", "/chat", "/schedule", "/initiative", "/record", "/vibe"];
+const onRoute = (pathname: string, r: string) => pathname === r || pathname.startsWith(r + "/");
 
 /** The leaf for a path: an exact match, else the longest leaf the path sits under (so
     /gm/import/review still marks Import). "/gm" and "/me" only ever match exactly, since every
@@ -271,7 +279,10 @@ function Sheet({ title, sections, current, onClose, extra }: {
 }
 
 export default function SixAxesNav() {
-  const [pathname, setPathname] = useState<string>("");
+  const pathname = usePathname() || "";
+  // The remembered share code is read from sessionStorage after mount, never during render, so the
+  // server HTML and the first client render agree.
+  const [remembered, setRemembered] = useState<string | null>(null);
   const [activeSystem, setActiveSystem] = useState<string | null>(null);
   const [campaignName, setCampaignName] = useState<string | null>(null);
   const [share, setShare] = useState<{ on: boolean; qs: string; code: string | null }>({ on: false, qs: "", code: null });
@@ -284,16 +295,17 @@ export default function SixAxesNav() {
     if (!pathname) return;
     sideRef.current?.querySelector<HTMLElement>('a[aria-current="page"]')?.scrollIntoView({ block: "nearest" });
     // Same on phone and tablet for the one-line row of the group's pages (Chat is the seventh chip).
-    document.querySelector<HTMLElement>('.sax-navroot .sax-row a[aria-current="page"]')?.scrollIntoView({ block: "nearest", inline: "center" });
+    document.querySelector<HTMLElement>('.sax-navroot .sax-row a[aria-current="page"]')?.scrollIntoView({ block: "nearest", inline: "nearest" });
   }, [pathname]);
   // Decided after mount: reading navigator during render would differ between server and client.
   const [isMac, setIsMac] = useState(false);
 
   useEffect(() => {
     try {
-      setPathname(window.location.pathname);
       const sp = new URLSearchParams(window.location.search);
-      if (sp.has("share")) setShare({ on: true, qs: window.location.search, code: sp.get("share") });
+      const code = sp.get("share");
+      if (code) setShare({ on: true, qs: window.location.search, code });
+      setRemembered(rememberShare(code));
       setIsMac(/Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent));
     } catch { /* no window */ }
     setFolded(readFolded());
@@ -372,21 +384,23 @@ export default function SixAxesNav() {
   // ---- PLAYER NAVIGATION ----
   // Shown when we have a share code (arrived through a campaign link) OR when we are on an
   // account-scoped dossier page (/me/* carries no ?share=).
-  const onDossier = pathname.startsWith("/me");
-  const isPlayer = share.on || onDossier;
+  const onDossier = onRoute(pathname, "/me");
+  const onTableRoute = pathname === "/me" || PLAYER_ROUTES.some((r) => onRoute(pathname, r));
+  const isPlayer = share.on || onDossier || onTableRoute;
 
   if (isPlayer) {
     // Remember the share code whenever we see one, so a player on a dossier page keeps their way
     // back to their table. A player who has never opened a campaign link sees only "You".
-    const remembered = rememberShare(share.on ? share.code : null);
     const qs = share.qs || (remembered ? `?share=${remembered}` : "");
-    const haveTable = share.on || Boolean(remembered);
+    // A share-scoped page (Recaps, Lore...) always belongs to a table, even before the code is read.
+    const haveTable = share.on || Boolean(remembered) || onTableRoute;
     const groups: PGroup[] = haveTable ? [PLAYER_TABLE, PLAYER_SESSION, PLAYER_YOU] : [PLAYER_YOU];
     const hrefFor = (g: Group, l: Leaf) => ((g as PGroup).scoped ? `${l.href}${qs}` : l.href);
     const hit = findLeaf(groups, pathname);
     const activeP = hit?.g ?? (onDossier ? PLAYER_YOU : groups[0]);
     const current = hit?.l.href ?? null;
-    const home = haveTable ? `/play${qs}` : "/me/campaigns";
+    // The table's home is the Journal, the same place the campaigns list opens.
+    const home = haveTable ? `/me${qs}` : "/me/campaigns";
     const sheetGroup = groups.find((g) => g.label === sheet);
 
     return (
