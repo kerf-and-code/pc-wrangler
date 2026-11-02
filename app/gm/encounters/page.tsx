@@ -701,9 +701,10 @@ export default function EncountersPage() {
             <button
               type="button"
               onClick={() => setFoes((fs) => fs.length > 1 ? fs.filter((x) => x.id !== f.id) : fs)}
-              style={{ background: "none", border: "none", color: C.muted, cursor: "pointer", fontSize: 18, lineHeight: 1, padding: "0 4px" }}
+              aria-label={`Remove ${f.name || "this monster"}`}
+              style={{ background: "none", border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, color: C.muted, cursor: "pointer", fontSize: 12.5, lineHeight: 1, padding: "6px 10px", minHeight: 28 }}
             >
-              {"\u00D7"}
+              Remove
             </button>
           </div>
         ))}

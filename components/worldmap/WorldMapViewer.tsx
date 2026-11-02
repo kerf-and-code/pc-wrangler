@@ -239,11 +239,27 @@ export default function WorldMapViewer({ campaignId, shareCode }: { campaignId?:
     setSelectedPoi(null);
   }, [supabase]);
 
-  if (bundle === undefined) {
-    return <p style={{ color: C.muted, fontSize: 14, padding: 24 }}>Loading the world map\u2026</p>;
+  // Terrain is decoded only after three more reads, so "no terrain yet" is loading, not missing: it
+  // used to say "not available to you" on every visit until the terrain arrived. Every state also
+  // keeps the way back to the table, since this page has no menu.
+  const backLink = shareCode ? (
+    <a href={`/me?share=${encodeURIComponent(shareCode)}`} style={{ fontSize: 13, color: C.sun, textDecoration: "none", padding: "6px 4px", minHeight: 32, display: "inline-flex", alignItems: "center" }}>
+      {"\u2190"} Back to your table
+    </a>
+  ) : null;
+  const stateScreen = (text: string) => (
+    <div style={{ padding: "10px 16px" }}>
+      {backLink}
+      <p style={{ color: C.muted, fontSize: 14, margin: "14px 0 0" }}>{text}</p>
+    </div>
+  );
+  if (bundle === undefined || (bundle && bundle.map && !terrain)) {
+    return stateScreen("Loading the world map\u2026");
   }
   if (bundle === null || !bundle.map || !terrain) {
-    return <p style={{ color: C.muted, fontSize: 14, padding: 24 }}>This world map is not available to you.</p>;
+    return stateScreen(shareCode
+      ? "Your GM has not shared a world map with this table yet."
+      : "This world map is not available to you.");
   }
 
   const editing = !shareCode && bundle.map.editable_by === "party";
@@ -257,11 +273,7 @@ export default function WorldMapViewer({ campaignId, shareCode }: { campaignId?:
       <div style={{ display: "flex", gap: 12, alignItems: "center", padding: "10px 16px", borderBottom: `1px solid ${C.line}` }}>
         {/* The player World Map fills the screen and has no menu, so without this it was a dead end
             that only the browser's back button left. */}
-        {shareCode && (
-          <a href={`/me?share=${encodeURIComponent(shareCode)}`} style={{ fontSize: 13, color: C.sun, textDecoration: "none", padding: "6px 4px", minHeight: 32, display: "inline-flex", alignItems: "center" }}>
-            {"\u2190"} Back to your table
-          </a>
-        )}
+        {backLink}
         <span style={{ fontSize: 15, fontWeight: 700, color: C.text }}>World map</span>
         <button type="button" onClick={() => setArtEnabled((v) => !v)}
           style={{ fontSize: 12, padding: "4px 9px", borderRadius: 7, cursor: "pointer", border: `1px solid ${artEnabled ? C.sun : C.line}`, background: artEnabled ? "rgba(200,162,75,0.14)" : C.surface2, color: C.text }}>

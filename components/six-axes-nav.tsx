@@ -161,7 +161,7 @@ const NAV_CSS = `
 .sax-navroot .sax-camp{border:1px solid ${SAX.line};border-radius:9px;padding:8px 10px;display:flex;flex-direction:column;gap:2px;}
 .sax-navroot .sax-camp-k{font-family:${SAX.mono};font-size:9.5px;letter-spacing:0.16em;text-transform:uppercase;color:${SAX.muted};}
 .sax-navroot .sax-camp-n{font-size:14px;color:${SAX.text};font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.sax-navroot a.sax-camp-sw{font-size:12px;color:${SAX.muted};text-decoration:underline;text-underline-offset:2px;}
+.sax-navroot a.sax-camp-sw{font-size:12px;color:${SAX.muted};text-decoration:underline;text-underline-offset:2px;display:inline-flex;align-items:center;min-height:24px;}
 .sax-navroot a.sax-camp-sw:hover{color:${SAX.text};}
 .sax-navroot .sax-find{display:flex;align-items:center;justify-content:space-between;gap:10px;background:transparent;cursor:pointer;
   border:1px solid ${SAX.line};border-radius:9px;padding:7px 10px;color:${SAX.muted};font-size:13px;font-family:inherit;}
@@ -190,7 +190,8 @@ const NAV_CSS = `
 .sax-navroot .sax-top-r{display:flex;align-items:center;gap:8px;min-width:0;}
 .sax-navroot .sax-top-camp{font-size:12.5px;color:${SAX.muted};max-width:38vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-decoration:none;}
 .sax-navroot .sax-row{display:flex;gap:6px;overflow-x:auto;white-space:nowrap;padding:2px 0 8px;margin-bottom:18px;border-bottom:1px solid ${SAX.line};scrollbar-width:thin;}
-.sax-navroot .sax-row-k{font-family:${SAX.mono};font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:${SAX.muted};align-self:center;margin-right:2px;flex:none;}
+.sax-navroot .sax-row-k{font-family:${SAX.mono};font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:${SAX.muted};align-self:stretch;display:flex;align-items:center;margin-right:2px;flex:none;
+  position:sticky;left:0;z-index:1;padding-right:8px;background:linear-gradient(90deg, rgba(10,6,14,0.96) 80%, rgba(10,6,14,0));}
 .sax-navroot a.sax-chip{flex:none;font-size:13.5px;color:${SAX.muted};text-decoration:none;padding:9px 12px;border-radius:999px;border:1px solid ${SAX.line};min-height:44px;box-sizing:border-box;display:inline-flex;align-items:center;}
 .sax-navroot a.sax-chip[aria-current="page"]{color:${SAX.inkDeep};background:${SAX.brass};border-color:${SAX.brass};font-weight:700;}
 .sax-navroot .sax-tabs{position:fixed;left:0;right:0;bottom:0;z-index:60;display:flex;background:rgba(10,6,14,0.97);border-top:1px solid ${SAX.line};
@@ -208,7 +209,7 @@ const NAV_CSS = `
 .sax-navroot a.sax-sheet-a{display:flex;align-items:center;min-height:48px;font-size:16px;color:${SAX.text};text-decoration:none;padding:0 10px;border-radius:8px;border-left:3px solid transparent;}
 .sax-navroot a.sax-sheet-a[aria-current="page"]{border-left-color:${SAX.brass};font-weight:700;background:rgba(200,162,75,0.10);}
 .sax-navroot .sax-sheet-out{margin-top:14px;padding:10px;border-top:1px solid ${SAX.line};}
-.sax-navroot .sax-x{background:transparent;border:1px solid ${SAX.line};color:${SAX.muted};border-radius:8px;min-height:40px;padding:0 12px;cursor:pointer;font-family:inherit;font-size:13px;}
+.sax-navroot .sax-x{background:transparent;border:1px solid ${SAX.line};color:${SAX.muted};border-radius:8px;min-height:44px;padding:0 12px;cursor:pointer;font-family:inherit;font-size:13px;}
 
 @media (max-width:1023px){
   body{padding-bottom:calc(64px + env(safe-area-inset-bottom));}
@@ -270,7 +271,7 @@ function Sheet({ title, sections, current, onClose, extra }: {
           <div key={s.label ?? i}>
             {s.label && <div className="sax-sheet-k">{s.label}</div>}
             {s.links.map((l) => (
-              <a key={l.href + l.label} className="sax-sheet-a" href={l.href} aria-current={current === l.href ? "page" : undefined}>{l.label}</a>
+              <a key={l.href + l.label} className="sax-sheet-a" href={l.href} aria-current={current === l.href.split("?")[0] ? "page" : undefined}>{l.label}</a>
             ))}
           </div>
         ))}
@@ -287,6 +288,11 @@ export default function SixAxesNav() {
   const [remembered, setRemembered] = useState<string | null>(null);
   const [activeSystem, setActiveSystem] = useState<string | null>(null);
   const [campaignName, setCampaignName] = useState<string | null>(null);
+  // What the campaign box may say when no page has named a campaign yet. "checking" until we know
+  // whether the GM has any campaigns; "loading" while a page may still be about to name one; "none"
+  // only when the GM truly has none; "unchosen" if nothing named one after a few seconds. It used to
+  // say "None picked yet, pick one in the Workspace" during every first load.
+  const [campState, setCampState] = useState<"checking" | "loading" | "none" | "unchosen">("checking");
   const [share, setShare] = useState<{ on: boolean; qs: string; code: string | null }>({ on: false, qs: "", code: null });
   const [folded, setFolded] = useState<string[]>([]);
   const [sheet, setSheet] = useState<string | null>(null);
@@ -336,6 +342,23 @@ export default function SixAxesNav() {
     read();
     return onActiveCampaignChange(read);
   }, []);
+
+  useEffect(() => {
+    if (campaignName || share.on || pathname.startsWith("/me") || !pathname.startsWith("/gm")) return;
+    let off = false;
+    let timer: number | undefined;
+    (async () => {
+      const sb = createClient();
+      const { data: { user } } = await sb.auth.getUser();
+      if (off || !user) return;
+      const { count } = await sb.from("campaigns").select("id", { count: "exact", head: true }).eq("gm_id", user.id);
+      if (off) return;
+      if (!count) { setCampState("none"); return; }
+      setCampState("loading");
+      timer = window.setTimeout(() => { if (!off) setCampState("unchosen"); }, 6000);
+    })();
+    return () => { off = true; if (timer) window.clearTimeout(timer); };
+  }, [campaignName, share.on, pathname]);
 
   const toggleFold = useCallback((label: string) => {
     setFolded((prev) => {
@@ -501,11 +524,16 @@ export default function SixAxesNav() {
       ]
     : (() => { const g = groups.find((x) => x.label === sheet); return g ? [{ links: g.children.map((l) => ({ href: l.href, label: l.label })) }] : []; })();
 
+  const campLabel = campaignName
+    ?? (campState === "none" ? "None yet" : campState === "unchosen" ? "Not chosen yet" : "Loading\u2026");
+  const campLink = campaignName ? "Switch in the Workspace"
+    : campState === "none" ? "Create one in the Workspace"
+    : campState === "unchosen" ? "Pick one in the Workspace" : null;
   const campaignBlock = (
     <div className="sax-camp">
       <span className="sax-camp-k">Campaign</span>
-      <span className="sax-camp-n" title={campaignName ?? undefined}>{campaignName ?? "None picked yet"}</span>
-      <a className="sax-camp-sw" href="/gm">{campaignName ? "Switch in the Workspace" : "Pick one in the Workspace"}</a>
+      <span className="sax-camp-n" title={campaignName ?? undefined} aria-live="polite">{campLabel}</span>
+      {campLink && <a className="sax-camp-sw" href="/gm">{campLink}</a>}
     </div>
   );
 
@@ -533,7 +561,7 @@ export default function SixAxesNav() {
         <div className="sax-top">
           {brand("/")}
           <div className="sax-top-r">
-            <a className="sax-top-camp" href="/gm" title="Campaign: switch in the Workspace">{campaignName ?? "No campaign"}</a>
+            <a className="sax-top-camp" href="/gm" title="Campaign: switch in the Workspace">{campaignName ?? (campState === "none" ? "No campaign yet" : campState === "unchosen" ? "Pick a campaign" : "Loading\u2026")}</a>
             {onGm && (
               <button type="button" className="sax-find sax-plain" onClick={openPalette} aria-label="Find or jump (command palette)">
                 <span>Find</span>

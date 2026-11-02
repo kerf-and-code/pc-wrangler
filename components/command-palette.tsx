@@ -76,9 +76,11 @@ export default function CommandPalette({ pages }: { pages: PalettePage[] }) {
 
   useEffect(() => {
     if (!open) return;
+    // Remember what had focus (the Find button, or wherever Ctrl+K was pressed) and hand it back on close.
+    const opener = document.activeElement as HTMLElement | null;
     setQ(""); setSel(0); setErr(null);
     const t = window.setTimeout(() => inputRef.current?.focus(), 0);
-    return () => window.clearTimeout(t);
+    return () => { window.clearTimeout(t); if (opener && opener !== document.body) opener.focus?.(); };
   }, [open]);
 
   // Load the campaign's searchable rows on first open per campaign.
@@ -136,7 +138,9 @@ export default function CommandPalette({ pages }: { pages: PalettePage[] }) {
     const needle = q.trim().toLowerCase();
     const pageItems: Item[] = pages.map((p) => ({ key: `p:${p.href}`, kind: "page", label: p.label, sub: p.group, href: p.href }));
     if (!needle) return pageItems.slice(0, 12);
-    const ranked = [...pageItems.map((i) => ({ i, s: score(i.label, needle) + 5 })), ...rows.map((i) => ({ i, s: score(i.label, needle) }))]
+    // Pages get a small lead over Codex rows, but only once they match: adding it before the filter
+    // let every page through, so typing "review" listed all of them.
+    const ranked = [...pageItems.map((i) => { const m = score(i.label, needle); return { i, s: m > 0 ? m + 5 : 0 }; }), ...rows.map((i) => ({ i, s: score(i.label, needle) }))]
       .filter((x) => x.s > 0)
       .sort((a, b) => b.s - a.s || a.i.label.localeCompare(b.i.label))
       .slice(0, 30)
@@ -168,6 +172,9 @@ export default function CommandPalette({ pages }: { pages: PalettePage[] }) {
 
   const onKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Escape") { e.preventDefault(); setOpen(false); }
+    // The list is driven by the arrow keys, so Tab has nowhere useful to go: keep focus in the field
+    // rather than letting it escape behind the dialog.
+    else if (e.key === "Tab") { e.preventDefault(); inputRef.current?.focus(); }
     else if (e.key === "ArrowDown") { e.preventDefault(); setSel((s) => Math.min(s + 1, items.length - 1)); }
     else if (e.key === "ArrowUp") { e.preventDefault(); setSel((s) => Math.max(s - 1, 0)); }
     else if (e.key === "Enter") { e.preventDefault(); choose(items[sel]); }
