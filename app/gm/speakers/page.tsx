@@ -22,6 +22,7 @@ import PageShell from "@/components/page-shell";
 import { createClient } from "@/lib/supabase/client";
 import { C, FORGE_RADIUS, STONE } from "@/lib/forge-theme";
 import { SAX } from "@/lib/theme";
+import { getActiveCampaign } from "@/lib/active-campaign";
 
 type Speaker = { label: number; seconds: number; utterances: number; samples: string[] };
 type Character = { id: string; name: string };
@@ -43,13 +44,17 @@ export default function SpeakersPage() {
   const [saving, setSaving] = useState(false);
   const [note, setNote] = useState<string | null>(null);
   const [problems, setProblems] = useState<string[]>([]);
+  const [saved, setSaved] = useState(false);
+  const [campNames, setCampNames] = useState<Record<string, string>>({});
 
   useEffect(() => {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const { data: camps } = await supabase.from("campaigns").select("id").eq("gm_id", user.id);
-      const ids = ((camps as { id: string }[]) || []).map((c) => c.id);
+      const { data: camps } = await supabase.from("campaigns").select("id, name").eq("gm_id", user.id);
+      const campRows = (camps as { id: string; name: string }[]) || [];
+      setCampNames(Object.fromEntries(campRows.map((c) => [c.id, c.name])));
+      const ids = campRows.map((c) => c.id);
       if (!ids.length) return;
       const { data } = await supabase
         .from("audio_tracks")
@@ -60,12 +65,15 @@ export default function SpeakersPage() {
         .limit(20);
       const rows = (data as RoomTrack[]) || [];
       setTracks(rows);
-      if (rows.length) setTrackId(rows[0].id);
+      // Open on the newest recording of the campaign the GM is working in, else the newest overall.
+      const active = getActiveCampaign()?.id;
+      const first = rows.find((r) => r.campaign_id === active) ?? rows[0];
+      if (first) setTrackId(first.id);
     })();
   }, [supabase]);
 
   const load = useCallback(async (id: string) => {
-    setLoading(true); setNote(null); setProblems([]);
+    setLoading(true); setNote(null); setProblems([]); setSaved(false);
     try {
       const res = await fetch(`/api/transcribe/speakers?track=${encodeURIComponent(id)}`);
       const out = await res.json();
@@ -99,6 +107,7 @@ export default function SpeakersPage() {
       if (!res.ok) { setNote(out.error ?? "Could not save."); return; }
       setProblems(out.problems ?? []);
       setNote(`Saved. ${out.assigned} line${out.assigned === 1 ? "" : "s"} of transcript attributed.`);
+      setSaved(true);
     } finally { setSaving(false); }
   }, [trackId, map]);
 
@@ -130,7 +139,7 @@ export default function SpeakersPage() {
       </h1>
       <p style={{ color: C.muted, fontSize: 14, marginTop: 0, marginBottom: 18, lineHeight: 1.6 }}>
         An in-person recording is one microphone, so the app separates the voices but cannot name
-        them. Listen to a line or two and tell it who is who. Everything downstream, from the recap
+        them. Read a line or two from each voice and tell it who is who. Everything downstream, from the recap
         to each player&apos;s read, depends on this being right.
       </p>
 
@@ -140,7 +149,7 @@ export default function SpeakersPage() {
           {tracks.length === 0 && <option value="">No in-person recordings yet</option>}
           {tracks.map((t) => (
             <option key={t.id} value={t.id}>
-              {new Date(t.created_at).toLocaleString()}
+              {campNames[t.campaign_id] ? `${campNames[t.campaign_id]} \u00B7 ` : ""}{new Date(t.created_at).toLocaleString()}
               {t.duration_seconds ? ` \u00B7 ${mins(t.duration_seconds)}` : ""}
             </option>
           ))}
@@ -231,6 +240,11 @@ export default function SpeakersPage() {
         <Card tone={problems.length ? "warn" : undefined}>
           <p style={{ ...body, marginBottom: problems.length ? 8 : 0 }}>{note}</p>
           {problems.map((p, i) => <p key={i} style={{ ...body, marginBottom: 0 }}>{p}</p>)}
+          {saved && (
+            <p style={{ ...body, marginTop: 8, marginBottom: 0 }}>
+              Next: <a href="/gm/review" style={{ color: C.sun }}>review the proposed events</a>. Once every proposal is decided, the recap writes itself.
+            </p>
+          )}
         </Card>
       )}
     </PageShell>

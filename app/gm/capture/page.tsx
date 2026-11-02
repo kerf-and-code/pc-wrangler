@@ -206,6 +206,9 @@ export default function CapturePage() {
       <p style={{ color: C.muted, fontSize: 14, margin: "0 0 20px" }}>
         When you record over Discord, run <code style={{ fontFamily: "ui-monospace, monospace", color: C.text }}>/record</code> to start and <code style={{ fontFamily: "ui-monospace, monospace", color: C.text }}>/stop</code> when you finish; the job, each player&apos;s track, and transcription all appear here on their own. Manual upload is the backup for tables that do not record over Discord. Nothing is processed until consent is on file.
       </p>
+      <p style={{ color: C.muted, fontSize: 13.5, margin: "-12px 0 20px" }}>
+        Playing in person? <a href="/gm/record" style={{ color: C.sun }}>Record the room</a> with one microphone instead, then map the voices on <a href="/gm/speakers" style={{ color: C.sun }}>Speakers</a>.
+      </p>
 
         {/* campaign + session */}
         <div style={box}>
@@ -340,7 +343,7 @@ export default function CapturePage() {
                     ) : (
                       <>
                         <span style={{ fontSize: 13, color: C.muted }}>
-                          Queued. Each track is being transcribed; when that finishes, proposed events appear on the Review page automatically.
+                          Queued. Each track is being transcribed; when that finishes, proposed events appear on the <a href="/gm/review" style={{ color: C.sun }}>Review page</a> automatically.
                         </span>
                         <button type="button" onClick={() => { if (window.confirm("Send this job back to draft? Transcription in progress stops, and you will need to queue it again.")) void setJobStatus("draft"); }} style={{ background: "transparent", color: C.plum, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "8px 14px", fontSize: 12, cursor: "pointer" }}>Back to draft</button>
                       </>
