@@ -7,6 +7,7 @@ import LogoutButton from "@/components/logout-button";
 import { getModule } from "@/lib/systems/registry";
 import { getActiveCampaign, onActiveCampaignChange } from "@/lib/active-campaign";
 import CommandPalette, { OPEN_PALETTE, type PalettePage } from "@/components/command-palette";
+import { createClient } from "@/lib/supabase/client";
 
 /* Six Axes navigation.
 
@@ -195,8 +196,9 @@ const NAV_CSS = `
 .sax-navroot .sax-tabs{position:fixed;left:0;right:0;bottom:0;z-index:60;display:flex;background:rgba(10,6,14,0.97);border-top:1px solid ${SAX.line};
   padding-bottom:env(safe-area-inset-bottom);}
 .sax-navroot .sax-tab{flex:1 1 0;min-height:56px;background:transparent;border:none;border-top:3px solid transparent;cursor:pointer;
-  color:${SAX.muted};font-size:12.5px;font-family:inherit;letter-spacing:0.02em;}
-.sax-navroot .sax-tab.on{color:${SAX.text};font-weight:700;border-top-color:${SAX.brass};}
+  color:${SAX.muted};font-size:12.5px;font-family:inherit;letter-spacing:0.02em;text-decoration:none;display:flex;align-items:center;justify-content:center;}
+.sax-navroot a.sax-tab:hover{color:${SAX.text};}
+.sax-navroot a.sax-tab.on{color:${SAX.text};font-weight:700;border-top-color:${SAX.brass};}
 .sax-navroot .sax-sheet-bg{position:fixed;inset:0;z-index:90;background:rgba(0,0,0,0.55);display:flex;align-items:flex-end;}
 .sax-navroot .sax-sheet{width:100%;max-height:75vh;overflow-y:auto;background:${SAX.inkDeep};border-top:1px solid ${SAX.line};border-radius:14px 14px 0 0;
   padding:14px 16px calc(16px + env(safe-area-inset-bottom));box-shadow:0 -14px 30px rgba(0,0,0,0.55);}
@@ -297,6 +299,24 @@ export default function SixAxesNav() {
     // Same on phone and tablet for the one-line row of the group's pages (Chat is the seventh chip).
     document.querySelector<HTMLElement>('.sax-navroot .sax-row a[aria-current="page"]')?.scrollIntoView({ block: "nearest", inline: "nearest" });
   }, [pathname]);
+  // The table's name for the player menu (the player-side twin of the GM's campaign box). Read once
+  // per share code through chat_context, the same call the Recaps page uses, and kept for the visit.
+  const [tableName, setTableName] = useState<string | null>(null);
+  const tableCode = share.code || remembered;
+  useEffect(() => {
+    if (!tableCode) return;
+    const key = `sax_table_name:${tableCode}`;
+    try { const hit = window.sessionStorage.getItem(key); if (hit) { setTableName(hit); return; } } catch { /* storage blocked */ }
+    let off = false;
+    (async () => {
+      const { data } = await createClient().rpc("chat_context", { code: tableCode });
+      const name = (data as { campaign_name?: string }[] | null)?.[0]?.campaign_name ?? null;
+      if (off || !name) return;
+      setTableName(name);
+      try { window.sessionStorage.setItem(key, name); } catch { /* storage blocked */ }
+    })();
+    return () => { off = true; };
+  }, [tableCode]);
   // Decided after mount: reading navigator during render would differ between server and client.
   const [isMac, setIsMac] = useState(false);
 
@@ -370,13 +390,17 @@ export default function SixAxesNav() {
       </nav>
     ) : null;
 
-  const tabBar = (tabs: { key: string; label: string }[], activeTab: string | null) => (
+  // Each tab is a real link to its group's first page, so a tap goes somewhere even before the
+  // page's script has loaded (on a slow connection the old buttons did nothing until then). Once
+  // the script runs, a tap opens the group's sheet instead.
+  const tabBar = (tabs: { key: string; label: string; href: string }[], activeTab: string | null) => (
     <nav className="sax-tabs" aria-label="Sections">
       {tabs.map((t) => (
-        <button key={t.key} type="button" className={`sax-tab sax-plain${activeTab === t.key ? " on" : ""}`}
-          aria-haspopup="dialog" aria-expanded={sheet === t.key} onClick={() => setSheet(t.key)}>
+        <a key={t.key} href={t.href} className={`sax-tab${activeTab === t.key ? " on" : ""}`}
+          aria-haspopup="dialog" aria-expanded={sheet === t.key}
+          onClick={(e) => { if (e.metaKey || e.ctrlKey || e.shiftKey) return; e.preventDefault(); setSheet(t.key); }}>
           {t.label}
-        </button>
+        </a>
       ))}
     </nav>
   );
@@ -402,23 +426,42 @@ export default function SixAxesNav() {
     // The table's home is the Journal, the same place the campaigns list opens.
     const home = haveTable ? `/me${qs}` : "/me/campaigns";
     const sheetGroup = groups.find((g) => g.label === sheet);
+    const tableBlock = (
+      <div className="sax-camp">
+        <span className="sax-camp-k">Table</span>
+        <span className="sax-camp-n" title={tableName ?? undefined}>{haveTable ? (tableName ?? "\u00A0") : "None open"}</span>
+        <a className="sax-camp-sw" href="/me/campaigns">{haveTable ? "Switch table" : "Your campaigns"}</a>
+      </div>
+    );
 
     return (
       <div className="sax-navroot">
         <style>{NAV_CSS}</style>
         <aside className="sax-side" ref={sideRef}>
           {brand(home)}
+          {tableBlock}
           {sidebarGroups(groups, hrefFor, activeP.label, current)}
-          <div className="sax-foot"><div className="sax-out"><LogoutButton /></div></div>
+          <div className="sax-foot">
+            <a className="sax-item" href="/faq">Help</a>
+            <div className="sax-out"><LogoutButton /></div>
+          </div>
         </aside>
 
         <div className="sax-narrow">
-          <div className="sax-top">{brand(home)}</div>
+          <div className="sax-top">
+            {brand(home)}
+            <div className="sax-top-r">
+              <a className="sax-top-camp" href="/me/campaigns" title="Table: switch on your campaigns list">{haveTable ? (tableName ?? "Your table") : "Your campaigns"}</a>
+            </div>
+          </div>
           {narrowRow(activeP, hrefFor, current)}
-          {groups.length > 1 && tabBar(groups.map((g) => ({ key: g.label, label: g.label })), activeP.label)}
+          {groups.length > 1 && tabBar(groups.map((g) => ({ key: g.label, label: g.label, href: hrefFor(g, g.children[0]) })), activeP.label)}
           {sheetGroup && (
             <Sheet title={sheetGroup.label} current={current} onClose={closeSheet}
-              sections={[{ links: sheetGroup.children.map((l) => ({ href: hrefFor(sheetGroup, l), label: l.label })) }]}
+              sections={[
+                { links: sheetGroup.children.map((l) => ({ href: hrefFor(sheetGroup, l), label: l.label })) },
+                ...(sheetGroup.label === PLAYER_YOU.label ? [{ label: "Help", links: [{ href: "/faq", label: "Help and FAQ" }] }] : []),
+              ]}
               extra={sheetGroup.label === PLAYER_YOU.label ? <div className="sax-sheet-out"><LogoutButton /></div> : null} />
           )}
         </div>
@@ -448,7 +491,8 @@ export default function SixAxesNav() {
   const openPalette = () => window.dispatchEvent(new Event(OPEN_PALETTE));
   const shortcut = isMac ? "⌘K" : "Ctrl K";
 
-  const tabs = [...GM_TABS.map((t) => ({ key: t, label: t })), { key: "More", label: "More" }];
+  const firstOf = (label: string) => groups.find((g) => g.label === label)?.children[0]?.href ?? "/gm";
+  const tabs = [...GM_TABS.map((t) => ({ key: t, label: t, href: firstOf(t) })), { key: "More", label: "More", href: "/gm/start" }];
   const activeTab = activeGroup && GM_TABS.includes(activeGroup) ? activeGroup : (activeGroup || current === "/gm/help") ? "More" : null;
   const sheetSections = sheet === "More"
     ? [
