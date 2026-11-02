@@ -263,6 +263,9 @@ export function statBlockFromMonster(m: Record<string, unknown>): StatBlockDoc {
     hp: num(m.hp),
     hit_dice: String(m.hit_dice || ""),
     speed: String(m.speed || base.speed),
+    // The book's own initiative bonus. 2024 blocks list one that is often not the DEX modifier
+    // (an Adult Red Dragon is +12 on DEX 10), and the combat runner rolls from it.
+    initiative: num(m.initiative),
     str: num(m.str) ?? 10, dex: num(m.dex) ?? 10, con: num(m.con) ?? 10,
     int: num(m.int) ?? 10, wis: num(m.wis) ?? 10, cha: num(m.cha) ?? 10,
     cr: String(m.cr ?? base.cr),

@@ -6,7 +6,8 @@ import PageShell from "@/components/page-shell";
 import { SAX } from "@/lib/theme";
 import { C, FORGE_RADIUS, stoneField, stonePanel, stoneButton } from "@/lib/forge-theme";
 import { loadSrd } from "@/lib/srd/srd";
-import { listStatBlocks, type StatBlockRow } from "@/lib/stat-blocks";
+import { listStatBlocks, statBlockFromMonster, type StatBlockRow } from "@/lib/stat-blocks";
+import { resolveFoeBlock, monsterCombatants, pcCombatant, type EncounterFoe, type Combatant } from "@/lib/combat";
 import { getModule } from "@/lib/systems/registry";
 import { pf2Budget, pf2EncounterXp, pf2Threat, PF2_THREATS, PF2_THREAT_LABEL } from "@/lib/pf2e/encounter";
 import { dhBattlePoints, dhAdjustedBudget, dhSpend, DH_ADJUSTMENTS, DH_BP_COST, type DHAdjustment } from "@/lib/daggerheart/encounter";
@@ -14,7 +15,7 @@ import { DH_ADVERSARY_TYPES, type DHAdversaryType } from "@/lib/daggerheart/adve
 import { dsBands, dsDifficultyOf, dsSpend, dsBenchmarkEV, DS_DIFFICULTY_LABEL, type DSDifficulty } from "@/lib/drawsteel/encounter";
 import { DS_ORGANIZATIONS, type DSOrganization } from "@/lib/drawsteel/adversary";
 import { monsterSourceLabel, monsterSourceTitle } from "@/lib/monster-sources";
-import { initialCampaignId, useRememberCampaign } from "@/lib/campaign-context";
+import { initialCampaignId, useRememberCampaign, preferredSessionId, gmHref } from "@/lib/campaign-context";
 
 // ============================================================================
 // THE TWO METHODS ARE GENUINELY DIFFERENT. THIS IS THE WHOLE POINT OF THE TOOL.
@@ -115,12 +116,16 @@ const CAP_LABEL: Record<string, string> = {
 const COMBAT_CRITICAL = ["healing", "ranged", "tank", "control", "aoe"];
 
 type Char = { id: string; name: string; level: number | null; class: string | null; subclass: string | null };
-type Foe = { id: string; name: string; cr: string; count: number };
+// A foe keeps where its stat block came from (origin + statBlockId / sourceKey / edition), so a saved
+// encounter can be RUN later, not just priced. A typed-in row, or a library row whose name was edited,
+// is "custom": priced by CR, and enters a fight with no stat block (the GM fills in HP by hand).
+type Foe = { id: string; name: string; cr: string; count: number } & Partial<Pick<EncounterFoe, "origin" | "statBlockId" | "sourceKey" | "edition">>;
+type SavedEncounter = { id: string; name: string; rules: string; foes: EncounterFoe[]; updated_at: string };
 type Method = "2024" | "2014";
 // A pickable monster from either source: the GM's own saved stat blocks or the SRD library.
 // `source` is the monster file's source_key (srd-2014, tob2, ...), so library rows can show which book
 // they come from; several names (Aboleth, Acolyte) exist in more than one book at different CRs.
-type MonsterSource = { name: string; cr: string; origin: "mine" | "srd"; source?: string };
+type MonsterSource = { name: string; cr: string; origin: "mine" | "srd"; source?: string; id?: string; edition?: string };
 type SrdMode = "2024" | "2014" | "both";
 
 let seq = 0;
@@ -141,6 +146,12 @@ export default function EncountersPage() {
   // difficulty further than any multiplier on this page.
   const [caps, setCaps] = useState<Array<{ class: string; subclass: string | null; capabilities: string[] }>>([]);
   const [savedMsg, setSavedMsg] = useState<string | null>(null);
+  // Saved encounters (p101 encounters table) and the one currently loaded, if any.
+  const [savedList, setSavedList] = useState<SavedEncounter[]>([]);
+  const [encId, setEncId] = useState<string | null>(null);
+  const [encName, setEncName] = useState("");
+  const [encMsg, setEncMsg] = useState<string | null>(null);
+  const [encBusy, setEncBusy] = useState(false);
 
   // Monster sources for the picker: the GM's own saved stat blocks (from the stat-block builder)
   // and the SRD monster library. Both feed the same Foe model, so the whole calc downstream is
@@ -299,9 +310,9 @@ export default function EncountersPage() {
   const monsterCatalog = useMemo<MonsterSource[]>(() => {
     const mine: MonsterSource[] = statBlocks
       .filter((b) => b.cr && CR_XP[b.cr] != null)
-      .map((b) => ({ name: b.name, cr: b.cr as string, origin: "mine" }));
+      .map((b) => ({ name: b.name, cr: b.cr as string, origin: "mine", id: b.id }));
     const srd = (loadSrd("monsters", srdMode) as unknown as Array<{ name: string; cr?: string | number; source_key?: string }>)
-      .map((m) => ({ name: m.name, cr: String(m.cr ?? ""), origin: "srd" as const, source: m.source_key }))
+      .map((m) => ({ name: m.name, cr: String(m.cr ?? ""), origin: "srd" as const, source: m.source_key, edition: srdMode }))
       .filter((m) => m.cr && CR_XP[m.cr] != null);
     return [...mine, ...srd];
   }, [statBlocks, srdMode]);
@@ -310,11 +321,16 @@ export default function EncountersPage() {
   // same CR). Everything downstream reads Foe, so no other change is needed.
   const addFoeFromCatalog = useCallback((m: MonsterSource) => {
     setFoes((fs) => {
-      const existing = fs.find((f) => f.name === m.name && f.cr === m.cr);
+      const existing = fs.find((f) => f.name === m.name && f.cr === m.cr && (f.sourceKey ?? null) === (m.source ?? null) && (f.statBlockId ?? null) === (m.id ?? null));
       if (existing) return fs.map((f) => f === existing ? { ...f, count: f.count + 1 } : f);
       // Drop a single empty placeholder row if that's all there is.
       const seeded = fs.length === 1 && !fs[0].name.trim() ? [] : fs;
-      return [...seeded, { id: uid(), name: m.name, cr: m.cr, count: 1 }];
+      return [...seeded, {
+        id: uid(), name: m.name, cr: m.cr, count: 1, origin: m.origin,
+        statBlockId: m.origin === "mine" ? m.id ?? null : null,
+        sourceKey: m.origin === "srd" ? m.source ?? null : null,
+        edition: m.origin === "srd" ? m.edition ?? null : null,
+      }];
     });
   }, []);
 
@@ -390,6 +406,89 @@ export default function EncountersPage() {
       source: "gm",
     });
     setSavedMsg(error ? "Could not save to the plan." : "Added to your session plan.");
+  }
+
+  // ---- saved encounters + run --------------------------------------------------
+  const loadSaved = useCallback(async (cid: string) => {
+    const { data, error } = await supabase.from("encounters").select("id, name, rules, foes, updated_at")
+      .eq("campaign_id", cid).order("updated_at", { ascending: false });
+    if (error) { setEncMsg(error.message.includes("does not exist") ? "Run migration p101 to save encounters." : error.message); setSavedList([]); return; }
+    setSavedList((data as SavedEncounter[]) || []);
+  }, [supabase]);
+  useEffect(() => { if (campaignId) { void loadSaved(campaignId); setEncId(null); setEncName(""); setEncMsg(null); } }, [campaignId, loadSaved]);
+
+  const foesForSave = (): EncounterFoe[] => foes
+    .filter((f) => f.name.trim())
+    .map((f) => ({
+      name: f.name.trim(), cr: f.cr, count: f.count, origin: f.origin ?? "custom",
+      statBlockId: f.statBlockId ?? null, sourceKey: f.sourceKey ?? null, edition: f.edition ?? null,
+    }));
+  const defaultEncName = () => {
+    const named = foesForSave();
+    return named.length ? named.map((f) => `${f.count > 1 ? `${f.count}x ` : ""}${f.name}`).join(", ").slice(0, 80) : "Encounter";
+  };
+
+  async function saveEncounter(asNew = false) {
+    if (!campaignId) return;
+    const list = foesForSave();
+    if (!list.length) { setEncMsg("Name at least one monster before saving."); return; }
+    setEncBusy(true); setEncMsg(null);
+    const name = encName.trim() || defaultEncName();
+    const row = { campaign_id: campaignId, name, rules: method, foes: list, updated_at: new Date().toISOString() };
+    const res = encId && !asNew
+      ? await supabase.from("encounters").update(row).eq("id", encId).select("id").single()
+      : await supabase.from("encounters").insert(row).select("id").single();
+    setEncBusy(false);
+    if (res.error) { setEncMsg(res.error.message.includes("does not exist") ? "Run migration p101 to save encounters." : `Not saved: ${res.error.message}`); return; }
+    setEncId((res.data as { id: string }).id); setEncName(name); setEncMsg("Saved.");
+    void loadSaved(campaignId);
+  }
+
+  function loadEncounter(id: string) {
+    const e = savedList.find((x) => x.id === id);
+    if (!e) return;
+    setFoes(e.foes.length ? e.foes.map((f) => ({ ...f, id: uid() })) : [{ id: uid(), name: "", cr: "1", count: 1 }]);
+    if (e.rules === "2014" || e.rules === "2024") setMethod(e.rules);
+    setEncId(e.id); setEncName(e.name); setEncMsg(null);
+  }
+
+  async function deleteEncounter() {
+    if (!encId) return;
+    const e = savedList.find((x) => x.id === encId);
+    if (!window.confirm(`Delete the saved encounter "${e?.name ?? "this encounter"}"? Fights already run from it are kept.`)) return;
+    const { error } = await supabase.from("encounters").delete().eq("id", encId);
+    if (error) { setEncMsg(`Not deleted: ${error.message}`); return; }
+    setEncId(null); setEncName(""); setEncMsg("Deleted.");
+    void loadSaved(campaignId);
+  }
+
+  // Start a live fight on the Combat page: the present party plus every monster, each monster with a
+  // snapshot of its stat block (your own block, or the library monster by name + book).
+  async function runEncounter() {
+    if (!campaignId) return;
+    const list = foesForSave();
+    if (!list.length) { setEncMsg("Add at least one named monster to run the fight."); return; }
+    setEncBusy(true); setEncMsg(null);
+    const monsters: Combatant[] = [];
+    let unresolved = 0;
+    for (const f of list) {
+      const block = resolveFoeBlock(
+        f, statBlocks as unknown as { id: string; block: unknown; system?: string | null }[],
+        (ed) => loadSrd("monsters", (ed === "2014" || ed === "2024" ? ed : "both") as SrdMode) as unknown as Record<string, unknown>[],
+        statBlockFromMonster,
+      );
+      if (!block) unresolved += f.count;
+      monsters.push(...monsterCombatants(f.name, f.count, block));
+    }
+    const combatants = [...party.map((c) => pcCombatant({ id: c.id, name: c.name })), ...monsters];
+    const { data, error } = await supabase.from("combats").insert({
+      campaign_id: campaignId, encounter_id: encId, session_id: preferredSessionId(campaignId),
+      name: encName.trim() || defaultEncName(), rules: method, combatants,
+    }).select("id").single();
+    setEncBusy(false);
+    if (error) { setEncMsg(error.message.includes("does not exist") ? "Run migration p101 to run fights." : `Could not start the fight: ${error.message}`); return; }
+    if (unresolved) { try { sessionStorage.setItem("sax_combat_note", `${unresolved} monster${unresolved === 1 ? " has" : "s have"} no stat block (typed in by hand). Set their HP and AC on the Combat page.`); } catch { /* ignore */ } }
+    window.location.assign(gmHref("/gm/combat", { campaign: campaignId, combat: (data as { id: string }).id }));
   }
 
   // ---- rendering -----------------------------------------------------------
@@ -580,7 +679,8 @@ export default function EncountersPage() {
           <div key={f.id} style={{ display: "flex", gap: 8, marginBottom: 8, flexWrap: "wrap", alignItems: "center" }}>
             <input
               value={f.name}
-              onChange={(e) => setFoes((fs) => fs.map((x) => x.id === f.id ? { ...x, name: e.target.value } : x))}
+              // Renaming a library monster breaks its link to the stat block, so it becomes custom.
+              onChange={(e) => setFoes((fs) => fs.map((x) => x.id === f.id ? { ...x, name: e.target.value, origin: "custom", statBlockId: null, sourceKey: null } : x))}
               placeholder="Monster (optional)"
               style={{ ...inputStyle, flex: "1 1 170px" }}
             />
@@ -640,6 +740,38 @@ export default function EncountersPage() {
             C={C} inputStyle={inputStyle}
           />
         )}
+      </div>
+
+      {/* save + run */}
+      <div style={box}>
+        <div style={eyebrow}>Save and run</div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+          {savedList.length > 0 && (
+            <select value={encId ?? ""} onChange={(e) => e.target.value ? loadEncounter(e.target.value) : (setEncId(null), setEncName(""))} style={{ ...inputStyle, maxWidth: 240 }} aria-label="Saved encounters">
+              <option value="">Saved encounters ({savedList.length})</option>
+              {savedList.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
+            </select>
+          )}
+          <input value={encName} onChange={(e) => setEncName(e.target.value)} placeholder={defaultEncName()} style={{ ...inputStyle, flex: "1 1 200px" }} aria-label="Encounter name" />
+          <button type="button" onClick={() => void saveEncounter(false)} disabled={encBusy}
+            style={{ background: "transparent", color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "7px 14px", fontSize: 12.5, fontWeight: 700, fontFamily: SAX.mono, cursor: "pointer" }}>
+            {encId ? "Save changes" : "Save encounter"}
+          </button>
+          {encId && (
+            <>
+              <button type="button" onClick={() => void saveEncounter(true)} disabled={encBusy}
+                style={{ background: "transparent", color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "7px 14px", fontSize: 12.5, fontWeight: 700, fontFamily: SAX.mono, cursor: "pointer" }}>Save as new</button>
+              <button type="button" onClick={() => void deleteEncounter()} disabled={encBusy}
+                style={{ background: "transparent", color: C.warn, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "7px 14px", fontSize: 12.5, fontWeight: 700, fontFamily: SAX.mono, cursor: "pointer" }}>Delete</button>
+            </>
+          )}
+          <button type="button" onClick={() => void runEncounter()} disabled={encBusy}
+            title="Open this fight on the Combat page with the party marked present above"
+            style={{ background: C.brass, color: C.ink, border: "none", borderRadius: FORGE_RADIUS, padding: "8px 16px", fontSize: 12.5, fontWeight: 700, fontFamily: SAX.mono, cursor: encBusy ? "default" : "pointer", opacity: encBusy ? 0.6 : 1 }}>
+            Run this encounter
+          </button>
+        </div>
+        {encMsg && <p role="status" style={{ fontSize: 12.5, color: C.muted, margin: "8px 0 0" }}>{encMsg}</p>}
       </div>
 
       {/* verdict */}
