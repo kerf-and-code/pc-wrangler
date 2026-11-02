@@ -144,7 +144,7 @@ export default function CheckInPage() {
 
   return (
     <PageShell width={920}>
-      <h1 style={{ ...ui.h1, fontSize: 28, margin: "4px 0 4px" }}>Run the session</h1>
+      <h1 style={{ ...ui.h1, fontSize: 28, margin: "4px 0 4px" }}>Player check-ins</h1>
       {writeErr && (
         <div role="alert" style={{ position: "sticky", top: 8, zIndex: 5, display: "flex", gap: 10, alignItems: "center", background: C.panel, border: `1px solid ${C.warn}`, borderRadius: FORGE_RADIUS, padding: "8px 12px", margin: "0 0 14px", color: C.warn, fontSize: 13.5 }}>
           <span style={{ flex: 1 }}>{writeErr}</span>
@@ -152,7 +152,7 @@ export default function CheckInPage() {
         </div>
       )}
       <p style={{ color: C.muted, fontSize: 14, margin: "0 0 20px" }}>
-        Mark who is at the table. Go live, end and process, and close are on the Session Log.
+        What players said in their post-session check-ins, party chat, and attendance for any session. To run tonight&apos;s game, use Tonight.
       </p>
 
         {/* campaign + portal link */}
@@ -165,7 +165,7 @@ export default function CheckInPage() {
           </select>
 
           <div style={{ fontSize: 12, color: C.muted, marginTop: 14, marginBottom: 6 }}>
-            One link for your players: Inventory, Check-in, and Chat. Check-in auto-shows the latest processed session.
+            One link for your players: Play style, Check-in, and Chat. Check-in auto-shows the latest processed session.
           </div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             <input readOnly value={portalLink()} style={{ flex: 1, minWidth: 220, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "10px 12px", fontSize: 13, fontFamily: "ui-monospace, monospace", boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }} />

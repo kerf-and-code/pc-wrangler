@@ -616,7 +616,7 @@ function PickerView({ rows, monsters, srdMode, onSrdMode, onNew, onEdit, onPrefi
   return (
     <div style={{ display: "grid", gap: 20, maxWidth: 900, margin: "0 auto" }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap" }}>
-        <h1 style={{ fontFamily: FORGE_FONTS.display, fontSize: 26, color: STONE.ink, margin: 0 }}>Stat block workshop</h1>
+        <h1 style={{ fontFamily: FORGE_FONTS.display, fontSize: 26, color: STONE.ink, margin: 0 }}>Monster Maker</h1>
         <span style={{ flex: 1 }} />
         <button className="forge-btn is-primary" style={stoneButton("primary")} onClick={onNew}>+ New from scratch</button>
       </div>

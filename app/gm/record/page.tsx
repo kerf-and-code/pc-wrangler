@@ -328,7 +328,7 @@ export default function RoomRecordPage() {
   return (
     <PageShell width={720}>
       <h1 style={{ fontFamily: SAX.serif, fontSize: 30, margin: "4px 0 2px", color: C.text }}>
-        Record the room
+        Record in person
       </h1>
       <p style={{ color: C.muted, fontSize: 14, marginTop: 0, marginBottom: 18, lineHeight: 1.6 }}>
         For playing in person. One microphone, everyone at the table, uploaded when you stop. Put the

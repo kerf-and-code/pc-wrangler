@@ -95,7 +95,7 @@ export default function RosterPage() {
 
   return (
     <PageShell width={820}>
-      <h1 style={{ ...ui.h1, fontSize: 28, margin: "4px 0 4px" }}>Roster &amp; identity</h1>
+      <h1 style={{ ...ui.h1, fontSize: 28, margin: "4px 0 4px" }}>Roster</h1>
       <p style={{ color: C.muted, fontSize: 14, margin: "0 0 20px" }}>
         Send each player their personal invite link below: opening it ties their inventory to that character from the start. Manual binding stays here as a fallback for anyone who took the inventory before joining.
       </p>

@@ -98,7 +98,7 @@ export default function GettingStartedPage() {
         Getting started
       </div>
       <h1 style={{ fontFamily: "'Iowan Old Style', Georgia, serif", fontSize: 30, fontWeight: 700, margin: "0 0 8px" }}>
-        Run your first session
+        Start here
       </h1>
       <p style={{ color: C.muted, fontSize: 15, lineHeight: 1.6, margin: "0 0 22px", maxWidth: 600 }}>
         From an empty account to a captured, reviewed session with a recap your players actually read. It runs on your Discord voice chat, on one microphone in the room for in-person play, or entirely from your notes if you would rather not record. The last step is optional.

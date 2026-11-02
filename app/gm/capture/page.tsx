@@ -6,7 +6,7 @@ import PageShell from "@/components/page-shell";
 import GmIdentityCard from "@/components/gm-identity-card";
 import { surfaces, ui } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
-import { initialCampaignId, useRememberCampaign, initialSessionId, useRememberSession } from "@/lib/campaign-context";
+import { initialCampaignId, useRememberCampaign, initialSessionId, useRememberSession, gmHref } from "@/lib/campaign-context";
 
 type Campaign = { id: string; name: string };
 type Sess = { id: string; session_number: number | null; status: string };
@@ -275,7 +275,7 @@ export default function CapturePage() {
                 <p style={{ color: C.warn, fontSize: 12.5, marginTop: 12 }}>Not consented, opt them out to proceed, or have them claim &amp; consent: {missing.map((c) => c.name).join(", ")}.</p>
               )}
               {!consentOk && presentChars.length === 0 && (
-                <p style={{ color: C.muted, fontSize: 12.5, marginTop: 12 }}>Mark attendance on the Check-in page so the gate knows who needs to consent.</p>
+                <p style={{ color: C.muted, fontSize: 12.5, marginTop: 12 }}>Mark attendance on <a href={gmHref("/gm/tonight", { campaign: campaignId, session: sessionId })} style={{ color: C.sun }}>Tonight</a> so the gate knows who needs to consent.</p>
               )}
             </div>
 

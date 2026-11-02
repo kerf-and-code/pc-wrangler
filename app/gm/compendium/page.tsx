@@ -26,7 +26,7 @@ export default function GmCompendiumPage() {
             margin: "0 0 6px",
           }}
         >
-          Rules compendium
+          Compendium
         </h1>
         <p
           style={{
