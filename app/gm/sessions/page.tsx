@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from "react"
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
-import { initialCampaignId, useRememberCampaign, initialSessionId, useRememberSession } from "@/lib/campaign-context";
+import { initialCampaignId, useRememberCampaign, initialSessionId, useRememberSession, gmHref } from "@/lib/campaign-context";
 
 const STATUS_TONE: Record<string, string> = {
   scheduled: C.muted, live: C.warn, completed: C.sun, processed: C.good, cancelled: C.muted,
@@ -733,6 +733,9 @@ export default function SessionWorkspace() {
                     <span style={{ fontSize: 11.5, color: STATUS_TONE[cur.status] || C.muted, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "ui-monospace, monospace" }}>{cur.status}</span>
                     {cur.status === "live" && (
                       <span style={{ fontSize: 11.5, color: C.warn }}>Live, party chat stays open</span>
+                    )}
+                    {isOpen && (
+                      <a href={gmHref("/gm/tonight", { campaign, session: cur.id })} style={{ fontSize: 12, color: C.sun, marginLeft: "auto" }}>Run it from Tonight</a>
                     )}
                   </div>
                   <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>

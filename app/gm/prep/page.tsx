@@ -126,12 +126,14 @@ export default function PrepPage() {
   async function removePlanItem(id: string) {
     const it = plan.find((p) => p.id === id);
     if (!window.confirm(`Remove ${it?.title ? `"${it.title}"` : "this item"} from the plan? This cannot be undone.`)) return;
-    await supabase.from("session_plan_items").delete().eq("id", id);
+    const { error: e } = await supabase.from("session_plan_items").delete().eq("id", id);
+    if (e) { setError(`Not removed: ${e.message}`); return; }
     setPlan((arr) => arr.filter((p) => p.id !== id));
   }
 
   async function togglePlanDone(id: string, done: boolean) {
-    await supabase.from("session_plan_items").update({ done }).eq("id", id);
+    const { error: e } = await supabase.from("session_plan_items").update({ done }).eq("id", id);
+    if (e) { setError(`Not saved: ${e.message}`); return; }
     setPlan((arr) => arr.map((p) => (p.id === id ? { ...p, done } : p)));
   }
 

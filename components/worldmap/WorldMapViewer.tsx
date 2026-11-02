@@ -232,6 +232,7 @@ export default function WorldMapViewer({ campaignId, shareCode }: { campaignId?:
   }, [supabase]);
 
   const removePoi = useCallback(async (id: string) => {
+    if (!window.confirm("Remove this marker from the map? This cannot be undone.")) return;
     const { error } = await supabase.from("map_pois").delete().eq("id", id);
     if (error) return;
     setPoiRows((prev) => prev.filter((r) => r.id !== id));

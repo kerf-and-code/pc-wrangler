@@ -422,7 +422,8 @@ export default function CodexPage() {
     const sep = linkPick.indexOf(":");
     const tType = linkPick.slice(0, sep);
     const tId = linkPick.slice(sep + 1);
-    await supabase.from("entity_links").insert({
+    setSaveErr(null);
+    const { error } = await supabase.from("entity_links").insert({
       campaign_id: campaignId,
       source_type: curType,
       source_id: mode.id,
@@ -430,12 +431,15 @@ export default function CodexPage() {
       target_id: tId,
       relation: linkRel.trim() || null,
     });
+    if (error) { setSaveErr(`Link not saved: ${error.message}`); return; }
     setLinkPick("");
     setLinkRel("");
     await reload(campaignId);
   }
   async function removeLink(id: string) {
-    await supabase.from("entity_links").delete().eq("id", id);
+    setSaveErr(null);
+    const { error } = await supabase.from("entity_links").delete().eq("id", id);
+    if (error) setSaveErr(`Link not removed: ${error.message}`);
     await reload(campaignId);
   }
 
@@ -445,11 +449,16 @@ export default function CodexPage() {
     const { data, error } = await supabase.from("entry_reveals")
       .insert({ campaign_id: campaignId, target_type, target_id: mode.id, revealed_to_character_id: pcId })
       .select("id, target_type, target_id, revealed_to_character_id").single();
-    if (!error && data) { setReveals((arr) => [...arr, data as EntryReveal]); setRevealPick(""); }
+    if (error || !data) { setSaveErr(`Reveal not saved: ${error?.message ?? "no row returned"}`); return; }
+    setSaveErr(null);
+    setReveals((arr) => [...arr, data as EntryReveal]); setRevealPick("");
   }
 
   async function revokeReveal(id: string) {
-    await supabase.from("entry_reveals").delete().eq("id", id);
+    // Checked: a revoke that failed used to vanish from the list while the player could still read it.
+    const { error } = await supabase.from("entry_reveals").delete().eq("id", id);
+    if (error) { setSaveErr(`Reveal not revoked, the player can still see this: ${error.message}`); return; }
+    setSaveErr(null);
     setReveals((arr) => arr.filter((r) => r.id !== id));
   }
 

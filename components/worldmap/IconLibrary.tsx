@@ -56,6 +56,7 @@ export default function IconLibrary({ campaignId, onPick, builtinOnly }: { campa
   }, [campaignId]);
 
   const remove = useCallback(async (id: string) => {
+    if (!window.confirm("Delete this icon from your library? Markers already using it lose their picture.")) return;
     const { error } = await supabase.from("map_icons").delete().eq("id", id);
     if (error) { setStatus(error.message); return; }
     setPersonal((prev) => prev.filter((i) => i.id !== id));

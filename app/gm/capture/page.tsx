@@ -115,14 +115,19 @@ export default function CapturePage() {
   async function toggleOptOut(charId: string, out: boolean) {
     if (!sessionId || !campaignId) return;
     setOptout((p) => ({ ...p, [charId]: out }));
-    if (out) {
-      await supabase.from("recording_consents").upsert(
-        { session_id: sessionId, campaign_id: campaignId, character_id: charId, consented: false, method: "gm_optout" },
-        { onConflict: "session_id,character_id" },
-      );
-    } else {
-      await supabase.from("recording_consents").delete()
-        .eq("session_id", sessionId).eq("character_id", charId).eq("consented", false);
+    setError(null);
+    // The write's result is checked: an opt-out that silently failed left the box ticked while the
+    // player's audio was still processed, the one failure on this page that must never be quiet.
+    const { error: e } = out
+      ? await supabase.from("recording_consents").upsert(
+          { session_id: sessionId, campaign_id: campaignId, character_id: charId, consented: false, method: "gm_optout" },
+          { onConflict: "session_id,character_id" },
+        )
+      : await supabase.from("recording_consents").delete()
+          .eq("session_id", sessionId).eq("character_id", charId).eq("consented", false);
+    if (e) {
+      setOptout((p) => ({ ...p, [charId]: !out }));
+      setError(`${out ? "Opt-out" : "Opt-in"} was not saved: ${e.message}`);
     }
     loadGate(sessionId);
   }
@@ -158,8 +163,13 @@ export default function CapturePage() {
   async function removeTrack(t: Track) {
     if (!job) return;
     if (!window.confirm("Remove this track? The audio file is deleted from storage and cannot be recovered.")) return;
-    if (t.storage_path) await supabase.storage.from("session-audio").remove([t.storage_path]);
-    await supabase.from("audio_tracks").delete().eq("id", t.id);
+    setError(null);
+    if (t.storage_path) {
+      const { error: se } = await supabase.storage.from("session-audio").remove([t.storage_path]);
+      if (se) { setError(`The audio file was not deleted: ${se.message}`); return; }
+    }
+    const { error: de } = await supabase.from("audio_tracks").delete().eq("id", t.id);
+    if (de) setError(`The track was not removed: ${de.message}`);
     loadTracks(job.id);
   }
 

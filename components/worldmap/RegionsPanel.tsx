@@ -107,12 +107,15 @@ export default function RegionsPanel({ worldMapId, campaignId, onChanged, onPain
   }, [supabase, onChanged]);
 
   const deleteRegion = useCallback(async (id: string) => {
+    // One stray click used to erase a region and every hex painted into it, with no way back.
+    const name = regions.find((r) => r.id === id)?.name;
+    if (!window.confirm(`Delete ${name ? `the region "${name}"` : "this region"} and the hexes painted into it? This cannot be undone.`)) return;
     const { error } = await supabase.from("regions").delete().eq("id", id);
     if (error) { setStatus(error.message); return; }
     setRegions((prev) => prev.filter((r) => r.id !== id));
     setPaintId((pv) => (pv === id ? null : pv));
     onChanged?.();
-  }, [supabase, onChanged]);
+  }, [supabase, onChanged, regions]);
 
   const createEntry = useCallback(async (region: Region) => {
     const { data: auth } = await supabase.auth.getUser();

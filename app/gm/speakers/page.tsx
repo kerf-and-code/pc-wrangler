@@ -23,11 +23,12 @@ import { createClient } from "@/lib/supabase/client";
 import { C, FORGE_RADIUS, STONE } from "@/lib/forge-theme";
 import { SAX } from "@/lib/theme";
 import { getActiveCampaign } from "@/lib/active-campaign";
+import { urlParam } from "@/lib/campaign-context";
 
 type Speaker = { label: number; seconds: number; utterances: number; samples: string[] };
 type Character = { id: string; name: string };
 type Assignment = { characterId?: string | null; isGm?: boolean };
-type RoomTrack = { id: string; campaign_id: string; created_at: string; duration_seconds: number | null };
+type RoomTrack = { id: string; campaign_id: string; job_id: string | null; created_at: string; duration_seconds: number | null };
 
 const mins = (s: number) => (s < 60 ? `${s}s` : `${Math.round(s / 60)} min`);
 
@@ -58,16 +59,24 @@ export default function SpeakersPage() {
       if (!ids.length) return;
       const { data } = await supabase
         .from("audio_tracks")
-        .select("id, campaign_id, created_at, duration_seconds")
+        .select("id, campaign_id, job_id, created_at, duration_seconds")
         .in("campaign_id", ids)
         .eq("kind", "room")
         .order("created_at", { ascending: false })
         .limit(20);
       const rows = (data as RoomTrack[]) || [];
       setTracks(rows);
-      // Open on the newest recording of the campaign the GM is working in, else the newest overall.
+      // ?session=<id> (Tonight and the Session Log link here with it) opens that session's room
+      // recording. Otherwise: the newest recording of the campaign the GM is working in, else the newest.
+      let forSession: RoomTrack | undefined;
+      const sid = urlParam("session");
+      if (sid) {
+        const { data: jobs } = await supabase.from("capture_jobs").select("id").eq("session_id", sid);
+        const jobIds = new Set(((jobs as { id: string }[]) || []).map((j) => j.id));
+        forSession = rows.find((r) => r.job_id && jobIds.has(r.job_id));
+      }
       const active = getActiveCampaign()?.id;
-      const first = rows.find((r) => r.campaign_id === active) ?? rows[0];
+      const first = forSession ?? rows.find((r) => r.campaign_id === active) ?? rows[0];
       if (first) setTrackId(first.id);
     })();
   }, [supabase]);

@@ -50,6 +50,7 @@ export default function CheckInPage() {
   const [selected, setSelected] = useState<Sess | null>(null);
   useRememberSession(campaignId, selected?.id);
   const [att, setAtt] = useState<Record<string, string>>({});
+  const [writeErr, setWriteErr] = useState<string | null>(null);
   const [vibes, setVibes] = useState<Vibe[]>([]);
   const [copied, setCopied] = useState<boolean>(false);
   const [chatReads, setChatReads] = useState<ChatRead[]>([]);
@@ -111,11 +112,16 @@ export default function CheckInPage() {
 
   async function mark(charId: string, status: string) {
     if (!selected || !campaignId) return;
+    const before = att[charId];
     setAtt((prev) => ({ ...prev, [charId]: status }));
-    await supabase.from("attendance").upsert(
+    const { error } = await supabase.from("attendance").upsert(
       { campaign_id: campaignId, session_id: selected.id, character_id: charId, status },
       { onConflict: "session_id,character_id" },
     );
+    if (error) {
+      setAtt((prev) => { const n = { ...prev }; if (before) n[charId] = before; else delete n[charId]; return n; });
+      setWriteErr(`Attendance was not saved: ${error.message}`);
+    } else setWriteErr(null);
   }
 
   function portalLink(): string {
@@ -139,6 +145,12 @@ export default function CheckInPage() {
   return (
     <PageShell width={920}>
       <h1 style={{ ...ui.h1, fontSize: 28, margin: "4px 0 4px" }}>Run the session</h1>
+      {writeErr && (
+        <div role="alert" style={{ position: "sticky", top: 8, zIndex: 5, display: "flex", gap: 10, alignItems: "center", background: C.panel, border: `1px solid ${C.warn}`, borderRadius: FORGE_RADIUS, padding: "8px 12px", margin: "0 0 14px", color: C.warn, fontSize: 13.5 }}>
+          <span style={{ flex: 1 }}>{writeErr}</span>
+          <button type="button" onClick={() => setWriteErr(null)} aria-label="Dismiss" style={{ background: "transparent", border: "none", color: C.muted, cursor: "pointer", fontSize: 15 }}>{"\u00D7"}</button>
+        </div>
+      )}
       <p style={{ color: C.muted, fontSize: 14, margin: "0 0 20px" }}>
         Mark who is at the table. Go live, end and process, and close are on the Session Log.
       </p>

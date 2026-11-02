@@ -49,6 +49,9 @@ export default function MapPage() {
   const [entries, setEntries] = useState<Ent[]>([]);
   const [chars, setChars] = useState<Ch[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
+  // Every pin and map write is checked. A visibility change that failed used to leave the pin
+  // looking GM-only on screen while players could still see it.
+  const [writeErr, setWriteErr] = useState<string | null>(null);
   // The place waiting to be put somewhere. While this is set the next map click creates a
   // pin already labelled and linked, instead of the usual blank one.
   const [placing, setPlacing] = useState<Ent | null>(null);
@@ -155,13 +158,16 @@ export default function MapPage() {
     const next = { ...activeMap, linked_entry_id: entryId };
     setActiveMap(next);
     setMaps((arr) => arr.map((m) => (m.id === next.id ? next : m)));
-    await supabase.from("maps").update({ linked_entry_id: entryId }).eq("id", next.id);
+    const { error } = await supabase.from("maps").update({ linked_entry_id: entryId }).eq("id", next.id);
+    setWriteErr(error ? `The map's place was not saved: ${error.message}` : null);
   }
 
   async function deleteMap(id: string) {
     const m = maps.find((x) => x.id === id);
     if (!window.confirm(`Delete ${m?.name ? `"${m.name}"` : "this map"} and every pin on it? This cannot be undone.`)) return;
-    await supabase.from("maps").delete().eq("id", id);
+    const { error } = await supabase.from("maps").delete().eq("id", id);
+    if (error) { setWriteErr(`The map was not deleted: ${error.message}`); return; }
+    setWriteErr(null);
     setMaps((arr) => {
       const next = arr.filter((m) => m.id !== id);
       setActiveMap((cur) => (cur && cur.id === id ? next[0] || null : cur));
@@ -182,16 +188,26 @@ export default function MapPage() {
         visibility: "player",
       })
       .select("id, x, y, label, linked_type, linked_id, visibility").single();
-    if (!error && data) { setPins((arr) => [...arr, data as Pin]); setSelected((data as Pin).id); }
+    if (error || !data) { setWriteErr(`The pin was not added: ${error?.message ?? "no row returned"}`); return; }
+    setWriteErr(null);
+    setPins((arr) => [...arr, data as Pin]); setSelected((data as Pin).id);
   }
 
   async function updatePin(id: string, fields: Partial<Pin>) {
+    const before = pins.find((p) => p.id === id);
     setPins((arr) => arr.map((p) => (p.id === id ? { ...p, ...fields } : p)));
-    await supabase.from("map_pins").update(fields).eq("id", id);
+    const { error } = await supabase.from("map_pins").update(fields).eq("id", id);
+    if (error) {
+      // Put the pin back the way the database still has it, so the screen never shows a state that is not real.
+      if (before) setPins((arr) => arr.map((p) => (p.id === id ? before : p)));
+      setWriteErr(`The pin change was not saved: ${error.message}`);
+    } else setWriteErr(null);
   }
 
   async function removePin(id: string) {
-    await supabase.from("map_pins").delete().eq("id", id);
+    const { error } = await supabase.from("map_pins").delete().eq("id", id);
+    if (error) { setWriteErr(`The pin was not removed: ${error.message}`); return; }
+    setWriteErr(null);
     setPins((arr) => arr.filter((p) => p.id !== id));
     if (selected === id) setSelected(null);
   }
@@ -293,6 +309,12 @@ export default function MapPage() {
     <PageShell width={1000}>
       <div style={eyebrow}>Story</div>
       <h1 style={{ fontFamily: "'Iowan Old Style', Georgia, serif", fontSize: 30, fontWeight: 700, margin: "0 0 8px" }}>Image maps</h1>
+      {writeErr && (
+        <div role="alert" style={{ position: "sticky", top: 8, zIndex: 5, display: "flex", gap: 10, alignItems: "center", background: C.panel, border: `1px solid ${C.warn}`, borderRadius: FORGE_RADIUS, padding: "8px 12px", margin: "0 0 14px", color: C.warn, fontSize: 13.5 }}>
+          <span style={{ flex: 1 }}>{writeErr}</span>
+          <button type="button" onClick={() => setWriteErr(null)} aria-label="Dismiss" style={{ background: "transparent", border: "none", color: C.muted, cursor: "pointer", fontSize: 15 }}>{"\u00D7"}</button>
+        </div>
+      )}
       <p style={{ color: C.muted, fontSize: 14.5, lineHeight: 1.6, margin: "0 0 18px", maxWidth: 620 }}>
         Your campaign map. Upload the world, drop pins, and link each to a place, NPC, or piece of lore. If a map IS somewhere, say so above and it stops asking you to pin it to itself. Places your sessions have named show up below ready to be placed. Click the map to add a pin; players see only the pins you make party-visible.
       </p>

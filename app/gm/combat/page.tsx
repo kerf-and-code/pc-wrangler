@@ -31,7 +31,7 @@ import {
   resolveFoeBlock, sortForTurns, type Combatant, type EncounterFoe, type ParsedAction,
 } from "@/lib/combat";
 import {
-  initialCampaignId, initialSessionId, useRememberCampaign, useRememberSession, urlParam, setUrlParam,
+  initialCampaignId, initialSessionId, useRememberCampaign, useRememberSession, urlParam, setUrlParam, gmHref,
 } from "@/lib/campaign-context";
 
 type Campaign = { id: string; name: string; system: string | null; share_code: string | null };
@@ -194,6 +194,24 @@ export default function CombatPage() {
     });
     setSelectedId(null);
   }
+  // N / P move the turn from the keyboard, the action a GM repeats most in a fight. Ignored while
+  // typing in a field (HP, damage, names) or with a modifier held, so it never fights the inputs.
+  const stepRef = useRef(step);
+  stepRef.current = step;
+  const hasFight = !!combat;
+  useEffect(() => {
+    if (!hasFight) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey || e.altKey || e.repeat) return;
+      const t = e.target as HTMLElement | null;
+      if (t && (t.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(t.tagName))) return;
+      const k = e.key.toLowerCase();
+      if (k === "n") { e.preventDefault(); stepRef.current(1); }
+      else if (k === "p") { e.preventDefault(); stepRef.current(-1); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [hasFight]);
   function sortNow() {
     update((cb) => {
       const currentId = cb.combatants[cb.turn]?.id;
@@ -295,6 +313,7 @@ export default function CombatPage() {
       <p style={{ color: C.muted, fontSize: 14, margin: "0 0 14px", lineHeight: 1.6, maxWidth: 760 }}>
         Run a fight: initiative, HP, conditions, and one-click rolls from each monster&apos;s stat block. Monster rolls are logged to the session,
         so they show up in Mechanics next to the players&apos;. Build and balance fights on <a href="/gm/encounters" style={{ color: C.sun }}>Encounters</a>, then press Run.
+        {campaignId && <> Everything else for the night is on <a href={gmHref("/gm/tonight", { campaign: campaignId, session: sessionId || null })} style={{ color: C.sun }}>Tonight</a>.</>}
       </p>
 
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center", marginBottom: 12 }}>
@@ -344,8 +363,8 @@ export default function CombatPage() {
             <div style={{ ...box, display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
               <input value={combat.name} onChange={(e) => update((cb) => ({ ...cb, name: e.target.value }))} style={{ ...input, fontWeight: 700, flex: "1 1 180px" }} aria-label="Fight name" />
               <span style={{ fontFamily: SAX.mono, fontSize: 13, color: C.text }}>Round {combat.round}</span>
-              <button type="button" style={btn()} onClick={() => step(-1)} title="Previous turn">Prev</button>
-              <button type="button" style={btn(true)} onClick={() => step(1)} title="Next turn (skips defeated monsters)">Next turn</button>
+              <button type="button" style={btn()} onClick={() => step(-1)} title="Previous turn (P)">Prev</button>
+              <button type="button" style={btn(true)} onClick={() => step(1)} title="Next turn, skips defeated monsters (N)">Next turn</button>
               <button type="button" style={btn()} onClick={() => void rollMonsterInitiative()} disabled={rolling} title="Roll initiative for every monster that has none, logged to the session">{rolling ? "Rolling…" : "Roll monster initiative"}</button>
               <button type="button" style={btn()} onClick={sortNow} title="Order everyone by initiative; the current turn stays with the same combatant">Sort</button>
               <button type="button" style={{ ...btn(), color: C.warn }} onClick={() => void endFight()}>End fight</button>
