@@ -387,6 +387,17 @@ export default function CompendiumTool() {
 
   const onSubmit = (e: React.FormEvent) => { e.preventDefault(); const q = query.trim(); if (q) lookup(q); };
 
+  // ?q=<text> runs one lookup as soon as the index is loaded, so the command palette (and any other
+  // page) can link straight to a rule, spell or monster. Read once; later typing is untouched.
+  const urlQueryDone = useRef(false);
+  useEffect(() => {
+    if (urlQueryDone.current || loading || entries.length === 0) return;
+    urlQueryDone.current = true;
+    let q = "";
+    try { q = (new URLSearchParams(window.location.search).get("q") || "").trim(); } catch { /* no window */ }
+    if (q) { setQuery(q); lookupRef.current(q); }
+  }, [loading, entries.length]);
+
   const pin = (key: string) => setCards((prev) => prev.map((c) => c.key === key ? { ...c, pinned: !c.pinned, expiresAt: !c.pinned ? null : Date.now() + AUTO_MS } : c));
   const dismiss = (key: string) => setCards((prev) => prev.filter((c) => c.key !== key));
   const onEnter = (key: string) => { hoveredRef.current = key; };

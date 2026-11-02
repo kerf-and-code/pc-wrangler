@@ -5,6 +5,7 @@ import { SAX } from "@/lib/theme";
 import LogoutButton from "@/components/logout-button";
 import { getModule } from "@/lib/systems/registry";
 import { getActiveCampaign, onActiveCampaignChange } from "@/lib/active-campaign";
+import CommandPalette, { OPEN_PALETTE, type PalettePage } from "@/components/command-palette";
 
 /* Six Axes — navigation.
    Wide screens (>=1024px): a left sidebar. Logo, an account popup (Help + Sign
@@ -22,6 +23,8 @@ const GROUPS: Group[] = [
     { href: "/gm/roster", label: "Roster" },
   ] },
   { label: "Play", href: "/gm/sessions", children: [
+    // Tonight runs game night top to bottom and links out to the pages below for anything deeper.
+    { href: "/gm/tonight", label: "Tonight" },
     { href: "/gm/sessions", label: "Sessions" },
     { href: "/gm/capture", label: "Capture" },
     // In-person capture used to be reachable only by typing the URL. Record (one microphone in the
@@ -171,6 +174,11 @@ const NAV_CSS = `
   border:1px solid ${SAX.line};border-radius:10px;padding:6px;z-index:20;display:flex;flex-direction:column;gap:2px;
   box-shadow:0 14px 30px rgba(0,0,0,0.55);}
 .sax-acct-item{font-size:13.5px;color:${SAX.muted};text-decoration:none;padding:8px 10px;border-radius:7px;}
+.sax-find{display:flex;align-items:center;justify-content:space-between;gap:10px;background:transparent;cursor:pointer;
+  border:1px solid ${SAX.line};border-radius:9px;padding:7px 10px;color:${SAX.muted};font-size:13px;font-family:inherit;}
+.sax-find:hover{color:${SAX.text};border-color:${SAX.brassDim};}
+.sax-find:focus-visible{outline:2px solid ${SAX.brass};outline-offset:2px;}
+.sax-find kbd{font-family:${SAX.mono};font-size:10.5px;border:1px solid ${SAX.line};border-radius:5px;padding:1px 6px;color:${SAX.muted};}
 .sax-acct-item:hover{background:rgba(255,255,255,0.05);color:${SAX.text};}
 
 @media (min-width:1024px){
@@ -204,6 +212,9 @@ function rememberShare(code: string | null): string | null {
 export default function SixAxesNav() {
   const [pathname, setPathname] = useState<string>("");
   const [activeSystem, setActiveSystem] = useState<string | null>(null);
+  // Decided after mount: reading navigator during render would differ between server and client.
+  const [isMac, setIsMac] = useState(false);
+  useEffect(() => { try { setIsMac(/Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent)); } catch { /* no navigator */ } }, []);
   const [share, setShare] = useState<{ on: boolean; qs: string; code: string | null }>({ on: false, qs: "", code: null });
 
   useEffect(() => {
@@ -351,9 +362,16 @@ export default function SixAxesNav() {
 
   const active = GROUPS.find((g) => hrefs(g).includes(pathname));
 
+  // Every visible GM page, for the command palette (Ctrl+K). Same capability filter as the menus.
+  const palettePages: PalettePage[] = GROUPS.flatMap((g) =>
+    g.children ? vis(g.children).map((c) => ({ href: c.href, label: c.label, group: g.label })) : [{ href: g.href, label: g.label, group: "" }]);
+  const openPalette = () => window.dispatchEvent(new Event(OPEN_PALETTE));
+  const shortcut = isMac ? "\u2318K" : "Ctrl K";
+
   return (
     <>
       <style>{NAV_CSS}</style>
+      {pathname.startsWith("/gm") && <CommandPalette pages={palettePages} />}
 
       {/* wide: left sidebar */}
       <aside className="sax-side">
@@ -368,6 +386,11 @@ export default function SixAxesNav() {
             <div className="sax-acct-item"><LogoutButton /></div>
           </div>
         </details>
+        {pathname.startsWith("/gm") && (
+          <button type="button" className="sax-find" onClick={openPalette} aria-label="Search and jump (command palette)">
+            <span>Find or jump</span><kbd>{shortcut}</kbd>
+          </button>
+        )}
         <nav className="sax-vnav">
           {SIDE_GROUPS.map((g) => {
             const on = active?.label === g.label;
@@ -398,6 +421,11 @@ export default function SixAxesNav() {
                 return <a key={g.label} className={`sax-glink${on ? " on" : ""}`} href={g.href}>{g.label}</a>;
               })}
             </nav>
+            {pathname.startsWith("/gm") && (
+              <button type="button" className="sax-find" onClick={openPalette} aria-label="Search and jump (command palette)">
+                <span>Find</span><kbd>{shortcut}</kbd>
+              </button>
+            )}
             <LogoutButton />
           </div>
         </div>
