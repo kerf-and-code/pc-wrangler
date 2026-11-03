@@ -220,10 +220,13 @@ export default function GMWorkspace() {
 
   async function removeCharacter(id: string) {
     const name = characters.find((c) => c.id === id)?.name ?? "this character";
-    if (!window.confirm(`Remove ${name} from the party? They drop off the roster and party coverage. Their history (events, rolls, recaps) is kept.`)) return;
+    if (!window.confirm(`Remove ${name} from this campaign? They leave the party everywhere: Tonight, check-ins, recording consent, encounters and the roll list, and the Discord bot stops treating them as a player here. Their history (events, rolls, recaps) is kept, and you can restore them from the Roster.`)) return;
     setErr(null);
-    const { error } = await supabase.from("characters").update({ active: false }).eq("id", id);
-    if (error) setErr(error.message); else if (selected) await loadCharacters(selected);
+    // Ask for the row back: an update that RLS filters out returns no error and changes nothing.
+    const { data, error } = await supabase.from("characters").update({ active: false }).eq("id", id).select("id");
+    if (error) setErr(error.message);
+    else if (!data || data.length === 0) setErr(`${name} was not removed: you may not have permission to change this character.`);
+    else if (selected) await loadCharacters(selected);
   }
 
   function copySetup(code: string) {

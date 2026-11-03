@@ -77,7 +77,7 @@ export default function CheckInPage() {
     (async () => {
       const [{ data: sess }, { data: ch }] = await Promise.all([
         supabase.from("sessions").select("id, session_number, status, recap").eq("campaign_id", campaignId).order("session_number", { ascending: false }),
-        supabase.from("characters").select("id, name, class").eq("campaign_id", campaignId).eq("kind", "pc").order("name", { ascending: true }),
+        supabase.from("characters").select("id, name, class").eq("campaign_id", campaignId).eq("kind", "pc").eq("active", true).order("name", { ascending: true }),
       ]);
       if (!active) return;
       const sList = (sess as Sess[]) || [];

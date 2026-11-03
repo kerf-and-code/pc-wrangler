@@ -11,7 +11,7 @@ import CharacterSheetPeek, { type Build } from "@/components/character-sheet-pee
 import { initialCampaignId, useRememberCampaign } from "@/lib/campaign-context";
 
 type Campaign = { id: string; name: string; share_code: string | null };
-type Char = { id: string; name: string; profile_id: string | null; invite_code: string | null; build: Build };
+type Char = { id: string; name: string; profile_id: string | null; invite_code: string | null; build: Build; active: boolean | null };
 type Resp = { id: string; player_name: string | null; assigned_character_id: string | null; created_at: string };
 
 export default function RosterPage() {
@@ -21,7 +21,11 @@ export default function RosterPage() {
   const [rotateMsg, setRotateMsg] = useState<string | null>(null);
   const [campaignId, setCampaignId] = useState<string>("");
   useRememberCampaign(campaignId, campaigns);
+  // Players in the party, and the ones removed from it. Removing a player used to leave them on
+  // this list (and on Player check-ins, Capture and Roll), because only some pages honoured the
+  // characters.active flag that "remove" sets.
   const [chars, setChars] = useState<Char[]>([]);
+  const [removed, setRemoved] = useState<Char[]>([]);
   const [responses, setResponses] = useState<Resp[]>([]);
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [busy, setBusy] = useState<boolean>(false);
@@ -57,11 +61,13 @@ export default function RosterPage() {
   async function load(cid: string) {
     setLoading(true);
     const [{ data: ch }, { data: rs }, { data: ev }] = await Promise.all([
-      supabase.from("characters").select("id, name, profile_id, invite_code, build").eq("campaign_id", cid).eq("kind", "pc").order("name", { ascending: true }),
+      supabase.from("characters").select("id, name, profile_id, invite_code, build, active").eq("campaign_id", cid).eq("kind", "pc").order("name", { ascending: true }),
       supabase.from("tpdi_responses").select("id, player_name, assigned_character_id, created_at").eq("campaign_id", cid).order("created_at", { ascending: false }),
       supabase.from("events").select("character_id").eq("campaign_id", cid),
     ]);
-    setChars((ch as Char[]) || []);
+    const all = (ch as Char[]) || [];
+    setChars(all.filter((c) => c.active !== false));
+    setRemoved(all.filter((c) => c.active === false));
     setResponses((rs as Resp[]) || []);
     const tally: Record<string, number> = {};
     ((ev as { character_id: string | null }[]) || []).forEach((e) => { if (e.character_id) tally[e.character_id] = (tally[e.character_id] || 0) + 1; });
@@ -75,6 +81,16 @@ export default function RosterPage() {
     setBusy(true); setError(null);
     const { error: e } = await supabase.rpc("assign_response_to_character", { p_response: responseId, p_character: characterId });
     if (e) setError(e.message);
+    await load(campaignId);
+    setBusy(false);
+  }
+  async function setActive(ch: Char, activeNow: boolean) {
+    if (!activeNow && !window.confirm(`Remove ${ch.name} from this campaign? They leave the party everywhere: Tonight, check-ins, recording consent, encounters and the roll list, and the Discord bot stops treating them as a player here. Their history (events, rolls, recaps) is kept, and you can restore them below.`)) return;
+    setBusy(true); setError(null);
+    // Checked: an update that RLS filters out returns no error and changes nothing, so ask for the row back.
+    const { data, error: e } = await supabase.from("characters").update({ active: activeNow }).eq("id", ch.id).select("id");
+    if (e) setError(e.message);
+    else if (!data || data.length === 0) setError(`${ch.name} was not ${activeNow ? "restored" : "removed"}: you may not have permission to change this character.`);
     await load(campaignId);
     setBusy(false);
   }
@@ -144,6 +160,10 @@ export default function RosterPage() {
                           style={{ marginTop: 8, marginLeft: 8, display: "inline-block", textDecoration: "none", background: "transparent", color: C.plum, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "5px 10px", fontSize: 12, fontWeight: 600 }}>
                           Character page
                         </a>
+                        <button type="button" onClick={() => void setActive(ch, false)} disabled={busy}
+                          style={{ marginTop: 8, marginLeft: 8, background: "transparent", color: C.warn, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "5px 10px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+                          Remove from campaign
+                        </button>
                       </div>
                       {r ? (
                         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -174,6 +194,26 @@ export default function RosterPage() {
                     </div>
                   );
                 })}
+              </div>
+            )}
+
+            {removed.length > 0 && (
+              <div style={{ ...box }}>
+                <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>Removed from the party</div>
+                <div style={{ fontSize: 12.5, color: C.muted, marginBottom: 10 }}>
+                  Not shown anywhere in the campaign. Their history stays in recaps, mechanics and transcripts. Restore puts them back in the party.
+                </div>
+                <div style={{ display: "grid", gap: 8 }}>
+                  {removed.map((ch) => (
+                    <div key={ch.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
+                      <span style={{ fontSize: 14, color: C.muted }}>{ch.name} <span style={{ fontSize: 12 }}>({counts[ch.id] || 0} events logged)</span></span>
+                      <button type="button" onClick={() => void setActive(ch, true)} disabled={busy}
+                        style={{ background: "transparent", color: C.sun, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "5px 12px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+                        Restore
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 

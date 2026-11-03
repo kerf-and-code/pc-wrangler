@@ -92,7 +92,7 @@ export default function CommandPalette({ pages }: { pages: PalettePage[] }) {
     (async () => {
       const [{ data: e }, { data: c }, { data: s }] = await Promise.all([
         supabase.from("entries").select("id, type, title, tags").eq("campaign_id", cid).order("title"),
-        supabase.from("characters").select("id, name, kind").eq("campaign_id", cid).in("kind", ["npc", "pc"]).order("name"),
+        supabase.from("characters").select("id, name, kind, active").eq("campaign_id", cid).in("kind", ["npc", "pc"]).order("name"),
         supabase.from("sessions").select("id, session_number, status, scheduled_at").eq("campaign_id", cid).order("session_number", { ascending: false }),
       ]);
       if (off) return;
@@ -101,7 +101,9 @@ export default function CommandPalette({ pages }: { pages: PalettePage[] }) {
         const tag = (r.tags || []).find((t) => t === "faction" || t === "item");
         out.push({ key: `e:${r.id}`, kind: "entry", label: r.title, sub: tag || r.type, href: gmHref("/gm/codex", { campaign: cid, entry: r.id }) });
       }
-      for (const r of (c as { id: string; name: string; kind: string }[]) || []) {
+      for (const r of (c as { id: string; name: string; kind: string; active: boolean | null }[]) || []) {
+        // A PC removed from the party is history, not someone to jump to.
+        if (r.kind === "pc" && r.active === false) continue;
         out.push({ key: `c:${r.id}`, kind: r.kind === "pc" ? "pc" : "npc", label: r.name, href: gmHref("/gm/codex", { campaign: cid, character: r.id }) });
       }
       for (const r of (s as { id: string; session_number: number | null; status: string | null; scheduled_at: string | null }[]) || []) {

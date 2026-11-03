@@ -102,7 +102,7 @@ export default function RollerPage() {
         supabase.from("sessions").select("id, session_number, ended_at")
           .eq("campaign_id", campaignId).order("session_number", { ascending: false }).limit(10),
         supabase.from("characters").select("id, name")
-          .eq("campaign_id", campaignId).eq("kind", "pc").order("name"),
+          .eq("campaign_id", campaignId).eq("kind", "pc").eq("active", true).order("name"),
       ]);
       const srows = (ss as Session[]) ?? [];
       setSessions(srows);

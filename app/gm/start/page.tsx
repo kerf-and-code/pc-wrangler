@@ -43,7 +43,7 @@ export default function GettingStartedPage() {
 
       const none = Promise.resolve({ data: [] as unknown[] });
       const [{ data: pcs }, { data: sess }, { data: jobs }, { data: evs }, { data: taps }] = await Promise.all([
-        cid ? supabase.from("characters").select("id").eq("campaign_id", cid).eq("kind", "pc").limit(1) : none,
+        cid ? supabase.from("characters").select("id").eq("campaign_id", cid).eq("kind", "pc").eq("active", true).limit(1) : none,
         cid ? supabase.from("sessions").select("id, notes, recap, scheduled_at, capture_modality").eq("campaign_id", cid) : none,
         cid ? supabase.from("capture_jobs").select("id, source").eq("campaign_id", cid) : none,
         cid ? supabase.from("events").select("id").eq("campaign_id", cid).limit(1) : none,
