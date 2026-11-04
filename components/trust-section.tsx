@@ -8,6 +8,10 @@ import { FORGE_FONTS, forgeHeading } from "@/lib/forge-theme";
 // section is that a GM weighing "you want to record my table's voices" should not have to dig through a
 // policy to find the reassurance. Every claim is deliberately conservative and matches the privacy page
 // (note: "in transit", because encryption at rest is not claimed there). Server-rendered.
+//
+// 2026-11-03: "Never used to train AI" was replaced. It promised that of every provider, and since Groq,
+// Replicate and Google Gemini joined the list, it is confirmed only for Deepgram and Anthropic (see
+// /privacy). Do not bring it back unless every provider's terms for the plan in use are confirmed.
 
 type Point = { title: string; body: string };
 
@@ -21,8 +25,8 @@ export const POINTS: Point[] = [
     body: "Recordings delete themselves 60 days after the session. Only the transcript and the moments you choose to keep stay.",
   },
   {
-    title: "Never used to train AI",
-    body: "The services that transcribe and analyze your sessions do not train their models on your table's data.",
+    title: "Never sold, never ads",
+    body: "We do not sell your table's data, we do not run ads, and we never build advertising profiles from what your table says.",
   },
   {
     title: "Encrypted on the way",

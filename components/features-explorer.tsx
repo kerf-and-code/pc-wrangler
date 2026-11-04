@@ -12,12 +12,15 @@ import { FULL_TOOLSET, THEMED_TABLE, systemsAnd } from "@/lib/marketing/systems"
 // groups roll the whole product up into the pillars, each with a live screenshot.
 //
 // SCREENSHOTS referenced (in /public/screens): mechanics.png, codex.png, dispositions.png, forge.png,
-// worldmap.png, compendium.png. The first four line up with the home page's set; forge.png and
-// compendium.png are the two added here.
+// worldmap.png, compendium.png, combat.png. The first four line up with the home page's set.
 //
 // 2026-10: renders only on /features inside SiteShell (the night palette). Tabs are labels without
 // numbers; the selected tab is ink on slate (amber is kept for actions); from 1200px the card puts the
-// copy in a 40% column beside the capture at 60%. On phones the six tabs are a 2 x 3 grid.
+// copy in a 40% column beside the capture at 60%. On phones the tabs are a two-column grid.
+//
+// 2026-11-03: added "Running the night" (Tonight, the combat tracker, the players' Initiative page, the
+// DM Screen; capture combat.png), and brought the systems and compendium copy up to the current library
+// (about 16,000 compendium entries, each labeled by book; partnered publishers' content with permission).
 
 type Feature = {
   key: string;
@@ -41,6 +44,18 @@ const FEATURES: Feature[] = [
     ],
     img: "/screens/mechanics.png",
     imgAlt: "The Mechanics view: a d20 distribution and a per-character roll table",
+  },
+  {
+    key: "night",
+    label: "Running the night",
+    title: "Run the fight, not the paperwork",
+    lead: "Everything for game night, on one page.",
+    paras: [
+      "Tonight walks you through the session from start to finish: who is here, consent, recording, a quick log for the moment you will want to remember, and the wrap-up. Build a fight on the encounter balancer, save it with its stat blocks, and press Run.",
+      "The combat tracker handles initiative, hit points, temporary hit points and conditions, with one-click attack and damage rolls from each monster's stat block. Those rolls land in the session's Mechanics next to the players'. Your players follow the turn order on their phones, without ever seeing a monster's hit points, and the DM Screen keeps the rules cards you need pinned beside you.",
+    ],
+    img: "/screens/combat.png",
+    imgAlt: "The combat tracker: initiative order, hit points and AC for player characters and goblins, with the Goblin Hexer's stat block and attack buttons open",
   },
   {
     key: "wiki",
@@ -73,6 +88,7 @@ const FEATURES: Feature[] = [
     lead: "It reskins and re-rules itself around your table.",
     paras: [
       `${systemsAnd(FULL_TOOLSET)} get the full toolset: a character builder, monsters or NPCs, encounter maths, and system-correct dice. ${systemsAnd(THEMED_TABLE)} run as a themed table with the right roller, with more on the way.`,
+      "On D&D 5e the builder goes well past the free rules: subclasses, species, feats, spells and magic items from the books most tables play from, written in our own words, plus classes and species from partnered publishers, used with their permission.",
       "The record, recap, wiki, and player insight work the same on every system. What changes is the dice and the sheet, not the loop.",
     ],
     img: "/screens/forge.png",
@@ -97,7 +113,7 @@ const FEATURES: Feature[] = [
     lead: "An offline voice compendium, built for the table.",
     paras: [
       "Say a spell, item, or condition, fireball, belt of giant strength, grappled, and its rules card is up before the question finishes. The speech recognition runs on-device and is not an AI model, so nothing leaves the browser and it works with the wifi off. Type it instead when the room is loud.",
-      "Hundreds of SRD spells, magic items, and conditions, with a 2014 or 2024 toggle. Push to talk to pin a card, or leave it listening and let cards fade on their own. It is there so you never stop the game to open a book.",
+      "Nearly 16,000 entries, spells, monsters, magic items, classes, species, feats and rules, each labeled with the book it comes from, with a 2014 or 2024 toggle. Push to talk to pin a card, or leave it listening and let cards fade on their own, and send any card to your DM Screen. It is there so you never stop the game to open a book.",
     ],
     img: "/screens/compendium.png",
     imgAlt: "The rules compendium with the Fireball card open",

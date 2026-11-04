@@ -33,6 +33,12 @@ import { LANDING_NAV, PILOT_CTA } from "@/lib/marketing/nav";
 //   - The free-tool chips are real links (they were plain boxes).
 //   - 40/60 text-to-image splits that run wide on monitors (A7); the phone gets its own order.
 //
+// 2026-11-03 content pass: a "Running the night" row (Tonight, the combat tracker, the players'
+// Initiative page, the DM Screen) with a new combat capture; the compendium figure and count brought up
+// to the current library; the systems section says what the D&D builder now covers; the integrations
+// say plainly that only D&D Beyond rolls (whichever VTT they are sent to) and Foundry rolls arrive
+// automatically, not native Roll20 rolls.
+//
 // Server-rendered, because this is the URL every link points at and a crawler needs the content.
 // Client islands: the section rail, the reveal observer, and the lit line, all progressive
 // enhancement over server-rendered markup.
@@ -62,6 +68,7 @@ const RAIL: RailSection[] = [
   { id: "how", label: "How it works" },
   { id: "sample", label: "See it" },
   { id: "why", label: "Why" },
+  { id: "night", label: "Game night" },
   { id: "wiki", label: "Living wiki" },
   { id: "insight", label: "Player insight" },
   { id: "maps", label: "Maps & world" },
@@ -157,13 +164,14 @@ export default function Home() {
           <div className="nt-split">
             <article data-reveal>
               <figure className="nt-split-shot">
-                <img src="/screens/compendium.png" width={696} height={490} loading="lazy"
-                  alt="The rules lookup with Fireball searched: the spell card, related items, and a Voice button for asking out loud" />
+                <img src="/screens/compendium.png" width={1092} height={1086} loading="lazy"
+                  alt="The rules compendium with Fireball looked up: the spell card, related spells and items each labeled by book, and a Voice button for asking out loud" />
               </figure>
               <h3>For the GM</h3>
               <p>
-                The recap, the wiki you approve, encounter maths, and a rules lookup you can ask out loud: say a
-                spell and its card comes up, from 933 SRD entries, without leaving your browser.
+                The recap, the wiki you approve, a combat tracker, encounter maths, and a rules lookup you can
+                ask out loud: say a spell and its card comes up, from nearly 16,000 entries, each labeled with
+                the book it comes from, without leaving your browser.
               </p>
               <Link href="/features" className="nt-link nt-strong">What the GM gets</Link>
             </article>
@@ -237,6 +245,23 @@ export default function Home() {
           <LitLine className="nt-lit" text="That Moderate fight left them on a third of their hit points. Your Moderates are landing like Hards." />
         </div>
       </section>
+
+      {/* GAME NIGHT */}
+      <Row id="night" title="Run the fight, not the paperwork" side="right"
+        img="/screens/combat.png" w={1208} h={1000}
+        alt="The combat tracker: initiative order, hit points and AC for player characters and goblins, with the Goblin Hexer's stat block and attack buttons open">
+        <p>
+          Tonight walks you through game night from start to finish: who is here, consent, recording, a
+          quick log for the moment you will want to remember, and the wrap-up. Build a fight on the
+          encounter balancer, save it with its stat blocks, and press Run.
+        </p>
+        <p>
+          The combat tracker handles initiative, hit points and conditions, with one-click attack and
+          damage rolls from each monster&apos;s stat block, and those rolls land in your Mechanics next to
+          the players&apos;. Your players follow the turn order on their phones without ever seeing a
+          monster&apos;s hit points.
+        </p>
+      </Row>
 
       {/* WIKI */}
       <Row id="wiki" title="A campaign wiki that writes itself" side="right"
@@ -327,7 +352,7 @@ export default function Home() {
           <div className="nt-tiers">
             <div data-reveal>
               <h3>Full toolset</h3>
-              <p>Character builder, monsters or NPCs, encounter maths, system-correct dice.</p>
+              <p>Character builder, monsters or NPCs, encounter maths, system-correct dice. On D&amp;D 5e the builder and compendium go well past the free rules, with partnered publishers&apos; classes and species used with permission.</p>
               <p className="nt-tier-list">{systemsDots(FULL_TOOLSET)}</p>
             </div>
             <div data-reveal>
@@ -354,8 +379,9 @@ export default function Home() {
           </p>
           <div className="nt-integrations" data-reveal>
             <p><strong>Discord.</strong> The bot records your voice channel with each player on their own track.</p>
-            <p><strong>D&amp;D Beyond and Roll20.</strong> Rolls come in through the browser extension, with no separate setup on the night.</p>
+            <p><strong>D&amp;D Beyond.</strong> The browser extension catches every roll made there, whichever virtual tabletop it is sent on to.</p>
             <p><strong>Foundry VTT.</strong> A module pipes every roll straight in. <Link href="/foundry" className="nt-link">Set it up</Link></p>
+            <p><strong>In person.</strong> One laptop or tablet records the room, and the rolls your table says out loud are read from the transcript.</p>
           </div>
         </div>
       </section>
@@ -610,7 +636,7 @@ html { scroll-behavior: smooth; }
 .nt-tiers h3 { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
 .nt-tiers p { color: var(--nt-dim); font-size: 17px; }
 .nt-tier-list { color: var(--nt-ink) !important; }
-.nt-integrations { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 40px; margin-top: 48px; padding-top: 28px; border-top: 1px solid var(--nt-line2); }
+.nt-integrations { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 40px; margin-top: 48px; padding-top: 28px; border-top: 1px solid var(--nt-line2); }
 .nt-integrations p { color: var(--nt-dim); font-size: 17px; margin: 0; }
 .nt-integrations strong { color: var(--nt-ink); }
 

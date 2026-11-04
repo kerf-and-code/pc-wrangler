@@ -10,14 +10,15 @@ import SiteShell from "@/components/site/site-shell";
 // LAYOUT (2026-10, critic round 4): three densities instead of one block repeated seven times.
 //   1. one lead row: the character page, capture in the 60% column (the home page's split);
 //   2. a pair: the recap and journal, and the lore, captures above text;
-//   3. a strip of four: maps, chat, the check-in, every character, each with a short caption.
+//   3. a strip of five: the fight, maps, chat, the check-in, every character, each with a short caption.
+//      (2026-11-03: the fight was added for the players' Initiative page; five across from 1200px.)
 // No eyebrow labels and no dividers; space separates the groups, as on the home page.
 
 export const metadata: Metadata = {
   title: "For players",
   description:
     "What Six Axes gives the players at the table: your own character page, the recap and journal, the "
-    + "lore you can see, shared maps, group chat, scheduling, an anonymous check-in, and every character "
+    + "lore you can see, the turn order in a fight, shared maps, group chat, scheduling, an anonymous check-in, and every character "
     + "and campaign in one place. Your data stays yours.",
   alternates: { canonical: "/players" },
 };
@@ -48,6 +49,11 @@ const PAIR: { title: string; shot: Shot; paras: string[] }[] = [
 ];
 
 const STRIP: { title: string; shot: Shot; text: string }[] = [
+  {
+    title: "In the fight",
+    shot: { img: "/screens/players/initiative.png", w: 585, h: 1200, alt: "The players' initiative page on a phone: the turn order for round 1, with the current turn marked" },
+    text: "Follow the turn order on your phone while the GM runs the fight. You see whose turn it is, never the monsters' hit points.",
+  },
   {
     title: "The map",
     shot: { img: "/screens/worldmap.png", w: 1057, h: 818, alt: "The campaign's hex world map in Six Axes, with settlements and regions", pos: "100% 100%" },
@@ -148,6 +154,7 @@ const CSS = `
 .pl-crop { height: 460px; overflow: hidden; border-radius: 10px; border: 1px solid var(--sn-line2); }
 .pl-crop img { height: 100%; width: 100%; object-fit: cover; object-position: 50% 0; border: 0; box-shadow: none; border-radius: 0; }
 .pl-strip { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 32px; margin-top: 112px; }
+@media (min-width: 1200px) { .pl-strip { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 28px; } }
 .pl-thumb { height: 300px; overflow: hidden; border-radius: 10px; border: 1px solid var(--sn-line2); background: #151b25; }
 .pl-thumb img { height: 100%; width: 100%; object-fit: cover; object-position: 50% 0; border: 0; box-shadow: none; border-radius: 0; }
 .pl-strip-title { font-family: var(--sn-display); font-weight: 700; font-size: 22px; color: var(--sn-ink); margin: 18px 0 6px; }
