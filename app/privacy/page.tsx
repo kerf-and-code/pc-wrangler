@@ -80,7 +80,7 @@ export default function PrivacyPolicyPage() {
             <tr><td>Groq</td><td>Speech-to-text transcription of Discord session audio</td></tr>
             <tr><td>Replicate</td><td>Speech-to-text transcription of in-person room recordings, including telling the voices in one recording apart</td></tr>
             <tr><td>Deepgram</td><td>Backup speech-to-text transcription, used when the providers above are unavailable</td></tr>
-            <tr><td>Anthropic (Claude)</td><td>AI analysis of transcripts and text: drafting recaps and the campaign journal, proposing events and codex entries (people, places, lore), prep suggestions, a second independent coding used to check reliability, and reading campaign notes a GM imports</td></tr>
+            <tr><td>Anthropic (Claude)</td><td>AI analysis of transcripts and text: drafting recaps and the campaign journal, proposing events and codex entries (people, places, lore), and reading campaign notes a GM imports</td></tr>
             <tr><td>Google (Gemini)</td><td>AI map images: turning a GM&rsquo;s colour-coded map, with the style and text they choose, into a finished map image, and reading a map image a GM uploads back into editable terrain. The free map generator sends the same kind of colour-coded map, without an account</td></tr>
             <tr><td>Google Cloud</td><td>Statistical computation for disposition modeling</td></tr>
             <tr><td>Google Analytics</td><td>Website usage measurement</td></tr>

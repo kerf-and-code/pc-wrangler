@@ -42,7 +42,7 @@ export default function AiRecordingDisclosurePage() {
 
       <h2>Other places AI is used</h2>
       <ul>
-        <li>Anthropic&rsquo;s Claude also drafts the campaign journal, suggests prep, reads campaign notes a GM chooses to import, and codes some sessions a second time so we can measure how reliable the extraction is.</li>
+        <li>Anthropic&rsquo;s Claude also drafts the campaign journal and reads campaign notes a GM chooses to import. How reliable the extraction is gets checked by a person, who codes a sample of lines without seeing the AI&rsquo;s answers.</li>
         <li>Google&rsquo;s Gemini turns a GM&rsquo;s map into a finished map image, and can read a map image the GM uploads back into editable terrain. It receives the map and the style and text the GM picks, not session audio or transcripts.</li>
         <li>The rules compendium&rsquo;s voice lookup is speech recognition that runs inside your browser. That audio never leaves your device.</li>
       </ul>
