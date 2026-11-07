@@ -10,7 +10,9 @@ export const DEFAULT_N = 25;
 
 export function feetPerSquare(n: number): number { return n / 5; }
 
-export const CELL_TYPES: { key: string; label: string; color: string | null }[] = [
+// Indices are stored in saved maps, so new terrains are only ever APPENDED. The outdoor ones (2026-11-06)
+// are open ground: on an outdoor map they get no walls, and the map maker lists them first there.
+export const CELL_TYPES: { key: string; label: string; color: string | null; outdoor?: boolean }[] = [
   { key: "erase", label: "Erase", color: null },
   { key: "corridor", label: "Corridor", color: "#c0b498" },
   { key: "room", label: "Room", color: "#d8cdb5" },
@@ -26,6 +28,17 @@ export const CELL_TYPES: { key: string; label: string; color: string | null }[] 
   { key: "temple", label: "Temple", color: "#cbb6d0" },
   { key: "ship", label: "Ship", color: "#8a6a4a" },
   { key: "spaceship", label: "Spaceship", color: "#8a9aa8" },
+  { key: "grass", label: "Grass", color: "#c9cf9a", outdoor: true },
+  { key: "meadow", label: "Meadow", color: "#d8d59e", outdoor: true },
+  { key: "forest", label: "Forest floor", color: "#aeb983", outdoor: true },
+  { key: "dirt", label: "Dirt", color: "#d4b88e", outdoor: true },
+  { key: "road", label: "Road", color: "#e0cfa6", outdoor: true },
+  { key: "sand", label: "Sand", color: "#eadaa9", outdoor: true },
+  { key: "snow", label: "Snow", color: "#f3f2ec", outdoor: true },
+  { key: "swamp", label: "Swamp", color: "#aab48d", outdoor: true },
+  { key: "deepwater", label: "Deep water", color: "#76a0b6", outdoor: true },
+  { key: "stone", label: "Stone ground", color: "#d2cbb8", outdoor: true },
+  { key: "cliff", label: "Cliff", color: "#bba986", outdoor: true },
 ];
 
 export function emptyLevels(n: number): number[][] {

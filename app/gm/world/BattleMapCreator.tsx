@@ -1,0 +1,804 @@
+"use client";
+
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { C, FORGE_RADIUS } from "@/lib/forge-theme";
+import { createClient } from "@/lib/supabase/client";
+import { CELL_TYPES, SIZES } from "@/lib/dungeon/render";
+import {
+  DOOR_KINDS, type DoorKind, type MapElement, type GridLook,
+  renderClassic, layoutFor, contentBounds, edgeKey, isStructure, drawElement, elementBox, hitElement, snapElement,
+  type Layout, type RenderInput,
+} from "@/lib/dungeon/classic";
+import {
+  PIECES, MAX_ELEMENTS, blankMap, fromRow, toRow, fromDungeonRow, resizeMap, newId,
+  type BattleMap, type BattleMapSummary, type MapKind,
+} from "@/lib/dungeon/battle";
+import TileLibrary from "./TileLibrary";
+import type { CustomTile } from "@/lib/tiles/custom";
+
+// The Battle maps tab (2026-11-06). Many named maps per campaign, indoor or outdoor, drawn in the
+// adventure-book style by lib/dungeon/classic. The GM edits the finished map directly: what is on the
+// canvas is what saves and what exports.
+//
+// Tools:
+//   Select   click a piece to select it, drag to move (snaps to the grid; hold Alt to place freely).
+//            The panel turns it, resizes it, renames a label, duplicates, deletes and restacks it.
+//   Place    pick a piece (trees, rocks, tents, furniture, stairs, text labels...) and click to drop it.
+//   Terrain  brush, rectangle or fill, with any terrain or custom tile. Erase returns a square to rock
+//            (indoor) or to the map's ground (outdoor).
+//   Doors    click near a wall line to set the chosen door; click it again to remove it.
+// Keys: Ctrl+Z undo, Delete removes, Ctrl+D duplicates, arrows nudge (Alt: a tenth of a square),
+// R turns 90 degrees (Shift+R back), [ and ] turn 15 degrees, + and - resize, Esc lets go.
+//
+// Saved to battle_maps (p104), one row per map. The first time a campaign with no maps opens the tab, its
+// old dungeon_maps row (if anything is painted on it) is copied into a first map; the old row is left as
+// it was.
+
+type Tool = "select" | "place" | "terrain" | "doors";
+type PaintMode = "brush" | "rect" | "fill";
+type Brush = { kind: "builtin"; idx: number } | { kind: "custom"; tileId: string };
+type Status = "loading" | "ready" | "empty" | "migration" | "error";
+
+const BRUSHES = [1, 2, 3, 5, 9];
+const UNDO_DEPTH = 60;
+const ZOOMS = [1, 1.5, 2, 3];
+const editCell = (n: number) => Math.max(12, Math.min(48, Math.round(1200 / n)));
+const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "map";
+const SELECT_COLOR = "#d9a43a";
+
+function cloneMap(m: BattleMap): BattleMap {
+  return {
+    ...m,
+    levels: m.levels.map((a) => a.slice()),
+    custom: m.custom.map((o) => ({ ...o })),
+    doors: m.doors.map((o) => ({ ...o })),
+    elements: m.elements.map((a) => a.map((e) => ({ ...e }))),
+    meta: { ...m.meta, levelNames: [...m.meta.levelNames], grid: { ...m.meta.grid } },
+  };
+}
+
+const missingTable = (msg: string | undefined) => !!msg && /battle_maps/.test(msg) && /(does not exist|not find|schema cache)/i.test(msg);
+
+export default function BattleMapCreator({ campaignId }: { campaignId: string }) {
+  const supabase = useMemo(() => createClient(), []);
+  const [status, setStatus] = useState<Status>("loading");
+  const [maps, setMaps] = useState<BattleMapSummary[]>([]);
+  const [doc, setDoc] = useState<BattleMap | null>(null);
+  const [level, setLevel] = useState(0);
+  const [tool, setTool] = useState<Tool>("select");
+  const [paintMode, setPaintMode] = useState<PaintMode>("brush");
+  const [brush, setBrush] = useState<Brush>({ kind: "builtin", idx: 2 });
+  const [brushSize, setBrushSize] = useState(1);
+  const [door, setDoor] = useState<DoorKind>("door");
+  const [piece, setPiece] = useState<string>("tree");
+  const [labelText, setLabelText] = useState("A");
+  const [selId, setSelId] = useState<string | null>(null);
+  const [zoom, setZoom] = useState(1);
+  const [tiles, setTiles] = useState<CustomTile[]>([]);
+  const [imgTick, setImgTick] = useState(0);
+  const [msg, setMsg] = useState<string | null>(null);
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [creating, setCreating] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newKind, setNewKind] = useState<MapKind>("outdoor");
+
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const baseRef = useRef<HTMLCanvasElement | null>(null);
+  const layoutRef = useRef<Layout | null>(null);
+  const work = useRef<BattleMap | null>(null);             // in-progress terrain stroke, committed on pointer up
+  const drag = useRef<{ id: string; dx: number; dy: number; x: number; y: number; moved: boolean } | null>(null);
+  const stroke = useRef<{ r0: number; c0: number; r1: number; c1: number } | null>(null);
+  const hover = useRef<{ x: number; y: number } | null>(null);
+  const undo = useRef<BattleMap[]>([]);
+  const dirty = useRef(false);
+  const docRef = useRef<BattleMap | null>(null);
+  const tileImgs = useRef<Map<string, HTMLImageElement>>(new Map());
+  const raf = useRef<{ base: boolean; id: number | null }>({ base: false, id: null });
+  docRef.current = doc;
+
+  const tileColors = useMemo(() => new Map(tiles.map((t) => [t.id, t.color])), [tiles]);
+  const outdoor = doc?.kind === "outdoor";
+
+  // ---- custom tile images (untainted blobs so the canvas can export) ----
+  useEffect(() => {
+    let off = false;
+    for (const t of tiles) {
+      if (tileImgs.current.has(t.id)) continue;
+      (async () => {
+        try {
+          const blob = await (await fetch(t.imageUrl)).blob();
+          const url = URL.createObjectURL(blob);
+          const img = new Image();
+          img.onload = () => { if (!off) { tileImgs.current.set(t.id, img); setImgTick((v) => v + 1); } URL.revokeObjectURL(url); };
+          img.src = url;
+        } catch { /* falls back to the tile's average colour */ }
+      })();
+    }
+    return () => { off = true; };
+  }, [tiles]);
+
+  // ---- loading ----
+  const listMaps = useCallback(async (): Promise<BattleMapSummary[] | null> => {
+    const { data, error } = await supabase.from("battle_maps").select("id, name, kind, updated_at").eq("campaign_id", campaignId).order("created_at", { ascending: true });
+    if (error) {
+      if (missingTable(error.message)) setStatus("migration");
+      else { setStatus("error"); setMsg(`Could not load maps: ${error.message}`); }
+      return null;
+    }
+    return (data ?? []).map((r) => ({ id: r.id as string, name: (r.name as string) || "Untitled map", kind: r.kind === "outdoor" ? "outdoor" : "indoor", updated_at: (r.updated_at as string) ?? null }));
+  }, [supabase, campaignId]);
+
+  const openMap = useCallback(async (id: string) => {
+    const { data, error } = await supabase.from("battle_maps").select("id, name, kind, n, feet_per_square, levels, custom_cells, doors, elements, meta").eq("id", id).maybeSingle();
+    if (error || !data) { setMsg(`Could not open that map: ${error?.message ?? "not found"}`); return; }
+    undo.current = []; dirty.current = false; work.current = null; drag.current = null;
+    setSelId(null); setLevel(0); setDoc(fromRow(data as Parameters<typeof fromRow>[0])); setStatus("ready"); setSaveState("idle");
+    try { localStorage.setItem(`battlemap:${campaignId}`, id); } catch { /* per-viewer convenience only */ }
+  }, [supabase, campaignId]);
+
+  // Copy the campaign's old dungeon_maps row into a first map, once.
+  const carryOver = useCallback(async (): Promise<boolean> => {
+    const { data } = await supabase.from("dungeon_maps").select("levels, feet_per_square, custom_cells").eq("campaign_id", campaignId).maybeSingle();
+    if (!data) return false;
+    const { data: extra } = await supabase.from("dungeon_maps").select("marks, meta").eq("campaign_id", campaignId).maybeSingle();
+    const m = fromDungeonRow({ ...(data as object), ...((extra as object | null) ?? {}) });
+    if (!m) return false;
+    const { error } = await supabase.from("battle_maps").insert({ campaign_id: campaignId, ...toRow({ ...m, id: "" }) });
+    if (error) { setMsg(`Your old dungeon map could not be copied over: ${error.message}`); return false; }
+    return true;
+  }, [supabase, campaignId]);
+
+  useEffect(() => {
+    let off = false;
+    (async () => {
+      if (!campaignId) { setStatus("empty"); return; }
+      let list = await listMaps(); if (off || !list) return;
+      if (list.length === 0 && (await carryOver())) { list = await listMaps(); if (off || !list) return; }
+      setMaps(list);
+      if (list.length === 0) { setStatus("empty"); setCreating(true); return; }
+      let pick = list[0].id;
+      try { const last = localStorage.getItem(`battlemap:${campaignId}`); if (last && list.some((m) => m.id === last)) pick = last; } catch { /* ignore */ }
+      await openMap(pick);
+    })();
+    return () => { off = true; };
+  }, [campaignId, listMaps, carryOver, openMap]);
+
+  // ---- saving ----
+  const saveNow = useCallback(async (m: BattleMap) => {
+    setSaveState("saving");
+    const { error } = await supabase.from("battle_maps").update(toRow(m)).eq("id", m.id);
+    if (error) { setSaveState("error"); setMsg(`Not saved: ${error.message}`); return false; }
+    dirty.current = false; setSaveState("saved");
+    setMaps((prev) => prev.map((x) => (x.id === m.id ? { ...x, name: m.name, kind: m.kind, updated_at: new Date().toISOString() } : x)));
+    return true;
+  }, [supabase]);
+
+  useEffect(() => {
+    if (!doc || !dirty.current) return;
+    setSaveState("saving");
+    const t = setTimeout(() => { void saveNow(doc); }, 800);
+    return () => clearTimeout(t);
+  }, [doc, saveNow]);
+
+  const flush = useCallback(async () => { const m = docRef.current; if (m && dirty.current) await saveNow(m); }, [saveNow]);
+
+  // ---- editing ----
+  const pushUndo = useCallback(() => {
+    const m = docRef.current; if (!m) return;
+    undo.current.push(cloneMap(m)); if (undo.current.length > UNDO_DEPTH) undo.current.shift();
+  }, []);
+  const mutate = useCallback((fn: (m: BattleMap) => void, withUndo = true) => {
+    const m = docRef.current; if (!m) return;
+    if (withUndo) pushUndo();
+    const next = cloneMap(m); fn(next); dirty.current = true; setDoc(next);
+  }, [pushUndo]);
+  const doUndo = useCallback(() => {
+    const s = undo.current.pop(); if (!s) return;
+    dirty.current = true; setDoc(s);
+    if (selId && !s.elements[level].some((e) => e.id === selId)) setSelId(null);
+  }, [selId, level]);
+
+  const selected = useMemo(() => (doc && selId ? doc.elements[level].find((e) => e.id === selId) ?? null : null), [doc, selId, level]);
+  const updateSel = useCallback((patch: Partial<MapElement>, withUndo = true) => {
+    if (!selId) return;
+    mutate((m) => { m.elements[level] = m.elements[level].map((e) => (e.id === selId ? { ...e, ...patch } : e)); }, withUndo);
+  }, [selId, level, mutate]);
+
+  // ---- drawing ----
+  const inputFor = useCallback((m: BattleMap, lv: number, drawEls: boolean): RenderInput => ({
+    n: m.n, grid: m.levels[lv], custom: m.custom[lv], tileImages: tileImgs.current, tileColors,
+    marks: { features: {}, doors: m.doors[lv], labels: {} },
+    meta: { title: m.meta.title, levelNames: m.meta.levelNames, autoNumber: m.meta.autoNumber, grid: m.meta.showGrid },
+    level: lv, feetPerSquare: m.feetPerSquare, outdoor: m.kind === "outdoor", ground: m.meta.ground, gridLook: m.meta.grid,
+    elements: m.elements[lv], drawElements: drawEls,
+  }), [tileColors]);
+
+  const paint = useCallback(() => {
+    const cv = canvasRef.current, base = baseRef.current, L = layoutRef.current, m = work.current ?? docRef.current;
+    if (!cv || !base || !L || !m) return;
+    const ctx = cv.getContext("2d"); if (!ctx) return;
+    if (cv.width !== base.width || cv.height !== base.height) { cv.width = base.width; cv.height = base.height; }
+    ctx.drawImage(base, 0, 0);
+    const S = L.cell, gx = L.ox, gy = L.oy;
+    const d = drag.current;
+    for (const el of m.elements[level]) drawElement(ctx, d && d.id === el.id ? { ...el, x: d.x, y: d.y } : el, gx, gy, S);
+    const sel = selId ? m.elements[level].find((e) => e.id === selId) : null;
+    if (sel) {
+      const e = d && d.id === sel.id ? { ...sel, x: d.x, y: d.y } : sel, { w, h } = elementBox(e.k, e.text);
+      const bw = Math.max(0.6, w * e.s) * S, bh = Math.max(0.6, h * e.s) * S;
+      ctx.save(); ctx.translate(gx + e.x * S, gy + e.y * S); ctx.rotate((e.rot * Math.PI) / 180);
+      ctx.setLineDash([6, 4]); ctx.lineWidth = 3; ctx.strokeStyle = "rgba(255,255,255,0.9)"; ctx.strokeRect(-bw / 2 - 3, -bh / 2 - 3, bw + 6, bh + 6);
+      ctx.lineWidth = 2; ctx.strokeStyle = SELECT_COLOR; ctx.strokeRect(-bw / 2 - 3, -bh / 2 - 3, bw + 6, bh + 6);
+      ctx.restore();
+    }
+    const hv = hover.current;
+    if (tool === "place" && hv && !drag.current) {
+      const def = PIECES.find((p) => p.key === piece);
+      const ghost: MapElement = { id: "ghost", k: piece, x: hv.x, y: hv.y, rot: 0, s: def?.s ?? 1, text: piece === "label" ? labelText.trim() || "?" : undefined };
+      const p = snapElement(ghost, hv.x, hv.y);
+      ctx.save(); ctx.globalAlpha = 0.5; drawElement(ctx, { ...ghost, ...p }, gx, gy, S); ctx.restore();
+    }
+    const st = stroke.current;
+    if (st) {
+      const r0 = Math.min(st.r0, st.r1), r1 = Math.max(st.r0, st.r1), c0 = Math.min(st.c0, st.c1), c1 = Math.max(st.c0, st.c1);
+      ctx.save(); ctx.setLineDash([6, 4]); ctx.lineWidth = 2; ctx.strokeStyle = SELECT_COLOR;
+      ctx.strokeRect(gx + c0 * S, gy + r0 * S, (c1 - c0 + 1) * S, (r1 - r0 + 1) * S); ctx.restore();
+    }
+    if (tool === "terrain" && paintMode === "brush" && hv && !st) {
+      const half = Math.floor(brushSize / 2), r = Math.floor(hv.y) - half, c = Math.floor(hv.x) - half;
+      ctx.save(); ctx.lineWidth = 1.5; ctx.strokeStyle = SELECT_COLOR; ctx.strokeRect(gx + c * S, gy + r * S, brushSize * S, brushSize * S); ctx.restore();
+    }
+  }, [level, selId, tool, piece, labelText, paintMode, brushSize]);
+
+  const renderBase = useCallback(() => {
+    const m = work.current ?? docRef.current; if (!m) return;
+    const L = layoutFor(editCell(m.n), { r0: 0, c0: 0, rows: m.n, cols: m.n });
+    const base = baseRef.current ?? (baseRef.current = document.createElement("canvas"));
+    if (base.width !== L.width || base.height !== L.height) { base.width = L.width; base.height = L.height; }
+    const ctx = base.getContext("2d"); if (!ctx) return;
+    renderClassic(ctx, inputFor(m, level, false), L);
+    layoutRef.current = L;
+  }, [inputFor, level]);
+
+  // At most one redraw per animation frame. withBase: the map underneath changed too (slow on big
+  // grids), otherwise only the pieces and highlights are drawn again over the cached map.
+  const paintRef = useRef(paint), renderBaseRef = useRef(renderBase);
+  paintRef.current = paint; renderBaseRef.current = renderBase;
+  const request = useCallback((withBase: boolean) => {
+    raf.current.base = raf.current.base || withBase;
+    if (raf.current.id !== null) return;
+    raf.current.id = requestAnimationFrame(() => {
+      const b = raf.current.base; raf.current = { base: false, id: null };
+      if (b) renderBaseRef.current();
+      paintRef.current();
+    });
+  }, []);
+
+  useEffect(() => { request(true); }, [doc, level, imgTick, tileColors, creating, request]);
+  useEffect(() => { request(false); }, [selId, tool, piece, labelText, paintMode, brushSize, request]);
+  useEffect(() => () => { if (raf.current.id !== null) cancelAnimationFrame(raf.current.id); }, []);
+
+  // ---- pointer ----
+  const toSquares = (e: React.PointerEvent) => {
+    const cv = canvasRef.current, L = layoutRef.current; if (!cv || !L) return null;
+    const rect = cv.getBoundingClientRect();
+    const px = ((e.clientX - rect.left) * cv.width) / rect.width, py = ((e.clientY - rect.top) * cv.height) / rect.height;
+    return { x: (px - L.ox) / L.cell, y: (py - L.oy) / L.cell };
+  };
+
+  const structureAt = (m: BattleMap, r: number, c: number) => {
+    if (r < 0 || c < 0 || r >= m.n || c >= m.n) return false;
+    const i = r * m.n + c;
+    return m.kind === "outdoor" ? isStructure(m.levels[level][i]) : m.levels[level][i] > 0 || !!m.custom[level][String(i)];
+  };
+
+  const brushCells = (n: number, row: number, col: number): number[] => {
+    const half = Math.floor(brushSize / 2), out: number[] = [];
+    for (let dr = 0; dr < brushSize; dr++) for (let dc = 0; dc < brushSize; dc++) { const r = row - half + dr, c = col - half + dc; if (r >= 0 && c >= 0 && r < n && c < n) out.push(r * n + c); }
+    return out;
+  };
+  const applyBrush = (m: BattleMap, cells: number[]) => {
+    const g = m.levels[level], cu = m.custom[level];
+    for (const i of cells) {
+      if (brush.kind === "builtin") { g[i] = brush.idx; delete cu[String(i)]; }
+      else { g[i] = 0; cu[String(i)] = brush.tileId; }
+    }
+  };
+  const floodFill = (m: BattleMap, row: number, col: number) => {
+    const n = m.n, g = m.levels[level], cu = m.custom[level];
+    const keyOf = (i: number) => cu[String(i)] ?? `#${g[i]}`;
+    const target = keyOf(row * n + col);
+    const want = brush.kind === "builtin" ? `#${brush.idx}` : brush.tileId;
+    if (target === want) return 0;
+    const seen = new Uint8Array(n * n), st = [row * n + col], cells: number[] = []; seen[row * n + col] = 1;
+    while (st.length) {
+      const i = st.pop() as number; cells.push(i);
+      const r = (i / n) | 0, c = i % n;
+      for (const [dr, dc] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const r2 = r + dr, c2 = c + dc; if (r2 < 0 || c2 < 0 || r2 >= n || c2 >= n) continue;
+        const j = r2 * n + c2; if (!seen[j] && keyOf(j) === target) { seen[j] = 1; st.push(j); }
+      }
+    }
+    applyBrush(m, cells);
+    return cells.length;
+  };
+
+  const clickDoor = (m: BattleMap, x: number, y: number) => {
+    const row = Math.floor(y), col = Math.floor(x), fx = x - col, fy = y - row, n = m.n;
+    if (row < 0 || col < 0 || row >= n || col >= n) return;
+    const side = [{ s: "top", v: fy }, { s: "bottom", v: 1 - fy }, { s: "left", v: fx }, { s: "right", v: 1 - fx }].sort((a, b) => a.v - b.v)[0].s;
+    let key: string, other: [number, number];
+    if (side === "top") { key = edgeKey(row * n + col, "h"); other = [row - 1, col]; }
+    else if (side === "bottom") { if (row + 1 >= n) return; key = edgeKey((row + 1) * n + col, "h"); other = [row + 1, col]; }
+    else if (side === "left") { key = edgeKey(row * n + col, "v"); other = [row, col - 1]; }
+    else { if (col + 1 >= n) return; key = edgeKey(row * n + col + 1, "v"); other = [row, col + 1]; }
+    if (!structureAt(m, row, col) && !structureAt(m, other[0], other[1])) {
+      setMsg(m.kind === "outdoor" ? "Doors go in the walls of a building, ruin or cave. Paint one with an indoor terrain first." : "Doors go on a wall or doorway next to a floor square.");
+      return;
+    }
+    setMsg(null);
+    mutate((d) => { if (d.doors[level][key] === door) delete d.doors[level][key]; else d.doors[level][key] = door; });
+  };
+
+  const topHit = (m: BattleMap, x: number, y: number): MapElement | null => {
+    const arr = m.elements[level];
+    for (let k = arr.length - 1; k >= 0; k--) if (hitElement(arr[k], x, y)) return arr[k];
+    return null;
+  };
+
+  const onDown = (e: React.PointerEvent) => {
+    const m = docRef.current, p = toSquares(e); if (!m || !p) return;
+    const inside = p.x >= 0 && p.y >= 0 && p.x < m.n && p.y < m.n;
+    const row = Math.floor(p.y), col = Math.floor(p.x);
+    if (tool === "select") {
+      const hit = topHit(m, p.x, p.y);
+      setSelId(hit ? hit.id : null);
+      if (hit) { drag.current = { id: hit.id, dx: p.x - hit.x, dy: p.y - hit.y, x: hit.x, y: hit.y, moved: false }; canvasRef.current?.setPointerCapture(e.pointerId); }
+      request(false); return;
+    }
+    if (!inside) return;
+    if (tool === "place") {
+      if (m.elements[level].length >= MAX_ELEMENTS) { setMsg(`A level holds up to ${MAX_ELEMENTS} pieces.`); return; }
+      if (piece === "label" && !labelText.trim()) { setMsg("Type the label text first."); return; }
+      const def = PIECES.find((q) => q.key === piece);
+      const el: MapElement = { id: newId(), k: piece, x: p.x, y: p.y, rot: 0, s: def?.s ?? 1 };
+      if (piece === "label") el.text = labelText.trim().slice(0, 60);
+      const at = e.altKey ? { x: Math.round(p.x * 10) / 10, y: Math.round(p.y * 10) / 10 } : snapElement(el, p.x, p.y);
+      setMsg(null);
+      mutate((d) => { d.elements[level].push({ ...el, ...at }); });
+      setSelId(el.id);
+      return;
+    }
+    if (tool === "doors") { clickDoor(m, p.x, p.y); return; }
+    // terrain
+    pushUndo();
+    if (paintMode === "fill") {
+      const next = cloneMap(m); const count = floodFill(next, row, col);
+      if (count) { dirty.current = true; setDoc(next); } else undo.current.pop();
+      return;
+    }
+    work.current = cloneMap(m);
+    canvasRef.current?.setPointerCapture(e.pointerId);
+    if (paintMode === "rect") { stroke.current = { r0: row, c0: col, r1: row, c1: col }; request(false); return; }
+    applyBrush(work.current, brushCells(m.n, row, col)); request(true);
+  };
+
+  const onMove = (e: React.PointerEvent) => {
+    const m = docRef.current, p = toSquares(e); if (!m || !p) return;
+    hover.current = p.x >= 0 && p.y >= 0 && p.x < m.n && p.y < m.n ? p : null;
+    const d = drag.current;
+    if (d) {
+      const raw = { x: p.x - d.dx, y: p.y - d.dy };
+      const el = m.elements[level].find((x) => x.id === d.id);
+      const at = !el || e.altKey ? { x: Math.round(raw.x * 20) / 20, y: Math.round(raw.y * 20) / 20 } : snapElement(el, raw.x, raw.y);
+      if (at.x !== d.x || at.y !== d.y) { d.x = Math.max(-1, Math.min(m.n + 1, at.x)); d.y = Math.max(-1, Math.min(m.n + 1, at.y)); d.moved = true; }
+      request(false); return;
+    }
+    if (work.current && tool === "terrain") {
+      const row = Math.max(0, Math.min(m.n - 1, Math.floor(p.y))), col = Math.max(0, Math.min(m.n - 1, Math.floor(p.x)));
+      if (stroke.current) { stroke.current.r1 = row; stroke.current.c1 = col; request(false); }
+      else { applyBrush(work.current, brushCells(m.n, row, col)); request(true); }
+      return;
+    }
+    if (tool === "place" || tool === "terrain") request(false);
+  };
+
+  const onUp = () => {
+    const d = drag.current;
+    if (d) {
+      drag.current = null;
+      if (d.moved) mutate((m) => { m.elements[level] = m.elements[level].map((x) => (x.id === d.id ? { ...x, x: d.x, y: d.y } : x)); });
+      else request(false);
+      return;
+    }
+    const w = work.current;
+    if (w) {
+      const st = stroke.current;
+      if (st) {
+        const cells: number[] = [];
+        for (let r = Math.min(st.r0, st.r1); r <= Math.max(st.r0, st.r1); r++) for (let c = Math.min(st.c0, st.c1); c <= Math.max(st.c0, st.c1); c++) cells.push(r * w.n + c);
+        applyBrush(w, cells); stroke.current = null;
+      }
+      work.current = null; dirty.current = true; setDoc(w);
+    }
+  };
+  const onLeave = () => { hover.current = null; if (!drag.current && !work.current) request(false); };
+
+  // ---- selection actions ----
+  const duplicateSel = useCallback(() => {
+    if (!selected) return;
+    const copy: MapElement = { ...selected, id: newId(), x: selected.x + 1, y: selected.y + 1 };
+    mutate((m) => { m.elements[level].push(copy); }); setSelId(copy.id);
+  }, [selected, level, mutate]);
+  const deleteSel = useCallback(() => {
+    if (!selId) return;
+    mutate((m) => { m.elements[level] = m.elements[level].filter((e) => e.id !== selId); }); setSelId(null);
+  }, [selId, level, mutate]);
+  const restack = (front: boolean) => {
+    if (!selected) return;
+    mutate((m) => { const rest = m.elements[level].filter((e) => e.id !== selected.id); m.elements[level] = front ? [...rest, { ...selected }] : [{ ...selected }, ...rest]; });
+  };
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLElement && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+      if (!docRef.current) return;
+      const k = e.key, mod = e.ctrlKey || e.metaKey;
+      if (mod && k.toLowerCase() === "z") { e.preventDefault(); doUndo(); return; }
+      if (k === "Escape") { setSelId(null); if (tool === "place") setTool("select"); return; }
+      if (!selected) return;
+      if (mod && k.toLowerCase() === "d") { e.preventDefault(); duplicateSel(); return; }
+      if (k === "Delete" || k === "Backspace") { e.preventDefault(); deleteSel(); return; }
+      const step = e.altKey ? 0.1 : 1;
+      const moves: Record<string, [number, number]> = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] };
+      if (moves[k]) { e.preventDefault(); const [dx, dy] = moves[k]; updateSel({ x: Math.round((selected.x + dx) * 100) / 100, y: Math.round((selected.y + dy) * 100) / 100 }); return; }
+      if (k.toLowerCase() === "r") { updateSel({ rot: (((selected.rot + (e.shiftKey ? -90 : 90)) % 360) + 360) % 360 }); return; }
+      if (k === "[" || k === "]") { updateSel({ rot: (((selected.rot + (k === "]" ? 15 : -15)) % 360) + 360) % 360 }); return; }
+      if (k === "+" || k === "=" || k === "-") { updateSel({ s: Math.max(0.25, Math.min(8, selected.s + (k === "-" ? -0.25 : 0.25))) }); return; }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [doUndo, selected, duplicateSel, deleteSel, updateSel, tool]);
+
+  // ---- map list actions ----
+  const createMap = async (base?: BattleMap) => {
+    const name = (base ? `${base.name} copy` : newName.trim()).slice(0, 80);
+    if (!name) { setMsg("Give the map a name."); return; }
+    await flush();
+    const m = base ? { ...cloneMap(base), name } : blankMap("", name, newKind);
+    if (!base) { m.meta.title = name; }
+    const { data, error } = await supabase.from("battle_maps").insert({ campaign_id: campaignId, ...toRow(m) }).select("id").single();
+    if (error || !data) { setMsg(`Could not create the map: ${error?.message ?? "no row returned"}`); return; }
+    const id = (data as { id: string }).id;
+    setMaps((prev) => [...prev, { id, name, kind: m.kind, updated_at: new Date().toISOString() }]);
+    setCreating(false); setNewName(""); setMsg(null);
+    await openMap(id);
+  };
+
+  const switchMap = async (id: string) => { if (id === doc?.id) return; await flush(); await openMap(id); };
+
+  const deleteMap = async () => {
+    if (!doc) return;
+    if (!window.confirm(`Delete the map "${doc.name}" and everything on it? This cannot be undone.`)) return;
+    const { error } = await supabase.from("battle_maps").delete().eq("id", doc.id);
+    if (error) { setMsg(`Could not delete: ${error.message}`); return; }
+    dirty.current = false;
+    const rest = maps.filter((m) => m.id !== doc.id);
+    setMaps(rest); setDoc(null);
+    if (rest.length) await openMap(rest[0].id); else { setStatus("empty"); setCreating(true); }
+  };
+
+  const clearLevel = () => {
+    if (!doc) return;
+    if (!window.confirm(`Clear everything on ${doc.meta.levelNames[level] || `level ${level + 1}`}? Ctrl+Z brings it back while this page stays open.`)) return;
+    mutate((m) => { m.levels[level] = m.levels[level].map(() => 0); m.custom[level] = {}; m.doors[level] = {}; m.elements[level] = []; });
+    setSelId(null);
+  };
+
+  const changeSize = (newN: number) => {
+    if (!doc || newN === doc.n) return;
+    if (newN < doc.n && !window.confirm(`Shrink to ${newN} by ${newN}? Anything beyond square ${newN} is cut off (Ctrl+Z brings it back).`)) return;
+    pushUndo(); dirty.current = true; setDoc(resizeMap(doc, newN));
+  };
+
+  // ---- export ----
+  const saveImage = () => {
+    if (!doc) return;
+    const n = doc.n, lv = level;
+    let bounds = { r0: 0, c0: 0, rows: n, cols: n };
+    if (doc.kind === "indoor") {
+      const g = doc.levels[lv].slice();
+      for (const el of doc.elements[lv]) { const r = Math.floor(el.y), c = Math.floor(el.x); if (r >= 0 && c >= 0 && r < n && c < n && !g[r * n + c]) g[r * n + c] = 1; }
+      bounds = contentBounds(n, g, doc.custom[lv]);
+    }
+    const cell = Math.max(28, Math.min(96, Math.round(2400 / Math.max(bounds.cols, bounds.rows))));
+    const L = layoutFor(cell, bounds), cv = document.createElement("canvas");
+    cv.width = L.width; cv.height = L.height;
+    const ctx = cv.getContext("2d"); if (!ctx) return;
+    renderClassic(ctx, inputFor(doc, lv, true), L);
+    cv.toBlob((blob) => {
+      if (!blob) { setMsg("Could not create the image."); return; }
+      const url = URL.createObjectURL(blob), a = document.createElement("a");
+      a.href = url; a.download = `${slug(doc.name)}-${slug(doc.meta.levelNames[lv] || `level-${lv + 1}`)}.png`;
+      document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    }, "image/png");
+  };
+
+  // ---- styles ----
+  const label: React.CSSProperties = { display: "block", fontSize: 11, letterSpacing: "0.06em", textTransform: "uppercase", color: C.muted, margin: "14px 0 6px" };
+  const seg = (on: boolean): React.CSSProperties => ({ flex: 1, padding: "7px 0", background: on ? C.surface2 : "transparent", color: on ? C.sun : C.muted, border: `1px solid ${on ? C.sun : C.line}`, borderRadius: 7, fontWeight: 600, fontSize: 13, cursor: "pointer" });
+  const chip = (on: boolean): React.CSSProperties => ({ display: "flex", alignItems: "center", gap: 7, padding: "6px 8px", background: on ? C.surface2 : "transparent", color: C.text, border: `1px solid ${on ? C.sun : C.line}`, borderRadius: 7, fontSize: 12.5, cursor: "pointer", textAlign: "left" });
+  const btn = (bg: string, fg: string): React.CSSProperties => ({ padding: "9px 14px", background: bg, color: fg, border: bg === "transparent" ? `1px solid ${C.line}` : "none", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer" });
+  const small: React.CSSProperties = { padding: "6px 10px", background: "transparent", color: C.text, border: `1px solid ${C.line}`, borderRadius: 7, fontSize: 12.5, cursor: "pointer" };
+  const field: React.CSSProperties = { width: "100%", boxSizing: "border-box", padding: "7px 9px", background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: 7, fontSize: 13 };
+  const panel: React.CSSProperties = { background: C.surface, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: 16 };
+  const check = (on: boolean, set: (v: boolean) => void, text: string) => (
+    <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8, color: C.text, fontSize: 12.5, cursor: "pointer" }}>
+      <input type="checkbox" checked={on} onChange={(e) => set(e.target.checked)} style={{ accentColor: C.sun }} />{text}
+    </label>
+  );
+
+  const terrainOrder = useMemo(() => {
+    const idx = CELL_TYPES.map((t, i) => ({ t, i })).filter(({ i }) => i > 0);
+    const out = idx.filter(({ t }) => !!t.outdoor), ind = idx.filter(({ t }) => !t.outdoor);
+    return outdoor ? [...out, ...ind] : [...ind, ...out];
+  }, [outdoor]);
+  const pieceGroups = useMemo(() => {
+    const g = (k: "indoor" | "outdoor" | "text") => PIECES.filter((p) => p.group === k);
+    return outdoor ? [["Outdoors", g("outdoor")], ["Indoors and furniture", g("indoor")], ["Text", g("text")]] as const
+      : [["Indoors and furniture", g("indoor")], ["Outdoors", g("outdoor")], ["Text", g("text")]] as const;
+  }, [outdoor]);
+
+  const hint: Record<Tool, string> = {
+    select: "Click a piece to select it, drag to move. It snaps to the grid; hold Alt to place it freely. Arrows nudge, R turns, Delete removes.",
+    place: "Pick a piece, then click the map to drop it. It snaps to the grid (Alt: free). The new piece is selected so you can turn or resize it right away.",
+    terrain: paintMode === "brush" ? "Drag to paint." : paintMode === "rect" ? "Drag a rectangle to fill it." : "Click to fill every touching square of the same terrain.",
+    doors: "Click near a wall line to set the chosen door. Click it again to remove it.",
+  };
+
+  // ---- render ----
+  if (status === "loading") return <p style={{ color: C.muted }}>Loading maps…</p>;
+  if (status === "migration") return (
+    <div style={panel}>
+      <p style={{ color: C.text, margin: 0 }}>Battle maps need one database update before they can be saved.</p>
+      <p style={{ color: C.muted, fontSize: 13 }}>Run supabase/migrations/p104-battle-maps.sql in the Supabase SQL editor, then reload this page. Your existing dungeon map is copied over automatically the first time.</p>
+    </div>
+  );
+  if (status === "error") return <div style={panel}><p role="alert" style={{ color: "#c98a7a", margin: 0 }}>{msg}</p></div>;
+
+  const newForm = (
+    <div style={{ ...panel, maxWidth: 520 }}>
+      <div style={{ fontWeight: 600, color: C.text, marginBottom: 4 }}>{maps.length ? "New map" : "Make your first map"}</div>
+      <label style={{ ...label, marginTop: 8 }} htmlFor="bm-new-name">Name</label>
+      <input id="bm-new-name" value={newName} onChange={(e) => setNewName(e.target.value.slice(0, 80))} placeholder="Forest road ambush" style={field}
+        onKeyDown={(e) => { if (e.key === "Enter") void createMap(); }} />
+      <label style={label}>Kind</label>
+      <div style={{ display: "flex", gap: 6 }}>
+        <button type="button" onClick={() => setNewKind("outdoor")} style={seg(newKind === "outdoor")}>Outdoor</button>
+        <button type="button" onClick={() => setNewKind("indoor")} style={seg(newKind === "indoor")}>Indoor</button>
+      </div>
+      <p style={{ color: C.muted, fontSize: 12, margin: "8px 0 0" }}>
+        {newKind === "outdoor" ? "Starts as open grass. Paint roads, water, forest and cliffs; add buildings with the indoor terrains." : "Starts as solid rock. Paint rooms and corridors; walls and hatching follow."}
+      </p>
+      <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
+        <button type="button" onClick={() => void createMap()} style={btn(C.sun, "#1b1712")}>Create map</button>
+        {maps.length > 0 && <button type="button" onClick={() => setCreating(false)} style={btn("transparent", C.text)}>Cancel</button>}
+      </div>
+      {msg && <p role="status" style={{ color: "#c98a7a", fontSize: 12, marginTop: 10 }}>{msg}</p>}
+    </div>
+  );
+
+  return (
+    <div>
+      {/* map bar */}
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", marginBottom: 14 }}>
+        <label htmlFor="bm-pick" style={{ color: C.muted, fontSize: 12 }}>Map</label>
+        <select id="bm-pick" value={doc?.id ?? ""} onChange={(e) => void switchMap(e.target.value)} style={{ ...field, width: 260 }} disabled={!maps.length}>
+          {maps.map((m) => <option key={m.id} value={m.id}>{m.name} ({m.kind})</option>)}
+        </select>
+        <button type="button" onClick={() => { setCreating(true); setMsg(null); }} style={small}>New map</button>
+        {doc && <button type="button" onClick={() => void createMap(doc)} style={small}>Duplicate</button>}
+        {doc && <button type="button" onClick={() => void deleteMap()} style={{ ...small, color: "#c98a7a" }}>Delete map</button>}
+        <span role="status" style={{ marginLeft: "auto", color: saveState === "error" ? "#c98a7a" : C.muted, fontSize: 12 }}>
+          {saveState === "saving" ? "Saving…" : saveState === "saved" ? "Saved" : saveState === "error" ? "Not saved" : ""}
+        </span>
+      </div>
+
+      {(creating || !doc) ? newForm : (
+        <div style={{ display: "flex", gap: 20, flexWrap: "wrap", alignItems: "flex-start" }}>
+          <div style={{ flex: "1 1 560px", minWidth: 0, background: C.surface, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: 12 }}>
+            <div style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 8, flexWrap: "wrap" }}>
+              {doc.meta.levelNames.map((nm, l) => (
+                <button key={l} type="button" onClick={() => { setLevel(l); setSelId(null); }} style={{ ...seg(level === l), flex: "0 0 auto", padding: "6px 10px" }}>{nm || `Level ${l + 1}`}</button>
+              ))}
+              <span style={{ marginLeft: "auto", color: C.muted, fontSize: 12 }}>Zoom</span>
+              {ZOOMS.map((z) => <button key={z} type="button" onClick={() => setZoom(z)} style={{ ...seg(zoom === z), flex: "0 0 auto", padding: "5px 9px" }}>{z === 1 ? "Fit" : `${z}x`}</button>)}
+            </div>
+            <div style={{ overflow: "auto", maxHeight: "78vh", borderRadius: 6 }}>
+              <canvas
+                ref={canvasRef}
+                onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp} onPointerLeave={onLeave}
+                style={{ display: "block", width: `${zoom * 100}%`, height: "auto", touchAction: "none", cursor: tool === "select" ? "default" : "crosshair" }}
+                aria-label={`Map editor: ${doc.name}`}
+              />
+            </div>
+            <p style={{ color: C.muted, fontSize: 12, margin: "8px 2px 0" }}>{hint[tool]}</p>
+            <p style={{ color: C.muted, fontSize: 12, margin: "4px 2px 0" }}>
+              {doc.n}&times;{doc.n} squares, 1 square = {doc.feetPerSquare} ft &middot; {doc.elements[level].length} pieces on this level
+            </p>
+          </div>
+
+          <div style={{ ...panel, width: 300 }}>
+            <label style={{ ...label, marginTop: 0 }}>Tool</label>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+              {([["select", "Select"], ["place", "Place"], ["terrain", "Terrain"], ["doors", "Doors"]] as const).map(([t, nm]) => (
+                <button key={t} type="button" onClick={() => setTool(t)} style={seg(tool === t)}>{nm}</button>
+              ))}
+            </div>
+
+            {selected && (
+              <div style={{ marginTop: 14, padding: 10, border: `1px solid ${C.sun}`, borderRadius: 8 }}>
+                <div style={{ color: C.text, fontWeight: 600, fontSize: 13 }}>{PIECES.find((p) => p.key === selected.k)?.label ?? selected.k}</div>
+                {selected.k === "label" && (
+                  <input aria-label="Label text" value={selected.text ?? ""} onFocus={pushUndo}
+                    onChange={(e) => updateSel({ text: e.target.value.slice(0, 60) }, false)} style={{ ...field, marginTop: 8 }} />
+                )}
+                <label style={label} htmlFor="bm-rot">Turn: {Math.round(selected.rot)}&deg;</label>
+                <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                  <button type="button" onClick={() => updateSel({ rot: (selected.rot + 270) % 360 })} style={small} aria-label="Turn 90 degrees left">&#8634; 90</button>
+                  <input id="bm-rot" type="range" min={0} max={359} step={1} value={Math.round(selected.rot)} onPointerDown={pushUndo}
+                    onChange={(e) => updateSel({ rot: Number(e.target.value) }, false)} style={{ flex: 1, accentColor: C.sun }} />
+                  <button type="button" onClick={() => updateSel({ rot: (selected.rot + 90) % 360 })} style={small} aria-label="Turn 90 degrees right">90 &#8635;</button>
+                </div>
+                <label style={label} htmlFor="bm-size">Size: {selected.s.toFixed(2).replace(/\.?0+$/, "")}&times;</label>
+                <input id="bm-size" type="range" min={0.25} max={6} step={0.25} value={selected.s} onPointerDown={pushUndo}
+                  onChange={(e) => updateSel({ s: Number(e.target.value) }, false)} style={{ width: "100%", accentColor: C.sun }} />
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, marginTop: 10 }}>
+                  <button type="button" onClick={duplicateSel} style={small}>Duplicate</button>
+                  <button type="button" onClick={deleteSel} style={{ ...small, color: "#c98a7a" }}>Delete</button>
+                  <button type="button" onClick={() => restack(true)} style={small}>Bring to front</button>
+                  <button type="button" onClick={() => restack(false)} style={small}>Send to back</button>
+                </div>
+              </div>
+            )}
+
+            {tool === "place" && (
+              <>
+                {pieceGroups.map(([title, list]) => (
+                  <div key={title}>
+                    <label style={label}>{title}</label>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+                      {list.map((p) => <button key={p.key} type="button" onClick={() => setPiece(p.key)} style={chip(piece === p.key)}>{p.label}</button>)}
+                    </div>
+                  </div>
+                ))}
+                {piece === "label" && (
+                  <>
+                    <label style={label} htmlFor="bm-label">Label text</label>
+                    <input id="bm-label" value={labelText} onChange={(e) => setLabelText(e.target.value.slice(0, 60))} placeholder="A, 12, Old Mill Road" style={field} />
+                  </>
+                )}
+              </>
+            )}
+
+            {tool === "terrain" && (
+              <>
+                <label style={label}>Paint with</label>
+                <div style={{ display: "flex", gap: 6 }}>
+                  {([["brush", "Brush"], ["rect", "Rectangle"], ["fill", "Fill"]] as const).map(([m, nm]) => <button key={m} type="button" onClick={() => setPaintMode(m)} style={seg(paintMode === m)}>{nm}</button>)}
+                </div>
+                {paintMode === "brush" && (
+                  <>
+                    <label style={label}>Brush size</label>
+                    <div style={{ display: "flex", gap: 6 }}>{BRUSHES.map((b) => <button key={b} type="button" onClick={() => setBrushSize(b)} style={seg(brushSize === b)}>{b}</button>)}</div>
+                  </>
+                )}
+                <label style={label}>Terrain</label>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, maxHeight: 330, overflowY: "auto" }}>
+                  <button type="button" onClick={() => setBrush({ kind: "builtin", idx: 0 })} style={chip(brush.kind === "builtin" && brush.idx === 0)}>
+                    <span style={{ width: 14, height: 14, borderRadius: 3, flexShrink: 0, border: "1px solid rgba(0,0,0,.4)", background: "repeating-linear-gradient(45deg,#333,#333 3px,#222 3px,#222 6px)" }} />
+                    {outdoor ? "Erase to ground" : "Erase to rock"}
+                  </button>
+                  {terrainOrder.map(({ t, i }) => (
+                    <button key={t.key} type="button" onClick={() => setBrush({ kind: "builtin", idx: i })} style={chip(brush.kind === "builtin" && brush.idx === i)}>
+                      <span style={{ width: 14, height: 14, borderRadius: 3, flexShrink: 0, border: "1px solid rgba(0,0,0,.4)", background: t.color ?? "transparent" }} />
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
+                {tiles.length > 0 && (
+                  <>
+                    <label style={label}>Custom tiles</label>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+                      {tiles.map((t) => (
+                        <button key={t.id} type="button" onClick={() => setBrush({ kind: "custom", tileId: t.id })} style={chip(brush.kind === "custom" && brush.tileId === t.id)}>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={t.imageUrl} alt="" style={{ width: 16, height: 16, borderRadius: 3, flexShrink: 0, objectFit: "cover", background: t.color }} />
+                          <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </>
+            )}
+
+            {tool === "doors" && (
+              <>
+                <label style={label}>Door</label>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+                  {DOOR_KINDS.map((d) => <button key={d.key} type="button" onClick={() => setDoor(d.key)} style={chip(door === d.key)}>{d.label}</button>)}
+                </div>
+              </>
+            )}
+
+            <label style={label} htmlFor="bm-name">Map name</label>
+            <input id="bm-name" value={doc.name} onFocus={pushUndo} onChange={(e) => mutate((m) => { m.name = e.target.value.slice(0, 80); }, false)} style={field} />
+            <label style={label} htmlFor="bm-title">Title on the map</label>
+            <input id="bm-title" value={doc.meta.title} onFocus={pushUndo} onChange={(e) => mutate((m) => { m.meta.title = e.target.value.slice(0, 80); }, false)} placeholder="Leave empty for just the level name" style={field} />
+            <label style={label} htmlFor="bm-level">This level&apos;s name</label>
+            <input id="bm-level" value={doc.meta.levelNames[level] || ""} onFocus={pushUndo}
+              onChange={(e) => mutate((m) => { m.meta.levelNames[level] = e.target.value.slice(0, 60); }, false)} placeholder={`Level ${level + 1}`} style={field} />
+
+            <label style={label}>Kind</label>
+            <div style={{ display: "flex", gap: 6 }}>
+              {(["outdoor", "indoor"] as const).map((k) => <button key={k} type="button" onClick={() => mutate((m) => { m.kind = k; })} style={seg(doc.kind === k)}>{k === "outdoor" ? "Outdoor" : "Indoor"}</button>)}
+            </div>
+            {outdoor && (
+              <>
+                <label style={label} htmlFor="bm-ground">Ground</label>
+                <select id="bm-ground" value={doc.meta.ground} onChange={(e) => mutate((m) => { m.meta.ground = Number(e.target.value); })} style={field}>
+                  {CELL_TYPES.map((t, i) => (t.outdoor ? <option key={t.key} value={i}>{t.label}</option> : null))}
+                </select>
+              </>
+            )}
+            {check(doc.meta.autoNumber, (v) => mutate((m) => { m.meta.autoNumber = v; }), outdoor ? "Number the buildings automatically" : "Number the rooms automatically")}
+
+            <label style={label}>Grid</label>
+            {check(doc.meta.showGrid, (v) => mutate((m) => { m.meta.showGrid = v; }), "Show the grid")}
+            {doc.meta.showGrid && (
+              <>
+                <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
+                  {(["ink", "black", "white", "red"] as GridLook["color"][]).map((c) => (
+                    <button key={c} type="button" onClick={() => mutate((m) => { m.meta.grid.color = c; })} style={seg(doc.meta.grid.color === c)}>{c[0].toUpperCase() + c.slice(1)}</button>
+                  ))}
+                </div>
+                <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
+                  {(["thin", "medium", "bold"] as GridLook["weight"][]).map((w) => (
+                    <button key={w} type="button" onClick={() => mutate((m) => { m.meta.grid.weight = w; })} style={seg(doc.meta.grid.weight === w)}>{w[0].toUpperCase() + w.slice(1)}</button>
+                  ))}
+                </div>
+                <label style={{ ...label, marginTop: 10 }} htmlFor="bm-gop">Strength: {Math.round(doc.meta.grid.opacity * 100)}%</label>
+                <input id="bm-gop" type="range" min={0.05} max={1} step={0.05} value={doc.meta.grid.opacity} onPointerDown={pushUndo}
+                  onChange={(e) => mutate((m) => { m.meta.grid.opacity = Number(e.target.value); }, false)} style={{ width: "100%", accentColor: C.sun }} />
+                {!outdoor && (
+                  <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
+                    <button type="button" onClick={() => mutate((m) => { m.meta.grid.cover = "floor"; })} style={seg(doc.meta.grid.cover === "floor")}>Floors only</button>
+                    <button type="button" onClick={() => mutate((m) => { m.meta.grid.cover = "all"; })} style={seg(doc.meta.grid.cover === "all")}>Whole map</button>
+                  </div>
+                )}
+              </>
+            )}
+
+            <label style={label}>Grid size</label>
+            <div style={{ display: "flex", gap: 6 }}>{SIZES.map((s) => <button key={s} type="button" onClick={() => changeSize(s)} style={seg(doc.n === s)}>{s}</button>)}</div>
+            <label style={label} htmlFor="bm-fps">Feet per square</label>
+            <input id="bm-fps" type="number" min={1} max={1000} step={1} value={doc.feetPerSquare} onFocus={pushUndo}
+              onChange={(e) => mutate((m) => { m.feetPerSquare = Math.max(1, Math.min(1000, Math.round(Number(e.target.value) || 1))); }, false)} style={{ ...field, width: 100 }} />
+
+            <div style={{ display: "grid", gap: 8, marginTop: 16 }}>
+              <button type="button" onClick={saveImage} style={btn(C.sun, "#1b1712")}>Save map image</button>
+              <button type="button" onClick={doUndo} style={btn("transparent", C.text)}>Undo (Ctrl+Z)</button>
+              <button type="button" onClick={clearLevel} style={btn("transparent", C.muted)}>Clear this level</button>
+            </div>
+            {msg && <p role="status" style={{ color: "#c98a7a", fontSize: 12, marginTop: 12 }}>{msg}</p>}
+          </div>
+        </div>
+      )}
+
+      <div style={{ marginTop: 20 }}>
+        <TileLibrary scope="dungeon" onChange={setTiles} />
+      </div>
+    </div>
+  );
+}

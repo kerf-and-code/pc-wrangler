@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import CityCreator from "./CityCreator";
-import DungeonCreator from "./DungeonCreator";
+import BattleMapCreator from "./BattleMapCreator";
 import BuildingCreator from "./BuildingCreator";
 import BastionCreator from "./BastionCreator";
 import TileLibrary from "./TileLibrary";
@@ -985,7 +985,7 @@ export default function WorldMapPage() {
         </button>
         <button type="button" onClick={() => setTab("dungeon")}
           style={{ padding: "7px 14px", borderRadius: 8, border: `1px solid ${tab === "dungeon" ? C.sun : C.line}`, background: tab === "dungeon" ? C.surface2 : "transparent", color: tab === "dungeon" ? C.sun : C.muted, fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
-          Dungeon
+          Battle maps
         </button>
         <button type="button" onClick={() => setTab("building")}
           style={{ padding: "7px 14px", borderRadius: 8, border: `1px solid ${tab === "building" ? C.sun : C.line}`, background: tab === "building" ? C.surface2 : "transparent", color: tab === "building" ? C.sun : C.muted, fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
@@ -1008,9 +1008,9 @@ export default function WorldMapPage() {
 
       {tab === "dungeon" && (
         <>
-          <h1 style={{ ...ui.h1, fontSize: 28, margin: "4px 0 10px" }}>Dungeon map</h1>
+          <h1 style={{ ...ui.h1, fontSize: 28, margin: "4px 0 10px" }}>Battle maps</h1>
           {campaignId
-            ? <DungeonCreator campaignId={campaignId} />
+            ? <BattleMapCreator campaignId={campaignId} />
             : <p style={{ color: C.muted, fontSize: 14 }}>Pick a campaign on the World map tab first.</p>}
         </>
       )}
