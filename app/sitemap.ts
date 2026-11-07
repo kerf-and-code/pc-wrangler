@@ -26,6 +26,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/tools",
     "/tools/encounter-balancer",
     "/tools/player-quiz",
+    "/tools/dnd-class-quiz",
     "/tools/map-generator",
     "/tools/party-coverage",
     "/tools/session-zero",

@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   title: "Free tabletop RPG tools",
   description:
     "Free, no-login tools for tabletop RPGs: a hex world map generator, an encounter balancer, a party "
-    + "coverage check, a session zero charter, a pacing planner, and a player-type quiz, across D&D 5e, "
+    + "coverage check, a session zero charter, a pacing planner, a player-type quiz, and a D&D class quiz, across D&D 5e, "
     + "Pathfinder 2e, Draw Steel and Daggerheart. No account, nothing saved.",
   alternates: { canonical: "/tools" },
 };
@@ -41,6 +41,13 @@ const TOOLS: Tool[] = [
     name: "Player-type quiz",
     blurb: "A quick read on how you play across the six axes, with your tavern disposition chart at the end.",
     systems: "Any system",
+    status: "live",
+  },
+  {
+    href: "/tools/dnd-class-quiz",
+    name: "What D&D class should I be?",
+    blurb: "A short branching quiz that narrows over 450 subclasses down to one hero, with runners-up and the full flowchart.",
+    systems: "D&D 5e (2024 and 2014), official and partnered books",
     status: "live",
   },
   {

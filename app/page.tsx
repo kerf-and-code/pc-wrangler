@@ -87,6 +87,7 @@ const TOOLS: { label: string; href: string }[] = [
   { label: "Pacing planner", href: "/tools/pacing" },
   { label: "Magic item prices", href: "/tools/magic-item-price" },
   { label: "Player-type quiz", href: "/tools/player-quiz" },
+  { label: "D&D class quiz", href: "/tools/dnd-class-quiz" },
 ];
 
 export default function Home() {
@@ -641,7 +642,7 @@ html { scroll-behavior: smooth; }
 .nt-integrations strong { color: var(--nt-ink); }
 
 /* tools */
-.nt-tools { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.nt-tools { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
 .nt-tool { display: flex; align-items: center; min-height: 64px; padding: 0 20px; border-radius: 8px; background: #1b2230; border: 1px solid var(--nt-line2);
   color: var(--nt-ink); text-decoration: none; font-weight: 600; font-size: 17px; transition: border-color .2s, color .2s; }
 .nt-tool:hover { border-color: var(--nt-amber); color: var(--nt-amber-hi); }

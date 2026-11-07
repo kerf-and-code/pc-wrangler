@@ -168,6 +168,36 @@ export const TOOL_COPY: Record<string, ToolCopyProps> = {
       { q: "Do I need an account?", a: "No login, and nothing is stored." },
     ],
     related: [
+      { href: "/tools/dnd-class-quiz", label: "What D&D class should I be?" },
+      { href: "/tools/party-coverage", label: "Party coverage check" },
+      { href: "/tools/session-zero", label: "Session zero checklist" },
+    ],
+  },
+
+  "dnd-class-quiz": {
+    heading: "What D&D class should you play?",
+    intro: [
+      "Picking a class is the first real decision in D&D, and the list keeps growing: the 2024 Player's Handbook, the newer setting books, the 2014 classics, and a long shelf of partnered books on D&D Beyond. This quiz asks a few questions about the hero you picture, then narrows over 450 subclasses down to one, with the close runners-up beside it.",
+      "It starts with where your story lives and where your power comes from, then asks about how you fight, what your magic feels like, and the kind of story you want. A gauge shows how many heroes are still possible after each answer, and at the end you can open the whole flowchart to see every path you did not take.",
+    ],
+    steps: [
+      "Choose which books to include: 2024 rules only or 2014 too, official books only or partnered ones too.",
+      "Answer each question with the option that feels most like the character you want to play. Keys 1 to 9 work.",
+      "Read your result: the subclass, its class, how it plays, its key abilities, and which book it is in.",
+      "Check the runners-up, or open the flowchart and follow a different branch.",
+    ],
+    systemsHeading: "Which books it covers",
+    systems: [
+      "Official books from the 2024 Player's Handbook through the newest setting books, the 2014 legacy subclasses, and the crossover books for Azeroth, Middle-earth and the World of Darkness, plus partnered publishers such as Ghostfire Gaming, Kobold Press, Mage Hand Press, Hit Point Press, MCDM and Critical Role. Every description is written for this quiz, so read the source book for the actual rules before you build.",
+    ],
+    faq: [
+      { q: "Is the class quiz free?", a: "Yes. It is free, needs no login, and saves nothing." },
+      { q: "Does it use the 2024 rules?", a: "Both editions. Choose \"2024 rules only\" to leave out the 2014 subclasses, or keep them in." },
+      { q: "Can I leave out third-party books?", a: "Yes. Choose \"Official only\" and the quiz only offers subclasses from Wizards of the Coast books." },
+      { q: "What if I do not like my result?", a: "Look at the runners-up, step back a question, or open the flowchart to see where every other answer leads." },
+    ],
+    related: [
+      { href: "/tools/player-quiz", label: "Player-type quiz" },
       { href: "/tools/party-coverage", label: "Party coverage check" },
       { href: "/tools/session-zero", label: "Session zero checklist" },
     ],
