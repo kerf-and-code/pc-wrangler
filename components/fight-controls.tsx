@@ -18,10 +18,16 @@ import { CONDITIONS } from "@/lib/combat";
 import { BUFFS, DEBUFFS, MARKER_COLORS, markerKind } from "@/lib/combat-effects";
 import { applyAdvantage } from "@/lib/dice";
 
+export type PendingSave = { id: string; by: string; byId?: string; label: string; ability: string; dc: number; damage: number; type?: string; half: boolean; conditions?: string[]; at?: number };
+export type LastSave = { label: string; by: string; total: number; dc: number; saved: boolean; damage: number; at: number };
+export const ABILITIES = ["str", "dex", "con", "int", "wis", "cha"] as const;
+export const ABILITY_NAME: Record<string, string> = { str: "Strength", dex: "Dexterity", con: "Constitution", int: "Intelligence", wis: "Wisdom", cha: "Charisma" };
+
 export type FightEntry = {
   id: string; name: string; kind: "pc" | "monster"; initiative: number | null; defeated: boolean; is_turn: boolean;
   tokenId?: string | null; characterId?: string | null; conditions?: string[]; mine?: boolean;
   hp?: number | null; maxHp?: number | null; tempHp?: number | null; ac?: number | null;
+  pendingSaves?: PendingSave[]; lastSave?: LastSave | null; awaitingSave?: boolean;
 };
 export type FightView = { id: string; name: string; round: number; order: FightEntry[] };
 
@@ -135,10 +141,16 @@ type Against = { target: string; hit: boolean | null; crit: boolean; applied?: b
 
 // Attack someone in the fight: pick the target, the attack's bonus and its damage, then one press rolls
 // the attack and, on a hit, the damage, which lands on the target at once.
-export function AttackForm({ campaignId, characterId, fight, onDone, defaultBonus, presetTarget }: {
+export function AttackForm({ campaignId, characterId, fight, onDone, defaultBonus, presetTarget, defaultDc }: {
   campaignId: string; characterId: string; fight: FightView; onDone: () => void; defaultBonus?: number | null;
   presetTarget?: string;   // a combatant id to start on (the tabletop passes the selected token's)
+  defaultDc?: number | null;   // the sheet's spell save DC, for save effects
 }) {
+  const [mode, setMode] = useState<"attack" | "save">("attack");
+  const [picked, setPicked] = useState<string[]>(presetTarget ? [presetTarget] : []);
+  const [ability, setAbility] = useState("dex");
+  const [dc, setDc] = useState(defaultDc != null ? String(defaultDc) : "");
+  const [half, setHalf] = useState(true);
   const targets = fight.order.filter((e) => e.characterId !== characterId && !e.defeated);
   const [target, setTarget] = useState(presetTarget ?? "");
   const [label, setLabel] = useState("Attack");
@@ -154,6 +166,20 @@ export function AttackForm({ campaignId, characterId, fight, onDone, defaultBonu
     const res = await fetch("/api/tabletop/roll", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ campaignId, characterId, ...body }) });
     const j = await res.json().catch(() => ({})) as { error?: string; message?: { roll?: { total?: number } }; against?: Against | null };
     return { ok: res.ok, ...j };
+  };
+
+  const saveEffect = async () => {
+    const d = parseInt(dc, 10);
+    if (!picked.length) { setOut("Pick at least one target."); return; }
+    if (!(d > 0)) { setOut("Enter the save DC."); return; }
+    if (!damage.trim()) { setOut("Add the damage dice. For an effect with no damage, mark its condition on the target instead."); return; }
+    setBusy(true); setOut(null);
+    try {
+      const r = await post({ notation: damage.trim(), label: label.trim() || "Save effect", saveAgainst: { targets: picked, ability, dc: d, half } });
+      if (!r.ok) { setOut(r.error ?? "Could not roll."); return; }
+      const sn = (r as { saveNote?: { targets: string[] } }).saveNote;
+      setOut(`${r.message?.roll?.total ?? "?"} damage now waits on ${sn?.targets.join(", ") || "the targets"}: each makes a ${ability.toUpperCase()} save, DC ${d}${half ? ", half on a success" : ", none on a success"}.`);
+    } finally { setBusy(false); onDone(); }
   };
 
   const attack = async () => {
@@ -178,8 +204,47 @@ export function AttackForm({ campaignId, characterId, fight, onDone, defaultBonu
 
   const field: React.CSSProperties = { padding: "5px 7px", borderRadius: 7, border: `1px solid ${C.line}`, background: C.surface2, color: C.text, fontSize: 13 };
   const seg = (on: boolean): React.CSSProperties => ({ padding: "4px 9px", borderRadius: 7, fontSize: 12, cursor: "pointer", border: `1px solid ${on ? C.sun : C.line}`, background: on ? "rgba(217,164,58,0.12)" : "transparent", color: on ? C.sun : C.muted });
+  const pill = (on: boolean): React.CSSProperties => ({ ...seg(on), padding: "3px 10px" });
+  if (mode === "save") {
+    return (
+      <div style={{ display: "grid", gap: 6 }}>
+        <div style={{ display: "flex", gap: 6 }}>
+          <button type="button" onClick={() => setMode("attack")} style={pill(false)}>Attack roll</button>
+          <button type="button" onClick={() => setMode("save")} style={pill(true)}>Saving throw effect</button>
+        </div>
+        <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }} role="group" aria-label="Targets">
+          {targets.map((e) => {
+            const on = picked.includes(e.id);
+            return <button key={e.id} type="button" aria-pressed={on} onClick={() => setPicked((p) => (on ? p.filter((x) => x !== e.id) : [...p, e.id]))} style={pill(on)}>{e.name}</button>;
+          })}
+        </div>
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+          <input aria-label="Effect name" value={label === "Attack" ? "" : label} onChange={(e) => setLabel(e.target.value.slice(0, 60))} placeholder="Fireball" style={{ ...field, width: 120 }} />
+          <select aria-label="Saving throw ability" value={ability} onChange={(e) => setAbility(e.target.value)} style={field}>
+            {ABILITIES.map((a) => <option key={a} value={a}>{a.toUpperCase()} save</option>)}
+          </select>
+          <input aria-label="Save DC" value={dc} onChange={(e) => setDc(e.target.value.replace(/[^0-9]/g, "").slice(0, 2))} placeholder="DC" style={{ ...field, width: 52 }} />
+          <input aria-label="Damage dice" value={damage} onChange={(e) => setDamage(e.target.value.replace(/[^0-9dD+\- ]/g, "").slice(0, 24))} placeholder="damage, e.g. 8d6" style={{ ...field, width: 120 }} />
+          <label style={{ fontSize: 12, color: C.muted, display: "flex", gap: 4, alignItems: "center" }}><input type="checkbox" checked={half} onChange={(e) => setHalf(e.target.checked)} />half on a success</label>
+        </div>
+        <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+          <span style={{ flex: 1, fontSize: 12, color: C.muted }}>The damage is rolled once and waits on each target until they roll their save.</span>
+          <button type="button" disabled={busy || !picked.length || !myTurn} onClick={() => void saveEffect()}
+            style={{ padding: "6px 14px", borderRadius: 7, border: "none", background: myTurn && picked.length ? C.sun : C.line, color: "#1b1712", fontWeight: 700, fontSize: 13, cursor: myTurn && picked.length ? "pointer" : "default" }}>
+            {busy ? "Rolling…" : `Cast on ${picked.length || "…"}`}
+          </button>
+        </div>
+        {!myTurn && <p style={{ color: C.muted, fontSize: 12, margin: 0 }}>You can use it on your turn.</p>}
+        {out && <p role="status" style={{ color: C.text, fontSize: 13, margin: 0 }}>{out}</p>}
+      </div>
+    );
+  }
   return (
     <div style={{ display: "grid", gap: 6 }}>
+      <div style={{ display: "flex", gap: 6 }}>
+        <button type="button" onClick={() => setMode("attack")} style={pill(true)}>Attack roll</button>
+        <button type="button" onClick={() => setMode("save")} style={pill(false)}>Saving throw effect</button>
+      </div>
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
         <select aria-label="Who you attack" value={target} onChange={(e) => setTarget(e.target.value)} style={{ ...field, minWidth: 150 }}>
           <option value="">Target…</option>
@@ -201,6 +266,97 @@ export function AttackForm({ campaignId, characterId, fight, onDone, defaultBonu
       </div>
       {!myTurn && <p style={{ color: C.muted, fontSize: 12, margin: 0 }}>You can attack on your turn.</p>}
       {out && <p role="status" style={{ color: C.text, fontSize: 13, margin: 0 }}>{out}</p>}
+    </div>
+  );
+}
+
+// Rolls go through the tabletop roll route, so they land in table chat and Mechanics like any other.
+async function postRoll(campaignId: string, characterId: string, body: Record<string, unknown>) {
+  const res = await fetch("/api/tabletop/roll", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ campaignId, characterId, ...body }) });
+  const j = await res.json().catch(() => ({})) as { error?: string; message?: { roll?: { total?: number } }; saved?: { saved: boolean; damage: number; dc: number } | null };
+  return { ok: res.ok, ...j };
+}
+
+// The saves waiting on your character: nothing lands until you roll. The bonus comes from the sheet
+// when there is one; it can be changed before rolling.
+export function SaveBanner({ campaignId, characterId, entry, saves, onDone }: {
+  campaignId: string; characterId: string; entry: FightEntry; saves?: Record<string, number> | null; onDone: () => void;
+}) {
+  const pending = entry.pendingSaves ?? [];
+  const [bonus, setBonus] = useState<Record<string, string>>({});
+  const [adv, setAdv] = useState<"flat" | "adv" | "dis">("flat");
+  const [busy, setBusy] = useState(false);
+  const [out, setOut] = useState<string | null>(null);
+  if (!pending.length && !out) return null;
+  const rollSave = async (ps: PendingSave) => {
+    const b = parseInt(bonus[ps.id] ?? String(saves?.[ps.ability] ?? 0), 10) || 0;
+    setBusy(true); setOut(null);
+    try {
+      const r = await postRoll(campaignId, characterId, { notation: applyAdvantage(`1d20${b >= 0 ? "+" : ""}${b}`, adv), label: `${ps.ability.toUpperCase()} save vs ${ps.label}`, saveFor: ps.id });
+      if (!r.ok) { setOut(r.error ?? "Could not roll."); return; }
+      const sv = r.saved;
+      setOut(sv ? `${r.message?.roll?.total ?? "?"} against DC ${sv.dc}: ${sv.saved ? "saved" : "failed"}. ${sv.damage ? `${sv.damage} damage.` : "No damage."}` : `Rolled ${r.message?.roll?.total ?? "?"}.`);
+    } finally { setBusy(false); onDone(); }
+  };
+  const field: React.CSSProperties = { padding: "4px 6px", borderRadius: 7, border: `1px solid ${C.line}`, background: C.surface2, color: C.text, fontSize: 13, width: 52 };
+  return (
+    <div role="alert" style={{ border: "1px solid #e07a70", borderRadius: 8, padding: "8px 10px", background: "rgba(224,122,112,0.08)", display: "grid", gap: 8 }}>
+      {pending.map((ps) => (
+        <div key={ps.id} style={{ display: "grid", gap: 4 }}>
+          <div style={{ fontSize: 13, color: C.text }}>
+            <strong>{ps.by}&apos;s {ps.label}</strong>: make a {ABILITY_NAME[ps.ability] ?? ps.ability.toUpperCase()} save, DC {ps.dc}.
+            {ps.damage ? ` ${ps.damage}${ps.type ? ` ${ps.type}` : ""} damage on a failure${ps.half ? ", half on a success" : ""}.` : ""}
+            {(ps.conditions ?? []).length ? ` ${(ps.conditions ?? []).join(", ")} on a failure.` : ""}
+          </div>
+          <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+            <label style={{ fontSize: 12, color: C.muted }}>Bonus <input aria-label={`${ps.ability} save bonus`} style={field}
+              value={bonus[ps.id] ?? String(saves?.[ps.ability] ?? "")} onChange={(e) => setBonus((m) => ({ ...m, [ps.id]: e.target.value.replace(/[^0-9+-]/g, "").slice(0, 3) }))} /></label>
+            {(["dis", "flat", "adv"] as const).map((m) => (
+              <button key={m} type="button" onClick={() => setAdv(m)} style={{ padding: "3px 8px", borderRadius: 7, fontSize: 12, cursor: "pointer", border: `1px solid ${adv === m ? C.sun : C.line}`, background: "transparent", color: adv === m ? C.sun : C.muted }}>
+                {m === "adv" ? "Advantage" : m === "dis" ? "Disadvantage" : "Straight"}
+              </button>
+            ))}
+            <button type="button" disabled={busy} onClick={() => void rollSave(ps)} style={{ padding: "5px 12px", borderRadius: 7, border: "none", background: "#e07a70", color: "#1b1712", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
+              Roll {ps.ability.toUpperCase()} save
+            </button>
+          </div>
+        </div>
+      ))}
+      {out && <p role="status" style={{ color: C.text, fontSize: 13, margin: 0 }}>{out}</p>}
+    </div>
+  );
+}
+
+// The six saving throws, ready to roll into table chat (an effect without a pending save, or the GM
+// asking out loud).
+export function SavesRow({ campaignId, characterId, saves, profs }: {
+  campaignId: string; characterId: string; saves: Record<string, number>; profs?: string[];
+}) {
+  const [busy, setBusy] = useState(false);
+  const [out, setOut] = useState<string | null>(null);
+  const roll = async (a: string) => {
+    const b = saves[a] ?? 0;
+    setBusy(true);
+    try {
+      const r = await postRoll(campaignId, characterId, { notation: `1d20${b >= 0 ? "+" : ""}${b}`, label: `${a.toUpperCase()} save` });
+      setOut(r.ok ? `${a.toUpperCase()} save: ${r.message?.roll?.total ?? "?"}` : r.error ?? "Could not roll.");
+    } finally { setBusy(false); }
+  };
+  return (
+    <div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(6, minmax(0, 1fr))", gap: 5 }}>
+        {ABILITIES.map((a) => {
+          const prof = (profs ?? []).includes(a);
+          return (
+            <button key={a} type="button" disabled={busy} onClick={() => void roll(a)} title={prof ? "Proficient" : undefined}
+              style={{ padding: "6px 4px", borderRadius: 7, cursor: "pointer", background: "transparent", color: C.text, border: `1px solid ${prof ? C.sun : C.line}`, fontSize: 12.5, display: "grid", gap: 1 }}>
+              <span style={{ fontSize: 10.5, color: C.muted, letterSpacing: "0.08em" }}>{a.toUpperCase()}</span>
+              <span style={{ fontWeight: 700 }}>{(saves[a] ?? 0) >= 0 ? "+" : ""}{saves[a] ?? 0}</span>
+            </button>
+          );
+        })}
+      </div>
+      {out && <p role="status" style={{ color: C.text, fontSize: 12.5, margin: "6px 0 0" }}>{out}</p>}
     </div>
   );
 }

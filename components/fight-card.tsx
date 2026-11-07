@@ -11,6 +11,10 @@
 // When the fight has no max HP or AC for this character yet, the card fills them in from the sheet
 // once (sync_sheet fills only what is empty, so a GM's own numbers are never overwritten).
 //
+// Saves (phase 4b, p111): an effect that calls for a save waits on the character until the player
+// rolls it here (or on the tabletop); the bonus comes from the sheet. The six saving throws sit on the
+// card too, ready to roll into table chat.
+//
 // Players cannot read combats directly or get its live updates (RLS), so the card reads
 // tabletop_combat: every 5 seconds while a fight runs, every 20 while none does, and at once after
 // each change made here.
@@ -19,10 +23,11 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { createClient } from "@/lib/supabase/client";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import { openTabletop } from "@/lib/tabletop/open";
-import { AttackForm, combatAct, isMyTurn, MarkerChips, PlayerEntryControls, type FightEntry, type FightView } from "@/components/fight-controls";
+import { AttackForm, combatAct, isMyTurn, MarkerChips, PlayerEntryControls, SaveBanner, SavesRow, type FightEntry, type FightView } from "@/components/fight-controls";
 
 export default function FightCard({ campaignId, characterId, sheet }: {
-  campaignId: string; characterId: string; sheet?: { ac: number; hpMax: number } | null;
+  campaignId: string; characterId: string;
+  sheet?: { ac: number; hpMax: number; saves?: Record<string, number>; saveProfs?: string[]; spellDc?: number | null } | null;
 }) {
   const supabase = useMemo(() => createClient(), []);
   const [fight, setFight] = useState<FightView | null | undefined>(undefined);
@@ -97,12 +102,26 @@ export default function FightCard({ campaignId, characterId, sheet }: {
             </div>
           )}
           <MarkerChips list={me.conditions ?? []} />
+          {me.mine && (me.pendingSaves ?? []).length > 0 && (
+            <div style={{ marginTop: 10 }}><SaveBanner campaignId={campaignId} characterId={characterId} entry={me} saves={sheet?.saves ?? null} onDone={() => void load()} /></div>
+          )}
+          {me.mine && me.lastSave && (
+            <p style={{ fontSize: 12.5, color: C.muted, margin: "8px 0 0" }}>
+              Last save: {me.lastSave.label} from {me.lastSave.by}, {me.lastSave.total} vs DC {me.lastSave.dc}, {me.lastSave.saved ? "saved" : "failed"}{me.lastSave.damage ? `, ${me.lastSave.damage} damage` : ""}.
+            </p>
+          )}
+          {me.mine && sheet?.saves && (
+            <div style={{ marginTop: 12 }}>
+              <div style={{ fontSize: 10.5, letterSpacing: "0.12em", textTransform: "uppercase", color: C.muted, marginBottom: 6 }}>Saving throws</div>
+              <SavesRow campaignId={campaignId} characterId={characterId} saves={sheet.saves} profs={sheet.saveProfs} />
+            </div>
+          )}
           {me.mine ? (
             <>
               <div style={{ marginTop: 10 }}><PlayerEntryControls fightId={fight.id} entry={me} onChanged={() => void load()} /></div>
               <div style={{ marginTop: 12, paddingTop: 10, borderTop: `1px solid ${C.line}` }}>
                 <div style={{ fontSize: 10.5, letterSpacing: "0.12em", textTransform: "uppercase", color: myTurn ? C.sun : C.muted, marginBottom: 6 }}>{myTurn ? "Your turn: attack" : "Attack"}</div>
-                <AttackForm campaignId={campaignId} characterId={characterId} fight={fight} onDone={() => void load()} />
+                <AttackForm campaignId={campaignId} characterId={characterId} fight={fight} onDone={() => void load()} defaultDc={sheet?.spellDc ?? null} />
               </div>
             </>
           ) : (
@@ -122,6 +141,7 @@ export default function FightCard({ campaignId, characterId, sheet }: {
                   <span style={{ width: 26, textAlign: "center", fontWeight: 700, color: C.muted }}>{e.initiative ?? "?"}</span>
                   <span style={{ color: C.text, fontSize: 13.5, fontWeight: e.is_turn ? 700 : 500, textDecoration: e.defeated ? "line-through" : "none" }}>{e.name}</span>
                   {e.kind === "pc" && e.hp != null && <span style={{ fontSize: 12, color: C.muted }}>{e.hp}{e.maxHp ? `/${e.maxHp}` : ""}</span>}
+                  {e.awaitingSave && <span style={{ fontSize: 11, color: "#e07a70" }}>saving throw due</span>}
                   <span style={{ flex: 1 }}><MarkerChips list={e.conditions ?? []} /></span>
                   <button type="button" onClick={() => setOpenId(open ? null : e.id)} aria-expanded={open}
                     style={{ padding: "3px 9px", background: "transparent", color: C.muted, border: `1px solid ${C.line}`, borderRadius: 7, fontSize: 12, cursor: "pointer" }}>

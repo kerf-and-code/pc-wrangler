@@ -22,7 +22,7 @@ import { drawElement, type DoorKind, type MapElement } from "@/lib/dungeon/class
 import { wallSegments, visibility, seenSquares, canSee, CANOPY_KINDS, type Seg } from "@/lib/tabletop/sight";
 import { markerShort, markerKind, MARKER_COLORS } from "@/lib/combat-effects";
 import { openTabletop } from "@/lib/tabletop/open";
-import { AttackForm, MarkerChips, MarkerPicker, PlayerEntryControls, isMyTurn, type FightEntry } from "@/components/fight-controls";
+import { AttackForm, MarkerChips, MarkerPicker, PlayerEntryControls, SaveBanner, isMyTurn, type FightEntry, type PendingSave } from "@/components/fight-controls";
 
 // The tabletop, phase 1 (2026-11-06). One page for the GM and the players; tabletop_state (p105)
 // decides the role and strips what players must not see before it leaves the database.
@@ -56,6 +56,9 @@ import { AttackForm, MarkerChips, MarkerPicker, PlayerEntryControls, isMyTurn, t
 //          anyone else on their turn, and attacks on a target they pick (or the token they select):
 //          the server compares the roll with the target's AC and lands the damage on a hit (p110).
 //          Buffs and debuffs sit beside the conditions. The table opens in its own window too.
+// Phase 4b: saving throws wait for the roll (p111). A player sees the saves waiting on their character
+//          in the Turns tab and rolls them there; their own save effects (a Fireball) wait on each target.
+//          The GM sees every pending save on the entries and settles them: saved, failed.
 // Live:    one Realtime channel per campaign. Table changes (tokens, scenes, chat) arrive through RLS;
 //          drags, rulers and pings are broadcast and never stored. Positions are saved once on drop.
 // Chat:    /r, /gr, /w name, /em. Rolls go to /api/tabletop/roll, which rolls on the server and logs
@@ -96,7 +99,9 @@ type Trail = { from: Pt; to: Pt; color: string; born: number; feet: number };
 type TC = Combatant & { tokenId?: string | null };
 type FightRow = { id: string; name: string; round: number; turn: number; combatants: TC[]; session_id: string | null };
 type Entry = { id: string; name: string; kind: "pc" | "monster"; initiative: number | null; defeated: boolean; is_turn: boolean; tokenId?: string | null;
-  characterId?: string | null; hp?: number | null; maxHp?: number | null; tempHp?: number; conditions?: string[]; ac?: number | null; hidden?: boolean; initBonus?: number; mine?: boolean };
+  characterId?: string | null; hp?: number | null; maxHp?: number | null; tempHp?: number; conditions?: string[]; ac?: number | null; hidden?: boolean; initBonus?: number; mine?: boolean;
+  pendingSaves?: PendingSave[]; awaitingSave?: boolean;
+  lastSave?: { label: string; by: string; total: number | null; dc: number; saved: boolean; damage: number; at: number } | null };
 type Fight = { id: string; name: string; round: number; order: Entry[] };
 const FIGHT_COLS = "id, name, round, turn, combatants, session_id";
 type LibMonster = { name: string; size?: string; cr?: string | number; hp?: number; ac?: number; source_key?: string };
@@ -771,7 +776,8 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   const toFight = (row: FightRow): Fight => ({
     id: row.id, name: row.name, round: row.round,
     order: row.combatants.map((c, i) => ({ id: c.id, name: c.name, kind: c.kind, initiative: c.initiative, defeated: c.defeated, is_turn: i === row.turn,
-      tokenId: c.tokenId ?? null, characterId: c.characterId ?? null, hp: c.hp, maxHp: c.maxHp, tempHp: c.tempHp, conditions: c.conditions, ac: c.ac, hidden: c.hidden, initBonus: c.initBonus })),
+      tokenId: c.tokenId ?? null, characterId: c.characterId ?? null, hp: c.hp, maxHp: c.maxHp, tempHp: c.tempHp, conditions: c.conditions, ac: c.ac, hidden: c.hidden, initBonus: c.initBonus,
+      pendingSaves: ((c as TC & { pendingSaves?: PendingSave[] }).pendingSaves ?? []) })),
   });
   const loadFight = useCallback(async () => {
     const st = stateRef.current; if (!st) return;
@@ -1797,6 +1803,17 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                     const preset = selTok ? fight.order.find((e) => e.tokenId === selTok && e.id !== mineE.id)?.id ?? "" : "";
                     const myTurnNow = isMyTurn(fight as unknown as Parameters<typeof isMyTurn>[0], mineE.characterId);
                     return (
+                      <>
+                      {(mineE.pendingSaves ?? []).length > 0 && (
+                        <div style={{ marginTop: 12 }}>
+                          <SaveBanner campaignId={campaignId} characterId={mineE.characterId} entry={mineE as unknown as FightEntry} onDone={() => { void loadFight(); send("combat", {}); }} />
+                        </div>
+                      )}
+                      {mineE.lastSave && Date.now() / 1000 - mineE.lastSave.at < 600 && (
+                        <p role="status" style={{ fontSize: 12.5, color: C.muted, margin: "10px 0 0" }}>
+                          Last save: {mineE.lastSave.label} from {mineE.lastSave.by}{mineE.lastSave.total != null ? `, ${mineE.lastSave.total} vs DC ${mineE.lastSave.dc}` : ""}, {mineE.lastSave.saved ? "saved" : "failed"}{mineE.lastSave.damage ? `, ${mineE.lastSave.damage} damage` : ""}.
+                        </p>
+                      )}
                       <div style={{ marginTop: 12, padding: "8px 10px", border: `1px solid ${myTurnNow ? C.sun : C.line}`, borderRadius: 8 }}>
                         <div style={{ fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", color: myTurnNow ? C.sun : C.muted, marginBottom: 6 }}>{myTurnNow ? `Your turn: ${mineE.name} attacks` : `${mineE.name} attacks on their turn`}</div>
                         <AttackForm key={preset || "none"} campaignId={campaignId} characterId={mineE.characterId} presetTarget={preset}
@@ -1804,6 +1821,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                           onDone={() => { void loadFight(); send("combat", {}); }} />
                         <p style={{ fontSize: 11.5, color: C.muted, margin: "6px 0 0" }}>Select a monster&apos;s token to make it the target.</p>
                       </div>
+                      </>
                     );
                   })()}
                   <div style={{ display: "grid", gap: 6, marginTop: 12 }}>
@@ -1823,6 +1841,22 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                           </div>
                           {frac != null && <div style={{ height: 4, background: "#2a241d", borderRadius: 2, marginTop: 5 }}><div style={{ width: `${frac * 100}%`, height: 4, borderRadius: 2, background: frac > 0.5 ? "#5fae5a" : frac > 0.25 ? "#d9a43a" : "#d0463c" }} /></div>}
                           {(e.conditions ?? []).length > 0 && <div style={{ marginTop: 5 }}><MarkerChips list={e.conditions ?? []} /></div>}
+                          {!isGm && e.awaitingSave && !mineEntry && <div style={{ fontSize: 11, color: "#e07a70", marginTop: 4 }}>saving throw due</div>}
+                          {isGm && (e.pendingSaves ?? []).map((ps) => (
+                            <div key={ps.id} style={{ marginTop: 6, padding: "5px 7px", border: "1px solid #e07a70", borderRadius: 6, fontSize: 12 }}>
+                              <div>{ps.ability.toUpperCase()} save DC {ps.dc} vs {ps.by}&apos;s {ps.label}{ps.damage ? `: ${ps.damage}${ps.half ? ", half on a success" : ""}` : ""}{e.kind === "pc" ? " (waiting for the player)" : ""}</div>
+                              <div style={{ display: "flex", gap: 6, marginTop: 4 }}>
+                                {([true, false] as const).map((ok) => (
+                                  <button key={String(ok)} type="button" onClick={() => editEntry(e.id, (c) => {
+                                    const dmg = ok ? (ps.half ? Math.floor(ps.damage / 2) : 0) : ps.damage;
+                                    let y = (dmg > 0 ? applyDamage(c, dmg) : c) as TC & { pendingSaves?: PendingSave[] };
+                                    if (!ok && ps.conditions?.length) y = { ...y, conditions: [...new Set([...y.conditions, ...ps.conditions])] };
+                                    return { ...y, pendingSaves: (y.pendingSaves ?? []).filter((p) => p.id !== ps.id), lastSave: { label: ps.label, by: ps.by, total: null, dc: ps.dc, saved: ok, damage: dmg, at: Date.now() / 1000 } } as TC;
+                                  })} style={{ ...small, padding: "2px 8px", color: ok ? "#8fd18a" : "#e07a70" }}>{ok ? "Saved" : "Failed"}</button>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
                           {!isGm && open && (
                             <div style={{ marginTop: 8, paddingTop: 8, borderTop: `1px solid ${C.line}` }}>
                               <PlayerEntryControls fightId={fight.id} entry={{ ...e, mine: mineEntry } as FightEntry}

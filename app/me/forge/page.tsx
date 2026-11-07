@@ -1613,7 +1613,8 @@ function ForgeInner() {
               {/* The running fight, when this campaign character is in one: HP and conditions as the
                   Combat page and the tabletop show them, and the player's own controls (p110). */}
               {mode === "character" && row?.campaign_id && (
-                <FightCard campaignId={row.campaign_id} characterId={row.id} sheet={{ ac: sheet.ac, hpMax: sheet.hpMax }} />
+                <FightCard campaignId={row.campaign_id} characterId={row.id}
+                  sheet={{ ac: sheet.ac, hpMax: sheet.hpMax, saves: sheet.saves as Record<string, number>, saveProfs: build.saveProf || [], spellDc: sheet.isCaster ? sheet.spellDC ?? null : null }} />
               )}
               <SheetPanel sheet={sheet} name={name || "Character"} />
 

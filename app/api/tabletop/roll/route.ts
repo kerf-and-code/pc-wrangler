@@ -28,6 +28,12 @@ import { critDice } from "@/lib/combat-effects";
 // With `rollFor: "damage"` and the same target, the damage lands on it after a hit, once, and a
 // critical hit doubles the dice. Both functions run with the service role; the checks above (who is
 // rolling, and as which character) come first.
+//
+// Saves (phase 4b, p111): with `saveFor` (a pending save's id) the roll is the character's own saving
+// throw against it; combat_resolve_save compares it with the DC and applies full, half or no damage.
+// With `saveAgainst` ({ targets, ability, dc, half, type }) the roll is the damage of the character's
+// own save effect, rolled once, and combat_request_save leaves it pending on each target until each
+// one rolls (the GM rolls for monsters).
 
 export const maxDuration = 30;
 
@@ -38,6 +44,8 @@ function friendlyFight(m: string): string {
   if (/roll a hit/.test(m)) return "Roll a hit on them first.";
   if (/someone else/.test(m)) return "Pick someone else to attack.";
   if (/no such combatant/.test(m)) return "They are no longer in the fight.";
+  if (/already settled/.test(m)) return "That save is already settled.";
+  if (/pick an ability|DC must|at least one target|too many targets/.test(m)) return m.charAt(0).toUpperCase() + m.slice(1) + ".";
   return m;
 }
 
@@ -69,7 +77,8 @@ function eventType(label: string): string {
 }
 
 export async function POST(req: Request) {
-  let b: { campaignId?: string; notation?: string; label?: string; gmOnly?: boolean; characterId?: string | null; asName?: string; initiative?: boolean; target?: string; rollFor?: "attack" | "damage" } = {};
+  let b: { campaignId?: string; notation?: string; label?: string; gmOnly?: boolean; characterId?: string | null; asName?: string; initiative?: boolean; target?: string; rollFor?: "attack" | "damage";
+    saveFor?: string; saveAgainst?: { targets?: string[]; ability?: string; dc?: number; half?: boolean; type?: string } } = {};
   try { b = await req.json(); } catch { /* guarded below */ }
   const campaignId = typeof b.campaignId === "string" ? b.campaignId : "";
   const label = (typeof b.label === "string" ? b.label : "").trim().slice(0, 120);
@@ -122,6 +131,29 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: e instanceof DiceError ? e.message : "Could not read that roll." }, { status: 400 });
   }
 
+  // A save effect on targets: the damage is this roll, rolled once; each target waits to roll its save.
+  let saveNote: { targets: string[]; ability: string; dc: number } | null = null;
+  if (b.saveAgainst && characterId) {
+    const sa = b.saveAgainst;
+    const targets = Array.isArray(sa.targets) ? sa.targets.filter((t) => typeof t === "string").slice(0, 30) : [];
+    const { data: res, error: sErr } = await admin.rpc("combat_request_save", {
+      p_campaign: campaignId, p_character: characterId, p_targets: targets, p_ability: String(sa.ability ?? ""),
+      p_dc: Number(sa.dc), p_damage: result.total, p_type: typeof sa.type === "string" ? sa.type : "", p_half: sa.half !== false,
+      p_label: label, p_gm: !!isGm,
+    });
+    if (sErr) return NextResponse.json({ error: friendlyFight(sErr.message) }, { status: 409 });
+    saveNote = { targets: ((res as { targets: string[] }).targets) ?? [], ability: String(sa.ability), dc: Number(sa.dc) };
+  }
+  // A character's own save against a pending effect.
+  let saved: { saved: boolean; damage: number; dc: number; label: string; by: string } | null = null;
+  if (b.saveFor && characterId) {
+    const { data: res, error: rErr } = await admin.rpc("combat_resolve_save", {
+      p_campaign: campaignId, p_character: characterId, p_save: String(b.saveFor).slice(0, 64), p_total: result.total,
+    });
+    if (rErr) return NextResponse.json({ error: friendlyFight(rErr.message) }, { status: 409 });
+    saved = res as { saved: boolean; damage: number; dc: number; label: string; by: string };
+  }
+
   // An attack: the turn gate and the AC comparison happen in the database.
   let against: { target: string; hit: boolean | null; crit: boolean; applied?: boolean; defeated?: boolean } | null = null;
   if (rollFor === "attack") {
@@ -138,7 +170,7 @@ export async function POST(req: Request) {
   const gmOnly = !!b.gmOnly;
   const rolledAt = new Date().toISOString();
 
-  const kindOf = rollFor === "attack" ? "to-hit" : rollFor === "damage" ? "damage" : eventType(label);
+  const kindOf = rollFor === "attack" ? "to-hit" : rollFor === "damage" || b.saveAgainst ? "damage" : b.saveFor ? "saving-throw" : eventType(label);
   let eventId: string | null = null;
   if (typeof sessionId === "string" && sessionId) {
     const { data: ev, error } = await admin.from("vtt_events").insert({
@@ -189,7 +221,7 @@ export async function POST(req: Request) {
     character_id: characterId,
     kind: "roll",
     body: label,
-    roll: { label, notation: result.notation, total: result.total, dice: result.dice, modifier: result.modifier, natural: result.natural, logged: !!eventId, against },
+    roll: { label, notation: result.notation, total: result.total, dice: result.dice, modifier: result.modifier, natural: result.natural, logged: !!eventId, against, saveNote, saved },
     vtt_event_id: eventId,
     gm_only: gmOnly,
   }).select("*").single();
@@ -211,5 +243,5 @@ export async function POST(req: Request) {
     }
   }
 
-  return NextResponse.json({ ok: true, message: msg, logged: !!eventId, initiativeSet, against });
+  return NextResponse.json({ ok: true, message: msg, logged: !!eventId, initiativeSet, against, saveNote, saved });
 }
