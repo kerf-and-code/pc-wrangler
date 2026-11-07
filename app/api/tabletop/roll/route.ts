@@ -34,11 +34,21 @@ import { critDice } from "@/lib/combat-effects";
 // With `saveAgainst` ({ targets, ability, dc, half, type }) the roll is the damage of the character's
 // own save effect, rolled once, and combat_request_save leaves it pending on each target until each
 // one rolls (the GM rolls for monsters).
+//
+// Action economy (phase 4c, p112): `cost` says what part of the turn an attack or save effect uses:
+// attack (one attack of the Attack action; Extra Attack gives more), action, bonus or reaction (allowed
+// on someone else's turn while the reaction is unused). The database spends it and refuses when it is
+// gone. Attacks default to attack, save effects to action.
 
 export const maxDuration = 30;
 
 function friendlyFight(m: string): string {
-  if (/not your turn/.test(m)) return "It is not your turn.";
+  if (/not your turn/.test(m)) return "It is not your turn. A reaction can be used on anyone's turn.";
+  if (/used your action/.test(m)) return "You have used your action this turn.";
+  if (/used your bonus action/.test(m)) return "You have used your bonus action this turn.";
+  if (/used your reaction/.test(m)) return "You have used your reaction this round. It comes back at the start of your turn.";
+  if (/cannot act while/.test(m)) return `You ${m.replace(/^.*?(cannot act while \w+).*$/, "$1")}.`;
+  if (/unknown cost/.test(m)) return "Pick what this uses: attack, action, bonus action or reaction.";
   if (/no fight/.test(m)) return "No fight is running.";
   if (/not in the fight/.test(m)) return "Your character is not in the fight.";
   if (/roll a hit/.test(m)) return "Roll a hit on them first.";
@@ -78,7 +88,7 @@ function eventType(label: string): string {
 
 export async function POST(req: Request) {
   let b: { campaignId?: string; notation?: string; label?: string; gmOnly?: boolean; characterId?: string | null; asName?: string; initiative?: boolean; target?: string; rollFor?: "attack" | "damage";
-    saveFor?: string; saveAgainst?: { targets?: string[]; ability?: string; dc?: number; half?: boolean; type?: string } } = {};
+    saveFor?: string; saveAgainst?: { targets?: string[]; ability?: string; dc?: number; half?: boolean; type?: string }; cost?: string } = {};
   try { b = await req.json(); } catch { /* guarded below */ }
   const campaignId = typeof b.campaignId === "string" ? b.campaignId : "";
   const label = (typeof b.label === "string" ? b.label : "").trim().slice(0, 120);
@@ -110,6 +120,7 @@ export async function POST(req: Request) {
   const target = typeof b.target === "string" && b.target ? b.target.slice(0, 64) : null;
   const rollFor = target && characterId && (b.rollFor === "attack" || b.rollFor === "damage") ? b.rollFor : null;
   let notation = b.notation ?? "";
+  const cost = typeof b.cost === "string" && ["attack", "action", "bonus", "reaction", "free"].includes(b.cost) ? b.cost : null;
 
   // A damage roll at a target needs a hit on it first; a critical hit doubles the dice.
   if (rollFor === "damage") {
@@ -139,7 +150,7 @@ export async function POST(req: Request) {
     const { data: res, error: sErr } = await admin.rpc("combat_request_save", {
       p_campaign: campaignId, p_character: characterId, p_targets: targets, p_ability: String(sa.ability ?? ""),
       p_dc: Number(sa.dc), p_damage: result.total, p_type: typeof sa.type === "string" ? sa.type : "", p_half: sa.half !== false,
-      p_label: label, p_gm: !!isGm,
+      p_label: label, p_gm: !!isGm, p_cost: cost === "attack" ? "action" : cost ?? "action",
     });
     if (sErr) return NextResponse.json({ error: friendlyFight(sErr.message) }, { status: 409 });
     saveNote = { targets: ((res as { targets: string[] }).targets) ?? [], ability: String(sa.ability), dc: Number(sa.dc) };
@@ -155,15 +166,15 @@ export async function POST(req: Request) {
   }
 
   // An attack: the turn gate and the AC comparison happen in the database.
-  let against: { target: string; hit: boolean | null; crit: boolean; applied?: boolean; defeated?: boolean } | null = null;
+  let against: { target: string; hit: boolean | null; crit: boolean; applied?: boolean; defeated?: boolean; attacksLeft?: number } | null = null;
   if (rollFor === "attack") {
     const { data: res, error: aErr } = await admin.rpc("combat_attack_resolve", {
       p_campaign: campaignId, p_character: characterId, p_target: target, p_total: result.total,
-      p_natural: result.natural ?? null, p_label: label, p_gm: !!isGm,
+      p_natural: result.natural ?? null, p_label: label, p_gm: !!isGm, p_cost: cost ?? "attack",
     });
     if (aErr) return NextResponse.json({ error: friendlyFight(aErr.message) }, { status: 409 });
-    const r = res as { hit: boolean | null; crit: boolean; target: string };
-    against = { target: r.target, hit: r.hit, crit: r.crit };
+    const r = res as { hit: boolean | null; crit: boolean; target: string; attacksLeft?: number };
+    against = { target: r.target, hit: r.hit, crit: r.crit, attacksLeft: r.attacksLeft ?? 0 };
   }
 
   const { data: sessionId } = await supabase.rpc("tabletop_open_session", { p_campaign: campaignId });

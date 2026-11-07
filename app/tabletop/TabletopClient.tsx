@@ -12,7 +12,7 @@ import {
   type Camera, type Pt, type DiagonalRule, type TemplateGeom, type TemplateShape,
 } from "@/lib/tabletop/geometry";
 import { loadSrd } from "@/lib/srd/srd";
-import { sortForTurns, applyDamage, applyHealing, combatantId, pcCombatant, CONDITIONS, type Combatant } from "@/lib/combat";
+import { sortForTurns, applyDamage, applyHealing, combatantId, pcCombatant, CONDITIONS, type Combatant, type Econ } from "@/lib/combat";
 import { monsterSourceLabel } from "@/lib/monster-sources";
 import {
   decodeFog, encodeFog, isRevealed, setSquares, fillFog, brushCells, roomsOf, roomCells, doorAt, edgeSegment,
@@ -20,9 +20,9 @@ import {
 } from "@/lib/tabletop/fog";
 import { drawElement, type DoorKind, type MapElement } from "@/lib/dungeon/classic";
 import { wallSegments, visibility, seenSquares, canSee, CANOPY_KINDS, type Seg } from "@/lib/tabletop/sight";
-import { markerShort, markerKind, MARKER_COLORS } from "@/lib/combat-effects";
+import { markerShort, markerKind, MARKER_COLORS, econOf, speedNow, cantAct, FRESH_ECON } from "@/lib/combat-effects";
 import { openTabletop } from "@/lib/tabletop/open";
-import { AttackForm, MarkerChips, MarkerPicker, PlayerEntryControls, SaveBanner, isMyTurn, type FightEntry, type PendingSave } from "@/components/fight-controls";
+import { AttackForm, EconomyBar, MarkerChips, MarkerPicker, PlayerEntryControls, SaveBanner, TurnUsed, isMyTurn, type FightEntry, type PendingSave } from "@/components/fight-controls";
 
 // The tabletop, phase 1 (2026-11-06). One page for the GM and the players; tabletop_state (p105)
 // decides the role and strips what players must not see before it leaves the database.
@@ -59,6 +59,10 @@ import { AttackForm, MarkerChips, MarkerPicker, PlayerEntryControls, SaveBanner,
 // Phase 4b: saving throws wait for the roll (p111). A player sees the saves waiting on their character
 //          in the Turns tab and rolls them there; their own save effects (a Fireball) wait on each target.
 //          The GM sees every pending save on the entries and settles them: saved, failed.
+// Phase 4c: action economy (p112). A player's Turns tab shows what is left of their turn (action, bonus
+//          action, reaction, movement, attacks left) and spends it; attacks and save effects say what
+//          they use. In a fight a player's token moves only on its turn and only as far as its movement
+//          left (checked in tabletop_move_token). The GM sees and toggles what each creature has used.
 // Live:    one Realtime channel per campaign. Table changes (tokens, scenes, chat) arrive through RLS;
 //          drags, rulers and pings are broadcast and never stored. Positions are saved once on drop.
 // Chat:    /r, /gr, /w name, /em. Rolls go to /api/tabletop/roll, which rolls on the server and logs
@@ -101,7 +105,9 @@ type FightRow = { id: string; name: string; round: number; turn: number; combata
 type Entry = { id: string; name: string; kind: "pc" | "monster"; initiative: number | null; defeated: boolean; is_turn: boolean; tokenId?: string | null;
   characterId?: string | null; hp?: number | null; maxHp?: number | null; tempHp?: number; conditions?: string[]; ac?: number | null; hidden?: boolean; initBonus?: number; mine?: boolean;
   pendingSaves?: PendingSave[]; awaitingSave?: boolean;
-  lastSave?: { label: string; by: string; total: number | null; dc: number; saved: boolean; damage: number; at: number } | null };
+  lastSave?: { label: string; by: string; total: number | null; dc: number; saved: boolean; damage: number; at: number } | null;
+  econ?: Econ | null; speed?: number | null; speedNow?: number | null; attacksPerAction?: number; cantAct?: string | null;
+  turnUsed?: { action: boolean; bonus: boolean; moved: number } | null };
 type Fight = { id: string; name: string; round: number; order: Entry[] };
 const FIGHT_COLS = "id, name, round, turn, combatants, session_id";
 type LibMonster = { name: string; size?: string; cr?: string | number; hp?: number; ac?: number; source_key?: string };
@@ -777,7 +783,8 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     id: row.id, name: row.name, round: row.round,
     order: row.combatants.map((c, i) => ({ id: c.id, name: c.name, kind: c.kind, initiative: c.initiative, defeated: c.defeated, is_turn: i === row.turn,
       tokenId: c.tokenId ?? null, characterId: c.characterId ?? null, hp: c.hp, maxHp: c.maxHp, tempHp: c.tempHp, conditions: c.conditions, ac: c.ac, hidden: c.hidden, initBonus: c.initBonus,
-      pendingSaves: ((c as TC & { pendingSaves?: PendingSave[] }).pendingSaves ?? []) })),
+      pendingSaves: ((c as TC & { pendingSaves?: PendingSave[] }).pendingSaves ?? []),
+      econ: econOf(c), speed: c.speed ?? null, speedNow: speedNow(c.speed, c.conditions), attacksPerAction: c.attacksPerAction ?? 1, cantAct: cantAct(c.conditions) })),
   });
   const loadFight = useCallback(async () => {
     const st = stateRef.current; if (!st) return;
@@ -810,9 +817,10 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
       const { data, error: e1 } = await supabase.from("combats").select(FIGHT_COLS).eq("id", cur.id).single();
       if (e1 || !data) { setChatErr(`Could not read the fight: ${e1?.message ?? "gone"}`); return; }
       const next = fn(data as FightRow);
-      const { error: e2 } = await supabase.from("combats").update({ round: next.round, turn: next.turn, combatants: next.combatants, updated_at: new Date().toISOString() }).eq("id", cur.id);
+      const { data: saved, error: e2 } = await supabase.from("combats").update({ round: next.round, turn: next.turn, combatants: next.combatants, updated_at: new Date().toISOString() }).eq("id", cur.id).select(FIGHT_COLS).maybeSingle();
       if (e2) { setChatErr(`Could not save the fight: ${e2.message}`); return; }
-      fightRow.current = next; setFight(toFight(next)); send("combat", {}); requestDraw();
+      const shown = (saved as FightRow | null) ?? next;   // as saved: the database starts a fresh turn when the turn moves
+      fightRow.current = shown; setFight(toFight(shown)); send("combat", {}); requestDraw();
     } finally { setFightBusy(false); }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [supabase, requestDraw]);
@@ -1310,7 +1318,14 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
           shown.current.delete(id);
           tokensRef.current.set(id, { ...t, x: p.x, y: p.y });
           void supabase.rpc("tabletop_move_token", { p_token: id, p_x: p.x, p_y: p.y, p_rot: null }).then(({ error: er }) => {
-            if (er) { setChatErr(`Could not move ${t.name}: ${er.message}`); tokensRef.current.set(id, t); requestDraw(); }
+            if (er) {
+              const m = er.message;
+              setChatErr(/wait for your turn/.test(m) ? `Wait for your turn to move ${t.name}.`
+                : /not enough movement left: (\d+)/.test(m) ? `${t.name} has ${m.match(/(\d+) ft/)?.[1] ?? 0} ft of movement left this turn. Dash adds more.`
+                : /speed is 0/.test(m) ? `${t.name} cannot move right now (speed 0).`
+                : `Could not move ${t.name}: ${m}`);
+              tokensRef.current.set(id, t); requestDraw();
+            } else if (fightRef.current && st.role !== "gm") { void loadFightRef.current?.(); send("combat", {}); }
           });
         }
       }
@@ -1815,7 +1830,12 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                         </p>
                       )}
                       <div style={{ marginTop: 12, padding: "8px 10px", border: `1px solid ${myTurnNow ? C.sun : C.line}`, borderRadius: 8 }}>
-                        <div style={{ fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", color: myTurnNow ? C.sun : C.muted, marginBottom: 6 }}>{myTurnNow ? `Your turn: ${mineE.name} attacks` : `${mineE.name} attacks on their turn`}</div>
+                        <div style={{ fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", color: myTurnNow ? C.sun : C.muted, marginBottom: 6 }}>{myTurnNow ? `Your turn: ${mineE.name}` : `${mineE.name}'s turn so far`}</div>
+                        <EconomyBar key={`${fight.id}:${fight.round}:${mineE.speed ?? ""}:${mineE.attacksPerAction ?? 1}`} fightId={fight.id} entry={mineE as unknown as FightEntry} myTurn={myTurnNow}
+                          onChanged={() => { void loadFight(); send("combat", {}); }} />
+                      </div>
+                      <div style={{ marginTop: 8, padding: "8px 10px", border: `1px solid ${C.line}`, borderRadius: 8 }}>
+                        <div style={{ fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", color: C.muted, marginBottom: 6 }}>Attack or cast</div>
                         <AttackForm key={preset || "none"} campaignId={campaignId} characterId={mineE.characterId} presetTarget={preset}
                           fight={fight as unknown as Parameters<typeof AttackForm>[0]["fight"]}
                           onDone={() => { void loadFight(); send("combat", {}); }} />
@@ -1841,6 +1861,23 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                           </div>
                           {frac != null && <div style={{ height: 4, background: "#2a241d", borderRadius: 2, marginTop: 5 }}><div style={{ width: `${frac * 100}%`, height: 4, borderRadius: 2, background: frac > 0.5 ? "#5fae5a" : frac > 0.25 ? "#d9a43a" : "#d0463c" }} /></div>}
                           {(e.conditions ?? []).length > 0 && <div style={{ marginTop: 5 }}><MarkerChips list={e.conditions ?? []} /></div>}
+                          {e.is_turn && !isGm && !mineEntry && <div style={{ marginTop: 3 }}><TurnUsed entry={e as unknown as FightEntry} /></div>}
+                          {isGm && e.econ && (e.is_turn || e.econ.reaction) && (
+                            <div style={{ display: "flex", gap: 4, flexWrap: "wrap", alignItems: "center", marginTop: 5 }} role="group" aria-label={`${e.name}'s turn`}>
+                              {(["action", "bonus", "reaction"] as const).map((k) => {
+                                const used = !!e.econ?.[k];
+                                return (
+                                  <button key={k} type="button" aria-pressed={used} title={used ? "Used: click to give it back" : "Ready: click to mark it used"}
+                                    onClick={() => editEntry(e.id, (c) => ({ ...c, econ: { ...econOf(c), [k]: !used, ...(k === "action" && used ? { attacks: 0 } : {}) } }))}
+                                    style={{ ...small, padding: "1px 7px", fontSize: 11, textDecoration: used ? "line-through" : "none", color: used ? C.muted : k === "action" ? "#d9a43a" : k === "bonus" ? "#8fd18a" : "#c2a8f0" }}>
+                                    {k === "bonus" ? "Bonus" : k === "action" ? "Action" : "Reaction"}
+                                  </button>
+                                );
+                              })}
+                              {e.is_turn && <span style={{ fontSize: 11, color: C.muted }}>moved {e.econ.moved}{e.speedNow != null ? ` of ${e.speedNow + e.econ.dash}` : ""} ft{e.econ.attacks ? `, ${e.econ.attacks} attack${e.econ.attacks === 1 ? "" : "s"} left` : ""}</span>}
+                              {e.is_turn && <button type="button" onClick={() => editEntry(e.id, (c) => ({ ...c, econ: { ...FRESH_ECON } }))} style={{ ...small, padding: "1px 7px", fontSize: 11, color: C.muted }} title="Give back everything this turn">Fresh turn</button>}
+                            </div>
+                          )}
                           {!isGm && e.awaitingSave && !mineEntry && <div style={{ fontSize: 11, color: "#e07a70", marginTop: 4 }}>saving throw due</div>}
                           {isGm && (e.pendingSaves ?? []).map((ps) => (
                             <div key={ps.id} style={{ marginTop: 6, padding: "5px 7px", border: "1px solid #e07a70", borderRadius: 6, fontSize: 12 }}>

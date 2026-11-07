@@ -15,6 +15,10 @@
 // rolls it here (or on the tabletop); the bonus comes from the sheet. The six saving throws sit on the
 // card too, ready to roll into table chat.
 //
+// Action economy (phase 4c, p112): the card shows what is left of this character's turn (action, bonus
+// action, reaction, movement, attacks left) and spends it (components/fight-controls.tsx EconomyBar).
+// Speed and attacks per Attack action come from the sheet the first time, as max HP and AC do.
+//
 // Players cannot read combats directly or get its live updates (RLS), so the card reads
 // tabletop_combat: every 5 seconds while a fight runs, every 20 while none does, and at once after
 // each change made here.
@@ -23,11 +27,11 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { createClient } from "@/lib/supabase/client";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import { openTabletop } from "@/lib/tabletop/open";
-import { AttackForm, combatAct, isMyTurn, MarkerChips, PlayerEntryControls, SaveBanner, SavesRow, type FightEntry, type FightView } from "@/components/fight-controls";
+import { AttackForm, combatAct, EconomyBar, isMyTurn, MarkerChips, PlayerEntryControls, SaveBanner, SavesRow, TurnUsed, type FightEntry, type FightView } from "@/components/fight-controls";
 
 export default function FightCard({ campaignId, characterId, sheet }: {
   campaignId: string; characterId: string;
-  sheet?: { ac: number; hpMax: number; saves?: Record<string, number>; saveProfs?: string[]; spellDc?: number | null } | null;
+  sheet?: { ac: number; hpMax: number; saves?: Record<string, number>; saveProfs?: string[]; spellDc?: number | null; speed?: number | null; attacksPerAction?: number } | null;
 }) {
   const supabase = useMemo(() => createClient(), []);
   const [fight, setFight] = useState<FightView | null | undefined>(undefined);
@@ -51,13 +55,20 @@ export default function FightCard({ campaignId, characterId, sheet }: {
 
   const me: FightEntry | null = fight?.order.find((e) => e.characterId === characterId) ?? null;
 
-  // Bring the sheet's max HP and AC into the fight once, where the fight has none.
+  // Bring the sheet's max HP, AC, speed and attacks per action into the fight once, where the fight has none.
   useEffect(() => {
     if (!fight || !me || !me.mine || !sheet || synced.current === fight.id) return;
-    if (me.maxHp != null && me.ac != null) { synced.current = fight.id; return; }
     synced.current = fight.id;
-    void combatAct(supabase as never, fight.id, me.id, "sync_sheet", { value: sheet.hpMax > 0 ? sheet.hpMax : null, ac: sheet.ac > 0 ? sheet.ac : null })
-      .then((e) => { if (e) setErr(e); else void load(); });
+    const jobs: Promise<string | null>[] = [];
+    if (me.maxHp == null || me.ac == null) {
+      jobs.push(combatAct(supabase as never, fight.id, me.id, "sync_sheet", { value: sheet.hpMax > 0 ? sheet.hpMax : null, ac: sheet.ac > 0 ? sheet.ac : null }));
+    }
+    if (me.speed == null && sheet.speed != null && sheet.speed >= 0) jobs.push(combatAct(supabase as never, fight.id, me.id, "set_speed", { value: sheet.speed }));
+    if (me.econ !== undefined && (me.attacksPerAction ?? 1) === 1 && (sheet.attacksPerAction ?? 1) > 1) {
+      jobs.push(combatAct(supabase as never, fight.id, me.id, "set_attacks", { value: sheet.attacksPerAction ?? 1 }));
+    }
+    if (!jobs.length) return;
+    void Promise.all(jobs).then((r) => { const e = r.find(Boolean); if (e) setErr(e); else void load(); });
   }, [fight, me, sheet, supabase, load]);
 
   const box: React.CSSProperties = { background: C.panel, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "14px 16px", margin: "0 0 14px" };
@@ -118,6 +129,10 @@ export default function FightCard({ campaignId, characterId, sheet }: {
           )}
           {me.mine ? (
             <>
+              <div style={{ marginTop: 12, paddingTop: 10, borderTop: `1px solid ${C.line}` }}>
+                <div style={{ fontSize: 10.5, letterSpacing: "0.12em", textTransform: "uppercase", color: myTurn ? C.sun : C.muted, marginBottom: 6 }}>{myTurn ? "Your turn" : "Your turn so far"}</div>
+                <EconomyBar key={`${fight.id}:${fight.round}:${me.speed ?? ""}:${me.attacksPerAction ?? 1}`} fightId={fight.id} entry={me} myTurn={myTurn} onChanged={() => void load()} />
+              </div>
               <div style={{ marginTop: 10 }}><PlayerEntryControls fightId={fight.id} entry={me} onChanged={() => void load()} /></div>
               <div style={{ marginTop: 12, paddingTop: 10, borderTop: `1px solid ${C.line}` }}>
                 <div style={{ fontSize: 10.5, letterSpacing: "0.12em", textTransform: "uppercase", color: myTurn ? C.sun : C.muted, marginBottom: 6 }}>{myTurn ? "Your turn: attack" : "Attack"}</div>
@@ -142,6 +157,7 @@ export default function FightCard({ campaignId, characterId, sheet }: {
                   <span style={{ color: C.text, fontSize: 13.5, fontWeight: e.is_turn ? 700 : 500, textDecoration: e.defeated ? "line-through" : "none" }}>{e.name}</span>
                   {e.kind === "pc" && e.hp != null && <span style={{ fontSize: 12, color: C.muted }}>{e.hp}{e.maxHp ? `/${e.maxHp}` : ""}</span>}
                   {e.awaitingSave && <span style={{ fontSize: 11, color: "#e07a70" }}>saving throw due</span>}
+                  {e.is_turn && <TurnUsed entry={e} />}
                   <span style={{ flex: 1 }}><MarkerChips list={e.conditions ?? []} /></span>
                   <button type="button" onClick={() => setOpenId(open ? null : e.id)} aria-expanded={open}
                     style={{ padding: "3px 9px", background: "transparent", color: C.muted, border: `1px solid ${C.line}`, borderRadius: 7, fontSize: 12, cursor: "pointer" }}>

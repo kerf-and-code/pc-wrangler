@@ -40,6 +40,19 @@ export type Combatant = {
   defeated: boolean;
   block?: StatBlockDoc | null;  // monsters: stat block snapshot
   note?: string;
+  // Action economy (phase 4c, p112). The database resets econ when this combatant's turn begins.
+  econ?: Econ | null;
+  speed?: number | null;        // walking speed in feet; null = not tracked
+  attacksPerAction?: number;    // attacks one Attack action makes (Extra Attack); 1 when missing
+};
+
+/** What this combatant has spent of its turn. Missing means a fresh turn. */
+export type EconSpend = { cost: "action" | "attack" | "bonus" | "reaction" | "move"; what: string; at: number; locked?: boolean };
+export type Econ = {
+  action: boolean; bonus: boolean; reaction: boolean;   // true once used
+  moved: number; dash: number;                           // feet moved this turn, feet added by Dash
+  attacks: number;                                       // attacks left from an Attack action already taken
+  log?: EconSpend[];
 };
 
 // The fifteen conditions (identical names in 2014 and 2024) plus Concentrating, which a GM tracks on

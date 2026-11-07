@@ -27,6 +27,11 @@
 // rolled here at once, and a player character's save waits as a pending save until the player rolls it
 // on their sheet or the tabletop (or the GM settles it: they saved, they failed). HP and conditions stay
 // editable by hand for anyone at any time: the GM is never gated. The DM Screen stays a reference board.
+//
+// Phase 4c (p112): action economy. The combatant whose turn it is shows its action, bonus action and
+// reaction (click one to mark it used or give it back), how far it has moved of its speed, and attacks
+// left; anyone whose reaction is used shows that too. The database gives each creature a fresh turn
+// when its turn begins, so stepping the turn here needs nothing more. The GM is never blocked.
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import PageShell from "@/components/page-shell";
@@ -37,7 +42,7 @@ import { loadSrd } from "@/lib/srd/srd";
 import { listStatBlocks, statBlockFromMonster, type StatBlockRow, type StatBlockDoc } from "@/lib/stat-blocks";
 import { monsterSourceLabel } from "@/lib/monster-sources";
 import { applyAdvantage } from "@/lib/dice";
-import { MARKERS, BUFFS, DEBUFFS, critDice, markerKind, MARKER_COLORS } from "@/lib/combat-effects";
+import { MARKERS, BUFFS, DEBUFFS, critDice, markerKind, MARKER_COLORS, econOf, speedNow, FRESH_ECON } from "@/lib/combat-effects";
 import { openTabletop } from "@/lib/tabletop/open";
 import {
   CONDITIONS, abilityMod, applyDamage, applyHealing, blockActions, combatantId, monsterCombatants, pcCombatant,
@@ -156,15 +161,17 @@ export default function CombatPage() {
     setSaveState("saving");
     const { data: fresh } = await supabase.from("combats").select("id, name, rules, status, round, turn, combatants, session_id, encounter_id").eq("id", cur.id).maybeSingle();
     const next = fns.reduce((acc, f) => f(acc), (fresh as CombatRow | null) ?? cur);
-    const { error } = await supabase.from("combats").update({
+    const { data: saved, error } = await supabase.from("combats").update({
       name: next.name, round: next.round, turn: next.turn, combatants: next.combatants, session_id: next.session_id || null,
       updated_at: new Date().toISOString(),
-    }).eq("id", next.id);
+    }).eq("id", next.id).select("id, name, rules, status, round, turn, combatants, session_id, encounter_id").maybeSingle();
     saving.current = false;
     setSaveState(error ? "error" : "idle");
     if (error) { setErr(`Not saved: ${error.message}`); return; }
-    // show the saved fight, with anything queued meanwhile still applied on top
-    setCombat((c) => (c && c.id === next.id ? queue.current.reduce((acc, f) => f(acc), next) : c));
+    // show the fight as saved (the database starts a fresh turn when the turn moves), with anything
+    // queued meanwhile still applied on top
+    const shown = (saved as CombatRow | null) ?? next;
+    setCombat((c) => (c && c.id === next.id ? queue.current.reduce((acc, f) => f(acc), shown) : c));
     if (queue.current.length) { if (timer.current) clearTimeout(timer.current); timer.current = setTimeout(() => void flush(), 150); }
   }, [supabase]);
   const update = useCallback((fn: (c: CombatRow) => CombatRow) => {
@@ -701,6 +708,33 @@ function CombatantRow({ c, isTurn, isSelected, onSelect, onChange, onRemove, inp
         <button type="button" style={{ ...btn(), color: C.warn }} disabled={!(n > 0)} onClick={() => { onChange((x) => applyDamage(x, n)); setAmt(""); }}>Damage</button>
         <button type="button" style={{ ...btn(), color: C.good }} disabled={!(n > 0)} onClick={() => { onChange((x) => applyHealing(x, n)); setAmt(""); }}>Heal</button>
       </div>
+      {(isTurn || econOf(c).reaction) && (() => {
+        const e = econOf(c), sp = speedNow(c.speed, c.conditions);
+        const pill = (k: "action" | "bonus" | "reaction", label: string, color: string) => {
+          const used = e[k];
+          return (
+            <button key={k} type="button" aria-pressed={used} title={used ? "Used: click to give it back" : "Ready: click to mark it used"}
+              onClick={() => onChange((x) => ({ ...x, econ: { ...econOf(x), [k]: !used, ...(k === "action" && used ? { attacks: 0 } : {}) } }))}
+              style={{ ...btn(), padding: "2px 9px", fontSize: 12, color: used ? C.muted : color, textDecoration: used ? "line-through" : "none" }}>{label}</button>
+          );
+        };
+        return (
+          <div onClick={(ev) => ev.stopPropagation()} style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", marginTop: 8 }}>
+            {isTurn && pill("action", "Action", "#d9a43a")}
+            {isTurn && pill("bonus", "Bonus action", "#8fd18a")}
+            {pill("reaction", "Reaction", "#c2a8f0")}
+            {isTurn && (
+              <>
+                <span style={{ fontSize: 12, color: C.muted }}>moved {e.moved}{sp != null ? ` of ${sp + e.dash}` : ""} ft{e.attacks ? `, ${e.attacks} attack${e.attacks === 1 ? "" : "s"} left` : ""}</span>
+                <span style={{ fontFamily: SAX.mono, fontSize: 12, color: C.muted }}>speed</span>
+                <input value={c.speed ?? ""} onChange={(ev) => onChange((x) => ({ ...x, speed: numOrNull(ev.target.value) }))} inputMode="numeric" placeholder="ft"
+                  style={{ ...input, width: 46, textAlign: "center", padding: "2px 4px" }} aria-label="Walking speed in feet" />
+                <button type="button" onClick={() => onChange((x) => ({ ...x, econ: { ...FRESH_ECON } }))} style={{ ...btn(), padding: "2px 9px", fontSize: 12, color: C.muted }} title="Give back everything this turn">Fresh turn</button>
+              </>
+            )}
+          </div>
+        );
+      })()}
       {pendingOf(c).map((ps) => (
         <div key={ps.id} onClick={(e) => e.stopPropagation()} style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", marginTop: 8, padding: "6px 8px", border: "1px solid #e07a70", borderRadius: FORGE_RADIUS }}>
           <span style={{ fontSize: 12.5, color: C.text, flex: "1 1 220px" }}>

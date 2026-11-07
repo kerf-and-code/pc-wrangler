@@ -10,12 +10,17 @@
 //     ogre), and only while your character holds the turn. Monster HP stays with the GM.
 // AttackForm attacks a chosen combatant through /api/tabletop/roll: the server rolls, compares with the
 // target's AC in the database (the player never sees it), and lands the damage on a hit.
+//
+// Action economy (phase 4c, p112): EconomyBar shows what is left of your turn (action, bonus action,
+// reaction, movement, attacks left from an Attack action) and spends it; AttackForm says what each
+// attack or save effect uses. The database keeps count and refuses what the turn no longer allows; a
+// reaction works on anyone's turn, once per round.
 
 import React, { useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { C } from "@/lib/forge-theme";
-import { CONDITIONS } from "@/lib/combat";
-import { BUFFS, DEBUFFS, MARKER_COLORS, markerKind } from "@/lib/combat-effects";
+import { CONDITIONS, type Econ } from "@/lib/combat";
+import { BUFFS, COST_LABEL, DEBUFFS, MARKER_COLORS, STANDARD_ACTIONS, econOf, markerKind, movementLeft } from "@/lib/combat-effects";
 import { applyAdvantage } from "@/lib/dice";
 
 export type PendingSave = { id: string; by: string; byId?: string; label: string; ability: string; dc: number; damage: number; type?: string; half: boolean; conditions?: string[]; at?: number };
@@ -28,25 +33,35 @@ export type FightEntry = {
   tokenId?: string | null; characterId?: string | null; conditions?: string[]; mine?: boolean;
   hp?: number | null; maxHp?: number | null; tempHp?: number | null; ac?: number | null;
   pendingSaves?: PendingSave[]; lastSave?: LastSave | null; awaitingSave?: boolean;
+  // phase 4c, your own entry: what is left of the turn
+  econ?: Econ | null; speed?: number | null; speedNow?: number | null; attacksPerAction?: number; cantAct?: string | null;
+  // phase 4c, whoever holds the turn (not yours): what the table can see of it
+  turnUsed?: { action: boolean; bonus: boolean; moved: number } | null;
 };
 export type FightView = { id: string; name: string; round: number; order: FightEntry[] };
 
-export type CombatAction = "damage" | "heal" | "temp" | "add_condition" | "remove_condition" | "sync_sheet";
+export type CombatAction = "damage" | "heal" | "temp" | "add_condition" | "remove_condition" | "sync_sheet"
+  | "spend" | "undo" | "move" | "set_speed" | "set_attacks";
 
 type Rpc = { rpc: (fn: string, args: Record<string, unknown>) => PromiseLike<{ error: { message: string } | null }> };
 
 export async function combatAct(
   supabase: Rpc, combatId: string, target: string, action: CombatAction,
-  opts: { value?: number | null; condition?: string | null; ac?: number | null } = {},
+  opts: { value?: number | null; condition?: string | null; ac?: number | null; note?: string | null } = {},
 ): Promise<string | null> {
   const { error } = await supabase.rpc("combat_act", {
     p_combat: combatId, p_target: target, p_action: action,
-    p_value: opts.value ?? null, p_condition: opts.condition ?? null, p_ac: opts.ac ?? null,
+    p_value: opts.value ?? null, p_condition: opts.condition ?? null, p_ac: opts.ac ?? null, p_note: opts.note ?? null,
   });
   if (!error) return null;
   const m = error.message;
   if (/only the GM/.test(m)) return "Only the GM can change that.";
-  if (/not your turn/.test(m)) return "Wait for your turn to affect anyone else.";
+  if (/not your turn/.test(m)) return action === "spend" || action === "move" || action === "undo" ? "Wait for your turn. A reaction can be used on anyone's turn." : "Wait for your turn to affect anyone else.";
+  if (/used your action/.test(m)) return "You have used your action this turn.";
+  if (/used your bonus action/.test(m)) return "You have used your bonus action this turn.";
+  if (/used your reaction/.test(m)) return "You have used your reaction this round. It comes back at the start of your turn.";
+  if (/cannot act while/.test(m)) return `You ${m.replace(/^.*?(cannot act while \w+).*$/, "$1")}.`;
+  if (/not enough movement|speed is 0|nothing to undo|already happened|between/.test(m)) return m.charAt(0).toUpperCase() + m.slice(1) + ".";
   if (/fight is over/.test(m)) return "That fight has ended.";
   if (/no such combatant/.test(m)) return "They are no longer in the fight.";
   if (/not at this table/.test(m)) return "You are not at this table.";
@@ -137,7 +152,7 @@ export function isMyTurn(fight: FightView | null | undefined, characterId: strin
   return !!cur && !!cur.mine && !!characterId && cur.characterId === characterId;
 }
 
-type Against = { target: string; hit: boolean | null; crit: boolean; applied?: boolean; defeated?: boolean };
+type Against = { target: string; hit: boolean | null; crit: boolean; applied?: boolean; defeated?: boolean; attacksLeft?: number };
 
 // Attack someone in the fight: pick the target, the attack's bonus and its damage, then one press rolls
 // the attack and, on a hit, the damage, which lands on the target at once.
@@ -159,8 +174,33 @@ export function AttackForm({ campaignId, characterId, fight, onDone, defaultBonu
   const [adv, setAdv] = useState<"flat" | "adv" | "dis">("flat");
   const [busy, setBusy] = useState(false);
   const [out, setOut] = useState<string | null>(null);
+  const [cost, setCost] = useState<"attack" | "action" | "bonus" | "reaction">("attack");
   const myTurn = isMyTurn(fight, characterId);
   const tgt = targets.find((e) => e.id === target) ?? null;
+  // what this character's turn still allows (phase 4c); the database has the final say
+  const meEntry = fight.order.find((e) => e.characterId === characterId && e.mine) ?? null;
+  const ec = meEntry?.econ ? econOf(meEntry) : null;
+  const useCost = mode === "save" && cost === "attack" ? "action" : cost;
+  const canNow = useCost === "reaction" || myTurn;
+  const blocked: string | null = !ec ? null
+    : meEntry?.cantAct ? `You cannot act while ${meEntry.cantAct}.`
+    : useCost === "reaction" ? (ec.reaction ? "Your reaction is used until your next turn." : null)
+    : !myTurn ? null
+    : useCost === "bonus" ? (ec.bonus ? "You have used your bonus action this turn." : null)
+    : useCost === "attack" ? (ec.attacks > 0 || !ec.action ? null : "You have used your action this turn.")
+    : ec.action ? "You have used your action this turn." : null;
+  const attackNote = ec && useCost === "attack" && myTurn && !blocked
+    ? (ec.attacks > 0 ? `${ec.attacks} attack${ec.attacks === 1 ? "" : "s"} left from this Attack action.` : (meEntry?.attacksPerAction ?? 1) > 1 ? `This Attack action makes ${meEntry?.attacksPerAction} attacks.` : null)
+    : null;
+  const costPick = (
+    <select aria-label="What this uses" value={useCost} onChange={(e) => setCost(e.target.value as typeof cost)}
+      style={{ padding: "5px 7px", borderRadius: 7, border: `1px solid ${C.line}`, background: C.surface2, color: C.text, fontSize: 13 }}>
+      {mode === "attack" && <option value="attack">Attack action</option>}
+      <option value="action">{mode === "attack" ? "Whole action (spell attack)" : "Action"}</option>
+      <option value="bonus">Bonus action</option>
+      <option value="reaction">Reaction</option>
+    </select>
+  );
 
   const post = async (body: Record<string, unknown>) => {
     const res = await fetch("/api/tabletop/roll", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ campaignId, characterId, ...body }) });
@@ -175,7 +215,7 @@ export function AttackForm({ campaignId, characterId, fight, onDone, defaultBonu
     if (!damage.trim()) { setOut("Add the damage dice. For an effect with no damage, mark its condition on the target instead."); return; }
     setBusy(true); setOut(null);
     try {
-      const r = await post({ notation: damage.trim(), label: label.trim() || "Save effect", saveAgainst: { targets: picked, ability, dc: d, half } });
+      const r = await post({ notation: damage.trim(), label: label.trim() || "Save effect", saveAgainst: { targets: picked, ability, dc: d, half }, cost: useCost });
       if (!r.ok) { setOut(r.error ?? "Could not roll."); return; }
       const sn = (r as { saveNote?: { targets: string[] } }).saveNote;
       setOut(`${r.message?.roll?.total ?? "?"} damage now waits on ${sn?.targets.join(", ") || "the targets"}: each makes a ${ability.toUpperCase()} save, DC ${d}${half ? ", half on a success" : ", none on a success"}.`);
@@ -187,18 +227,19 @@ export function AttackForm({ campaignId, characterId, fight, onDone, defaultBonu
     const b = parseInt(bonus, 10) || 0;
     setBusy(true); setOut(null);
     try {
-      const a = await post({ notation: applyAdvantage(`1d20${b >= 0 ? "+" : ""}${b}`, adv), label: label.trim() || "Attack", target: tgt.id, rollFor: "attack" });
+      const a = await post({ notation: applyAdvantage(`1d20${b >= 0 ? "+" : ""}${b}`, adv), label: label.trim() || "Attack", target: tgt.id, rollFor: "attack", cost: useCost });
       if (!a.ok) { setOut(a.error ?? "Could not roll."); return; }
       const total = a.message?.roll?.total;
       const ag = a.against;
       if (!ag) { setOut(`Rolled ${total ?? "?"}.`); return; }
-      if (ag.hit === false) { setOut(`${total ?? "?"}: miss against ${ag.target}.`); return; }
-      if (ag.hit === null) { setOut(`${total ?? "?"} against ${ag.target}: the GM has not set its AC, so the GM decides.`); return; }
+      const left = useCost === "attack" && ag.attacksLeft ? ` ${ag.attacksLeft} attack${ag.attacksLeft === 1 ? "" : "s"} left this action.` : "";
+      if (ag.hit === false) { setOut(`${total ?? "?"}: miss against ${ag.target}.${left}`); return; }
+      if (ag.hit === null) { setOut(`${total ?? "?"} against ${ag.target}: the GM has not set its AC, so the GM decides.${left}`); return; }
       const hitText = `${total ?? "?"}: ${ag.crit ? "critical hit" : "hit"} on ${ag.target}`;
-      if (!damage.trim()) { setOut(`${hitText}. Roll damage to land it.`); return; }
+      if (!damage.trim()) { setOut(`${hitText}. Roll damage to land it.${left}`); return; }
       const d = await post({ notation: damage.trim(), label: `${label.trim() || "Attack"} damage`, target: tgt.id, rollFor: "damage" });
       if (!d.ok) { setOut(`${hitText}, but the damage did not land: ${d.error ?? "unknown error"}`); return; }
-      setOut(`${hitText}: ${d.message?.roll?.total ?? "?"} damage${ag.crit ? " (dice doubled)" : ""}${d.against?.defeated ? `. ${ag.target} goes down.` : "."}`);
+      setOut(`${hitText}: ${d.message?.roll?.total ?? "?"} damage${ag.crit ? " (dice doubled)" : ""}${d.against?.defeated ? `. ${ag.target} goes down.` : "."}${left}`);
     } finally { setBusy(false); onDone(); }
   };
 
@@ -227,14 +268,15 @@ export function AttackForm({ campaignId, characterId, fight, onDone, defaultBonu
           <input aria-label="Damage dice" value={damage} onChange={(e) => setDamage(e.target.value.replace(/[^0-9dD+\- ]/g, "").slice(0, 24))} placeholder="damage, e.g. 8d6" style={{ ...field, width: 120 }} />
           <label style={{ fontSize: 12, color: C.muted, display: "flex", gap: 4, alignItems: "center" }}><input type="checkbox" checked={half} onChange={(e) => setHalf(e.target.checked)} />half on a success</label>
         </div>
-        <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-          <span style={{ flex: 1, fontSize: 12, color: C.muted }}>The damage is rolled once and waits on each target until they roll their save.</span>
-          <button type="button" disabled={busy || !picked.length || !myTurn} onClick={() => void saveEffect()}
-            style={{ padding: "6px 14px", borderRadius: 7, border: "none", background: myTurn && picked.length ? C.sun : C.line, color: "#1b1712", fontWeight: 700, fontSize: 13, cursor: myTurn && picked.length ? "pointer" : "default" }}>
+        <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+          {costPick}
+          <span style={{ flex: 1, fontSize: 12, color: C.muted, minWidth: 160 }}>The damage is rolled once and waits on each target until they roll their save.</span>
+          <button type="button" disabled={busy || !picked.length || !canNow || !!blocked} onClick={() => void saveEffect()}
+            style={{ padding: "6px 14px", borderRadius: 7, border: "none", background: canNow && !blocked && picked.length ? C.sun : C.line, color: "#1b1712", fontWeight: 700, fontSize: 13, cursor: canNow && !blocked && picked.length ? "pointer" : "default" }}>
             {busy ? "Rolling…" : `Cast on ${picked.length || "…"}`}
           </button>
         </div>
-        {!myTurn && <p style={{ color: C.muted, fontSize: 12, margin: 0 }}>You can use it on your turn.</p>}
+        {(blocked || !canNow) && <p style={{ color: C.muted, fontSize: 12, margin: 0 }}>{blocked ?? "You can use it on your turn, or as a reaction."}</p>}
         {out && <p role="status" style={{ color: C.text, fontSize: 13, margin: 0 }}>{out}</p>}
       </div>
     );
@@ -258,13 +300,15 @@ export function AttackForm({ campaignId, characterId, fight, onDone, defaultBonu
         <button type="button" onClick={() => setAdv("dis")} style={seg(adv === "dis")}>Disadvantage</button>
         <button type="button" onClick={() => setAdv("flat")} style={seg(adv === "flat")}>Straight</button>
         <button type="button" onClick={() => setAdv("adv")} style={seg(adv === "adv")}>Advantage</button>
+        {costPick}
         <span style={{ flex: 1 }} />
-        <button type="button" disabled={busy || !tgt || !myTurn} onClick={() => void attack()}
-          style={{ padding: "6px 14px", borderRadius: 7, border: "none", background: myTurn && tgt ? C.sun : C.line, color: "#1b1712", fontWeight: 700, fontSize: 13, cursor: myTurn && tgt ? "pointer" : "default" }}>
+        <button type="button" disabled={busy || !tgt || !canNow || !!blocked} onClick={() => void attack()}
+          style={{ padding: "6px 14px", borderRadius: 7, border: "none", background: canNow && !blocked && tgt ? C.sun : C.line, color: "#1b1712", fontWeight: 700, fontSize: 13, cursor: canNow && !blocked && tgt ? "pointer" : "default" }}>
           {busy ? "Rolling…" : tgt ? `Attack ${tgt.name}` : "Attack"}
         </button>
       </div>
-      {!myTurn && <p style={{ color: C.muted, fontSize: 12, margin: 0 }}>You can attack on your turn.</p>}
+      {(blocked || !canNow) && <p style={{ color: C.muted, fontSize: 12, margin: 0 }}>{blocked ?? "You can attack on your turn, or with your reaction (an opportunity attack)."}</p>}
+      {attackNote && <p style={{ color: C.muted, fontSize: 12, margin: 0 }}>{attackNote}</p>}
       {out && <p role="status" style={{ color: C.text, fontSize: 13, margin: 0 }}>{out}</p>}
     </div>
   );
@@ -359,4 +403,97 @@ export function SavesRow({ campaignId, characterId, saves, profs }: {
       {out && <p role="status" style={{ color: C.text, fontSize: 12.5, margin: "6px 0 0" }}>{out}</p>}
     </div>
   );
+}
+
+// What is left of your turn, and the buttons that spend it. Action, bonus action and movement are for
+// your own turn; a reaction works on anyone's turn and comes back at the start of yours. Moving your
+// token on the tabletop counts its movement for you; "Move" here is for a fight without the tabletop.
+export function EconomyBar({ fightId, entry, myTurn, onChanged }: { fightId: string; entry: FightEntry; myTurn: boolean; onChanged: () => void }) {
+  const supabase = useMemo(() => createClient(), []);
+  const [note, setNote] = useState("");
+  const [feet, setFeet] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const [edit, setEdit] = useState(false);
+  const [spd, setSpd] = useState(entry.speed != null ? String(entry.speed) : "");
+  const [apa, setApa] = useState(String(entry.attacksPerAction ?? 1));
+  const e = econOf(entry);
+  const left = movementLeft(e, entry.speedNow ?? null);
+  const run = async (action: CombatAction, opts: { value?: number; condition?: string; note?: string } = {}) => {
+    setBusy(true); setErr(null);
+    const m = await combatAct(supabase as unknown as Rpc, fightId, entry.id, action, opts);
+    setBusy(false);
+    if (m) setErr(m); else { if (action === "spend") setNote(""); if (action === "move") setFeet(""); onChanged(); }
+  };
+  const spend = (cost: "action" | "bonus" | "reaction", what?: string) => void run("spend", { condition: cost, note: what ?? (note.trim() || undefined) });
+  const last = (e.log ?? [])[(e.log ?? []).length - 1] ?? null;
+  const pip = (label: string, used: boolean, color: string): React.ReactNode => (
+    <span title={used ? `${label}: used` : `${label}: ready`} style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12.5, color: used ? C.muted : C.text, textDecoration: used ? "line-through" : "none" }}>
+      <span aria-hidden style={{ width: 11, height: 11, borderRadius: 999, border: `2px solid ${color}`, background: used ? "transparent" : color }} />{label}
+    </span>
+  );
+  const small: React.CSSProperties = { padding: "4px 9px", background: "transparent", color: C.text, border: `1px solid ${C.line}`, borderRadius: 7, fontSize: 12, cursor: "pointer" };
+  const field: React.CSSProperties = { padding: "4px 6px", borderRadius: 7, border: `1px solid ${C.line}`, background: C.surface2, color: C.text, fontSize: 12.5 };
+  const turnOk = myTurn && !entry.cantAct;
+  return (
+    <div style={{ display: "grid", gap: 7 }} aria-label="What is left of your turn">
+      <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+        {pip("Action", e.action && e.attacks === 0, "#d9a43a")}
+        {pip("Bonus action", e.bonus, "#8fd18a")}
+        {pip("Reaction", e.reaction, "#c2a8f0")}
+        <span style={{ fontSize: 12.5, color: C.text }}>
+          {left == null ? "Speed not set" : `${left} of ${(entry.speedNow ?? 0) + e.dash} ft left`}
+          {e.dash > 0 ? <span style={{ color: C.muted }}> (Dash)</span> : null}
+        </span>
+        {e.attacks > 0 && <span style={{ fontSize: 12.5, color: "#d9a43a" }}>{e.attacks} attack{e.attacks === 1 ? "" : "s"} left</span>}
+        <span style={{ flex: 1 }} />
+        <button type="button" onClick={() => setEdit((v) => !v)} aria-expanded={edit} style={{ ...small, color: C.muted }}>Speed and attacks</button>
+      </div>
+      {entry.cantAct && <p role="status" style={{ fontSize: 12.5, color: "#e07a70", margin: 0 }}>{entry.cantAct}: no actions, bonus actions or reactions until it ends.</p>}
+      {!myTurn && !entry.cantAct && <p style={{ fontSize: 12, color: C.muted, margin: 0 }}>Not your turn: only your reaction can be used now.</p>}
+      {edit && (
+        <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+          <label style={{ fontSize: 12, color: C.muted }}>Speed <input aria-label="Walking speed in feet" value={spd} inputMode="numeric" onChange={(ev) => setSpd(ev.target.value.replace(/[^0-9]/g, "").slice(0, 3))} style={{ ...field, width: 50 }} /> ft</label>
+          <button type="button" disabled={busy || spd === ""} onClick={() => void run("set_speed", { value: parseInt(spd, 10) })} style={small}>Set</button>
+          <label style={{ fontSize: 12, color: C.muted }}>Attacks per Attack action <input aria-label="Attacks per Attack action" value={apa} inputMode="numeric" onChange={(ev) => setApa(ev.target.value.replace(/[^0-9]/g, "").slice(0, 1))} style={{ ...field, width: 34 }} /></label>
+          <button type="button" disabled={busy || !(parseInt(apa, 10) >= 1)} onClick={() => void run("set_attacks", { value: parseInt(apa, 10) })} style={small}>Set</button>
+          <span style={{ fontSize: 11.5, color: C.muted }}>Filled in from your sheet; Hasted doubles speed and Slowed halves it.</span>
+        </div>
+      )}
+      <div style={{ display: "flex", gap: 4, flexWrap: "wrap", alignItems: "center" }} role="group" aria-label="Standard actions">
+        <span style={{ fontSize: 11, color: C.muted, letterSpacing: "0.08em", textTransform: "uppercase", marginRight: 2 }}>Action</span>
+        {STANDARD_ACTIONS.map((a) => (
+          <button key={a.name} type="button" title={a.tip} disabled={busy || !turnOk || e.action} onClick={() => spend("action", a.name)} style={small}>{a.name}</button>
+        ))}
+      </div>
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+        <input aria-label="What you use it for" value={note} onChange={(ev) => setNote(ev.target.value.slice(0, 60))} placeholder="what for, e.g. Cunning Action: Dash" style={{ ...field, width: 210 }} />
+        <button type="button" disabled={busy || !turnOk || e.action} onClick={() => spend("action")} style={small}>Use action</button>
+        <button type="button" disabled={busy || !turnOk || e.bonus} onClick={() => spend("bonus")} style={{ ...small, color: "#8fd18a" }}>Use bonus action</button>
+        <button type="button" disabled={busy || !!entry.cantAct || e.reaction} onClick={() => spend("reaction")} style={{ ...small, color: "#c2a8f0" }}>Use reaction</button>
+      </div>
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+        <input aria-label="Feet to move" value={feet} inputMode="numeric" onChange={(ev) => setFeet(ev.target.value.replace(/[^0-9]/g, "").slice(0, 3))} placeholder="ft" style={{ ...field, width: 50 }} />
+        <button type="button" disabled={busy || !myTurn || !(parseInt(feet, 10) > 0)} onClick={() => void run("move", { value: parseInt(feet, 10) })} style={small}>Move</button>
+        <span style={{ fontSize: 11.5, color: C.muted }}>Moving your token on the tabletop counts this for you.</span>
+        <span style={{ flex: 1 }} />
+        {last && (
+          <button type="button" disabled={busy || !!last.locked} onClick={() => void run("undo")} style={{ ...small, color: C.muted }}
+            title={last.locked ? "That already happened at the table; the GM can undo it" : "Take back the last thing you spent"}>
+            Undo: {COST_LABEL[last.cost] ?? last.cost}{last.what ? `, ${last.what}` : ""}
+          </button>
+        )}
+      </div>
+      {err && <p role="alert" style={{ color: "#e07a70", fontSize: 12, margin: 0 }}>{err}</p>}
+    </div>
+  );
+}
+
+// What the creature whose turn it is has used, as the table sees it (not your own character).
+export function TurnUsed({ entry }: { entry: FightEntry }) {
+  const u = entry.turnUsed;
+  if (!u) return null;
+  const bits = [u.action ? "action used" : null, u.bonus ? "bonus action used" : null, u.moved ? `moved ${u.moved} ft` : null].filter(Boolean);
+  if (!bits.length) return null;
+  return <span style={{ fontSize: 11.5, color: C.muted }}>{bits.join(", ")}</span>;
 }

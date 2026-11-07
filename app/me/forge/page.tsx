@@ -53,6 +53,7 @@ import { LANCER_RULES } from "@/lib/lancer/rules-data";
 import LancerForge from "@/components/lancer-forge";
 import SystemAttribution from "@/components/system-attribution";
 import FightCard from "@/components/fight-card";
+import { attacksPerAction } from "@/lib/combat-effects";
 import { menusFor, type ClassMenu } from "@/lib/class-menus";
 import { casterLevel, multiclassSlots, isMulticlassCaster, type CasterType } from "@/lib/multiclass-slots";
 import { subclassCasterType, subclassSpellList, subclassCasting, thirdCasterSlots } from "@/lib/subclass-casters";
@@ -1614,7 +1615,8 @@ function ForgeInner() {
                   Combat page and the tabletop show them, and the player's own controls (p110). */}
               {mode === "character" && row?.campaign_id && (
                 <FightCard campaignId={row.campaign_id} characterId={row.id}
-                  sheet={{ ac: sheet.ac, hpMax: sheet.hpMax, saves: sheet.saves as Record<string, number>, saveProfs: build.saveProf || [], spellDc: sheet.isCaster ? sheet.spellDC ?? null : null }} />
+                  sheet={{ ac: sheet.ac, hpMax: sheet.hpMax, saves: sheet.saves as Record<string, number>, saveProfs: build.saveProf || [], spellDc: sheet.isCaster ? sheet.spellDC ?? null : null,
+                    speed: sheet.speed, attacksPerAction: attacksPerAction([{ className: build.meta.className, subclass: build.meta.subclass, level: build.level }, ...(build.multiclass || [])]) }} />
               )}
               <SheetPanel sheet={sheet} name={name || "Character"} />
 
