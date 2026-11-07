@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { roll, DiceError } from "@/lib/dice";
 import { sortForTurns, type Combatant } from "@/lib/combat";
+import { critDice } from "@/lib/combat-effects";
 
 // app/api/tabletop/roll/route.ts (2026-11-06)
 //
@@ -20,8 +21,25 @@ import { sortForTurns, type Combatant } from "@/lib/combat";
 // character's initiative in the campaign's active fight (the Combat page's combats row), if it has none
 // yet, so players roll their own and the turn tracker fills in. Before the first turn is taken the order
 // is sorted at once, exactly as the Combat page does after rolling monster initiative.
+//
+// Attacks (phase 4a): with `target` (a combatant id) and `rollFor: "attack"`, the roll is an attack on
+// that combatant. combat_attack_resolve (p110) checks the turn gate and compares the roll with the
+// target's AC in the database, so the AC never reaches the player; the chat card says hit or miss.
+// With `rollFor: "damage"` and the same target, the damage lands on it after a hit, once, and a
+// critical hit doubles the dice. Both functions run with the service role; the checks above (who is
+// rolling, and as which character) come first.
 
 export const maxDuration = 30;
+
+function friendlyFight(m: string): string {
+  if (/not your turn/.test(m)) return "It is not your turn.";
+  if (/no fight/.test(m)) return "No fight is running.";
+  if (/not in the fight/.test(m)) return "Your character is not in the fight.";
+  if (/roll a hit/.test(m)) return "Roll a hit on them first.";
+  if (/someone else/.test(m)) return "Pick someone else to attack.";
+  if (/no such combatant/.test(m)) return "They are no longer in the fight.";
+  return m;
+}
 
 function groupForBeyond20(dice: { sides: number; value: number; kept: boolean }[]) {
   const by = new Map<number, number[]>();
@@ -51,7 +69,7 @@ function eventType(label: string): string {
 }
 
 export async function POST(req: Request) {
-  let b: { campaignId?: string; notation?: string; label?: string; gmOnly?: boolean; characterId?: string | null; asName?: string; initiative?: boolean } = {};
+  let b: { campaignId?: string; notation?: string; label?: string; gmOnly?: boolean; characterId?: string | null; asName?: string; initiative?: boolean; target?: string; rollFor?: "attack" | "damage" } = {};
   try { b = await req.json(); } catch { /* guarded below */ }
   const campaignId = typeof b.campaignId === "string" ? b.campaignId : "";
   const label = (typeof b.label === "string" ? b.label : "").trim().slice(0, 120);
@@ -80,17 +98,47 @@ export async function POST(req: Request) {
   }
   if (!actorName) actorName = isGm ? "GM" : "Player";
 
+  const target = typeof b.target === "string" && b.target ? b.target.slice(0, 64) : null;
+  const rollFor = target && characterId && (b.rollFor === "attack" || b.rollFor === "damage") ? b.rollFor : null;
+  let notation = b.notation ?? "";
+
+  // A damage roll at a target needs a hit on it first; a critical hit doubles the dice.
+  if (rollFor === "damage") {
+    const { data: cb } = await admin.from("combats").select("combatants")
+      .eq("campaign_id", campaignId).eq("status", "active").order("updated_at", { ascending: false }).limit(1).maybeSingle();
+    const att = ((cb as { combatants: (Combatant & { lastAttack?: { target: string; hit: boolean | null; crit: boolean; applied?: boolean; at: number } })[] } | null)?.combatants ?? [])
+      .find((c) => c.kind === "pc" && c.characterId === characterId);
+    const la = att?.lastAttack;
+    if (!la || la.target !== target || la.hit !== true || la.applied || Date.now() / 1000 - Number(la.at) > 180) {
+      return NextResponse.json({ error: "Roll a hit on them first." }, { status: 409 });
+    }
+    if (la.crit) notation = critDice(notation);
+  }
+
   let result;
   try {
-    result = roll(b.notation ?? "");
+    result = roll(notation);
   } catch (e) {
     return NextResponse.json({ error: e instanceof DiceError ? e.message : "Could not read that roll." }, { status: 400 });
+  }
+
+  // An attack: the turn gate and the AC comparison happen in the database.
+  let against: { target: string; hit: boolean | null; crit: boolean; applied?: boolean; defeated?: boolean } | null = null;
+  if (rollFor === "attack") {
+    const { data: res, error: aErr } = await admin.rpc("combat_attack_resolve", {
+      p_campaign: campaignId, p_character: characterId, p_target: target, p_total: result.total,
+      p_natural: result.natural ?? null, p_label: label, p_gm: !!isGm,
+    });
+    if (aErr) return NextResponse.json({ error: friendlyFight(aErr.message) }, { status: 409 });
+    const r = res as { hit: boolean | null; crit: boolean; target: string };
+    against = { target: r.target, hit: r.hit, crit: r.crit };
   }
 
   const { data: sessionId } = await supabase.rpc("tabletop_open_session", { p_campaign: campaignId });
   const gmOnly = !!b.gmOnly;
   const rolledAt = new Date().toISOString();
 
+  const kindOf = rollFor === "attack" ? "to-hit" : rollFor === "damage" ? "damage" : eventType(label);
   let eventId: string | null = null;
   if (typeof sessionId === "string" && sessionId) {
     const { data: ev, error } = await admin.from("vtt_events").insert({
@@ -100,7 +148,7 @@ export async function POST(req: Request) {
       actor_name: actorName,
       ddb_character_id: null,
       source: "six_axes_tabletop",
-      event_type: eventType(label),
+      event_type: kindOf,
       name: label || null,
       rolls: {
         total: result.total,
@@ -112,7 +160,7 @@ export async function POST(req: Request) {
         modifier: result.modifier,
         natural: result.natural,
         dropped: result.dice.filter((d) => !d.kept).map((d) => ({ faces: d.sides, value: d.value })),
-        kind: eventType(label),
+        kind: kindOf,
         gm_only: gmOnly,
       },
       state: null,
@@ -123,6 +171,16 @@ export async function POST(req: Request) {
     eventId = (ev as { id: string }).id;
   }
 
+  // Damage at a target lands now, before the card is posted, so the card can say it did.
+  if (rollFor === "damage") {
+    const { data: res, error: dErr } = await admin.rpc("combat_attack_damage", {
+      p_campaign: campaignId, p_character: characterId, p_target: target, p_amount: result.total,
+    });
+    if (dErr) return NextResponse.json({ error: friendlyFight(dErr.message) }, { status: 409 });
+    const r = res as { target: string; defeated: boolean };
+    against = { target: r.target, hit: true, crit: notation !== (b.notation ?? ""), applied: true, defeated: r.defeated };
+  }
+
   const { data: msg, error: mErr } = await admin.from("vtt_messages").insert({
     campaign_id: campaignId,
     session_id: typeof sessionId === "string" && sessionId ? sessionId : null,
@@ -131,7 +189,7 @@ export async function POST(req: Request) {
     character_id: characterId,
     kind: "roll",
     body: label,
-    roll: { label, notation: result.notation, total: result.total, dice: result.dice, modifier: result.modifier, natural: result.natural, logged: !!eventId },
+    roll: { label, notation: result.notation, total: result.total, dice: result.dice, modifier: result.modifier, natural: result.natural, logged: !!eventId, against },
     vtt_event_id: eventId,
     gm_only: gmOnly,
   }).select("*").single();
@@ -153,5 +211,5 @@ export async function POST(req: Request) {
     }
   }
 
-  return NextResponse.json({ ok: true, message: msg, logged: !!eventId, initiativeSet });
+  return NextResponse.json({ ok: true, message: msg, logged: !!eventId, initiativeSet, against });
 }

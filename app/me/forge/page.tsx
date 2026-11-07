@@ -52,6 +52,7 @@ import { deriveLancerSheet, emptyLancerBuild, type LancerBuild } from "@/lib/lan
 import { LANCER_RULES } from "@/lib/lancer/rules-data";
 import LancerForge from "@/components/lancer-forge";
 import SystemAttribution from "@/components/system-attribution";
+import FightCard from "@/components/fight-card";
 import { menusFor, type ClassMenu } from "@/lib/class-menus";
 import { casterLevel, multiclassSlots, isMulticlassCaster, type CasterType } from "@/lib/multiclass-slots";
 import { subclassCasterType, subclassSpellList, subclassCasting, thirdCasterSlots } from "@/lib/subclass-casters";
@@ -1609,6 +1610,11 @@ function ForgeInner() {
               {/* The sheet is the one panel shown on EVERY tab. It is the thing being edited, and
                   hiding it behind a tab would make each change unverifiable at the moment it is
                   made - which is the whole reason the Forge derives live. */}
+              {/* The running fight, when this campaign character is in one: HP and conditions as the
+                  Combat page and the tabletop show them, and the player's own controls (p110). */}
+              {mode === "character" && row?.campaign_id && (
+                <FightCard campaignId={row.campaign_id} characterId={row.id} sheet={{ ac: sheet.ac, hpMax: sheet.hpMax }} />
+              )}
               <SheetPanel sheet={sheet} name={name || "Character"} />
 
               {tab === "finish" && (

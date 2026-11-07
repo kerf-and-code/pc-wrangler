@@ -15,6 +15,7 @@ import {
 } from "@/lib/dungeon/battle";
 import TileLibrary from "./TileLibrary";
 import type { CustomTile } from "@/lib/tiles/custom";
+import { openTabletop, tabletopUrl } from "@/lib/tabletop/open";
 
 // The Battle maps tab (2026-11-06). Many named maps per campaign, indoor or outdoor, drawn in the
 // adventure-book style by lib/dungeon/classic. The GM edits the finished map directly: what is on the
@@ -759,7 +760,7 @@ export default function BattleMapCreator({ campaignId }: { campaignId: string })
         <button type="button" onClick={() => { setCreating(true); setMsg(null); }} style={small}>New map</button>
         {doc && <button type="button" onClick={() => void createMap(doc)} style={small}>Duplicate</button>}
         {doc && <button type="button" onClick={() => void deleteMap()} style={{ ...small, color: "#c98a7a" }}>Delete map</button>}
-        <a href={`/tabletop/${campaignId}`} title="The shared table: put a map on it from its Scenes tab, add tokens, and invite the players" style={{ ...small, textDecoration: "none", color: C.sun, borderColor: C.sun }}>Open the tabletop</a>
+        <a href={tabletopUrl(campaignId)} onClick={(e) => { e.preventDefault(); openTabletop(campaignId); }} title="The shared table, in its own window: put a map on it from its Scenes tab, add tokens, and invite the players" style={{ ...small, textDecoration: "none", color: C.sun, borderColor: C.sun }}>Open the tabletop</a>
         <span role="status" style={{ marginLeft: "auto", color: saveState === "error" ? "#c98a7a" : C.muted, fontSize: 12 }}>
           {saveState === "saving" ? "Saving…" : saveState === "saved" ? "Saved" : saveState === "error" ? "Not saved" : ""}
         </span>

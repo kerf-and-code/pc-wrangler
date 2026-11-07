@@ -20,6 +20,9 @@ import {
 } from "@/lib/tabletop/fog";
 import { drawElement, type DoorKind, type MapElement } from "@/lib/dungeon/classic";
 import { wallSegments, visibility, seenSquares, canSee, CANOPY_KINDS, type Seg } from "@/lib/tabletop/sight";
+import { markerShort, markerKind, MARKER_COLORS } from "@/lib/combat-effects";
+import { openTabletop } from "@/lib/tabletop/open";
+import { AttackForm, MarkerChips, MarkerPicker, PlayerEntryControls, isMyTurn, type FightEntry } from "@/components/fight-controls";
 
 // The tabletop, phase 1 (2026-11-06). One page for the GM and the players; tabletop_state (p105)
 // decides the role and strips what players must not see before it leaves the database.
@@ -49,6 +52,10 @@ import { wallSegments, visibility, seenSquares, canSee, CANOPY_KINDS, type Seg }
 //          dimmed, with nobody shown in them. Remembered in this browser only. Trees are a canopy: drawn
 //          over the tokens and faded while one stands beneath. The GM sees everything, and the sight of
 //          the tokens they select as an outline.
+// Phase 4a: players act on the fight from the Turns tab: their own HP and conditions, effects on
+//          anyone else on their turn, and attacks on a target they pick (or the token they select):
+//          the server compares the roll with the target's AC and lands the damage on a hit (p110).
+//          Buffs and debuffs sit beside the conditions. The table opens in its own window too.
 // Live:    one Realtime channel per campaign. Table changes (tokens, scenes, chat) arrive through RLS;
 //          drags, rulers and pings are broadcast and never stored. Positions are saved once on drop.
 // Chat:    /r, /gr, /w name, /em. Rolls go to /api/tabletop/roll, which rolls on the server and logs
@@ -89,7 +96,7 @@ type Trail = { from: Pt; to: Pt; color: string; born: number; feet: number };
 type TC = Combatant & { tokenId?: string | null };
 type FightRow = { id: string; name: string; round: number; turn: number; combatants: TC[]; session_id: string | null };
 type Entry = { id: string; name: string; kind: "pc" | "monster"; initiative: number | null; defeated: boolean; is_turn: boolean; tokenId?: string | null;
-  characterId?: string | null; hp?: number | null; maxHp?: number | null; tempHp?: number; conditions?: string[]; ac?: number | null; hidden?: boolean; initBonus?: number };
+  characterId?: string | null; hp?: number | null; maxHp?: number | null; tempHp?: number; conditions?: string[]; ac?: number | null; hidden?: boolean; initBonus?: number; mine?: boolean };
 type Fight = { id: string; name: string; round: number; order: Entry[] };
 const FIGHT_COLS = "id, name, round, turn, combatants, session_id";
 type LibMonster = { name: string; size?: string; cr?: string | number; hp?: number; ac?: number; source_key?: string };
@@ -570,9 +577,10 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
         ctx.save(); ctx.font = `700 ${fs}px system-ui, sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
         shown2.forEach((cn, i) => {
           const a = Math.PI * 0.25 + i * 0.42, bx = cx + Math.cos(a) * rad, by = cy + Math.sin(a) * rad, r2 = fs * 0.85;
-          ctx.fillStyle = "#3b2f6b"; ctx.beginPath(); ctx.arc(bx, by, r2, 0, Math.PI * 2); ctx.fill();
-          ctx.strokeStyle = "#c2a8f0"; ctx.lineWidth = Math.max(1, fs * 0.12); ctx.stroke();
-          ctx.fillStyle = "#fff"; ctx.fillText(cn === "Exhaustion" ? "Ex" : cn.slice(0, 2), bx, by);
+          const mc = MARKER_COLORS[markerKind(cn)];
+          ctx.fillStyle = mc.fill; ctx.beginPath(); ctx.arc(bx, by, r2, 0, Math.PI * 2); ctx.fill();
+          ctx.strokeStyle = mc.line; ctx.lineWidth = Math.max(1, fs * 0.12); ctx.stroke();
+          ctx.fillStyle = "#fff"; ctx.fillText(markerShort(cn), bx, by);
         });
         if (conds.length > 4) { ctx.fillStyle = "#c2a8f0"; ctx.fillText(`+${conds.length - 4}`, cx + rad * 0.2, cy + rad + fs); }
         ctx.restore();
@@ -1593,6 +1601,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
             Round {fight.round}{cur ? ` · ${cur.name}'s turn` : ""}
           </button>); })()}
         <div style={{ marginLeft: "auto", display: "flex", gap: 6, alignItems: "center" }}>
+          <button type="button" onClick={() => openTabletop(campaignId)} title="Open the table in its own window, for a second screen" style={{ fontSize: 12, padding: "3px 9px", borderRadius: 999, border: `1px solid ${C.line}`, background: "transparent", color: C.muted, cursor: "pointer" }}>New window</button>
           {present.map((p) => (
             <span key={p.key} title={p.name} style={{ fontSize: 12, padding: "3px 8px", borderRadius: 999, border: `1px solid ${p.color}`, color: p.color }}>{p.name}</span>
           ))}
@@ -1721,7 +1730,9 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                   const who = nameOf(m);
                   if (m.kind === "roll" && m.roll) {
                     const dice = (m.roll.dice ?? []).map((d) => ({ v: d.value, sides: d.sides, kept: d.kept }));
-                    return <div key={f.key}>{renderRoll(who, m.roll.label ?? "", m.roll.total, dice, m.roll.natural ?? null, m.gm_only ? "GM only" : m.roll.logged === false ? "not logged" : null)}</div>;
+                    const ag = (m.roll as { against?: { target: string; hit: boolean | null; crit: boolean; applied?: boolean; defeated?: boolean } | null }).against;
+                    const title = ag ? `${m.roll.label ?? ""} vs ${ag.target}: ${ag.applied ? `damage lands${ag.crit ? " (crit)" : ""}${ag.defeated ? `, ${ag.target} goes down` : ""}` : ag.hit === null ? "the GM decides" : ag.crit ? "critical hit" : ag.hit ? "hit" : "miss"}` : m.roll.label ?? "";
+                    return <div key={f.key}>{renderRoll(who, title, m.roll.total, dice, m.roll.natural ?? null, m.gm_only ? "GM only" : m.roll.logged === false ? "not logged" : null)}</div>;
                   }
                   if (m.kind === "emote") return <div key={f.key} style={{ fontStyle: "italic", color: C.muted, fontSize: 13.5 }}>{who} {m.body}</div>;
                   if (m.kind === "whisper") {
@@ -1779,6 +1790,22 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                       <button type="button" disabled={fightBusy} onClick={sortFight} style={small}>Sort by initiative</button>
                     </div>
                   )}
+                  {!isGm && (() => {
+                    const mineE = fight.order.find((e) => e.kind === "pc" && myChars.some((c) => c.character_id === e.characterId));
+                    if (!mineE?.characterId) return null;
+                    const selTok = selected.length === 1 ? selected[0] : null;
+                    const preset = selTok ? fight.order.find((e) => e.tokenId === selTok && e.id !== mineE.id)?.id ?? "" : "";
+                    const myTurnNow = isMyTurn(fight as unknown as Parameters<typeof isMyTurn>[0], mineE.characterId);
+                    return (
+                      <div style={{ marginTop: 12, padding: "8px 10px", border: `1px solid ${myTurnNow ? C.sun : C.line}`, borderRadius: 8 }}>
+                        <div style={{ fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", color: myTurnNow ? C.sun : C.muted, marginBottom: 6 }}>{myTurnNow ? `Your turn: ${mineE.name} attacks` : `${mineE.name} attacks on their turn`}</div>
+                        <AttackForm key={preset || "none"} campaignId={campaignId} characterId={mineE.characterId} presetTarget={preset}
+                          fight={fight as unknown as Parameters<typeof AttackForm>[0]["fight"]}
+                          onDone={() => { void loadFight(); send("combat", {}); }} />
+                        <p style={{ fontSize: 11.5, color: C.muted, margin: "6px 0 0" }}>Select a monster&apos;s token to make it the target.</p>
+                      </div>
+                    );
+                  })()}
                   <div style={{ display: "grid", gap: 6, marginTop: 12 }}>
                     {fight.order.map((e) => {
                       const mineEntry = e.kind === "pc" && myChars.some((c) => c.character_id === e.characterId);
@@ -1788,14 +1815,21 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                         <div key={e.id} style={{ border: `1px solid ${e.is_turn ? C.sun : C.line}`, borderLeft: `4px solid ${e.is_turn ? C.sun : "transparent"}`, borderRadius: 8, padding: "7px 9px", opacity: e.defeated ? 0.55 : 1, background: e.is_turn ? "rgba(217,164,58,0.08)" : "transparent" }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                             <span style={{ width: 28, textAlign: "center", fontWeight: 700, color: e.initiative == null ? C.muted : C.text }}>{e.initiative ?? "?"}</span>
-                            <button type="button" onClick={() => { centreOnEntry(e); if (isGm) setSelEntry(open ? null : e.id); }} style={{ flex: 1, textAlign: "left", background: "none", border: "none", color: C.text, cursor: "pointer", padding: 0, fontSize: 13.5, fontWeight: e.is_turn ? 700 : 500, textDecoration: e.defeated ? "line-through" : "none" }}>
+                            <button type="button" onClick={() => { centreOnEntry(e); setSelEntry(open ? null : e.id); }} style={{ flex: 1, textAlign: "left", background: "none", border: "none", color: C.text, cursor: "pointer", padding: 0, fontSize: 13.5, fontWeight: e.is_turn ? 700 : 500, textDecoration: e.defeated ? "line-through" : "none" }}>
                               {e.name}{e.hidden ? " (hidden)" : ""}
                             </button>
                             {e.hp != null && <span style={{ fontSize: 12, color: C.muted }}>{e.hp}{e.maxHp ? `/${e.maxHp}` : ""}{e.tempHp ? ` +${e.tempHp}` : ""}</span>}
                             {isGm && e.ac != null && <span style={{ fontSize: 11.5, color: C.muted }}>AC {e.ac}</span>}
                           </div>
                           {frac != null && <div style={{ height: 4, background: "#2a241d", borderRadius: 2, marginTop: 5 }}><div style={{ width: `${frac * 100}%`, height: 4, borderRadius: 2, background: frac > 0.5 ? "#5fae5a" : frac > 0.25 ? "#d9a43a" : "#d0463c" }} /></div>}
-                          {(e.conditions ?? []).length > 0 && <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 5 }}>{(e.conditions ?? []).map((cn) => <span key={cn} style={{ fontSize: 11, padding: "0 6px", borderRadius: 999, border: "1px solid #6b5aa0", color: "#c2a8f0" }}>{cn}</span>)}</div>}
+                          {(e.conditions ?? []).length > 0 && <div style={{ marginTop: 5 }}><MarkerChips list={e.conditions ?? []} /></div>}
+                          {!isGm && open && (
+                            <div style={{ marginTop: 8, paddingTop: 8, borderTop: `1px solid ${C.line}` }}>
+                              <PlayerEntryControls fightId={fight.id} entry={{ ...e, mine: mineEntry } as FightEntry}
+                                myTurn={isMyTurn(fight as unknown as Parameters<typeof isMyTurn>[0], myChars.find((c) => fight.order.some((x) => x.characterId === c.character_id))?.character_id ?? null)}
+                                onChanged={() => { void loadFight(); send("combat", {}); }} />
+                            </div>
+                          )}
                           {!isGm && mineEntry && e.initiative == null && (
                             <div style={{ display: "flex", gap: 6, marginTop: 6, alignItems: "center" }}>
                               <label style={{ fontSize: 12, color: C.muted }} htmlFor={`ib-${e.id}`}>Bonus</label>
@@ -1815,12 +1849,9 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                                 <label style={{ fontSize: 11.5, color: C.muted }}>Max HP<input aria-label={`Max HP for ${e.name}`} defaultValue={e.maxHp ?? ""} key={`m${e.id}${e.maxHp}`} onBlur={(ev) => { const v = parseInt(ev.target.value, 10); editEntry(e.id, (c) => ({ ...c, maxHp: Number.isFinite(v) ? v : null, hp: c.hp == null && Number.isFinite(v) ? v : c.hp })); }} style={{ ...field, padding: "4px 6px" }} /></label>
                                 <label style={{ fontSize: 11.5, color: C.muted }}>Temp<input aria-label={`Temp HP for ${e.name}`} defaultValue={e.tempHp ?? 0} key={`t${e.id}${e.tempHp}`} onBlur={(ev) => { const v = parseInt(ev.target.value, 10); editEntry(e.id, (c) => ({ ...c, tempHp: Number.isFinite(v) ? Math.max(0, v) : 0 })); }} style={{ ...field, padding: "4px 6px" }} /></label>
                               </div>
-                              <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 8 }}>
-                                {CONDITIONS.map((cn) => {
-                                  const on = (e.conditions ?? []).includes(cn);
-                                  return <button key={cn} type="button" onClick={() => editEntry(e.id, (c) => ({ ...c, conditions: on ? c.conditions.filter((x) => x !== cn) : [...c.conditions, cn] }))}
-                                    style={{ fontSize: 11, padding: "2px 7px", borderRadius: 999, border: `1px solid ${on ? "#c2a8f0" : C.line}`, background: on ? "#3b2f6b" : "transparent", color: on ? "#fff" : C.muted, cursor: "pointer" }}>{cn}</button>;
-                                })}
+                              <div style={{ marginTop: 4 }}>
+                                <MarkerPicker current={e.conditions ?? []}
+                                  onToggle={(cn, on) => editEntry(e.id, (c) => ({ ...c, conditions: on ? (c.conditions.includes(cn) ? c.conditions : [...c.conditions, cn]) : c.conditions.filter((x) => x !== cn) }))} />
                               </div>
                               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, marginTop: 8 }}>
                                 <button type="button" onClick={() => editEntry(e.id, (c) => ({ ...c, defeated: !c.defeated }))} style={small}>{e.defeated ? "Not defeated" : "Defeated"}</button>
@@ -1834,7 +1865,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                     })}
                   </div>
                   {isGm && <button type="button" onClick={() => void endFight()} style={{ ...small, width: "100%", marginTop: 14, color: "#e07a70" }}>End the fight</button>}
-                  {!isGm && <p style={{ color: C.muted, fontSize: 11.5, marginTop: 10 }}>Monster HP stays with the GM. Your own initiative roll goes straight into the order.</p>}
+                  {!isGm && <p style={{ color: C.muted, fontSize: 11.5, marginTop: 10 }}>Click a name to change your own HP and conditions, or (on your turn) mark your effects on someone else. Monster HP stays with the GM. Your own initiative roll goes straight into the order.</p>}
                 </>
               )}
               {chatErr && <p role="status" style={{ color: "#e07a70", fontSize: 12, marginTop: 10 }}>{chatErr}</p>}

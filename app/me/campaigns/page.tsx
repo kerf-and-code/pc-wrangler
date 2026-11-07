@@ -7,6 +7,7 @@ import { SAX } from "@/lib/theme";
 import { UpgradeAccount } from "@/components/upgrade-account";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import { setActiveCampaign } from "@/lib/active-campaign";
+import { openTabletop, tabletopUrl } from "@/lib/tabletop/open";
 
 // Every campaign this player has a character in, across all of them.
 //
@@ -104,6 +105,7 @@ export default function MyCampaignsPage() {
                 <A href={`/lore?share=${c.share_code}`} onClick={enter}>Lore</A>
                 <A href={`/record?share=${c.share_code}`} onClick={enter}>Record</A>
               </>}
+              <A href={tabletopUrl(c.campaign_id)} onClick={(e) => { e?.preventDefault(); enter(); openTabletop(c.campaign_id); }}>Tabletop</A>
               <A href="/me/forge" onClick={enter}>New character</A>
             </div>
           </div>
@@ -135,7 +137,7 @@ function Muted({ children }: { children: React.ReactNode }) {
   return <p style={{ textAlign: "center", color: C.muted, fontSize: 14, lineHeight: 1.65 }}>{children}</p>;
 }
 
-function A({ href, children, onClick }: { href: string; children: React.ReactNode; onClick?: () => void }) {
+function A({ href, children, onClick }: { href: string; children: React.ReactNode; onClick?: (e?: React.MouseEvent) => void }) {
   return (
     <a
       href={href}

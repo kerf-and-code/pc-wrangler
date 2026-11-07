@@ -16,6 +16,15 @@
 // indexes into them; initiative edits do not reorder the list until the GM presses "Sort", so the
 // current turn never jumps while someone fixes a typo. Players see the order (never monster HP, AC or
 // stat blocks, and never hidden monsters) on their Initiative page through combat_for_player().
+//
+// Phase 4a (2026-11-07): one fight, three screens. The tabletop and the players' character sheets act
+// on this same row (players through combat_act and their targeted attacks, p110), so this page now
+// listens for changes and applies its own edits on top of the latest saved fight rather than over it:
+// each edit is queued as a function and replayed on a fresh read when it saves. The combatant whose
+// turn it is can attack a chosen target: the attack is compared with the target's AC, and on a hit the
+// damage is rolled and taken off the target at once (critical hits double the dice). Save-based actions
+// roll their damage and let the GM apply it in full or by half. HP and conditions stay editable by hand
+// for anyone at any time: the GM is never gated. The DM Screen stays a reference board.
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import PageShell from "@/components/page-shell";
@@ -26,6 +35,8 @@ import { loadSrd } from "@/lib/srd/srd";
 import { listStatBlocks, statBlockFromMonster, type StatBlockRow, type StatBlockDoc } from "@/lib/stat-blocks";
 import { monsterSourceLabel } from "@/lib/monster-sources";
 import { applyAdvantage } from "@/lib/dice";
+import { MARKERS, BUFFS, DEBUFFS, critDice, markerKind, MARKER_COLORS } from "@/lib/combat-effects";
+import { openTabletop } from "@/lib/tabletop/open";
 import {
   CONDITIONS, abilityMod, applyDamage, applyHealing, blockActions, combatantId, monsterCombatants, pcCombatant,
   resolveFoeBlock, sortForTurns, type Combatant, type EncounterFoe, type ParsedAction,
@@ -41,6 +52,13 @@ type CombatRow = { id: string; name: string; rules: string; status: string; roun
 type SavedEnc = { id: string; name: string; rules: string; foes: EncounterFoe[] };
 type RollLog = { id: string; who: string; label: string; notation: string; total: number; natural: number | null };
 type AdvMode = "flat" | "adv" | "dis";
+type HpSnap = { hp: number | null; tempHp: number; defeated: boolean };
+type AttackResult = {
+  key: string; attacker: string; action: string; targetId: string; targetName: string;
+  total: number | null; natural: number | null; ac: number | null;
+  outcome: "hit" | "crit" | "miss" | "unknown" | "save";
+  damage: number | null; parts: string; before: HpSnap | null; applied: number | null;
+};
 
 const signed = (n: number) => (n >= 0 ? `+${n}` : `${n}`);
 const d20 = (bonus: number) => `1d20${bonus ? signed(bonus) : ""}`;
@@ -112,32 +130,57 @@ export default function CombatPage() {
   useEffect(() => { if (campaignId) void loadCampaign(campaignId); }, [campaignId, loadCampaign]);
   useEffect(() => { setUrlParam("combat", combat?.id ?? null); }, [combat?.id]);
 
-  // ---- autosave (debounced) ----
-  const pending = useRef<CombatRow | null>(null);
+  // ---- autosave (debounced, replayed on the latest saved fight) ----
+  // Players and the tabletop write this row too, so an edit here is kept as a function and, when it
+  // saves, replayed on a fresh read of the row: a player's heal between two of the GM's edits survives.
+  const queue = useRef<((c: CombatRow) => CombatRow)[]>([]);
+  const combatRef = useRef<CombatRow | null>(null);
+  combatRef.current = combat;
+  const saving = useRef(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const flush = useCallback(async () => {
-    const c = pending.current;
-    if (!c) return;
-    pending.current = null;
+    const cur = combatRef.current;
+    if (!cur || !queue.current.length || saving.current) return;
+    saving.current = true;
+    const fns = queue.current.splice(0);
     setSaveState("saving");
+    const { data: fresh } = await supabase.from("combats").select("id, name, rules, status, round, turn, combatants, session_id, encounter_id").eq("id", cur.id).maybeSingle();
+    const next = fns.reduce((acc, f) => f(acc), (fresh as CombatRow | null) ?? cur);
     const { error } = await supabase.from("combats").update({
-      name: c.name, round: c.round, turn: c.turn, combatants: c.combatants, session_id: c.session_id || null,
+      name: next.name, round: next.round, turn: next.turn, combatants: next.combatants, session_id: next.session_id || null,
       updated_at: new Date().toISOString(),
-    }).eq("id", c.id);
+    }).eq("id", next.id);
+    saving.current = false;
     setSaveState(error ? "error" : "idle");
-    if (error) setErr(`Not saved: ${error.message}`);
+    if (error) { setErr(`Not saved: ${error.message}`); return; }
+    // show the saved fight, with anything queued meanwhile still applied on top
+    setCombat((c) => (c && c.id === next.id ? queue.current.reduce((acc, f) => f(acc), next) : c));
+    if (queue.current.length) { if (timer.current) clearTimeout(timer.current); timer.current = setTimeout(() => void flush(), 150); }
   }, [supabase]);
   const update = useCallback((fn: (c: CombatRow) => CombatRow) => {
-    setCombat((cur) => {
-      if (!cur) return cur;
-      const next = fn(cur);
-      pending.current = next;
-      if (timer.current) clearTimeout(timer.current);
-      timer.current = setTimeout(() => void flush(), 400);
-      return next;
-    });
+    setCombat((cur) => (cur ? fn(cur) : cur));
+    queue.current.push(fn);
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(() => { timer.current = null; void flush(); }, 400);
   }, [flush]);
   useEffect(() => () => { if (timer.current) { clearTimeout(timer.current); void flush(); } }, [flush]);
+
+  // Live: a change from the tabletop or a player's sheet shows here at once (only the GM passes
+  // combats' RLS, which is what this page needs). Ignored while this page has its own edits in flight;
+  // those replay on a fresh read anyway.
+  const liveId = combat?.id ?? null;
+  useEffect(() => {
+    if (!liveId) return;
+    const ch = supabase.channel(`combat-page:${liveId}`)
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "combats", filter: `id=eq.${liveId}` }, (p) => {
+        if (queue.current.length || saving.current || timer.current) return;
+        const row = p.new as CombatRow;
+        if (row.status && row.status !== "active") { setCombat(null); return; }
+        setCombat((c) => (c && c.id === row.id ? { ...c, ...row } : c));
+      })
+      .subscribe();
+    return () => { void supabase.removeChannel(ch); };
+  }, [supabase, liveId]);
 
   const setCombatant = (id: string, fn: (c: Combatant) => Combatant) =>
     update((cb) => ({ ...cb, combatants: cb.combatants.map((x) => (x.id === id ? fn(x) : x)) }));
@@ -169,7 +212,8 @@ export default function CombatPage() {
   async function endFight() {
     if (!combat) return;
     if (!window.confirm(`End "${combat.name}"? Players stop seeing it, and it leaves this page. The rolls stay in this session's Mechanics.`)) return;
-    if (timer.current) { clearTimeout(timer.current); await flush(); }
+    if (timer.current) { clearTimeout(timer.current); timer.current = null; }
+    await flush();
     const { error } = await supabase.from("combats").update({ status: "ended", ended_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq("id", combat.id);
     if (error) { setErr(`Not ended: ${error.message}`); return; }
     setCombat(null); setSelectedId(null); setLog([]);
@@ -254,6 +298,62 @@ export default function CombatPage() {
       if (cb.round === 1 && cb.turn === 0) return { ...cb, combatants: sortForTurns(withInit), turn: 0 };
       return { ...cb, combatants: withInit };
     });
+  }
+
+  // ---- attacking a target ----
+  const [targetBy, setTargetBy] = useState<Record<string, string>>({});
+  const [result, setResult] = useState<AttackResult | null>(null);
+  const snap = (c: Combatant): HpSnap => ({ hp: c.hp, tempHp: c.tempHp, defeated: c.defeated });
+  const hurt = (id: string, amount: number) => setCombatant(id, (x) => applyDamage(x, amount));
+
+  async function rollDamage(att: Combatant, a: ParsedAction, crit: boolean): Promise<{ total: number; parts: string } | null> {
+    let total = 0; const parts: string[] = [];
+    for (const d of a.damage) {
+      const dr = await roll(att, crit ? critDice(d.dice) : d.dice, "damage", `${a.name} damage${d.type ? ` (${d.type})` : ""}`);
+      if (!dr) return null;
+      total += dr.total; parts.push(`${dr.total}${d.type ? ` ${d.type}` : ""}`);
+    }
+    return { total, parts: parts.join(" + ") };
+  }
+
+  async function attackWith(att: Combatant, a: ParsedAction) {
+    const tgt = live.find((c) => c.id === targetBy[att.id]); if (!tgt) return;
+    setRolling(true);
+    try {
+      const r = await roll(att, applyAdvantage(d20(a.toHit ?? 0), adv), "attack", `${a.name} vs ${tgt.name}`);
+      if (!r) return;
+      const outcome: AttackResult["outcome"] = r.natural === 20 ? "crit" : r.natural === 1 ? "miss" : tgt.ac == null ? "unknown" : r.total >= tgt.ac ? "hit" : "miss";
+      let damage: number | null = null, parts = "", applied: number | null = null;
+      const before = snap(tgt);
+      if ((outcome === "hit" || outcome === "crit") && a.damage.length) {
+        const d = await rollDamage(att, a, outcome === "crit");
+        if (d) { damage = d.total; parts = d.parts; hurt(tgt.id, d.total); applied = d.total; }
+      }
+      setResult({ key: combatantId(), attacker: att.name, action: a.name, targetId: tgt.id, targetName: tgt.name, total: r.total, natural: r.natural, ac: tgt.ac, outcome, damage, parts, before, applied });
+    } finally { setRolling(false); }
+  }
+
+  async function saveActionOn(att: Combatant, a: ParsedAction) {
+    const tgt = live.find((c) => c.id === targetBy[att.id]); if (!tgt) return;
+    setRolling(true);
+    try {
+      const d = a.damage.length ? await rollDamage(att, a, false) : null;
+      setResult({ key: combatantId(), attacker: att.name, action: a.name, targetId: tgt.id, targetName: tgt.name, total: null, natural: null, ac: null,
+        outcome: "save", damage: d?.total ?? null, parts: d?.parts ?? "", before: snap(tgt), applied: null });
+    } finally { setRolling(false); }
+  }
+
+  function applyResult(amount: number) {
+    if (!result) return;
+    const tgt = live.find((c) => c.id === result.targetId); if (!tgt) return;
+    hurt(tgt.id, amount);
+    setResult({ ...result, before: snap(tgt), applied: amount });
+  }
+  function undoResult() {
+    if (!result?.before || result.applied == null) return;
+    const b = result.before;
+    setCombatant(result.targetId, (x) => ({ ...x, hp: b.hp, tempHp: b.tempHp, defeated: b.defeated }));
+    setResult({ ...result, applied: null });
   }
 
   // ---- adding and removing ----
@@ -367,6 +467,7 @@ export default function CombatPage() {
               <button type="button" style={btn(true)} onClick={() => step(1)} title="Next turn, skips defeated monsters (N)">Next turn</button>
               <button type="button" style={btn()} onClick={() => void rollMonsterInitiative()} disabled={rolling} title="Roll initiative for every monster that has none, logged to the session">{rolling ? "Rolling…" : "Roll monster initiative"}</button>
               <button type="button" style={btn()} onClick={sortNow} title="Order everyone by initiative; the current turn stays with the same combatant">Sort</button>
+              <button type="button" style={btn()} onClick={() => openTabletop(campaignId)} title="The shared table in its own window, on the same fight">Open the tabletop</button>
               <button type="button" style={{ ...btn(), color: C.warn }} onClick={() => void endFight()}>End fight</button>
               <span style={{ fontSize: 11.5, color: saveState === "error" ? C.warn : C.muted }}>{saveState === "saving" ? "Saving…" : saveState === "error" ? "Not saved" : "Saved"}</span>
             </div>
@@ -422,9 +523,57 @@ export default function CombatPage() {
 
           <div>
             {selected && (
-              <DetailPanel c={selected} adv={adv} onAdv={setAdv} box={box} btn={btn} eyebrow={eyebrow}
-                onRoll={(notation, kind, label) => void roll(selected, notation, kind, label)} />
+              <DetailPanel c={selected} adv={adv} onAdv={setAdv} box={box} btn={btn} eyebrow={eyebrow} input={input}
+                onRoll={(notation, kind, label) => void roll(selected, notation, kind, label)}
+                isTurn={current?.id === selected.id} currentName={current?.name ?? null} busy={rolling}
+                others={live.filter((x) => x.id !== selected.id && !(x.kind === "monster" && x.defeated))}
+                targetId={targetBy[selected.id] ?? ""} onTarget={(id) => setTargetBy((m) => ({ ...m, [selected.id]: id }))}
+                onAttack={(a) => void attackWith(selected, a)} onSaveAction={(a) => void saveActionOn(selected, a)} />
             )}
+            {result && (() => {
+              const tgt = live.find((x) => x.id === result.targetId);
+              const verdict = result.outcome === "crit" ? "Critical hit" : result.outcome === "hit" ? "Hit" : result.outcome === "miss" ? "Miss" : result.outcome === "unknown" ? "AC not set" : "Saving throw";
+              return (
+                <div style={{ ...box, borderColor: result.outcome === "miss" ? C.line : C.sun }} role="status">
+                  <div style={eyebrow}>Result</div>
+                  <div style={{ color: C.text, fontSize: 14 }}>
+                    <strong>{result.attacker}</strong> {result.action} &rarr; <strong>{result.targetName}</strong>
+                  </div>
+                  <div style={{ color: C.text, fontSize: 13.5, marginTop: 4 }}>
+                    {result.total != null && <>{result.total}{result.ac != null ? ` vs AC ${result.ac}` : ""}: </>}
+                    <strong style={{ color: result.outcome === "miss" ? C.muted : C.sun }}>{verdict}</strong>
+                    {result.damage != null && <> · {result.damage} damage{result.parts ? ` (${result.parts})` : ""}{result.outcome === "crit" ? ", dice doubled" : ""}</>}
+                  </div>
+                  {tgt && (
+                    <div style={{ color: C.muted, fontSize: 13, marginTop: 6 }}>
+                      {tgt.name}: {result.before && result.applied != null ? <>{result.before.hp ?? "?"} &rarr; </> : null}<strong style={{ color: C.text }}>{tgt.hp ?? "?"}</strong>{tgt.maxHp != null ? ` / ${tgt.maxHp}` : ""} HP{tgt.tempHp ? ` (+${tgt.tempHp} temp)` : ""}{tgt.defeated ? (tgt.kind === "pc" ? ", down" : ", defeated") : ""}
+                    </div>
+                  )}
+                  {tgt && tgt.conditions.length > 0 && (
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 6 }}>
+                      {tgt.conditions.map((k) => <span key={k} style={{ fontSize: 11.5, padding: "0 7px", borderRadius: 999, border: `1px solid ${MARKER_COLORS[markerKind(k)].line}`, color: MARKER_COLORS[markerKind(k)].line }}>{k}</span>)}
+                    </div>
+                  )}
+                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 10, alignItems: "center" }}>
+                    {result.applied == null && result.damage != null && (
+                      <>
+                        <button type="button" style={btn(true)} onClick={() => applyResult(result.damage as number)}>{result.outcome === "save" ? "Failed save: " : "Apply "}{result.damage}</button>
+                        <button type="button" style={btn()} onClick={() => applyResult(Math.floor((result.damage as number) / 2))}>{result.outcome === "save" ? "Saved: " : "Half: "}{Math.floor((result.damage as number) / 2)}</button>
+                      </>
+                    )}
+                    {result.applied != null && <button type="button" style={btn()} onClick={undoResult}>Undo the {result.applied} damage</button>}
+                    {tgt && (
+                      <select value="" aria-label={`Add a condition to ${tgt.name}`} style={{ ...input, padding: "4px 6px", fontSize: 12 }}
+                        onChange={(e) => { const v = e.target.value; if (v) setCombatant(tgt.id, (x) => ({ ...x, conditions: x.conditions.includes(v) ? x.conditions : [...x.conditions, v] })); }}>
+                        <option value="">+ condition on {tgt.name}</option>
+                        {MARKERS.filter((k) => !tgt.conditions.includes(k)).map((k) => <option key={k} value={k}>{k}</option>)}
+                      </select>
+                    )}
+                    <button type="button" style={{ ...btn(), color: C.muted }} onClick={() => setResult(null)}>Clear</button>
+                  </div>
+                </div>
+              );
+            })()}
             <div style={box}>
               <div style={eyebrow}>Roll log</div>
               {log.length === 0 ? <p style={{ color: C.muted, fontSize: 13, margin: 0 }}>Rolls you make here appear in this list and in the session&apos;s Mechanics.</p> : (
@@ -488,12 +637,14 @@ function CombatantRow({ c, isTurn, isSelected, onSelect, onChange, onRemove, inp
       <div onClick={(e) => e.stopPropagation()} style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", marginTop: 8 }}>
         {c.conditions.map((k) => (
           <button key={k} type="button" title="Remove condition" onClick={() => onChange((x) => ({ ...x, conditions: x.conditions.filter((y) => y !== k) }))}
-            style={{ fontSize: 11.5, color: C.text, background: "rgba(200,162,75,0.12)", border: `1px solid ${C.line}`, borderRadius: 999, padding: "1px 8px", cursor: "pointer" }}>{k} ×</button>
+            style={{ fontSize: 11.5, color: MARKER_COLORS[markerKind(k)].line, background: "transparent", border: `1px solid ${MARKER_COLORS[markerKind(k)].line}`, borderRadius: 999, padding: "1px 8px", cursor: "pointer" }}>{k} ×</button>
         ))}
         <select value="" onChange={(e) => { const v = e.target.value; if (v) onChange((x) => ({ ...x, conditions: x.conditions.includes(v) ? x.conditions : [...x.conditions, v] })); }}
           style={{ ...input, padding: "3px 6px", fontSize: 12 }} aria-label="Add a condition">
-          <option value="">+ condition</option>
-          {CONDITIONS.filter((k) => !c.conditions.includes(k)).map((k) => <option key={k} value={k}>{k}</option>)}
+          <option value="">+ condition or effect</option>
+          <optgroup label="Conditions">{CONDITIONS.filter((k) => !c.conditions.includes(k)).map((k) => <option key={k} value={k}>{k}</option>)}</optgroup>
+          <optgroup label="Buffs">{BUFFS.filter((k) => !c.conditions.includes(k)).map((k) => <option key={k} value={k}>{k}</option>)}</optgroup>
+          <optgroup label="Debuffs">{DEBUFFS.filter((k) => !c.conditions.includes(k)).map((k) => <option key={k} value={k}>{k}</option>)}</optgroup>
         </select>
         <span style={{ flex: 1 }} />
         {c.kind === "monster" && (
@@ -511,10 +662,13 @@ function CombatantRow({ c, isTurn, isSelected, onSelect, onChange, onRemove, inp
 }
 
 /* ---------------------------------------------------------------- the selected combatant's sheet */
-function DetailPanel({ c, adv, onAdv, onRoll, box, btn, eyebrow }: {
+function DetailPanel({ c, adv, onAdv, onRoll, box, btn, eyebrow, input, isTurn, currentName, busy, others, targetId, onTarget, onAttack, onSaveAction }: {
   c: Combatant; adv: AdvMode; onAdv: (m: AdvMode) => void; onRoll: (notation: string, kind: string, label: string) => void;
-  box: React.CSSProperties; btn: (p?: boolean) => React.CSSProperties; eyebrow: React.CSSProperties;
+  box: React.CSSProperties; btn: (p?: boolean) => React.CSSProperties; eyebrow: React.CSSProperties; input: React.CSSProperties;
+  isTurn: boolean; currentName: string | null; busy: boolean; others: Combatant[]; targetId: string;
+  onTarget: (id: string) => void; onAttack: (a: ParsedAction) => void; onSaveAction: (a: ParsedAction) => void;
 }) {
+  const tgt = others.find((o) => o.id === targetId) ?? null;
   const b = c.block;
   const groups = blockActions(b);
   const seg = (on: boolean): React.CSSProperties => ({ ...btn(on), padding: "4px 10px" });
@@ -545,24 +699,44 @@ function DetailPanel({ c, adv, onAdv, onRoll, box, btn, eyebrow }: {
         <button type="button" style={seg(adv === "dis")} onClick={() => onAdv("dis")}>Disadvantage</button>
         <button type="button" style={btn()} onClick={() => onRoll(d20(c.initBonus), "initiative", "Initiative")}>Initiative {signed(c.initBonus)}</button>
       </div>
+      {c.kind === "monster" && b && (
+        isTurn ? (
+          <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", margin: "0 0 10px", padding: "8px 10px", border: `1px solid ${C.sun}`, borderRadius: FORGE_RADIUS }}>
+            <span style={{ fontSize: 12.5, color: C.sun, fontWeight: 700 }}>Target</span>
+            <select value={targetId} onChange={(e) => onTarget(e.target.value)} style={{ ...input, padding: "4px 6px", fontSize: 12.5 }} aria-label={`Who ${c.name} attacks`}>
+              <option value="">Pick who {c.name} attacks…</option>
+              {others.map((o) => <option key={o.id} value={o.id}>{o.name}{o.ac != null ? ` (AC ${o.ac})` : ""}{o.hp != null ? `, ${o.hp} HP` : ""}</option>)}
+            </select>
+            {tgt && <span style={{ fontSize: 12, color: C.muted }}>Attack buttons roll against {tgt.name} and take the damage off on a hit.</span>}
+          </div>
+        ) : (
+          <p style={{ fontSize: 12, color: C.muted, margin: "0 0 10px" }}>Targeted attacks are for the combatant whose turn it is{currentName ? ` (${currentName})` : ""}. Rolls below still work, and HP and conditions can be changed by hand.</p>
+        )
+      )}
       {groups.map((g) => (
         <div key={g.group} style={{ marginBottom: 10 }}>
           <div style={{ fontSize: 11.5, color: C.sun, fontWeight: 700, marginBottom: 4 }}>{g.group}</div>
-          {g.actions.map((a, i) => <ActionLine key={`${a.name}-${i}`} a={a} adv={adv} onRoll={onRoll} btn={btn} />)}
+          {g.actions.map((a, i) => <ActionLine key={`${a.name}-${i}`} a={a} adv={adv} onRoll={onRoll} btn={btn}
+            target={isTurn && tgt ? tgt : null} busy={busy} onAttack={() => onAttack(a)} onSaveAction={() => onSaveAction(a)} />)}
         </div>
       ))}
     </div>
   );
 }
 
-function ActionLine({ a, adv, onRoll, btn }: { a: ParsedAction; adv: AdvMode; onRoll: (n: string, k: string, l: string) => void; btn: (p?: boolean) => React.CSSProperties }) {
+function ActionLine({ a, adv, onRoll, btn, target, busy, onAttack, onSaveAction }: {
+  a: ParsedAction; adv: AdvMode; onRoll: (n: string, k: string, l: string) => void; btn: (p?: boolean) => React.CSSProperties;
+  target: Combatant | null; busy: boolean; onAttack: () => void; onSaveAction: () => void;
+}) {
   const [open, setOpen] = useState(false);
   const small: React.CSSProperties = { ...btn(), padding: "3px 9px", fontSize: 12 };
   return (
     <div style={{ padding: "6px 0", borderTop: `1px solid ${C.line}` }}>
       <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
         <button type="button" onClick={() => setOpen((v) => !v)} style={{ background: "none", border: "none", color: C.text, fontWeight: 700, fontSize: 13, cursor: "pointer", padding: 0 }} title="Show the full text">{a.name}</button>
-        {a.toHit != null && <button type="button" style={small} onClick={() => onRoll(applyAdvantage(d20(a.toHit as number), adv), "attack", a.name)}>Attack {signed(a.toHit)}</button>}
+        {a.toHit != null && target && <button type="button" disabled={busy} style={{ ...small, background: C.brass, color: C.ink, border: "none" }} onClick={onAttack} title={`Roll ${signed(a.toHit)} against ${target.name}; on a hit the damage comes off at once`}>Attack {target.name} {signed(a.toHit)}</button>}
+        {a.toHit != null && !target && <button type="button" style={small} onClick={() => onRoll(applyAdvantage(d20(a.toHit as number), adv), "attack", a.name)}>Attack {signed(a.toHit)}</button>}
+        {a.toHit == null && a.save && target && a.damage.length > 0 && <button type="button" disabled={busy} style={{ ...small, background: C.brass, color: C.ink, border: "none" }} onClick={onSaveAction} title="Roll the damage, then apply it in full or by half by the target's save">Use on {target.name}</button>}
         {a.damage.map((d, i) => (
           <button key={i} type="button" style={small} onClick={() => onRoll(d.dice, "damage", `${a.name} damage${d.type ? ` (${d.type})` : ""}`)}>{d.dice}{d.type ? ` ${d.type}` : ""}</button>
         ))}
