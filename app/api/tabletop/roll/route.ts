@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { roll, DiceError } from "@/lib/dice";
+import { sortForTurns, type Combatant } from "@/lib/combat";
 
 // app/api/tabletop/roll/route.ts (2026-11-06)
 //
@@ -14,6 +15,11 @@ import { roll, DiceError } from "@/lib/dice";
 //   vtt_messages  the chat card everyone at the table sees (or only the GM, for /gr).
 // Who may roll: the GM, or a player who owns a pc in the campaign; a player may roll as their own
 // character only. Checked with the caller's own session through the same functions RLS uses.
+//
+// Initiative (phase 2b): with `initiative: true` and a character, the total also becomes that
+// character's initiative in the campaign's active fight (the Combat page's combats row), if it has none
+// yet, so players roll their own and the turn tracker fills in. Before the first turn is taken the order
+// is sorted at once, exactly as the Combat page does after rolling monster initiative.
 
 export const maxDuration = 30;
 
@@ -45,7 +51,7 @@ function eventType(label: string): string {
 }
 
 export async function POST(req: Request) {
-  let b: { campaignId?: string; notation?: string; label?: string; gmOnly?: boolean; characterId?: string | null; asName?: string } = {};
+  let b: { campaignId?: string; notation?: string; label?: string; gmOnly?: boolean; characterId?: string | null; asName?: string; initiative?: boolean } = {};
   try { b = await req.json(); } catch { /* guarded below */ }
   const campaignId = typeof b.campaignId === "string" ? b.campaignId : "";
   const label = (typeof b.label === "string" ? b.label : "").trim().slice(0, 120);
@@ -131,5 +137,21 @@ export async function POST(req: Request) {
   }).select("*").single();
   if (mErr) return NextResponse.json({ error: `The roll was made but could not be posted: ${mErr.message}` }, { status: 500 });
 
-  return NextResponse.json({ ok: true, message: msg, logged: !!eventId });
+  let initiativeSet = false;
+  if (b.initiative && characterId) {
+    const { data: cb } = await admin.from("combats").select("id, round, turn, combatants")
+      .eq("campaign_id", campaignId).eq("status", "active").order("updated_at", { ascending: false }).limit(1).maybeSingle();
+    const row = cb as { id: string; round: number; turn: number; combatants: Combatant[] } | null;
+    const mine = row?.combatants.find((c) => c.kind === "pc" && c.characterId === characterId);
+    if (row && mine && mine.initiative == null) {
+      const withInit = row.combatants.map((c) => (c.id === mine.id ? { ...c, initiative: result.total } : c));
+      const first = row.round === 1 && row.turn === 0;
+      const { error: cErr } = await admin.from("combats").update({
+        combatants: first ? sortForTurns(withInit) : withInit, turn: first ? 0 : row.turn, updated_at: new Date().toISOString(),
+      }).eq("id", row.id);
+      initiativeSet = !cErr;
+    }
+  }
+
+  return NextResponse.json({ ok: true, message: msg, logged: !!eventId, initiativeSet });
 }

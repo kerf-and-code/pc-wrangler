@@ -12,6 +12,7 @@ import {
   type Camera, type Pt, type DiagonalRule, type TemplateGeom, type TemplateShape,
 } from "@/lib/tabletop/geometry";
 import { loadSrd } from "@/lib/srd/srd";
+import { sortForTurns, applyDamage, applyHealing, combatantId, pcCombatant, CONDITIONS, type Combatant } from "@/lib/combat";
 import { monsterSourceLabel } from "@/lib/monster-sources";
 
 // The tabletop, phase 1 (2026-11-06). One page for the GM and the players; tabletop_state (p105)
@@ -28,6 +29,11 @@ import { monsterSourceLabel } from "@/lib/monster-sources";
 // Phase 2a: area templates (circle, cone, square, line) sized in feet, left on the table, moved and
 //          turned by their owner or the GM (p106); token borders and auras; a fading trail with the
 //          feet moved; tokens from the monster library; the battle map's painting on the table.
+// Phase 2b: the turn tracker runs the Combat page's own fight (combats, p101): the GM reads and writes
+//          it the way that page does (same turn stepping, same sort, same damage rules); players see it
+//          through tabletop_combat (p107), which hides monster HP and hidden combatants. Each combatant
+//          the table adds carries a tokenId, so its token shows the HP bar, conditions and whose turn.
+//          N and P step the turn for the GM. Players roll their own initiative from the Turns tab.
 // Live:    one Realtime channel per campaign. Table changes (tokens, scenes, chat) arrive through RLS;
 //          drags, rulers and pings are broadcast and never stored. Positions are saved once on drop.
 // Chat:    /r, /gr, /w name, /em. Rolls go to /api/tabletop/roll, which rolls on the server and logs
@@ -61,6 +67,12 @@ type Tpl = TemplateGeom & { id: string; owner: string; color: string; label: str
 type Aura = { ft: number; color: string; players: boolean };
 type Border = { pattern?: "solid" | "double" | "dashed" | "dotted"; width?: "thin" | "normal" | "thick" };
 type Trail = { from: Pt; to: Pt; color: string; born: number; feet: number };
+type TC = Combatant & { tokenId?: string | null };
+type FightRow = { id: string; name: string; round: number; turn: number; combatants: TC[]; session_id: string | null };
+type Entry = { id: string; name: string; kind: "pc" | "monster"; initiative: number | null; defeated: boolean; is_turn: boolean; tokenId?: string | null;
+  characterId?: string | null; hp?: number | null; maxHp?: number | null; tempHp?: number; conditions?: string[]; ac?: number | null; hidden?: boolean; initBonus?: number };
+type Fight = { id: string; name: string; round: number; order: Entry[] };
+const FIGHT_COLS = "id, name, round, turn, combatants, session_id";
 type LibMonster = { name: string; size?: string; cr?: string | number; hp?: number; ac?: number; source_key?: string };
 type Ping = { x: number; y: number; color: string; born: number };
 type Ruler = { points: Pt[]; color: string; done: number | null; by: string };
@@ -93,7 +105,14 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   const [state, setState] = useState<State | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [tool, setTool] = useState<Tool>("select");
-  const [panel, setPanel] = useState<"chat" | "tokens" | "scenes">("chat");
+  const [panel, setPanel] = useState<"chat" | "turns" | "tokens" | "scenes">("chat");
+  const [fight, setFight] = useState<Fight | null>(null);
+  const fightRow = useRef<FightRow | null>(null);
+  const fightRef = useRef<Fight | null>(null);
+  const [selEntry, setSelEntry] = useState<string | null>(null);
+  const [hpAmt, setHpAmt] = useState("");
+  const [initBonus, setInitBonus] = useState("0");
+  const [fightBusy, setFightBusy] = useState(false);
   const [feed, setFeed] = useState<FeedItem[]>([]);
   const [draft, setDraft] = useState("");
   const [asWho, setAsWho] = useState<string>("");          // character id, or "" for yourself / GM name
@@ -131,6 +150,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   const trails = useRef<Trail[]>([]);
   const overlayUrl = useRef<string | null>(null);
   const renderBaseRef = useRef<() => void>(() => {});
+  const loadFightRef = useRef<() => Promise<void>>(async () => {});
   const rulerSent = useRef(0);
   const drag = useRef<{ ids: string[]; start: Pt; orig: Map<string, Pt>; now: Map<string, Pt>; free: boolean; lastSend: number; moved: boolean } | null>(null);
   const pan = useRef<{ sx: number; sy: number; ox: number; oy: number; moved: boolean; button: number; shift: boolean } | null>(null);
@@ -144,6 +164,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   selRef.current = selected;
   const selTplRef = useRef<string | null>(null);
   selTplRef.current = selTpl;
+  fightRef.current = fight;
   stateRef.current = state;
 
   const isGm = state?.role === "gm";
@@ -235,6 +256,12 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // the fight entry for a token: the combatant the table stamped with its tokenId, else the pc by character
+  function entryFor(t: Token): Entry | null {
+    const f = fightRef.current; if (!f) return null;
+    return f.order.find((e) => e.tokenId === t.id) ?? (t.character_id ? f.order.find((e) => e.kind === "pc" && e.characterId === t.character_id) ?? null : null);
+  }
+
   // where a token is drawn right now: my drag, someone else's drag, or a glide to its saved square
   function shownPos(t: Token): Pt {
     const d = drag.current?.now.get(t.id); if (d) return d;
@@ -242,6 +269,9 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     const g = shown.current.get(t.id);
     if (!g) return { x: t.x, y: t.y };
     const k = Math.min(1, (performance.now() - g.t0) / GLIDE_MS), e = 1 - (1 - k) * (1 - k);
+    // A finished glide lets go, so the token is drawn (and clicked) where it actually is. Keeping the
+    // entry pinned the token to that glide's end point after any later move.
+    if (k >= 1 || g.x !== t.x || g.y !== t.y) { shown.current.delete(t.id); return { x: t.x, y: t.y }; }
     return { x: g.fx + (g.x - g.fx) * e, y: g.fy + (g.y - g.fy) * e };
   }
 
@@ -348,6 +378,40 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
         ctx.beginPath(); ctx.arc(0, 0, rad + bw * 1.1, 0, Math.PI * 2); ctx.stroke();
       }
       ctx.restore();
+      const en = entryFor(t);
+      if (en?.is_turn) {
+        animating = true;
+        const pulse = 0.55 + 0.45 * Math.sin(now / 260);
+        ctx.save(); ctx.globalAlpha = pulse; ctx.strokeStyle = "#ffd36b"; ctx.lineWidth = Math.max(3, cell * 0.1);
+        ctx.shadowColor = "#ffd36b"; ctx.shadowBlur = cell * 0.4;
+        ctx.beginPath(); ctx.arc(cx, cy, rad + Math.max(5, cell * 0.16), 0, Math.PI * 2); ctx.stroke(); ctx.restore();
+      }
+      if (en?.defeated) {
+        ctx.save(); ctx.fillStyle = "rgba(10,8,6,0.55)"; ctx.beginPath(); ctx.arc(cx, cy, rad, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = "#d0463c"; ctx.lineWidth = Math.max(2, cell * 0.08); ctx.lineCap = "round";
+        const k = rad * 0.6; ctx.beginPath(); ctx.moveTo(cx - k, cy - k); ctx.lineTo(cx + k, cy + k); ctx.moveTo(cx + k, cy - k); ctx.lineTo(cx - k, cy + k); ctx.stroke(); ctx.restore();
+      }
+      if (en && en.hp != null && en.maxHp) {
+        const w = rad * 2, h = Math.max(4, cell * 0.11), x0 = cx - rad, y0 = cy - rad - h - Math.max(3, cell * 0.06);
+        const frac = Math.max(0, Math.min(1, en.hp / en.maxHp));
+        ctx.save(); ctx.fillStyle = "rgba(15,12,10,0.85)"; ctx.fillRect(x0 - 1, y0 - 1, w + 2, h + 2);
+        ctx.fillStyle = frac > 0.5 ? "#5fae5a" : frac > 0.25 ? "#d9a43a" : "#d0463c"; ctx.fillRect(x0, y0, w * frac, h);
+        if (en.tempHp && en.tempHp > 0) { ctx.fillStyle = "#6fa3d8"; ctx.fillRect(x0 + w * Math.max(0, frac - Math.min(1, en.tempHp / en.maxHp)), y0, w * Math.min(frac, en.tempHp / en.maxHp), h * 0.45); }
+        ctx.restore();
+      }
+      const conds = en?.conditions ?? [];
+      if (conds.length) {
+        const fs = Math.max(8, cell * 0.2), shown2 = conds.slice(0, 4);
+        ctx.save(); ctx.font = `700 ${fs}px system-ui, sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        shown2.forEach((cn, i) => {
+          const a = Math.PI * 0.25 + i * 0.42, bx = cx + Math.cos(a) * rad, by = cy + Math.sin(a) * rad, r2 = fs * 0.85;
+          ctx.fillStyle = "#3b2f6b"; ctx.beginPath(); ctx.arc(bx, by, r2, 0, Math.PI * 2); ctx.fill();
+          ctx.strokeStyle = "#c2a8f0"; ctx.lineWidth = Math.max(1, fs * 0.12); ctx.stroke();
+          ctx.fillStyle = "#fff"; ctx.fillText(cn === "Exhaustion" ? "Ex" : cn.slice(0, 2), bx, by);
+        });
+        if (conds.length > 4) { ctx.fillStyle = "#c2a8f0"; ctx.fillText(`+${conds.length - 4}`, cx + rad * 0.2, cy + rad + fs); }
+        ctx.restore();
+      }
       if (sel.has(t.id)) {
         ctx.save(); ctx.lineWidth = Math.max(2, 3 / cam.s); ctx.strokeStyle = SELECT; ctx.setLineDash([6 / cam.s, 4 / cam.s]);
         ctx.beginPath(); ctx.arc(cx, cy, rad + Math.max(4, cell * 0.12), 0, Math.PI * 2); ctx.stroke(); ctx.restore();
@@ -473,6 +537,145 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     if (f) addFeed(f.messages ?? [], f.outside_rolls ?? []);
   }, [supabase, campaignId, addFeed]);
 
+  // ---- the fight ----
+  const toFight = (row: FightRow): Fight => ({
+    id: row.id, name: row.name, round: row.round,
+    order: row.combatants.map((c, i) => ({ id: c.id, name: c.name, kind: c.kind, initiative: c.initiative, defeated: c.defeated, is_turn: i === row.turn,
+      tokenId: c.tokenId ?? null, characterId: c.characterId ?? null, hp: c.hp, maxHp: c.maxHp, tempHp: c.tempHp, conditions: c.conditions, ac: c.ac, hidden: c.hidden, initBonus: c.initBonus })),
+  });
+  const loadFight = useCallback(async () => {
+    const st = stateRef.current; if (!st) return;
+    if (st.role === "gm") {
+      const { data } = await supabase.from("combats").select(FIGHT_COLS).eq("campaign_id", campaignId).eq("status", "active").order("updated_at", { ascending: false }).limit(1);
+      const row = ((data ?? []) as FightRow[])[0] ?? null;
+      fightRow.current = row; setFight(row ? toFight(row) : null);
+    } else {
+      const { data } = await supabase.rpc("tabletop_combat", { p_campaign: campaignId });
+      setFight((data as Fight | null) ?? null);
+    }
+    requestDraw();
+  }, [supabase, campaignId, requestDraw]);
+  loadFightRef.current = loadFight;
+  useEffect(() => { if (state?.me) void loadFight(); }, [state?.me, loadFight]);
+  // players also poll: a fight started or changed on the Combat page reaches them even when the GM's
+  // table is closed (the GM's table relays changes at once when it is open)
+  useEffect(() => {
+    if (!state || state.role === "gm") return;
+    const id = setInterval(() => { if (!document.hidden) void loadFight(); }, fight ? 8000 : 30000);
+    return () => clearInterval(id);
+  }, [state, fight, loadFight]);
+
+  // GM writes: read the row fresh, change it, save it, tell the players' tables. The same rules as the
+  // Combat page, so either screen can run the fight.
+  const mutateFight = useCallback(async (fn: (row: FightRow) => FightRow) => {
+    const cur = fightRow.current; if (!cur) return;
+    setFightBusy(true);
+    try {
+      const { data, error: e1 } = await supabase.from("combats").select(FIGHT_COLS).eq("id", cur.id).single();
+      if (e1 || !data) { setChatErr(`Could not read the fight: ${e1?.message ?? "gone"}`); return; }
+      const next = fn(data as FightRow);
+      const { error: e2 } = await supabase.from("combats").update({ round: next.round, turn: next.turn, combatants: next.combatants, updated_at: new Date().toISOString() }).eq("id", cur.id);
+      if (e2) { setChatErr(`Could not save the fight: ${e2.message}`); return; }
+      fightRow.current = next; setFight(toFight(next)); send("combat", {}); requestDraw();
+    } finally { setFightBusy(false); }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [supabase, requestDraw]);
+
+  const combatantFromToken = (t: Token): TC | null => {
+    if (t.kind === "object") return null;
+    if (t.kind === "pc" && t.character_id) return { ...pcCombatant({ id: t.character_id, name: t.name }), tokenId: t.id };
+    const stats = (t.style?.stats ?? {}) as { hp?: number | null; ac?: number | null };
+    return { id: combatantId(), kind: "monster", name: t.name, initiative: null, initBonus: 0, hp: stats.hp ?? null, maxHp: stats.hp ?? null, tempHp: 0,
+      ac: stats.ac ?? null, conditions: [], hidden: t.hidden || t.layer === "gm", defeated: false, block: null, tokenId: t.id };
+  };
+  const addToFight = useCallback(async (ids: string[]) => {
+    const st = stateRef.current; if (!st) return;
+    const toks = ids.map((i) => tokensRef.current.get(i)).filter((t): t is Token => !!t);
+    if (!toks.length) { setChatErr("Select tokens on the map first (click, Shift-click or drag a box)."); return; }
+    if (!fightRow.current) {
+      const combatants = toks.map(combatantFromToken).filter((c): c is TC => !!c);
+      const { data, error: er } = await supabase.from("combats").insert({ campaign_id: campaignId, session_id: st.session_id, name: st.scene?.name ?? "Combat", rules: "2024", combatants }).select(FIGHT_COLS).single();
+      if (er || !data) { setChatErr(`Could not start the fight: ${er?.message ?? "no row"}`); return; }
+      fightRow.current = data as FightRow; setFight(toFight(data as FightRow)); send("combat", {}); setPanel("turns"); requestDraw();
+      return;
+    }
+    await mutateFight((row) => {
+      const have = (t: Token) => row.combatants.some((c) => c.tokenId === t.id || (t.kind === "pc" && c.kind === "pc" && c.characterId === t.character_id));
+      const add = toks.filter((t) => !have(t)).map(combatantFromToken).filter((c): c is TC => !!c);
+      return { ...row, combatants: [...row.combatants, ...add] };
+    });
+    setPanel("turns");
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [supabase, campaignId, mutateFight]);
+
+  // the Combat page's step(): skips defeated monsters, wraps the round
+  const stepTurn = useCallback((dir: 1 | -1) => mutateFight((cb) => {
+    const n = cb.combatants.length; if (!n) return cb;
+    const canAct = (c: TC) => !(c.kind === "monster" && c.defeated);
+    let turn = cb.turn, round = cb.round;
+    for (let i = 0; i < n; i++) {
+      turn += dir;
+      if (turn >= n) { turn = 0; round += 1; }
+      if (turn < 0) { turn = n - 1; round = Math.max(1, round - 1); }
+      if (canAct(cb.combatants[turn])) break;
+    }
+    return { ...cb, turn, round };
+  }), [mutateFight]);
+  const sortFight = () => void mutateFight((cb) => {
+    const currentId = cb.combatants[cb.turn]?.id;
+    const sorted = sortForTurns(cb.combatants) as TC[];
+    return { ...cb, combatants: sorted, turn: Math.max(0, sorted.findIndex((c) => c.id === currentId)) };
+  });
+  const editEntry = (id: string, fn: (c: TC) => TC) => void mutateFight((cb) => ({ ...cb, combatants: cb.combatants.map((c) => (c.id === id ? fn(c) : c)) }));
+  const removeEntry = (id: string) => void mutateFight((cb) => {
+    const index = cb.combatants.findIndex((c) => c.id === id); if (index < 0) return cb;
+    const combatants = cb.combatants.filter((c) => c.id !== id);
+    return { ...cb, combatants, turn: index < cb.turn ? cb.turn - 1 : Math.min(cb.turn, Math.max(0, combatants.length - 1)) };
+  });
+  const endFight = async () => {
+    const cur = fightRow.current; if (!cur) return;
+    if (!window.confirm(`End "${cur.name}"? Players stop seeing it here and on the Combat page. The rolls stay in this session's Mechanics.`)) return;
+    const { error: er } = await supabase.from("combats").update({ status: "ended", ended_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq("id", cur.id);
+    if (er) { setChatErr(`Not ended: ${er.message}`); return; }
+    fightRow.current = null; setFight(null); setSelEntry(null); send("combat", {}); requestDraw();
+  };
+  const rollInitiative = async (who: Entry, bonus: number, asPlayer: boolean) => {
+    const notation = bonus ? `1d20${bonus > 0 ? "+" : ""}${bonus}` : "1d20";
+    const res = await fetch("/api/tabletop/roll", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ campaignId, notation, label: "Initiative", gmOnly: !asPlayer, characterId: asPlayer ? who.characterId : null, asName: asPlayer ? undefined : who.name, initiative: asPlayer }),
+    });
+    const j = (await res.json().catch(() => ({}))) as { error?: string; message?: Message };
+    if (!res.ok || !j.message) { setChatErr(j.error || `Roll failed (${res.status}).`); return null; }
+    addFeed([j.message], []);
+    return j.message.roll?.total ?? null;
+  };
+  const rollMonsterInit = async () => {
+    const row = fightRow.current; if (!row) return;
+    const targets = row.combatants.filter((c) => c.kind === "monster" && c.initiative == null);
+    if (!targets.length) { setChatErr("Every monster already has initiative."); return; }
+    setFightBusy(true);
+    const got: Record<string, number> = {};
+    for (const c of targets) {
+      const total = await rollInitiative({ ...c, is_turn: false } as Entry, c.initBonus, false);
+      if (total == null) break;
+      got[c.id] = total;
+    }
+    setFightBusy(false);
+    await mutateFight((cb) => {
+      const withInit = cb.combatants.map((c) => (got[c.id] != null ? { ...c, initiative: got[c.id] } : c));
+      if (cb.round === 1 && cb.turn === 0) return { ...cb, combatants: sortForTurns(withInit) as TC[], turn: 0 };
+      return { ...cb, combatants: withInit };
+    });
+  };
+  const centreOnEntry = (e: Entry) => {
+    const t = [...tokensRef.current.values()].find((x) => x.id === e.tokenId || (e.kind === "pc" && x.character_id === e.characterId));
+    const cv = canvasRef.current; if (!t || !cv) return;
+    const r = cv.getBoundingClientRect();
+    camRef.current = centerOn(camRef.current, t.x * cellRef.current, t.y * cellRef.current, r.width, r.height);
+    setSelected([t.id]); requestDraw();
+  };
+
   useEffect(() => { void load(); void pollFeed(true); }, [load, pollFeed]);
   useEffect(() => { const id = setInterval(() => { if (!document.hidden) void pollFeed(false); }, 6000); return () => clearInterval(id); }, [pollFeed]);
   useEffect(() => { feedEnd.current?.scrollIntoView({ block: "end" }); }, [feed.length]);
@@ -524,6 +727,12 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
         requestDraw();
       })
       .on("broadcast", { event: "refresh" }, () => { void load(); })
+      .on("broadcast", { event: "combat" }, () => { void loadFightRef.current(); })
+      .on("postgres_changes", { event: "*", schema: "public", table: "combats", filter: `campaign_id=eq.${campaignId}` }, () => {
+        // only the GM passes combats' RLS: an edit made on the Combat page reaches this table, which
+        // reloads and tells the players' tables to do the same
+        void loadFightRef.current().then(() => { void channelRef.current?.send({ type: "broadcast", event: "combat", payload: {} }); });
+      })
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "vtt_templates", filter: `campaign_id=eq.${campaignId}` }, (p) => upsertTpl(p.new as Tpl))
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "vtt_templates", filter: `campaign_id=eq.${campaignId}` }, (p) => upsertTpl(p.new as Tpl))
       .on("postgres_changes", { event: "DELETE", schema: "public", table: "vtt_templates" }, (p) => {
@@ -746,6 +955,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
           if (!t) continue;
           const o = d.orig.get(id)!;
           trails.current.push({ from: o, to: p, color: myColor, born: performance.now(), feet: measure([o, p], rule, fps).feet });
+          shown.current.delete(id);
           tokensRef.current.set(id, { ...t, x: p.x, y: p.y });
           void supabase.rpc("tabletop_move_token", { p_token: id, p_x: p.x, p_y: p.y, p_rot: null }).then(({ error: er }) => {
             if (er) { setChatErr(`Could not move ${t.name}: ${er.message}`); tokensRef.current.set(id, t); requestDraw(); }
@@ -851,6 +1061,8 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
       if (k === "c") { fit(); return; }
       if (k === "r") { turn(selRef.current, e.shiftKey ? -45 : 45); return; }
       if (!isGm) return;
+      if (fightRef.current && (k === "n" || k === "p") && !e.ctrlKey && !e.metaKey) { e.preventDefault(); void stepTurn(k === "n" ? 1 : -1); return; }
+      if (k === "f" && !e.ctrlKey && !e.metaKey) { void addToFight(selRef.current); return; }
       if (k === "delete" || k === "backspace") { e.preventDefault(); void deleteTokens(selRef.current); return; }
       if (k === "h") {
         const ts = selRef.current.map((i) => tokensRef.current.get(i)).filter((t): t is Token => !!t);
@@ -861,7 +1073,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     window.addEventListener("keydown", down); window.addEventListener("keyup", up);
     return () => { window.removeEventListener("keydown", down); window.removeEventListener("keyup", up); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isGm, me, myColor, fit, turn, deleteTokens, updateTokens, requestDraw, turnTpl, removeTpl]);
+  }, [isGm, me, myColor, fit, turn, deleteTokens, updateTokens, requestDraw, turnTpl, removeTpl, stepTurn, addToFight]);
 
   // place new tokens in the middle of what the GM is looking at
   const viewCentre = (): Pt => {
@@ -1037,6 +1249,10 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
         <div style={{ fontWeight: 700 }}>{state.campaign.name}</div>
         <div style={{ color: C.muted, fontSize: 13 }}>{scene ? scene.name : "No map on the table"}</div>
         {!state.session_id && <div style={{ color: "#d9a43a", fontSize: 12 }}>No open session: rolls show here but are not logged for Mechanics.</div>}
+        {fight && (() => { const cur = fight.order.find((e) => e.is_turn); return (
+          <button type="button" onClick={() => setPanel("turns")} style={{ background: "rgba(217,164,58,0.12)", border: `1px solid ${C.sun}`, color: C.sun, borderRadius: 999, padding: "3px 10px", fontSize: 12.5, cursor: "pointer" }}>
+            Round {fight.round}{cur ? ` · ${cur.name}'s turn` : ""}
+          </button>); })()}
         <div style={{ marginLeft: "auto", display: "flex", gap: 6, alignItems: "center" }}>
           {present.map((p) => (
             <span key={p.key} title={p.name} style={{ fontSize: 12, padding: "3px 8px", borderRadius: 999, border: `1px solid ${p.color}`, color: p.color }}>{p.name}</span>
@@ -1110,6 +1326,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
         <div style={{ width: 360, display: "flex", flexDirection: "column", borderLeft: `1px solid ${C.line}`, background: C.surface, minHeight: 0 }}>
           <div style={{ display: "flex", gap: 6, padding: 8, borderBottom: `1px solid ${C.line}` }}>
             <button type="button" onClick={() => setPanel("chat")} style={seg(panel === "chat")}>Chat</button>
+            <button type="button" onClick={() => setPanel("turns")} style={seg(panel === "turns")}>Turns{fight ? ` (${fight.round})` : ""}</button>
             {isGm && <button type="button" onClick={() => setPanel("tokens")} style={seg(panel === "tokens")}>Tokens</button>}
             {isGm && <button type="button" onClick={() => setPanel("scenes")} style={seg(panel === "scenes")}>Scenes</button>}
           </div>
@@ -1163,6 +1380,89 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                 {chatErr && <p role="status" style={{ color: "#e07a70", fontSize: 12, margin: "6px 0 0" }}>{chatErr}</p>}
               </div>
             </>
+          )}
+
+          {panel === "turns" && (
+            <div style={{ flex: 1, overflowY: "auto", padding: 12 }}>
+              {!fight ? (
+                <>
+                  <p style={{ color: C.muted, fontSize: 13, margin: 0 }}>No fight running.</p>
+                  {isGm && <p style={{ color: C.muted, fontSize: 12.5 }}>Select tokens on the map (click, Shift-click, or drag a box), then press F or use &quot;Start a fight with these&quot; in the Tokens tab. A fight started on the Combat page shows up here too.</p>}
+                </>
+              ) : (
+                <>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+                    <div style={{ fontWeight: 700 }}>{fight.name}</div>
+                    <div style={{ color: C.sun, fontSize: 13 }}>Round {fight.round}</div>
+                  </div>
+                  {isGm && (
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, marginTop: 10 }}>
+                      <button type="button" disabled={fightBusy} onClick={() => void stepTurn(-1)} style={small} title="P">&larr; Previous (P)</button>
+                      <button type="button" disabled={fightBusy} onClick={() => void stepTurn(1)} style={{ ...small, background: C.sun, color: "#1b1712", border: "none", fontWeight: 600 }} title="N">Next turn (N) &rarr;</button>
+                      <button type="button" disabled={fightBusy} onClick={() => void rollMonsterInit()} style={small}>Roll monster initiative</button>
+                      <button type="button" disabled={fightBusy} onClick={sortFight} style={small}>Sort by initiative</button>
+                    </div>
+                  )}
+                  <div style={{ display: "grid", gap: 6, marginTop: 12 }}>
+                    {fight.order.map((e) => {
+                      const mineEntry = e.kind === "pc" && myChars.some((c) => c.character_id === e.characterId);
+                      const open = selEntry === e.id;
+                      const frac = e.hp != null && e.maxHp ? Math.max(0, Math.min(1, e.hp / e.maxHp)) : null;
+                      return (
+                        <div key={e.id} style={{ border: `1px solid ${e.is_turn ? C.sun : C.line}`, borderLeft: `4px solid ${e.is_turn ? C.sun : "transparent"}`, borderRadius: 8, padding: "7px 9px", opacity: e.defeated ? 0.55 : 1, background: e.is_turn ? "rgba(217,164,58,0.08)" : "transparent" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <span style={{ width: 28, textAlign: "center", fontWeight: 700, color: e.initiative == null ? C.muted : C.text }}>{e.initiative ?? "?"}</span>
+                            <button type="button" onClick={() => { centreOnEntry(e); if (isGm) setSelEntry(open ? null : e.id); }} style={{ flex: 1, textAlign: "left", background: "none", border: "none", color: C.text, cursor: "pointer", padding: 0, fontSize: 13.5, fontWeight: e.is_turn ? 700 : 500, textDecoration: e.defeated ? "line-through" : "none" }}>
+                              {e.name}{e.hidden ? " (hidden)" : ""}
+                            </button>
+                            {e.hp != null && <span style={{ fontSize: 12, color: C.muted }}>{e.hp}{e.maxHp ? `/${e.maxHp}` : ""}{e.tempHp ? ` +${e.tempHp}` : ""}</span>}
+                            {isGm && e.ac != null && <span style={{ fontSize: 11.5, color: C.muted }}>AC {e.ac}</span>}
+                          </div>
+                          {frac != null && <div style={{ height: 4, background: "#2a241d", borderRadius: 2, marginTop: 5 }}><div style={{ width: `${frac * 100}%`, height: 4, borderRadius: 2, background: frac > 0.5 ? "#5fae5a" : frac > 0.25 ? "#d9a43a" : "#d0463c" }} /></div>}
+                          {(e.conditions ?? []).length > 0 && <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 5 }}>{(e.conditions ?? []).map((cn) => <span key={cn} style={{ fontSize: 11, padding: "0 6px", borderRadius: 999, border: "1px solid #6b5aa0", color: "#c2a8f0" }}>{cn}</span>)}</div>}
+                          {!isGm && mineEntry && e.initiative == null && (
+                            <div style={{ display: "flex", gap: 6, marginTop: 6, alignItems: "center" }}>
+                              <label style={{ fontSize: 12, color: C.muted }} htmlFor={`ib-${e.id}`}>Bonus</label>
+                              <input id={`ib-${e.id}`} value={initBonus} onChange={(ev) => setInitBonus(ev.target.value.replace(/[^0-9+-]/g, "").slice(0, 3))} style={{ ...field, width: 52, padding: "4px 6px" }} />
+                              <button type="button" onClick={async () => { const b2 = parseInt(initBonus, 10) || 0; await rollInitiative(e, b2, true); await loadFight(); }} style={{ ...small, borderColor: C.sun, color: C.sun }}>Roll initiative</button>
+                            </div>
+                          )}
+                          {isGm && open && (
+                            <div style={{ marginTop: 8, paddingTop: 8, borderTop: `1px solid ${C.line}` }}>
+                              <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                                <input aria-label={`Amount for ${e.name}`} value={hpAmt} onChange={(ev) => setHpAmt(ev.target.value.replace(/[^0-9]/g, "").slice(0, 4))} placeholder="HP" style={{ ...field, width: 60, padding: "5px 6px" }} />
+                                <button type="button" onClick={() => { const n2 = parseInt(hpAmt, 10); if (n2 > 0) { editEntry(e.id, (c) => applyDamage(c, n2) as TC); setHpAmt(""); } }} style={{ ...small, color: "#e07a70" }}>Damage</button>
+                                <button type="button" onClick={() => { const n2 = parseInt(hpAmt, 10); if (n2 > 0) { editEntry(e.id, (c) => applyHealing(c, n2) as TC); setHpAmt(""); } }} style={{ ...small, color: "#8fd18a" }}>Heal</button>
+                              </div>
+                              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, marginTop: 6 }}>
+                                <label style={{ fontSize: 11.5, color: C.muted }}>Init<input aria-label={`Initiative for ${e.name}`} defaultValue={e.initiative ?? ""} key={`i${e.id}${e.initiative}`} onBlur={(ev) => { const v = ev.target.value.trim(); editEntry(e.id, (c) => ({ ...c, initiative: v === "" ? null : Number(v) || 0 })); }} style={{ ...field, padding: "4px 6px" }} /></label>
+                                <label style={{ fontSize: 11.5, color: C.muted }}>Max HP<input aria-label={`Max HP for ${e.name}`} defaultValue={e.maxHp ?? ""} key={`m${e.id}${e.maxHp}`} onBlur={(ev) => { const v = parseInt(ev.target.value, 10); editEntry(e.id, (c) => ({ ...c, maxHp: Number.isFinite(v) ? v : null, hp: c.hp == null && Number.isFinite(v) ? v : c.hp })); }} style={{ ...field, padding: "4px 6px" }} /></label>
+                                <label style={{ fontSize: 11.5, color: C.muted }}>Temp<input aria-label={`Temp HP for ${e.name}`} defaultValue={e.tempHp ?? 0} key={`t${e.id}${e.tempHp}`} onBlur={(ev) => { const v = parseInt(ev.target.value, 10); editEntry(e.id, (c) => ({ ...c, tempHp: Number.isFinite(v) ? Math.max(0, v) : 0 })); }} style={{ ...field, padding: "4px 6px" }} /></label>
+                              </div>
+                              <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 8 }}>
+                                {CONDITIONS.map((cn) => {
+                                  const on = (e.conditions ?? []).includes(cn);
+                                  return <button key={cn} type="button" onClick={() => editEntry(e.id, (c) => ({ ...c, conditions: on ? c.conditions.filter((x) => x !== cn) : [...c.conditions, cn] }))}
+                                    style={{ fontSize: 11, padding: "2px 7px", borderRadius: 999, border: `1px solid ${on ? "#c2a8f0" : C.line}`, background: on ? "#3b2f6b" : "transparent", color: on ? "#fff" : C.muted, cursor: "pointer" }}>{cn}</button>;
+                                })}
+                              </div>
+                              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, marginTop: 8 }}>
+                                <button type="button" onClick={() => editEntry(e.id, (c) => ({ ...c, defeated: !c.defeated }))} style={small}>{e.defeated ? "Not defeated" : "Defeated"}</button>
+                                <button type="button" onClick={() => editEntry(e.id, (c) => ({ ...c, hidden: !c.hidden }))} style={small}>{e.hidden ? "Reveal" : "Hide"}</button>
+                                <button type="button" onClick={() => { removeEntry(e.id); setSelEntry(null); }} style={{ ...small, color: "#e07a70" }}>Remove</button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {isGm && <button type="button" onClick={() => void endFight()} style={{ ...small, width: "100%", marginTop: 14, color: "#e07a70" }}>End the fight</button>}
+                  {!isGm && <p style={{ color: C.muted, fontSize: 11.5, marginTop: 10 }}>Monster HP stays with the GM. Your own initiative roll goes straight into the order.</p>}
+                </>
+              )}
+              {chatErr && <p role="status" style={{ color: "#e07a70", fontSize: 12, marginTop: 10 }}>{chatErr}</p>}
+            </div>
           )}
 
           {panel === "tokens" && isGm && (
@@ -1219,6 +1519,9 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                       </select>
                     </>
                   )}
+                  <button type="button" disabled={fightBusy} onClick={() => void addToFight(sel.map((t) => t.id))} style={{ ...small, width: "100%", marginTop: 10, borderColor: C.sun, color: C.sun }}>
+                    {fight ? "Add to the fight (F)" : "Start a fight with these (F)"}
+                  </button>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, marginTop: 10 }}>
                     <button type="button" onClick={() => void updateTokens(sel.map((t) => t.id), { hidden: !sel.every((t) => t.hidden) }, true)} style={small}>{sel.every((t) => t.hidden) ? "Show to players" : "Hide from players"} (H)</button>
                     <button type="button" onClick={() => void updateTokens(sel.map((t) => t.id), { layer: sel.every((t) => t.layer === "gm") ? "token" : "gm" }, true)} style={small}>{sel.every((t) => t.layer === "gm") ? "Back to the table" : "To the GM layer"}</button>
