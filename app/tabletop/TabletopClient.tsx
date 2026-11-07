@@ -8,8 +8,11 @@ import { normalizeLevels, CELL_TYPES } from "@/lib/dungeon/render";
 import { normCustom, normDoors, normElements, normBattleMeta } from "@/lib/dungeon/battle";
 import {
   snapToken, snapCenter, measure, fitCamera, zoomAt, centerOn, toWorld, parseChat, DIAGONAL_RULES,
-  type Camera, type Pt, type DiagonalRule,
+  templateCells, templateOutline, insideTemplate, snapOrigin, snapAngle, TEMPLATE_SHAPES,
+  type Camera, type Pt, type DiagonalRule, type TemplateGeom, type TemplateShape,
 } from "@/lib/tabletop/geometry";
+import { loadSrd } from "@/lib/srd/srd";
+import { monsterSourceLabel } from "@/lib/monster-sources";
 
 // The tabletop, phase 1 (2026-11-06). One page for the GM and the players; tabletop_state (p105)
 // decides the role and strips what players must not see before it leaves the database.
@@ -21,7 +24,10 @@ import {
 //          does not move pings (Shift + right-click, GM: everyone's view jumps there). In the ruler,
 //          right-click drops a waypoint. Left-drag on a token you control moves it, snapped (Alt: free).
 // Keys:    V select, M ruler, Delete removes (GM), H hides or shows (GM), R turns 45 degrees,
-//          Escape lets go, C re-centres.
+//          Escape lets go, C re-centres, T templates, Q drops a ruler waypoint.
+// Phase 2a: area templates (circle, cone, square, line) sized in feet, left on the table, moved and
+//          turned by their owner or the GM (p106); token borders and auras; a fading trail with the
+//          feet moved; tokens from the monster library; the battle map's painting on the table.
 // Live:    one Realtime channel per campaign. Table changes (tokens, scenes, chat) arrive through RLS;
 //          drags, rulers and pings are broadcast and never stored. Positions are saved once on drop.
 // Chat:    /r, /gr, /w name, /em. Rolls go to /api/tabletop/roll, which rolls on the server and logs
@@ -50,7 +56,12 @@ type Message = {
 type OutsideRoll = { id: string; actor_name: string | null; source: string; name: string | null; at: string; rolls: { total?: number; dice?: { faces: number; results: number[] }[]; critical_success?: boolean; critical_failure?: boolean } | null };
 type FeedItem = { t: number; key: string; msg?: Message; ext?: OutsideRoll };
 
-type Tool = "select" | "ruler" | "hand";
+type Tool = "select" | "ruler" | "template" | "hand";
+type Tpl = TemplateGeom & { id: string; owner: string; color: string; label: string | null; scene_id: string };
+type Aura = { ft: number; color: string; players: boolean };
+type Border = { pattern?: "solid" | "double" | "dashed" | "dotted"; width?: "thin" | "normal" | "thick" };
+type Trail = { from: Pt; to: Pt; color: string; born: number; feet: number };
+type LibMonster = { name: string; size?: string; cr?: string | number; hp?: number; ac?: number; source_key?: string };
 type Ping = { x: number; y: number; color: string; born: number };
 type Ruler = { points: Pt[]; color: string; done: number | null; by: string };
 
@@ -59,7 +70,12 @@ const SIZES: { v: number; label: string }[] = [
 ];
 const KIND_RING: Record<Token["kind"], string> = { pc: "#d9a43a", npc: "#6fa3d8", monster: "#c9534a", object: "#9a9387" };
 const SELECT = "#ffd36b";
-const PING_MS = 3000, RULER_FADE_MS = 1500, DRAG_SEND_MS = 60, GLIDE_MS = 220;
+const PING_MS = 3000, RULER_FADE_MS = 1500, DRAG_SEND_MS = 60, GLIDE_MS = 220, TRAIL_MS = 3500;
+const BORDER_W: Record<NonNullable<Border["width"]>, number> = { thin: 0.05, normal: 0.08, thick: 0.13 };
+const hexA = (hex: string, a: number) => {
+  const m = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex);
+  return m ? `rgba(${parseInt(m[1], 16)},${parseInt(m[2], 16)},${parseInt(m[3], 16)},${a})` : hex;
+};
 
 function hueOf(id: string): string {
   let h = 0; for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) % 360;
@@ -87,6 +103,11 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   const [selected, setSelected] = useState<string[]>([]);
   const [present, setPresent] = useState<{ key: string; name: string; color: string }[]>([]);
   const [tick, setTick] = useState(0);
+  const [selTpl, setSelTpl] = useState<string | null>(null);
+  const [tplShape, setTplShape] = useState<TemplateShape>("circle");
+  const [tplSize, setTplSize] = useState("");
+  const [tplColor, setTplColor] = useState("#e0703a");
+  const [tplLinger, setTplLinger] = useState(true);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const wrapRef = useRef<HTMLDivElement | null>(null);
@@ -102,6 +123,14 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   const rulers = useRef<Map<string, Ruler>>(new Map());
   const myRuler = useRef<Ruler | null>(null);
   const keepRuler = useRef(false);
+  const templatesRef = useRef<Map<string, Tpl>>(new Map());
+  const tplPreview = useRef<{ geom: TemplateGeom; color: string; done: number | null } | null>(null);
+  const remoteTpl = useRef<Map<string, { geom: TemplateGeom; color: string; done: number | null }>>(new Map());
+  const tplDrag = useRef<{ id: string; start: Pt; orig: Pt; now: Pt; moved: boolean } | null>(null);
+  const tplSent = useRef(0);
+  const trails = useRef<Trail[]>([]);
+  const overlayUrl = useRef<string | null>(null);
+  const renderBaseRef = useRef<() => void>(() => {});
   const rulerSent = useRef(0);
   const drag = useRef<{ ids: string[]; start: Pt; orig: Map<string, Pt>; now: Map<string, Pt>; free: boolean; lastSend: number; moved: boolean } | null>(null);
   const pan = useRef<{ sx: number; sy: number; ox: number; oy: number; moved: boolean; button: number; shift: boolean } | null>(null);
@@ -113,6 +142,8 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   const feedEnd = useRef<HTMLDivElement | null>(null);
   const selRef = useRef<string[]>([]);
   selRef.current = selected;
+  const selTplRef = useRef<string | null>(null);
+  selTplRef.current = selTpl;
   stateRef.current = state;
 
   const isGm = state?.role === "gm";
@@ -141,7 +172,12 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     if (imgs.current.has(url)) return;
     imgs.current.set(url, "loading");
     const img = new Image();
-    img.onload = () => { imgs.current.set(url, img); requestDraw(); setTick((v) => v + 1); };
+    img.onload = () => {
+      imgs.current.set(url, img);
+      // the battle map's painting is part of the map underneath, so the map is rendered again with it
+      if (url === overlayUrl.current) renderBaseRef.current();
+      requestDraw(); setTick((v) => v + 1);
+    };
     img.onerror = () => { imgs.current.set(url, "failed"); };
     img.src = url;
   }, [requestDraw]);
@@ -156,6 +192,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     const kind = m.kind === "outdoor" ? "outdoor" : "indoor";
     const meta = normBattleMeta({ ...m.meta, overlays: [m.meta?.overlay ?? null] }, kind);
     const ov = meta.overlays[0];
+    overlayUrl.current = ov && ov.show ? ov.url : null;
     let overlay: { img: HTMLImageElement; opacity: number; inkOnTop: boolean } | null = null;
     if (ov && ov.show) {
       const im = imgs.current.get(ov.url);
@@ -176,6 +213,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     }, L);
     baseRef.current = cv;
   }, [loadImage]);
+  renderBaseRef.current = renderBase;
 
   const fit = useCallback(() => {
     const cv = canvasRef.current, base = baseRef.current; if (!cv || !base) return;
@@ -220,6 +258,55 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     const base = baseRef.current;
     if (base) { ctx.imageSmoothingQuality = "high"; ctx.drawImage(base, 0, 0); }
     let animating = false;
+    const n = stateRef.current?.map?.n ?? 0;
+
+    // area templates, under the tokens: covered squares, the shape, its origin and size
+    const drawTpl = (g: TemplateGeom, color: string, alpha: number, sel: boolean) => {
+      ctx.save(); ctx.globalAlpha = Math.max(0, alpha);
+      ctx.fillStyle = hexA(color, 0.22);
+      for (const [r, c] of templateCells(g, fps, n)) ctx.fillRect(c * cell, r * cell, cell, cell);
+      const pts = templateOutline(g, fps);
+      ctx.beginPath(); pts.forEach((p, i) => (i ? ctx.lineTo(p.x * cell, p.y * cell) : ctx.moveTo(p.x * cell, p.y * cell))); ctx.closePath();
+      ctx.fillStyle = hexA(color, 0.1); ctx.fill();
+      ctx.strokeStyle = color; ctx.lineWidth = Math.max(2, 2.5 / cam.s);
+      if (sel) ctx.setLineDash([7 / cam.s, 4 / cam.s]);
+      ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = color; ctx.beginPath(); ctx.arc(g.x * cell, g.y * cell, Math.max(3, 4.5 / cam.s), 0, Math.PI * 2); ctx.fill();
+      const fs = Math.max(11, 13 / cam.s);
+      const text = `${Math.round(g.size_ft)} ft ${g.shape === "circle" ? "radius" : g.shape}`;
+      ctx.font = `700 ${fs}px system-ui, sans-serif`; const w = ctx.measureText(text).width + fs;
+      ctx.fillStyle = "rgba(20,16,12,0.85)"; ctx.fillRect(g.x * cell + 8 / cam.s, g.y * cell + 8 / cam.s, w, fs * 1.4);
+      ctx.fillStyle = "#fff"; ctx.textBaseline = "top"; ctx.fillText(text, g.x * cell + 8 / cam.s + fs / 2, g.y * cell + 8 / cam.s + fs * 0.2);
+      ctx.restore();
+    };
+    for (const t of templatesRef.current.values()) {
+      const d = tplDrag.current && tplDrag.current.id === t.id ? tplDrag.current.now : null;
+      drawTpl(d ? { ...t, x: d.x, y: d.y } : t, t.color, 1, selTplRef.current === t.id);
+    }
+    const fadeOf = (done: number | null) => (done === null ? 1 : 1 - (now - done) / RULER_FADE_MS);
+    if (tplPreview.current) {
+      const a = fadeOf(tplPreview.current.done);
+      if (a <= 0) tplPreview.current = null; else { if (tplPreview.current.done !== null) animating = true; drawTpl(tplPreview.current.geom, tplPreview.current.color, a, false); }
+    }
+    for (const [k, rt] of remoteTpl.current) {
+      const a = fadeOf(rt.done);
+      if (a <= 0) remoteTpl.current.delete(k); else { if (rt.done !== null) animating = true; drawTpl(rt.geom, rt.color, a, false); }
+    }
+
+    // auras, under the tokens, measured from the token's edge (as a 2024 emanation is)
+    for (const t of tokensRef.current.values()) {
+      const auras = Array.isArray(t.style?.auras) ? (t.style.auras as Aura[]) : [];
+      if (!auras.length) continue;
+      const p = shownPos(t), base = (t.size / 2) * cell;
+      for (const a of auras) {
+        if (!a || !(a.ft > 0) || (!a.players && stateRef.current?.role !== "gm")) continue;
+        const rr = base + (a.ft / fps) * cell;
+        ctx.save(); ctx.beginPath(); ctx.arc(p.x * cell, p.y * cell, rr, 0, Math.PI * 2);
+        ctx.fillStyle = hexA(a.color, 0.13); ctx.fill(); ctx.strokeStyle = hexA(a.color, 0.7); ctx.lineWidth = Math.max(1.5, 2 / cam.s);
+        if (!a.players) ctx.setLineDash([6 / cam.s, 4 / cam.s]);
+        ctx.stroke(); ctx.restore();
+      }
+    }
 
     // tokens: map layer, then tokens, then the GM layer
     const list = [...tokensRef.current.values()];
@@ -249,9 +336,17 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
         ctx.rotate((t.rot * Math.PI) / 180);
       }
       const ring = typeof t.style?.ring === "string" ? (t.style.ring as string) : KIND_RING[t.kind];
-      ctx.lineWidth = Math.max(2, cell * 0.08); ctx.strokeStyle = ring;
+      const border = (t.style?.border ?? {}) as Border;
+      const bw = Math.max(2, cell * BORDER_W[border.width ?? "normal"] * Math.max(1, Math.sqrt(t.size)));
+      ctx.lineWidth = bw; ctx.strokeStyle = ring;
       if (t.hidden || t.layer === "gm") ctx.setLineDash([cell * 0.15, cell * 0.1]);
+      else if (border.pattern === "dashed") ctx.setLineDash([bw * 2.2, bw * 1.4]);
+      else if (border.pattern === "dotted") { ctx.setLineDash([0.01, bw * 1.8]); ctx.lineCap = "round"; }
       ctx.beginPath(); ctx.arc(0, 0, rad, 0, Math.PI * 2); ctx.stroke();
+      if (border.pattern === "double") {
+        ctx.lineWidth = Math.max(1.2, bw * 0.45);
+        ctx.beginPath(); ctx.arc(0, 0, rad + bw * 1.1, 0, Math.PI * 2); ctx.stroke();
+      }
       ctx.restore();
       if (sel.has(t.id)) {
         ctx.save(); ctx.lineWidth = Math.max(2, 3 / cam.s); ctx.strokeStyle = SELECT; ctx.setLineDash([6 / cam.s, 4 / cam.s]);
@@ -264,6 +359,21 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
         ctx.fillStyle = "rgba(20,16,12,0.85)"; ctx.fillRect(cx - w / 2, cy + rad + 4 / cam.s, w, fs * 1.5);
         ctx.fillStyle = "#f2e6c9"; ctx.fillText(label, cx, cy + rad + 4 / cam.s + fs * 0.25); ctx.restore();
       }
+    }
+
+    // movement trails: where a token came from, and how far, fading out
+    trails.current = trails.current.filter((tr) => now - tr.born < TRAIL_MS);
+    for (const tr of trails.current) {
+      animating = true;
+      const a = 1 - (now - tr.born) / TRAIL_MS;
+      ctx.save(); ctx.globalAlpha = a; ctx.strokeStyle = tr.color; ctx.lineWidth = Math.max(2, 3 / cam.s); ctx.setLineDash([8 / cam.s, 6 / cam.s]);
+      ctx.beginPath(); ctx.moveTo(tr.from.x * cell, tr.from.y * cell); ctx.lineTo(tr.to.x * cell, tr.to.y * cell); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = tr.color; ctx.beginPath(); ctx.arc(tr.from.x * cell, tr.from.y * cell, Math.max(3, 4 / cam.s), 0, Math.PI * 2); ctx.fill();
+      const fs = Math.max(11, 13 / cam.s), text = `${tr.feet} ft`, mx = ((tr.from.x + tr.to.x) / 2) * cell, my = ((tr.from.y + tr.to.y) / 2) * cell;
+      ctx.font = `700 ${fs}px system-ui, sans-serif`; const w = ctx.measureText(text).width + fs;
+      ctx.fillStyle = "rgba(20,16,12,0.85)"; ctx.fillRect(mx - w / 2, my - fs * 0.7, w, fs * 1.4);
+      ctx.fillStyle = "#fff"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(text, mx, my);
+      ctx.restore();
     }
 
     // rulers: mine, then everyone else's
@@ -325,6 +435,11 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     const prevMap = stateRef.current?.map?.id, prevScene = stateRef.current?.scene?.id;
     stateRef.current = st; setState(st); setError(null);
     applyTokens(st.tokens);
+    templatesRef.current = new Map();
+    if (st.scene) {
+      const { data: tpls } = await supabase.from("vtt_templates").select("*").eq("scene_id", st.scene.id);
+      for (const t of (tpls ?? []) as Tpl[]) templatesRef.current.set(t.id, t);
+    }
     if (st.map?.id !== prevMap || st.scene?.id !== prevScene || !baseRef.current) { renderBase(); fitPending.current = true; }
   }, [supabase, campaignId, applyTokens, renderBase]);
 
@@ -373,11 +488,18 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
       if (prev && (prev.x !== t.x || prev.y !== t.y) && !drag.current?.now.has(t.id)) {
         const from = remoteDrag.current.get(t.id) ?? shownPos(prev);
         shown.current.set(t.id, { x: t.x, y: t.y, fx: from.x, fy: from.y, t0: performance.now() });
+        const f = { x: prev.x, y: prev.y }, to = { x: t.x, y: t.y };
+        if (!t.hidden && t.layer !== "gm") trails.current.push({ from: f, to, color: hueOf(owner ?? st.campaign.gm_id), born: performance.now(), feet: measure([f, to], st.scene.settings?.diagonal ?? "five", st.map?.feet_per_square ?? 5).feet });
       }
       remoteDrag.current.delete(t.id);
       tokensRef.current.set(t.id, t);
       if (st.role !== "gm" && (t.hidden || t.layer === "gm")) tokensRef.current.delete(t.id);
       requestDraw();
+    };
+    const upsertTpl = (row: Tpl) => {
+      const st = stateRef.current; if (!st?.scene || row.scene_id !== st.scene.id) return;
+      if (tplDrag.current?.id === row.id) return;
+      templatesRef.current.set(row.id, row); requestDraw();
     };
     ch.on("postgres_changes", { event: "INSERT", schema: "public", table: "vtt_tokens", filter: `campaign_id=eq.${campaignId}` }, (p) => upsert(p.new as Token))
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "vtt_tokens", filter: `campaign_id=eq.${campaignId}` }, (p) => upsert(p.new as Token))
@@ -402,6 +524,17 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
         requestDraw();
       })
       .on("broadcast", { event: "refresh" }, () => { void load(); })
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "vtt_templates", filter: `campaign_id=eq.${campaignId}` }, (p) => upsertTpl(p.new as Tpl))
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "vtt_templates", filter: `campaign_id=eq.${campaignId}` }, (p) => upsertTpl(p.new as Tpl))
+      .on("postgres_changes", { event: "DELETE", schema: "public", table: "vtt_templates" }, (p) => {
+        const id = (p.old as { id?: string }).id; if (id && templatesRef.current.delete(id)) requestDraw();
+      })
+      .on("broadcast", { event: "tpl" }, ({ payload }) => {
+        const r = payload as { by: string; color: string; geom: TemplateGeom; done: boolean; placed?: boolean };
+        if (r.placed) remoteTpl.current.delete(r.by);
+        else remoteTpl.current.set(r.by, { geom: r.geom, color: r.color, done: r.done ? performance.now() : null });
+        requestDraw();
+      })
       .on("presence", { event: "sync" }, () => {
         const ps = ch.presenceState() as Record<string, { name?: string; color?: string }[]>;
         setPresent(Object.entries(ps).map(([key, arr]) => ({ key, name: arr[0]?.name ?? "Someone", color: arr[0]?.color ?? "#999" })));
@@ -444,6 +577,21 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     requestDraw(); return true;
   };
 
+  const canEditTpl = (t: Tpl | undefined | null) => !!t && (stateRef.current?.role === "gm" || t.owner === stateRef.current?.me);
+  const tplAt = (sq: Pt): Tpl | null => {
+    const list = [...templatesRef.current.values()];
+    for (let i = list.length - 1; i >= 0; i--) {
+      const t = list[i];
+      if (Math.hypot(sq.x - t.x, sq.y - t.y) < 0.5 || insideTemplate(t, fps, sq.x, sq.y)) return t;
+    }
+    return null;
+  };
+  const fixedSize = () => { const v = Number(tplSize); return Number.isFinite(v) && v > 0 ? Math.min(1000, v) : null; };
+  const sendTpl = (done: boolean, placed = false) => {
+    const pv = tplPreview.current; if (!pv) return;
+    send("tpl", { by: me, color: pv.color, geom: pv.geom, done, placed });
+  };
+
   const onDown = (e: React.PointerEvent) => {
     const st = stateRef.current; if (!st) return;
     const sp = screenPt(e), sq = toSquares(sp);
@@ -455,6 +603,11 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
       return;
     }
     if (e.button !== 0) return;
+    if (tool === "template") {
+      const o = e.altKey ? sq : snapOrigin(sq, tplShape);
+      tplPreview.current = { geom: { shape: tplShape, x: o.x, y: o.y, size_ft: fixedSize() ?? 5, width_ft: 5, rot: 0 }, color: tplColor, done: null };
+      setSelTpl(null); requestDraw(); return;
+    }
     if (tool === "ruler") {
       const p = e.altKey ? sq : snapCenter(sq);
       myRuler.current = { points: [p, { ...p }], color: myColor, done: null, by: st.me };
@@ -462,6 +615,15 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
       requestDraw(); return;
     }
     const hit = tokenAt({ x: sq.x * cellRef.current, y: sq.y * cellRef.current });
+    if (!hit) {
+      const th = tplAt(sq);
+      if (th) {
+        setSelTpl(th.id); setSelected([]); selRef.current = [];
+        if (canEditTpl(th)) tplDrag.current = { id: th.id, start: sq, orig: { x: th.x, y: th.y }, now: { x: th.x, y: th.y }, moved: false };
+        requestDraw(); return;
+      }
+    }
+    setSelTpl(null);
     if (hit) {
       let next = selRef.current;
       if (e.shiftKey) next = next.includes(hit.id) ? next.filter((i) => i !== hit.id) : [...next, hit.id];
@@ -486,6 +648,23 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
       if (Math.hypot(dx, dy) > 4) pan.current.moved = true;
       if (pan.current.moved) { camRef.current = { ...camRef.current, ox: pan.current.ox + dx, oy: pan.current.oy + dy }; requestDraw(); }
       return;
+    }
+    if (tplPreview.current && tplPreview.current.done === null && (e.buttons & 1)) {
+      const g = tplPreview.current.geom, dx = sq.x - g.x, dy = sq.y - g.y, fps2 = stateRef.current?.map?.feet_per_square ?? 5;
+      const dist = Math.hypot(dx, dy);
+      g.size_ft = fixedSize() ?? Math.max(fps2, Math.round((dist * fps2) / 5) * 5);
+      if (dist > 0.2) { const deg = (Math.atan2(dy, dx) * 180) / Math.PI; g.rot = e.altKey ? ((deg % 360) + 360) % 360 : snapAngle(deg); }
+      const t = performance.now();
+      if (t - tplSent.current > DRAG_SEND_MS) { tplSent.current = t; sendTpl(false); }
+      requestDraw(); return;
+    }
+    const td = tplDrag.current;
+    if (td) {
+      const t = templatesRef.current.get(td.id);
+      const raw = { x: td.orig.x + sq.x - td.start.x, y: td.orig.y + sq.y - td.start.y };
+      td.now = e.altKey || !t ? raw : snapOrigin(raw, t.shape);
+      if (Math.hypot(sq.x - td.start.x, sq.y - td.start.y) > 0.1) td.moved = true;
+      requestDraw(); return;
     }
     if (myRuler.current && myRuler.current.done === null) {
       const pts = myRuler.current.points;
@@ -528,6 +707,30 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
       }
       return;
     }
+    if (tplPreview.current && tplPreview.current.done === null && e.button === 0) {
+      const pv = tplPreview.current, sc = st.scene;
+      if (tplLinger && sc) {
+        const row = { campaign_id: campaignId, scene_id: sc.id, owner: st.me, ...pv.geom, color: pv.color };
+        void supabase.from("vtt_templates").insert(row).select("*").single().then(({ data, error: er }) => {
+          if (er || !data) { setChatErr(`Could not leave the template: ${er?.message ?? "no row"}`); return; }
+          templatesRef.current.set((data as Tpl).id, data as Tpl); setSelTpl((data as Tpl).id); requestDraw();
+        });
+        sendTpl(true, true); tplPreview.current = null;
+      } else { pv.done = performance.now(); sendTpl(true); }
+      requestDraw(); return;
+    }
+    const td = tplDrag.current;
+    if (td) {
+      tplDrag.current = null;
+      const t = templatesRef.current.get(td.id);
+      if (t && td.moved) {
+        templatesRef.current.set(t.id, { ...t, x: td.now.x, y: td.now.y });
+        void supabase.from("vtt_templates").update({ x: td.now.x, y: td.now.y, updated_at: new Date().toISOString() }).eq("id", t.id).then(({ error: er }) => {
+          if (er) { setChatErr(`Could not move the template: ${er.message}`); templatesRef.current.set(t.id, t); requestDraw(); }
+        });
+      }
+      requestDraw(); return;
+    }
     if (myRuler.current && myRuler.current.done === null && e.button === 0) {
       keepRuler.current = e.shiftKey;
       if (!keepRuler.current) myRuler.current.done = performance.now();
@@ -541,6 +744,8 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
         for (const id of d.ids) {
           const p = d.now.get(id)!, t = tokensRef.current.get(id);
           if (!t) continue;
+          const o = d.orig.get(id)!;
+          trails.current.push({ from: o, to: p, color: myColor, born: performance.now(), feet: measure([o, p], rule, fps).feet });
           tokensRef.current.set(id, { ...t, x: p.x, y: p.y });
           void supabase.rpc("tabletop_move_token", { p_token: id, p_x: p.x, p_y: p.y, p_rot: null }).then(({ error: er }) => {
             if (er) { setChatErr(`Could not move ${t.name}: ${er.message}`); tokensRef.current.set(id, t); requestDraw(); }
@@ -602,9 +807,31 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
       const t = tokensRef.current.get(id); if (!t || !t.mine) continue;
       const rot = (((t.rot + by) % 360) + 360) % 360;
       tokensRef.current.set(id, { ...t, rot });
-      void supabase.rpc("tabletop_move_token", { p_token: id, p_x: t.x, p_y: t.y, p_rot: rot });
+      // A Supabase query only runs once something awaits it or calls then(); a bare `void` never sends it.
+      void supabase.rpc("tabletop_move_token", { p_token: id, p_x: t.x, p_y: t.y, p_rot: rot }).then(({ error: er }) => {
+        if (er) { setChatErr(`Could not turn ${t.name}: ${er.message}`); tokensRef.current.set(id, t); requestDraw(); }
+      });
     }
     requestDraw();
+  }, [supabase, requestDraw]);
+
+  const turnTpl = useCallback((by: number) => {
+    const t = selTplRef.current ? templatesRef.current.get(selTplRef.current) : null;
+    if (!t || !canEditTpl(t)) return;
+    const rot = (((t.rot + by) % 360) + 360) % 360;
+    templatesRef.current.set(t.id, { ...t, rot }); requestDraw();
+    void supabase.from("vtt_templates").update({ rot, updated_at: new Date().toISOString() }).eq("id", t.id).then(({ error: er }) => {
+      if (er) { setChatErr(`Could not turn the template: ${er.message}`); templatesRef.current.set(t.id, t); requestDraw(); }
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [supabase, requestDraw]);
+  const removeTpl = useCallback(async () => {
+    const t = selTplRef.current ? templatesRef.current.get(selTplRef.current) : null;
+    if (!t || !canEditTpl(t)) return;
+    const { error: er } = await supabase.from("vtt_templates").delete().eq("id", t.id);
+    if (er) { setChatErr(`Could not remove the template: ${er.message}`); return; }
+    templatesRef.current.delete(t.id); setSelTpl(null); requestDraw();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [supabase, requestDraw]);
 
   useEffect(() => {
@@ -612,10 +839,15 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
       if (e.target instanceof HTMLElement && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
       if (e.key === " ") { space.current = true; e.preventDefault(); return; }
       const k = e.key.toLowerCase();
-      if (k === "escape") { setSelected([]); if (myRuler.current) { myRuler.current.done = performance.now(); send("ruler", { by: me, color: myColor, points: myRuler.current.points, done: true }); } requestDraw(); return; }
+      if (k === "escape") { setSelected([]); setSelTpl(null); if (tplPreview.current) { tplPreview.current.done = performance.now(); sendTpl(true); } if (myRuler.current) { myRuler.current.done = performance.now(); send("ruler", { by: me, color: myColor, points: myRuler.current.points, done: true }); } requestDraw(); return; }
       if (k === "v") { setTool("select"); return; }
       if (k === "m") { setTool("ruler"); return; }
       if (k === "q") { addWaypoint(); return; }
+      if (k === "t") { setTool("template"); return; }
+      if (selTplRef.current) {
+        if (k === "r") { turnTpl(e.shiftKey ? -15 : 15); return; }
+        if (k === "delete" || k === "backspace") { e.preventDefault(); void removeTpl(); return; }
+      }
       if (k === "c") { fit(); return; }
       if (k === "r") { turn(selRef.current, e.shiftKey ? -45 : 45); return; }
       if (!isGm) return;
@@ -629,7 +861,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     window.addEventListener("keydown", down); window.addEventListener("keyup", up);
     return () => { window.removeEventListener("keydown", down); window.removeEventListener("keyup", up); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isGm, me, myColor, fit, turn, deleteTokens, updateTokens, requestDraw]);
+  }, [isGm, me, myColor, fit, turn, deleteTokens, updateTokens, requestDraw, turnTpl, removeTpl]);
 
   // place new tokens in the middle of what the GM is looking at
   const viewCentre = (): Pt => {
@@ -645,7 +877,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
       const name = count > 1 || taken.includes(t.name) ? enumerated(t.name, [...taken, ...rows.map((r) => r.name)]) : t.name;
       const p = snapToken(c.x + (i % 4) * Math.max(1, t.size), c.y + Math.floor(i / 4) * Math.max(1, t.size), t.size);
       rows.push({ campaign_id: campaignId, scene_id: st.scene.id, kind: t.kind, character_id: t.character_id ?? null, stat_block_id: t.stat_block_id ?? null,
-        name, image_url: t.image_url ?? null, x: p.x, y: p.y, size: t.size, rot: 0, layer: "token", hidden: !!t.hidden, controlled_by: [], style: {} });
+        name, image_url: t.image_url ?? null, x: p.x, y: p.y, size: t.size, rot: 0, layer: "token", hidden: !!t.hidden, controlled_by: [], style: t.style ?? {} });
     }
     const { data, error: er } = await supabase.from("vtt_tokens").insert(rows).select("*");
     if (er) { setChatErr(`Could not add the token: ${er.message}`); return; }
@@ -727,6 +959,14 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   const [tImage, setTImage] = useState("");
   const [tHidden, setTHidden] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [tStats, setTStats] = useState<{ hp: number | null; ac: number | null } | null>(null);
+  const [libEdition, setLibEdition] = useState<"2014" | "2024">("2024");
+  const [libQuery, setLibQuery] = useState("");
+  const library = useMemo(() => (isGm && panel === "tokens" ? (loadSrd("monsters", libEdition) as unknown as LibMonster[]) : []), [isGm, panel, libEdition]);
+  const libHits = useMemo(() => {
+    const q = libQuery.trim().toLowerCase(); if (q.length < 2) return [];
+    return library.filter((m) => m.name.toLowerCase().includes(q)).sort((a, b) => a.name.length - b.name.length).slice(0, 25);
+  }, [library, libQuery]);
   const [blocks, setBlocks] = useState<{ id: string; name: string; size: string | null }[]>([]);
   useEffect(() => {
     if (!isGm || panel !== "tokens") return;
@@ -737,7 +977,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   }, [isGm, panel, supabase, campaignId, me]);
   const sizeFromText = (s: string | null) => {
     const l = (s ?? "").toLowerCase();
-    return l.startsWith("tiny") ? 0.5 : l.startsWith("large") ? 2 : l.startsWith("huge") ? 3 : l.startsWith("garg") ? 4 : 1;
+    return l.startsWith("tiny") ? 0.5 : l.startsWith("large") ? 2 : l.startsWith("huge") ? 3 : l.startsWith("garg") || l.startsWith("titan") ? 4 : 1;
   };
   const uploadImage = async (file: File, then: (url: string) => void) => {
     setUploading(true); setChatErr(null);
@@ -813,6 +1053,9 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
           <button type="button" title="Measure (M). Right-click or Q adds a waypoint, Shift on release keeps it, Alt measures freely." onClick={() => setTool("ruler")} style={railBtn(tool === "ruler")}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 17L17 3l4 4L7 21z M7 13l2 2 M10 10l2 2 M13 7l2 2"/></svg>Ruler
           </button>
+          <button type="button" title="Area template (T): circle, cone, square or line. Drag to size and aim, or type an exact size." onClick={() => setTool("template")} style={railBtn(tool === "template")}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12L20 4v16z"/><circle cx="8" cy="12" r="1.5" fill="currentColor"/></svg>Area
+          </button>
           <button type="button" title="Pan (or hold Space, or drag with the right mouse button)" onClick={() => setTool("hand")} style={railBtn(tool === "hand")}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2v20 M2 12h20 M12 2l-3 3 M12 2l3 3 M12 22l-3-3 M12 22l3-3 M2 12l3-3 M2 12l3 3 M22 12l-3-3 M22 12l-3 3"/></svg>Pan
           </button>
@@ -836,9 +1079,29 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
               {isGm ? "Put a battle map on the table from the Scenes tab on the right." : "The GM has not put a map on the table yet. Chat and dice work in the meantime."}
             </div>
           )}
+          {scene && tool === "template" && (
+            <div style={{ position: "absolute", top: 10, left: "50%", transform: "translateX(-50%)", display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", background: "rgba(28,24,20,0.95)", border: `1px solid ${C.line}`, borderRadius: 10, padding: "6px 8px" }}>
+              {TEMPLATE_SHAPES.map((sh) => <button key={sh.key} type="button" onClick={() => setTplShape(sh.key)} style={{ ...seg(tplShape === sh.key), flex: "0 0 auto", padding: "6px 10px" }}>{sh.label}</button>)}
+              <input aria-label="Exact size in feet" value={tplSize} onChange={(e) => setTplSize(e.target.value.replace(/[^0-9.]/g, "").slice(0, 5))} placeholder="ft" title="Exact size in feet (radius for a circle, length otherwise). Leave empty to size it by dragging." style={{ ...field, width: 56, padding: "6px 6px" }} />
+              <input aria-label="Template colour" type="color" value={tplColor} onChange={(e) => setTplColor(e.target.value)} style={{ width: 34, height: 30, padding: 0, border: "none", background: "transparent" }} />
+              <label style={{ display: "flex", gap: 5, fontSize: 12, alignItems: "center", color: C.text }}><input type="checkbox" checked={tplLinger} onChange={(e) => setTplLinger(e.target.checked)} style={{ accentColor: C.sun }} />Leave it on the table</label>
+            </div>
+          )}
+          {scene && selTpl && templatesRef.current.get(selTpl) && (
+            <div style={{ position: "absolute", top: tool === "template" ? 58 : 10, left: "50%", transform: "translateX(-50%)", display: "flex", gap: 6, alignItems: "center", background: "rgba(28,24,20,0.95)", border: `1px solid ${C.sun}`, borderRadius: 10, padding: "6px 8px", fontSize: 12.5 }}>
+              <span>{(() => { const t = templatesRef.current.get(selTpl)!; return `${Math.round(t.size_ft)} ft ${t.shape === "circle" ? "radius" : t.shape}`; })()}</span>
+              {canEditTpl(templatesRef.current.get(selTpl)) ? (
+                <>
+                  <button type="button" onClick={() => turnTpl(-15)} style={small} title="Shift+R">&#8634; 15</button>
+                  <button type="button" onClick={() => turnTpl(15)} style={small} title="R">15 &#8635;</button>
+                  <button type="button" onClick={() => void removeTpl()} style={{ ...small, color: "#e07a70" }}>Remove</button>
+                </>
+              ) : <span style={{ color: C.muted }}>placed by someone else</span>}
+            </div>
+          )}
           {scene && (
             <div style={{ position: "absolute", left: 10, bottom: 10, fontSize: 11.5, color: C.muted, background: "rgba(20,16,12,0.75)", padding: "4px 8px", borderRadius: 6, pointerEvents: "none" }}>
-              Wheel zooms · right-drag pans · right-click pings{isGm ? " (Shift: bring everyone)" : ""} · R turns · M ruler
+              Wheel zooms · right-drag pans · right-click pings{isGm ? " (Shift: bring everyone)" : ""} · R turns · M ruler · T area
             </div>
           )}
         </div>
@@ -919,6 +1182,34 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                       <label style={label} htmlFor="tt-ring">Ring colour</label>
                       <input id="tt-ring" type="color" value={typeof sel[0].style?.ring === "string" ? (sel[0].style.ring as string) : KIND_RING[sel[0].kind]}
                         onChange={(e) => void updateTokens([sel[0].id], { style: { ...sel[0].style, ring: e.target.value } })} style={{ ...field, height: 34, padding: 2 }} />
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                        <div><label style={label} htmlFor="tt-bpat">Border</label>
+                          <select id="tt-bpat" value={((sel[0].style?.border ?? {}) as Border).pattern ?? "solid"} onChange={(e) => void updateTokens([sel[0].id], { style: { ...sel[0].style, border: { ...((sel[0].style?.border ?? {}) as Border), pattern: e.target.value as Border["pattern"] } } })} style={field}>
+                            <option value="solid">Solid</option><option value="double">Double</option><option value="dashed">Dashed</option><option value="dotted">Dotted</option>
+                          </select></div>
+                        <div><label style={label} htmlFor="tt-bw">Thickness</label>
+                          <select id="tt-bw" value={((sel[0].style?.border ?? {}) as Border).width ?? "normal"} onChange={(e) => void updateTokens([sel[0].id], { style: { ...sel[0].style, border: { ...((sel[0].style?.border ?? {}) as Border), width: e.target.value as Border["width"] } } })} style={field}>
+                            <option value="thin">Thin</option><option value="normal">Normal</option><option value="thick">Thick</option>
+                          </select></div>
+                      </div>
+                      <label style={label}>Auras (from the token&apos;s edge)</label>
+                      {[0, 1].map((i) => {
+                        const auras = (Array.isArray(sel[0].style?.auras) ? (sel[0].style.auras as Aura[]) : []).slice(0, 2);
+                        const a = auras[i] ?? { ft: 0, color: i === 0 ? "#f0c040" : "#60a0ff", players: true };
+                        const setA = (patch: Partial<Aura>) => {
+                          const next = [auras[0] ?? { ft: 0, color: "#f0c040", players: true }, auras[1] ?? { ft: 0, color: "#60a0ff", players: true }];
+                          next[i] = { ...a, ...patch };
+                          void updateTokens([sel[0].id], { style: { ...sel[0].style, auras: next.filter((x) => x.ft > 0) } });
+                        };
+                        return (
+                          <div key={i} style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 6 }}>
+                            <input aria-label={`Aura ${i + 1} radius in feet`} type="number" min={0} max={300} step={5} value={a.ft || ""} placeholder="ft"
+                              onChange={(e) => setA({ ft: Math.max(0, Math.min(300, Number(e.target.value) || 0)) })} style={{ ...field, width: 70 }} />
+                            <input aria-label={`Aura ${i + 1} colour`} type="color" value={a.color} onChange={(e) => setA({ color: e.target.value })} style={{ width: 34, height: 30, padding: 0, border: "none", background: "transparent" }} />
+                            <label style={{ display: "flex", gap: 5, fontSize: 12, alignItems: "center" }}><input type="checkbox" checked={a.players} onChange={(e) => setA({ players: e.target.checked })} style={{ accentColor: C.sun }} />Players see it</label>
+                          </div>
+                        );
+                      })}
                       <label style={label}>Image</label>
                       <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" disabled={uploading}
                         onChange={(e) => { const f = e.target.files?.[0]; if (f) void uploadImage(f, (url) => void updateTokens([sel[0].id], { image_url: url })); }} style={{ fontSize: 12, color: C.muted }} />
@@ -950,10 +1241,29 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                     {party.filter((p) => p.character_id).length === 0 && <p style={{ color: C.muted, fontSize: 12.5, margin: 0 }}>No claimed player characters yet.</p>}
                   </div>
                   <div style={{ fontWeight: 600, fontSize: 13, marginTop: 18 }}>Monster, NPC or object</div>
+                  <label style={label} htmlFor="tt-lib">From the monster library</label>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <input id="tt-lib" value={libQuery} onChange={(e) => setLibQuery(e.target.value.slice(0, 60))} placeholder="Search, e.g. ogre" style={{ ...field, flex: 1 }} />
+                    <select aria-label="Rules edition" value={libEdition} onChange={(e) => setLibEdition(e.target.value as "2014" | "2024")} style={{ ...field, width: 74 }}>
+                      <option value="2024">2024</option><option value="2014">2014</option>
+                    </select>
+                  </div>
+                  {libHits.length > 0 && (
+                    <div style={{ maxHeight: 180, overflowY: "auto", border: `1px solid ${C.line}`, borderRadius: 7, marginTop: 6 }}>
+                      {libHits.map((m, i) => (
+                        <button key={`${m.name}-${m.source_key ?? ""}-${i}`} type="button"
+                          onClick={() => { setTName(m.name); setTSize(sizeFromText(m.size ?? null)); setTKind("monster"); setTStats({ hp: typeof m.hp === "number" ? m.hp : null, ac: typeof m.ac === "number" ? m.ac : null }); setLibQuery(""); }}
+                          style={{ display: "block", width: "100%", textAlign: "left", padding: "6px 8px", background: "transparent", color: C.text, border: "none", borderBottom: `1px solid ${C.line}`, fontSize: 12.5, cursor: "pointer" }}>
+                          {m.name} <span style={{ color: C.muted }}>· CR {String(m.cr ?? "?")} · {m.size ?? "?"}{m.source_key ? ` · ${monsterSourceLabel(m.source_key)}` : ""}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {libQuery.trim().length >= 2 && libHits.length === 0 && <p style={{ color: C.muted, fontSize: 12, margin: "6px 0 0" }}>No monster by that name in the {libEdition} library.</p>}
                   {blocks.length > 0 && (
                     <>
                       <label style={label} htmlFor="tt-block">From your stat blocks</label>
-                      <select id="tt-block" value="" onChange={(e) => { const b = blocks.find((x) => x.id === e.target.value); if (b) { setTName(b.name); setTSize(sizeFromText(b.size)); setTKind("monster"); } }} style={field}>
+                      <select id="tt-block" value="" onChange={(e) => { const b = blocks.find((x) => x.id === e.target.value); if (b) { setTName(b.name); setTSize(sizeFromText(b.size)); setTKind("monster"); setTStats(null); } }} style={field}>
                         <option value="">Pick one to fill the form…</option>
                         {blocks.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
                       </select>
@@ -978,7 +1288,8 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                   <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" disabled={uploading} onChange={(e) => { const f = e.target.files?.[0]; if (f) void uploadImage(f, setTImage); }} style={{ fontSize: 12, color: C.muted }} />
                   <input aria-label="Or paste an image link" value={tImage} onChange={(e) => setTImage(e.target.value.trim())} placeholder="or paste an image link" style={{ ...field, marginTop: 6 }} />
                   <p style={{ color: C.muted, fontSize: 11.5, margin: "6px 0 0" }}>No image: a disc with initials. Copies are numbered (Goblin 2, Goblin 3).</p>
-                  <button type="button" disabled={!tName.trim() || uploading} onClick={() => void addToken({ name: tName.trim(), size: tSize, kind: tKind, image_url: tImage || null, hidden: tHidden }, tCount)}
+                  {tStats && <p style={{ color: C.muted, fontSize: 11.5, margin: "6px 0 0" }}>From the library: {tStats.hp ?? "?"} HP, AC {tStats.ac ?? "?"} (kept with the token for the HP bars coming next).</p>}
+                  <button type="button" disabled={!tName.trim() || uploading} onClick={() => void addToken({ name: tName.trim(), size: tSize, kind: tKind, image_url: tImage || null, hidden: tHidden, style: tStats ? { stats: tStats } : {} }, tCount)}
                     style={{ ...small, marginTop: 10, width: "100%", background: C.sun, color: "#1b1712", border: "none", fontWeight: 600, padding: "9px 0" }}>
                     {uploading ? "Uploading…" : `Add ${tCount > 1 ? `${tCount} ` : ""}to the table`}
                   </button>

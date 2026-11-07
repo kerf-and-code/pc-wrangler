@@ -103,3 +103,61 @@ export function parseChat(text: string, names: string[]): Parsed {
   if (t.startsWith("/")) return { kind: "error", message: "Commands: /r, /gr, /w name, /em. Anything else is said to the table." };
   return { kind: "say", body: t };
 }
+
+// ---- area templates ----
+// A circle (sphere) has its centre at (x, y) and size_ft as its radius. A cone, line or square starts at
+// (x, y) and points along rot (degrees clockwise from east): a cone is as wide at its end as it is long
+// (the 5e cone), a line is width_ft wide, and a square (cube) has its origin on the middle of one side.
+// A square of the grid counts as covered when the shape covers at least half of it (the 2014 DMG's grid
+// rule), measured by sampling 25 points across the square. The GM can always rule otherwise.
+export type TemplateShape = "circle" | "cone" | "square" | "line";
+export type TemplateGeom = { shape: TemplateShape; x: number; y: number; size_ft: number; width_ft: number; rot: number };
+
+export const TEMPLATE_SHAPES: { key: TemplateShape; label: string }[] = [
+  { key: "circle", label: "Circle" }, { key: "cone", label: "Cone" }, { key: "square", label: "Square" }, { key: "line", label: "Line" },
+];
+
+export function insideTemplate(t: TemplateGeom, fps: number, px: number, py: number): boolean {
+  const L = t.size_ft / fps, dx = px - t.x, dy = py - t.y, eps = 1e-6;
+  if (t.shape === "circle") return Math.hypot(dx, dy) <= L + eps;
+  const a = (t.rot * Math.PI) / 180, ux = Math.cos(a), uy = Math.sin(a);
+  const along = dx * ux + dy * uy, across = -dx * uy + dy * ux;
+  if (t.shape === "cone") return along > eps && along <= L + eps && Math.abs(across) <= along / 2 + eps;
+  if (t.shape === "square") return along >= -eps && along <= L + eps && Math.abs(across) <= L / 2 + eps;
+  const W = t.width_ft / fps;
+  return along >= -eps && along <= L + eps && Math.abs(across) <= W / 2 + eps;
+}
+
+export function templateCells(t: TemplateGeom, fps: number, n: number): [number, number][] {
+  const reach = t.size_ft / fps + t.width_ft / fps + 1, out: [number, number][] = [];
+  for (let r = Math.max(0, Math.floor(t.y - reach)); r <= Math.min(n - 1, Math.ceil(t.y + reach)); r++)
+    for (let c = Math.max(0, Math.floor(t.x - reach)); c <= Math.min(n - 1, Math.ceil(t.x + reach)); c++)
+    {
+      let hits = 0;
+      for (let i = 0; i < 5; i++) for (let j = 0; j < 5; j++) if (insideTemplate(t, fps, c + 0.1 + i * 0.2, r + 0.1 + j * 0.2)) hits++;
+      if (hits >= 13) out.push([r, c]);
+    }
+  return out;
+}
+
+// The outline, as points in squares (a circle is returned as many points round its edge).
+export function templateOutline(t: TemplateGeom, fps: number): Pt[] {
+  const L = t.size_ft / fps;
+  if (t.shape === "circle") return Array.from({ length: 64 }, (_, i) => ({ x: t.x + Math.cos((i / 64) * Math.PI * 2) * L, y: t.y + Math.sin((i / 64) * Math.PI * 2) * L }));
+  const a = (t.rot * Math.PI) / 180, ux = Math.cos(a), uy = Math.sin(a);
+  const P = (along: number, across: number): Pt => ({ x: t.x + ux * along - uy * across, y: t.y + uy * along + ux * across });
+  if (t.shape === "cone") return [P(0, 0), P(L, -L / 2), P(L, L / 2)];
+  const half = t.shape === "square" ? L / 2 : t.width_ft / fps / 2;
+  return [P(0, -half), P(L, -half), P(L, half), P(0, half)];
+}
+
+// Origins snap: a circle's centre to a grid intersection; a cone, line or square to the nearest
+// intersection OR middle of a square's side, so a cone can start from a creature's face as the DMG's
+// pictures show. Directions snap to 15 degrees.
+export const snapCorner = (p: Pt): Pt => ({ x: Math.round(p.x), y: Math.round(p.y) });
+export function snapOrigin(p: Pt, shape: TemplateShape): Pt {
+  if (shape === "circle") return snapCorner(p);
+  const cands: Pt[] = [snapCorner(p), { x: Math.round(p.x), y: Math.floor(p.y) + 0.5 }, { x: Math.floor(p.x) + 0.5, y: Math.round(p.y) }];
+  return cands.reduce((best, c) => (Math.hypot(c.x - p.x, c.y - p.y) < Math.hypot(best.x - p.x, best.y - p.y) ? c : best));
+}
+export const snapAngle = (deg: number, step = 15) => (((Math.round(deg / step) * step) % 360) + 360) % 360;
