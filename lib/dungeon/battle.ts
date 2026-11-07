@@ -13,7 +13,16 @@ import {
 import { OUTDOOR_ELEMENTS } from "./outdoor";
 
 export type MapKind = "indoor" | "outdoor";
-export type BattleMeta = { title: string; levelNames: string[]; autoNumber: boolean; showGrid: boolean; ground: number; grid: GridLook };
+// topGrid: a black battle grid drawn over everything (off by default), separate from the book grid.
+// overlays: per level, the Gemini painting of that level (or null). sig is levelSig() at the moment it
+// was painted, so the editor can say when the map has changed since.
+export type PaintOverlay = { url: string; at: string; sig: string; style: string; show: boolean; opacity: number; inkOnTop: boolean; piecesOnTop: boolean };
+export type BattleMeta = { title: string; levelNames: string[]; autoNumber: boolean; showGrid: boolean; ground: number; grid: GridLook; topGrid: { show: boolean; opacity: number }; overlays: (PaintOverlay | null)[] };
+export const PAINT_STYLES: { key: string; label: string }[] = [
+  { key: "fantasy", label: "Painted fantasy" },
+  { key: "grimdark", label: "Grim and dark" },
+  { key: "ink", label: "Ink and watercolour" },
+];
 export type BattleMap = {
   id: string;
   name: string;
@@ -52,6 +61,8 @@ export function defaultBattleMeta(kind: MapKind): BattleMeta {
     showGrid: true,
     ground: GRASS,
     grid: { ...DEFAULT_GRID_LOOK, cover: kind === "outdoor" ? "all" : "floor", opacity: kind === "outdoor" ? 0.22 : DEFAULT_GRID_LOOK.opacity },
+    topGrid: { show: false, opacity: 0.5 },
+    overlays: Array.from({ length: LEVELS }, () => null),
   };
 }
 
@@ -124,6 +135,11 @@ export function normBattleMeta(raw: unknown, kind: MapKind): BattleMeta {
     levelNames: base.levelNames.map((d, i) => (Array.isArray(m.levelNames) && typeof m.levelNames[i] === "string" && m.levelNames[i].trim() ? m.levelNames[i].slice(0, 60) : d)),
     autoNumber: typeof m.autoNumber === "boolean" ? m.autoNumber : base.autoNumber,
     showGrid: m.showGrid !== false,
+    topGrid: {
+      show: !!(m.topGrid && typeof m.topGrid === "object" && m.topGrid.show === true),
+      opacity: num(m.topGrid && typeof m.topGrid === "object" ? m.topGrid.opacity : undefined, 0.05, 1, base.topGrid.opacity),
+    },
+    overlays: base.overlays.map((_, l) => normOverlay(Array.isArray(m.overlays) ? m.overlays[l] : null)),
     ground: typeof m.ground === "number" && m.ground > 0 && m.ground < CELL_TYPES.length ? m.ground : base.ground,
     grid: {
       color: g.color === "black" || g.color === "white" || g.color === "red" ? g.color : "ink",
@@ -200,4 +216,33 @@ export function resizeMap(m: BattleMap, newN: number): BattleMap {
   const doors = m.doors.map((o) => { const next: Record<string, DoorKind> = {}; for (const [key, v] of Object.entries(o)) { const e = parseEdge(key); if (!e) continue; const j = cell(e.i); if (j >= 0) next[`${j}${e.side}`] = v; } return next; });
   const elements = m.elements.map((arr) => arr.filter((e) => e.x < newN && e.y < newN));
   return { ...m, n: newN, levels, custom, doors, elements };
+}
+
+const STYLE_KEYS = new Set(PAINT_STYLES.map((x) => x.key));
+function normOverlay(raw: unknown): PaintOverlay | null {
+  if (!raw || typeof raw !== "object") return null;
+  const o = raw as Partial<PaintOverlay>;
+  if (typeof o.url !== "string" || !/^https:\/\//.test(o.url)) return null;
+  return {
+    url: o.url.slice(0, 600),
+    at: typeof o.at === "string" ? o.at : "",
+    sig: typeof o.sig === "string" ? o.sig : "",
+    style: typeof o.style === "string" && STYLE_KEYS.has(o.style) ? o.style : "fantasy",
+    show: o.show !== false,
+    opacity: num(o.opacity, 0, 1, 1),
+    inkOnTop: o.inkOnTop !== false,
+    piecesOnTop: o.piecesOnTop === true,
+  };
+}
+
+// A fingerprint of everything on one level that the painting depicts: terrain, custom tiles, doors,
+// pieces (not labels), the kind and the ground. Any change to these makes a painting out of date.
+export function levelSig(m: BattleMap, lv: number): string {
+  const els = m.elements[lv].filter((e) => e.k !== "label").map((e) => [e.k, e.x, e.y, e.rot, e.s]);
+  const doors = Object.keys(m.doors[lv]).sort().map((k) => [k, m.doors[lv][k]]);
+  const custom = Object.keys(m.custom[lv]).sort().map((k) => [k, m.custom[lv][k]]);
+  const text = JSON.stringify([m.n, m.kind, m.meta.ground, m.levels[lv], custom, doors, els]);
+  let h1 = 5381, h2 = 52711;
+  for (let i = 0; i < text.length; i++) { const ch = text.charCodeAt(i); h1 = (h1 * 33) ^ ch; h2 = (h2 * 31) ^ ch; }
+  return (h1 >>> 0).toString(36) + (h2 >>> 0).toString(36);
 }

@@ -213,6 +213,13 @@ export type RenderInput = {
   gridLook?: GridLook;
   elements?: MapElement[];              // free pieces; also keep room numbers off them
   drawElements?: boolean;               // false: lay out around the elements but leave them to the caller
+  topGrid?: number | null;              // opacity of a black battle grid drawn over everything; null = off
+  // A painted image of the whole n x n grid (the Gemini overlay), laid exactly over the grid square.
+  // inkOnTop: walls, doors, numbers and grids stay drawn over it; otherwise it covers all but the numbers,
+  // labels and the black grid. Pieces are the caller's choice (drawElements / piecesHidden).
+  overlay?: { img: CanvasImageSource; opacity: number; inkOnTop: boolean } | null;
+  piecesHidden?: boolean;               // draw only text labels among the free pieces (they are in the painting)
+  bare?: boolean;                       // no frame, title, scale bar or compass (the plan sent to the painter)
 };
 
 // The squares a page shows: the painted area plus a two-square border for the hatching. Printed maps
@@ -247,6 +254,11 @@ export function layoutFor(cellPx: number, bounds: Bounds): Layout {
   const width = side * 2 + bounds.cols * cellPx;
   const height = oy + bounds.rows * cellPx + footer;
   return { cell: cellPx, bounds, ox: side, oy, titlePx, width, height };
+}
+
+// A layout with no margins: the canvas is exactly the bounds. For the plan sent to the painter.
+export function layoutBare(cellPx: number, bounds: Bounds): Layout {
+  return { cell: cellPx, bounds, ox: 0, oy: 0, titlePx: 0, width: bounds.cols * cellPx, height: bounds.rows * cellPx };
 }
 
 export function renderClassic(ctx: CanvasRenderingContext2D, input: RenderInput, L: Layout): void {
@@ -406,6 +418,18 @@ export function renderClassic(ctx: CanvasRenderingContext2D, input: RenderInput,
     }
   }
 
+  // 4c. the painted overlay, under the book grid and the ink
+  const ov = input.overlay;
+  const drawOverlay = () => {
+    if (!ov) return;
+    ctx.save();
+    ctx.beginPath(); ctx.rect(X(B.c0), Y(B.r0), B.cols * CELL, B.rows * CELL); ctx.clip();
+    ctx.globalAlpha = Math.max(0, Math.min(1, ov.opacity));
+    ctx.drawImage(ov.img, X(0), Y(0), n * CELL, n * CELL);
+    ctx.restore();
+  };
+  if (ov && ov.inkOnTop) drawOverlay();
+
   // 5. grid
   if (meta.grid) {
     const look = input.gridLook ?? DEFAULT_GRID_LOOK;
@@ -456,7 +480,7 @@ export function renderClassic(ctx: CanvasRenderingContext2D, input: RenderInput,
   }
   // 7b. free pieces, in their stacking order
   const els = input.elements ?? [];
-  if (input.drawElements !== false) for (const el of els) drawElement(ctx, el, X(0), Y(0), CELL);
+  if (input.drawElements !== false) for (const el of els) if (!input.piecesHidden || el.k === "label") drawElement(ctx, el, X(0), Y(0), CELL);
 
   // 8. doors, set into the edge between two squares
   for (const [k, kind] of Object.entries(marks.doors)) {
@@ -465,6 +489,12 @@ export function renderClassic(ctx: CanvasRenderingContext2D, input: RenderInput,
     if (!(occ(r, c) || (e.side === "h" ? occ(r - 1, c) : occ(r, c - 1)))) continue;
     if (e.side === "h") drawDoor(ctx, kind, X(c), Y(r), CELL, true);
     else drawDoor(ctx, kind, X(c), Y(r), CELL, false);
+  }
+
+  // 8b. the painted overlay over everything drawn so far, then the text labels again on top of it
+  if (ov && !ov.inkOnTop) {
+    drawOverlay();
+    if (input.drawElements !== false) for (const el of els) if (el.k === "label") drawElement(ctx, el, X(0), Y(0), CELL);
   }
 
   // 9. room numbers and labels
@@ -524,6 +554,11 @@ export function renderClassic(ctx: CanvasRenderingContext2D, input: RenderInput,
     const i = Number(k); const r = (i / n) | 0, c = i % n;
     writeLabel(text, X(c) + CELL / 2, Y(r) + CELL / 2, Math.max(11, CELL * (text.length > 3 ? 0.55 : 0.8)));
   }
+
+  // 9b. the black battle grid goes over everything (the editor draws its own over its pieces)
+  if (input.topGrid && input.drawElements !== false) drawTopGrid(ctx, X(0), Y(0), CELL, B, input.topGrid);
+
+  if (input.bare) return;
 
   // 10. map furniture: frame, title, scale bar, compass
   const fx0 = L.ox - CELL * 0.9, fy0 = L.oy - CELL * 0.9, fw = B.cols * CELL + CELL * 1.8, fh = B.rows * CELL + CELL * 1.8;
@@ -802,4 +837,17 @@ export function snapElement(el: MapElement, x: number, y: number): { x: number; 
   if (!square) { fw = 1; fh = 1; } else if (((quarter % 2) + 2) % 2 === 1) { const t = fw; fw = fh; fh = t; }
   const snap = (v: number, f: number) => (Math.round(f) % 2 === 0 ? Math.round(v) : Math.floor(v) + 0.5);
   return { x: snap(x, fw), y: snap(y, fh) };
+}
+
+// A plain black square grid over the whole map area, for play on a table or a VTT: on top of the floor,
+// walls, pieces and numbers. gx, gy: canvas position of the grid's top-left corner.
+export function drawTopGrid(ctx: CanvasRenderingContext2D, gx: number, gy: number, S: number, B: Bounds, opacity: number): void {
+  const a = Math.max(0.05, Math.min(1, opacity));
+  ctx.save();
+  ctx.strokeStyle = `rgba(0,0,0,${a.toFixed(3)})`; ctx.lineWidth = Math.max(1, S * 0.03); ctx.setLineDash([]);
+  ctx.beginPath();
+  for (let r = B.r0; r <= B.r0 + B.rows; r++) { ctx.moveTo(gx + B.c0 * S, gy + r * S); ctx.lineTo(gx + (B.c0 + B.cols) * S, gy + r * S); }
+  for (let c = B.c0; c <= B.c0 + B.cols; c++) { ctx.moveTo(gx + c * S, gy + B.r0 * S); ctx.lineTo(gx + c * S, gy + (B.r0 + B.rows) * S); }
+  ctx.stroke();
+  ctx.restore();
 }

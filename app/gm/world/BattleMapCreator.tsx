@@ -6,12 +6,12 @@ import { createClient } from "@/lib/supabase/client";
 import { CELL_TYPES, SIZES } from "@/lib/dungeon/render";
 import {
   DOOR_KINDS, type DoorKind, type MapElement, type GridLook,
-  renderClassic, layoutFor, contentBounds, edgeKey, isStructure, drawElement, elementBox, hitElement, snapElement,
+  renderClassic, layoutFor, layoutBare, contentBounds, edgeKey, isStructure, drawElement, elementBox, hitElement, snapElement, drawTopGrid,
   type Layout, type RenderInput,
 } from "@/lib/dungeon/classic";
 import {
-  PIECES, MAX_ELEMENTS, blankMap, fromRow, toRow, fromDungeonRow, resizeMap, newId,
-  type BattleMap, type BattleMapSummary, type MapKind,
+  PIECES, MAX_ELEMENTS, PAINT_STYLES, blankMap, fromRow, toRow, fromDungeonRow, resizeMap, newId, levelSig,
+  type BattleMap, type BattleMapSummary, type MapKind, type PaintOverlay,
 } from "@/lib/dungeon/battle";
 import TileLibrary from "./TileLibrary";
 import type { CustomTile } from "@/lib/tiles/custom";
@@ -26,15 +26,36 @@ import type { CustomTile } from "@/lib/tiles/custom";
 //   Place    pick a piece (trees, rocks, tents, furniture, stairs, text labels...) and click to drop it.
 //   Terrain  brush, rectangle or fill, with any terrain or custom tile. Erase returns a square to rock
 //            (indoor) or to the map's ground (outdoor).
-//   Doors    click near a wall line to set the chosen door; click it again to remove it.
+//   Doors    click near a wall line to set the chosen door. Click a door to select it: change its kind,
+//            move it to another side of its square (or press R to turn it round the square), or remove it.
 // Keys: Ctrl+Z undo, Delete removes, Ctrl+D duplicates, arrows nudge (Alt: a tenth of a square),
-// R turns 90 degrees (Shift+R back), [ and ] turn 15 degrees, + and - resize, Esc lets go.
+// R turns 90 degrees (Shift+R back), [ and ] turn 15 degrees, + and - resize, Esc lets go. With a door
+// selected: R moves it to the next side clockwise (Shift+R the other way), Delete removes it.
+// Grid: the book grid (under the walls, any colour) and a separate black battle grid over everything.
+//
+// Painted overlay (Gemini): "Paint this level" sends a plan of the level (the whole grid, no title,
+// numbers, labels or grid) to /api/battle-map/paint and lays the painting back over the same square. By
+// default the real walls, doors, numbers and grids stay drawn on top, so the structure is always exactly
+// what the GM designed even where the painting drifts; the pieces are left to the painting. Any change to
+// the level after painting marks the painting out of date.
 //
 // Saved to battle_maps (p104), one row per map. The first time a campaign with no maps opens the tab, its
 // old dungeon_maps row (if anything is painted on it) is copied into a first map; the old row is left as
 // it was.
 
 type Tool = "select" | "place" | "terrain" | "doors";
+type Side = "top" | "right" | "bottom" | "left";
+type DoorSel = { r: number; c: number; side: Side };         // a door, named by the square it belongs to
+const SIDES: Side[] = ["top", "right", "bottom", "left"];
+const SIDE_LABEL: Record<Side, string> = { top: "Top", right: "Right", bottom: "Bottom", left: "Left" };
+// The edge key for one side of square (r, c), or null on the outside edge of the grid's bottom or right.
+function doorKey(n: number, r: number, c: number, side: Side): string | null {
+  if (r < 0 || c < 0 || r >= n || c >= n) return null;
+  if (side === "top") return edgeKey(r * n + c, "h");
+  if (side === "left") return edgeKey(r * n + c, "v");
+  if (side === "bottom") return r + 1 < n ? edgeKey((r + 1) * n + c, "h") : null;
+  return c + 1 < n ? edgeKey(r * n + c + 1, "v") : null;
+}
 type PaintMode = "brush" | "rect" | "fill";
 type Brush = { kind: "builtin"; idx: number } | { kind: "custom"; tileId: string };
 type Status = "loading" | "ready" | "empty" | "migration" | "error";
@@ -53,7 +74,7 @@ function cloneMap(m: BattleMap): BattleMap {
     custom: m.custom.map((o) => ({ ...o })),
     doors: m.doors.map((o) => ({ ...o })),
     elements: m.elements.map((a) => a.map((e) => ({ ...e }))),
-    meta: { ...m.meta, levelNames: [...m.meta.levelNames], grid: { ...m.meta.grid } },
+    meta: { ...m.meta, levelNames: [...m.meta.levelNames], grid: { ...m.meta.grid }, topGrid: { ...m.meta.topGrid }, overlays: m.meta.overlays.map((o) => (o ? { ...o } : null)) },
   };
 }
 
@@ -73,6 +94,7 @@ export default function BattleMapCreator({ campaignId }: { campaignId: string })
   const [piece, setPiece] = useState<string>("tree");
   const [labelText, setLabelText] = useState("A");
   const [selId, setSelId] = useState<string | null>(null);
+  const [selDoor, setSelDoor] = useState<DoorSel | null>(null);
   const [zoom, setZoom] = useState(1);
   const [tiles, setTiles] = useState<CustomTile[]>([]);
   const [imgTick, setImgTick] = useState(0);
@@ -93,11 +115,40 @@ export default function BattleMapCreator({ campaignId }: { campaignId: string })
   const dirty = useRef(false);
   const docRef = useRef<BattleMap | null>(null);
   const tileImgs = useRef<Map<string, HTMLImageElement>>(new Map());
+  const paintImgs = useRef<Map<string, HTMLImageElement | "loading" | "failed">>(new Map());
+  const [painting, setPainting] = useState(false);
+  const [paintStyle, setPaintStyle] = useState("fantasy");
+  const [paintNote, setPaintNote] = useState("");
   const raf = useRef<{ base: boolean; id: number | null }>({ base: false, id: null });
   docRef.current = doc;
 
   const tileColors = useMemo(() => new Map(tiles.map((t) => [t.id, t.color])), [tiles]);
   const outdoor = doc?.kind === "outdoor";
+
+  // ---- painted overlays: fetched as blobs so the canvas stays exportable ----
+  const overlayUrls = useMemo(() => (doc ? doc.meta.overlays.map((o) => o?.url).filter((u): u is string => !!u) : []), [doc]);
+  useEffect(() => {
+    for (const url of overlayUrls) {
+      if (paintImgs.current.has(url)) continue;
+      paintImgs.current.set(url, "loading");
+      (async () => {
+        try {
+          const resp = await fetch(url);
+          if (!resp.ok) throw new Error(String(resp.status));
+          const obj = URL.createObjectURL(await resp.blob());
+          const img = new Image();
+          img.onload = () => { paintImgs.current.set(url, img); setImgTick((v) => v + 1); };
+          img.onerror = () => { paintImgs.current.set(url, "failed"); setImgTick((v) => v + 1); };
+          img.src = obj;
+        } catch { paintImgs.current.set(url, "failed"); setImgTick((v) => v + 1); }
+      })();
+    }
+  }, [overlayUrls]);
+  const overlayFor = useCallback((m: BattleMap, lv: number): { o: PaintOverlay; img: HTMLImageElement } | null => {
+    const o = m.meta.overlays[lv]; if (!o || !o.show) return null;
+    const img = paintImgs.current.get(o.url);
+    return img && typeof img !== "string" ? { o, img } : null;
+  }, []);
 
   // ---- custom tile images (untainted blobs so the canvas can export) ----
   useEffect(() => {
@@ -131,7 +182,7 @@ export default function BattleMapCreator({ campaignId }: { campaignId: string })
   const openMap = useCallback(async (id: string) => {
     const { data, error } = await supabase.from("battle_maps").select("id, name, kind, n, feet_per_square, levels, custom_cells, doors, elements, meta").eq("id", id).maybeSingle();
     if (error || !data) { setMsg(`Could not open that map: ${error?.message ?? "not found"}`); return; }
-    undo.current = []; dirty.current = false; work.current = null; drag.current = null;
+    undo.current = []; dirty.current = false; work.current = null; drag.current = null; setSelDoor(null);
     setSelId(null); setLevel(0); setDoc(fromRow(data as Parameters<typeof fromRow>[0])); setStatus("ready"); setSaveState("idle");
     try { localStorage.setItem(`battlemap:${campaignId}`, id); } catch { /* per-viewer convenience only */ }
   }, [supabase, campaignId]);
@@ -205,13 +256,18 @@ export default function BattleMapCreator({ campaignId }: { campaignId: string })
   }, [selId, level, mutate]);
 
   // ---- drawing ----
-  const inputFor = useCallback((m: BattleMap, lv: number, drawEls: boolean): RenderInput => ({
-    n: m.n, grid: m.levels[lv], custom: m.custom[lv], tileImages: tileImgs.current, tileColors,
-    marks: { features: {}, doors: m.doors[lv], labels: {} },
-    meta: { title: m.meta.title, levelNames: m.meta.levelNames, autoNumber: m.meta.autoNumber, grid: m.meta.showGrid },
-    level: lv, feetPerSquare: m.feetPerSquare, outdoor: m.kind === "outdoor", ground: m.meta.ground, gridLook: m.meta.grid,
-    elements: m.elements[lv], drawElements: drawEls,
-  }), [tileColors]);
+  const inputFor = useCallback((m: BattleMap, lv: number, drawEls: boolean): RenderInput => {
+    const ov = overlayFor(m, lv);
+    return {
+      n: m.n, grid: m.levels[lv], custom: m.custom[lv], tileImages: tileImgs.current, tileColors,
+      marks: { features: {}, doors: m.doors[lv], labels: {} },
+      meta: { title: m.meta.title, levelNames: m.meta.levelNames, autoNumber: m.meta.autoNumber, grid: m.meta.showGrid },
+      level: lv, feetPerSquare: m.feetPerSquare, outdoor: m.kind === "outdoor", ground: m.meta.ground, gridLook: m.meta.grid,
+      elements: m.elements[lv], drawElements: drawEls, topGrid: m.meta.topGrid.show ? m.meta.topGrid.opacity : null,
+      overlay: ov ? { img: ov.img, opacity: ov.o.opacity, inkOnTop: ov.o.inkOnTop } : null,
+      piecesHidden: !!ov && !ov.o.piecesOnTop,
+    };
+  }, [tileColors, overlayFor]);
 
   const paint = useCallback(() => {
     const cv = canvasRef.current, base = baseRef.current, L = layoutRef.current, m = work.current ?? docRef.current;
@@ -221,7 +277,25 @@ export default function BattleMapCreator({ campaignId }: { campaignId: string })
     ctx.drawImage(base, 0, 0);
     const S = L.cell, gx = L.ox, gy = L.oy;
     const d = drag.current;
-    for (const el of m.elements[level]) drawElement(ctx, d && d.id === el.id ? { ...el, x: d.x, y: d.y } : el, gx, gy, S);
+    const ovNow = overlayFor(m, level), hidePieces = !!ovNow && !ovNow.o.piecesOnTop;
+    for (const el of m.elements[level]) {
+      if (hidePieces && el.k !== "label") continue;      // the painting shows them
+      drawElement(ctx, d && d.id === el.id ? { ...el, x: d.x, y: d.y } : el, gx, gy, S);
+    }
+    if (m.meta.topGrid.show) drawTopGrid(ctx, gx, gy, S, { r0: 0, c0: 0, rows: m.n, cols: m.n }, m.meta.topGrid.opacity);
+    const dk = selDoor ? doorKey(m.n, selDoor.r, selDoor.c, selDoor.side) : null;
+    if (tool === "doors" && selDoor && dk && m.doors[level][dk]) {
+      const { r, c, side } = selDoor;
+      const x0 = gx + (side === "right" ? c + 1 : c) * S, y0 = gy + (side === "bottom" ? r + 1 : r) * S;
+      const horiz = side === "top" || side === "bottom", pad = Math.max(5, S * 0.18);
+      ctx.save(); ctx.setLineDash([6, 4]);
+      const rect = horiz ? [x0 - 3, y0 - pad, S + 6, pad * 2] : [x0 - pad, y0 - 3, pad * 2, S + 6];
+      ctx.lineWidth = 3; ctx.strokeStyle = "rgba(255,255,255,0.9)"; ctx.strokeRect(rect[0], rect[1], rect[2], rect[3]);
+      ctx.lineWidth = 2; ctx.strokeStyle = SELECT_COLOR; ctx.strokeRect(rect[0], rect[1], rect[2], rect[3]);
+      // a dot in the square the door belongs to, so it is clear which way it will turn
+      ctx.setLineDash([]); ctx.fillStyle = SELECT_COLOR; ctx.beginPath(); ctx.arc(gx + (c + 0.5) * S, gy + (r + 0.5) * S, Math.max(3, S * 0.08), 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+    }
     const sel = selId ? m.elements[level].find((e) => e.id === selId) : null;
     if (sel) {
       const e = d && d.id === sel.id ? { ...sel, x: d.x, y: d.y } : sel, { w, h } = elementBox(e.k, e.text);
@@ -248,7 +322,7 @@ export default function BattleMapCreator({ campaignId }: { campaignId: string })
       const half = Math.floor(brushSize / 2), r = Math.floor(hv.y) - half, c = Math.floor(hv.x) - half;
       ctx.save(); ctx.lineWidth = 1.5; ctx.strokeStyle = SELECT_COLOR; ctx.strokeRect(gx + c * S, gy + r * S, brushSize * S, brushSize * S); ctx.restore();
     }
-  }, [level, selId, tool, piece, labelText, paintMode, brushSize]);
+  }, [level, selId, selDoor, tool, piece, labelText, paintMode, brushSize]);
 
   const renderBase = useCallback(() => {
     const m = work.current ?? docRef.current; if (!m) return;
@@ -275,7 +349,7 @@ export default function BattleMapCreator({ campaignId }: { campaignId: string })
   }, []);
 
   useEffect(() => { request(true); }, [doc, level, imgTick, tileColors, creating, request]);
-  useEffect(() => { request(false); }, [selId, tool, piece, labelText, paintMode, brushSize, request]);
+  useEffect(() => { request(false); }, [selId, selDoor, tool, piece, labelText, paintMode, brushSize, request]);
   useEffect(() => () => { if (raf.current.id !== null) cancelAnimationFrame(raf.current.id); }, []);
 
   // ---- pointer ----
@@ -326,18 +400,56 @@ export default function BattleMapCreator({ campaignId }: { campaignId: string })
   const clickDoor = (m: BattleMap, x: number, y: number) => {
     const row = Math.floor(y), col = Math.floor(x), fx = x - col, fy = y - row, n = m.n;
     if (row < 0 || col < 0 || row >= n || col >= n) return;
-    const side = [{ s: "top", v: fy }, { s: "bottom", v: 1 - fy }, { s: "left", v: fx }, { s: "right", v: 1 - fx }].sort((a, b) => a.v - b.v)[0].s;
-    let key: string, other: [number, number];
-    if (side === "top") { key = edgeKey(row * n + col, "h"); other = [row - 1, col]; }
-    else if (side === "bottom") { if (row + 1 >= n) return; key = edgeKey((row + 1) * n + col, "h"); other = [row + 1, col]; }
-    else if (side === "left") { key = edgeKey(row * n + col, "v"); other = [row, col - 1]; }
-    else { if (col + 1 >= n) return; key = edgeKey(row * n + col + 1, "v"); other = [row, col + 1]; }
-    if (!structureAt(m, row, col) && !structureAt(m, other[0], other[1])) {
+    const near: { s: Side; v: number }[] = [{ s: "top", v: fy }, { s: "bottom", v: 1 - fy }, { s: "left", v: fx }, { s: "right", v: 1 - fx }];
+    const side = near.sort((a, b) => a.v - b.v)[0].s;
+    const key = doorKey(n, row, col, side);
+    if (!key) return;
+    const OPP: Record<Side, Side> = { top: "bottom", bottom: "top", left: "right", right: "left" };
+    const other: [number, number] = side === "top" ? [row - 1, col] : side === "bottom" ? [row + 1, col] : side === "left" ? [row, col - 1] : [row, col + 1];
+    // the door belongs to the floor square on its side of the wall (the clicked one when both are floor)
+    const anchor: DoorSel | null = structureAt(m, row, col) ? { r: row, c: col, side }
+      : structureAt(m, other[0], other[1]) ? { r: other[0], c: other[1], side: OPP[side] } : null;
+    const existing = m.doors[level][key];
+    if (existing) { setSelDoor(anchor ?? { r: row, c: col, side }); setDoor(existing); setMsg(null); return; }
+    if (!anchor) {
       setMsg(m.kind === "outdoor" ? "Doors go in the walls of a building, ruin or cave. Paint one with an indoor terrain first." : "Doors go on a wall or doorway next to a floor square.");
-      return;
+      setSelDoor(null); return;
     }
     setMsg(null);
-    mutate((d) => { if (d.doors[level][key] === door) delete d.doors[level][key]; else d.doors[level][key] = door; });
+    mutate((d) => { d.doors[level][key] = door; });
+    setSelDoor(anchor);
+  };
+
+  // ---- the selected door ----
+  const selDoorKey = doc && selDoor ? doorKey(doc.n, selDoor.r, selDoor.c, selDoor.side) : null;
+  const selDoorKind = doc && selDoorKey ? doc.doors[level][selDoorKey] ?? null : null;
+  const moveDoor = useCallback((to: Side) => {
+    const m = docRef.current; if (!m || !selDoor) return;
+    const from = doorKey(m.n, selDoor.r, selDoor.c, selDoor.side), dest = doorKey(m.n, selDoor.r, selDoor.c, to);
+    if (!from || !dest || from === dest) return;
+    const kind = m.doors[level][from]; if (!kind) return;
+    if (m.doors[level][dest]) { setMsg(`That side already has a door. Remove it first.`); return; }
+    setMsg(null);
+    mutate((d) => { delete d.doors[level][from]; d.doors[level][dest] = kind; });
+    setSelDoor({ ...selDoor, side: to });
+  }, [selDoor, level, mutate]);
+  const turnDoor = useCallback((clockwise: boolean) => {
+    const m = docRef.current; if (!m || !selDoor) return;
+    const at = SIDES.indexOf(selDoor.side);
+    for (let k = 1; k < 4; k++) {
+      const side = SIDES[(at + (clockwise ? k : 4 - k)) % 4], key = doorKey(m.n, selDoor.r, selDoor.c, side);
+      if (key && !m.doors[level][key]) { moveDoor(side); return; }
+    }
+    setMsg("Every other side of this square already has a door.");
+  }, [selDoor, level, moveDoor]);
+  const removeDoor = useCallback(() => {
+    const m = docRef.current; if (!m || !selDoor) return;
+    const key = doorKey(m.n, selDoor.r, selDoor.c, selDoor.side); if (!key || !m.doors[level][key]) return;
+    mutate((d) => { delete d.doors[level][key]; }); setSelDoor(null);
+  }, [selDoor, level, mutate]);
+  const setDoorKind = (k: DoorKind) => {
+    setDoor(k);
+    if (selDoorKey && selDoorKind && selDoorKind !== k) mutate((d) => { d.doors[level][selDoorKey] = k; });
   };
 
   const topHit = (m: BattleMap, x: number, y: number): MapElement | null => {
@@ -445,7 +557,12 @@ export default function BattleMapCreator({ campaignId }: { campaignId: string })
       if (!docRef.current) return;
       const k = e.key, mod = e.ctrlKey || e.metaKey;
       if (mod && k.toLowerCase() === "z") { e.preventDefault(); doUndo(); return; }
-      if (k === "Escape") { setSelId(null); if (tool === "place") setTool("select"); return; }
+      if (k === "Escape") { setSelId(null); setSelDoor(null); if (tool === "place") setTool("select"); return; }
+      if (tool === "doors" && selDoor) {
+        if (k === "Delete" || k === "Backspace") { e.preventDefault(); removeDoor(); return; }
+        if (k.toLowerCase() === "r") { turnDoor(!e.shiftKey); return; }
+        return;
+      }
       if (!selected) return;
       if (mod && k.toLowerCase() === "d") { e.preventDefault(); duplicateSel(); return; }
       if (k === "Delete" || k === "Backspace") { e.preventDefault(); deleteSel(); return; }
@@ -458,7 +575,7 @@ export default function BattleMapCreator({ campaignId }: { campaignId: string })
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [doUndo, selected, duplicateSel, deleteSel, updateSel, tool]);
+  }, [doUndo, selected, duplicateSel, deleteSel, updateSel, tool, selDoor, removeDoor, turnDoor]);
 
   // ---- map list actions ----
   const createMap = async (base?: BattleMap) => {
@@ -502,6 +619,49 @@ export default function BattleMapCreator({ campaignId }: { campaignId: string })
   };
 
   // ---- export ----
+  // ---- paint with Gemini ----
+  const paintLevel = async () => {
+    const m = docRef.current; if (!m || painting) return;
+    const lv = level;
+    if (!m.levels[lv].some((v) => v > 0) && !Object.keys(m.custom[lv]).length && !m.elements[lv].length && m.kind === "indoor") {
+      setMsg("Draw something on this level first."); return;
+    }
+    // The plan: the whole grid, exact edges, no frame, title, numbers, labels, grids or painting.
+    const cell = Math.max(8, Math.round(1536 / m.n));
+    const L = layoutBare(cell, { r0: 0, c0: 0, rows: m.n, cols: m.n });
+    const cv = document.createElement("canvas"); cv.width = L.width; cv.height = L.height;
+    const ctx = cv.getContext("2d"); if (!ctx) return;
+    renderClassic(ctx, {
+      ...inputFor(m, lv, true),
+      meta: { title: "", levelNames: m.meta.levelNames, autoNumber: false, grid: false },
+      elements: m.elements[lv].filter((e) => e.k !== "label"),
+      topGrid: null, overlay: null, piecesHidden: false, bare: true,
+    }, L);
+    const sig = levelSig(m, lv), style = paintStyle;
+    setPainting(true); setMsg(null);
+    try {
+      const resp = await fetch("/api/battle-map/paint", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ campaignId, controlImage: cv.toDataURL("image/jpeg", 0.9), kind: m.kind, style, flavour: paintNote, feetPerSquare: m.feetPerSquare }),
+      });
+      const j = (await resp.json().catch(() => ({}))) as { url?: string; error?: string };
+      if (!resp.ok || !j.url) { setMsg(j.error || `Painting failed (${resp.status}).`); return; }
+      const url = j.url;
+      const cur = docRef.current;
+      if (!cur || cur.id !== m.id) return;            // the GM switched maps while it painted
+      const prev = cur.meta.overlays[lv];
+      mutate((d) => {
+        d.meta.overlays[lv] = { url, at: new Date().toISOString(), sig, style, show: true, opacity: prev?.opacity ?? 1, inkOnTop: prev?.inkOnTop ?? true, piecesOnTop: prev?.piecesOnTop ?? false };
+      });
+    } catch (e) {
+      setMsg(`Painting failed: ${e instanceof Error ? e.message : String(e)}`);
+    } finally {
+      setPainting(false);
+    }
+  };
+  const setOverlay = (patch: Partial<PaintOverlay>, withUndo = true) =>
+    mutate((d) => { const o = d.meta.overlays[level]; if (o) d.meta.overlays[level] = { ...o, ...patch }; }, withUndo);
+
   const saveImage = () => {
     if (!doc) return;
     const n = doc.n, lv = level;
@@ -553,7 +713,7 @@ export default function BattleMapCreator({ campaignId }: { campaignId: string })
     select: "Click a piece to select it, drag to move. It snaps to the grid; hold Alt to place it freely. Arrows nudge, R turns, Delete removes.",
     place: "Pick a piece, then click the map to drop it. It snaps to the grid (Alt: free). The new piece is selected so you can turn or resize it right away.",
     terrain: paintMode === "brush" ? "Drag to paint." : paintMode === "rect" ? "Drag a rectangle to fill it." : "Click to fill every touching square of the same terrain.",
-    doors: "Click near a wall line to set the chosen door. Click it again to remove it.",
+    doors: "Click near a wall line to add a door. Click a door to select it, then change its kind, move it to another side of its square (R turns it clockwise) or remove it.",
   };
 
   // ---- render ----
@@ -609,7 +769,7 @@ export default function BattleMapCreator({ campaignId }: { campaignId: string })
           <div style={{ flex: "1 1 560px", minWidth: 0, background: C.surface, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: 12 }}>
             <div style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 8, flexWrap: "wrap" }}>
               {doc.meta.levelNames.map((nm, l) => (
-                <button key={l} type="button" onClick={() => { setLevel(l); setSelId(null); }} style={{ ...seg(level === l), flex: "0 0 auto", padding: "6px 10px" }}>{nm || `Level ${l + 1}`}</button>
+                <button key={l} type="button" onClick={() => { setLevel(l); setSelId(null); setSelDoor(null); }} style={{ ...seg(level === l), flex: "0 0 auto", padding: "6px 10px" }}>{nm || `Level ${l + 1}`}</button>
               ))}
               <span style={{ marginLeft: "auto", color: C.muted, fontSize: 12 }}>Zoom</span>
               {ZOOMS.map((z) => <button key={z} type="button" onClick={() => setZoom(z)} style={{ ...seg(zoom === z), flex: "0 0 auto", padding: "5px 9px" }}>{z === 1 ? "Fit" : `${z}x`}</button>)}
@@ -727,10 +887,75 @@ export default function BattleMapCreator({ campaignId }: { campaignId: string })
               <>
                 <label style={label}>Door</label>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
-                  {DOOR_KINDS.map((d) => <button key={d.key} type="button" onClick={() => setDoor(d.key)} style={chip(door === d.key)}>{d.label}</button>)}
+                  {DOOR_KINDS.map((d) => <button key={d.key} type="button" onClick={() => setDoorKind(d.key)} style={chip(door === d.key)}>{d.label}</button>)}
                 </div>
+                {selDoor && selDoorKind ? (
+                  <div style={{ marginTop: 14, padding: 10, border: `1px solid ${C.sun}`, borderRadius: 8 }}>
+                    <div style={{ color: C.text, fontWeight: 600, fontSize: 13 }}>{DOOR_KINDS.find((d) => d.key === selDoorKind)?.label ?? "Door"} selected</div>
+                    <p style={{ color: C.muted, fontSize: 12, margin: "4px 0 0" }}>Picking a kind above changes this door. The dot marks the square it belongs to.</p>
+                    <label style={label}>Side of the square</label>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+                      {SIDES.map((sd) => {
+                        const key = doorKey(doc.n, selDoor.r, selDoor.c, sd), taken = !!key && sd !== selDoor.side && !!doc.doors[level][key];
+                        return <button key={sd} type="button" disabled={!key || taken} onClick={() => moveDoor(sd)}
+                          title={!key ? "That side is the edge of the map" : taken ? "That side already has a door" : undefined}
+                          style={{ ...seg(selDoor.side === sd), opacity: !key || taken ? 0.45 : 1 }}>{SIDE_LABEL[sd]}</button>;
+                      })}
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, marginTop: 8 }}>
+                      <button type="button" onClick={() => turnDoor(false)} style={small}>&#8634; Turn left</button>
+                      <button type="button" onClick={() => turnDoor(true)} style={small}>Turn right &#8635;</button>
+                      <button type="button" onClick={removeDoor} style={{ ...small, color: "#c98a7a", gridColumn: "1 / -1" }}>Remove door</button>
+                    </div>
+                  </div>
+                ) : <p style={{ color: C.muted, fontSize: 12, margin: "10px 0 0" }}>No door selected. Click a door on the map to select it.</p>}
               </>
             )}
+
+            <div style={{ marginTop: 16, padding: 10, border: `1px solid ${C.line}`, borderRadius: 8 }}>
+              <div style={{ color: C.text, fontWeight: 600, fontSize: 13 }}>Painted overlay</div>
+              {(() => {
+                const o = doc.meta.overlays[level];
+                const img = o ? paintImgs.current.get(o.url) : undefined;
+                const stale = !!o && o.sig !== levelSig(doc, level);
+                return (
+                  <>
+                    {o && (
+                      <>
+                        {img === "failed" && <p role="status" style={{ color: "#c98a7a", fontSize: 12, margin: "6px 0 0" }}>The painting could not be loaded. Repaint, or remove it.</p>}
+                        {img === "loading" && <p style={{ color: C.muted, fontSize: 12, margin: "6px 0 0" }}>Loading the painting…</p>}
+                        {stale && <p role="status" style={{ color: "#d9a43a", fontSize: 12, margin: "6px 0 0" }}>This level has changed since it was painted. Repaint to match.</p>}
+                        {check(o.show, (v) => setOverlay({ show: v }), "Show the painting")}
+                        {o.show && (
+                          <>
+                            <label style={{ ...label, marginTop: 10 }} htmlFor="bm-ovop">Opacity: {Math.round(o.opacity * 100)}%</label>
+                            <input id="bm-ovop" type="range" min={0} max={1} step={0.05} value={o.opacity} onPointerDown={pushUndo}
+                              onChange={(e) => setOverlay({ opacity: Number(e.target.value) }, false)} style={{ width: "100%", accentColor: C.sun }} />
+                            {check(o.inkOnTop, (v) => setOverlay({ inkOnTop: v }), "Keep my walls, doors and grid on top")}
+                            {check(o.piecesOnTop, (v) => setOverlay({ piecesOnTop: v }), "Draw my pieces on top too")}
+                          </>
+                        )}
+                      </>
+                    )}
+                    <label style={label} htmlFor="bm-pstyle">Style</label>
+                    <select id="bm-pstyle" value={paintStyle} onChange={(e) => setPaintStyle(e.target.value)} style={field}>
+                      {PAINT_STYLES.map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
+                    </select>
+                    <label style={label} htmlFor="bm-pnote">Extra direction (optional)</label>
+                    <input id="bm-pnote" value={paintNote} onChange={(e) => setPaintNote(e.target.value.slice(0, 300))} placeholder="Autumn leaves, mossy stone, torchlight" style={field} />
+                    <div style={{ display: "grid", gap: 6, marginTop: 10 }}>
+                      <button type="button" disabled={painting} onClick={() => void paintLevel()} style={{ ...btn(C.sun, "#1b1712"), opacity: painting ? 0.6 : 1 }}>
+                        {painting ? "Painting… (up to a minute)" : o ? "Repaint this level" : "Paint this level with Gemini"}
+                      </button>
+                      {o && <button type="button" onClick={() => mutate((d) => { d.meta.overlays[level] = null; })} style={{ ...small, color: "#c98a7a" }}>Remove painting</button>}
+                    </div>
+                    <p style={{ color: C.muted, fontSize: 11.5, margin: "8px 0 0" }}>
+                      Sends a picture of this level&apos;s layout (no names, notes or labels) to Google Gemini. The painting can drift from the plan, so your walls, doors and grid stay drawn over it unless you turn that off.
+                    </p>
+                  </>
+                );
+              })()}
+            </div>
 
             <label style={label} htmlFor="bm-name">Map name</label>
             <input id="bm-name" value={doc.name} onFocus={pushUndo} onChange={(e) => mutate((m) => { m.name = e.target.value.slice(0, 80); }, false)} style={field} />
@@ -754,8 +979,8 @@ export default function BattleMapCreator({ campaignId }: { campaignId: string })
             )}
             {check(doc.meta.autoNumber, (v) => mutate((m) => { m.meta.autoNumber = v; }), outdoor ? "Number the buildings automatically" : "Number the rooms automatically")}
 
-            <label style={label}>Grid</label>
-            {check(doc.meta.showGrid, (v) => mutate((m) => { m.meta.showGrid = v; }), "Show the grid")}
+            <label style={label}>Book grid</label>
+            {check(doc.meta.showGrid, (v) => mutate((m) => { m.meta.showGrid = v; }), "Show the book grid (under the walls and pieces)")}
             {doc.meta.showGrid && (
               <>
                 <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
@@ -777,6 +1002,16 @@ export default function BattleMapCreator({ campaignId }: { campaignId: string })
                     <button type="button" onClick={() => mutate((m) => { m.meta.grid.cover = "all"; })} style={seg(doc.meta.grid.cover === "all")}>Whole map</button>
                   </div>
                 )}
+              </>
+            )}
+
+            <label style={label}>Black battle grid</label>
+            {check(doc.meta.topGrid.show, (v) => mutate((m) => { m.meta.topGrid.show = v; }), "Show a black grid over everything")}
+            {doc.meta.topGrid.show && (
+              <>
+                <label style={{ ...label, marginTop: 10 }} htmlFor="bm-tgop">Opacity: {Math.round(doc.meta.topGrid.opacity * 100)}%</label>
+                <input id="bm-tgop" type="range" min={0.05} max={1} step={0.05} value={doc.meta.topGrid.opacity} onPointerDown={pushUndo}
+                  onChange={(e) => mutate((m) => { m.meta.topGrid.opacity = Number(e.target.value); }, false)} style={{ width: "100%", accentColor: C.sun }} />
               </>
             )}
 
