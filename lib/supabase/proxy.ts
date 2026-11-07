@@ -132,15 +132,17 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // ---- Secondary access gate (private pilot) ----
-  // An authenticated user who has not entered the pilot code is held at /enter. Only the private app
-  // (/gm, /me) is gated; the published wiki, share links, auth and legal pages stay open via the
-  // allowlist above, and /enter itself is never gated (it starts with neither prefix). The flag lives
-  // on profiles.access_granted and is set ONLY by /api/gate, after the code is verified server-side,
-  // so a user cannot grant themselves by calling the database directly.
+  // ---- Secondary access gate (private pilot): GM tools only ----
+  // A signed-in user who has not entered the GM access code is held at /enter, but ONLY on the GM tools
+  // (/gm). The player side (/me) is no longer gated (2026-11-06): players arrive from Discord's /mypage
+  // and /claim already tied to a character, and a second code in front of their own pages only locked
+  // them out. The published wiki, share links, auth and legal pages stay open via the allowlist above,
+  // and /enter itself is never gated. The flag lives on profiles.access_granted and is set ONLY by
+  // /api/gate, after the code is verified server-side, so a user cannot grant themselves by calling the
+  // database directly.
   if (user) {
     const path = request.nextUrl.pathname;
-    if (path.startsWith("/gm") || path.startsWith("/me")) {
+    if (path.startsWith("/gm")) {
       // Read the pilot flags with the SERVICE ROLE, not the `supabase` client above. That client is
       // authenticated via getClaims(), which validates the JWT but does not attach the session to a
       // PostgREST query, so a `.from("profiles")` read here goes out effectively anonymous and RLS
@@ -162,7 +164,7 @@ export async function updateSession(request: NextRequest) {
             .maybeSingle()
         : { data: null };
       if (!profile?.access_granted) {
-        // Not in the pilot at all: send to the code screen.
+        // No code entered yet: send to the code screen.
         const url = request.nextUrl.clone();
         url.pathname = "/enter";
         return NextResponse.redirect(url);
