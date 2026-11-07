@@ -759,6 +759,7 @@ export default function BattleMapCreator({ campaignId }: { campaignId: string })
         <button type="button" onClick={() => { setCreating(true); setMsg(null); }} style={small}>New map</button>
         {doc && <button type="button" onClick={() => void createMap(doc)} style={small}>Duplicate</button>}
         {doc && <button type="button" onClick={() => void deleteMap()} style={{ ...small, color: "#c98a7a" }}>Delete map</button>}
+        <a href={`/tabletop/${campaignId}`} title="The shared table: put a map on it from its Scenes tab, add tokens, and invite the players" style={{ ...small, textDecoration: "none", color: C.sun, borderColor: C.sun }}>Open the tabletop</a>
         <span role="status" style={{ marginLeft: "auto", color: saveState === "error" ? "#c98a7a" : C.muted, fontSize: 12 }}>
           {saveState === "saving" ? "Saving…" : saveState === "saved" ? "Saved" : saveState === "error" ? "Not saved" : ""}
         </span>
