@@ -14,6 +14,12 @@ import {
 import { loadSrd } from "@/lib/srd/srd";
 import { sortForTurns, applyDamage, applyHealing, combatantId, pcCombatant, CONDITIONS, type Combatant } from "@/lib/combat";
 import { monsterSourceLabel } from "@/lib/monster-sources";
+import {
+  decodeFog, encodeFog, isRevealed, setSquares, fillFog, brushCells, roomsOf, roomCells, doorAt, edgeSegment,
+  doorsAsDrawn, PLAYER_DOORS, type MapShape,
+} from "@/lib/tabletop/fog";
+import { drawElement, type DoorKind, type MapElement } from "@/lib/dungeon/classic";
+import { wallSegments, visibility, seenSquares, canSee, CANOPY_KINDS, type Seg } from "@/lib/tabletop/sight";
 
 // The tabletop, phase 1 (2026-11-06). One page for the GM and the players; tabletop_state (p105)
 // decides the role and strips what players must not see before it leaves the database.
@@ -34,6 +40,15 @@ import { monsterSourceLabel } from "@/lib/monster-sources";
 //          through tabletop_combat (p107), which hides monster HP and hidden combatants. Each combatant
 //          the table adds carries a tokenId, so its token shows the HP bar, conditions and whose turn.
 //          N and P step the turn for the GM. Players roll their own initiative from the Turns tab.
+// Phase 3a: fog of war and doors (p109). The GM reveals or hides a room with one click (the room comes
+//          from the map's walls and doors) or paints squares with a brush; players get nothing from a
+//          hidden square, filtered in the database. Doors open and close with a click: the GM any door,
+//          Shift-click to pick several; a player a plain or double door beside their own token.
+// Phase 3b: line of sight (scene setting, on top of the fog): a player sees what their own tokens can
+//          see, walls and closed doors from the battle map blocking it; rooms they have seen stay drawn,
+//          dimmed, with nobody shown in them. Remembered in this browser only. Trees are a canopy: drawn
+//          over the tokens and faded while one stands beneath. The GM sees everything, and the sight of
+//          the tokens they select as an outline.
 // Live:    one Realtime channel per campaign. Table changes (tokens, scenes, chat) arrive through RLS;
 //          drags, rulers and pings are broadcast and never stored. Positions are saved once on drop.
 // Chat:    /r, /gr, /w name, /em. Rolls go to /api/tabletop/roll, which rolls on the server and logs
@@ -45,8 +60,11 @@ type Token = {
   layer: "map" | "token" | "gm"; hidden: boolean; controlled_by: string[]; style: Record<string, unknown>; mine?: boolean;
 };
 type PartyMember = { profile_id: string; name: string; character_id: string | null; portrait_url: string | null };
-type MapJson = { id: string; kind: string; n: number; feet_per_square: number; grid: unknown; custom: unknown; doors: unknown; elements: unknown; meta: Record<string, unknown> };
-type Scene = { id: string; name: string; battle_map_id: string; level: number; settings: { show_labels?: boolean; diagonal?: DiagonalRule } };
+type MapJson = {
+  id: string; kind: string; n: number; feet_per_square: number; grid: unknown; custom: unknown; doors: unknown; elements: unknown; meta: Record<string, unknown>;
+  door_state?: Record<string, boolean>; fog?: { on: boolean; revealed: string }; walls?: string[];
+};
+type Scene = { id: string; name: string; battle_map_id: string; level: number; settings: { show_labels?: boolean; diagonal?: DiagonalRule; los?: boolean } };
 type State = {
   role: "gm" | "player"; me: string; campaign: { id: string; name: string; gm_id: string }; session_id: string | null;
   scene: Scene | null; map: MapJson | null; tokens: Token[]; party: PartyMember[];
@@ -62,7 +80,8 @@ type Message = {
 type OutsideRoll = { id: string; actor_name: string | null; source: string; name: string | null; at: string; rolls: { total?: number; dice?: { faces: number; results: number[] }[]; critical_success?: boolean; critical_failure?: boolean } | null };
 type FeedItem = { t: number; key: string; msg?: Message; ext?: OutsideRoll };
 
-type Tool = "select" | "ruler" | "template" | "hand";
+type Tool = "select" | "ruler" | "template" | "hand" | "fog";
+type FogMode = "reveal-room" | "hide-room" | "reveal-brush" | "hide-brush";
 type Tpl = TemplateGeom & { id: string; owner: string; color: string; label: string | null; scene_id: string };
 type Aura = { ft: number; color: string; players: boolean };
 type Border = { pattern?: "solid" | "double" | "dashed" | "dotted"; width?: "thin" | "normal" | "thick" };
@@ -122,6 +141,10 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   const [selected, setSelected] = useState<string[]>([]);
   const [present, setPresent] = useState<{ key: string; name: string; color: string }[]>([]);
   const [tick, setTick] = useState(0);
+  const [fogMode, setFogMode] = useState<FogMode>("reveal-room");
+  const [fogBrush, setFogBrush] = useState(1);
+  const [fogOnUi, setFogOnUi] = useState(false);
+  const [selDoors, setSelDoors] = useState<string[]>([]);
   const [selTpl, setSelTpl] = useState<string | null>(null);
   const [tplShape, setTplShape] = useState<TemplateShape>("circle");
   const [tplSize, setTplSize] = useState("");
@@ -149,6 +172,22 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   const tplSent = useRef(0);
   const trails = useRef<Trail[]>([]);
   const overlayUrl = useRef<string | null>(null);
+  const fogBits = useRef<Uint8Array>(new Uint8Array(0));
+  const fogOn = useRef(false);
+  const fogCanvas = useRef<HTMLCanvasElement | null>(null);
+  const fogEditedAt = useRef(0);
+  const fogTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const brushing = useRef<{ on: boolean } | null>(null);
+  const hoverSq = useRef<Pt | null>(null);
+  const roomsCache = useRef<{ sig: string; rooms: Int32Array; shape: MapShape } | null>(null);
+  const mapSig = useRef("");
+  const selDoorsRef = useRef<string[]>([]);
+  const sight = useRef<{ key: string; polys: { x: number; y: number }[][]; viewers: number } >({ key: "", polys: [], viewers: 0 });
+  const segsCache = useRef<{ sig: string; segs: Seg[] } | null>(null);
+  const explored = useRef<{ scene: string; bits: Uint8Array; canvas: HTMLCanvasElement | null; dirty: boolean; savedAt: number } | null>(null);
+  const darkLayer = useRef<HTMLCanvasElement | null>(null);
+  const canopy = useRef<MapElement[]>([]);
+  const seenTokens = useRef<Set<string> | null>(null);
   const renderBaseRef = useRef<() => void>(() => {});
   const loadFightRef = useRef<() => Promise<void>>(async () => {});
   const rulerSent = useRef(0);
@@ -162,6 +201,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   const feedEnd = useRef<HTMLDivElement | null>(null);
   const selRef = useRef<string[]>([]);
   selRef.current = selected;
+  selDoorsRef.current = selDoors;
   const selTplRef = useRef<string | null>(null);
   selTplRef.current = selTpl;
   fightRef.current = fight;
@@ -220,21 +260,110 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
       if (!im) loadImage(ov.url);
       else if (typeof im !== "string") overlay = { img: im, opacity: ov.opacity, inkOnTop: ov.inkOnTop };
     }
+    // trees are a canopy over the tokens, unless the painting already carries the pieces
+    const allEls = normElements([m.elements], n)[0];
+    const piecesInPaint = !!overlay && !ov?.piecesOnTop;
+    canopy.current = piecesInPaint ? [] : allEls.filter((e) => CANOPY_KINDS.has(e.k));
+    const baseEls = piecesInPaint ? allEls : allEls.filter((e) => !CANOPY_KINDS.has(e.k));
     const L = layoutBare(cell, { r0: 0, c0: 0, rows: n, cols: n });
     const cv = baseRef.current ?? document.createElement("canvas");
     cv.width = L.width; cv.height = L.height;
     const ctx = cv.getContext("2d"); if (!ctx) return;
     renderClassic(ctx, {
       n, grid: normalizeLevels([m.grid], n)[0], custom: normCustom([m.custom], n)[0], tileImages: new Map(), tileColors: new Map(),
-      marks: { features: {}, doors: normDoors([m.doors], n)[0], labels: {} },
+      marks: { features: {}, doors: doorsAsDrawn(normDoors([m.doors], n)[0], m.door_state ?? {}), labels: {} },
       meta: { title: "", levelNames: meta.levelNames, autoNumber: meta.autoNumber, grid: meta.showGrid },
       level: 0, feetPerSquare: m.feet_per_square, outdoor: kind === "outdoor", ground: meta.ground > 0 && meta.ground < CELL_TYPES.length ? meta.ground : undefined,
-      gridLook: meta.grid, elements: normElements([m.elements], n)[0], drawElements: true,
+      gridLook: meta.grid, elements: baseEls, drawElements: true,
       topGrid: meta.topGrid.show ? meta.topGrid.opacity : null, overlay, piecesHidden: !!overlay && !ov?.piecesOnTop, bare: true,
     }, L);
+    // closed secret doors, as players get them: plain wall drawn the way the renderer draws walls
+    if (m.walls?.length) {
+      ctx.save(); ctx.lineCap = "round";
+      for (const [w, col] of [[Math.max(3, cell * 0.32), "rgba(70,50,25,0.13)"], [Math.max(2, cell * 0.11), "#2b2018"]] as [number, string][]) {
+        ctx.lineWidth = w; ctx.strokeStyle = col; ctx.beginPath();
+        for (const k of m.walls) { const sg = edgeSegment(k, n); if (!sg) continue; ctx.moveTo(sg.a.x * cell, sg.a.y * cell); ctx.lineTo(sg.b.x * cell, sg.b.y * cell); }
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
     baseRef.current = cv;
   }, [loadImage]);
   renderBaseRef.current = renderBase;
+
+  // The fog as an n by n image, one pixel per square, opaque where hidden; drawn scaled up with no
+  // smoothing so the squares stay crisp.
+  const rebuildFog = useCallback(() => {
+    const m = stateRef.current?.map;
+    if (!m || !fogOn.current) { fogCanvas.current = null; return; }
+    const n = m.n > 0 ? m.n : 25;
+    const cv = fogCanvas.current ?? document.createElement("canvas");
+    cv.width = n; cv.height = n;
+    const ctx = cv.getContext("2d"); if (!ctx) return;
+    const img = ctx.createImageData(n, n), gm = stateRef.current?.role === "gm";
+    // Indoors a player's hidden squares arrive as plain rock, so the one square of rock around what is
+    // revealed is left clear: walls and hatching draw whole, and a hidden passage leaves no notch.
+    const margin = !gm && m.kind !== "outdoor";
+    const near = (c: number, r: number) => {
+      for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) if ((dr || dc) && isRevealed(fogBits.current, n, c + dc, r + dr)) return true;
+      return false;
+    };
+    for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) {
+      if (isRevealed(fogBits.current, n, c, r) || (margin && near(c, r))) continue;
+      const k = (r * n + c) * 4;
+      img.data[k] = gm ? 8 : 13; img.data[k + 1] = gm ? 10 : 11; img.data[k + 2] = gm ? 26 : 9; img.data[k + 3] = 255;
+    }
+    ctx.putImageData(img, 0, 0);
+    fogCanvas.current = cv;
+  }, []);
+
+  // The map's shape for rooms and doors, cached per map content.
+  const shapeOf = useCallback((): { rooms: Int32Array; shape: MapShape } | null => {
+    const m = stateRef.current?.map; if (!m) return null;
+    const n = m.n > 0 ? m.n : 25;
+    if (roomsCache.current && roomsCache.current.sig === mapSig.current) return roomsCache.current;
+    const shape: MapShape = { n, grid: normalizeLevels([m.grid], n)[0], custom: normCustom([m.custom], n)[0], doors: normDoors([m.doors], n)[0], outdoor: m.kind === "outdoor", walls: m.walls ?? [] };
+    roomsCache.current = { sig: mapSig.current, rooms: roomsOf(shape), shape };
+    return roomsCache.current;
+  }, []);
+
+  // Line of sight: who is looking (a player's own tokens on the map; for the GM, the tokens they have
+  // selected, shown as an outline only), and what they can see. Recomputed only when a viewer moves or
+  // the walls change.
+  const losOn = () => !!stateRef.current?.scene?.settings?.los && !!stateRef.current?.map;
+  const updateSight = (): void => {
+    const st = stateRef.current, m = st?.map;
+    if (!st || !m || !losOn()) { sight.current = { key: "", polys: [], viewers: 0 }; return; }
+    const n = m.n > 0 ? m.n : 25, gm = st.role === "gm";
+    const viewers = [...tokensRef.current.values()].filter((t) => (gm ? selRef.current.includes(t.id) : t.mine) && !t.hidden && t.layer !== "gm")
+      .map((t) => shownPos(t)).filter((p) => p.x >= 0 && p.y >= 0 && p.x < n && p.y < n);
+    const key = mapSig.current + "|" + viewers.map((p) => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(";");
+    if (key === sight.current.key) return;
+    const sh = shapeOf(); if (!sh) return;
+    if (!segsCache.current || segsCache.current.sig !== mapSig.current) segsCache.current = { sig: mapSig.current, segs: wallSegments(sh.shape, m.door_state ?? {}) };
+    const polys = viewers.map((p) => visibility(p, segsCache.current!.segs));
+    sight.current = { key, polys, viewers: viewers.length };
+    if (gm || !st.scene) return;
+    // remember what this player has seen, per scene, in this browser
+    let ex = explored.current;
+    if (!ex || ex.scene !== st.scene.id) {
+      let bits: Uint8Array = new Uint8Array(Math.ceil((n * n) / 8));
+      try { const raw = window.localStorage.getItem(`sixaxes:explored:${st.scene.id}:${st.me}`); if (raw) bits = decodeFog(raw, n); } catch { /* storage unavailable: memory lasts for this visit */ }
+      ex = explored.current = { scene: st.scene.id, bits, canvas: null, dirty: true, savedAt: 0 };
+    }
+    const fresh: number[] = [];
+    for (const poly of polys) for (const i of seenSquares(sh.shape, poly)) if (!isRevealed(ex.bits, n, i % n, (i / n) | 0)) fresh.push(i);
+    if (fresh.length) {
+      ex.bits = setSquares(ex.bits, n, fresh, true); ex.dirty = true;
+      if (Date.now() - ex.savedAt > 1000) { ex.savedAt = Date.now(); try { window.localStorage.setItem(`sixaxes:explored:${st.scene.id}:${st.me}`, encodeFog(ex.bits)); } catch { /* ignore */ } }
+    }
+  };
+
+  // Is this point hidden from players right now?
+  const fogHides = useCallback((p: Pt): boolean => {
+    const m = stateRef.current?.map;
+    return !!m && fogOn.current && !isRevealed(fogBits.current, m.n, Math.floor(p.x), Math.floor(p.y));
+  }, []);
 
   const fit = useCallback(() => {
     const cv = canvasRef.current, base = baseRef.current; if (!cv || !base) return;
@@ -249,6 +378,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     list.sort((a, b) => order(a) - order(b));
     for (let i = list.length - 1; i >= 0; i--) {
       const t = list[i], p = shownPos(t);
+      if (seenTokens.current && !seenTokens.current.has(t.id)) continue;
       const r = Math.max(0.35, t.size / 2) * cell;
       if (Math.hypot(w.x - p.x * cell, w.y - p.y * cell) <= r) return t;
     }
@@ -323,8 +453,19 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
       if (a <= 0) remoteTpl.current.delete(k); else { if (rt.done !== null) animating = true; drawTpl(rt.geom, rt.color, a, false); }
     }
 
+    // line of sight: which tokens this player can see right now (their own always)
+    updateSight();
+    const lineOfSight = losOn() && stateRef.current?.role !== "gm";
+    if (lineOfSight) {
+      const vis = new Set<string>();
+      for (const t of tokensRef.current.values()) { const p = shownPos(t); if (t.mine || canSee(sight.current.polys, p.x, p.y, t.size / 2)) vis.add(t.id); }
+      seenTokens.current = vis;
+    } else seenTokens.current = null;
+    const shownToMe = (t: Token) => !seenTokens.current || seenTokens.current.has(t.id);
+
     // auras, under the tokens, measured from the token's edge (as a 2024 emanation is)
     for (const t of tokensRef.current.values()) {
+      if (!shownToMe(t)) continue;
       const auras = Array.isArray(t.style?.auras) ? (t.style.auras as Aura[]) : [];
       if (!auras.length) continue;
       const p = shownPos(t), base = (t.size / 2) * cell;
@@ -338,12 +479,36 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
       }
     }
 
+    // fog: opaque for players, a shade for the GM, who still sees what is underneath
+    if (fogOn.current && fogCanvas.current && n) {
+      ctx.save(); ctx.imageSmoothingEnabled = false;
+      ctx.globalAlpha = stateRef.current?.role === "gm" ? 0.5 : 1;
+      ctx.drawImage(fogCanvas.current, 0, 0, n * cell, n * cell);
+      ctx.restore();
+    }
+    // the fog brush under the pointer
+    if (tool === "fog" && hoverSq.current && (fogMode === "reveal-brush" || fogMode === "hide-brush") && n) {
+      const h = Math.floor(fogBrush / 2), c0 = Math.floor(hoverSq.current.x) - h, r0 = Math.floor(hoverSq.current.y) - h;
+      ctx.save(); ctx.strokeStyle = fogMode === "reveal-brush" ? "#9fd39a" : "#e07a70"; ctx.lineWidth = Math.max(1.5, 2 / cam.s); ctx.setLineDash([5 / cam.s, 4 / cam.s]);
+      ctx.strokeRect(c0 * cell, r0 * cell, fogBrush * cell, fogBrush * cell); ctx.restore();
+    }
+    // doors picked by the GM
+    if (selDoorsRef.current.length && n) {
+      ctx.save(); ctx.strokeStyle = SELECT; ctx.lineWidth = Math.max(4, cell * 0.16); ctx.lineCap = "round"; ctx.globalAlpha = 0.85;
+      for (const k of selDoorsRef.current) {
+        const sg = edgeSegment(k, n); if (!sg) continue;
+        ctx.beginPath(); ctx.moveTo(sg.a.x * cell, sg.a.y * cell); ctx.lineTo(sg.b.x * cell, sg.b.y * cell); ctx.stroke();
+      }
+      ctx.restore();
+    }
+
     // tokens: map layer, then tokens, then the GM layer
     const list = [...tokensRef.current.values()];
     const order = (t: Token) => (t.layer === "map" ? 0 : t.layer === "token" ? 1 : 2);
     list.sort((a, b) => order(a) - order(b));
     const sel = new Set(selRef.current);
     for (const t of list) {
+      if (!shownToMe(t)) continue;
       const p = shownPos(t);
       const g = shown.current.get(t.id); if (g && now - g.t0 < GLIDE_MS) animating = true;
       const cx = p.x * cell, cy = p.y * cell, rad = (t.size / 2) * cell * 0.9;
@@ -425,6 +590,52 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
       }
     }
 
+    // the canopy: trees over the tokens, faded while a token this viewer can see stands beneath
+    if (canopy.current.length) {
+      const under = list.filter(shownToMe).map((t) => ({ p: shownPos(t), r: t.size / 2 }));
+      for (const el of canopy.current) {
+        const reach = (el.s > 0 ? el.s : 1) * 0.45;
+        const covered = under.some(({ p, r }) => Math.hypot(p.x - el.x, p.y - el.y) < reach + r * 0.6);
+        ctx.save(); ctx.globalAlpha = covered ? 0.28 : 1; drawElement(ctx, el, 0, 0, cell); ctx.restore();
+      }
+    }
+    // darkness: everything this player's tokens cannot see; what they have seen before stays dim
+    if (lineOfSight && n) {
+      const W = cv.width, H = cv.height;
+      const dl = darkLayer.current ?? document.createElement("canvas");
+      if (dl.width !== W || dl.height !== H) { dl.width = W; dl.height = H; }
+      darkLayer.current = dl;
+      const d = dl.getContext("2d");
+      if (d) {
+        d.setTransform(1, 0, 0, 1, 0, 0); d.globalCompositeOperation = "source-over"; d.globalAlpha = 1;
+        d.clearRect(0, 0, W, H); d.fillStyle = "#0b0a08"; d.fillRect(0, 0, W, H);
+        d.setTransform(dpr * cam.s, 0, 0, dpr * cam.s, dpr * cam.ox, dpr * cam.oy);
+        d.globalCompositeOperation = "destination-out";
+        const ex = explored.current;
+        if (ex) {
+          if (ex.dirty || !ex.canvas) {
+            const ec = ex.canvas ?? document.createElement("canvas"); ec.width = n; ec.height = n;
+            const ectx = ec.getContext("2d");
+            if (ectx) { const img = ectx.createImageData(n, n); for (let i = 0; i < n * n; i++) if (isRevealed(ex.bits, n, i % n, (i / n) | 0)) img.data[i * 4 + 3] = 255; ectx.putImageData(img, 0, 0); }
+            ex.canvas = ec; ex.dirty = false;
+          }
+          d.imageSmoothingEnabled = false; d.globalAlpha = 0.42; d.drawImage(ex.canvas, 0, 0, n * cell, n * cell);
+        }
+        d.globalAlpha = 1; d.fillStyle = "#000"; d.strokeStyle = "#000"; d.lineJoin = "round"; d.lineWidth = cell * 0.35;
+        for (const poly of sight.current.polys) {
+          if (poly.length < 3) continue;
+          d.beginPath(); poly.forEach((q, i) => (i ? d.lineTo(q.x * cell, q.y * cell) : d.moveTo(q.x * cell, q.y * cell))); d.closePath(); d.fill(); d.stroke();
+        }
+        ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.drawImage(dl, 0, 0); ctx.restore();
+      }
+    }
+    // the GM's check: the sight of the selected tokens as an outline
+    if (losOn() && stateRef.current?.role === "gm" && sight.current.polys.length) {
+      ctx.save(); ctx.strokeStyle = "#8fd0ff"; ctx.lineWidth = Math.max(1.5, 2 / cam.s); ctx.setLineDash([6 / cam.s, 4 / cam.s]); ctx.fillStyle = "rgba(143,208,255,0.06)";
+      for (const poly of sight.current.polys) { if (poly.length < 3) continue; ctx.beginPath(); poly.forEach((q, i) => (i ? ctx.lineTo(q.x * cell, q.y * cell) : ctx.moveTo(q.x * cell, q.y * cell))); ctx.closePath(); ctx.fill(); ctx.stroke(); }
+      ctx.restore();
+    }
+
     // movement trails: where a token came from, and how far, fading out
     trails.current = trails.current.filter((tr) => now - tr.born < TRAIL_MS);
     for (const tr of trails.current) {
@@ -504,8 +715,19 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
       const { data: tpls } = await supabase.from("vtt_templates").select("*").eq("scene_id", st.scene.id);
       for (const t of (tpls ?? []) as Tpl[]) templatesRef.current.set(t.id, t);
     }
+    // fog: a GM in the middle of painting keeps their own copy until it has been saved
+    const pendingFog = st.role === "gm" && (fogTimer.current !== null || Date.now() - fogEditedAt.current < 1500);
+    if (!pendingFog) {
+      fogOn.current = !!st.map?.fog?.on; setFogOnUi(fogOn.current);
+      fogBits.current = decodeFog(st.map?.fog?.revealed, st.map?.n ?? 0);
+    }
+    const sig = st.map ? JSON.stringify([st.map.id, st.map.grid, st.map.custom, st.map.doors, st.map.door_state, st.map.walls, st.map.elements, st.map.meta?.overlay]) : "";
+    const changed = sig !== mapSig.current;
+    mapSig.current = sig;
     if (st.map?.id !== prevMap || st.scene?.id !== prevScene || !baseRef.current) { renderBase(); fitPending.current = true; }
-  }, [supabase, campaignId, applyTokens, renderBase]);
+    else if (changed) renderBase();
+    rebuildFog(); requestDraw();
+  }, [supabase, campaignId, applyTokens, renderBase, rebuildFog, requestDraw]);
 
   // The canvas only exists once a scene is loaded, so the first fit waits for it to mount.
   const fitPending = useRef(true);
@@ -692,11 +914,13 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
         const from = remoteDrag.current.get(t.id) ?? shownPos(prev);
         shown.current.set(t.id, { x: t.x, y: t.y, fx: from.x, fy: from.y, t0: performance.now() });
         const f = { x: prev.x, y: prev.y }, to = { x: t.x, y: t.y };
-        if (!t.hidden && t.layer !== "gm") trails.current.push({ from: f, to, color: hueOf(owner ?? st.campaign.gm_id), born: performance.now(), feet: measure([f, to], st.scene.settings?.diagonal ?? "five", st.map?.feet_per_square ?? 5).feet });
+        const losHides = st.role !== "gm" && !!st.scene.settings?.los && !t.mine
+          && !(canSee(sight.current.polys, f.x, f.y, t.size / 2) && canSee(sight.current.polys, to.x, to.y, t.size / 2));
+        if (!t.hidden && t.layer !== "gm" && !losHides) trails.current.push({ from: f, to, color: hueOf(owner ?? st.campaign.gm_id), born: performance.now(), feet: measure([f, to], st.scene.settings?.diagonal ?? "five", st.map?.feet_per_square ?? 5).feet });
       }
       remoteDrag.current.delete(t.id);
       tokensRef.current.set(t.id, t);
-      if (st.role !== "gm" && (t.hidden || t.layer === "gm")) tokensRef.current.delete(t.id);
+      if (st.role !== "gm" && (t.hidden || t.layer === "gm" || (!t.mine && fogHides(t)))) tokensRef.current.delete(t.id);
       requestDraw();
     };
     const upsertTpl = (row: Tpl) => {
@@ -713,7 +937,15 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "vtt_messages", filter: `campaign_id=eq.${campaignId}` }, (p) => addFeed([p.new as Message], []))
       .on("broadcast", { event: "drag" }, ({ payload }) => {
         const d = payload as { id: string; x: number; y: number };
-        if (tokensRef.current.has(d.id)) { remoteDrag.current.set(d.id, { x: d.x, y: d.y, until: performance.now() + 4000 }); requestDraw(); }
+        const t = tokensRef.current.get(d.id);
+        if (!t || (stateRef.current?.role !== "gm" && !t.mine && fogHides(d))) return;
+        remoteDrag.current.set(d.id, { x: d.x, y: d.y, until: performance.now() + 4000 }); requestDraw();
+      })
+      .on("broadcast", { event: "vanish" }, ({ payload }) => {
+        // the GM moved these into the fog: players stop drawing them (the database stops sending them)
+        if (stateRef.current?.role === "gm") return;
+        for (const id of ((payload as { ids?: string[] }).ids ?? [])) { const t = tokensRef.current.get(id); if (t && !t.mine) { tokensRef.current.delete(id); remoteDrag.current.delete(id); } }
+        requestDraw();
       })
       .on("broadcast", { event: "ruler" }, ({ payload }) => {
         const r = payload as { by: string; color: string; points: Pt[]; done: boolean };
@@ -771,6 +1003,83 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   useEffect(() => { requestDraw(); }, [selected, tick, requestDraw]);
 
   // ---------------------------------------------------------------------------------------------------
+  // fog and doors
+  const saveFog = useCallback((on: boolean | null, now = false) => {
+    const sc = stateRef.current?.scene; if (!sc) return;
+    fogEditedAt.current = Date.now();
+    if (fogTimer.current) clearTimeout(fogTimer.current);
+    const run = () => {
+      fogTimer.current = null;
+      void supabase.rpc("tabletop_set_fog", { p_scene: sc.id, p_on: on, p_revealed: encodeFog(fogBits.current) }).then(({ error: er }) => {
+        fogEditedAt.current = Date.now();
+        if (er) setChatErr(`Could not save the fog: ${er.message}`);
+      });
+    };
+    if (now) run(); else fogTimer.current = setTimeout(run, 300);
+  }, [supabase]);
+
+  const paintFog = useCallback((cells: number[], on: boolean) => {
+    const m = stateRef.current?.map; if (!m || !cells.length) return;
+    fogBits.current = setSquares(fogBits.current.length ? fogBits.current : decodeFog("", m.n), m.n, cells, on);
+    rebuildFog(); requestDraw();
+  }, [rebuildFog, requestDraw]);
+
+  const setFogEnabled = useCallback((on: boolean) => {
+    fogOn.current = on; setFogOnUi(on);
+    rebuildFog(); requestDraw(); saveFog(on, true);
+  }, [rebuildFog, requestDraw, saveFog]);
+
+  const setLos = useCallback(async (on: boolean) => {
+    const sc = stateRef.current?.scene; if (!sc) return;
+    const settings = { ...(sc.settings ?? {}), los: on };
+    const { error: er } = await supabase.from("vtt_scenes").update({ settings, updated_at: new Date().toISOString() }).eq("id", sc.id);
+    if (er) { setChatErr(`Could not change line of sight: ${er.message}`); return; }
+    void load();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [supabase]);
+
+  const fogAll = useCallback((reveal: boolean) => {
+    const m = stateRef.current?.map; if (!m) return;
+    fogBits.current = fillFog(m.n, reveal);
+    rebuildFog(); requestDraw(); saveFog(null, true);
+  }, [rebuildFog, requestDraw, saveFog]);
+
+  const fogClick = (sq: Pt, mode: FogMode) => {
+    const m = stateRef.current?.map; if (!m) return;
+    const c = Math.floor(sq.x), r = Math.floor(sq.y);
+    if (mode === "reveal-room" || mode === "hide-room") {
+      const sh = shapeOf(); if (!sh) return;
+      const cells = roomCells(sh.shape, sh.rooms, c, r);
+      if (!cells) { setChatErr("There is no room there. Use the brush for open ground."); return; }
+      paintFog(cells, mode === "reveal-room"); saveFog(null);
+    } else {
+      brushing.current = { on: mode === "reveal-brush" };
+      paintFog(brushCells(m.n, c, r, fogBrush), brushing.current.on);
+    }
+  };
+
+  // Open or close doors. The new state shows at once; the scene's Realtime update brings everyone else
+  // (and this table) the saved state.
+  const setDoors = useCallback(async (edges: string[], open: boolean) => {
+    const st = stateRef.current, sc = st?.scene, m = st?.map; if (!sc || !m || !edges.length) return;
+    const before = m.door_state ?? {};
+    const next = { ...before }; for (const k of edges) { if (open) next[k] = true; else delete next[k]; }
+    m.door_state = next; mapSig.current = ""; renderBase(); requestDraw();
+    const { error: er } = await supabase.rpc("tabletop_set_doors", { p_scene: sc.id, p_edges: edges, p_open: open });
+    if (er) {
+      setChatErr(/next to the door/.test(er.message) ? "Move your token next to the door first." : /only the GM/.test(er.message) ? "Only the GM can open that door." : `Could not change the door: ${er.message}`);
+      m.door_state = before; renderBase(); requestDraw();
+    }
+  }, [supabase, renderBase, requestDraw]);
+
+  const doorUnder = (sq: Pt): { key: string; kind: DoorKind; open: boolean } | null => {
+    const m = stateRef.current?.map; if (!m) return null;
+    const doors = normDoors([m.doors], m.n)[0];
+    const key = doorAt(doors, m.n, sq.x, sq.y); if (!key) return null;
+    return { key, kind: doors[key], open: !!m.door_state?.[key] };
+  };
+
+  // ---------------------------------------------------------------------------------------------------
   // pointer
   const screenPt = (e: { clientX: number; clientY: number }) => {
     const r = canvasRef.current!.getBoundingClientRect();
@@ -812,6 +1121,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
       return;
     }
     if (e.button !== 0) return;
+    if (tool === "fog" && st.role === "gm") { fogClick(sq, fogMode); return; }
     if (tool === "template") {
       const o = e.altKey ? sq : snapOrigin(sq, tplShape);
       tplPreview.current = { geom: { shape: tplShape, x: o.x, y: o.y, size_ft: fixedSize() ?? 5, width_ft: 5, rot: 0 }, color: tplColor, done: null };
@@ -825,6 +1135,16 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     }
     const hit = tokenAt({ x: sq.x * cellRef.current, y: sq.y * cellRef.current });
     if (!hit) {
+      const dr = doorUnder(sq);
+      if (dr) {
+        if (st.role === "gm" && e.shiftKey) {
+          const cur = selDoorsRef.current, next = cur.includes(dr.key) ? cur.filter((k) => k !== dr.key) : [...cur, dr.key];
+          setSelDoors(next); selDoorsRef.current = next; requestDraw(); return;
+        }
+        if (st.role !== "gm" && !PLAYER_DOORS.has(dr.kind)) { setChatErr("Only the GM can open that door."); return; }
+        setSelDoors([]); selDoorsRef.current = [];
+        void setDoors([dr.key], !dr.open); return;
+      }
       const th = tplAt(sq);
       if (th) {
         setSelTpl(th.id); setSelected([]); selRef.current = [];
@@ -852,6 +1172,12 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
 
   const onMove = (e: React.PointerEvent) => {
     const sp = screenPt(e), sq = toSquares(sp);
+    if (tool === "fog") { hoverSq.current = sq; requestDraw(); }
+    if (brushing.current && (e.buttons & 1)) {
+      const m = stateRef.current?.map;
+      if (m) paintFog(brushCells(m.n, Math.floor(sq.x), Math.floor(sq.y), fogBrush), brushing.current.on);
+      return;
+    }
     if (pan.current) {
       const dx = sp.x - pan.current.sx, dy = sp.y - pan.current.sy;
       if (Math.hypot(dx, dy) > 4) pan.current.moved = true;
@@ -893,18 +1219,26 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
       const now = performance.now();
       if (now - d.lastSend > DRAG_SEND_MS) {
         d.lastSend = now;
-        for (const id of d.ids) { const t = tokensRef.current.get(id)!; if (!t.hidden && t.layer !== "gm") { const p = d.now.get(id)!; send("drag", { id, x: p.x, y: p.y }); } }
+        for (const id of d.ids) {
+          const t = tokensRef.current.get(id)!, p = d.now.get(id)!;
+          if (t.hidden || t.layer === "gm") continue;
+          if (stateRef.current?.role === "gm" && fogHides(p)) continue;     // never show players a move inside the fog
+          send("drag", { id, x: p.x, y: p.y });
+        }
       }
       requestDraw(); return;
     }
     if (box.current) { box.current.b = { x: sq.x * cellRef.current, y: sq.y * cellRef.current }; requestDraw(); return; }
     const h = tokenAt({ x: sq.x * cellRef.current, y: sq.y * cellRef.current })?.id ?? null;
     if (h !== hover.current) { hover.current = h; requestDraw(); }
+    const cv = canvasRef.current;
+    if (cv && tool === "select") cv.style.cursor = !h && doorUnder(sq) ? "pointer" : "default";
   };
 
   const onUp = (e: React.PointerEvent) => {
     const st = stateRef.current; if (!st) return;
     const sp = screenPt(e), sq = toSquares(sp);
+    if (brushing.current) { brushing.current = null; saveFog(null); return; }
     if (pan.current) {
       const p = pan.current; pan.current = null;
       if (!p.moved && p.button === 2) {
@@ -950,6 +1284,10 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     if (d) {
       drag.current = null;
       if (d.moved) {
+        if (st.role === "gm" && fogOn.current) {
+          const gone = d.ids.filter((id) => { const t = tokensRef.current.get(id); return t && !t.hidden && t.layer !== "gm" && fogHides(d.now.get(id)!); });
+          if (gone.length) send("vanish", { ids: gone });
+        }
         for (const id of d.ids) {
           const p = d.now.get(id)!, t = tokensRef.current.get(id);
           if (!t) continue;
@@ -1049,11 +1387,12 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
       if (e.target instanceof HTMLElement && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
       if (e.key === " ") { space.current = true; e.preventDefault(); return; }
       const k = e.key.toLowerCase();
-      if (k === "escape") { setSelected([]); setSelTpl(null); if (tplPreview.current) { tplPreview.current.done = performance.now(); sendTpl(true); } if (myRuler.current) { myRuler.current.done = performance.now(); send("ruler", { by: me, color: myColor, points: myRuler.current.points, done: true }); } requestDraw(); return; }
+      if (k === "escape") { setSelected([]); setSelTpl(null); setSelDoors([]); selDoorsRef.current = []; if (tplPreview.current) { tplPreview.current.done = performance.now(); sendTpl(true); } if (myRuler.current) { myRuler.current.done = performance.now(); send("ruler", { by: me, color: myColor, points: myRuler.current.points, done: true }); } requestDraw(); return; }
       if (k === "v") { setTool("select"); return; }
       if (k === "m") { setTool("ruler"); return; }
       if (k === "q") { addWaypoint(); return; }
       if (k === "t") { setTool("template"); return; }
+      if (k === "u" && isGm) { setTool("fog"); return; }
       if (selTplRef.current) {
         if (k === "r") { turnTpl(e.shiftKey ? -15 : 15); return; }
         if (k === "delete" || k === "backspace") { e.preventDefault(); void removeTpl(); return; }
@@ -1272,6 +1611,11 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
           <button type="button" title="Area template (T): circle, cone, square or line. Drag to size and aim, or type an exact size." onClick={() => setTool("template")} style={railBtn(tool === "template")}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12L20 4v16z"/><circle cx="8" cy="12" r="1.5" fill="currentColor"/></svg>Area
           </button>
+          {isGm && (
+            <button type="button" title="Fog of war (U): reveal or hide a room with a click, or paint squares with the brush" onClick={() => setTool("fog")} style={railBtn(tool === "fog")}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 8h12a3 3 0 1 0-3-3 M3 12h17 M5 16h11a3 3 0 1 1-3 3"/></svg>Fog
+            </button>
+          )}
           <button type="button" title="Pan (or hold Space, or drag with the right mouse button)" onClick={() => setTool("hand")} style={railBtn(tool === "hand")}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2v20 M2 12h20 M12 2l-3 3 M12 2l3 3 M12 22l-3-3 M12 22l3-3 M2 12l3-3 M2 12l3 3 M22 12l-3-3 M22 12l-3 3"/></svg>Pan
           </button>
@@ -1289,7 +1633,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
             <canvas ref={canvasRef} onMouseDown={(e) => { if (e.button === 2 && myRuler.current && myRuler.current.done === null && (e.buttons & 1)) addWaypoint(); }} onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}
               onPointerLeave={() => { hover.current = null; requestDraw(); }} onContextMenu={(e) => e.preventDefault()}
               aria-label={`Table: ${scene.name}`}
-              style={{ position: "absolute", inset: 0, width: "100%", height: "100%", touchAction: "none", cursor: tool === "ruler" ? "crosshair" : tool === "hand" ? "grab" : "default" }} />
+              style={{ position: "absolute", inset: 0, width: "100%", height: "100%", touchAction: "none", cursor: tool === "ruler" || tool === "fog" ? "crosshair" : tool === "hand" ? "grab" : "default" }} />
           ) : (
             <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: C.muted, padding: 24, textAlign: "center" }}>
               {isGm ? "Put a battle map on the table from the Scenes tab on the right." : "The GM has not put a map on the table yet. Chat and dice work in the meantime."}
@@ -1301,6 +1645,33 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
               <input aria-label="Exact size in feet" value={tplSize} onChange={(e) => setTplSize(e.target.value.replace(/[^0-9.]/g, "").slice(0, 5))} placeholder="ft" title="Exact size in feet (radius for a circle, length otherwise). Leave empty to size it by dragging." style={{ ...field, width: 56, padding: "6px 6px" }} />
               <input aria-label="Template colour" type="color" value={tplColor} onChange={(e) => setTplColor(e.target.value)} style={{ width: 34, height: 30, padding: 0, border: "none", background: "transparent" }} />
               <label style={{ display: "flex", gap: 5, fontSize: 12, alignItems: "center", color: C.text }}><input type="checkbox" checked={tplLinger} onChange={(e) => setTplLinger(e.target.checked)} style={{ accentColor: C.sun }} />Leave it on the table</label>
+            </div>
+          )}
+          {scene && isGm && tool === "fog" && (
+            <div style={{ position: "absolute", top: 10, left: "50%", transform: "translateX(-50%)", display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", justifyContent: "center", maxWidth: "calc(100% - 20px)", background: "rgba(28,24,20,0.95)", border: `1px solid ${C.line}`, borderRadius: 10, padding: "6px 8px" }}>
+              <label style={{ display: "flex", gap: 5, fontSize: 12.5, alignItems: "center", color: C.text, marginRight: 4 }}>
+                <input type="checkbox" checked={fogOnUi} onChange={(e) => setFogEnabled(e.target.checked)} style={{ accentColor: C.sun }} />Fog on
+              </label>
+              {([["reveal-room", "Reveal room"], ["hide-room", "Hide room"], ["reveal-brush", "Reveal brush"], ["hide-brush", "Hide brush"]] as [FogMode, string][]).map(([k, l]) => (
+                <button key={k} type="button" onClick={() => setFogMode(k)} style={{ ...seg(fogMode === k), flex: "0 0 auto", padding: "6px 10px" }}>{l}</button>
+              ))}
+              {(fogMode === "reveal-brush" || fogMode === "hide-brush") && [1, 3, 5].map((b) => (
+                <button key={b} type="button" title={`Brush ${b} by ${b} squares`} onClick={() => setFogBrush(b)} style={{ ...seg(fogBrush === b), flex: "0 0 auto", padding: "6px 8px" }}>{b}</button>
+              ))}
+              <label title="Players see only what their own tokens can see, inside what the fog reveals" style={{ display: "flex", gap: 5, fontSize: 12.5, alignItems: "center", color: C.text, margin: "0 4px" }}>
+                <input type="checkbox" checked={!!scene.settings?.los} onChange={(e) => void setLos(e.target.checked)} style={{ accentColor: C.sun }} />Line of sight
+              </label>
+              <button type="button" onClick={() => fogAll(true)} style={small}>Reveal all</button>
+              <button type="button" onClick={() => fogAll(false)} style={small}>Hide all</button>
+              {!fogOnUi && <span style={{ fontSize: 12, color: "#d9a43a" }}>Fog is off: players see the whole map.</span>}
+            </div>
+          )}
+          {scene && isGm && selDoors.length > 0 && (
+            <div style={{ position: "absolute", bottom: 40, left: "50%", transform: "translateX(-50%)", display: "flex", gap: 6, alignItems: "center", background: "rgba(28,24,20,0.95)", border: `1px solid ${C.sun}`, borderRadius: 10, padding: "6px 8px", fontSize: 12.5 }}>
+              <span>{selDoors.length} door{selDoors.length === 1 ? "" : "s"}</span>
+              <button type="button" onClick={() => { void setDoors(selDoors, true); setSelDoors([]); }} style={small}>Open</button>
+              <button type="button" onClick={() => { void setDoors(selDoors, false); setSelDoors([]); }} style={small}>Close</button>
+              <button type="button" onClick={() => setSelDoors([])} style={{ ...small, color: C.muted }}>Clear</button>
             </div>
           )}
           {scene && selTpl && templatesRef.current.get(selTpl) && (
@@ -1315,9 +1686,14 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
               ) : <span style={{ color: C.muted }}>placed by someone else</span>}
             </div>
           )}
+          {scene && !isGm && scene.settings?.los && ![...tokensRef.current.values()].some((t) => t.mine && !t.hidden && t.layer !== "gm") && (
+            <div role="status" style={{ position: "absolute", top: 10, left: "50%", transform: "translateX(-50%)", background: "rgba(28,24,20,0.95)", border: `1px solid ${C.line}`, borderRadius: 10, padding: "6px 10px", fontSize: 12.5, color: C.text }}>
+              Line of sight is on and you have no token on this map yet, so you see only what you have seen before.
+            </div>
+          )}
           {scene && (
             <div style={{ position: "absolute", left: 10, bottom: 10, fontSize: 11.5, color: C.muted, background: "rgba(20,16,12,0.75)", padding: "4px 8px", borderRadius: 6, pointerEvents: "none" }}>
-              Wheel zooms · right-drag pans · right-click pings{isGm ? " (Shift: bring everyone)" : ""} · R turns · M ruler · T area
+              Wheel zooms · right-drag pans · right-click pings{isGm ? " (Shift: bring everyone)" : ""} · click a door to open it{isGm ? " (Shift: pick several)" : ""} · R turns · M ruler · T area{isGm ? " · U fog" : ""}
             </div>
           )}
         </div>
