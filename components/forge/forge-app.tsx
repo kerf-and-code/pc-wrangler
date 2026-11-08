@@ -64,6 +64,7 @@ import { featureCost, costSentence } from "@/lib/play/features";
 import PlayInventory, { attunementLimit, type Coins, type CharNotes } from "@/components/play-inventory";
 import FloatingPanel from "@/components/floating-panel";
 import PlayCompanions, { type Companion, type MonsterRec } from "@/components/play-companions";
+import PlayParty from "@/components/play-party";
 import { combatAct, type FightEntry, type FightView } from "@/components/fight-controls";
 import { trackedResources, type TrackInputs } from "@/lib/play/tracks";
 import { isWeapon, unarmedAttack, weaponAttack, weaponProfText, type AttackRow, type WeaponRecord } from "@/lib/play/attacks";
@@ -1652,6 +1653,11 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
                           coins={(build as Build & { coins?: Coins }).coins || {}}
                           notes={(build as Build & { notes?: CharNotes }).notes || {}}
                           onGear={setGear} onCoins={setCoins} onNotes={setNotes} />
+                      )}
+                      {openTab === "inventory" && campaignNow && (
+                        <PlayParty campaignId={campaignNow} gear={build.gear} onGear={setGear}
+                          coins={(build as Build & { coins?: Coins }).coins || {}} onCoins={setCoins}
+                          itemByName={srd.itemByName} ctx={ctx} catalogNames={gearIndex.map((g) => g.name)} />
                       )}
                       {openTab === "features" && (
                         <SheetFeatures
