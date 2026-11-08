@@ -39,6 +39,8 @@ const GM_GROUPS: Group[] = [
     { href: "/gm/roster", label: "Roster" },
     // The play-style questionnaire, taken by the GM. It used to sit alone as "Profile".
     { href: "/play", label: "Your play style" },
+    // A GM who also plays reaches their own character sheet from here (phase 5d).
+    { href: "/me/sheet", label: "Your character sheet" },
   ] },
   { label: "Prep", children: [
     { href: "/gm/prep", label: "Prep" },
@@ -118,6 +120,8 @@ const PLAYER_SESSION: PGroup = {
 const PLAYER_YOU: PGroup = {
   label: "You", scoped: false,
   children: [
+    // The character sheet you play from (phase 5d): its own page, apart from the Forge you build in.
+    { href: "/me/sheet", label: "Character sheet" },
     { href: "/me/campaigns", label: "Campaigns" },
     { href: "/me/characters", label: "Characters" },
     { href: "/me/library", label: "Library" },

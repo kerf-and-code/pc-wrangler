@@ -42,13 +42,15 @@ const ABIL_NAME: Record<string, string> = { str: "STR", dex: "DEX", con: "CON", 
 const sign = (n: number) => `${n >= 0 ? "+" : ""}${n}`;
 const costLabel: Record<SpellCost, string> = { action: "Action", bonus: "Bonus action", reaction: "Reaction", other: "Other" };
 
-export default function PlayActions({ sheet, charLevel, characterId, campaignId, fight, attacks, spells, pools, slots, pactLevel, spent, onSpend, costed, onHealSelf, onFightChanged }: {
+export default function PlayActions({ sheet, charLevel, characterId, campaignId, fight, attacks, spells, pools, slots, pactLevel, spent, onSpend, costed, onHealSelf, onFightChanged, tab = "all" }: {
   sheet: DerivedSheet; charLevel: number; characterId: string | null; campaignId: string | null;
   fight: { view: FightView; me: FightEntry } | null;
   attacks: AttackRow[]; spells: KnownSpell[]; pools: Resource[]; slots: Resource[]; pactLevel: number | null;
   spent: Record<string, number>; onSpend: (key: string, n: number) => void;
   costed: { name: string; summary: string; resource: string; amount: number }[];
   onHealSelf: (n: number) => void; onFightChanged: () => void;
+  /** Phase 5d: the character sheet shows actions and spells on separate tabs. */
+  tab?: "all" | "actions" | "spells";
 }) {
   const supabase = useMemo(() => createClient(), []);
   // on a phone each row stacks: the name and its numbers on the left, the button on the right
@@ -225,27 +227,39 @@ export default function PlayActions({ sheet, charLevel, characterId, campaignId,
     <div key={k} style={{ marginTop: 10 }}><div style={tiny}>{title}</div>{list.map(rowLine)}</div>
   ) : null);
 
+  // advantage and the target, shared by the actions and the spells (each tab shows them when alone)
+  const rollWith = (
+    <span role="group" aria-label="Roll with" style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+      {(["dis", "flat", "adv"] as const).map((m) => <button key={m} type="button" className="forge-btn" aria-pressed={adv === m} onClick={() => setAdv(m)} style={btn(adv === m)}>{m === "adv" ? "Advantage" : m === "dis" ? "Disadvantage" : "Straight"}</button>)}
+    </span>
+  );
+  const targetLine = inFight ? (
+    <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", marginTop: 8 }}>
+      <span style={{ fontSize: 12.5, color: STONE.ink }}>Target</span>
+      <select aria-label="Who you attack" value={target} onChange={(e) => setTarget(e.target.value)} style={field}>
+        <option value="">no target: just roll</option>
+        {targets.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
+      </select>
+      <span style={{ fontSize: 11.5, color: STONE.inkFaint }}>With a target, the AC is checked and the damage lands on a hit.</span>
+    </div>
+  ) : <p style={{ fontSize: 12, color: STONE.inkFaint, margin: "8px 0 0" }}>No fight running: rolls are recorded to the session, with nothing to land on.</p>;
+  const outLine = out && (
+    <p role={out.bad ? "alert" : "status"} style={{ fontSize: 13, color: out.bad ? C.warn : STONE.ink, margin: "10px 0 0" }}>
+      {out.text}
+      {out.heal ? <> <button type="button" className="forge-btn" onClick={() => { onHealSelf(out.heal!); setOut({ text: `You regain ${out.heal} HP.`, bad: false }); }} style={{ ...btn(), marginLeft: 6 }}>Heal myself with it</button></> : null}
+    </p>
+  );
+
   return (
-    <section aria-label="Actions and spells" style={{ display: "grid", gap: 12, marginBottom: 14 }}>
-      <div style={box}>
+    <section aria-label={tab === "spells" ? "Spells" : tab === "actions" ? "Actions" : "Actions and spells"} style={{ display: "grid", gap: 12, marginBottom: 14 }}>
+      {tab !== "spells" && <div style={box}>
         <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
           <label style={{ ...forgeLabel, margin: 0 }}>Actions</label>
           <span style={{ ...mono, fontSize: 11.5, color: STONE.inkFaint }}>{sheet.martialArts ? `martial arts d${sheet.martialArts} · ` : ""}{sheet.sneakDice ? `sneak attack ${sheet.sneakDice}d6 · ` : ""}</span>
           <span style={{ flex: 1 }} />
-          <span role="group" aria-label="Roll with" style={{ display: "flex", gap: 4 }}>
-            {(["dis", "flat", "adv"] as const).map((m) => <button key={m} type="button" className="forge-btn" aria-pressed={adv === m} onClick={() => setAdv(m)} style={btn(adv === m)}>{m === "adv" ? "Advantage" : m === "dis" ? "Disadvantage" : "Straight"}</button>)}
-          </span>
+          {rollWith}
         </div>
-        {inFight ? (
-          <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", marginTop: 8 }}>
-            <span style={{ fontSize: 12.5, color: STONE.ink }}>Target</span>
-            <select aria-label="Who you attack" value={target} onChange={(e) => setTarget(e.target.value)} style={field}>
-              <option value="">no target: just roll</option>
-              {targets.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
-            </select>
-            <span style={{ fontSize: 11.5, color: STONE.inkFaint }}>With a target, the AC is checked and the damage lands on a hit.</span>
-          </div>
-        ) : <p style={{ fontSize: 12, color: STONE.inkFaint, margin: "8px 0 0" }}>No fight running: rolls are recorded to the session, with nothing to land on.</p>}
+        {targetLine}
         <div role="group" aria-label="Show" style={{ display: "flex", gap: 4, flexWrap: "wrap", marginTop: 10 }}>
           {([["all", "All"], ["attack", "Attack"], ["action", "Action"], ["bonus", "Bonus action"], ["reaction", "Reaction"], ["other", "Other"], ["limited", "Limited use"]] as [Filter, string][]).map(([k, l]) => (
             <button key={k} type="button" className="forge-btn" aria-pressed={filter === k} onClick={() => setFilter(k)} style={btn(filter === k)}>{l}</button>
@@ -255,7 +269,7 @@ export default function PlayActions({ sheet, charLevel, characterId, campaignId,
         {section("action", "Actions anyone can take", rows.filter((r) => r.kind === "action"))}
         {section("bonus", "Bonus actions", rows.filter((r) => r.kind === "bonus"))}
         {section("reaction", "Reactions", rows.filter((r) => r.kind === "reaction"))}
-        {show("other") && filter === "other" && <p style={{ fontSize: 12.5, color: STONE.inkFaint, margin: "10px 0 0" }}>Nothing else yet. Features that are not actions arrive with the features page (phase 5c).</p>}
+        {show("other") && filter === "other" && <p style={{ fontSize: 12.5, color: STONE.inkFaint, margin: "10px 0 0" }}>Nothing else here. Features that are not actions are listed under Features and traits.</p>}
         {show("limited") && (pools.length > 0 || costed.length > 0) && (
           <div style={{ marginTop: 10 }}>
             <div style={tiny}>Limited use</div>
@@ -284,16 +298,16 @@ export default function PlayActions({ sheet, charLevel, characterId, campaignId,
             })}
           </div>
         )}
-        {out && (
-          <p role={out.bad ? "alert" : "status"} style={{ fontSize: 13, color: out.bad ? C.warn : STONE.ink, margin: "10px 0 0" }}>
-            {out.text}
-            {out.heal ? <> <button type="button" className="forge-btn" onClick={() => { onHealSelf(out.heal!); setOut({ text: `You regain ${out.heal} HP.`, bad: false }); }} style={{ ...btn(), marginLeft: 6 }}>Heal myself with it</button></> : null}
-          </p>
-        )}
-      </div>
+        {outLine}
+      </div>}
 
-      {known.length > 0 && (
+      {tab === "spells" && known.length === 0 && (
+        <div style={box}><p style={{ fontSize: 13, color: STONE.inkFaint, margin: 0 }}>This character has no spells.</p></div>
+      )}
+      {tab !== "actions" && known.length > 0 && (
         <div style={box} role="region" aria-label="Spells">
+          {tab === "spells" && <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", marginBottom: 8 }}>{rollWith}</div>}
+          {tab === "spells" && <div style={{ marginBottom: 10 }}>{targetLine}</div>}
           <div style={{ display: "flex", gap: 10, alignItems: "baseline", flexWrap: "wrap" }}>
             <label style={{ ...forgeLabel, margin: 0 }}>Spells</label>
             {sheet.isCaster && <span style={{ ...mono, fontSize: 12.5, color: STONE.inkFaint }}>{(sheet.castAbil ?? "").toUpperCase()} {sign(castMod)} · attack {sign(sheet.spellAttack)} · save DC {sheet.spellDC}</span>}
@@ -396,10 +410,11 @@ export default function PlayActions({ sheet, charLevel, characterId, campaignId,
             })}
             {!shown.length && <p style={{ fontSize: 12.5, color: STONE.inkFaint }}>No spells match.</p>}
           </div>
+          {tab === "spells" && outLine}
           <p style={{ fontSize: 11.5, color: STONE.inkFaint, margin: "8px 0 0" }}>A spell&apos;s attack, save, damage and healing are read from its text; when a spell does something the text does not spell out plainly, it casts with no roll and shows the description.</p>
         </div>
       )}
-      {slotFor(slots, 1) === null && !pact && known.some((s) => s.rec.level > 0) && <p style={{ fontSize: 12, color: STONE.inkFaint, margin: 0 }}>No spell slots on this character&apos;s class table.</p>}
+      {tab !== "actions" && slotFor(slots, 1) === null && !pact && known.some((s) => s.rec.level > 0) && <p style={{ fontSize: 12, color: STONE.inkFaint, margin: 0 }}>No spell slots on this character&apos;s class table.</p>}
     </section>
   );
 }

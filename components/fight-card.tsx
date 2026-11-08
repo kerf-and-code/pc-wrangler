@@ -23,6 +23,10 @@
 // full), and the card tells the Forge what the fight says about this character (onSeen), so the play
 // sheet shows and changes the fight's HP and conditions while it runs.
 //
+// Phase 5d: `compact` is the character sheet's floating turn tracker. It shows the round, whose turn
+// it is, a save that is waiting, what is left of your own turn, and the turn order with HP and
+// conditions; "All controls" opens the full card in the same place. The full card is unchanged.
+//
 // Players cannot read combats directly or get its live updates (RLS), so the card reads
 // tabletop_combat: every 5 seconds while a fight runs, every 20 while none does, and at once after
 // each change made here.
@@ -31,18 +35,21 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { createClient } from "@/lib/supabase/client";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import { openTabletop } from "@/lib/tabletop/open";
+import { movementLeft } from "@/lib/combat-effects";
 import { AttackForm, combatAct, EconomyBar, isMyTurn, MarkerChips, PlayerEntryControls, SaveBanner, SavesRow, TurnUsed, type FightEntry, type FightView } from "@/components/fight-controls";
 
-export default function FightCard({ campaignId, characterId, sheet, onSeen }: {
+export default function FightCard({ campaignId, characterId, sheet, onSeen, compact = false }: {
   campaignId: string; characterId: string;
   sheet?: { ac: number; hpMax: number; saves?: Record<string, number>; saveProfs?: string[]; spellDc?: number | null; speed?: number | null; attacksPerAction?: number;
     hpNow?: number | null; tempNow?: number } | null;
   onSeen?: (fight: FightView | null, me: FightEntry | null) => void;
+  compact?: boolean;
 }) {
   const supabase = useMemo(() => createClient(), []);
   const [fight, setFight] = useState<FightView | null | undefined>(undefined);
   const [err, setErr] = useState<string | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
+  const [full, setFull] = useState(false);
   const synced = useRef<string | null>(null);
 
   const load = useCallback(async () => {
@@ -91,6 +98,15 @@ export default function FightCard({ campaignId, characterId, sheet, onSeen }: {
   const btn: React.CSSProperties = { padding: "6px 12px", background: "transparent", color: C.sun, border: `1px solid ${C.sun}`, borderRadius: 7, fontSize: 12.5, fontWeight: 600, cursor: "pointer" };
 
   if (fight === undefined) return null;
+  if (!fight && compact) {
+    return (
+      <div style={{ display: "grid", gap: 8 }}>
+        <span style={{ color: C.muted, fontSize: 13 }}>No fight running. The turn order shows here when the GM starts one.</span>
+        <button type="button" onClick={() => openTabletop(campaignId)} style={{ ...btn, justifySelf: "start" }}>Open the tabletop</button>
+        {err && <span role="alert" style={{ color: "#e07a70", fontSize: 12 }}>{err}</span>}
+      </div>
+    );
+  }
   if (!fight) {
     return (
       <div style={{ ...box, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
@@ -105,12 +121,63 @@ export default function FightCard({ campaignId, characterId, sheet, onSeen }: {
   const cur = fight.order.find((e) => e.is_turn);
   const myTurn = isMyTurn(fight, characterId);
   const frac = me && me.hp != null && me.maxHp ? Math.max(0, Math.min(1, me.hp / me.maxHp)) : null;
+
+  // the floating turn tracker: the order, and the few things a player needs to see while it runs
+  if (compact && !full) {
+    const econ = me?.mine ? me.econ : null;
+    const left = econ ? movementLeft(econ, me?.speedNow ?? me?.speed ?? null) : null;
+    const pip = (used: boolean, label: string) => (
+      <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12, color: used ? C.muted : C.text, textDecoration: used ? "line-through" : "none" }}>
+        <span aria-hidden style={{ width: 8, height: 8, borderRadius: 4, background: used ? "transparent" : C.sun, border: `1px solid ${used ? C.line : C.sun}` }} />{label}
+      </span>
+    );
+    return (
+      <section aria-label="Turn order" style={{ display: "grid", gap: 8 }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
+          <strong style={{ color: C.text, fontSize: 13.5 }}>{fight.name}</strong>
+          <span style={{ color: C.sun, fontSize: 12.5 }}>Round {fight.round}{cur ? ` · ${cur.mine ? "your" : `${cur.name}'s`} turn` : ""}</span>
+        </div>
+        {me?.mine && (me.pendingSaves ?? []).length > 0 && (
+          <SaveBanner campaignId={campaignId} characterId={characterId} entry={me} saves={sheet?.saves ?? null} onDone={() => void load()} />
+        )}
+        {econ && (
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }} aria-label="What is left of your turn">
+            {pip(econ.action, "Action")}{pip(econ.bonus, "Bonus")}{pip(econ.reaction, "Reaction")}
+            {left != null && <span style={{ fontSize: 12, color: C.muted }}>{left} ft left</span>}
+          </div>
+        )}
+        {!me && <p style={{ color: C.muted, fontSize: 12.5, margin: 0 }}>This character is not in the fight yet.</p>}
+        <ol style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gap: 3 }}>
+          {fight.order.map((e) => (
+            <li key={e.id} aria-current={e.is_turn ? "step" : undefined}
+              style={{ display: "flex", alignItems: "center", gap: 6, padding: "3px 6px", borderRadius: 5, border: `1px solid ${e.is_turn ? C.sun : "transparent"}`,
+                background: e.mine ? "rgba(255,255,255,0.04)" : "transparent", opacity: e.defeated ? 0.5 : 1 }}>
+              <span style={{ width: 22, textAlign: "right", fontSize: 12, fontWeight: 700, color: C.muted }}>{e.initiative ?? "?"}</span>
+              <span style={{ color: C.text, fontSize: 13, fontWeight: e.is_turn ? 700 : 500, textDecoration: e.defeated ? "line-through" : "none", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {e.name}{e.mine ? " (you)" : ""}
+              </span>
+              {e.kind === "pc" && e.hp != null && <span style={{ fontSize: 11.5, color: C.muted }}>{e.hp}{e.maxHp ? `/${e.maxHp}` : ""}</span>}
+              {e.awaitingSave && <span style={{ fontSize: 11, color: "#e07a70" }}>save due</span>}
+              {(e.conditions ?? []).length > 0 && <span title={(e.conditions ?? []).join(", ")} style={{ fontSize: 11, color: C.sun }}>{(e.conditions ?? []).length} effect{(e.conditions ?? []).length === 1 ? "" : "s"}</span>}
+            </li>
+          ))}
+        </ol>
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+          <button type="button" onClick={() => setFull(true)} style={{ ...btn, padding: "4px 10px", fontSize: 12 }}>All controls</button>
+          <button type="button" onClick={() => openTabletop(campaignId)} style={{ ...btn, padding: "4px 10px", fontSize: 12 }}>Open the tabletop</button>
+        </div>
+        {err && <p role="alert" style={{ color: "#e07a70", fontSize: 12, margin: 0 }}>{err}</p>}
+      </section>
+    );
+  }
+
   return (
     <section style={box} aria-label="The running fight">
       <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
         <strong style={{ color: C.text, fontSize: 15 }}>In the fight: {fight.name}</strong>
         <span style={{ color: C.sun, fontSize: 13 }}>Round {fight.round}{cur ? ` · ${cur.mine ? "your" : `${cur.name}'s`} turn` : ""}</span>
         <span style={{ flex: 1 }} />
+        {compact && <button type="button" onClick={() => setFull(false)} style={btn}>Fewer controls</button>}
         <button type="button" onClick={() => openTabletop(campaignId)} style={btn}>Open the tabletop</button>
       </div>
 

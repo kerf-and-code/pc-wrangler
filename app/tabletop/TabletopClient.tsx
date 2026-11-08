@@ -107,7 +107,7 @@ type Message = {
   kind: "say" | "emote" | "whisper" | "roll" | "system"; body: string; whisper_to: string[] | null; gm_only: boolean; created_at: string;
   roll: { label?: string; notation?: string; total?: number; dice?: RollDie[]; natural?: number | null; logged?: boolean } | null;
 };
-type OutsideRoll = { id: string; actor_name: string | null; source: string; name: string | null; at: string; rolls: { total?: number; dice?: { faces: number; results: number[] }[]; critical_success?: boolean; critical_failure?: boolean } | null };
+type OutsideRoll = { id: string; actor_name: string | null; character_id?: string | null; source: string; name: string | null; at: string; rolls: { total?: number; dice?: { faces: number; results: number[] }[]; critical_success?: boolean; critical_failure?: boolean } | null };
 type FeedItem = { t: number; key: string; msg?: Message; ext?: OutsideRoll };
 
 type Tool = "select" | "ruler" | "template" | "hand" | "fog" | "draw";
@@ -1347,7 +1347,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     if (last) void eraseDrawings([last.id]); else setChatErr("Nothing of yours to take back on this scene.");
   };
 
-  // Shift + double-click a token: its sheet, in a new tab. A player's own character opens in the Forge;
+  // Shift + double-click a token: its sheet, in a new tab. A player's own character opens on its character sheet;
   // for the GM a character opens in the Codex and a monster in its stat block.
   const openSheet = (e: React.MouseEvent) => {
     if (!e.shiftKey) return;
@@ -1356,7 +1356,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     if (!t) return;
     const gm = st.role === "gm";
     const ownChar = !!t.character_id && st.party.some((p) => p.profile_id === st.me && p.character_id === t.character_id);
-    const url = t.character_id && ownChar ? `/me/forge?c=${t.character_id}`
+    const url = t.character_id && ownChar ? `/me/sheet?c=${t.character_id}`
       : t.character_id && gm ? `/gm/codex?character=${t.character_id}`
       : t.stat_block_id && gm ? `/gm/statblock?sb=${t.stat_block_id}`
       : gm && entryFor(t) ? `/gm/combat` : null;
@@ -2193,7 +2193,12 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                   if (f.ext) {
                     const r = f.ext.rolls, dice = (r?.dice ?? []).flatMap((g) => g.results.map((v) => ({ v, sides: g.faces, kept: true })));
                     const nat = r?.critical_success ? 20 : r?.critical_failure ? 1 : null;
-                    return <div key={f.key}>{renderRoll(f.ext.actor_name ?? "Someone", f.ext.name ?? "", r?.total, dice, nat, f.ext.source === "beyond20" ? "D&D Beyond" : f.ext.source === "foundry" ? "Foundry" : f.ext.source)}</div>;
+                    // Who rolled: the name written with the roll, else the party member it belongs to (rolls
+                    // from the character sheet carried no name before phase 5d). Only rolls from outside
+                    // Six Axes get a badge saying where they came from; our own rollers show none.
+                    const who = f.ext.actor_name ?? party.find((p) => p.character_id && p.character_id === f.ext!.character_id)?.name ?? "A player";
+                    const badge = f.ext.source === "beyond20" ? "D&D Beyond" : f.ext.source === "foundry" ? "Foundry" : null;
+                    return <div key={f.key}>{renderRoll(who, f.ext.name ?? "", r?.total, dice, nat, badge)}</div>;
                   }
                   const m = f.msg!;
                   const who = nameOf(m);

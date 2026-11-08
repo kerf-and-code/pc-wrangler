@@ -37,6 +37,8 @@ type Filter = "all" | "equipped" | "attuned" | "magic" | "gear";
 const COIN_KEYS: (keyof Coins)[] = ["pp", "gp", "ep", "sp", "cp"];
 const COIN_NAME: Record<keyof Coins, string> = { pp: "Platinum", gp: "Gold", ep: "Electrum", sp: "Silver", cp: "Copper" };
 const COIN_IN_GP: Record<keyof Coins, number> = { pp: 10, gp: 1, ep: 0.5, sp: 0.1, cp: 0.01 };
+const TRAIT_KEYS: (keyof CharNotes)[] = ["personality", "ideals", "bonds", "flaws"];
+const NOTE_KEYS: (keyof CharNotes)[] = ["backstory", "allies", "organizations"];
 const NOTE_FIELDS: [keyof CharNotes, string, number][] = [
   ["personality", "Personality traits", 2], ["ideals", "Ideals", 2], ["bonds", "Bonds", 2], ["flaws", "Flaws", 2],
   ["backstory", "Backstory", 5], ["allies", "Allies", 3], ["organizations", "Organizations", 3],
@@ -76,7 +78,7 @@ export function canEquip(e: GearEntry, ctx: Ctx, rec: ItemRecord | undefined): b
 const bodyArmor = (e: GearEntry, ctx: Ctx) => ctx.items[e.n]?.kind === "Armor" && ctx.items[e.n]?.sub !== "Shield";
 const shield = (e: GearEntry, ctx: Ctx) => ctx.items[e.n]?.kind === "Armor" && ctx.items[e.n]?.sub === "Shield";
 
-export default function PlayInventory({ gear, catalog, itemByName, ctx, str, attuneMax, coins, notes, onGear, onCoins, onNotes }: {
+export default function PlayInventory({ gear, catalog, itemByName, ctx, str, attuneMax, coins, notes, onGear, onCoins, onNotes, part = "all" }: {
   gear: Build["gear"];
   catalog: CatalogEntry[];
   itemByName: Record<string, ItemRecord>;
@@ -88,6 +90,9 @@ export default function PlayInventory({ gear, catalog, itemByName, ctx, str, att
   onGear: (items: GearEntry[], attuned: string[]) => void;
   onCoins: (c: Coins) => void;
   onNotes: (n: CharNotes) => void;
+  /** Phase 5d: the character sheet shows the inventory (with coins), the notes, and the personality
+   *  traits (on its Background tab) separately. */
+  part?: "all" | "items" | "notes" | "traits";
 }) {
   const narrow = useNarrow();
   const items = useMemo(() => gear?.items ?? [], [gear]);
@@ -197,8 +202,8 @@ export default function PlayInventory({ gear, catalog, itemByName, ctx, str, att
     || (filter === "magic" && v.magic) || (filter === "gear" && !v.magic && !v.equippable));
 
   return (
-    <section aria-label="Inventory" style={{ display: "grid", gap: 12, marginBottom: 14 }}>
-      <div style={box}>
+    <section aria-label={part === "notes" ? "Notes" : part === "traits" ? "Characteristics" : "Inventory"} style={{ display: "grid", gap: 12, marginBottom: 14 }}>
+      {(part === "all" || part === "items") && <div style={box}>
         <div style={{ display: "flex", gap: 10, alignItems: "baseline", flexWrap: "wrap" }}>
           <div style={tiny}>Inventory</div>
           <span style={{ fontSize: 12.5, color: STONE.inkFaint }}>{items.length} item{items.length === 1 ? "" : "s"}</span>
@@ -328,10 +333,11 @@ export default function PlayInventory({ gear, catalog, itemByName, ctx, str, att
             );
           })}
         </div>
-      </div>
+      </div>}
 
-      <CoinsBox coins={coins} onCoins={onCoins} box={box} tiny={tiny} field={field} />
-      <NotesBox notes={notes} onNotes={onNotes} box={box} tiny={tiny} field={field} />
+      {(part === "all" || part === "items") && <CoinsBox coins={coins} onCoins={onCoins} box={box} tiny={tiny} field={field} />}
+      {part !== "items" && <NotesBox notes={notes} onNotes={onNotes} box={box} tiny={tiny} field={field}
+        only={part === "traits" ? TRAIT_KEYS : part === "notes" ? NOTE_KEYS : null} title={part === "traits" ? "Characteristics" : part === "notes" ? "Notes" : "Character notes"} />}
     </section>
   );
 }
@@ -360,7 +366,7 @@ function CoinsBox({ coins, onCoins, box, tiny, field }: { coins: Coins; onCoins:
 
 // Notes are typed into local state and written back a moment after the typing stops (and when the
 // panel goes away), so a long backstory does not re-derive the sheet on every key.
-function NotesBox({ notes, onNotes, box, tiny, field }: { notes: CharNotes; onNotes: (n: CharNotes) => void; box: React.CSSProperties; tiny: React.CSSProperties; field: React.CSSProperties }) {
+function NotesBox({ notes, onNotes, box, tiny, field, only, title }: { notes: CharNotes; onNotes: (n: CharNotes) => void; box: React.CSSProperties; tiny: React.CSSProperties; field: React.CSSProperties; only: (keyof CharNotes)[] | null; title: string }) {
   const [draft, setDraft] = useState<CharNotes>(notes);
   const pending = useRef<CharNotes | null>(null);
   const save = useRef(onNotes);
@@ -374,9 +380,9 @@ function NotesBox({ notes, onNotes, box, tiny, field }: { notes: CharNotes; onNo
   const set = (k: keyof CharNotes, v: string) => { const next = { ...draft, [k]: v.slice(0, 4000) }; pending.current = next; setDraft(next); };
   return (
     <div style={box}>
-      <div style={tiny}>Character notes</div>
+      <div style={tiny}>{title}</div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 10, marginTop: 8 }}>
-        {NOTE_FIELDS.map(([k, label, rows]) => (
+        {NOTE_FIELDS.filter(([k]) => !only || only.includes(k)).map(([k, label, rows]) => (
           <label key={k} style={{ display: "grid", gap: 3, fontSize: 11.5, color: STONE.inkFaint, gridColumn: rows >= 5 ? "1 / -1" : undefined }}>
             {label}
             <textarea rows={rows} value={draft[k] ?? ""} onChange={(e) => set(k, e.target.value)} style={{ ...field, resize: "vertical", lineHeight: 1.5, fontFamily: FORGE_FONTS.body }} />

@@ -95,7 +95,9 @@ export async function POST(req: Request) {
     campaign_id: ch.campaign_id,
     session_id: session.id,
     character_id: ch.id,
-    actor_name: null,
+    // The character's name, written with the roll (phase 5d). It was null, and a reader without the
+    // character list to hand (the tabletop chat) showed the roll as "Someone".
+    actor_name: ch.name || null,
     ddb_character_id: null,
     source: "six_axes_sheet",
     event_type: EVENT_TYPE[kind],

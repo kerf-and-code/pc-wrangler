@@ -125,6 +125,9 @@ export default function MyCharactersPage() {
                   <a href={`/me/characters/${c.character_id}`} style={{ fontFamily: SAX.mono, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: SAX.brass, textDecoration: "none" }}>
                     Character page
                   </a>
+                  <a href={`/me/sheet?c=${c.character_id}`} style={{ fontFamily: SAX.mono, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: SAX.brass, textDecoration: "none" }}>
+                    Sheet
+                  </a>
                   <a href={`/me/forge?c=${c.character_id}`} style={{ fontFamily: SAX.mono, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: C.muted, textDecoration: "none" }}>
                     Forge
                   </a>
