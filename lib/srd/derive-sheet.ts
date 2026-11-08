@@ -51,6 +51,8 @@ export type GearEntry = {
   n: string; mod?: number; variant?: string;
   eq?: boolean; att?: boolean; qty?: number;
   custom?: boolean; wt?: number; note?: string;
+  /** Phase 5g: containers. A container entry carries an `id`; an item stored in it carries that id as `in`. */
+  id?: string; in?: string;
 };
 
 // The stored character build: the INPUTS a derivation runs over.

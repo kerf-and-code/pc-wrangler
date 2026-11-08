@@ -63,6 +63,7 @@ import PlayActions, { type KnownSpell, type FeatureAction } from "@/components/p
 import { featureCost, costSentence } from "@/lib/play/features";
 import PlayInventory, { attunementLimit, type Coins, type CharNotes } from "@/components/play-inventory";
 import FloatingPanel from "@/components/floating-panel";
+import PlayCompanions, { type Companion, type MonsterRec } from "@/components/play-companions";
 import { combatAct, type FightEntry, type FightView } from "@/components/fight-controls";
 import { trackedResources, type TrackInputs } from "@/lib/play/tracks";
 import { isWeapon, unarmedAttack, weaponAttack, weaponProfText, type AttackRow, type WeaponRecord } from "@/lib/play/attacks";
@@ -487,6 +488,8 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
     magic.forEach((m) => { if (!itemByName[m.name]) itemByName[m.name] = m; });
     return { backgrounds, equipment, magic, speciesByName, variantByName, bgByName, classByName, itemByName, featList, featByName, spells, structuredByName };
   }, [srdMode]);
+  // the creatures a companion or a Wild Shape form can be picked from (phase 5g)
+  const monsterList = useMemo(() => loadSrd("monsters", srdMode) as unknown as MonsterRec[], [srdMode]);
 
   // Description of the currently selected species / background, for the Identity panel.
   const speciesDesc = useMemo<Described | null>(
@@ -991,6 +994,7 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
     return b;
   });
   // Languages the player chose (phase 5e). The ones a species or class grants are worked out, not stored.
+  const setCompanions = (list: Companion[]) => patch((b) => { (b as Build & { companions?: Companion[] }).companions = list; return b; });
   const setCustomDefenses = (d: CustomDefenses) => patch((b) => { b.customDefenses = d; return b; });
   const setLanguages = (list: string[]) => patch((b) => { (b as Build & { languages?: string[] }).languages = list; return b; });
   const setCoins = (c: Coins) => patch((b) => { (b as Build & { coins?: Coins }).coins = c; return b; });
@@ -1521,7 +1525,7 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
     const tabs: [SheetTab, string][] = [
       ["actions", "Actions"],
       ...(playSpells.length ? [["spells", "Spells"] as [SheetTab, string]] : []),
-      ["inventory", "Inventory"], ["features", "Features and traits"], ["background", "Background"], ["notes", "Notes"],
+      ["inventory", "Inventory"], ["features", "Features and traits"], ["background", "Background"], ["notes", "Notes"], ["extras", "Extras"],
     ];
     const openTab: SheetTab = tabs.some(([k]) => k === sheetTab) ? sheetTab : "actions";
     const multi = build.multiclass || [];
@@ -1657,6 +1661,10 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
                           species={build.meta.species} speciesRec={srd.speciesByName[build.meta.species]}
                           variantName={speciesVariant} variantRec={srd.variantByName[speciesVariant]}
                           feats={chosenFeats} itemNotes={sheet.itemNotes || []} />
+                      )}
+                      {openTab === "extras" && (
+                        <PlayCompanions companions={(build as Build & { companions?: Companion[] }).companions || []} onChange={setCompanions}
+                          monsters={monsterList} characterId={charIdNow} ruleset={ruleset} />
                       )}
                       {openTab === "background" && (
                         <>
@@ -5093,7 +5101,7 @@ function structuredCloneSafe<T>(v: T): T {
 // The character sheet's own panels (phase 5d)
 // ---------------------------------------------------------------------------
 
-type SheetTab = "actions" | "spells" | "inventory" | "features" | "background" | "notes";
+type SheetTab = "actions" | "spells" | "inventory" | "features" | "background" | "notes" | "extras";
 
 // Two columns on a wide screen (the stats down the left as on a D&D Beyond sheet), one on anything
 // narrower. A stylesheet rather than a width hook, so the server render is already right.

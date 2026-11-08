@@ -17,7 +17,12 @@
 // sheet always treated it. The first change made here writes the flags out explicitly, so what the
 // list shows and what the sheet applies can never drift apart.
 //
-// WEIGHT against carrying capacity (STR x 15 lb), coins included at 50 to the pound. COINS in the
+// WEIGHT against carrying capacity (STR x 15 lb), coins included at 50 to the pound.
+//
+// CONTAINERS (phase 5g): a backpack, sack, pouch, chest or a magic bag holds other items. Each item
+// has a "Where it is" picker; a container lists its contents under it with how full it is. What a
+// Bag of Holding, Handy Haversack or Portable Hole holds weighs nothing to carry (the bag's own
+// weight counts). Removing a container puts its contents back with the rest. COINS in the
 // five denominations. NOTES: personality, ideals, bonds, flaws, backstory, allies and organizations.
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
@@ -64,6 +69,18 @@ export function parseWeight(w: unknown): number | null {
   if (f) return Number(f[1]) / Number(f[2]);
   const n = parseFloat(s);
   return Number.isFinite(n) ? n : null;
+}
+
+// What a container holds, in pounds (null: the book gives a volume, not a weight), and whether its
+// contents weigh nothing while inside (the extradimensional ones).
+export const CONTAINERS: Record<string, { holds: number | null; weightless?: boolean }> = {
+  "Backpack": { holds: 30 }, "Sack": { holds: 30 }, "Pouch": { holds: 6 }, "Basket": { holds: 40 }, "Chest": { holds: 300 },
+  "Bag of Holding": { holds: 500, weightless: true }, "Handy Haversack": { holds: 120, weightless: true },
+  "Heward's Handy Haversack": { holds: 120, weightless: true }, "Portable Hole": { holds: null, weightless: true },
+};
+const withoutIn = (e: GearEntry): GearEntry => { const x = { ...e }; delete x.in; return x; };
+export function containerOf(name: string): { holds: number | null; weightless?: boolean } | null {
+  return CONTAINERS[name] ?? CONTAINERS[name.replace(/\s*\(.*\)\s*$/, "").replace(/\u2019/g, "'")] ?? null;
 }
 
 // The Artificer's Magic Item Adept, Savant and Master raise the attunement limit; everyone else has 3.
@@ -129,8 +146,12 @@ export default function PlayInventory({ gear, catalog, itemByName, ctx, str, att
     const attuned = attune && gearAttuned(e, gear);
     const each = e.wt ?? parseWeight((rec as { weight?: unknown } | undefined)?.weight);
     const qty = Math.max(1, e.qty ?? 1);
+    const holder = e.in ? items.find((x) => x.id === e.in && containerOf(x.n)) ?? null : null;
     return {
       e, i, rec, equippable, attune, equipped, attuned, qty, each,
+      box: e.custom ? null : containerOf(e.n),
+      parent: holder ? holder.id! : null,
+      weightless: !!(holder && containerOf(holder.n)?.weightless),
       weight: each === null ? null : each * qty,
       active: (equippable ? equipped : true) && (attune ? attuned : true),
       magic: !!rec && !!(rec as { rarity?: string }).rarity,
@@ -140,7 +161,9 @@ export default function PlayInventory({ gear, catalog, itemByName, ctx, str, att
   type V = (typeof view)[number];
   const attunedCount = view.filter((v) => v.attuned).length;
   const coinCount = COIN_KEYS.reduce((n, k) => n + (Number(coins[k]) || 0), 0);
-  const carried = view.reduce((n, v) => n + (v.weight ?? 0), 0) + coinCount / 50;
+  // what is inside a Bag of Holding (and the like) weighs nothing to carry
+  const carried = view.reduce((n, v) => n + (v.weightless ? 0 : (v.weight ?? 0)), 0) + coinCount / 50;
+  const contentsOf = (id: string | undefined) => (id ? view.filter((x) => x.parent === id) : []);
   const unweighed = view.filter((v) => v.weight === null).length;
   const capacity = str * 15;
   const over = carried > capacity;
@@ -179,7 +202,27 @@ export default function PlayInventory({ gear, catalog, itemByName, ctx, str, att
     change(v.i, (e) => ({ ...e, att: true }));
     setMsg({ text: `Attuned to ${v.e.n}${v.equippable && !v.equipped ? ". Equip it too for its magic to work" : ""}.`, bad: false });
   };
-  const remove = (v: V) => { commit(items.filter((_, idx) => idx !== v.i)); setOpen(null); setMsg({ text: `${v.e.n} removed.`, bad: false }); };
+  const remove = (v: V) => {
+    // a container's contents go back with the rest rather than vanishing with it
+    const kept = items.filter((_, idx) => idx !== v.i).map((e) => (v.e.id && e.in === v.e.id ? withoutIn(e) : e));
+    commit(kept); setOpen(null);
+    setMsg({ text: `${v.e.n} removed${v.box && contentsOf(v.e.id).length ? "; what it held is back with the rest" : ""}.`, bad: false });
+  };
+  // move an item into a container (giving the container an id the first time) or back out
+  const moveTo = (v: V, target: number | null) => {
+    let id: string | undefined;
+    const next = items.map((e, idx) => {
+      if (target !== null && idx === target) { id = e.id ?? `c${Math.random().toString(36).slice(2, 8)}`; return { ...e, id }; }
+      return e;
+    }).map((e, idx) => {
+      if (idx !== v.i) return e;
+      if (target === null) return withoutIn(e);
+      return { ...e, in: id };
+    });
+    commit(next);
+    setMsg({ text: target === null ? `${v.e.n} is with the rest of your gear.` : `${v.e.n} is in the ${items[target].n}.`, bad: false });
+  };
+  const holders = view.filter((x) => x.box);
   const add = (name: string) => {
     const rec = itemByName[name];
     const proto: GearEntry = { n: name };
@@ -274,7 +317,20 @@ export default function PlayInventory({ gear, catalog, itemByName, ctx, str, att
         {items.length === 0 && <p style={{ fontSize: 13, color: STONE.inkFaint, margin: "10px 0 0" }}>Nothing carried yet. Search the compendium above, or add your own item.</p>}
         {items.length > 0 && shown.length === 0 && <p style={{ fontSize: 13, color: STONE.inkFaint, margin: "10px 0 0" }}>Nothing here under this filter.</p>}
         <div style={{ marginTop: 6 }}>
-          {shown.map((v) => {
+          {(filter === "all" ? shown.filter((v) => !v.parent) : shown).flatMap((v) => [
+            rowOf(v, 0),
+            ...(filter === "all" && v.box ? contentsOf(v.e.id).map((c) => rowOf(c, 1)) : []),
+          ])}
+        </div>
+      </div>}
+
+      {(part === "all" || part === "items") && <CoinsBox coins={coins} onCoins={onCoins} box={box} tiny={tiny} field={field} />}
+      {part !== "items" && <NotesBox notes={notes} onNotes={onNotes} box={box} tiny={tiny} field={field}
+        only={part === "traits" ? TRAIT_KEYS : part === "notes" ? NOTE_KEYS : null} title={part === "traits" ? "Characteristics" : part === "notes" ? "Notes" : "Character notes"} />}
+    </section>
+  );
+
+  function rowOf(v: V, depth: number) {
             const isOpen = open === v.i;
             const def = ctx.items[v.e.n];
             const variants = ctx.itemVariants[v.e.n];
@@ -284,8 +340,10 @@ export default function PlayInventory({ gear, catalog, itemByName, ctx, str, att
               v.weight !== null ? `${Math.round(v.weight * 100) / 100} lb` : null].filter(Boolean).join(" · ");
             const state = v.equippable && v.equipped && v.attune && !v.attuned ? "Not working until attuned"
               : v.attune && v.attuned && v.equippable && !v.equipped ? "Attuned, not equipped" : null;
+            const held = v.box ? contentsOf(v.e.id) : [];
+            const heldLb = held.reduce((n, x) => n + (x.weight ?? 0), 0);
             return (
-              <div key={`${v.e.n}-${v.i}`} style={{ borderBottom: `1px solid ${STONE.hi}`, padding: "7px 0" }}>
+              <div key={`${v.e.n}-${v.i}`} style={{ borderBottom: `1px solid ${STONE.hi}`, padding: "7px 0", marginLeft: depth ? 22 : 0, borderLeft: depth ? `2px solid ${STONE.hi}` : undefined, paddingLeft: depth ? 10 : 0 }}>
                 <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: narrow ? "wrap" : "nowrap" }}>
                   <div style={{ flex: "1 1 200px", minWidth: 0 }}>
                     <button type="button" onClick={() => setOpen(isOpen ? null : v.i)} aria-expanded={isOpen} style={{ background: "none", border: "none", padding: 0, color: STONE.ink, fontSize: 13.5, cursor: "pointer", textAlign: "left" }}>
@@ -296,8 +354,25 @@ export default function PlayInventory({ gear, catalog, itemByName, ctx, str, att
                     {v.effect && <div style={{ fontSize: 12, color: v.active ? C.plum : STONE.inkFaint }}>{v.active ? "" : "When active: "}{v.effect}</div>}
                     {state && <div style={{ fontSize: 12, color: C.warn }}>{state}</div>}
                     {v.e.custom && v.e.note && <div style={{ fontSize: 12, color: STONE.inkFaint }}>{v.e.note}</div>}
+                    {v.box && (
+                      <div style={{ fontSize: 12, color: v.box.holds !== null && heldLb > v.box.holds ? C.warn : STONE.inkFaint }}>
+                        {held.length ? `Holds ${held.length} item${held.length === 1 ? "" : "s"}, ` : "Empty, "}
+                        {v.box.holds !== null ? `${Math.round(heldLb * 10) / 10} of ${v.box.holds} lb` : `${Math.round(heldLb * 10) / 10} lb`}
+                        {v.box.weightless ? " (weighs nothing to carry)" : ""}
+                        {v.box.holds !== null && heldLb > v.box.holds ? ": over what it holds" : ""}
+                      </div>
+                    )}
                   </div>
                   <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", justifyContent: narrow ? "flex-start" : "flex-end" }}>
+                    {/* worn and wielded things are not in a bag: unequip one to pack it away */}
+                    {!v.box && !v.equipped && holders.length > 0 && (
+                      <select aria-label={`Where ${v.e.n} is`} value={v.parent ? String(holders.findIndex((h) => h.e.id === v.parent)) : ""}
+                        onChange={(ev) => moveTo(v, ev.target.value === "" ? null : holders[Number(ev.target.value)].i)}
+                        style={{ ...field, width: "auto", maxWidth: 150 }}>
+                        <option value="">Carried</option>
+                        {holders.map((h, hi) => <option key={h.i} value={hi}>In {h.e.n}{holders.filter((x) => x.e.n === h.e.n).length > 1 ? ` ${hi + 1}` : ""}</option>)}
+                      </select>
+                    )}
                     {v.equippable && <button type="button" className="forge-btn" aria-pressed={v.equipped} onClick={() => equip(v)} aria-label={`${v.equipped ? "Unequip" : "Equip"} ${v.e.n}`} style={btn(v.equipped)}>{v.equipped ? "Equipped" : "Equip"}</button>}
                     {v.attune && <button type="button" className="forge-btn" aria-pressed={v.attuned} onClick={() => attune(v)} aria-label={`${v.attuned ? "End attunement to" : "Attune to"} ${v.e.n}`} style={btn(v.attuned)}>{v.attuned ? "Attuned" : "Attune"}</button>}
                     {!v.equippable && (
@@ -342,15 +417,7 @@ export default function PlayInventory({ gear, catalog, itemByName, ctx, str, att
                 )}
               </div>
             );
-          })}
-        </div>
-      </div>}
-
-      {(part === "all" || part === "items") && <CoinsBox coins={coins} onCoins={onCoins} box={box} tiny={tiny} field={field} />}
-      {part !== "items" && <NotesBox notes={notes} onNotes={onNotes} box={box} tiny={tiny} field={field}
-        only={part === "traits" ? TRAIT_KEYS : part === "notes" ? NOTE_KEYS : null} title={part === "traits" ? "Characteristics" : part === "notes" ? "Notes" : "Character notes"} />}
-    </section>
-  );
+  }
 }
 
 function CoinsBox({ coins, onCoins, box, tiny, field }: { coins: Coins; onCoins: (c: Coins) => void; box: React.CSSProperties; tiny: React.CSSProperties; field: React.CSSProperties }) {
