@@ -5,7 +5,7 @@ import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import { createClient } from "@/lib/supabase/client";
 import { renderClassic, layoutBare } from "@/lib/dungeon/classic";
 import { normalizeLevels, CELL_TYPES } from "@/lib/dungeon/render";
-import { normCustom, normDoors, normElements, normBattleMeta, normSightWalls } from "@/lib/dungeon/battle";
+import { normCustom, normDoors, normElements, normBattleMeta, normSightWalls, piecesOverImage } from "@/lib/dungeon/battle";
 import {
   snapToken, snapCenter, measure, fitCamera, zoomAt, centerOn, toWorld, parseChat, DIAGONAL_RULES,
   templateCells, templateOutline, insideTemplate, snapOrigin, snapAngle, TEMPLATE_SHAPES,
@@ -349,7 +349,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     }
     // trees are a canopy over the tokens, unless the painting already carries the pieces
     const allEls = normElements([m.elements], n)[0];
-    const piecesInPaint = !!overlay && !ov?.piecesOnTop;
+    const piecesInPaint = !!overlay && !!ov && !piecesOverImage(ov);
     canopy.current = piecesInPaint ? [] : allEls.filter((e) => CANOPY_KINDS.has(e.k));
     const baseEls = piecesInPaint ? allEls : allEls.filter((e) => !CANOPY_KINDS.has(e.k));
     const L = layoutBare(cell, { r0: 0, c0: 0, rows: n, cols: n });
@@ -362,7 +362,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
       meta: { title: "", levelNames: meta.levelNames, autoNumber: meta.autoNumber, grid: meta.showGrid },
       level: 0, feetPerSquare: m.feet_per_square, outdoor: kind === "outdoor", ground: meta.ground > 0 && meta.ground < CELL_TYPES.length ? meta.ground : undefined,
       gridLook: meta.grid, elements: baseEls, drawElements: true,
-      topGrid: meta.topGrid.show ? meta.topGrid.opacity : null, overlay, piecesHidden: !!overlay && !ov?.piecesOnTop, bare: true,
+      topGrid: meta.topGrid.show ? meta.topGrid.opacity : null, overlay, piecesHidden: piecesInPaint, bare: true,
     }, L);
     // closed secret doors, as players get them: plain wall drawn the way the renderer draws walls
     if (m.walls?.length) {

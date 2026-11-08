@@ -10,7 +10,7 @@ import {
   type Layout, type RenderInput,
 } from "@/lib/dungeon/classic";
 import {
-  PIECES, MAX_ELEMENTS, MAX_SIGHT_WALLS, PAINT_STYLES, blankMap, fromRow, toRow, fromDungeonRow, resizeMap, newId, levelSig,
+  PIECES, MAX_ELEMENTS, MAX_SIGHT_WALLS, PAINT_STYLES, blankMap, fromRow, toRow, fromDungeonRow, resizeMap, newId, levelSig, piecesOverImage,
   type BattleMap, type BattleMapSummary, type MapKind, type PaintOverlay, type SightWall,
 } from "@/lib/dungeon/battle";
 import TileLibrary from "./TileLibrary";
@@ -289,7 +289,7 @@ export default function BattleMapCreator({ campaignId }: { campaignId: string })
       level: lv, feetPerSquare: m.feetPerSquare, outdoor: m.kind === "outdoor", ground: m.meta.ground, gridLook: m.meta.grid,
       elements: m.elements[lv], drawElements: drawEls, topGrid: m.meta.topGrid.show ? m.meta.topGrid.opacity : null,
       overlay: ov ? { img: ov.img, opacity: ov.o.opacity, inkOnTop: ov.o.inkOnTop } : null,
-      piecesHidden: !!ov && !ov.o.piecesOnTop,
+      piecesHidden: !!ov && !piecesOverImage(ov.o),
     };
   }, [tileColors, overlayFor]);
 
@@ -301,7 +301,7 @@ export default function BattleMapCreator({ campaignId }: { campaignId: string })
     ctx.drawImage(base, 0, 0);
     const S = L.cell, gx = L.ox, gy = L.oy;
     const d = drag.current;
-    const ovNow = overlayFor(m, level), hidePieces = !!ovNow && !ovNow.o.piecesOnTop;
+    const ovNow = overlayFor(m, level), hidePieces = !!ovNow && !piecesOverImage(ovNow.o);
     for (const el of m.elements[level]) {
       if (hidePieces && el.k !== "label") continue;      // the painting shows them
       drawElement(ctx, d && d.id === el.id ? { ...el, x: d.x, y: d.y } : el, gx, gy, S);
@@ -1054,7 +1054,8 @@ export default function BattleMapCreator({ campaignId }: { campaignId: string })
                             <input id="bm-ovop" type="range" min={0} max={1} step={0.05} value={o.opacity} onPointerDown={pushUndo}
                               onChange={(e) => setOverlay({ opacity: Number(e.target.value) }, false)} style={{ width: "100%", accentColor: C.sun }} />
                             {check(o.inkOnTop, (v) => setOverlay({ inkOnTop: v }), "Keep my walls, doors and grid on top")}
-                            {check(o.piecesOnTop, (v) => setOverlay({ piecesOnTop: v }), "Draw my pieces on top too")}
+                            {own ? <p style={{ color: C.muted, fontSize: 12, margin: "8px 0 0" }}>Pieces and doors you add are drawn over your image.</p>
+                              : check(o.piecesOnTop, (v) => setOverlay({ piecesOnTop: v }), "Draw my pieces on top too")}
                           </>
                         )}
                       </>

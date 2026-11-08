@@ -230,6 +230,10 @@ export function resizeMap(m: BattleMap, newN: number): BattleMap {
 
 const STYLE_KEYS = new Set([...PAINT_STYLES.map((x) => x.key), "upload"]);
 
+// The GM's pieces are drawn over the image unless it is a Gemini painting that already shows them. An
+// uploaded map never shows the pieces added to it.
+export function piecesOverImage(o: PaintOverlay): boolean { return o.piecesOnTop || o.style === "upload"; }
+
 // One level's sight walls from jsonb: finite numbers inside the grid (n squares, at most 200), at least
 // a hundredth of a square long, rounded to a hundredth, and no more than MAX_SIGHT_WALLS.
 export function normSightWalls(raw: unknown, n = 200): SightWall[] {
@@ -254,7 +258,8 @@ function normOverlay(raw: unknown): PaintOverlay | null {
     url: o.url.slice(0, 600),
     at: typeof o.at === "string" ? o.at : "",
     sig: typeof o.sig === "string" ? o.sig : "",
-    style: typeof o.style === "string" && STYLE_KEYS.has(o.style) ? o.style : "fantasy",
+    // maps uploaded before style "upload" existed (Phase 4d) are known by where the image is stored
+    style: /\/uploads\/[^/]+$/.test(o.url) ? "upload" : typeof o.style === "string" && STYLE_KEYS.has(o.style) ? o.style : "fantasy",
     show: o.show !== false,
     opacity: num(o.opacity, 0, 1, 1),
     inkOnTop: o.inkOnTop !== false,

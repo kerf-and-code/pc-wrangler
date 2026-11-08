@@ -483,18 +483,25 @@ export function renderClassic(ctx: CanvasRenderingContext2D, input: RenderInput,
   if (input.drawElements !== false) for (const el of els) if (!input.piecesHidden || el.k === "label") drawElement(ctx, el, X(0), Y(0), CELL);
 
   // 8. doors, set into the edge between two squares
-  for (const [k, kind] of Object.entries(marks.doors)) {
-    const e = parseEdge(k); if (!e) continue;
-    const r = Math.floor(e.i / n), c = e.i % n;
-    if (!(occ(r, c) || (e.side === "h" ? occ(r - 1, c) : occ(r, c - 1)))) continue;
-    if (e.side === "h") drawDoor(ctx, kind, X(c), Y(r), CELL, true);
-    else drawDoor(ctx, kind, X(c), Y(r), CELL, false);
-  }
+  const drawDoors = () => {
+    for (const [k, kind] of Object.entries(marks.doors)) {
+      const e = parseEdge(k); if (!e) continue;
+      const r = Math.floor(e.i / n), c = e.i % n;
+      if (!(occ(r, c) || (e.side === "h" ? occ(r - 1, c) : occ(r, c - 1)))) continue;
+      if (e.side === "h") drawDoor(ctx, kind, X(c), Y(r), CELL, true);
+      else drawDoor(ctx, kind, X(c), Y(r), CELL, false);
+    }
+  };
+  drawDoors();
 
-  // 8b. the painted overlay over everything drawn so far, then the text labels again on top of it
+  // 8b. the painted overlay over everything drawn so far, then the text labels again on top of it. When
+  // the picture does not show the pieces (piecesHidden false: the GM's own uploaded map, or "draw my
+  // pieces on top"), what the GM added over it stays on top of it too: the doors and every piece, in
+  // their stacking order (Terry, 2026-11-08: pieces added to an imported map never showed).
   if (ov && !ov.inkOnTop) {
     drawOverlay();
-    if (input.drawElements !== false) for (const el of els) if (el.k === "label") drawElement(ctx, el, X(0), Y(0), CELL);
+    if (!input.piecesHidden) drawDoors();
+    if (input.drawElements !== false) for (const el of els) if (!input.piecesHidden || el.k === "label") drawElement(ctx, el, X(0), Y(0), CELL);
   }
 
   // 9. room numbers and labels
