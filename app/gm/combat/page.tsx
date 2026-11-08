@@ -202,6 +202,47 @@ export default function CombatPage() {
   const setCombatant = (id: string, fn: (c: Combatant) => Combatant) =>
     update((cb) => ({ ...cb, combatants: cb.combatants.map((x) => (x.id === id ? fn(x) : x)) }));
 
+  // ---- tokens on the table (phase 5i) ----
+  // The campaign's active tabletop scene and the tokens on it, so a combatant without one (a monster
+  // added from an encounter here, or one whose token was deleted) can be put on the table, linked by
+  // tokenId so its token shows its HP and its turn.
+  const [table, setTable] = useState<{ sceneId: string; n: number; tokenIds: string[]; pcChars: string[] } | null>(null);
+  const loadTable = useCallback(async (cid: string) => {
+    const { data: sc } = await supabase.from("vtt_scenes").select("id, battle_map_id").eq("campaign_id", cid).eq("is_active", true).maybeSingle();
+    if (!sc) { setTable(null); return; }
+    const [{ data: toks }, { data: bm }] = await Promise.all([
+      supabase.from("vtt_tokens").select("id, character_id").eq("scene_id", (sc as { id: string }).id),
+      supabase.from("battle_maps").select("n").eq("id", (sc as { battle_map_id: string }).battle_map_id).maybeSingle(),
+    ]);
+    const rows = (toks ?? []) as { id: string; character_id: string | null }[];
+    setTable({ sceneId: (sc as { id: string }).id, n: Number((bm as { n?: number } | null)?.n) || 20,
+      tokenIds: rows.map((r) => r.id), pcChars: rows.map((r) => r.character_id).filter((x): x is string => !!x) });
+  }, [supabase]);
+  useEffect(() => { if (campaignId) void loadTable(campaignId); }, [campaignId, loadTable]);
+  const hasToken = (c: Combatant) => !!table && ((c as Combatant & { tokenId?: string | null }).tokenId
+    ? table.tokenIds.includes((c as Combatant & { tokenId?: string | null }).tokenId!)
+    : c.kind === "pc" && !!c.characterId && table.pcChars.includes(c.characterId));
+  const sizeSquares = (size: string | null | undefined) => { const s = (size ?? "").toLowerCase(); return s.startsWith("tiny") ? 0.5 : s.startsWith("large") ? 2 : s.startsWith("huge") ? 3 : s.startsWith("garg") ? 4 : 1; };
+  async function putOnTable(list: Combatant[]) {
+    if (!table || !campaignId || !list.length) return;
+    // in a row from the middle of the map; the GM drags them where they belong on the tabletop
+    const mid = Math.max(1, Math.floor(table.n / 2));
+    const rows = list.map((c, i) => {
+      const size = sizeSquares(c.block?.size);
+      const step = Math.max(1, size);
+      return { campaign_id: campaignId, scene_id: table.sceneId, kind: c.kind === "pc" ? "pc" : "monster", character_id: c.kind === "pc" ? c.characterId ?? null : null,
+        stat_block_id: null, name: c.name, image_url: null, x: Math.min(table.n - size, mid - 2 + (i % 5) * step) + (size < 1 ? 0.25 : 0), y: Math.min(table.n - size, mid + Math.floor(i / 5) * step) + (size < 1 ? 0.25 : 0),
+        size, rot: 0, layer: "token", hidden: !!c.hidden, controlled_by: [], style: c.kind === "pc" ? {} : { stats: { hp: c.maxHp ?? null, ac: c.ac ?? null } } };
+    });
+    const { data, error } = await supabase.from("vtt_tokens").insert(rows).select("id");
+    if (error) { setErr(`Could not put the token on the table: ${error.message}`); return; }
+    const ids = ((data ?? []) as { id: string }[]).map((r) => r.id);
+    const link = new Map(list.map((c, i) => [c.id, ids[i]]).filter(([, id]) => !!id) as [string, string][]);
+    update((cb) => ({ ...cb, combatants: cb.combatants.map((x) => (link.has(x.id) ? { ...x, tokenId: link.get(x.id)! } as Combatant : x)) }));
+    setNote(`${ids.length} token${ids.length === 1 ? "" : "s"} put on the table's active scene. Drag ${ids.length === 1 ? "it" : "them"} into place on the tabletop.`);
+    void loadTable(campaignId);
+  }
+
   // ---- starting a fight ----
   const libraryFor = useCallback((ed: string) =>
     loadSrd("monsters", (ed === "2014" || ed === "2024" ? ed : "both") as "2014" | "2024" | "both") as unknown as Record<string, unknown>[], []);
@@ -584,6 +625,18 @@ export default function CombatPage() {
           </div>
 
           <div>
+            {combat && table && (() => {
+              const missing = live.filter((c) => !hasToken(c) && !(c.kind === "monster" && c.defeated));
+              if (!missing.length) return null;
+              return (
+                <div style={{ ...box, display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                  <span style={{ flex: "1 1 200px", color: C.muted, fontSize: 13 }}>{missing.length} in this fight {missing.length === 1 ? "has" : "have"} no token on the table&apos;s active scene.</span>
+                  {selected && !hasToken(selected) && <button type="button" style={btn()} onClick={() => void putOnTable([selected])}>Put {selected.name} on the table</button>}
+                  <button type="button" style={btn(true)} onClick={() => void putOnTable(missing)}>Put all {missing.length} on the table</button>
+                </div>
+              );
+            })()}
+            {combat && !table && <p style={{ color: C.muted, fontSize: 12.5, margin: "0 0 10px" }}>No tabletop scene is active for this campaign, so there is nowhere to put tokens yet.</p>}
             {selected && (
               <DetailPanel c={selected} adv={adv} onAdv={setAdv} box={box} btn={btn} eyebrow={eyebrow} input={input}
                 onRoll={(notation, kind, label) => void roll(selected, notation, kind, label)}

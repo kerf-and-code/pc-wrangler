@@ -1600,6 +1600,8 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
                       style={{ ...stoneButton(initOpen || fightMine?.me.is_turn ? "primary" : "stone"), fontSize: 12.5, padding: "6px 12px" }}>{initLabel}</button>
                     {campaignNow && charIdNow && <SheetRollLog campaignId={campaignNow} characterId={charIdNow} />}
                     <a className="forge-btn" href={forgeHref} style={{ ...stoneButton("ghost"), fontSize: 12.5, padding: "6px 12px", textDecoration: "none" }}>Edit in the Forge</a>
+                    {charIdNow && <a className="forge-btn" href={`/me/import?into=${charIdNow}`} title="Replace this character's build with a D&D Beyond character-sheet PDF, keeping HP, coins, notes and the rest of the sheet's own state"
+                      style={{ ...stoneButton("ghost"), fontSize: 12.5, padding: "6px 12px", textDecoration: "none" }}>Update from D&amp;D Beyond</a>}
                     <span role="status" style={{ fontFamily: FORGE_FONTS.mono, fontSize: 11, color: saveState === "error" ? C.warn : STONE.inkFaint }}>{saveText}</span>
                   </div>
                 </header>

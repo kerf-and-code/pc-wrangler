@@ -18,9 +18,15 @@
 // The import is deliberately honest about what it could not place: every degradation from the
 // mapper's ImportReport is shown before the player commits, because the authoritative sheet still
 // lives on D&D Beyond and this copy exists for encounter balancing and build ideas.
+//
+// UPDATE MODE (phase 5i): /me/import?into=<character_id> reads the PDF the same way and then
+// overwrites that campaign character's build instead of making a library build, so a character kept
+// up to date on D&D Beyond never has to be rebuilt here. What the D&D Beyond sheet does not hold is
+// kept from the character as it was: current HP and the rest of the play state, spent resources,
+// coins, notes, companions, languages, hand-added defenses and the sheet's overrides.
 
-import React, { useCallback, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import SixAxesNav from "@/components/six-axes-nav";
 import {
@@ -36,9 +42,36 @@ import { ddbToBuild, type ImportContext, type ImportReport } from "@/lib/ddb-imp
 
 type Stage = "idle" | "reading" | "ready" | "saving" | "error";
 
+// The build keys the character sheet keeps that a D&D Beyond PDF does not carry (update mode keeps them).
+const SHEET_KEYS = ["play", "spent", "coins", "notes", "companions", "languages", "customDefenses",
+  "abilityOverride", "hpMaxMod", "hpMaxOverride"] as const;
+
 export default function ImportPage() {
+  return (
+    <Suspense fallback={null}>
+      <ImportInner />
+    </Suspense>
+  );
+}
+
+function ImportInner() {
   const supabase = useMemo(() => createClient(), []);
   const router = useRouter();
+  const into = useSearchParams().get("into");
+  const [target, setTarget] = useState<{ id: string; name: string; build: Record<string, unknown> } | null>(null);
+  const [targetErr, setTargetErr] = useState<string | null>(null);
+  useEffect(() => {
+    if (!into) return;
+    let on = true;
+    void (async () => {
+      const { data, error: er } = await supabase.from("characters").select("id, name, build").eq("id", into).maybeSingle();
+      if (!on) return;
+      if (er || !data) { setTargetErr("That character could not be loaded, so the import would make a new library build instead."); return; }
+      const r = data as { id: string; name: string; build: unknown };
+      setTarget({ id: r.id, name: r.name, build: (r.build && typeof r.build === "object" ? r.build : {}) as Record<string, unknown> });
+    })();
+    return () => { on = false; };
+  }, [into, supabase]);
   const fileRef = useRef<HTMLInputElement | null>(null);
 
   const [stage, setStage] = useState<Stage>("idle");
@@ -113,6 +146,22 @@ export default function ImportPage() {
     setStage("saving");
     setError(null);
     try {
+      if (target) {
+        // update mode: the D&D Beyond build, with what only the sheet holds carried over
+        const next: Record<string, unknown> = { ...(build as Record<string, unknown>) };
+        for (const k of SHEET_KEYS) if (target.build[k] !== undefined) next[k] = target.build[k];
+        const { error: er } = await supabase.from("characters").update({
+          build: next,
+          species: report.species.matched ?? report.species.raw ?? null,
+          class: report.className.matched ?? report.className.raw ?? null,
+          subclass: report.subclass.matched ?? report.subclass.raw ?? null,
+          species_variant: report.species.variant ?? null,
+          level: report.level,
+        }).eq("id", target.id);
+        if (er) throw er;
+        router.push(`/me/sheet?c=${target.id}`);
+        return;
+      }
       const id = await saveToLibrary(supabase, report.characterName || "Imported character", build, {
         species: report.species.matched ?? report.species.raw ?? null,
         class: report.className.matched ?? report.className.raw ?? null,
@@ -127,7 +176,7 @@ export default function ImportPage() {
       setStage("error");
       setError(e instanceof Error ? e.message : "Could not save to your library.");
     }
-  }, [build, report, supabase, router, setStage]);
+  }, [build, report, supabase, router, setStage, target]);
 
   return (
     <div style={{ minHeight: "100vh", position: "relative", ...forgeBackground() }}>
@@ -136,7 +185,15 @@ export default function ImportPage() {
       <div className="sax-navpad" style={{ position: "relative", zIndex: 1 }}>
         <SixAxesNav />
         <main style={{ maxWidth: 900, margin: "0 auto", padding: "28px 20px 64px", ...FORGE_FONTS }}>
-          <h1 style={{ ...forgeHeading, fontSize: 28, marginBottom: 4 }}>Import from D&amp;D Beyond</h1>
+          <h1 style={{ ...forgeHeading, fontSize: 28, marginBottom: 4 }}>{target ? `Update ${target.name} from D&D Beyond` : "Import from D&D Beyond"}</h1>
+          {target && (
+            <p role="status" style={{ ...stonePanel(), padding: "10px 14px", color: STONE.ink, fontSize: 13.5 }}>
+              This replaces {target.name}&apos;s build with the sheet in the PDF: abilities, class and level, proficiencies, gear and spells.
+              Kept as they are: current HP and conditions, spent resources and slots, coins, notes, companions, languages and any overrides.
+              Gear comes in as worn, so check what is equipped on the sheet&apos;s Inventory tab afterwards.
+            </p>
+          )}
+          {targetErr && <p role="alert" style={{ color: "#e07a70", fontSize: 13.5 }}>{targetErr}</p>}
           <p style={{ color: STONE.inkDim, marginTop: 0, marginBottom: 18, fontSize: 14 }}>
             Upload a character-sheet PDF exported from D&amp;D Beyond. It is read in your browser and
             never uploaded anywhere. Everything on the sheet is kept, including the parts Six Axes
@@ -239,7 +296,7 @@ export default function ImportPage() {
                   onClick={() => void onSave()}
                   disabled={stage === "saving"}
                 >
-                  {stage === "saving" ? "Saving…" : "Save to my library"}
+                  {stage === "saving" ? "Saving…" : target ? `Update ${target.name}` : "Save to my library"}
                 </button>
                 <button
                   className="forge-btn is-ghost"

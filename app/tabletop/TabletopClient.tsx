@@ -107,7 +107,14 @@ type Message = {
   kind: "say" | "emote" | "whisper" | "roll" | "system"; body: string; whisper_to: string[] | null; gm_only: boolean; created_at: string;
   roll: { label?: string; notation?: string; total?: number; dice?: RollDie[]; natural?: number | null; logged?: boolean } | null;
 };
-type OutsideRoll = { id: string; actor_name: string | null; character_id?: string | null; source: string; name: string | null; at: string; rolls: { total?: number; dice?: { faces: number; results: number[] }[]; critical_success?: boolean; critical_failure?: boolean } | null };
+type OutsideRoll = { id: string; actor_name: string | null; character_id?: string | null; source: string; name: string | null; at: string;
+  event_type?: string | null; applied_to?: string | null;
+  rolls: { total?: number; dice?: { faces: number; results: number[] }[]; critical_success?: boolean | null; critical_failure?: boolean | null; damage_type?: string | null; discarded?: boolean } | null };
+// Phase 5i: the chat shows one attack from D&D Beyond (its attack roll and every damage roll) as one card
+type FeedRow = { key: string; msg?: Message; ext?: OutsideRoll; group?: OutsideRoll[] };
+const GROUP_MS = 6000;
+// Tiny 0.5, Small and Medium 1, Large 2, Huge 3, Gargantuan 4 squares
+const sizeSquares = (size: string | null | undefined) => { const s = (size ?? "").toLowerCase(); return s.startsWith("tiny") ? 0.5 : s.startsWith("large") ? 2 : s.startsWith("huge") ? 3 : s.startsWith("garg") ? 4 : 1; };
 type FeedItem = { t: number; key: string; msg?: Message; ext?: OutsideRoll };
 
 type Tool = "select" | "ruler" | "template" | "hand" | "fog" | "draw";
@@ -171,6 +178,9 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   const fightRow = useRef<FightRow | null>(null);
   const fightRef = useRef<Fight | null>(null);
   const [selEntry, setSelEntry] = useState<string | null>(null);
+  // phase 5i: the target picked on each D&D Beyond attack card, and what applying it did
+  const [applyTo, setApplyTo] = useState<Record<string, string>>({});
+  const [applyNote, setApplyNote] = useState<Record<string, { text: string; bad: boolean }>>({});
   const [hpAmt, setHpAmt] = useState("");
   const [initBonus, setInitBonus] = useState("0");
   const [fightBusy, setFightBusy] = useState(false);
@@ -890,6 +900,66 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     const f = data as { messages?: Message[]; outside_rolls?: OutsideRoll[] } | null;
     if (f) addFeed(f.messages ?? [], f.outside_rolls ?? []);
   }, [supabase, campaignId, addFeed]);
+
+  // One attack from D&D Beyond arrives as several rows (the attack roll, then each damage roll), with
+  // the same character, the same item name and moments apart: shown together as one card. A second
+  // attack roll after damage starts a new card.
+  const feedRows = useMemo<FeedRow[]>(() => {
+    const out: FeedRow[] = [];
+    type Open = FeedRow & { t: number; who: string };
+    let last: Open | null = null;
+    for (const f of feed) {
+      if (!f.ext) { out.push({ key: f.key, msg: f.msg }); last = null; continue; }
+      const who = f.ext.character_id || f.ext.actor_name || "";
+      const g = last?.group;
+      const joins = !!g && last!.who === who && (g[0].name ?? "") === (f.ext.name ?? "") && Math.abs(f.t - last!.t) <= GROUP_MS
+        && !(f.ext.event_type === "to-hit" && g.some((x) => x.event_type === "damage"));
+      if (joins) { g!.push(f.ext); last!.t = f.t; continue; }
+      const row: Open = { key: f.key, ext: f.ext, group: [f.ext], t: f.t, who };
+      out.push(row); last = row;
+    }
+    return out;
+  }, [feed]);
+
+  // Apply the damage an outside roll rolled to a creature in the fight (p117). The server reads the
+  // logged rows, checks whose they are, the turn and (for a player) the hit, and applies them once.
+  const applyOutside = async (key: string, ids: string[], target: string, half: boolean) => {
+    const f = fightRef.current;
+    if (!f || !target) return;
+    const { data, error: er } = await supabase.rpc("combat_apply_outside_roll", { p_combat: f.id, p_target: target, p_events: ids, p_half: half });
+    if (er) {
+      setApplyNote((m) => ({ ...m, [key]: { text: /does not exist|schema cache/.test(er.message) ? "Damage from D&D Beyond needs migration p117 on the server." : er.message, bad: true } }));
+      return;
+    }
+    const r = data as { target: string; damage: number; hit: boolean; attack: number | null; ac: number | null };
+    const label = r.hit ? r.target : `missed ${r.target}`;
+    setFeed((prev) => prev.map((fi) => (fi.ext && ids.includes(fi.ext.id) ? { ...fi, ext: { ...fi.ext, applied_to: label } } : fi)));
+    setApplyNote((m) => ({ ...m, [key]: { text: r.hit ? `${r.damage} damage to ${r.target}.` : `${r.attack ?? "The attack"} misses ${r.target}.`, bad: false } }));
+  };
+
+  // A combatant with no token on this scene (made on the Combat page, or its token deleted): put one on
+  // the table, sized from its stat block, and link it so the token shows its HP and its turn.
+  const tokenForEntry = (e: Entry) => [...tokensRef.current.values()].find((x) => x.id === e.tokenId || (e.kind === "pc" && x.character_id === e.characterId)) ?? null;
+  const addTokenFor = async (entries: Entry[]) => {
+    const st = stateRef.current; if (!st?.scene) { setChatErr("Open a scene first: a token goes on the scene in front of you."); return; }
+    const c = viewCentre();
+    const rows = entries.map((e, i) => {
+      const cb = fightRow.current?.combatants.find((x) => x.id === e.id);
+      const size = sizeSquares(cb?.block?.size);
+      const p = snapToken(c.x + (i % 4) * Math.max(1, size), c.y + Math.floor(i / 4) * Math.max(1, size), size);
+      return { campaign_id: campaignId, scene_id: st.scene!.id, kind: e.kind === "pc" ? "pc" : "monster", character_id: e.kind === "pc" ? e.characterId ?? null : null,
+        stat_block_id: null, name: e.name, image_url: null, x: p.x, y: p.y, size, rot: 0, layer: "token", hidden: !!e.hidden, controlled_by: [],
+        style: e.kind === "pc" ? {} : { stats: { hp: cb?.maxHp ?? null, ac: cb?.ac ?? null } } };
+    });
+    const { data, error: er } = await supabase.from("vtt_tokens").insert(rows).select("*");
+    if (er) { setChatErr(`Could not add the token: ${er.message}`); return; }
+    const made = (data ?? []) as Token[];
+    for (const t of made) tokensRef.current.set(t.id, { ...t, mine: true });
+    // link each monster's token to its entry (a pc finds its token by character)
+    const link = new Map(entries.map((e, i) => [e.id, made[i]?.id]).filter(([, id]) => !!id) as [string, string][]);
+    if (link.size) await mutateFight((cb) => ({ ...cb, combatants: cb.combatants.map((x) => (link.has(x.id) ? { ...x, tokenId: link.get(x.id)! } : x)) }));
+    setSelected(made.map((t) => t.id)); requestDraw();
+  };
 
   // ---- the fight ----
   const toFight = (row: FightRow): Fight => ({
@@ -1972,6 +2042,74 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   );
   if (!state) return <div style={{ minHeight: "100vh", background: "#15120f", color: C.muted, padding: 24 }}>Setting up the table…</div>;
 
+  // One attack from outside (D&D Beyond): its attack roll(s), its damage rolls with their types and the
+  // total, and the controls to land the damage on a creature in the fight.
+  const renderAttack = (key: string, g: OutsideRoll[]) => {
+    const first = g[0];
+    const who = first.actor_name ?? party.find((p) => p.character_id && p.character_id === first.character_id)?.name ?? "A player";
+    const attacks = g.filter((x) => x.event_type === "to-hit");
+    const kept = attacks.find((x) => !x.rolls?.discarded) ?? attacks[0];
+    const dmg = g.filter((x) => x.event_type === "damage");
+    const other = g.filter((x) => x.event_type !== "to-hit" && x.event_type !== "damage");
+    const total = dmg.reduce((n, x) => n + (Number(x.rolls?.total) || 0), 0);
+    const crit = !!kept?.rolls?.critical_success, fumble = !!kept?.rolls?.critical_failure;
+    const chips = (x: OutsideRoll) => (x.rolls?.dice ?? []).flatMap((d) => d.results.map((v, i) => (
+      <span key={`${x.id}-${d.faces}-${i}`} style={{ fontSize: 11, padding: "0 5px", borderRadius: 5, border: `1px solid ${C.line}`, color: C.muted }}>{v}/d{d.faces}</span>)));
+    const applied = dmg.length > 0 && dmg.every((x) => !!x.applied_to) ? dmg[0].applied_to : null;
+    const fightNow = fight;
+    const mineRoll = g.every((x) => !!x.character_id && myChars.some((c) => c.character_id === x.character_id));
+    const canApply = !!fightNow && dmg.length > 0 && (isGm || mineRoll) && (!applied || (isGm && applied.startsWith("missed ")));
+    const preset = isGm ? (selEntry && fightNow?.order.some((e) => e.id === selEntry) ? selEntry : (selected[0] ? fightNow?.order.find((e) => e.tokenId === selected[0])?.id ?? "" : "")) : "";
+    const target = applyTo[key] ?? preset;
+    const tgt = fightNow?.order.find((e) => e.id === target) ?? null;
+    const choices = (fightNow?.order ?? []).filter((e) => isGm || (!e.hidden && !(e.kind === "pc" && myChars.some((c) => c.character_id === e.characterId))));
+    const ids = g.map((x) => x.id);
+    const note = applyNote[key];
+    return (
+      <div style={{ background: "#1c1814", border: `1px solid ${crit ? "#5f9c5a" : fumble ? "#a8483f" : C.line}`, borderRadius: 8, padding: "8px 10px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 8, color: C.muted, fontSize: 12 }}>
+          <span><b style={{ color: C.text }}>{who}</b>{first.name ? ` · ${first.name}` : ""}</span>
+          <span style={{ fontSize: 11, color: C.sun }}>{first.source === "foundry" ? "Foundry" : "D&D Beyond"}</span>
+        </div>
+        {kept && (
+          <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: 4, flexWrap: "wrap" }}>
+            <span style={{ fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: C.muted, minWidth: 50 }}>Attack</span>
+            <span style={{ fontSize: 22, fontWeight: 700, color: crit ? "#8fd18a" : fumble ? "#e07a70" : C.text }}>{kept.rolls?.total ?? "?"}</span>
+            {attacks.map((x) => <span key={x.id} style={{ display: "inline-flex", gap: 3, textDecoration: x.rolls?.discarded ? "line-through" : "none", opacity: x.rolls?.discarded ? 0.6 : 1 }}>{chips(x)}</span>)}
+            {crit && <span style={{ fontSize: 12, color: "#8fd18a" }}>critical hit</span>}
+            {fumble && <span style={{ fontSize: 12, color: "#e07a70" }}>natural 1</span>}
+            {isGm && tgt?.ac != null && !crit && !fumble && <span style={{ fontSize: 12, color: C.muted }}>vs AC {tgt.ac}: {Number(kept.rolls?.total) >= tgt.ac ? "hits" : "misses"}</span>}
+          </div>
+        )}
+        {dmg.length > 0 && (
+          <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: 4, flexWrap: "wrap" }}>
+            <span style={{ fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: C.muted, minWidth: 50 }}>Damage</span>
+            <span style={{ fontSize: 22, fontWeight: 700, color: C.text }}>{total}</span>
+            <span style={{ fontSize: 12.5, color: C.muted }}>{dmg.map((x) => `${x.rolls?.total ?? "?"}${x.rolls?.damage_type ? ` ${x.rolls.damage_type.toLowerCase()}` : ""}`).join(" + ")}</span>
+            <span style={{ display: "inline-flex", gap: 3, flexWrap: "wrap" }}>{dmg.flatMap(chips)}</span>
+          </div>
+        )}
+        {other.map((x) => (
+          <div key={x.id} style={{ fontSize: 12.5, color: C.muted, marginTop: 3 }}>{x.event_type}: <b style={{ color: C.text }}>{x.rolls?.total ?? "?"}</b></div>
+        ))}
+        {crit && dmg.length > 0 && <div style={{ fontSize: 11.5, color: C.muted, marginTop: 3 }}>Damage as D&amp;D Beyond rolled it (it doubles the dice on a critical, and adds what the sheet adds, such as Rage).</div>}
+        {applied && <div style={{ fontSize: 12.5, color: applied.startsWith("missed ") ? "#e07a70" : "#8fd18a", marginTop: 5 }}>{applied.startsWith("missed ") ? `Missed ${applied.slice(7)}` : `Applied to ${applied}`}</div>}
+        {canApply && (
+          <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", marginTop: 6 }}>
+            <select aria-label="Who the damage lands on" value={target} onChange={(ev) => setApplyTo((m) => ({ ...m, [key]: ev.target.value }))} style={{ ...field, flex: "1 1 120px", padding: "4px 6px" }}>
+              <option value="">Target…</option>
+              {choices.map((e) => <option key={e.id} value={e.id}>{e.name}{e.defeated ? " (down)" : ""}</option>)}
+            </select>
+            <button type="button" disabled={!target} onClick={() => void applyOutside(key, ids, target, false)} style={{ ...small, padding: "4px 9px", color: "#e07a70" }}>{applied ? "Apply anyway" : `Apply ${total}`}</button>
+            <button type="button" disabled={!target} onClick={() => void applyOutside(key, ids, target, true)} style={{ ...small, padding: "4px 9px" }}>Half ({Math.floor(total / 2)})</button>
+          </div>
+        )}
+        {!fightNow && dmg.length > 0 && !applied && (isGm || mineRoll) && <div style={{ fontSize: 11.5, color: C.muted, marginTop: 4 }}>Start a fight to land this damage on a creature.</div>}
+        {note && <div role={note.bad ? "alert" : "status"} style={{ fontSize: 12, color: note.bad ? "#e07a70" : "#8fd18a", marginTop: 4 }}>{note.text}</div>}
+      </div>
+    );
+  };
+
   const renderRoll = (who: string, title: string, total: number | undefined, dice: { v: number; sides: number; kept: boolean }[], nat: number | null, badge: string | null) => (
     <div style={{ background: "#1c1814", border: `1px solid ${nat === 20 ? "#5f9c5a" : nat === 1 ? "#a8483f" : C.line}`, borderRadius: 8, padding: "8px 10px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", gap: 8, color: C.muted, fontSize: 12 }}>
@@ -2189,7 +2327,8 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
             <>
               <div style={{ flex: 1, overflowY: "auto", padding: 10, display: "flex", flexDirection: "column", gap: 8 }}>
                 {feed.length === 0 && <p style={{ color: C.muted, fontSize: 13, margin: 0 }}>Nothing said yet. Type below, or roll with the dice buttons. /r 1d20+5 Attack rolls, /w name whispers.</p>}
-                {feed.map((f) => {
+                {feedRows.map((f) => {
+                  if (f.group && (f.group.length > 1 || f.group.some((x) => x.event_type === "damage"))) return <div key={f.key}>{renderAttack(f.key, f.group)}</div>;
                   if (f.ext) {
                     const r = f.ext.rolls, dice = (r?.dice ?? []).flatMap((g) => g.results.map((v) => ({ v, sides: g.faces, kept: true })));
                     const nat = r?.critical_success ? 20 : r?.critical_failure ? 1 : null;
@@ -2262,6 +2401,13 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                       <button type="button" disabled={fightBusy} onClick={() => void stepTurn(1)} style={{ ...small, background: C.sun, color: "#1b1712", border: "none", fontWeight: 600 }} title="N">Next turn (N) &rarr;</button>
                       <button type="button" disabled={fightBusy} onClick={() => void rollMonsterInit()} style={small}>Roll monster initiative</button>
                       <button type="button" disabled={fightBusy} onClick={sortFight} style={small}>Sort by initiative</button>
+                      {(() => {
+                        const missing = fight.order.filter((e) => !tokenForEntry(e) && !e.defeated);
+                        return missing.length > 0 ? (
+                          <button type="button" disabled={fightBusy} onClick={() => void addTokenFor(missing)} style={{ ...small, gridColumn: "1 / -1" }}
+                            title="Everyone in the fight without a token on this scene gets one, in the middle of your view">Add the {missing.length} missing token{missing.length === 1 ? "" : "s"}</button>
+                        ) : null;
+                      })()}
                     </div>
                   )}
                   {!isGm && (() => {
@@ -2311,6 +2457,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                             </button>
                             {e.hp != null && <span style={{ fontSize: 12, color: C.muted }}>{e.hp}{e.maxHp ? `/${e.maxHp}` : ""}{e.tempHp ? ` +${e.tempHp}` : ""}</span>}
                             {isGm && e.ac != null && <span style={{ fontSize: 11.5, color: C.muted }}>AC {e.ac}</span>}
+                            {isGm && !tokenForEntry(e) && <button type="button" onClick={() => void addTokenFor([e])} title={`${e.name} has no token on this scene: put one on the table, linked to this entry`} aria-label={`Add a token for ${e.name}`} style={{ ...small, padding: "1px 7px", fontSize: 11 }}>Add token</button>}
                           </div>
                           {frac != null && <div style={{ height: 4, background: "#2a241d", borderRadius: 2, marginTop: 5 }}><div style={{ width: `${frac * 100}%`, height: 4, borderRadius: 2, background: frac > 0.5 ? "#5fae5a" : frac > 0.25 ? "#d9a43a" : "#d0463c" }} /></div>}
                           {(e.conditions ?? []).length > 0 && <div style={{ marginTop: 5 }}><MarkerChips list={e.conditions ?? []} /></div>}
