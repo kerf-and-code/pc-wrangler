@@ -19,6 +19,12 @@
 // (phase 4a/4b), and each spends the right part of the turn (4c). Outside a fight the same rolls go
 // to /api/rolls/player and are recorded for the session. A spell with several attacks (beams, rays)
 // spends its action on the first; each further one is a follow-up (p115).
+//
+// Phase 5f: class features that cost an action, bonus action or reaction without spending a pool
+// (Cunning Action, Uncanny Dodge: read from their text, lib/play/features.ts) sit in their sections
+// and spend that part of the turn in a fight. A species spell cast "once per long rest without a
+// slot" gets a free cast beside the slots, tracked in the spent map as free:<spell> so the long
+// rest gives it back with everything else.
 
 import React, { useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -33,7 +39,8 @@ import { slotsLeft, slotFor } from "@/lib/play/tracks";
 import type { DerivedSheet } from "@/lib/srd/derive-sheet";
 import { useNarrow } from "@/lib/use-narrow";
 
-export type KnownSpell = { rec: SpellRecord; always?: string | null };
+export type KnownSpell = { rec: SpellRecord; always?: string | null; free?: boolean };
+export type FeatureAction = { key: string; name: string; level: number; cost: "action" | "bonus" | "reaction"; summary: string; from: string };
 type Filter = "all" | "attack" | "action" | "bonus" | "reaction" | "other" | "limited";
 type Cost = "attack" | "action" | "bonus" | "reaction" | "followup";
 type RollOut = { total: number; natural: number | null; notation: string; logged: boolean; hit?: boolean | null; crit?: boolean; target?: string; defeated?: boolean; error?: string };
@@ -42,7 +49,7 @@ const ABIL_NAME: Record<string, string> = { str: "STR", dex: "DEX", con: "CON", 
 const sign = (n: number) => `${n >= 0 ? "+" : ""}${n}`;
 const costLabel: Record<SpellCost, string> = { action: "Action", bonus: "Bonus action", reaction: "Reaction", other: "Other" };
 
-export default function PlayActions({ sheet, charLevel, characterId, campaignId, fight, attacks, spells, pools, slots, pactLevel, spent, onSpend, costed, onHealSelf, onFightChanged, tab = "all" }: {
+export default function PlayActions({ sheet, charLevel, characterId, campaignId, fight, attacks, spells, pools, slots, pactLevel, spent, onSpend, costed, onHealSelf, onFightChanged, tab = "all", features = [] }: {
   sheet: DerivedSheet; charLevel: number; characterId: string | null; campaignId: string | null;
   fight: { view: FightView; me: FightEntry } | null;
   attacks: AttackRow[]; spells: KnownSpell[]; pools: Resource[]; slots: Resource[]; pactLevel: number | null;
@@ -51,6 +58,8 @@ export default function PlayActions({ sheet, charLevel, characterId, campaignId,
   onHealSelf: (n: number) => void; onFightChanged: () => void;
   /** Phase 5d: the character sheet shows actions and spells on separate tabs. */
   tab?: "all" | "actions" | "spells";
+  /** Phase 5f: features that cost part of the turn but spend no pool. */
+  features?: FeatureAction[];
 }) {
   const supabase = useMemo(() => createClient(), []);
   // on a phone each row stacks: the name and its numbers on the left, the button on the right
@@ -193,6 +202,10 @@ export default function PlayActions({ sheet, charLevel, characterId, campaignId,
       hit: r.attack ? sign(sheet.spellAttack) : `DC ${sheet.spellDC} ${ABIL_NAME[r.save!]}`, effect: `${r.damage ?? ""} ${(r.damageType ?? "").toLowerCase()}${r.count > 1 ? ` x${r.count} ${r.unit}s` : ""}`.trim(),
       note: `${s.rec.level ? `${ORD[s.rec.level]} level spell` : "cantrip"} · ${costLabel[c]}`,
       run: () => { if (s.rec.level === 0) void cast(s.rec, null, 0); else { setLvl(s.rec.level); setQ(s.rec.name); setOpen(s.rec.name); } }, runLabel: s.rec.level === 0 ? "Cast" : "Cast…" });
+  }
+  for (const f of features) {
+    rows.push({ key: `ft-${f.key}`, kind: f.cost, name: f.name, range: "", hit: "", effect: f.summary, note: `${f.from} feature, level ${f.level}`,
+      run: () => void spendTurn(f.cost, f.name), runLabel: inFight ? "Use" : undefined });
   }
   for (const a of STANDARD_ACTIONS) rows.push({ key: `std-${a.name}`, kind: "action", name: a.name, range: "", hit: "", effect: a.tip, run: () => void spendTurn("action", a.name), runLabel: inFight ? "Use" : undefined });
   const melee = attacks.find((a) => a.melee && a.source === "weapon") ?? attacks.find((a) => a.melee);
@@ -350,6 +363,8 @@ export default function PlayActions({ sheet, charLevel, characterId, campaignId,
             {shown.map((s) => {
               const sp = s.rec, r = readSpell(sp, { slot: sp.level, charLevel, castMod }), c = spellCost(sp.casting_time), isOpen = open === sp.name;
               const choices = sp.level ? slotChoices(sp) : [];
+              const freeKey = `free:${sp.name}`;
+              const freeOk = !!s.free && sp.level > 0 && !(spent[freeKey] > 0);
               return (
                 <div key={sp.name} style={{ borderBottom: `1px solid ${STONE.hi}`, padding: "7px 0" }}>
                   <div style={{ display: "grid", gridTemplateColumns: narrow ? "1fr auto" : "minmax(150px, 1.4fr) 90px 90px 90px minmax(110px, 1.2fr) auto", gap: 8, alignItems: "center" }}>
@@ -373,16 +388,23 @@ export default function PlayActions({ sheet, charLevel, characterId, campaignId,
                     <div>
                       {sp.level === 0
                         ? <button type="button" className="forge-btn" disabled={busy} onClick={() => void cast(sp, null, 0)} aria-label={`Cast ${sp.name}`} style={btn()}>Cast</button>
-                        : <button type="button" className="forge-btn" disabled={busy || choices.length === 0} title={choices.length ? undefined : "No slot left of this level or higher"} onClick={() => setOpen(isOpen ? null : sp.name)} aria-label={choices.length ? `Cast ${sp.name}: pick a slot` : `${sp.name}: no slots left`} aria-expanded={isOpen} style={btn(isOpen)}>{choices.length ? "Cast…" : "No slots"}</button>}
+                        : <button type="button" className="forge-btn" disabled={busy || (choices.length === 0 && !freeOk)} title={choices.length || freeOk ? undefined : "No slot left of this level or higher"} onClick={() => setOpen(isOpen ? null : sp.name)} aria-label={choices.length || freeOk ? `Cast ${sp.name}: pick a slot` : `${sp.name}: no slots left`} aria-expanded={isOpen} style={btn(isOpen)}>{choices.length || freeOk ? "Cast…" : "No slots"}</button>}
                     </div>
                   </div>
                   {isOpen && (
                     <div style={{ marginTop: 8, padding: "8px 10px", background: "rgba(0,0,0,0.22)", borderRadius: 4 }}>
                       <p style={{ fontSize: 12, color: STONE.inkFaint, margin: "0 0 6px" }}>{costLabel[c]} · {sp.range} · {sp.components} · {sp.duration}</p>
                       <p style={{ fontSize: 13, color: STONE.ink, margin: "0 0 8px", lineHeight: 1.55, whiteSpace: "pre-wrap" }}>{sp.description}</p>
-                      {sp.level > 0 && choices.length > 0 && (
+                      {sp.level > 0 && (choices.length > 0 || s.free) && (
                         <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
                           <span style={{ fontSize: 12.5, color: STONE.ink }}>Cast with</span>
+                          {s.free && (
+                            <button type="button" className="forge-btn" disabled={busy || !freeOk}
+                              title={freeOk ? "Once per long rest, without a slot" : "Used: it comes back on a long rest"}
+                              onClick={() => { onSpend(freeKey, 1); void cast(sp, null, sp.level); }} style={btn(freeOk)}>
+                              {freeOk ? "No slot (once per long rest)" : "Free cast used"}
+                            </button>
+                          )}
                           {choices.map((ch) => {
                             const rr = readSpell(sp, { slot: ch.level, charLevel, castMod });
                             const fx = rr.healing ?? rr.damage;

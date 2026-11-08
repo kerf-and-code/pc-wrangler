@@ -30,18 +30,29 @@ import {
 import { useNarrow } from "@/lib/use-narrow";
 
 export type Coins = { pp?: number; gp?: number; ep?: number; sp?: number; cp?: number };
-export type CharNotes = { personality?: string; ideals?: string; bonds?: string; flaws?: string; backstory?: string; allies?: string; organizations?: string };
+export type CharNotes = {
+  personality?: string; ideals?: string; bonds?: string; flaws?: string; backstory?: string; allies?: string; organizations?: string;
+  // phase 5f: the rest of the characteristics, and two more notes
+  gender?: string; age?: string; height?: string; weight?: string; eyes?: string; hair?: string; skin?: string; faith?: string; size?: string;
+  enemies?: string; other?: string;
+};
 export type CatalogEntry = { name: string; type: string; magic: boolean; rarity?: string };
 
 type Filter = "all" | "equipped" | "attuned" | "magic" | "gear";
 const COIN_KEYS: (keyof Coins)[] = ["pp", "gp", "ep", "sp", "cp"];
 const COIN_NAME: Record<keyof Coins, string> = { pp: "Platinum", gp: "Gold", ep: "Electrum", sp: "Silver", cp: "Copper" };
 const COIN_IN_GP: Record<keyof Coins, number> = { pp: 10, gp: 1, ep: 0.5, sp: 0.1, cp: 0.01 };
-const TRAIT_KEYS: (keyof CharNotes)[] = ["personality", "ideals", "bonds", "flaws"];
-const NOTE_KEYS: (keyof CharNotes)[] = ["backstory", "allies", "organizations"];
+// short one-line characteristics (rows 0 means a single-line field)
+const LOOK_FIELDS: [keyof CharNotes, string, number][] = [
+  ["gender", "Gender", 0], ["age", "Age", 0], ["size", "Size", 0], ["height", "Height", 0], ["weight", "Weight", 0],
+  ["eyes", "Eyes", 0], ["hair", "Hair", 0], ["skin", "Skin", 0], ["faith", "Faith", 0],
+];
+const TRAIT_KEYS: (keyof CharNotes)[] = [...LOOK_FIELDS.map(([k]) => k), "personality", "ideals", "bonds", "flaws"];
+const NOTE_KEYS: (keyof CharNotes)[] = ["backstory", "allies", "organizations", "enemies", "other"];
 const NOTE_FIELDS: [keyof CharNotes, string, number][] = [
+  ...LOOK_FIELDS,
   ["personality", "Personality traits", 2], ["ideals", "Ideals", 2], ["bonds", "Bonds", 2], ["flaws", "Flaws", 2],
-  ["backstory", "Backstory", 5], ["allies", "Allies", 3], ["organizations", "Organizations", 3],
+  ["backstory", "Backstory", 5], ["allies", "Allies", 3], ["organizations", "Organizations", 3], ["enemies", "Enemies", 3], ["other", "Other notes", 4],
 ];
 
 // "3", 3, "1/4", "1½", 0.5 -> pounds
@@ -381,8 +392,18 @@ function NotesBox({ notes, onNotes, box, tiny, field, only, title }: { notes: Ch
   return (
     <div style={box}>
       <div style={tiny}>{title}</div>
+      {NOTE_FIELDS.some(([k, , rows]) => rows === 0 && (!only || only.includes(k))) && (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))", gap: 8, marginTop: 8 }}>
+          {NOTE_FIELDS.filter(([k, , rows]) => rows === 0 && (!only || only.includes(k))).map(([k, label]) => (
+            <label key={k} style={{ display: "grid", gap: 3, fontSize: 11.5, color: STONE.inkFaint }}>
+              {label}
+              <input value={draft[k] ?? ""} onChange={(e) => set(k, e.target.value.slice(0, 80))} style={{ ...field, fontFamily: FORGE_FONTS.body, width: "100%", boxSizing: "border-box" }} />
+            </label>
+          ))}
+        </div>
+      )}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 10, marginTop: 8 }}>
-        {NOTE_FIELDS.filter(([k]) => !only || only.includes(k)).map(([k, label, rows]) => (
+        {NOTE_FIELDS.filter(([k, , rows]) => rows > 0 && (!only || only.includes(k))).map(([k, label, rows]) => (
           <label key={k} style={{ display: "grid", gap: 3, fontSize: 11.5, color: STONE.inkFaint, gridColumn: rows >= 5 ? "1 / -1" : undefined }}>
             {label}
             <textarea rows={rows} value={draft[k] ?? ""} onChange={(e) => set(k, e.target.value)} style={{ ...field, resize: "vertical", lineHeight: 1.5, fontFamily: FORGE_FONTS.body }} />

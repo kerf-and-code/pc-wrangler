@@ -106,6 +106,8 @@ export type Build = {
    * breakdown shows featMods as one line instead.
    */
   featModSources?: { label: string; mods: Record<string, number> }[];
+  /** Phase 5f: defenses the player records by hand (a curse, a boon, a blessing), added to the derived ones. */
+  customDefenses?: { resist?: string[]; immune?: string[]; vuln?: string[] };
 };
 
 export type EpicChoice = {
@@ -522,6 +524,8 @@ export type DerivedSheet = {
   abilityParts?: Record<Ability, AbilityPart[]>;
   /** Phase 5e: maximum HP before the player's modifier or override. */
   hpMaxRolled?: number;
+  /** Phase 5f: damage vulnerabilities (only ever recorded by hand: no species or item in either SRD gives one to a character). */
+  vulnerable?: string[];
 };
 
 /** One line of an ability score's breakdown. "set" raises the score to a value (Belt of Giant Strength). */
@@ -754,13 +758,16 @@ export function deriveSheet(build: Build, ctx: RulesContext): DerivedSheet {  co
   // list is normalized and de-duplicated rather than showing Poison twice.
   const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
   const resist: string[] = [];
-  for (const r of (ctx.species[build.meta.species]?.resist || []).concat(ep.grants.resist, ib.resist)) {
+  const cd = build.customDefenses || {};
+  for (const r of (ctx.species[build.meta.species]?.resist || []).concat(ep.grants.resist, ib.resist, cd.resist || [])) {
     if (r && !resist.includes(cap(r))) resist.push(cap(r));
   }
 
   const sp = ctx.species[build.meta.species] || {};
   const immune: string[] = [];
-  for (const r of (sp.immune || []).concat(ib.immune)) if (r && !immune.includes(cap(r))) immune.push(cap(r));
+  for (const r of (sp.immune || []).concat(ib.immune, cd.immune || [])) if (r && !immune.includes(cap(r))) immune.push(cap(r));
+  const vulnerable: string[] = [];
+  for (const r of cd.vuln || []) if (r && !vulnerable.includes(cap(r))) vulnerable.push(cap(r));
   const senses: string[] = [];
   if (sp.darkvision) senses.push(`Darkvision ${sp.darkvision} ft`);
   for (const [k, v] of Object.entries(sp.senses || {})) if (v) senses.push(`${cap(k)} ${v} ft`);
@@ -780,6 +787,6 @@ export function deriveSheet(build: Build, ctx: RulesContext): DerivedSheet {  co
     immune, senses, otherSpeeds,
     advAgainst: sp.advAgainst || [], advSaves: sp.advSaves || [], advSavesVs: sp.advSavesVs || "",
     checkBonus: ib.checks, itemNotes,
-    abilityParts: parts, hpMaxRolled,
+    abilityParts: parts, hpMaxRolled, vulnerable,
   };
 }

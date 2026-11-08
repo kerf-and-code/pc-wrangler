@@ -58,8 +58,9 @@ import { LANCER_RULES } from "@/lib/lancer/rules-data";
 import LancerForge from "@/components/lancer-forge";
 import SystemAttribution from "@/components/system-attribution";
 import FightCard from "@/components/fight-card";
-import PlaySheet, { type PlayState, type SheetOverrides } from "@/components/play-sheet";
-import PlayActions, { type KnownSpell } from "@/components/play-actions";
+import PlaySheet, { type PlayState, type SheetOverrides, type CustomDefenses } from "@/components/play-sheet";
+import PlayActions, { type KnownSpell, type FeatureAction } from "@/components/play-actions";
+import { featureCost, costSentence } from "@/lib/play/features";
 import PlayInventory, { attunementLimit, type Coins, type CharNotes } from "@/components/play-inventory";
 import FloatingPanel from "@/components/floating-panel";
 import { combatAct, type FightEntry, type FightView } from "@/components/fight-controls";
@@ -605,14 +606,16 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
     const traits = traitList(srd.speciesByName[build.meta.species]?.traits)
       .concat(traitList(srd.variantByName[speciesVariant]?.traits));
     const picks = (build as Build & { speciesChoices?: Record<string, string> }).speciesChoices || {};
-    const out: { spell: string; from: string; level: number }[] = [];
+    // free: a species grant, cast once per long rest without a slot (phase 5f); subclass spells are not
+    const out: { spell: string; from: string; level: number; free?: boolean }[] = [];
     // A species with a structured entry grants its spells from there: the base species' (Light,
     // Thaumaturgy) and the picked option's. The trait-text route below misses the level 1 cantrip,
     // because that table cell is a sentence rather than a spell name.
     if (resolvedSpecies) {
       for (const g of resolvedSpecies.effects.spells || []) {
         if (g.level <= (build.level || 1) && !out.some((o) => o.spell === g.spell)) {
-          out.push({ spell: g.spell, from: resolvedSpecies.option || build.meta.species, level: g.level });
+          // the species data marks the once-per-long-rest casts ("free": "1/LR"); cantrips need no slot anyway
+          out.push({ spell: g.spell, from: resolvedSpecies.option || build.meta.species, level: g.level, free: !!(g as { free?: string }).free });
         }
       }
     }
@@ -623,7 +626,7 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
       for (const g of lineageSpells(opt)) {
         // Only what the character has actually reached. A level 1 elf does not have Misty Step
         // pending; they have nothing, and listing it as theirs would be wrong rather than early.
-        if (g.level <= (build.level || 1)) out.push({ spell: g.spell, from: `${chosen} ${t.name}`, level: g.level });
+        if (g.level <= (build.level || 1)) out.push({ spell: g.spell, from: `${chosen} ${t.name}`, level: g.level, free: true });
       }
     }
     // A subclass that grants spells does so on exactly the same terms as a lineage - always
@@ -853,8 +856,8 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
   const playSpells = useMemo<KnownSpell[]>(() => {
     const byName = new Map((srd.spells as unknown as PlaySpell[]).map((sp) => [sp.name, sp]));
     const out: KnownSpell[] = [];
-    const add = (n: string, always: string | null) => { const rec = byName.get(n); if (rec && !out.some((o) => o.rec.name === n)) out.push({ rec, always }); };
-    for (const g of grantedSpells) add(g.spell, g.from);
+    const add = (n: string, always: string | null, free = false) => { const rec = byName.get(n); if (rec && !out.some((o) => o.rec.name === n)) out.push({ rec, always, free }); };
+    for (const g of grantedSpells) add(g.spell, g.from, !!g.free);
     for (const n of [...(build.spells?.cantrips || []), ...(build.spells?.known || [])]) add(n, null);
     return out;
   }, [srd.spells, grantedSpells, build.spells]);
@@ -988,6 +991,7 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
     return b;
   });
   // Languages the player chose (phase 5e). The ones a species or class grants are worked out, not stored.
+  const setCustomDefenses = (d: CustomDefenses) => patch((b) => { b.customDefenses = d; return b; });
   const setLanguages = (list: string[]) => patch((b) => { (b as Build & { languages?: string[] }).languages = list; return b; });
   const setCoins = (c: Coins) => patch((b) => { (b as Build & { coins?: Coins }).coins = c; return b; });
   const setNotes = (n: CharNotes) => patch((b) => { (b as Build & { notes?: CharNotes }).notes = n; return b; });
@@ -1526,6 +1530,23 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
       [build.meta.subclass, build.meta.className].filter(Boolean).join(" ") + (multi.length ? ` ${build.level}` : ""),
       ...multi.map((c) => [c.subclass, c.className].filter(Boolean).join(" ") + ` ${c.level}`),
     ].filter(Boolean).join(" · ");
+    // features that cost part of a turn but spend no pool (phase 5f); the pool ones are under Limited use
+    const poolNames = [...tracks.pools.map((p) => p.label), ...costedList.map((c) => c.name)].map((x) => x.toLowerCase().replace(/s$/, ""));
+    const featureActions: FeatureAction[] = [];
+    for (const c of [{ className: build.meta.className, level: build.level }, ...multi].filter((x) => x.className)) {
+      for (const g of classProgression(classRecWithSub(c.className), c.level)) {
+        for (const f of g.features) {
+          const cost = featureCost(f.desc);
+          if (!cost) continue;
+          const base = f.name.replace(/\s*\(.*\)\s*$/, "").trim();
+          const low = base.toLowerCase();
+          if (poolNames.some((p) => p === low || low.startsWith(p) || p.startsWith(low))) continue;
+          const at = featureActions.findIndex((x) => x.name === base);
+          const row = { key: `${c.className}-${base}`, name: base, level: g.level, cost, summary: costSentence(f.desc), from: c.className };
+          if (at >= 0) featureActions[at] = row; else featureActions.push(row);
+        }
+      }
+    }
     const initLabel = fightView ? `Initiative · round ${fightView.round}${fightMine?.me.is_turn ? ", your turn" : ""}` : "Initiative";
     const saveText = saveState === "saving" ? "Saving…" : saveState === "error" ? "Could not save" : saveState === "idle" ? "Unsaved changes" : "Saved";
     const tabBtn = (on: boolean): React.CSSProperties => ({
@@ -1572,6 +1593,7 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
                       disabled={!campaignNow} title={campaignNow ? "Show or hide the turn order" : "Only a character at a campaign table is in fights"}
                       onClick={() => setInitOpen((o) => !o)}
                       style={{ ...stoneButton(initOpen || fightMine?.me.is_turn ? "primary" : "stone"), fontSize: 12.5, padding: "6px 12px" }}>{initLabel}</button>
+                    {campaignNow && charIdNow && <SheetRollLog campaignId={campaignNow} characterId={charIdNow} />}
                     <a className="forge-btn" href={forgeHref} style={{ ...stoneButton("ghost"), fontSize: 12.5, padding: "6px 12px", textDecoration: "none" }}>Edit in the Forge</a>
                     <span role="status" style={{ fontFamily: FORGE_FONTS.mono, fontSize: 11, color: saveState === "error" ? C.warn : STONE.inkFaint }}>{saveText}</span>
                   </div>
@@ -1585,7 +1607,8 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
                       onShortRestResources={() => setSpentMap(afterShortRest([...tracks.pools, ...tracks.slots], spentNow))}
                       onLongRestResources={clearSpent}
                       overrides={{ ability: build.abilityOverride || {}, hpMaxMod: build.hpMaxMod || 0, hpMaxOverride: build.hpMaxOverride ?? null }}
-                      onOverrides={setOverrides} />
+                      onOverrides={setOverrides}
+                      customDefenses={build.customDefenses || {}} onCustomDefenses={setCustomDefenses} />
                     <SheetProficiencies
                       coreTraits={((srd.structuredByName[build.meta.className] || {}) as { core_traits?: string }).core_traits || ""}
                       backgroundRec={srd.bgByName[build.meta.background]}
@@ -1615,7 +1638,8 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
                           fight={fightView && fightMine ? { view: fightView, me: fightMine.me } : null}
                           attacks={playAttacks} spells={playSpells} pools={tracks.pools} slots={tracks.slots} pactLevel={tracks.pactLevel}
                           spent={spentNow} onSpend={setSpent}
-                          costed={costedList} onHealSelf={healSelf} onFightChanged={() => { /* the fight card polls */ }} />
+                          costed={costedList} onHealSelf={healSelf} onFightChanged={() => { /* the fight card polls */ }}
+                          features={featureActions} />
                       )}
                       {(openTab === "inventory" || openTab === "notes") && (
                         <PlayInventory part={openTab === "inventory" ? "items" : "notes"} gear={build.gear} catalog={gearIndex} itemByName={srd.itemByName} ctx={ctx}
@@ -5224,6 +5248,69 @@ function SheetProficiencies({ coreTraits, backgroundRec, masteries, ruleset, spe
           <button type="button" className="forge-btn" disabled={!typed.trim()} onClick={() => add(typed)} style={{ ...stoneButton("stone"), fontSize: 12, padding: "4px 10px" }}>Add</button>
         </div>
       </FeatureGroup>
+    </div>
+  );
+}
+
+// The header's roll log (phase 5f): this character's rolls in the campaign's open session, from the
+// sheet, the tabletop and D&D Beyond alike, newest first. Read through tabletop_feed (players cannot
+// read vtt_events or vtt_messages directly), only while the list is open, every 8 seconds.
+type LogRoll = { key: string; at: string; label: string; total: number | null; nat: 20 | 1 | null; from: string | null };
+function SheetRollLog({ campaignId, characterId }: { campaignId: string; characterId: string }) {
+  const supabase = useMemo(() => createClient(), []);
+  const [open, setOpen] = useState(false);
+  const [rolls, setRolls] = useState<LogRoll[] | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const load = useCallback(async () => {
+    const { data, error } = await supabase.rpc("tabletop_feed", { p_campaign: campaignId, p_since: null, p_limit: 200 });
+    if (error) { setErr(/not at this table/.test(error.message) ? "Only the table's players and GM see its rolls." : `Could not read the rolls: ${error.message}`); return; }
+    setErr(null);
+    const f = (data ?? {}) as {
+      messages?: { id: string; kind: string; character_id: string | null; created_at: string; roll: { label?: string; total?: number; natural?: number | null } | null }[];
+      outside_rolls?: { id: string; character_id?: string | null; source: string; name: string | null; at: string; rolls: { total?: number; critical_success?: boolean; critical_failure?: boolean } | null }[];
+    };
+    const out: LogRoll[] = [];
+    for (const m of f.messages ?? []) {
+      if (m.kind !== "roll" || m.character_id !== characterId || !m.roll) continue;
+      out.push({ key: `m-${m.id}`, at: m.created_at, label: m.roll.label || "Roll", total: m.roll.total ?? null, nat: m.roll.natural === 20 ? 20 : m.roll.natural === 1 ? 1 : null, from: "Tabletop" });
+    }
+    for (const r of f.outside_rolls ?? []) {
+      if (r.character_id !== characterId) continue;
+      out.push({ key: `e-${r.id}`, at: r.at, label: r.name || "Roll", total: r.rolls?.total ?? null, nat: r.rolls?.critical_success ? 20 : r.rolls?.critical_failure ? 1 : null,
+        from: r.source === "beyond20" ? "D&D Beyond" : r.source === "foundry" ? "Foundry" : null });
+    }
+    out.sort((a, b) => (a.at < b.at ? 1 : -1));
+    setRolls(out.slice(0, 30));
+  }, [supabase, campaignId, characterId]);
+  useEffect(() => {
+    if (!open) return;
+    void load();
+    const id = setInterval(() => { if (!document.hidden) void load(); }, 8000);
+    return () => clearInterval(id);
+  }, [open, load]);
+  const time = (iso: string) => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? "" : d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }); };
+  return (
+    <div style={{ position: "relative" }}>
+      <button type="button" className="forge-btn" aria-expanded={open} aria-haspopup="true" onClick={() => setOpen((o) => !o)}
+        style={{ ...stoneButton(open ? "primary" : "stone"), fontSize: 12.5, padding: "6px 12px" }}>Rolls</button>
+      {open && (
+        <div role="region" aria-label="Your rolls this session"
+          style={{ position: "absolute", right: 0, top: "calc(100% + 6px)", zIndex: 40, width: "min(320px, calc(100vw - 32px))", maxHeight: 360, overflowY: "auto",
+            background: "rgba(20,17,13,0.98)", border: `1px solid ${STONE.hi}`, borderRadius: 8, boxShadow: "0 10px 30px rgba(0,0,0,0.5)", padding: 8 }}>
+          <div style={{ ...forgeLabel, margin: "0 0 6px" }}>Your rolls this session</div>
+          {err && <p role="alert" style={{ fontSize: 12.5, color: C.warn, margin: 0 }}>{err}</p>}
+          {!err && rolls === null && <p style={{ fontSize: 12.5, color: STONE.inkFaint, margin: 0 }}>Loading&hellip;</p>}
+          {!err && rolls && rolls.length === 0 && <p style={{ fontSize: 12.5, color: STONE.inkFaint, margin: 0 }}>No rolls yet, or no session open.</p>}
+          {rolls && rolls.map((r) => (
+            <div key={r.key} style={{ display: "flex", gap: 8, alignItems: "baseline", padding: "4px 2px", borderBottom: `1px solid ${STONE.hi}` }}>
+              <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 16, fontWeight: 700, minWidth: 32, textAlign: "right", color: r.nat === 20 ? "#8fd18a" : r.nat === 1 ? "#e07a70" : STONE.ink }}>{r.total ?? "?"}</span>
+              <span style={{ flex: 1, fontSize: 13, color: STONE.ink, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.label}</span>
+              {r.from && <span style={{ fontSize: 10.5, color: STONE.inkFaint }}>{r.from}</span>}
+              <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 10.5, color: STONE.inkFaint }}>{time(r.at)}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

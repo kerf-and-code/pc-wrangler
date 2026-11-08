@@ -22,6 +22,9 @@
 // Phase 5e: a score's pill opens its breakdown (base, species, background, feats, items, cap) with an
 // override; the HP box's Max HP control adds a modifier or replaces the maximum. Both are stored in
 // the build (abilityOverride, hpMaxMod, hpMaxOverride) and applied by the derivation.
+//
+// Phase 5f: defenses the player records by hand (resistances, immunities, vulnerabilities) join the
+// derived ones, kept in the build as customDefenses.
 
 import React, { useCallback, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -32,6 +35,9 @@ import { combatAct, type FightEntry } from "@/components/fight-controls";
 import { SKILLS, type Ability, type DerivedSheet } from "@/lib/srd/derive-sheet";
 
 export type SheetOverrides = { ability: Partial<Record<Ability, number>>; hpMaxMod: number; hpMaxOverride: number | null };
+export type CustomDefenses = { resist?: string[]; immune?: string[]; vuln?: string[] };
+const DAMAGE_TYPES = ["Acid", "Bludgeoning", "Cold", "Fire", "Force", "Lightning", "Necrotic", "Piercing", "Poison", "Psychic", "Radiant", "Slashing", "Thunder"];
+const DEF_KINDS: [keyof CustomDefenses, string][] = [["resist", "Resistant"], ["immune", "Immune"], ["vuln", "Vulnerable"]];
 
 export type PlayState = {
   hp?: number | null;                     // null or missing: at full HP
@@ -75,13 +81,15 @@ export function takeDamage(hp: number, temp: number, n: number): { hp: number; t
 
 type Rolled = { label: string; total: number; notation: string; natural: number | null; logged: boolean; at: number };
 
-export default function PlaySheet({ name, sheet, saveProf, ruleset, characterId, hitDice, play, onPlay, fight, onFightChanged, onShortRestResources, onLongRestResources, overrides, onOverrides }: {
+export default function PlaySheet({ name, sheet, saveProf, ruleset, characterId, hitDice, play, onPlay, fight, onFightChanged, onShortRestResources, onLongRestResources, overrides, onOverrides, customDefenses, onCustomDefenses }: {
   name: string; sheet: DerivedSheet; saveProf: Ability[]; ruleset: "2014" | "2024"; characterId: string | null;
   hitDice: HitDice; play: PlayState; onPlay: (fn: (p: PlayState) => PlayState) => void;
   fight: { id: string; me: FightEntry } | null; onFightChanged: () => void;
   onShortRestResources: () => void; onLongRestResources: () => void;
   /** Phase 5e: the player's ability and max HP overrides; without onOverrides the controls are hidden. */
   overrides?: SheetOverrides; onOverrides?: (fn: (o: SheetOverrides) => SheetOverrides) => void;
+  /** Phase 5f: hand-recorded defenses; without onCustomDefenses the editor is hidden. */
+  customDefenses?: CustomDefenses; onCustomDefenses?: (d: CustomDefenses) => void;
 }) {
   const supabase = useMemo(() => createClient(), []);
   const [adv, setAdv] = useState<"flat" | "adv" | "dis">("flat");
@@ -94,6 +102,8 @@ export default function PlaySheet({ name, sheet, saveProf, ruleset, characterId,
   const [resting, setResting] = useState<"short" | "long" | null>(null);
   const [detail, setDetail] = useState<Ability | null>(null);
   const [maxOpen, setMaxOpen] = useState(false);
+  const [defOpen, setDefOpen] = useState(false);
+  const [defAdd, setDefAdd] = useState<{ kind: keyof CustomDefenses; type: string }>({ kind: "resist", type: "" });
   const ov: SheetOverrides = overrides ?? { ability: {}, hpMaxMod: 0, hpMaxOverride: null };
 
   const hpMax = Math.max(1, sheet.hpMax || 1);
@@ -410,10 +420,41 @@ export default function PlaySheet({ name, sheet, saveProf, ruleset, characterId,
 
         <div style={{ display: "grid", gap: 12 }}>
           <div style={box}>
-            <label style={forgeLabel}>Defenses</label>
-            {sheet.resist.length === 0 && sheet.immune.length === 0 && <p style={{ fontSize: 12.5, color: STONE.inkFaint, margin: 0 }}>No resistances or immunities.</p>}
+            <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+              <label style={{ ...forgeLabel, flex: 1 }}>Defenses</label>
+              {onCustomDefenses && <button type="button" className="forge-btn" onClick={() => setDefOpen((v) => !v)} aria-expanded={defOpen} style={{ ...btn(defOpen), fontSize: 11.5, padding: "3px 9px" }}>{defOpen ? "Done" : "Edit"}</button>}
+            </div>
+            {sheet.resist.length === 0 && sheet.immune.length === 0 && !(sheet.vulnerable ?? []).length && <p style={{ fontSize: 12.5, color: STONE.inkFaint, margin: 0 }}>No resistances, immunities or vulnerabilities.</p>}
             {sheet.resist.length > 0 && <p style={{ fontSize: 13, color: STONE.ink, margin: "0 0 4px" }}>Resistant: {sheet.resist.join(", ")}</p>}
-            {sheet.immune.length > 0 && <p style={{ fontSize: 13, color: STONE.ink, margin: 0 }}>Immune: {sheet.immune.join(", ")}</p>}
+            {sheet.immune.length > 0 && <p style={{ fontSize: 13, color: STONE.ink, margin: "0 0 4px" }}>Immune: {sheet.immune.join(", ")}</p>}
+            {(sheet.vulnerable ?? []).length > 0 && <p style={{ fontSize: 13, color: C.warn, margin: 0 }}>Vulnerable: {(sheet.vulnerable ?? []).join(", ")}</p>}
+            {defOpen && onCustomDefenses && (
+              <div style={{ marginTop: 8, paddingTop: 8, borderTop: `1px solid ${STONE.hi}`, display: "grid", gap: 6 }}>
+                <p style={{ fontSize: 11.5, color: STONE.inkFaint, margin: 0 }}>Ones you add by hand (a curse, a boon, a blessing). Those from your species, feats and items are worked out and cannot be removed here.</p>
+                {DEF_KINDS.map(([k, label]) => (customDefenses?.[k] ?? []).length > 0 && (
+                  <div key={k} style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+                    <span style={{ fontSize: 12, color: STONE.inkFaint, minWidth: 74 }}>{label}</span>
+                    {(customDefenses?.[k] ?? []).map((t) => (
+                      <button key={t} type="button" className="forge-btn" aria-label={`Remove ${label.toLowerCase()} to ${t}`}
+                        onClick={() => onCustomDefenses({ ...customDefenses, [k]: (customDefenses?.[k] ?? []).filter((x) => x !== t) })}
+                        style={{ ...btn(), fontSize: 11.5, padding: "2px 8px" }}>{t} (remove)</button>
+                    ))}
+                  </div>
+                ))}
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+                  <select aria-label="Kind of defense" value={defAdd.kind} onChange={(e) => setDefAdd({ ...defAdd, kind: e.target.value as keyof CustomDefenses })} style={{ ...field, width: "auto", fontFamily: FORGE_FONTS.body }}>
+                    {DEF_KINDS.map(([k, label]) => <option key={k} value={k}>{label}</option>)}
+                  </select>
+                  <select aria-label="Damage type" value={defAdd.type} onChange={(e) => setDefAdd({ ...defAdd, type: e.target.value })} style={{ ...field, width: "auto", fontFamily: FORGE_FONTS.body }}>
+                    <option value="">Damage type</option>
+                    {DAMAGE_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                  <button type="button" className="forge-btn" disabled={!defAdd.type}
+                    onClick={() => { const cur = customDefenses?.[defAdd.kind] ?? []; if (!cur.includes(defAdd.type)) onCustomDefenses({ ...customDefenses, [defAdd.kind]: [...cur, defAdd.type] }); setDefAdd({ ...defAdd, type: "" }); }}
+                    style={{ ...btn(), fontSize: 12, padding: "4px 10px" }}>Add</button>
+                </div>
+              </div>
+            )}
           </div>
           <div style={box}>
             <label style={forgeLabel}>Conditions{inFight ? " (in the fight)" : ""}</label>
