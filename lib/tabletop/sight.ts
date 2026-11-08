@@ -130,5 +130,63 @@ export function canSee(polys: Pt[][], x: number, y: number, radius: number): boo
   return polys.some((poly) => probes.some(([px, py]) => insidePoly(poly, px, py)));
 }
 
+// ---------------------------------------------------------------------------------------------------
+// Light (Phase 5k). A scene is bright (sight alone decides), dim (everything in sight is seen, shaded,
+// and lights brighten their area) or dark (only what is lit, or within the viewer's darkvision, is seen).
+// A light source sits on a token: bright light out to `bright`, dim light a further `dim` beyond, both
+// measured from the token's edge as auras are, and stopped by walls exactly as sight is (its own
+// visibility polygon). Darkvision is a radius around the viewer, inside the viewer's sight.
+// Everything here is in squares; the table turns feet into squares.
+
+export type LightMode = "bright" | "dim" | "dark";
+export const LIGHT_MODES: { key: LightMode; label: string }[] = [
+  { key: "bright", label: "Bright" }, { key: "dim", label: "Dim" }, { key: "dark", label: "Dark" },
+];
+export const lightModeOf = (v: unknown): LightMode => (v === "dim" || v === "dark" ? v : "bright");
+
+// Bright and dim radii in feet, from the 2024 rules' light sources.
+export const LIGHT_PRESETS: { key: string; label: string; bright: number; dim: number }[] = [
+  { key: "candle", label: "Candle (5 + 5 ft)", bright: 5, dim: 5 },
+  { key: "torch", label: "Torch (20 + 20 ft)", bright: 20, dim: 20 },
+  { key: "lamp", label: "Lamp (15 + 30 ft)", bright: 15, dim: 30 },
+  { key: "lantern", label: "Lantern (30 + 30 ft)", bright: 30, dim: 30 },
+  { key: "light", label: "Light cantrip (20 + 20 ft)", bright: 20, dim: 20 },
+  { key: "daylight", label: "Daylight (60 + 60 ft)", bright: 60, dim: 60 },
+];
+export const DARKVISION_FT = [60, 90, 120, 300];
+
+// A token's light from its style ({ light: { bright, dim } }), or null.
+export function lightOf(style: Record<string, unknown> | null | undefined): { bright: number; dim: number } | null {
+  const l = style?.light as { bright?: unknown; dim?: unknown } | undefined;
+  if (!l || typeof l !== "object") return null;
+  const bright = Math.max(0, Math.min(600, Number(l.bright) || 0)), dim = Math.max(0, Math.min(600, Number(l.dim) || 0));
+  return bright + dim > 0 ? { bright, dim } : null;
+}
+export function darkvisionOf(style: Record<string, unknown> | null | undefined): number {
+  return Math.max(0, Math.min(600, Number(style?.darkvision) || 0));
+}
+
+export type Light = { x: number; y: number; bright: number; r: number; poly: Pt[] };   // r: bright + dim
+export type Viewer = { x: number; y: number; dv: number; poly: Pt[] };
+
+// Is this point lit by any light (bright or dim)?
+export function litAt(lights: Light[], x: number, y: number): boolean {
+  return lights.some((L) => Math.hypot(x - L.x, y - L.y) <= L.r && insidePoly(L.poly, x, y));
+}
+
+// Does this viewer see the point, given the scene's light?
+export function seesPoint(v: Viewer, lights: Light[], mode: LightMode, x: number, y: number): boolean {
+  if (!insidePoly(v.poly, x, y)) return false;
+  if (mode !== "dark") return true;
+  return Math.hypot(x - v.x, y - v.y) <= v.dv || litAt(lights, x, y);
+}
+
+// canSee with light: the token's centre or a point on its rim, seen by any viewer.
+export function canSeeLit(viewers: Viewer[], lights: Light[], mode: LightMode, x: number, y: number, radius: number): boolean {
+  const k = radius * 0.6;
+  const probes: [number, number][] = [[x, y], [x + k, y], [x - k, y], [x, y + k], [x, y - k]];
+  return viewers.some((v) => probes.some(([px, py]) => seesPoint(v, lights, mode, px, py)));
+}
+
 // Trees whose canopy hangs over tokens: drawn above them, and faded while a token stands beneath.
 export const CANOPY_KINDS = new Set(["tree", "pine", "deadtree"]);

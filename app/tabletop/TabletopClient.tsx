@@ -19,7 +19,10 @@ import {
   doorsAsDrawn, PLAYER_DOORS, type MapShape,
 } from "@/lib/tabletop/fog";
 import { drawElement, type DoorKind, type MapElement } from "@/lib/dungeon/classic";
-import { wallSegments, sightWallSegs, visibility, seenSquares, canSee, CANOPY_KINDS, type Seg } from "@/lib/tabletop/sight";
+import {
+  wallSegments, sightWallSegs, visibility, seenSquares, canSeeLit, seesPoint, lightOf, darkvisionOf, lightModeOf,
+  LIGHT_MODES, LIGHT_PRESETS, DARKVISION_FT, CANOPY_KINDS, type Seg, type Light, type Viewer, type LightMode,
+} from "@/lib/tabletop/sight";
 import { markerShort, markerKind, MARKER_COLORS, econOf, speedNow, cantAct, FRESH_ECON } from "@/lib/combat-effects";
 import { openTabletop } from "@/lib/tabletop/open";
 import MapUpload from "@/components/map-upload";
@@ -93,7 +96,7 @@ type MapJson = {
   id: string; kind: string; n: number; feet_per_square: number; grid: unknown; custom: unknown; doors: unknown; elements: unknown; meta: Record<string, unknown>;
   door_state?: Record<string, boolean>; fog?: { on: boolean; revealed: string }; walls?: string[];
 };
-type Scene = { id: string; name: string; battle_map_id: string; level: number; settings: { show_labels?: boolean; diagonal?: DiagonalRule; los?: boolean } };
+type Scene = { id: string; name: string; battle_map_id: string; level: number; settings: { show_labels?: boolean; diagonal?: DiagonalRule; los?: boolean; light?: LightMode } };
 type State = {
   role: "gm" | "player"; me: string; campaign: { id: string; name: string; gm_id: string }; session_id: string | null;
   scene: Scene | null; map: MapJson | null; tokens: Token[]; party: PartyMember[];
@@ -263,7 +266,10 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   const roomsCache = useRef<{ sig: string; rooms: Int32Array; shape: MapShape } | null>(null);
   const mapSig = useRef("");
   const selDoorsRef = useRef<string[]>([]);
-  const sight = useRef<{ key: string; polys: { x: number; y: number }[][]; viewers: number } >({ key: "", polys: [], viewers: 0 });
+  // polys: each viewer's line of sight; seers and lights add the scene's light (Phase 5k)
+  const sight = useRef<{ key: string; polys: { x: number; y: number }[][]; viewers: number; seers: Viewer[]; lights: Light[]; mode: LightMode }>({ key: "", polys: [], viewers: 0, seers: [], lights: [], mode: "bright" });
+  const lightPolys = useRef<{ sig: string; at: Map<string, { x: number; y: number }[]> }>({ sig: "", at: new Map() });
+  const dimLayer = useRef<HTMLCanvasElement | null>(null);
   const segsCache = useRef<{ sig: string; segs: Seg[] } | null>(null);
   const explored = useRef<{ scene: string; bits: Uint8Array; canvas: HTMLCanvasElement | null; dirty: boolean; savedAt: number } | null>(null);
   const darkLayer = useRef<HTMLCanvasElement | null>(null);
@@ -414,16 +420,35 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   const losOn = () => !!stateRef.current?.scene?.settings?.los && !!stateRef.current?.map;
   const updateSight = (): void => {
     const st = stateRef.current, m = st?.map;
-    if (!st || !m || !losOn()) { sight.current = { key: "", polys: [], viewers: 0 }; return; }
-    const n = m.n > 0 ? m.n : 25, gm = st.role === "gm";
-    const viewers = [...tokensRef.current.values()].filter((t) => (gm ? selRef.current.includes(t.id) : t.mine) && !t.hidden && t.layer !== "gm")
-      .map((t) => shownPos(t)).filter((p) => p.x >= 0 && p.y >= 0 && p.x < n && p.y < n);
-    const key = mapSig.current + "|" + viewers.map((p) => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(";");
+    if (!st || !m || !losOn()) { sight.current = { key: "", polys: [], viewers: 0, seers: [], lights: [], mode: "bright" }; return; }
+    const n = m.n > 0 ? m.n : 25, gm = st.role === "gm", feet = m.feet_per_square > 0 ? m.feet_per_square : 5;
+    const mode = lightModeOf(st.scene?.settings?.light);
+    const onMap = (p: { x: number; y: number }) => p.x >= 0 && p.y >= 0 && p.x < n && p.y < n;
+    const lookers = [...tokensRef.current.values()].filter((t) => (gm ? selRef.current.includes(t.id) : t.mine) && !t.hidden && t.layer !== "gm")
+      .map((t) => ({ ...shownPos(t), dv: darkvisionOf(t.style) > 0 ? t.size / 2 + darkvisionOf(t.style) / feet : 0 })).filter(onMap);
+    // light sources: any token on the map carrying one (a player only has the tokens they are sent)
+    const sources = mode === "bright" ? [] : [...tokensRef.current.values()].filter((t) => t.layer !== "gm" || gm).flatMap((t) => {
+      const l = lightOf(t.style); if (!l) return [];
+      const p = shownPos(t); if (!onMap(p)) return [];
+      return [{ x: p.x, y: p.y, bright: l.bright > 0 ? t.size / 2 + l.bright / feet : 0, r: t.size / 2 + (l.bright + l.dim) / feet }];
+    });
+    const key = mapSig.current + "|" + mode + "|" + lookers.map((p) => `${p.x.toFixed(2)},${p.y.toFixed(2)},${p.dv}`).join(";")
+      + "|" + sources.map((p) => `${p.x.toFixed(2)},${p.y.toFixed(2)},${p.r}`).join(";");
     if (key === sight.current.key) return;
     const sh = shapeOf(); if (!sh) return;
     if (!segsCache.current || segsCache.current.sig !== mapSig.current) segsCache.current = { sig: mapSig.current, segs: wallSegments(sh.shape, m.door_state ?? {}, sightWallSegs(normSightWalls(m.meta?.sightWalls, n))) };
-    const polys = viewers.map((p) => visibility(p, segsCache.current!.segs));
-    sight.current = { key, polys, viewers: viewers.length };
+    const segs = segsCache.current.segs;
+    const polys = lookers.map((p) => visibility(p, segs));
+    // a light's polygon only changes when it moves or the walls do
+    if (lightPolys.current.sig !== mapSig.current) lightPolys.current = { sig: mapSig.current, at: new Map() };
+    const lights: Light[] = sources.map((s0) => {
+      const k = `${s0.x.toFixed(2)},${s0.y.toFixed(2)}`;
+      let poly = lightPolys.current.at.get(k);
+      if (!poly) { poly = visibility(s0, segs); if (lightPolys.current.at.size > 400) lightPolys.current.at.clear(); lightPolys.current.at.set(k, poly); }
+      return { ...s0, poly };
+    });
+    const seers: Viewer[] = lookers.map((p, i) => ({ x: p.x, y: p.y, dv: p.dv, poly: polys[i] }));
+    sight.current = { key, polys, viewers: lookers.length, seers, lights, mode };
     if (gm || !st.scene) return;
     // remember what this player has seen, per scene, in this browser
     let ex = explored.current;
@@ -433,7 +458,12 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
       ex = explored.current = { scene: st.scene.id, bits, canvas: null, dirty: true, savedAt: 0 };
     }
     const fresh: number[] = [];
-    for (const poly of polys) for (const i of seenSquares(sh.shape, poly)) if (!isRevealed(ex.bits, n, i % n, (i / n) | 0)) fresh.push(i);
+    // in the dark only what was actually seen (lit, or within darkvision) is remembered
+    for (const v of seers) for (const i of seenSquares(sh.shape, v.poly)) {
+      if (isRevealed(ex.bits, n, i % n, (i / n) | 0)) continue;
+      if (mode === "dark" && !seesPoint(v, lights, mode, (i % n) + 0.5, ((i / n) | 0) + 0.5)) continue;
+      fresh.push(i);
+    }
     if (fresh.length) {
       ex.bits = setSquares(ex.bits, n, fresh, true); ex.dirty = true;
       if (Date.now() - ex.savedAt > 1000) { ex.savedAt = Date.now(); try { window.localStorage.setItem(`sixaxes:explored:${st.scene.id}:${st.me}`, encodeFog(ex.bits)); } catch { /* ignore */ } }
@@ -579,7 +609,8 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     const lineOfSight = losOn() && stateRef.current?.role !== "gm";
     if (lineOfSight) {
       const vis = new Set<string>();
-      for (const t of tokensRef.current.values()) { const p = shownPos(t); if (t.mine || canSee(sight.current.polys, p.x, p.y, t.size / 2)) vis.add(t.id); }
+      const sc = sight.current;
+      for (const t of tokensRef.current.values()) { const p = shownPos(t); if (t.mine || canSeeLit(sc.seers, sc.lights, sc.mode, p.x, p.y, t.size / 2)) vis.add(t.id); }
       seenTokens.current = vis;
     } else seenTokens.current = null;
     const shownToMe = (t: Token) => !seenTokens.current || seenTokens.current.has(t.id);
@@ -732,6 +763,33 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
       }
     }
     // darkness: everything this player's tokens cannot see; what they have seen before stays dim
+    // light (Phase 5k): in a dim or dark scene, a shade over the map with each light's area cut out of
+    // it (fully in its bright radius, half in its dim ring). Players see it under their darkness; the GM
+    // sees a lighter version, so the lights they place show.
+    const scLight = sight.current;
+    if (losOn() && n && scLight.mode !== "bright") {
+      const W = cv.width, H = cv.height;
+      const ml = dimLayer.current ?? document.createElement("canvas");
+      if (ml.width !== W || ml.height !== H) { ml.width = W; ml.height = H; }
+      dimLayer.current = ml;
+      const g = ml.getContext("2d");
+      if (g) {
+        const gmView = stateRef.current?.role === "gm";
+        g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = "source-over"; g.globalAlpha = 1;
+        g.clearRect(0, 0, W, H);
+        g.fillStyle = `rgba(6,8,18,${(scLight.mode === "dark" ? 0.55 : 0.4) * (gmView ? 0.6 : 1)})`; g.fillRect(0, 0, W, H);
+        g.setTransform(dpr * cam.s, 0, 0, dpr * cam.s, dpr * cam.ox, dpr * cam.oy);
+        g.globalCompositeOperation = "destination-out"; g.fillStyle = "#000";
+        for (const L of scLight.lights) {
+          if (L.poly.length < 3) continue;
+          g.save(); g.beginPath(); L.poly.forEach((q, i) => (i ? g.lineTo(q.x * cell, q.y * cell) : g.moveTo(q.x * cell, q.y * cell))); g.closePath(); g.clip();
+          g.globalAlpha = 0.5; g.beginPath(); g.arc(L.x * cell, L.y * cell, L.r * cell, 0, Math.PI * 2); g.fill();
+          if (L.bright > 0) { g.globalAlpha = 1; g.beginPath(); g.arc(L.x * cell, L.y * cell, L.bright * cell, 0, Math.PI * 2); g.fill(); }
+          g.restore();
+        }
+        ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.drawImage(ml, 0, 0); ctx.restore();
+      }
+    }
     if (lineOfSight && n) {
       const W = cv.width, H = cv.height;
       const dl = darkLayer.current ?? document.createElement("canvas");
@@ -754,9 +812,21 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
           d.imageSmoothingEnabled = false; d.globalAlpha = 0.42; d.drawImage(ex.canvas, 0, 0, n * cell, n * cell);
         }
         d.globalAlpha = 1; d.fillStyle = "#000"; d.strokeStyle = "#000"; d.lineJoin = "round"; d.lineWidth = cell * 0.35;
-        for (const poly of sight.current.polys) {
-          if (poly.length < 3) continue;
-          d.beginPath(); poly.forEach((q, i) => (i ? d.lineTo(q.x * cell, q.y * cell) : d.moveTo(q.x * cell, q.y * cell))); d.closePath(); d.fill(); d.stroke();
+        const path = (poly: { x: number; y: number }[]) => { d.beginPath(); poly.forEach((q, i) => (i ? d.lineTo(q.x * cell, q.y * cell) : d.moveTo(q.x * cell, q.y * cell))); d.closePath(); };
+        if (sight.current.mode !== "dark") {
+          for (const poly of sight.current.polys) { if (poly.length < 3) continue; path(poly); d.fill(); d.stroke(); }
+        } else {
+          // in the dark: inside each viewer's sight, only their darkvision and the lit areas
+          for (const v of sight.current.seers) {
+            if (v.poly.length < 3) continue;
+            d.save(); path(v.poly); d.clip();
+            if (v.dv > 0) { d.beginPath(); d.arc(v.x * cell, v.y * cell, v.dv * cell, 0, Math.PI * 2); d.fill(); }
+            for (const L of sight.current.lights) {
+              if (L.poly.length < 3) continue;
+              d.save(); path(L.poly); d.clip(); d.beginPath(); d.arc(L.x * cell, L.y * cell, L.r * cell, 0, Math.PI * 2); d.fill(); d.restore();
+            }
+            d.restore();
+          }
         }
         ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.drawImage(dl, 0, 0); ctx.restore();
       }
@@ -1120,7 +1190,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
         shown.current.set(t.id, { x: t.x, y: t.y, fx: from.x, fy: from.y, t0: performance.now() });
         const f = { x: prev.x, y: prev.y }, to = { x: t.x, y: t.y };
         const losHides = st.role !== "gm" && !!st.scene.settings?.los && !t.mine
-          && !(canSee(sight.current.polys, f.x, f.y, t.size / 2) && canSee(sight.current.polys, to.x, to.y, t.size / 2));
+          && !(canSeeLit(sight.current.seers, sight.current.lights, sight.current.mode, f.x, f.y, t.size / 2) && canSeeLit(sight.current.seers, sight.current.lights, sight.current.mode, to.x, to.y, t.size / 2));
         if (!t.hidden && t.layer !== "gm" && !losHides) trails.current.push({ from: f, to, color: hueOf(owner ?? st.campaign.gm_id), born: performance.now(), feet: measure([f, to], st.scene.settings?.diagonal ?? "five", st.map?.feet_per_square ?? 5).feet });
       }
       remoteDrag.current.delete(t.id);
@@ -1253,11 +1323,11 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     rebuildFog(); requestDraw(); saveFog(on, true);
   }, [rebuildFog, requestDraw, saveFog]);
 
-  const setLos = useCallback(async (on: boolean) => {
+  const setLos = useCallback(async (patch: { los?: boolean; light?: LightMode }) => {
     const sc = stateRef.current?.scene; if (!sc) return;
-    const settings = { ...(sc.settings ?? {}), los: on };
+    const settings = { ...(sc.settings ?? {}), ...patch };
     const { error: er } = await supabase.from("vtt_scenes").update({ settings, updated_at: new Date().toISOString() }).eq("id", sc.id);
-    if (er) { setChatErr(`Could not change line of sight: ${er.message}`); return; }
+    if (er) { setChatErr(`Could not change ${patch.light ? "the light" : "line of sight"}: ${er.message}`); return; }
     void load();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [supabase]);
@@ -2244,8 +2314,16 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                 <button key={b} type="button" title={`Brush ${b} by ${b} squares`} onClick={() => setFogBrush(b)} style={{ ...seg(fogBrush === b), flex: "0 0 auto", padding: "6px 8px" }}>{b}</button>
               ))}
               <label title="Players see only what their own tokens can see, inside what the fog reveals" style={{ display: "flex", gap: 5, fontSize: 12.5, alignItems: "center", color: C.text, margin: "0 4px" }}>
-                <input type="checkbox" checked={!!scene.settings?.los} onChange={(e) => void setLos(e.target.checked)} style={{ accentColor: C.sun }} />Line of sight
+                <input type="checkbox" checked={!!scene.settings?.los} onChange={(e) => void setLos({ los: e.target.checked })} style={{ accentColor: C.sun }} />Line of sight
               </label>
+              {!!scene.settings?.los && (
+                <label title="Dim: everything in sight is seen, shaded, and lights brighten their area. Dark: players see only lit areas and what their darkvision reaches. Set lights and darkvision on tokens (Tokens tab)." style={{ display: "flex", gap: 5, fontSize: 12.5, alignItems: "center", color: C.text, margin: "0 4px" }}>
+                  Light
+                  <select aria-label="Scene light" value={lightModeOf(scene.settings?.light)} onChange={(e) => void setLos({ light: e.target.value as LightMode })} style={{ ...field, width: "auto", padding: "4px 6px" }}>
+                    {LIGHT_MODES.map((l) => <option key={l.key} value={l.key}>{l.label}</option>)}
+                  </select>
+                </label>
+              )}
               <button type="button" onClick={() => fogAll(true)} style={small}>Reveal all</button>
               <button type="button" onClick={() => fogAll(false)} style={small}>Hide all</button>
               {!fogOnUi && <span style={{ fontSize: 12, color: "#d9a43a" }}>Fog is off: players see the whole map.</span>}
@@ -2588,6 +2666,34 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                           </div>
                         );
                       })}
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                        <div><label style={label} htmlFor="tt-light">Carries a light</label>
+                          {(() => {
+                            const l = lightOf(sel[0].style);
+                            const pre = l ? LIGHT_PRESETS.find((x) => x.bright === l.bright && x.dim === l.dim)?.key ?? "custom" : "";
+                            return (
+                              <select id="tt-light" value={pre} onChange={(e) => {
+                                const p0 = LIGHT_PRESETS.find((x) => x.key === e.target.value);
+                                const style = { ...sel[0].style }; if (p0) style.light = { bright: p0.bright, dim: p0.dim }; else delete style.light;
+                                void updateTokens([sel[0].id], { style }, true);
+                              }} style={field}>
+                                <option value="">None</option>
+                                {LIGHT_PRESETS.map((x) => <option key={x.key} value={x.key}>{x.label}</option>)}
+                                {pre === "custom" && l && <option value="custom" disabled>{l.bright} + {l.dim} ft</option>}
+                              </select>
+                            );
+                          })()}</div>
+                        <div><label style={label} htmlFor="tt-dv">Darkvision</label>
+                          <select id="tt-dv" value={darkvisionOf(sel[0].style) || ""} onChange={(e) => {
+                            const v = Number(e.target.value) || 0, style = { ...sel[0].style }; if (v) style.darkvision = v; else delete style.darkvision;
+                            void updateTokens([sel[0].id], { style }, true);
+                          }} style={field}>
+                            <option value="">None</option>
+                            {DARKVISION_FT.map((f) => <option key={f} value={f}>{f} ft</option>)}
+                            {darkvisionOf(sel[0].style) > 0 && !DARKVISION_FT.includes(darkvisionOf(sel[0].style)) && <option value={darkvisionOf(sel[0].style)}>{darkvisionOf(sel[0].style)} ft</option>}
+                          </select></div>
+                      </div>
+                      {(lightOf(sel[0].style) || darkvisionOf(sel[0].style) > 0) && <p style={{ color: C.muted, fontSize: 11.5, margin: "4px 0 0" }}>Used when the scene has line of sight on and its light set to Dim or Dark. Measured from the token&apos;s edge; walls stop light.</p>}
                       <label style={label}>Image</label>
                       <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" disabled={uploading}
                         onChange={(e) => { const f = e.target.files?.[0]; if (f) void uploadImage(f, (url) => void updateTokens([sel[0].id], { image_url: url })); }} style={{ fontSize: 12, color: C.muted }} />
