@@ -33,7 +33,6 @@ import { SAX } from "@/lib/theme";
 import SixAxesNav from "@/components/six-axes-nav";
 import { C, STONE, FORGE_FONTS, forgeBackground, forgeVignette, stonePanel, stoneButton, FORGE_BUTTON_CSS, statTile, stoneField, stoneChip, forgeHeading, forgePanelTitle, forgeLabel, forgeRuleLine, forgeBoss } from "@/lib/forge-theme";
 import { loadSrd } from "@/lib/srd/srd";
-import { applyAdvantage } from "@/lib/dice";
 import { traitOptions, traitAsksAChoice, lineageSpells } from "@/lib/species-choices";
 import { choicesFor, resolveChoice, choiceKey, costedPicks, actionsFor, type ClassChoice } from "@/lib/class-choices";
 import { classTable, classTableColumns } from "@/lib/class-table";
@@ -53,6 +52,8 @@ import { LANCER_RULES } from "@/lib/lancer/rules-data";
 import LancerForge from "@/components/lancer-forge";
 import SystemAttribution from "@/components/system-attribution";
 import FightCard from "@/components/fight-card";
+import PlaySheet, { type PlayState } from "@/components/play-sheet";
+import type { FightEntry, FightView } from "@/components/fight-controls";
 import { attacksPerAction } from "@/lib/combat-effects";
 import { menusFor, type ClassMenu } from "@/lib/class-menus";
 import { casterLevel, multiclassSlots, isMulticlassCaster, type CasterType } from "@/lib/multiclass-slots";
@@ -241,7 +242,7 @@ const TABS: { key: TabKey; label: string; ready: (b: Build) => boolean }[] = [
   { key: "spells", label: "Spells", ready: (b) => Boolean((b.spells?.cantrips?.length || 0) + (b.spells?.known?.length || 0)) },
   { key: "abilities", label: "Abilities", ready: (b) => Object.values(b.abilities || {}).some((v) => Number(v) > 0) },
   { key: "equipment", label: "Equipment", ready: (b) => Boolean((b.gear?.items || []).length) },
-  { key: "roll",      label: "Roll",      ready: () => true },
+  { key: "roll",      label: "Play",      ready: () => true },
   { key: "features",  label: "Features",  ready: (b) => Boolean(b.meta.species) },
   { key: "finish",    label: "Finish",    ready: () => true },
 ];
@@ -317,6 +318,10 @@ function ForgeInner() {
   // the picker stays usable until the player actually starts the build. Existing builds also skip a
   // redundant post-load save this way.
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("saved");
+  // phase 5a: this character's entry in a running fight (from the fight card), and a nudge that tells
+  // the resource tracker to apply a short rest
+  const [fightMine, setFightMine] = useState<{ id: string; me: FightEntry } | null>(null);
+  const [shortRestTick, setShortRestTick] = useState(0);
 
   // Catalog + its scoping controls.
   const [catalog, setCatalog] = useState<Catalog | null>(null);
@@ -774,6 +779,24 @@ function ForgeInner() {
 
   const epic = useMemo(() => epicAdvancement(build.level), [build.level]);
 
+  // Hit dice: one per level of each class, of that class's size.
+  const hitDice = useMemo(() => [
+    { cn: build.meta.className || "", lv: build.level || 1 },
+    ...((build as Build & { multiclass?: { className: string; level: number }[] }).multiclass || []).map((c) => ({ cn: c.className, lv: c.level || 1 })),
+  ].map(({ cn, lv }) => ({ die: deriveCtx.classes?.[cn]?.hitDie ?? 0, count: lv })).filter((d) => d.die > 0), [build, deriveCtx]);
+
+  // While the character is in a fight, the fight's HP and conditions are the truth; copy them into
+  // the play state so the sheet still shows them after the fight ends.
+  const onFightSeen = useCallback((f: FightView | null, me: FightEntry | null) => {
+    setFightMine(f && me && me.mine ? { id: f.id, me } : null);
+    if (!f || !me || !me.mine || me.hp == null) return;
+    const cur = (build as Build & { play?: PlayState }).play || {};
+    const conds = (me.conditions ?? []).filter((c) => c !== "Exhaustion");
+    if (cur.hp === me.hp && (cur.temp ?? 0) === (me.tempHp ?? 0) && JSON.stringify(cur.conds ?? []) === JSON.stringify(conds)) return;
+    setPlay((p) => ({ ...p, hp: me.hp, temp: me.tempHp ?? 0, conds }));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [build]);
+
   // --- catalog-derived option lists ---
   const partners = useMemo(() => (catalog ? partnerList(catalog) : []), [catalog]);
   const speciesOpts = useMemo(
@@ -858,6 +881,13 @@ function ForgeInner() {
   });
   const clearSpent = () => patch((b) => {
     (b as Build & { spent?: Record<string, number> }).spent = {};
+    return b;
+  });
+  // The play state (phase 5a): current and temporary HP, hit dice spent, death saves, inspiration,
+  // exhaustion and conditions, kept in the build beside the spent resources and saved the same way.
+  const setPlay = (fn: (p: PlayState) => PlayState) => patch((b) => {
+    const t = b as Build & { play?: PlayState };
+    t.play = fn({ ...(t.play || {}) });
     return b;
   });
 
@@ -1614,9 +1644,10 @@ function ForgeInner() {
               {/* The running fight, when this campaign character is in one: HP and conditions as the
                   Combat page and the tabletop show them, and the player's own controls (p110). */}
               {mode === "character" && row?.campaign_id && (
-                <FightCard campaignId={row.campaign_id} characterId={row.id}
+                <FightCard campaignId={row.campaign_id} characterId={row.id} onSeen={onFightSeen}
                   sheet={{ ac: sheet.ac, hpMax: sheet.hpMax, saves: sheet.saves as Record<string, number>, saveProfs: build.saveProf || [], spellDc: sheet.isCaster ? sheet.spellDC ?? null : null,
-                    speed: sheet.speed, attacksPerAction: attacksPerAction([{ className: build.meta.className, subclass: build.meta.subclass, level: build.level }, ...(build.multiclass || [])]) }} />
+                    speed: sheet.speed, attacksPerAction: attacksPerAction([{ className: build.meta.className, subclass: build.meta.subclass, level: build.level }, ...(build.multiclass || [])]),
+                    hpNow: (build as Build & { play?: PlayState }).play?.hp ?? null, tempNow: (build as Build & { play?: PlayState }).play?.temp ?? 0 }} />
               )}
               <SheetPanel sheet={sheet} name={name || "Character"} />
 
@@ -1631,6 +1662,17 @@ function ForgeInner() {
                       ...grantedSpells.map((g) => `${g.spell} always prepared, from ${g.from}`),
                     ],
                   }} />
+              )}
+
+              {tab === "roll" && sheet && (
+                <PlaySheet name={name || "Character"} sheet={sheet} saveProf={build.saveProf || []} ruleset={ruleset}
+                  characterId={mode === "character" && row ? row.id : null} hitDice={hitDice}
+                  play={(build as Build & { play?: PlayState }).play || {}} onPlay={setPlay}
+                  fight={fightMine} onFightChanged={() => { /* the fight card polls; nothing to do here */ }}
+                  onShortRestResources={() => setShortRestTick((v) => v + 1)} onLongRestResources={clearSpent} />
+              )}
+              {tab === "roll" && !sheet && (
+                <div style={stonePanel()}><Muted>The sheet has not derived yet. Pick a class and species first.</Muted></div>
               )}
 
               {tab === "roll" && (
@@ -1689,7 +1731,7 @@ function ForgeInner() {
                     sheet?.proficiencyBonus || 0,
                   )}
                   spent={(build as Build & { spent?: Record<string, number> }).spent || {}}
-                  onSpend={setSpent} onRest={clearSpent} onSpentMap={setSpentMap}
+                  onSpend={setSpent} onRest={clearSpent} onSpentMap={setSpentMap} shortRestTick={shortRestTick}
                 />
               )}
 
@@ -1701,10 +1743,6 @@ function ForgeInner() {
                 ].flatMap(({ cn, sc, lv }) => menusFor(cn, sc, lv))} />
               )}
 
-              {tab === "roll" && (
-                <RollPanel sheet={sheet} build={build}
-                  characterId={mode === "character" && row ? row.id : null} />
-              )}
 
               {tab === "features" && build.meta.species && (
                 <FeaturesPanel
@@ -2371,167 +2409,6 @@ function SpellsPanel({ build, spells, sheet, edition, structuredRec, granted, on
 }
 
 
-/**
- * Rolling straight off the sheet.
- *
- * WHY THE MODIFIERS ARE NOT RETYPED
- *   Every number here comes from deriveSheet, which is the same engine that draws the sheet below.
- *   A roller that asks the player what their Stealth bonus is has moved the arithmetic back to the
- *   human, and the whole reason the Forge derives live is so nobody has to hold it.
- *
- * WHERE THE ROLL GOES
- *   The server rolls and logs it, so the number shown and the number stored cannot disagree. It
- *   reaches the same Mechanics page as a Beyond20 roll, at the same fidelity, because the app
- *   produced it rather than overhearing it. A build that is not playing at a table has no session
- *   to log to; it still rolls, and says so rather than pretending it recorded something.
- */
-function RollPanel({ sheet, build, characterId }: {
-  sheet: NonNullable<ReturnType<typeof deriveSheet>> | null;
-  build: Build;
-  characterId: string | null;
-}) {
-  const [mode, setMode] = useState<"flat" | "adv" | "dis">("flat");
-  const [log, setLog] = useState<{ label: string; total: number; notation: string;
-    natural: 20 | 1 | null; logged: boolean; at: number }[]>([]);
-  const [busy, setBusy] = useState(false);
-  const [note, setNote] = useState<string | null>(null);
-
-  const doRoll = useCallback(async (label: string, mod: number, kind: string) => {
-    setBusy(true); setNote(null);
-    const base = `1d20${mod >= 0 ? "+" : "-"}${Math.abs(mod)}`;
-    const notation = applyAdvantage(base, mode);
-    try {
-      const res = await fetch("/api/rolls/player", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ characterId, notation, kind, label }),
-      });
-      const out = await res.json();
-      if (!res.ok) { setNote(out.error ?? "Could not roll."); return; }
-      setLog((l) => [{
-        label, total: out.result.total, notation: out.result.notation,
-        natural: out.result.natural, logged: Boolean(out.logged), at: Date.now(),
-      }, ...l].slice(0, 20));
-      if (!out.logged && out.reason) setNote(`Rolled, not recorded: ${out.reason}.`);
-    } catch {
-      setNote("Could not reach the server.");
-    } finally { setBusy(false); }
-  }, [characterId, mode]);
-
-  if (!sheet) {
-    return (
-      <div style={stonePanel()}>
-        <PanelTitle>Roll</PanelTitle>
-        <Muted>The sheet has not derived yet. Pick a class and species first.</Muted>
-      </div>
-    );
-  }
-
-  // rank 0 untrained, 1 proficient, 2 expertise. Shown as a mark rather than a word: the number
-  // beside it already says how much, and what a player is scanning for is "am I good at this".
-  const Btn = ({ label, mod, kind, rank = 0 }: {
-    label: string; mod: number; kind: string; rank?: number;
-  }) => (
-    <button className="forge-btn" disabled={busy} onClick={() => void doRoll(label, mod, kind)}
-      title={rank >= 2 ? "Expertise" : rank >= 1 ? "Proficient" : undefined}
-      style={{ ...stoneButton("stone"), display: "flex", justifyContent: "space-between",
-        gap: 8, fontSize: 13, textAlign: "left", alignItems: "center",
-        borderColor: rank >= 2 ? C.sun : rank >= 1 ? "rgba(200,162,75,0.4)" : undefined }}>
-      <span style={{ color: STONE.ink, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" }}>
-        {label}
-      </span>
-      <span style={{ display: "flex", alignItems: "center", gap: 5, flexShrink: 0 }}>
-        {rank >= 1 && (
-          <span aria-hidden style={{
-            width: 6, height: 6, borderRadius: 3, flexShrink: 0,
-            background: rank >= 2 ? C.sun : "rgba(200,162,75,0.55)",
-            boxShadow: rank >= 2 ? `0 0 0 2px rgba(200,162,75,0.22)` : undefined,
-          }} />
-        )}
-        <span style={{ fontFamily: FORGE_FONTS.mono, color: C.plum }}>
-          {mod >= 0 ? "+" : ""}{mod}
-        </span>
-      </span>
-    </button>
-  );
-
-  const skillNames = Object.keys(sheet.skills || {}).sort();
-
-  return (
-    <div style={stonePanel()}>
-      <PanelTitle hint="Every bonus comes from the sheet below, so there is nothing to retype.">
-        Roll
-      </PanelTitle>
-
-      <div style={{ display: "flex", gap: 6, marginBottom: 14, flexWrap: "wrap", alignItems: "center" }}>
-        {(["dis", "flat", "adv"] as const).map((m) => (
-          <button key={m} className="forge-btn" onClick={() => setMode(m)}
-            style={{ ...stoneButton(mode === m ? "primary" : "stone"), fontSize: 12.5 }}>
-            {m === "adv" ? "Advantage" : m === "dis" ? "Disadvantage" : "Straight"}
-          </button>
-        ))}
-        <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 11, color: STONE.inkFaint, marginLeft: "auto" }}>
-          {characterId ? "rolls are recorded to your session" : "library build \u2014 not recorded"}
-        </span>
-      </div>
-
-      <label style={forgeLabel}>Ability checks</label>
-      {/* Six columns, matching the six abilities exactly, so the last one never orphans onto a row
-          of its own. Skills use the same grid so the whole panel lines up rather than each block
-          finding its own rhythm. */}
-      <div style={{ display: "grid", gridTemplateColumns: ROLL_GRID, gap: 5, marginBottom: 14 }}>
-        {ABILITIES.map((a) => (
-          <Btn key={a} label={a.toUpperCase()} mod={sheet.mods[a] ?? 0} kind="check" />
-        ))}
-      </div>
-
-      <label style={forgeLabel}>Saving throws</label>
-      <div style={{ display: "grid", gridTemplateColumns: ROLL_GRID, gap: 5, marginBottom: 14 }}>
-        {ABILITIES.map((a) => (
-          <Btn key={a} label={`${a.toUpperCase()} save`} mod={sheet.saves[a] ?? 0} kind="save"
-            rank={(build.saveProf || []).includes(a) ? 1 : 0} />
-        ))}
-      </div>
-
-      <label style={forgeLabel}>Skills</label>
-      <div style={{ display: "grid", gridTemplateColumns: ROLL_GRID, gap: 5, marginBottom: 14 }}>
-        {skillNames.map((k) => (
-          <Btn key={k} label={k} mod={sheet.skills[k]?.val ?? 0} kind="skill"
-            rank={sheet.skills[k]?.rank ?? 0} />
-        ))}
-      </div>
-
-      <label style={forgeLabel}>Other</label>
-      <div style={{ display: "grid", gridTemplateColumns: ROLL_GRID, gap: 5 }}>
-        <Btn label="Initiative" mod={sheet.initiative ?? 0} kind="initiative" />
-        {sheet.isCaster && <Btn label="Spell attack" mod={sheet.spellAttack ?? 0} kind="attack" />}
-      </div>
-
-      {note && <p style={{ color: C.warn, fontSize: 12.5, marginTop: 12, marginBottom: 0 }}>{note}</p>}
-
-      {log.length > 0 && (
-        <div style={{ marginTop: 18, paddingTop: 14, borderTop: `1px solid ${STONE.hi}` }}>
-          <label style={forgeLabel}>This sitting</label>
-          {log.map((r) => (
-            <div key={r.at} style={{ display: "flex", justifyContent: "space-between",
-              alignItems: "baseline", gap: 10, padding: "6px 0", borderTop: `1px solid ${STONE.hi}` }}>
-              <span style={{ fontSize: 13.5, color: STONE.ink }}>
-                {r.label}
-                <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 11, color: STONE.inkFaint, marginLeft: 8 }}>
-                  {r.notation}{r.logged ? "" : " \u00b7 not recorded"}
-                </span>
-              </span>
-              <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 19,
-                color: r.natural === 20 ? C.good : r.natural === 1 ? C.warn : C.sun }}>
-                {r.total}
-              </span>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
 
 /**
  * Species, lineage, and the choices a species asks for.
@@ -2939,9 +2816,6 @@ function ClassChoicesPanel({ build, sheet, weapons, spells, feats, picks, onPick
   );
 }
 
-// One grid for every block on the Roll tab. Six columns fits the six abilities exactly and divides
-// the eighteen skills into three clean rows.
-const ROLL_GRID = "repeat(auto-fit, minmax(min(100%, 132px), 1fr))";
 
 const thStyle: React.CSSProperties = {
   fontFamily: FORGE_FONTS.mono, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase",
@@ -3105,7 +2979,7 @@ function GrantedEquipmentPanel({ bgRec, coreTraits, catalog, owned, onAdd }: {
  *   asking: a tracker that silently refilled at the wrong moment is a tracker nobody can trust. The
  *   button is one tap and it is the player's call.
  */
-function ResourcePanel({ structuredRec, level, costed, extraPools, extraClasses, mcSlots, spent, onSpend, onRest, onSpentMap }: {
+function ResourcePanel({ structuredRec, level, costed, extraPools, extraClasses, mcSlots, spent, onSpend, onRest, onSpentMap, shortRestTick = 0 }: {
   structuredRec?: unknown;
   level: number;
   costed: { name: string; summary: string; resource: string; amount: number }[];
@@ -3117,6 +2991,8 @@ function ResourcePanel({ structuredRec, level, costed, extraPools, extraClasses,
   onSpend: (key: string, n: number) => void;
   onRest: () => void;
   onSpentMap: (next: Record<string, number>) => void;
+  /** Bumped by the play sheet's short rest: apply each pool's short-rest recovery, as the button below does. */
+  shortRestTick?: number;
 }) {
   const row = useMemo(
     () => classTable(structuredRec).find((r) => r.level === level),
@@ -3149,6 +3025,15 @@ function ResourcePanel({ structuredRec, level, costed, extraPools, extraClasses,
     }
     return slotsFor(row);
   }, [row, mcSlots]);
+
+  // before the early return below: hooks run on every render, in the same order
+  const lastTick = useRef(shortRestTick);
+  useEffect(() => {
+    if (shortRestTick === lastTick.current) return;
+    lastTick.current = shortRestTick;
+    onSpentMap(afterShortRest([...pools, ...slots], spent));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shortRestTick]);
 
   if (pools.length === 0 && slots.length === 0) return null;
 

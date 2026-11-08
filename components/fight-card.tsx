@@ -19,6 +19,10 @@
 // action, reaction, movement, attacks left) and spends it (components/fight-controls.tsx EconomyBar).
 // Speed and attacks per Attack action come from the sheet the first time, as max HP and AC do.
 //
+// Phase 5a: a character who joins a fight wounded joins at their current HP from the play sheet (not
+// full), and the card tells the Forge what the fight says about this character (onSeen), so the play
+// sheet shows and changes the fight's HP and conditions while it runs.
+//
 // Players cannot read combats directly or get its live updates (RLS), so the card reads
 // tabletop_combat: every 5 seconds while a fight runs, every 20 while none does, and at once after
 // each change made here.
@@ -29,9 +33,11 @@ import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import { openTabletop } from "@/lib/tabletop/open";
 import { AttackForm, combatAct, EconomyBar, isMyTurn, MarkerChips, PlayerEntryControls, SaveBanner, SavesRow, TurnUsed, type FightEntry, type FightView } from "@/components/fight-controls";
 
-export default function FightCard({ campaignId, characterId, sheet }: {
+export default function FightCard({ campaignId, characterId, sheet, onSeen }: {
   campaignId: string; characterId: string;
-  sheet?: { ac: number; hpMax: number; saves?: Record<string, number>; saveProfs?: string[]; spellDc?: number | null; speed?: number | null; attacksPerAction?: number } | null;
+  sheet?: { ac: number; hpMax: number; saves?: Record<string, number>; saveProfs?: string[]; spellDc?: number | null; speed?: number | null; attacksPerAction?: number;
+    hpNow?: number | null; tempNow?: number } | null;
+  onSeen?: (fight: FightView | null, me: FightEntry | null) => void;
 }) {
   const supabase = useMemo(() => createClient(), []);
   const [fight, setFight] = useState<FightView | null | undefined>(undefined);
@@ -54,6 +60,8 @@ export default function FightCard({ campaignId, characterId, sheet }: {
   }, [load, running]);
 
   const me: FightEntry | null = fight?.order.find((e) => e.characterId === characterId) ?? null;
+  const seenRef = useRef(onSeen); seenRef.current = onSeen;
+  useEffect(() => { if (fight !== undefined) seenRef.current?.(fight, me); }, [fight, me]);
 
   // Bring the sheet's max HP, AC, speed and attacks per action into the fight once, where the fight has none.
   useEffect(() => {
@@ -61,7 +69,15 @@ export default function FightCard({ campaignId, characterId, sheet }: {
     synced.current = fight.id;
     const jobs: Promise<string | null>[] = [];
     if (me.maxHp == null || me.ac == null) {
-      jobs.push(combatAct(supabase as never, fight.id, me.id, "sync_sheet", { value: sheet.hpMax > 0 ? sheet.hpMax : null, ac: sheet.ac > 0 ? sheet.ac : null }));
+      const fresh = me.hp == null && sheet.hpMax > 0;
+      jobs.push(combatAct(supabase as never, fight.id, me.id, "sync_sheet", { value: sheet.hpMax > 0 ? sheet.hpMax : null, ac: sheet.ac > 0 ? sheet.ac : null }).then(async (e) => {
+        if (e || !fresh) return e;
+        // joining wounded: bring the fight down to the play sheet's current HP, and its temporary HP
+        const now = sheet.hpNow;
+        if (now != null && now >= 0 && now < sheet.hpMax) { const e2 = await combatAct(supabase as never, fight.id, me.id, "damage", { value: sheet.hpMax - now }); if (e2) return e2; }
+        if ((sheet.tempNow ?? 0) > 0) return combatAct(supabase as never, fight.id, me.id, "temp", { value: sheet.tempNow ?? 0 });
+        return null;
+      }));
     }
     if (me.speed == null && sheet.speed != null && sheet.speed >= 0) jobs.push(combatAct(supabase as never, fight.id, me.id, "set_speed", { value: sheet.speed }));
     if (me.econ !== undefined && (me.attacksPerAction ?? 1) === 1 && (sheet.attacksPerAction ?? 1) > 1) {
