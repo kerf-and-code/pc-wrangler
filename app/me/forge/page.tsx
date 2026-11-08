@@ -36,7 +36,7 @@ import { loadSrd } from "@/lib/srd/srd";
 import { traitOptions, traitAsksAChoice, lineageSpells } from "@/lib/species-choices";
 import { choicesFor, resolveChoice, choiceKey, costedPicks, actionsFor, type ClassChoice } from "@/lib/class-choices";
 import { classTable, classTableColumns } from "@/lib/class-table";
-import { resourcesFor, slotsFor, remaining, afterShortRest, speciesResources, type Resource } from "@/lib/resources";
+import { remaining, afterShortRest, speciesResources, type Resource } from "@/lib/resources";
 import { getActiveCampaign, setActiveCampaign } from "@/lib/active-campaign";
 import { derivePf2eSheet, emptyPf2eBuild, type Pf2eBuild } from "@/lib/pf2e/character";
 import { PF2_RULES } from "@/lib/pf2e/rules-data";
@@ -53,7 +53,11 @@ import LancerForge from "@/components/lancer-forge";
 import SystemAttribution from "@/components/system-attribution";
 import FightCard from "@/components/fight-card";
 import PlaySheet, { type PlayState } from "@/components/play-sheet";
-import type { FightEntry, FightView } from "@/components/fight-controls";
+import PlayActions, { type KnownSpell } from "@/components/play-actions";
+import { combatAct, type FightEntry, type FightView } from "@/components/fight-controls";
+import { trackedResources, type TrackInputs } from "@/lib/play/tracks";
+import { isWeapon, unarmedAttack, weaponAttack, weaponProfText, type AttackRow, type WeaponRecord } from "@/lib/play/attacks";
+import type { SpellRecord as PlaySpell } from "@/lib/play/spells";
 import { attacksPerAction } from "@/lib/combat-effects";
 import { menusFor, type ClassMenu } from "@/lib/class-menus";
 import { casterLevel, multiclassSlots, isMulticlassCaster, type CasterType } from "@/lib/multiclass-slots";
@@ -321,6 +325,7 @@ function ForgeInner() {
   // phase 5a: this character's entry in a running fight (from the fight card), and a nudge that tells
   // the resource tracker to apply a short rest
   const [fightMine, setFightMine] = useState<{ id: string; me: FightEntry } | null>(null);
+  const [fightView, setFightView] = useState<FightView | null>(null);
   const [shortRestTick, setShortRestTick] = useState(0);
 
   // Catalog + its scoping controls.
@@ -785,10 +790,77 @@ function ForgeInner() {
     ...((build as Build & { multiclass?: { className: string; level: number }[] }).multiclass || []).map((c) => ({ cn: c.className, lv: c.level || 1 })),
   ].map(({ cn, lv }) => ({ die: deriveCtx.classes?.[cn]?.hitDie ?? 0, count: lv })).filter((d) => d.die > 0), [build, deriveCtx]);
 
+  // Phase 5b: what the resource tracker and the play sheet's actions and spells share. Lifted out of
+  // the tracker's props so both read one set of numbers (lib/play/tracks.ts).
+  const resInputs = useMemo<TrackInputs>(() => {
+    const multi = (build as Build & { multiclass?: { className: string; level: number }[] }).multiclass || [];
+    const casterOf = (n: string): CasterType =>
+      ((srd.structuredByName[n] as { caster_type?: string } | undefined)?.caster_type || "NONE") as CasterType;
+    // A subclass caster (Eldritch Knight, Arcane Trickster, Warrior of the Mystic Arts) makes a
+    // non-casting class a THIRD caster; the class data alone says NONE.
+    const primaryType = subclassCasterType(build.meta.className || "", build.meta.subclass) || casterOf(build.meta.className || "");
+    const all = [{ casterType: primaryType, level: build.level || 1 }, ...multi.map((c) => ({ casterType: casterOf(c.className), level: c.level || 1 }))];
+    // Slots for a multiclassed caster come from ONE combined table, not from each class's own row;
+    // a single-class subclass caster's own third-caster table replaces its (empty) class row.
+    const mcSlots = isMulticlassCaster(all) ? multiclassSlots(casterLevel(all))
+      : primaryType === "THIRD" && all.length === 1 ? thirdCasterSlots(build.level || 1) : [];
+    return {
+      structuredRec: srd.structuredByName[build.meta.className],
+      level: build.level || 1,
+      // Each additional class brings its own pools at ITS level.
+      extraClasses: multi.map((c) => ({ rec: srd.structuredByName[c.className], level: c.level || 1 })),
+      extraPools: speciesResources(traitList(srd.speciesByName[build.meta.species]?.traits).map((t) => t.name), sheet?.proficiencyBonus || 0),
+      mcSlots,
+    };
+  }, [build, srd, sheet?.proficiencyBonus]);
+  const costedList = useMemo(() => [
+    // Automatic first: a monk's Flurry is not a decision they made, and burying it under the options
+    // they picked would read as though it were.
+    ...[
+      { cn: build.meta.className || "", sc: build.meta.subclass || "", lv: build.level || 1 },
+      ...((build as Build & { multiclass?: { className: string; subclass?: string; level: number }[] }).multiclass || [])
+        .map((c) => ({ cn: c.className, sc: c.subclass || "", lv: c.level || 1 })),
+    ].flatMap(({ cn, sc, lv }) => actionsFor(cn, sc, lv))
+      .map((a) => ({ name: a.name, summary: a.summary, resource: a.cost.resource, amount: a.cost.amount })),
+    ...costedPicks(build.meta.className || "", build.meta.subclass || "", build.level || 1,
+      (build as Build & { classChoices?: Record<string, string[]> }).classChoices || {}, edition),
+  ], [build, edition]);
+  const tracks = useMemo(() => trackedResources(resInputs), [resInputs]);
+  // attack rows: every weapon the character carries, and an unarmed strike
+  const playAttacks = useMemo<AttackRow[]>(() => {
+    if (!sheet) return [];
+    const profText = weaponProfText((srd.structuredByName[build.meta.className] as { core_traits?: string } | undefined)?.core_traits);
+    const rows: AttackRow[] = [];
+    (build.gear?.items || []).forEach((g, i) => {
+      const rec = srd.itemByName[g.n] as unknown as WeaponRecord | undefined;
+      if (isWeapon(rec)) rows.push(weaponAttack(rec, sheet.mods, sheet.proficiencyBonus, profText, Number(g.mod) || 0, `${g.n}-${i}`));
+    });
+    rows.push(unarmedAttack(sheet.mods, sheet.proficiencyBonus, sheet.martialArts || 0));
+    return rows;
+  }, [sheet, build, srd]);
+  // known spells: cantrips, known or prepared, and those always prepared from species and subclass
+  const playSpells = useMemo<KnownSpell[]>(() => {
+    const byName = new Map((srd.spells as unknown as PlaySpell[]).map((sp) => [sp.name, sp]));
+    const out: KnownSpell[] = [];
+    const add = (n: string, always: string | null) => { const rec = byName.get(n); if (rec && !out.some((o) => o.rec.name === n)) out.push({ rec, always }); };
+    for (const g of grantedSpells) add(g.spell, g.from);
+    for (const n of [...(build.spells?.cantrips || []), ...(build.spells?.known || [])]) add(n, null);
+    return out;
+  }, [srd.spells, grantedSpells, build.spells]);
+  // healing yourself from a spell: through the fight when one is running, and into the play state
+  const healSelf = (n: number) => {
+    if (!sheet || !(n > 0)) return;
+    const cur = (build as Build & { play?: PlayState }).play || {};
+    const max = sheet.hpMax, now = fightMine?.me.hp ?? cur.hp ?? max;
+    if (fightMine) void combatAct(supabase as never, fightMine.id, fightMine.me.id, "heal", { value: n });
+    setPlay((p) => ({ ...p, hp: Math.min(max, now + n), death: { s: 0, f: 0 } }));
+  };
+
   // While the character is in a fight, the fight's HP and conditions are the truth; copy them into
   // the play state so the sheet still shows them after the fight ends.
   const onFightSeen = useCallback((f: FightView | null, me: FightEntry | null) => {
     setFightMine(f && me && me.mine ? { id: f.id, me } : null);
+    setFightView(f && me && me.mine ? f : null);
     if (!f || !me || !me.mine || me.hp == null) return;
     const cur = (build as Build & { play?: PlayState }).play || {};
     const conds = (me.conditions ?? []).filter((c) => c !== "Exhaustion");
@@ -1671,65 +1743,20 @@ function ForgeInner() {
                   fight={fightMine} onFightChanged={() => { /* the fight card polls; nothing to do here */ }}
                   onShortRestResources={() => setShortRestTick((v) => v + 1)} onLongRestResources={clearSpent} />
               )}
+              {tab === "roll" && sheet && (
+                <PlayActions sheet={sheet} charLevel={sheet.totalLevel || build.level || 1}
+                  characterId={mode === "character" && row ? row.id : null} campaignId={mode === "character" && row ? row.campaign_id : null}
+                  fight={fightView && fightMine ? { view: fightView, me: fightMine.me } : null}
+                  attacks={playAttacks} spells={playSpells} pools={tracks.pools} slots={tracks.slots} pactLevel={tracks.pactLevel}
+                  spent={(build as Build & { spent?: Record<string, number> }).spent || {}} onSpend={setSpent}
+                  costed={costedList} onHealSelf={healSelf} onFightChanged={() => { /* the fight card polls */ }} />
+              )}
               {tab === "roll" && !sheet && (
                 <div style={stonePanel()}><Muted>The sheet has not derived yet. Pick a class and species first.</Muted></div>
               )}
 
               {tab === "roll" && (
-                <ResourcePanel
-                  structuredRec={srd.structuredByName[build.meta.className]}
-                  level={build.level || 1}
-                  // Each additional class brings its own pools at ITS level: a Fighter 5 / Monk 3
-                  // has Second Wind from the fighter table and Focus Points from the monk one, and
-                  // neither is visible from the other's row.
-                  extraClasses={((build as Build & { multiclass?: { className: string; level: number }[] })
-                    .multiclass || []).map((c) => ({
-                      rec: srd.structuredByName[c.className], level: c.level || 1,
-                    }))}
-                  // Slots for a multiclassed caster come from ONE combined table, not from each
-                  // class's own row. Computed here and handed down so the panel does not have to
-                  // know the rule, only which numbers to draw.
-                  mcSlots={(() => {
-                    const casterOf = (n: string): CasterType =>
-                      ((srd.structuredByName[n] as { caster_type?: string } | undefined)?.caster_type
-                        || "NONE") as CasterType;
-                    // A subclass caster (Eldritch Knight, Arcane Trickster, Warrior of the Mystic
-                    // Arts) makes a non-casting class a THIRD caster; the class data alone says NONE.
-                    const primaryType = subclassCasterType(build.meta.className || "", build.meta.subclass)
-                      || casterOf(build.meta.className || "");
-                    const all = [
-                      { casterType: primaryType, level: build.level || 1 },
-                      ...((build as Build & { multiclass?: { className: string; level: number }[] })
-                        .multiclass || []).map((c) => ({
-                          casterType: casterOf(c.className), level: c.level || 1,
-                        })),
-                    ];
-                    if (isMulticlassCaster(all)) return multiclassSlots(casterLevel(all));
-                    // Single-class subclass caster: its class table has no slot columns, so its own
-                    // third-caster table comes through here and replaces the (empty) class row.
-                    return primaryType === "THIRD" && all.length === 1 ? thirdCasterSlots(build.level || 1) : [];
-                  })()}
-                  costed={[
-                    // Automatic first: a monk's Flurry is not a decision they made, and burying it
-                    // under the options they picked would read as though it were.
-                    // Automatic actions from every class the character holds.
-                    ...[
-                      { cn: build.meta.className || "", sc: build.meta.subclass || "", lv: build.level || 1 },
-                      ...((build as Build & { multiclass?: { className: string; subclass?: string; level: number }[] })
-                        .multiclass || []).map((c) => ({ cn: c.className, sc: c.subclass || "", lv: c.level || 1 })),
-                    ].flatMap(({ cn, sc, lv }) => actionsFor(cn, sc, lv))
-                      .map((a) => ({ name: a.name, summary: a.summary,
-                        resource: a.cost.resource, amount: a.cost.amount })),
-                    ...costedPicks(
-                    build.meta.className || "", build.meta.subclass || "", build.level || 1,
-                    (build as Build & { classChoices?: Record<string, string[]> }).classChoices || {},
-                    edition,
-                    ),
-                  ]}
-                  extraPools={speciesResources(
-                    traitList(srd.speciesByName[build.meta.species]?.traits).map((t) => t.name),
-                    sheet?.proficiencyBonus || 0,
-                  )}
+                <ResourcePanel {...resInputs} costed={costedList}
                   spent={(build as Build & { spent?: Record<string, number> }).spent || {}}
                   onSpend={setSpent} onRest={clearSpent} onSpentMap={setSpentMap} shortRestTick={shortRestTick}
                 />
@@ -2994,37 +3021,12 @@ function ResourcePanel({ structuredRec, level, costed, extraPools, extraClasses,
   /** Bumped by the play sheet's short rest: apply each pool's short-rest recovery, as the button below does. */
   shortRestTick?: number;
 }) {
-  const row = useMemo(
-    () => classTable(structuredRec).find((r) => r.level === level),
-    [structuredRec, level],
+  // Species-granted pools sit alongside the class ones; a multiclass caster's combined table replaces
+  // the class's own slot row. One function (lib/play/tracks.ts) so the play sheet reads the same.
+  const { pools, slots } = useMemo(
+    () => trackedResources({ structuredRec, level, extraClasses, extraPools, mcSlots }),
+    [structuredRec, level, extraClasses, extraPools, mcSlots],
   );
-  // Species-granted pools sit alongside the class ones. Goliath's Giant Ancestry scales with
-  // proficiency bonus rather than appearing in any column, so it can only arrive this way.
-  const pools = useMemo(() => {
-    const out = [...resourcesFor(row)];
-    for (const c of extraClasses) {
-      const r = classTable(c.rec).find((x) => x.level === c.level);
-      for (const p of resourcesFor(r)) {
-        // A pool of the same name from two classes is ONE pool - a Cleric/Paladin has a single
-        // Channel Divinity, not two - and the larger maximum is the one that applies.
-        const at = out.findIndex((e) => e.key === p.key);
-        if (at >= 0) out[at] = out[at].max >= p.max ? out[at] : p;
-        else out.push(p);
-      }
-    }
-    return [...out, ...extraPools];
-  }, [row, extraClasses, extraPools]);
-  const slots = useMemo(() => {
-    // The combined table REPLACES the primary class's own slot row rather than adding to it. A
-    // Cleric 3 / Wizard 3 has one set of slots; showing both classes' rows as well would offer
-    // three times what the character actually has.
-    if (mcSlots.length) {
-      return mcSlots.map((r) => ({
-        key: `slot-${r.level}`, label: `Level ${r.level}`, max: r.slots, shortRest: "none" as const,
-      }));
-    }
-    return slotsFor(row);
-  }, [row, mcSlots]);
 
   // before the early return below: hooks run on every render, in the same order
   const lastTick = useRef(shortRestTick);

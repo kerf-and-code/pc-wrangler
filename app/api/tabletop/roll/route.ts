@@ -38,7 +38,8 @@ import { critDice } from "@/lib/combat-effects";
 // Action economy (phase 4c, p112): `cost` says what part of the turn an attack or save effect uses:
 // attack (one attack of the Attack action; Extra Attack gives more), action, bonus or reaction (allowed
 // on someone else's turn while the reaction is unused). The database spends it and refuses when it is
-// gone. Attacks default to attack, save effects to action.
+// gone. Attacks default to attack, save effects to action. A further beam or ray from one casting
+// (Eldritch Blast, Scorching Ray) comes with cost followup and spends nothing more (p115).
 
 export const maxDuration = 30;
 
@@ -49,6 +50,8 @@ function friendlyFight(m: string): string {
   if (/used your reaction/.test(m)) return "You have used your reaction this round. It comes back at the start of your turn.";
   if (/cannot act while/.test(m)) return `You ${m.replace(/^.*?(cannot act while \w+).*$/, "$1")}.`;
   if (/unknown cost/.test(m)) return "Pick what this uses: attack, action, bonus action or reaction.";
+  if (/cast the spell first/.test(m)) return "Cast the spell first: that casting has gone stale or was a different spell.";
+  if (/no attacks left/.test(m)) return "That casting has no attacks left.";
   if (/no fight/.test(m)) return "No fight is running.";
   if (/not in the fight/.test(m)) return "Your character is not in the fight.";
   if (/roll a hit/.test(m)) return "Roll a hit on them first.";
@@ -120,7 +123,7 @@ export async function POST(req: Request) {
   const target = typeof b.target === "string" && b.target ? b.target.slice(0, 64) : null;
   const rollFor = target && characterId && (b.rollFor === "attack" || b.rollFor === "damage") ? b.rollFor : null;
   let notation = b.notation ?? "";
-  const cost = typeof b.cost === "string" && ["attack", "action", "bonus", "reaction", "free"].includes(b.cost) ? b.cost : null;
+  const cost = typeof b.cost === "string" && ["attack", "action", "bonus", "reaction", "free", "followup"].includes(b.cost) ? b.cost : null;
 
   // A damage roll at a target needs a hit on it first; a critical hit doubles the dice.
   if (rollFor === "damage") {
@@ -150,7 +153,7 @@ export async function POST(req: Request) {
     const { data: res, error: sErr } = await admin.rpc("combat_request_save", {
       p_campaign: campaignId, p_character: characterId, p_targets: targets, p_ability: String(sa.ability ?? ""),
       p_dc: Number(sa.dc), p_damage: result.total, p_type: typeof sa.type === "string" ? sa.type : "", p_half: sa.half !== false,
-      p_label: label, p_gm: !!isGm, p_cost: cost === "attack" ? "action" : cost ?? "action",
+      p_label: label, p_gm: !!isGm, p_cost: cost === "attack" || cost === "followup" ? "action" : cost ?? "action",
     });
     if (sErr) return NextResponse.json({ error: friendlyFight(sErr.message) }, { status: 409 });
     saveNote = { targets: ((res as { targets: string[] }).targets) ?? [], ability: String(sa.ability), dc: Number(sa.dc) };
