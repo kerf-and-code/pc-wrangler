@@ -58,7 +58,7 @@ import { LANCER_RULES } from "@/lib/lancer/rules-data";
 import LancerForge from "@/components/lancer-forge";
 import SystemAttribution from "@/components/system-attribution";
 import FightCard from "@/components/fight-card";
-import PlaySheet, { type PlayState } from "@/components/play-sheet";
+import PlaySheet, { type PlayState, type SheetOverrides } from "@/components/play-sheet";
 import PlayActions, { type KnownSpell } from "@/components/play-actions";
 import PlayInventory, { attunementLimit, type Coins, type CharNotes } from "@/components/play-inventory";
 import FloatingPanel from "@/components/floating-panel";
@@ -777,7 +777,15 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
     // Granted skills and expertise fold in here, so the engine sees them as though the player had
     // ticked them by hand - which is the point: a proficiency from a background is not a lesser
     // proficiency.
-    return applyToBuild({ ...build, featMods: merged }, effects);
+    // where those points came from, for the character sheet's ability breakdown (labels only)
+    const featModSources = [
+      { label: "Background", mods: build.bgAsi || {} },
+      { label: "Species", mods: bonus },
+      { label: "Species choice", mods: spAsi },
+      { label: "Class and species choices", mods: effects.featMods },
+      { label: "Other bonuses", mods: build.featMods || {} },
+    ] as { label: string; mods: Record<string, number> }[];
+    return applyToBuild({ ...build, featMods: merged, featModSources }, effects);
   }, [build, srd.speciesByName, effects, resolvedSpecies]);
 
   const sheet = useMemo(() => {
@@ -971,6 +979,16 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
     b.gear = { ...b.gear, items, attuned };
     return b;
   });
+  // The character sheet's overrides (phase 5e): ability scores and maximum HP, applied by the derivation.
+  const setOverrides = (fn: (o: SheetOverrides) => SheetOverrides) => patch((b) => {
+    const next = fn({ ability: { ...(b.abilityOverride || {}) }, hpMaxMod: b.hpMaxMod || 0, hpMaxOverride: b.hpMaxOverride ?? null });
+    b.abilityOverride = Object.keys(next.ability).length ? next.ability : undefined;
+    b.hpMaxMod = next.hpMaxMod || undefined;
+    b.hpMaxOverride = next.hpMaxOverride ?? undefined;
+    return b;
+  });
+  // Languages the player chose (phase 5e). The ones a species or class grants are worked out, not stored.
+  const setLanguages = (list: string[]) => patch((b) => { (b as Build & { languages?: string[] }).languages = list; return b; });
   const setCoins = (c: Coins) => patch((b) => { (b as Build & { coins?: Coins }).coins = c; return b; });
   const setNotes = (n: CharNotes) => patch((b) => { (b as Build & { notes?: CharNotes }).notes = n; return b; });
 
@@ -1565,7 +1583,23 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
                       characterId={charIdNow} hitDice={hitDice} play={playNow} onPlay={setPlay}
                       fight={fightMine} onFightChanged={() => { /* the fight card polls */ }}
                       onShortRestResources={() => setSpentMap(afterShortRest([...tracks.pools, ...tracks.slots], spentNow))}
-                      onLongRestResources={clearSpent} />
+                      onLongRestResources={clearSpent}
+                      overrides={{ ability: build.abilityOverride || {}, hpMaxMod: build.hpMaxMod || 0, hpMaxOverride: build.hpMaxOverride ?? null }}
+                      onOverrides={setOverrides} />
+                    <SheetProficiencies
+                      coreTraits={((srd.structuredByName[build.meta.className] || {}) as { core_traits?: string }).core_traits || ""}
+                      backgroundRec={srd.bgByName[build.meta.background]}
+                      masteries={Object.entries((build as Build & { classChoices?: Record<string, string[]> }).classChoices || {})
+                        .filter(([k]) => /Weapon Mastery/i.test(k)).flatMap(([, v]) => v)}
+                      ruleset={ruleset}
+                      speciesLanguages={(srd.speciesByName[build.meta.species] as { languages?: string } | undefined)?.languages ?? null}
+                      species={build.meta.species}
+                      backgroundLanguages={(srd.bgByName[build.meta.background] as { languages?: string } | undefined)?.languages ?? null}
+                      classFeatureNames={[{ className: build.meta.className, level: build.level }, ...multi]
+                        .filter((c) => c.className)
+                        .flatMap((c) => classProgression(classRecWithSub(c.className), c.level).flatMap((g) => g.features.map((f) => f.name)))}
+                      chosen={(build as Build & { languages?: string[] }).languages || []}
+                      onChosen={setLanguages} />
                   </div>
                   <div style={{ minWidth: 0 }}>
                     <div role="tablist" aria-label="Sheet sections" className="sax-sheet-tabs" style={{ display: "flex", gap: 2, overflowX: "auto", borderBottom: `1px solid ${STONE.hi}`, marginBottom: 12 }}>
@@ -1596,10 +1630,6 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
                           classes={[{ className: build.meta.className, level: build.level }, ...multi.map((c) => ({ className: c.className, level: c.level }))]
                             .filter((c) => c.className)
                             .map((c) => ({ ...c, groups: classProgression(classRecWithSub(c.className), c.level) }))}
-                          coreTraits={((srd.structuredByName[build.meta.className] || {}) as { core_traits?: string }).core_traits || ""}
-                          backgroundRec={srd.bgByName[build.meta.background]}
-                          masteries={Object.entries((build as Build & { classChoices?: Record<string, string[]> }).classChoices || {})
-                            .filter(([k]) => /Weapon Mastery/i.test(k)).flatMap(([, v]) => v)}
                           species={build.meta.species} speciesRec={srd.speciesByName[build.meta.species]}
                           variantName={speciesVariant} variantRec={srd.variantByName[speciesVariant]}
                           feats={chosenFeats} itemNotes={sheet.itemNotes || []} />
@@ -5050,13 +5080,10 @@ const SHEET_CSS = `
 `;
 
 // Features and traits: each class's features up to its level (name first, the rules text a click
-// away, as D&D Beyond shows them), the species and lineage traits, feats, what active magic items
-// add, and the proficiencies that carry no number.
-function SheetFeatures({ classes, coreTraits, backgroundRec, masteries, species, speciesRec, variantName, variantRec, feats, itemNotes }: {
+// away, as D&D Beyond shows them), the species and lineage traits, feats, and what active magic items
+// add. Proficiencies sit in the left column (SheetProficiencies).
+function SheetFeatures({ classes, species, speciesRec, variantName, variantRec, feats, itemNotes }: {
   classes: { className: string; level: number; groups: LevelGroup[] }[];
-  coreTraits: string;
-  backgroundRec: BackgroundRecord | undefined;
-  masteries: string[];
   species: string; speciesRec: SpeciesMechRecord | undefined;
   variantName: string; variantRec: SpeciesVariantRec | undefined;
   feats: { level: number; name: string; desc?: string; category?: string }[];
@@ -5115,8 +5142,6 @@ function SheetFeatures({ classes, coreTraits, backgroundRec, masteries, species,
           {itemNotes.map((n) => <p key={n} style={{ fontFamily: FORGE_FONTS.body, fontSize: 13.5, color: STONE.inkDim, margin: "0 0 4px" }}>{n}</p>)}
         </FeatureGroup>
       )}
-
-      <ProficiencyBlock coreTraits={coreTraits} backgroundRec={backgroundRec} masteries={masteries} />
     </div>
   );
 }
@@ -5129,6 +5154,76 @@ function SheetBackground({ background, desc, alignment }: { background: string; 
       <PanelTitle>{background || "Background"}</PanelTitle>
       {alignment && <p style={{ fontSize: 13, color: STONE.inkFaint, margin: "0 0 8px" }}>Alignment: {alignment}</p>}
       {desc ? <DescBlock desc={desc} /> : <Muted>No background chosen. Pick one in the Forge.</Muted>}
+    </div>
+  );
+}
+
+// The language names of each edition's rules, offered when adding one (any other can be typed in).
+const LANGUAGES: Record<"2014" | "2024", string[]> = {
+  "2024": ["Common", "Common Sign Language", "Draconic", "Dwarvish", "Elvish", "Giant", "Gnomish", "Goblin", "Halfling", "Orc",
+    "Abyssal", "Celestial", "Deep Speech", "Druidic", "Infernal", "Primordial", "Sylvan", "Thieves' Cant", "Undercommon"],
+  "2014": ["Common", "Dwarvish", "Elvish", "Giant", "Gnomish", "Goblin", "Halfling", "Orc",
+    "Abyssal", "Celestial", "Deep Speech", "Draconic", "Infernal", "Primordial", "Sylvan", "Undercommon"],
+};
+
+// Proficiencies and languages, in the sheet's left column as on D&D Beyond (phase 5e). Armor, weapon
+// and tool proficiencies come from the class and background. Languages are partly worked out (a
+// 2014 species' own languages, Druidic or Thieves' Cant from a class feature, Common in the 2024
+// rules) and partly chosen, since backgrounds and the 2024 origin say "of your choice": the chosen
+// ones are stored as build.languages and can be removed; the worked-out ones cannot.
+function SheetProficiencies({ coreTraits, backgroundRec, masteries, ruleset, species, speciesLanguages, backgroundLanguages, classFeatureNames, chosen, onChosen }: {
+  coreTraits: string; backgroundRec: BackgroundRecord | undefined; masteries: string[];
+  ruleset: "2014" | "2024"; species: string; speciesLanguages: string | null; backgroundLanguages: string | null;
+  classFeatureNames: string[]; chosen: string[]; onChosen: (list: string[]) => void;
+}) {
+  const [pick, setPick] = useState("");
+  const [typed, setTyped] = useState("");
+  const granted: { name: string; from: string }[] = [];
+  const grant = (name: string, from: string) => { if (name && !granted.some((g) => g.name.toLowerCase() === name.toLowerCase())) granted.push({ name, from }); };
+  if (ruleset === "2024") grant("Common", "2024 rules");
+  for (const raw of (speciesLanguages || "").split(/,|\band\b/)) {
+    const nm = raw.trim();
+    // a fixed language name, not "one extra language of your choice"
+    if (nm && nm.split(/\s+/).length <= 3 && !/choice|one|extra|any/i.test(nm)) grant(nm, species || "Species");
+  }
+  if (classFeatureNames.some((f) => /^druidic$/i.test(f.trim()))) grant("Druidic", "Druid");
+  if (classFeatureNames.some((f) => /^thieves[\u2019']? cant$/i.test(f.trim()))) grant("Thieves' Cant", "Rogue");
+  const known = new Set([...granted.map((g) => g.name.toLowerCase()), ...chosen.map((c) => c.toLowerCase())]);
+  const add = (nm: string) => {
+    const v = nm.trim().slice(0, 40);
+    if (!v || known.has(v.toLowerCase())) return;
+    onChosen([...chosen, v]); setPick(""); setTyped("");
+  };
+  const hint = ruleset === "2024"
+    ? "The 2024 rules give Common plus two languages of your choice."
+    : backgroundLanguages && !/^none$/i.test(backgroundLanguages.trim()) ? `Your background: ${backgroundLanguages}.` : null;
+  const chip: React.CSSProperties = { display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12.5, color: STONE.ink, border: `1px solid ${STONE.hi}`, borderRadius: 999, padding: "2px 10px" };
+  return (
+    <div style={{ ...stonePanel(), marginTop: 12 }} role="region" aria-label="Proficiencies and languages">
+      <ProficiencyBlock coreTraits={coreTraits} backgroundRec={backgroundRec} masteries={masteries} />
+      <FeatureGroup label="Languages">
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+          {granted.map((g) => <span key={g.name} title={`From ${g.from}`} style={chip}>{g.name}<span style={{ fontSize: 10.5, color: STONE.inkFaint }}>{g.from}</span></span>)}
+          {chosen.map((c) => (
+            <span key={c} style={chip}>{c}
+              <button type="button" onClick={() => onChosen(chosen.filter((x) => x !== c))} aria-label={`Remove ${c}`}
+                style={{ background: "none", border: "none", color: STONE.inkFaint, cursor: "pointer", padding: 0, fontSize: 12 }}>remove</button>
+            </span>
+          ))}
+          {granted.length + chosen.length === 0 && <MutedNote>No languages yet.</MutedNote>}
+        </div>
+        {hint && <p style={{ fontSize: 12, color: STONE.inkFaint, margin: "8px 0 0" }}>{hint}</p>}
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center", marginTop: 8 }}>
+          <select aria-label="Add a language" value={pick} onChange={(e) => { setPick(e.target.value); if (e.target.value) add(e.target.value); }}
+            style={{ ...stoneField(), width: "auto", padding: "5px 8px", fontSize: 13 }}>
+            <option value="" style={OPTION_STYLE}>Add a language</option>
+            {LANGUAGES[ruleset].filter((l) => !known.has(l.toLowerCase())).map((l) => <option key={l} value={l} style={OPTION_STYLE}>{l}</option>)}
+          </select>
+          <input aria-label="Another language" value={typed} onChange={(e) => setTyped(e.target.value.slice(0, 40))} placeholder="or type one"
+            onKeyDown={(e) => { if (e.key === "Enter") add(typed); }} style={{ ...stoneField(), width: 140, padding: "5px 8px", fontSize: 13, cursor: "text" }} />
+          <button type="button" className="forge-btn" disabled={!typed.trim()} onClick={() => add(typed)} style={{ ...stoneButton("stone"), fontSize: 12, padding: "4px 10px" }}>Add</button>
+        </div>
+      </FeatureGroup>
     </div>
   );
 }

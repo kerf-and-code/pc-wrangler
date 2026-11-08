@@ -18,6 +18,10 @@
 // the Forge's own autosave. While the character is in a running fight, the fight's HP and conditions
 // are the truth: changes here go through the fight (combat_act, p110) and the Forge copies the fight's
 // numbers back into `play`, so the HP a fight ends with is the HP the sheet shows afterwards.
+//
+// Phase 5e: a score's pill opens its breakdown (base, species, background, feats, items, cap) with an
+// override; the HP box's Max HP control adds a modifier or replaces the maximum. Both are stored in
+// the build (abilityOverride, hpMaxMod, hpMaxOverride) and applied by the derivation.
 
 import React, { useCallback, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -25,7 +29,9 @@ import { C, STONE, FORGE_FONTS, stonePanel, stoneButton, forgeLabel } from "@/li
 import { applyAdvantage } from "@/lib/dice";
 import { CONDITIONS } from "@/lib/combat";
 import { combatAct, type FightEntry } from "@/components/fight-controls";
-import type { Ability, DerivedSheet } from "@/lib/srd/derive-sheet";
+import { SKILLS, type Ability, type DerivedSheet } from "@/lib/srd/derive-sheet";
+
+export type SheetOverrides = { ability: Partial<Record<Ability, number>>; hpMaxMod: number; hpMaxOverride: number | null };
 
 export type PlayState = {
   hp?: number | null;                     // null or missing: at full HP
@@ -69,11 +75,13 @@ export function takeDamage(hp: number, temp: number, n: number): { hp: number; t
 
 type Rolled = { label: string; total: number; notation: string; natural: number | null; logged: boolean; at: number };
 
-export default function PlaySheet({ name, sheet, saveProf, ruleset, characterId, hitDice, play, onPlay, fight, onFightChanged, onShortRestResources, onLongRestResources }: {
+export default function PlaySheet({ name, sheet, saveProf, ruleset, characterId, hitDice, play, onPlay, fight, onFightChanged, onShortRestResources, onLongRestResources, overrides, onOverrides }: {
   name: string; sheet: DerivedSheet; saveProf: Ability[]; ruleset: "2014" | "2024"; characterId: string | null;
   hitDice: HitDice; play: PlayState; onPlay: (fn: (p: PlayState) => PlayState) => void;
   fight: { id: string; me: FightEntry } | null; onFightChanged: () => void;
   onShortRestResources: () => void; onLongRestResources: () => void;
+  /** Phase 5e: the player's ability and max HP overrides; without onOverrides the controls are hidden. */
+  overrides?: SheetOverrides; onOverrides?: (fn: (o: SheetOverrides) => SheetOverrides) => void;
 }) {
   const supabase = useMemo(() => createClient(), []);
   const [adv, setAdv] = useState<"flat" | "adv" | "dis">("flat");
@@ -84,6 +92,9 @@ export default function PlaySheet({ name, sheet, saveProf, ruleset, characterId,
   const setNote = useCallback((text: string | null, bad = true) => setNoteRaw(text ? { text, bad } : null), []);
   const [busy, setBusy] = useState(false);
   const [resting, setResting] = useState<"short" | "long" | null>(null);
+  const [detail, setDetail] = useState<Ability | null>(null);
+  const [maxOpen, setMaxOpen] = useState(false);
+  const ov: SheetOverrides = overrides ?? { ability: {}, hpMaxMod: 0, hpMaxOverride: null };
 
   const hpMax = Math.max(1, sheet.hpMax || 1);
   const inFight = !!fight && fight.me.hp != null;
@@ -190,12 +201,12 @@ export default function PlaySheet({ name, sheet, saveProf, ruleset, characterId,
   const n = parseInt(amt, 10);
   // a passive score is not a d20 test, so 2024 exhaustion does not lower it
   const passive = (k: string) => 10 + (sheet.skills[k]?.val ?? 0);
-  const rollBtn = (label: string, mod: number, kind: string, rank = 0, key?: string) => (
+  const rollBtn = (label: string, mod: number, kind: string, rank = 0, key?: string, abil?: string) => (
     <button key={key ?? label} type="button" className="forge-btn" disabled={busy} onClick={() => d20(label, mod, kind)}
       title={rank >= 2 ? "Expertise" : rank >= 1 ? "Proficient" : "Not proficient"}
       style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "5px 8px", background: "transparent", border: "none", borderBottom: `1px solid ${STONE.hi}`, color: STONE.ink, cursor: "pointer", fontSize: 13.5, textAlign: "left" }}>
       <span aria-hidden style={{ width: 8, height: 8, borderRadius: 4, flexShrink: 0, border: `1px solid ${rank ? C.sun : STONE.hi}`, background: rank >= 1 ? C.sun : "transparent", boxShadow: rank >= 2 ? "0 0 0 2px rgba(200,162,75,0.3)" : undefined }} />
-      <span style={{ flex: 1 }}>{label}</span>
+      <span style={{ flex: 1 }}>{label}{abil && <span style={{ ...mono, fontSize: 10.5, color: STONE.inkFaint, marginLeft: 6 }}>{abil}</span>}</span>
       <span style={{ ...mono, color: C.plum }}>{sign(mod - exPenalty)}</span>
     </button>
   );
@@ -248,15 +259,50 @@ export default function PlaySheet({ name, sheet, saveProf, ruleset, characterId,
       {/* abilities, then the numbers a turn uses, then the HP box */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(92px, 1fr))", gap: 8 }}>
         {ABILS.map((a) => (
-          <button key={a} type="button" className="forge-btn" disabled={busy} onClick={() => d20(`${ABIL_NAME[a]} check`, (sheet.mods[a] ?? 0) + (sheet.checkBonus ?? 0), "check")}
-            title={`Roll a ${ABIL_NAME[a]} check${sheet.checkBonus ? ` (${sign(sheet.checkBonus)} from items)` : ""}`} aria-label={`${ABIL_NAME[a]} ${sheet.abilities[a]}, modifier ${sign(sheet.mods[a] ?? 0)}: roll a check`}
-            style={{ ...box, cursor: "pointer", textAlign: "center", display: "grid", gap: 2, padding: "10px 6px" }}>
-            <span style={tiny}>{ABIL_NAME[a]}</span>
-            <span style={{ ...mono, fontSize: 26, fontWeight: 700, color: STONE.ink, lineHeight: 1.1 }}>{sign(sheet.mods[a] ?? 0)}</span>
-            <span style={{ ...mono, fontSize: 12, color: STONE.inkFaint, border: `1px solid ${STONE.hi}`, borderRadius: 999, padding: "0 8px", justifySelf: "center" }}>{sheet.abilities[a]}</span>
-          </button>
+          <div key={a} style={{ ...box, textAlign: "center", display: "grid", gap: 2, padding: "10px 6px", outline: detail === a ? `1px solid ${C.sun}` : "none" }}>
+            <button type="button" className="forge-btn" disabled={busy} onClick={() => d20(`${ABIL_NAME[a]} check`, (sheet.mods[a] ?? 0) + (sheet.checkBonus ?? 0), "check")}
+              title={`Roll a ${ABIL_NAME[a]} check${sheet.checkBonus ? ` (${sign(sheet.checkBonus)} from items)` : ""}`} aria-label={`${ABIL_NAME[a]} ${sheet.abilities[a]}, modifier ${sign(sheet.mods[a] ?? 0)}: roll a check`}
+              style={{ background: "none", border: "none", padding: 0, cursor: "pointer", display: "grid", gap: 2 }}>
+              <span style={tiny}>{ABIL_NAME[a]}</span>
+              <span style={{ ...mono, fontSize: 26, fontWeight: 700, color: STONE.ink, lineHeight: 1.1 }}>{sign(sheet.mods[a] ?? 0)}</span>
+            </button>
+            <button type="button" onClick={() => setDetail(detail === a ? null : a)} aria-expanded={detail === a}
+              aria-label={`${ABIL_NAME[a]} score ${sheet.abilities[a]}: where it comes from`} title="Where this score comes from"
+              style={{ ...mono, fontSize: 12, color: typeof ov.ability[a] === "number" ? C.sun : STONE.inkFaint, background: "transparent", border: `1px solid ${typeof ov.ability[a] === "number" ? C.sun : STONE.hi}`, borderRadius: 999, padding: "0 8px", justifySelf: "center", cursor: "pointer" }}>{sheet.abilities[a]}</button>
+          </div>
         ))}
       </div>
+      {detail && (
+        <div style={{ ...box }} role="region" aria-label={`${ABIL_NAME[detail]} breakdown`}>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+            <span style={tiny}>{ABIL_NAME[detail]} {sheet.abilities[detail]}</span>
+            <span style={{ flex: 1 }} />
+            <button type="button" className="forge-btn" onClick={() => setDetail(null)} style={btn()}>Close</button>
+          </div>
+          <div style={{ display: "grid", gap: 3, marginTop: 6 }}>
+            {(sheet.abilityParts?.[detail] ?? [{ label: "Score", value: sheet.abilities[detail], how: "base" as const }]).map((p, i) => (
+              <div key={i} style={{ display: "flex", gap: 8, fontSize: 13, color: p.how === "override" ? C.sun : STONE.ink }}>
+                <span style={{ flex: 1 }}>{p.label}</span>
+                <span style={{ ...mono }}>{p.how === "add" ? sign(p.value) : p.value}</span>
+              </div>
+            ))}
+          </div>
+          {onOverrides && (
+            <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", marginTop: 8 }}>
+              <label style={{ fontSize: 12.5, color: STONE.inkFaint, display: "flex", gap: 6, alignItems: "center" }}>Override
+                <input key={`ov-${detail}-${ov.ability[detail] ?? ""}`} inputMode="numeric" defaultValue={ov.ability[detail] ?? ""} placeholder="none"
+                  onBlur={(e) => { const v = parseInt(e.target.value, 10); const d = detail; onOverrides((o) => { const ab = { ...o.ability }; if (Number.isFinite(v) && v > 0) ab[d] = Math.min(30, v); else delete ab[d]; return { ...o, ability: ab }; }); }}
+                  onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
+                  style={{ ...field, width: 64 }} />
+              </label>
+              {typeof ov.ability[detail] === "number" && (
+                <button type="button" className="forge-btn" onClick={() => { const d = detail; onOverrides((o) => { const ab = { ...o.ability }; delete ab[d]; return { ...o, ability: ab }; }); }} style={btn()}>Clear override</button>
+              )}
+              <span style={{ fontSize: 11.5, color: STONE.inkFaint }}>An override replaces the score; everything that uses it follows.</span>
+            </div>
+          )}
+        </div>
+      )}
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 8 }}>
         <div style={{ ...box, textAlign: "center" }}><div style={tiny}>Armor class</div><div title={sheet.acFormula || undefined} style={{ ...mono, fontSize: 26, fontWeight: 700, color: STONE.ink }}>{sheet.ac}</div></div>
@@ -276,6 +322,10 @@ export default function PlaySheet({ name, sheet, saveProf, ruleset, characterId,
             <div style={tiny}>Hit points{inFight ? " (in the fight)" : ""}</div>
             <div style={{ ...mono, fontSize: 30, fontWeight: 700, color: hp === 0 ? C.warn : STONE.ink, lineHeight: 1.1 }}>
               {hp}<span style={{ fontSize: 16, color: STONE.inkFaint }}> / {hpMax}</span>
+              {onOverrides && (
+                <button type="button" onClick={() => setMaxOpen((v) => !v)} aria-expanded={maxOpen} title="Adjust maximum HP"
+                  style={{ ...mono, fontSize: 11, marginLeft: 8, verticalAlign: "middle", background: "transparent", color: ov.hpMaxOverride || ov.hpMaxMod ? C.sun : STONE.inkFaint, border: `1px solid ${ov.hpMaxOverride || ov.hpMaxMod ? C.sun : STONE.hi}`, borderRadius: 4, padding: "1px 6px", cursor: "pointer" }}>Max HP</button>
+              )}
               {temp > 0 && <span style={{ fontSize: 16, color: "#6fa3d8" }}> +{temp} temp</span>}
             </div>
           </div>
@@ -290,6 +340,22 @@ export default function PlaySheet({ name, sheet, saveProf, ruleset, characterId,
             <button type="button" className="forge-btn" disabled={amt === ""} onClick={() => void setTemp(n)} title="Temporary HP do not stack: this replaces what you have" style={{ ...btn(), color: "#6fa3d8" }}>Set temp</button>
           </div>
         </div>
+        {maxOpen && onOverrides && (
+          <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginTop: 10, paddingTop: 8, borderTop: `1px solid ${STONE.hi}` }} role="group" aria-label="Maximum HP">
+            <span style={{ fontSize: 12.5, color: STONE.inkFaint }}>From level, hit dice and CON: <b style={{ color: STONE.ink }}>{sheet.hpMaxRolled ?? hpMax}</b></span>
+            <label style={{ fontSize: 12.5, color: STONE.inkFaint, display: "flex", gap: 6, alignItems: "center" }}>Modifier
+              <input key={`hm-${ov.hpMaxMod}`} inputMode="numeric" defaultValue={ov.hpMaxMod || ""} placeholder="0"
+                onBlur={(e) => { const v = parseInt(e.target.value, 10); onOverrides((o) => ({ ...o, hpMaxMod: Number.isFinite(v) ? Math.max(-999, Math.min(999, v)) : 0 })); }}
+                onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }} style={{ ...field, width: 60 }} />
+            </label>
+            <label style={{ fontSize: 12.5, color: STONE.inkFaint, display: "flex", gap: 6, alignItems: "center" }}>Override
+              <input key={`ho-${ov.hpMaxOverride ?? ""}`} inputMode="numeric" defaultValue={ov.hpMaxOverride ?? ""} placeholder="none"
+                onBlur={(e) => { const v = parseInt(e.target.value, 10); onOverrides((o) => ({ ...o, hpMaxOverride: Number.isFinite(v) && v > 0 ? Math.min(9999, v) : null })); }}
+                onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }} style={{ ...field, width: 64 }} />
+            </label>
+            <span style={{ fontSize: 11.5, color: STONE.inkFaint }}>An override replaces the maximum; the modifier adds to it (rolled HP, a curse, a boon).</span>
+          </div>
+        )}
         {hp > 0 && amt !== "" && n > 0 && (
           <p style={{ fontSize: 12, color: STONE.inkFaint, margin: "8px 0 0" }}>
             Heal {n}: {Math.min(hpMax, hp + n)} HP. Damage {n}: {takeDamage(hp, temp, n).hp} HP{temp ? `, ${takeDamage(hp, temp, n).temp} temp` : ""}.
@@ -338,7 +404,8 @@ export default function PlaySheet({ name, sheet, saveProf, ruleset, characterId,
 
         <div style={box}>
           <label style={forgeLabel}>Skills</label>
-          {Object.keys(sheet.skills).sort().map((k) => rollBtn(k, sheet.skills[k].val, "skill", sheet.skills[k].rank, k))}
+          {/* by their proper names ("Animal Handling", not the key "animal"), in the book's order, with the ability */}
+          {SKILLS.filter(([k]) => sheet.skills[k]).map(([k, label, ab]) => rollBtn(label, sheet.skills[k].val, "skill", sheet.skills[k].rank, k, ab.toUpperCase()))}
         </div>
 
         <div style={{ display: "grid", gap: 12 }}>

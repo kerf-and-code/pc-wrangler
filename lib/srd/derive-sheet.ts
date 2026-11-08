@@ -92,6 +92,20 @@ export type Build = {
   epicChoices: Record<number, EpicChoice[]>; // per-level 21-30 boon/feat picks
   spells: { cantrips: string[]; known: string[] };
   slotsUsed?: Record<number, number>;
+  /**
+   * Phase 5e, the character sheet's overrides. An ability override replaces the final score (after
+   * every bonus and the cap); hpMaxMod adds to the computed maximum HP; hpMaxOverride replaces it.
+   * None of them is stored unless the player sets it, so every existing sheet derives as before.
+   */
+  abilityOverride?: Partial<Record<Ability, number>>;
+  hpMaxMod?: number;
+  hpMaxOverride?: number | null;
+  /**
+   * Labels only, for the ability breakdown: where featMods' points came from (background, species,
+   * choices). The engine still adds featMods itself; when these do not add up to it per ability, the
+   * breakdown shows featMods as one line instead.
+   */
+  featModSources?: { label: string; mods: Record<string, number> }[];
 };
 
 export type EpicChoice = {
@@ -504,7 +518,14 @@ export type DerivedSheet = {
   checkBonus?: number;
   /** What each active magic item adds, one line per item: "Ring of Protection: +1 AC, +1 to saves". */
   itemNotes?: string[];
+  /** Phase 5e: where each ability score comes from, in the order applied (the sheet's breakdown). */
+  abilityParts?: Record<Ability, AbilityPart[]>;
+  /** Phase 5e: maximum HP before the player's modifier or override. */
+  hpMaxRolled?: number;
 };
+
+/** One line of an ability score's breakdown. "set" raises the score to a value (Belt of Giant Strength). */
+export type AbilityPart = { label: string; value: number; how: "base" | "add" | "set" | "cap" | "override" };
 
 // How many epic choices a character of the given level has earned, and the ability-score cap
 // in force, from the epic table. The builder UI uses this to offer the right number of ASI /
@@ -533,26 +554,48 @@ export function deriveSheet(build: Build, ctx: RulesContext): DerivedSheet {  co
   // flows into every derived number with no rebuild.
   const liveAb = {} as Record<Ability, number>;
   ABILITIES.forEach((a) => { liveAb[a] = build.abilities[a]; });
+  // the breakdown the character sheet shows, built beside the arithmetic so the two cannot disagree
+  const parts = {} as Record<Ability, AbilityPart[]>;
+  ABILITIES.forEach((a) => { parts[a] = [{ label: "Base score", value: build.abilities[a], how: "base" }]; });
   // Species and feat/background ability-score bonuses raise the BASE score (a +2 racial adds to
   // your stat), applied before gear so a gear "set" can still override a low result. In 2024 the
   // species table carries no ability mods (they moved to backgrounds), so this is a no-op there;
   // in 2014 the species table supplies "STR +2" etc., and featMods carries background bonuses.
   const abMods = ctx.species[build.meta.species]?.mods || {};
   const featAbMods = build.featMods || {};
-  ABILITIES.forEach((a) => { if (abMods[a]) liveAb[a] += abMods[a] as number; });
-  ABILITIES.forEach((a) => { if (featAbMods[a]) liveAb[a] += featAbMods[a] as number; });
+  ABILITIES.forEach((a) => { if (abMods[a]) { liveAb[a] += abMods[a] as number; parts[a].push({ label: "Species", value: abMods[a] as number, how: "add" }); } });
+  ABILITIES.forEach((a) => {
+    if (!featAbMods[a]) return;
+    liveAb[a] += featAbMods[a] as number;
+    const srcs = (build.featModSources || []).map((x) => ({ label: x.label, value: Number(x.mods[a] || 0) })).filter((x) => x.value);
+    if (srcs.length && srcs.reduce((n, x) => n + x.value, 0) === featAbMods[a]) srcs.forEach((x) => parts[a].push({ ...x, how: "add" }));
+    else parts[a].push({ label: "Species, background and feats", value: featAbMods[a] as number, how: "add" });
+  });
   // Ability-score increases and feat bonuses chosen at ASI levels (standard 4/8/12/16/19 and epic
   // 21-30) accumulate into em.mods via epicAgg; apply their per-ability values to the base score
   // too, so an ASI or an ability-raising feat actually moves the stat.
-  ABILITIES.forEach((a) => { if (em[a]) liveAb[a] += em[a] as number; });
+  ABILITIES.forEach((a) => { if (em[a]) { liveAb[a] += em[a] as number; parts[a].push({ label: "Ability score improvements and feats", value: em[a] as number, how: "add" }); } });
   // Only equipped (and, where needed, attuned) gear applies (phase 5c).
   const active = activeGear(build, ctx);
   const geff = gearAbilityEffects(active, ctx);
   ABILITIES.forEach((a) => { if (geff.bump[a]) liveAb[a] += geff.bump[a] as number; });
-  ABILITIES.forEach((a) => { const s = geff.set[a]; if (s !== undefined && liveAb[a] < s) liveAb[a] = s; });
+  const setWon: Partial<Record<Ability, boolean>> = {};
+  ABILITIES.forEach((a) => { const s = geff.set[a]; if (s !== undefined && liveAb[a] < s) { liveAb[a] = s; setWon[a] = true; } });
+  // the items behind those two lines, named
+  for (const e of active) {
+    const eff = gearEffectOf(e, ctx);
+    if (!eff) continue;
+    if (eff.type === "bumpScore") parts[eff.abil].push({ label: e.n, value: eff.value, how: "add" });
+    else if (geff.set[eff.abil] === eff.value) parts[eff.abil].push({ label: setWon[eff.abil] ? `${e.n} sets the score` : `${e.n} (would set ${eff.value}, already higher)`, value: eff.value, how: "set" });
+  }
   // Cap after everything: no ability exceeds the epic ceiling (30 by default).
   const abilityCap = epic.abilityCap || 30;
-  ABILITIES.forEach((a) => { if (liveAb[a] > abilityCap) liveAb[a] = abilityCap; });
+  ABILITIES.forEach((a) => { if (liveAb[a] > abilityCap) { liveAb[a] = abilityCap; parts[a].push({ label: `Capped at ${abilityCap}`, value: abilityCap, how: "cap" }); } });
+  // The player's override replaces the result outright (phase 5e).
+  ABILITIES.forEach((a) => {
+    const ov = build.abilityOverride?.[a];
+    if (typeof ov === "number" && Number.isFinite(ov)) { liveAb[a] = Math.max(1, Math.min(abilityCap, Math.round(ov))); parts[a].push({ label: "Override", value: liveAb[a], how: "override" }); }
+  });
   const m = {} as Record<Ability, number>;
   ABILITIES.forEach((a) => { m[a] = abilityMod(liveAb[a]); });
 
@@ -648,8 +691,12 @@ export function deriveSheet(build: Build, ctx: RulesContext): DerivedSheet {  co
     const cavg = epic.hitDieAvg || (Math.floor(cd / 2) + 1);
     return n + (c.level || 0) * cavg;
   }, 0);
-  const hpMax = hd + (build.level - 1) * avg + extraHp
+  const hpMaxRolled = hd + (build.level - 1) * avg + extraHp
     + totalLevel * m.con + perLvl * totalLevel + classHp;
+  // the player's adjustments (phase 5e): an override replaces the maximum; a modifier adds to it
+  const hpMax = typeof build.hpMaxOverride === "number" && build.hpMaxOverride > 0
+    ? Math.round(build.hpMaxOverride)
+    : Math.max(1, hpMaxRolled + Math.round(build.hpMaxMod || 0));
 
   // Saves: class proficiencies plus any earned at later levels plus epic grants.
   const lateSaves: Ability[] = [];
@@ -733,5 +780,6 @@ export function deriveSheet(build: Build, ctx: RulesContext): DerivedSheet {  co
     immune, senses, otherSpeeds,
     advAgainst: sp.advAgainst || [], advSaves: sp.advSaves || [], advSavesVs: sp.advSavesVs || "",
     checkBonus: ib.checks, itemNotes,
+    abilityParts: parts, hpMaxRolled,
   };
 }
