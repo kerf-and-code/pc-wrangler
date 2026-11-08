@@ -16,8 +16,14 @@ export type MapKind = "indoor" | "outdoor";
 // topGrid: a black battle grid drawn over everything (off by default), separate from the book grid.
 // overlays: per level, the Gemini painting of that level (or null). sig is levelSig() at the moment it
 // was painted, so the editor can say when the map has changed since.
+// style "upload" marks the GM's own image (an uploaded map) rather than a Gemini painting: it is never
+// called out of date.
 export type PaintOverlay = { url: string; at: string; sig: string; style: string; show: boolean; opacity: number; inkOnTop: boolean; piecesOnTop: boolean };
-export type BattleMeta = { title: string; levelNames: string[]; autoNumber: boolean; showGrid: boolean; ground: number; grid: GridLook; topGrid: { show: boolean; opacity: number }; overlays: (PaintOverlay | null)[] };
+// sightWalls (Phase 5j): per level, invisible walls the GM draws over a map (usually an uploaded image,
+// whose painted walls the grid knows nothing about). Each is a straight line [ax, ay, bx, by] in squares
+// from the top-left, at any angle. They block line of sight on the tabletop and are never drawn there.
+export type SightWall = [number, number, number, number];
+export type BattleMeta = { title: string; levelNames: string[]; autoNumber: boolean; showGrid: boolean; ground: number; grid: GridLook; topGrid: { show: boolean; opacity: number }; overlays: (PaintOverlay | null)[]; sightWalls: SightWall[][] };
 export const PAINT_STYLES: { key: string; label: string }[] = [
   { key: "fantasy", label: "Painted fantasy" },
   { key: "grimdark", label: "Grim and dark" },
@@ -38,6 +44,7 @@ export type BattleMap = {
 export type BattleMapSummary = { id: string; name: string; kind: MapKind; updated_at: string | null };
 
 export const MAX_ELEMENTS = 2000;            // per level, so a runaway paste cannot bloat a row
+export const MAX_SIGHT_WALLS = 800;          // per level: sight casts a ray at every wall end, so keep it bounded
 export const GRASS = CELL_TYPES.findIndex((t) => t.key === "grass");
 
 // Everything a GM can place, grouped for the palette. Indoor pieces work outdoors and the reverse.
@@ -63,6 +70,7 @@ export function defaultBattleMeta(kind: MapKind): BattleMeta {
     grid: { ...DEFAULT_GRID_LOOK, cover: kind === "outdoor" ? "all" : "floor", opacity: kind === "outdoor" ? 0.22 : DEFAULT_GRID_LOOK.opacity },
     topGrid: { show: false, opacity: 0.5 },
     overlays: Array.from({ length: LEVELS }, () => null),
+    sightWalls: Array.from({ length: LEVELS }, () => []),
   };
 }
 
@@ -140,6 +148,7 @@ export function normBattleMeta(raw: unknown, kind: MapKind): BattleMeta {
       opacity: num(m.topGrid && typeof m.topGrid === "object" ? m.topGrid.opacity : undefined, 0.05, 1, base.topGrid.opacity),
     },
     overlays: base.overlays.map((_, l) => normOverlay(Array.isArray(m.overlays) ? m.overlays[l] : null)),
+    sightWalls: base.sightWalls.map((_, l) => normSightWalls(Array.isArray(m.sightWalls) ? m.sightWalls[l] : null)),
     ground: typeof m.ground === "number" && m.ground > 0 && m.ground < CELL_TYPES.length ? m.ground : base.ground,
     grid: {
       color: g.color === "black" || g.color === "white" || g.color === "red" ? g.color : "ink",
@@ -215,10 +224,28 @@ export function resizeMap(m: BattleMap, newN: number): BattleMap {
   const custom = m.custom.map((o) => { const next: Record<string, string> = {}; for (const [key, v] of Object.entries(o)) { const j = cell(Number(key)); if (j >= 0) next[String(j)] = v; } return next; });
   const doors = m.doors.map((o) => { const next: Record<string, DoorKind> = {}; for (const [key, v] of Object.entries(o)) { const e = parseEdge(key); if (!e) continue; const j = cell(e.i); if (j >= 0) next[`${j}${e.side}`] = v; } return next; });
   const elements = m.elements.map((arr) => arr.filter((e) => e.x < newN && e.y < newN));
-  return { ...m, n: newN, levels, custom, doors, elements };
+  const sightWalls = m.meta.sightWalls.map((arr) => arr.filter((w) => Math.max(w[0], w[1], w[2], w[3]) <= newN));
+  return { ...m, n: newN, levels, custom, doors, elements, meta: { ...m.meta, sightWalls } };
 }
 
-const STYLE_KEYS = new Set(PAINT_STYLES.map((x) => x.key));
+const STYLE_KEYS = new Set([...PAINT_STYLES.map((x) => x.key), "upload"]);
+
+// One level's sight walls from jsonb: finite numbers inside the grid (n squares, at most 200), at least
+// a hundredth of a square long, rounded to a hundredth, and no more than MAX_SIGHT_WALLS.
+export function normSightWalls(raw: unknown, n = 200): SightWall[] {
+  if (!Array.isArray(raw)) return [];
+  const out: SightWall[] = [];
+  for (const w of raw) {
+    if (out.length >= MAX_SIGHT_WALLS) break;
+    if (!Array.isArray(w) || w.length !== 4) continue;
+    const v = w.map((x) => Number(x));
+    if (!v.every((x) => Number.isFinite(x) && x >= 0 && x <= n)) continue;
+    const r = v.map((x) => Math.round(x * 100) / 100) as SightWall;
+    if (Math.hypot(r[2] - r[0], r[3] - r[1]) < 0.01) continue;
+    out.push(r);
+  }
+  return out;
+}
 function normOverlay(raw: unknown): PaintOverlay | null {
   if (!raw || typeof raw !== "object") return null;
   const o = raw as Partial<PaintOverlay>;

@@ -5,7 +5,7 @@ import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import { createClient } from "@/lib/supabase/client";
 import { renderClassic, layoutBare } from "@/lib/dungeon/classic";
 import { normalizeLevels, CELL_TYPES } from "@/lib/dungeon/render";
-import { normCustom, normDoors, normElements, normBattleMeta } from "@/lib/dungeon/battle";
+import { normCustom, normDoors, normElements, normBattleMeta, normSightWalls } from "@/lib/dungeon/battle";
 import {
   snapToken, snapCenter, measure, fitCamera, zoomAt, centerOn, toWorld, parseChat, DIAGONAL_RULES,
   templateCells, templateOutline, insideTemplate, snapOrigin, snapAngle, TEMPLATE_SHAPES,
@@ -19,7 +19,7 @@ import {
   doorsAsDrawn, PLAYER_DOORS, type MapShape,
 } from "@/lib/tabletop/fog";
 import { drawElement, type DoorKind, type MapElement } from "@/lib/dungeon/classic";
-import { wallSegments, visibility, seenSquares, canSee, CANOPY_KINDS, type Seg } from "@/lib/tabletop/sight";
+import { wallSegments, sightWallSegs, visibility, seenSquares, canSee, CANOPY_KINDS, type Seg } from "@/lib/tabletop/sight";
 import { markerShort, markerKind, MARKER_COLORS, econOf, speedNow, cantAct, FRESH_ECON } from "@/lib/combat-effects";
 import { openTabletop } from "@/lib/tabletop/open";
 import MapUpload from "@/components/map-upload";
@@ -421,7 +421,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     const key = mapSig.current + "|" + viewers.map((p) => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(";");
     if (key === sight.current.key) return;
     const sh = shapeOf(); if (!sh) return;
-    if (!segsCache.current || segsCache.current.sig !== mapSig.current) segsCache.current = { sig: mapSig.current, segs: wallSegments(sh.shape, m.door_state ?? {}) };
+    if (!segsCache.current || segsCache.current.sig !== mapSig.current) segsCache.current = { sig: mapSig.current, segs: wallSegments(sh.shape, m.door_state ?? {}, sightWallSegs(normSightWalls(m.meta?.sightWalls, n))) };
     const polys = viewers.map((p) => visibility(p, segsCache.current!.segs));
     sight.current = { key, polys, viewers: viewers.length };
     if (gm || !st.scene) return;
@@ -863,7 +863,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
       fogOn.current = !!st.map?.fog?.on; setFogOnUi(fogOn.current);
       fogBits.current = decodeFog(st.map?.fog?.revealed, st.map?.n ?? 0);
     }
-    const sig = st.map ? JSON.stringify([st.map.id, st.map.grid, st.map.custom, st.map.doors, st.map.door_state, st.map.walls, st.map.elements, st.map.meta?.overlay]) : "";
+    const sig = st.map ? JSON.stringify([st.map.id, st.map.grid, st.map.custom, st.map.doors, st.map.door_state, st.map.walls, st.map.elements, st.map.meta?.overlay, st.map.meta?.sightWalls]) : "";
     const changed = sig !== mapSig.current;
     mapSig.current = sig;
     if (st.map?.id !== prevMap || st.scene?.id !== prevScene || !baseRef.current) { renderBase(); fitPending.current = true; }

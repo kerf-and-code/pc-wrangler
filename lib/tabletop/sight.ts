@@ -9,6 +9,10 @@ import { walledAt, type MapShape } from "@/lib/tabletop/fog";
 // decks). A door edge blocks while the door is closed and passes once it is open; an archway always
 // passes. The map's border closes everything in.
 //
+// Sight walls (Phase 5j): the GM can also draw invisible straight walls at any angle over the map
+// (battle_maps.meta.sightWalls), for an uploaded image whose painted walls the grid knows nothing about.
+// They come in as `more` and block exactly like a grid wall.
+//
 // Sight is a visibility polygon per token: rays cast at every wall end point (and a hair either side),
 // each stopped by the nearest wall. No range limit and no light yet: dim light, darkness and darkvision
 // come later.
@@ -16,7 +20,13 @@ import { walledAt, type MapShape } from "@/lib/tabletop/fog";
 export type Seg = { ax: number; ay: number; bx: number; by: number };
 export type Pt = { x: number; y: number };
 
-export function wallSegments(m: MapShape, open: Record<string, unknown>): Seg[] {
+// A level's sight walls ([ax, ay, bx, by] in squares, as lib/dungeon/battle normSightWalls keeps them)
+// as segments.
+export function sightWallSegs(walls: [number, number, number, number][]): Seg[] {
+  return walls.map(([ax, ay, bx, by]) => ({ ax, ay, bx, by }));
+}
+
+export function wallSegments(m: MapShape, open: Record<string, unknown>, more: Seg[] = []): Seg[] {
   const { n } = m, extra = new Set(m.walls ?? []);
   const blocks = (key: string, walledA: boolean, walledB: boolean) => {
     if (extra.has(key)) return true;
@@ -47,6 +57,7 @@ export function wallSegments(m: MapShape, open: Record<string, unknown>): Seg[] 
   for (const [c, runs] of vRuns) for (const [a, b] of runs) out.push({ ax: c, ay: a, bx: c, by: b });
   // the border of the map, so every ray ends somewhere
   out.push({ ax: 0, ay: 0, bx: n, by: 0 }, { ax: n, ay: 0, bx: n, by: n }, { ax: n, ay: n, bx: 0, by: n }, { ax: 0, ay: n, bx: 0, by: 0 });
+  for (const s of more) out.push(s);
   return out;
 }
 

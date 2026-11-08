@@ -16,6 +16,14 @@
 //     image as its painting at full opacity, and a scene for it is put on the table.
 //
 // Nothing is sent anywhere until the GM presses "Put it on the table".
+//
+// Phase 5j: the Battle Map editor opens the same dialog for two more jobs (the `dest` prop):
+//   * "map": make a new battle map from the image, without putting it on the table (onDone gets the
+//     map's id, and the editor opens it, ready for doors and sight walls);
+//   * "level": use the image as the painting of a level of the map being edited. The grid is that map's,
+//     so the squares across start at its size and the image may not cover more than it (onDone gets the
+//     image's URL).
+// An uploaded image is saved as an overlay with style "upload", so the editor never calls it out of date.
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -38,8 +46,9 @@ export function squaresIn(len: number, off: number, px: number): number {
 }
 
 // The square image the tabletop gets: the grid region of the source, scaled so a square is `cell` pixels.
-export function squareUp(img: CanvasImageSource, iw: number, ih: number, c: Calib, cols: number, rows: number): { canvas: HTMLCanvasElement; n: number; cell: number } {
-  const n = Math.max(5, Math.max(cols, rows));
+// nFixed: the grid is an existing map's (n squares a side) rather than one sized to the image.
+export function squareUp(img: CanvasImageSource, iw: number, ih: number, c: Calib, cols: number, rows: number, nFixed?: number): { canvas: HTMLCanvasElement; n: number; cell: number } {
+  const n = nFixed ?? Math.max(5, Math.max(cols, rows));
   const cell = Math.max(8, Math.min(tableCell(n), Math.round(c.px)));
   const cv = document.createElement("canvas");
   cv.width = n * cell; cv.height = n * cell;
@@ -55,7 +64,15 @@ export function squareUp(img: CanvasImageSource, iw: number, ih: number, c: Cali
 
 const toBlob = (cv: HTMLCanvasElement, type: string, q: number) => new Promise<Blob | null>((res) => cv.toBlob(res, type, q));
 
-export default function MapUpload({ campaignId, onClose, onDone }: { campaignId: string; onClose: () => void; onDone: (sceneId: string) => void }) {
+export type UploadDest = { kind: "table" } | { kind: "map" } | { kind: "level"; n: number; levelName: string };
+
+export default function MapUpload({ campaignId, onClose, onDone, dest = { kind: "table" } }: {
+  campaignId: string; onClose: () => void;
+  /** table: the new scene's id; map: the new battle map's id; level: the uploaded image's URL */
+  onDone: (result: string) => void;
+  dest?: UploadDest;
+}) {
+  const fixedN = dest.kind === "level" ? dest.n : undefined;
   const supabase = useMemo(() => createClient(), []);
   const [img, setImg] = useState<HTMLImageElement | null>(null);
   const [name, setName] = useState("");
@@ -87,6 +104,8 @@ export default function MapUpload({ campaignId, onClose, onDone }: { campaignId:
       setImg(im);
       setName((n) => n || f.name.replace(/\.[a-z0-9]+$/i, "").replace(/[_-]+/g, " ").trim().slice(0, 80));
       // a common size for module maps is 70 or 140 pixels a square; start from 70 and let the GM correct it
+      // onto an existing map, start from the image spanning that map's whole grid
+      if (fixedN) { setCal({ px: im.naturalWidth / fixedN, ox: 0, oy: 0 }); setAcross(String(fixedN)); return; }
       const guess = im.naturalWidth >= 2800 && im.naturalWidth % 140 < 6 ? 140 : 70;
       setCal({ px: guess, ox: 0, oy: 0 }); setAcross(String(squaresIn(im.naturalWidth, 0, guess)));
     };
@@ -130,7 +149,7 @@ export default function MapUpload({ campaignId, onClose, onDone }: { campaignId:
   };
   const onUp = () => { dragRef.current = null; };
 
-  const tooSmall = cols < MIN_SQ || rows < MIN_SQ, tooBig = Math.max(cols, rows) > MAX_SQ;
+  const tooSmall = cols < MIN_SQ || rows < MIN_SQ, tooBig = Math.max(cols, rows) > (fixedN ?? MAX_SQ);
   const feet = Math.max(1, Math.min(1000, parseInt(fps, 10) || 5));
 
   const save = async () => {
@@ -138,7 +157,7 @@ export default function MapUpload({ campaignId, onClose, onDone }: { campaignId:
     setErr(null);
     try {
       setBusy("Preparing the image");
-      const { canvas, n } = squareUp(img, iw, ih, cal, cols, rows);
+      const { canvas, n } = squareUp(img, iw, ih, cal, cols, rows, fixedN);
       let blob = await toBlob(canvas, "image/webp", 0.9);
       if (!blob || blob.type !== "image/webp") blob = await toBlob(canvas, "image/jpeg", 0.9);
       if (!blob) throw new Error("This browser could not export the image.");
@@ -148,15 +167,17 @@ export default function MapUpload({ campaignId, onClose, onDone }: { campaignId:
       if (!res.ok || !j.path || !j.token || !j.url) throw new Error(j.error ?? "Could not start the upload.");
       const up = await supabase.storage.from("campaign-maps").uploadToSignedUrl(j.path, j.token, blob, { contentType: blob.type });
       if (up.error) throw new Error(`Upload failed: ${up.error.message}`);
+      if (dest.kind === "level") { onDone(j.url); return; }
 
       setBusy("Making the map");
       const title = name.trim() || "Uploaded map";
       const m = blankMap("", title, "outdoor", n);
       m.feetPerSquare = feet;
       m.meta.topGrid = { show: gridOver, opacity: 0.35 };
-      m.meta.overlays[0] = { url: j.url, at: new Date().toISOString(), sig: levelSig(m, 0), style: "fantasy", show: true, opacity: 1, inkOnTop: false, piecesOnTop: false };
+      m.meta.overlays[0] = { url: j.url, at: new Date().toISOString(), sig: levelSig(m, 0), style: "upload", show: true, opacity: 1, inkOnTop: false, piecesOnTop: false };
       const { data: bm, error: e1 } = await supabase.from("battle_maps").insert({ campaign_id: campaignId, ...toRow(m) }).select("id").single();
       if (e1 || !bm) throw new Error(`Could not save the map: ${e1?.message ?? "no row"}`);
+      if (dest.kind === "map") { onDone((bm as { id: string }).id); return; }
       const { data: sc, error: e2 } = await supabase.from("vtt_scenes").insert({ campaign_id: campaignId, battle_map_id: (bm as { id: string }).id, level: 0, name: title, settings: {} }).select("id").single();
       if (e2 || !sc) throw new Error(`Could not make the scene: ${e2?.message ?? "no row"}`);
       const { error: e3 } = await supabase.rpc("tabletop_activate_scene", { p_scene: (sc as { id: string }).id });
@@ -176,7 +197,9 @@ export default function MapUpload({ campaignId, onClose, onDone }: { campaignId:
       <div style={{ background: C.panel, border: `1px solid ${C.line}`, borderRadius: 12, width: "min(940px, 100%)", maxHeight: "100%", overflow: "auto", padding: 16, color: C.text }}>
         <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
           <strong style={{ fontSize: 16 }}>Upload a map image</strong>
-          <span style={{ color: C.muted, fontSize: 12.5 }}>A battle map from a module or campaign, lined up with the table&apos;s grid.</span>
+          <span style={{ color: C.muted, fontSize: 12.5 }}>
+            {dest.kind === "level" ? `Your own image for ${dest.levelName}, lined up with this map's ${dest.n} by ${dest.n} grid.` : "A battle map from a module or campaign, lined up with the table's grid."}
+          </span>
           <span style={{ flex: 1 }} />
           <button type="button" disabled={!!busy} onClick={onClose} style={small}>Close</button>
         </div>
@@ -194,7 +217,7 @@ export default function MapUpload({ campaignId, onClose, onDone }: { campaignId:
               toward the far edge. The gold box is what goes on the table.
             </p>
             <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "end" }}>
-              <label style={label}>Name<input value={name} onChange={(e) => setName(e.target.value.slice(0, 80))} style={{ ...field, width: 200 }} /></label>
+              {!fixedN && <label style={label}>Name<input value={name} onChange={(e) => setName(e.target.value.slice(0, 80))} style={{ ...field, width: 200 }} /></label>}
               <label style={label}>Squares across<input aria-label="Squares across" value={across} inputMode="numeric" onChange={(e) => fitAcross(e.target.value.replace(/[^0-9]/g, "").slice(0, 3))} style={{ ...field, width: 70 }} /></label>
               <label style={label}>Square size (px)
                 <span style={{ display: "flex", gap: 4 }}>
@@ -204,8 +227,8 @@ export default function MapUpload({ campaignId, onClose, onDone }: { campaignId:
                   <button type="button" aria-label="Larger squares" onClick={() => setPx(cal.px + 0.25)} style={small}>+</button>
                 </span>
               </label>
-              <label style={label}>Feet per square<input aria-label="Feet per square" value={fps} inputMode="numeric" onChange={(e) => setFps(e.target.value.replace(/[^0-9]/g, "").slice(0, 4))} style={{ ...field, width: 60 }} /></label>
-              <label style={{ ...label, display: "flex", gap: 6, alignItems: "center" }}><input type="checkbox" checked={gridOver} onChange={(e) => setGridOver(e.target.checked)} />Table grid over the map</label>
+              {!fixedN && <label style={label}>Feet per square<input aria-label="Feet per square" value={fps} inputMode="numeric" onChange={(e) => setFps(e.target.value.replace(/[^0-9]/g, "").slice(0, 4))} style={{ ...field, width: 60 }} /></label>}
+              {!fixedN && <label style={{ ...label, display: "flex", gap: 6, alignItems: "center" }}><input type="checkbox" checked={gridOver} onChange={(e) => setGridOver(e.target.checked)} />Table grid over the map</label>}
               <span style={{ flex: 1 }} />
               <span role="group" aria-label="Preview zoom" style={{ display: "flex", gap: 4 }}>
                 <button type="button" aria-pressed={zoom === "fit"} onClick={() => setZoom("fit")} style={{ ...small, color: zoom === "fit" ? C.sun : C.muted }}>Fit</button>
@@ -218,15 +241,17 @@ export default function MapUpload({ campaignId, onClose, onDone }: { campaignId:
             </div>
             <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginTop: 10 }}>
               <span style={{ fontSize: 13 }} role="status">
-                {cols} by {rows} squares ({cols * feet} by {rows * feet} ft){cols !== rows && !tooSmall && !tooBig ? `. The table is square, so it gets ${Math.max(cols, rows) - Math.min(cols, rows)} empty ${cols > rows ? "rows" : "columns"} past the map's edge.` : "."}
+                {fixedN
+                  ? `${cols} by ${rows} squares of this map's ${fixedN} by ${fixedN}${cols < fixedN || rows < fixedN ? ", from the top-left corner; the rest of the grid stays dark." : "."}`
+                  : <>{cols} by {rows} squares ({cols * feet} by {rows * feet} ft){cols !== rows && !tooSmall && !tooBig ? `. The table is square, so it gets ${Math.max(cols, rows) - Math.min(cols, rows)} empty ${cols > rows ? "rows" : "columns"} past the map's edge.` : "."}</>}
               </span>
               {tooSmall && <span style={{ fontSize: 12.5, color: "#e07a70" }}>That is under {MIN_SQ} squares a side: make the squares smaller.</span>}
-              {tooBig && <span style={{ fontSize: 12.5, color: "#e07a70" }}>The table holds up to {MAX_SQ} squares a side: make the squares larger.</span>}
+              {tooBig && <span style={{ fontSize: 12.5, color: "#e07a70" }}>{fixedN ? `This map is ${fixedN} squares a side: make the squares larger, or change the map's grid size first.` : `The table holds up to ${MAX_SQ} squares a side: make the squares larger.`}</span>}
               <span style={{ flex: 1 }} />
               <button type="button" onClick={() => { setImg(null); setErr(null); }} disabled={!!busy} style={small}>Choose another</button>
               <button type="button" disabled={!!busy || tooSmall || tooBig} onClick={() => void save()}
                 style={{ ...small, border: "none", background: tooSmall || tooBig ? C.line : C.sun, color: "#1b1712", fontWeight: 700, padding: "8px 16px" }}>
-                {busy ? `${busy}…` : "Put it on the table"}
+                {busy ? `${busy}…` : dest.kind === "level" ? "Use it on this level" : dest.kind === "map" ? "Make the map" : "Put it on the table"}
               </button>
             </div>
           </>

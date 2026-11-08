@@ -10,10 +10,11 @@ import {
   type Layout, type RenderInput,
 } from "@/lib/dungeon/classic";
 import {
-  PIECES, MAX_ELEMENTS, PAINT_STYLES, blankMap, fromRow, toRow, fromDungeonRow, resizeMap, newId, levelSig,
-  type BattleMap, type BattleMapSummary, type MapKind, type PaintOverlay,
+  PIECES, MAX_ELEMENTS, MAX_SIGHT_WALLS, PAINT_STYLES, blankMap, fromRow, toRow, fromDungeonRow, resizeMap, newId, levelSig,
+  type BattleMap, type BattleMapSummary, type MapKind, type PaintOverlay, type SightWall,
 } from "@/lib/dungeon/battle";
 import TileLibrary from "./TileLibrary";
+import MapUpload, { type UploadDest } from "@/components/map-upload";
 import type { CustomTile } from "@/lib/tiles/custom";
 import { openTabletop, tabletopUrl } from "@/lib/tabletop/open";
 
@@ -29,6 +30,14 @@ import { openTabletop, tabletopUrl } from "@/lib/tabletop/open";
 //            (indoor) or to the map's ground (outdoor).
 //   Doors    click near a wall line to set the chosen door. Click a door to select it: change its kind,
 //            move it to another side of its square (or press R to turn it round the square), or remove it.
+//   Sight walls (Phase 5j)  invisible straight walls at any angle, drawn over the map (usually an
+//            uploaded image, whose painted walls the grid knows nothing about). Click to start, click to
+//            add each corner, double-click, Enter or Esc to finish. Points snap to a quarter square and to
+//            the ends of walls already drawn (hold Alt for free). Erase removes the wall clicked. They block
+//            line of sight on the tabletop and are never drawn there or in the saved image.
+// Images (Phase 5j): "Upload a map image" makes a new map from a picture (components/map-upload, the
+// same dialog the tabletop uses); "Use my own image" lays a picture over the level being edited, lined
+// up with its grid.
 // Keys: Ctrl+Z undo, Delete removes, Ctrl+D duplicates, arrows nudge (Alt: a tenth of a square),
 // R turns 90 degrees (Shift+R back), [ and ] turn 15 degrees, + and - resize, Esc lets go. With a door
 // selected: R moves it to the next side clockwise (Shift+R the other way), Delete removes it.
@@ -44,7 +53,16 @@ import { openTabletop, tabletopUrl } from "@/lib/tabletop/open";
 // old dungeon_maps row (if anything is painted on it) is copied into a first map; the old row is left as
 // it was.
 
-type Tool = "select" | "place" | "terrain" | "doors";
+type Tool = "select" | "place" | "terrain" | "doors" | "walls";
+type Pt = { x: number; y: number };
+const WALL_COLOR = "#d24bd8";
+const WALL_NEAR = 0.3;                     // squares: how close a click must be to a wall end or a wall
+// Distance from point p to the wall w, in squares.
+function wallDist(w: SightWall, p: Pt): number {
+  const [ax, ay, bx, by] = w, dx = bx - ax, dy = by - ay, len = dx * dx + dy * dy;
+  const t = len ? Math.max(0, Math.min(1, ((p.x - ax) * dx + (p.y - ay) * dy) / len)) : 0;
+  return Math.hypot(p.x - (ax + t * dx), p.y - (ay + t * dy));
+}
 type Side = "top" | "right" | "bottom" | "left";
 type DoorSel = { r: number; c: number; side: Side };         // a door, named by the square it belongs to
 const SIDES: Side[] = ["top", "right", "bottom", "left"];
@@ -75,7 +93,8 @@ function cloneMap(m: BattleMap): BattleMap {
     custom: m.custom.map((o) => ({ ...o })),
     doors: m.doors.map((o) => ({ ...o })),
     elements: m.elements.map((a) => a.map((e) => ({ ...e }))),
-    meta: { ...m.meta, levelNames: [...m.meta.levelNames], grid: { ...m.meta.grid }, topGrid: { ...m.meta.topGrid }, overlays: m.meta.overlays.map((o) => (o ? { ...o } : null)) },
+    meta: { ...m.meta, levelNames: [...m.meta.levelNames], grid: { ...m.meta.grid }, topGrid: { ...m.meta.topGrid }, overlays: m.meta.overlays.map((o) => (o ? { ...o } : null)),
+      sightWalls: m.meta.sightWalls.map((a) => a.map((w) => [...w] as SightWall)) },
   };
 }
 
@@ -104,6 +123,10 @@ export default function BattleMapCreator({ campaignId }: { campaignId: string })
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState("");
   const [newKind, setNewKind] = useState<MapKind>("outdoor");
+  const [wallMode, setWallMode] = useState<"draw" | "erase">("draw");
+  const [wallStart, setWallStart] = useState<Pt | null>(null);   // the open end of the wall being drawn
+  const [upload, setUpload] = useState<UploadDest | null>(null);
+  const hoverAlt = useRef(false);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const baseRef = useRef<HTMLCanvasElement | null>(null);
@@ -307,6 +330,34 @@ export default function BattleMapCreator({ campaignId }: { campaignId: string })
       ctx.restore();
     }
     const hv = hover.current;
+    // sight walls: bold while the tool is on, a faint dashed line otherwise (never in the saved image)
+    const walls = m.meta.sightWalls[level];
+    if (walls.length || (tool === "walls" && wallStart)) {
+      const on = tool === "walls";
+      const gone = on && wallMode === "erase" && hv ? walls.find((w) => wallDist(w, hv) <= WALL_NEAR) ?? null : null;
+      ctx.save(); ctx.lineCap = "round";
+      const line = (w: SightWall) => { ctx.beginPath(); ctx.moveTo(gx + w[0] * S, gy + w[1] * S); ctx.lineTo(gx + w[2] * S, gy + w[3] * S); ctx.stroke(); };
+      if (on) {
+        ctx.lineWidth = 5; ctx.strokeStyle = "rgba(255,255,255,0.75)"; for (const w of walls) line(w);
+        ctx.lineWidth = 3; ctx.strokeStyle = WALL_COLOR; for (const w of walls) line(w);
+        ctx.fillStyle = WALL_COLOR;
+        for (const w of walls) for (const [x, y] of [[w[0], w[1]], [w[2], w[3]]]) { ctx.beginPath(); ctx.arc(gx + x * S, gy + y * S, 3, 0, Math.PI * 2); ctx.fill(); }
+        if (gone) { ctx.lineWidth = 5; ctx.strokeStyle = "#e0463c"; line(gone); }
+      } else {
+        ctx.setLineDash([5, 4]); ctx.lineWidth = 1.5; ctx.strokeStyle = "rgba(210,75,216,0.7)"; for (const w of walls) line(w);
+      }
+      if (on && wallMode === "draw" && wallStart) {
+        const to = hv ? snapWall(m, hv, hoverAlt.current) : null;
+        ctx.setLineDash([6, 4]); ctx.lineWidth = 2.5; ctx.strokeStyle = WALL_COLOR;
+        if (to) line([wallStart.x, wallStart.y, to.x, to.y]);
+        ctx.setLineDash([]); ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(gx + wallStart.x * S, gy + wallStart.y * S, 4, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.restore();
+    }
+    if (tool === "walls" && wallMode === "draw" && hv && !wallStart) {
+      const to = snapWall(m, hv, hoverAlt.current);
+      ctx.save(); ctx.fillStyle = WALL_COLOR; ctx.beginPath(); ctx.arc(gx + to.x * S, gy + to.y * S, 4, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+    }
     if (tool === "place" && hv && !drag.current) {
       const def = PIECES.find((p) => p.key === piece);
       const ghost: MapElement = { id: "ghost", k: piece, x: hv.x, y: hv.y, rot: 0, s: def?.s ?? 1, text: piece === "label" ? labelText.trim() || "?" : undefined };
@@ -323,7 +374,8 @@ export default function BattleMapCreator({ campaignId }: { campaignId: string })
       const half = Math.floor(brushSize / 2), r = Math.floor(hv.y) - half, c = Math.floor(hv.x) - half;
       ctx.save(); ctx.lineWidth = 1.5; ctx.strokeStyle = SELECT_COLOR; ctx.strokeRect(gx + c * S, gy + r * S, brushSize * S, brushSize * S); ctx.restore();
     }
-  }, [level, selId, selDoor, tool, piece, labelText, paintMode, brushSize]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [level, selId, selDoor, tool, piece, labelText, paintMode, brushSize, wallMode, wallStart]);
 
   const renderBase = useCallback(() => {
     const m = work.current ?? docRef.current; if (!m) return;
@@ -350,7 +402,7 @@ export default function BattleMapCreator({ campaignId }: { campaignId: string })
   }, []);
 
   useEffect(() => { request(true); }, [doc, level, imgTick, tileColors, creating, request]);
-  useEffect(() => { request(false); }, [selId, selDoor, tool, piece, labelText, paintMode, brushSize, request]);
+  useEffect(() => { request(false); }, [selId, selDoor, tool, piece, labelText, paintMode, brushSize, wallMode, wallStart, request]);
   useEffect(() => () => { if (raf.current.id !== null) cancelAnimationFrame(raf.current.id); }, []);
 
   // ---- pointer ----
@@ -459,8 +511,51 @@ export default function BattleMapCreator({ campaignId }: { campaignId: string })
     return null;
   };
 
+  // ---- sight walls ----
+  // A wall point: inside the grid, on the end of a wall already drawn when one is close (so walls join),
+  // else on a quarter square; free (a twentieth) with Alt.
+  function snapWall(m: BattleMap, p: Pt, free: boolean): Pt {
+    const x = Math.max(0, Math.min(m.n, p.x)), y = Math.max(0, Math.min(m.n, p.y));
+    let best: Pt | null = null, bd = WALL_NEAR;
+    for (const w of m.meta.sightWalls[level]) for (const q of [{ x: w[0], y: w[1] }, { x: w[2], y: w[3] }]) {
+      const d = Math.hypot(q.x - x, q.y - y); if (d < bd) { bd = d; best = q; }
+    }
+    if (best) return best;
+    const k = free ? 20 : 4;
+    return { x: Math.round(x * k) / k, y: Math.round(y * k) / k };
+  }
+  const finishWall = () => setWallStart(null);
+  const clearWalls = () => {
+    const m = docRef.current; if (!m || !m.meta.sightWalls[level].length) return;
+    if (!window.confirm(`Remove all ${m.meta.sightWalls[level].length} sight walls on ${m.meta.levelNames[level] || `level ${level + 1}`}? Ctrl+Z brings them back while this page stays open.`)) return;
+    mutate((d) => { d.meta.sightWalls[level] = []; }); setWallStart(null);
+  };
+  const clickWall = (m: BattleMap, p: Pt, free: boolean) => {
+    if (wallMode === "erase") {
+      const arr = m.meta.sightWalls[level];
+      let at = -1, bd = WALL_NEAR;
+      arr.forEach((w, i) => { const d = wallDist(w, p); if (d <= bd) { bd = d; at = i; } });
+      if (at < 0) { setMsg("Click on a sight wall to remove it."); return; }
+      setMsg(null); mutate((d) => { d.meta.sightWalls[level].splice(at, 1); });
+      return;
+    }
+    const q = snapWall(m, p, free);
+    if (!wallStart) { setMsg(null); setWallStart(q); return; }
+    if (Math.hypot(q.x - wallStart.x, q.y - wallStart.y) < 0.01) { setWallStart(null); return; }   // the same point again ends it
+    if (m.meta.sightWalls[level].length >= MAX_SIGHT_WALLS) { setMsg(`A level holds up to ${MAX_SIGHT_WALLS} sight walls. Join long straight runs into one wall.`); setWallStart(null); return; }
+    setMsg(null);
+    mutate((d) => { d.meta.sightWalls[level].push([wallStart.x, wallStart.y, q.x, q.y]); });
+    setWallStart(q);
+  };
+
   const onDown = (e: React.PointerEvent) => {
     const m = docRef.current, p = toSquares(e); if (!m || !p) return;
+    if (tool === "walls") {
+      if (e.button !== 0) return;
+      // the double-click that ends a wall arrives as a second press first: let onDoubleClick handle it
+      if (e.detail >= 2 && wallMode === "draw") return;
+      clickWall(m, p, e.altKey); return;
+    }
     const inside = p.x >= 0 && p.y >= 0 && p.x < m.n && p.y < m.n;
     const row = Math.floor(p.y), col = Math.floor(p.x);
     if (tool === "select") {
@@ -499,6 +594,8 @@ export default function BattleMapCreator({ campaignId }: { campaignId: string })
   const onMove = (e: React.PointerEvent) => {
     const m = docRef.current, p = toSquares(e); if (!m || !p) return;
     hover.current = p.x >= 0 && p.y >= 0 && p.x < m.n && p.y < m.n ? p : null;
+    hoverAlt.current = e.altKey;
+    if (tool === "walls") { if (p.x >= -0.5 && p.y >= -0.5 && p.x <= m.n + 0.5 && p.y <= m.n + 0.5) hover.current = p; request(false); return; }
     const d = drag.current;
     if (d) {
       const raw = { x: p.x - d.dx, y: p.y - d.dy };
@@ -558,7 +655,8 @@ export default function BattleMapCreator({ campaignId }: { campaignId: string })
       if (!docRef.current) return;
       const k = e.key, mod = e.ctrlKey || e.metaKey;
       if (mod && k.toLowerCase() === "z") { e.preventDefault(); doUndo(); return; }
-      if (k === "Escape") { setSelId(null); setSelDoor(null); if (tool === "place") setTool("select"); return; }
+      if (k === "Escape") { setSelId(null); setSelDoor(null); setWallStart(null); if (tool === "place") setTool("select"); return; }
+      if (tool === "walls") { if (k === "Enter") setWallStart(null); return; }
       if (tool === "doors" && selDoor) {
         if (k === "Delete" || k === "Backspace") { e.preventDefault(); removeDoor(); return; }
         if (k.toLowerCase() === "r") { turnDoor(!e.shiftKey); return; }
@@ -609,8 +707,8 @@ export default function BattleMapCreator({ campaignId }: { campaignId: string })
   const clearLevel = () => {
     if (!doc) return;
     if (!window.confirm(`Clear everything on ${doc.meta.levelNames[level] || `level ${level + 1}`}? Ctrl+Z brings it back while this page stays open.`)) return;
-    mutate((m) => { m.levels[level] = m.levels[level].map(() => 0); m.custom[level] = {}; m.doors[level] = {}; m.elements[level] = []; });
-    setSelId(null);
+    mutate((m) => { m.levels[level] = m.levels[level].map(() => 0); m.custom[level] = {}; m.doors[level] = {}; m.elements[level] = []; m.meta.sightWalls[level] = []; });
+    setSelId(null); setWallStart(null);
   };
 
   const changeSize = (newN: number) => {
@@ -715,6 +813,7 @@ export default function BattleMapCreator({ campaignId }: { campaignId: string })
     place: "Pick a piece, then click the map to drop it. It snaps to the grid (Alt: free). The new piece is selected so you can turn or resize it right away.",
     terrain: paintMode === "brush" ? "Drag to paint." : paintMode === "rect" ? "Drag a rectangle to fill it." : "Click to fill every touching square of the same terrain.",
     doors: "Click near a wall line to add a door. Click a door to select it, then change its kind, move it to another side of its square (R turns it clockwise) or remove it.",
+    walls: wallMode === "erase" ? "Click a sight wall to remove it." : wallStart ? "Click to add the next corner. Double-click, Enter or Esc finishes this wall." : "Click to start a sight wall along a wall in the picture. Points snap to a quarter square and to wall ends; hold Alt to place freely.",
   };
 
   // ---- render ----
@@ -758,6 +857,7 @@ export default function BattleMapCreator({ campaignId }: { campaignId: string })
           {maps.map((m) => <option key={m.id} value={m.id}>{m.name} ({m.kind})</option>)}
         </select>
         <button type="button" onClick={() => { setCreating(true); setMsg(null); }} style={small}>New map</button>
+        <button type="button" onClick={() => { setMsg(null); setUpload({ kind: "map" }); }} title="Make a new map from a picture: a module's battle map, lined up with the grid" style={small}>Upload a map image</button>
         {doc && <button type="button" onClick={() => void createMap(doc)} style={small}>Duplicate</button>}
         {doc && <button type="button" onClick={() => void deleteMap()} style={{ ...small, color: "#c98a7a" }}>Delete map</button>}
         <a href={tabletopUrl(campaignId)} onClick={(e) => { e.preventDefault(); openTabletop(campaignId); }} title="The shared table, in its own window: put a map on it from its Scenes tab, add tokens, and invite the players" style={{ ...small, textDecoration: "none", color: C.sun, borderColor: C.sun }}>Open the tabletop</a>
@@ -771,7 +871,7 @@ export default function BattleMapCreator({ campaignId }: { campaignId: string })
           <div style={{ flex: "1 1 560px", minWidth: 0, background: C.surface, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: 12 }}>
             <div style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 8, flexWrap: "wrap" }}>
               {doc.meta.levelNames.map((nm, l) => (
-                <button key={l} type="button" onClick={() => { setLevel(l); setSelId(null); setSelDoor(null); }} style={{ ...seg(level === l), flex: "0 0 auto", padding: "6px 10px" }}>{nm || `Level ${l + 1}`}</button>
+                <button key={l} type="button" onClick={() => { setLevel(l); setSelId(null); setSelDoor(null); setWallStart(null); }} style={{ ...seg(level === l), flex: "0 0 auto", padding: "6px 10px" }}>{nm || `Level ${l + 1}`}</button>
               ))}
               <span style={{ marginLeft: "auto", color: C.muted, fontSize: 12 }}>Zoom</span>
               {ZOOMS.map((z) => <button key={z} type="button" onClick={() => setZoom(z)} style={{ ...seg(zoom === z), flex: "0 0 auto", padding: "5px 9px" }}>{z === 1 ? "Fit" : `${z}x`}</button>)}
@@ -780,6 +880,7 @@ export default function BattleMapCreator({ campaignId }: { campaignId: string })
               <canvas
                 ref={canvasRef}
                 onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp} onPointerLeave={onLeave}
+                onDoubleClick={() => { if (tool === "walls") finishWall(); }}
                 style={{ display: "block", width: `${zoom * 100}%`, height: "auto", touchAction: "none", cursor: tool === "select" ? "default" : "crosshair" }}
                 aria-label={`Map editor: ${doc.name}`}
               />
@@ -787,16 +888,33 @@ export default function BattleMapCreator({ campaignId }: { campaignId: string })
             <p style={{ color: C.muted, fontSize: 12, margin: "8px 2px 0" }}>{hint[tool]}</p>
             <p style={{ color: C.muted, fontSize: 12, margin: "4px 2px 0" }}>
               {doc.n}&times;{doc.n} squares, 1 square = {doc.feetPerSquare} ft &middot; {doc.elements[level].length} pieces on this level
+              {doc.meta.sightWalls[level].length > 0 && <> &middot; {doc.meta.sightWalls[level].length} sight walls</>}
             </p>
           </div>
 
           <div style={{ ...panel, width: 300 }}>
             <label style={{ ...label, marginTop: 0 }}>Tool</label>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
-              {([["select", "Select"], ["place", "Place"], ["terrain", "Terrain"], ["doors", "Doors"]] as const).map(([t, nm]) => (
-                <button key={t} type="button" onClick={() => setTool(t)} style={seg(tool === t)}>{nm}</button>
+              {([["select", "Select"], ["place", "Place"], ["terrain", "Terrain"], ["doors", "Doors"], ["walls", "Sight walls"]] as const).map(([t, nm]) => (
+                <button key={t} type="button" onClick={() => { setTool(t); setWallStart(null); }} style={{ ...seg(tool === t), gridColumn: t === "walls" ? "1 / -1" : undefined }}>{nm}</button>
               ))}
             </div>
+
+            {tool === "walls" && (
+              <div style={{ marginTop: 14 }}>
+                <p style={{ color: C.muted, fontSize: 12, margin: 0 }}>
+                  Invisible walls that block line of sight on the tabletop. Trace the walls of an uploaded map so tokens cannot see through them. Players never see these lines. Doors still go on the grid with the Doors tool.
+                </p>
+                <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
+                  <button type="button" onClick={() => { setWallMode("draw"); }} style={seg(wallMode === "draw")}>Draw</button>
+                  <button type="button" onClick={() => { setWallMode("erase"); setWallStart(null); }} style={seg(wallMode === "erase")}>Erase</button>
+                </div>
+                {wallStart && <button type="button" onClick={finishWall} style={{ ...small, width: "100%", marginTop: 8 }}>Finish this wall (Enter)</button>}
+                <p style={{ color: C.text, fontSize: 12.5, margin: "10px 0 0" }}>{doc.meta.sightWalls[level].length} on this level{doc.meta.sightWalls[level].length >= MAX_SIGHT_WALLS ? " (the most a level holds)" : ""}</p>
+                {doc.meta.sightWalls[level].length > 0 && <button type="button" onClick={clearWalls} style={{ ...small, color: "#c98a7a", width: "100%", marginTop: 8 }}>Remove all sight walls on this level</button>}
+                <p style={{ color: C.muted, fontSize: 11.5, margin: "8px 0 0" }}>On the tabletop, turn on line of sight for the scene (Scenes tab) to use them.</p>
+              </div>
+            )}
 
             {selected && (
               <div style={{ marginTop: 14, padding: 10, border: `1px solid ${C.sun}`, borderRadius: 8 }}>
@@ -915,19 +1033,21 @@ export default function BattleMapCreator({ campaignId }: { campaignId: string })
             )}
 
             <div style={{ marginTop: 16, padding: 10, border: `1px solid ${C.line}`, borderRadius: 8 }}>
-              <div style={{ color: C.text, fontWeight: 600, fontSize: 13 }}>Painted overlay</div>
+              <div style={{ color: C.text, fontWeight: 600, fontSize: 13 }}>Map image</div>
               {(() => {
                 const o = doc.meta.overlays[level];
                 const img = o ? paintImgs.current.get(o.url) : undefined;
-                const stale = !!o && o.sig !== levelSig(doc, level);
+                const own = o?.style === "upload";
+                const stale = !!o && !own && o.sig !== levelSig(doc, level);
                 return (
                   <>
                     {o && (
                       <>
-                        {img === "failed" && <p role="status" style={{ color: "#c98a7a", fontSize: 12, margin: "6px 0 0" }}>The painting could not be loaded. Repaint, or remove it.</p>}
-                        {img === "loading" && <p style={{ color: C.muted, fontSize: 12, margin: "6px 0 0" }}>Loading the painting…</p>}
+                        <p style={{ color: C.muted, fontSize: 12, margin: "6px 0 0" }}>{own ? "Your uploaded image is on this level." : "A Gemini painting is on this level."}</p>
+                        {img === "failed" && <p role="status" style={{ color: "#c98a7a", fontSize: 12, margin: "6px 0 0" }}>The image could not be loaded. Upload or paint it again, or remove it.</p>}
+                        {img === "loading" && <p style={{ color: C.muted, fontSize: 12, margin: "6px 0 0" }}>Loading the image…</p>}
                         {stale && <p role="status" style={{ color: "#d9a43a", fontSize: 12, margin: "6px 0 0" }}>This level has changed since it was painted. Repaint to match.</p>}
-                        {check(o.show, (v) => setOverlay({ show: v }), "Show the painting")}
+                        {check(o.show, (v) => setOverlay({ show: v }), own ? "Show the image" : "Show the painting")}
                         {o.show && (
                           <>
                             <label style={{ ...label, marginTop: 10 }} htmlFor="bm-ovop">Opacity: {Math.round(o.opacity * 100)}%</label>
@@ -946,13 +1066,16 @@ export default function BattleMapCreator({ campaignId }: { campaignId: string })
                     <label style={label} htmlFor="bm-pnote">Extra direction (optional)</label>
                     <input id="bm-pnote" value={paintNote} onChange={(e) => setPaintNote(e.target.value.slice(0, 300))} placeholder="Autumn leaves, mossy stone, torchlight" style={field} />
                     <div style={{ display: "grid", gap: 6, marginTop: 10 }}>
-                      <button type="button" disabled={painting} onClick={() => void paintLevel()} style={{ ...btn(C.sun, "#1b1712"), opacity: painting ? 0.6 : 1 }}>
-                        {painting ? "Painting… (up to a minute)" : o ? "Repaint this level" : "Paint this level with Gemini"}
+                      <button type="button" onClick={() => setUpload({ kind: "level", n: doc.n, levelName: doc.meta.levelNames[level] || `level ${level + 1}` })} style={btn("transparent", C.text)}>
+                        {own ? "Replace with another image" : "Use my own image"}
                       </button>
-                      {o && <button type="button" onClick={() => mutate((d) => { d.meta.overlays[level] = null; })} style={{ ...small, color: "#c98a7a" }}>Remove painting</button>}
+                      <button type="button" disabled={painting} onClick={() => void paintLevel()} style={{ ...btn(C.sun, "#1b1712"), opacity: painting ? 0.6 : 1 }}>
+                        {painting ? "Painting… (up to a minute)" : !o ? "Paint this level with Gemini" : own ? "Paint with Gemini instead" : "Repaint this level"}
+                      </button>
+                      {o && <button type="button" onClick={() => mutate((d) => { d.meta.overlays[level] = null; })} style={{ ...small, color: "#c98a7a" }}>{own ? "Remove image" : "Remove painting"}</button>}
                     </div>
                     <p style={{ color: C.muted, fontSize: 11.5, margin: "8px 0 0" }}>
-                      Sends a picture of this level&apos;s layout (no names, notes or labels) to Google Gemini. The painting can drift from the plan, so your walls, doors and grid stay drawn over it unless you turn that off.
+                      Your own image stays in your campaign&apos;s storage; after uploading, trace its walls with the Sight walls tool. Painting sends a picture of this level&apos;s layout (no names, notes or labels) to Google Gemini; the painting can drift from the plan, so your walls, doors and grid stay drawn over it unless you turn that off.
                     </p>
                   </>
                 );
@@ -1036,6 +1159,26 @@ export default function BattleMapCreator({ campaignId }: { campaignId: string })
       <div style={{ marginTop: 20 }}>
         <TileLibrary scope="dungeon" onChange={setTiles} />
       </div>
+
+      {upload && (
+        <MapUpload campaignId={campaignId} dest={upload} onClose={() => setUpload(null)}
+          onDone={(result) => {
+            const kind = upload.kind; setUpload(null);
+            if (kind === "map") {
+              void (async () => {
+                await flush();
+                const list = await listMaps(); if (list) setMaps(list);
+                setCreating(false);
+                await openMap(result);
+                setTool("walls"); setWallMode("draw");
+                setMsg(null);
+              })();
+              return;
+            }
+            const cur = docRef.current; if (!cur) return;
+            mutate((d) => { d.meta.overlays[level] = { url: result, at: new Date().toISOString(), sig: levelSig(d, level), style: "upload", show: true, opacity: 1, inkOnTop: false, piecesOnTop: false }; });
+          }} />
+      )}
     </div>
   );
 }
