@@ -32,7 +32,7 @@ import { C, STONE, FORGE_FONTS, stonePanel, stoneButton, forgeLabel } from "@/li
 import { applyAdvantage } from "@/lib/dice";
 import { CONDITIONS } from "@/lib/combat";
 import { combatAct, type FightEntry } from "@/components/fight-controls";
-import { SKILLS, type Ability, type DerivedSheet } from "@/lib/srd/derive-sheet";
+import { SKILLS, type Ability, type DerivedSheet, type ImportAdjust } from "@/lib/srd/derive-sheet";
 
 export type SheetOverrides = { ability: Partial<Record<Ability, number>>; hpMaxMod: number; hpMaxOverride: number | null };
 export type CustomDefenses = { resist?: string[]; immune?: string[]; vuln?: string[] };
@@ -81,7 +81,7 @@ export function takeDamage(hp: number, temp: number, n: number): { hp: number; t
 
 type Rolled = { label: string; total: number; notation: string; natural: number | null; logged: boolean; at: number };
 
-export default function PlaySheet({ name, sheet, saveProf, ruleset, characterId, hitDice, play, onPlay, fight, onFightChanged, onShortRestResources, onLongRestResources, overrides, onOverrides, customDefenses, onCustomDefenses }: {
+export default function PlaySheet({ name, sheet, saveProf, ruleset, characterId, hitDice, play, onPlay, fight, onFightChanged, onShortRestResources, onLongRestResources, overrides, onOverrides, customDefenses, onCustomDefenses, importAdjust }: {
   name: string; sheet: DerivedSheet; saveProf: Ability[]; ruleset: "2014" | "2024"; characterId: string | null;
   hitDice: HitDice; play: PlayState; onPlay: (fn: (p: PlayState) => PlayState) => void;
   fight: { id: string; me: FightEntry } | null; onFightChanged: () => void;
@@ -90,6 +90,8 @@ export default function PlaySheet({ name, sheet, saveProf, ruleset, characterId,
   overrides?: SheetOverrides; onOverrides?: (fn: (o: SheetOverrides) => SheetOverrides) => void;
   /** Phase 5f: hand-recorded defenses; without onCustomDefenses the editor is hidden. */
   customDefenses?: CustomDefenses; onCustomDefenses?: (d: CustomDefenses) => void;
+  /** Phase 5i.2: an imported character's adjustments to match D&D Beyond (the passives are applied here). */
+  importAdjust?: ImportAdjust;
 }) {
   const supabase = useMemo(() => createClient(), []);
   const [adv, setAdv] = useState<"flat" | "adv" | "dis">("flat");
@@ -210,7 +212,7 @@ export default function PlaySheet({ name, sheet, saveProf, ruleset, characterId,
   const field: React.CSSProperties = { padding: "6px 8px", borderRadius: 4, border: `1px solid ${STONE.hi}`, background: "rgba(0,0,0,0.25)", color: STONE.ink, fontSize: 14, width: 74, ...mono };
   const n = parseInt(amt, 10);
   // a passive score is not a d20 test, so 2024 exhaustion does not lower it
-  const passive = (k: string) => 10 + (sheet.skills[k]?.val ?? 0);
+  const passive = (k: string) => 10 + (sheet.skills[k]?.val ?? 0) + ((importAdjust?.passives as Record<string, number | undefined> | undefined)?.[k] ?? 0);
   const rollBtn = (label: string, mod: number, kind: string, rank = 0, key?: string, abil?: string) => (
     <button key={key ?? label} type="button" className="forge-btn" disabled={busy} onClick={() => d20(label, mod, kind)}
       title={rank >= 2 ? "Expertise" : rank >= 1 ? "Proficient" : "Not proficient"}

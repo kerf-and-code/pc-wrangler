@@ -51,6 +51,8 @@ export type GearEntry = {
   n: string; mod?: number; variant?: string;
   eq?: boolean; att?: boolean; qty?: number;
   custom?: boolean; wt?: number; note?: string;
+  /** Phase 5i.2: the base weapon or armor of a magic item named with it ("Holy Avenger Rapier"). */
+  base?: string;
   /** Phase 5g: containers. A container entry carries an `id`; an item stored in it carries that id as `in`. */
   id?: string; in?: string;
 };
@@ -110,6 +112,28 @@ export type Build = {
   featModSources?: { label: string; mods: Record<string, number> }[];
   /** Phase 5f: defenses the player records by hand (a curse, a boon, a blessing), added to the derived ones. */
   customDefenses?: { resist?: string[]; immune?: string[]; vuln?: string[] };
+  /**
+   * Phase 5i.2, an imported character's reconciliation with D&D Beyond: what D&D Beyond printed minus
+   * what this engine works out, per number, stored once right after an import (components/forge
+   * forge-app reconcile) and added on top from then on. So the sheet matches the PDF on the day it
+   * comes in, even where a feat, item or subclass feature is not modelled yet, and later changes
+   * (a level, a new item) still move the numbers. The sheet lists every adjustment, and the player can
+   * clear them. Attack adjustments are applied where the attacks are built (lib/play/attacks).
+   */
+  importAdjust?: ImportAdjust;
+};
+
+export type ImportAdjust = {
+  ac?: number; hp?: number; init?: number; speed?: number; spellDC?: number; spellAttack?: number;
+  saves?: Partial<Record<Ability, number>>;
+  skills?: Record<string, number>;
+  /** By the attack's name as D&D Beyond prints it: to-hit and flat damage differences, or D&D
+   *  Beyond's damage itself when its dice differ (a class's bigger unarmed die). */
+  attacks?: Record<string, { hit?: number; dmg?: number; damage?: string }>;
+  /** Passive scores beyond 10 + the skill (Observant's +5), applied by the sheet's Senses box. */
+  passives?: { perception?: number; insight?: number; investigation?: number };
+  /** When it was worked out (an ISO time), and from which D&D Beyond export. */
+  at?: string;
 };
 
 export type EpicChoice = {
@@ -686,6 +710,9 @@ export function deriveSheet(build: Build, ctx: RulesContext): DerivedSheet {  co
       acFormula = `Natural Armor: ${nat.base}${nat.addDex ? " plus DEX" : ""}${nat.addAbil ? ` plus ${nat.addAbil.toUpperCase()}` : ""}`;
     }
   }
+  // Phase 5i.2: what D&D Beyond counts that the engine does not (an item or feature not modelled yet)
+  const acAdj = build.importAdjust?.ac || 0;
+  if (acAdj) { ac += acAdj; acFormula = `${acFormula || "10 plus DEX"}, ${acAdj > 0 ? "plus" : "minus"} ${Math.abs(acAdj)} to match D&D Beyond`; }
 
   const cls = ctx.classes[build.meta.className] || {};
   const hd = cls.hitDie || 8;
@@ -711,9 +738,10 @@ export function deriveSheet(build: Build, ctx: RulesContext): DerivedSheet {  co
   const hpMaxRolled = hd + (build.level - 1) * avg + extraHp
     + totalLevel * m.con + perLvl * totalLevel + classHp;
   // the player's adjustments (phase 5e): an override replaces the maximum; a modifier adds to it
+  const adj = build.importAdjust || {};
   const hpMax = typeof build.hpMaxOverride === "number" && build.hpMaxOverride > 0
     ? Math.round(build.hpMaxOverride)
-    : Math.max(1, hpMaxRolled + Math.round(build.hpMaxMod || 0));
+    : Math.max(1, hpMaxRolled + Math.round(build.hpMaxMod || 0) + (adj.hp || 0));
 
   // Saves: class proficiencies plus any earned at later levels plus epic grants.
   const lateSaves: Ability[] = [];
@@ -730,10 +758,11 @@ export function deriveSheet(build: Build, ctx: RulesContext): DerivedSheet {  co
   const auraOfProtection = classLevelOf(build, "Paladin") >= 6 ? Math.max(1, m.cha) : 0;
   const saves = {} as Record<Ability, number>;
   ABILITIES.forEach((a) => {
-    saves[a] = m[a] + (saveProfAll.includes(a) ? P : 0) + (build.saveBonusAll || 0) + (em.allSaves || 0) + ib.saves + auraOfProtection;
+    saves[a] = m[a] + (saveProfAll.includes(a) ? P : 0) + (build.saveBonusAll || 0) + (em.allSaves || 0) + ib.saves + auraOfProtection + (adj.saves?.[a] || 0);
   });
 
   // Skills: proficiency and expertise from class and epic; epic-granted ones are flagged.
+  const jackOfAllTrades = classLevelOf(build, "Bard") >= 2;
   const skills: DerivedSheet["skills"] = {};
   SKILLS.forEach(([k, , ab]) => {
     const isExp = build.skillExpert.includes(k) || ep.expertise.includes(k);
@@ -741,7 +770,9 @@ export function deriveSheet(build: Build, ctx: RulesContext): DerivedSheet {  co
     const rank = isExp ? 2 : isProf ? 1 : 0;
     skills[k] = {
       abil: ab, rank,
-      val: m[ab] + rank * P + (em.allSkills || 0) + ib.checks,
+      // Jack of All Trades (Bard 2, both editions): half the proficiency bonus, rounded down, on any
+      // check without proficiency. Phase 5i.2: it was missing; D&D Beyond marks those skills "H".
+      val: m[ab] + rank * P + (rank === 0 && jackOfAllTrades ? Math.floor(P / 2) : 0) + (em.allSkills || 0) + ib.checks + (adj.skills?.[k] || 0),
       fromEpic: !build.skillExpert.includes(k) && !build.skillProf.includes(k) && rank > 0,
     };
   });
@@ -751,11 +782,11 @@ export function deriveSheet(build: Build, ctx: RulesContext): DerivedSheet {  co
   const cr = castRule(build, ctx);
   const isCaster = !!cr;
   const castAbil = cr ? cr.ability : null;
-  const spellDC = isCaster && castAbil ? 8 + m[castAbil] + P + (em.spellDC || 0) + ib.spellDC : 0;
-  const spellAttack = isCaster && castAbil ? m[castAbil] + P + (em.spellAttack || 0) + ib.spellAttack : 0;
+  const spellDC = isCaster && castAbil ? 8 + m[castAbil] + P + (em.spellDC || 0) + ib.spellDC + (adj.spellDC || 0) : 0;
+  const spellAttack = isCaster && castAbil ? m[castAbil] + P + (em.spellAttack || 0) + ib.spellAttack + (adj.spellAttack || 0) : 0;
 
   // Initiative is a Dexterity check, so an item's bonus to checks counts.
-  const init = m.dex + (em.initiative || 0) + ib.checks;
+  const init = m.dex + (em.initiative || 0) + ib.checks + (adj.init || 0);
 
   // Speed: species base plus class movement features (Monk unarmored, Barbarian fast).
   let speed = (ctx.species[build.meta.species]?.speed || 30) + (em.speed || 0);
@@ -767,6 +798,7 @@ export function deriveSheet(build: Build, ctx: RulesContext): DerivedSheet {  co
   } else if (build.meta.className === "Barbarian" && build.level >= 5 && !wa.heavy) {
     speed += 10; speedLabel = "Fast Movement";
   }
+  speed += adj.speed || 0;
   if (speed < 0) speed = 0;
 
   const martialArts = build.meta.className === "Monk" ? stepValue(MONK_MA_DIE, build.level) : 0;

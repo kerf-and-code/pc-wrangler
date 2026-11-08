@@ -249,7 +249,9 @@ function parseSaveProf(f: Map<string, string>): AbilityKey[] {
 function parseSkills(f: Map<string, string>): DdbSheet["skills"] {
   return SKILL_FIELD.map(([label, valKey, profKey]) => {
     const mark = (f.get(profKey) ?? "").trim().toUpperCase();
-    const prof = mark === "E" ? "expertise" : mark ? "proficient" : null;
+    // "P" proficient, "E" expertise, "H" half (Jack of All Trades, worked out by the engine itself):
+    // phase 5i.2, "H" was read as full proficiency, so a bard was proficient in every skill.
+    const prof = mark === "E" ? "expertise" : mark === "P" ? "proficient" : null;
     return { skill: label, modifier: I(f, valKey), prof: prof as "proficient" | "expertise" | null };
   });
 }

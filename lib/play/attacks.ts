@@ -27,7 +27,7 @@ export type WeaponRecord = {
 export type AbilityMods = { str: number; dex: number; con: number; int: number; wis: number; cha: number };
 
 export type AttackRow = {
-  key: string; name: string; source: "weapon" | "unarmed";
+  key: string; name: string; source: "weapon" | "unarmed" | "imported";
   toHit: number; damage: string; damageType: string; versatile: string | null;
   range: string; properties: string[]; mastery: string | null;
   ability: "str" | "dex"; proficient: boolean; assumed: boolean; melee: boolean;
@@ -101,7 +101,8 @@ export function weaponAttack(w: WeaponRecord, mods: AbilityMods, prof: number, p
 export function unarmedAttack(mods: AbilityMods, prof: number, martialArtsDie: number): AttackRow {
   const ability: "str" | "dex" = martialArtsDie && mods.dex > mods.str ? "dex" : "str";
   const am = mods[ability];
-  const dmg = martialArtsDie ? withMod(`1d${martialArtsDie}`, am) : `${Math.max(1, 1 + am)}`;
+  // 1 plus the Strength modifier, which can be 0 (phase 5i.2: was held at 1; D&D Beyond prints 0)
+  const dmg = martialArtsDie ? withMod(`1d${martialArtsDie}`, am) : `${Math.max(0, 1 + am)}`;
   return {
     key: "unarmed", name: "Unarmed Strike", source: "unarmed", toHit: am + prof, damage: dmg, damageType: "Bludgeoning",
     versatile: null, range: "5 ft", properties: [], mastery: null, ability, proficient: true, assumed: false, melee: true,
@@ -129,6 +130,7 @@ export function damageText(a: AttackRow, dice: string = a.damage): string {
 // Add a flat amount to a damage expression's modifier: "1d8+3" + 2 -> "1d8+5", "1d6" + 2 -> "1d6+2".
 export function addToDamage(dice: string, n: number): string {
   if (!n) return dice;
+  if (/^-?\d+$/.test(dice.trim())) return String(Number(dice) + n);   // a flat "6" becomes "7
   const m = /^(.*?)([+-]\d+)$/.exec(dice);
   const base = m ? m[1] : dice, mod = (m ? Number(m[2]) : 0) + n;
   return mod ? `${base}${sign(mod)}` : base;
@@ -177,4 +179,48 @@ export function baseWeaponFor(rec: { name: string; category?: string; attunement
     for (const [k, w] of byName) if ((n.endsWith(` ${k}`) || n.startsWith(`${k},`)) && (!base || k.length > base.name.length)) base = w;
   }
   return base ? { ...base, name: rec.name } : null;
+}
+
+// ---------------------------------------------------------------------------
+// Imported characters (phase 5i.2)
+// ---------------------------------------------------------------------------
+const akey = (n: string) => n.toLowerCase().replace(/[,()]/g, " ").replace(/\s+/g, " ").trim();
+
+// The stored differences from D&D Beyond (build.importAdjust.attacks), added to the rows they name:
+// a magic weapon's +N the item data does not carry, a feature's extra damage.
+export function applyImportAdjust(rows: AttackRow[], adj: Record<string, { hit?: number; dmg?: number; damage?: string }> | undefined): AttackRow[] {
+  if (!adj || !Object.keys(adj).length) return rows;
+  const byKey = new Map(Object.entries(adj).map(([k, v]) => [akey(k), v]));
+  return rows.map((r) => {
+    const a = byKey.get(akey(r.name));
+    if (!a) return r;
+    const out: AttackRow = { ...r, toHit: r.toHit + (a.hit || 0), damage: a.damage ?? addToDamage(r.damage, a.dmg || 0), notes: [...(r.notes ?? [])] };
+    out.notes!.push(`matched to D&D Beyond${a.hit ? `, ${sign(a.hit)} to hit` : ""}${a.dmg ? `, ${sign(a.dmg)} damage` : ""}${a.damage ? `, ${a.damage} damage` : ""}`);
+    return out;
+  });
+}
+
+// Attacks D&D Beyond lists that the sheet does not build (talons, horns, a Guardian Armor's gauntlets,
+// homebrew weapons), as rows with D&D Beyond's numbers. Spells and the unarmed strikes the sheet
+// already builds are left out.
+export function importedAttackRows(
+  printed: { name: string; hit: string | null; damage: string | null; notes?: string | null }[] | undefined,
+  existing: AttackRow[], spellNames: Set<string>,
+): AttackRow[] {
+  const have = new Set(existing.map((r) => akey(r.name)));
+  const out: AttackRow[] = [];
+  for (const a of printed ?? []) {
+    const k = akey(a.name);
+    if (have.has(k) || spellNames.has(a.name.toLowerCase()) || /^unarmed strike|^flurry of blows/i.test(a.name)) continue;
+    const hit = /[-+]?\d+/.exec(a.hit ?? "");
+    const dm = /^\s*([0-9d+\-]+)\s*(.*)$/i.exec(a.damage ?? "");
+    if (!hit || !dm) continue;
+    have.add(k);
+    out.push({
+      key: `imported-${k}`, name: a.name, source: "imported", toHit: Number(hit[0]), damage: dm[1],
+      damageType: (dm[2] || "").split(/[,\s]/)[0] || "", versatile: null, range: "", properties: [], mastery: null,
+      ability: "str", proficient: true, assumed: false, melee: true, notes: ["from your D&D Beyond sheet"],
+    });
+  }
+  return out;
 }

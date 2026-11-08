@@ -38,7 +38,7 @@
 //     paladin's Aura of Protection), which it used to count a second time.
 // ---------------------------------------------------------------------------
 
-import { SKILLS, type Ability, type Build, type GearEntry, type RulesContext } from "./srd/derive-sheet";
+import { SKILLS, type Ability, type Build, type GearEntry, type ImportAdjust, type RulesContext } from "./srd/derive-sheet";
 import { aliasPairs } from "./name-aliases";
 
 // ---------------------------------------------------------------------------
@@ -222,6 +222,24 @@ export function matchItem(ix: Map<string, string>, raw: string): { entry: GearEn
     }
   }
 
+  // A magic weapon or armor written with its base item (phase 5i.2): "Holy Avenger Rapier", "Luck
+  // Blade Rapier", "Moon-Touched Sword, Shortsword". The magic item is the name, the base is kept so
+  // the sheet can attack with it.
+  {
+    const comma = s.match(/^(.+?),\s*([^,]+)$/);
+    const words = s.split(/\s+/);
+    const tries: [string, string][] = comma ? [[comma[1], comma[2]]] : [];
+    for (let i = words.length - 1; i >= 1; i--) tries.push([words.slice(0, i).join(" "), words.slice(i).join(" ")]);
+    for (const [head, tail] of tries) {
+      const item = lookup(ix, head), base = lookup(ix, tail);
+      if (item && base && item !== base) {
+        const entry: GearEntry = { n: item, base };
+        if (mod !== undefined) entry.mod = mod;
+        return { entry, matched: item };
+      }
+    }
+  }
+
   // No match. Keep the item under its printed name rather than dropping it: the residue is almost
   // entirely homebrew and non-SRD published content, and losing a player's gear silently is worse
   // than carrying a name the engine has no rules for. This is the same honest degradation the
@@ -238,8 +256,11 @@ export function splitSpecies(raw: string): { base: string; variant?: string } {
 }
 
 /** D&D Beyond marks pre-2024 subclasses "(Legacy)": "Bladesinging (Legacy)" -> "Bladesinging". */
+// D&D Beyond tags a subclass with its book: "Circle of Spores (TCoE)", "Echo Knight (EGtW)", "The
+// Undead (VRGtR)". Phase 5i.2: only five tags were known, so most book subclasses never matched; any
+// short book code in a trailing bracket is now dropped.
 export function stripLegacy(raw: string): string {
-  return raw.replace(/\s*\((?:Legacy|SCAG|XGtE|TCE|PHB)\)\s*$/i, "").trim();
+  return raw.replace(/\s*\((?:Legacy|[A-Z][A-Za-z0-9]{1,7}(?:-\d{4})?)\)\s*$/, "").trim();
 }
 
 // ---------------------------------------------------------------------------
@@ -328,10 +349,7 @@ export function ddbToBuild(sheet: DdbSheet, ctx: ImportContext): ImportResult {
     ? classes.reduce((best, c) => (c.level > best.level ? c : best), classes[0])
     : null;
   if (classes.length > 1) {
-    notes.push(
-      `Multiclass (${classes.map((c) => `${c.class} ${c.level}`).join(" / ")}). ` +
-        `The Forge models ${primary?.class ?? "the primary class"} only; the full breakdown is kept in the import record.`,
-    );
+    notes.push(`Multiclass (${classes.map((c) => `${c.class} ${c.level}`).join(" / ")}): ${primary?.class ?? "the highest class"} is the main class, and the others come in as its multiclass levels.`);
   }
 
   const rawSpecies = sheet.identity.species ?? "";
@@ -357,7 +375,10 @@ export function ddbToBuild(sheet: DdbSheet, ctx: ImportContext): ImportResult {
   const classRes: Resolution = { raw: rawClass, matched: lookup(classIx, rawClass) };
 
   // The subclass is the body of the "<Class> Subclass" feature ("Fighter Subclass" -> "Battle Master").
-  const subclassFeature = sheet.features.find((f) => /\bsubclass\b/i.test(f.name) && f.desc);
+  // A multiclass character has one per class, so the primary class's own is taken first.
+  const subclassOf = (cls: string) => sheet.features.find((f) => norm(f.name) === norm(`${cls} Subclass`) && f.desc);
+  const subclassFeature = (primary ? subclassOf(primary.class) : undefined)
+    ?? (classes.length > 1 ? undefined : sheet.features.find((f) => /\bsubclass\b/i.test(f.name) && f.desc));
   const rawSubclass = subclassFeature ? stripLegacy(subclassFeature.desc) : "";
   const subclassRes: Resolution = { raw: subclassFeature?.desc ?? "", matched: rawSubclass ? lookup(subclassIx, rawSubclass) : null };
   if (rawSubclass && !subclassRes.matched) {
@@ -384,11 +405,18 @@ export function ddbToBuild(sheet: DdbSheet, ctx: ImportContext): ImportResult {
   {
     const paladinLv = classes.find((c) => norm(c.class) === "paladin")?.level ?? 0;
     const aura = paladinLv >= 6 ? Math.max(1, abilityMod(Number(sheet.abilities.cha ?? 10))) : 0;
+    // Only ATTUNED items count (a Cloak of Protection does nothing until attuned), each name once, looked
+    // up as the engine looks it up ("Stone of Good Luck (Luckstone)" is a Stone of Good Luck). Phase
+    // 5i.2: unattuned cloaks and bracketed names put five of 31 test sheets one off on every save.
     let fromItems = 0;
+    const counted = new Set<string>();
     for (const row of sheet.equipment) {
+      if (!row.attuned) continue;
       const { entry } = matchItem(itemIx, row.name);
-      const b = ctx.saveBonusItems?.[entry.n];
-      if (b) fromItems += b;
+      const key = [entry.n, entry.n.replace(/\s*\(.*\)\s*$/, "")].find((k) => ctx.saveBonusItems?.[k]);
+      if (!key || counted.has(key)) continue;
+      counted.add(key);
+      fromItems += ctx.saveBonusItems![key];
     }
     if (inferred.saveBonusAll && (aura || fromItems)) {
       notes.push(`D&D Beyond adds +${inferred.saveBonusAll} to every save; ${[aura ? `Aura of Protection (+${aura})` : "", fromItems ? `magic items (+${fromItems})` : ""].filter(Boolean).join(" and ")} ${aura && fromItems ? "are" : "is"} worked out by the sheet itself.`);
@@ -478,8 +506,19 @@ export function ddbToBuild(sheet: DdbSheet, ctx: ImportContext): ImportResult {
   }
 
   // --- assemble -------------------------------------------------------------
+  // Multiclass (phase 5i.2): Build keeps the PRIMARY class and ITS level in meta and level, and every
+  // other class in build.multiclass, each with its own subclass when the sheet names one. It used to
+  // keep only the total level, so a Paladin 6 / Bard 10 derived as a level 16 bard: no Aura of
+  // Protection, bard hit dice for every level.
+  const others = primary && classes.length > 1 ? classes.filter((c) => c !== primary) : [];
+  const multiclass = others.map((c) => {
+    const f = subclassOf(c.class);
+    const raw = f ? stripLegacy(f.desc) : "";
+    return { className: lookup(classIx, c.class) ?? c.class, level: c.level, ...(raw ? { subclass: lookup(subclassIx, raw) ?? raw } : {}) };
+  });
   const build: Build = {
-    level: sheet.identity.total_level ?? 1,
+    level: others.length && primary ? primary.level : sheet.identity.total_level ?? 1,
+    ...(multiclass.length ? { multiclass } : {}),
     abilities,
     meta: {
       species: speciesRes.matched ?? sp.base,
@@ -563,7 +602,7 @@ export function ddbToBuild(sheet: DdbSheet, ctx: ImportContext): ImportResult {
 
   const report: ImportReport = {
     characterName: sheet.identity.name,
-    level: build.level,
+    level: sheet.identity.total_level ?? build.level,
     classes,
     species: speciesRes,
     background: backgroundRes,
@@ -612,5 +651,86 @@ export function reconcile(
       out.push({ field: `save_${a}`, ddb, derived: derived.saves[a], delta: derived.saves[a] - ddb });
     }
   }
+  return out;
+}
+
+// ---------------------------------------------------------------------------
+// Reconciliation into adjustments (phase 5i.2)
+// ---------------------------------------------------------------------------
+// Terry, 2026-11-08, after 31 test characters: an imported sheet must match the PDF it came from. The
+// Forge works out every number itself; wherever that differs from what D&D Beyond printed (a feat,
+// item or subclass feature not modelled yet, or a 2014 rule), the difference is stored once as
+// build.importAdjust and added on top. The engine still does the arithmetic, so a later change (a
+// level, a new item) moves the number, and the sheet lists each adjustment so nothing is hidden.
+
+/** An attack row as the sheet builds it (lib/play/attacks AttackRow, the fields compared here). */
+export type ReconcileAttack = { name: string; toHit: number; damage: string };
+
+const firstInt = (v: unknown): number | null => {
+  const m = /[-+]?\d+/.exec(String(v ?? ""));
+  return m ? Number(m[0]) : null;
+};
+// "1d8+5" -> { dice: "1d8", mod: 5 }; "7" -> { dice: "", mod: 7 }
+const splitDamage = (d: string): { dice: string; mod: number } => {
+  const t = d.replace(/\s+/g, "");
+  const m = /^((?:\d*d\d+)(?:\+\d*d\d+)*)?([+-]\d+)?$/i.exec(t);
+  if (!m) return { dice: t, mod: 0 };
+  if (!m[1]) return { dice: "", mod: Number(t) || 0 };
+  return { dice: m[1].toLowerCase(), mod: m[2] ? Number(m[2]) : 0 };
+};
+/** Names as both sides write them: "Rapier, +2" and "Rapier +2" are one weapon. */
+export const attackKey = (n: string) => n.toLowerCase().replace(/[,()]/g, " ").replace(/\s+/g, " ").trim();
+
+export function reconcileImport(
+  sheet: DdbSheet,
+  derived: {
+    ac: number; hpMax: number; initiative: number; speed: number; isCaster: boolean; spellDC: number; spellAttack: number;
+    saves: Record<Ability, number>; skills: Record<string, { val: number }>;
+  },
+  attacks: ReconcileAttack[],
+): ImportAdjust {
+  const out: ImportAdjust = {};
+  const diff = (printed: number | null, ours: number) => (printed === null || !Number.isFinite(printed) ? 0 : printed - ours);
+  const c = sheet.combat;
+  const set = <K extends "ac" | "hp" | "init" | "speed" | "spellDC" | "spellAttack">(k: K, d: number) => { if (d) out[k] = d; };
+  set("ac", diff(firstInt(c.armor_class), derived.ac));
+  set("hp", diff(firstInt(c.max_hp), derived.hpMax));
+  set("init", diff(firstInt(c.initiative), derived.initiative));
+  set("speed", diff(firstInt(c.speed), derived.speed));
+  if (derived.isCaster) {
+    set("spellDC", diff(firstInt(sheet.spells?.save_dc), derived.spellDC));
+    set("spellAttack", diff(firstInt(sheet.spells?.attack_bonus), derived.spellAttack));
+  }
+  for (const a of ABILITIES) {
+    const d = diff(firstInt(sheet.saves[a]), derived.saves[a]);
+    if (d) (out.saves ??= {})[a] = d;
+  }
+  for (const s of sheet.skills) {
+    const k = SKILLS.find(([key, label]) => norm(label) === norm(s.skill) || norm(key) === norm(s.skill))?.[0];
+    if (!k || !derived.skills[k]) continue;
+    const d = diff(firstInt(s.modifier), derived.skills[k].val);
+    if (d) (out.skills ??= {})[k] = d;
+  }
+  for (const a of sheet.attacks ?? []) {
+    const row = attacks.find((r) => attackKey(r.name) === attackKey(a.name));
+    if (!row) continue;
+    const hit = diff(firstInt(a.hit), row.toHit);
+    const printed = splitDamage(String(a.damage ?? "").split(/\s+/)[0] ?? "");
+    const ours = splitDamage(row.damage);
+    // a flat difference is carried as one; different dice (a class's bigger unarmed die) take D&D
+    // Beyond's damage as printed
+    const sameDice = printed.dice === ours.dice;
+    const dmg = sameDice ? printed.mod - ours.mod : 0;
+    const damage = !sameDice && printed.dice ? `${printed.dice}${printed.mod ? (printed.mod > 0 ? `+${printed.mod}` : `${printed.mod}`) : ""}` : undefined;
+    if (hit || dmg || damage) (out.attacks ??= {})[a.name] = { ...(hit ? { hit } : {}), ...(dmg ? { dmg } : {}), ...(damage ? { damage } : {}) };
+  }
+  // Passive scores: D&D Beyond's passive minus 10 and its own printed skill, which the sheet now
+  // matches; anything left is a bonus to the passive alone (Observant's +5).
+  const printedSkill = (label: string) => firstInt(sheet.skills.find((s) => norm(s.skill) === norm(label))?.modifier);
+  for (const [k, field, label] of [["perception", "passive_perception", "Perception"], ["insight", "passive_insight", "Insight"], ["investigation", "passive_investigation", "Investigation"]] as const) {
+    const pv = firstInt((c as Record<string, unknown>)[field]), sk = printedSkill(label);
+    if (pv !== null && sk !== null && pv - 10 - sk) (out.passives ??= {})[k] = pv - 10 - sk;
+  }
+  out.at = new Date().toISOString();
   return out;
 }

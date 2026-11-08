@@ -67,7 +67,7 @@ import PlayCompanions, { type Companion, type MonsterRec } from "@/components/pl
 import PlayParty from "@/components/play-party";
 import { combatAct, type FightEntry, type FightView } from "@/components/fight-controls";
 import { trackedResources, type TrackInputs } from "@/lib/play/tracks";
-import { isWeapon, unarmedAttack, weaponAttack, weaponProfText, applyAttackFeatures, baseWeaponFor, type AttackRow, type WeaponRecord } from "@/lib/play/attacks";
+import { isWeapon, unarmedAttack, weaponAttack, weaponProfText, applyAttackFeatures, baseWeaponFor, applyImportAdjust, importedAttackRows, type AttackRow, type WeaponRecord } from "@/lib/play/attacks";
 import type { SpellRecord as PlaySpell } from "@/lib/play/spells";
 import { attacksPerAction } from "@/lib/combat-effects";
 import { menusFor, type ClassMenu } from "@/lib/class-menus";
@@ -111,9 +111,9 @@ import {
 } from "@/lib/class-progression";
 import {
   deriveSheet, epicAdvancement, ABILITIES, SKILLS, DEFAULT_EPIC, gearEquipped, classLevelOf,
-  type Ability, type Build, type EpicChoice, type GearEntry,
+  type Ability, type Build, type EpicChoice, type GearEntry, type ImportAdjust,
 } from "@/lib/srd/derive-sheet";
-import { hasPrintedAbilities, suppressItemEffects } from "@/lib/ddb-import";
+import { hasPrintedAbilities, suppressItemEffects, reconcileImport, type DdbSheet } from "@/lib/ddb-import";
 
 // ---------------------------------------------------------------------------
 // Build defaults + normalization
@@ -879,7 +879,9 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
   ], [build, edition]);
   const tracks = useMemo(() => trackedResources(resInputs), [resInputs]);
   // attack rows: every weapon the character has equipped (phase 5c), and an unarmed strike
-  const playAttacks = useMemo<AttackRow[]>(() => {
+  // attacksBase: what the engine works out; playAttacks adds an imported character's adjustments
+  // (phase 5i.2), and the attacks D&D Beyond lists that the sheet has no weapon for
+  const attacksBase = useMemo<AttackRow[]>(() => {
     if (!sheet) return [];
     const profText = weaponProfText((srd.structuredByName[build.meta.className] as { core_traits?: string } | undefined)?.core_traits);
     const rows: AttackRow[] = [];
@@ -889,8 +891,10 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
     (build.gear?.items || []).forEach((g, i) => {
       if (!gearEquipped(g)) return;
       const raw = srd.itemByName[g.n] as unknown as WeaponRecord | undefined;
-      // a magic weapon with no damage of its own (Cinnabar Rapier) attacks as its base weapon
-      const rec = isWeapon(raw) ? raw : baseWeaponFor(raw as never, srd.equipment as unknown as WeaponRecord[]);
+      // a magic weapon with no damage of its own (Cinnabar Rapier) attacks as its base weapon: the one
+      // its import named ("Holy Avenger Rapier" keeps base Rapier), else the one its record names
+      const named = g.base ? srd.itemByName[g.base] as unknown as WeaponRecord | undefined : undefined;
+      const rec = isWeapon(raw) ? raw : isWeapon(named) ? { ...named, name: g.n } : baseWeaponFor(raw as never, srd.equipment as unknown as WeaponRecord[]);
       if (!isWeapon(rec)) return;
       const row = weaponAttack(rec, sheet.mods, sheet.proficiencyBonus, profText, Number(g.mod) || 0, `${g.n}-${i}`);
       const baseName = (rec === raw ? rec.name : (raw as { attunement_note?: string } | undefined)?.attunement_note || rec.name).toLowerCase();
@@ -904,6 +908,15 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
       ruleset: edition === "2014" ? "2014" : "2024",
     });
   }, [sheet, build, srd, edition]);
+  const importedSheet = (build as Build & { imported?: { sheet?: DdbSheet } }).imported?.sheet;
+  const playAttacks = useMemo<AttackRow[]>(() => {
+    const rows = applyImportAdjust(attacksBase, build.importAdjust?.attacks);
+    if (!importedSheet) return rows;
+    const spellNames = new Set([...(srd.spells as unknown as { name: string }[]).map((x) => x.name.toLowerCase()),
+      ...(build.spells?.cantrips || []).map((x) => x.toLowerCase()), ...(build.spells?.known || []).map((x) => x.toLowerCase())]);
+    return [...rows, ...importedAttackRows(importedSheet.attacks, rows, spellNames)];
+  }, [attacksBase, build.importAdjust, importedSheet, srd.spells, build.spells]);
+
   // known spells: cantrips, known or prepared, and those always prepared from species and subclass
   const playSpells = useMemo<KnownSpell[]>(() => {
     const byName = new Map((srd.spells as unknown as PlaySpell[]).map((sp) => [sp.name, sp]));
@@ -995,6 +1008,20 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
     setBuild((prev) => fn(structuredCloneSafe(prev)));
     setSaveState("idle");
   }, []);
+
+  // Phase 5i.2: an imported character is matched to its D&D Beyond sheet ONCE, right after it comes in
+  // (the import leaves no importAdjust): whatever the engine works out differently from the printed
+  // numbers is stored as importAdjust and added on top from then on. It waits until the character and
+  // the catalog have loaded, so the comparison is against the sheet as it will be shown.
+  const reconciledFor = useRef<string | null>(null);
+  useEffect(() => {
+    if (status !== "ready" || !catalog || !sheet || !importedSheet || build.importAdjust) return;
+    const key = `${row?.id ?? "lib"}:${JSON.stringify(importedSheet.identity ?? {})}:${importedSheet.combat?.max_hp ?? ""}`;
+    if (reconciledFor.current === key) return;
+    reconciledFor.current = key;
+    const adjust = reconcileImport(importedSheet, sheet, attacksBase);
+    patch((b) => ({ ...b, importAdjust: adjust }));
+  }, [status, catalog, sheet, importedSheet, build.importAdjust, attacksBase, row, patch]);
 
   const setSpecies = (v: string) => patch((b) => {
     // A new species asks different questions, so the old answers (an elf's lineage, its Keen Senses
@@ -1666,7 +1693,7 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
 
                 <div className="sax-sheet-grid">
                   <div>
-                    <PlaySheet name={name || "Character"} sheet={sheet} saveProf={build.saveProf || []} ruleset={ruleset}
+                    <PlaySheet name={name || "Character"} sheet={sheet} saveProf={build.saveProf || []} ruleset={ruleset} importAdjust={build.importAdjust}
                       characterId={charIdNow} hitDice={hitDice} play={playNow} onPlay={setPlay}
                       fight={fightMine} onFightChanged={() => { /* the fight card polls */ }}
                       onShortRestResources={() => setSpentMap(afterShortRest([...tracks.pools, ...tracks.slots], spentNow))}
@@ -1726,7 +1753,10 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
                             .map((c) => ({ ...c, groups: classProgression(classRecWithSub(c.className), c.level) }))}
                           species={build.meta.species} speciesRec={srd.speciesByName[build.meta.species]}
                           variantName={speciesVariant} variantRec={srd.variantByName[speciesVariant]}
-                          feats={[...chosenFeats, ...importedFeats]} itemNotes={sheet.itemNotes || []} />
+                          feats={[...chosenFeats, ...importedFeats]} itemNotes={sheet.itemNotes || []}
+                          importAdjust={importedSheet ? build.importAdjust : undefined}
+                          onClearAdjust={() => patch((b) => ({ ...b, importAdjust: { at: new Date().toISOString() } }))}
+                          onRematch={() => { reconciledFor.current = null; patch((b) => { const n = { ...b }; delete n.importAdjust; return n; }); }} />
                       )}
                       {openTab === "extras" && (
                         <PlayCompanions companions={(build as Build & { companions?: Companion[] }).companions || []} onChange={setCompanions}
@@ -5180,12 +5210,14 @@ const SHEET_CSS = `
 // Features and traits: each class's features up to its level (name first, the rules text a click
 // away, as D&D Beyond shows them), the species and lineage traits, feats, and what active magic items
 // add. Proficiencies sit in the left column (SheetProficiencies).
-function SheetFeatures({ classes, species, speciesRec, variantName, variantRec, feats, itemNotes }: {
+function SheetFeatures({ classes, species, speciesRec, variantName, variantRec, feats, itemNotes, importAdjust, onClearAdjust, onRematch }: {
   classes: { className: string; level: number; groups: LevelGroup[] }[];
   species: string; speciesRec: SpeciesMechRecord | undefined;
   variantName: string; variantRec: SpeciesVariantRec | undefined;
   feats: { level: number; name: string; desc?: string; category?: string }[];
   itemNotes: string[];
+  /** Phase 5i.2: an imported character's adjustments to match D&D Beyond, listed so nothing is hidden. */
+  importAdjust?: ImportAdjust; onClearAdjust?: () => void; onRematch?: () => void;
 }) {
   const [open, setOpen] = useState<Set<string>>(new Set());
   const toggle = (k: string) => setOpen((s) => { const n = new Set(s); if (n.has(k)) n.delete(k); else n.add(k); return n; });
@@ -5240,6 +5272,37 @@ function SheetFeatures({ classes, species, speciesRec, variantName, variantRec, 
           {itemNotes.map((n) => <p key={n} style={{ fontFamily: FORGE_FONTS.body, fontSize: 13.5, color: STONE.inkDim, margin: "0 0 4px" }}>{n}</p>)}
         </FeatureGroup>
       )}
+
+      {importAdjust && (() => {
+        const sg = (n: number) => (n > 0 ? `+${n}` : `${n}`);
+        const lines: string[] = [];
+        if (importAdjust.ac) lines.push(`Armor Class ${sg(importAdjust.ac)}`);
+        if (importAdjust.hp) lines.push(`Hit point maximum ${sg(importAdjust.hp)}`);
+        if (importAdjust.init) lines.push(`Initiative ${sg(importAdjust.init)}`);
+        if (importAdjust.speed) lines.push(`Speed ${sg(importAdjust.speed)} ft`);
+        if (importAdjust.spellDC) lines.push(`Spell save DC ${sg(importAdjust.spellDC)}`);
+        if (importAdjust.spellAttack) lines.push(`Spell attack ${sg(importAdjust.spellAttack)}`);
+        for (const [a, v] of Object.entries(importAdjust.saves || {})) if (v) lines.push(`${a.toUpperCase()} save ${sg(v)}`);
+        for (const [k, v] of Object.entries(importAdjust.skills || {})) if (v) lines.push(`${SKILLS.find(([x]) => x === k)?.[1] ?? k} ${sg(v)}`);
+        for (const [n, v] of Object.entries(importAdjust.attacks || {})) lines.push(`${n}: ${[v.hit ? `${sg(v.hit)} to hit` : "", v.dmg ? `${sg(v.dmg)} damage` : "", v.damage ? `${v.damage} damage` : ""].filter(Boolean).join(", ")}`);
+        for (const [k, v] of Object.entries(importAdjust.passives || {})) if (v) lines.push(`Passive ${k} ${sg(v)}`);
+        return (
+          <FeatureGroup label="Matched to your D&D Beyond sheet">
+            {lines.length ? (
+              <>
+                <p style={{ fontFamily: FORGE_FONTS.body, fontSize: 13, color: STONE.inkDim, margin: "0 0 6px" }}>
+                  D&amp;D Beyond counts these and Six Axes does not work them out yet (a feat, magic item or feature it does not model), so they are added to match your sheet:
+                </p>
+                <p style={{ fontFamily: FORGE_FONTS.body, fontSize: 13.5, color: STONE.ink, margin: "0 0 8px" }}>{lines.join(" · ")}</p>
+              </>
+            ) : <p style={{ fontFamily: FORGE_FONTS.body, fontSize: 13, color: STONE.inkDim, margin: "0 0 8px" }}>Every number matches your D&amp;D Beyond sheet with no adjustment.</p>}
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              {lines.length > 0 && onClearAdjust && <button type="button" className="forge-btn" onClick={onClearAdjust} style={{ fontSize: 12 }}>Use Six Axes&apos; own numbers</button>}
+              {onRematch && <button type="button" className="forge-btn" onClick={onRematch} style={{ fontSize: 12 }}>Match D&amp;D Beyond again</button>}
+            </div>
+          </FeatureGroup>
+        );
+      })()}
     </div>
   );
 }
