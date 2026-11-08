@@ -61,7 +61,14 @@ export const RULES_DATA = rulesData as unknown as RulesData;
 // ---------------------------------------------------------------------------
 
 type EquipRow = { name: string; category?: string; weapon_category?: string; armor_category?: string; armor_class?: ArmorClassField };
-type MagicRow = { name: string; category?: string; rarity?: string };
+type MagicRow = { name: string; category?: string; rarity?: string; attunement?: boolean; description?: string };
+
+// Does a magic item need attunement? The data's flag, or, where the 2024 text was cut so the flag
+// was lost, the "(Requires Attunement)" fragment left at the start of the description.
+export function magicNeedsAttunement(r: { attunement?: boolean; description?: string }): boolean {
+  if (r.attunement) return true;
+  return /^\W*[^.]{0,60}?\battunement\)/i.test(r.description || "");
+}
 
 // Parse an armor_class string ("15 + Dex modifier (max 2)", "16", "18", "11 + Dex modifier") into a
 // base AC number and a Dex cap. Dex cap: null = add full DEX (Light armor), a number = cap DEX at
@@ -120,7 +127,7 @@ function itemsFromMagic(rows: MagicRow[]): Record<string, ItemDef> {
     // the common ones and leave the rest as Wondrous (no AC/attack gate).
     const cat = (r.category || "").toLowerCase();
     const kind = cat.includes("armor") ? "Armor" : cat.includes("weapon") ? "Weapon" : "Wondrous";
-    out[r.name] = { kind, rarity: r.rarity || "unknown" };
+    out[r.name] = { kind, rarity: r.rarity || "unknown", attune: magicNeedsAttunement(r) || undefined };
   }
   return out;
 }

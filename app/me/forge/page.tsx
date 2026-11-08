@@ -54,6 +54,7 @@ import SystemAttribution from "@/components/system-attribution";
 import FightCard from "@/components/fight-card";
 import PlaySheet, { type PlayState } from "@/components/play-sheet";
 import PlayActions, { type KnownSpell } from "@/components/play-actions";
+import PlayInventory, { attunementLimit, type Coins, type CharNotes } from "@/components/play-inventory";
 import { combatAct, type FightEntry, type FightView } from "@/components/fight-controls";
 import { trackedResources, type TrackInputs } from "@/lib/play/tracks";
 import { isWeapon, unarmedAttack, weaponAttack, weaponProfText, type AttackRow, type WeaponRecord } from "@/lib/play/attacks";
@@ -99,8 +100,8 @@ import {
   type ClassRecord, type LevelGroup,
 } from "@/lib/class-progression";
 import {
-  deriveSheet, epicAdvancement, ABILITIES, SKILLS, DEFAULT_EPIC,
-  type Ability, type Build, type EpicChoice,
+  deriveSheet, epicAdvancement, ABILITIES, SKILLS, DEFAULT_EPIC, gearEquipped,
+  type Ability, type Build, type EpicChoice, type GearEntry,
 } from "@/lib/srd/derive-sheet";
 import { hasPrintedAbilities, suppressItemEffects } from "@/lib/ddb-import";
 
@@ -826,12 +827,13 @@ function ForgeInner() {
       (build as Build & { classChoices?: Record<string, string[]> }).classChoices || {}, edition),
   ], [build, edition]);
   const tracks = useMemo(() => trackedResources(resInputs), [resInputs]);
-  // attack rows: every weapon the character carries, and an unarmed strike
+  // attack rows: every weapon the character has equipped (phase 5c), and an unarmed strike
   const playAttacks = useMemo<AttackRow[]>(() => {
     if (!sheet) return [];
     const profText = weaponProfText((srd.structuredByName[build.meta.className] as { core_traits?: string } | undefined)?.core_traits);
     const rows: AttackRow[] = [];
     (build.gear?.items || []).forEach((g, i) => {
+      if (!gearEquipped(g)) return;
       const rec = srd.itemByName[g.n] as unknown as WeaponRecord | undefined;
       if (isWeapon(rec)) rows.push(weaponAttack(rec, sheet.mods, sheet.proficiencyBonus, profText, Number(g.mod) || 0, `${g.n}-${i}`));
     });
@@ -962,6 +964,14 @@ function ForgeInner() {
     t.play = fn({ ...(t.play || {}) });
     return b;
   });
+  // The inventory (phase 5c): the gear list with its equipped and attuned flags and the attuned
+  // names beside it, the coins, and the character notes, all kept in the build.
+  const setGear = (items: GearEntry[], attuned: string[]) => patch((b) => {
+    b.gear = { ...b.gear, items, attuned };
+    return b;
+  });
+  const setCoins = (c: Coins) => patch((b) => { (b as Build & { coins?: Coins }).coins = c; return b; });
+  const setNotes = (n: CharNotes) => patch((b) => { (b as Build & { notes?: CharNotes }).notes = n; return b; });
 
   type MC = { className: string; subclass?: string; level: number };
   const addClass = (className: string) => patch((b) => {
@@ -1750,6 +1760,14 @@ function ForgeInner() {
                   attacks={playAttacks} spells={playSpells} pools={tracks.pools} slots={tracks.slots} pactLevel={tracks.pactLevel}
                   spent={(build as Build & { spent?: Record<string, number> }).spent || {}} onSpend={setSpent}
                   costed={costedList} onHealSelf={healSelf} onFightChanged={() => { /* the fight card polls */ }} />
+              )}
+              {tab === "roll" && sheet && (
+                <PlayInventory gear={build.gear} catalog={gearIndex} itemByName={srd.itemByName} ctx={ctx}
+                  str={sheet.abilities.str}
+                  attuneMax={attunementLimit([{ className: build.meta.className, level: build.level }, ...(build.multiclass || [])])}
+                  coins={(build as Build & { coins?: Coins }).coins || {}}
+                  notes={(build as Build & { notes?: CharNotes }).notes || {}}
+                  onGear={setGear} onCoins={setCoins} onNotes={setNotes} />
               )}
               {tab === "roll" && !sheet && (
                 <div style={stonePanel()}><Muted>The sheet has not derived yet. Pick a class and species first.</Muted></div>
@@ -4658,6 +4676,7 @@ function GearPanel({ build, gearIndex, gearTypes, ctx, itemByName, onAdd, onRemo
               <span style={{ flex: 1, fontFamily: FORGE_FONTS.body, fontSize: 16, color: STONE.ink }}>
                 {e.n}
                 {def?.sub ? <span style={{ color: STONE.inkFaint, fontSize: 13 }}> · {def.sub}</span> : null}
+                {e.eq === false ? <span style={{ color: STONE.inkFaint, fontSize: 13 }}> · in your pack (equip it on the Play tab)</span> : null}
               </span>
 
               {variantSpec && (

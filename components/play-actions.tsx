@@ -31,6 +31,7 @@ import type { AttackRow } from "@/lib/play/attacks";
 import { readSpell, spellCost, upcasts, ORD, type SpellRecord, type SpellCost } from "@/lib/play/spells";
 import { slotsLeft, slotFor } from "@/lib/play/tracks";
 import type { DerivedSheet } from "@/lib/srd/derive-sheet";
+import { useNarrow } from "@/lib/use-narrow";
 
 export type KnownSpell = { rec: SpellRecord; always?: string | null };
 type Filter = "all" | "attack" | "action" | "bonus" | "reaction" | "other" | "limited";
@@ -50,6 +51,8 @@ export default function PlayActions({ sheet, charLevel, characterId, campaignId,
   onHealSelf: (n: number) => void; onFightChanged: () => void;
 }) {
   const supabase = useMemo(() => createClient(), []);
+  // on a phone each row stacks: the name and its numbers on the left, the button on the right
+  const narrow = useNarrow();
   const [filter, setFilter] = useState<Filter>("all");
   const [adv, setAdv] = useState<"flat" | "adv" | "dis">("flat");
   const [target, setTarget] = useState("");
@@ -199,13 +202,23 @@ export default function PlayActions({ sheet, charLevel, characterId, campaignId,
   const mono: React.CSSProperties = { fontFamily: FORGE_FONTS.mono };
   const tiny: React.CSSProperties = { ...mono, fontSize: 10, letterSpacing: "0.16em", textTransform: "uppercase", color: STONE.inkFaint };
   const field: React.CSSProperties = { padding: "6px 8px", borderRadius: 4, border: `1px solid ${STONE.hi}`, background: "rgba(0,0,0,0.25)", color: STONE.ink, fontSize: 13 };
-  const rowLine = (r: Row) => (
+  const runButton = (r: Row) => r.run && r.runLabel && <button type="button" className="forge-btn" disabled={busy} onClick={r.run} aria-label={`${r.runLabel.replace("…", "")} ${r.name}`} style={btn()}>{r.runLabel}</button>;
+  const rowLine = (r: Row) => narrow ? (
+    <div key={r.key} style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 8, alignItems: "center", padding: "7px 0", borderBottom: `1px solid ${STONE.hi}` }}>
+      <div>
+        <div style={{ color: STONE.ink, fontSize: 14 }}>{r.name}{r.hit && <span style={{ ...mono, fontSize: 13, color: C.plum, marginLeft: 8 }}>{r.hit}</span>}</div>
+        <div style={{ fontSize: 12.5, color: STONE.ink }}>{r.effect}</div>
+        <div style={{ fontSize: 11.5, color: STONE.inkFaint }}>{[r.range, r.note].filter(Boolean).join(" · ")}</div>
+      </div>
+      <div>{runButton(r)}</div>
+    </div>
+  ) : (
     <div key={r.key} style={{ display: "grid", gridTemplateColumns: "minmax(140px, 1.4fr) 90px 80px minmax(120px, 1.6fr) auto", gap: 8, alignItems: "center", padding: "6px 0", borderBottom: `1px solid ${STONE.hi}` }}>
       <div><div style={{ color: STONE.ink, fontSize: 13.5 }}>{r.name}</div>{r.note && <div style={{ fontSize: 11, color: STONE.inkFaint }}>{r.note}</div>}</div>
       <div style={{ fontSize: 12, color: STONE.inkFaint }}>{r.range}</div>
       <div style={{ ...mono, fontSize: 13, color: C.plum }}>{r.hit}</div>
       <div style={{ fontSize: 12.5, color: STONE.ink }}>{r.effect}</div>
-      <div>{r.run && r.runLabel && <button type="button" className="forge-btn" disabled={busy} onClick={r.run} aria-label={`${r.runLabel.replace("…", "")} ${r.name}`} style={btn()}>{r.runLabel}</button>}</div>
+      <div>{runButton(r)}</div>
     </div>
   );
   const section = (k: Filter, title: string, list: Row[]) => (show(k) && list.length > 0 ? (
@@ -325,15 +338,24 @@ export default function PlayActions({ sheet, charLevel, characterId, campaignId,
               const choices = sp.level ? slotChoices(sp) : [];
               return (
                 <div key={sp.name} style={{ borderBottom: `1px solid ${STONE.hi}`, padding: "7px 0" }}>
-                  <div style={{ display: "grid", gridTemplateColumns: "minmax(150px, 1.4fr) 90px 90px 90px minmax(110px, 1.2fr) auto", gap: 8, alignItems: "center" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: narrow ? "1fr auto" : "minmax(150px, 1.4fr) 90px 90px 90px minmax(110px, 1.2fr) auto", gap: 8, alignItems: "center" }}>
                     <div>
                       <button type="button" onClick={() => setOpen(isOpen ? null : sp.name)} aria-expanded={isOpen} style={{ background: "none", border: "none", padding: 0, color: STONE.ink, fontSize: 13.5, cursor: "pointer", textAlign: "left" }}>{sp.name}</button>
                       <div style={{ fontSize: 11, color: STONE.inkFaint }}>{sp.level ? `${ORD[sp.level]} level` : "Cantrip"} {sp.school ?? ""}{sp.concentration ? " · concentration" : ""}{sp.ritual ? " · ritual" : ""}{s.always ? ` · always prepared (${s.always})` : ""}</div>
+                      {narrow && (
+                        <div style={{ fontSize: 12, color: STONE.ink, marginTop: 2 }}>
+                          {[sp.casting_time, sp.range].filter(Boolean).join(" · ")}
+                          {(r.attack || r.save) && <span style={{ ...mono, color: C.plum }}> · {r.attack ? sign(sheet.spellAttack) : `DC ${sheet.spellDC} ${ABIL_NAME[r.save!]}`}</span>}
+                          {(r.healing || r.damage) && <span> · {r.healing ? `${r.healing} healing` : `${r.damage} ${(r.damageType ?? "").toLowerCase()}${r.count > 1 ? ` x${r.count}` : ""}`}</span>}
+                        </div>
+                      )}
                     </div>
-                    <div style={{ fontSize: 12, color: STONE.inkFaint }}>{sp.casting_time}</div>
-                    <div style={{ fontSize: 12, color: STONE.inkFaint }}>{sp.range}</div>
-                    <div style={{ ...mono, fontSize: 12.5, color: C.plum }}>{r.attack ? sign(sheet.spellAttack) : r.save ? `DC ${sheet.spellDC} ${ABIL_NAME[r.save]}` : ""}</div>
-                    <div style={{ fontSize: 12.5, color: STONE.ink }}>{r.healing ? `${r.healing} healing` : r.damage ? `${r.damage} ${(r.damageType ?? "").toLowerCase()}${r.count > 1 ? ` x${r.count}` : ""}` : sp.duration}</div>
+                    {!narrow && <>
+                      <div style={{ fontSize: 12, color: STONE.inkFaint }}>{sp.casting_time}</div>
+                      <div style={{ fontSize: 12, color: STONE.inkFaint }}>{sp.range}</div>
+                      <div style={{ ...mono, fontSize: 12.5, color: C.plum }}>{r.attack ? sign(sheet.spellAttack) : r.save ? `DC ${sheet.spellDC} ${ABIL_NAME[r.save]}` : ""}</div>
+                      <div style={{ fontSize: 12.5, color: STONE.ink }}>{r.healing ? `${r.healing} healing` : r.damage ? `${r.damage} ${(r.damageType ?? "").toLowerCase()}${r.count > 1 ? ` x${r.count}` : ""}` : sp.duration}</div>
+                    </>}
                     <div>
                       {sp.level === 0
                         ? <button type="button" className="forge-btn" disabled={busy} onClick={() => void cast(sp, null, 0)} aria-label={`Cast ${sp.name}`} style={btn()}>Cast</button>

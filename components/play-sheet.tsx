@@ -248,8 +248,8 @@ export default function PlaySheet({ name, sheet, saveProf, ruleset, characterId,
       {/* abilities, then the numbers a turn uses, then the HP box */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(92px, 1fr))", gap: 8 }}>
         {ABILS.map((a) => (
-          <button key={a} type="button" className="forge-btn" disabled={busy} onClick={() => d20(`${ABIL_NAME[a]} check`, sheet.mods[a] ?? 0, "check")}
-            title={`Roll a ${ABIL_NAME[a]} check`} aria-label={`${ABIL_NAME[a]} ${sheet.abilities[a]}, modifier ${sign(sheet.mods[a] ?? 0)}: roll a check`}
+          <button key={a} type="button" className="forge-btn" disabled={busy} onClick={() => d20(`${ABIL_NAME[a]} check`, (sheet.mods[a] ?? 0) + (sheet.checkBonus ?? 0), "check")}
+            title={`Roll a ${ABIL_NAME[a]} check${sheet.checkBonus ? ` (${sign(sheet.checkBonus)} from items)` : ""}`} aria-label={`${ABIL_NAME[a]} ${sheet.abilities[a]}, modifier ${sign(sheet.mods[a] ?? 0)}: roll a check`}
             style={{ ...box, cursor: "pointer", textAlign: "center", display: "grid", gap: 2, padding: "10px 6px" }}>
             <span style={tiny}>{ABIL_NAME[a]}</span>
             <span style={{ ...mono, fontSize: 26, fontWeight: 700, color: STONE.ink, lineHeight: 1.1 }}>{sign(sheet.mods[a] ?? 0)}</span>

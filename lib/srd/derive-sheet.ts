@@ -40,9 +40,18 @@ export type Ruleset = "2024" | "2014";
 // Inputs
 // ---------------------------------------------------------------------------
 
-// A single equipped item. `mod` is the plus-bonus of magic armor/weapons (+1, +2...).
+// A single carried item. `mod` is the plus-bonus of magic armor/weapons (+1, +2...).
 // `variant` names a chosen sub-option (e.g. which Belt of Giant Strength).
-export type GearEntry = { n: string; mod?: number; variant?: string };
+//
+// Phase 5c: `eq` (equipped) and `att` (attuned) say whether the item's effects apply. An entry
+// stored before 5c has neither, and keeps counting exactly as it did (worn, and attuned when the
+// item needs it), so no existing sheet changes. `qty` is a count for stackable gear (default 1);
+// `custom` marks an item the player typed in, with an optional weight `wt` and a `note`.
+export type GearEntry = {
+  n: string; mod?: number; variant?: string;
+  eq?: boolean; att?: boolean; qty?: number;
+  custom?: boolean; wt?: number; note?: string;
+};
 
 // The stored character build: the INPUTS a derivation runs over.
 export type Build = {
@@ -148,7 +157,7 @@ export type SpeciesRule = {
 };
 export type SubclassRule = { casting?: CastRule | null };
 export type CastRule = { ability: Ability };
-export type ItemDef = { kind: string; sub?: string; rarity?: string; baseAC?: number; dexCap?: number | null };
+export type ItemDef = { kind: string; sub?: string; rarity?: string; baseAC?: number; dexCap?: number | null; attune?: boolean };
 
 // The pluggable epic (21-30) progression table. DEFAULT_EPIC below now carries the OFFICIAL
 // Epic Legacy Core Rulebook (2CGaming, v1.0) progression, verified from the player-version
@@ -197,6 +206,96 @@ function gearName(e: GearEntry | string): string {
 }
 function gearMod(e: GearEntry | string): number {
   return typeof e === "object" && e?.mod ? e.mod : 0;
+}
+
+// ---- equipped and attuned (phase 5c) ----
+
+/** Does this item need attunement before its magic works? From the item data. */
+export function needsAttunement(name: string, ctx: Pick<RulesContext, "items">): boolean {
+  return !!ctx.items[name]?.attune;
+}
+/** Is this entry equipped? An entry stored before equipping existed counts as worn. */
+export function gearEquipped(e: GearEntry): boolean {
+  return e.eq !== false;
+}
+/**
+ * Is this entry attuned? An explicit `att` wins. Otherwise a D&D Beyond import's attuned list
+ * (gear.attuned) decides, and a build with no such list counts the item as attuned, which is how
+ * every sheet derived before 5c treated it.
+ */
+export function gearAttuned(e: GearEntry, gear: Build["gear"] | undefined): boolean {
+  if (typeof e.att === "boolean") return e.att;
+  if (Array.isArray(gear?.attuned)) return gear!.attuned!.includes(e.n);
+  return true;
+}
+/** Do this entry's effects apply: equipped, and attuned when the item needs it. */
+export function gearActive(e: GearEntry, gear: Build["gear"] | undefined, ctx: Pick<RulesContext, "items">): boolean {
+  if (!gearEquipped(e)) return false;
+  return needsAttunement(e.n, ctx) ? gearAttuned(e, gear) : true;
+}
+function activeGear(build: Build, ctx: RulesContext): GearEntry[] {
+  return (build.gear?.items || []).filter((e) => gearActive(e, build.gear, ctx));
+}
+
+/**
+ * Fixed bonuses from common magic items, by name (both SRDs word these the same way). These sit
+ * beside ITEM_EFFECTS (which raise or set ability scores) and cover the rest of what an item adds
+ * to the numbers on a sheet:
+ *   ac            to Armor Class, always
+ *   acUnarmored   to Armor Class only with no body armor and no shield (Bracers of Defense)
+ *   acBaseNoArmor a base AC used with no body armor when it beats the usual one (Robe of the Archmagi)
+ *   saves, checks to every saving throw, to every ability check (skills and initiative included)
+ *   spellDC, spellAttack
+ *   resist, immune   damage types
+ * Anything an item does that is not a flat number (advantage, charges, spells) stays in its
+ * description, which the inventory shows.
+ */
+export type ItemBonus = {
+  ac?: number; acUnarmored?: number; acBaseNoArmor?: number; saves?: number; checks?: number;
+  spellDC?: number; spellAttack?: number; resist?: string[]; immune?: string[];
+};
+const RESIST_RINGS = ["Acid", "Cold", "Fire", "Force", "Lightning", "Necrotic", "Poison", "Psychic", "Radiant", "Thunder"];
+export const ITEM_BONUSES: Record<string, ItemBonus> = {
+  "Ring of Protection": { ac: 1, saves: 1 },
+  "Cloak of Protection": { ac: 1, saves: 1 },
+  "Bracers of Defense": { acUnarmored: 2 },
+  "Stone of Good Luck": { saves: 1, checks: 1 },
+  "Ioun Stone of Protection": { ac: 1 },
+  "Luck Blade": { saves: 1 },
+  "Robe of the Archmagi": { acBaseNoArmor: 15, spellDC: 2, spellAttack: 2 },
+  "Wand of the War Mage, +1": { spellAttack: 1 },
+  "Wand of the War Mage, +2": { spellAttack: 2 },
+  "Wand of the War Mage, +3": { spellAttack: 3 },
+  "Periapt of Proof against Poison": { immune: ["Poison"] },
+  ...Object.fromEntries(RESIST_RINGS.map((t) => [`Ring of ${t} Resistance`, { resist: [t] }])),
+};
+/** The fixed bonus an item gives, if any. "Stone of Good Luck (Luckstone)" finds "Stone of Good Luck". */
+export function itemBonusOf(name: string): ItemBonus | null {
+  return ITEM_BONUSES[name] ?? ITEM_BONUSES[name.replace(/\s*\(.*\)\s*$/, "")] ?? null;
+}
+const sgn = (n: number) => (n >= 0 ? `+${n}` : `${n}`);
+/** One line for what an item changes on the sheet ("+1 AC, +1 to saves"), or null when nothing. */
+export function itemEffectSummary(e: GearEntry, ctx: Pick<RulesContext, "items" | "itemEffects" | "itemVariants">): string | null {
+  const bits: string[] = [];
+  const eff = gearEffectOf(e, ctx as RulesContext);
+  if (eff) bits.push(eff.type === "setScore" ? `${eff.abil.toUpperCase()} becomes ${eff.value}` : `${sgn(eff.value)} ${eff.abil.toUpperCase()}`);
+  const it = ctx.items[e.n], md = gearMod(e);
+  if (it?.kind === "Armor" && it.sub === "Shield") bits.push("+2 AC");
+  else if (it?.kind === "Armor" && typeof it.baseAC === "number") bits.push(`AC ${it.baseAC}${it.dexCap === 0 ? "" : it.dexCap ? ` plus DEX (max ${it.dexCap})` : " plus DEX"}`);
+  if (it && md) bits.push(it.kind === "Armor" ? `${sgn(md)} AC` : it.kind === "Weapon" ? `${sgn(md)} to attack and damage` : `${sgn(md)}`);
+  const b = itemBonusOf(e.n);
+  if (b) {
+    if (b.ac) bits.push(`${sgn(b.ac)} AC`);
+    if (b.acUnarmored) bits.push(`${sgn(b.acUnarmored)} AC with no armor or shield`);
+    if (b.acBaseNoArmor) bits.push(`AC ${b.acBaseNoArmor} plus DEX with no armor`);
+    if (b.saves) bits.push(`${sgn(b.saves)} to saves`);
+    if (b.checks) bits.push(`${sgn(b.checks)} to ability checks`);
+    if (b.spellDC) bits.push(`${sgn(b.spellDC)} spell save DC`);
+    if (b.spellAttack) bits.push(`${sgn(b.spellAttack)} spell attacks`);
+    if (b.resist?.length) bits.push(`${b.resist.join(", ")} resistance`);
+    if (b.immune?.length) bits.push(`${b.immune.join(", ")} immunity`);
+  }
+  return bits.length ? bits.join(", ") : null;
 }
 
 // Some catalogs serve giant-strength items under their FULL name ("Belt of Storm Giant Strength")
@@ -289,7 +388,8 @@ function wornArmorKinds(build: Build, ctx: RulesContext): {
 } {
   const out = { body: null as string | null, shield: false, heavy: false,
     baseAC: null as number | null, dexCap: null as number | null };
-  for (const e of build.gear?.items || []) {
+  // only what is equipped: armor in the pack does not protect you
+  for (const e of activeGear(build, ctx)) {
     const it = ctx.items[gearName(e)];
     if (!it || it.kind !== "Armor") continue;
     if (it.sub === "Shield") { out.shield = true; continue; }
@@ -400,6 +500,10 @@ export type DerivedSheet = {
   advSaves: Ability[];
   /** What those save advantages are limited to, if anything ("magic" for the 2014 gnome). */
   advSavesVs: string;
+  /** Bonus to every ability check from items (Stone of Good Luck); already in skills and initiative. */
+  checkBonus?: number;
+  /** What each active magic item adds, one line per item: "Ring of Protection: +1 AC, +1 to saves". */
+  itemNotes?: string[];
 };
 
 // How many epic choices a character of the given level has earned, and the ability-score cap
@@ -441,7 +545,9 @@ export function deriveSheet(build: Build, ctx: RulesContext): DerivedSheet {  co
   // 21-30) accumulate into em.mods via epicAgg; apply their per-ability values to the base score
   // too, so an ASI or an ability-raising feat actually moves the stat.
   ABILITIES.forEach((a) => { if (em[a]) liveAb[a] += em[a] as number; });
-  const geff = gearAbilityEffects(build.gear?.items || [], ctx);
+  // Only equipped (and, where needed, attuned) gear applies (phase 5c).
+  const active = activeGear(build, ctx);
+  const geff = gearAbilityEffects(active, ctx);
   ABILITIES.forEach((a) => { if (geff.bump[a]) liveAb[a] += geff.bump[a] as number; });
   ABILITIES.forEach((a) => { const s = geff.set[a]; if (s !== undefined && liveAb[a] < s) liveAb[a] = s; });
   // Cap after everything: no ability exceeds the epic ceiling (30 by default).
@@ -450,13 +556,33 @@ export function deriveSheet(build: Build, ctx: RulesContext): DerivedSheet {  co
   const m = {} as Record<Ability, number>;
   ABILITIES.forEach((a) => { m[a] = abilityMod(liveAb[a]); });
 
-  // Highest plus-bonus among carried armor/shields feeds AC directly.
+  // Highest plus-bonus among worn armor/shields feeds AC directly.
   let gearAcBonus = 0, gearWeaponBonus = 0;
-  for (const e of build.gear?.items || []) {
+  for (const e of active) {
     const it = ctx.items[gearName(e)]; const md = gearMod(e);
     if (!it || !md) continue;
     if (it.kind === "Armor") gearAcBonus = Math.max(gearAcBonus, md);
     if (it.kind === "Weapon") gearWeaponBonus = Math.max(gearWeaponBonus, md);
+  }
+  // Fixed item bonuses (Ring of Protection and the like). The same item twice does not stack:
+  // the rules let you attune to only one copy of a named item.
+  const ib = { ac: 0, acUnarmored: 0, acBaseNoArmor: 0, saves: 0, checks: 0, spellDC: 0, spellAttack: 0, resist: [] as string[], immune: [] as string[] };
+  const itemNotes: string[] = [];
+  const seenItems = new Set<string>();
+  for (const e of active) {
+    // the sheet lists what each active magic item adds (a score, a +N, a fixed bonus)
+    if (gearMod(e) || gearEffectOf(e, ctx) || itemBonusOf(e.n)) {
+      const line = itemEffectSummary(e, ctx);
+      if (line && !itemNotes.some((x) => x.startsWith(`${e.n}${gearMod(e) ? ` +${gearMod(e)}` : ""}:`))) itemNotes.push(`${e.n}${gearMod(e) ? ` +${gearMod(e)}` : ""}: ${line}`);
+    }
+    const b = itemBonusOf(e.n);
+    if (!b || seenItems.has(e.n)) continue;
+    seenItems.add(e.n);
+    ib.ac += b.ac || 0; ib.acUnarmored = Math.max(ib.acUnarmored, b.acUnarmored || 0);
+    ib.acBaseNoArmor = Math.max(ib.acBaseNoArmor, b.acBaseNoArmor || 0);
+    ib.saves += b.saves || 0; ib.checks += b.checks || 0;
+    ib.spellDC += b.spellDC || 0; ib.spellAttack += b.spellAttack || 0;
+    ib.resist.push(...(b.resist || [])); ib.immune.push(...(b.immune || []));
   }
 
   // Class features that set base AC while unarmored replace armorBase and can add a second
@@ -480,14 +606,21 @@ export function deriveSheet(build: Build, ctx: RulesContext): DerivedSheet {  co
   const shieldBonus = worn.shield ? 2 : 0;
   // A species AC bonus (Warforged Integrated Protection) applies armored or not.
   const speciesAc = ctx.species[build.meta.species]?.acBonus || 0;
-  let ac = acBase + dexToAc + acAbil + build.armorMisc + (em.ac || 0) + gearAcBonus + shieldBonus + speciesAc;
+  // Item AC: flat bonuses always; Bracers of Defense only with no armor and no shield.
+  const itemAc = ib.ac + (!worn.body && !worn.shield ? ib.acUnarmored : 0);
+  let ac = acBase + dexToAc + acAbil + build.armorMisc + (em.ac || 0) + gearAcBonus + shieldBonus + speciesAc + itemAc;
+  // Robe of the Archmagi: base 15 plus DEX with no body armor, when that beats the usual base.
+  if (ib.acBaseNoArmor && !worn.body) {
+    const robe = ib.acBaseNoArmor + m.dex + build.armorMisc + (em.ac || 0) + shieldBonus + speciesAc + itemAc;
+    if (robe > ac) { ac = robe; acFormula = `${ib.acBaseNoArmor} plus DEX (item)`; }
+  }
   // Species natural armor (Lizardfolk, Tortle) replaces the base only without body armor, and only
   // when it comes out higher, which is how the trait is worded.
   const nat = ctx.species[build.meta.species]?.naturalArmor;
   if (nat && !worn.body) {
     const natAc = nat.base + (nat.addDex ? m.dex : 0) + (nat.addAbil ? m[nat.addAbil] : 0)
       + build.armorMisc + (em.ac || 0) + gearAcBonus
-      + shieldBonus + speciesAc;
+      + shieldBonus + speciesAc + itemAc;
     if (natAc > ac) {
       ac = natAc;
       acFormula = `Natural Armor: ${nat.base}${nat.addDex ? " plus DEX" : ""}${nat.addAbil ? ` plus ${nat.addAbil.toUpperCase()}` : ""}`;
@@ -529,7 +662,7 @@ export function deriveSheet(build: Build, ctx: RulesContext): DerivedSheet {  co
     .concat(ep.grants.saveProf.filter((s) => !build.saveProf.includes(s as Ability) && !lateSaves.includes(s as Ability)) as Ability[]);
   const saves = {} as Record<Ability, number>;
   ABILITIES.forEach((a) => {
-    saves[a] = m[a] + (saveProfAll.includes(a) ? P : 0) + (build.saveBonusAll || 0) + (em.allSaves || 0);
+    saves[a] = m[a] + (saveProfAll.includes(a) ? P : 0) + (build.saveBonusAll || 0) + (em.allSaves || 0) + ib.saves;
   });
 
   // Skills: proficiency and expertise from class and epic; epic-granted ones are flagged.
@@ -540,7 +673,7 @@ export function deriveSheet(build: Build, ctx: RulesContext): DerivedSheet {  co
     const rank = isExp ? 2 : isProf ? 1 : 0;
     skills[k] = {
       abil: ab, rank,
-      val: m[ab] + rank * P + (em.allSkills || 0),
+      val: m[ab] + rank * P + (em.allSkills || 0) + ib.checks,
       fromEpic: !build.skillExpert.includes(k) && !build.skillProf.includes(k) && rank > 0,
     };
   });
@@ -550,10 +683,11 @@ export function deriveSheet(build: Build, ctx: RulesContext): DerivedSheet {  co
   const cr = castRule(build, ctx);
   const isCaster = !!cr;
   const castAbil = cr ? cr.ability : null;
-  const spellDC = isCaster && castAbil ? 8 + m[castAbil] + P + (em.spellDC || 0) : 0;
-  const spellAttack = isCaster && castAbil ? m[castAbil] + P + (em.spellAttack || 0) : 0;
+  const spellDC = isCaster && castAbil ? 8 + m[castAbil] + P + (em.spellDC || 0) + ib.spellDC : 0;
+  const spellAttack = isCaster && castAbil ? m[castAbil] + P + (em.spellAttack || 0) + ib.spellAttack : 0;
 
-  const init = m.dex + (em.initiative || 0);
+  // Initiative is a Dexterity check, so an item's bonus to checks counts.
+  const init = m.dex + (em.initiative || 0) + ib.checks;
 
   // Speed: species base plus class movement features (Monk unarmored, Barbarian fast).
   let speed = (ctx.species[build.meta.species]?.speed || 30) + (em.speed || 0);
@@ -573,12 +707,13 @@ export function deriveSheet(build: Build, ctx: RulesContext): DerivedSheet {  co
   // list is normalized and de-duplicated rather than showing Poison twice.
   const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
   const resist: string[] = [];
-  for (const r of (ctx.species[build.meta.species]?.resist || []).concat(ep.grants.resist)) {
+  for (const r of (ctx.species[build.meta.species]?.resist || []).concat(ep.grants.resist, ib.resist)) {
     if (r && !resist.includes(cap(r))) resist.push(cap(r));
   }
 
   const sp = ctx.species[build.meta.species] || {};
-  const immune = (sp.immune || []).map(cap);
+  const immune: string[] = [];
+  for (const r of (sp.immune || []).concat(ib.immune)) if (r && !immune.includes(cap(r))) immune.push(cap(r));
   const senses: string[] = [];
   if (sp.darkvision) senses.push(`Darkvision ${sp.darkvision} ft`);
   for (const [k, v] of Object.entries(sp.senses || {})) if (v) senses.push(`${cap(k)} ${v} ft`);
@@ -597,5 +732,6 @@ export function deriveSheet(build: Build, ctx: RulesContext): DerivedSheet {  co
     sneakDice: sneak, martialArts, resist,
     immune, senses, otherSpeeds,
     advAgainst: sp.advAgainst || [], advSaves: sp.advSaves || [], advSavesVs: sp.advSavesVs || "",
+    checkBonus: ib.checks, itemNotes,
   };
 }
