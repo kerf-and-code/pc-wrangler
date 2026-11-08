@@ -33,7 +33,7 @@ import { applyAdvantage } from "@/lib/dice";
 import { critDice, STANDARD_ACTIONS } from "@/lib/combat-effects";
 import { combatAct, type FightEntry, type FightView } from "@/components/fight-controls";
 import { remaining, type Resource } from "@/lib/resources";
-import type { AttackRow } from "@/lib/play/attacks";
+import { fullDamage, damageText, type AttackRow } from "@/lib/play/attacks";
 import { readSpell, spellCost, upcasts, ORD, type SpellRecord, type SpellCost } from "@/lib/play/spells";
 import { slotsLeft, slotFor } from "@/lib/play/tracks";
 import type { DerivedSheet } from "@/lib/srd/derive-sheet";
@@ -187,9 +187,11 @@ export default function PlayActions({ sheet, charLevel, characterId, campaignId,
   type Row = { key: string; kind: Filter; name: string; range: string; hit: string; effect: string; note?: string; run?: () => void; runLabel?: string };
   const rows: Row[] = [];
   for (const a of attacks) {
-    rows.push({ key: a.key, kind: "attack", name: a.name, range: a.range, hit: sign(a.toHit), effect: `${a.damage} ${a.damageType.toLowerCase()}${a.versatile ? `, ${a.versatile} two-handed` : ""}`,
-      note: [a.properties.join(", "), a.mastery ? `mastery: ${a.mastery}` : "", a.proficient ? "" : "not proficient", a.assumed ? "proficiency assumed" : ""].filter(Boolean).join(" · "),
-      run: () => void attack(a.name, a.toHit, a.damage, "attack", a.damageType), runLabel: "Attack" });
+    // phase 5i.1: extra dice (Radiant Strikes) show beside the weapon's damage and roll with it
+    rows.push({ key: a.key, kind: "attack", name: a.name, range: a.range, hit: sign(a.toHit), effect: `${damageText(a)}${a.versatile ? `, ${a.versatile} two-handed` : ""}`,
+      note: [a.properties.join(", "), a.mastery ? `mastery: ${a.mastery}` : "", a.proficient ? "" : "not proficient", a.assumed ? "proficiency assumed" : "",
+        ...(a.notes ?? []), ...(a.bonus ?? []).map((b) => `${b.label}: ${b.dice} ${b.type.toLowerCase()}`)].filter(Boolean).join(" · "),
+      run: () => void attack(a.name, a.toHit, fullDamage(a), "attack", a.damageType), runLabel: "Attack" });
   }
   for (const s of known) {
     const r = readSpell(s.rec, { slot: s.rec.level, charLevel, castMod });
@@ -209,7 +211,7 @@ export default function PlayActions({ sheet, charLevel, characterId, campaignId,
   }
   for (const a of STANDARD_ACTIONS) rows.push({ key: `std-${a.name}`, kind: "action", name: a.name, range: "", hit: "", effect: a.tip, run: () => void spendTurn("action", a.name), runLabel: inFight ? "Use" : undefined });
   const melee = attacks.find((a) => a.melee && a.source === "weapon") ?? attacks.find((a) => a.melee);
-  if (melee) rows.push({ key: "opportunity", kind: "reaction", name: `Opportunity attack (${melee.name})`, range: melee.range, hit: sign(melee.toHit), effect: `${melee.damage} ${melee.damageType.toLowerCase()}`, note: "when a creature you can see leaves your reach", run: () => void attack(`Opportunity attack, ${melee.name}`, melee.toHit, melee.damage, "reaction", melee.damageType), runLabel: "Attack" });
+  if (melee) rows.push({ key: "opportunity", kind: "reaction", name: `Opportunity attack (${melee.name})`, range: melee.range, hit: sign(melee.toHit), effect: damageText(melee), note: "when a creature you can see leaves your reach", run: () => void attack(`Opportunity attack, ${melee.name}`, melee.toHit, fullDamage(melee), "reaction", melee.damageType), runLabel: "Attack" });
   const show = (k: Filter) => filter === "all" || filter === k;
 
   const box: React.CSSProperties = { ...stonePanel(), marginBottom: 0, padding: "12px 14px" };

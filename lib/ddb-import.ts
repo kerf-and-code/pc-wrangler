@@ -24,9 +24,21 @@
 //      Forge would otherwise treat "Wish from a Ring of Three Wishes" as a known wizard spell.
 //   4. Reconciliation REPORTS the delta between DDB's printed numbers and deriveSheet's computed
 //      ones. It does NOT auto-fill armorMisc / saveBonusAll, because the divergence IS the signal.
+//
+// Phase 5i.1 (Terry, 2026-11-08, Bobertas Vox, Paladin 11): "make sure the character sheets reflect
+// the uploaded D&D Beyond PDFs accurately". The parse already held everything; the mapper dropped it.
+// It now also carries, all of it stated on the sheet rather than guessed:
+//   * skill proficiencies as the engine's skill KEYS ("stealth", "animal"); they were saved as the
+//     printed names ("Stealth"), which the engine never matched, so only background skills showed;
+//   * gear quantities (Javelin 6, Ball Bearings 1,000), and which weapons are in use: a weapon is
+//     equipped when D&D Beyond lists it under attacks, armor and shields always (they make its AC);
+//   * coins, languages, resistances and immunities, and the bio (characteristics and notes);
+//   * the Fighting Style feat and the Weapon Mastery picks, as the Forge's class choices;
+//   * the flat all-saves bonus WITHOUT what the engine already adds (a worn Cloak of Protection, the
+//     paladin's Aura of Protection), which it used to count a second time.
 // ---------------------------------------------------------------------------
 
-import type { Ability, Build, GearEntry, RulesContext } from "./srd/derive-sheet";
+import { SKILLS, type Ability, type Build, type GearEntry, type RulesContext } from "./srd/derive-sheet";
 import { aliasPairs } from "./name-aliases";
 
 // ---------------------------------------------------------------------------
@@ -82,7 +94,10 @@ export type DdbSheet = {
       detail: string | null;
     }[];
   };
-  equipment: { name: string; detail: string | null; attuned: boolean }[];
+  equipment: { name: string; detail: string | null; attuned: boolean; qty?: number | null; weight?: string | null }[];
+  /** Field path only: the coin ledger, and the DEFENSES box split into lists. */
+  currency?: Partial<Record<"cp" | "sp" | "ep" | "gp" | "pp", number | null>>;
+  defenses?: { raw?: string | null; resistances?: string[]; immunities?: string[]; senses?: string | null; save_modifiers?: string | null };
   _meta?: Record<string, unknown>;
 };
 
@@ -100,6 +115,13 @@ export type ImportContext = {
   classes: string[];
   /** Names in RULES_DATA.ITEM_EFFECTS / ITEM_VARIANTS. Used only to WARN about double-counting. */
   abilityEffectItems: string[];
+  /** Phase 5i.1, all optional (an older caller just gets the old behaviour for each):
+   *  feats of the Fighting Style category; weapon and armor item names (a magic weapon counts);
+   *  and items that add a flat bonus to every save while worn (Cloak of Protection: 1). */
+  fightingStyles?: string[];
+  weapons?: string[];
+  armor?: string[];
+  saveBonusItems?: Record<string, number>;
 };
 
 export type Resolution = { raw: string; matched: string | null; variant?: string; note?: string };
@@ -118,6 +140,8 @@ export type ImportReport = {
   /** Gear that would double-count ability scores if ITEM_EFFECTS were left on. */
   abilityEffectWarnings: string[];
   inferred: { saveProf: Ability[]; saveBonusAll: number };
+  /** The alignment printed on the sheet, for the caller to store on the character. */
+  alignment: string | null;
   /** Human-readable notes for the import UI. */
   notes: string[];
 };
@@ -353,14 +377,38 @@ export function ddbToBuild(sheet: DdbSheet, ctx: ImportContext): ImportResult {
   const inferredSaves = inferSaves(sheet.abilities, sheet.saves, pb);
   const inferred = sheet.save_prof && sheet.save_prof.length
     ? { saveProf: sheet.save_prof, saveBonusAll: inferredSaves.saveBonusAll }
-    : inferredSaves;
+    : { ...inferredSaves };
+  // What the engine adds to every save by itself is taken out of the flat bonus, or it counts twice:
+  // a worn save item (Cloak of Protection +1) and the paladin's Aura of Protection (CHA mod, at least
+  // 1, from Paladin 6). Whatever is left is a bonus the engine does not model, carried as before.
+  {
+    const paladinLv = classes.find((c) => norm(c.class) === "paladin")?.level ?? 0;
+    const aura = paladinLv >= 6 ? Math.max(1, abilityMod(Number(sheet.abilities.cha ?? 10))) : 0;
+    let fromItems = 0;
+    for (const row of sheet.equipment) {
+      const { entry } = matchItem(itemIx, row.name);
+      const b = ctx.saveBonusItems?.[entry.n];
+      if (b) fromItems += b;
+    }
+    if (inferred.saveBonusAll && (aura || fromItems)) {
+      notes.push(`D&D Beyond adds +${inferred.saveBonusAll} to every save; ${[aura ? `Aura of Protection (+${aura})` : "", fromItems ? `magic items (+${fromItems})` : ""].filter(Boolean).join(" and ")} ${aura && fromItems ? "are" : "is"} worked out by the sheet itself.`);
+    }
+    inferred.saveBonusAll = inferred.saveBonusAll - aura - fromItems;
+  }
   if (inferred.saveBonusAll) {
-    notes.push(`Detected a flat +${inferred.saveBonusAll} to all saving throws and carried it as saveBonusAll.`);
+    notes.push(`Detected a flat ${inferred.saveBonusAll > 0 ? "+" : ""}${inferred.saveBonusAll} to all saving throws the sheet does not model, and carried it as saveBonusAll.`);
   }
 
   // --- skills ---------------------------------------------------------------
-  const skillProf = sheet.skills.filter((s) => s.prof === "proficient").map((s) => s.skill);
-  const skillExpert = sheet.skills.filter((s) => s.prof === "expertise").map((s) => s.skill);
+  // The engine keys skills by its own short names ("animal", "sleight"), not the printed ones.
+  const skillKey = (printed: string) => {
+    const n = norm(printed);
+    return SKILLS.find(([k, label]) => norm(label) === n || norm(k) === n)?.[0] ?? null;
+  };
+  const keysOf = (rank: "proficient" | "expertise") =>
+    [...new Set(sheet.skills.filter((s) => s.prof === rank).map((s) => skillKey(s.skill)).filter((k): k is string => !!k))];
+  const skillProf = keysOf("proficient");
+  const skillExpert = keysOf("expertise");
 
   // --- gear -----------------------------------------------------------------
   const items: GearEntry[] = [];
@@ -369,8 +417,22 @@ export function ddbToBuild(sheet: DdbSheet, ctx: ImportContext): ImportResult {
   const attuned: string[] = [];
   const abilityEffectWarnings: string[] = [];
 
+  // Which weapons are in use: the ones D&D Beyond lists as attacks.
+  const attackNames = new Set((sheet.attacks ?? []).map((a) => norm(a.name)));
+  const weaponIx = ctx.weapons ? new Set(ctx.weapons.map(norm)) : null;
+  const armorIx = ctx.armor ? new Set(ctx.armor.map(norm)) : null;
   for (const row of sheet.equipment) {
     const { entry, matched } = matchItem(itemIx, row.name);
+    const qty = typeof row.qty === "number" && row.qty > 0 ? row.qty : 1;
+    if (qty > 1) entry.qty = qty;
+    // D&D Beyond prints the weight of the whole row ("Ball Bearings 1,000, 2 lb."), and weighs items the
+    // rules data leaves blank (Saddlebags, potions). Keep its weight per piece, so the total carried
+    // matches the sheet; a row printed without a weight ("--") keeps the data's own.
+    const w = parseFloat(String(row.weight ?? "").replace(/,/g, ""));
+    if (Number.isFinite(w) && w > 0) entry.wt = Math.round((w / qty) * 10000) / 10000;
+    if (weaponIx && weaponIx.has(norm(entry.n))) entry.eq = attackNames.has(norm(row.name)) || attackNames.has(norm(entry.n));
+    else if (armorIx && armorIx.has(norm(entry.n))) entry.eq = true;
+    if (row.attuned) { entry.eq = true; entry.att = true; }
     items.push(entry);
     (matched ? gearMatched : gearUnmatched).push({ raw: row.name, matched });
     if (row.attuned) attuned.push(entry.n);
@@ -440,6 +502,55 @@ export function ddbToBuild(sheet: DdbSheet, ctx: ImportContext): ImportResult {
     spells: { cantrips, known },
   };
 
+  // --- what the sheet states beyond the engine's inputs (phase 5i.1) ----------
+  const extra = build as unknown as Record<string, unknown>;
+  const cur = sheet.currency;
+  if (cur) {
+    const coins: Record<string, number> = {};
+    for (const k of ["pp", "gp", "ep", "sp", "cp"] as const) { const v = Number(cur[k] ?? 0); if (v > 0) coins[k] = v; }
+    extra.coins = coins;
+  }
+  const langs = (sheet.proficiencies?.languages ?? "").split(/,|;/).map((x) => x.trim()).filter(Boolean);
+  if (langs.length) extra.languages = [...new Set(langs)];
+  const def = sheet.defenses;
+  if (def && ((def.resistances ?? []).length || (def.immunities ?? []).length)) {
+    extra.customDefenses = {
+      ...((def.resistances ?? []).length ? { resist: [...new Set(def.resistances)] } : {}),
+      ...((def.immunities ?? []).length ? { immune: [...new Set(def.immunities)] } : {}),
+    };
+  }
+  const bio = sheet.bio ?? {};
+  const txt = (k: string) => { const v = bio[k]; return typeof v === "string" && v.trim() ? v.trim() : undefined; };
+  // "=== Allies === ... === Organizations === ..." comes as one box; split it into the two notes.
+  const ao = txt("allies_organizations") ?? "";
+  const section = (label: string) => {
+    const m = new RegExp(`===\\s*${label}\\s*===([\\s\\S]*?)(?====|$)`, "i").exec(ao);
+    return m ? m[1].trim() || undefined : undefined;
+  };
+  const allies = section("Allies") ?? (ao && !/===/.test(ao) ? ao : undefined);
+  const organizations = section("Organizations");
+  const charNotes: Record<string, string> = {};
+  const put = (k: string, v: string | undefined) => { if (v) charNotes[k] = v; };
+  for (const k of ["gender", "age", "size", "height", "weight", "eyes", "hair", "skin", "faith", "personality", "ideals", "bonds", "flaws", "backstory"]) put(k, txt(k));
+  put("allies", allies); put("organizations", organizations);
+  put("other", [txt("appearance") ? `Appearance: ${txt("appearance")}` : "", txt("notes") ?? ""].filter(Boolean).join("\n\n") || undefined);
+  if (Object.keys(charNotes).length) extra.notes = charNotes;
+
+  // Class choices the sheet names: the Fighting Style feat, and the Weapon Mastery weapons
+  // ("Longbow (Slow)" in the Weapon Mastery feature's text). Keys follow lib/class-choices choiceKey.
+  const classChoices: Record<string, string[]> = {};
+  const cls = build.meta.className;
+  const styleSet = new Set((ctx.fightingStyles ?? []).map(norm));
+  const styles = sheet.features.map((f) => f.name).filter((n) => styleSet.has(norm(n)));
+  const STYLE_LEVEL: Record<string, number> = { Fighter: 1, Paladin: 2, Ranger: 2 };
+  if (styles.length && STYLE_LEVEL[cls]) classChoices[`${cls}:-:${STYLE_LEVEL[cls]}:Fighting Style`] = [...new Set(styles)];
+  const wm = sheet.features.find((f) => /^weapon mastery$/i.test(f.name.trim()));
+  if (wm?.desc) {
+    const picks = [...wm.desc.matchAll(/([A-Z][A-Za-z ,'-]{1,40}?) \((Cleave|Graze|Nick|Push|Sap|Slow|Topple|Vex)\)/g)].map((m) => m[1].trim());
+    if (picks.length) classChoices[`${cls}:-:1:Weapon Mastery`] = [...new Set(picks)];
+  }
+  if (Object.keys(classChoices).length) extra.classChoices = classChoices;
+
   // Park the ENTIRE parse. app/me/forge/page.tsx round-trips unknown build keys (normalizeBuild
   // spreads the raw object, edits deep-clone it, save writes the whole thing), so nothing here is
   // lost by opening the character in the Forge and editing it.
@@ -462,6 +573,7 @@ export function ddbToBuild(sheet: DdbSheet, ctx: ImportContext): ImportResult {
     spells: { known, cantrips, parked, unmatched: spellsUnmatched },
     abilityEffectWarnings,
     inferred,
+    alignment: typeof sheet.bio?.alignment === "string" && sheet.bio.alignment.trim() ? sheet.bio.alignment.trim() : null,
     notes,
   };
 

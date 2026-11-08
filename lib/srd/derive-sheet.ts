@@ -390,7 +390,12 @@ const UNARMORED_AC: Record<Ruleset, {
       Barbarian: { base: 10, add: "con", shieldOk: true, label: "Unarmored Defense" },
       Monk: { base: 10, add: "wis", shieldOk: false, label: "Unarmored Defense" },
     },
-    sub: { "Draconic Sorcery": { base: 10, add: "cha", shieldOk: false, label: "Draconic Resilience" } },
+    sub: {
+      "Draconic Sorcery": { base: 10, add: "cha", shieldOk: false, label: "Draconic Resilience" },
+      // Forgotten Realms: Heroes of Faerun, Oath of the Noble Genies level 3 (2026-11-08): with no
+      // armor, base AC 10 + DEX + CHA, and a Shield still counts.
+      "Oath of the Noble Genies": { base: 10, add: "cha", shieldOk: true, label: "Genie's Splendor" },
+    },
   },
   "2014": {
     cls: {
@@ -419,6 +424,12 @@ function wornArmorKinds(build: Build, ctx: RulesContext): {
     out.dexCap = it.dexCap === undefined ? out.dexCap : it.dexCap;
   }
   return out;
+}
+
+// The character's level in one class, whether it is the primary class or one added by multiclassing.
+export function classLevelOf(build: Build, className: string): number {
+  if (build.meta.className === className) return build.level || 0;
+  return (build.multiclass || []).find((c) => c.className === className)?.level || 0;
 }
 
 function unarmoredACRule(build: Build, ctx: RulesContext) {
@@ -713,9 +724,13 @@ export function deriveSheet(build: Build, ctx: RulesContext): DerivedSheet {  co
   const saveProfAll = build.saveProf
     .concat(lateSaves.filter((s) => !build.saveProf.includes(s)))
     .concat(ep.grants.saveProf.filter((s) => !build.saveProf.includes(s as Ability) && !lateSaves.includes(s as Ability)) as Ability[]);
+  // Aura of Protection (Paladin 6, both editions): the paladin adds their Charisma modifier (at least
+  // +1) to their own saving throws, as everyone in the aura does. Phase 5i.1: it was missing, so an
+  // imported paladin carried it as a flat saveBonusAll instead (and lost it on any CHA change).
+  const auraOfProtection = classLevelOf(build, "Paladin") >= 6 ? Math.max(1, m.cha) : 0;
   const saves = {} as Record<Ability, number>;
   ABILITIES.forEach((a) => {
-    saves[a] = m[a] + (saveProfAll.includes(a) ? P : 0) + (build.saveBonusAll || 0) + (em.allSaves || 0) + ib.saves;
+    saves[a] = m[a] + (saveProfAll.includes(a) ? P : 0) + (build.saveBonusAll || 0) + (em.allSaves || 0) + ib.saves + auraOfProtection;
   });
 
   // Skills: proficiency and expertise from class and epic; epic-granted ones are flagged.
@@ -767,7 +782,9 @@ export function deriveSheet(build: Build, ctx: RulesContext): DerivedSheet {  co
 
   const sp = ctx.species[build.meta.species] || {};
   const immune: string[] = [];
-  for (const r of (sp.immune || []).concat(ib.immune, cd.immune || [])) if (r && !immune.includes(cap(r))) immune.push(cap(r));
+  // Aura of Courage (Paladin 10, both editions): immune to the Frightened condition while it is up.
+  const classImmune = classLevelOf(build, "Paladin") >= 10 ? ["Frightened"] : [];
+  for (const r of (sp.immune || []).concat(ib.immune, classImmune, cd.immune || [])) if (r && !immune.includes(cap(r))) immune.push(cap(r));
   const vulnerable: string[] = [];
   for (const r of cd.vuln || []) if (r && !vulnerable.includes(cap(r))) vulnerable.push(cap(r));
   const senses: string[] = [];

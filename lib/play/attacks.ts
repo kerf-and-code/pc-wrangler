@@ -11,6 +11,13 @@
 //   * a +1, +2 or +3 weapon (the Forge's gear "mod") adds to the attack and the damage;
 //   * range, versatile damage and mastery come from the item data of either edition (2014 records
 //     carry numbers and a two-handed damage; 2024 records carry them in the property text).
+//
+// Phase 5i.1 (Terry, 2026-11-08, from an imported paladin): class features that change an attack are
+// applied by applyAttackFeatures: the Archery and Dueling fighting styles, and the paladin's extra
+// radiant die on melee hits (Radiant Strikes in 2024, Improved Divine Smite in 2014). Extra dice of
+// another damage type ride in `bonus`, shown beside the weapon's own damage and rolled with it
+// (fullDamage). A magic weapon whose record has no damage of its own (Cinnabar Rapier) attacks as its
+// base weapon (baseWeaponFor).
 
 export type WeaponRecord = {
   name: string; category?: string; weapon_category?: string | null; weapon_range?: string | null;
@@ -24,6 +31,10 @@ export type AttackRow = {
   toHit: number; damage: string; damageType: string; versatile: string | null;
   range: string; properties: string[]; mastery: string | null;
   ability: "str" | "dex"; proficient: boolean; assumed: boolean; melee: boolean;
+  /** Extra damage dice of their own type (Radiant Strikes' 1d8 radiant), rolled with the attack's damage. */
+  bonus?: { dice: string; type: string; label: string }[];
+  /** What changed this row (Dueling +2 damage, Archery +2 to hit), shown under it. */
+  notes?: string[];
 };
 
 const sign = (n: number) => (n >= 0 ? `+${n}` : `${n}`);
@@ -104,4 +115,66 @@ export function weaponProfText(coreTraits: string | null | undefined): string | 
     if (cells.length >= 4 && /^weapon proficienc/i.test(cells[1])) return cells[2];
   }
   return null;
+}
+
+// The damage an attack rolls: the weapon's own dice plus every bonus die (one roll, one total).
+export function fullDamage(a: AttackRow): string {
+  return [a.damage, ...(a.bonus ?? []).map((b) => b.dice)].join("+");
+}
+// The damage as the sheet shows it: "1d8+5 piercing + 1d8 radiant".
+export function damageText(a: AttackRow, dice: string = a.damage): string {
+  return [`${dice} ${a.damageType.toLowerCase()}`, ...(a.bonus ?? []).map((b) => `${b.dice} ${b.type.toLowerCase()}`)].join(" + ");
+}
+
+// Add a flat amount to a damage expression's modifier: "1d8+3" + 2 -> "1d8+5", "1d6" + 2 -> "1d6+2".
+export function addToDamage(dice: string, n: number): string {
+  if (!n) return dice;
+  const m = /^(.*?)([+-]\d+)$/.exec(dice);
+  const base = m ? m[1] : dice, mod = (m ? Number(m[2]) : 0) + n;
+  return mod ? `${base}${sign(mod)}` : base;
+}
+
+export type AttackFeatureInputs = {
+  /** Fighting Style feats the character has (Dueling, Archery...). */
+  fightingStyles: string[];
+  paladinLevel: number;
+  ruleset: "2014" | "2024";
+};
+
+// Apply the class features that change attack rows. Pure: returns new rows.
+export function applyAttackFeatures(rows: AttackRow[], f: AttackFeatureInputs): AttackRow[] {
+  const styles = new Set(f.fightingStyles.map((x) => x.toLowerCase()));
+  return rows.map((r0) => {
+    const r: AttackRow = { ...r0, bonus: [...(r0.bonus ?? [])], notes: [...(r0.notes ?? [])] };
+    const twoHanded = r.properties.some((p) => /^two-handed/i.test(p));
+    // Archery: +2 to attack rolls with ranged weapons
+    if (styles.has("archery") && r.source === "weapon" && !r.melee) { r.toHit += 2; r.notes!.push("Archery +2 to hit"); }
+    // Dueling: +2 damage with a one-handed melee weapon (the sheet cannot see your other hand)
+    if (styles.has("dueling") && r.source === "weapon" && r.melee && !twoHanded) {
+      r.damage = addToDamage(r.damage, 2);
+      r.notes!.push("Dueling +2 damage, holding it in one hand and no other weapon");
+    }
+    // the paladin's radiant die on every melee hit
+    if (f.paladinLevel >= 11 && r.melee && (r.source === "weapon" || (f.ruleset === "2024" && r.source === "unarmed"))) {
+      r.bonus!.push({ dice: "1d8", type: "Radiant", label: f.ruleset === "2024" ? "Radiant Strikes" : "Improved Divine Smite" });
+    }
+    if (!r.bonus!.length) delete r.bonus;
+    if (!r.notes!.length) delete r.notes;
+    return r;
+  });
+}
+
+// A magic weapon whose own record carries no damage (Cinnabar Rapier, a "+1 Longsword" written out)
+// attacks as its base weapon: named in the record's attunement note, or the longest weapon name that
+// ends the item's name. Returns that weapon's record under the magic item's name, or null.
+export function baseWeaponFor(rec: { name: string; category?: string; attunement_note?: string | null } | undefined, weapons: WeaponRecord[]): WeaponRecord | null {
+  if (!rec || (rec.category ?? "").toLowerCase() !== "weapon") return null;
+  const byName = new Map(weapons.filter(isWeapon).map((w) => [w.name.toLowerCase(), w]));
+  const note = (rec.attunement_note ?? "").toLowerCase().trim();
+  let base = note ? byName.get(note) ?? null : null;
+  if (!base) {
+    const n = rec.name.toLowerCase();
+    for (const [k, w] of byName) if ((n.endsWith(` ${k}`) || n.startsWith(`${k},`)) && (!base || k.length > base.name.length)) base = w;
+  }
+  return base ? { ...base, name: rec.name } : null;
 }

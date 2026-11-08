@@ -24,6 +24,12 @@
 // up to date on D&D Beyond never has to be rebuilt here. What the D&D Beyond sheet does not hold is
 // kept from the character as it was: current HP and the rest of the play state, spent resources,
 // coins, notes, companions, languages, hand-added defenses and the sheet's overrides.
+//
+// Phase 5i.1 (Terry, 2026-11-08): coins, languages, defenses and notes ARE on the D&D Beyond sheet,
+// so an update now takes them from the PDF when it has them, and keeps the character's own only when
+// the PDF's are empty. The mapper also gets the weapon, armor, fighting-style and save-item lists it
+// needs to mark weapons in use, record the fighting style and avoid counting a Cloak of Protection
+// twice. The sheet's alignment is stored on the character.
 
 import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -37,6 +43,7 @@ import { saveToLibrary } from "@/lib/pc-library";
 import { loadCatalog } from "@/lib/catalog";
 import { loadSrd } from "@/lib/srd/srd";
 import { RULES_DATA } from "@/lib/srd/rules-context";
+import { ITEM_BONUSES } from "@/lib/srd/derive-sheet";
 import { parseSheet, FlattenedSheetError, type PdfDocumentLike, type DdbSheet } from "@/lib/ddb-parse";
 import { ddbToBuild, type ImportContext, type ImportReport } from "@/lib/ddb-import";
 
@@ -45,6 +52,9 @@ type Stage = "idle" | "reading" | "ready" | "saving" | "error";
 // The build keys the character sheet keeps that a D&D Beyond PDF does not carry (update mode keeps them).
 const SHEET_KEYS = ["play", "spent", "coins", "notes", "companions", "languages", "customDefenses",
   "abilityOverride", "hpMaxMod", "hpMaxOverride"] as const;
+// Of those, the ones a D&D Beyond sheet also states: the PDF's win when it has any.
+const PDF_WINS = new Set<string>(["coins", "notes", "languages", "customDefenses"]);
+const hasContent = (v: unknown) => v !== undefined && v !== null && (typeof v !== "object" || Object.keys(v as object).length > 0);
 
 export default function ImportPage() {
   return (
@@ -106,6 +116,13 @@ function ImportInner() {
         ...Object.keys(RULES_DATA.ITEM_EFFECTS || {}),
         ...Object.keys(RULES_DATA.ITEM_VARIANTS || {}),
       ],
+      fightingStyles: (loadSrd("feats", "both") as unknown as { name: string; category?: string }[])
+        .filter((f) => f.category === "Fighting Style").map((f) => f.name),
+      weapons: [...loadSrd("equipment", "both"), ...loadSrd("magic-items", "both")]
+        .filter((r) => /^weapons?$/i.test(String((r as { category?: string }).category ?? ""))).map((r) => r.name),
+      armor: [...loadSrd("equipment", "both"), ...loadSrd("magic-items", "both")]
+        .filter((r) => /^armou?r$/i.test(String((r as { category?: string }).category ?? ""))).map((r) => r.name),
+      saveBonusItems: Object.fromEntries(Object.entries(ITEM_BONUSES).filter(([, b]) => b.saves).map(([n, b]) => [n, b.saves as number])),
     };
   }, [supabase]);
 
@@ -149,9 +166,14 @@ function ImportInner() {
       if (target) {
         // update mode: the D&D Beyond build, with what only the sheet holds carried over
         const next: Record<string, unknown> = { ...(build as Record<string, unknown>) };
-        for (const k of SHEET_KEYS) if (target.build[k] !== undefined) next[k] = target.build[k];
+        for (const k of SHEET_KEYS) {
+          if (target.build[k] === undefined) continue;
+          if (PDF_WINS.has(k) && hasContent(next[k])) continue;
+          next[k] = target.build[k];
+        }
         const { error: er } = await supabase.from("characters").update({
           build: next,
+          ...(report.alignment ? { alignment: report.alignment } : {}),
           species: report.species.matched ?? report.species.raw ?? null,
           class: report.className.matched ?? report.className.raw ?? null,
           subclass: report.subclass.matched ?? report.subclass.raw ?? null,
@@ -189,8 +211,9 @@ function ImportInner() {
           {target && (
             <p role="status" style={{ ...stonePanel(), padding: "10px 14px", color: STONE.ink, fontSize: 13.5 }}>
               This replaces {target.name}&apos;s build with the sheet in the PDF: abilities, class and level, proficiencies, gear and spells.
-              Kept as they are: current HP and conditions, spent resources and slots, coins, notes, companions, languages and any overrides.
-              Gear comes in as worn, so check what is equipped on the sheet&apos;s Inventory tab afterwards.
+              Coins, languages, defenses, characteristics and notes come from the PDF too when it has them.
+              Kept as they are: current HP and conditions, spent resources and slots, companions and any overrides.
+              Weapons D&amp;D Beyond lists as attacks, armor and attuned items come in equipped; the rest is carried.
             </p>
           )}
           {targetErr && <p role="alert" style={{ color: "#e07a70", fontSize: 13.5 }}>{targetErr}</p>}

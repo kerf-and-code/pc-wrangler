@@ -67,7 +67,7 @@ import PlayCompanions, { type Companion, type MonsterRec } from "@/components/pl
 import PlayParty from "@/components/play-party";
 import { combatAct, type FightEntry, type FightView } from "@/components/fight-controls";
 import { trackedResources, type TrackInputs } from "@/lib/play/tracks";
-import { isWeapon, unarmedAttack, weaponAttack, weaponProfText, type AttackRow, type WeaponRecord } from "@/lib/play/attacks";
+import { isWeapon, unarmedAttack, weaponAttack, weaponProfText, applyAttackFeatures, baseWeaponFor, type AttackRow, type WeaponRecord } from "@/lib/play/attacks";
 import type { SpellRecord as PlaySpell } from "@/lib/play/spells";
 import { attacksPerAction } from "@/lib/combat-effects";
 import { menusFor, type ClassMenu } from "@/lib/class-menus";
@@ -110,7 +110,7 @@ import {
   type ClassRecord, type LevelGroup,
 } from "@/lib/class-progression";
 import {
-  deriveSheet, epicAdvancement, ABILITIES, SKILLS, DEFAULT_EPIC, gearEquipped,
+  deriveSheet, epicAdvancement, ABILITIES, SKILLS, DEFAULT_EPIC, gearEquipped, classLevelOf,
   type Ability, type Build, type EpicChoice, type GearEntry,
 } from "@/lib/srd/derive-sheet";
 import { hasPrintedAbilities, suppressItemEffects } from "@/lib/ddb-import";
@@ -546,6 +546,21 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
     return out;
   }, [build.epicChoices, srd.featByName]);
 
+  // Phase 5i.1: the feats a D&D Beyond sheet lists (Resilient, Skilled, a Fighting Style), shown with
+  // the chosen ones. D&D Beyond does not say at which level each was taken, so they show as level 0.
+  const importedFeats = useMemo(() => {
+    const list = (build as Build & { imported?: { sheet?: { features?: { name: string }[] } } }).imported?.sheet?.features || [];
+    const seen = new Set(chosenFeats.map((f) => f.name));
+    const out: { level: number; name: string; desc?: string; category?: string }[] = [];
+    for (const f of list) {
+      const rec = srd.featByName[f.name.trim()];
+      if (!rec || rec.name === "Ability Score Improvement" || seen.has(rec.name)) continue;
+      seen.add(rec.name);
+      out.push({ level: 0, name: rec.name, desc: rec.description, category: rec.category });
+    }
+    return out;
+  }, [build, chosenFeats, srd.featByName]);
+
   // Class features gained, grouped by level, for the printable sheet's compact roster.
   const classFeatureGroups = useMemo(() => {
     const rec = classRecWithSub(build.meta.className);
@@ -639,6 +654,19 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
     const classPicks = (build as Build & { classChoices?: Record<string, string[]> }).classChoices || {};
     for (const g of subclassSpellsFor(build.meta.subclass || "", build.level || 1, classPicks, edition, build.meta.className || "")) {
       out.push({ spell: g.spell, from: build.meta.subclass || "your subclass", level: g.level });
+    }
+    // Phase 5i.1: spells a CLASS feature keeps prepared (2024 rules). The paladin's Divine Smite
+    // (Paladin's Smite, level 2) and Find Steed (Faithful Steed, level 5) are each cast once per Long
+    // Rest without a slot; the ranger's Hunter's Mark (Favored Enemy, level 1) is always prepared.
+    if (edition !== "2014") {
+      const CLASS_FEATURE_SPELLS: { cls: string; at: number; spell: string; from: string; free: boolean }[] = [
+        { cls: "Paladin", at: 2, spell: "Divine Smite", from: "Paladin's Smite", free: true },
+        { cls: "Paladin", at: 5, spell: "Find Steed", from: "Faithful Steed", free: true },
+        { cls: "Ranger", at: 1, spell: "Hunter's Mark", from: "Favored Enemy", free: false },
+      ];
+      for (const g of CLASS_FEATURE_SPELLS) {
+        if (classLevelOf(build, g.cls) >= g.at && !out.some((o) => o.spell === g.spell)) out.push({ spell: g.spell, from: g.from, level: g.at, free: g.free });
+      }
     }
     return out;
   }, [build, speciesVariant, srd.speciesByName, srd.variantByName, resolvedSpecies, edition]);
@@ -778,7 +806,10 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
     const spAsi = speciesAsiMods(resolvedSpecies?.effects.asiPick,
       (build as Build & { speciesChoices?: Record<string, string> }).speciesChoices || {});
     const merged: Record<string, number> = {};
-    for (const src of [build.featMods || {}, build.bgAsi || {}, effects.featMods, bonus, spAsi]) {
+    // An imported character's scores are D&D Beyond's FINAL ones (phase 5i.1): species, background
+    // and feat increases are already in them, so only what the player adds here afterwards applies.
+    const sources = printedAbilities ? [build.featMods || {}] : [build.featMods || {}, build.bgAsi || {}, effects.featMods, bonus, spAsi];
+    for (const src of sources) {
       for (const [k, v] of Object.entries(src)) merged[k] = (merged[k] || 0) + Number(v || 0);
     }
     // Granted skills and expertise fold in here, so the engine sees them as though the player had
@@ -793,7 +824,7 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
       { label: "Other bonuses", mods: build.featMods || {} },
     ] as { label: string; mods: Record<string, number> }[];
     return applyToBuild({ ...build, featMods: merged, featModSources }, effects);
-  }, [build, srd.speciesByName, effects, resolvedSpecies]);
+  }, [build, srd.speciesByName, effects, resolvedSpecies, printedAbilities]);
 
   const sheet = useMemo(() => {
     try { return deriveSheet(buildForDerive, deriveCtx); } catch { return null; }
@@ -826,7 +857,11 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
       level: build.level || 1,
       // Each additional class brings its own pools at ITS level.
       extraClasses: multi.map((c) => ({ rec: srd.structuredByName[c.className], level: c.level || 1 })),
-      extraPools: speciesResources(traitList(srd.speciesByName[build.meta.species]?.traits).map((t) => t.name), sheet?.proficiencyBonus || 0),
+      extraPools: [
+        ...speciesResources(traitList(srd.speciesByName[build.meta.species]?.traits).map((t) => t.name), sheet?.proficiencyBonus || 0),
+        // Lay on Hands (both editions): a pool of 5 hit points per paladin level, back on a Long Rest
+        ...(classLevelOf(build, "Paladin") > 0 ? [{ key: "lay-on-hands", label: "Lay on Hands (HP)", max: 5 * classLevelOf(build, "Paladin"), shortRest: "none" as const }] : []),
+      ],
       mcSlots,
     };
   }, [build, srd, sheet?.proficiencyBonus]);
@@ -848,14 +883,27 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
     if (!sheet) return [];
     const profText = weaponProfText((srd.structuredByName[build.meta.className] as { core_traits?: string } | undefined)?.core_traits);
     const rows: AttackRow[] = [];
+    const picks = (build as Build & { classChoices?: Record<string, string[]> }).classChoices || {};
+    // the weapons whose mastery the character can use: the Weapon Mastery picks, when there are any
+    const mastered = new Set(Object.entries(picks).filter(([k]) => /Weapon Mastery/i.test(k)).flatMap(([, v]) => v).map((x) => x.toLowerCase()));
     (build.gear?.items || []).forEach((g, i) => {
       if (!gearEquipped(g)) return;
-      const rec = srd.itemByName[g.n] as unknown as WeaponRecord | undefined;
-      if (isWeapon(rec)) rows.push(weaponAttack(rec, sheet.mods, sheet.proficiencyBonus, profText, Number(g.mod) || 0, `${g.n}-${i}`));
+      const raw = srd.itemByName[g.n] as unknown as WeaponRecord | undefined;
+      // a magic weapon with no damage of its own (Cinnabar Rapier) attacks as its base weapon
+      const rec = isWeapon(raw) ? raw : baseWeaponFor(raw as never, srd.equipment as unknown as WeaponRecord[]);
+      if (!isWeapon(rec)) return;
+      const row = weaponAttack(rec, sheet.mods, sheet.proficiencyBonus, profText, Number(g.mod) || 0, `${g.n}-${i}`);
+      const baseName = (rec === raw ? rec.name : (raw as { attunement_note?: string } | undefined)?.attunement_note || rec.name).toLowerCase();
+      if (mastered.size && !mastered.has(rec.name.toLowerCase()) && !mastered.has(baseName)) row.mastery = null;
+      rows.push(row);
     });
     rows.push(unarmedAttack(sheet.mods, sheet.proficiencyBonus, sheet.martialArts || 0));
-    return rows;
-  }, [sheet, build, srd]);
+    return applyAttackFeatures(rows, {
+      fightingStyles: Object.entries(picks).filter(([k]) => /Fighting Style/i.test(k)).flatMap(([, v]) => v),
+      paladinLevel: classLevelOf(build, "Paladin"),
+      ruleset: edition === "2014" ? "2014" : "2024",
+    });
+  }, [sheet, build, srd, edition]);
   // known spells: cantrips, known or prepared, and those always prepared from species and subclass
   const playSpells = useMemo<KnownSpell[]>(() => {
     const byName = new Map((srd.spells as unknown as PlaySpell[]).map((sp) => [sp.name, sp]));
@@ -863,8 +911,18 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
     const add = (n: string, always: string | null, free = false) => { const rec = byName.get(n); if (rec && !out.some((o) => o.rec.name === n)) out.push({ rec, always, free }); };
     for (const g of grantedSpells) add(g.spell, g.from, !!g.free);
     for (const n of [...(build.spells?.cantrips || []), ...(build.spells?.known || [])]) add(n, null);
+    // Phase 5i.1: a spell the rules data does not have (one from a book outside the SRD, brought in from
+    // D&D Beyond) is still listed, by name and level, so the sheet shows every spell the player has.
+    const importedList = ((build as Build & { imported?: { sheet?: { spells?: { list?: { name: string; level: number | null; casting_time?: string; range?: string; duration?: string }[] } } } }).imported?.sheet?.spells?.list) || [];
+    for (const n of [...(build.spells?.cantrips || []), ...(build.spells?.known || [])]) {
+      if (byName.has(n) || out.some((o) => o.rec.name === n)) continue;
+      const from = importedList.find((x) => x.name === n);
+      const ct = (from?.casting_time ?? "").replace(/^1A$/, "Action").replace(/^1BA$/, "Bonus Action").replace(/^1R$/, "Reaction");
+      out.push({ rec: { name: n, level: from?.level ?? 1, casting_time: ct || undefined, range: from?.range, duration: from?.duration,
+        description: "This spell is not in Six Axes' rules data. Its full text is on your D&D Beyond sheet." }, always: null });
+    }
     return out;
-  }, [srd.spells, grantedSpells, build.spells]);
+  }, [srd.spells, grantedSpells, build]);
   // healing yourself from a spell: through the fight when one is running, and into the play state
   const healSelf = (n: number) => {
     if (!sheet || !(n > 0)) return;
@@ -1668,7 +1726,7 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
                             .map((c) => ({ ...c, groups: classProgression(classRecWithSub(c.className), c.level) }))}
                           species={build.meta.species} speciesRec={srd.speciesByName[build.meta.species]}
                           variantName={speciesVariant} variantRec={srd.variantByName[speciesVariant]}
-                          feats={chosenFeats} itemNotes={sheet.itemNotes || []} />
+                          feats={[...chosenFeats, ...importedFeats]} itemNotes={sheet.itemNotes || []} />
                       )}
                       {openTab === "extras" && (
                         <PlayCompanions companions={(build as Build & { companions?: Companion[] }).companions || []} onChange={setCompanions}
@@ -5173,7 +5231,7 @@ function SheetFeatures({ classes, species, speciesRec, variantName, variantRec, 
 
       {feats.length > 0 && (
         <FeatureGroup label="Feats">
-          {feats.map((f, i) => <TraitItem key={`${f.name}-${i}`} trait={{ name: `${f.name} (level ${f.level})`, desc: f.desc || "" }} />)}
+          {feats.map((f, i) => <TraitItem key={`${f.name}-${i}`} trait={{ name: f.level ? `${f.name} (level ${f.level})` : `${f.name}${f.category ? ` (${f.category})` : ""}`, desc: f.desc || "" }} />)}
         </FeatureGroup>
       )}
 

@@ -403,7 +403,8 @@ export default function PlaySheet({ name, sheet, saveProf, ruleset, characterId,
           </div>
           <div style={box}>
             <label style={forgeLabel}>Senses</label>
-            {([["Passive Perception", "Perception"], ["Passive Investigation", "Investigation"], ["Passive Insight", "Insight"]] as const).map(([l, k]) => (
+            {/* the engine keys skills in lower case; the printed names here always read 10 before phase 5i.1 */}
+            {([["Passive Perception", "perception"], ["Passive Investigation", "investigation"], ["Passive Insight", "insight"]] as const).map(([l, k]) => (
               <div key={l} style={{ display: "flex", justifyContent: "space-between", fontSize: 13.5, color: STONE.ink, padding: "4px 0", borderBottom: `1px solid ${STONE.hi}` }}>
                 <span>{l}</span><span style={{ ...mono, color: C.plum }}>{passive(k)}</span>
               </div>
