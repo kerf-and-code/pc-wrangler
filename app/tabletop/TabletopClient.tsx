@@ -23,6 +23,7 @@ import { wallSegments, visibility, seenSquares, canSee, CANOPY_KINDS, type Seg }
 import { markerShort, markerKind, MARKER_COLORS, econOf, speedNow, cantAct, FRESH_ECON } from "@/lib/combat-effects";
 import { openTabletop } from "@/lib/tabletop/open";
 import MapUpload from "@/components/map-upload";
+import { EFFECTS, drawEffect, isEffect, seedOf, type EffectKind } from "@/lib/tabletop/effects";
 import HandoutView, { type Handout } from "@/components/handout-view";
 import { AttackForm, EconomyBar, MarkerChips, MarkerPicker, PlayerEntryControls, SaveBanner, TurnUsed, isMyTurn, type FightEntry, type PendingSave } from "@/components/fight-controls";
 
@@ -71,6 +72,12 @@ import { AttackForm, EconomyBar, MarkerChips, MarkerPicker, PlayerEntryControls,
 //          (Handouts tab): they pop up for the players they are shown to and stay in their Codex.
 //          Shift + double-click a token opens its sheet. The GM can upload a map image from a module,
 //          line its grid up with the table's, and put it on the table as a scene (components/map-upload).
+// Phase 4e: animated effects (fire, cold, acid, lightning, poison, darkness, fog, radiant, necrotic)
+//          fill an area template or surround a token; anyone places them and removes their own (p114,
+//          lib/tabletop/effects.ts). A split party: the GM sends players to different scenes and views
+//          any scene without moving anyone; each player gets only their own scene. Touch: one finger
+//          moves tokens or pans, two fingers pinch to zoom, a long press pings; the side panel folds
+//          away on a small screen.
 // Live:    one Realtime channel per campaign. Table changes (tokens, scenes, chat) arrive through RLS;
 //          drags, rulers and pings are broadcast and never stored. Positions are saved once on drop.
 // Chat:    /r, /gr, /w name, /em. Rolls go to /api/tabletop/roll, which rolls on the server and logs
@@ -91,6 +98,7 @@ type State = {
   role: "gm" | "player"; me: string; campaign: { id: string; name: string; gm_id: string }; session_id: string | null;
   scene: Scene | null; map: MapJson | null; tokens: Token[]; party: PartyMember[];
   scenes: { id: string; name: string; battle_map_id: string; level: number; is_active: boolean }[];
+  placements?: { profile_id: string; scene_id: string }[];
   battle_maps: { id: string; name: string; kind: string; levelNames: string[] | null }[];
 };
 type RollDie = { sides: number; value: number; kept: boolean };
@@ -111,7 +119,8 @@ type Drawing = {
 const DRAW_COLORS = ["#e0703a", "#d9a43a", "#5fae5a", "#6fa3d8", "#b07ad8", "#e0e0e0", "#1b1712"];
 const DRAW_WIDTHS: [string, number][] = [["Thin", 0.05], ["Medium", 0.1], ["Thick", 0.2]];
 type FogMode = "reveal-room" | "hide-room" | "reveal-brush" | "hide-brush";
-type Tpl = TemplateGeom & { id: string; owner: string; color: string; label: string | null; scene_id: string };
+type Tpl = TemplateGeom & { id: string; owner: string; color: string; label: string | null; scene_id: string; effect?: string | null };
+type TokenEffect = { id: string; scene_id: string; token_id: string; owner: string; kind: string; radius_ft: number };
 type Aura = { ft: number; color: string; players: boolean };
 type Border = { pattern?: "solid" | "double" | "dashed" | "dotted"; width?: "thin" | "normal" | "thick" };
 type Trail = { from: Pt; to: Pt; color: string; born: number; feet: number };
@@ -197,6 +206,12 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   const [hoPick, setHoPick] = useState("");
   const [hoTo, setHoTo] = useState<string[] | null>(null);       // character ids, or null for everyone
   const [hoBusy, setHoBusy] = useState(false);
+  const [tplEffect, setTplEffect] = useState<EffectKind | "">("");
+  const [fxKind, setFxKind] = useState<EffectKind>("fire");
+  const [fxRadius, setFxRadius] = useState(0);
+  const [sendPick, setSendPick] = useState<{ scene: string; who: string[] } | null>(null);
+  const [panelOpen, setPanelOpen] = useState(true);
+  const [narrow, setNarrow] = useState(false);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const wrapRef = useRef<HTMLDivElement | null>(null);
@@ -218,6 +233,11 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   const tplDrag = useRef<{ id: string; start: Pt; orig: Pt; now: Pt; moved: boolean } | null>(null);
   const tplSent = useRef(0);
   const drawingsRef = useRef<Map<string, Drawing>>(new Map());
+  const effectsRef = useRef<Map<string, TokenEffect>>(new Map());
+  const reducedMotion = useRef(false);
+  const touches = useRef<Map<number, Pt>>(new Map());
+  const pinch = useRef<{ d: number; mid: Pt } | null>(null);
+  const longPress = useRef<{ timer: ReturnType<typeof setTimeout>; at: Pt; fired: boolean } | null>(null);
   const drawPreview = useRef<{ kind: Exclude<DrawKind, "erase" | "text">; points: [number, number][]; color: string; width: number; fill: boolean; layer: "table" | "gm" } | null>(null);
   const onHandoutRef = useRef<(p: { id: string; characters: string[] | null }) => void>(() => {});
   const loadHandoutsRef = useRef<() => Promise<unknown>>(async () => {});
@@ -494,6 +514,18 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
       const d = tplDrag.current && tplDrag.current.id === t.id ? tplDrag.current.now : null;
       drawTpl(d ? { ...t, x: d.x, y: d.y } : t, t.color, 1, selTplRef.current === t.id);
     }
+    // effects filling area templates, inside the template's outline
+    const fxTime = reducedMotion.current ? 0 : now / 1000;
+    for (const t of templatesRef.current.values()) {
+      if (!isEffect(t.effect)) continue;
+      const d = tplDrag.current && tplDrag.current.id === t.id ? tplDrag.current.now : null;
+      const pts = templateOutline(d ? { ...t, x: d.x, y: d.y } : t, fps).map((q) => ({ x: q.x * cell, y: q.y * cell }));
+      if (pts.length < 3) continue;
+      const xs = pts.map((q) => q.x), ys = pts.map((q) => q.y), x0 = Math.min(...xs), y0 = Math.min(...ys);
+      drawEffect(ctx, t.effect, { x: x0, y: y0, w: Math.max(...xs) - x0, h: Math.max(...ys) - y0,
+        path: (c) => { c.beginPath(); pts.forEach((q, i) => (i ? c.lineTo(q.x, q.y) : c.moveTo(q.x, q.y))); c.closePath(); } }, fxTime, seedOf(t.id), cell);
+      if (!reducedMotion.current) animating = true;
+    }
     const fadeOf = (done: number | null) => (done === null ? 1 : 1 - (now - done) / RULER_FADE_MS);
     if (tplPreview.current) {
       const a = fadeOf(tplPreview.current.done);
@@ -670,6 +702,16 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
       }
     }
 
+    // effects on or around tokens, over them (a burning creature, a cloud of darkness around one)
+    for (const f of effectsRef.current.values()) {
+      const t = tokensRef.current.get(f.token_id);
+      if (!t || !shownToMe(t) || !isEffect(f.kind)) continue;
+      const p = shownPos(t), r = ((t.size / 2) * (f.radius_ft > 0 ? 1 : 1.05) + (f.radius_ft > 0 ? f.radius_ft / fps : 0)) * cell;
+      const cx = p.x * cell, cy = p.y * cell;
+      drawEffect(ctx, f.kind, { x: cx - r, y: cy - r, w: r * 2, h: r * 2, path: (c) => { c.beginPath(); c.arc(cx, cy, r, 0, Math.PI * 2); } }, fxTime, seedOf(f.id), cell);
+      if (!reducedMotion.current) animating = true;
+    }
+
     // the canopy: trees over the tokens, faded while a token this viewer can see stands beneath
     if (canopy.current.length) {
       const under = list.filter(shownToMe).map((t) => ({ p: shownPos(t), r: t.size / 2 }));
@@ -799,6 +841,11 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     if (st.scene) {
       const { data: drs } = await supabase.from("vtt_drawings").select("*").eq("scene_id", st.scene.id).order("created_at");
       for (const d of (drs ?? []) as Drawing[]) drawingsRef.current.set(d.id, d);
+    }
+    effectsRef.current = new Map();
+    if (st.scene) {
+      const { data: fx } = await supabase.from("vtt_effects").select("id, scene_id, token_id, owner, kind, radius_ft").eq("scene_id", st.scene.id);
+      for (const f of (fx ?? []) as TokenEffect[]) effectsRef.current.set(f.id, f);
     }
     // fog: a GM in the middle of painting keeps their own copy until it has been saved
     const pendingFog = st.role === "gm" && (fogTimer.current !== null || Date.now() - fogEditedAt.current < 1500);
@@ -1068,6 +1115,13 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
         const id = (p.old as { id?: string }).id; if (id && drawingsRef.current.delete(id)) requestDraw();
       })
       .on("broadcast", { event: "drawings" }, () => { void reloadDrawingsRef.current(); })
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "vtt_effects", filter: `campaign_id=eq.${campaignId}` }, (p) => {
+        const row = p.new as TokenEffect; if (row.scene_id === stateRef.current?.scene?.id) { effectsRef.current.set(row.id, row); requestDraw(); }
+      })
+      .on("postgres_changes", { event: "DELETE", schema: "public", table: "vtt_effects" }, (p) => {
+        const id = (p.old as { id?: string }).id; if (id && effectsRef.current.delete(id)) requestDraw();
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "vtt_scene_players" }, () => { void load(); })
       .on("broadcast", { event: "handout" }, ({ payload }) => { onHandoutRef.current(payload as { id: string; characters: string[] | null }); })
       .on("broadcast", { event: "handout-gone" }, () => { void loadHandoutsRef.current(); })
       .on("broadcast", { event: "tpl" }, ({ payload }) => {
@@ -1310,10 +1364,36 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     window.open(url, "_blank", "noopener");
   };
 
+  // ---- touch: two fingers pinch and pan; a long press pings ----
+  const cancelGesture = () => {
+    drag.current = null; box.current = null; drawPreview.current = null; brushing.current = null;
+    if (myRuler.current && myRuler.current.done === null) myRuler.current = null;
+    if (tplPreview.current && tplPreview.current.done === null) tplPreview.current = null;
+    tplDrag.current = null; pan.current = null;
+    if (longPress.current) { clearTimeout(longPress.current.timer); longPress.current = null; }
+    requestDraw();
+  };
+  const touchMid = (): { d: number; mid: Pt } | null => {
+    const v = [...touches.current.values()]; if (v.length < 2) return null;
+    return { d: Math.hypot(v[0].x - v[1].x, v[0].y - v[1].y), mid: { x: (v[0].x + v[1].x) / 2, y: (v[0].y + v[1].y) / 2 } };
+  };
+
   const onDown = (e: React.PointerEvent) => {
     const st = stateRef.current; if (!st) return;
     const sp = screenPt(e), sq = toSquares(sp);
-    canvasRef.current?.setPointerCapture(e.pointerId);
+    try { canvasRef.current?.setPointerCapture(e.pointerId); } catch { /* the pointer is already gone */ }
+    if (e.pointerType === "touch") {
+      touches.current.set(e.pointerId, sp);
+      if (touches.current.size >= 2) { cancelGesture(); pinch.current = touchMid(); return; }
+      // a long press without moving is a ping (the touch version of a right-click)
+      longPress.current = { at: sp, fired: false, timer: setTimeout(() => {
+        const lp = longPress.current; if (!lp) return;
+        lp.fired = true; cancelGesture();
+        const w = toSquares(lp.at);
+        pings.current.push({ x: w.x, y: w.y, color: myColor, born: performance.now() });
+        send("ping", { x: w.x, y: w.y, color: myColor, pull: false }); requestDraw();
+      }, 550) };
+    }
     // right button inside the ruler: a waypoint
     if (e.button === 2 && addWaypoint()) return;
     if (e.button === 1 || e.button === 2 || (e.button === 0 && (tool === "hand" || space.current))) {
@@ -1364,6 +1444,9 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
         const orig = new Map(movable.map((t) => [t.id, { x: t.x, y: t.y }]));
         drag.current = { ids: movable.map((t) => t.id), start: sq, orig, now: new Map(orig), free: e.altKey, lastSend: 0, moved: false };
       }
+    } else if (e.pointerType === "touch") {
+      setSelected([]); selRef.current = [];
+      pan.current = { sx: sp.x, sy: sp.y, ox: camRef.current.ox, oy: camRef.current.oy, moved: false, button: 0, shift: false };
     } else {
       if (!e.shiftKey) { setSelected([]); selRef.current = []; }
       box.current = { a: { x: sq.x * cellRef.current, y: sq.y * cellRef.current }, b: { x: sq.x * cellRef.current, y: sq.y * cellRef.current } };
@@ -1373,6 +1456,21 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
 
   const onMove = (e: React.PointerEvent) => {
     const sp = screenPt(e), sq = toSquares(sp);
+    if (e.pointerType === "touch" && touches.current.has(e.pointerId)) {
+      touches.current.set(e.pointerId, sp);
+      const lp = longPress.current;
+      if (lp && Math.hypot(sp.x - lp.at.x, sp.y - lp.at.y) > 10) { clearTimeout(lp.timer); longPress.current = null; }
+      if (pinch.current) {
+        const now2 = touchMid();
+        if (now2 && pinch.current.d > 0) {
+          let cam = zoomAt(camRef.current, now2.d / pinch.current.d, now2.mid.x, now2.mid.y);
+          cam = { ...cam, ox: cam.ox + now2.mid.x - pinch.current.mid.x, oy: cam.oy + now2.mid.y - pinch.current.mid.y };
+          camRef.current = cam; pinch.current = now2; requestDraw();
+        }
+        return;
+      }
+      if (lp?.fired) return;
+    }
     if (tool === "fog") { hoverSq.current = sq; requestDraw(); }
     const dp = drawPreview.current;
     if (dp && (e.buttons & 1)) {
@@ -1448,6 +1546,12 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   const onUp = (e: React.PointerEvent) => {
     const st = stateRef.current; if (!st) return;
     const sp = screenPt(e), sq = toSquares(sp);
+    if (e.pointerType === "touch") {
+      touches.current.delete(e.pointerId);
+      const lp = longPress.current; if (lp) { clearTimeout(lp.timer); longPress.current = null; }
+      if (pinch.current) { if (touches.current.size < 2) pinch.current = null; return; }
+      if (lp?.fired) return;
+    }
     if (brushing.current) { brushing.current = null; saveFog(null); return; }
     if (drawPreview.current) { finishDrawing(); return; }
     if (pan.current) {
@@ -1464,7 +1568,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     if (tplPreview.current && tplPreview.current.done === null && e.button === 0) {
       const pv = tplPreview.current, sc = st.scene;
       if (tplLinger && sc) {
-        const row = { campaign_id: campaignId, scene_id: sc.id, owner: st.me, ...pv.geom, color: pv.color };
+        const row = { campaign_id: campaignId, scene_id: sc.id, owner: st.me, ...pv.geom, color: pv.color, effect: tplEffect || null };
         void supabase.from("vtt_templates").insert(row).select("*").single().then(({ data, error: er }) => {
           if (er || !data) { setChatErr(`Could not leave the template: ${er?.message ?? "no row"}`); return; }
           templatesRef.current.set((data as Tpl).id, data as Tpl); setSelTpl((data as Tpl).id); requestDraw();
@@ -1531,6 +1635,19 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
       requestDraw();
     }
   };
+
+  useEffect(() => {
+    const mq = window.matchMedia?.("(prefers-reduced-motion: reduce)");
+    reducedMotion.current = !!mq?.matches;
+    const nq = window.matchMedia?.("(max-width: 900px)");
+    const apply = () => { const small2 = !!nq?.matches; setNarrow(small2); if (small2) setPanelOpen(false); };
+    apply();
+    const onMq = () => { reducedMotion.current = !!mq?.matches; requestDraw(); };
+    mq?.addEventListener?.("change", onMq); nq?.addEventListener?.("change", apply);
+    return () => { mq?.removeEventListener?.("change", onMq); nq?.removeEventListener?.("change", apply); };
+  }, [requestDraw]);
+  // the canvas changes size when the side panel opens or closes
+  useEffect(() => { requestDraw(); }, [panelOpen, requestDraw]);
 
   const onWheel = useCallback((e: WheelEvent) => {
     e.preventDefault();
@@ -1739,6 +1856,41 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   };
 
   // ---------------------------------------------------------------------------------------------------
+  // effects on tokens (p114)
+  const addTokenEffect = async (tokenId: string) => {
+    const st = stateRef.current; if (!st?.scene) return;
+    const { data, error: er } = await supabase.from("vtt_effects").insert({ campaign_id: campaignId, scene_id: st.scene.id, token_id: tokenId, owner: st.me, kind: fxKind, radius_ft: fxRadius })
+      .select("id, scene_id, token_id, owner, kind, radius_ft").single();
+    if (er || !data) { setChatErr(`Could not add the effect: ${er?.message ?? "no row"}`); return; }
+    effectsRef.current.set((data as TokenEffect).id, data as TokenEffect); requestDraw(); setTick((v) => v + 1);
+  };
+  const removeTokenEffect = async (id: string) => {
+    const f = effectsRef.current.get(id); if (!f) return;
+    effectsRef.current.delete(id); requestDraw(); setTick((v) => v + 1);
+    const { error: er } = await supabase.from("vtt_effects").delete().eq("id", id);
+    if (er) { effectsRef.current.set(id, f); requestDraw(); setChatErr(`Could not remove the effect: ${er.message}`); }
+  };
+  const setTplEffectOn = async (id: string, effect: EffectKind | "") => {
+    const t = templatesRef.current.get(id); if (!t) return;
+    templatesRef.current.set(id, { ...t, effect: effect || null }); requestDraw(); setTick((v) => v + 1);
+    const { error: er } = await supabase.from("vtt_templates").update({ effect: effect || null, updated_at: new Date().toISOString() }).eq("id", id);
+    if (er) { templatesRef.current.set(id, t); requestDraw(); setChatErr(`Could not change the effect: ${er.message}`); }
+  };
+
+  // split party (p114): who is on which scene, sending players, and the GM's own view
+  const placeOn = async (sceneId: string, profiles: string[]) => {
+    if (!profiles.length) return;
+    const { error: er } = await supabase.rpc("tabletop_place", { p_scene: sceneId, p_profiles: profiles });
+    if (er) { setChatErr(`Could not move them: ${er.message}`); return; }
+    setSendPick(null); send("refresh", {}); await load();
+  };
+  const viewScene = async (sceneId: string) => {
+    const { error: er } = await supabase.rpc("tabletop_view_scene", { p_scene: sceneId });
+    if (er) { setChatErr(er.message); return; }
+    await load();
+  };
+
+  // ---------------------------------------------------------------------------------------------------
   // GM: scenes
   const [newMap, setNewMap] = useState("");
   const [newLevel, setNewLevel] = useState(0);
@@ -1755,7 +1907,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   };
   const activate = async (id: string) => {
     const { error: er } = await supabase.rpc("tabletop_activate_scene", { p_scene: id });
-    if (er) setChatErr(er.message); else await load();
+    if (er) setChatErr(er.message); else { send("refresh", {}); await load(); }
   };
   const sceneSetting = async (patch: Scene["settings"]) => {
     const st = stateRef.current; if (!st?.scene) return;
@@ -1849,12 +2001,16 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
       <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 14px", borderBottom: `1px solid ${C.line}`, background: C.surface }}>
         <div style={{ fontWeight: 700 }}>{state.campaign.name}</div>
         <div style={{ color: C.muted, fontSize: 13 }}>{scene ? scene.name : "No map on the table"}</div>
+        {isGm && scene && state.scenes.some((s) => s.is_active) && !state.scenes.find((s) => s.id === scene.id)?.is_active && (
+          <span style={{ fontSize: 12, color: "#d9a43a", border: "1px solid #d9a43a", borderRadius: 999, padding: "2px 9px" }}>Viewing: players who were not sent here cannot see it</span>
+        )}
         {!state.session_id && <div style={{ color: "#d9a43a", fontSize: 12 }}>No open session: rolls show here but are not logged for Mechanics.</div>}
         {fight && (() => { const cur = fight.order.find((e) => e.is_turn); return (
           <button type="button" onClick={() => setPanel("turns")} style={{ background: "rgba(217,164,58,0.12)", border: `1px solid ${C.sun}`, color: C.sun, borderRadius: 999, padding: "3px 10px", fontSize: 12.5, cursor: "pointer" }}>
             Round {fight.round}{cur ? ` · ${cur.name}'s turn` : ""}
           </button>); })()}
         <div style={{ marginLeft: "auto", display: "flex", gap: 6, alignItems: "center" }}>
+          <button type="button" onClick={() => setPanelOpen((v) => !v)} aria-expanded={panelOpen} title="Show or hide the side panel (chat, turns, handouts)" style={{ fontSize: 12, padding: "3px 9px", borderRadius: 999, border: `1px solid ${panelOpen ? C.sun : C.line}`, background: "transparent", color: panelOpen ? C.sun : C.muted, cursor: "pointer" }}>{panelOpen ? "Hide panel" : "Panel"}</button>
           <button type="button" onClick={() => openTabletop(campaignId)} title="Open the table in its own window, for a second screen" style={{ fontSize: 12, padding: "3px 9px", borderRadius: 999, border: `1px solid ${C.line}`, background: "transparent", color: C.muted, cursor: "pointer" }}>New window</button>
           {present.map((p) => (
             <span key={p.key} title={p.name} style={{ fontSize: 12, padding: "3px 8px", borderRadius: 999, border: `1px solid ${p.color}`, color: p.color }}>{p.name}</span>
@@ -1862,7 +2018,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
         </div>
       </div>
 
-      <div style={{ flex: 1, display: "flex", minHeight: 0 }}>
+      <div style={{ flex: 1, display: "flex", minHeight: 0, position: "relative" }}>
         {/* tool rail */}
         <div style={{ width: 56, padding: 6, display: "flex", flexDirection: "column", gap: 6, alignItems: "center", borderRight: `1px solid ${C.line}`, background: C.surface }}>
           <button type="button" title="Select and move (V)" onClick={() => setTool("select")} style={railBtn(tool === "select")}>
@@ -1910,6 +2066,10 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
               {TEMPLATE_SHAPES.map((sh) => <button key={sh.key} type="button" onClick={() => setTplShape(sh.key)} style={{ ...seg(tplShape === sh.key), flex: "0 0 auto", padding: "6px 10px" }}>{sh.label}</button>)}
               <input aria-label="Exact size in feet" value={tplSize} onChange={(e) => setTplSize(e.target.value.replace(/[^0-9.]/g, "").slice(0, 5))} placeholder="ft" title="Exact size in feet (radius for a circle, length otherwise). Leave empty to size it by dragging." style={{ ...field, width: 56, padding: "6px 6px" }} />
               <input aria-label="Template colour" type="color" value={tplColor} onChange={(e) => setTplColor(e.target.value)} style={{ width: 34, height: 30, padding: 0, border: "none", background: "transparent" }} />
+              <select aria-label="Effect in the template" value={tplEffect} onChange={(e) => setTplEffect(e.target.value as EffectKind | "")} style={{ ...field, width: "auto", padding: "6px 6px" }}>
+                <option value="">No effect</option>
+                {EFFECTS.map((x) => <option key={x.key} value={x.key}>{x.label}</option>)}
+              </select>
               <label style={{ display: "flex", gap: 5, fontSize: 12, alignItems: "center", color: C.text }}><input type="checkbox" checked={tplLinger} onChange={(e) => setTplLinger(e.target.checked)} style={{ accentColor: C.sun }} />Leave it on the table</label>
             </div>
           )}
@@ -1968,11 +2128,40 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                 <>
                   <button type="button" onClick={() => turnTpl(-15)} style={small} title="Shift+R">&#8634; 15</button>
                   <button type="button" onClick={() => turnTpl(15)} style={small} title="R">15 &#8635;</button>
+                  <select aria-label="Effect in this template" value={templatesRef.current.get(selTpl)?.effect ?? ""} onChange={(e) => void setTplEffectOn(selTpl, e.target.value as EffectKind | "")} style={{ ...field, width: "auto", padding: "5px 6px" }}>
+                    <option value="">No effect</option>
+                    {EFFECTS.map((x) => <option key={x.key} value={x.key}>{x.label}</option>)}
+                  </select>
                   <button type="button" onClick={() => void removeTpl()} style={{ ...small, color: "#e07a70" }}>Remove</button>
                 </>
               ) : <span style={{ color: C.muted }}>placed by someone else</span>}
             </div>
           )}
+          {scene && tool === "select" && selected.length === 1 && tokensRef.current.get(selected[0]) && (() => {
+            const tk = tokensRef.current.get(selected[0])!;
+            const list = [...effectsRef.current.values()].filter((f) => f.token_id === tk.id);
+            return (
+              <div role="group" aria-label={`Effects on ${tk.name}`} style={{ position: "absolute", bottom: selDoors.length ? 92 : 40, left: "50%", transform: "translateX(-50%)", display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", justifyContent: "center", maxWidth: "calc(100% - 20px)", background: "rgba(28,24,20,0.95)", border: `1px solid ${C.line}`, borderRadius: 10, padding: "6px 8px", fontSize: 12.5 }}>
+                <span style={{ color: C.muted }}>Effects on {tk.name}</span>
+                {list.map((f) => {
+                  const ef = EFFECTS.find((x) => x.key === f.kind), mineFx = isGm || f.owner === state.me;
+                  return (
+                    <span key={f.id} style={{ display: "inline-flex", alignItems: "center", gap: 4, border: `1px solid ${ef?.color ?? C.line}`, color: ef?.color ?? C.text, borderRadius: 999, padding: "1px 8px" }}>
+                      {ef?.label ?? f.kind}{f.radius_ft > 0 ? ` ${f.radius_ft} ft` : ""}
+                      {mineFx && <button type="button" aria-label={`Remove ${ef?.label ?? f.kind}`} onClick={() => void removeTokenEffect(f.id)} style={{ background: "none", border: "none", color: "inherit", cursor: "pointer", padding: 0, fontSize: 14 }}>&times;</button>}
+                    </span>
+                  );
+                })}
+                <select aria-label="Effect to add" value={fxKind} onChange={(e) => setFxKind(e.target.value as EffectKind)} style={{ ...field, width: "auto", padding: "5px 6px" }}>
+                  {EFFECTS.map((x) => <option key={x.key} value={x.key}>{x.label}</option>)}
+                </select>
+                <select aria-label="Reach of the effect" value={fxRadius} onChange={(e) => setFxRadius(Number(e.target.value))} style={{ ...field, width: "auto", padding: "5px 6px" }}>
+                  {[0, 5, 10, 15, 20, 30].map((r) => <option key={r} value={r}>{r ? `${r} ft around` : "On the token"}</option>)}
+                </select>
+                <button type="button" onClick={() => void addTokenEffect(tk.id)} style={small}>Add</button>
+              </div>
+            );
+          })()}
           {scene && !isGm && scene.settings?.los && ![...tokensRef.current.values()].some((t) => t.mine && !t.hidden && t.layer !== "gm") && (
             <div role="status" style={{ position: "absolute", top: 10, left: "50%", transform: "translateX(-50%)", background: "rgba(28,24,20,0.95)", border: `1px solid ${C.line}`, borderRadius: 10, padding: "6px 10px", fontSize: 12.5, color: C.text }}>
               Line of sight is on and you have no token on this map yet, so you see only what you have seen before.
@@ -1986,7 +2175,8 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
         </div>
 
         {/* side panel */}
-        <div style={{ width: 360, display: "flex", flexDirection: "column", borderLeft: `1px solid ${C.line}`, background: C.surface, minHeight: 0 }}>
+        <div style={{ width: narrow ? "min(360px, 88vw)" : 360, display: panelOpen ? "flex" : "none", flexDirection: "column", borderLeft: `1px solid ${C.line}`, background: C.surface, minHeight: 0,
+          ...(narrow ? { position: "absolute" as const, right: 0, top: 0, bottom: 0, zIndex: 20, boxShadow: "-8px 0 24px rgba(0,0,0,0.5)" } : {}) }}>
           <div style={{ display: "flex", gap: 6, padding: 8, borderBottom: `1px solid ${C.line}` }}>
             <button type="button" onClick={() => setPanel("chat")} style={seg(panel === "chat")}>Chat</button>
             <button type="button" onClick={() => setPanel("turns")} style={seg(panel === "turns")}>Turns{fight ? ` (${fight.round})` : ""}</button>
@@ -2342,12 +2532,44 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
             <div style={{ flex: 1, overflowY: "auto", padding: 12 }}>
               <div style={{ fontWeight: 600, fontSize: 13 }}>Scenes</div>
               <div style={{ display: "grid", gap: 6, marginTop: 8 }}>
-                {state.scenes.map((s) => (
-                  <div key={s.id} style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                    <span style={{ flex: 1, fontSize: 13, color: s.is_active ? C.sun : C.text }}>{s.name}{s.is_active ? " (on the table)" : ""}</span>
-                    {!s.is_active && <button type="button" onClick={() => void activate(s.id)} style={small}>Put on table</button>}
-                  </div>
-                ))}
+                {(() => {
+                  const activeId = state.scenes.find((s) => s.is_active)?.id ?? null;
+                  const place = new Map((state.placements ?? []).map((p) => [p.profile_id, p.scene_id]));
+                  const sceneOf = (profile: string) => place.get(profile) ?? activeId;
+                  const players = party.filter((p) => p.character_id && p.profile_id !== state.campaign.gm_id);
+                  const split = players.some((p) => sceneOf(p.profile_id) !== activeId);
+                  return (
+                    <>
+                      {split && <p style={{ fontSize: 12, color: "#d9a43a", margin: "0 0 4px" }}>The party is split. &quot;Everyone here&quot; brings them back together.</p>}
+                      {state.scenes.map((s) => {
+                        const here = players.filter((p) => sceneOf(p.profile_id) === s.id);
+                        const viewing = scene?.id === s.id;
+                        const picking = sendPick?.scene === s.id;
+                        return (
+                          <div key={s.id} style={{ border: `1px solid ${viewing ? C.sun : C.line}`, borderRadius: 8, padding: "6px 8px" }}>
+                            <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+                              <span style={{ flex: 1, fontSize: 13, color: s.is_active ? C.sun : C.text }}>{s.name}{s.is_active ? " (on the table)" : ""}</span>
+                              {!viewing && <button type="button" onClick={() => void viewScene(s.id)} title="Look at this scene yourself; nobody moves" style={{ ...small, padding: "3px 8px" }}>View</button>}
+                              <button type="button" onClick={() => setSendPick(picking ? null : { scene: s.id, who: [] })} aria-expanded={picking} style={{ ...small, padding: "3px 8px" }}>Send players</button>
+                              {(!s.is_active || split) && <button type="button" onClick={() => void activate(s.id)} style={{ ...small, padding: "3px 8px" }}>Everyone here</button>}
+                            </div>
+                            <div style={{ fontSize: 11.5, color: C.muted, marginTop: 3 }}>{viewing ? "You are looking at it. " : ""}{here.length ? `Players here: ${here.map((p) => p.name).join(", ")}` : "No players here."}</div>
+                            {picking && (
+                              <div style={{ display: "flex", gap: 4, flexWrap: "wrap", alignItems: "center", marginTop: 6 }} role="group" aria-label={`Send players to ${s.name}`}>
+                                {players.map((p) => {
+                                  const on = sendPick!.who.includes(p.profile_id);
+                                  return <button key={p.profile_id} type="button" aria-pressed={on} onClick={() => setSendPick((cur) => cur && { ...cur, who: on ? cur.who.filter((x) => x !== p.profile_id) : [...cur.who, p.profile_id] })}
+                                    style={{ ...small, padding: "2px 8px", color: on ? C.sun : C.muted, borderColor: on ? C.sun : C.line }}>{p.name}</button>;
+                                })}
+                                <button type="button" disabled={!sendPick!.who.length} onClick={() => void placeOn(s.id, sendPick!.who)} style={{ ...small, padding: "2px 10px", background: sendPick!.who.length ? C.sun : "transparent", color: sendPick!.who.length ? "#1b1712" : C.muted, border: "none", fontWeight: 600 }}>Send</button>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </>
+                  );
+                })()}
                 {state.scenes.length === 0 && <p style={{ color: C.muted, fontSize: 12.5, margin: 0 }}>No scenes yet.</p>}
               </div>
               <div style={{ fontWeight: 600, fontSize: 13, marginTop: 18 }}>Map from a module or campaign</div>
