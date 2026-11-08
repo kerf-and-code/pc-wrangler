@@ -231,7 +231,15 @@ export function matchItem(ix: Map<string, string>, raw: string): { entry: GearEn
     const tries: [string, string][] = comma ? [[comma[1], comma[2]]] : [];
     for (let i = words.length - 1; i >= 1; i--) tries.push([words.slice(0, i).join(" "), words.slice(i).join(" ")]);
     for (const [head, tail] of tries) {
-      const item = lookup(ix, head), base = lookup(ix, tail);
+      const base = lookup(ix, tail);
+      let item = lookup(ix, head);
+      // "Moon-Touched Quarterstaff": the data names the item for one weapon ("Moon-Touched Sword") while
+      // D&D Beyond allows any; take the one item that starts with the same words
+      if (!item && base) {
+        const h = norm(head) + " ";
+        const starts = [...new Set([...ix.entries()].filter(([k]) => k.startsWith(h)).map(([, v]) => v))];
+        if (starts.length === 1) item = starts[0];
+      }
       if (item && base && item !== base) {
         const entry: GearEntry = { n: item, base };
         if (mod !== undefined) entry.mod = mod;
@@ -353,8 +361,17 @@ export function ddbToBuild(sheet: DdbSheet, ctx: ImportContext): ImportResult {
   }
 
   const rawSpecies = sheet.identity.species ?? "";
-  const sp = splitSpecies(rawSpecies);
-  const speciesMatch = lookup(speciesIx, rawSpecies) ?? lookup(speciesIx, sp.base);
+  let sp = splitSpecies(rawSpecies);
+  let speciesMatch = lookup(speciesIx, rawSpecies) ?? lookup(speciesIx, sp.base);
+  // Any lineage written before the species ("Rock Gnome", "Forest Gnome", "Sea Elf"), not only the
+  // known prefixes: drop leading words until the rest is a species (phase 5i.2).
+  if (!speciesMatch) {
+    const words = rawSpecies.trim().split(/\s+/);
+    for (let i = 1; i < words.length && !speciesMatch; i++) {
+      const hit = lookup(speciesIx, words.slice(i).join(" "));
+      if (hit) { speciesMatch = hit; sp = { base: hit, variant: words.slice(0, i).join(" ") }; }
+    }
+  }
   // D&D Beyond folds the lineage into the species name ("Variant Human", "High Elf"). The Forge
   // keeps the variant OUTSIDE Build, as its own speciesVariant state and denorm column, so hand it
   // back on the report for the caller to apply rather than dropping it.
@@ -365,7 +382,7 @@ export function ddbToBuild(sheet: DdbSheet, ctx: ImportContext): ImportResult {
     note: speciesMatch ? undefined : "not in the catalog; kept as typed",
   };
   if (!speciesMatch && rawSpecies) {
-    notes.push(`Species "${rawSpecies}" is not in the catalog, so its traits will not compute. The name is kept as typed.`);
+    notes.push(`Species "${rawSpecies}" is not one Six Axes has traits for, so its traits will not show. The name is kept as typed.`);
   }
 
   const rawBackground = sheet.identity.background ?? "";
@@ -382,7 +399,7 @@ export function ddbToBuild(sheet: DdbSheet, ctx: ImportContext): ImportResult {
   const rawSubclass = subclassFeature ? stripLegacy(subclassFeature.desc) : "";
   const subclassRes: Resolution = { raw: subclassFeature?.desc ?? "", matched: rawSubclass ? lookup(subclassIx, rawSubclass) : null };
   if (rawSubclass && !subclassRes.matched) {
-    notes.push(`Subclass "${rawSubclass}" is not in the catalog, so its features will not compute. The name is kept as typed.`);
+    notes.push(`Subclass "${rawSubclass}" is not one Six Axes has features for, so its features will not show. The name is kept as typed.`);
   }
 
   // --- abilities and saves --------------------------------------------------
@@ -419,7 +436,9 @@ export function ddbToBuild(sheet: DdbSheet, ctx: ImportContext): ImportResult {
       fromItems += ctx.saveBonusItems![key];
     }
     if (inferred.saveBonusAll && (aura || fromItems)) {
-      notes.push(`D&D Beyond adds +${inferred.saveBonusAll} to every save; ${[aura ? `Aura of Protection (+${aura})` : "", fromItems ? `magic items (+${fromItems})` : ""].filter(Boolean).join(" and ")} ${aura && fromItems ? "are" : "is"} worked out by the sheet itself.`);
+      // phase 5i.2: plain words for the import screen ("magic items (+1) is worked out" read badly)
+      const parts = [aura ? `Aura of Protection (+${aura})` : "", fromItems ? `attuned magic items (+${fromItems})` : ""].filter(Boolean).join(" and ");
+      notes.push(`D&D Beyond's +${inferred.saveBonusAll} to every save comes from ${parts}. The sheet works that out itself, so it is not added twice.`);
     }
     inferred.saveBonusAll = inferred.saveBonusAll - aura - fromItems;
   }
@@ -468,8 +487,7 @@ export function ddbToBuild(sheet: DdbSheet, ctx: ImportContext): ImportResult {
   }
   if (abilityEffectWarnings.length) {
     notes.push(
-      `${abilityEffectWarnings.join(", ")} change ability scores, and the imported scores already include them. ` +
-        `Derive this character through suppressItemEffects() so they are not applied twice.`,
+      `${abilityEffectWarnings.join(", ")} change ability scores. D&D Beyond's scores already include them, so the sheet does not add them again.`,
     );
   }
   if (gearUnmatched.length) {

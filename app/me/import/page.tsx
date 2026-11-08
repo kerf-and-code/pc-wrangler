@@ -44,6 +44,7 @@ import { loadCatalog } from "@/lib/catalog";
 import { loadSrd } from "@/lib/srd/srd";
 import { RULES_DATA } from "@/lib/srd/rules-context";
 import { ITEM_BONUSES } from "@/lib/srd/derive-sheet";
+import { knownSubclassNames } from "@/lib/subclass-features";
 import { parseSheet, FlattenedSheetError, type PdfDocumentLike, type DdbSheet } from "@/lib/ddb-parse";
 import { ddbToBuild, type ImportContext, type ImportReport } from "@/lib/ddb-import";
 
@@ -109,9 +110,9 @@ function ImportInner() {
       backgrounds: names(loadSrd("backgrounds", "both")),
       species: cat ? cat.species.map((s) => s.name) : [],
       classes: cat ? cat.classes.map((c) => c.name) : [],
-      subclasses: cat
-        ? [...new Set(cat.caps.map((c) => c.subclass).filter((s): s is string => !!s))]
-        : [],
+      // the catalog's subclasses plus every subclass the sheet holds features for (phase 5i.2: a
+      // subclass missing from the catalog table was reported as "will not compute" when it does)
+      subclasses: [...new Set([...(cat ? cat.caps.map((c) => c.subclass).filter((s): s is string => !!s) : []), ...knownSubclassNames()])],
       abilityEffectItems: [
         ...Object.keys(RULES_DATA.ITEM_EFFECTS || {}),
         ...Object.keys(RULES_DATA.ITEM_VARIANTS || {}),
@@ -305,8 +306,9 @@ function ImportInner() {
                     they stay on the character exactly as written.
                   </p>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                    {report.gear.unmatched.map((g, i) => (
-                      <span key={i} style={stoneChip()}>{g.raw}</span>
+                    {/* one chip per name, with a count: a sheet often carries the same item in two stacks */}
+                    {Object.entries(report.gear.unmatched.reduce<Record<string, number>>((m, g) => { m[g.raw] = (m[g.raw] ?? 0) + 1; return m; }, {})).map(([raw, n]) => (
+                      <span key={raw} style={stoneChip()}>{raw}{n > 1 ? ` (${n} rows)` : ""}</span>
                     ))}
                   </div>
                 </section>

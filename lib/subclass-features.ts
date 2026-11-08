@@ -99,3 +99,11 @@ export function withSubclass(
   const merged = [...base, ...extra].sort((a, b) => a.level - b.level);
   return { ...cls, features_by_level: merged };
 }
+
+/** Phase 5i.2: every subclass name the app holds feature data for, in either edition, so the D&D
+ *  Beyond import recognises a subclass the sheet can compute even when the catalog table lacks it. */
+export function knownSubclassNames(): string[] {
+  const out = new Set<string>();
+  for (const pool of [SRD["2014"], SRD["2024"], AUTHORED["2014"], AUTHORED["2024"]]) for (const s of pool) if (s.name) out.add(s.name);
+  return [...out];
+}
