@@ -22,6 +22,8 @@ import { drawElement, type DoorKind, type MapElement } from "@/lib/dungeon/class
 import { wallSegments, visibility, seenSquares, canSee, CANOPY_KINDS, type Seg } from "@/lib/tabletop/sight";
 import { markerShort, markerKind, MARKER_COLORS, econOf, speedNow, cantAct, FRESH_ECON } from "@/lib/combat-effects";
 import { openTabletop } from "@/lib/tabletop/open";
+import MapUpload from "@/components/map-upload";
+import HandoutView, { type Handout } from "@/components/handout-view";
 import { AttackForm, EconomyBar, MarkerChips, MarkerPicker, PlayerEntryControls, SaveBanner, TurnUsed, isMyTurn, type FightEntry, type PendingSave } from "@/components/fight-controls";
 
 // The tabletop, phase 1 (2026-11-06). One page for the GM and the players; tabletop_state (p105)
@@ -63,6 +65,12 @@ import { AttackForm, EconomyBar, MarkerChips, MarkerPicker, PlayerEntryControls,
 //          action, reaction, movement, attacks left) and spends it; attacks and save effects say what
 //          they use. In a fight a player's token moves only on its turn and only as far as its movement
 //          left (checked in tabletop_move_token). The GM sees and toggles what each creature has used.
+// Phase 4d: drawing and text on the table (D), a dry-erase board everyone uses (p113): pen, line, box,
+//          ellipse and text; each person erases their own, the GM anything, and the GM can draw on a
+//          GM-only layer players never receive. Handouts are wiki entries the GM shows from the table
+//          (Handouts tab): they pop up for the players they are shown to and stay in their Codex.
+//          Shift + double-click a token opens its sheet. The GM can upload a map image from a module,
+//          line its grid up with the table's, and put it on the table as a scene (components/map-upload).
 // Live:    one Realtime channel per campaign. Table changes (tokens, scenes, chat) arrive through RLS;
 //          drags, rulers and pings are broadcast and never stored. Positions are saved once on drop.
 // Chat:    /r, /gr, /w name, /em. Rolls go to /api/tabletop/roll, which rolls on the server and logs
@@ -94,7 +102,14 @@ type Message = {
 type OutsideRoll = { id: string; actor_name: string | null; source: string; name: string | null; at: string; rolls: { total?: number; dice?: { faces: number; results: number[] }[]; critical_success?: boolean; critical_failure?: boolean } | null };
 type FeedItem = { t: number; key: string; msg?: Message; ext?: OutsideRoll };
 
-type Tool = "select" | "ruler" | "template" | "hand" | "fog";
+type Tool = "select" | "ruler" | "template" | "hand" | "fog" | "draw";
+type DrawKind = "pen" | "line" | "rect" | "ellipse" | "text" | "erase";
+type Drawing = {
+  id: string; scene_id: string; owner: string; layer: "table" | "gm"; kind: Exclude<DrawKind, "erase">;
+  points: [number, number][]; color: string; width: number; fill: boolean; text: string | null; size: number;
+};
+const DRAW_COLORS = ["#e0703a", "#d9a43a", "#5fae5a", "#6fa3d8", "#b07ad8", "#e0e0e0", "#1b1712"];
+const DRAW_WIDTHS: [string, number][] = [["Thin", 0.05], ["Medium", 0.1], ["Thick", 0.2]];
 type FogMode = "reveal-room" | "hide-room" | "reveal-brush" | "hide-brush";
 type Tpl = TemplateGeom & { id: string; owner: string; color: string; label: string | null; scene_id: string };
 type Aura = { ft: number; color: string; players: boolean };
@@ -142,7 +157,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   const [state, setState] = useState<State | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [tool, setTool] = useState<Tool>("select");
-  const [panel, setPanel] = useState<"chat" | "turns" | "tokens" | "scenes">("chat");
+  const [panel, setPanel] = useState<"chat" | "turns" | "tokens" | "scenes" | "handouts">("chat");
   const [fight, setFight] = useState<Fight | null>(null);
   const fightRow = useRef<FightRow | null>(null);
   const fightRef = useRef<Fight | null>(null);
@@ -168,6 +183,20 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   const [tplSize, setTplSize] = useState("");
   const [tplColor, setTplColor] = useState("#e0703a");
   const [tplLinger, setTplLinger] = useState(true);
+  const [drawKind, setDrawKind] = useState<DrawKind>("pen");
+  const [drawColor, setDrawColor] = useState("#e0703a");
+  const [drawWidth, setDrawWidth] = useState(0.1);
+  const [drawFill, setDrawFill] = useState(false);
+  const [drawGm, setDrawGm] = useState(false);
+  const [drawText, setDrawText] = useState("");
+  const [handouts, setHandouts] = useState<Handout[]>([]);
+  const [openHandout, setOpenHandout] = useState<Handout | null>(null);
+  const [showUpload, setShowUpload] = useState(false);
+  const [hoEntries, setHoEntries] = useState<{ id: string; title: string; type: string; visibility: string }[] | null>(null);
+  const [hoQuery, setHoQuery] = useState("");
+  const [hoPick, setHoPick] = useState("");
+  const [hoTo, setHoTo] = useState<string[] | null>(null);       // character ids, or null for everyone
+  const [hoBusy, setHoBusy] = useState(false);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const wrapRef = useRef<HTMLDivElement | null>(null);
@@ -188,6 +217,10 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   const remoteTpl = useRef<Map<string, { geom: TemplateGeom; color: string; done: number | null }>>(new Map());
   const tplDrag = useRef<{ id: string; start: Pt; orig: Pt; now: Pt; moved: boolean } | null>(null);
   const tplSent = useRef(0);
+  const drawingsRef = useRef<Map<string, Drawing>>(new Map());
+  const drawPreview = useRef<{ kind: Exclude<DrawKind, "erase" | "text">; points: [number, number][]; color: string; width: number; fill: boolean; layer: "table" | "gm" } | null>(null);
+  const onHandoutRef = useRef<(p: { id: string; characters: string[] | null }) => void>(() => {});
+  const loadHandoutsRef = useRef<() => Promise<unknown>>(async () => {});
   const trails = useRef<Trail[]>([]);
   const overlayUrl = useRef<string | null>(null);
   const fogBits = useRef<Uint8Array>(new Uint8Array(0));
@@ -471,6 +504,34 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
       if (a <= 0) remoteTpl.current.delete(k); else { if (rt.done !== null) animating = true; drawTpl(rt.geom, rt.color, a, false); }
     }
 
+    // drawings and text, a dry-erase layer over the map (the GM's own layer drawn dashed and fainter)
+    const drawOne = (d: Pick<Drawing, "kind" | "points" | "color" | "width" | "fill" | "text" | "size" | "layer">) => {
+      const pts = d.points; if (!pts.length) return;
+      ctx.save();
+      if (d.layer === "gm") { ctx.globalAlpha = 0.6; ctx.setLineDash([8 / cam.s, 5 / cam.s]); }
+      ctx.strokeStyle = d.color; ctx.lineWidth = Math.max(1, d.width * cell); ctx.lineCap = "round"; ctx.lineJoin = "round";
+      if (d.kind === "text") {
+        const fs = Math.max(6, d.size * cell);
+        ctx.font = `700 ${fs}px system-ui, sans-serif`; ctx.textBaseline = "alphabetic"; ctx.setLineDash([]);
+        ctx.lineWidth = Math.max(2, fs * 0.16); ctx.strokeStyle = "rgba(15,12,9,0.85)"; ctx.strokeText(d.text ?? "", pts[0][0] * cell, pts[0][1] * cell);
+        ctx.fillStyle = d.color; ctx.fillText(d.text ?? "", pts[0][0] * cell, pts[0][1] * cell);
+      } else if (d.kind === "pen" || d.kind === "line") {
+        ctx.beginPath(); pts.forEach(([x, y], i) => (i ? ctx.lineTo(x * cell, y * cell) : ctx.moveTo(x * cell, y * cell)));
+        if (pts.length === 1) ctx.lineTo(pts[0][0] * cell + 0.01, pts[0][1] * cell);
+        ctx.stroke();
+      } else if (pts.length >= 2) {
+        const [a, b] = [pts[0], pts[pts.length - 1]];
+        const x0 = Math.min(a[0], b[0]) * cell, y0 = Math.min(a[1], b[1]) * cell, w = Math.abs(b[0] - a[0]) * cell, h = Math.abs(b[1] - a[1]) * cell;
+        ctx.beginPath();
+        if (d.kind === "rect") ctx.rect(x0, y0, w, h); else ctx.ellipse(x0 + w / 2, y0 + h / 2, w / 2, h / 2, 0, 0, Math.PI * 2);
+        if (d.fill) { ctx.fillStyle = hexA(d.color, 0.2); ctx.fill(); }
+        ctx.stroke();
+      }
+      ctx.restore();
+    };
+    for (const d of drawingsRef.current.values()) drawOne(d);
+    if (drawPreview.current) drawOne({ ...drawPreview.current, text: null, size: 0.6 });
+
     // line of sight: which tokens this player can see right now (their own always)
     updateSight();
     const lineOfSight = losOn() && stateRef.current?.role !== "gm";
@@ -734,6 +795,11 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
       const { data: tpls } = await supabase.from("vtt_templates").select("*").eq("scene_id", st.scene.id);
       for (const t of (tpls ?? []) as Tpl[]) templatesRef.current.set(t.id, t);
     }
+    drawingsRef.current = new Map();
+    if (st.scene) {
+      const { data: drs } = await supabase.from("vtt_drawings").select("*").eq("scene_id", st.scene.id).order("created_at");
+      for (const d of (drs ?? []) as Drawing[]) drawingsRef.current.set(d.id, d);
+    }
     // fog: a GM in the middle of painting keeps their own copy until it has been saved
     const pendingFog = st.role === "gm" && (fogTimer.current !== null || Date.now() - fogEditedAt.current < 1500);
     if (!pendingFog) {
@@ -945,6 +1011,10 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
       if (st.role !== "gm" && (t.hidden || t.layer === "gm" || (!t.mine && fogHides(t)))) tokensRef.current.delete(t.id);
       requestDraw();
     };
+    const upsertDrawing = (row: Drawing) => {
+      const st = stateRef.current; if (!st?.scene || row.scene_id !== st.scene.id) return;
+      drawingsRef.current.set(row.id, row); requestDraw();
+    };
     const upsertTpl = (row: Tpl) => {
       const st = stateRef.current; if (!st?.scene || row.scene_id !== st.scene.id) return;
       if (tplDrag.current?.id === row.id) return;
@@ -992,6 +1062,14 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
       .on("postgres_changes", { event: "DELETE", schema: "public", table: "vtt_templates" }, (p) => {
         const id = (p.old as { id?: string }).id; if (id && templatesRef.current.delete(id)) requestDraw();
       })
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "vtt_drawings", filter: `campaign_id=eq.${campaignId}` }, (p) => upsertDrawing(p.new as Drawing))
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "vtt_drawings", filter: `campaign_id=eq.${campaignId}` }, (p) => upsertDrawing(p.new as Drawing))
+      .on("postgres_changes", { event: "DELETE", schema: "public", table: "vtt_drawings" }, (p) => {
+        const id = (p.old as { id?: string }).id; if (id && drawingsRef.current.delete(id)) requestDraw();
+      })
+      .on("broadcast", { event: "drawings" }, () => { void reloadDrawingsRef.current(); })
+      .on("broadcast", { event: "handout" }, ({ payload }) => { onHandoutRef.current(payload as { id: string; characters: string[] | null }); })
+      .on("broadcast", { event: "handout-gone" }, () => { void loadHandoutsRef.current(); })
       .on("broadcast", { event: "tpl" }, ({ payload }) => {
         const r = payload as { by: string; color: string; geom: TemplateGeom; done: boolean; placed?: boolean };
         if (r.placed) remoteTpl.current.delete(r.by);
@@ -1132,6 +1210,106 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     send("tpl", { by: me, color: pv.color, geom: pv.geom, done, placed });
   };
 
+  // ---- drawing ----
+  const canEditDrawing = (d: Drawing | undefined | null) => !!d && (stateRef.current?.role === "gm" || d.owner === stateRef.current?.me);
+  const drawingAt = (sq: Pt): Drawing | null => {
+    const near = (px: number, py: number, ax: number, ay: number, bx: number, by: number) => {
+      const dx = bx - ax, dy = by - ay, L = dx * dx + dy * dy, t = L ? Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / L)) : 0;
+      return Math.hypot(px - (ax + t * dx), py - (ay + t * dy));
+    };
+    const list = [...drawingsRef.current.values()].filter(canEditDrawing);
+    for (let i = list.length - 1; i >= 0; i--) {
+      const d = list[i], pts = d.points, tol = Math.max(0.25, d.width);
+      if (d.kind === "text") {
+        const w = (d.text ?? "").length * d.size * 0.6, [x, y] = pts[0];
+        if (sq.x >= x - 0.1 && sq.x <= x + w && sq.y >= y - d.size && sq.y <= y + 0.2) return d;
+      } else if (d.kind === "rect" || d.kind === "ellipse") {
+        const [a, b] = [pts[0], pts[pts.length - 1]];
+        if (sq.x >= Math.min(a[0], b[0]) - tol && sq.x <= Math.max(a[0], b[0]) + tol && sq.y >= Math.min(a[1], b[1]) - tol && sq.y <= Math.max(a[1], b[1]) + tol) return d;
+      } else {
+        for (let k = 0; k < pts.length; k++) {
+          const a = pts[k], b = pts[Math.min(k + 1, pts.length - 1)];
+          if (near(sq.x, sq.y, a[0], a[1], b[0], b[1]) <= tol) return d;
+        }
+      }
+    }
+    return null;
+  };
+  const eraseDrawings = async (ids: string[]) => {
+    if (!ids.length) return;
+    const keep = ids.map((id) => drawingsRef.current.get(id)).filter((d): d is Drawing => !!d);
+    for (const id of ids) drawingsRef.current.delete(id);
+    requestDraw();
+    const { error: er } = await supabase.from("vtt_drawings").delete().in("id", ids);
+    if (er) { for (const d of keep) drawingsRef.current.set(d.id, d); requestDraw(); setChatErr(`Could not erase: ${er.message}`); }
+  };
+  const saveDrawing = async (row: Omit<Drawing, "id" | "owner">) => {
+    const st = stateRef.current; if (!st) return;
+    const { data, error: er } = await supabase.from("vtt_drawings").insert({ ...row, campaign_id: campaignId, owner: st.me }).select("*").single();
+    if (er || !data) { setChatErr(`Could not draw that: ${er?.message ?? "no row"}`); return; }
+    drawingsRef.current.set((data as Drawing).id, data as Drawing); requestDraw();
+  };
+  const drawDown = (sq: Pt, free: boolean) => {
+    const st = stateRef.current; if (!st?.scene) return;
+    const layer: "table" | "gm" = st.role === "gm" && drawGm ? "gm" : "table";
+    if (drawKind === "erase") { const d = drawingAt(sq); if (d) void eraseDrawings([d.id]); return; }
+    if (drawKind === "text") {
+      const t = drawText.trim();
+      if (!t) { setChatErr("Type the words in the drawing bar first, then click where they go."); return; }
+      void saveDrawing({ scene_id: st.scene.id, layer, kind: "text", points: [[sq.x, sq.y]], color: drawColor, width: 0.05, fill: false, text: t.slice(0, 200), size: Math.max(0.4, drawWidth * 6) });
+      return;
+    }
+    const p: [number, number] = free || drawKind === "pen" ? [sq.x, sq.y] : [Math.round(sq.x * 2) / 2, Math.round(sq.y * 2) / 2];
+    drawPreview.current = { kind: drawKind, points: [p], color: drawColor, width: drawWidth, fill: drawFill, layer };
+    requestDraw();
+  };
+  const finishDrawing = () => {
+    const dp = drawPreview.current, st = stateRef.current; drawPreview.current = null;
+    if (!dp || !st?.scene) { requestDraw(); return; }
+    const pts = dp.points, a = pts[0], b = pts[pts.length - 1];
+    const size = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    if (dp.kind !== "pen" && size < 0.25) { requestDraw(); return; }       // a click, not a shape
+    void saveDrawing({ scene_id: st.scene.id, layer: dp.layer, kind: dp.kind, points: dp.kind === "pen" ? pts.map(([x, y]) => [Math.round(x * 100) / 100, Math.round(y * 100) / 100] as [number, number]) : [a, b],
+      color: dp.color, width: dp.width, fill: dp.kind === "rect" || dp.kind === "ellipse" ? dp.fill : false, text: null, size: 0.6 });
+    requestDraw();
+  };
+  const reloadDrawingsRef = useRef<() => Promise<void>>(async () => {});
+  reloadDrawingsRef.current = async () => {
+    const st = stateRef.current; if (!st?.scene) return;
+    const { data: drs } = await supabase.from("vtt_drawings").select("*").eq("scene_id", st.scene.id).order("created_at");
+    drawingsRef.current = new Map(((drs ?? []) as Drawing[]).map((d) => [d.id, d])); requestDraw();
+  };
+  const clearDrawings = async (all: boolean) => {
+    const st = stateRef.current; if (!st?.scene) return;
+    const ids = [...drawingsRef.current.values()].filter((d) => (all ? true : d.owner === st.me)).map((d) => d.id);
+    if (!ids.length) { setChatErr(all ? "There are no drawings on this scene." : "You have no drawings on this scene."); return; }
+    if (all && !window.confirm(`Erase all ${ids.length} drawings on this scene, everyone's? This cannot be undone.`)) return;
+    await eraseDrawings(ids); send("drawings", {});
+  };
+  const undoMyDrawing = () => {
+    const st = stateRef.current; if (!st) return;
+    const mine = [...drawingsRef.current.values()].filter((d) => d.owner === st.me);
+    const last = mine[mine.length - 1];
+    if (last) void eraseDrawings([last.id]); else setChatErr("Nothing of yours to take back on this scene.");
+  };
+
+  // Shift + double-click a token: its sheet, in a new tab. A player's own character opens in the Forge;
+  // for the GM a character opens in the Codex and a monster in its stat block.
+  const openSheet = (e: React.MouseEvent) => {
+    if (!e.shiftKey) return;
+    const st = stateRef.current; if (!st) return;
+    const sq = toSquares(screenPt(e)), t = tokenAt({ x: sq.x * cellRef.current, y: sq.y * cellRef.current });
+    if (!t) return;
+    const gm = st.role === "gm";
+    const ownChar = !!t.character_id && st.party.some((p) => p.profile_id === st.me && p.character_id === t.character_id);
+    const url = t.character_id && ownChar ? `/me/forge?c=${t.character_id}`
+      : t.character_id && gm ? `/gm/codex?character=${t.character_id}`
+      : t.stat_block_id && gm ? `/gm/statblock?sb=${t.stat_block_id}`
+      : gm && entryFor(t) ? `/gm/combat` : null;
+    if (!url) { setChatErr(gm ? `${t.name} has no sheet: it is not a character and has no stat block.` : `Only ${t.name}'s player and the GM can open that sheet.`); return; }
+    window.open(url, "_blank", "noopener");
+  };
+
   const onDown = (e: React.PointerEvent) => {
     const st = stateRef.current; if (!st) return;
     const sp = screenPt(e), sq = toSquares(sp);
@@ -1144,6 +1322,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     }
     if (e.button !== 0) return;
     if (tool === "fog" && st.role === "gm") { fogClick(sq, fogMode); return; }
+    if (tool === "draw") { drawDown(sq, e.altKey); return; }
     if (tool === "template") {
       const o = e.altKey ? sq : snapOrigin(sq, tplShape);
       tplPreview.current = { geom: { shape: tplShape, x: o.x, y: o.y, size_ft: fixedSize() ?? 5, width_ft: 5, rot: 0 }, color: tplColor, done: null };
@@ -1195,6 +1374,15 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   const onMove = (e: React.PointerEvent) => {
     const sp = screenPt(e), sq = toSquares(sp);
     if (tool === "fog") { hoverSq.current = sq; requestDraw(); }
+    const dp = drawPreview.current;
+    if (dp && (e.buttons & 1)) {
+      const p: [number, number] = e.altKey || dp.kind === "pen" ? [sq.x, sq.y] : [Math.round(sq.x * 2) / 2, Math.round(sq.y * 2) / 2];
+      if (dp.kind === "pen") {
+        const last = dp.points[dp.points.length - 1];
+        if (Math.hypot(p[0] - last[0], p[1] - last[1]) > 0.06 && dp.points.length < 4000) dp.points.push(p);
+      } else dp.points = [dp.points[0], p];
+      requestDraw(); return;
+    }
     if (brushing.current && (e.buttons & 1)) {
       const m = stateRef.current?.map;
       if (m) paintFog(brushCells(m.n, Math.floor(sq.x), Math.floor(sq.y), fogBrush), brushing.current.on);
@@ -1261,6 +1449,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     const st = stateRef.current; if (!st) return;
     const sp = screenPt(e), sq = toSquares(sp);
     if (brushing.current) { brushing.current = null; saveFog(null); return; }
+    if (drawPreview.current) { finishDrawing(); return; }
     if (pan.current) {
       const p = pan.current; pan.current = null;
       if (!p.moved && p.button === 2) {
@@ -1416,11 +1605,12 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
       if (e.target instanceof HTMLElement && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
       if (e.key === " ") { space.current = true; e.preventDefault(); return; }
       const k = e.key.toLowerCase();
-      if (k === "escape") { setSelected([]); setSelTpl(null); setSelDoors([]); selDoorsRef.current = []; if (tplPreview.current) { tplPreview.current.done = performance.now(); sendTpl(true); } if (myRuler.current) { myRuler.current.done = performance.now(); send("ruler", { by: me, color: myColor, points: myRuler.current.points, done: true }); } requestDraw(); return; }
+      if (k === "escape") { drawPreview.current = null; setSelected([]); setSelTpl(null); setSelDoors([]); selDoorsRef.current = []; if (tplPreview.current) { tplPreview.current.done = performance.now(); sendTpl(true); } if (myRuler.current) { myRuler.current.done = performance.now(); send("ruler", { by: me, color: myColor, points: myRuler.current.points, done: true }); } requestDraw(); return; }
       if (k === "v") { setTool("select"); return; }
       if (k === "m") { setTool("ruler"); return; }
       if (k === "q") { addWaypoint(); return; }
       if (k === "t") { setTool("template"); return; }
+      if (k === "d") { setTool("draw"); return; }
       if (k === "u" && isGm) { setTool("fog"); return; }
       if (selTplRef.current) {
         if (k === "r") { turnTpl(e.shiftKey ? -15 : 15); return; }
@@ -1503,6 +1693,49 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   const quickRoll = (sides: number) => {
     const notation = sides === 20 && adv !== "flat" ? `2d20${adv === "adv" ? "kh1" : "kl1"}` : `1d${sides}`;
     void rollDice(notation, sides === 20 && adv !== "flat" ? (adv === "adv" ? "with advantage" : "with disadvantage") : "", false);
+  };
+
+  // ---------------------------------------------------------------------------------------------------
+  // handouts (p113): wiki entries the GM shows from the table
+  const loadHandouts = useCallback(async (): Promise<Handout[]> => {
+    const { data, error: er } = await supabase.rpc("tabletop_handouts", { p_campaign: campaignId });
+    if (er) { setChatErr(`Could not read the handouts: ${er.message}`); return []; }
+    const list = (data as Handout[] | null) ?? [];
+    setHandouts(list); return list;
+  }, [supabase, campaignId]);
+  loadHandoutsRef.current = loadHandouts;
+  useEffect(() => { if (state?.me) void loadHandouts(); }, [state?.me, loadHandouts]);
+  useEffect(() => {
+    if (!isGm || panel !== "handouts" || hoEntries !== null) return;
+    void supabase.from("entries").select("id, title, type, visibility").eq("campaign_id", campaignId).order("title").then(({ data, error: er }) => {
+      if (er) { setChatErr(`Could not read the wiki: ${er.message}`); setHoEntries([]); return; }
+      setHoEntries((data ?? []) as { id: string; title: string; type: string; visibility: string }[]);
+    });
+  }, [isGm, panel, hoEntries, supabase, campaignId]);
+  // a handout shown at the table: pop it up for the players it was shown to
+  onHandoutRef.current = (p) => {
+    const st = stateRef.current; if (!st || st.role === "gm") return;
+    const mine = st.party.filter((m) => m.profile_id === st.me && m.character_id).map((m) => m.character_id as string);
+    if (p.characters && !p.characters.some((c) => mine.includes(c))) return;
+    void loadHandouts().then((list) => { const h = list.find((x) => x.id === p.id); if (h) setOpenHandout(h); });
+  };
+  const showHandout = async () => {
+    if (!hoPick) return;
+    setHoBusy(true);
+    try {
+      const { data, error: er } = await supabase.rpc("tabletop_show_handout", { p_campaign: campaignId, p_entry: hoPick, p_characters: hoTo });
+      if (er) { setChatErr(/no player characters/.test(er.message) ? "There are no player characters to show it to." : `Could not show it: ${er.message}`); return; }
+      const r = data as { id: string; characters: string[] };
+      send("handout", { id: r.id, characters: hoTo === null ? null : r.characters });
+      setHoPick(""); setChatErr(null);
+      await loadHandouts();
+    } finally { setHoBusy(false); }
+  };
+  const hideHandout = async (id: string) => {
+    const { error: er } = await supabase.rpc("tabletop_hide_handout", { p_handout: id });
+    if (er) { setChatErr(`Could not hide it: ${er.message}`); return; }
+    send("handout-gone", { id });
+    await loadHandouts();
   };
 
   // ---------------------------------------------------------------------------------------------------
@@ -1641,6 +1874,9 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
           <button type="button" title="Area template (T): circle, cone, square or line. Drag to size and aim, or type an exact size." onClick={() => setTool("template")} style={railBtn(tool === "template")}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12L20 4v16z"/><circle cx="8" cy="12" r="1.5" fill="currentColor"/></svg>Area
           </button>
+          <button type="button" title="Draw and write on the table (D): pen, line, box, ellipse, text. Each person erases their own." onClick={() => setTool("draw")} style={railBtn(tool === "draw")}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 20l4-1 11-11-3-3L5 16z M14 6l3 3"/></svg>Draw
+          </button>
           {isGm && (
             <button type="button" title="Fog of war (U): reveal or hide a room with a click, or paint squares with the brush" onClick={() => setTool("fog")} style={railBtn(tool === "fog")}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 8h12a3 3 0 1 0-3-3 M3 12h17 M5 16h11a3 3 0 1 1-3 3"/></svg>Fog
@@ -1661,9 +1897,9 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
         <div ref={wrapRef} style={{ flex: 1, position: "relative", minWidth: 0 }}>
           {scene ? (
             <canvas ref={canvasRef} onMouseDown={(e) => { if (e.button === 2 && myRuler.current && myRuler.current.done === null && (e.buttons & 1)) addWaypoint(); }} onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}
-              onPointerLeave={() => { hover.current = null; requestDraw(); }} onContextMenu={(e) => e.preventDefault()}
+              onPointerLeave={() => { hover.current = null; requestDraw(); }} onContextMenu={(e) => e.preventDefault()} onDoubleClick={openSheet}
               aria-label={`Table: ${scene.name}`}
-              style={{ position: "absolute", inset: 0, width: "100%", height: "100%", touchAction: "none", cursor: tool === "ruler" || tool === "fog" ? "crosshair" : tool === "hand" ? "grab" : "default" }} />
+              style={{ position: "absolute", inset: 0, width: "100%", height: "100%", touchAction: "none", cursor: tool === "ruler" || tool === "fog" || (tool === "draw" && drawKind !== "erase") ? "crosshair" : tool === "draw" ? "pointer" : tool === "hand" ? "grab" : "default" }} />
           ) : (
             <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: C.muted, padding: 24, textAlign: "center" }}>
               {isGm ? "Put a battle map on the table from the Scenes tab on the right." : "The GM has not put a map on the table yet. Chat and dice work in the meantime."}
@@ -1675,6 +1911,27 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
               <input aria-label="Exact size in feet" value={tplSize} onChange={(e) => setTplSize(e.target.value.replace(/[^0-9.]/g, "").slice(0, 5))} placeholder="ft" title="Exact size in feet (radius for a circle, length otherwise). Leave empty to size it by dragging." style={{ ...field, width: 56, padding: "6px 6px" }} />
               <input aria-label="Template colour" type="color" value={tplColor} onChange={(e) => setTplColor(e.target.value)} style={{ width: 34, height: 30, padding: 0, border: "none", background: "transparent" }} />
               <label style={{ display: "flex", gap: 5, fontSize: 12, alignItems: "center", color: C.text }}><input type="checkbox" checked={tplLinger} onChange={(e) => setTplLinger(e.target.checked)} style={{ accentColor: C.sun }} />Leave it on the table</label>
+            </div>
+          )}
+          {scene && tool === "draw" && (
+            <div role="toolbar" aria-label="Drawing" style={{ position: "absolute", top: 10, left: "50%", transform: "translateX(-50%)", display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", justifyContent: "center", maxWidth: "calc(100% - 20px)", background: "rgba(28,24,20,0.95)", border: `1px solid ${C.line}`, borderRadius: 10, padding: "6px 8px" }}>
+              {([["pen", "Pen"], ["line", "Line"], ["rect", "Box"], ["ellipse", "Ellipse"], ["text", "Text"], ["erase", "Erase"]] as [DrawKind, string][]).map(([k, l]) => (
+                <button key={k} type="button" aria-pressed={drawKind === k} onClick={() => setDrawKind(k)} style={{ ...seg(drawKind === k), flex: "0 0 auto", padding: "6px 10px" }}>{l}</button>
+              ))}
+              {drawKind === "text" && <input aria-label="Words to write" value={drawText} onChange={(e) => setDrawText(e.target.value.slice(0, 200))} placeholder="words, then click the map" style={{ ...field, width: 180, padding: "6px 8px" }} />}
+              {drawKind !== "erase" && (
+                <>
+                  <span role="group" aria-label="Colour" style={{ display: "flex", gap: 3 }}>
+                    {DRAW_COLORS.map((c) => <button key={c} type="button" aria-label={`Colour ${c}`} aria-pressed={drawColor === c} onClick={() => setDrawColor(c)} style={{ width: 20, height: 20, borderRadius: 999, background: c, border: `2px solid ${drawColor === c ? "#fff" : "rgba(255,255,255,0.15)"}`, cursor: "pointer", padding: 0 }} />)}
+                  </span>
+                  {DRAW_WIDTHS.map(([l, w]) => <button key={l} type="button" aria-pressed={drawWidth === w} onClick={() => setDrawWidth(w)} title={drawKind === "text" ? `${l} text` : `${l} line`} style={{ ...seg(drawWidth === w), flex: "0 0 auto", padding: "6px 8px" }}>{l}</button>)}
+                  {(drawKind === "rect" || drawKind === "ellipse") && <label style={{ display: "flex", gap: 5, fontSize: 12, alignItems: "center", color: C.text }}><input type="checkbox" checked={drawFill} onChange={(e) => setDrawFill(e.target.checked)} style={{ accentColor: C.sun }} />Fill</label>}
+                  {isGm && <label title="Only you see it; players never receive it" style={{ display: "flex", gap: 5, fontSize: 12, alignItems: "center", color: C.text }}><input type="checkbox" checked={drawGm} onChange={(e) => setDrawGm(e.target.checked)} style={{ accentColor: C.sun }} />GM only</label>}
+                </>
+              )}
+              <button type="button" onClick={undoMyDrawing} style={small}>Undo mine</button>
+              <button type="button" onClick={() => void clearDrawings(false)} style={small}>Clear mine</button>
+              {isGm && <button type="button" onClick={() => void clearDrawings(true)} style={{ ...small, color: "#e07a70" }}>Clear all</button>}
             </div>
           )}
           {scene && isGm && tool === "fog" && (
@@ -1735,6 +1992,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
             <button type="button" onClick={() => setPanel("turns")} style={seg(panel === "turns")}>Turns{fight ? ` (${fight.round})` : ""}</button>
             {isGm && <button type="button" onClick={() => setPanel("tokens")} style={seg(panel === "tokens")}>Tokens</button>}
             {isGm && <button type="button" onClick={() => setPanel("scenes")} style={seg(panel === "scenes")}>Scenes</button>}
+            <button type="button" onClick={() => setPanel("handouts")} style={seg(panel === "handouts")}>Handouts{handouts.length ? ` (${handouts.length})` : ""}</button>
           </div>
 
           {panel === "chat" && (
@@ -2092,6 +2350,9 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                 ))}
                 {state.scenes.length === 0 && <p style={{ color: C.muted, fontSize: 12.5, margin: 0 }}>No scenes yet.</p>}
               </div>
+              <div style={{ fontWeight: 600, fontSize: 13, marginTop: 18 }}>Map from a module or campaign</div>
+              <p style={{ color: C.muted, fontSize: 12, margin: "6px 0" }}>Upload a map image and line its grid up with the table&apos;s. It becomes a battle map and a scene.</p>
+              <button type="button" onClick={() => setShowUpload(true)} style={{ ...small, width: "100%" }}>Upload a map image</button>
               <div style={{ fontWeight: 600, fontSize: 13, marginTop: 18 }}>New scene from a battle map</div>
               {state.battle_maps.length === 0 ? <p style={{ color: C.muted, fontSize: 12.5 }}>Make a map on the World page, Battle maps tab, first.</p> : (
                 <>
@@ -2133,8 +2394,59 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
               {chatErr && <p role="status" style={{ color: chatErr === "Table link copied." ? C.muted : "#e07a70", fontSize: 12, marginTop: 10 }}>{chatErr}</p>}
             </div>
           )}
+
+          {panel === "handouts" && (
+            <div style={{ flex: 1, overflowY: "auto", padding: 12 }}>
+              {isGm && (
+                <>
+                  <div style={{ fontWeight: 600, fontSize: 13 }}>Show a handout</div>
+                  <p style={{ color: C.muted, fontSize: 12, margin: "6px 0" }}>A handout is a wiki entry. It pops up for the players you pick and stays in their Codex.</p>
+                  <input aria-label="Find an entry" value={hoQuery} onChange={(e) => setHoQuery(e.target.value.slice(0, 60))} placeholder="Find an entry…" style={field} />
+                  <div style={{ maxHeight: 180, overflowY: "auto", marginTop: 6, border: `1px solid ${C.line}`, borderRadius: 7 }} role="listbox" aria-label="Wiki entries">
+                    {hoEntries === null && <p style={{ color: C.muted, fontSize: 12, margin: 8 }}>Loading the wiki…</p>}
+                    {hoEntries !== null && hoEntries.length === 0 && <p style={{ color: C.muted, fontSize: 12, margin: 8 }}>No wiki entries yet. Write one in the Codex first.</p>}
+                    {(hoEntries ?? []).filter((x) => !hoQuery.trim() || x.title.toLowerCase().includes(hoQuery.trim().toLowerCase())).slice(0, 60).map((x) => (
+                      <button key={x.id} type="button" role="option" aria-selected={hoPick === x.id} onClick={() => setHoPick(x.id)}
+                        style={{ display: "flex", width: "100%", gap: 6, padding: "6px 8px", background: hoPick === x.id ? C.surface2 : "transparent", color: hoPick === x.id ? C.sun : C.text, border: "none", borderBottom: `1px solid ${C.line}`, textAlign: "left", fontSize: 12.5, cursor: "pointer" }}>
+                        <span style={{ flex: 1 }}>{x.title}</span><span style={{ color: C.muted, fontSize: 11 }}>{x.type}{x.visibility === "gm" ? ", GM only" : ""}</span>
+                      </button>
+                    ))}
+                  </div>
+                  <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginTop: 8 }} role="group" aria-label="Show it to">
+                    <button type="button" aria-pressed={hoTo === null} onClick={() => setHoTo(null)} style={{ ...small, padding: "3px 9px", color: hoTo === null ? C.sun : C.muted, borderColor: hoTo === null ? C.sun : C.line }}>Everyone</button>
+                    {party.filter((p) => p.character_id).map((p) => {
+                      const on = !!hoTo && hoTo.includes(p.character_id as string);
+                      return <button key={p.character_id} type="button" aria-pressed={on} onClick={() => setHoTo((cur) => { const list = cur ?? []; const next = on ? list.filter((c) => c !== p.character_id) : [...list, p.character_id as string]; return next.length ? next : null; })}
+                        style={{ ...small, padding: "3px 9px", color: on ? C.sun : C.muted, borderColor: on ? C.sun : C.line }}>{p.name}</button>;
+                    })}
+                  </div>
+                  <button type="button" disabled={!hoPick || hoBusy} onClick={() => void showHandout()} style={{ ...small, marginTop: 8, width: "100%", background: hoPick ? C.sun : "transparent", color: hoPick ? "#1b1712" : C.muted, border: hoPick ? "none" : `1px solid ${C.line}`, fontWeight: 600, padding: "8px 0" }}>
+                    {hoBusy ? "Showing…" : hoTo === null ? "Show it to everyone" : `Show it to ${hoTo.length}`}
+                  </button>
+                  <a href="/gm/codex" target="_blank" rel="noopener" style={{ display: "block", marginTop: 6, fontSize: 12, color: C.muted }}>Write a new entry in the Codex</a>
+                </>
+              )}
+              <div style={{ fontWeight: 600, fontSize: 13, marginTop: isGm ? 18 : 0 }}>{isGm ? "Shown at this table" : "Handouts"}</div>
+              {handouts.length === 0 && <p style={{ color: C.muted, fontSize: 12.5 }}>{isGm ? "Nothing shown yet." : "The GM has not shown you anything yet."}</p>}
+              <div style={{ display: "grid", gap: 6, marginTop: 8 }}>
+                {handouts.map((h) => (
+                  <div key={h.id} style={{ display: "flex", gap: 6, alignItems: "center", border: `1px solid ${C.line}`, borderRadius: 8, padding: "6px 8px" }}>
+                    <button type="button" onClick={() => setOpenHandout(h)} style={{ flex: 1, textAlign: "left", background: "none", border: "none", color: C.text, cursor: "pointer", padding: 0, fontSize: 13 }}>
+                      {h.title}
+                      <span style={{ display: "block", fontSize: 11, color: C.muted }}>{isGm ? `to ${h.shownTo ? h.shownTo.join(", ") : "everyone"}, ` : ""}{new Date(h.shownAt).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span>
+                    </button>
+                    {isGm && <button type="button" onClick={() => send("handout", { id: h.id, characters: null })} title="Pop it up again for the players it was shown to" style={{ ...small, padding: "3px 8px" }}>Again</button>}
+                    {isGm && <button type="button" onClick={() => void hideHandout(h.id)} title="Take it back: the players lose what this showing revealed" style={{ ...small, padding: "3px 8px", color: "#e07a70" }}>Hide</button>}
+                  </div>
+                ))}
+              </div>
+              {chatErr && <p role="status" style={{ color: "#e07a70", fontSize: 12, marginTop: 10 }}>{chatErr}</p>}
+            </div>
+          )}
         </div>
       </div>
+      {showUpload && <MapUpload campaignId={campaignId} onClose={() => setShowUpload(false)} onDone={() => { setShowUpload(false); void load().then(() => { fit(); send("refresh", {}); }); }} />}
+      {openHandout && <HandoutView h={openHandout} onClose={() => setOpenHandout(null)} />}
     </div>
   );
 }
