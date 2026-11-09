@@ -25,7 +25,8 @@ import { GifEncoder } from "@/lib/tabletop/gif";
 // Nothing here talks to a server.
 
 type Mode = "free" | "app";
-export type TokenMakerResult = { portrait: Blob; frame: Frame; border: Blob | null; clearFrame: boolean };
+/** portrait: the cut-out alone (the tabletop draws the frame live); baked: a still PNG with the frame drawn in (a sheet portrait). */
+export type TokenMakerResult = { portrait: Blob; baked: Blob; frame: Frame; border: Blob | null; clearFrame: boolean };
 
 const MAX_SIDE = 900;
 const PREVIEW = 360;
@@ -64,13 +65,14 @@ function picFrom(im: HTMLImageElement): Pic {
 
 function slug(s: string) { return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "token"; }
 
-export default function TokenMaker({ mode, initialImage, initialFrame, name, onSave, onCancel }: {
+export default function TokenMaker({ mode, initialImage, initialFrame, name, onSave, onCancel, saveLabel = "Use on this token" }: {
   mode: Mode;
   initialImage?: string | null;
   initialFrame?: unknown;
   name?: string;
   onSave?: (r: TokenMakerResult) => Promise<string | null>;
   onCancel?: () => void;
+  saveLabel?: string;
 }) {
   const [frame, setFrame] = useState<Frame>(() => normFrame(initialFrame) ?? DEFAULT_FRAME);
   const [hadFrame] = useState(() => !!normFrame(initialFrame));
@@ -397,22 +399,30 @@ export default function TokenMaker({ mode, initialImage, initialFrame, name, onS
   };
 
   const saveGif = async () => {
-    const size = Math.min(exportSize, 768), fps = 20, n = fps * 3;
+    const size = Math.min(exportSize, 768), fps = 20, L = 3, n = fps * L;
     const cv = document.createElement("canvas"); cv.width = size; cv.height = size;
     const c = cv.getContext("2d", { willReadFrequently: true })!;
     const r = size / 2 / frameReach(frame);
     const draw = (t: number) => {
       c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, size, size); c.translate(size / 2, size / 2);
       drawPortrait(c, r); drawFrame(c, frame, r, t, imgBorder);
-      return c.getImageData(0, 0, size, size).data;
+      return new Uint8ClampedArray(c.getImageData(0, 0, size, size).data);
+    };
+    // A seamless loop: the effects do not repeat every L seconds, so each frame cross-fades the
+    // animation at t + L into the animation at t. The first frame is the animation at L, the last is
+    // almost the animation at L again, so the GIF wraps around without a jump.
+    const frameAt = (i: number) => {
+      const t = i / fps, w = t / L, a = draw(L + t), b = draw(t);
+      for (let k = 0; k < a.length; k++) a[k] = a[k] * (1 - w) + b[k] * w;
+      return a;
     };
     try {
       setGifProgress(0);
       const enc = new GifEncoder(size, size, { transparent: gifClear });
-      for (let i = 0; i < n; i += 5) enc.addPaletteSample(draw(i / fps));
+      for (let i = 0; i < n; i += 5) enc.addPaletteSample(frameAt(i));
       enc.buildPalette();
       for (let i = 0; i < n; i++) {
-        enc.addFrame(draw(i / fps), 1000 / fps);
+        enc.addFrame(frameAt(i), 1000 / fps);
         if (i % 3 === 0) { setGifProgress(i / n); await new Promise((res) => setTimeout(res, 0)); }
       }
       download(new Blob([enc.finish().buffer as ArrayBuffer], { type: "image/gif" }), `${base}-animated.gif`);
@@ -427,7 +437,8 @@ export default function TokenMaker({ mode, initialImage, initialFrame, name, onS
     setBusy(true); setMsg(null);
     try {
       const portrait = await toBlob(renderCanvas(512, false, 0));
-      const err = await onSave({ portrait, frame, border: border?.blob ?? null, clearFrame });
+      const baked = await toBlob(renderCanvas(512, !clearFrame, 0.8));
+      const err = await onSave({ portrait, baked, frame, border: border?.blob ?? null, clearFrame });
       if (err) setMsg(err);
     } catch {
       setMsg("That picture could not be saved (it came from a site that does not allow it). Choose the file from your computer instead.");
@@ -561,7 +572,7 @@ export default function TokenMaker({ mode, initialImage, initialFrame, name, onS
         <div style={sectionH}>{mode === "app" ? "7. Save" : "7. Download"}</div>
         {mode === "app" && (
           <div style={rowS}>
-            <button type="button" style={primary} disabled={busy} onClick={() => void saveToToken(false)}>{busy ? "Saving..." : "Use on this token"}</button>
+            <button type="button" style={primary} disabled={busy} onClick={() => void saveToToken(false)}>{busy ? "Saving..." : saveLabel}</button>
             {hadFrame && <button type="button" style={btn()} disabled={busy} onClick={() => void saveToToken(true)}>Use the picture, no frame</button>}
             {onCancel && <button type="button" style={btn()} disabled={busy} onClick={onCancel}>Cancel</button>}
           </div>
@@ -590,7 +601,7 @@ export default function TokenMaker({ mode, initialImage, initialFrame, name, onS
           </div>
         )}
         <p style={{ fontSize: 12, color: ui.muted, margin: "6px 0 0" }}>
-          The PNG is a still with a transparent background. {moving ? "The GIF loops 3 seconds of the animation and works on most virtual tabletops; GIF edges are crisp, not soft. At 512 px it is about 3 to 4 MB; 1024 makes a 768 px GIF of about 8 MB. The video loops it on a dark background. " : ""}
+          The PNG is a still with a transparent background. {moving ? "The GIF is a seamless 3 second loop and works on most virtual tabletops; GIF edges are crisp, not soft. At 512 px it is about 3 to 4 MB; 1024 makes a 768 px GIF of about 8 MB. The video loops it on a dark background. " : ""}
           {mode === "app" ? "On the tabletop the frame is drawn live, so the animation plays at the table." : "Everything happens in your browser: nothing is uploaded."}
         </p>
       </div>

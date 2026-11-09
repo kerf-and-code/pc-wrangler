@@ -20,7 +20,7 @@ import {
 } from "@/lib/tabletop/fog";
 import { drawElement, type DoorKind, type MapElement } from "@/lib/dungeon/classic";
 import {
-  wallSegments, sightWallSegs, visibility, seenSquares, canSeeLit, seesPoint, lightOf, darkvisionOf, lightModeOf,
+  wallSegments, sightWallSegs, visibility, moveStop, seenSquares, canSeeLit, seesPoint, lightOf, darkvisionOf, lightModeOf,
   LIGHT_MODES, LIGHT_PRESETS, DARKVISION_FT, CANOPY_KINDS, type Seg, type Light, type Viewer, type LightMode,
 } from "@/lib/tabletop/sight";
 import { econOf, speedNow, cantAct, FRESH_ECON } from "@/lib/combat-effects";
@@ -436,6 +436,14 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   // selected, shown as an outline only), and what they can see. Recomputed only when a viewer moves or
   // the walls change.
   const losOn = () => !!stateRef.current?.scene?.settings?.los && !!stateRef.current?.map;
+  // the scene's walls as segments (map walls, closed doors, sight walls), shared by sight and movement
+  const wallSegsNow = (): Seg[] | null => {
+    const m = stateRef.current?.map; if (!m) return null;
+    const sh = shapeOf(); if (!sh) return null;
+    const n = m.n > 0 ? m.n : 25;
+    if (!segsCache.current || segsCache.current.sig !== mapSig.current) segsCache.current = { sig: mapSig.current, segs: wallSegments(sh.shape, m.door_state ?? {}, sightWallSegs(normSightWalls(m.meta?.sightWalls, n))) };
+    return segsCache.current.segs;
+  };
   const updateSight = (): void => {
     const st = stateRef.current, m = st?.map;
     if (!st || !m || !losOn()) { sight.current = { key: "", polys: [], viewers: 0, seers: [], lights: [], mode: "bright" }; return; }
@@ -454,8 +462,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
       + "|" + sources.map((p) => `${p.x.toFixed(2)},${p.y.toFixed(2)},${p.r}`).join(";");
     if (key === sight.current.key) return;
     const sh = shapeOf(); if (!sh) return;
-    if (!segsCache.current || segsCache.current.sig !== mapSig.current) segsCache.current = { sig: mapSig.current, segs: wallSegments(sh.shape, m.door_state ?? {}, sightWallSegs(normSightWalls(m.meta?.sightWalls, n))) };
-    const segs = segsCache.current.segs;
+    const segs = wallSegsNow() ?? [];
     const polys = lookers.map((p) => visibility(p, segs));
     // a light's polygon only changes when it moves or the walls do
     if (lightPolys.current.sig !== mapSig.current) lightPolys.current = { sig: mapSig.current, at: new Map() };
@@ -1690,9 +1697,13 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     if (d) {
       const dx = sq.x - d.start.x, dy = sq.y - d.start.y;
       if (Math.hypot(dx, dy) > 0.05) d.moved = true;
+      // Phase 5o: a player's token stops at a wall, a closed door or a sight wall; the GM moves freely
+      const segs = stateRef.current?.role === "gm" ? null : wallSegsNow();
       for (const id of d.ids) {
         const o = d.orig.get(id)!, t = tokensRef.current.get(id)!;
-        d.now.set(id, d.free || e.altKey ? { x: o.x + dx, y: o.y + dy } : snapToken(o.x + dx, o.y + dy, t.size));
+        const want = d.free || e.altKey ? { x: o.x + dx, y: o.y + dy } : snapToken(o.x + dx, o.y + dy, t.size);
+        const stop = segs ? moveStop(o, want, segs) : null;
+        d.now.set(id, stop?.blocked ? { x: stop.x, y: stop.y } : want);
       }
       const now = performance.now();
       if (now - d.lastSend > DRAG_SEND_MS) {

@@ -1940,6 +1940,7 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
                         void supabase.from("characters").update({ portrait_url: path }).eq("id", row.id);
                       }}
                       textColor={STONE.ink} mutedColor={STONE.inkDim}
+                      maker name={name || row.name}
                     />
                   </div>
                 )}

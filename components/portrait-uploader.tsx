@@ -10,9 +10,14 @@
  * handles file selection, the upload, and preview. Writes are gated by the storage policies in
  * p14-portrait-uploads.sql; if the caller lacks permission the upload fails and we surface it
  * plainly rather than pretending it worked.
+ *
+ * Phase 5o: with `maker`, a second button opens the token maker (components/token-maker), so a player
+ * can cut their picture out, shape it and frame it (a class border, an effect) and save the result as
+ * the portrait: a still PNG, uploaded through the same path and policies as a picked file.
  */
 
 import React, { useRef, useState } from "react";
+import TokenMaker from "@/components/token-maker";
 import { createClient } from "@/lib/supabase/client";
 
 import { FORGE_RADIUS } from "@/lib/forge-theme";
@@ -34,13 +39,18 @@ export type PortraitUploaderProps = {
   buttonStyle?: React.CSSProperties;
   textColor?: string;
   mutedColor?: string;
+  /** Offer the token maker beside the upload button (player characters). */
+  maker?: boolean;
+  /** The character's name, for the maker's download file names. */
+  name?: string;
 };
 
 export function PortraitUploader({
   basePath, currentUrl, onUploaded, label = "Portrait",
   notReadyHint = "Save first, then add a portrait.",
-  buttonStyle, textColor = "#e8e3d8", mutedColor = "#9a9488",
+  buttonStyle, textColor = "#e8e3d8", mutedColor = "#9a9488", maker = false, name,
 }: PortraitUploaderProps) {
+  const [makerOpen, setMakerOpen] = useState(false);
   const supabase = React.useMemo(() => createClient(), []);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [busy, setBusy] = useState(false);
@@ -57,20 +67,27 @@ export function PortraitUploader({
     if (!OK_TYPES.includes(file.type)) { setError("Use a PNG, JPEG, or WebP image."); return; }
     if (file.size > MAX_BYTES) { setError("That image is over 4 MB. Use a smaller one."); return; }
 
+    await upload(file, file.type);
+  };
+
+  /** Uploads an image (a picked file, or the token maker's PNG) to basePath and reports it. Returns an error message or null. */
+  const upload = async (file: Blob, type: string): Promise<string | null> => {
+    if (!basePath) return "Save first, then add a portrait.";
     setBusy(true);
     setError(null);
     try {
-      const ext = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
+      const ext = type === "image/png" ? "png" : type === "image/webp" ? "webp" : "jpg";
       const path = `${basePath}.${ext}`;
       const { error: upErr } = await supabase.storage
         .from(BUCKET)
-        .upload(path, file, { upsert: true, contentType: file.type });
+        .upload(path, file, { upsert: true, contentType: type });
       if (upErr) throw upErr;
       const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
       // Cache-bust so a re-upload to the same path shows the new image immediately.
       const url = `${data.publicUrl}?v=${Date.now()}`;
       setPreview(url);
       onUploaded(url, path);
+      return null;
     } catch (err) {
       // Surface what actually failed. This used to be a bare catch that replaced every error with
       // "you may not have permission to write here", which is a GUESS: a missing bucket, an
@@ -91,6 +108,7 @@ export function PortraitUploader({
       setError(`Upload failed: ${msg}${status ? ` (${status})` : ""}.${hint}`);
       // Keep the raw object in the console for anything the cases above do not cover.
       console.error("portrait upload failed", err);
+      return `Upload failed: ${msg}`;
     } finally {
       setBusy(false);
     }
@@ -121,12 +139,37 @@ export function PortraitUploader({
             </button>
             <input ref={inputRef} type="file" accept="image/png,image/jpeg,image/webp"
               onChange={onFile} style={{ display: "none" }} />
+            {maker && (
+              <button type="button" onClick={() => setMakerOpen(true)} disabled={busy}
+                style={buttonStyle || {
+                  background: "transparent", color: textColor, border: `1px solid ${mutedColor}`,
+                  borderRadius: FORGE_RADIUS, padding: "6px 12px", fontSize: 12.5, cursor: busy ? "default" : "pointer",
+                }}>
+                Make one with the token maker
+              </button>
+            )}
           </>
         ) : (
           <span style={{ fontSize: 12, color: mutedColor, fontStyle: "italic" }}>{notReadyHint}</span>
         )}
         {error && <span style={{ fontSize: 11.5, color: "#c98a7a" }}>{error}</span>}
       </div>
+      {makerOpen && (
+        <div role="dialog" aria-modal="true" aria-label="Token maker for the portrait"
+          onKeyDown={(e) => { if (e.key === "Escape") setMakerOpen(false); }}
+          style={{ position: "fixed", inset: 0, zIndex: 60, background: "rgba(10,8,6,0.78)", display: "flex", alignItems: "flex-start", justifyContent: "center", overflowY: "auto", padding: "24px 12px" }}>
+          <div style={{ background: "#1b1714", border: "1px solid rgba(255,255,255,0.16)", borderRadius: 12, padding: 18, width: "min(1000px, 100%)", boxSizing: "border-box" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+              <strong style={{ flex: 1, fontSize: 16, color: "#f2e6c9" }}>Make a portrait</strong>
+              <button type="button" onClick={() => setMakerOpen(false)}
+                style={{ background: "transparent", color: "#f2e6c9", border: "1px solid rgba(255,255,255,0.16)", borderRadius: 7, padding: "6px 10px", fontSize: 12.5, cursor: "pointer" }}>Close</button>
+            </div>
+            <TokenMaker mode="app" name={name} initialImage={preview} saveLabel="Use as the portrait"
+              onSave={async (r) => { const err = await upload(r.baked, "image/png"); if (!err) setMakerOpen(false); return err; }}
+              onCancel={() => setMakerOpen(false)} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

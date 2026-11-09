@@ -266,6 +266,7 @@ export default function CharacterPage() {
                 await supabase.from("characters").update({ portrait_url: url }).eq("id", ch.id);
               }}
               label="Character portrait"
+              maker name={ch.name}
             />
             <p style={{ fontSize: 12, color: C.muted, margin: "6px 0 0" }}>This is the same portrait as the Forge, and it is the page&rsquo;s header image.</p>
           </div>

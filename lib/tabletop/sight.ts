@@ -72,6 +72,22 @@ function hit(o: Pt, dx: number, dy: number, s: Seg): number {
   return t;
 }
 
+/**
+ * Phase 5o: where a token's centre stops when moved in a straight line from a toward b, if a wall is in
+ * the way (map walls, closed doors, sight walls): `pad` squares short of the first wall it meets.
+ * Returns b itself when the way is clear. Only the centre line is checked, so a token passes any gap its
+ * centre fits through, as in most virtual tabletops.
+ */
+export function moveStop(a: Pt, b: Pt, segs: Seg[], pad = 0.2): { x: number; y: number; blocked: boolean } {
+  const dx = b.x - a.x, dy = b.y - a.y, len = Math.hypot(dx, dy);
+  if (len < 1e-6) return { x: b.x, y: b.y, blocked: false };
+  let t = Infinity;
+  for (const s of segs) { const h = hit(a, dx, dy, s); if (h < t) t = h; }
+  if (t > 1) return { x: b.x, y: b.y, blocked: false };
+  const k = Math.max(0, t - pad / len);
+  return { x: a.x + dx * k, y: a.y + dy * k, blocked: true };
+}
+
 // The area a viewer at o can see, as a polygon (points in angle order).
 export function visibility(o: Pt, segs: Seg[]): Pt[] {
   const angles: number[] = [];
