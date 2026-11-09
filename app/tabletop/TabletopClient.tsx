@@ -35,6 +35,7 @@ import HandoutView, { type Handout } from "@/components/handout-view";
 import RollTablesPanel from "@/components/roll-tables-panel";
 import TableSound, { useTableAudio } from "@/components/table-sound";
 import SoundPanel from "@/components/sound-panel";
+import { encodeDifficult, normDifficult, paintDifficult, pathExtra } from "@/lib/tabletop/terrain";
 import { AttackForm, EconomyBar, MarkerChips, MarkerPicker, PlayerEntryControls, SaveBanner, TurnUsed, isMyTurn, type FightEntry, type PendingSave } from "@/components/fight-controls";
 
 // The tabletop, phase 1 (2026-11-06). One page for the GM and the players; tabletop_state (p105)
@@ -103,7 +104,7 @@ type MapJson = {
   id: string; kind: string; n: number; feet_per_square: number; grid: unknown; custom: unknown; doors: unknown; elements: unknown; meta: Record<string, unknown>;
   door_state?: Record<string, boolean>; fog?: { on: boolean; revealed: string }; walls?: string[];
 };
-type Scene = { id: string; name: string; battle_map_id: string; level: number; settings: { show_labels?: boolean; diagonal?: DiagonalRule; los?: boolean; light?: LightMode } };
+type Scene = { id: string; name: string; battle_map_id: string; level: number; settings: { show_labels?: boolean; diagonal?: DiagonalRule; los?: boolean; light?: LightMode; difficult?: number[] } };
 type State = {
   role: "gm" | "player"; me: string; campaign: { id: string; name: string; gm_id: string }; session_id: string | null;
   scene: Scene | null; map: MapJson | null; tokens: Token[]; party: PartyMember[];
@@ -127,7 +128,7 @@ const GROUP_MS = 6000;
 const sizeSquares = (size: string | null | undefined) => { const s = (size ?? "").toLowerCase(); return s.startsWith("tiny") ? 0.5 : s.startsWith("large") ? 2 : s.startsWith("huge") ? 3 : s.startsWith("garg") ? 4 : 1; };
 type FeedItem = { t: number; key: string; msg?: Message; ext?: OutsideRoll };
 
-type Tool = "select" | "ruler" | "template" | "hand" | "fog" | "draw";
+type Tool = "select" | "ruler" | "template" | "hand" | "fog" | "draw" | "terrain";
 type DrawKind = "pen" | "line" | "rect" | "ellipse" | "text" | "erase";
 type Drawing = {
   id: string; scene_id: string; owner: string; layer: "table" | "gm"; kind: Exclude<DrawKind, "erase">;
@@ -207,6 +208,11 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   const [tick, setTick] = useState(0);
   const [fogMode, setFogMode] = useState<FogMode>("reveal-room");
   const [fogBrush, setFogBrush] = useState(1);
+  // phase 5u: difficult terrain (the scene's settings.difficult), and the GM's terrain brush
+  const [terrainMode, setTerrainMode] = useState<"paint" | "erase">("paint");
+  const [terrainBrush, setTerrainBrush] = useState(1);
+  const difficultRef = useRef<Set<number>>(new Set());
+  const terrainPaint = useRef<{ on: boolean } | null>(null);
   const [fogOnUi, setFogOnUi] = useState(false);
   const [selDoors, setSelDoors] = useState<string[]>([]);
   const [selTpl, setSelTpl] = useState<string | null>(null);
@@ -661,6 +667,23 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
       }
     }
 
+    // phase 5u: difficult terrain, hatched, under the fog (players see it only where the fog is lifted)
+    if (difficultRef.current.size && n) {
+      ctx.save(); ctx.beginPath();
+      for (const i of difficultRef.current) ctx.rect((i % n) * cell, Math.floor(i / n) * cell, cell, cell);
+      ctx.clip();
+      ctx.fillStyle = "rgba(150,100,45,0.2)"; ctx.fillRect(0, 0, n * cell, n * cell);
+      ctx.strokeStyle = "rgba(235,175,95,0.6)"; ctx.lineWidth = Math.max(1, cell * 0.05);
+      ctx.beginPath();
+      for (let d = -n * cell; d < n * cell; d += cell / 3) { ctx.moveTo(d, 0); ctx.lineTo(d + n * cell, n * cell); }
+      ctx.stroke(); ctx.restore();
+    }
+    if (tool === "terrain" && hoverSq.current && n) {
+      const h = Math.floor(terrainBrush / 2), c0 = Math.floor(hoverSq.current.x) - h, r0 = Math.floor(hoverSq.current.y) - h;
+      ctx.save(); ctx.strokeStyle = terrainMode === "paint" ? "#ebaf5f" : "#e07a70"; ctx.lineWidth = Math.max(1.5, 2 / cam.s); ctx.setLineDash([5 / cam.s, 4 / cam.s]);
+      ctx.strokeRect(c0 * cell, r0 * cell, terrainBrush * cell, terrainBrush * cell); ctx.restore();
+    }
+
     // fog: opaque for players, a shade for the GM, who still sees what is underneath
     if (fogOn.current && fogCanvas.current && n) {
       ctx.save(); ctx.imageSmoothingEnabled = false;
@@ -895,7 +918,9 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
       ctx.beginPath(); pts.forEach((p, i) => (i ? ctx.lineTo(p.x * cell, p.y * cell) : ctx.moveTo(p.x * cell, p.y * cell))); ctx.stroke();
       ctx.fillStyle = ru.color; for (const p of pts) { ctx.beginPath(); ctx.arc(p.x * cell, p.y * cell, Math.max(3, 4 / cam.s), 0, Math.PI * 2); ctx.fill(); }
       const d = measure(pts, rule, fps), end = pts[pts.length - 1];
-      const fs = Math.max(12, 15 / cam.s), text = `${d.feet} ft`;
+      // phase 5u: what difficult terrain adds, leg by leg, as the move check counts it
+      const xtra = difficultRef.current.size && n ? pathExtra(difficultRef.current, n, pts, (a, b) => measure([a, b], rule, fps).feet, fps) : 0;
+      const fs = Math.max(12, 15 / cam.s), text = xtra ? `${d.feet + xtra} ft (${xtra} difficult)` : `${d.feet} ft`;
       ctx.font = `700 ${fs}px system-ui, sans-serif`; const w = ctx.measureText(text).width + fs;
       ctx.fillStyle = "rgba(20,16,12,0.88)"; ctx.fillRect(end.x * cell + 10 / cam.s, end.y * cell - fs * 1.6, w, fs * 1.4);
       ctx.fillStyle = "#fff"; ctx.textBaseline = "top"; ctx.fillText(text, end.x * cell + 10 / cam.s + fs / 2, end.y * cell - fs * 1.45);
@@ -971,6 +996,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     const st = data as State;
     const prevMap = stateRef.current?.map?.id, prevScene = stateRef.current?.scene?.id;
     stateRef.current = st; setState(st); setError(null);
+    difficultRef.current = normDifficult(st.scene?.settings?.difficult, st.map?.n ?? 0);
     applyTokens(st.tokens);
     // darkvision from the character sheets behind the tokens (a player can read only their own)
     await refreshSheetDv(st.tokens ?? []);
@@ -1380,6 +1406,25 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     rebuildFog(); requestDraw();
   }, [rebuildFog, requestDraw]);
 
+  // phase 5u: the GM paints difficult terrain; the scene's settings carry it to everyone (the scene's
+  // Realtime update reloads every table, this one included)
+  const paintTerrain = useCallback((cells: number[], on: boolean) => {
+    if (!cells.length) return;
+    difficultRef.current = paintDifficult(difficultRef.current, cells, on); requestDraw();
+  }, [requestDraw]);
+  const saveTerrain = useCallback(async () => {
+    const sc = stateRef.current?.scene; if (!sc) return;
+    setTick((v) => v + 1);
+    const settings = { ...(sc.settings ?? {}), difficult: encodeDifficult(difficultRef.current) };
+    const { error: er } = await supabase.from("vtt_scenes").update({ settings, updated_at: new Date().toISOString() }).eq("id", sc.id);
+    if (er) setChatErr(`Could not save the terrain: ${er.message}`);
+  }, [supabase]);
+  const terrainDown = (sq: Pt) => {
+    const m = stateRef.current?.map; if (!m) return;
+    terrainPaint.current = { on: terrainMode === "paint" };
+    paintTerrain(brushCells(m.n, Math.floor(sq.x), Math.floor(sq.y), terrainBrush), terrainPaint.current.on);
+  };
+
   const setFogEnabled = useCallback((on: boolean) => {
     fogOn.current = on; setFogOnUi(on);
     rebuildFog(); requestDraw(); saveFog(on, true);
@@ -1604,6 +1649,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     }
     if (e.button !== 0) return;
     if (tool === "fog" && st.role === "gm") { fogClick(sq, fogMode); return; }
+    if (tool === "terrain" && st.role === "gm") { terrainDown(sq); return; }
     if (tool === "draw") { drawDown(sq, e.altKey); return; }
     if (tool === "template") {
       const o = e.altKey ? sq : snapOrigin(sq, tplShape);
@@ -1673,7 +1719,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
       }
       if (lp?.fired) return;
     }
-    if (tool === "fog") { hoverSq.current = sq; requestDraw(); }
+    if (tool === "fog" || tool === "terrain") { hoverSq.current = sq; requestDraw(); }
     const dp = drawPreview.current;
     if (dp && (e.buttons & 1)) {
       const p: [number, number] = e.altKey || dp.kind === "pen" ? [sq.x, sq.y] : [Math.round(sq.x * 2) / 2, Math.round(sq.y * 2) / 2];
@@ -1682,6 +1728,11 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
         if (Math.hypot(p[0] - last[0], p[1] - last[1]) > 0.06 && dp.points.length < 4000) dp.points.push(p);
       } else dp.points = [dp.points[0], p];
       requestDraw(); return;
+    }
+    if (terrainPaint.current && (e.buttons & 1)) {
+      const m = stateRef.current?.map;
+      if (m) paintTerrain(brushCells(m.n, Math.floor(sq.x), Math.floor(sq.y), terrainBrush), terrainPaint.current.on);
+      return;
     }
     if (brushing.current && (e.buttons & 1)) {
       const m = stateRef.current?.map;
@@ -1759,6 +1810,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
       if (lp?.fired) return;
     }
     if (brushing.current) { brushing.current = null; saveFog(null); return; }
+    if (terrainPaint.current) { terrainPaint.current = null; void saveTerrain(); return; }
     if (drawPreview.current) { finishDrawing(); return; }
     if (pan.current) {
       const p = pan.current; pan.current = null;
@@ -2001,6 +2053,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
       if (k === "t") { setTool("template"); return; }
       if (k === "d") { setTool("draw"); return; }
       if (k === "u" && isGm) { setTool("fog"); return; }
+      if (k === "g" && isGm) { setTool("terrain"); return; }
       if (selTplRef.current) {
         if (k === "r") { turnTpl(e.shiftKey ? -15 : 15); return; }
         if (k === "delete" || k === "backspace") { e.preventDefault(); void removeTpl(); return; }
@@ -2392,6 +2445,11 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 8h12a3 3 0 1 0-3-3 M3 12h17 M5 16h11a3 3 0 1 1-3 3"/></svg>Fog
             </button>
           )}
+          {isGm && (
+            <button type="button" title="Difficult terrain (G): paint squares where every foot of movement costs two" onClick={() => setTool("terrain")} style={railBtn(tool === "terrain")}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 20l5-8 4 5 3-4 6 7z M4 9l4-4 M9 9l4-4 M14 9l4-4"/></svg>Terrain
+            </button>
+          )}
           <button type="button" title="Pan (or hold Space, or drag with the right mouse button)" onClick={() => setTool("hand")} style={railBtn(tool === "hand")}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2v20 M2 12h20 M12 2l-3 3 M12 2l3 3 M12 22l-3-3 M12 22l3-3 M2 12l3-3 M2 12l3 3 M22 12l-3-3 M22 12l-3 3"/></svg>Pan
           </button>
@@ -2446,6 +2504,19 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
               <button type="button" onClick={undoMyDrawing} style={small}>Undo mine</button>
               <button type="button" onClick={() => void clearDrawings(false)} style={small}>Clear mine</button>
               {isGm && <button type="button" onClick={() => void clearDrawings(true)} style={{ ...small, color: "#e07a70" }}>Clear all</button>}
+            </div>
+          )}
+          {scene && isGm && tool === "terrain" && (
+            <div role="toolbar" aria-label="Difficult terrain" style={{ position: "absolute", top: 10, left: "50%", transform: "translateX(-50%)", display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", justifyContent: "center", maxWidth: "calc(100% - 20px)", background: "rgba(28,24,20,0.95)", border: `1px solid ${C.line}`, borderRadius: 10, padding: "6px 8px" }}>
+              <span style={{ fontSize: 12.5, color: C.text, marginRight: 2 }}>Difficult terrain</span>
+              {([["paint", "Paint"], ["erase", "Erase"]] as ["paint" | "erase", string][]).map(([k, l]) => (
+                <button key={k} type="button" aria-pressed={terrainMode === k} onClick={() => setTerrainMode(k)} style={{ ...seg(terrainMode === k), flex: "0 0 auto", padding: "6px 10px" }}>{l}</button>
+              ))}
+              {[1, 3, 5].map((b) => (
+                <button key={b} type="button" title={`Brush ${b} by ${b} squares`} aria-pressed={terrainBrush === b} onClick={() => setTerrainBrush(b)} style={{ ...seg(terrainBrush === b), flex: "0 0 auto", padding: "6px 8px" }}>{b}</button>
+              ))}
+              <button type="button" disabled={!difficultRef.current.size} onClick={() => { difficultRef.current = new Set(); requestDraw(); void saveTerrain(); }} style={{ ...small, padding: "6px 10px" }}>Clear all</button>
+              <span style={{ fontSize: 12, color: C.muted }}>{difficultRef.current.size} square{difficultRef.current.size === 1 ? "" : "s"}. Moving through them costs double.</span>
             </div>
           )}
           {scene && isGm && tool === "fog" && (
