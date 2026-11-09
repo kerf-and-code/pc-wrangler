@@ -41,6 +41,7 @@ import { PinCard, TokenNotes, type EntryOption, type Pin } from "@/components/ta
 import TokenBars, { HEALTH_COLOR, HEALTH_LABEL, type Bar } from "@/components/token-bars";
 import DiceTray, { diceColor, useDiceSetting, type DiceTrayApi, type TrayDie } from "@/components/dice-tray";
 import CardsPanel, { useTableCards, type Seat } from "@/components/cards-panel";
+import AddonsPanel from "@/components/addons-panel";
 import { AttackForm, EconomyBar, MarkerChips, MarkerPicker, PlayerEntryControls, SaveBanner, TurnUsed, isMyTurn, type FightEntry, type PendingSave } from "@/components/fight-controls";
 
 // The tabletop, phase 1 (2026-11-06). One page for the GM and the players; tabletop_state (p105)
@@ -121,7 +122,7 @@ type RollDie = { sides: number; value: number; kept: boolean };
 type Message = {
   id: string; session_id: string | null; author_profile: string; as_name: string | null; character_id: string | null;
   kind: "say" | "emote" | "whisper" | "roll" | "system"; body: string; whisper_to: string[] | null; gm_only: boolean; created_at: string;
-  roll: { label?: string; notation?: string; total?: number; dice?: RollDie[]; natural?: number | null; logged?: boolean; table?: { id?: string; name: string; result: string; found?: boolean } } | null;
+  roll: { label?: string; notation?: string; total?: number; dice?: RollDie[]; natural?: number | null; logged?: boolean; table?: { id?: string; name: string; result: string; found?: boolean }; addon?: string } | null;
 };
 type OutsideRoll = { id: string; actor_name: string | null; character_id?: string | null; source: string; name: string | null; at: string;
   event_type?: string | null; applied_to?: string | null;
@@ -193,10 +194,29 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   const cardsReloadRef = useRef<() => void>(() => {});
   const reloadCards = tableCards.reload;
   useEffect(() => { cardsReloadRef.current = () => { void reloadCards(); }; }, [reloadCards]);
+  // phase 6b (p131): when this table has a webhook on, the browser that just did something (posted,
+  // rolled, moved the turn on) asks the server to send it now; the minute cron catches anything missed
+  const hasHooks = useRef(false);
+  const checkHooks = useCallback(async () => {
+    const { data } = await supabase.rpc("tabletop_has_hooks", { p_campaign: campaignId });
+    hasHooks.current = data === true;
+  }, [supabase, campaignId]);
+  useEffect(() => { void checkHooks(); }, [checkHooks]);
+  const kickTimer = useRef<number | null>(null);
+  const kickAddons = useCallback(() => {
+    if (!hasHooks.current || kickTimer.current !== null) return;
+    kickTimer.current = window.setTimeout(() => {
+      kickTimer.current = null;
+      void fetch("/api/addon/kick", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ campaignId }) }).catch(() => {});
+    }, 400);
+  }, [campaignId]);
+  const kickRef = useRef<() => void>(() => {});
+  const checkHooksRef = useRef<() => void>(() => {});
+  useEffect(() => { kickRef.current = kickAddons; checkHooksRef.current = () => { void checkHooks(); }; }, [kickAddons, checkHooks]);
   const [state, setState] = useState<State | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [tool, setTool] = useState<Tool>("select");
-  const [panel, setPanel] = useState<"chat" | "turns" | "tokens" | "scenes" | "handouts" | "tables" | "sound" | "cards">("chat");
+  const [panel, setPanel] = useState<"chat" | "turns" | "tokens" | "scenes" | "handouts" | "tables" | "sound" | "cards" | "addons">("chat");
   const [fight, setFight] = useState<Fight | null>(null);
   const fightRow = useRef<FightRow | null>(null);
   const fightRef = useRef<Fight | null>(null);
@@ -1433,7 +1453,11 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
         const id = (p.old as { id?: string }).id; if (id && tokensRef.current.delete(id)) requestDraw();
       })
       .on("postgres_changes", { event: "*", schema: "public", table: "vtt_scenes", filter: `campaign_id=eq.${campaignId}` }, () => { void load(); })
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "vtt_messages", filter: `campaign_id=eq.${campaignId}` }, (p) => addFeed([p.new as Message], []))
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "vtt_messages", filter: `campaign_id=eq.${campaignId}` }, (p) => {
+        const m = p.new as Message;
+        addFeed([m], []);
+        if (m.author_profile === stateRef.current?.me) kickRef.current();
+      })
       .on("broadcast", { event: "drag" }, ({ payload }) => {
         const d = payload as { id: string; x: number; y: number };
         const t = tokensRef.current.get(d.id);
@@ -1487,6 +1511,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
       .on("broadcast", { event: "pins" }, () => { loadPinsRef.current(); })
       .on("broadcast", { event: "bars" }, () => { loadPinsRef.current(); })
       .on("broadcast", { event: "cards" }, () => { cardsReloadRef.current(); })
+      .on("broadcast", { event: "addons" }, () => { checkHooksRef.current(); })
       .on("broadcast", { event: "tpl" }, ({ payload }) => {
         const r = payload as { by: string; color: string; geom: TemplateGeom; done: boolean; placed?: boolean };
         if (r.placed) remoteTpl.current.delete(r.by);
@@ -1508,7 +1533,10 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [supabase, campaignId, state?.me, state?.role]);
 
-  const send = (event: string, payload: Record<string, unknown>) => { void channelRef.current?.send({ type: "broadcast", event, payload }); };
+  const send = (event: string, payload: Record<string, unknown>) => {
+    void channelRef.current?.send({ type: "broadcast", event, payload });
+    if (event === "combat") kickRef.current();
+  };
 
   const loaded = !!state;
   useEffect(() => {
@@ -2899,6 +2927,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
             <button type="button" onClick={() => setPanel("tables")} style={seg(panel === "tables")}>Tables</button>
             <button type="button" onClick={() => setPanel("cards")} style={seg(panel === "cards")}>Cards{tableCards.data?.hand.length ? ` (${tableCards.data.hand.length})` : ""}</button>
             {isGm && <button type="button" onClick={() => setPanel("sound")} style={seg(panel === "sound")}>Sound</button>}
+            {isGm && <button type="button" onClick={() => setPanel("addons")} style={seg(panel === "addons")}>Add-ons</button>}
           </div>
 
           {panel === "chat" && (
@@ -2925,15 +2954,17 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                     if (m.roll.table) return <div key={f.key}>{renderTableRoll(who, m.roll.table, m.roll.total, dice, m.gm_only)}</div>;
                     const ag = (m.roll as { against?: { target: string; hit: boolean | null; crit: boolean; applied?: boolean; defeated?: boolean } | null }).against;
                     const title = ag ? `${m.roll.label ?? ""} vs ${ag.target}: ${ag.applied ? `damage lands${ag.crit ? " (crit)" : ""}${ag.defeated ? `, ${ag.target} goes down` : ""}` : ag.hit === null ? "the GM decides" : ag.crit ? "critical hit" : ag.hit ? "hit" : "miss"}` : m.roll.label ?? "";
-                    return <div key={f.key}>{renderRoll(who, title, m.roll.total, dice, m.roll.natural ?? null, m.gm_only ? "GM only" : m.roll.logged === false ? "not logged" : null)}</div>;
+                    return <div key={f.key}>{renderRoll(who, title, m.roll.total, dice, m.roll.natural ?? null, m.roll.addon ? `via ${m.roll.addon}${m.gm_only ? ", GM only" : ""}` : m.gm_only ? "GM only" : m.roll.logged === false ? "not logged" : null)}</div>;
                   }
-                  if (m.kind === "emote") return <div key={f.key} style={{ fontStyle: "italic", color: C.muted, fontSize: 13.5 }}>{who} {m.body}</div>;
+                  // phase 6b: a line an add-on posted says so, so it never passes for a player
+                  const via = m.roll?.addon ? <span style={{ marginLeft: 6, fontSize: 10.5, fontStyle: "normal", color: C.muted, border: `1px solid ${C.line}`, borderRadius: 999, padding: "0 6px" }}>via {m.roll.addon}</span> : null;
+                  if (m.kind === "emote") return <div key={f.key} style={{ fontStyle: "italic", color: C.muted, fontSize: 13.5 }}>{who} {m.body}{via}</div>;
                   if (m.kind === "whisper") {
                     const to = (m.whisper_to ?? []).map((id) => party.find((p) => p.profile_id === id)?.name ?? "someone").join(", ");
                     return <div key={f.key} style={{ fontSize: 13.5, background: "rgba(140,110,200,0.12)", border: "1px solid rgba(140,110,200,0.35)", borderRadius: 8, padding: "6px 8px" }}>
                       <span style={{ color: "#c2a8f0", fontSize: 12 }}>{m.author_profile === me ? `You whisper to ${to}` : `${who} whispers to you`}</span><div>{m.body}</div></div>;
                   }
-                  return <div key={f.key} style={{ fontSize: 13.5 }}><b style={{ color: m.author_profile === state.campaign.gm_id ? C.sun : C.text }}>{who}:</b> {m.body}</div>;
+                  return <div key={f.key} style={{ fontSize: 13.5 }}><b style={{ color: m.author_profile === state.campaign.gm_id && !m.roll?.addon ? C.sun : C.text }}>{who}:</b> {m.body}{via}</div>;
                 })}
                 <div ref={feedEnd} />
               </div>
@@ -3389,6 +3420,10 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
 
           {panel === "sound" && isGm && (
             <SoundPanel campaignId={campaignId} supabase={supabase} audio={tableAudio.audio} serverNow={tableAudio.serverNow} save={tableAudio.save} missing={tableAudio.missing} />
+          )}
+
+          {panel === "addons" && isGm && (
+            <AddonsPanel campaignId={campaignId} supabase={supabase} onHooksChanged={() => { void checkHooks(); send("addons", {}); }} />
           )}
 
           {panel === "cards" && (
