@@ -32,6 +32,7 @@ import { openTabletop } from "@/lib/tabletop/open";
 import MapUpload from "@/components/map-upload";
 import { EFFECTS, drawEffect, isEffect, seedOf, type EffectKind } from "@/lib/tabletop/effects";
 import HandoutView, { type Handout } from "@/components/handout-view";
+import RollTablesPanel from "@/components/roll-tables-panel";
 import { AttackForm, EconomyBar, MarkerChips, MarkerPicker, PlayerEntryControls, SaveBanner, TurnUsed, isMyTurn, type FightEntry, type PendingSave } from "@/components/fight-controls";
 
 // The tabletop, phase 1 (2026-11-06). One page for the GM and the players; tabletop_state (p105)
@@ -112,7 +113,7 @@ type RollDie = { sides: number; value: number; kept: boolean };
 type Message = {
   id: string; session_id: string | null; author_profile: string; as_name: string | null; character_id: string | null;
   kind: "say" | "emote" | "whisper" | "roll" | "system"; body: string; whisper_to: string[] | null; gm_only: boolean; created_at: string;
-  roll: { label?: string; notation?: string; total?: number; dice?: RollDie[]; natural?: number | null; logged?: boolean } | null;
+  roll: { label?: string; notation?: string; total?: number; dice?: RollDie[]; natural?: number | null; logged?: boolean; table?: { id?: string; name: string; result: string; found?: boolean } } | null;
 };
 type OutsideRoll = { id: string; actor_name: string | null; character_id?: string | null; source: string; name: string | null; at: string;
   event_type?: string | null; applied_to?: string | null;
@@ -180,7 +181,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   const [state, setState] = useState<State | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [tool, setTool] = useState<Tool>("select");
-  const [panel, setPanel] = useState<"chat" | "turns" | "tokens" | "scenes" | "handouts">("chat");
+  const [panel, setPanel] = useState<"chat" | "turns" | "tokens" | "scenes" | "handouts" | "tables">("chat");
   const [fight, setFight] = useState<Fight | null>(null);
   const fightRow = useRef<FightRow | null>(null);
   const fightRef = useRef<Fight | null>(null);
@@ -2326,6 +2327,20 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     </div>
   );
 
+  // A roll on a rollable table (phase 5r): the table's name, the number, and the entry it landed on.
+  const renderTableRoll = (who: string, tb: { name: string; result: string; found?: boolean }, total: number | undefined, dice: { v: number; sides: number; kept: boolean }[], gmOnly: boolean) => (
+    <div style={{ background: "#1c1814", border: `1px solid ${C.line}`, borderLeft: `3px solid ${C.sun}`, borderRadius: 8, padding: "8px 10px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 8, color: C.muted, fontSize: 12 }}>
+        <span><b style={{ color: C.text }}>{who}</b> rolls on {tb.name}</span>
+        {gmOnly && <span style={{ fontSize: 11, color: C.sun }}>GM only</span>}
+      </div>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginTop: 4 }}>
+        {dice.length > 0 && <span title={dice.map((d) => `${d.v}/d${d.sides}`).join(" + ")} style={{ fontSize: 18, fontWeight: 700, color: C.sun, minWidth: 26 }}>{total ?? "?"}</span>}
+        <span style={{ fontSize: 14, color: tb.found === false ? C.muted : C.text, lineHeight: 1.35 }}>{tb.result}</span>
+      </div>
+    </div>
+  );
+
   const scene = state.scene;
   const onSceneTokens = new Set([...tokensRef.current.values()].map((t) => t.character_id).filter(Boolean));
   const sel = selectedTokens;
@@ -2543,6 +2558,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
             {isGm && <button type="button" onClick={() => setPanel("tokens")} style={seg(panel === "tokens")}>Tokens</button>}
             {isGm && <button type="button" onClick={() => setPanel("scenes")} style={seg(panel === "scenes")}>Scenes</button>}
             <button type="button" onClick={() => setPanel("handouts")} style={seg(panel === "handouts")}>Handouts{handouts.length ? ` (${handouts.length})` : ""}</button>
+            <button type="button" onClick={() => setPanel("tables")} style={seg(panel === "tables")}>Tables</button>
           </div>
 
           {panel === "chat" && (
@@ -2565,6 +2581,8 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                   const who = nameOf(m);
                   if (m.kind === "roll" && m.roll) {
                     const dice = (m.roll.dice ?? []).map((d) => ({ v: d.value, sides: d.sides, kept: d.kept }));
+                    // phase 5r: a roll on a rollable table shows the entry it landed on
+                    if (m.roll.table) return <div key={f.key}>{renderTableRoll(who, m.roll.table, m.roll.total, dice, m.gm_only)}</div>;
                     const ag = (m.roll as { against?: { target: string; hit: boolean | null; crit: boolean; applied?: boolean; defeated?: boolean } | null }).against;
                     const title = ag ? `${m.roll.label ?? ""} vs ${ag.target}: ${ag.applied ? `damage lands${ag.crit ? " (crit)" : ""}${ag.defeated ? `, ${ag.target} goes down` : ""}` : ag.hit === null ? "the GM decides" : ag.crit ? "critical hit" : ag.hit ? "hit" : "miss"}` : m.roll.label ?? "";
                     return <div key={f.key}>{renderRoll(who, title, m.roll.total, dice, m.roll.natural ?? null, m.gm_only ? "GM only" : m.roll.logged === false ? "not logged" : null)}</div>;
@@ -3024,6 +3042,11 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
               <button type="button" onClick={() => { void navigator.clipboard?.writeText(`${window.location.origin}/tabletop/${campaignId}`); setChatErr("Table link copied."); }} style={{ ...small, width: "100%" }}>Copy the table link</button>
               {chatErr && <p role="status" style={{ color: chatErr === "Table link copied." ? C.muted : "#e07a70", fontSize: 12, marginTop: 10 }}>{chatErr}</p>}
             </div>
+          )}
+
+          {panel === "tables" && (
+            <RollTablesPanel campaignId={campaignId} isGm={isGm} supabase={supabase} asWho={asWho} gmName={gmName}
+              onPosted={(m) => addFeed([m as Message], [])} />
           )}
 
           {panel === "handouts" && (
