@@ -38,6 +38,7 @@ import SoundPanel from "@/components/sound-panel";
 import { encodeDifficult, normDifficult, paintDifficult, pathExtra } from "@/lib/tabletop/terrain";
 import { distance3d, elevationOf, elevationText } from "@/lib/tabletop/elevation";
 import { PinCard, TokenNotes, type EntryOption, type Pin } from "@/components/table-pins";
+import TokenBars, { HEALTH_COLOR, HEALTH_LABEL, type Bar } from "@/components/token-bars";
 import { AttackForm, EconomyBar, MarkerChips, MarkerPicker, PlayerEntryControls, SaveBanner, TurnUsed, isMyTurn, type FightEntry, type PendingSave } from "@/components/fight-controls";
 
 // The tabletop, phase 1 (2026-11-06). One page for the GM and the players; tabletop_state (p105)
@@ -321,6 +322,9 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   const loadPinsRef = useRef<() => void>(() => {});
   const [notesFor, setNotesFor] = useState<string | null>(null);
   const noteIds = useRef<Set<string>>(new Set());
+  // phase 5y: each token's resource bars (tabletop_bars decides what a player gets), and whose editor is open
+  const barsRef = useRef<Map<string, Bar[]>>(new Map());
+  const [barsFor, setBarsFor] = useState<string | null>(null);
   const space = useRef(false);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const frame = useRef<number | null>(null);
@@ -804,6 +808,25 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
         if (en.tempHp && en.tempHp > 0) { ctx.fillStyle = "#6fa3d8"; ctx.fillRect(x0 + w * Math.max(0, frac - Math.min(1, en.tempHp / en.maxHp)), y0, w * Math.min(frac, en.tempHp / en.maxHp), h * 0.45); }
         ctx.restore();
       }
+      // phase 5y: the token's other bars, stacked above its hit points; for players, a creature's health
+      // as the GM chose to show it (healthy, bloodied, down), a strip in the hit points' place
+      const hpShown = !!(en && en.hp != null && en.maxHp);
+      const health = (en as { health?: string } | undefined)?.health;
+      const myBars = barsRef.current.get(t.id) ?? [];
+      {
+        const bh = Math.max(4, cell * 0.11), bgap = Math.max(3, cell * 0.06);
+        let row = hpShown ? 1 : 0;
+        if (!hpShown && health) {
+          const x0 = cx - rad, y0 = cy - rad - bh - bgap;
+          ctx.save(); ctx.fillStyle = "rgba(15,12,10,0.85)"; ctx.fillRect(x0 - 1, y0 - 1, rad * 2 + 2, bh + 2);
+          ctx.fillStyle = HEALTH_COLOR[health] ?? "#888"; ctx.fillRect(x0, y0, rad * 2, bh); ctx.restore(); row = 1;
+        }
+        for (const b of myBars) {
+          const x0 = cx - rad, y0 = cy - rad - bh - bgap - row * (bh + 2), w = rad * 2;
+          ctx.save(); ctx.fillStyle = "rgba(15,12,10,0.85)"; ctx.fillRect(x0 - 1, y0 - 1, w + 2, bh + 2);
+          ctx.fillStyle = b.color; ctx.fillRect(x0, y0, w * Math.max(0, Math.min(1, b.value / b.most)), bh); ctx.restore(); row++;
+        }
+      }
       const conds = en?.conditions ?? [];
       const marks: TokenMarker[] = [...conds.map((c) => ({ id: c, n: null })), ...tokenMarkers(t.style).filter((m) => !conds.includes(m.id))];
       if (marks.length) drawMarkerRing(ctx, marks, cx, cy, rad, Math.max(7, cell * 0.16), markerStyleRef.current);
@@ -839,7 +862,8 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
       if (sel.has(t.id) || hover.current === t.id) {
         const fs = Math.max(11, 13 / cam.s);
         ctx.save(); ctx.font = `600 ${fs}px system-ui, sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "top";
-        const label = (t.hidden ? `${t.name} (hidden)` : t.name) + (elev ? `, ${elevationText(elev)}` : "") + (marks.length ? `: ${marks.map(markerText).join(", ")}` : ""), w = ctx.measureText(label).width + fs;
+        const label = (t.hidden ? `${t.name} (hidden)` : t.name) + (elev ? `, ${elevationText(elev)}` : "") + (!hpShown && health ? `, ${HEALTH_LABEL[health] ?? health}` : "")
+          + myBars.map((b) => `, ${b.label} ${b.value}/${b.most}`).join("") + (marks.length ? `: ${marks.map(markerText).join(", ")}` : ""), w = ctx.measureText(label).width + fs;
         ctx.fillStyle = "rgba(20,16,12,0.85)"; ctx.fillRect(cx - w / 2, cy + rad + 4 / cam.s, w, fs * 1.5);
         ctx.fillStyle = "#f2e6c9"; ctx.fillText(label, cx, cy + rad + 4 / cam.s + fs * 0.25); ctx.restore();
       }
@@ -1426,6 +1450,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
       .on("broadcast", { event: "handout" }, ({ payload }) => { onHandoutRef.current(payload as { id: string; characters: string[] | null }); })
       .on("broadcast", { event: "handout-gone" }, () => { void loadHandoutsRef.current(); })
       .on("broadcast", { event: "pins" }, () => { loadPinsRef.current(); })
+      .on("broadcast", { event: "bars" }, () => { loadPinsRef.current(); })
       .on("broadcast", { event: "tpl" }, ({ payload }) => {
         const r = payload as { by: string; color: string; geom: TemplateGeom; done: boolean; placed?: boolean };
         if (r.placed) remoteTpl.current.delete(r.by);
@@ -2030,7 +2055,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     }
     setMarkerBusy(false);
   }, [supabase, updateTokens, requestDraw]);
-  useEffect(() => { setMarkerOpen(false); setNotesFor(null); }, [selected]);
+  useEffect(() => { setMarkerOpen(false); setNotesFor(null); setBarsFor(null); }, [selected]);
 
   // phase 5w: height off the ground through tabletop_set_token_elevation (p127): the GM any token, a
   // player their own. It shows at once here; the token's Realtime update brings it to everyone else.
@@ -2284,6 +2309,12 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     const { data, error: er } = await supabase.rpc("tabletop_pins", { p_scene: sc.id });
     if (er) { if (!/tabletop_pins/.test(er.message)) setChatErr(`Could not read the pins: ${er.message}`); return; }
     pinsRef.current = (data as Pin[] | null) ?? []; setPins(pinsRef.current); requestDraw();
+    const { data: bd, error: be } = await supabase.rpc("tabletop_bars", { p_scene: sc.id });
+    if (!be) {
+      const map = new Map<string, Bar[]>();
+      for (const b of (bd as Bar[] | null) ?? []) { const list = map.get(b.tokenId) ?? []; list.push(b); map.set(b.tokenId, list); }
+      barsRef.current = map; setTick((v) => v + 1); requestDraw();
+    }
     if (st?.role === "gm") {
       const { data: nd } = await supabase.from("vtt_token_notes").select("token_id").eq("campaign_id", campaignId);
       noteIds.current = new Set(((nd ?? []) as { token_id: string }[]).map((r) => r.token_id)); requestDraw();
@@ -2752,6 +2783,24 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                   </span>
                 )}
                 {(isGm || tk.mine) && <button type="button" onClick={() => setMakerFor(tk.id)} style={small}>Token maker</button>}
+                {(isGm || tk.mine) && (
+                  <button type="button" aria-expanded={barsFor === tk.id} onClick={() => setBarsFor((v) => (v === tk.id ? null : tk.id))} title="Resource bars (ki, rage, spell slots) and who sees them"
+                    style={{ ...small, borderColor: barsFor === tk.id ? C.sun : C.line, color: barsFor === tk.id ? C.sun : C.text }}>
+                    Bars{(barsRef.current.get(tk.id) ?? []).length ? ` (${(barsRef.current.get(tk.id) ?? []).length})` : ""}
+                  </button>
+                )}
+                {(isGm || tk.mine) && barsFor === tk.id && (
+                  <div style={{ position: "absolute", bottom: "calc(100% + 8px)", left: "50%", transform: "translateX(-50%)" }}>
+                    <TokenBars tokenId={tk.id} tokenName={tk.name} isCreature={tk.kind !== "pc"} isGm={isGm} bars={barsRef.current.get(tk.id) ?? []}
+                      healthToPlayers={tk.style?.healthToPlayers === true} campaignId={campaignId} supabase={supabase}
+                      onChanged={(e) => { if (e) setChatErr(/not yours/.test(e) ? "That bar is not yours to change." : `Could not change the bar: ${e}`); else { loadPinsRef.current(); send("bars", {}); } }}
+                      onHealthToPlayers={(on) => {
+                        const style: Record<string, unknown> = { ...tk.style }; if (on) style.healthToPlayers = true; else delete style.healthToPlayers;
+                        void updateTokens([tk.id], { style }).then(() => send("combat", {}));
+                      }}
+                      onClose={() => setBarsFor(null)} />
+                  </div>
+                )}
                 {isGm && (
                   <button type="button" aria-expanded={notesFor === tk.id} onClick={() => setNotesFor((v) => (v === tk.id ? null : tk.id))} title="Your private note on this token; players never see it"
                     style={{ ...small, borderColor: notesFor === tk.id ? C.sun : C.line, color: notesFor === tk.id ? C.sun : C.text }}>
