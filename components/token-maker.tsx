@@ -6,18 +6,19 @@ import {
   clipToShape, designDefaults, drawFrame, frameMoves, frameReach, normFrame,
   type Frame, type Shape,
 } from "@/lib/tabletop/frames";
-import { HANDOFF_KEY, applyMask, autoMask, keptShare, paintMask, wandRemove } from "@/lib/tabletop/cutout";
+import { applyMask, autoMask, keptShare, paintMask, stampSeed, strokeOverlay, wandRemove } from "@/lib/tabletop/cutout";
+import { guidedCut } from "@/lib/tabletop/guided-cut";
 import { GifEncoder } from "@/lib/tabletop/gif";
 
 // components/token-maker.tsx (2026-11-08)
 //
-// The token maker: take a picture, remove its background, cut it to a shape, and give it a border
+// The token maker: take a picture, remove its background (the guided cut in lib/tabletop/guided-cut.ts:
+// scribble "keep" over the subject and "remove" over the background), cut it to a shape, and give it a border
 // (a plain band or a design inspired by a class or subclass), an animated effect themed on a damage
 // type, a motion style, or an imported border image. Used in two places:
 //   - the free tool at /tools/token-maker (mode "free"): everything stays in the browser and the
 //     visitor downloads a PNG (still), the picture alone, an animated GIF (lib/tabletop/gif.ts), or a
-//     short WebM video of the animation. The background remover (/tools/background-remover) can hand a
-//     cut-out picture over through sessionStorage (HANDOFF_KEY);
+//     short WebM video of the animation;
 //   - the tabletop (mode "app"): "Use on this token" hands back the cut-out picture and the frame
 //     settings; the caller uploads the picture and stores the frame on the token, where it is drawn
 //     live, so the animation runs at the table.
@@ -40,6 +41,9 @@ const rowS: React.CSSProperties = { display: "flex", gap: 6, flexWrap: "wrap", a
 const lab: React.CSSProperties = { display: "flex", gap: 8, alignItems: "center", fontSize: 13, color: ui.text };
 
 type Pic = { w: number; h: number; rgba: Uint8ClampedArray };
+type Tool = "move" | "keep" | "drop" | "wand" | "erase" | "restore";
+type Snap = { mask: Uint8ClampedArray; keep: Uint8Array; drop: Uint8Array };
+const MARKS: Tool[] = ["keep", "drop"];
 
 function loadImage(src: string, cors: boolean): Promise<HTMLImageElement> {
   return new Promise((res, rej) => {
@@ -72,10 +76,11 @@ export default function TokenMaker({ mode, initialImage, initialFrame, name, onS
   const [hadFrame] = useState(() => !!normFrame(initialFrame));
   const [pic, setPic] = useState<Pic | null>(null);
   const [mask, setMask] = useState<Uint8ClampedArray | null>(null);
-  const [history, setHistory] = useState<Uint8ClampedArray[]>([]);
+  const [history, setHistory] = useState<Snap[]>([]);
+  const [cutting, setCutting] = useState(false);
   const [tolerance, setTolerance] = useState(35);
   const [autoOn, setAutoOn] = useState(false);
-  const [tool, setTool] = useState<"move" | "wand" | "erase" | "restore">("move");
+  const [tool, setTool] = useState<Tool>("move");
   const [gifClear, setGifClear] = useState(true);
   const [gifProgress, setGifProgress] = useState<number | null>(null);
   const [brush, setBrush] = useState(18);
@@ -97,6 +102,13 @@ export default function TokenMaker({ mode, initialImage, initialFrame, name, onS
   const reduced = useRef(false);
   const drag = useRef<{ x: number; y: number; px: number; py: number; painting: boolean } | null>(null);
   const strokeMask = useRef<Uint8ClampedArray | null>(null);
+  // guided-cut strokes at the picture's size, the translucent picture of them, and the unmasked picture
+  const keepRef = useRef<Uint8Array | null>(null);
+  const dropRef = useRef<Uint8Array | null>(null);
+  const overlayRef = useRef<HTMLCanvasElement | null>(null);
+  const origRef = useRef<HTMLCanvasElement | null>(null);
+  const markLast = useRef<{ x: number; y: number } | null>(null);
+  const hoverRef = useRef<{ x: number; y: number } | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
   const borderRef = useRef<HTMLInputElement | null>(null);
 
@@ -111,6 +123,10 @@ export default function TokenMaker({ mode, initialImage, initialFrame, name, onS
     cv.getContext("2d")!.putImageData(new ImageData(new Uint8ClampedArray(data), p.w, p.h), 0, 0);
     cutRef.current = cv;
   }, []);
+  const redrawOverlay = useCallback((p: Pic) => {
+    const ov = overlayRef.current; if (!ov || !keepRef.current || !dropRef.current) return;
+    ov.getContext("2d")!.putImageData(strokeOverlay(keepRef.current, dropRef.current, p.w, p.h), 0, 0);
+  }, []);
   useEffect(() => { refreshCut(pic, mask); }, [pic, mask, refreshCut]);
 
   const openPicture = useCallback(async (src: string, cors: boolean) => {
@@ -118,23 +134,19 @@ export default function TokenMaker({ mode, initialImage, initialFrame, name, onS
     try {
       const im = await loadImage(src, cors);
       const p = picFrom(im);
+      keepRef.current = new Uint8Array(p.w * p.h); dropRef.current = new Uint8Array(p.w * p.h);
+      const ov = document.createElement("canvas"); ov.width = p.w; ov.height = p.h; overlayRef.current = ov;
+      const og = document.createElement("canvas"); og.width = p.w; og.height = p.h;
+      og.getContext("2d")!.putImageData(new ImageData(new Uint8ClampedArray(p.rgba), p.w, p.h), 0, 0); origRef.current = og;
       setPic(p); setMask(new Uint8ClampedArray(p.w * p.h).fill(255)); setHistory([]); setAutoOn(false);
-      setZoom(1); setPan({ x: 0, y: 0 });
+      // a tall picture opens framed from the top, where a face usually is, not cropped through the middle
+      setZoom(1); setPan({ x: 0, y: p.h > p.w * 1.1 ? Math.min(0.5, (p.h / p.w - 1) / 2) * 0.9 : 0 });
     } catch (e) {
       setMsg(cors ? "That picture could not be read here (the site it is on does not allow it). Download it and choose the file instead." : (e as Error).message);
     }
   }, []);
 
   useEffect(() => { if (initialImage) void openPicture(initialImage, true); }, [initialImage, openPicture]);
-
-  // a picture handed over from the background remover
-  useEffect(() => {
-    if (mode !== "free") return;
-    try {
-      const url = window.sessionStorage.getItem(HANDOFF_KEY);
-      if (url && url.startsWith("data:image/")) { window.sessionStorage.removeItem(HANDOFF_KEY); void openPicture(url, false); }
-    } catch { /* storage unavailable: start empty */ }
-  }, [mode, openPicture]);
 
   useEffect(() => {
     const mq = typeof window !== "undefined" ? window.matchMedia?.("(prefers-reduced-motion: reduce)") : null;
@@ -159,7 +171,10 @@ export default function TokenMaker({ mode, initialImage, initialFrame, name, onS
     return () => window.removeEventListener("paste", onPaste);
   });
 
-  const pushHistory = (m: Uint8ClampedArray) => setHistory((h) => [...h.slice(-11), new Uint8ClampedArray(m)]);
+  const pushHistory = (m: Uint8ClampedArray) => {
+    const keep = keepRef.current ? new Uint8Array(keepRef.current) : new Uint8Array(0), drop = dropRef.current ? new Uint8Array(dropRef.current) : new Uint8Array(0);
+    setHistory((h) => [...h.slice(-11), { mask: new Uint8ClampedArray(m), keep, drop }]);
+  };
   const runAuto = (tol = tolerance) => {
     if (!pic || !mask) return;
     pushHistory(mask);
@@ -168,7 +183,27 @@ export default function TokenMaker({ mode, initialImage, initialFrame, name, onS
     const k = keptShare(m);
     setMsg(k > 0.985 ? "No background to remove was found at the edges. Try a higher tolerance, or erase by hand." : k < 0.05 ? "That removed almost everything. Lower the tolerance, or undo." : null);
   };
-  const undo = () => setHistory((h) => { if (!h.length) return h; setMask(h[h.length - 1]); return h.slice(0, -1); });
+  const undo = () => {
+    const last = history[history.length - 1]; if (!last) return;
+    setHistory(history.slice(0, -1));
+    setMask(last.mask);
+    if (pic && last.keep.length === pic.w * pic.h) { keepRef.current = last.keep; dropRef.current = last.drop; redrawOverlay(pic); }
+  };
+  const clearStrokes = () => {
+    if (!pic || !mask) return; pushHistory(mask);
+    keepRef.current = new Uint8Array(pic.w * pic.h); dropRef.current = new Uint8Array(pic.w * pic.h); redrawOverlay(pic);
+  };
+  /** Runs the guided cut from the strokes so far (after a short pause so "Cutting" can show). */
+  const runCut = () => {
+    if (!pic || !keepRef.current || !dropRef.current) return;
+    if (!keepRef.current.some((v) => v)) { setMsg("Paint over your subject with Keep first; Remove strokes then tell it what is background."); return; }
+    setCutting(true); setMsg(null);
+    setTimeout(() => {
+      const r = guidedCut(pic.rgba, pic.w, pic.h, keepRef.current!, dropRef.current!);
+      if (r) { setMask(r.mask); setAutoOn(false); }
+      setCutting(false);
+    }, 30);
+  };
   const resetMask = () => { if (!pic || !mask) return; pushHistory(mask); setMask(new Uint8ClampedArray(pic.w * pic.h).fill(255)); setAutoOn(false); };
 
   const imgBorder = useCallback((url: string): CanvasImageSource | null => {
@@ -183,12 +218,17 @@ export default function TokenMaker({ mode, initialImage, initialFrame, name, onS
   }, [border]);
 
   /** Draws the portrait cut to the shape at radius r, centred on the origin. */
-  const drawPortrait = useCallback((c: CanvasRenderingContext2D, r: number) => {
+  const drawPortrait = useCallback((c: CanvasRenderingContext2D, r: number, guides = false) => {
     const cut = cutRef.current, v = view.current;
     c.save(); clipToShape(c, v.frame.shape, r);
     if (cut) {
       const k = ((2 * r) / Math.min(cut.width, cut.height)) * v.zoom;
-      c.drawImage(cut, v.pan.x * 2 * r - (cut.width * k) / 2, v.pan.y * 2 * r - (cut.height * k) / 2, cut.width * k, cut.height * k);
+      const x = v.pan.x * 2 * r - (cut.width * k) / 2, y = v.pan.y * 2 * r - (cut.height * k) / 2, W = cut.width * k, H = cut.height * k;
+      const marking = guides && MARKS.includes(v.tool);
+      // while marking, what has been removed shows faintly, so a missed part can be painted back
+      if (marking && origRef.current) { c.globalAlpha = 0.28; c.drawImage(origRef.current, x, y, W, H); c.globalAlpha = 1; }
+      c.drawImage(cut, x, y, W, H);
+      if (guides && overlayRef.current) c.drawImage(overlayRef.current, x, y, W, H);
     } else {
       c.fillStyle = "#2a241d"; c.fillRect(-r * 2, -r * 2, r * 4, r * 4);
       c.fillStyle = ui.muted; c.font = `600 ${r * 0.16}px system-ui, sans-serif`; c.textAlign = "center"; c.textBaseline = "middle";
@@ -215,12 +255,12 @@ export default function TokenMaker({ mode, initialImage, initialFrame, name, onS
         for (let y = 0; y < S; y += sq) for (let x = 0; x < S; x += sq) { c.fillStyle = ((x + y) / sq) % 2 ? "#2b2622" : "#35302a"; c.fillRect(x, y, sq, sq); }
         const v = view.current, r = S * 0.3;
         c.save(); c.translate(S / 2, S / 2);
-        drawPortrait(c, r);
+        drawPortrait(c, r, true);
         const t = v.paused ? 0 : (performance.now() - t0) / 1000;
         drawFrame(c, v.frame, r, t, imgBorder);
-        if ((v.tool === "erase" || v.tool === "restore") && drag.current) {
-          c.beginPath(); c.arc(drag.current.x - S / 2, drag.current.y - S / 2, v.brush / 2, 0, Math.PI * 2);
-          c.strokeStyle = v.tool === "erase" ? ui.warn : "#8fd18a"; c.lineWidth = 1.5; c.stroke();
+        if (["erase", "restore", "keep", "drop"].includes(v.tool) && hoverRef.current) {
+          c.beginPath(); c.arc(hoverRef.current.x - S / 2, hoverRef.current.y - S / 2, v.brush / 2, 0, Math.PI * 2);
+          c.strokeStyle = v.tool === "erase" || v.tool === "drop" ? ui.warn : "#8fd18a"; c.lineWidth = 1.5; c.stroke();
         }
         c.restore();
       }
@@ -244,9 +284,35 @@ export default function TokenMaker({ mode, initialImage, initialFrame, name, onS
     paintMask(strokeMask.current, pic.w, pic.h, q.x, q.y, brush / 2 / q.k, tool === "erase" ? 0 : 255);
     refreshCut(pic, strokeMask.current);
   };
+  /** Paints a keep or remove stroke from the last point to (x, y), into the stroke map and its picture. */
+  const markTo = (x: number, y: number) => {
+    if (!pic) return;
+    const seed = tool === "keep" ? keepRef.current : dropRef.current, other = tool === "keep" ? dropRef.current : keepRef.current;
+    const q = toImage(x, y); if (!q || !seed || !other) return;
+    const rr = brush / 2 / q.k, from = markLast.current ?? q;
+    const steps = Math.max(1, Math.ceil(Math.hypot(q.x - from.x, q.y - from.y) / Math.max(1, rr / 2)));
+    const ov = overlayRef.current?.getContext("2d");
+    for (let s2 = 0; s2 <= steps; s2++) {
+      const cx = from.x + ((q.x - from.x) * s2) / steps, cy = from.y + ((q.y - from.y) * s2) / steps;
+      stampSeed(seed, pic.w, pic.h, cx, cy, rr);
+      // a new stroke wins over an old one of the other kind where they overlap
+      const x0 = Math.max(0, Math.floor(cx - rr)), x1 = Math.min(pic.w - 1, Math.ceil(cx + rr)), y0 = Math.max(0, Math.floor(cy - rr)), y1 = Math.min(pic.h - 1, Math.ceil(cy + rr));
+      for (let yy = y0; yy <= y1; yy++) for (let xx = x0; xx <= x1; xx++) if ((xx - cx) ** 2 + (yy - cy) ** 2 <= rr * rr) other[yy * pic.w + xx] = 0;
+      if (ov) { ov.fillStyle = tool === "keep" ? "rgba(70,220,100,0.59)" : "rgba(235,70,70,0.59)"; ov.beginPath(); ov.arc(cx, cy, rr, 0, Math.PI * 2); ov.fill(); }
+    }
+    markLast.current = { x: q.x, y: q.y };
+  };
   const onDown = (e: React.PointerEvent) => {
     if (!pic) { fileRef.current?.click(); return; }
     const p = local(e);
+    if (MARKS.includes(tool)) {
+      if (cutting || !mask) return;
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+      pushHistory(mask);
+      drag.current = { x: p.x, y: p.y, px: pan.x, py: pan.y, painting: false };
+      markLast.current = null; markTo(p.x, p.y);
+      return;
+    }
     if (tool === "wand") {
       const q = toImage(p.x, p.y); if (!q || !mask) return;
       const m = new Uint8ClampedArray(mask); pushHistory(mask);
@@ -261,14 +327,18 @@ export default function TokenMaker({ mode, initialImage, initialFrame, name, onS
   };
   const onMove = (e: React.PointerEvent) => {
     const p = local(e);
+    hoverRef.current = p;
     if (!drag.current) return;
+    if (MARKS.includes(tool)) { markTo(p.x, p.y); return; }
     if (drag.current.painting) { paintAt(p.x, p.y); drag.current.x = p.x; drag.current.y = p.y; return; }
     const r = PREVIEW * 0.3;
     setPan({ x: drag.current.px + (p.x - drag.current.x) / (2 * r), y: drag.current.py + (p.y - drag.current.y) / (2 * r) });
   };
   const onUp = () => {
+    const wasMarking = !!drag.current && MARKS.includes(tool);
     if (drag.current?.painting && strokeMask.current) setMask(strokeMask.current);
-    strokeMask.current = null; drag.current = null;
+    strokeMask.current = null; drag.current = null; markLast.current = null;
+    if (wasMarking) { if (pic) redrawOverlay(pic); runCut(); }
   };
   const onWheel = (e: React.WheelEvent) => { if (!pic) return; setZoom((z) => Math.max(0.3, Math.min(5, z * (e.deltaY < 0 ? 1.08 : 1 / 1.08)))); };
 
@@ -327,7 +397,7 @@ export default function TokenMaker({ mode, initialImage, initialFrame, name, onS
   };
 
   const saveGif = async () => {
-    const size = Math.min(exportSize, 512), fps = 20, n = fps * 3;
+    const size = Math.min(exportSize, 768), fps = 20, n = fps * 3;
     const cv = document.createElement("canvas"); cv.width = size; cv.height = size;
     const c = cv.getContext("2d", { willReadFrequently: true })!;
     const r = size / 2 / frameReach(frame);
@@ -382,11 +452,11 @@ export default function TokenMaker({ mode, initialImage, initialFrame, name, onS
       <div style={{ flex: "0 1 360px", minWidth: 260, maxWidth: 400 }}>
         <div onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); onFile(e.dataTransfer.files?.[0]); }}
           style={{ position: "relative", width: "100%", aspectRatio: "1 / 1", borderRadius: 12, overflow: "hidden", border: `1px solid ${ui.line}` }}>
-          <canvas ref={canvasRef} role="img" aria-label="Token preview" onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp} onWheel={onWheel}
+          <canvas ref={canvasRef} role="img" aria-label="Token preview" onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp} onPointerLeave={() => { hoverRef.current = null; }} onWheel={onWheel}
             style={{ width: "100%", height: "100%", display: "block", touchAction: "none", cursor: !pic ? "pointer" : tool === "move" ? "grab" : "crosshair" }} />
         </div>
         <p style={{ fontSize: 12, color: ui.muted, margin: "6px 0 0" }}>
-          {!pic ? "Choose, drop or paste a picture." : tool === "move" ? "Drag to move the picture, scroll to zoom." : tool === "wand" ? "Click a patch of background to remove it (uses the tolerance)." : tool === "erase" ? "Paint over what you want gone." : "Paint over what you want back."}
+          {!pic ? "Choose, drop or paste a picture." : cutting ? "Cutting..." : tool === "keep" ? "Scribble over the parts to keep. It cuts again after each stroke." : tool === "drop" ? "Scribble over background that is still showing." : tool === "move" ? "Drag to move the picture, scroll to zoom." : tool === "wand" ? "Click a patch of background to remove it (uses the tolerance)." : tool === "erase" ? "Paint over what you want gone." : "Paint over what you want back."}
         </p>
         <div style={{ ...rowS, marginTop: 8 }}>
           <button type="button" style={btn(paused)} aria-pressed={paused} onClick={() => setPaused((p) => !p)}>{paused ? "Play animation" : "Pause animation"}</button>
@@ -404,22 +474,25 @@ export default function TokenMaker({ mode, initialImage, initialFrame, name, onS
         </div>
 
         <div style={sectionH}>2. Background</div>
-        <div style={rowS}>
-          <button type="button" style={btn(autoOn)} disabled={!pic} onClick={() => runAuto()}>Remove background</button>
+        <p style={{ fontSize: 12.5, color: ui.muted, margin: "0 0 6px" }}>Scribble <strong style={{ color: "#8fd18a" }}>Keep</strong> over your subject (face, hair, armour, anything it holds), then <strong style={{ color: ui.warn }}>Remove</strong> over background that is still showing. It cuts after every stroke, and never removes what you marked Keep.</p>
+        <div style={rowS} role="group" aria-label="Tool">
+          {([["move", "Move"], ["keep", "Keep"], ["drop", "Remove"], ["wand", "Remove by click"], ["erase", "Erase brush"], ["restore", "Restore brush"]] as [Tool, string][]).map(([k, l]) => (
+            <button key={k} type="button" style={btn(tool === k)} aria-pressed={tool === k} disabled={!pic} onClick={() => setTool(k)}>{l}</button>
+          ))}
+        </div>
+        {["keep", "drop", "erase", "restore"].includes(tool) && <label style={{ ...lab, marginTop: 6 }}>Brush size<input type="range" min={4} max={80} value={brush} onChange={(e) => setBrush(Number(e.target.value))} /></label>}
+        <div style={{ ...rowS, marginTop: 6 }}>
+          <button type="button" style={btn()} disabled={!history.length || cutting} onClick={undo}>Undo</button>
+          <button type="button" style={btn()} disabled={!pic || cutting} onClick={clearStrokes}>Clear strokes</button>
+          <button type="button" style={btn()} disabled={!pic || cutting} onClick={resetMask}>Bring everything back</button>
+        </div>
+        <div style={{ ...rowS, marginTop: 8 }}>
+          <span style={{ fontSize: 12, color: ui.muted }}>Plain background?</span>
+          <button type="button" style={btn(autoOn)} disabled={!pic} onClick={() => runAuto()}>Quick remove</button>
           <label style={lab}>Tolerance
             <input type="range" min={0} max={100} value={tolerance} disabled={!pic}
               onChange={(e) => { const v = Number(e.target.value); setTolerance(v); if (autoOn && pic) { setMask(autoMask(pic.rgba, pic.w, pic.h, v)); } }} />
           </label>
-        </div>
-        <div style={{ ...rowS, marginTop: 6 }} role="group" aria-label="Brush">
-          {(["move", "wand", "erase", "restore"] as const).map((k) => (
-            <button key={k} type="button" style={btn(tool === k)} aria-pressed={tool === k} disabled={!pic} onClick={() => setTool(k)}>{k === "move" ? "Move" : k === "wand" ? "Remove by click" : k === "erase" ? "Erase brush" : "Restore brush"}</button>
-          ))}
-          {(tool === "erase" || tool === "restore") && <label style={lab}>Size<input type="range" min={4} max={80} value={brush} onChange={(e) => setBrush(Number(e.target.value))} /></label>}
-        </div>
-        <div style={{ ...rowS, marginTop: 6 }}>
-          <button type="button" style={btn()} disabled={!history.length} onClick={undo}>Undo</button>
-          <button type="button" style={btn()} disabled={!pic} onClick={resetMask}>Bring everything back</button>
         </div>
 
         <div style={sectionH}>3. Shape and fit</div>
@@ -517,7 +590,7 @@ export default function TokenMaker({ mode, initialImage, initialFrame, name, onS
           </div>
         )}
         <p style={{ fontSize: 12, color: ui.muted, margin: "6px 0 0" }}>
-          The PNG is a still with a transparent background. {moving ? "The GIF loops 3 seconds of the animation (up to 512 px) and works on most virtual tabletops; GIF edges are crisp, not soft. The video loops it on a dark background. " : ""}
+          The PNG is a still with a transparent background. {moving ? "The GIF loops 3 seconds of the animation and works on most virtual tabletops; GIF edges are crisp, not soft. At 512 px it is about 3 to 4 MB; 1024 makes a 768 px GIF of about 8 MB. The video loops it on a dark background. " : ""}
           {mode === "app" ? "On the tabletop the frame is drawn live, so the animation plays at the table." : "Everything happens in your browser: nothing is uploaded."}
         </p>
       </div>

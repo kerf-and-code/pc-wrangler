@@ -113,7 +113,7 @@ import {
   deriveSheet, epicAdvancement, ABILITIES, SKILLS, DEFAULT_EPIC, gearEquipped, classLevelOf,
   type Ability, type Build, type EpicChoice, type GearEntry, type ImportAdjust,
 } from "@/lib/srd/derive-sheet";
-import { hasPrintedAbilities, suppressItemEffects, reconcileImport, type DdbSheet } from "@/lib/ddb-import";
+import { hasPrintedAbilities, suppressItemEffects, reconcileImport, RECONCILE_VERSION, type DdbSheet } from "@/lib/ddb-import";
 
 // ---------------------------------------------------------------------------
 // Build defaults + normalization
@@ -334,7 +334,14 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
 
   // Catalog + its scoping controls.
   const [catalog, setCatalog] = useState<Catalog | null>(null);
-  const [edition, setEdition] = useState<Edition>("2024");
+  // Phase 5o: the rules edition is stored on the character (build.edition), so a 2014 character reloads
+  // as 2014. A character saved before this has none and stays on 2024, as it always derived.
+  const storedEdition = (build as Build & { edition?: Edition }).edition;
+  const edition: Edition = storedEdition === "2014" || storedEdition === "both" ? storedEdition : "2024";
+  const setEdition = useCallback((e: Edition) => {
+    setBuild((prev) => ({ ...prev, edition: e } as Build));
+    setSaveState("idle");
+  }, []);
   const [enabledPartners, setEnabledPartners] = useState<Set<string>>(new Set());
 
   // A brand-new build has no ?c and no ?lib: it's immediately editable (no fetch needed). A ?c or
@@ -755,7 +762,7 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
       if (tool) fx.applied.push(`${tool} proficiency from ${spName}`);
     }
     return fx;
-  }, [build, speciesVariant, srd.speciesByName, srd.variantByName, srd.bgByName, srd.featByName, resolvedSpecies]);
+  }, [build, speciesVariant, srd.speciesByName, srd.variantByName, srd.bgByName, srd.featByName, resolvedSpecies, edition]);
 
   const deriveCtx = useMemo(() => {
     const base0 = printedAbilities ? suppressItemEffects(ctx) : ctx;
@@ -796,6 +803,14 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
 
   // Apply the chosen species' ability bonuses (2014 carry "CON +2"; 2024 carry none) into
   // build.featMods, which the engine adds to the base scores.
+  // Phase 5o: the feats the engine models (Alert, Tough) by name: chosen at ASI levels, listed on an
+  // imported D&D Beyond sheet, or granted by the background (its origin feat).
+  const featNames = useMemo(() => {
+    const listed = ((build as Build & { imported?: { sheet?: { features?: { name: string }[] } } }).imported?.sheet?.features || []).map((f) => f.name.trim());
+    const origin = srd.bgByName[build.meta.background]?.feat;
+    return [...new Set([...chosenFeats.map((f) => f.name), ...listed, ...(origin ? [origin] : [])])];
+  }, [build, chosenFeats, srd.bgByName]);
+
   const buildForDerive = useMemo<Build>(() => {
     const mech = srd.speciesByName[build.meta.species];
     const bonus = parseAbilityBonuses(mech?.ability_bonuses);
@@ -823,8 +838,8 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
       { label: "Class and species choices", mods: effects.featMods },
       { label: "Other bonuses", mods: build.featMods || {} },
     ] as { label: string; mods: Record<string, number> }[];
-    return applyToBuild({ ...build, featMods: merged, featModSources }, effects);
-  }, [build, srd.speciesByName, effects, resolvedSpecies, printedAbilities]);
+    return applyToBuild({ ...build, featMods: merged, featModSources, feats: featNames }, effects);
+  }, [build, srd.speciesByName, effects, resolvedSpecies, printedAbilities, featNames]);
 
   const sheet = useMemo(() => {
     try { return deriveSheet(buildForDerive, deriveCtx); } catch { return null; }
@@ -909,6 +924,14 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
     });
   }, [sheet, build, srd, edition]);
   const importedSheet = (build as Build & { imported?: { sheet?: DdbSheet } }).imported?.sheet;
+
+  // Phase 5o: numbers other screens read off the saved character without running the engine, saved
+  // with it as build.sheetSnapshot: darkvision, for the tabletop's line of sight. The longest of what
+  // the sheet works out (species) and what an imported D&D Beyond sheet lists (Eyes of Night, an item).
+  const sheetSnapshot = useMemo(() => {
+    const dv = (t: string | null | undefined) => { const m = /darkvision\D{0,12}(\d+)/i.exec(t || ""); return m ? Number(m[1]) : 0; };
+    return { darkvision: Math.max(0, ...(sheet?.senses || []).map(dv), dv(importedSheet?.defenses?.senses)) };
+  }, [sheet, importedSheet]);
   const playAttacks = useMemo<AttackRow[]>(() => {
     const rows = applyImportAdjust(attacksBase, build.importAdjust?.attacks);
     if (!importedSheet) return rows;
@@ -1013,15 +1036,23 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
   // (the import leaves no importAdjust): whatever the engine works out differently from the printed
   // numbers is stored as importAdjust and added on top from then on. It waits until the character and
   // the catalog have loaded, so the comparison is against the sheet as it will be shown.
+  // Phase 5o: an adjustment worked out against an older engine (before it modelled Alert, Tough and the
+  // rest) is worked out again, once, against the engine as it is now, so a feat is not counted twice.
+  // An adjustment the player cleared ("Use Six Axes' own numbers") is left cleared.
   const reconciledFor = useRef<string | null>(null);
   useEffect(() => {
-    if (status !== "ready" || !catalog || !sheet || !importedSheet || build.importAdjust) return;
+    if (status !== "ready" || !catalog || !sheet || !importedSheet) return;
+    const adj = build.importAdjust;
+    const cleared = !!adj && Object.keys(adj).every((k) => k === "at" || k === "v");
+    if (adj && (cleared || (adj.v ?? 1) >= RECONCILE_VERSION)) return;
     const key = `${row?.id ?? "lib"}:${JSON.stringify(importedSheet.identity ?? {})}:${importedSheet.combat?.max_hp ?? ""}`;
     if (reconciledFor.current === key) return;
     reconciledFor.current = key;
-    const adjust = reconcileImport(importedSheet, sheet, attacksBase);
+    let fresh = sheet;
+    if (adj) { try { fresh = deriveSheet({ ...buildForDerive, importAdjust: undefined }, deriveCtx); } catch { return; } }
+    const adjust = reconcileImport(importedSheet, fresh, attacksBase);
     patch((b) => ({ ...b, importAdjust: adjust }));
-  }, [status, catalog, sheet, importedSheet, build.importAdjust, attacksBase, row, patch]);
+  }, [status, catalog, sheet, importedSheet, build.importAdjust, attacksBase, row, patch, buildForDerive, deriveCtx]);
 
   const setSpecies = (v: string) => patch((b) => {
     // A new species asks different questions, so the old answers (an elf's lineage, its Keen Senses
@@ -1498,7 +1529,7 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
         const { error } = await supabase
           .from("characters")
           .update({
-            build: build as unknown as Record<string, unknown>,
+            build: { ...build, sheetSnapshot } as unknown as Record<string, unknown>,
             name: name || row.name,
             species: build.meta.species || null,
             class: build.meta.className || null,
@@ -1537,7 +1568,7 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
       setSaveState("error");
       return false;
     }
-  }, [supabase, router, mode, row, libId, build, name, speciesVariant, system, pbuild, dbuild, steelBuild, lancerBuild]);
+  }, [supabase, router, mode, row, libId, build, name, speciesVariant, system, pbuild, dbuild, steelBuild, lancerBuild, sheetSnapshot]);
 
   // Autosave: debounce ~1s after the last change. Only runs once loaded and when there are unsaved
   // edits (saveState "idle"). Skips while picking / signed out / errored.

@@ -121,6 +121,12 @@ export type Build = {
    * clear them. Attack adjustments are applied where the attacks are built (lib/play/attacks).
    */
   importAdjust?: ImportAdjust;
+  /**
+   * The character's feats by name, for the ones the engine models (Alert, Tough). Filled at derive
+   * time by the Forge from the chosen feats, the feats a D&D Beyond import lists, and the background's
+   * origin feat; not something the player edits here.
+   */
+  feats?: string[];
 };
 
 export type ImportAdjust = {
@@ -134,6 +140,12 @@ export type ImportAdjust = {
   passives?: { perception?: number; insight?: number; investigation?: number };
   /** When it was worked out (an ISO time), and from which D&D Beyond export. */
   at?: string;
+  /**
+   * Which engine it was worked out against (lib/ddb-import RECONCILE_VERSION). When the engine learns
+   * something new (a feat it now models), an older adjustment would count that thing twice, so the
+   * Forge works the adjustment out again.
+   */
+  v?: number;
 };
 
 export type EpicChoice = {
@@ -719,6 +731,10 @@ export function deriveSheet(build: Build, ctx: RulesContext): DerivedSheet {  co
   const avg = epic.hitDieAvg || (Math.floor(hd / 2) + 1);
   const spMods = ctx.species[build.meta.species]?.mods || {};
   const ftMods = build.featMods || {};
+  // Feats the engine models (phase 5o). Tough: +2 HP per character level (both editions). Alert:
+  // initiative plus the proficiency bonus (2024) or plus 5 (2014).
+  const featSet = new Set((build.feats || []).map((f) => f.trim().toLowerCase()));
+  const toughHp = featSet.has("tough") ? 2 * totalLevel : 0;
   const perLvl = (em.hpPerLevel || 0) + (spMods.hpPerLevel || 0) + (ftMods.hpPerLevel || 0);
 
   // Draconic Resilience raises HP max by 3 at the subclass level and +1 per level after.
@@ -736,7 +752,7 @@ export function deriveSheet(build: Build, ctx: RulesContext): DerivedSheet {  co
     return n + (c.level || 0) * cavg;
   }, 0);
   const hpMaxRolled = hd + (build.level - 1) * avg + extraHp
-    + totalLevel * m.con + perLvl * totalLevel + classHp;
+    + totalLevel * m.con + perLvl * totalLevel + classHp + toughHp;
   // the player's adjustments (phase 5e): an override replaces the maximum; a modifier adds to it
   const adj = build.importAdjust || {};
   const hpMax = typeof build.hpMaxOverride === "number" && build.hpMaxOverride > 0
@@ -763,6 +779,14 @@ export function deriveSheet(build: Build, ctx: RulesContext): DerivedSheet {  co
 
   // Skills: proficiency and expertise from class and epic; epic-granted ones are flagged.
   const jackOfAllTrades = classLevelOf(build, "Bard") >= 2;
+  // 2024 class options that add Wisdom to checks: Divine Order: Thaumaturge (Cleric 1) on Arcana and
+  // Religion, Primal Order: Magician (Druid 1) on Arcana and Nature, each at least +1.
+  const picks = (build as Build & { classChoices?: Record<string, string[]> }).classChoices || {};
+  const picked = (owner: string, feature: string, option: string) =>
+    classLevelOf(build, owner) >= 1 && Object.entries(picks).some(([k, v]) => k.startsWith(`${owner}:`) && k.endsWith(`:${feature}`) && (v || []).includes(option));
+  const wisToChecks: Record<string, number> = {};
+  if (picked("Cleric", "Divine Order", "Thaumaturge")) { wisToChecks.arcana = Math.max(1, m.wis); wisToChecks.religion = Math.max(1, m.wis); }
+  if (picked("Druid", "Primal Order", "Magician")) { wisToChecks.arcana = Math.max(1, m.wis); wisToChecks.nature = Math.max(1, m.wis); }
   const skills: DerivedSheet["skills"] = {};
   SKILLS.forEach(([k, , ab]) => {
     const isExp = build.skillExpert.includes(k) || ep.expertise.includes(k);
@@ -772,7 +796,7 @@ export function deriveSheet(build: Build, ctx: RulesContext): DerivedSheet {  co
       abil: ab, rank,
       // Jack of All Trades (Bard 2, both editions): half the proficiency bonus, rounded down, on any
       // check without proficiency. Phase 5i.2: it was missing; D&D Beyond marks those skills "H".
-      val: m[ab] + rank * P + (rank === 0 && jackOfAllTrades ? Math.floor(P / 2) : 0) + (em.allSkills || 0) + ib.checks + (adj.skills?.[k] || 0),
+      val: m[ab] + rank * P + (rank === 0 && jackOfAllTrades ? Math.floor(P / 2) : 0) + (wisToChecks[k] || 0) + (em.allSkills || 0) + ib.checks + (adj.skills?.[k] || 0),
       fromEpic: !build.skillExpert.includes(k) && !build.skillProf.includes(k) && rank > 0,
     };
   });
@@ -786,7 +810,8 @@ export function deriveSheet(build: Build, ctx: RulesContext): DerivedSheet {  co
   const spellAttack = isCaster && castAbil ? m[castAbil] + P + (em.spellAttack || 0) + ib.spellAttack + (adj.spellAttack || 0) : 0;
 
   // Initiative is a Dexterity check, so an item's bonus to checks counts.
-  const init = m.dex + (em.initiative || 0) + ib.checks + (adj.init || 0);
+  const alertInit = featSet.has("alert") ? (ctx.ruleset === "2014" ? 5 : P) : 0;
+  const init = m.dex + (em.initiative || 0) + ib.checks + alertInit + (adj.init || 0);
 
   // Speed: species base plus class movement features (Monk unarmored, Barbarian fast).
   let speed = (ctx.species[build.meta.species]?.speed || 30) + (em.speed || 0);

@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   title: "Free tabletop RPG tools",
   description:
     "Free, no-login tools for tabletop RPGs: a hex world map generator, an encounter balancer, a party "
-    + "coverage check, a session zero charter, a pacing planner, a player-type quiz, a D&D class quiz, a token maker and a background remover, across D&D 5e, "
+    + "coverage check, a session zero charter, a pacing planner, a player-type quiz, a D&D class quiz, and a token maker, across D&D 5e, "
     + "Pathfinder 2e, Draw Steel and Daggerheart. No account, nothing saved.",
   alternates: { canonical: "/tools" },
 };
@@ -97,13 +97,6 @@ const TOOLS: Tool[] = [
     name: "Token maker",
     blurb: "Remove a picture's background, cut it to a shape, and frame it: class-inspired borders and animated damage-type effects.",
     systems: "Any system, any virtual tabletop",
-    status: "live",
-  },
-  {
-    href: "/tools/background-remover",
-    name: "Background remover",
-    blurb: "Lift a character, monster or prop off its background in your browser, then download a full-size transparent PNG.",
-    systems: "Any picture",
     status: "live",
   },
 ];

@@ -262,7 +262,10 @@ export default function PlayInventory({ gear, catalog, itemByName, ctx, str, att
           <div style={tiny}>Inventory</div>
           <span style={{ fontSize: 12.5, color: STONE.inkFaint }}>{items.length} item{items.length === 1 ? "" : "s"}</span>
           <span style={{ fontSize: 12.5, color: attunedCount > attuneMax ? C.warn : STONE.inkFaint }} aria-label={`Attuned to ${attunedCount} of ${attuneMax}`}>Attuned {attunedCount} of {attuneMax}</span>
-          <span style={{ fontSize: 12.5, color: over ? C.warn : STONE.inkFaint }}>Carrying {Math.round(carried * 10) / 10} of {capacity} lb</span>
+          <span style={{ fontSize: 12.5, color: over ? C.warn : STONE.inkFaint }}
+            title={coinCount ? "Coins count at 50 to the pound, as the rules have it. D&D Beyond leaves them out unless its coin-weight setting is on, so its total can be lower." : undefined}>
+            Carrying {Math.round(carried * 10) / 10} of {capacity} lb{coinCount >= 50 ? ` (${Math.round((coinCount / 50) * 10) / 10} lb of it coins)` : ""}
+          </span>
         </div>
         <div role="meter" aria-label="Carried weight" aria-valuemin={0} aria-valuemax={capacity} aria-valuenow={Math.round(carried)} style={{ height: 6, borderRadius: 3, background: "rgba(0,0,0,0.3)", marginTop: 8, overflow: "hidden" }}>
           <div style={{ width: `${Math.min(100, capacity ? (carried / capacity) * 100 : 0)}%`, height: "100%", background: over ? C.warn : C.sun }} />

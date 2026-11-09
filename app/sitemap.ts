@@ -34,7 +34,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/tools/magic-item-price",
     "/tools/dice-roller",
     "/tools/token-maker",
-    "/tools/background-remover",
   ];
 
   const statics: MetadataRoute.Sitemap = [

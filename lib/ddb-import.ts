@@ -606,7 +606,20 @@ export function ddbToBuild(sheet: DdbSheet, ctx: ImportContext): ImportResult {
     const picks = [...wm.desc.matchAll(/([A-Z][A-Za-z ,'-]{1,40}?) \((Cleave|Graze|Nick|Push|Sap|Slow|Topple|Vex)\)/g)].map((m) => m[1].trim());
     if (picks.length) classChoices[`${cls}:-:1:Weapon Mastery`] = [...new Set(picks)];
   }
+  // Divine Order (Cleric 1) and Primal Order (Druid 1), 2024: D&D Beyond starts the feature's text with
+  // the option taken ("Thaumaturge • You know one extra cantrip..."), so the choice comes across too.
+  for (const [feature, owner, options] of [["Divine Order", "Cleric", ["Protector", "Thaumaturge"]], ["Primal Order", "Druid", ["Magician", "Warden"]]] as const) {
+    const f = sheet.features.find((x) => x.name.trim().toLowerCase() === feature.toLowerCase());
+    const pick = f?.desc ? options.find((o) => new RegExp(`^\\s*${o}\\b`, "i").test(f.desc)) : undefined;
+    if (pick) classChoices[`${owner}:-:1:${feature}`] = [pick];
+  }
   if (Object.keys(classChoices).length) extra.classChoices = classChoices;
+
+  // Phase 5o: the rules edition, from the sources D&D Beyond prints beside each feature ("PHB-2024 70"
+  // for the 2024 books, "PHB 72" for 2014). Left unset when the sheet names no sources.
+  const sources = sheet.features.map((f) => f.source || "").filter(Boolean);
+  if (sources.some((x) => /2024/.test(x))) extra.edition = "2024";
+  else if (sources.length) extra.edition = "2014";
 
   // Park the ENTIRE parse. app/me/forge/page.tsx round-trips unknown build keys (normalizeBuild
   // spreads the raw object, edits deep-clone it, save writes the whole thing), so nothing here is
@@ -699,6 +712,13 @@ const splitDamage = (d: string): { dice: string; mod: number } => {
 /** Names as both sides write them: "Rapier, +2" and "Rapier +2" are one weapon. */
 export const attackKey = (n: string) => n.toLowerCase().replace(/[,()]/g, " ").replace(/\s+/g, " ").trim();
 
+/**
+ * Bumped whenever the engine starts modelling something D&D Beyond already counted (version 2: the
+ * Alert and Tough feats, Thaumaturge and Magician). An import matched against an older engine is matched
+ * again by the Forge, so the new rule and the old adjustment do not both count.
+ */
+export const RECONCILE_VERSION = 2;
+
 export function reconcileImport(
   sheet: DdbSheet,
   derived: {
@@ -750,5 +770,6 @@ export function reconcileImport(
     if (pv !== null && sk !== null && pv - 10 - sk) (out.passives ??= {})[k] = pv - 10 - sk;
   }
   out.at = new Date().toISOString();
+  out.v = RECONCILE_VERSION;
   return out;
 }

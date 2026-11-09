@@ -12,6 +12,7 @@
 // frames; enc.buildPalette(); enc.addFrame(rgba, delayMs) for every frame; enc.finish() -> Uint8Array.
 
 const TRANSPARENT = 255;
+const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
 
 class ByteOut {
   private buf = new Uint8Array(1 << 16);
@@ -52,10 +53,12 @@ export class GifEncoder {
   }
 
   /** The colour a pixel is drawn in: its own when opaque enough, or blended onto the matte. */
-  private px(rgba: Uint8ClampedArray, i: number): number {
+  private px(rgba: Uint8ClampedArray, i: number, dither = 0): number {
     const a = rgba[i + 3];
-    if (this.transparent) return a < 128 ? -1 : ((rgba[i] >> 3) << 10) | ((rgba[i + 1] >> 3) << 5) | (rgba[i + 2] >> 3);
-    const k = a / 255, r = rgba[i] * k + this.matte[0] * (1 - k), g = rgba[i + 1] * k + this.matte[1] * (1 - k), b = rgba[i + 2] * k + this.matte[2] * (1 - k);
+    let r = rgba[i], g = rgba[i + 1], b = rgba[i + 2];
+    if (this.transparent) { if (a < 128) return -1; }
+    else { const k = a / 255; r = r * k + this.matte[0] * (1 - k); g = g * k + this.matte[1] * (1 - k); b = b * k + this.matte[2] * (1 - k); }
+    if (dither) { r = Math.max(0, Math.min(255, r + dither)); g = Math.max(0, Math.min(255, g + dither)); b = Math.max(0, Math.min(255, b + dither)); }
     return ((r >> 3) << 10) | ((g >> 3) << 5) | (b >> 3);
   }
 
@@ -84,8 +87,11 @@ export class GifEncoder {
       if (bi < 0) break;
       const b = boxes[bi];
       b.bins.sort((x, y) => ch(x, axis) - ch(y, axis));
+      // split at the median count, but never leave either half empty (an empty half wasted a palette
+      // slot and produced a broken colour, which is how whole colour families went missing)
       let acc = 0, cut = 0;
       for (; cut < b.bins.length - 1; cut++) { acc += this.hist[b.bins[cut]]; if (acc >= b.count / 2) break; }
+      cut = Math.min(cut, b.bins.length - 2);
       const left = b.bins.slice(0, cut + 1), right = b.bins.slice(cut + 1);
       const cnt = (a: number[]) => a.reduce((s, c) => s + this.hist[c], 0);
       boxes = [...boxes.slice(0, bi), { bins: left, count: cnt(left) }, { bins: right, count: cnt(right) }, ...boxes.slice(bi + 1)];
@@ -116,7 +122,14 @@ export class GifEncoder {
     if (!this.palette.length) this.buildPalette();
     if (!this.started) this.header();
     const o = this.out, n = this.w * this.h, idx = new Uint8Array(n);
-    for (let p = 0, i = 0; p < n; p++, i += 4) { const c = this.px(rgba, i); idx[p] = c < 0 ? TRANSPARENT : this.lookup[c]; }
+    for (let p = 0, i = 0; p < n; p++, i += 4) {
+      if (this.transparent && rgba[i + 3] < 128) { idx[p] = TRANSPARENT; continue; }
+      // a light 4 by 4 ordered dither: smooth gradients without the crawling noise error diffusion
+      // gives an animation
+      const x = p % this.w, y = (p - x) / this.w, d = (BAYER[(y & 3) * 4 + (x & 3)] - 7.5) * 0.9;
+      const c = this.px(rgba, i, d);
+      idx[p] = this.lookup[c];
+    }
     // graphic control: restore to background between frames so clear pixels stay clear
     o.bytes([0x21, 0xf9, 0x04, ((this.transparent ? 2 : 1) << 2) | (this.transparent ? 1 : 0)]);
     o.word(Math.max(2, Math.round(delayMs / 10))); o.byte(this.transparent ? TRANSPARENT : 0); o.byte(0);

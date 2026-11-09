@@ -11,8 +11,6 @@
 
 export type RGBA = Uint8ClampedArray;
 
-/** sessionStorage key the background remover uses to hand a cut-out picture to the token maker. */
-export const HANDOFF_KEY = "sixaxes:cutout-handoff";
 
 const dist2 = (a: RGBA, i: number, c: number[]) => {
   const dr = a[i] - c[0], dg = a[i + 1] - c[1], db = a[i + 2] - c[2];
@@ -184,4 +182,21 @@ export function tightenEdge(mask: Uint8ClampedArray, w: number, h: number): Uint
     out[p] = m;
   }
   return out;
+}
+
+/** Marks a round stroke of radius r into a stroke map (one byte per pixel) for the guided cut. */
+export function stampSeed(seed: Uint8Array, w: number, h: number, cx: number, cy: number, r: number) {
+  const rr = Math.max(1, r), x0 = Math.max(0, Math.floor(cx - rr)), x1 = Math.min(w - 1, Math.ceil(cx + rr));
+  const y0 = Math.max(0, Math.floor(cy - rr)), y1 = Math.min(h - 1, Math.ceil(cy + rr));
+  for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if ((x - cx) ** 2 + (y - cy) ** 2 <= rr * rr) seed[y * w + x] = 1;
+}
+
+/** The keep (green) and remove (red) strokes as a translucent picture, for drawing over the preview. */
+export function strokeOverlay(keep: Uint8Array, remove: Uint8Array, w: number, h: number): ImageData {
+  const img = new ImageData(w, h), d = img.data;
+  for (let p = 0, i = 0; p < w * h; p++, i += 4) {
+    if (keep[p]) { d[i] = 70; d[i + 1] = 220; d[i + 2] = 100; d[i + 3] = 150; }
+    else if (remove[p]) { d[i] = 235; d[i + 1] = 70; d[i + 2] = 70; d[i + 3] = 150; }
+  }
+  return img;
 }

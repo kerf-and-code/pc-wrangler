@@ -261,6 +261,10 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   const [markerBusy, setMarkerBusy] = useState(false);
   // the token maker, open for one token (picture, shape, border, animated frame)
   const [makerFor, setMakerFor] = useState<string | null>(null);
+  // Phase 5o: darkvision read off each character's saved sheet (characters.build.sheetSnapshot, written
+  // by the Forge on save). A darkvision the GM sets on the token itself wins over it.
+  const sheetDv = useRef<Map<string, number>>(new Map());
+  const tokenDv = (t: Token) => darkvisionOf(t.style) || (t.character_id ? sheetDv.current.get(t.character_id) ?? 0 : 0);
   const touches = useRef<Map<number, Pt>>(new Map());
   const pinch = useRef<{ d: number; mid: Pt } | null>(null);
   const longPress = useRef<{ timer: ReturnType<typeof setTimeout>; at: Pt; fired: boolean } | null>(null);
@@ -439,7 +443,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     const mode = lightModeOf(st.scene?.settings?.light);
     const onMap = (p: { x: number; y: number }) => p.x >= 0 && p.y >= 0 && p.x < n && p.y < n;
     const lookers = [...tokensRef.current.values()].filter((t) => (gm ? selRef.current.includes(t.id) : t.mine) && !t.hidden && t.layer !== "gm")
-      .map((t) => ({ ...shownPos(t), dv: darkvisionOf(t.style) > 0 ? t.size / 2 + darkvisionOf(t.style) / feet : 0 })).filter(onMap);
+      .map((t) => ({ ...shownPos(t), dv: tokenDv(t) > 0 ? t.size / 2 + tokenDv(t) / feet : 0 })).filter(onMap);
     // light sources: any token on the map carrying one (a player only has the tokens they are sent)
     const sources = mode === "bright" ? [] : [...tokensRef.current.values()].filter((t) => t.layer !== "gm" || gm).flatMap((t) => {
       const l = lightOf(t.style); if (!l) return [];
@@ -928,6 +932,16 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     const prevMap = stateRef.current?.map?.id, prevScene = stateRef.current?.scene?.id;
     stateRef.current = st; setState(st); setError(null);
     applyTokens(st.tokens);
+    // darkvision from the character sheets behind the tokens (a player can read only their own)
+    const charIds = [...new Set((st.tokens ?? []).map((t) => t.character_id).filter(Boolean))] as string[];
+    const dvs = new Map<string, number>();
+    if (charIds.length) {
+      const { data: cs } = await supabase.from("characters").select("id, snap:build->sheetSnapshot").in("id", charIds);
+      for (const c of (cs ?? []) as unknown as { id: string; snap: { darkvision?: number } | null }[]) {
+        const dv = Math.min(600, Number(c.snap?.darkvision) || 0); if (dv > 0) dvs.set(c.id, dv);
+      }
+    }
+    sheetDv.current = dvs;
     templatesRef.current = new Map();
     if (st.scene) {
       const { data: tpls } = await supabase.from("vtt_templates").select("*").eq("scene_id", st.scene.id);
@@ -2777,7 +2791,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                             const v = Number(e.target.value) || 0, style = { ...sel[0].style }; if (v) style.darkvision = v; else delete style.darkvision;
                             void updateTokens([sel[0].id], { style }, true);
                           }} style={field}>
-                            <option value="">None</option>
+                            <option value="">{sel[0].character_id && sheetDv.current.get(sel[0].character_id) ? `From the sheet (${sheetDv.current.get(sel[0].character_id)} ft)` : "None"}</option>
                             {DARKVISION_FT.map((f) => <option key={f} value={f}>{f} ft</option>)}
                             {darkvisionOf(sel[0].style) > 0 && !DARKVISION_FT.includes(darkvisionOf(sel[0].style)) && <option value={darkvisionOf(sel[0].style)}>{darkvisionOf(sel[0].style)} ft</option>}
                           </select></div>
