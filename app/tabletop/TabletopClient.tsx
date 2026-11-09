@@ -36,6 +36,7 @@ import RollTablesPanel from "@/components/roll-tables-panel";
 import TableSound, { useTableAudio } from "@/components/table-sound";
 import SoundPanel from "@/components/sound-panel";
 import { encodeDifficult, normDifficult, paintDifficult, pathExtra } from "@/lib/tabletop/terrain";
+import { distance3d, elevationOf, elevationText } from "@/lib/tabletop/elevation";
 import { AttackForm, EconomyBar, MarkerChips, MarkerPicker, PlayerEntryControls, SaveBanner, TurnUsed, isMyTurn, type FightEntry, type PendingSave } from "@/components/fight-controls";
 
 // The tabletop, phase 1 (2026-11-06). One page for the GM and the players; tabletop_state (p105)
@@ -786,6 +787,23 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
       const conds = en?.conditions ?? [];
       const marks: TokenMarker[] = [...conds.map((c) => ({ id: c, n: null })), ...tokenMarkers(t.style).filter((m) => !conds.includes(m.id))];
       if (marks.length) drawMarkerRing(ctx, marks, cx, cy, rad, Math.max(7, cell * 0.16), markerStyleRef.current);
+      // phase 5w: height off the ground, a badge at the top right (an arrow up, or down below the ground)
+      const elev = elevationOf(t.style);
+      if (elev) {
+        const fs = Math.max(8, cell * 0.2), txt = `${Math.abs(elev)}`;
+        ctx.save(); ctx.font = `700 ${fs}px system-ui, sans-serif`;
+        const tw = ctx.measureText(txt).width, aw = fs * 0.7, w = tw + aw + fs * 0.7, h = fs * 1.35;
+        const bx = cx + rad * 0.45, by = cy - rad - h * 0.2;
+        ctx.fillStyle = "rgba(20,16,12,0.9)"; ctx.strokeStyle = elev > 0 ? "#7fc4ea" : "#c69a63"; ctx.lineWidth = Math.max(1, fs * 0.1);
+        ctx.beginPath(); ctx.roundRect(bx, by, w, h, h / 2); ctx.fill(); ctx.stroke();
+        const ax = bx + fs * 0.35, ay = by + h / 2;
+        ctx.fillStyle = ctx.strokeStyle; ctx.beginPath();
+        if (elev > 0) { ctx.moveTo(ax, ay + aw * 0.4); ctx.lineTo(ax + aw / 2, ay - aw * 0.45); ctx.lineTo(ax + aw, ay + aw * 0.4); }
+        else { ctx.moveTo(ax, ay - aw * 0.4); ctx.lineTo(ax + aw / 2, ay + aw * 0.45); ctx.lineTo(ax + aw, ay - aw * 0.4); }
+        ctx.closePath(); ctx.fill();
+        ctx.fillStyle = "#f2e6c9"; ctx.textBaseline = "middle"; ctx.fillText(txt, ax + aw + fs * 0.15, ay + fs * 0.05);
+        ctx.restore();
+      }
       if (sel.has(t.id)) {
         ctx.save(); ctx.lineWidth = Math.max(2, 3 / cam.s); ctx.strokeStyle = SELECT; ctx.setLineDash([6 / cam.s, 4 / cam.s]);
         ctx.beginPath(); ctx.arc(cx, cy, rad + Math.max(4, cell * 0.12), 0, Math.PI * 2); ctx.stroke(); ctx.restore();
@@ -793,7 +811,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
       if (sel.has(t.id) || hover.current === t.id) {
         const fs = Math.max(11, 13 / cam.s);
         ctx.save(); ctx.font = `600 ${fs}px system-ui, sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "top";
-        const label = (t.hidden ? `${t.name} (hidden)` : t.name) + (marks.length ? `: ${marks.map(markerText).join(", ")}` : ""), w = ctx.measureText(label).width + fs;
+        const label = (t.hidden ? `${t.name} (hidden)` : t.name) + (elev ? `, ${elevationText(elev)}` : "") + (marks.length ? `: ${marks.map(markerText).join(", ")}` : ""), w = ctx.measureText(label).width + fs;
         ctx.fillStyle = "rgba(20,16,12,0.85)"; ctx.fillRect(cx - w / 2, cy + rad + 4 / cam.s, w, fs * 1.5);
         ctx.fillStyle = "#f2e6c9"; ctx.fillText(label, cx, cy + rad + 4 / cam.s + fs * 0.25); ctx.restore();
       }
@@ -921,7 +939,14 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
       const d = measure(pts, rule, fps), end = pts[pts.length - 1];
       // phase 5u: what difficult terrain adds, leg by leg, as the move check counts it
       const xtra = difficultRef.current.size && n ? pathExtra(difficultRef.current, n, pts, (a, b) => measure([a, b], rule, fps).feet, fps) : 0;
-      const fs = Math.max(12, 15 / cam.s), text = xtra ? `${d.feet + xtra} ft (${xtra} difficult)` : `${d.feet} ft`;
+      // phase 5w: from one token to another at a different height, the distance with the height counted
+      let up = "";
+      const ta = tokenAt({ x: pts[0].x * cell, y: pts[0].y * cell }), tb = tokenAt({ x: end.x * cell, y: end.y * cell });
+      if (ta && tb && ta.id !== tb.id) {
+        const dv = elevationOf(tb.style) - elevationOf(ta.style);
+        if (dv) up = `, ${distance3d(d.feet, dv, rule, fps)} ft counting ${Math.abs(dv)} ft of height`;
+      }
+      const fs = Math.max(12, 15 / cam.s), text = (xtra ? `${d.feet + xtra} ft (${xtra} difficult)` : `${d.feet} ft`) + up;
       ctx.font = `700 ${fs}px system-ui, sans-serif`; const w = ctx.measureText(text).width + fs;
       ctx.fillStyle = "rgba(20,16,12,0.88)"; ctx.fillRect(end.x * cell + 10 / cam.s, end.y * cell - fs * 1.6, w, fs * 1.4);
       ctx.fillStyle = "#fff"; ctx.textBaseline = "top"; ctx.fillText(text, end.x * cell + 10 / cam.s + fs / 2, end.y * cell - fs * 1.45);
@@ -1955,6 +1980,23 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   }, [supabase, updateTokens, requestDraw]);
   useEffect(() => { setMarkerOpen(false); }, [selected]);
 
+  // phase 5w: height off the ground through tabletop_set_token_elevation (p127): the GM any token, a
+  // player their own. It shows at once here; the token's Realtime update brings it to everyone else.
+  const setTokenElevation = useCallback(async (ids: string[], feet: number) => {
+    const gm = stateRef.current?.role === "gm";
+    const list = ids.filter((id) => { const t = tokensRef.current.get(id); return !!t && (gm || !!t.mine); });
+    if (!list.length) return;
+    const f = Math.max(-9999, Math.min(9999, Math.round(feet)));
+    for (const id of list) {
+      const t = tokensRef.current.get(id)!, style: Record<string, unknown> = { ...t.style };
+      if (f) style.elevation = f; else delete style.elevation;
+      tokensRef.current.set(id, { ...t, style });
+    }
+    setTick((v) => v + 1); requestDraw();
+    const { error: er } = await supabase.rpc("tabletop_set_token_elevation", { p_tokens: list, p_feet: f });
+    if (er) { setChatErr(/height is between/.test(er.message) ? "A height is between -9999 and 9999 ft." : `Could not change the height: ${er.message}`); void load(); }
+  }, [supabase, requestDraw, load]);
+
   // Saves what the token maker made: uploads the cut-out picture (and an imported border), then sets the
   // picture and frame through tabletop_set_token_look (p120), which lets the GM change any token and a
   // player change their own. Audit A4: afterwards the pictures it replaced are offered for removal, and
@@ -2063,6 +2105,12 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
       }
       if (k === "c") { fit(); return; }
       if (k === "r") { turn(selRef.current, e.shiftKey ? -45 : 45); return; }
+      // phase 5w: [ and ] lower and raise the selected tokens 5 ft (Shift: 30 ft)
+      if ((e.key === "[" || e.key === "]" || e.key === "{" || e.key === "}") && selRef.current.length) {
+        const first = tokensRef.current.get(selRef.current[0]);
+        const step = (e.key === "]" || e.key === "}" ? 1 : -1) * (e.shiftKey ? 30 : 5);
+        void setTokenElevation(selRef.current, elevationOf(first?.style) + step); return;
+      }
       if (!isGm) return;
       if (fightRef.current && (k === "n" || k === "p") && !e.ctrlKey && !e.metaKey) { e.preventDefault(); void stepTurn(k === "n" ? 1 : -1); return; }
       if (k === "f" && !e.ctrlKey && !e.metaKey) { void addToFight(selRef.current); return; }
@@ -2076,7 +2124,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     window.addEventListener("keydown", down); window.addEventListener("keyup", up);
     return () => { window.removeEventListener("keydown", down); window.removeEventListener("keyup", up); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isGm, me, myColor, fit, turn, deleteTokens, updateTokens, requestDraw, turnTpl, removeTpl, stepTurn, addToFight]);
+  }, [isGm, me, myColor, fit, turn, deleteTokens, updateTokens, requestDraw, turnTpl, removeTpl, stepTurn, addToFight, setTokenElevation]);
 
   // place new tokens in the middle of what the GM is looking at
   const viewCentre = (): Pt => {
@@ -2595,6 +2643,15 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                   {[0, 5, 10, 15, 20, 30].map((r) => <option key={r} value={r}>{r ? `${r} ft around` : "On the token"}</option>)}
                 </select>
                 <button type="button" onClick={() => void addTokenEffect(tk.id)} style={small}>Add</button>
+                {(isGm || tk.mine) && (
+                  <span role="group" aria-label={`Height of ${tk.name}`} title="Height off the ground. Keys: [ and ] (Shift: 30 ft)" style={{ display: "inline-flex", gap: 4, alignItems: "center" }}>
+                    <span style={{ color: C.muted }}>Height</span>
+                    <button type="button" aria-label={`Lower ${tk.name} 5 ft`} onClick={() => void setTokenElevation([tk.id], elevationOf(tk.style) - 5)} style={{ ...small, padding: "3px 8px" }}>-</button>
+                    <span aria-live="polite" style={{ minWidth: 46, textAlign: "center" }}>{elevationOf(tk.style)} ft</span>
+                    <button type="button" aria-label={`Raise ${tk.name} 5 ft`} onClick={() => void setTokenElevation([tk.id], elevationOf(tk.style) + 5)} style={{ ...small, padding: "3px 8px" }}>+</button>
+                    {elevationOf(tk.style) !== 0 && <button type="button" onClick={() => void setTokenElevation([tk.id], 0)} style={{ ...small, padding: "3px 8px" }}>Ground</button>}
+                  </span>
+                )}
                 {(isGm || tk.mine) && <button type="button" onClick={() => setMakerFor(tk.id)} style={small}>Token maker</button>}
                 {(isGm || tk.mine) && (
                   <button type="button" aria-expanded={markerOpen} onClick={() => setMarkerOpen((v) => !v)} style={{ ...small, borderColor: markerOpen ? C.sun : C.line, color: markerOpen ? C.sun : C.text }}>
