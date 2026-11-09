@@ -215,11 +215,11 @@ export const TOOL_COPY: Record<string, ToolCopyProps> = {
       "Press Remove background, and tidy any edges with the erase and restore brushes.",
       "Pick a shape, then drag and zoom the picture to frame the face.",
       "Choose a border design and its colours, an animated effect, and a motion style, or import a border of your own.",
-      "Download the token as a PNG, the picture alone, or a short animated video.",
+      "Download the token as a PNG, the picture alone, an animated GIF, or a short video.",
     ],
     systemsHeading: "Using it on your table",
     systems: [
-      "The PNG has a transparent background, so it drops onto any virtual tabletop or into any character sheet that takes an image. The animated version downloads as a WebM video that loops the effect. In Six Axes the same token maker sits in the tabletop for the GM and for each player, and the frame is drawn live, so the animation plays at the table.",
+      "The PNG has a transparent background, so it drops onto any virtual tabletop or into any character sheet that takes an image. The animated version downloads as a looping GIF, which most virtual tabletops accept, or as a WebM video. In Six Axes the same token maker sits in the tabletop for the GM and for each player, and the frame is drawn live, so the animation plays at the table.",
     ],
     faq: [
       { q: "Is the token maker free?", a: "Yes. It is free, needs no login, and nothing you make is uploaded or stored." },
@@ -228,9 +228,34 @@ export const TOOL_COPY: Record<string, ToolCopyProps> = {
       { q: "Are the class borders official art?", a: "No. Every design is original Six Axes artwork. The class and subclass names only say what inspired each one." },
     ],
     related: [
-      { href: "/tools/dice-roller", label: "Dice roller" },
+      { href: "/tools/background-remover", label: "Background remover" },
       { href: "/tools/dnd-class-quiz", label: "What D&D class should I be?" },
       { href: "/tools/party-coverage", label: "Party coverage check" },
+    ],
+  },
+
+  "background-remover": {
+    heading: "Remove a background without uploading anything",
+    intro: [
+      "Character art, monster pictures and props almost always come on a background you do not want on a map or a sheet. This removes it in your browser: the picture never leaves your device, there is no account, and the download is full size.",
+      "It reads the colours around the edge of the picture and clears everything connected to them, then gives you the tools to finish the job: click any patch of background that is left (the gap between an arm and a body), paint with an erase or restore brush, keep only the largest piece to clear stray specks, and tighten the edge to trim a halo.",
+    ],
+    steps: [
+      "Choose, drop or paste a picture.",
+      "Press Remove background automatically, and raise or lower the tolerance until the edge looks right.",
+      "Click any background that is left, and touch up with the brushes. Zoom in for fine edges.",
+      "Check it against white, black or a colour, then download a transparent PNG, or one with a new background.",
+      "Or send it straight to the token maker to frame it as a token.",
+    ],
+    faq: [
+      { q: "Is my picture uploaded?", a: "No. Everything runs in your browser, so the picture stays on your device." },
+      { q: "What pictures work best?", a: "Pictures on a plain or simple background remove in one click. Busy photographs take more brushwork, since the remover works from colour rather than recognising what is in the picture." },
+      { q: "What size is the download?", a: "The same size as your picture. You edit a preview copy, and the result is applied to the original at full resolution." },
+      { q: "Is it free?", a: "Yes. It is free, needs no login, and nothing is stored." },
+    ],
+    related: [
+      { href: "/tools/token-maker", label: "Token maker" },
+      { href: "/tools/map-generator", label: "Hex map generator" },
     ],
   },
 

@@ -6,7 +6,8 @@ import {
   clipToShape, designDefaults, drawFrame, frameMoves, frameReach, normFrame,
   type Frame, type Shape,
 } from "@/lib/tabletop/frames";
-import { applyMask, autoMask, keptShare, paintMask } from "@/lib/tabletop/cutout";
+import { HANDOFF_KEY, applyMask, autoMask, keptShare, paintMask, wandRemove } from "@/lib/tabletop/cutout";
+import { GifEncoder } from "@/lib/tabletop/gif";
 
 // components/token-maker.tsx (2026-11-08)
 //
@@ -14,7 +15,9 @@ import { applyMask, autoMask, keptShare, paintMask } from "@/lib/tabletop/cutout
 // (a plain band or a design inspired by a class or subclass), an animated effect themed on a damage
 // type, a motion style, or an imported border image. Used in two places:
 //   - the free tool at /tools/token-maker (mode "free"): everything stays in the browser and the
-//     visitor downloads a PNG (still), the picture alone, or a short WebM video of the animation;
+//     visitor downloads a PNG (still), the picture alone, an animated GIF (lib/tabletop/gif.ts), or a
+//     short WebM video of the animation. The background remover (/tools/background-remover) can hand a
+//     cut-out picture over through sessionStorage (HANDOFF_KEY);
 //   - the tabletop (mode "app"): "Use on this token" hands back the cut-out picture and the frame
 //     settings; the caller uploads the picture and stores the frame on the token, where it is drawn
 //     live, so the animation runs at the table.
@@ -72,7 +75,9 @@ export default function TokenMaker({ mode, initialImage, initialFrame, name, onS
   const [history, setHistory] = useState<Uint8ClampedArray[]>([]);
   const [tolerance, setTolerance] = useState(35);
   const [autoOn, setAutoOn] = useState(false);
-  const [tool, setTool] = useState<"move" | "erase" | "restore">("move");
+  const [tool, setTool] = useState<"move" | "wand" | "erase" | "restore">("move");
+  const [gifClear, setGifClear] = useState(true);
+  const [gifProgress, setGifProgress] = useState<number | null>(null);
   const [brush, setBrush] = useState(18);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -121,6 +126,15 @@ export default function TokenMaker({ mode, initialImage, initialFrame, name, onS
   }, []);
 
   useEffect(() => { if (initialImage) void openPicture(initialImage, true); }, [initialImage, openPicture]);
+
+  // a picture handed over from the background remover
+  useEffect(() => {
+    if (mode !== "free") return;
+    try {
+      const url = window.sessionStorage.getItem(HANDOFF_KEY);
+      if (url && url.startsWith("data:image/")) { window.sessionStorage.removeItem(HANDOFF_KEY); void openPicture(url, false); }
+    } catch { /* storage unavailable: start empty */ }
+  }, [mode, openPicture]);
 
   useEffect(() => {
     const mq = typeof window !== "undefined" ? window.matchMedia?.("(prefers-reduced-motion: reduce)") : null;
@@ -232,15 +246,22 @@ export default function TokenMaker({ mode, initialImage, initialFrame, name, onS
   };
   const onDown = (e: React.PointerEvent) => {
     if (!pic) { fileRef.current?.click(); return; }
-    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
     const p = local(e);
-    const painting = tool !== "move";
+    if (tool === "wand") {
+      const q = toImage(p.x, p.y); if (!q || !mask) return;
+      const m = new Uint8ClampedArray(mask); pushHistory(mask);
+      const n = wandRemove(pic.rgba, m, pic.w, pic.h, q.x, q.y, tolerance);
+      setMask(m); setMsg(n ? null : "Nothing there to remove. Click on the background colour you want gone.");
+      return;
+    }
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    const painting = tool === "erase" || tool === "restore";
     drag.current = { x: p.x, y: p.y, px: pan.x, py: pan.y, painting };
     if (painting && mask) { pushHistory(mask); strokeMask.current = new Uint8ClampedArray(mask); paintAt(p.x, p.y); }
   };
   const onMove = (e: React.PointerEvent) => {
     const p = local(e);
-    if (!drag.current) { if (tool !== "move") drag.current = null; return; }
+    if (!drag.current) return;
     if (drag.current.painting) { paintAt(p.x, p.y); drag.current.x = p.x; drag.current.y = p.y; return; }
     const r = PREVIEW * 0.3;
     setPan({ x: drag.current.px + (p.x - drag.current.x) / (2 * r), y: drag.current.py + (p.y - drag.current.y) / (2 * r) });
@@ -305,6 +326,31 @@ export default function TokenMaker({ mode, initialImage, initialFrame, name, onS
     download(new Blob(chunks, { type: "video/webm" }), `${base}-animated.webm`);
   };
 
+  const saveGif = async () => {
+    const size = Math.min(exportSize, 512), fps = 20, n = fps * 3;
+    const cv = document.createElement("canvas"); cv.width = size; cv.height = size;
+    const c = cv.getContext("2d", { willReadFrequently: true })!;
+    const r = size / 2 / frameReach(frame);
+    const draw = (t: number) => {
+      c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, size, size); c.translate(size / 2, size / 2);
+      drawPortrait(c, r); drawFrame(c, frame, r, t, imgBorder);
+      return c.getImageData(0, 0, size, size).data;
+    };
+    try {
+      setGifProgress(0);
+      const enc = new GifEncoder(size, size, { transparent: gifClear });
+      for (let i = 0; i < n; i += 5) enc.addPaletteSample(draw(i / fps));
+      enc.buildPalette();
+      for (let i = 0; i < n; i++) {
+        enc.addFrame(draw(i / fps), 1000 / fps);
+        if (i % 3 === 0) { setGifProgress(i / n); await new Promise((res) => setTimeout(res, 0)); }
+      }
+      download(new Blob([enc.finish().buffer as ArrayBuffer], { type: "image/gif" }), `${base}-animated.gif`);
+    } catch {
+      setMsg("That picture could not be exported (it came from a site that does not allow it). Choose the file from your computer instead.");
+    } finally { setGifProgress(null); }
+  };
+
   const saveToToken = async (clearFrame = false) => {
     if (!onSave) return;
     if (!pic && !initialImage) { setMsg("Choose a picture first."); return; }
@@ -340,7 +386,7 @@ export default function TokenMaker({ mode, initialImage, initialFrame, name, onS
             style={{ width: "100%", height: "100%", display: "block", touchAction: "none", cursor: !pic ? "pointer" : tool === "move" ? "grab" : "crosshair" }} />
         </div>
         <p style={{ fontSize: 12, color: ui.muted, margin: "6px 0 0" }}>
-          {!pic ? "Choose, drop or paste a picture." : tool === "move" ? "Drag to move the picture, scroll to zoom." : tool === "erase" ? "Paint over what you want gone." : "Paint over what you want back."}
+          {!pic ? "Choose, drop or paste a picture." : tool === "move" ? "Drag to move the picture, scroll to zoom." : tool === "wand" ? "Click a patch of background to remove it (uses the tolerance)." : tool === "erase" ? "Paint over what you want gone." : "Paint over what you want back."}
         </p>
         <div style={{ ...rowS, marginTop: 8 }}>
           <button type="button" style={btn(paused)} aria-pressed={paused} onClick={() => setPaused((p) => !p)}>{paused ? "Play animation" : "Pause animation"}</button>
@@ -366,10 +412,10 @@ export default function TokenMaker({ mode, initialImage, initialFrame, name, onS
           </label>
         </div>
         <div style={{ ...rowS, marginTop: 6 }} role="group" aria-label="Brush">
-          {(["move", "erase", "restore"] as const).map((k) => (
-            <button key={k} type="button" style={btn(tool === k)} aria-pressed={tool === k} disabled={!pic} onClick={() => setTool(k)}>{k === "move" ? "Move" : k === "erase" ? "Erase brush" : "Restore brush"}</button>
+          {(["move", "wand", "erase", "restore"] as const).map((k) => (
+            <button key={k} type="button" style={btn(tool === k)} aria-pressed={tool === k} disabled={!pic} onClick={() => setTool(k)}>{k === "move" ? "Move" : k === "wand" ? "Remove by click" : k === "erase" ? "Erase brush" : "Restore brush"}</button>
           ))}
-          {tool !== "move" && <label style={lab}>Size<input type="range" min={4} max={80} value={brush} onChange={(e) => setBrush(Number(e.target.value))} /></label>}
+          {(tool === "erase" || tool === "restore") && <label style={lab}>Size<input type="range" min={4} max={80} value={brush} onChange={(e) => setBrush(Number(e.target.value))} /></label>}
         </div>
         <div style={{ ...rowS, marginTop: 6 }}>
           <button type="button" style={btn()} disabled={!history.length} onClick={undo}>Undo</button>
@@ -457,8 +503,21 @@ export default function TokenMaker({ mode, initialImage, initialFrame, name, onS
           <button type="button" style={btn()} disabled={!pic} onClick={() => void savePng(false)}>Picture only</button>
           {moving && canRecord && <button type="button" style={btn(recording)} disabled={!pic || recording} onClick={() => void saveVideo()}>{recording ? "Recording 4 seconds..." : "Animated (WebM video)"}</button>}
         </div>
+        {moving && (
+          <div style={{ ...rowS, marginTop: 8 }}>
+            <button type="button" style={btn(gifProgress != null)} disabled={!pic || gifProgress != null} onClick={() => void saveGif()}>
+              {gifProgress != null ? `Making the GIF... ${Math.round(gifProgress * 100)}%` : "Animated GIF"}
+            </button>
+            <label style={lab}>GIF background
+              <select aria-label="GIF background" value={gifClear ? "clear" : "dark"} onChange={(e) => setGifClear(e.target.value === "clear")} style={field}>
+                <option value="clear">Transparent</option>
+                <option value="dark">Dark (smoother edges)</option>
+              </select>
+            </label>
+          </div>
+        )}
         <p style={{ fontSize: 12, color: ui.muted, margin: "6px 0 0" }}>
-          The PNG is a still with a transparent background. {moving ? "The video loops the animation on a dark background. " : ""}
+          The PNG is a still with a transparent background. {moving ? "The GIF loops 3 seconds of the animation (up to 512 px) and works on most virtual tabletops; GIF edges are crisp, not soft. The video loops it on a dark background. " : ""}
           {mode === "app" ? "On the tabletop the frame is drawn live, so the animation plays at the table." : "Everything happens in your browser: nothing is uploaded."}
         </p>
       </div>
