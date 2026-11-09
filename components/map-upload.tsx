@@ -24,11 +24,19 @@
 //     so the squares across start at its size and the image may not cover more than it (onDone gets the
 //     image's URL).
 // An uploaded image is saved as an overlay with style "upload", so the editor never calls it out of date.
+//
+// Phase 5t: a Universal VTT file (.dd2vtt from Dungeondraft, .df2vtt, .uvtt) works too, for a new map
+// or the table (not a level). The file carries its picture and its grid, so the grid is set from it and
+// locked, and its walls and doors come in with the map (lib/tabletop/uvtt.ts): walls as sight walls,
+// doors on grid lines as real doors, and a line saying what was not brought in. The preview draws the
+// walls and doors over the picture before anything is saved, and line of sight is switched on for the
+// new scene when there are walls.
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { C } from "@/lib/forge-theme";
 import { blankMap, levelSig, toRow } from "@/lib/dungeon/battle";
+import { MAX_UVTT_BYTES, UVTT_EXT, buildImport, describeImport, imageBlob, readUvtt, type Uvtt } from "@/lib/tabletop/uvtt";
 
 const MAX_FILE = 60 * 1024 * 1024;          // a browser can decode this; bigger maps are usually print scans
 const MIN_SQ = 4;                            // squares per side, at least (battle_maps allows 5 to 200)
@@ -83,6 +91,9 @@ export default function MapUpload({ campaignId, onClose, onDone, dest = { kind: 
   const [zoom, setZoom] = useState<"fit" | "1">("fit");
   const [busy, setBusy] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  // phase 5t: a Universal VTT file's map (grid, walls, doors), when that is what was picked
+  const [uv, setUv] = useState<Uvtt | null>(null);
+  const [objectWalls, setObjectWalls] = useState(false);
   const cvRef = useRef<HTMLCanvasElement | null>(null);
   const dragRef = useRef<{ x: number; y: number; ox: number; oy: number } | null>(null);
   const urlRef = useRef<string | null>(null);
@@ -90,12 +101,46 @@ export default function MapUpload({ campaignId, onClose, onDone, dest = { kind: 
 
   const iw = img?.naturalWidth ?? 0, ih = img?.naturalHeight ?? 0;
   const cols = squaresIn(iw, cal.ox, cal.px), rows = squaresIn(ih, cal.oy, cal.px);
+  // the battle map's size (as squareUp makes it) and what a Universal VTT file brings to it
+  const importN = Math.max(5, Math.max(cols, rows));
+  const imported = useMemo(() => (uv ? buildImport(uv, importN, { objects: objectWalls }) : null), [uv, importN, objectWalls]);
   const view = zoom === "fit" && iw ? Math.min(1, 860 / iw, 520 / ih) : 1;
 
+  // a Universal VTT file: its picture, with the grid set from the file
+  const pickUvtt = async (f: File) => {
+    if (f.size > MAX_UVTT_BYTES) { setErr("That file is over 150 MB. Export it with a smaller picture (fewer pixels per square)."); return; }
+    setBusy("Reading the map file");
+    try {
+      let json: unknown;
+      try { json = JSON.parse(await f.text()); } catch { setErr("That file could not be read as a Universal VTT map."); return; }
+      const r = readUvtt(json);
+      if (!r.ok) { setErr(r.error); return; }
+      if (!r.map.image) { setErr("That file has no map picture in it. Export it again with the image included."); return; }
+      if (urlRef.current) URL.revokeObjectURL(urlRef.current);
+      const url = URL.createObjectURL(imageBlob(r.map.image)); urlRef.current = url;
+      const im = new Image();
+      im.onload = () => {
+        const map = r.map;
+        // the picture's own square size, in case it was scaled on export
+        const px = map.cols > 0 && Math.abs(im.naturalWidth / map.cols - map.ppg) > 0.5 ? im.naturalWidth / map.cols : map.ppg;
+        setUv({ ...map, image: null });
+        setImg(im);
+        setName((n) => n || f.name.replace(UVTT_EXT, "").replace(/[_-]+/g, " ").trim().slice(0, 80));
+        setCal({ px, ox: 0, oy: 0 }); setAcross(String(map.cols));
+      };
+      im.onerror = () => setErr("The picture inside that file could not be read.");
+      im.src = url;
+    } finally { setBusy(null); }
+  };
+
   const pick = (f: File | null | undefined) => {
-    setErr(null);
+    setErr(null); setUv(null);
     if (!f) return;
-    if (!/^image\/(png|jpeg|webp|gif)$/.test(f.type)) { setErr("Use a PNG, JPEG, WebP or GIF image."); return; }
+    if (UVTT_EXT.test(f.name)) {
+      if (fixedN) { setErr("A Universal VTT file makes a whole map. Use it from New map, or Upload to the table."); return; }
+      void pickUvtt(f); return;
+    }
+    if (!/^image\/(png|jpeg|webp|gif)$/.test(f.type)) { setErr("Use a PNG, JPEG, WebP or GIF image, or a Universal VTT map file (.dd2vtt, .uvtt)."); return; }
     if (f.size > MAX_FILE) { setErr("That image is over 60 MB. Export it smaller first."); return; }
     if (urlRef.current) URL.revokeObjectURL(urlRef.current);
     const url = URL.createObjectURL(f); urlRef.current = url;
@@ -129,7 +174,22 @@ export default function MapUpload({ campaignId, onClose, onDone, dest = { kind: 
     for (let r = 0; r <= rows; r++) { const y = Math.round(y0 + r * cal.px * s) + 0.5; ctx.moveTo(x0, y); ctx.lineTo(x0 + w, y); }
     ctx.stroke();
     ctx.strokeStyle = "#d9a43a"; ctx.lineWidth = 2; ctx.strokeRect(x0, y0, w, h);
-  }, [img, iw, ih, view, cal, cols, rows]);
+    // a Universal VTT file's walls (cyan) and doors (gold), where they will land
+    if (imported) {
+      const k = cal.px * s;
+      ctx.strokeStyle = "rgba(90,220,255,0.95)"; ctx.lineWidth = 2; ctx.beginPath();
+      for (const [ax, ay, bx, by] of imported.sightWalls) { ctx.moveTo(x0 + ax * k, y0 + ay * k); ctx.lineTo(x0 + bx * k, y0 + by * k); }
+      ctx.stroke();
+      ctx.strokeStyle = "#f2c14e"; ctx.lineWidth = 4; ctx.beginPath();
+      const nn = importN;
+      for (const key of Object.keys(imported.doors)) {
+        const i = parseInt(key, 10), r = Math.floor(i / nn), c = i % nn;
+        if (key.endsWith("h")) { ctx.moveTo(x0 + c * k, y0 + r * k); ctx.lineTo(x0 + (c + 1) * k, y0 + r * k); }
+        else { ctx.moveTo(x0 + c * k, y0 + r * k); ctx.lineTo(x0 + c * k, y0 + (r + 1) * k); }
+      }
+      ctx.stroke();
+    }
+  }, [img, iw, ih, view, cal, cols, rows, imported, importN]);
   useEffect(() => { draw(); }, [draw]);
 
   const setPx = (px: number) => setCal((c) => ({ ...c, px: Math.max(4, Math.min(2000, px)), ox: c.ox % Math.max(4, px), oy: c.oy % Math.max(4, px) }));
@@ -139,6 +199,7 @@ export default function MapUpload({ campaignId, onClose, onDone, dest = { kind: 
     if (a >= 1 && iw) setPx((iw - cal.ox) / a);
   };
   const onDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (uv) return;                       // the file sets the grid; moving it would move the walls off it
     e.currentTarget.setPointerCapture(e.pointerId);
     dragRef.current = { x: e.clientX, y: e.clientY, ox: cal.ox, oy: cal.oy };
   };
@@ -174,11 +235,12 @@ export default function MapUpload({ campaignId, onClose, onDone, dest = { kind: 
       const m = blankMap("", title, "outdoor", n);
       m.feetPerSquare = feet;
       m.meta.topGrid = { show: gridOver, opacity: 0.35 };
+      if (imported) { m.meta.sightWalls[0] = imported.sightWalls; m.doors[0] = imported.doors; }
       m.meta.overlays[0] = { url: j.url, at: new Date().toISOString(), sig: levelSig(m, 0), style: "upload", show: true, opacity: 1, inkOnTop: false, piecesOnTop: false };
       const { data: bm, error: e1 } = await supabase.from("battle_maps").insert({ campaign_id: campaignId, ...toRow(m) }).select("id").single();
       if (e1 || !bm) throw new Error(`Could not save the map: ${e1?.message ?? "no row"}`);
       if (dest.kind === "map") { onDone((bm as { id: string }).id); return; }
-      const { data: sc, error: e2 } = await supabase.from("vtt_scenes").insert({ campaign_id: campaignId, battle_map_id: (bm as { id: string }).id, level: 0, name: title, settings: {} }).select("id").single();
+      const { data: sc, error: e2 } = await supabase.from("vtt_scenes").insert({ campaign_id: campaignId, battle_map_id: (bm as { id: string }).id, level: 0, name: title, settings: imported?.sightWalls.length ? { los: true } : {} }).select("id").single();
       if (e2 || !sc) throw new Error(`Could not make the scene: ${e2?.message ?? "no row"}`);
       const { error: e3 } = await supabase.rpc("tabletop_activate_scene", { p_scene: (sc as { id: string }).id });
       if (e3) throw new Error(e3.message);
@@ -207,28 +269,42 @@ export default function MapUpload({ campaignId, onClose, onDone, dest = { kind: 
           <label style={{ display: "grid", placeItems: "center", gap: 8, marginTop: 14, padding: "40px 16px", border: `2px dashed ${C.line}`, borderRadius: 10, cursor: "pointer", textAlign: "center" }}
             onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); pick(e.dataTransfer.files?.[0]); }}>
             <span style={{ fontSize: 14 }}>Choose a map image, or drop one here</span>
-            <span style={{ fontSize: 12, color: C.muted }}>PNG, JPEG, WebP or GIF. Only use maps you own or have the right to use at your table.</span>
-            <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={(e) => pick(e.target.files?.[0])} style={{ fontSize: 12.5 }} />
+            <span style={{ fontSize: 12, color: C.muted }}>
+              PNG, JPEG, WebP or GIF{fixedN ? "" : ", or a Universal VTT map (.dd2vtt from Dungeondraft, .uvtt, .df2vtt), which brings its walls and doors"}. Only use maps you own or have the right to use at your table.
+            </span>
+            <input type="file" accept={fixedN ? "image/png,image/jpeg,image/webp,image/gif" : "image/png,image/jpeg,image/webp,image/gif,.dd2vtt,.uvtt,.df2vtt"} onChange={(e) => pick(e.target.files?.[0])} style={{ fontSize: 12.5 }} />
+            {busy && <span role="status" style={{ fontSize: 12.5 }}>{busy}…</span>}
           </label>
         ) : (
           <>
-            <p style={{ fontSize: 12.5, color: C.muted, margin: "10px 0 8px" }}>
-              Set how many squares the map is across, then drag the red grid until it sits on the map&apos;s own lines. Fine-tune the square size if the lines drift
-              toward the far edge. The gold box is what goes on the table.
-            </p>
+            {uv ? (
+              <p style={{ fontSize: 12.5, color: C.muted, margin: "10px 0 8px" }}>
+                The grid comes from the file. Walls show in blue and doors in gold, where they will be on the table; check they sit on the picture&apos;s walls.
+              </p>
+            ) : (
+              <p style={{ fontSize: 12.5, color: C.muted, margin: "10px 0 8px" }}>
+                Set how many squares the map is across, then drag the red grid until it sits on the map&apos;s own lines. Fine-tune the square size if the lines drift
+                toward the far edge. The gold box is what goes on the table.
+              </p>
+            )}
             <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "end" }}>
               {!fixedN && <label style={label}>Name<input value={name} onChange={(e) => setName(e.target.value.slice(0, 80))} style={{ ...field, width: 200 }} /></label>}
-              <label style={label}>Squares across<input aria-label="Squares across" value={across} inputMode="numeric" onChange={(e) => fitAcross(e.target.value.replace(/[^0-9]/g, "").slice(0, 3))} style={{ ...field, width: 70 }} /></label>
+              <label style={label}>Squares across<input aria-label="Squares across" value={across} inputMode="numeric" disabled={!!uv} onChange={(e) => fitAcross(e.target.value.replace(/[^0-9]/g, "").slice(0, 3))} style={{ ...field, width: 70 }} /></label>
               <label style={label}>Square size (px)
                 <span style={{ display: "flex", gap: 4 }}>
-                  <button type="button" aria-label="Smaller squares" onClick={() => setPx(cal.px - 0.25)} style={small}>-</button>
-                  <input aria-label="Square size in pixels" value={Math.round(cal.px * 100) / 100} inputMode="decimal"
+                  <button type="button" aria-label="Smaller squares" disabled={!!uv} onClick={() => setPx(cal.px - 0.25)} style={small}>-</button>
+                  <input aria-label="Square size in pixels" value={Math.round(cal.px * 100) / 100} inputMode="decimal" disabled={!!uv}
                     onChange={(e) => { const v = parseFloat(e.target.value); if (v > 0) setPx(v); }} style={{ ...field, width: 72 }} />
-                  <button type="button" aria-label="Larger squares" onClick={() => setPx(cal.px + 0.25)} style={small}>+</button>
+                  <button type="button" aria-label="Larger squares" disabled={!!uv} onClick={() => setPx(cal.px + 0.25)} style={small}>+</button>
                 </span>
               </label>
               {!fixedN && <label style={label}>Feet per square<input aria-label="Feet per square" value={fps} inputMode="numeric" onChange={(e) => setFps(e.target.value.replace(/[^0-9]/g, "").slice(0, 4))} style={{ ...field, width: 60 }} /></label>}
               {!fixedN && <label style={{ ...label, display: "flex", gap: 6, alignItems: "center" }}><input type="checkbox" checked={gridOver} onChange={(e) => setGridOver(e.target.checked)} />Table grid over the map</label>}
+              {uv && uv.objects.length > 0 && (
+                <label style={{ ...label, display: "flex", gap: 6, alignItems: "center" }}>
+                  <input type="checkbox" checked={objectWalls} onChange={(e) => setObjectWalls(e.target.checked)} />Pillars and furniture block sight too ({uv.objects.length})
+                </label>
+              )}
               <span style={{ flex: 1 }} />
               <span role="group" aria-label="Preview zoom" style={{ display: "flex", gap: 4 }}>
                 <button type="button" aria-pressed={zoom === "fit"} onClick={() => setZoom("fit")} style={{ ...small, color: zoom === "fit" ? C.sun : C.muted }}>Fit</button>
@@ -236,8 +312,8 @@ export default function MapUpload({ campaignId, onClose, onDone, dest = { kind: 
               </span>
             </div>
             <div style={{ marginTop: 10, maxHeight: 540, overflow: "auto", border: `1px solid ${C.line}`, borderRadius: 8, background: "#0e0c0a" }}>
-              <canvas ref={cvRef} aria-label="Map preview with the grid; drag to shift the grid" onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}
-                style={{ display: "block", cursor: "move", touchAction: "none" }} />
+              <canvas ref={cvRef} aria-label={uv ? "Map preview with the grid, walls and doors from the file" : "Map preview with the grid; drag to shift the grid"} onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}
+                style={{ display: "block", cursor: uv ? "default" : "move", touchAction: "none" }} />
             </div>
             <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginTop: 10 }}>
               <span style={{ fontSize: 13 }} role="status">
@@ -245,10 +321,11 @@ export default function MapUpload({ campaignId, onClose, onDone, dest = { kind: 
                   ? `${cols} by ${rows} squares of this map's ${fixedN} by ${fixedN}${cols < fixedN || rows < fixedN ? ", from the top-left corner; the rest of the grid stays dark." : "."}`
                   : <>{cols} by {rows} squares ({cols * feet} by {rows * feet} ft){cols !== rows && !tooSmall && !tooBig ? `. The table is square, so it gets ${Math.max(cols, rows) - Math.min(cols, rows)} empty ${cols > rows ? "rows" : "columns"} past the map's edge.` : "."}</>}
               </span>
+              {imported && <span role="status" style={{ fontSize: 12.5, color: C.muted, flexBasis: "100%", order: -1 }}>{describeImport(imported.report)}</span>}
               {tooSmall && <span style={{ fontSize: 12.5, color: "#e07a70" }}>That is under {MIN_SQ} squares a side: make the squares smaller.</span>}
               {tooBig && <span style={{ fontSize: 12.5, color: "#e07a70" }}>{fixedN ? `This map is ${fixedN} squares a side: make the squares larger, or change the map's grid size first.` : `The table holds up to ${MAX_SQ} squares a side: make the squares larger.`}</span>}
               <span style={{ flex: 1 }} />
-              <button type="button" onClick={() => { setImg(null); setErr(null); }} disabled={!!busy} style={small}>Choose another</button>
+              <button type="button" onClick={() => { setImg(null); setUv(null); setErr(null); }} disabled={!!busy} style={small}>Choose another</button>
               <button type="button" disabled={!!busy || tooSmall || tooBig} onClick={() => void save()}
                 style={{ ...small, border: "none", background: tooSmall || tooBig ? C.line : C.sun, color: "#1b1712", fontWeight: 700, padding: "8px 16px" }}>
                 {busy ? `${busy}…` : dest.kind === "level" ? "Use it on this level" : dest.kind === "map" ? "Make the map" : "Put it on the table"}
