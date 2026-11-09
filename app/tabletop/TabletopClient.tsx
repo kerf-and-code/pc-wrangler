@@ -42,6 +42,7 @@ import TokenBars, { HEALTH_COLOR, HEALTH_LABEL, type Bar } from "@/components/to
 import DiceTray, { diceColor, useDiceSetting, type DiceTrayApi, type TrayDie } from "@/components/dice-tray";
 import CardsPanel, { useTableCards, type Seat } from "@/components/cards-panel";
 import AddonsPanel from "@/components/addons-panel";
+import { floorError, onConnector, type Floor } from "@/lib/tabletop/floors";
 import { AttackForm, EconomyBar, MarkerChips, MarkerPicker, PlayerEntryControls, SaveBanner, TurnUsed, isMyTurn, type FightEntry, type PendingSave } from "@/components/fight-controls";
 
 // The tabletop, phase 1 (2026-11-06). One page for the GM and the players; tabletop_state (p105)
@@ -110,7 +111,7 @@ type MapJson = {
   id: string; kind: string; n: number; feet_per_square: number; grid: unknown; custom: unknown; doors: unknown; elements: unknown; meta: Record<string, unknown>;
   door_state?: Record<string, boolean>; fog?: { on: boolean; revealed: string }; walls?: string[];
 };
-type Scene = { id: string; name: string; battle_map_id: string; level: number; settings: { show_labels?: boolean; diagonal?: DiagonalRule; los?: boolean; light?: LightMode; difficult?: number[] } };
+type Scene = { id: string; name: string; battle_map_id: string; level: number; settings: { show_labels?: boolean; diagonal?: DiagonalRule; los?: boolean; light?: LightMode; difficult?: number[]; freeFloors?: boolean } };
 type State = {
   role: "gm" | "player"; me: string; campaign: { id: string; name: string; gm_id: string }; session_id: string | null;
   scene: Scene | null; map: MapJson | null; tokens: Token[]; party: PartyMember[];
@@ -371,6 +372,17 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   const rule: DiagonalRule = state?.scene?.settings?.diagonal ?? "five";
   const party = useMemo(() => state?.party ?? [], [state]);
   const myChars = useMemo(() => party.filter((p) => p.profile_id === me && p.character_id), [party, me]);
+  // phase 6c (p132): the floors of this place (the scenes made from this battle map's levels), and the
+  // pieces on this floor, for the stairs test
+  const [floors, setFloors] = useState<Floor[]>([]);
+  const sceneId = state?.scene?.id ?? null;
+  const loadFloors = useCallback(async () => {
+    if (!sceneId) { setFloors([]); return; }
+    const { data, error: er } = await supabase.rpc("tabletop_floors", { p_scene: sceneId });
+    setFloors(er ? [] : ((data ?? []) as Floor[]));
+  }, [supabase, sceneId]);
+  useEffect(() => { void loadFloors(); }, [loadFloors, state]);
+  const levelEls = useMemo(() => (state?.map ? normElements([state.map.elements], state.map.n)[0] ?? [] : []), [state?.map]);
   const nameOf = useCallback((m: Message) => {
     if (m.as_name) return m.as_name;
     const byChar = party.find((p) => p.character_id && p.character_id === m.character_id);
@@ -1421,7 +1433,9 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     if (!state?.me) return;
     const ch = supabase.channel(`tabletop:${campaignId}`, { config: { broadcast: { self: false }, presence: { key: state.me } } });
     const upsert = (row: Token) => {
-      const st = stateRef.current; if (!st?.scene || (row as unknown as { scene_id?: string }).scene_id !== st.scene.id) return;
+      const st = stateRef.current; if (!st?.scene) return;
+      // a token that went to another floor (or scene) leaves this one
+      if ((row as unknown as { scene_id?: string }).scene_id !== st.scene.id) { if (tokensRef.current.delete(row.id)) requestDraw(); return; }
       const prev = tokensRef.current.get(row.id);
       const owner = row.character_id ? st.party.find((p) => p.character_id === row.character_id)?.profile_id : null;
       const t: Token = { ...row, mine: st.role === "gm" || owner === st.me || (row.controlled_by ?? []).includes(st.me) };
@@ -2445,6 +2459,24 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     if (er) { setChatErr(er.message); return; }
     await load();
   };
+  // phase 6c: a token to another floor, at the same spot (its players' view goes with it, on the server)
+  const takeToFloor = async (tk: Token, level: number) => {
+    const { error: er } = await supabase.rpc("tabletop_token_floor", { p_token: tk.id, p_level: level });
+    if (er) { setChatErr(floorError(er.message)); return; }
+    tokensRef.current.delete(tk.id); setSelected([]); selRef.current = []; requestDraw();
+    send("refresh", {}); await load();
+  };
+  const addFloor = async (level: number) => {
+    const st = stateRef.current; if (!st?.scene) return;
+    const bm = st.battle_maps?.find((b) => b.id === st.scene!.battle_map_id);
+    const { show_labels, diagonal, los, light, freeFloors } = st.scene.settings ?? {};
+    const { error: er } = await supabase.from("vtt_scenes").insert({
+      campaign_id: campaignId, battle_map_id: st.scene.battle_map_id, level,
+      name: `${bm?.name ?? "Map"}: ${bm?.levelNames?.[level] || `Level ${level + 1}`}`, settings: { show_labels, diagonal, los, light, freeFloors },
+    });
+    if (er) { setChatErr(`Could not add the floor: ${er.message}`); return; }
+    send("refresh", {}); await load(); await loadFloors();
+  };
 
   // ---------------------------------------------------------------------------------------------------
   // GM: scenes
@@ -2630,6 +2662,9 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   );
 
   const scene = state.scene;
+  const floorMap = scene ? state.battle_maps?.find((b) => b.id === scene.battle_map_id) : undefined;
+  const levelNameOf = (l: number) => floorMap?.levelNames?.[l] || `Level ${l + 1}`;
+  const missingLevels = isGm && scene ? [0, 1, 2].filter((l) => !floors.some((f) => f.level === l)) : [];
   const onSceneTokens = new Set([...tokensRef.current.values()].map((t) => t.character_id).filter(Boolean));
   const sel = selectedTokens;
 
@@ -2846,6 +2881,17 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                     {elevationOf(tk.style) !== 0 && <button type="button" onClick={() => void setTokenElevation([tk.id], 0)} style={{ ...small, padding: "3px 8px" }}>Ground</button>}
                   </span>
                 )}
+                {(isGm || tk.mine) && floors.length > 1 && (() => {
+                  const can = isGm || !!scene?.settings?.freeFloors || onConnector(levelEls, tk.x, tk.y);
+                  return (
+                    <span role="group" aria-label={`Floor of ${tk.name}`} title={can ? "Take this token to another floor, at the same spot" : "Stand on stairs, a ladder, a trapdoor or a pit to change floor"} style={{ display: "inline-flex", gap: 4, alignItems: "center" }}>
+                      <span style={{ color: C.muted }}>Floor</span>
+                      {floors.filter((f) => !f.current).map((f) => (
+                        <button key={f.level} type="button" disabled={!can} onClick={() => void takeToFloor(tk, f.level)} style={{ ...small, padding: "3px 8px", opacity: can ? 1 : 0.5, cursor: can ? "pointer" : "not-allowed" }}>To {f.name}</button>
+                      ))}
+                    </span>
+                  );
+                })()}
                 {(isGm || tk.mine) && <button type="button" onClick={() => setMakerFor(tk.id)} style={small}>Token maker</button>}
                 {(isGm || tk.mine) && (
                   <button type="button" aria-expanded={barsFor === tk.id} onClick={() => setBarsFor((v) => (v === tk.id ? null : tk.id))} title="Resource bars (ki, rage, spell slots) and who sees them"
@@ -2905,6 +2951,15 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
           {scene && (
             <div style={{ position: "absolute", left: 10, bottom: 10, fontSize: 11.5, color: C.muted, background: "rgba(20,16,12,0.75)", padding: "4px 8px", borderRadius: 6, pointerEvents: "none" }}>
               Wheel zooms · right-drag pans · right-click pings{isGm ? " (Shift: bring everyone)" : ""} · click a door to open it{isGm ? " (Shift: pick several)" : ""} · R turns · M ruler · T area{isGm ? " · U fog" : ""}
+            </div>
+          )}
+          {/* phase 6c: which floor this is; the GM looks at another by clicking it */}
+          {scene && floors.length > 1 && (
+            <div role="group" aria-label="Floors" style={{ position: "absolute", top: 10, left: 10, zIndex: 5, display: "flex", gap: 4, alignItems: "center", flexWrap: "wrap", maxWidth: "calc(100% - 20px)", background: "rgba(28,24,20,0.92)", border: `1px solid ${C.line}`, borderRadius: 10, padding: "4px 6px", fontSize: 12 }}>
+              <span style={{ color: C.muted, padding: "0 4px" }}>Floor</span>
+              {floors.map((f) => isGm && f.sceneId && !f.current
+                ? <button key={f.level} type="button" onClick={() => void viewScene(f.sceneId!)} title={`Look at ${f.name}${f.active ? " (the main scene)" : ""}. The players stay where they are.`} style={{ ...seg(false), flex: "0 0 auto", padding: "4px 9px" }}>{f.name}</button>
+                : <span key={f.level} aria-current={f.current ? "true" : undefined} style={{ ...seg(f.current), flex: "0 0 auto", padding: "4px 9px", cursor: "default" }}>{f.name}</span>)}
             </div>
           )}
           {/* phase 5z: dice thrown over the table as rolls arrive (this person can turn them off in the chat) */}
@@ -3408,6 +3463,20 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                     <input type="checkbox" checked={!!scene.settings?.show_labels} onChange={(e) => void sceneSetting({ show_labels: e.target.checked })} style={{ accentColor: C.sun }} />
                     Show the map&apos;s text labels to players
                   </label>
+                  <label style={{ display: "flex", gap: 8, marginTop: 10, fontSize: 12.5, alignItems: "center" }}>
+                    <input type="checkbox" checked={!!scene.settings?.freeFloors} onChange={(e) => void sceneSetting({ freeFloors: e.target.checked })} style={{ accentColor: C.sun }} />
+                    Players change floors anywhere, not only on stairs, ladders, trapdoors and pits
+                  </label>
+                  {missingLevels.length > 0 && (
+                    <>
+                      <label style={label} htmlFor="tt-floor">Floors</label>
+                      <select id="tt-floor" value="" onChange={(e) => { if (e.target.value !== "") void addFloor(Number(e.target.value)); }} style={field}>
+                        <option value="">Add another level of this map as a floor...</option>
+                        {missingLevels.map((l) => <option key={l} value={l}>{levelNameOf(l)}</option>)}
+                      </select>
+                      <p style={{ color: C.muted, fontSize: 11.5, margin: "6px 0 0" }}>Tokens on stairs, a ladder, a trapdoor or a pit can then go between floors, and players see the floor their character is on.</p>
+                    </>
+                  )}
                   <p style={{ color: C.muted, fontSize: 11.5, margin: "6px 0 0" }}>Secret doors always show to players as plain wall.</p>
                 </>
               )}

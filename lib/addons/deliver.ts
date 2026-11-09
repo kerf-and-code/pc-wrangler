@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { signature } from "@/lib/addons/keys";
 import { hookUrlUnsafe } from "@/lib/addons/safe-url";
+import { discordMessage, isDiscordWebhook } from "@/lib/addons/discord";
 
 // lib/addons/deliver.ts (2026-11-09)
 //
@@ -13,13 +14,22 @@ import { hookUrlUnsafe } from "@/lib/addons/safe-url";
 //   { id: "dlv_<n>", type: "roll" | "chat" | "turn" | "combat" | "ping", campaign: { id, name }, createdAt, data }
 // with headers X-SixAxes-Event, X-SixAxes-Delivery and X-SixAxes-Signature (lib/addons/keys.ts).
 // Any 2xx within 5 seconds counts. Redirects are not followed.
+// A Discord channel webhook gets a readable message instead (lib/addons/discord.ts); when Discord says
+// to slow down (429), the delivery is retried like any other failure.
 
 type Claimed = { id: number; hookId: string; event: string; payload: unknown; createdAt: string; attempts: number; url: string; secret: string; campaignId: string; campaignName: string };
 
 async function sendOne(d: Claimed): Promise<{ ok: boolean; status: number; error: string | null }> {
   const unsafe = await hookUrlUnsafe(d.url);
   if (unsafe) return { ok: false, status: 0, error: unsafe };
-  const body = JSON.stringify({ id: `dlv_${d.id}`, type: d.event, campaign: { id: d.campaignId, name: d.campaignName }, createdAt: d.createdAt, data: d.payload });
+  let body: string;
+  if (isDiscordWebhook(d.url)) {
+    const msg = discordMessage(d.event, d.campaignName, (d.payload ?? {}) as Parameters<typeof discordMessage>[2]);
+    if (!msg) return { ok: true, status: 204, error: null };
+    body = JSON.stringify(msg);
+  } else {
+    body = JSON.stringify({ id: `dlv_${d.id}`, type: d.event, campaign: { id: d.campaignId, name: d.campaignName }, createdAt: d.createdAt, data: d.payload });
+  }
   const t = Math.floor(Date.now() / 1000);
   try {
     const res = await fetch(d.url, {
@@ -32,6 +42,7 @@ async function sendOne(d: Claimed): Promise<{ ok: boolean; status: number; error
     });
     void res.body?.cancel().catch(() => {});
     if (res.status >= 200 && res.status < 300) return { ok: true, status: res.status, error: null };
+    if (res.status === 429) return { ok: false, status: 429, error: "The address asked to slow down; trying again shortly." };
     if (res.status >= 300 && res.status < 400) return { ok: false, status: res.status, error: "The address redirected; webhooks do not follow redirects." };
     return { ok: false, status: res.status, error: `The address answered ${res.status}.` };
   } catch (e) {

@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { C } from "@/lib/forge-theme";
 import type { createClient } from "@/lib/supabase/client";
+import { isDiscordWebhook } from "@/lib/addons/discord";
 
 // components/addons-panel.tsx (2026-11-09)
 //
@@ -11,7 +12,8 @@ import type { createClient } from "@/lib/supabase/client";
 //             may do (read, chat, roll), when it was last used, revoke. A new key is shown once.
 //   Webhooks  addresses the table's events are sent to as they happen (rolls, chat, turns, fights
 //             starting and ending), signed with the hook's secret: on or off, what it gets, how the last
-//             delivery went, send a test.
+//             delivery went, send a test. A Discord channel's webhook address gets readable messages
+//             (phase 6c, lib/addons/discord.ts), so no bot is needed to post rolls into Discord.
 //   A short reference for whoever writes the add-on.
 
 type Supa = ReturnType<typeof createClient>;
@@ -155,7 +157,7 @@ GET  /api/addon/v1/chat?since=ISO  chat and rolls, oldest first  [read]
 GET  /api/addon/v1/combat          round and turn order, no HP   [read]
 POST /api/addon/v1/chat  {"text":"...","kind":"say|emote","as":"Name"}      [chat]
 POST /api/addon/v1/roll  {"notation":"1d20+5","label":"Attack","secret":false} [roll]`}</code>
-          <p style={{ margin: "8px 0 4px" }}>Webhooks POST JSON like this, within seconds of it happening:</p>
+          <p style={{ margin: "8px 0 4px" }}>A Discord webhook address gets plain messages for the channel. Any other address gets JSON like this, within seconds of it happening:</p>
           <code style={code}>{`{ "id": "dlv_123", "type": "roll",
   "campaign": { "id": "...", "name": "..." },
   "createdAt": "...",
@@ -208,6 +210,7 @@ function HookRow({ hook: h, supabase, busy, act, onReload }: {
     <div style={{ ...box, opacity: h.enabled ? 1 : 0.75 }}>
       <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
         <strong style={{ flex: 1 }}>{h.name}</strong>
+        {isDiscordWebhook(h.url) && <span title="Posts readable messages to a Discord channel" style={{ fontSize: 10.5, color: "#a5b4fc", border: "1px solid rgba(165,180,252,0.5)", borderRadius: 999, padding: "0 6px" }}>Discord</span>}
         <label style={{ display: "flex", gap: 4, alignItems: "center" }}>
           <input type="checkbox" checked={h.enabled} disabled={busy}
             onChange={(e) => void act(() => supabase.from("addon_hooks").update({ enabled: e.target.checked, fail_count: 0, updated_at: new Date().toISOString() }).eq("id", h.id), true)}
@@ -260,6 +263,11 @@ function NewHook({ campaignId, onDone, onCancel }: { campaignId: string; onDone:
       <input id="hook-name" value={name} maxLength={40} onChange={(e) => setName(e.target.value)} placeholder="Discord rolls channel" style={field} />
       <label htmlFor="hook-url" style={{ display: "block", color: C.muted, fontSize: 11.5, margin: "8px 0 4px" }}>Address (https)</label>
       <input id="hook-url" value={url} maxLength={500} onChange={(e) => setUrl(e.target.value)} style={field} />
+      <p style={{ color: C.muted, fontSize: 11.5, margin: "4px 0 0" }}>
+        {isDiscordWebhook(url.trim())
+          ? "A Discord channel: it gets readable messages (\"Bobert rolls Attack: 19\"), and nobody can be pinged from chat."
+          : "For Discord, paste the channel's webhook address (Channel settings, Integrations, Webhooks). Anything else gets Six Axes' JSON, signed."}
+      </p>
       <div role="group" aria-label="What it gets" style={{ marginTop: 8 }}>
         {Object.entries(EVENT_LABEL).map(([ev, label]) => (
           <label key={ev} style={{ display: "flex", gap: 6, alignItems: "center", marginTop: 3 }}>
