@@ -43,6 +43,7 @@ import { listStatBlocks, statBlockFromMonster, type StatBlockRow, type StatBlock
 import { monsterSourceLabel } from "@/lib/monster-sources";
 import { applyAdvantage } from "@/lib/dice";
 import { MARKERS, BUFFS, DEBUFFS, critDice, markerKind, MARKER_COLORS, econOf, speedNow, FRESH_ECON } from "@/lib/combat-effects";
+import { MarkerGlyph } from "@/components/marker-icon";
 import { openTabletop } from "@/lib/tabletop/open";
 import {
   CONDITIONS, abilityMod, applyDamage, applyHealing, blockActions, combatantId, monsterCombatants, pcCombatant,
@@ -677,7 +678,7 @@ export default function CombatPage() {
                   )}
                   {tgt && tgt.conditions.length > 0 && (
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 6 }}>
-                      {tgt.conditions.map((k) => <span key={k} style={{ fontSize: 11.5, padding: "0 7px", borderRadius: 999, border: `1px solid ${MARKER_COLORS[markerKind(k)].line}`, color: MARKER_COLORS[markerKind(k)].line }}>{k}</span>)}
+                      {tgt.conditions.map((k) => <span key={k} style={{ fontSize: 11.5, padding: "0 7px 0 4px", borderRadius: 999, border: `1px solid ${MARKER_COLORS[markerKind(k)].line}`, color: MARKER_COLORS[markerKind(k)].line, display: "inline-flex", alignItems: "center", gap: 4 }}><MarkerGlyph name={k} size={13} />{k}</span>)}
                     </div>
                   )}
                   <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 10, alignItems: "center" }}>
@@ -802,7 +803,7 @@ function CombatantRow({ c, isTurn, isSelected, onSelect, onChange, onRemove, inp
       <div onClick={(e) => e.stopPropagation()} style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", marginTop: 8 }}>
         {c.conditions.map((k) => (
           <button key={k} type="button" title="Remove condition" onClick={() => onChange((x) => ({ ...x, conditions: x.conditions.filter((y) => y !== k) }))}
-            style={{ fontSize: 11.5, color: MARKER_COLORS[markerKind(k)].line, background: "transparent", border: `1px solid ${MARKER_COLORS[markerKind(k)].line}`, borderRadius: 999, padding: "1px 8px", cursor: "pointer" }}>{k} ×</button>
+            style={{ fontSize: 11.5, color: MARKER_COLORS[markerKind(k)].line, background: "transparent", border: `1px solid ${MARKER_COLORS[markerKind(k)].line}`, borderRadius: 999, padding: "1px 8px 1px 4px", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 4 }}><MarkerGlyph name={k} size={13} />{k} ×</button>
         ))}
         <select value="" onChange={(e) => { const v = e.target.value; if (v) onChange((x) => ({ ...x, conditions: x.conditions.includes(v) ? x.conditions : [...x.conditions, v] })); }}
           style={{ ...input, padding: "3px 6px", fontSize: 12 }} aria-label="Add a condition">

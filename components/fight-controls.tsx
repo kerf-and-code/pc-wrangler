@@ -22,6 +22,7 @@ import { C } from "@/lib/forge-theme";
 import { CONDITIONS, type Econ } from "@/lib/combat";
 import { BUFFS, COST_LABEL, DEBUFFS, MARKER_COLORS, STANDARD_ACTIONS, econOf, markerKind, movementLeft } from "@/lib/combat-effects";
 import { applyAdvantage } from "@/lib/dice";
+import { MarkerBadge, MarkerGlyph, useMarkerStyle } from "@/components/marker-icon";
 
 export type PendingSave = { id: string; by: string; byId?: string; label: string; ability: string; dc: number; damage: number; type?: string; half: boolean; conditions?: string[]; at?: number };
 export type LastSave = { label: string; by: string; total: number; dc: number; saved: boolean; damage: number; at: number };
@@ -69,14 +70,16 @@ export async function combatAct(
 }
 
 const chip = (on: boolean, kind: "condition" | "buff" | "debuff"): React.CSSProperties => ({
-  fontSize: 11.5, padding: "3px 8px", borderRadius: 999, cursor: "pointer",
+  fontSize: 11.5, padding: "3px 8px 3px 4px", borderRadius: 999, cursor: "pointer",
+  display: "inline-flex", alignItems: "center", gap: 5,
   border: `1px solid ${on ? MARKER_COLORS[kind].line : C.line}`,
   background: on ? MARKER_COLORS[kind].fill : "transparent",
   color: on ? "#fff" : C.muted,
 });
 
-// The marker chips, grouped. Clicking one adds or removes it on the target.
+// The marker chips, grouped, each with its token icon. Clicking one adds or removes it on the target.
 export function MarkerPicker({ current, onToggle, busy }: { current: string[]; onToggle: (m: string, on: boolean) => void; busy?: boolean }) {
+  const [style] = useMarkerStyle();
   const group = (title: string, list: readonly string[]) => (
     <div style={{ marginTop: 6 }}>
       <div style={{ fontSize: 10.5, letterSpacing: "0.12em", textTransform: "uppercase", color: C.muted, marginBottom: 4 }}>{title}</div>
@@ -84,7 +87,9 @@ export function MarkerPicker({ current, onToggle, busy }: { current: string[]; o
         {list.map((m) => {
           const on = current.includes(m);
           return (
-            <button key={m} type="button" disabled={busy} aria-pressed={on} onClick={() => onToggle(m, !on)} style={chip(on, markerKind(m))}>{m}</button>
+            <button key={m} type="button" disabled={busy} aria-pressed={on} onClick={() => onToggle(m, !on)} style={chip(on, markerKind(m))}>
+              <MarkerBadge name={m} size={18} style={style} />{m}
+            </button>
           );
         })}
       </div>
@@ -99,14 +104,19 @@ export function MarkerPicker({ current, onToggle, busy }: { current: string[]; o
   );
 }
 
-// Markers on a combatant, read-only, coloured by kind.
+// Markers on a combatant, read-only, coloured by kind, each with the icon its token shows.
 export function MarkerChips({ list }: { list: string[] }) {
+  const [style] = useMarkerStyle();
   if (!list.length) return null;
   return (
     <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
       {list.map((m) => {
-        const k = markerKind(m);
-        return <span key={m} style={{ fontSize: 11, padding: "0 7px", borderRadius: 999, border: `1px solid ${MARKER_COLORS[k].line}`, color: MARKER_COLORS[k].line }}>{m}</span>;
+        const k = markerKind(m), col = style === "plain" ? C.text : MARKER_COLORS[k].line;
+        return (
+          <span key={m} style={{ fontSize: 11, padding: "1px 7px 1px 4px", borderRadius: 999, border: `1px solid ${col}`, color: col, display: "inline-flex", alignItems: "center", gap: 4 }}>
+            <MarkerGlyph name={m} size={13} />{m}
+          </span>
+        );
       })}
     </div>
   );

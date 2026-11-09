@@ -23,7 +23,9 @@ import {
   wallSegments, sightWallSegs, visibility, seenSquares, canSeeLit, seesPoint, lightOf, darkvisionOf, lightModeOf,
   LIGHT_MODES, LIGHT_PRESETS, DARKVISION_FT, CANOPY_KINDS, type Seg, type Light, type Viewer, type LightMode,
 } from "@/lib/tabletop/sight";
-import { markerShort, markerKind, MARKER_COLORS, econOf, speedNow, cantAct, FRESH_ECON } from "@/lib/combat-effects";
+import { econOf, speedNow, cantAct, FRESH_ECON } from "@/lib/combat-effects";
+import { drawMarkerRing, formatMarker, markerText, tokenMarkers, type TokenMarker } from "@/lib/tabletop/markers";
+import { MarkerStylePicker, TokenMarkerPicker, useMarkerStyle } from "@/components/marker-icon";
 import { openTabletop } from "@/lib/tabletop/open";
 import MapUpload from "@/components/map-upload";
 import { EFFECTS, drawEffect, isEffect, seedOf, type EffectKind } from "@/lib/tabletop/effects";
@@ -248,6 +250,13 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   const drawingsRef = useRef<Map<string, Drawing>>(new Map());
   const effectsRef = useRef<Map<string, TokenEffect>>(new Map());
   const reducedMotion = useRef(false);
+  // coloured or black-and-white marker icons on tokens and in the panels, chosen per viewer
+  const [markerStyle, setMarkerStyle] = useMarkerStyle();
+  const markerStyleRef = useRef(markerStyle);
+  markerStyleRef.current = markerStyle;
+  // the marker picker for the selected token (status markers kept on the token, beside the fight's conditions)
+  const [markerOpen, setMarkerOpen] = useState(false);
+  const [markerBusy, setMarkerBusy] = useState(false);
   const touches = useRef<Map<number, Pt>>(new Map());
   const pinch = useRef<{ d: number; mid: Pt } | null>(null);
   const longPress = useRef<{ timer: ReturnType<typeof setTimeout>; at: Pt; fired: boolean } | null>(null);
@@ -315,6 +324,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     if (frame.current !== null) return;
     frame.current = requestAnimationFrame(() => { frame.current = null; drawRef.current(); });
   }, []);
+  useEffect(() => { requestDraw(); }, [markerStyle, requestDraw]);
 
   const loadImage = useCallback((url: string) => {
     if (imgs.current.has(url)) return;
@@ -717,19 +727,8 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
         ctx.restore();
       }
       const conds = en?.conditions ?? [];
-      if (conds.length) {
-        const fs = Math.max(8, cell * 0.2), shown2 = conds.slice(0, 4);
-        ctx.save(); ctx.font = `700 ${fs}px system-ui, sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-        shown2.forEach((cn, i) => {
-          const a = Math.PI * 0.25 + i * 0.42, bx = cx + Math.cos(a) * rad, by = cy + Math.sin(a) * rad, r2 = fs * 0.85;
-          const mc = MARKER_COLORS[markerKind(cn)];
-          ctx.fillStyle = mc.fill; ctx.beginPath(); ctx.arc(bx, by, r2, 0, Math.PI * 2); ctx.fill();
-          ctx.strokeStyle = mc.line; ctx.lineWidth = Math.max(1, fs * 0.12); ctx.stroke();
-          ctx.fillStyle = "#fff"; ctx.fillText(markerShort(cn), bx, by);
-        });
-        if (conds.length > 4) { ctx.fillStyle = "#c2a8f0"; ctx.fillText(`+${conds.length - 4}`, cx + rad * 0.2, cy + rad + fs); }
-        ctx.restore();
-      }
+      const marks: TokenMarker[] = [...conds.map((c) => ({ id: c, n: null })), ...tokenMarkers(t.style).filter((m) => !conds.includes(m.id))];
+      if (marks.length) drawMarkerRing(ctx, marks, cx, cy, rad, Math.max(7, cell * 0.16), markerStyleRef.current);
       if (sel.has(t.id)) {
         ctx.save(); ctx.lineWidth = Math.max(2, 3 / cam.s); ctx.strokeStyle = SELECT; ctx.setLineDash([6 / cam.s, 4 / cam.s]);
         ctx.beginPath(); ctx.arc(cx, cy, rad + Math.max(4, cell * 0.12), 0, Math.PI * 2); ctx.stroke(); ctx.restore();
@@ -737,7 +736,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
       if (sel.has(t.id) || hover.current === t.id) {
         const fs = Math.max(11, 13 / cam.s);
         ctx.save(); ctx.font = `600 ${fs}px system-ui, sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "top";
-        const label = t.hidden ? `${t.name} (hidden)` : t.name, w = ctx.measureText(label).width + fs;
+        const label = (t.hidden ? `${t.name} (hidden)` : t.name) + (marks.length ? `: ${marks.map(markerText).join(", ")}` : ""), w = ctx.measureText(label).width + fs;
         ctx.fillStyle = "rgba(20,16,12,0.85)"; ctx.fillRect(cx - w / 2, cy + rad + 4 / cam.s, w, fs * 1.5);
         ctx.fillStyle = "#f2e6c9"; ctx.fillText(label, cx, cy + rad + 4 / cam.s + fs * 0.25); ctx.restore();
       }
@@ -1817,6 +1816,22 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [supabase, requestDraw]);
 
+  // A token's own markers: the GM writes the token directly; a player goes through
+  // tabletop_set_token_markers (p119), which only lets them mark a token they control.
+  const setTokenMarkers = useCallback(async (id: string, list: TokenMarker[]) => {
+    const t = tokensRef.current.get(id); if (!t) return;
+    const markers = list.map(formatMarker), style = { ...t.style, markers };
+    setMarkerBusy(true);
+    if (stateRef.current?.role === "gm") await updateTokens([id], { style });
+    else {
+      const { error: er } = await supabase.rpc("tabletop_set_token_markers", { p_token: id, p_markers: markers });
+      if (er) setChatErr(`Could not change the markers: ${er.message}`);
+      else { const cur = tokensRef.current.get(id); if (cur) tokensRef.current.set(id, { ...cur, style }); setTick((v) => v + 1); requestDraw(); }
+    }
+    setMarkerBusy(false);
+  }, [supabase, updateTokens, requestDraw]);
+  useEffect(() => { setMarkerOpen(false); }, [selected]);
+
   const deleteTokens = useCallback(async (ids: string[]) => {
     if (!ids.length) return;
     const { error: er } = await supabase.from("vtt_tokens").delete().in("id", ids);
@@ -2375,6 +2390,22 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                   {[0, 5, 10, 15, 20, 30].map((r) => <option key={r} value={r}>{r ? `${r} ft around` : "On the token"}</option>)}
                 </select>
                 <button type="button" onClick={() => void addTokenEffect(tk.id)} style={small}>Add</button>
+                {(isGm || tk.mine) && (
+                  <button type="button" aria-expanded={markerOpen} onClick={() => setMarkerOpen((v) => !v)} style={{ ...small, borderColor: markerOpen ? C.sun : C.line, color: markerOpen ? C.sun : C.text }}>
+                    Markers{tokenMarkers(tk.style).length ? ` (${tokenMarkers(tk.style).length})` : ""}
+                  </button>
+                )}
+                {markerOpen && (isGm || tk.mine) && (
+                  <div role="dialog" aria-label={`Markers on ${tk.name}`} style={{ position: "absolute", bottom: "calc(100% + 8px)", left: "50%", transform: "translateX(-50%)", width: "min(560px, calc(100vw - 40px))", maxHeight: "55vh", overflowY: "auto", background: "rgba(28,24,20,0.98)", border: `1px solid ${C.line}`, borderRadius: 10, padding: 10, textAlign: "left", boxShadow: "0 8px 30px rgba(0,0,0,0.5)" }}>
+                    <div style={{ display: "flex", alignItems: "center", marginBottom: 8 }}>
+                      <strong style={{ flex: 1, fontSize: 13 }}>Markers on {tk.name}</strong>
+                      <button type="button" onClick={() => setMarkerOpen(false)} style={small}>Done</button>
+                    </div>
+                    <TokenMarkerPicker value={tokenMarkers(tk.style)} busy={markerBusy} style={markerStyle} onStyle={setMarkerStyle}
+                      onChange={(next) => void setTokenMarkers(tk.id, next)} />
+                    <p style={{ fontSize: 11.5, color: C.muted, margin: "8px 0 0" }}>Everyone who can see this token sees its markers. Conditions from the fight show on the token too, and change in the Turns tab.</p>
+                  </div>
+                )}
               </div>
             );
           })()}
@@ -2521,7 +2552,10 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                       </>
                     );
                   })()}
-                  <div style={{ display: "grid", gap: 6, marginTop: 12 }}>
+                  <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 12, color: C.muted }}>
+                    <MarkerStylePicker style={markerStyle} onChange={setMarkerStyle} />
+                  </div>
+                  <div style={{ display: "grid", gap: 6, marginTop: 6 }}>
                     {fight.order.map((e) => {
                       const mineEntry = e.kind === "pc" && myChars.some((c) => c.character_id === e.characterId);
                       const open = selEntry === e.id;
