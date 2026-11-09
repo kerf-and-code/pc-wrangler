@@ -39,6 +39,7 @@ import { encodeDifficult, normDifficult, paintDifficult, pathExtra } from "@/lib
 import { distance3d, elevationOf, elevationText } from "@/lib/tabletop/elevation";
 import { PinCard, TokenNotes, type EntryOption, type Pin } from "@/components/table-pins";
 import TokenBars, { HEALTH_COLOR, HEALTH_LABEL, type Bar } from "@/components/token-bars";
+import DiceTray, { diceColor, useDiceSetting, type DiceTrayApi, type TrayDie } from "@/components/dice-tray";
 import { AttackForm, EconomyBar, MarkerChips, MarkerPicker, PlayerEntryControls, SaveBanner, TurnUsed, isMyTurn, type FightEntry, type PendingSave } from "@/components/fight-controls";
 
 // The tabletop, phase 1 (2026-11-06). One page for the GM and the players; tabletop_state (p105)
@@ -1135,8 +1136,34 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     requestDraw();
   }, [state, renderBase, fit, requestDraw]);
 
+  // Phase 5z: rolls that arrive while someone is at the table are thrown as 3D dice over it. Rolls already
+  // in the chat when the page opens are not; each roll plays once, however it arrives (realtime, the
+  // poll, or the roller's own reply).
+  const diceApi = useRef<DiceTrayApi | null>(null);
+  const [dice3d, setDice3d] = useDiceSetting();
+  const diceSeen = useRef(new Set<string>());
+  const feedPrimed = useRef(false);
+  const throwDice = useCallback((msgs: Message[], ext: OutsideRoll[]) => {
+    for (const m of msgs) {
+      const key = `m${m.id}`;
+      if (diceSeen.current.has(key)) continue;
+      diceSeen.current.add(key);
+      if (!feedPrimed.current || m.kind !== "roll" || !m.roll?.dice?.length) continue;
+      diceApi.current?.play(m.roll.dice, { color: m.gm_only ? "#8a6bbf" : diceColor(m.character_id ?? m.as_name ?? m.author_profile), total: m.roll.total ?? null, label: m.roll.table?.name ?? m.roll.label ?? "" });
+    }
+    for (const r of ext) {
+      const key = `e${r.id}`;
+      if (diceSeen.current.has(key)) continue;
+      diceSeen.current.add(key);
+      const dice: TrayDie[] = (r.rolls?.dice ?? []).flatMap((g) => g.results.map((value) => ({ sides: g.faces, value })));
+      if (!feedPrimed.current || !dice.length || r.rolls?.discarded) continue;
+      diceApi.current?.play(dice, { color: diceColor(r.character_id ?? r.actor_name ?? "outside"), total: r.rolls?.total ?? null, label: r.name ?? "" });
+    }
+  }, []);
+
   const lastFeed = useRef<{ msg: string | null; ext: string | null }>({ msg: null, ext: null });
   const addFeed = useCallback((msgs: Message[], ext: OutsideRoll[]) => {
+    throwDice(msgs, ext);
     setFeed((prev) => {
       const keys = new Set(prev.map((f) => f.key));
       const add: FeedItem[] = [];
@@ -1147,13 +1174,15 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     });
     for (const m of msgs) if (!lastFeed.current.msg || m.created_at > lastFeed.current.msg) lastFeed.current.msg = m.created_at;
     for (const r of ext) if (!lastFeed.current.ext || r.at > lastFeed.current.ext) lastFeed.current.ext = r.at;
-  }, []);
+  }, [throwDice]);
 
   const pollFeed = useCallback(async (initial: boolean) => {
     const since = initial ? null : [lastFeed.current.msg, lastFeed.current.ext].filter(Boolean).sort()[0] ?? null;
     const { data } = await supabase.rpc("tabletop_feed", { p_campaign: campaignId, p_since: since, p_limit: 200 });
     const f = data as { messages?: Message[]; outside_rolls?: OutsideRoll[] } | null;
     if (f) addFeed(f.messages ?? [], f.outside_rolls ?? []);
+    // what was already in the chat when the page opened is history: only rolls after this get thrown
+    if (initial && f) feedPrimed.current = true;
   }, [supabase, campaignId, addFeed]);
 
   // One attack from D&D Beyond arrives as several rows (the attack roll, then each damage roll), with
@@ -2843,6 +2872,8 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
               Wheel zooms · right-drag pans · right-click pings{isGm ? " (Shift: bring everyone)" : ""} · click a door to open it{isGm ? " (Shift: pick several)" : ""} · R turns · M ruler · T area{isGm ? " · U fog" : ""}
             </div>
           )}
+          {/* phase 5z: dice thrown over the table as rolls arrive (this person can turn them off in the chat) */}
+          <DiceTray api={diceApi} enabled={dice3d} />
           {/* phase 5s: the table's music and ambient sound, with this person's own volume */}
           <div style={{ position: "absolute", right: 10, bottom: 10, zIndex: 5 }}>
             <TableSound audio={tableAudio.audio} serverNow={tableAudio.serverNow} />
@@ -2906,6 +2937,9 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                   <select aria-label="Advantage for d20" value={adv} onChange={(e) => setAdv(e.target.value as typeof adv)} style={{ ...field, width: 92, padding: "5px 6px" }}>
                     <option value="flat">Normal</option><option value="adv">Advantage</option><option value="dis">Disadvantage</option>
                   </select>
+                  <label title="Show rolls as dice thrown over the table (this browser only; off when your device asks for reduced motion)" style={{ display: "flex", gap: 4, alignItems: "center", fontSize: 12, color: C.muted, marginLeft: "auto" }}>
+                    <input type="checkbox" checked={dice3d} onChange={(e) => setDice3d(e.target.checked)} style={{ accentColor: C.sun }} />3D dice
+                  </label>
                 </div>
                 <div style={{ display: "flex", gap: 6, marginBottom: 6, alignItems: "center" }}>
                   <span style={{ color: C.muted, fontSize: 12 }}>As</span>
