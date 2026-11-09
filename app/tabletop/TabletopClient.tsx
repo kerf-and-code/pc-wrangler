@@ -40,6 +40,7 @@ import { distance3d, elevationOf, elevationText } from "@/lib/tabletop/elevation
 import { PinCard, TokenNotes, type EntryOption, type Pin } from "@/components/table-pins";
 import TokenBars, { HEALTH_COLOR, HEALTH_LABEL, type Bar } from "@/components/token-bars";
 import DiceTray, { diceColor, useDiceSetting, type DiceTrayApi, type TrayDie } from "@/components/dice-tray";
+import CardsPanel, { useTableCards, type Seat } from "@/components/cards-panel";
 import { AttackForm, EconomyBar, MarkerChips, MarkerPicker, PlayerEntryControls, SaveBanner, TurnUsed, isMyTurn, type FightEntry, type PendingSave } from "@/components/fight-controls";
 
 // The tabletop, phase 1 (2026-11-06). One page for the GM and the players; tabletop_state (p105)
@@ -187,10 +188,15 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   const supabase = useMemo(() => createClient(), []);
   // phase 5s: what the table hears (music and ambient loops), followed live by every browser here
   const tableAudio = useTableAudio(campaignId, supabase);
+  // phase 6a (p130): card decks; everyone reloads when someone moves a card ("cards" broadcast)
+  const tableCards = useTableCards(supabase, campaignId);
+  const cardsReloadRef = useRef<() => void>(() => {});
+  const reloadCards = tableCards.reload;
+  useEffect(() => { cardsReloadRef.current = () => { void reloadCards(); }; }, [reloadCards]);
   const [state, setState] = useState<State | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [tool, setTool] = useState<Tool>("select");
-  const [panel, setPanel] = useState<"chat" | "turns" | "tokens" | "scenes" | "handouts" | "tables" | "sound">("chat");
+  const [panel, setPanel] = useState<"chat" | "turns" | "tokens" | "scenes" | "handouts" | "tables" | "sound" | "cards">("chat");
   const [fight, setFight] = useState<Fight | null>(null);
   const fightRow = useRef<FightRow | null>(null);
   const fightRef = useRef<Fight | null>(null);
@@ -1480,6 +1486,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
       .on("broadcast", { event: "handout-gone" }, () => { void loadHandoutsRef.current(); })
       .on("broadcast", { event: "pins" }, () => { loadPinsRef.current(); })
       .on("broadcast", { event: "bars" }, () => { loadPinsRef.current(); })
+      .on("broadcast", { event: "cards" }, () => { cardsReloadRef.current(); })
       .on("broadcast", { event: "tpl" }, ({ payload }) => {
         const r = payload as { by: string; color: string; geom: TemplateGeom; done: boolean; placed?: boolean };
         if (r.placed) remoteTpl.current.delete(r.by);
@@ -2890,6 +2897,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
             {isGm && <button type="button" onClick={() => setPanel("scenes")} style={seg(panel === "scenes")}>Scenes</button>}
             <button type="button" onClick={() => setPanel("handouts")} style={seg(panel === "handouts")}>Handouts{handouts.length ? ` (${handouts.length})` : ""}</button>
             <button type="button" onClick={() => setPanel("tables")} style={seg(panel === "tables")}>Tables</button>
+            <button type="button" onClick={() => setPanel("cards")} style={seg(panel === "cards")}>Cards{tableCards.data?.hand.length ? ` (${tableCards.data.hand.length})` : ""}</button>
             {isGm && <button type="button" onClick={() => setPanel("sound")} style={seg(panel === "sound")}>Sound</button>}
           </div>
 
@@ -3381,6 +3389,12 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
 
           {panel === "sound" && isGm && (
             <SoundPanel campaignId={campaignId} supabase={supabase} audio={tableAudio.audio} serverNow={tableAudio.serverNow} save={tableAudio.save} missing={tableAudio.missing} />
+          )}
+
+          {panel === "cards" && (
+            <CardsPanel campaignId={campaignId} supabase={supabase} isGm={isGm} me={me}
+              seats={party.reduce<Seat[]>((a, p) => (a.some((x) => x.profileId === p.profile_id) ? a : [...a, { profileId: p.profile_id, name: p.name }]), [])}
+              data={tableCards.data} error={tableCards.error} reload={tableCards.reload} onChanged={() => send("cards", {})} />
           )}
 
           {panel === "tables" && (
