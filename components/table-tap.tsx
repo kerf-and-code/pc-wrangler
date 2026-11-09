@@ -120,6 +120,11 @@ function normalizeRenderedRoll(payload: any): TapEvent[] {
         discarded: roll.discarded === true,
         critical_success: isD20 ? roll["critical-success"] === true : null,
         critical_failure: isD20 ? roll["critical-failure"] === true : null,
+        // what kind of attack it was, so the table spends the right thing (p122): a spell attack spends
+        // the action (or the bonus action its casting time names), a weapon attack spends an attack
+        roll_type: typeof roll.type === "string" ? roll.type.slice(0, 32) : null,
+        request_type: typeof req?.type === "string" ? String(req.type).slice(0, 32) : null,
+        casting_time: typeof req?.["casting-time"] === "string" ? String(req["casting-time"]).slice(0, 40) : null,
       },
       state,
     });
@@ -168,7 +173,7 @@ export default function TableTap({ shareCode }: { shareCode: string }) {
   const [session, setSession] = useState<"unknown" | "open" | "closed">("unknown");
   const [sent, setSent] = useState(0);
   const [pending, setPending] = useState(0);
-  const [skipped, setSkipped] = useState(0);
+  const [, setSkipped] = useState(0);
   const [unmatched, setUnmatched] = useState<string[]>([]);
   const [charOptions, setCharOptions] = useState<{ id: string; name: string }[] | null>(null);
   const [linkSel, setLinkSel] = useState<Record<string, string>>({});
@@ -395,7 +400,7 @@ export default function TableTap({ shareCode }: { shareCode: string }) {
       {b20 === "waiting" && (
         <div style={{ background: C.panel, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: 14, fontSize: 14, marginBottom: 12 }}>
           <b style={{ color: BRASS }}>One-time setup:</b> in Beyond20&apos;s options, add{" "}
-          <code style={{ color: C.good }}>{siteOrigin()}/*</code> to Custom Domains and press
+          <code style={{ color: C.good }}>{`${siteOrigin()}/*`}</code> to Custom Domains and press
           Apply, then reload this page. For table-accurate numbers, also enable D&D Beyond digital dice.
         </div>
       )}

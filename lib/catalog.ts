@@ -15,6 +15,7 @@
 // class (via class_capabilities). Partnered content is OFF by default and toggled per partner.
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { sameSubclass } from "@/lib/subclass-names";
 
 export type Edition = "2024" | "2014" | "both";
 
@@ -125,12 +126,14 @@ export function subclassOptions(
 }
 
 // The tactical ROLE tags for a subclass (e.g. ["tank","support"]), from class_capabilities. These
-// are what the encounter balancer uses — they describe how the subclass plays, not its rules text
+// are what the encounter balancer uses: they describe how the subclass plays, not its rules text
 // (the catalog carries no prose). Returns [] when the subclass isn't found or has no tags. The UI
 // must present these AS role tags, not as a rules description.
 export function subclassRoles(cat: Catalog, className: string, subclassName: string): string[] {
   if (!subclassName) return [];
-  const row = cat.caps.find((r) => r.class === className && r.subclass === subclassName);
+  // the exact name first, then any spelling of the same subclass (audit A11: "Light Domain" = "Light")
+  const row = cat.caps.find((r) => r.class === className && r.subclass === subclassName)
+    ?? cat.caps.find((r) => r.class === className && sameSubclass(r.subclass, subclassName));
   if (!row) return [];
   const cap = row.capabilities;
   // capabilities is a jsonb array of strings; be defensive about shape.

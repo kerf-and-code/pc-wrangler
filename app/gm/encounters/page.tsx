@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { SAX } from "@/lib/theme";
-import { C, FORGE_RADIUS, stoneField, stonePanel, stoneButton } from "@/lib/forge-theme";
+import { C, FORGE_RADIUS, stoneField } from "@/lib/forge-theme";
 import { loadSrd } from "@/lib/srd/srd";
 import { listStatBlocks, statBlockFromMonster, type StatBlockRow } from "@/lib/stat-blocks";
 import { resolveFoeBlock, monsterCombatants, pcCombatant, type EncounterFoe, type Combatant } from "@/lib/combat";
@@ -16,6 +16,7 @@ import { dsBands, dsDifficultyOf, dsSpend, dsBenchmarkEV, DS_DIFFICULTY_LABEL, t
 import { DS_ORGANIZATIONS, type DSOrganization } from "@/lib/drawsteel/adversary";
 import { monsterSourceLabel, monsterSourceTitle } from "@/lib/monster-sources";
 import { initialCampaignId, useRememberCampaign, preferredSessionId, gmHref } from "@/lib/campaign-context";
+import { subclassKey } from "@/lib/subclass-names";
 
 // ============================================================================
 // THE TWO METHODS ARE GENUINELY DIFFERENT. THIS IS THE WHOLE POINT OF THE TOOL.
@@ -144,7 +145,7 @@ export default function EncountersPage() {
   // What this party can DO. Deterministic, straight from class_capabilities: no model,
   // no inference. "This party has no healing" is a fact, and it moves a fight's real
   // difficulty further than any multiplier on this page.
-  const [caps, setCaps] = useState<Array<{ class: string; subclass: string | null; capabilities: string[] }>>([]);
+  const [caps, setCaps] = useState<Array<{ class: string; subclass: string | null; capabilities: string[]; partnered?: boolean | null }>>([]);
   const [savedMsg, setSavedMsg] = useState<string | null>(null);
   // Saved encounters (p101 encounters table) and the one currently loaded, if any.
   const [savedList, setSavedList] = useState<SavedEncounter[]>([]);
@@ -180,12 +181,12 @@ export default function EncountersPage() {
     (async () => {
       const [{ data }, { data: cp }, blocks] = await Promise.all([
         supabase.from("campaigns").select("id, name, system").order("created_at", { ascending: false }),
-        supabase.from("class_capabilities").select("class, subclass, capabilities"),
+        supabase.from("class_capabilities").select("class, subclass, capabilities, partnered"),
         listStatBlocks(supabase).catch(() => [] as StatBlockRow[]),
       ]);
       const list = (data as Array<{ id: string; name: string; system: string | null }>) || [];
       setCampaigns(list);
-      setCaps((cp as Array<{ class: string; subclass: string | null; capabilities: string[] }>) || []);
+      setCaps((cp as Array<{ class: string; subclass: string | null; capabilities: string[]; partnered?: boolean | null }>) || []);
       setStatBlocks(blocks);
       if (list.length) setCampaignId(initialCampaignId(list));
       setLoading(false);
@@ -288,15 +289,21 @@ export default function EncountersPage() {
   // knows your party.
   const coverage = useMemo(() => {
     if (caps.length === 0 || levelled.length === 0) return null;
+    // subclasses by their canonical key (audit A11, lib/subclass-names), core rows winning a shared name
     const index = new Map<string, string[]>();
+    const core = new Set<string>();
     for (const r of caps) {
-      index.set(r.subclass ? `${r.class}|${r.subclass}` : r.class, r.capabilities || []);
+      if (!r.subclass) { index.set(r.class, r.capabilities || []); continue; }
+      const key = subclassKey(r.class, r.subclass);
+      if (core.has(key)) continue;
+      index.set(key, r.capabilities || []);
+      if (!r.partnered) core.add(key);
     }
     const have = new Set<string>();
     const unknown: string[] = [];
     for (const c of levelled) {
       const base = c.class ? index.get(c.class) : undefined;
-      const sub  = c.class && c.subclass ? index.get(`${c.class}|${c.subclass}`) : undefined;
+      const sub  = c.class && c.subclass ? index.get(subclassKey(c.class, c.subclass)) : undefined;
       if (!base && !sub) { unknown.push(c.name); continue; }
       for (const b of [...(base || []), ...(sub || [])]) have.add(b);
     }

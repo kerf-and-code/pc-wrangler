@@ -114,6 +114,12 @@
           discarded: aroll.discarded === true,
           critical_success: isD20 ? aroll["critical-success"] === true : null,
           critical_failure: isD20 ? aroll["critical-failure"] === true : null,
+          // 2.2.0: what kind of attack it was, so the table spends the right thing (Six Axes p122): a
+          // spell attack spends the action (or the bonus action its casting time names), a weapon
+          // attack spends an attack
+          roll_type: typeof aroll.type === "string" ? aroll.type.slice(0, 32) : null,
+          request_type: req && typeof req.type === "string" ? String(req.type).slice(0, 32) : null,
+          casting_time: req && typeof req["casting-time"] === "string" ? String(req["casting-time"]).slice(0, 40) : null,
         },
         state: state,
       });

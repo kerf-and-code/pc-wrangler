@@ -52,6 +52,16 @@ export function canonicalSubclass(name: string | null | undefined): string {
   return RENAMES[n] ?? n;
 }
 
+/**
+ * A lookup key for "this class's subclass", the same for every spelling (audit A11): the party
+ * coverage panel and the encounter balancer index class_capabilities rows by it, so a character saved
+ * as "Circle of the Moon" or "Light Domain" (a D&D Beyond import) finds the catalog's "Moon" or "Light"
+ * row instead of silently counting for nothing.
+ */
+export function subclassKey(className: string | null | undefined, subclass: string | null | undefined): string {
+  return `${String(className ?? "").trim().toLowerCase()}|${canonicalSubclass(subclass)}`;
+}
+
 /** True when two spellings name the same subclass. An empty name never matches anything. */
 export function sameSubclass(a: string | null | undefined, b: string | null | undefined): boolean {
   const x = canonicalSubclass(a);

@@ -12,7 +12,7 @@ import {
   type Camera, type Pt, type DiagonalRule, type TemplateGeom, type TemplateShape,
 } from "@/lib/tabletop/geometry";
 import { loadSrd } from "@/lib/srd/srd";
-import { sortForTurns, applyDamage, applyHealing, combatantId, pcCombatant, CONDITIONS, type Combatant, type Econ } from "@/lib/combat";
+import { sortForTurns, applyDamage, applyHealing, combatantId, pcCombatant, type Combatant, type Econ } from "@/lib/combat";
 import { monsterSourceLabel } from "@/lib/monster-sources";
 import {
   decodeFog, encodeFog, isRevealed, setSquares, fillFog, brushCells, roomsOf, roomCells, doorAt, edgeSegment,
@@ -932,6 +932,34 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     requestDraw();
   }, [requestDraw]);
 
+  // Darkvision off each character's saved sheet. Read when the table loads, and again (audit A8) when the
+  // tab comes back into view and once a minute, so a sheet saved mid-session reaches the table without a
+  // reload. Returns whether anything changed.
+  const refreshSheetDv = useCallback(async (tokens: Token[]): Promise<boolean> => {
+    const charIds = [...new Set(tokens.map((t) => t.character_id).filter(Boolean))] as string[];
+    const dvs = new Map<string, number>();
+    if (charIds.length) {
+      const { data: cs, error: er } = await supabase.from("characters").select("id, snap:build->sheetSnapshot").in("id", charIds);
+      if (er) return false;
+      for (const c of (cs ?? []) as unknown as { id: string; snap: { darkvision?: number } | null }[]) {
+        const dv = Math.min(600, Number(c.snap?.darkvision) || 0); if (dv > 0) dvs.set(c.id, dv);
+      }
+    }
+    const prev = sheetDv.current;
+    const same = prev.size === dvs.size && [...dvs].every(([k, v]) => prev.get(k) === v);
+    sheetDv.current = dvs;
+    return !same;
+  }, [supabase]);
+  useEffect(() => {
+    const again = () => {
+      if (document.visibilityState !== "visible") return;
+      void refreshSheetDv([...tokensRef.current.values()]).then((changed) => { if (changed) { setTick((v) => v + 1); requestDraw(); } });
+    };
+    const timer = window.setInterval(again, 60_000);
+    document.addEventListener("visibilitychange", again);
+    return () => { window.clearInterval(timer); document.removeEventListener("visibilitychange", again); };
+  }, [refreshSheetDv, requestDraw]);
+
   const load = useCallback(async () => {
     const { data, error: e } = await supabase.rpc("tabletop_state", { p_campaign: campaignId });
     if (e) { setError(/not at this table/.test(e.message) ? "You are not at this table. Ask your GM to add your character to the campaign." : /not signed in/.test(e.message) ? "Sign in to join the table." : `Could not load the table: ${e.message}`); return; }
@@ -940,15 +968,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     stateRef.current = st; setState(st); setError(null);
     applyTokens(st.tokens);
     // darkvision from the character sheets behind the tokens (a player can read only their own)
-    const charIds = [...new Set((st.tokens ?? []).map((t) => t.character_id).filter(Boolean))] as string[];
-    const dvs = new Map<string, number>();
-    if (charIds.length) {
-      const { data: cs } = await supabase.from("characters").select("id, snap:build->sheetSnapshot").in("id", charIds);
-      for (const c of (cs ?? []) as unknown as { id: string; snap: { darkvision?: number } | null }[]) {
-        const dv = Math.min(600, Number(c.snap?.darkvision) || 0); if (dv > 0) dvs.set(c.id, dv);
-      }
-    }
-    sheetDv.current = dvs;
+    await refreshSheetDv(st.tokens ?? []);
     templatesRef.current = new Map();
     if (st.scene) {
       const { data: tpls } = await supabase.from("vtt_templates").select("*").eq("scene_id", st.scene.id);
@@ -976,7 +996,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     if (st.map?.id !== prevMap || st.scene?.id !== prevScene || !baseRef.current) { renderBase(); fitPending.current = true; }
     else if (changed) renderBase();
     rebuildFog(); requestDraw();
-  }, [supabase, campaignId, applyTokens, renderBase, rebuildFog, requestDraw]);
+  }, [supabase, campaignId, applyTokens, renderBase, rebuildFog, requestDraw, refreshSheetDv]);
 
   // The canvas only exists once a scene is loaded, so the first fit waits for it to mount.
   const fitPending = useRef(true);
@@ -1797,6 +1817,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
               setChatErr(/wait for your turn/.test(m) ? `Wait for your turn to move ${t.name}.`
                 : /not enough movement left: (\d+)/.test(m) ? `${t.name} has ${m.match(/(\d+) ft/)?.[1] ?? 0} ft of movement left this turn. Dash adds more.`
                 : /speed is 0/.test(m) ? `${t.name} cannot move right now (speed 0).`
+                : /wall is in the way/.test(m) ? `A wall is in the way of ${t.name}.`
                 : `Could not move ${t.name}: ${m}`);
               tokensRef.current.set(id, t); requestDraw();
             } else if (fightRef.current && st.role !== "gm") { void loadFightRef.current?.(); send("combat", {}); }
@@ -1876,22 +1897,33 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
 
   // Saves what the token maker made: uploads the cut-out picture (and an imported border), then sets the
   // picture and frame through tabletop_set_token_look (p120), which lets the GM change any token and a
-  // player change their own.
+  // player change their own. Audit A4: afterwards the pictures it replaced are offered for removal, and
+  // when the save fails the ones it just uploaded are; the route keeps any picture a token still shows.
   const saveLook = useCallback(async (tokenId: string, r: TokenMakerResult): Promise<string | null> => {
+    const uploaded: string[] = [];
     const up = async (blob: Blob, file: string) => {
       const fd = new FormData(); fd.append("campaignId", campaignId); fd.append("tokenId", tokenId); fd.append("file", blob, file);
       const res = await fetch("/api/tabletop/token-image", { method: "POST", body: fd });
       const j = (await res.json().catch(() => ({}))) as { url?: string; error?: string };
       if (!res.ok || !j.url) throw new Error(j.error || `Upload failed (${res.status}).`);
+      uploaded.push(j.url);
       return j.url;
     };
+    const tidy = (urls: (string | null | undefined)[]) => {
+      const list = urls.filter((u): u is string => typeof u === "string" && /^https:\/\//.test(u));
+      if (list.length) void fetch("/api/tabletop/token-image", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ campaignId, tokenId, urls: list }) }).catch(() => {});
+    };
+    const before = tokensRef.current.get(tokenId);
+    const oldImage = before?.image_url ?? null;
+    const oldBorder = normFrame(before?.style?.frame)?.importUrl ?? null;
     try {
       const image = await up(r.portrait, "token.png");
       let frame: Frame | null = r.clearFrame ? null : { ...r.frame };
       if (frame && r.border) frame = { ...frame, importUrl: await up(r.border, "border.png") };
       else if (frame?.importUrl?.startsWith("blob:")) frame = { ...frame, importUrl: null };
       const { error: er } = await supabase.rpc("tabletop_set_token_look", { p_token: tokenId, p_image_url: image, p_frame: frame, p_clear_frame: r.clearFrame });
-      if (er) return `Could not save the token: ${er.message}`;
+      if (er) { tidy(uploaded); return `Could not save the token: ${er.message}`; }
+      tidy([oldImage !== image ? oldImage : null, oldBorder && oldBorder !== frame?.importUrl ? oldBorder : null]);
       const cur = tokensRef.current.get(tokenId);
       if (cur) {
         const style: Record<string, unknown> = { ...cur.style };
@@ -1901,6 +1933,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
       setTick((v) => v + 1); requestDraw(); setMakerFor(null);
       return null;
     } catch (e) {
+      tidy(uploaded);
       return (e as Error).message;
     }
   }, [campaignId, supabase, requestDraw]);

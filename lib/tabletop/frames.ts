@@ -770,18 +770,55 @@ export const designDefaults = (id: string) => { const d = DESIGN_BY_ID.get(id); 
 /** How far past r the frame can reach, as a share of r (for sizing exports). */
 export const frameReach = (f: Frame) => 1 + f.width * (f.effect ? 4.2 : 3.2);
 
+// ---- the design cache (audit A7) ----
+//
+// A design does not move (only the "pulse" motion resizes it), yet the tabletop redraws every framed
+// token on every animation frame. So a design is drawn once per look and size onto an offscreen canvas
+// and stamped from there; effects, motion and imported borders stay live on top. Sizes are rounded up to
+// steps of about 19% in screen pixels, so zooming reuses a few bitmaps instead of making one per frame,
+// and the bitmap is only ever drawn a little smaller than it was made (never blurred upward).
+
+type Cached = { cv: HTMLCanvasElement | OffscreenCanvas; R: number; half: number };
+const designCache = new Map<string, Cached>();
+const CACHE_MAX = 96;
+
+function designBitmap(d: DesignDef, f: Frame, devR: number): Cached | null {
+  if (!(devR >= 6 && devR <= 900)) return null;
+  const R = Math.pow(2, Math.ceil(Math.log2(devR) * 4) / 4);
+  const key = `${d.id}|${f.shape}|${f.color}|${f.color2}|${f.width}|${R.toFixed(2)}`;
+  const hit = designCache.get(key);
+  if (hit) { designCache.delete(key); designCache.set(key, hit); return hit; }
+  const half = Math.ceil(R * (1 + f.width * 4) + 6);
+  let cv: HTMLCanvasElement | OffscreenCanvas;
+  if (typeof OffscreenCanvas !== "undefined") cv = new OffscreenCanvas(half * 2, half * 2);
+  else if (typeof document !== "undefined") { cv = document.createElement("canvas"); cv.width = half * 2; cv.height = half * 2; }
+  else return null;
+  const c = cv.getContext("2d") as Ctx | null;
+  if (!c) return null;
+  c.translate(half, half);
+  d.draw(c, f.shape, R, Math.max(1, R * f.width), f.color, f.color2);
+  const made = { cv, R, half };
+  designCache.set(key, made);
+  if (designCache.size > CACHE_MAX) { const first = designCache.keys().next().value; if (first !== undefined) designCache.delete(first); }
+  return made;
+}
+
 /**
  * Draws a frame centred on the origin around a portrait of radius r. `time` is in seconds; pass 0 to
  * draw it still (reduced motion, thumbnails). `image` resolves the imported border's URL, if any.
+ * `live` draws the design straight onto c instead of from the cache (exports, where size is exact).
  */
-export function drawFrame(c: Ctx, f: Frame, r: number, time: number, image?: (url: string) => CanvasImageSource | null) {
+export function drawFrame(c: Ctx, f: Frame, r: number, time: number, image?: (url: string) => CanvasImageSource | null, live = false) {
   const w = Math.max(1, r * f.width), t = time * f.speed;
   c.save();
   if (f.design !== "none") {
     const d = DESIGN_BY_ID.get(f.design) ?? DESIGNS[0];
     let ww = w;
     if (f.motion === "pulse") ww = w * (1 + 0.08 * Math.sin(t * 3));
-    d.draw(c, f.shape, r, ww, f.color, f.color2);
+    const m = !live && f.motion !== "pulse" && typeof c.getTransform === "function" ? c.getTransform() : null;
+    const bm = m ? designBitmap(d, f, r * Math.hypot(m.a, m.b)) : null;
+    if (bm) { const k = r / bm.R; c.drawImage(bm.cv, -bm.half * k, -bm.half * k, bm.half * 2 * k, bm.half * 2 * k); }
+    else d.draw(c, f.shape, r, ww, f.color, f.color2);
   }
   if (f.motion) drawMotion(c, f, r, w, t);
   if (f.effect) drawEffect(c, f, r, w, t);

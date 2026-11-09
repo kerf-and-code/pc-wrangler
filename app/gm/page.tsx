@@ -9,6 +9,7 @@ import { listModules } from "@/lib/systems/registry";
 import { getRosterFields, type RosterSpec } from "@/lib/systems/roster-fields";
 import { computeCoverage, rolesForClass, classesForRole, ROLE_LABEL, type CoverageSystem } from "@/lib/party/coverage";
 import { initialCampaignId, useRememberCampaign } from "@/lib/campaign-context";
+import { canonicalSubclass, subclassKey } from "@/lib/subclass-names";
 
 // Palette mapped onto the shared cellar theme.
 
@@ -234,7 +235,7 @@ export default function GMWorkspace() {
       navigator.clipboard.writeText(`/setup code:${code}`);
       setCopied(code);
       setTimeout(() => setCopied(null), 1500);
-    } catch (e) { /* clipboard unavailable */ }
+    } catch { /* clipboard unavailable */ }
   }
 
   // Pull an existing (unassigned) inventory into this campaign so it can be assigned.
@@ -321,8 +322,9 @@ export default function GMWorkspace() {
   // class_capabilities row has no capabilities attached, so the character is absent from
   // the coverage panel and from the encounter balancer's capability check. Level 1-2
   // having no subclass is CORRECT and is not flagged; level 3+ is a real gap.
+  // compared in canonical form (lib/subclass-names), so "Light Domain" finds the catalog's "Light"
   const knownSubclasses = useMemo(
-    () => new Set(caps.filter((r: any) => r.subclass).map((r: any) => r.subclass as string)),
+    () => new Set(caps.filter((r: any) => r.subclass).map((r: any) => canonicalSubclass(r.subclass as string))),
     [caps],
   );
   const coverageGap = (ch: any): string | null => {
@@ -331,7 +333,7 @@ export default function GMWorkspace() {
       if (ch.level == null) return "no level or subclass recorded";
       return ch.level >= 3 ? "no subclass: not counted in party coverage" : null;
     }
-    if (!knownSubclasses.has(ch.subclass)) return `subclass "${ch.subclass}" is not in the catalog: not counted in party coverage`;
+    if (!knownSubclasses.has(canonicalSubclass(ch.subclass))) return `subclass "${ch.subclass}" is not in the catalog: not counted in party coverage`;
     return null;
   };
 
@@ -353,11 +355,17 @@ export default function GMWorkspace() {
 
   // ---- coverage analysis (deterministic) ----
   const capIndex = useMemo(() => {
-    // class -> baseline caps; "class|subclass" -> subclass caps
+    // class -> baseline caps; subclassKey(class, subclass) -> subclass caps. The subclass key is the
+    // canonical form (audit A11), so every spelling of a subclass finds its row; where a core and a
+    // partner subclass share one canonical name, the core row wins.
     const m: Record<string, string[]> = {};
+    const core = new Set<string>();
     for (const r of caps) {
-      const key = r.subclass ? `${r.class}|${r.subclass}` : r.class;
+      if (!r.subclass) { m[r.class] = r.capabilities || []; continue; }
+      const key = subclassKey(r.class, r.subclass);
+      if (core.has(key)) continue;
       m[key] = r.capabilities || [];
+      if (!r.partnered) core.add(key);
     }
     return m;
   }, [caps]);
@@ -367,7 +375,7 @@ export default function GMWorkspace() {
     const contributors: Record<string, string[]> = {}; // bucket -> [char names]
     for (const ch of characters) {
       const base = capIndex[ch.class] || GENERAL_PROFILE;
-      const sub = ch.subclass ? (capIndex[`${ch.class}|${ch.subclass}`] || []) : [];
+      const sub = ch.subclass ? (capIndex[subclassKey(ch.class, ch.subclass)] || []) : [];
       for (const b of [...base, ...sub]) {
         present.add(b);
         (contributors[b] ||= []).push(ch.name);
@@ -484,7 +492,7 @@ export default function GMWorkspace() {
             {!rosterSpec && partnerList.length > 0 && (
               <div style={{ marginBottom: 14 }}>
                 <div style={{ fontSize: 11.5, color: C.muted, marginBottom: 7 }}>
-                  Partnered content {enabledPartners.size > 0 ? `(${enabledPartners.size} on)` : "— off by default; toggle a partner to add its options"}
+                  Partnered content {enabledPartners.size > 0 ? `(${enabledPartners.size} on)` : "(off by default; toggle a partner to add its options)"}
                 </div>
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                   {partnerList.map((p) => {
@@ -712,7 +720,7 @@ export default function GMWorkspace() {
             )}
           </div>
 
-          {/* coverage — D&D party-role analysis; hidden for systems without a class-capability model. */}
+          {/* coverage: D&D party-role analysis; hidden for systems without a class-capability model. */}
           {!rosterSpec && (
           <div style={box}>
             <div style={{ fontSize: 13, color: C.muted, marginBottom: 12 }}>Coverage analysis</div>
@@ -754,7 +762,7 @@ export default function GMWorkspace() {
           </div>
           )}
 
-          {/* basic coverage — the shared 7-role read for non-D&D systems that expose a class list.
+          {/* basic coverage: the shared 7-role read for non-D&D systems that expose a class list.
               D&D uses the deep class_capabilities panel above; this is the parity read everywhere else. */}
           {rosterSpec && basicSys && basicCoverage && (
           <div style={box}>
@@ -839,7 +847,7 @@ export default function GMWorkspace() {
                 <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${C.line}`, display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
                   <span style={{ fontSize: 12.5, color: C.muted }}>Import an existing inventory:</span>
                   <select style={{ ...inputStyle, maxWidth: 240 }} value="" onChange={(e) => importInventory(e.target.value)}>
-                    <option value="">— choose an inventory —</option>
+                    <option value="">Choose an inventory</option>
                     {pool.map((d) => <option key={d.id} value={d.id}>{d.player_name || "Unnamed"}</option>)}
                   </select>
                 </div>

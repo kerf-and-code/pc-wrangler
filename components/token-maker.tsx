@@ -7,8 +7,7 @@ import {
   type Frame, type Shape,
 } from "@/lib/tabletop/frames";
 import { applyMask, autoMask, keptShare, paintMask, stampSeed, strokeOverlay, wandRemove } from "@/lib/tabletop/cutout";
-import { guidedCut } from "@/lib/tabletop/guided-cut";
-import { GifEncoder } from "@/lib/tabletop/gif";
+import { cutInBackground, GifJob, WorkerFailed } from "@/lib/tabletop/tools-client";
 
 // components/token-maker.tsx (2026-11-08)
 //
@@ -22,7 +21,13 @@ import { GifEncoder } from "@/lib/tabletop/gif";
 //   - the tabletop (mode "app"): "Use on this token" hands back the cut-out picture and the frame
 //     settings; the caller uploads the picture and stores the frame on the token, where it is drawn
 //     live, so the animation runs at the table.
-// Nothing here talks to a server.
+// Nothing here talks to a server. The guided cut and GIF encoding run in a background worker
+// (lib/tabletop/tools-client.ts, audit A5) so the page stays responsive; the same code runs on the page
+// when a worker cannot start.
+//
+// Without a mouse or touch (audit A10): "Cut around the middle" cuts out a subject in the centre with no
+// drawing, every other step is a button or a field, and each cut is announced to screen readers with
+// how much of the picture it kept.
 
 type Mode = "free" | "app";
 /** portrait: the cut-out alone (the tabletop draws the frame live); baked: a still PNG with the frame drawn in (a sheet portrait). */
@@ -94,6 +99,8 @@ export default function TokenMaker({ mode, initialImage, initialFrame, name, onS
   const [border, setBorder] = useState<{ url: string; blob: Blob } | null>(null);
   const [exportSize, setExportSize] = useState(512);
   const [recording, setRecording] = useState(false);
+  const [announce, setAnnounce] = useState("");
+  const cutSeq = useRef(0);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const cutRef = useRef<HTMLCanvasElement | null>(null);
@@ -195,16 +202,41 @@ export default function TokenMaker({ mode, initialImage, initialFrame, name, onS
     if (!pic || !mask) return; pushHistory(mask);
     keepRef.current = new Uint8Array(pic.w * pic.h); dropRef.current = new Uint8Array(pic.w * pic.h); redrawOverlay(pic);
   };
-  /** Runs the guided cut from the strokes so far (after a short pause so "Cutting" can show). */
+  /** Runs the guided cut from the strokes so far, in the background; a newer cut supersedes an older one. */
   const runCut = () => {
     if (!pic || !keepRef.current || !dropRef.current) return;
     if (!keepRef.current.some((v) => v)) { setMsg("Paint over your subject with Keep first; Remove strokes then tell it what is background."); return; }
     setCutting(true); setMsg(null);
-    setTimeout(() => {
-      const r = guidedCut(pic.rgba, pic.w, pic.h, keepRef.current!, dropRef.current!);
-      if (r) { setMask(r.mask); setAutoOn(false); }
-      setCutting(false);
-    }, 30);
+    const mine = ++cutSeq.current;
+    void cutInBackground(pic.rgba, pic.w, pic.h, keepRef.current, dropRef.current)
+      .then((r) => {
+        if (mine !== cutSeq.current) return;
+        if (r) { setMask(r.mask); setAutoOn(false); setAnnounce(`Cut done: kept ${Math.round(r.keptShare * 100)}% of the picture.`); }
+      })
+      .catch(() => { if (mine === cutSeq.current) setMsg("The cut did not work on this picture. Try Quick remove, or the brushes."); })
+      .finally(() => { if (mine === cutSeq.current) setCutting(false); });
+  };
+  /**
+   * Audit A10: a cut with no drawing, for a subject in the middle of the picture (most portraits). Keep
+   * is a narrow upright oval down the centre (narrow, because Keep marks are never removed, and a wide
+   * one kept background beside the neck), Remove a thin band round the edge; the guided cut does the
+   * rest, and the strokes stay on screen to adjust with the brushes.
+   */
+  const cutMiddle = () => {
+    if (!pic || !mask) return;
+    pushHistory(mask);
+    const { w, h } = pic, keep = new Uint8Array(w * h), drop = new Uint8Array(w * h);
+    // a tall picture is usually a bust whose body runs off the bottom edge, so its bottom edge is not
+    // marked as background (the same reason Quick remove reads only the top and sides)
+    const cx = w / 2, cy = h * 0.5, rx = w * 0.07, ry = h * 0.28, band = Math.max(2, Math.round(Math.min(w, h) * 0.025));
+    const bottomToo = h <= w * 1.15;
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      const i = y * w + x, dx = (x - cx) / rx, dy = (y - cy) / ry;
+      if (dx * dx + dy * dy <= 1) keep[i] = 1;
+      else if (x < band || y < band || x >= w - band || (bottomToo && y >= h - band)) drop[i] = 1;
+    }
+    keepRef.current = keep; dropRef.current = drop; redrawOverlay(pic);
+    runCut();
   };
   const resetMask = () => { if (!pic || !mask) return; pushHistory(mask); setMask(new Uint8ClampedArray(pic.w * pic.h).fill(255)); setAutoOn(false); };
 
@@ -353,7 +385,7 @@ export default function TokenMaker({ mode, initialImage, initialFrame, name, onS
     c.translate(size / 2, size / 2);
     const r = withFrame ? size / 2 / frameReach(frame) : size / 2;
     drawPortrait(c, r);
-    if (withFrame) drawFrame(c, frame, r, t, imgBorder);
+    if (withFrame) drawFrame(c, frame, r, t, imgBorder, true);
     return cv;
   };
   const download = (blob: Blob, file: string) => {
@@ -405,7 +437,7 @@ export default function TokenMaker({ mode, initialImage, initialFrame, name, onS
     const r = size / 2 / frameReach(frame);
     const draw = (t: number) => {
       c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, size, size); c.translate(size / 2, size / 2);
-      drawPortrait(c, r); drawFrame(c, frame, r, t, imgBorder);
+      drawPortrait(c, r); drawFrame(c, frame, r, t, imgBorder, true);
       return new Uint8ClampedArray(c.getImageData(0, 0, size, size).data);
     };
     // A seamless loop: the effects do not repeat every L seconds, so each frame cross-fades the
@@ -416,16 +448,23 @@ export default function TokenMaker({ mode, initialImage, initialFrame, name, onS
       for (let k = 0; k < a.length; k++) a[k] = a[k] * (1 - w) + b[k] * w;
       return a;
     };
+    // encoded in the background worker (audit A5); if the worker fails, once more on the page
+    const encode = async (inPage: boolean) => {
+      const job = await GifJob.start(size, size, gifClear, inPage);
+      for (let i = 0; i < n; i += 5) await job.sample(frameAt(i));
+      await job.palette();
+      for (let i = 0; i < n; i++) {
+        await job.frame(frameAt(i), 1000 / fps);
+        setGifProgress(i / n);
+        if (inPage && i % 3 === 0) await new Promise((res) => setTimeout(res, 0));
+      }
+      return job.finish();
+    };
     try {
       setGifProgress(0);
-      const enc = new GifEncoder(size, size, { transparent: gifClear });
-      for (let i = 0; i < n; i += 5) enc.addPaletteSample(frameAt(i));
-      enc.buildPalette();
-      for (let i = 0; i < n; i++) {
-        enc.addFrame(frameAt(i), 1000 / fps);
-        if (i % 3 === 0) { setGifProgress(i / n); await new Promise((res) => setTimeout(res, 0)); }
-      }
-      download(new Blob([enc.finish().buffer as ArrayBuffer], { type: "image/gif" }), `${base}-animated.gif`);
+      let bytes: Uint8Array;
+      try { bytes = await encode(false); } catch (e) { if (!(e instanceof WorkerFailed)) throw e; setGifProgress(0); bytes = await encode(true); }
+      download(new Blob([bytes.buffer as ArrayBuffer], { type: "image/gif" }), `${base}-animated.gif`);
     } catch {
       setMsg("That picture could not be exported (it came from a site that does not allow it). Choose the file from your computer instead.");
     } finally { setGifProgress(null); }
@@ -463,7 +502,7 @@ export default function TokenMaker({ mode, initialImage, initialFrame, name, onS
       <div style={{ flex: "0 1 360px", minWidth: 260, maxWidth: 400 }}>
         <div onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); onFile(e.dataTransfer.files?.[0]); }}
           style={{ position: "relative", width: "100%", aspectRatio: "1 / 1", borderRadius: 12, overflow: "hidden", border: `1px solid ${ui.line}` }}>
-          <canvas ref={canvasRef} role="img" aria-label="Token preview" onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp} onPointerLeave={() => { hoverRef.current = null; }} onWheel={onWheel}
+          <canvas ref={canvasRef} role="img" aria-label={pic ? "Token preview. Drag to move the picture or draw the background strokes; every step also has a button." : "Token preview. Choose a picture to start."} onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp} onPointerLeave={() => { hoverRef.current = null; }} onWheel={onWheel}
             style={{ width: "100%", height: "100%", display: "block", touchAction: "none", cursor: !pic ? "pointer" : tool === "move" ? "grab" : "crosshair" }} />
         </div>
         <p style={{ fontSize: 12, color: ui.muted, margin: "6px 0 0" }}>
@@ -473,6 +512,7 @@ export default function TokenMaker({ mode, initialImage, initialFrame, name, onS
           <button type="button" style={btn(paused)} aria-pressed={paused} onClick={() => setPaused((p) => !p)}>{paused ? "Play animation" : "Pause animation"}</button>
         </div>
         {msg && <p role="status" style={{ fontSize: 13, color: ui.warn, margin: "10px 0 0" }}>{msg}</p>}
+        <p aria-live="polite" style={{ position: "absolute", width: 1, height: 1, margin: -1, padding: 0, overflow: "hidden", clip: "rect(0 0 0 0)", whiteSpace: "nowrap", border: 0 }}>{announce}</p>
       </div>
 
       {/* controls */}
@@ -496,6 +536,11 @@ export default function TokenMaker({ mode, initialImage, initialFrame, name, onS
           <button type="button" style={btn()} disabled={!history.length || cutting} onClick={undo}>Undo</button>
           <button type="button" style={btn()} disabled={!pic || cutting} onClick={clearStrokes}>Clear strokes</button>
           <button type="button" style={btn()} disabled={!pic || cutting} onClick={resetMask}>Bring everything back</button>
+        </div>
+        <div style={{ ...rowS, marginTop: 8 }}>
+          <span style={{ fontSize: 12, color: ui.muted }}>Subject in the middle?</span>
+          <button type="button" style={btn()} disabled={!pic || cutting} onClick={cutMiddle} aria-describedby="tm-middle-help">Cut around the middle</button>
+          <span id="tm-middle-help" style={{ fontSize: 12, color: ui.muted }}>No drawing needed; fix any misses with Keep or Remove.</span>
         </div>
         <div style={{ ...rowS, marginTop: 8 }}>
           <span style={{ fontSize: 12, color: ui.muted }}>Plain background?</span>
