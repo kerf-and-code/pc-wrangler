@@ -33,6 +33,8 @@ import MapUpload from "@/components/map-upload";
 import { EFFECTS, drawEffect, isEffect, seedOf, type EffectKind } from "@/lib/tabletop/effects";
 import HandoutView, { type Handout } from "@/components/handout-view";
 import RollTablesPanel from "@/components/roll-tables-panel";
+import TableSound, { useTableAudio } from "@/components/table-sound";
+import SoundPanel from "@/components/sound-panel";
 import { AttackForm, EconomyBar, MarkerChips, MarkerPicker, PlayerEntryControls, SaveBanner, TurnUsed, isMyTurn, type FightEntry, type PendingSave } from "@/components/fight-controls";
 
 // The tabletop, phase 1 (2026-11-06). One page for the GM and the players; tabletop_state (p105)
@@ -178,10 +180,12 @@ const enumerated = (base: string, taken: string[]) => {
 
 export default function TabletopClient({ campaignId }: { campaignId: string }) {
   const supabase = useMemo(() => createClient(), []);
+  // phase 5s: what the table hears (music and ambient loops), followed live by every browser here
+  const tableAudio = useTableAudio(campaignId, supabase);
   const [state, setState] = useState<State | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [tool, setTool] = useState<Tool>("select");
-  const [panel, setPanel] = useState<"chat" | "turns" | "tokens" | "scenes" | "handouts" | "tables">("chat");
+  const [panel, setPanel] = useState<"chat" | "turns" | "tokens" | "scenes" | "handouts" | "tables" | "sound">("chat");
   const [fight, setFight] = useState<Fight | null>(null);
   const fightRow = useRef<FightRow | null>(null);
   const fightRef = useRef<Fight | null>(null);
@@ -2547,18 +2551,23 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
               Wheel zooms · right-drag pans · right-click pings{isGm ? " (Shift: bring everyone)" : ""} · click a door to open it{isGm ? " (Shift: pick several)" : ""} · R turns · M ruler · T area{isGm ? " · U fog" : ""}
             </div>
           )}
+          {/* phase 5s: the table's music and ambient sound, with this person's own volume */}
+          <div style={{ position: "absolute", right: 10, bottom: 10, zIndex: 5 }}>
+            <TableSound audio={tableAudio.audio} serverNow={tableAudio.serverNow} />
+          </div>
         </div>
 
         {/* side panel */}
         <div style={{ width: narrow ? "min(360px, 88vw)" : 360, display: panelOpen ? "flex" : "none", flexDirection: "column", borderLeft: `1px solid ${C.line}`, background: C.surface, minHeight: 0,
           ...(narrow ? { position: "absolute" as const, right: 0, top: 0, bottom: 0, zIndex: 20, boxShadow: "-8px 0 24px rgba(0,0,0,0.5)" } : {}) }}>
-          <div style={{ display: "flex", gap: 6, padding: 8, borderBottom: `1px solid ${C.line}` }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, padding: 8, borderBottom: `1px solid ${C.line}` }}>
             <button type="button" onClick={() => setPanel("chat")} style={seg(panel === "chat")}>Chat</button>
             <button type="button" onClick={() => setPanel("turns")} style={seg(panel === "turns")}>Turns{fight ? ` (${fight.round})` : ""}</button>
             {isGm && <button type="button" onClick={() => setPanel("tokens")} style={seg(panel === "tokens")}>Tokens</button>}
             {isGm && <button type="button" onClick={() => setPanel("scenes")} style={seg(panel === "scenes")}>Scenes</button>}
             <button type="button" onClick={() => setPanel("handouts")} style={seg(panel === "handouts")}>Handouts{handouts.length ? ` (${handouts.length})` : ""}</button>
             <button type="button" onClick={() => setPanel("tables")} style={seg(panel === "tables")}>Tables</button>
+            {isGm && <button type="button" onClick={() => setPanel("sound")} style={seg(panel === "sound")}>Sound</button>}
           </div>
 
           {panel === "chat" && (
@@ -3042,6 +3051,10 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
               <button type="button" onClick={() => { void navigator.clipboard?.writeText(`${window.location.origin}/tabletop/${campaignId}`); setChatErr("Table link copied."); }} style={{ ...small, width: "100%" }}>Copy the table link</button>
               {chatErr && <p role="status" style={{ color: chatErr === "Table link copied." ? C.muted : "#e07a70", fontSize: 12, marginTop: 10 }}>{chatErr}</p>}
             </div>
+          )}
+
+          {panel === "sound" && isGm && (
+            <SoundPanel campaignId={campaignId} supabase={supabase} audio={tableAudio.audio} serverNow={tableAudio.serverNow} save={tableAudio.save} missing={tableAudio.missing} />
           )}
 
           {panel === "tables" && (
