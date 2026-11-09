@@ -37,6 +37,7 @@ import TableSound, { useTableAudio } from "@/components/table-sound";
 import SoundPanel from "@/components/sound-panel";
 import { encodeDifficult, normDifficult, paintDifficult, pathExtra } from "@/lib/tabletop/terrain";
 import { distance3d, elevationOf, elevationText } from "@/lib/tabletop/elevation";
+import { PinCard, TokenNotes, type EntryOption, type Pin } from "@/components/table-pins";
 import { AttackForm, EconomyBar, MarkerChips, MarkerPicker, PlayerEntryControls, SaveBanner, TurnUsed, isMyTurn, type FightEntry, type PendingSave } from "@/components/fight-controls";
 
 // The tabletop, phase 1 (2026-11-06). One page for the GM and the players; tabletop_state (p105)
@@ -129,7 +130,7 @@ const GROUP_MS = 6000;
 const sizeSquares = (size: string | null | undefined) => { const s = (size ?? "").toLowerCase(); return s.startsWith("tiny") ? 0.5 : s.startsWith("large") ? 2 : s.startsWith("huge") ? 3 : s.startsWith("garg") ? 4 : 1; };
 type FeedItem = { t: number; key: string; msg?: Message; ext?: OutsideRoll };
 
-type Tool = "select" | "ruler" | "template" | "hand" | "fog" | "draw" | "terrain";
+type Tool = "select" | "ruler" | "template" | "hand" | "fog" | "draw" | "terrain" | "pin";
 type DrawKind = "pen" | "line" | "rect" | "ellipse" | "text" | "erase";
 type Drawing = {
   id: string; scene_id: string; owner: string; layer: "table" | "gm"; kind: Exclude<DrawKind, "erase">;
@@ -311,6 +312,15 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   const pan = useRef<{ sx: number; sy: number; ox: number; oy: number; moved: boolean; button: number; shift: boolean } | null>(null);
   const box = useRef<{ a: Pt; b: Pt } | null>(null);
   const hover = useRef<string | null>(null);
+  // phase 5x: pins on this scene (tabletop_pins decides what a player gets), the one open, the one under
+  // the pointer, and the GM's token notes (which tokens have one, and whose editor is open)
+  const [pins, setPins] = useState<Pin[]>([]);
+  const pinsRef = useRef<Pin[]>([]);
+  const [openPin, setOpenPin] = useState<string | null>(null);
+  const hoverPin = useRef<string | null>(null);
+  const loadPinsRef = useRef<() => void>(() => {});
+  const [notesFor, setNotesFor] = useState<string | null>(null);
+  const noteIds = useRef<Set<string>>(new Set());
   const space = useRef(false);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const frame = useRef<number | null>(null);
@@ -520,6 +530,16 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     camRef.current = fitCamera(r.width, r.height, base.width, base.height);
     requestDraw();
   }, [requestDraw]);
+
+  // phase 5x: the pin under a point in squares (its head sits above the point it marks)
+  const pinAt = (sq: Pt): Pin | null => {
+    const r = Math.max(0.2, 7 / (camRef.current.s * cellRef.current));
+    for (let i = pinsRef.current.length - 1; i >= 0; i--) {
+      const pn = pinsRef.current[i];
+      if (Math.hypot(sq.x - pn.x, sq.y - (pn.y - r * 1.6)) <= r * 1.15 || Math.hypot(sq.x - pn.x, sq.y - pn.y) <= r * 0.5) return pn;
+    }
+    return null;
+  };
 
   const tokenAt = useCallback((w: Pt): Token | null => {
     const cell = cellRef.current, list = [...tokensRef.current.values()];
@@ -804,6 +824,14 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
         ctx.fillStyle = "#f2e6c9"; ctx.textBaseline = "middle"; ctx.fillText(txt, ax + aw + fs * 0.15, ay + fs * 0.05);
         ctx.restore();
       }
+      // phase 5x: the GM's own note on this token, a small page at the bottom right (the GM only)
+      if (noteIds.current.has(t.id) && stateRef.current?.role === "gm") {
+        const g = Math.max(7, cell * 0.17), gx = cx + rad * 0.55, gy = cy + rad * 0.45;
+        ctx.save(); ctx.fillStyle = "#f2e6c9"; ctx.strokeStyle = "rgba(20,16,12,0.95)"; ctx.lineWidth = Math.max(1, g * 0.12);
+        ctx.beginPath(); ctx.rect(gx, gy, g * 0.8, g); ctx.fill(); ctx.stroke();
+        ctx.beginPath(); for (let i = 1; i <= 3; i++) { ctx.moveTo(gx + g * 0.16, gy + g * 0.24 * i); ctx.lineTo(gx + g * 0.64, gy + g * 0.24 * i); } ctx.stroke();
+        ctx.restore();
+      }
       if (sel.has(t.id)) {
         ctx.save(); ctx.lineWidth = Math.max(2, 3 / cam.s); ctx.strokeStyle = SELECT; ctx.setLineDash([6 / cam.s, 4 / cam.s]);
         ctx.beginPath(); ctx.arc(cx, cy, rad + Math.max(4, cell * 0.12), 0, Math.PI * 2); ctx.stroke(); ctx.restore();
@@ -927,6 +955,24 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
       ctx.restore();
     }
 
+    // phase 5x: pins, over the tokens (a pin for players only is dashed and faint for the GM)
+    for (const pn of pinsRef.current) {
+      const r = Math.max(cell * 0.2, 7 / cam.s), px = pn.x * cell, py = pn.y * cell, hy = py - r * 1.6;
+      ctx.save(); ctx.globalAlpha = pn.playersSee ? 1 : 0.6;
+      ctx.fillStyle = pn.color; ctx.strokeStyle = "rgba(20,16,12,0.95)"; ctx.lineWidth = Math.max(1.5, r * 0.18);
+      if (!pn.playersSee) ctx.setLineDash([r * 0.4, r * 0.3]);
+      ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(px - r * 0.62, hy + r * 0.45); ctx.arc(px, hy, r, Math.PI * 0.78, Math.PI * 0.22); ctx.closePath();
+      ctx.fill(); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = "rgba(20,16,12,0.85)"; ctx.beginPath(); ctx.arc(px, hy, r * 0.38, 0, Math.PI * 2); ctx.fill();
+      if (hoverPin.current === pn.id || openPin === pn.id) {
+        const fs = Math.max(11, 13 / cam.s), text = pn.label + (stateRef.current?.role === "gm" && !pn.playersSee ? " (GM only)" : "");
+        ctx.font = `600 ${fs}px system-ui, sans-serif`; const w = ctx.measureText(text).width + fs;
+        ctx.globalAlpha = 1; ctx.fillStyle = "rgba(20,16,12,0.9)"; ctx.fillRect(px - w / 2, hy - r - fs * 1.7, w, fs * 1.4);
+        ctx.fillStyle = "#f2e6c9"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(text, px, hy - r - fs);
+      }
+      ctx.restore();
+    }
+
     // rulers: mine, then everyone else's
     const drawRuler = (ru: Ruler) => {
       let alpha = 1;
@@ -1026,6 +1072,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     applyTokens(st.tokens);
     // darkvision from the character sheets behind the tokens (a player can read only their own)
     await refreshSheetDv(st.tokens ?? []);
+    loadPinsRef.current();
     templatesRef.current = new Map();
     if (st.scene) {
       const { data: tpls } = await supabase.from("vtt_templates").select("*").eq("scene_id", st.scene.id);
@@ -1378,6 +1425,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
       .on("postgres_changes", { event: "*", schema: "public", table: "vtt_scene_players" }, () => { void load(); })
       .on("broadcast", { event: "handout" }, ({ payload }) => { onHandoutRef.current(payload as { id: string; characters: string[] | null }); })
       .on("broadcast", { event: "handout-gone" }, () => { void loadHandoutsRef.current(); })
+      .on("broadcast", { event: "pins" }, () => { loadPinsRef.current(); })
       .on("broadcast", { event: "tpl" }, ({ payload }) => {
         const r = payload as { by: string; color: string; geom: TemplateGeom; done: boolean; placed?: boolean };
         if (r.placed) remoteTpl.current.delete(r.by);
@@ -1674,6 +1722,8 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
       return;
     }
     if (e.button !== 0) return;
+    if (tool === "pin" && st.role === "gm") { void addPin(sq); return; }
+    if (tool === "select") { const pn = pinAt(sq); if (pn) { setOpenPin(pn.id); return; } }
     if (tool === "fog" && st.role === "gm") { fogClick(sq, fogMode); return; }
     if (tool === "terrain" && st.role === "gm") { terrainDown(sq); return; }
     if (tool === "draw") { drawDown(sq, e.altKey); return; }
@@ -1824,8 +1874,10 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     if (box.current) { box.current.b = { x: sq.x * cellRef.current, y: sq.y * cellRef.current }; requestDraw(); return; }
     const h = tokenAt({ x: sq.x * cellRef.current, y: sq.y * cellRef.current })?.id ?? null;
     if (h !== hover.current) { hover.current = h; requestDraw(); }
+    const hp = pinAt(sq)?.id ?? null;
+    if (hp !== hoverPin.current) { hoverPin.current = hp; requestDraw(); }
     const cv = canvasRef.current;
-    if (cv && tool === "select") cv.style.cursor = !h && doorUnder(sq) ? "pointer" : "default";
+    if (cv && tool === "select") cv.style.cursor = hp || (!h && doorUnder(sq)) ? "pointer" : "default";
   };
 
   const onUp = (e: React.PointerEvent) => {
@@ -1978,7 +2030,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     }
     setMarkerBusy(false);
   }, [supabase, updateTokens, requestDraw]);
-  useEffect(() => { setMarkerOpen(false); }, [selected]);
+  useEffect(() => { setMarkerOpen(false); setNotesFor(null); }, [selected]);
 
   // phase 5w: height off the ground through tabletop_set_token_elevation (p127): the GM any token, a
   // player their own. It shows at once here; the token's Realtime update brings it to everyone else.
@@ -2224,6 +2276,39 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
       await loadHandouts();
     } finally { setHoBusy(false); }
   };
+  // ---------------------------------------------------------------------------------------------------
+  // pins and token notes (phase 5x, p128)
+  const loadPins = useCallback(async () => {
+    const st = stateRef.current, sc = st?.scene;
+    if (!sc) { pinsRef.current = []; setPins([]); requestDraw(); return; }
+    const { data, error: er } = await supabase.rpc("tabletop_pins", { p_scene: sc.id });
+    if (er) { if (!/tabletop_pins/.test(er.message)) setChatErr(`Could not read the pins: ${er.message}`); return; }
+    pinsRef.current = (data as Pin[] | null) ?? []; setPins(pinsRef.current); requestDraw();
+    if (st?.role === "gm") {
+      const { data: nd } = await supabase.from("vtt_token_notes").select("token_id").eq("campaign_id", campaignId);
+      noteIds.current = new Set(((nd ?? []) as { token_id: string }[]).map((r) => r.token_id)); requestDraw();
+    }
+  }, [supabase, campaignId, requestDraw]);
+  loadPinsRef.current = () => { void loadPins(); };
+  const addPin = async (sq: Pt) => {
+    const sc = stateRef.current?.scene; if (!sc) return;
+    const { data, error: er } = await supabase.from("vtt_pins").insert({ campaign_id: campaignId, scene_id: sc.id, x: Math.round(sq.x * 100) / 100, y: Math.round(sq.y * 100) / 100, label: "Pin" }).select("id").single();
+    if (er || !data) { setChatErr(/vtt_pins/.test(er?.message ?? "") ? "Pins are not set up yet (the p128 migration)." : `Could not add the pin: ${er?.message ?? "no row"}`); return; }
+    await loadPins(); setOpenPin((data as { id: string }).id); send("pins", {});
+  };
+  const loadEntries = useCallback(() => {
+    if (hoEntries !== null) return;
+    void supabase.from("entries").select("id, title, type, visibility").eq("campaign_id", campaignId).order("title").then(({ data, error: er }) => {
+      if (er) { setChatErr(`Could not read the wiki: ${er.message}`); setHoEntries([]); return; }
+      setHoEntries((data ?? []) as EntryOption[]);
+    });
+  }, [hoEntries, supabase, campaignId]);
+  const readPin = async (pn: Pin) => {
+    const { data, error: er } = await supabase.rpc("tabletop_pin_entry", { p_pin: pn.id });
+    if (er || !data) { setChatErr(/nothing to read/.test(er?.message ?? "") ? "There is nothing you can read there." : `Could not open it: ${er?.message ?? "no entry"}`); return; }
+    setOpenHandout(data as Handout);
+  };
+
   const hideHandout = async (id: string) => {
     const { error: er } = await supabase.rpc("tabletop_hide_handout", { p_handout: id });
     if (er) { setChatErr(`Could not hide it: ${er.message}`); return; }
@@ -2501,6 +2586,11 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 20l5-8 4 5 3-4 6 7z M4 9l4-4 M9 9l4-4 M14 9l4-4"/></svg>Terrain
             </button>
           )}
+          {isGm && (
+            <button type="button" title="Pin: click the map to drop a pin with a label, your own note and a wiki entry to open. Click a pin with Select to open it." onClick={() => setTool("pin")} style={railBtn(tool === "pin")}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s7-7.5 7-13a7 7 0 1 0-14 0c0 5.5 7 13 7 13z M12 11.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z"/></svg>Pin
+            </button>
+          )}
           <button type="button" title="Pan (or hold Space, or drag with the right mouse button)" onClick={() => setTool("hand")} style={railBtn(tool === "hand")}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2v20 M2 12h20 M12 2l-3 3 M12 2l3 3 M12 22l-3-3 M12 22l3-3 M2 12l3-3 M2 12l3 3 M22 12l-3-3 M22 12l-3 3"/></svg>Pan
           </button>
@@ -2621,6 +2711,15 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
               ) : <span style={{ color: C.muted }}>placed by someone else</span>}
             </div>
           )}
+          {/* phase 5x: the open pin */}
+          {scene && openPin && pins.find((x) => x.id === openPin) && (
+            <div style={{ position: "absolute", top: 56, left: "50%", transform: "translateX(-50%)", zIndex: 6 }}>
+              <PinCard key={openPin} pin={pins.find((x) => x.id === openPin)!} isGm={isGm} campaignId={campaignId} supabase={supabase}
+                entries={hoEntries as EntryOption[] | null} onNeedEntries={loadEntries}
+                onSaved={(e) => { if (e) { setChatErr(e); return; } void loadPins(); send("pins", {}); }}
+                onRead={(pn) => void readPin(pn)} onClose={() => setOpenPin(null)} />
+            </div>
+          )}
           {scene && tool === "select" && selected.length === 1 && tokensRef.current.get(selected[0]) && (() => {
             const tk = tokensRef.current.get(selected[0])!;
             const list = [...effectsRef.current.values()].filter((f) => f.token_id === tk.id);
@@ -2653,6 +2752,19 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                   </span>
                 )}
                 {(isGm || tk.mine) && <button type="button" onClick={() => setMakerFor(tk.id)} style={small}>Token maker</button>}
+                {isGm && (
+                  <button type="button" aria-expanded={notesFor === tk.id} onClick={() => setNotesFor((v) => (v === tk.id ? null : tk.id))} title="Your private note on this token; players never see it"
+                    style={{ ...small, borderColor: notesFor === tk.id ? C.sun : C.line, color: notesFor === tk.id ? C.sun : C.text }}>
+                    Notes{noteIds.current.has(tk.id) ? " (1)" : ""}
+                  </button>
+                )}
+                {isGm && notesFor === tk.id && (
+                  <div style={{ position: "absolute", bottom: "calc(100% + 8px)", left: "50%", transform: "translateX(-50%)" }}>
+                    <TokenNotes tokenId={tk.id} tokenName={tk.name} campaignId={campaignId} supabase={supabase}
+                      onChange={(has) => { if (has) noteIds.current.add(tk.id); else noteIds.current.delete(tk.id); setTick((v) => v + 1); requestDraw(); }}
+                      onClose={() => setNotesFor(null)} />
+                  </div>
+                )}
                 {(isGm || tk.mine) && (
                   <button type="button" aria-expanded={markerOpen} onClick={() => setMarkerOpen((v) => !v)} style={{ ...small, borderColor: markerOpen ? C.sun : C.line, color: markerOpen ? C.sun : C.text }}>
                     Markers{tokenMarkers(tk.style).length ? ` (${tokenMarkers(tk.style).length})` : ""}
