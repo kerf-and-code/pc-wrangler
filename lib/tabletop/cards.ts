@@ -3,6 +3,8 @@
 // Phase 6a (p130): the cards in a new deck, and how a card reads. A deck is either a standard deck of
 // playing cards (52, plus two jokers if wanted) or the GM's own cards, one per line: "Name | text".
 // The server keeps every card and where it is; these only build a new deck and name cards.
+// Phase 6d (p133): a card can have a picture; nameFromFile names a card after its picture's file, so a
+// GM can make a deck from a folder of pictures.
 
 export type Suit = "hearts" | "diamonds" | "clubs" | "spades" | "joker";
 export type CardFace = { name: string; body: string; suit: Suit | null; rank: string | null };
@@ -60,3 +62,13 @@ function cryptoInt(n: number): number {
   do { crypto.getRandomValues(buf); x = buf[0]; } while (x >= lim);
   return x % n;
 }
+
+/** A card's name from its picture's file name: "03_the-high_priestess.png" is "the high priestess". */
+export function nameFromFile(fileName: string): string {
+  const base = fileName.replace(/\.[A-Za-z0-9]{1,5}$/, "").replace(/^\d+[\s._-]+(?=\D)/, "").replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim();
+  return (base || "Card").slice(0, 80);
+}
+
+/** How card names are matched to picture files: case, hyphens, underscores, extra spaces and a leading
+ *  "the", "a" or "an" ignored, so tower.png finds The Tower. */
+export const cardKey = (name: string) => name.toLowerCase().replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim().replace(/^(the|a|an) (?=\S)/, "");

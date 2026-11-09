@@ -43,6 +43,8 @@ import DiceTray, { diceColor, useDiceSetting, type DiceTrayApi, type TrayDie } f
 import CardsPanel, { useTableCards, type Seat } from "@/components/cards-panel";
 import AddonsPanel from "@/components/addons-panel";
 import { floorError, onConnector, type Floor } from "@/lib/tabletop/floors";
+import { clearPictures, pictureProblem, uploadPicture } from "@/lib/tabletop/table-files";
+import { nameFromFile } from "@/lib/tabletop/cards";
 import { AttackForm, EconomyBar, MarkerChips, MarkerPicker, PlayerEntryControls, SaveBanner, TurnUsed, isMyTurn, type FightEntry, type PendingSave } from "@/components/fight-controls";
 
 // The tabletop, phase 1 (2026-11-06). One page for the GM and the players; tabletop_state (p105)
@@ -88,6 +90,7 @@ import { AttackForm, EconomyBar, MarkerChips, MarkerPicker, PlayerEntryControls,
 //          ellipse and text; each person erases their own, the GM anything, and the GM can draw on a
 //          GM-only layer players never receive. Handouts are wiki entries the GM shows from the table
 //          (Handouts tab): they pop up for the players they are shown to and stay in their Codex.
+//          Phase 6d (p133): a handout can also be a picture the GM uploads, kept private until shown.
 //          Shift + double-click a token opens its sheet. The GM can upload a map image from a module,
 //          line its grid up with the table's, and put it on the table as a scene (components/map-upload).
 // Phase 4e: animated effects (fire, cold, acid, lightning, poison, darkness, fog, radiant, necrotic)
@@ -265,6 +268,9 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   const [hoPick, setHoPick] = useState("");
   const [hoTo, setHoTo] = useState<string[] | null>(null);       // character ids, or null for everyone
   const [hoBusy, setHoBusy] = useState(false);
+  const [hoPic, setHoPic] = useState<{ file: File; url: string } | null>(null);   // phase 6d: a picture handout
+  const [hoPicTitle, setHoPicTitle] = useState("");
+  const [hoPicNote, setHoPicNote] = useState("");
   const [tplEffect, setTplEffect] = useState<EffectKind | "">("");
   const [fxKind, setFxKind] = useState<EffectKind>("fire");
   const [fxRadius, setFxRadius] = useState(0);
@@ -2419,10 +2425,42 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   };
 
   const hideHandout = async (id: string) => {
+    const picturePath = handouts.find((h) => h.id === id)?.picturePath ?? null;
     const { error: er } = await supabase.rpc("tabletop_hide_handout", { p_handout: id });
     if (er) { setChatErr(`Could not hide it: ${er.message}`); return; }
     send("handout-gone", { id });
     await loadHandouts();
+    // a picture nobody is shown any more is removed (the server keeps it if another handout uses it)
+    if (picturePath) void clearPictures(campaignId, [picturePath]);
+  };
+  // phase 6d: show a picture the GM uploads now, to the players picked above
+  const pickHandoutPicture = (f: File | null) => {
+    if (hoPic) URL.revokeObjectURL(hoPic.url);
+    if (!f) { setHoPic(null); return; }
+    const bad = pictureProblem(f);
+    if (bad) { setHoPic(null); setChatErr(bad); return; }
+    setChatErr(null); setHoPic({ file: f, url: URL.createObjectURL(f) });
+    if (!hoPicTitle.trim()) setHoPicTitle(nameFromFile(f.name));
+  };
+  const showPicture = async () => {
+    if (!hoPic) return;
+    setHoBusy(true);
+    try {
+      const up = await uploadPicture(supabase, campaignId, "handouts", hoPic.file);
+      if ("error" in up) { setChatErr(up.error); return; }
+      const { data, error: er } = await supabase.rpc("tabletop_show_image_handout", {
+        p_campaign: campaignId, p_title: hoPicTitle.trim() || nameFromFile(hoPic.file.name), p_path: up.path, p_note: hoPicNote.trim() || null, p_characters: hoTo,
+      });
+      if (er) {
+        void clearPictures(campaignId, [up.path]);
+        setChatErr(/no player characters/.test(er.message) ? "There are no player characters to show it to." : /tabletop_show_image_handout/.test(er.message) ? "Picture handouts are not set up yet (the p133 migration)." : `Could not show it: ${er.message}`);
+        return;
+      }
+      const r = data as { id: string; characters: string[] };
+      send("handout", { id: r.id, characters: hoTo === null ? null : r.characters });
+      URL.revokeObjectURL(hoPic.url); setHoPic(null); setHoPicTitle(""); setHoPicNote(""); setChatErr(null);
+      await loadHandouts();
+    } finally { setHoBusy(false); }
   };
 
   // ---------------------------------------------------------------------------------------------------
@@ -3511,7 +3549,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
               {isGm && (
                 <>
                   <div style={{ fontWeight: 600, fontSize: 13 }}>Show a handout</div>
-                  <p style={{ color: C.muted, fontSize: 12, margin: "6px 0" }}>A handout is a wiki entry. It pops up for the players you pick and stays in their Codex.</p>
+                  <p style={{ color: C.muted, fontSize: 12, margin: "6px 0" }}>A handout is a wiki entry or a picture. It pops up for the players you pick. A wiki entry stays in their Codex; a picture stays here in their Handouts.</p>
                   <input aria-label="Find an entry" value={hoQuery} onChange={(e) => setHoQuery(e.target.value.slice(0, 60))} placeholder="Find an entry…" style={field} />
                   <div style={{ maxHeight: 180, overflowY: "auto", marginTop: 6, border: `1px solid ${C.line}`, borderRadius: 7 }} role="listbox" aria-label="Wiki entries">
                     {hoEntries === null && <p style={{ color: C.muted, fontSize: 12, margin: 8 }}>Loading the wiki…</p>}
@@ -3535,6 +3573,27 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                     {hoBusy ? "Showing…" : hoTo === null ? "Show it to everyone" : `Show it to ${hoTo.length}`}
                   </button>
                   <a href="/gm/codex" target="_blank" rel="noopener" style={{ display: "block", marginTop: 6, fontSize: 12, color: C.muted }}>Write a new entry in the Codex</a>
+
+                  <div style={{ fontWeight: 600, fontSize: 13, marginTop: 16 }}>Or show a picture</div>
+                  <p style={{ color: C.muted, fontSize: 12, margin: "6px 0" }}>A letter, a wanted poster, a scrap of map. It goes to the players picked above, and nobody else can open it.</p>
+                  <label style={{ ...small, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "8px 0", cursor: "pointer" }}>
+                    {hoPic ? "Choose another picture" : "Choose a picture"}
+                    <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={(e) => { pickHandoutPicture(e.target.files?.[0] ?? null); e.target.value = ""; }} style={{ display: "none" }} />
+                  </label>
+                  {hoPic && (
+                    <>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={hoPic.url} alt="" style={{ display: "block", width: "100%", maxHeight: 180, objectFit: "contain", marginTop: 8, borderRadius: 7, border: `1px solid ${C.line}`, background: "#000" }} />
+                      <input aria-label="Title of the picture" value={hoPicTitle} maxLength={80} onChange={(e) => setHoPicTitle(e.target.value)} placeholder="Title" style={{ ...field, marginTop: 8 }} />
+                      <textarea aria-label="Caption" value={hoPicNote} maxLength={600} rows={2} onChange={(e) => setHoPicNote(e.target.value)} placeholder="A caption the players see with it (optional)" style={{ ...field, marginTop: 6, resize: "vertical" }} />
+                      <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
+                        <button type="button" disabled={hoBusy || !hoPicTitle.trim()} onClick={() => void showPicture()} style={{ ...small, flex: 1, background: C.sun, color: "#1b1712", border: "none", fontWeight: 600, padding: "8px 0" }}>
+                          {hoBusy ? "Showing…" : hoTo === null ? "Show the picture to everyone" : `Show the picture to ${hoTo.length}`}
+                        </button>
+                        <button type="button" disabled={hoBusy} onClick={() => pickHandoutPicture(null)} style={small}>Cancel</button>
+                      </div>
+                    </>
+                  )}
                 </>
               )}
               <div style={{ fontWeight: 600, fontSize: 13, marginTop: isGm ? 18 : 0 }}>{isGm ? "Shown at this table" : "Handouts"}</div>
@@ -3547,7 +3606,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                       <span style={{ display: "block", fontSize: 11, color: C.muted }}>{isGm ? `to ${h.shownTo ? h.shownTo.join(", ") : "everyone"}, ` : ""}{new Date(h.shownAt).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span>
                     </button>
                     {isGm && <button type="button" onClick={() => send("handout", { id: h.id, characters: null })} title="Pop it up again for the players it was shown to" style={{ ...small, padding: "3px 8px" }}>Again</button>}
-                    {isGm && <button type="button" onClick={() => void hideHandout(h.id)} title="Take it back: the players lose what this showing revealed" style={{ ...small, padding: "3px 8px", color: "#e07a70" }}>Hide</button>}
+                    {isGm && <button type="button" onClick={() => void hideHandout(h.id)} title={h.picture ? "Take it back: the players can no longer open the picture" : "Take it back: the players lose what this showing revealed"} style={{ ...small, padding: "3px 8px", color: "#e07a70" }}>Hide</button>}
                   </div>
                 ))}
               </div>

@@ -6,6 +6,8 @@
 // (tabletop_show_handout, p113), so this draws an entry the way the wiki does in brief: its title, its
 // image, the summary, and the blocks (text, headings, images), or the plain body when the entry has no
 // blocks yet. It pops up when the GM shows it and opens again from the Handouts tab.
+// Phase 6d (p133): a handout can also be a picture the GM uploaded, with a caption; the picture comes
+// through /api/tabletop/table-file, which only answers players it was shown to.
 
 import React, { useEffect, useRef } from "react";
 import { C } from "@/lib/forge-theme";
@@ -16,13 +18,20 @@ export type HandoutBlock =
   | { id?: string; type: "image"; url: string; caption?: string };
 
 export type Handout = {
-  id: string; entryId: string; title: string; type?: string | null; summary?: string | null; body?: string | null;
+  id: string; entryId: string | null; title: string; picture?: string | null; picturePath?: string | null; note?: string | null; type?: string | null; summary?: string | null; body?: string | null;
   blocks?: HandoutBlock[] | null; imageUrl?: string | null; shownAt: string; shownTo?: string[] | null;
 };
 
 export function HandoutBody({ h }: { h: Handout }) {
   const blocks = Array.isArray(h.blocks) ? h.blocks.filter((b) => b && typeof b === "object") : [];
   const serif = "'EB Garamond','Iowan Old Style',Georgia,serif";
+  if (h.picture) return (
+    <div style={{ fontFamily: serif, color: "#ece4d6", fontSize: 17, lineHeight: 1.7 }}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={h.picture} alt={h.title} style={{ display: "block", maxWidth: "100%", maxHeight: "70vh", margin: "0 auto", borderRadius: 8, border: "1px solid #3a332a", objectFit: "contain" }} />
+      {h.note && <p style={{ fontStyle: "italic", color: "#cbbfa6", margin: "12px 0 0", whiteSpace: "pre-wrap" }}>{h.note}</p>}
+    </div>
+  );
   return (
     <div style={{ fontFamily: serif, color: "#ece4d6", fontSize: 17, lineHeight: 1.7 }}>
       {h.imageUrl && (
@@ -52,7 +61,7 @@ export default function HandoutView({ h, onClose }: { h: Handout; onClose: () =>
     <div role="dialog" aria-modal="true" aria-label={`Handout: ${h.title}`} onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
       style={{ position: "fixed", inset: 0, background: "rgba(8,6,4,0.72)", display: "grid", placeItems: "center", zIndex: 60, padding: 16 }}>
-      <div style={{ background: "#1f1a15", border: "1px solid #3a332a", borderRadius: 12, width: "min(680px, 100%)", maxHeight: "100%", overflow: "auto", padding: "18px 22px" }}>
+      <div style={{ background: "#1f1a15", border: "1px solid #3a332a", borderRadius: 12, width: h.picture ? "min(960px, 100%)" : "min(680px, 100%)", maxHeight: "100%", overflow: "auto", padding: "18px 22px" }}>
         <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 10 }}>
           <span style={{ fontFamily: "'IBM Plex Mono',ui-monospace,monospace", fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", color: "#8a7038" }}>Handout</span>
           <span style={{ flex: 1 }} />

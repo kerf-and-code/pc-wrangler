@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { MAX_CARDS, isRed, parseCustomDeck, shuffled, standardDeck } from "@/lib/tabletop/cards";
+import { MAX_CARDS, cardKey, isRed, nameFromFile, parseCustomDeck, shuffled, standardDeck } from "@/lib/tabletop/cards";
 
 // Phase 6a: building a new deck.
 describe("standard deck", () => {
@@ -47,5 +47,24 @@ describe("shuffle", () => {
     const counts = [0, 0, 0, 0];
     for (let k = 0; k < 40000; k++) counts[shuffled([0, 1, 2, 3], rand).indexOf(0)]++;
     for (const c of counts) expect(Math.abs(c - 10000)).toBeLessThan(400);
+  });
+});
+
+// Phase 6d: cards named after their picture files, and matched to lines of text.
+describe("cards from pictures", () => {
+  it("names a card after its file", () => {
+    expect(nameFromFile("The Tower.png")).toBe("The Tower");
+    expect(nameFromFile("03_the-high_priestess.webp")).toBe("the high priestess");
+    expect(nameFromFile("12 - Hanged Man.jpg")).toBe("Hanged Man");
+    expect(nameFromFile("2049.png")).toBe("2049");
+    expect(nameFromFile(".png")).toBe("Card");
+    expect(nameFromFile("x".repeat(120) + ".gif").length).toBe(80);
+  });
+  it("matches a picture to its line whatever the case or separators", () => {
+    expect(cardKey("The High Priestess")).toBe(cardKey(nameFromFile("03_the-high_priestess.png")));
+    expect(cardKey("The  Tower ")).toBe("tower");
+    expect(cardKey("The Tower")).not.toBe(cardKey("The Star"));
+    expect(cardKey("The Tower")).toBe(cardKey(nameFromFile("tower.png")));
+    expect(cardKey("Theater")).toBe("theater");
   });
 });
