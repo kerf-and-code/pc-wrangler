@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   title: "Free tabletop RPG tools",
   description:
     "Free, no-login tools for tabletop RPGs: a hex world map generator, an encounter balancer, a party "
-    + "coverage check, a session zero charter, a pacing planner, a player-type quiz, and a D&D class quiz, across D&D 5e, "
+    + "coverage check, a session zero charter, a pacing planner, a player-type quiz, a D&D class quiz, and a token maker, across D&D 5e, "
     + "Pathfinder 2e, Draw Steel and Daggerheart. No account, nothing saved.",
   alternates: { canonical: "/tools" },
 };
@@ -90,6 +90,13 @@ const TOOLS: Tool[] = [
     name: "Dice roller",
     blurb: "A provably-fair roller with per-system modes: advantage, degrees, d100, power rolls, Hope and Fear, d10 pools.",
     systems: "D&D 5e, Pathfinder 2e, Call of Cthulhu, Draw Steel, Daggerheart, d10 pool",
+    status: "live",
+  },
+  {
+    href: "/tools/token-maker",
+    name: "Token maker",
+    blurb: "Remove a picture's background, cut it to a shape, and frame it: class-inspired borders and animated damage-type effects.",
+    systems: "Any system, any virtual tabletop",
     status: "live",
   },
 ];

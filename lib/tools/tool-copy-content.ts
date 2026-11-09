@@ -203,6 +203,37 @@ export const TOOL_COPY: Record<string, ToolCopyProps> = {
     ],
   },
 
+  "token-maker": {
+    heading: "Make a token that looks like your character",
+    intro: [
+      "Take any picture, lift it off its background, cut it to a circle, hexagon, shield or other shape, and put a frame around it. Frames come plain, or themed on a class or subclass: thornvine for a druid, gilded filigree for a paladin, crossed blades for a fighter, moon phases for a Circle of the Moon druid, a lamp and wisps for a genie-sworn paladin.",
+      "Then make it move. Animated effects follow the damage types, so a fire sorcerer's token licks with flame, a tempest cleric's crackles with lightning, a necromancer's trails dark smoke, and a psion's ripples. Add a glow, a pulse, a rainbow, or sparkles on top, and pick your own colours for all of it.",
+      "Everything happens in your browser. Nothing is uploaded, and there is no account.",
+    ],
+    steps: [
+      "Choose, drop or paste a picture.",
+      "Press Remove background, and tidy any edges with the erase and restore brushes.",
+      "Pick a shape, then drag and zoom the picture to frame the face.",
+      "Choose a border design and its colours, an animated effect, and a motion style, or import a border of your own.",
+      "Download the token as a PNG, the picture alone, or a short animated video.",
+    ],
+    systemsHeading: "Using it on your table",
+    systems: [
+      "The PNG has a transparent background, so it drops onto any virtual tabletop or into any character sheet that takes an image. The animated version downloads as a WebM video that loops the effect. In Six Axes the same token maker sits in the tabletop for the GM and for each player, and the frame is drawn live, so the animation plays at the table.",
+    ],
+    faq: [
+      { q: "Is the token maker free?", a: "Yes. It is free, needs no login, and nothing you make is uploaded or stored." },
+      { q: "How does the background removal work?", a: "It reads the colours around the edge of your picture and removes everything connected to them, then softens the cut. It works best on a plain or simple background; the erase and restore brushes handle the rest." },
+      { q: "Can I use my own border?", a: "Yes. Import a square PNG with a transparent middle and it is drawn around your picture, alone or over one of the designs." },
+      { q: "Are the class borders official art?", a: "No. Every design is original Six Axes artwork. The class and subclass names only say what inspired each one." },
+    ],
+    related: [
+      { href: "/tools/dice-roller", label: "Dice roller" },
+      { href: "/tools/dnd-class-quiz", label: "What D&D class should I be?" },
+      { href: "/tools/party-coverage", label: "Party coverage check" },
+    ],
+  },
+
   "session-zero": {
     heading: "Run a session zero worth having",
     intro: [

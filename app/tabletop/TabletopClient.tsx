@@ -26,6 +26,8 @@ import {
 import { econOf, speedNow, cantAct, FRESH_ECON } from "@/lib/combat-effects";
 import { drawMarkerRing, formatMarker, markerText, tokenMarkers, type TokenMarker } from "@/lib/tabletop/markers";
 import { MarkerStylePicker, TokenMarkerPicker, useMarkerStyle } from "@/components/marker-icon";
+import { drawFrame, frameMoves, normFrame, tracePath, type Frame } from "@/lib/tabletop/frames";
+import TokenMaker, { type TokenMakerResult } from "@/components/token-maker";
 import { openTabletop } from "@/lib/tabletop/open";
 import MapUpload from "@/components/map-upload";
 import { EFFECTS, drawEffect, isEffect, seedOf, type EffectKind } from "@/lib/tabletop/effects";
@@ -257,6 +259,8 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   // the marker picker for the selected token (status markers kept on the token, beside the fight's conditions)
   const [markerOpen, setMarkerOpen] = useState(false);
   const [markerBusy, setMarkerBusy] = useState(false);
+  // the token maker, open for one token (picture, shape, border, animated frame)
+  const [makerFor, setMakerFor] = useState<string | null>(null);
   const touches = useRef<Map<number, Pt>>(new Map());
   const pinch = useRef<{ d: number; mid: Pt } | null>(null);
   const longPress = useRef<{ timer: ReturnType<typeof setTimeout>; at: Pt; fired: boolean } | null>(null);
@@ -677,7 +681,8 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
       ctx.save();
       if (t.hidden || t.layer === "gm") ctx.globalAlpha = 0.5;
       ctx.translate(cx, cy); ctx.rotate((t.rot * Math.PI) / 180);
-      ctx.beginPath(); ctx.arc(0, 0, rad, 0, Math.PI * 2);
+      const fr = normFrame(t.style?.frame);
+      if (fr) tracePath(ctx, fr.shape, rad); else { ctx.beginPath(); ctx.arc(0, 0, rad, 0, Math.PI * 2); }
       const im = t.image_url ? imgs.current.get(t.image_url) : undefined;
       if (t.image_url && !im) loadImage(t.image_url);
       if (im && typeof im !== "string") {
@@ -692,6 +697,17 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
         ctx.fillText(initials(t.name), 0, rad * 0.04);
         ctx.rotate((t.rot * Math.PI) / 180);
       }
+      if (fr) {
+        // a frame from the token maker replaces the ring; drawn live so its animation plays
+        drawFrame(ctx, fr, rad, reducedMotion.current ? 0 : now / 1000, (url) => {
+          const fi = imgs.current.get(url);
+          if (!fi) { loadImage(url); return null; }
+          return typeof fi === "string" ? null : fi;
+        });
+        if (frameMoves(fr) && !reducedMotion.current) animating = true;
+        if (t.hidden || t.layer === "gm") { ctx.setLineDash([cell * 0.15, cell * 0.1]); ctx.lineWidth = 2; ctx.strokeStyle = "#f2e6c9"; tracePath(ctx, fr.shape, rad); ctx.stroke(); }
+        ctx.restore();
+      } else {
       const ring = typeof t.style?.ring === "string" ? (t.style.ring as string) : KIND_RING[t.kind];
       const border = (t.style?.border ?? {}) as Border;
       const bw = Math.max(2, cell * BORDER_W[border.width ?? "normal"] * Math.max(1, Math.sqrt(t.size)));
@@ -705,6 +721,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
         ctx.beginPath(); ctx.arc(0, 0, rad + bw * 1.1, 0, Math.PI * 2); ctx.stroke();
       }
       ctx.restore();
+      }
       const en = entryFor(t);
       if (en?.is_turn) {
         animating = true;
@@ -1832,6 +1849,43 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   }, [supabase, updateTokens, requestDraw]);
   useEffect(() => { setMarkerOpen(false); }, [selected]);
 
+  // Saves what the token maker made: uploads the cut-out picture (and an imported border), then sets the
+  // picture and frame through tabletop_set_token_look (p120), which lets the GM change any token and a
+  // player change their own.
+  const saveLook = useCallback(async (tokenId: string, r: TokenMakerResult): Promise<string | null> => {
+    const up = async (blob: Blob, file: string) => {
+      const fd = new FormData(); fd.append("campaignId", campaignId); fd.append("tokenId", tokenId); fd.append("file", blob, file);
+      const res = await fetch("/api/tabletop/token-image", { method: "POST", body: fd });
+      const j = (await res.json().catch(() => ({}))) as { url?: string; error?: string };
+      if (!res.ok || !j.url) throw new Error(j.error || `Upload failed (${res.status}).`);
+      return j.url;
+    };
+    try {
+      const image = await up(r.portrait, "token.png");
+      let frame: Frame | null = r.clearFrame ? null : { ...r.frame };
+      if (frame && r.border) frame = { ...frame, importUrl: await up(r.border, "border.png") };
+      else if (frame?.importUrl?.startsWith("blob:")) frame = { ...frame, importUrl: null };
+      const { error: er } = await supabase.rpc("tabletop_set_token_look", { p_token: tokenId, p_image_url: image, p_frame: frame, p_clear_frame: r.clearFrame });
+      if (er) return `Could not save the token: ${er.message}`;
+      const cur = tokensRef.current.get(tokenId);
+      if (cur) {
+        const style: Record<string, unknown> = { ...cur.style };
+        if (frame) style.frame = frame; else delete style.frame;
+        tokensRef.current.set(tokenId, { ...cur, image_url: image, style });
+      }
+      setTick((v) => v + 1); requestDraw(); setMakerFor(null);
+      return null;
+    } catch (e) {
+      return (e as Error).message;
+    }
+  }, [campaignId, supabase, requestDraw]);
+  useEffect(() => {
+    if (!makerFor) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setMakerFor(null); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [makerFor]);
+
   const deleteTokens = useCallback(async (ids: string[]) => {
     if (!ids.length) return;
     const { error: er } = await supabase.from("vtt_tokens").delete().in("id", ids);
@@ -2390,6 +2444,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                   {[0, 5, 10, 15, 20, 30].map((r) => <option key={r} value={r}>{r ? `${r} ft around` : "On the token"}</option>)}
                 </select>
                 <button type="button" onClick={() => void addTokenEffect(tk.id)} style={small}>Add</button>
+                {(isGm || tk.mine) && <button type="button" onClick={() => setMakerFor(tk.id)} style={small}>Token maker</button>}
                 {(isGm || tk.mine) && (
                   <button type="button" aria-expanded={markerOpen} onClick={() => setMarkerOpen((v) => !v)} style={{ ...small, borderColor: markerOpen ? C.sun : C.line, color: markerOpen ? C.sun : C.text }}>
                     Markers{tokenMarkers(tk.style).length ? ` (${tokenMarkers(tk.style).length})` : ""}
@@ -2731,6 +2786,10 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                       <label style={label}>Image</label>
                       <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" disabled={uploading}
                         onChange={(e) => { const f = e.target.files?.[0]; if (f) void uploadImage(f, (url) => void updateTokens([sel[0].id], { image_url: url })); }} style={{ fontSize: 12, color: C.muted }} />
+                      <div style={{ display: "flex", gap: 6, alignItems: "center", marginTop: 6, flexWrap: "wrap" }}>
+                        <button type="button" onClick={() => setMakerFor(sel[0].id)} style={small}>Open the token maker</button>
+                        <span style={{ fontSize: 11.5, color: C.muted }}>Remove a background, cut a shape, add a border or an animated frame.</span>
+                      </div>
                       <label style={label} htmlFor="tt-ctrl">Also controlled by</label>
                       <select id="tt-ctrl" multiple value={sel[0].controlled_by ?? []} onChange={(e) => void updateTokens([sel[0].id], { controlled_by: [...e.target.selectedOptions].map((o) => o.value) })} style={{ ...field, height: 72 }}>
                         {party.filter((p) => p.character_id).map((p) => <option key={p.character_id!} value={p.profile_id}>{p.name}</option>)}
@@ -2961,6 +3020,21 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
       </div>
       {showUpload && <MapUpload campaignId={campaignId} onClose={() => setShowUpload(false)} onDone={() => { setShowUpload(false); void load().then(() => { fit(); send("refresh", {}); }); }} />}
       {openHandout && <HandoutView h={openHandout} onClose={() => setOpenHandout(null)} />}
+      {makerFor && tokensRef.current.get(makerFor) && (() => {
+        const tk = tokensRef.current.get(makerFor)!;
+        return (
+          <div role="dialog" aria-modal="true" aria-label={`Token maker for ${tk.name}`} style={{ position: "fixed", inset: 0, zIndex: 60, background: "rgba(10,8,6,0.78)", display: "flex", alignItems: "flex-start", justifyContent: "center", overflowY: "auto", padding: "24px 12px" }}>
+            <div style={{ background: C.surface, border: `1px solid ${C.line}`, borderRadius: 12, padding: 18, width: "min(1000px, 100%)", boxSizing: "border-box" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+                <strong style={{ flex: 1, fontSize: 16 }}>Token maker: {tk.name}</strong>
+                <button type="button" onClick={() => setMakerFor(null)} style={small}>Close</button>
+              </div>
+              <TokenMaker mode="app" name={tk.name} initialImage={tk.image_url} initialFrame={tk.style?.frame}
+                onSave={(r) => saveLook(tk.id, r)} onCancel={() => setMakerFor(null)} />
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
