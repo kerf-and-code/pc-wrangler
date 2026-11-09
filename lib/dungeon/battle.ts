@@ -22,7 +22,17 @@ export type PaintOverlay = { url: string; at: string; sig: string; style: string
 // sightWalls (Phase 5j): per level, invisible walls the GM draws over a map (usually an uploaded image,
 // whose painted walls the grid knows nothing about). Each is a straight line [ax, ay, bx, by] in squares
 // from the top-left, at any angle. They block line of sight on the tabletop and are never drawn there.
-export type SightWall = [number, number, number, number];
+// Phase 5v: an optional fifth number is the wall's kind (WALL_KINDS); a plain wall keeps four numbers,
+// so every wall saved before wall types reads as a wall.
+export type WallKind = 0 | 1 | 2 | 3;
+export type SightWall = [number, number, number, number, WallKind?];
+export const WALL_KINDS: { k: WallKind; label: string; hint: string; color: string }[] = [
+  { k: 0, label: "Wall", hint: "Blocks sight and movement.", color: "#d24bd8" },
+  { k: 1, label: "Window", hint: "Blocks movement; tokens see through it. Also bars, low walls, pillars and furniture.", color: "#4bb8d8" },
+  { k: 2, label: "Screen", hint: "Blocks sight; tokens walk through it. Curtains, thick foliage, an illusory wall.", color: "#7fcf7a" },
+  { k: 3, label: "One-way", hint: "Blocks movement, and sight from one side: tokens on the side its ticks point to see through it.", color: "#e6a33c" },
+];
+export const wallKindOf = (w: SightWall): WallKind => (w[4] === 1 || w[4] === 2 || w[4] === 3 ? w[4] : 0);
 export type BattleMeta = { title: string; levelNames: string[]; autoNumber: boolean; showGrid: boolean; ground: number; grid: GridLook; topGrid: { show: boolean; opacity: number }; overlays: (PaintOverlay | null)[]; sightWalls: SightWall[][] };
 export const PAINT_STYLES: { key: string; label: string }[] = [
   { key: "fantasy", label: "Painted fantasy" },
@@ -235,18 +245,20 @@ const STYLE_KEYS = new Set([...PAINT_STYLES.map((x) => x.key), "upload"]);
 export function piecesOverImage(o: PaintOverlay): boolean { return o.piecesOnTop || o.style === "upload"; }
 
 // One level's sight walls from jsonb: finite numbers inside the grid (n squares, at most 200), at least
-// a hundredth of a square long, rounded to a hundredth, and no more than MAX_SIGHT_WALLS.
+// a hundredth of a square long, rounded to a hundredth, and no more than MAX_SIGHT_WALLS. A fifth number
+// is the wall's kind (1 window, 2 screen, 3 one-way); a plain wall is stored with four.
 export function normSightWalls(raw: unknown, n = 200): SightWall[] {
   if (!Array.isArray(raw)) return [];
   const out: SightWall[] = [];
   for (const w of raw) {
     if (out.length >= MAX_SIGHT_WALLS) break;
-    if (!Array.isArray(w) || w.length !== 4) continue;
-    const v = w.map((x) => Number(x));
+    if (!Array.isArray(w) || (w.length !== 4 && w.length !== 5)) continue;
+    const v = w.slice(0, 4).map((x) => Number(x));
     if (!v.every((x) => Number.isFinite(x) && x >= 0 && x <= n)) continue;
-    const r = v.map((x) => Math.round(x * 100) / 100) as SightWall;
+    const r = v.map((x) => Math.round(x * 100) / 100);
     if (Math.hypot(r[2] - r[0], r[3] - r[1]) < 0.01) continue;
-    out.push(r);
+    const k = w.length === 5 ? Number(w[4]) : 0;
+    out.push(k === 1 || k === 2 || k === 3 ? [r[0], r[1], r[2], r[3], k] : [r[0], r[1], r[2], r[3]]);
   }
   return out;
 }

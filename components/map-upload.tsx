@@ -177,9 +177,14 @@ export default function MapUpload({ campaignId, onClose, onDone, dest = { kind: 
     // a Universal VTT file's walls (cyan) and doors (gold), where they will land
     if (imported) {
       const k = cal.px * s;
-      ctx.strokeStyle = "rgba(90,220,255,0.95)"; ctx.lineWidth = 2; ctx.beginPath();
-      for (const [ax, ay, bx, by] of imported.sightWalls) { ctx.moveTo(x0 + ax * k, y0 + ay * k); ctx.lineTo(x0 + bx * k, y0 + by * k); }
-      ctx.stroke();
+      // phase 5v: walls solid, windows and object outlines (feet, not eyes) dashed
+      ctx.strokeStyle = "rgba(90,220,255,0.95)"; ctx.lineWidth = 2;
+      for (const dashed of [false, true]) {
+        ctx.setLineDash(dashed ? [6, 4] : []); ctx.beginPath();
+        for (const [ax, ay, bx, by, kd] of imported.sightWalls) if ((kd === 1) === dashed) { ctx.moveTo(x0 + ax * k, y0 + ay * k); ctx.lineTo(x0 + bx * k, y0 + by * k); }
+        ctx.stroke();
+      }
+      ctx.setLineDash([]);
       ctx.strokeStyle = "#f2c14e"; ctx.lineWidth = 4; ctx.beginPath();
       const nn = importN;
       for (const key of Object.keys(imported.doors)) {
@@ -279,7 +284,7 @@ export default function MapUpload({ campaignId, onClose, onDone, dest = { kind: 
           <>
             {uv ? (
               <p style={{ fontSize: 12.5, color: C.muted, margin: "10px 0 8px" }}>
-                The grid comes from the file. Walls show in blue and doors in gold, where they will be on the table; check they sit on the picture&apos;s walls.
+                The grid comes from the file. Walls show in blue (dashed: windows and furniture, which stop feet but not eyes) and doors in gold, where they will be on the table; check they sit on the picture&apos;s walls.
               </p>
             ) : (
               <p style={{ fontSize: 12.5, color: C.muted, margin: "10px 0 8px" }}>

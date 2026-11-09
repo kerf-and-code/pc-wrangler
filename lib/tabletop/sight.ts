@@ -17,13 +17,34 @@ import { walledAt, type MapShape } from "@/lib/tabletop/fog";
 // each stopped by the nearest wall. No range limit and no light yet: dim light, darkness and darkvision
 // come later.
 
-export type Seg = { ax: number; ay: number; bx: number; by: number };
+// kind (phase 5v): 0 or absent a wall, 1 a window (stops feet, not eyes), 2 a screen (stops eyes, not
+// feet), 3 one-way (stops feet; stops eyes only from behind, see forSight). Grid walls and doors are 0.
+export type Seg = { ax: number; ay: number; bx: number; by: number; kind?: number };
 export type Pt = { x: number; y: number };
 
-// A level's sight walls ([ax, ay, bx, by] in squares, as lib/dungeon/battle normSightWalls keeps them)
-// as segments.
-export function sightWallSegs(walls: [number, number, number, number][]): Seg[] {
-  return walls.map(([ax, ay, bx, by]) => ({ ax, ay, bx, by }));
+// A level's sight walls ([ax, ay, bx, by] and an optional kind, in squares, as lib/dungeon/battle
+// normSightWalls keeps them) as segments.
+export function sightWallSegs(walls: (readonly [number, number, number, number, number?])[]): Seg[] {
+  return walls.map(([ax, ay, bx, by, k]) => (k === 1 || k === 2 || k === 3 ? { ax, ay, bx, by, kind: k } : { ax, ay, bx, by }));
+}
+
+/**
+ * The walls that block sight (and light) for a viewer at p (phase 5v): every kind but windows, and a
+ * one-way wall only when p is behind it. Its front is the side of the normal (-dy, dx) of a to b, where
+ * the map editor draws its ticks; from there it is seen through.
+ */
+export function forSight(segs: Seg[], p: Pt): Seg[] {
+  return segs.filter((s) => {
+    if (s.kind === 1) return false;
+    if (s.kind !== 3) return true;
+    const front = (s.bx - s.ax) * (p.y - s.ay) - (s.by - s.ay) * (p.x - s.ax);
+    return front <= 0;
+  });
+}
+
+/** The walls that block movement (phase 5v): every kind but screens. */
+export function forMove(segs: Seg[]): Seg[] {
+  return segs.filter((s) => s.kind !== 2);
 }
 
 export function wallSegments(m: MapShape, open: Record<string, unknown>, more: Seg[] = []): Seg[] {

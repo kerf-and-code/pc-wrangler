@@ -10,8 +10,8 @@ import {
   type Layout, type RenderInput,
 } from "@/lib/dungeon/classic";
 import {
-  PIECES, MAX_ELEMENTS, MAX_SIGHT_WALLS, PAINT_STYLES, blankMap, fromRow, toRow, fromDungeonRow, resizeMap, newId, levelSig, piecesOverImage,
-  type BattleMap, type BattleMapSummary, type MapKind, type PaintOverlay, type SightWall,
+  PIECES, MAX_ELEMENTS, MAX_SIGHT_WALLS, PAINT_STYLES, WALL_KINDS, blankMap, fromRow, toRow, fromDungeonRow, resizeMap, newId, levelSig, piecesOverImage, wallKindOf,
+  type BattleMap, type BattleMapSummary, type MapKind, type PaintOverlay, type SightWall, type WallKind,
 } from "@/lib/dungeon/battle";
 import TileLibrary from "./TileLibrary";
 import MapUpload, { type UploadDest } from "@/components/map-upload";
@@ -55,7 +55,6 @@ import { openTabletop, tabletopUrl } from "@/lib/tabletop/open";
 
 type Tool = "select" | "place" | "terrain" | "doors" | "walls";
 type Pt = { x: number; y: number };
-const WALL_COLOR = "#d24bd8";
 const WALL_NEAR = 0.3;                     // squares: how close a click must be to a wall end or a wall
 // Distance from point p to the wall w, in squares.
 function wallDist(w: SightWall, p: Pt): number {
@@ -125,6 +124,7 @@ export default function BattleMapCreator({ campaignId }: { campaignId: string })
   const [newKind, setNewKind] = useState<MapKind>("outdoor");
   const [wallMode, setWallMode] = useState<"draw" | "erase">("draw");
   const [wallStart, setWallStart] = useState<Pt | null>(null);   // the open end of the wall being drawn
+  const [wallKind, setWallKind] = useState<WallKind>(0);           // phase 5v: what the next wall is (WALL_KINDS)
   const [upload, setUpload] = useState<UploadDest | null>(null);
   const hoverAlt = useRef(false);
 
@@ -337,26 +337,42 @@ export default function BattleMapCreator({ campaignId }: { campaignId: string })
       const gone = on && wallMode === "erase" && hv ? walls.find((w) => wallDist(w, hv) <= WALL_NEAR) ?? null : null;
       ctx.save(); ctx.lineCap = "round";
       const line = (w: SightWall) => { ctx.beginPath(); ctx.moveTo(gx + w[0] * S, gy + w[1] * S); ctx.lineTo(gx + w[2] * S, gy + w[3] * S); ctx.stroke(); };
+      // phase 5v: each kind in its own colour, a screen dashed, and a one-way wall with ticks on the
+      // side tokens see through it from (the normal (-dy, dx), as lib/tabletop/sight forSight reads it)
+      const colorOf = (w: SightWall) => WALL_KINDS[wallKindOf(w)].color;
+      const ticks = (w: SightWall) => {
+        const dx = w[2] - w[0], dy = w[3] - w[1], len = Math.hypot(dx, dy); if (len < 0.05) return;
+        const nx = -dy / len, ny = dx / len, steps = Math.max(1, Math.round(len / 0.5));
+        ctx.beginPath();
+        for (let i = 0; i < steps; i++) {
+          const t = (i + 0.5) / steps, x = w[0] + dx * t, y = w[1] + dy * t;
+          ctx.moveTo(gx + x * S, gy + y * S); ctx.lineTo(gx + (x + nx * 0.22) * S, gy + (y + ny * 0.22) * S);
+        }
+        ctx.stroke();
+      };
       if (on) {
         ctx.lineWidth = 5; ctx.strokeStyle = "rgba(255,255,255,0.75)"; for (const w of walls) line(w);
-        ctx.lineWidth = 3; ctx.strokeStyle = WALL_COLOR; for (const w of walls) line(w);
-        ctx.fillStyle = WALL_COLOR;
-        for (const w of walls) for (const [x, y] of [[w[0], w[1]], [w[2], w[3]]]) { ctx.beginPath(); ctx.arc(gx + x * S, gy + y * S, 3, 0, Math.PI * 2); ctx.fill(); }
+        ctx.lineWidth = 3;
+        for (const w of walls) { ctx.strokeStyle = colorOf(w); ctx.setLineDash(wallKindOf(w) === 2 ? [7, 5] : []); line(w); }
+        ctx.setLineDash([]); ctx.lineWidth = 2;
+        for (const w of walls) if (wallKindOf(w) === 3) { ctx.strokeStyle = colorOf(w); ticks(w); }
+        for (const w of walls) { ctx.fillStyle = colorOf(w); for (const [x, y] of [[w[0], w[1]], [w[2], w[3]]]) { ctx.beginPath(); ctx.arc(gx + x * S, gy + y * S, 3, 0, Math.PI * 2); ctx.fill(); } }
         if (gone) { ctx.lineWidth = 5; ctx.strokeStyle = "#e0463c"; line(gone); }
       } else {
-        ctx.setLineDash([5, 4]); ctx.lineWidth = 1.5; ctx.strokeStyle = "rgba(210,75,216,0.7)"; for (const w of walls) line(w);
+        ctx.setLineDash([5, 4]); ctx.lineWidth = 1.5; ctx.globalAlpha = 0.7; for (const w of walls) { ctx.strokeStyle = colorOf(w); line(w); }
+        ctx.globalAlpha = 1;
       }
       if (on && wallMode === "draw" && wallStart) {
         const to = hv ? snapWall(m, hv, hoverAlt.current) : null;
-        ctx.setLineDash([6, 4]); ctx.lineWidth = 2.5; ctx.strokeStyle = WALL_COLOR;
-        if (to) line([wallStart.x, wallStart.y, to.x, to.y]);
+        ctx.setLineDash([6, 4]); ctx.lineWidth = 2.5; ctx.strokeStyle = WALL_KINDS[wallKind].color;
+        if (to) { line([wallStart.x, wallStart.y, to.x, to.y]); if (wallKind === 3) { ctx.setLineDash([]); ctx.lineWidth = 2; ticks([wallStart.x, wallStart.y, to.x, to.y]); } }
         ctx.setLineDash([]); ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(gx + wallStart.x * S, gy + wallStart.y * S, 4, 0, Math.PI * 2); ctx.fill();
       }
       ctx.restore();
     }
     if (tool === "walls" && wallMode === "draw" && hv && !wallStart) {
       const to = snapWall(m, hv, hoverAlt.current);
-      ctx.save(); ctx.fillStyle = WALL_COLOR; ctx.beginPath(); ctx.arc(gx + to.x * S, gy + to.y * S, 4, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+      ctx.save(); ctx.fillStyle = WALL_KINDS[wallKind].color; ctx.beginPath(); ctx.arc(gx + to.x * S, gy + to.y * S, 4, 0, Math.PI * 2); ctx.fill(); ctx.restore();
     }
     if (tool === "place" && hv && !drag.current) {
       const def = PIECES.find((p) => p.key === piece);
@@ -375,7 +391,7 @@ export default function BattleMapCreator({ campaignId }: { campaignId: string })
       ctx.save(); ctx.lineWidth = 1.5; ctx.strokeStyle = SELECT_COLOR; ctx.strokeRect(gx + c * S, gy + r * S, brushSize * S, brushSize * S); ctx.restore();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [level, selId, selDoor, tool, piece, labelText, paintMode, brushSize, wallMode, wallStart]);
+  }, [level, selId, selDoor, tool, piece, labelText, paintMode, brushSize, wallMode, wallStart, wallKind]);
 
   const renderBase = useCallback(() => {
     const m = work.current ?? docRef.current; if (!m) return;
@@ -402,7 +418,7 @@ export default function BattleMapCreator({ campaignId }: { campaignId: string })
   }, []);
 
   useEffect(() => { request(true); }, [doc, level, imgTick, tileColors, creating, request]);
-  useEffect(() => { request(false); }, [selId, selDoor, tool, piece, labelText, paintMode, brushSize, wallMode, wallStart, request]);
+  useEffect(() => { request(false); }, [selId, selDoor, tool, piece, labelText, paintMode, brushSize, wallMode, wallStart, wallKind, request]);
   useEffect(() => () => { if (raf.current.id !== null) cancelAnimationFrame(raf.current.id); }, []);
 
   // ---- pointer ----
@@ -544,7 +560,7 @@ export default function BattleMapCreator({ campaignId }: { campaignId: string })
     if (Math.hypot(q.x - wallStart.x, q.y - wallStart.y) < 0.01) { setWallStart(null); return; }   // the same point again ends it
     if (m.meta.sightWalls[level].length >= MAX_SIGHT_WALLS) { setMsg(`A level holds up to ${MAX_SIGHT_WALLS} sight walls. Join long straight runs into one wall.`); setWallStart(null); return; }
     setMsg(null);
-    mutate((d) => { d.meta.sightWalls[level].push([wallStart.x, wallStart.y, q.x, q.y]); });
+    mutate((d) => { d.meta.sightWalls[level].push(wallKind ? [wallStart.x, wallStart.y, q.x, q.y, wallKind] : [wallStart.x, wallStart.y, q.x, q.y]); });
     setWallStart(q);
   };
 
@@ -905,6 +921,15 @@ export default function BattleMapCreator({ campaignId }: { campaignId: string })
                 <p style={{ color: C.muted, fontSize: 12, margin: 0 }}>
                   Invisible walls that block line of sight on the tabletop. Trace the walls of an uploaded map so tokens cannot see through them. Players never see these lines. Doors still go on the grid with the Doors tool.
                 </p>
+                <div role="group" aria-label="Kind of wall" style={{ display: "flex", gap: 4, flexWrap: "wrap", marginTop: 10 }}>
+                  {WALL_KINDS.map((k) => (
+                    <button key={k.k} type="button" aria-pressed={wallKind === k.k} onClick={() => { setWallKind(k.k); setWallMode("draw"); }}
+                      style={{ ...seg(wallKind === k.k), flex: "1 1 40%", display: "flex", gap: 6, alignItems: "center", justifyContent: "center" }}>
+                      <span aria-hidden style={{ width: 14, height: 3, background: k.color, borderRadius: 2, display: "inline-block" }} />{k.label}
+                    </button>
+                  ))}
+                </div>
+                <p style={{ color: C.muted, fontSize: 11.5, margin: "6px 0 0" }}>{WALL_KINDS[wallKind].hint}{wallKind === 3 ? " Draw it so the ticks face the side that should see out." : ""}</p>
                 <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
                   <button type="button" onClick={() => { setWallMode("draw"); }} style={seg(wallMode === "draw")}>Draw</button>
                   <button type="button" onClick={() => { setWallMode("erase"); setWallStart(null); }} style={seg(wallMode === "erase")}>Erase</button>

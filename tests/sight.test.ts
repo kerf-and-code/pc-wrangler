@@ -1,7 +1,8 @@
 // tests/sight.test.ts: walls for movement (lib/tabletop/sight.ts moveStop over wallSegments). The
 // server repeats this test in p122 (tabletop_wall_blocks), checked to agree on 4,596 random moves.
 import { describe, expect, it } from "vitest";
-import { moveStop, sightWallSegs, wallSegments } from "@/lib/tabletop/sight";
+import { forMove, forSight, moveStop, sightWallSegs, visibility, wallSegments } from "@/lib/tabletop/sight";
+import { normSightWalls } from "@/lib/dungeon/battle";
 import type { MapShape } from "@/lib/tabletop/fog";
 
 // a 10 by 10 indoor map with one room painted at columns 1..4, rows 1..4
@@ -33,5 +34,32 @@ describe("moveStop", () => {
   });
   it("is blocked by the map's edge", () => {
     expect(moveStop({ x: 0.5, y: 6.5 }, { x: -1.5, y: 6.5 }, wallSegments(room(), {})).blocked).toBe(true);
+  });
+});
+
+// phase 5v: wall types. One wall of each kind across an open 10 by 10 map, at x = 5 from y = 0 to 10.
+describe("wall types", () => {
+  const open = (): MapShape => ({ n: 10, grid: new Array(100).fill(0), custom: {}, doors: {}, outdoor: false, walls: [] });
+  const segsOf = (k?: 1 | 2 | 3) => wallSegments(open(), {}, sightWallSegs([k ? [5, 0, 5, 10, k] : [5, 0, 5, 10]]));
+  const left = { x: 2.5, y: 5.5 }, right = { x: 7.5, y: 5.5 };
+  const sees = (segs: ReturnType<typeof segsOf>, from: typeof left) => {
+    const poly = visibility(from, forSight(segs, from));
+    return Math.max(...poly.map((p) => p.x)) > 6;           // the sight polygon reaches past the wall
+  };
+  const walks = (segs: ReturnType<typeof segsOf>) => !moveStop(left, right, forMove(segs)).blocked;
+
+  it("a wall stops sight and feet", () => { expect([sees(segsOf(), left), walks(segsOf())]).toEqual([false, false]); });
+  it("a window lets sight through and stops feet", () => { expect([sees(segsOf(1), left), walks(segsOf(1))]).toEqual([true, false]); });
+  it("a screen stops sight and lets feet through", () => { expect([sees(segsOf(2), left), walks(segsOf(2))]).toEqual([false, true]); });
+  it("a one-way wall is seen through from its front only, and stops feet", () => {
+    // from (5,0) to (5,10) the normal (-dy, dx) points to -x: the front is the left side
+    const segs = segsOf(3);
+    expect(sees(segs, left)).toBe(true);
+    const fromRight = visibility(right, forSight(segs, right));
+    expect(Math.min(...fromRight.map((p) => p.x))).toBeGreaterThanOrEqual(5 - 1e-6);
+    expect(walks(segs)).toBe(false);
+  });
+  it("reads a stored kind and ignores a bad one", () => {
+    expect(normSightWalls([[1, 1, 2, 2], [1, 1, 3, 3, 1], [1, 1, 4, 4, 9], [1, 1, 5, 5, 3]], 10)).toEqual([[1, 1, 2, 2], [1, 1, 3, 3, 1], [1, 1, 4, 4], [1, 1, 5, 5, 3]]);
   });
 });

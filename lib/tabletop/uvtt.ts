@@ -19,11 +19,12 @@
 //   * doors that sit on the grid's lines become real doors on those square edges, so they open and close
 //     at the table like any other door. A door at an angle or between grid lines cannot be a grid door;
 //     it is left as a gap in the wall and counted, so the GM can see it;
-//   * windows and objects are left out unless asked (the table has no wall that stops feet but not
-//     eyes yet), and lights are counted only (lights belong to tokens at the table for now).
+//   * windows become window walls (phase 5v wall types: they stop feet, not eyes), and the outlines of
+//     pillars and furniture become window walls too (what Roll20 does with them), or plain walls when
+//     the GM says they block sight; lights are counted only (lights belong to tokens at the table).
 // Everything left out is reported, never dropped silently.
 
-import { MAX_SIGHT_WALLS, type SightWall } from "@/lib/dungeon/battle";
+import { MAX_SIGHT_WALLS, type SightWall, type WallKind } from "@/lib/dungeon/battle";
 
 export const UVTT_EXT = /\.(dd2vtt|df2vtt|uvtt)$/i;
 export const MAX_UVTT_BYTES = 150 * 1024 * 1024;
@@ -123,48 +124,49 @@ export function doorEdges(p: Portal, n: number): string[] | null {
 export type UvttImport = {
   sightWalls: SightWall[];
   doors: Record<string, "door">;
-  report: { walls: number; doors: number; doorsLeftOpen: number; windows: number; objects: number; objectsIncluded: boolean; lights: number; cut: number };
+  report: { walls: number; doors: number; doorsLeftOpen: number; windows: number; objects: number; objectsBlockSight: boolean; lights: number; cut: number };
 };
 
 /** What goes on the battle map (n squares a side), and what was left out. */
+/** opts.objects: pillars and furniture block sight too (plain walls) rather than only feet (windows). */
 export function buildImport(m: Uvtt, n: number, opts: { objects?: boolean } = {}): UvttImport {
   const clamp = (v: number) => Math.max(0, Math.min(n, Math.round(v * 100) / 100));
   const walls: SightWall[] = [];
   let cut = 0;
-  const add = (line: Pt[]) => {
+  const add = (line: Pt[], kind: WallKind = 0) => {
     const s = simplify(line);
     for (let k = 0; k + 1 < s.length; k++) {
-      const w: SightWall = [clamp(s[k].x), clamp(s[k].y), clamp(s[k + 1].x), clamp(s[k + 1].y)];
-      if (Math.hypot(w[2] - w[0], w[3] - w[1]) < 0.01) continue;
+      const a = clamp(s[k].x), b = clamp(s[k].y), c = clamp(s[k + 1].x), d = clamp(s[k + 1].y);
+      if (Math.hypot(c - a, d - b) < 0.01) continue;
       if (walls.length >= MAX_SIGHT_WALLS) { cut++; continue; }
-      walls.push(w);
+      walls.push(kind ? [a, b, c, d, kind] : [a, b, c, d]);
     }
   };
-  m.walls.forEach(add);
-  if (opts.objects) m.objects.forEach(add);
+  m.walls.forEach((l) => add(l));
   const doors: Record<string, "door"> = {};
   let placed = 0, open = 0, windows = 0;
   for (const p of m.portals) {
-    if (!p.closed) { windows++; continue; }
+    if (!p.closed) { add([p.a, p.b], 1); windows++; continue; }
     const keys = doorEdges(p, n);
     if (!keys) { open++; continue; }
     for (const k of keys) doors[k] = "door";
     placed++;
   }
+  m.objects.forEach((l) => add(l, opts.objects ? 0 : 1));
   return {
     sightWalls: walls, doors,
-    report: { walls: walls.length, doors: placed, doorsLeftOpen: open, windows, objects: m.objects.length, objectsIncluded: !!opts.objects, lights: m.lights, cut },
+    report: { walls: walls.length, doors: placed, doorsLeftOpen: open, windows, objects: m.objects.length, objectsBlockSight: !!opts.objects, lights: m.lights, cut },
   };
 }
 
 /** One line for the GM: what came in and what did not. */
 export function describeImport(r: UvttImport["report"]): string {
-  const parts = [`${r.walls} wall${r.walls === 1 ? "" : "s"}`, `${r.doors} door${r.doors === 1 ? "" : "s"}`];
+  const parts = [`${r.walls} wall piece${r.walls === 1 ? "" : "s"}`, `${r.doors} door${r.doors === 1 ? "" : "s"}`];
+  if (r.windows) parts.push(`${r.windows} window${r.windows === 1 ? "" : "s"}`);
+  if (r.objects) parts.push(`${r.objects} object outline${r.objects === 1 ? "" : "s"} that ${r.objectsBlockSight ? "block sight and movement" : "stop movement but not sight"}`);
   const left: string[] = [];
   if (r.cut) left.push(`${r.cut} wall pieces past the table's limit of ${MAX_SIGHT_WALLS}`);
   if (r.doorsLeftOpen) left.push(`${r.doorsLeftOpen} door${r.doorsLeftOpen === 1 ? "" : "s"} off the grid lines (left as open gaps)`);
-  if (r.windows) left.push(`${r.windows} window${r.windows === 1 ? "" : "s"} (left open)`);
-  if (r.objects && !r.objectsIncluded) left.push(`${r.objects} object outline${r.objects === 1 ? "" : "s"} (pillars, furniture)`);
   if (r.lights) left.push(`${r.lights} light${r.lights === 1 ? "" : "s"} (give a token a light at the table instead)`);
   return `From the file: ${parts.join(", ")}.${left.length ? ` Not brought in: ${left.join("; ")}.` : ""}`;
 }

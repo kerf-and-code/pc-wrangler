@@ -55,21 +55,27 @@ describe("doorEdges", () => {
 });
 
 describe("buildImport", () => {
-  it("makes walls and one grid door, and reports the rest", () => {
+  it("makes walls, a window, object barriers and one grid door, and reports the rest", () => {
     const r = buildImport(read(), 10);
-    expect(r.sightWalls).toEqual([[4, 1, 1, 1], [1, 1, 1, 7], [1, 7, 9, 7], [9, 7, 9, 1], [9, 1, 5, 1]]);
+    expect(r.sightWalls).toEqual([
+      [4, 1, 1, 1], [1, 1, 1, 7], [1, 7, 9, 7], [9, 7, 9, 1], [9, 1, 5, 1],     // the room
+      [9, 3.5, 9, 4.5, 1],                                                     // the window
+      [6, 4, 7, 4, 1], [7, 4, 7, 5, 1], [7, 5, 6, 5, 1], [6, 5, 6, 4, 1],      // the pillar: feet, not eyes
+    ]);
     expect(r.doors).toEqual({ "14h": "door" });
-    expect(r.report).toMatchObject({ walls: 5, doors: 1, doorsLeftOpen: 1, windows: 1, objects: 1, objectsIncluded: false, lights: 2, cut: 0 });
-    expect(describeImport(r.report)).toMatch(/5 walls, 1 door\. Not brought in: 1 door off the grid lines/);
+    expect(r.report).toMatchObject({ walls: 10, doors: 1, doorsLeftOpen: 1, windows: 1, objects: 1, objectsBlockSight: false, lights: 2, cut: 0 });
+    expect(describeImport(r.report)).toMatch(/1 window, 1 object outline that stop movement but not sight\. Not brought in: 1 door off the grid lines/);
   });
-  it("adds object outlines as walls when asked", () => {
-    expect(buildImport(read(), 10, { objects: true }).sightWalls).toHaveLength(9);
+  it("makes object outlines plain walls when they block sight", () => {
+    const w = buildImport(read(), 10, { objects: true }).sightWalls;
+    expect(w.slice(6).every((x) => x.length === 4)).toBe(true);
   });
   it("stops at the table's wall limit and says how many were cut", () => {
     const zig = Array.from({ length: 1000 }, (_, i) => ({ x: (i % 2) * 2 + 1, y: i * 0.01 + 1 }));
     const r = buildImport({ ...read(), walls: [zig] }, 20);
     expect(r.sightWalls.length).toBe(800);
     expect(r.report.cut).toBeGreaterThan(150);
-    expect(r.report.walls + r.report.cut).toBeLessThanOrEqual(999);
+    // the zigzag (at most 999 pieces) plus the file's window and the pillar's four sides
+    expect(r.report.walls + r.report.cut).toBeLessThanOrEqual(999 + 5);
   });
 });

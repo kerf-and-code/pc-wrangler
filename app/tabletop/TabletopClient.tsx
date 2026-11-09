@@ -20,7 +20,7 @@ import {
 } from "@/lib/tabletop/fog";
 import { drawElement, type DoorKind, type MapElement } from "@/lib/dungeon/classic";
 import {
-  wallSegments, sightWallSegs, visibility, moveStop, seenSquares, canSeeLit, seesPoint, lightOf, darkvisionOf, lightModeOf,
+  wallSegments, sightWallSegs, forSight, forMove, visibility, moveStop, seenSquares, canSeeLit, seesPoint, lightOf, darkvisionOf, lightModeOf,
   LIGHT_MODES, LIGHT_PRESETS, DARKVISION_FT, CANOPY_KINDS, type Seg, type Light, type Viewer, type LightMode,
 } from "@/lib/tabletop/sight";
 import { econOf, speedNow, cantAct, FRESH_ECON } from "@/lib/combat-effects";
@@ -474,13 +474,14 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     if (key === sight.current.key) return;
     const sh = shapeOf(); if (!sh) return;
     const segs = wallSegsNow() ?? [];
-    const polys = lookers.map((p) => visibility(p, segs));
+    // phase 5v: windows let sight through, one-way walls only from their front
+    const polys = lookers.map((p) => visibility(p, forSight(segs, p)));
     // a light's polygon only changes when it moves or the walls do
     if (lightPolys.current.sig !== mapSig.current) lightPolys.current = { sig: mapSig.current, at: new Map() };
     const lights: Light[] = sources.map((s0) => {
       const k = `${s0.x.toFixed(2)},${s0.y.toFixed(2)}`;
       let poly = lightPolys.current.at.get(k);
-      if (!poly) { poly = visibility(s0, segs); if (lightPolys.current.at.size > 400) lightPolys.current.at.clear(); lightPolys.current.at.set(k, poly); }
+      if (!poly) { poly = visibility(s0, forSight(segs, s0)); if (lightPolys.current.at.size > 400) lightPolys.current.at.clear(); lightPolys.current.at.set(k, poly); }
       return { ...s0, poly };
     });
     const seers: Viewer[] = lookers.map((p, i) => ({ x: p.x, y: p.y, dv: p.dv, poly: polys[i] }));
@@ -1774,7 +1775,9 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
       const dx = sq.x - d.start.x, dy = sq.y - d.start.y;
       if (Math.hypot(dx, dy) > 0.05) d.moved = true;
       // Phase 5o: a player's token stops at a wall, a closed door or a sight wall; the GM moves freely
-      const segs = stateRef.current?.role === "gm" ? null : wallSegsNow();
+      // phase 5v: screens (curtains, foliage) do not stop feet
+      const allSegs = stateRef.current?.role === "gm" ? null : wallSegsNow();
+      const segs = allSegs ? forMove(allSegs) : null;
       for (const id of d.ids) {
         const o = d.orig.get(id)!, t = tokensRef.current.get(id)!;
         const want = d.free || e.altKey ? { x: o.x + dx, y: o.y + dy } : snapToken(o.x + dx, o.y + dy, t.size);
