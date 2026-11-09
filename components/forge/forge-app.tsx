@@ -3905,13 +3905,17 @@ function Field({ label, value, onChange, options, placeholder, disabled }: {
   label: string; value: string; onChange: (v: string) => void;
   options: string[]; placeholder?: string; disabled?: boolean;
 }) {
+  // A stored value the list does not hold (an imported "Light Domain" where the catalog says "Light",
+  // "Aberrant Sorcery" where it says "Aberrant Mind") is shown as it is, first, instead of the select
+  // falling back to the placeholder and looking unset.
+  const opts = value && !options.includes(value) ? [value, ...options] : options;
   return (
     <div style={{ marginBottom: 16, position: "relative" }}>
       <label style={forgeLabel}>{label}</label>
       <select value={value} onChange={(e) => onChange(e.target.value)} disabled={disabled}
         style={{ ...stoneField(), opacity: disabled ? 0.5 : 1 }}>
         <option value="" style={OPTION_STYLE}>{placeholder || `Choose ${label.toLowerCase()}`}</option>
-        {options.map((o) => <option key={o} value={o} style={OPTION_STYLE}>{o}</option>)}
+        {opts.map((o) => <option key={o} value={o} style={OPTION_STYLE}>{o}</option>)}
       </select>
       <span style={{ position: "absolute", right: 14, bottom: 14, fontSize: 9, color: SAX.brass, pointerEvents: "none" }}>▼</span>
     </div>
