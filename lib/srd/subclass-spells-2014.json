@@ -1054,5 +1054,89 @@
       "Greater Restoration",
       "Telekinesis"
     ]
+  },
+  "Inquisition Domain": {
+    "1": [
+      "Detect Magic",
+      "Identify"
+    ],
+    "3": [
+      "See Invisibility",
+      "Silence"
+    ],
+    "5": [
+      "Dispel Magic",
+      "Remove Curse"
+    ],
+    "7": [
+      "Arcane Eye",
+      "Locate Creature"
+    ],
+    "9": [
+      "Creation",
+      "Hallow"
+    ]
+  },
+  "Oath of Zeal": {
+    "3": [
+      "Detect Evil and Good",
+      "Hunter's Mark"
+    ],
+    "5": [
+      "Detect Thoughts",
+      "Knock"
+    ],
+    "9": [
+      "Fear",
+      "Tongues"
+    ],
+    "13": [
+      "Divination",
+      "Locate Creature"
+    ],
+    "17": [
+      "Insect Plague",
+      "Scrying"
+    ]
+  },
+  "Black Powder Domain": {
+    "1": [
+      "Fog Cloud",
+      "Thunderwave"
+    ],
+    "3": [
+      "Heat Metal",
+      "Shatter"
+    ],
+    "5": [
+      "Fireball",
+      "Stinking Cloud"
+    ],
+    "7": [
+      "Confusion",
+      "Wall of Fire"
+    ],
+    "9": [
+      "Cloudkill",
+      "Deadly Salvo"
+    ]
+  },
+  "Circle of Bees": {
+    "3": [
+      "Blur",
+      "Bombardment of Stings"
+    ],
+    "5": [
+      "Fly",
+      "Haste"
+    ],
+    "7": [
+      "Giant Insect",
+      "Locate Creature"
+    ],
+    "9": [
+      "Insect Plague",
+      "Telepathic Bond"
+    ]
   }
 }

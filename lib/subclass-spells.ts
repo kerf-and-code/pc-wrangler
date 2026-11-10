@@ -122,6 +122,9 @@ const SPELL_TABLE_CLASS: Record<string, string> = {
   "Dragon Domain": "Cleric",
   "Blood Domain": "Cleric",
   "Moon Domain": "Cleric",
+  // Push 11 (audit G16): the Cleric's Black Powder Domain and the Wizard's School of Black Powder both
+  // reduce to "black powder".
+  "Black Powder Domain": "Cleric",
 };
 
 export function subclassSpellsFor(

@@ -495,6 +495,8 @@ function unarmoredACRule(build: Build, ctx: RulesContext) {
 // Monk Unarmored Movement and Martial Arts die, by level (highest threshold that applies).
 const MONK_MOVE: [number, number][] = [[18, 30], [14, 25], [10, 20], [6, 15], [2, 10]];
 const MONK_MA_DIE: [number, number][] = [[17, 12], [11, 10], [5, 8], [1, 6]];
+// The 2014 Martial Arts die is one size smaller at every step: d4, d6, d8, d10 (audit B14, push 11).
+const MONK_MA_DIE_2014: [number, number][] = [[17, 10], [11, 8], [5, 6], [1, 4]];
 function stepValue(table: [number, number][], level: number): number {
   for (const [threshold, value] of table) if (level >= threshold) return value;
   return 0;
@@ -754,7 +756,9 @@ export function deriveSheet(build: Build, ctx: RulesContext): DerivedSheet {  co
   let classHp = 0;
   if (/^Draconic/.test(build.meta.subclass || "")) {
     const at = subclassLevel(build.meta.className, ctx.ruleset) || 3;
-    if (build.level >= at) classHp = 3 + Math.max(0, build.level - at);
+    // 2014 (audit B15, push 11): +1 per sorcerer level from level 1, so the total is the level itself.
+    // 2024: +3 at level 3, then +1 a level, which also comes to the level.
+    if (build.level >= at) classHp = ctx.ruleset === "2014" ? build.level - at + 1 : 3 + Math.max(0, build.level - at);
   }
   // Hit points across classes. The FIRST class gets its full hit die at level 1; every level after
   // that, in any class, is an average roll of THAT class's die. Constitution applies per character
@@ -839,7 +843,7 @@ export function deriveSheet(build: Build, ctx: RulesContext): DerivedSheet {  co
   speed += adj.speed || 0;
   if (speed < 0) speed = 0;
 
-  const martialArts = build.meta.className === "Monk" ? stepValue(MONK_MA_DIE, build.level) : 0;
+  const martialArts = build.meta.className === "Monk" ? stepValue(ctx.ruleset === "2014" ? MONK_MA_DIE_2014 : MONK_MA_DIE, build.level) : 0;
   const sneak = sneakDice(build, ctx, epic) + (em.sneakDice || 0);
   // Species data is lower case ("poison") and a chosen type arrives capitalized ("Acid"), so the
   // list is normalized and de-duplicated rather than showing Poison twice.

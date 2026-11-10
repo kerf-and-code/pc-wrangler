@@ -1706,5 +1706,149 @@
       "Fabricate",
       "Death Ward"
     ]
+  },
+  "Arcane Order": {
+    "3": [
+      "Demiplanar Pitch",
+      "Shocking Grasp",
+      "Find Familiar",
+      "Magic Missile"
+    ],
+    "5": [
+      "Arcanist's Magic Aura",
+      "Misty Step"
+    ],
+    "9": [
+      "Dispel Magic",
+      "Waypoint"
+    ],
+    "13": [
+      "Banishment",
+      "Private Sanctum"
+    ],
+    "17": [
+      "Reflect Magic",
+      "Teleportation Circle"
+    ]
+  },
+  "Heaven's Guard": {
+    "3": [
+      "Cure Wounds",
+      "Give Life",
+      "Guiding Bolt",
+      "Righteous Incitement"
+    ],
+    "5": [
+      "Animate Shield",
+      "Gentle Repose"
+    ],
+    "9": [
+      "Mass Healing Word",
+      "Revivify"
+    ],
+    "13": [
+      "Death Ward",
+      "Stoneskin"
+    ],
+    "17": [
+      "Mass Cure Wounds",
+      "Raise Dead"
+    ]
+  },
+  "Knights Stygian": {
+    "3": [
+      "Bitter Wind",
+      "Hateful Haunting",
+      "Grave Bolt",
+      "Grave Grasp"
+    ],
+    "5": [
+      "Carrionette",
+      "Web"
+    ],
+    "9": [
+      "Animate Dead",
+      "Mortal Terror"
+    ],
+    "13": [
+      "Black Tentacles",
+      "Stygian Blast"
+    ],
+    "17": [
+      "Contagion",
+      "Insect Plague"
+    ]
+  },
+  "Shadow Court": {
+    "3": [
+      "Disguise Self",
+      "Forced Hesitation",
+      "Phantasmal Feint",
+      "Obscuring Prick"
+    ],
+    "5": [
+      "Darkness",
+      "Invisibility"
+    ],
+    "9": [
+      "Hypnotic Pattern",
+      "Major Image"
+    ],
+    "13": [
+      "Greater Invisibility",
+      "Phantasmal Killer"
+    ],
+    "17": [
+      "Mislead",
+      "Seeming"
+    ]
+  },
+  "Sidereal Cabal": {
+    "3": [
+      "Misfortunate Missile",
+      "Overexposure",
+      "Bane",
+      "Bless"
+    ],
+    "5": [
+      "Augury",
+      "Mind Spike"
+    ],
+    "9": [
+      "Haste",
+      "Slow"
+    ],
+    "13": [
+      "Cascade of Hours",
+      "Divination"
+    ],
+    "17": [
+      "Dream",
+      "Scrying"
+    ]
+  },
+  "Sylvan Circle": {
+    "3": [
+      "Entangle",
+      "Speak with Animals",
+      "Thorn Whip",
+      "Thornhold"
+    ],
+    "5": [
+      "Lesser Restoration",
+      "Moonbeam"
+    ],
+    "9": [
+      "Conjure Animals",
+      "Speak with Plants"
+    ],
+    "13": [
+      "Conjure Woodland Beings",
+      "Polymorph"
+    ],
+    "17": [
+      "Greater Restoration",
+      "Reincarnate"
+    ]
   }
 }

@@ -253,7 +253,9 @@ const TABS: { key: TabKey; label: string; ready: (b: Build) => boolean }[] = [
   { key: "identity",  label: "Identity",  ready: (b) => Boolean(b.meta.species && b.meta.className && b.meta.background) },
   { key: "class",     label: "Class",     ready: (b) => Boolean(b.meta.className) },
   { key: "species",   label: "Species",   ready: (b) => Boolean(b.meta.species) },
-  { key: "background", label: "Background", ready: (b) => Boolean(b.meta.background) && bgAsiTotal(b) > 0 },
+  // Push 11 (audit G9): a 2014 background raises no ability (the species did), so it is done once picked.
+  { key: "background", label: "Background", ready: (b) => Boolean(b.meta.background)
+    && ((b as Build & { edition?: string }).edition === "2014" || bgAsiTotal(b) > 0) },
   { key: "spells", label: "Spells", ready: (b) => Boolean((b.spells?.cantrips?.length || 0) + (b.spells?.known?.length || 0)) },
   { key: "abilities", label: "Abilities", ready: (b) => Object.values(b.abilities || {}).some((v) => Number(v) > 0) },
   { key: "equipment", label: "Equipment", ready: (b) => Boolean((b.gear?.items || []).length) },
@@ -509,6 +511,15 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
     () => describeBackground(srd.bgByName[build.meta.background]),
     [srd.bgByName, build.meta.background],
   );
+  // Push 11 (audit G9): a background from an older book lists no ability scores and no origin feat. Under
+  // the 2024 rules the player picks both (three abilities on the Background tab, and an Origin feat
+  // stored as build.bgOriginFeat). Everything that reads the background's feat reads this record, so the
+  // chosen feat applies exactly as a listed one would.
+  const bgOriginFeat = (build as Build & { bgOriginFeat?: string }).bgOriginFeat || "";
+  const bgEff = useMemo(() => {
+    const r = srd.bgByName[build.meta.background];
+    return r && !r.feat && edition !== "2014" && bgOriginFeat ? { ...r, feat: bgOriginFeat } : r;
+  }, [srd.bgByName, build.meta.background, edition, bgOriginFeat]);
 
   // The class record with the character's OWN subclass in its feature list. The raw class JSON
   // carries the SRD subclass's features for every character (lib/subclass-features.ts), so every
@@ -703,7 +714,7 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
       ? [choiceKey({ className: cls, level: 1, feature: "Skill Proficiencies", choose: 0, kind: "skill" })]
       : [];
 
-    const bgRec = srd.bgByName[build.meta.background];
+    const bgRec = bgEff;
     const fx = choiceEffects({
       background: bgRec,
       grantedFeat: bgRec?.feat ? srd.featByName[bgRec.feat] : undefined,
@@ -763,7 +774,7 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
       if (tool) fx.applied.push(`${tool} proficiency from ${spName}`);
     }
     return fx;
-  }, [build, speciesVariant, srd.speciesByName, srd.variantByName, srd.bgByName, srd.featByName, resolvedSpecies, edition]);
+  }, [build, speciesVariant, srd.speciesByName, srd.variantByName, srd.bgByName, srd.featByName, resolvedSpecies, edition, bgEff]);
 
   // Every species trait the sheets show: SRD text, else the bundled summary (rules-data), plus the
   // player's own (a same-name own trait replaces the built-in one). One list, so the Species tab, the
@@ -822,9 +833,9 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
   // imported D&D Beyond sheet, or granted by the background (its origin feat).
   const featNames = useMemo(() => {
     const listed = ((build as Build & { imported?: { sheet?: { features?: { name: string }[] } } }).imported?.sheet?.features || []).map((f) => f.name.trim());
-    const origin = srd.bgByName[build.meta.background]?.feat;
+    const origin = bgEff?.feat;
     return [...new Set([...chosenFeats.map((f) => f.name), ...listed, ...(origin ? [origin] : [])])];
-  }, [build, chosenFeats, srd.bgByName]);
+  }, [build, chosenFeats, bgEff]);
 
   const buildForDerive = useMemo<Build>(() => {
     const mech = srd.speciesByName[build.meta.species];
@@ -880,7 +891,8 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
     const all = [{ casterType: primaryType, level: build.level || 1 }, ...multi.map((c) => ({ casterType: casterOf(c.className), level: c.level || 1 }))];
     // Slots for a multiclassed caster come from ONE combined table, not from each class's own row;
     // a single-class subclass caster's own third-caster table replaces its (empty) class row.
-    const mcSlots = isMulticlassCaster(all) ? multiclassSlots(casterLevel(all))
+    // Push 11 (audit B13): 2024 rounds Paladin and Ranger levels up, 2014 down.
+    const mcSlots = isMulticlassCaster(all) ? multiclassSlots(casterLevel(all, ruleset))
       : primaryType === "THIRD" && all.length === 1 ? thirdCasterSlots(build.level || 1) : [];
     return {
       structuredRec: srd.structuredByName[build.meta.className],
@@ -894,7 +906,7 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
       ],
       mcSlots,
     };
-  }, [build, srd, sheet?.proficiencyBonus]);
+  }, [build, srd, sheet?.proficiencyBonus, ruleset]);
   const costedList = useMemo(() => [
     // Automatic first: a monk's Flurry is not a decision they made, and burying it under the options
     // they picked would read as though it were.
@@ -1082,8 +1094,9 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
     b.meta.background = v;
     // A new background offers different abilities, so the old assignment is meaningless rather than
     // merely stale. Clearing it is honest; carrying it over would silently apply a bonus the new
-    // background does not grant.
+    // background does not grant. The same goes for an origin feat picked for a background without one.
     b.bgAsi = {};
+    (b as Build & { bgOriginFeat?: string }).bgOriginFeat = undefined;
     return b;
   });
   const setBgAsi = (mods: Record<string, number>) => patch((b) => { b.bgAsi = mods; return b; });
@@ -1170,6 +1183,13 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
   const removeClass = (className: string) => patch((b) => {
     const t = b as Build & { multiclass?: MC[] };
     t.multiclass = (t.multiclass || []).filter((c) => c.className !== className);
+    return b;
+  });
+
+  const setBgOriginFeat = (f: string) => patch((b) => {
+    (b as Build & { bgOriginFeat?: string }).bgOriginFeat = f || undefined;
+    // the feat's own ability choice belonged to the previous feat
+    (b as Build & { bgFeatAbility?: string }).bgFeatAbility = undefined;
     return b;
   });
 
@@ -1752,7 +1772,7 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
                       customDefenses={build.customDefenses || {}} onCustomDefenses={setCustomDefenses} />
                     <SheetProficiencies
                       coreTraits={((srd.structuredByName[build.meta.className] || {}) as { core_traits?: string }).core_traits || ""}
-                      backgroundRec={srd.bgByName[build.meta.background]}
+                      backgroundRec={bgEff}
                       masteries={Object.entries((build as Build & { classChoices?: Record<string, string[]> }).classChoices || {})
                         .filter(([k]) => /Weapon Mastery/i.test(k)).flatMap(([, v]) => v)}
                       ruleset={ruleset}
@@ -2028,7 +2048,10 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
                   build={build} backgroundRows={srd.backgrounds}
                   bgRec={srd.bgByName[build.meta.background]} desc={backgroundDesc}
                   onBackground={setBackground} onAsi={setBgAsi}
-                  featRec={srd.featByName[srd.bgByName[build.meta.background]?.feat || ""]}
+                  edition={edition}
+                  originFeats={srd.featList.filter((f) => (f as { category?: string }).category === "Origin")}
+                  originFeat={bgOriginFeat} onOriginFeat={setBgOriginFeat}
+                  featRec={srd.featByName[bgEff?.feat || ""]}
                   featAbility={(build as Build & { bgFeatAbility?: string }).bgFeatAbility || ""}
                   onFeatAbility={setBgFeatAbility}
                 />
@@ -2068,7 +2091,7 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
 
               {tab === "equipment" && (
                 <GrantedEquipmentPanel
-                  bgRec={srd.bgByName[build.meta.background]}
+                  bgRec={bgEff}
                   coreTraits={((srd.structuredByName[build.meta.className] || {}) as { core_traits?: string }).core_traits || ""}
                   catalog={srd.equipment.map((i) => i.name)}
                   owned={(build.gear?.items || []).map((i) => i.n)}
@@ -2139,7 +2162,7 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
                     .flatMap(([, v]) => v)}
                   species={build.meta.species} speciesRec={srd.speciesByName[build.meta.species]} shownTraits={speciesTraitsShown}
                   variantName={speciesVariant} variantRec={srd.variantByName[speciesVariant]}
-                  background={build.meta.background} backgroundRec={srd.bgByName[build.meta.background]}
+                  background={build.meta.background} backgroundRec={bgEff}
                   className={build.meta.className} classRec={classRecWithSub(build.meta.className)}
                   level={build.level} chosenFeats={chosenFeats}
                 />
@@ -2344,8 +2367,12 @@ function FinishPanel({ build, name, sheet, onTab, effects }: {
  *   asking which ability gets the +2 makes an illegal assignment unreachable rather than caught.
  */
 function BackgroundPanel({ build, backgroundRows, bgRec, desc, onBackground, onAsi,
-  featRec, featAbility, onFeatAbility }: {
+  featRec, featAbility, onFeatAbility, edition, originFeats, originFeat, onOriginFeat }: {
   build: Build;
+  edition: Edition;
+  originFeats: FeatOption[];
+  originFeat: string;
+  onOriginFeat: (f: string) => void;
   backgroundRows: BackgroundRecord[];
   bgRec: { ability_scores?: string; feat?: string; skill_proficiencies?: string;
            tool_proficiency?: string; equipment?: string } | undefined;
@@ -2363,8 +2390,34 @@ function BackgroundPanel({ build, backgroundRows, bgRec, desc, onBackground, onA
       .filter((k, i, arr) => k && arr.indexOf(k) === i);
   }, [bgRec]);
 
+  // Push 11 (audit G9): a background from an older book lists no ability scores and no feat. Under the
+  // 2024 rules that character still gets the background's increase (any three abilities: +2 and +1, or
+  // +1 to three) and an Origin feat, so both are asked here instead of the 2014 note.
+  const freeChoice = !!build.meta.background && abilities.length === 0 && edition !== "2014";
+  const needsOriginFeat = !!build.meta.background && !bgRec?.feat && edition !== "2014";
+
   const current = build.bgAsi || {};
   const total = Object.values(current).reduce((a, v) => a + Number(v || 0), 0);
+  // One click steps an ability 0 -> +1 -> +2 -> 0, refusing any step that would leave an illegal shape
+  // (more than 3 points, two +2s, or a +2 beside two +1s).
+  const [freeMsg, setFreeMsg] = useState<string | null>(null);
+  const stepFree = (a: Ability) => {
+    const now = Number(current[a] || 0);
+    const next = now === 0 ? 1 : now === 1 ? 2 : 0;
+    const trial: Record<string, number> = { ...current, [a]: next };
+    if (!next) delete trial[a];
+    const vals = Object.values(trial).map(Number);
+    const sum = vals.reduce((x, v) => x + v, 0);
+    const legal = sum <= 3 && vals.filter((v) => v === 2).length <= 1 && !(vals.includes(2) && vals.length > 2);
+    if (!legal) {
+      // stepping to +2 is the usual cause; try skipping straight back to 0 instead
+      if (next === 2) { const t = { ...current }; delete t[a]; setFreeMsg(null); onAsi(t); return; }
+      setFreeMsg("That would be more than the background gives: +2 and +1, or +1 to three abilities.");
+      return;
+    }
+    setFreeMsg(null);
+    onAsi(trial);
+  };
   const spread = total === 3 && Object.values(current).every((v) => Number(v) === 1);
   const focused = total === 3 && Object.values(current).some((v) => Number(v) === 2);
 
@@ -2379,7 +2432,7 @@ function BackgroundPanel({ build, backgroundRows, bgRec, desc, onBackground, onA
       <PanelTitle hint="Where this character came from, and what it gave them.">Background</PanelTitle>
 
       <PickerField label="Background" value={build.meta.background} onChange={onBackground}
-        placeholder="Search 123 backgrounds"
+        placeholder={`Search ${backgroundRows.length} backgrounds`}
         rows={backgroundRows.map((b) => ({
           name: b.name,
           // The two things a player is choosing BETWEEN, on the row itself, so the filters are a
@@ -2406,11 +2459,56 @@ function BackgroundPanel({ build, backgroundRows, bgRec, desc, onBackground, onA
         <Muted>Pick a background and its ability scores, feat and equipment appear here.</Muted>
       )}
 
-      {build.meta.background && abilities.length === 0 && (
+      {build.meta.background && abilities.length === 0 && edition === "2014" && (
         <Muted>
           This background does not list ability scores. That is normal for a 2014 background, where
           the bonuses came from your species instead.
         </Muted>
+      )}
+
+      {freeChoice && (
+        <div style={{ marginTop: 16 }}>
+          <label style={forgeLabel}>Ability scores</label>
+          <p style={{ color: STONE.inkDim, fontSize: 13, margin: "0 0 10px", lineHeight: 1.6 }}>
+            This background comes from an older book and lists no ability scores. Under the 2024 rules you
+            choose them: <strong>+2 to one ability and +1 to another</strong>, or{" "}
+            <strong>+1 to three</strong>. Tap an ability to step it through +1, +2 and back to nothing.
+          </p>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            {ABILITIES.map((a) => {
+              const v = Number(current[a] || 0);
+              return (
+                <button key={a} className="forge-btn" onClick={() => stepFree(a)}
+                  aria-label={`${a.toUpperCase()}: ${v ? `plus ${v}` : "no increase"}`}
+                  style={{ ...stoneButton(v ? "primary" : "stone"), fontSize: 13, minWidth: 64 }}>
+                  {a.toUpperCase()}{v ? ` +${v}` : ""}
+                </button>
+              );
+            })}
+          </div>
+          {freeMsg && <p role="alert" style={{ color: C.warn, fontSize: 12.5, margin: "8px 0 0" }}>{freeMsg}</p>}
+          <p style={{ fontFamily: FORGE_FONTS.mono, fontSize: 12, color: total === 3 ? C.good : STONE.inkFaint,
+            marginTop: 12, marginBottom: 0 }}>
+            {total === 0 ? "nothing assigned yet"
+              : total === 3 ? `applied: ${ABILITIES.filter((a) => current[a]).map((a) => `${a.toUpperCase()} +${current[a]}`).join(", ")}`
+              : `${total} of 3 points assigned`}
+          </p>
+        </div>
+      )}
+
+      {needsOriginFeat && (
+        <div style={{ marginTop: 16 }}>
+          <label style={forgeLabel} htmlFor="bg-origin-feat">Origin feat</label>
+          <p style={{ color: STONE.inkDim, fontSize: 13, margin: "0 0 8px", lineHeight: 1.6 }}>
+            This background names no feat. Under the 2024 rules every background grants an Origin feat, so
+            pick one.
+          </p>
+          <select id="bg-origin-feat" value={originFeat} onChange={(e) => onOriginFeat(e.target.value)}
+            style={{ ...stoneField(), width: "100%", maxWidth: 360, fontSize: 16 }}>
+            <option value="">Choose an Origin feat</option>
+            {originFeats.map((f) => <option key={f.name} value={f.name}>{f.name}</option>)}
+          </select>
+        </div>
       )}
 
       {abilities.length > 0 && (
@@ -2459,7 +2557,7 @@ function BackgroundPanel({ build, backgroundRows, bgRec, desc, onBackground, onA
         </div>
       )}
 
-      {(bgRec?.feat || bgRec?.skill_proficiencies || bgRec?.tool_proficiency || bgRec?.equipment) && (
+      {(bgRec?.feat || (needsOriginFeat && originFeat) || bgRec?.skill_proficiencies || bgRec?.tool_proficiency || bgRec?.equipment) && (
         <div style={{ marginTop: 18, paddingTop: 14, borderTop: `1px solid ${STONE.hi}` }}>
           {/* Shown, not applied. The engine has no route for a granted feat or a tool proficiency
               yet, and printing them as though they were live would be worse than printing them as
@@ -2474,7 +2572,7 @@ function BackgroundPanel({ build, backgroundRows, bgRec, desc, onBackground, onA
           {featRec?.asi && !ABILITIES.some((a) => typeof (featRec.asi as Record<string, unknown>)?.[a] === "number") && (
             <div style={{ marginBottom: 10 }}>
               <label style={forgeLabel}>
-                {featRec.name} raises an ability &mdash; which one?
+                {featRec.name} raises an ability. Which one?
               </label>
               <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
                 {ABILITIES.map((a) => (
@@ -2488,7 +2586,7 @@ function BackgroundPanel({ build, backgroundRows, bgRec, desc, onBackground, onA
             </div>
           )}
           <div style={{ display: "grid", gap: 5, fontSize: 13.5, color: STONE.ink }}>
-            {bgRec?.feat && <span><strong>Feat:</strong> {bgRec.feat}</span>}
+            {(bgRec?.feat || (needsOriginFeat && originFeat)) && <span><strong>Feat:</strong> {bgRec?.feat || originFeat}</span>}
             {bgRec?.skill_proficiencies && <span><strong>Skills:</strong> {bgRec.skill_proficiencies}</span>}
             {bgRec?.tool_proficiency && <span><strong>Tools:</strong> {bgRec.tool_proficiency}</span>}
             {bgRec?.equipment && <span><strong>Equipment:</strong> {bgRec.equipment}</span>}

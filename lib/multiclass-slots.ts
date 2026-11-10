@@ -57,15 +57,20 @@ const SLOTS: number[][] = [
 /**
  * What one class contributes to the caster level.
  *
- * ROUNDING IS DOWN, AND IT IS APPLIED PER CLASS. A Paladin 3 / Ranger 3 contributes 1 + 1 = 2, not
- * 3: each half is floored on its own before they are added. Summing first and halving after is the
- * commonest way to get this wrong and it always errs upward.
+ * ROUNDING IS APPLIED PER CLASS. A 2014 Paladin 3 / Ranger 3 contributes 1 + 1 = 2, not 3: each half
+ * is rounded on its own before they are added. Summing first and halving after is the commonest way to
+ * get this wrong.
+ *
+ * THE EDITIONS ROUND HALF CASTERS DIFFERENTLY (audit B13, push 11). 2014 rounds Paladin and Ranger
+ * levels DOWN; the 2024 rules (SRD 5.2, Multiclassing: Spellcasting) count "half your levels (round
+ * up) in the Paladin and Ranger classes", so a 2024 Paladin 3 / Sorcerer 3 is a level 5 caster, not 4.
+ * Third casters round down in both.
  */
-export function casterLevelFrom(type: CasterType, level: number): number {
+export function casterLevelFrom(type: CasterType, level: number, ruleset: "2014" | "2024" = "2014"): number {
   if (level <= 0) return 0;
   switch (type) {
     case "FULL": return level;
-    case "HALF": return Math.floor(level / 2);
+    case "HALF": return ruleset === "2024" ? Math.ceil(level / 2) : Math.floor(level / 2);
     case "ARTIFICER": return Math.ceil(level / 2);
     case "THIRD": return Math.floor(level / 3);
     default: return 0;   // PACT and NONE contribute nothing
@@ -74,8 +79,8 @@ export function casterLevelFrom(type: CasterType, level: number): number {
 
 export type ClassLevel = { casterType: CasterType; level: number };
 
-export function casterLevel(classes: ClassLevel[]): number {
-  return classes.reduce((n, c) => n + casterLevelFrom(c.casterType, c.level), 0);
+export function casterLevel(classes: ClassLevel[], ruleset: "2014" | "2024" = "2014"): number {
+  return classes.reduce((n, c) => n + casterLevelFrom(c.casterType, c.level, ruleset), 0);
 }
 
 /**

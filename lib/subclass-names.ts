@@ -44,6 +44,10 @@ const RENAMES: Record<string, string> = {
   "spellfire sorcery": "spellfire",
   // Ravenloft: The Horrors Within (2024) renames Shadow Magic.
   "shadow sorcery": "shadow magic",
+  // Push 11 (audit G8): the catalog holds two spellings of these, from the same publisher, and the
+  // feature data uses one of them; picking the other gave a character no subclass features at all.
+  "chronurgy magic": "chronurgy", "graviturgy magic": "graviturgy",
+  sangromancer: "sangromancy", "wretched bloodline sorcery": "wretched bloodline",
 };
 
 export function canonicalSubclass(name: string | null | undefined): string {
