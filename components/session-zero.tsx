@@ -159,7 +159,7 @@ export default function SessionZero() {
             {SAFETY_TOOLS.map((t) => {
               const on = d.safety.includes(t);
               return (
-                <button key={t} type="button" onClick={() => toggleSafety(t)} style={{ ...chip, ...(on ? chipOn : null) }}>{t}</button>
+                <button key={t} type="button" aria-pressed={on} onClick={() => toggleSafety(t)} style={{ ...chip, ...(on ? chipOn : null) }}>{t}</button>
               );
             })}
           </div>
@@ -309,7 +309,7 @@ function LevelPick({ label, value, onChange }: { label: string; value: Level; on
       <div style={{ ...smallLabel, marginBottom: 6 }}>{label}</div>
       <div style={{ display: "flex", gap: 6 }}>
         {LEVELS.map((l) => (
-          <button key={l} type="button" onClick={() => onChange(l)} style={{ ...chip, flex: 1, ...(value === l ? chipOn : null) }}>{l}</button>
+          <button key={l} type="button" aria-pressed={value === l} onClick={() => onChange(l)} style={{ ...chip, flex: 1, ...(value === l ? chipOn : null) }}>{l}</button>
         ))}
       </div>
     </div>

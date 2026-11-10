@@ -139,6 +139,7 @@ export default function PartyCoverage() {
                       <button
                         key={role}
                         type="button"
+                        aria-pressed={on}
                         onClick={() => toggleRole(i, role)}
                         style={{ ...chip, ...(on ? chipOn : null) }}
                       >

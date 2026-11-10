@@ -190,6 +190,13 @@ export function blockActions(block: StatBlockDoc | null | undefined): { group: s
     .filter((g) => g.actions.length > 0);
 }
 
+/** Stat blocks the D&D combat tools can run: D&D 5e and the 5e-built settings (Dark Matter), the same
+ *  family lib/systems/roster-fields.ts treats as D&D. Blocks saved before systems existed have no system.
+ *  Audit G2: Dark Matter blocks were dropped as "typed in by hand". */
+export function isDndFamilyBlock(system: string | null | undefined): boolean {
+  return !system || system === "dnd5e" || system === "darkmatter";
+}
+
 /** Resolve a saved foe to a stat block snapshot from the GM's own blocks or the monster library. */
 export function resolveFoeBlock(
   foe: EncounterFoe,
@@ -199,7 +206,7 @@ export function resolveFoeBlock(
 ): StatBlockDoc | null {
   if (foe.origin === "mine" && foe.statBlockId) {
     const row = ownBlocks.find((b) => b.id === foe.statBlockId);
-    return row && (!row.system || row.system === "dnd5e") ? (row.block as StatBlockDoc) : null;
+    return row && isDndFamilyBlock(row.system) ? (row.block as StatBlockDoc) : null;
   }
   if (foe.origin === "srd") {
     const list = libraryFor(foe.edition || "both");

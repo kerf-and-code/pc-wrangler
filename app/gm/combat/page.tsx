@@ -48,6 +48,7 @@ import { openTabletop } from "@/lib/tabletop/open";
 import {
   CONDITIONS, abilityMod, applyDamage, applyHealing, blockActions, combatantId, monsterCombatants, pcCombatant,
   resolveFoeBlock, sortForTurns, type Combatant, type EncounterFoe, type ParsedAction,
+  isDndFamilyBlock,
 } from "@/lib/combat";
 import {
   initialCampaignId, initialSessionId, useRememberCampaign, useRememberSession, urlParam, setUrlParam, gmHref,
@@ -112,7 +113,7 @@ export default function CombatPage() {
       ]);
       const list = (camps as Campaign[]) || [];
       setCampaigns(list);
-      setBlocks(own.filter((b) => !b.system || b.system === "dnd5e"));
+      setBlocks(own.filter((b) => isDndFamilyBlock(b.system)));
       setCampaignId(initialCampaignId(list));
       setLoading(false);
       try { const n = sessionStorage.getItem("sax_combat_note"); if (n) { setNote(n); sessionStorage.removeItem("sax_combat_note"); } } catch { /* ignore */ }

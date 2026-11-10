@@ -102,14 +102,22 @@ export default function PlayerMapPage() {
               {/* Read-only. Updates live over Realtime as the GM reveals. */}
               <MapFog mapId={active.id} shareCode={share} />
               {active.pins.map((p) => (
+                // 44px transparent hit area for a comfortable tap target on a phone at the table; the
+                // visible dot stays small so the map is not cluttered. aria-label names the pin.
                 <button key={p.id} type="button" title={p.label || p.linked_title || "pin"}
+                  aria-label={p.label || p.linked_title || "Map pin"}
                   onClick={() => setSelectedPin((cur) => (cur === p.id ? null : p.id))}
                   style={{
                     position: "absolute", left: `${p.x * 100}%`, top: `${p.y * 100}%`, transform: "translate(-50%, -50%)",
+                    width: 44, height: 44, borderRadius: "50%", background: "transparent", border: "none",
+                    padding: 0, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                  }}>
+                  <span aria-hidden="true" style={{
                     width: selectedPin === p.id ? 20 : 15, height: selectedPin === p.id ? 20 : 15, borderRadius: "50%",
                     background: C.sun, border: `2px solid ${selectedPin === p.id ? C.text : C.ink}`,
-                    boxShadow: "0 2px 6px rgba(0,0,0,0.5)", cursor: "pointer", padding: 0,
+                    boxShadow: "0 2px 6px rgba(0,0,0,0.5)",
                   }} />
+                </button>
               ))}
             </div>
 

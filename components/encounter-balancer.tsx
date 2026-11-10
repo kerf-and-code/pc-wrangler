@@ -121,7 +121,7 @@ export default function EncounterBalancer() {
         {system === "dnd" && (
           <div style={{ display: "inline-flex", gap: 6, marginLeft: 10 }}>
             {(["2024", "2014"] as const).map((m) => (
-              <button key={m} onClick={() => setMethod(m)} style={m === method ? pillOn : pill}>{m === "2024" ? "2024 rules" : "2014 rules"}</button>
+              <button key={m} aria-pressed={m === method} onClick={() => setMethod(m)} style={m === method ? pillOn : pill}>{m === "2024" ? "2024 rules" : "2014 rules"}</button>
             ))}
           </div>
         )}

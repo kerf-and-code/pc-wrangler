@@ -271,6 +271,7 @@ const FORGE_SYSTEMS: [string, string][] = [
   ["daggerheart", "Daggerheart"],
   ["drawsteel", "Draw Steel"],
   ["lancer", "Lancer"],
+  ["darkmatter", "Dark Matter"], // built on 5e: the D&D forge, under its own label (audit G2)
 ];
 
 export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }) {

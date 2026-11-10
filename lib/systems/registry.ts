@@ -6,6 +6,7 @@ import { daggerheart } from "./daggerheart";
 import { poold10 } from "./poold10";
 import { drawsteel } from "./drawsteel";
 import { lancer } from "./lancer";
+import { darkmatter } from "./darkmatter";
 
 // The registry maps a campaign's `system` to its module. Today it holds only D&D 5e, so every
 // campaign resolves to the same module and behavior is unchanged. New systems are added here as
@@ -24,6 +25,7 @@ const MODULES: Record<SystemId, RulesModule> = {
   poold10,
   drawsteel,
   lancer,
+  darkmatter,
 };
 
 export const DEFAULT_SYSTEM: SystemId = "dnd5e";
