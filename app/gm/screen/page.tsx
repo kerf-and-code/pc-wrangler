@@ -6,8 +6,8 @@ import { SAX, STONE } from "@/lib/theme";
 
 // app/gm/screen/page.tsx
 //
-// The DM Screen: free-form boards of compendium cards the GM sends over from the Rules compendium
-// ("To DM Screen"). Gated to signed-in GMs by lib/supabase/proxy.ts like the rest of /gm. Cards are
+// The GM screen: free-form boards of compendium cards the GM sends over from the Rules compendium
+// ("To GM screen"). Gated to signed-in GMs by lib/supabase/proxy.ts like the rest of /gm. Cards are
 // snapshots stored per GM in dm_boards (migration p92); this page arranges and persists them.
 
 export default function GmScreenPage() {
@@ -28,7 +28,7 @@ export default function GmScreenPage() {
             margin: "0 0 6px",
           }}
         >
-          DM Screen
+          GM screen
         </h1>
         <p
           style={{

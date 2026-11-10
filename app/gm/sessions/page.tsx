@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import { initialCampaignId, useRememberCampaign, initialSessionId, useRememberSession, gmHref } from "@/lib/campaign-context";
+import { friendlyError } from "@/lib/friendly-error";
 
 const STATUS_TONE: Record<string, string> = {
   scheduled: C.muted, live: C.warn, completed: C.sun, processed: C.good, cancelled: C.muted,
@@ -221,7 +222,7 @@ export default function SessionWorkspace() {
       capture_modality: newSession.modality, consent_recorded: newSession.consent,
       notes: newSession.notes.trim() || null, started_at: new Date().toISOString(),
     }).select().single();
-    if (error) setErr(error.message);
+    if (error) setErr(friendlyError(error));
     else { setSessions((s) => [data, ...s]); setSession(data.id); setNewSession({ modality: "in_person", consent: false, notes: "" }); }
     setBusy(false);
   }
@@ -312,7 +313,7 @@ export default function SessionWorkspace() {
   // End and process: close the session AND open it for player check-in, in one guarded
   // write so status, ended_at, and processed_at can never disagree.
   async function endAndProcess() {
-    if (!window.confirm("End this session and open player check-in? Players can then rate the session, and the recap pipeline starts. You can reopen the session later if you need to.")) return;
+    if (!window.confirm("End this session and open player check-in? Players can then rate the session, and Six Axes starts drafting the recap. You can reopen the session later if you need to.")) return;
     await closeSession(false, true);
   }
 
@@ -403,7 +404,7 @@ export default function SessionWorkspace() {
     setRecapSaving(true); setRecapMsg(null);
     const { error } = await supabase.from("sessions")
       .update({ recap: recap.trim() || null }).eq("id", session);
-    if (error) setRecapMsg(error.message);
+    if (error) setRecapMsg(friendlyError(error));
     else {
       setSessions((arr) => arr.map((s) => (s.id === session ? { ...s, recap: recap.trim() || null } : s)));
       setRecapMsg("Saved.");
@@ -433,7 +434,7 @@ export default function SessionWorkspace() {
     // save the current text first so we send exactly what is shown
     const { error: saveErr } = await supabase.from("sessions")
       .update({ recap: recap.trim() || null }).eq("id", session);
-    if (saveErr) { setRecapMsg(saveErr.message); setRecapSending(false); return; }
+    if (saveErr) { setRecapMsg(friendlyError(saveErr)); setRecapSending(false); return; }
     setSessions((arr) => arr.map((s) => (s.id === session ? { ...s, recap: recap.trim() || null } : s)));
 
     const emails = recipients.split(",").map((e) => e.trim()).filter(Boolean);
@@ -463,7 +464,7 @@ export default function SessionWorkspace() {
     // Save the current text first so Discord gets exactly what is shown, same as email.
     const { error: saveErr } = await supabase.from("sessions")
       .update({ recap: recap.trim() || null }).eq("id", session);
-    if (saveErr) { setRecapMsg(saveErr.message); setRecapPosting(false); return; }
+    if (saveErr) { setRecapMsg(friendlyError(saveErr)); setRecapPosting(false); return; }
     setSessions((arr) => arr.map((s) => (s.id === session ? { ...s, recap: recap.trim() || null } : s)));
 
     try {
@@ -494,7 +495,7 @@ export default function SessionWorkspace() {
         if (tz) void supabase.from("campaigns").update({ time_zone: tz }).eq("id", campaign).is("time_zone", null).then(() => {});
       } catch { /* ignore */ }
     }
-    if (error) setSchedMsg(error.message);
+    if (error) setSchedMsg(friendlyError(error));
     else {
       setSessions((arr) => arr.map((s) => (s.id === session ? { ...s, scheduled_at: iso } : s)));
       setSchedMsg(iso ? "Time saved." : "Time cleared.");
@@ -623,7 +624,7 @@ export default function SessionWorkspace() {
       axis: entry.axis || null, frame: entry.frame || null, target: entry.target || null,
       source: "manual", payload: entry.note.trim() ? { note: entry.note.trim() } : null,
     });
-    if (error) setErr(error.message);
+    if (error) setErr(friendlyError(error));
     else { setEntry((e) => ({ ...e, note: "" })); await loadEvents(session); }
     setBusy(false);
   }
@@ -631,7 +632,7 @@ export default function SessionWorkspace() {
   async function deleteEvent(id: string) {
     if (!window.confirm("Delete this logged event? It also leaves the session's stats and recap inputs. This cannot be undone.")) return;
     const { error } = await supabase.from("events").delete().eq("id", id);
-    if (error) setErr(error.message); else if (session) loadEvents(session);
+    if (error) setErr(friendlyError(error)); else if (session) loadEvents(session);
   }
 
   async function addLoot() {
@@ -644,7 +645,7 @@ export default function SessionWorkspace() {
       rarity: newLoot.rarity.trim() || null,
       est_value: newLoot.value ? Number(newLoot.value) : null,
     });
-    if (error) setErr(error.message);
+    if (error) setErr(friendlyError(error));
     else { setNewLoot({ characterId: "", item: "", rarity: "", value: "" }); if (session) await loadEvents(session); }
     setBusy(false);
   }
@@ -652,7 +653,7 @@ export default function SessionWorkspace() {
   async function removeLoot(id: string) {
     if (!window.confirm("Remove this loot entry? It also leaves the loot-fairness numbers. This cannot be undone.")) return;
     const { error } = await supabase.from("loot_grants").delete().eq("id", id);
-    if (error) setErr(error.message); else if (session) loadEvents(session);
+    if (error) setErr(friendlyError(error)); else if (session) loadEvents(session);
   }
 
   async function addArc() {
@@ -663,7 +664,7 @@ export default function SessionWorkspace() {
       character_id: newArc.characterId || null, status: "open",
       opened_session_id: session || null,
     });
-    if (error) setErr(error.message);
+    if (error) setErr(friendlyError(error));
     else { setNewArc({ title: "", characterId: "" }); if (campaign) await loadCampaignData(campaign); }
     setBusy(false);
   }
@@ -674,7 +675,7 @@ export default function SessionWorkspace() {
     const { error } = await supabase.from("arc_touches").insert({
       campaign_id: campaign, arc_id: arcId, session_id: session,
     });
-    if (error) setErr(error.message); else if (campaign) await loadCampaignData(campaign);
+    if (error) setErr(friendlyError(error)); else if (campaign) await loadCampaignData(campaign);
   }
 
   // ---- derived ----

@@ -7,6 +7,7 @@ import { UpgradeAccount } from "@/components/upgrade-account";
 import TableTap from "@/components/table-tap";
 import { SAX } from "@/lib/theme";
 import { C, FORGE_RADIUS, stoneField, stonePanel, stoneButton } from "@/lib/forge-theme";
+import { ConnectProblem, LinkInvalid } from "@/components/load-problem";
 
 type RosterEntry = { character_id: string; name: string };
 type Phase = "idle" | "recording" | "recorded" | "uploading" | "uploaded";
@@ -27,7 +28,7 @@ function pickMime(): string {
 export default function RecordPage() {
   const supabase = useMemo(() => createClient(), []);
   const [share, setShare] = useState<string | null>(null);
-  const [status, setStatus] = useState<"loading" | "ready" | "invalid">("loading");
+  const [status, setStatus] = useState<"loading" | "ready" | "invalid" | "offline">("loading");
   const [campaignName, setCampaignName] = useState<string | null>(null);
   const [openSession, setOpenSession] = useState<boolean>(false);
   const [sessionNumber, setSessionNumber] = useState<number | null>(null);
@@ -63,13 +64,14 @@ export default function RecordPage() {
       } catch (e) { /* no storage */ }
 
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { const { error: e } = await supabase.auth.signInAnonymously(); if (e) { if (active) setStatus("invalid"); return; } }
+      if (!user) { const { error: e } = await supabase.auth.signInAnonymously(); if (e) { if (active) setStatus("offline"); return; } }
 
-      const [{ data: ctx }, { data: rost }] = await Promise.all([
+      const [{ data: ctx, error: cErr }, { data: rost, error: rErr }] = await Promise.all([
         supabase.rpc("record_context", { code }),
         supabase.rpc("roster_for_share", { code }),
       ]);
       if (!active) return;
+      if (cErr || rErr) { setStatus("offline"); return; } // audit U9
       if (!ctx || !ctx.length) { setStatus("invalid"); return; }
       setCampaignName(ctx[0].campaign_name);
       setOpenSession(Boolean(ctx[0].open));
@@ -214,7 +216,8 @@ export default function RecordPage() {
           <div style={{ height: 3, borderRadius: 3, background: `linear-gradient(90deg, ${C.sun}, ${C.plum})`, margin: "18px 0 22px" }} />
 
           {status === "loading" && <p style={{ textAlign: "center", color: C.muted, fontSize: 14 }}>Loading…</p>}
-          {status === "invalid" && <p style={{ textAlign: "center", color: C.muted, fontSize: 14, lineHeight: 1.6 }}>This link looks broken. Ask your GM for the campaign link.</p>}
+          {status === "invalid" && <LinkInvalid />}
+          {status === "offline" && <ConnectProblem />}
 
           {status === "ready" && (
             <>

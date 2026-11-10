@@ -6,6 +6,7 @@ import PageShell from "@/components/page-shell";
 import { UpgradeAccount } from "@/components/upgrade-account";
 import { PlayerDisposition } from "@/components/player-disposition";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
+import { ConnectProblem, LinkInvalid } from "@/components/load-problem";
 
 const AXES = ["N", "T", "O", "S", "E", "I"] as const;
 type Axis = typeof AXES[number];
@@ -35,7 +36,7 @@ export default function PlayerJournalPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         const { error } = await supabase.auth.signInAnonymously();
-        if (error) { if (active) setStatus("invalid"); return; }
+        if (error) { if (active) setStatus("error"); return; } // audit U9: a sign-in failure is not a bad link
       }
       const { data: { user: me } } = await supabase.auth.getUser();
       if (active && me) setProfileId(me.id);
@@ -79,8 +80,8 @@ export default function PlayerJournalPage() {
         <UpgradeAccount variant="card" next="/me" />
 
         {status === "loading" && <p style={{ textAlign: "center", color: C.muted, fontSize: 14 }}>Loading&hellip;</p>}
-        {status === "invalid" && <p style={{ textAlign: "center", color: C.muted, fontSize: 14 }}>This link looks broken. Ask your GM for your invite link.</p>}
-        {status === "error" && <p style={{ textAlign: "center", color: C.muted, fontSize: 14, lineHeight: 1.6 }}>Something went wrong loading your journal. Please refresh to try again.</p>}
+        {status === "invalid" && <LinkInvalid what="invite link" />}
+        {status === "error" && <ConnectProblem />}
         {status === "unclaimed" && (
           <p style={{ textAlign: "center", color: C.muted, fontSize: 14, lineHeight: 1.6 }}>
             Claim your character with the personal invite link your GM sent, and your story will gather here.
@@ -97,7 +98,7 @@ export default function PlayerJournalPage() {
                 worse than not knowing it is there. */}
             {profileId && <PlayerDisposition profileId={profileId} mode="player" />}
 
-            {/* how you actually play — the character posterior */}
+            {/* how you actually play: the character posterior */}
             <div style={sectionTitle}>How you actually play</div>
             {hasPost ? (
               <div style={card}>
@@ -110,7 +111,7 @@ export default function PlayerJournalPage() {
                     <div key={ax} style={{ marginBottom: 9 }}>
                       <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 4 }}>
                         <span style={{ color: C.text }}>{TAVERN[ax]}</span>
-                        <span style={{ fontFamily: "ui-monospace, monospace", color: C.muted }}>{v == null ? "—" : `${Math.round(v * 100)}`}</span>
+                        <span style={{ fontFamily: "ui-monospace, monospace", color: C.muted }}>{v == null ? "-" : `${Math.round(v * 100)}`}</span>
                       </div>
                       <div style={{ height: 8, background: "rgba(255,255,255,0.06)", borderRadius: FORGE_RADIUS, overflow: "hidden" }}>
                         <div style={{ height: "100%", width: `${(v ?? 0) * 100}%`, background: AXIS_COLOR[ax], transition: "width .3s" }} />
@@ -133,7 +134,7 @@ export default function PlayerJournalPage() {
               journal.beats.map((b, i) => (
                 <div key={i} style={{ ...card, display: "flex", gap: 12, alignItems: "flex-start" }}>
                   <span style={{ fontFamily: "ui-monospace, monospace", fontSize: 11, color: C.muted, whiteSpace: "nowrap", marginTop: 2 }}>
-                    {b.n != null ? `S${b.n}` : "—"}
+                    {b.n != null ? `S${b.n}` : "-"}
                   </span>
                   <span style={{ fontSize: 14, color: C.text, lineHeight: 1.6 }}>{b.summary}</span>
                 </div>

@@ -6,6 +6,7 @@ import PageShell from "@/components/page-shell";
 import { surfaces, ui } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import { initialCampaignId, useRememberCampaign, initialSessionId, useRememberSession } from "@/lib/campaign-context";
+import { friendlyError } from "@/lib/friendly-error";
 
 type Campaign = { id: string; name: string };
 type Sess = { id: string; session_number: number | null; status: string };
@@ -84,7 +85,7 @@ export default function TranscriptsPage() {
     (async () => {
       setLoading(true); setError(null); setSpeaker("");
       const { data: jobs, error: je } = await supabase.from("capture_jobs").select("id").eq("session_id", sessionId);
-      if (je) { if (active) { setError(je.message); setLoading(false); } return; }
+      if (je) { if (active) { setError(friendlyError(je)); setLoading(false); } return; }
       const jobIds = ((jobs as { id: string }[]) || []).map((j) => j.id);
       if (jobIds.length === 0) { if (active) { setTracks([]); setSegments([]); setLoading(false); } return; }
 
@@ -102,7 +103,7 @@ export default function TranscriptsPage() {
           .order("start_ms", { ascending: true, nullsFirst: true })
           .order("id", { ascending: true })
           .range(from, from + PAGE - 1);
-        if (se) { if (active) setError(se.message); break; }
+        if (se) { if (active) setError(friendlyError(se)); break; }
         const batch = (segs as Seg[]) || [];
         all.push(...batch);
         if (batch.length < PAGE) break;

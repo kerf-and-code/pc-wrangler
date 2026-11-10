@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
+import { ConnectProblem, LinkInvalid } from "@/components/load-problem";
 
 type Item = { item_kind: string; item_type: string; id: string; title: string; body: string | null };
 
@@ -17,7 +18,7 @@ const GROUPS: { type: string; label: string }[] = [
 export default function PlayerLorePage() {
   const supabase = useMemo(() => createClient(), []);
   const [items, setItems] = useState<Item[]>([]);
-  const [status, setStatus] = useState<"loading" | "ready" | "empty" | "invalid">("loading");
+  const [status, setStatus] = useState<"loading" | "ready" | "empty" | "invalid" | "offline">("loading");
 
   useEffect(() => {
     let active = true;
@@ -28,11 +29,12 @@ export default function PlayerLorePage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         const { error: signErr } = await supabase.auth.signInAnonymously();
-        if (signErr) { if (active) setStatus("invalid"); return; }
+        if (signErr) { if (active) setStatus("offline"); return; }
       }
 
-      const { data: rows } = await supabase.rpc("codex_for_player", { p_share: shareCode });
+      const { data: rows, error: rErr } = await supabase.rpc("codex_for_player", { p_share: shareCode });
       if (!active) return;
+      if (rErr) { setStatus("offline"); return; } // audit U9: a failed read is not "nothing yet"
       const list = (rows as Item[]) || [];
       setItems(list);
       setStatus(list.length ? "ready" : "empty");
@@ -53,9 +55,8 @@ export default function PlayerLorePage() {
         <div style={{ height: 3, borderRadius: 3, background: `linear-gradient(90deg, ${C.sun}, ${C.plum})`, marginBottom: 24 }} />
 
         {status === "loading" && <p style={{ textAlign: "center", color: C.muted, fontSize: 14 }}>Loading&hellip;</p>}
-        {status === "invalid" && (
-          <p style={{ textAlign: "center", color: C.muted, fontSize: 14, lineHeight: 1.6 }}>This link looks broken. Ask your GM for the campaign link.</p>
-        )}
+        {status === "invalid" && <LinkInvalid />}
+        {status === "offline" && <ConnectProblem />}
         {status === "empty" && (
           <p style={{ textAlign: "center", color: C.muted, fontSize: 14, lineHeight: 1.6 }}>
             Nothing to show yet. As you meet people and uncover places, what your character learns will gather here.

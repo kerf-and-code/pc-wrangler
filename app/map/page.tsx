@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import MapFog from "@/components/map-fog";
+import { ConnectProblem, LinkInvalid } from "@/components/load-problem";
 
 const BUCKET = "campaign-maps";
 
@@ -21,7 +22,7 @@ export default function PlayerMapPage() {
   const [maps, setMaps] = useState<MapView[]>([]);
   const [activeId, setActiveId] = useState<string>("");
   const [selectedPin, setSelectedPin] = useState<string | null>(null);
-  const [status, setStatus] = useState<"loading" | "ready" | "empty" | "invalid">("loading");
+  const [status, setStatus] = useState<"loading" | "ready" | "empty" | "invalid" | "offline">("loading");
   // Held at page level so the fog overlay can read through it. The effect below already reads the
   // same value from the URL; this just keeps it where a child can be given it.
   const [share, setShare] = useState("");
@@ -36,11 +37,12 @@ export default function PlayerMapPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         const { error } = await supabase.auth.signInAnonymously();
-        if (error) { if (active) setStatus("invalid"); return; }
+        if (error) { if (active) setStatus("offline"); return; }
       }
 
-      const { data } = await supabase.rpc("map_for_player", { p_share: shareCode });
+      const { data, error: mErr } = await supabase.rpc("map_for_player", { p_share: shareCode });
       if (!active) return;
+      if (mErr) { setStatus("offline"); return; } // audit U9: a failed read is not "no map yet"
       const rows = (data as Row[]) || [];
       const byMap = new Map<string, MapView>();
       for (const r of rows) {
@@ -73,9 +75,8 @@ export default function PlayerMapPage() {
         <div style={{ height: 3, borderRadius: 3, background: `linear-gradient(90deg, ${C.sun}, ${C.plum})`, marginBottom: 24 }} />
 
         {status === "loading" && <p style={{ textAlign: "center", color: C.muted, fontSize: 14 }}>Loading&hellip;</p>}
-        {status === "invalid" && (
-          <p style={{ textAlign: "center", color: C.muted, fontSize: 14, lineHeight: 1.6 }}>This link looks broken. Ask your GM for the campaign link.</p>
-        )}
+        {status === "invalid" && <LinkInvalid />}
+        {status === "offline" && <ConnectProblem />}
         {status === "empty" && (
           <p style={{ textAlign: "center", color: C.muted, fontSize: 14, lineHeight: 1.6 }}>
             No map yet. When your GM shares one, it&rsquo;ll appear here with the places you&rsquo;ve discovered.

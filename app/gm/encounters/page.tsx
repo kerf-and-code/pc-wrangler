@@ -18,6 +18,7 @@ import { monsterSourceLabel, monsterSourceTitle } from "@/lib/monster-sources";
 import { initialCampaignId, useRememberCampaign, preferredSessionId, gmHref } from "@/lib/campaign-context";
 import { subclassKey } from "@/lib/subclass-names";
 import { rulesetForCampaign } from "@/lib/systems/ruleset";
+import { friendlyError, notReady } from "@/lib/friendly-error";
 
 // ============================================================================
 // THE TWO METHODS ARE GENUINELY DIFFERENT. THIS IS THE WHOLE POINT OF THE TOOL.
@@ -420,7 +421,7 @@ export default function EncountersPage() {
   const loadSaved = useCallback(async (cid: string) => {
     const { data, error } = await supabase.from("encounters").select("id, name, rules, foes, updated_at")
       .eq("campaign_id", cid).order("updated_at", { ascending: false });
-    if (error) { setEncMsg(error.message.includes("does not exist") ? "Run migration p101 to save encounters." : error.message); setSavedList([]); return; }
+    if (error) { setEncMsg(error.message.includes("does not exist") ? notReady("Saved encounters", "p101") : friendlyError(error)); setSavedList([]); return; }
     setSavedList((data as SavedEncounter[]) || []);
   }, [supabase]);
   useEffect(() => { if (campaignId) { void loadSaved(campaignId); setEncId(null); setEncName(""); setEncMsg(null); } }, [campaignId, loadSaved]);
@@ -453,7 +454,7 @@ export default function EncountersPage() {
       ? await supabase.from("encounters").update(row).eq("id", encId).select("id").single()
       : await supabase.from("encounters").insert(row).select("id").single();
     setEncBusy(false);
-    if (res.error) { setEncMsg(res.error.message.includes("does not exist") ? "Run migration p101 to save encounters." : `Not saved: ${res.error.message}`); return; }
+    if (res.error) { setEncMsg(res.error.message.includes("does not exist") ? notReady("Saved encounters", "p101") : friendlyError(res.error, "save")); return; }
     setEncId((res.data as { id: string }).id); setEncName(name); setEncMsg("Saved.");
     void loadSaved(campaignId);
   }
@@ -572,7 +573,7 @@ export default function EncountersPage() {
       name: encName.trim() || defaultEncName(), rules: method, combatants,
     }).select("id").single();
     setEncBusy(false);
-    if (error) { setEncMsg(error.message.includes("does not exist") ? "Run migration p101 to run fights." : `Could not start the fight: ${error.message}`); return; }
+    if (error) { setEncMsg(error.message.includes("does not exist") ? notReady("Running fights", "p101") : friendlyError(error, "start the fight")); return; }
     if (unresolved) { try { sessionStorage.setItem("sax_combat_note", `${unresolved} monster${unresolved === 1 ? " has" : "s have"} no stat block (typed in by hand). Set their HP and AC on the Combat page.`); } catch { /* ignore */ } }
     window.location.assign(gmHref("/gm/combat", { campaign: campaignId, combat: (data as { id: string }).id }));
   }

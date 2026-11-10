@@ -104,7 +104,7 @@ export default function ImportReviewPage() {
 
   return (
     <PageShell width={820}>
-      <div style={{ ...label, marginBottom: 6 }}>Backfill · review</div>
+      <div style={{ ...label, marginBottom: 6 }}>Older sessions · review</div>
       <h1 style={{ fontFamily: "'Iowan Old Style', Georgia, serif", fontSize: 28, fontWeight: 700, margin: "0 0 8px" }}>
         {done ? "Imported" : "Review before it lands"}
       </h1>

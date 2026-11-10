@@ -26,7 +26,7 @@
 // wait for the target's saving throw (phase 4b, p111): the damage is rolled once, a monster's save is
 // rolled here at once, and a player character's save waits as a pending save until the player rolls it
 // on their sheet or the tabletop (or the GM settles it: they saved, they failed). HP and conditions stay
-// editable by hand for anyone at any time: the GM is never gated. The DM Screen stays a reference board.
+// editable by hand for anyone at any time: the GM is never gated. The GM screen stays a reference board.
 //
 // Phase 4c (p112): action economy. The combatant whose turn it is shows its action, bonus action and
 // reaction (click one to mark it used or give it back), how far it has moved of its speed, and attacks
@@ -54,6 +54,7 @@ import {
 import {
   initialCampaignId, initialSessionId, useRememberCampaign, useRememberSession, urlParam, setUrlParam, gmHref,
 } from "@/lib/campaign-context";
+import { friendlyError, notReady } from "@/lib/friendly-error";
 
 type Campaign = { id: string; name: string; system: string | null; share_code: string | null };
 type Sess = { id: string; session_number: number | null; status: string | null };
@@ -132,7 +133,7 @@ export default function CombatPage() {
     ]);
     if (encErr || cbErr) {
       const msg = (encErr || cbErr)!.message;
-      setErr(msg.includes("does not exist") ? "The combat tables are not set up yet. Run migration p101 in Supabase." : msg);
+      setErr(msg.includes("does not exist") ? notReady("Combat", "p101") : friendlyError(msg));
     }
     const sl = (s as Sess[]) || [];
     setSessions(sl);
@@ -266,7 +267,7 @@ export default function CombatPage() {
       campaign_id: campaignId, encounter_id: enc?.id ?? null, session_id: sessionId || null,
       name: enc?.name ?? "Combat", rules: enc?.rules ?? "2024", combatants,
     }).select("id, name, rules, status, round, turn, combatants, session_id, encounter_id").single();
-    if (error) { setErr(error.message.includes("does not exist") ? "Run migration p101 in Supabase first." : `Could not start: ${error.message}`); return; }
+    if (error) { setErr(error.message.includes("does not exist") ? notReady("Combat", "p101") : friendlyError(error, "start the fight")); return; }
     setCombat(data as CombatRow);
     setNote(unresolved ? `${unresolved} monster${unresolved === 1 ? " has" : "s have"} no stat block (typed in by hand). Set their HP and AC below.` : null);
   }

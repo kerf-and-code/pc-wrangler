@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
+import { ConnectProblem, LinkInvalid } from "@/components/load-problem";
 
 type Content = {
   campaign: string;
@@ -19,7 +20,7 @@ type Content = {
 export default function CampaignJournalPage() {
   const supabase = useMemo(() => createClient(), []);
   const [content, setContent] = useState<Content | null>(null);
-  const [status, setStatus] = useState<"loading" | "ready" | "empty" | "invalid">("loading");
+  const [status, setStatus] = useState<"loading" | "ready" | "empty" | "invalid" | "offline">("loading");
 
   useEffect(() => {
     let active = true;
@@ -28,8 +29,9 @@ export default function CampaignJournalPage() {
       const idx = parts.indexOf("journal");
       const share = idx >= 0 ? parts[idx + 1] : undefined;
       if (!share) { if (active) setStatus("invalid"); return; }
-      const { data } = await supabase.rpc("journal_for_share", { p_share: share });
+      const { data, error: jErr } = await supabase.rpc("journal_for_share", { p_share: share });
       if (!active) return;
+      if (jErr) { setStatus("offline"); return; } // audit U9: a failed read is not "no chronicle yet"
       const c = (data as Content | null) || null;
       if (c && c.chronicle) { setContent(c); setStatus("ready"); }
       else setStatus("empty");
@@ -45,7 +47,8 @@ export default function CampaignJournalPage() {
     <PageShell width={920}>
       <div style={{ width: "100%", maxWidth: 680, margin: "0 auto" }}>
         {status === "loading" && <p style={{ textAlign: "center", color: C.muted, fontSize: 14 }}>Loading&hellip;</p>}
-        {status === "invalid" && <p style={{ textAlign: "center", color: C.muted, fontSize: 14 }}>This link looks broken.</p>}
+        {status === "invalid" && <LinkInvalid what="journal link" />}
+        {status === "offline" && <ConnectProblem />}
         {status === "empty" && (
           <p style={{ textAlign: "center", color: C.muted, fontSize: 14, lineHeight: 1.6 }}>
             No chronicle yet. Once the GM assembles the journal, the tale of the campaign will live here.

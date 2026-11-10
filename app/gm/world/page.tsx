@@ -26,6 +26,7 @@ import {
 } from "@/lib/worldmap/hex";
 import { fitImageToGrid, pixelToHex, BASE_SIZE, type PlacedImage } from "@/lib/worldmap/layout";
 import { initialCampaignId, useRememberCampaign, gmHref } from "@/lib/campaign-context";
+import { friendlyError } from "@/lib/friendly-error";
 
 // The GM's world map. Paint biomes (Erase clears a hex), set the grid size in hex units, and place
 // one or more uploaded map images that you can move (drag) and scale (scroll) to line up or stitch
@@ -316,11 +317,11 @@ export default function WorldMapPage() {
       const { data, error } = await supabase.from("world_maps").select(MAP_COLS).eq("campaign_id", campaignId).maybeSingle();
       let row = data as MapRow | null;
       if (error) {
-        setStatus(error.message);
+        setStatus(friendlyError(error));
       } else if (!row) {
         const ins = await supabase.from("world_maps").insert({ campaign_id: campaignId }).select(MAP_COLS).single();
         row = ins.data as MapRow | null;
-        if (ins.error) setStatus(ins.error.message);
+        if (ins.error) setStatus(friendlyError(ins.error));
       }
       if (cancelled) return;
       setMapRow(row);
@@ -569,7 +570,7 @@ export default function WorldMapPage() {
   const renameRiver = useCallback(async (oldName: string, newName: string) => {
     if (!mapRow) return;
     const { error } = await supabase.from("map_features").update({ name: newName }).eq("world_map_id", mapRow.id).eq("name", oldName);
-    if (error) { setStatus(error.message); return; }
+    if (error) { setStatus(friendlyError(error)); return; }
     setFeatures((prev) => prev.map((f) => (f.name === oldName ? { ...f, name: newName } : f)));
   }, [supabase, mapRow]);
 
@@ -594,7 +595,7 @@ export default function WorldMapPage() {
   }, [supabase]);
   const removeLabel = useCallback(async (id: string) => {
     const { error } = await supabase.from("map_labels").delete().eq("id", id);
-    if (error) { setStatus(error.message); return; }
+    if (error) { setStatus(friendlyError(error)); return; }
     setLabelRows((prev) => prev.filter((l) => l.id !== id));
   }, [supabase]);
 
@@ -648,9 +649,9 @@ export default function WorldMapPage() {
       supabase.from("map_features").update({ name: null }).eq("world_map_id", mapRow.id).not("name", "is", null),
       supabase.from("map_labels").delete().eq("world_map_id", mapRow.id),
     ]);
-    if (poiRes.error) { setStatus(poiRes.error.message); return; }
-    if (featRes.error) { setStatus(featRes.error.message); return; }
-    if (lblRes.error) { setStatus(lblRes.error.message); return; }
+    if (poiRes.error) { setStatus(friendlyError(poiRes.error)); return; }
+    if (featRes.error) { setStatus(friendlyError(featRes.error)); return; }
+    if (lblRes.error) { setStatus(friendlyError(lblRes.error)); return; }
     setPoiRows([]);
     setFeatures((prev) => prev.map((f) => (f.name ? { ...f, name: null } : f)));
     setLabelRows([]);
@@ -721,7 +722,7 @@ export default function WorldMapPage() {
     const name = poiRows.find((r) => r.id === id)?.name;
     if (!window.confirm(`Delete the marker${name ? ` "${name}"` : ""}? This cannot be undone.`)) return;
     const { error } = await supabase.from("map_pois").delete().eq("id", id);
-    if (error) { setStatus(error.message); return; }
+    if (error) { setStatus(friendlyError(error)); return; }
     setPoiRows((prev) => prev.filter((r) => r.id !== id));
   }, [supabase, poiRows]);
 
@@ -729,13 +730,13 @@ export default function WorldMapPage() {
     const { col, row } = pixelToHex(x, y, BASE_SIZE);
     setPoiRows((prev) => prev.map((r) => (r.id === id ? { ...r, x, y } : r)));
     const { error } = await supabase.from("map_pois").update({ x, y, col, row }).eq("id", id);
-    if (error) setStatus(error.message);
+    if (error) setStatus(friendlyError(error));
   }, [supabase]);
 
   const patchPoi = useCallback(async (id: string, patch: Partial<PoiRow>) => {
     setPoiRows((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)));
     const { error } = await supabase.from("map_pois").update(patch).eq("id", id);
-    if (error) setStatus(error.message);
+    if (error) setStatus(friendlyError(error));
   }, [supabase]);
 
   useEffect(() => () => { if (saveTimer.current) clearTimeout(saveTimer.current); }, []);
@@ -764,7 +765,7 @@ export default function WorldMapPage() {
     if (!mapRow) return;
     const next = mapRow.editable_by === "party" ? "gm" : "party";
     const { error } = await supabase.from("world_maps").update({ editable_by: next }).eq("id", mapRow.id);
-    if (error) { setStatus(error.message); return; }
+    if (error) { setStatus(friendlyError(error)); return; }
     setMapRow({ ...mapRow, editable_by: next });
     setStatus(next === "party" ? "Players can now edit the map" : "Editing locked to you");
   }, [supabase, mapRow]);

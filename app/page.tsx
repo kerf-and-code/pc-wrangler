@@ -34,7 +34,7 @@ import { LANDING_NAV, PILOT_CTA } from "@/lib/marketing/nav";
 //   - 40/60 text-to-image splits that run wide on monitors (A7); the phone gets its own order.
 //
 // 2026-11-03 content pass: a "Running the night" row (Tonight, the combat tracker, the players'
-// Initiative page, the DM Screen) with a new combat capture; the compendium figure and count brought up
+// Initiative page, the GM screen) with a new combat capture; the compendium figure and count brought up
 // to the current library; the systems section says what the D&D builder now covers; the integrations
 // say plainly that only D&D Beyond rolls (whichever VTT they are sent to) and Foundry rolls arrive
 // automatically, not native Roll20 rolls.

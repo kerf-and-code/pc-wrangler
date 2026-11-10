@@ -12,6 +12,7 @@ import { initialCampaignId, useRememberCampaign } from "@/lib/campaign-context";
 import { CampaignSettings, CampaignTrash } from "@/components/campaign-safety";
 import { rulesetForCampaign, pickerSystem } from "@/lib/systems/ruleset";
 import { canonicalSubclass, subclassKey } from "@/lib/subclass-names";
+import { friendlyError } from "@/lib/friendly-error";
 
 // Palette mapped onto the shared cellar theme.
 
@@ -144,7 +145,7 @@ export default function GMWorkspace() {
       .select("id,name,class,subclass,level,species,species_variant,active")
       .eq("campaign_id", campaignId).eq("kind", "pc").eq("active", true)
       .order("created_at", { ascending: true });
-    if (error) setErr(error.message);
+    if (error) setErr(friendlyError(error));
     setCharacters(data || []);
   }, [supabase]);
 
@@ -166,7 +167,7 @@ export default function GMWorkspace() {
     if (!window.confirm(`Switch ${name} to a different game system? The roster, tools and rules shown change to match. Existing characters stay, but fields the new system doesn't use are hidden.`)) return;
     setBusy(true); setErr(null);
     const { error } = await supabase.from("campaigns").update({ system }).eq("id", id);
-    if (error) setErr(error.message);
+    if (error) setErr(friendlyError(error));
     else setCampaigns((cs) => cs.map((c) => (c.id === id ? { ...c, system } : c)));
     setBusy(false);
   }
@@ -178,12 +179,12 @@ export default function GMWorkspace() {
       .from("campaigns")
       .insert({ name: newCampaign.name.trim(), system: newCampaign.system, gm_id: userId, time_zone: browserTimeZone() })
       .select().single();
-    if (error) { setErr(error.message); setBusy(false); return; }
+    if (error) { setErr(friendlyError(error)); setBusy(false); return; }
     // The GM must also be a member (role gm) so member-scoped reads work.
     const { error: mErr } = await supabase
       .from("memberships")
       .insert({ campaign_id: camp.id, profile_id: userId, role: "gm" });
-    if (mErr) setErr(mErr.message);
+    if (mErr) setErr(friendlyError(mErr));
     setCampaigns((cs) => [camp, ...cs]);
     setNewCampaign({ name: "", system: "5e" });
     setSelected(camp.id);
@@ -203,7 +204,7 @@ export default function GMWorkspace() {
       // is needed: they cannot be typed, only chosen.
       species_variant: newChar.species_variant || null,
     });
-    if (error) setErr(error.message);
+    if (error) setErr(friendlyError(error));
     else { setNewChar({ name: "", class: "", subclass: "", level: "", species: "", species_variant: "" }); if (selected) await loadCharacters(selected); }
     setBusy(false);
   }
@@ -229,7 +230,7 @@ export default function GMWorkspace() {
       species: editChar.species || null,
       species_variant: editChar.species_variant || null,
     }).eq("id", editId);
-    if (error) setErr(error.message);
+    if (error) setErr(friendlyError(error));
     else { setEditId(null); if (selected) await loadCharacters(selected); }
     setBusy(false);
   }
@@ -240,7 +241,7 @@ export default function GMWorkspace() {
     setErr(null);
     // Ask for the row back: an update that RLS filters out returns no error and changes nothing.
     const { data, error } = await supabase.from("characters").update({ active: false }).eq("id", id).select("id");
-    if (error) setErr(error.message);
+    if (error) setErr(friendlyError(error));
     else if (!data || data.length === 0) setErr(`${name} was not removed: you may not have permission to change this character.`);
     else if (selected) await loadCharacters(selected);
   }
@@ -259,7 +260,7 @@ export default function GMWorkspace() {
     setErr(null);
     const { error } = await supabase.from("tpdi_responses")
       .update({ campaign_id: selected }).eq("id", responseId);
-    if (error) setErr(error.message);
+    if (error) setErr(friendlyError(error));
     else setDispositions((ds) => ds.map((d) => (d.id === responseId ? { ...d, campaign_id: selected } : d)));
   }
 
@@ -278,7 +279,7 @@ export default function GMWorkspace() {
   }
   async function reloadCampaigns() {
     const { data, error } = await supabase.from("campaigns").select("id,name,system,gm_id,share_code,time_zone").order("created_at", { ascending: false });
-    if (error) { setErr(error.message); return; }
+    if (error) { setErr(friendlyError(error)); return; }
     setCampaigns(data || []);
     setNotice(null);
   }

@@ -19,7 +19,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { SAX } from "@/lib/theme";
 import SixAxesNav from "@/components/six-axes-nav";
 import {
   STONE, FORGE_FONTS, forgeBackground, forgeVignette, stonePanel, stoneButton,
@@ -66,7 +65,7 @@ export default function LibraryPage() {
   }, [supabase]);
 
   const onPlay = useCallback(async (lib: LibraryRow, campaignId: string) => {
-    if (!campaignId) return; // "No campaign" — nothing to do
+    if (!campaignId) return; // "No campaign": nothing to do
     setBusyId(lib.id);
     try {
       const newCharId = await instantiateToCampaign(supabase, lib, campaignId);
@@ -100,7 +99,7 @@ export default function LibraryPage() {
               <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 18 }}>
                 <button className="forge-btn is-primary" style={stoneButton("primary")}
                   onClick={() => router.push("/me/forge")}>
-                  + Create new character
+                  + New character
                 </button>
               </div>
 
@@ -221,13 +220,9 @@ function FontsAndCss() {
 function Header() {
   return (
     <header style={{ textAlign: "center", margin: "10px 0 6px" }}>
-      <div style={{ fontFamily: FORGE_FONTS.mono, fontSize: 12, letterSpacing: "0.42em",
-        textTransform: "uppercase", color: SAX.brass, marginBottom: 12 }}>
-        Kerf &amp; Code · Six Axes
-      </div>
-      <h1 style={{ ...forgeHeading, fontSize: 38, margin: 0 }}>YOUR CHARACTERS</h1>
+      <h1 style={{ ...forgeHeading, fontSize: 38, margin: 0 }}>CHARACTER LIBRARY</h1>
       <p style={{ color: STONE.inkDim, fontStyle: "italic", fontSize: 17, marginTop: 4 }}>
-        every hero you&rsquo;ve forged, ready for any table
+        builds not yet in a campaign, ready for any table
       </p>
       <div style={{ display: "flex", alignItems: "center", gap: 16, margin: "26px 0" }}>
         <span style={forgeRuleLine} />

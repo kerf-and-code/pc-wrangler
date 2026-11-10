@@ -3009,7 +3009,7 @@ function SpeciesPanel({
                         <option value="">Not chosen</option>
                         {opts.map((o) => (
                           <option key={o.name} value={o.name}>
-                            {o.name}{o.detail ? ` \u2014 ${o.detail.slice(0, 60)}` : ""}
+                            {o.name}{o.detail ? `: ${o.detail.slice(0, 60)}` : ""}
                           </option>
                         ))}
                       </select>
@@ -3482,7 +3482,7 @@ function GrantedEquipmentPanel({ bgRec, coreTraits, catalog, owned, onAdd }: {
                 ))}
                 {choose.map((i) => (
                   <span key={i.raw} style={{ ...stoneChip(), fontSize: 12.5, color: C.plum }}>
-                    {i.name} \u2014 your choice
+                    {i.name}: your choice
                   </span>
                 ))}
                 {missing.map((i) => (
@@ -3851,7 +3851,7 @@ function MenuPanel({ menus }: { menus: ClassMenu[] }) {
                   width: "100%", display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10 }}>
                 <span style={{ fontSize: 13.5, color: STONE.ink }}>{m.name}</span>
                 <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 11, color: STONE.inkFaint }}>
-                  {m.options.length} options {isOpen ? "\u2013" : "+"}
+                  {m.options.length} options {isOpen ? "-" : "+"}
                 </span>
               </button>
               {isOpen && (
@@ -3900,10 +3900,6 @@ function FontsAndCss() {
 function Header() {
   return (
     <header style={{ textAlign: "center", margin: "10px 0 6px" }}>
-      <div style={{ fontFamily: FORGE_FONTS.mono, fontSize: 12, letterSpacing: "0.42em",
-        textTransform: "uppercase", color: SAX.brass, marginBottom: 12 }}>
-        Kerf &amp; Code · Six Axes
-      </div>
       <h1 style={{ ...forgeHeading, fontSize: 40, margin: 0 }}>THE FORGE</h1>
       <p style={{ color: STONE.inkDim, fontStyle: "italic", fontSize: 17, marginTop: 4 }}>
         where characters are hammered into shape
@@ -4568,7 +4564,7 @@ function ClassProgressionPanel({ className, level, progression, epicRows, classR
                 </td>
                 {cols.map((c) => (
                   <td key={c} style={{ ...tdStyle, color: here ? STONE.ink : STONE.inkDim }}>
-                    {r.columns[c] || "\u2014"}
+                    {r.columns[c] || "-"}
                   </td>
                 ))}
               </tr>

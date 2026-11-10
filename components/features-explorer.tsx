@@ -19,7 +19,7 @@ import { FULL_TOOLSET, THEMED_TABLE, systemsAnd } from "@/lib/marketing/systems"
 // copy in a 40% column beside the capture at 60%. On phones the tabs are a two-column grid.
 //
 // 2026-11-03: added "Running the night" (Tonight, the combat tracker, the players' Initiative page, the
-// DM Screen; capture combat.png), and brought the systems and compendium copy up to the current library
+// GM screen; capture combat.png), and brought the systems and compendium copy up to the current library
 // (about 16,000 compendium entries, each labeled by book; partnered publishers' content with permission).
 
 type Feature = {
@@ -52,7 +52,7 @@ const FEATURES: Feature[] = [
     lead: "Everything for game night, on one page.",
     paras: [
       "Tonight walks you through the session from start to finish: who is here, consent, recording, a quick log for the moment you will want to remember, and the wrap-up. Build a fight on the encounter balancer, save it with its stat blocks, and press Run.",
-      "The combat tracker handles initiative, hit points, temporary hit points and conditions, with one-click attack and damage rolls from each monster's stat block. Those rolls land in the session's Mechanics next to the players'. Your players follow the turn order on their phones, without ever seeing a monster's hit points, and the DM Screen keeps the rules cards you need pinned beside you.",
+      "The combat tracker handles initiative, hit points, temporary hit points and conditions, with one-click attack and damage rolls from each monster's stat block. Those rolls land in the session's Mechanics next to the players'. Your players follow the turn order on their phones, without ever seeing a monster's hit points, and the GM screen keeps the rules cards you need pinned beside you.",
     ],
     img: "/screens/combat.png",
     imgAlt: "The combat tracker: initiative order, hit points and AC for player characters and goblins, with the Goblin Hexer's stat block and attack buttons open",
@@ -113,7 +113,7 @@ const FEATURES: Feature[] = [
     lead: "An offline voice compendium, built for the table.",
     paras: [
       "Say a spell, item, or condition, fireball, belt of giant strength, grappled, and its rules card is up before the question finishes. The speech recognition runs on-device and is not an AI model, so nothing leaves the browser and it works with the wifi off. Type it instead when the room is loud.",
-      "Nearly 16,000 entries, spells, monsters, magic items, classes, species, feats and rules, each labeled with the book it comes from, with a 2014 or 2024 toggle. Push to talk to pin a card, or leave it listening and let cards fade on their own, and send any card to your DM Screen. It is there so you never stop the game to open a book.",
+      "Nearly 16,000 entries, spells, monsters, magic items, classes, species, feats and rules, each labeled with the book it comes from, with a 2014 or 2024 toggle. Push to talk to pin a card, or leave it listening and let cards fade on their own, and send any card to your GM screen. It is there so you never stop the game to open a book.",
     ],
     img: "/screens/compendium.png",
     imgAlt: "The rules compendium with the Fireball card open",

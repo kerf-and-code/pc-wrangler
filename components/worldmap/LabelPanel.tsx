@@ -64,7 +64,7 @@ export default function LabelPanel({
                 </select>
                 <input type="color" value={lb.color || "#f2e9d6"} onChange={(e) => onPatch(lb.id, { color: e.target.value })} title="Label colour"
                   style={{ width: 30, height: 28, padding: 0, border: `1px solid ${c.line}`, borderRadius: 6, background: c.surface2, cursor: "pointer", flex: "0 0 auto" }} />
-                {lb.color && <button type="button" onClick={() => onPatch(lb.id, { color: null })} style={mini}>auto</button>}
+                {lb.color && <button type="button" onClick={() => onPatch(lb.id, { color: null })} style={mini} title="Go back to the default colour">Default colour</button>}
                 <button type="button" onClick={() => onPatch(lb.id, { locked: !lb.locked })} title={lb.locked ? "Unlock to move" : "Lock so it won't drag"}
                   style={{ ...mini, marginLeft: "auto", borderColor: lb.locked ? c.sun : c.line, color: lb.locked ? c.sun : c.muted }}>{lb.locked ? "Locked" : "Lock"}</button>
                 <button type="button" onClick={() => onRemove(lb.id)} style={mini}>Delete</button>

@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
+import { ConnectProblem, LinkInvalid } from "@/components/load-problem";
 
 type Recap = { session_id: string; session_number: number | null; recap: string };
 
@@ -11,7 +12,7 @@ export default function PlayerRecapsPage() {
   const supabase = useMemo(() => createClient(), []);
   const [campaignName, setCampaignName] = useState<string | null>(null);
   const [recaps, setRecaps] = useState<Recap[]>([]);
-  const [status, setStatus] = useState<"loading" | "ready" | "empty" | "invalid">("loading");
+  const [status, setStatus] = useState<"loading" | "ready" | "empty" | "invalid" | "offline">("loading");
   // Which sessions are collapsed. Default is expanded (empty set), so the page reads top to bottom;
   // a reader collapses the ones they have already read to find a particular session faster.
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
@@ -26,15 +27,19 @@ export default function PlayerRecapsPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         const { error: signErr } = await supabase.auth.signInAnonymously();
-        if (signErr) { if (active) setStatus("invalid"); return; }
+        if (signErr) { if (active) setStatus("offline"); return; }
       }
 
-      const [{ data: rows }, { data: ctx }] = await Promise.all([
+      const [{ data: rows, error: rErr }, { data: ctx, error: cErr }] = await Promise.all([
         supabase.rpc("recaps_for_share", { code: shareCode }),
         supabase.rpc("chat_context", { code: shareCode }),
       ]);
       if (!active) return;
-      if (ctx && ctx.length) setCampaignName(ctx[0].campaign_name);
+      // Push 12 (audit U9): a failed read is a connection problem, an unknown code is a bad link, and
+      // only a good read with no rows is "no recaps yet".
+      if (rErr || cErr) { setStatus("offline"); return; }
+      if (!ctx || !ctx.length) { setStatus("invalid"); return; }
+      setCampaignName(ctx[0].campaign_name);
       if (rows && rows.length) { setRecaps(rows as Recap[]); setStatus("ready"); }
       else setStatus("empty");
     })();
@@ -93,11 +98,8 @@ export default function PlayerRecapsPage() {
           <p style={{ textAlign: "center", color: C.muted, fontSize: 14 }}>Loading…</p>
         )}
 
-        {status === "invalid" && (
-          <p style={{ textAlign: "center", color: C.muted, fontSize: 14, lineHeight: 1.6 }}>
-            This link looks broken. Ask your GM for the campaign link.
-          </p>
-        )}
+{status === "invalid" && <LinkInvalid />}
+        {status === "offline" && <ConnectProblem />}
 
         {status === "empty" && (
           <p style={{ textAlign: "center", color: C.muted, fontSize: 14, lineHeight: 1.6 }}>

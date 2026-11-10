@@ -162,7 +162,7 @@ export default function CompendiumTool() {
   const [manageOpen, setManageOpen] = useState(false);
   const [saveErr, setSaveErr] = useState<string | null>(null);
   const [indexOpen, setIndexOpen] = useState(false);
-  const [sentKeys, setSentKeys] = useState<Set<string>>(new Set()); // card keys sent to the DM Screen this session
+  const [sentKeys, setSentKeys] = useState<Set<string>>(new Set()); // card keys sent to the GM screen this session
   const [catFilter, setCatFilter] = useState<string>("");   // CAT_FILTERS id, "" = all
   const [srcFilter, setSrcFilter] = useState<string>("");   // a book title, or "" = any
   const [versionsOpen, setVersionsOpen] = useState(false);  // the "all versions" list under the alternates
@@ -348,7 +348,7 @@ export default function CompendiumTool() {
       .sort((x, y) => x.name.localeCompare(y.name));
   }, [candidates, filteredEntries]);
 
-  // Send a copy of a card to the GM's DM Screen (a snapshot). Targets the last board used (localStorage),
+  // Send a copy of a card to the GM's GM screen (a snapshot). Targets the last board used (localStorage),
   // creating a default board if there is none. Best-effort: a failure never disrupts lookup.
   const sendToScreen = useCallback(async (entry: CompendiumEntry, key: string) => {
     if (!gmId) return;
@@ -776,7 +776,7 @@ function CardView({ card, otherEdition, canEdit, onEdit, onPin, onDismiss, onEnt
           {!card.pinned && card.expiresAt != null && <span style={{ ...chip, borderColor: "transparent", color: C.muted }}>auto</span>}
         </div>
         <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
-          {onSend && <button type="button" onClick={onSend} title="Send a copy of this card to your DM Screen" style={{ background: "transparent", border: `1px solid ${sent ? C.sun : C.line}`, borderRadius: 7, color: sent ? C.sun : C.muted, cursor: "pointer", fontSize: 12, padding: "2px 8px" }}>{sent ? "Sent" : "To DM Screen"}</button>}
+          {onSend && <button type="button" onClick={onSend} title="Send a copy of this card to your GM screen" style={{ background: "transparent", border: `1px solid ${sent ? C.sun : C.line}`, borderRadius: 7, color: sent ? C.sun : C.muted, cursor: "pointer", fontSize: 12, padding: "2px 8px" }}>{sent ? "Sent" : "To GM screen"}</button>}
           {canEdit && <button type="button" onClick={onEdit} title={homebrew ? "Edit this card" : "Override this card"} style={{ background: "transparent", border: `1px solid ${C.line}`, borderRadius: 7, color: C.muted, cursor: "pointer", fontSize: 12, padding: "2px 8px" }}>{homebrew ? "Edit" : "Override"}</button>}
           <button type="button" onClick={onPin} title={card.pinned ? "Unpin" : "Pin"} style={{ background: "transparent", border: `1px solid ${C.line}`, borderRadius: 7, color: card.pinned ? C.sun : C.muted, cursor: "pointer", fontSize: 12, padding: "2px 8px" }}>{card.pinned ? "Pinned" : "Pin"}</button>
           <button type="button" onClick={onDismiss} title="Dismiss" style={{ background: "transparent", border: `1px solid ${C.line}`, borderRadius: 7, color: C.muted, cursor: "pointer", fontSize: 14, padding: "2px 8px", lineHeight: 1 }}>&times;</button>

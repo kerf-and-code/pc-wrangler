@@ -9,6 +9,7 @@ import { surfaces, ui } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import CharacterSheetPeek, { type Build } from "@/components/character-sheet-peek";
 import { initialCampaignId, useRememberCampaign } from "@/lib/campaign-context";
+import { friendlyError } from "@/lib/friendly-error";
 
 type Campaign = { id: string; name: string; share_code: string | null };
 type Char = { id: string; name: string; profile_id: string | null; invite_code: string | null; build: Build; active: boolean | null };
@@ -80,7 +81,7 @@ export default function RosterPage() {
   async function bind(responseId: string, characterId: string) {
     setBusy(true); setError(null);
     const { error: e } = await supabase.rpc("assign_response_to_character", { p_response: responseId, p_character: characterId });
-    if (e) setError(e.message);
+    if (e) setError(friendlyError(e));
     await load(campaignId);
     setBusy(false);
   }
@@ -89,7 +90,7 @@ export default function RosterPage() {
     setBusy(true); setError(null);
     // Checked: an update that RLS filters out returns no error and changes nothing, so ask for the row back.
     const { data, error: e } = await supabase.from("characters").update({ active: activeNow }).eq("id", ch.id).select("id");
-    if (e) setError(e.message);
+    if (e) setError(friendlyError(e));
     else if (!data || data.length === 0) setError(`${ch.name} was not ${activeNow ? "restored" : "removed"}: you may not have permission to change this character.`);
     await load(campaignId);
     setBusy(false);
@@ -97,7 +98,7 @@ export default function RosterPage() {
   async function unbind(responseId: string) {
     setBusy(true); setError(null);
     const { error: e } = await supabase.rpc("unassign_response", { p_response: responseId });
-    if (e) setError(e.message);
+    if (e) setError(friendlyError(e));
     await load(campaignId);
     setBusy(false);
   }

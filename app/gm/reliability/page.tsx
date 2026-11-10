@@ -122,11 +122,11 @@ function computeAgreement(items: SampleItem[], labels: Record<string, string>): 
 function readAgreement(a: Agreement): { headline: string; points: string[] } {
   const points: string[] = [];
   if (a.detectKappa >= 0.6) {
-    points.push("You and the extractor mostly agree on which lines hold a moment worth counting, so its per-session counts track what a person would count.");
+    points.push("You and Six Axes' automatic notes mostly agree on which lines hold a moment worth counting, so their per-session counts track what a person would count.");
   } else if (a.detectKappa >= 0.4) {
-    points.push("You and the extractor only moderately agree on which lines hold a moment worth counting. Treat its counts per session as approximate.");
+    points.push("You and the automatic notes only moderately agree on which lines hold a moment worth counting. Treat their counts per session as approximate.");
   } else {
-    points.push("You and the extractor often disagree about whether a line holds anything at all. Its per-session counts are not yet dependable on their own.");
+    points.push("You and the automatic notes often disagree about whether a line holds anything at all. Their per-session counts are not yet dependable on their own.");
   }
   if (a.classN === 0) {
     points.push("No line was flagged by both of you, so there is nothing to compare on what kind of moment it was.");
@@ -145,9 +145,9 @@ function readAgreement(a: Agreement): { headline: string; points: string[] } {
   }
   const worst = Math.min(a.detectKappa, a.classN > 0 ? a.classKappa : 1);
   const headline =
-    worst >= 0.6 ? "The extractor agrees with a person well. Numbers built on its events are safe to act on."
-    : worst >= 0.4 ? "The extractor agrees with a person reasonably well, with room to improve. Use the totals with some caution."
-    : "The extractor does not yet agree with a person reliably. Your review decisions are the trustworthy part; the automatic numbers are a starting point.";
+    worst >= 0.6 ? "The automatic notes agree with a person well. Numbers built on them are safe to act on."
+    : worst >= 0.4 ? "The automatic notes agree with a person reasonably well, with room to improve. Use the totals with some caution."
+    : "The automatic notes do not yet agree with a person reliably. Your review decisions are the trustworthy part; the automatic numbers are a starting point.";
   return { headline, points };
 }
 
@@ -352,7 +352,7 @@ export default function ReliabilityPage() {
     <PageShell width={880}>
       <h1 style={{ ...ui.h1, fontSize: 28, margin: "4px 0 4px" }}>Reliability</h1>
       <p style={{ color: C.muted, fontSize: 14, margin: "0 0 20px" }}>
-        How well the extractor codes. Precision and calibration come from your review decisions; the agreement section compares the extractor with a person coding a blind sample of one session.
+        How far you can trust Six Axes&apos; automatic notes. The first figures come from what you accepted and rejected in Review; the agreement section checks a sample yourself: a person marks lines from one session without seeing the notes, and the two are compared.
       </p>
 
         <div style={box}>
@@ -392,7 +392,7 @@ export default function ReliabilityPage() {
             <div style={box}>
               <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>Calibration</div>
               <div style={{ color: C.muted, fontSize: 12.5, marginBottom: 16 }}>
-                Is the extractor&apos;s confidence honest? In a well-calibrated model the accept rate in each band lands near the band itself; the trailing number is the gap from the band midpoint.
+                Are the automatic notes as sure as they should be? When they are, the accept rate in each band lands near the band itself; the trailing number is the gap from the band midpoint.
               </div>
               <div style={{ display: "grid", gap: 12 }}>
                 {stats.calib.map((b) => {
@@ -427,7 +427,7 @@ export default function ReliabilityPage() {
             </div>
 
             <div style={box}>
-              <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>Accept rate by extractor version</div>
+              <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>Accept rate by version of the automatic notes</div>
               <div style={{ color: C.muted, fontSize: 12.5, marginBottom: 16 }}>When you revise the prompt or model the version string changes, so you can see whether reliability moved.</div>
               <div style={{ display: "grid", gap: 12 }}>{stats.byVer.map((g) => (<Row key={g.k} label={g.k} n={g.n} rate={g.rate} />))}</div>
             </div>
@@ -438,7 +438,7 @@ export default function ReliabilityPage() {
         <div style={box}>
           <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>Agreement with a human coder</div>
           <div style={{ color: C.muted, fontSize: 12.5, marginBottom: 14 }}>
-            A person codes a blind sample of lines from one session, without seeing what the extractor said, and the two are compared on two questions: do you pick out the same moments, and do you call them the same thing. Both are Cohen&apos;s kappa (0 is chance, 1 is identical), shown with a 95% range. The sample takes about fifteen minutes to code.
+            A person codes a blind sample of lines from one session, without seeing what the automatic notes said, and the two are compared on two questions: do you pick out the same moments, and do you call them the same thing. Both are Cohen&apos;s kappa (0 is chance, 1 is identical), shown with a 95% range. The sample takes about fifteen minutes to code.
           </div>
 
           {jobs.length === 0 ? (
@@ -470,7 +470,7 @@ export default function ReliabilityPage() {
                     {busy ? "Drawing…" : "Draw a coding sample"}
                   </button>
                   <p style={{ color: C.muted, fontSize: 12, margin: "4px 0 0", flexBasis: "100%" }}>
-                    Half the lines come from moments the extractor flagged and half from the rest, so even a quiet session gives enough to measure; the figures are weighted back to the whole session. Best coded by someone who has not reviewed this session.
+                    Half the lines come from moments the automatic notes flagged and half from the rest, so even a quiet session gives enough to measure; the figures are weighted back to the whole session. Best coded by someone who has not reviewed this session.
                   </p>
                 </div>
               )}
@@ -510,7 +510,7 @@ export default function ReliabilityPage() {
                     </div>
                   </div>
                   <p style={{ fontSize: 11.5, color: C.muted, margin: "0 0 14px" }}>
-                    Method: human coder, blind, stratified random sample ({agree.nFlagged} lines the extractor flagged, {agree.nUnflagged} it did not), one primary event per line on both sides.
+                    Method: human coder, blind, stratified random sample ({agree.nFlagged} lines the automatic notes flagged, {agree.nUnflagged} it did not), one primary event per line on both sides.
                   </p>
 
                   {(() => {
@@ -525,7 +525,7 @@ export default function ReliabilityPage() {
                     );
                   })()}
 
-                  <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>Sample counts (rows = extractor, columns = human; not weighted)</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>Sample counts (rows = automatic notes, columns = the person; not weighted)</div>
                   <div style={{ fontSize: 12, color: C.muted, marginBottom: 10 }}>
                     {agree.cats.map((c, i) => `${i} = ${c === "none" ? "(nothing)" : (labels[c] || c)}`).join("   ")}
                   </div>

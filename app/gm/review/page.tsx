@@ -7,6 +7,7 @@ import { useMomentPlayer, MomentButton } from "@/components/moment-player";
 import { surfaces, ui, AXES, type AxisKey } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import { initialCampaignId, useRememberCampaign, preferredSessionId, useRememberSession } from "@/lib/campaign-context";
+import { friendlyError } from "@/lib/friendly-error";
 
 type Campaign = { id: string; name: string };
 type JobRow = { id: string; status: string; extract_cursor: number; session_id: string; session: { session_number: number | null } | null };
@@ -226,7 +227,7 @@ export default function ReviewPage() {
   async function review(id: string, accept: boolean) {
     setBusy(true);
     const { error: e } = await supabase.rpc("review_proposed_event", { p_id: id, p_accept: accept });
-    if (e) setError(e.message);
+    if (e) setError(friendlyError(e));
     else {
       setProps((prev) => prev.filter((p) => p.id !== id));
       setCounts((c) => ({ accepted: c.accepted + (accept ? 1 : 0), rejected: c.rejected + (accept ? 0 : 1) }));
@@ -240,7 +241,7 @@ export default function ReviewPage() {
     const targets = props.filter((p) => Math.round((p.confidence || 0) * 100) >= threshold);
     for (const p of targets) {
       const { error: e } = await supabase.rpc("review_proposed_event", { p_id: p.id, p_accept: true });
-      if (e) { setError(e.message); break; }
+      if (e) { setError(friendlyError(e)); break; }
     }
     setBusy(false);
     await loadProps(jobId);

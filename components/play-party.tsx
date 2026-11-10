@@ -22,6 +22,7 @@ import { C, STONE, FORGE_FONTS, stonePanel, stoneButton } from "@/lib/forge-them
 import { needsAttunement, type Build, type GearEntry, type RulesContext } from "@/lib/srd/derive-sheet";
 import type { ItemRecord } from "@/lib/descriptions";
 import { canEquip, parseWeight, type Coins } from "@/components/play-inventory";
+import { notReady } from "@/lib/friendly-error";
 
 type PartyItem = { id: string; name: string; qty: number; weight: number | null; note: string | null; custom: boolean; mod: number | null; variant: string | null; updated_at: string };
 type Funds = { pp: number; gp: number; ep: number; sp: number; cp: number };
@@ -56,7 +57,7 @@ export default function PlayParty({ campaignId, gear, onGear, coins, onCoins, it
       supabase.from("party_items").select("id, name, qty, weight, note, custom, mod, variant, updated_at").eq("campaign_id", campaignId).order("name"),
       supabase.from("party_funds").select("pp, gp, ep, sp, cp").eq("campaign_id", campaignId).maybeSingle(),
     ]);
-    if (it.error) { setErr(/does not exist|schema cache/.test(it.error.message) ? "The party inventory is not set up on this server yet (migration p116)." : `Could not read the party inventory: ${it.error.message}`); return; }
+    if (it.error) { setErr(/does not exist|schema cache/.test(it.error.message) ? notReady("The party inventory", "p116") : `Could not read the party inventory: ${it.error.message}`); return; }
     setErr(null);
     setItems((it.data as PartyItem[]) ?? []);
     if (fu.data) setFunds(fu.data as Funds);

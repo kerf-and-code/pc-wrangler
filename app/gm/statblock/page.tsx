@@ -619,7 +619,7 @@ function PickerView({ rows, monsters, srdMode, onSrdMode, onNew, onEdit, onPrefi
   return (
     <div style={{ display: "grid", gap: 20, maxWidth: 900, margin: "0 auto" }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap" }}>
-        <h1 style={{ fontFamily: FORGE_FONTS.display, fontSize: 26, color: STONE.ink, margin: 0 }}>Monster Maker</h1>
+        <h1 style={{ fontFamily: FORGE_FONTS.display, fontSize: 26, color: STONE.ink, margin: 0 }}>Monster maker</h1>
         <span style={{ flex: 1 }} />
         <button className="forge-btn is-primary" style={stoneButton("primary")} onClick={onNew}>+ New from scratch</button>
       </div>
@@ -1026,7 +1026,7 @@ function NumInput({ value, onChange }: { value: number | null; onChange: (v: num
 }
 
 function Shell({ children }: { children: React.ReactNode }) {
-  // Use the shared PageShell so the Monster Maker gets the same 232px desktop
+  // Use the shared PageShell so the Monster maker gets the same 232px desktop
   // sidebar offset and 100dvh frame as every other page, instead of forking a
   // local shell that dropped the offset (content underlapped the nav) and used
   // 100vh. width is generous so the workshop stays effectively full-bleed.

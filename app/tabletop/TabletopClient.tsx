@@ -47,6 +47,7 @@ import { floorError, onConnector, type Floor } from "@/lib/tabletop/floors";
 import { clearPictures, pictureProblem, uploadPicture } from "@/lib/tabletop/table-files";
 import { nameFromFile } from "@/lib/tabletop/cards";
 import { AttackForm, EconomyBar, MarkerChips, MarkerPicker, PlayerEntryControls, SaveBanner, TurnUsed, isMyTurn, type FightEntry, type PendingSave } from "@/components/fight-controls";
+import { friendlyError, notReady } from "@/lib/friendly-error";
 
 // The tabletop, phase 1 (2026-11-06). One page for the GM and the players; tabletop_state (p105)
 // decides the role and strips what players must not see before it leaves the database.
@@ -251,6 +252,16 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   const [gmName, setGmName] = useState("GM");
   const [adv, setAdv] = useState<"flat" | "adv" | "dis">("flat");
   const [chatErr, setChatErr] = useState<string | null>(null);
+  // Push 12 (audit U3): what a click on the map did, or why it did nothing, shown on the map itself,
+  // not in whichever side panel happens to be open. Clears itself after a few seconds.
+  const [canvasMsg, setCanvasMsg] = useState<{ text: string; ok: boolean } | null>(null);
+  const canvasMsgTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const say = useCallback((text: string | null, ok = false) => {
+    if (canvasMsgTimer.current) clearTimeout(canvasMsgTimer.current);
+    setCanvasMsg(text ? { text, ok } : null);
+    if (text) canvasMsgTimer.current = setTimeout(() => setCanvasMsg(null), ok ? 3000 : 6000);
+  }, []);
+  useEffect(() => () => { if (canvasMsgTimer.current) clearTimeout(canvasMsgTimer.current); }, []);
   const [selected, setSelected] = useState<string[]>([]);
   const [present, setPresent] = useState<{ key: string; name: string; color: string }[]>([]);
   const [tick, setTick] = useState(0);
@@ -1271,7 +1282,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     if (!f || !target) return;
     const { data, error: er } = await supabase.rpc("combat_apply_outside_roll", { p_combat: f.id, p_target: target, p_events: ids, p_half: half });
     if (er) {
-      setApplyNote((m) => ({ ...m, [key]: { text: /does not exist|schema cache/.test(er.message) ? "Damage from D&D Beyond needs migration p117 on the server." : er.message, bad: true } }));
+      setApplyNote((m) => ({ ...m, [key]: { text: /does not exist|schema cache/.test(er.message) ? notReady("Damage from D&D Beyond", "p117") : friendlyError(er), bad: true } }));
       return;
     }
     const r = data as { target: string; damage: number; hit: boolean; attack: number | null; ac: number | null };
@@ -1284,7 +1295,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   // the table, sized from its stat block, and link it so the token shows its HP and its turn.
   const tokenForEntry = (e: Entry) => [...tokensRef.current.values()].find((x) => x.id === e.tokenId || (e.kind === "pc" && x.character_id === e.characterId)) ?? null;
   const addTokenFor = async (entries: Entry[]) => {
-    const st = stateRef.current; if (!st?.scene) { setChatErr("Open a scene first: a token goes on the scene in front of you."); return; }
+    const st = stateRef.current; if (!st?.scene) { say("Open a scene first: a token goes on the scene in front of you."); return; }
     const c = viewCentre();
     const rows = entries.map((e, i) => {
       const cb = fightRow.current?.combatants.find((x) => x.id === e.id);
@@ -1295,7 +1306,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
         style: e.kind === "pc" ? {} : { stats: { hp: cb?.maxHp ?? null, ac: cb?.ac ?? null } } };
     });
     const { data, error: er } = await supabase.from("vtt_tokens").insert(rows).select("*");
-    if (er) { setChatErr(`Could not add the token: ${er.message}`); return; }
+    if (er) { say(`Could not add the token: ${er.message}`); return; }
     const made = (data ?? []) as Token[];
     for (const t of made) tokensRef.current.set(t.id, { ...t, mine: true });
     // link each monster's token to its entry (a pc finds its token by character)
@@ -1343,10 +1354,10 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     setFightBusy(true);
     try {
       const { data, error: e1 } = await supabase.from("combats").select(FIGHT_COLS).eq("id", cur.id).single();
-      if (e1 || !data) { setChatErr(`Could not read the fight: ${e1?.message ?? "gone"}`); return; }
+      if (e1 || !data) { say(`Could not read the fight: ${e1?.message ?? "gone"}`); return; }
       const next = fn(data as FightRow);
       const { data: saved, error: e2 } = await supabase.from("combats").update({ round: next.round, turn: next.turn, combatants: next.combatants, updated_at: new Date().toISOString() }).eq("id", cur.id).select(FIGHT_COLS).maybeSingle();
-      if (e2) { setChatErr(`Could not save the fight: ${e2.message}`); return; }
+      if (e2) { say(`Could not save the fight: ${e2.message}`); return; }
       const shown = (saved as FightRow | null) ?? next;   // as saved: the database starts a fresh turn when the turn moves
       fightRow.current = shown; setFight(toFight(shown)); send("combat", {}); requestDraw();
     } finally { setFightBusy(false); }
@@ -1363,11 +1374,11 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   const addToFight = useCallback(async (ids: string[]) => {
     const st = stateRef.current; if (!st) return;
     const toks = ids.map((i) => tokensRef.current.get(i)).filter((t): t is Token => !!t);
-    if (!toks.length) { setChatErr("Select tokens on the map first (click, Shift-click or drag a box)."); return; }
+    if (!toks.length) { say("Select tokens on the map first (click, Shift-click or drag a box)."); return; }
     if (!fightRow.current) {
       const combatants = toks.map(combatantFromToken).filter((c): c is TC => !!c);
       const { data, error: er } = await supabase.from("combats").insert({ campaign_id: campaignId, session_id: st.session_id, name: st.scene?.name ?? "Combat", rules: "2024", combatants }).select(FIGHT_COLS).single();
-      if (er || !data) { setChatErr(`Could not start the fight: ${er?.message ?? "no row"}`); return; }
+      if (er || !data) { say(`Could not start the fight: ${er?.message ?? "no row"}`); return; }
       fightRow.current = data as FightRow; setFight(toFight(data as FightRow)); send("combat", {}); setPanel("turns"); requestDraw();
       return;
     }
@@ -1408,7 +1419,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     const cur = fightRow.current; if (!cur) return;
     if (!window.confirm(`End "${cur.name}"? Players stop seeing it here and on the Combat page. The rolls stay in this session's Mechanics.`)) return;
     const { error: er } = await supabase.from("combats").update({ status: "ended", ended_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq("id", cur.id);
-    if (er) { setChatErr(`Not ended: ${er.message}`); return; }
+    if (er) { say(`Not ended: ${er.message}`); return; }
     fightRow.current = null; setFight(null); setSelEntry(null); send("combat", {}); requestDraw();
   };
   const rollInitiative = async (who: Entry, bonus: number, asPlayer: boolean) => {
@@ -1418,14 +1429,14 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
       body: JSON.stringify({ campaignId, notation, label: "Initiative", gmOnly: !asPlayer, characterId: asPlayer ? who.characterId : null, asName: asPlayer ? undefined : who.name, initiative: asPlayer }),
     });
     const j = (await res.json().catch(() => ({}))) as { error?: string; message?: Message };
-    if (!res.ok || !j.message) { setChatErr(j.error || `Roll failed (${res.status}).`); return null; }
+    if (!res.ok || !j.message) { say(j.error || `Roll failed (${res.status}).`); return null; }
     addFeed([j.message], []);
     return j.message.roll?.total ?? null;
   };
   const rollMonsterInit = async () => {
     const row = fightRow.current; if (!row) return;
     const targets = row.combatants.filter((c) => c.kind === "monster" && c.initiative == null);
-    if (!targets.length) { setChatErr("Every monster already has initiative."); return; }
+    if (!targets.length) { say("Every monster already has initiative."); return; }
     setFightBusy(true);
     const got: Record<string, number> = {};
     for (const c of targets) {
@@ -1610,7 +1621,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
       fogTimer.current = null;
       void supabase.rpc("tabletop_set_fog", { p_scene: sc.id, p_on: on, p_revealed: encodeFog(fogBits.current) }).then(({ error: er }) => {
         fogEditedAt.current = Date.now();
-        if (er) setChatErr(`Could not save the fog: ${er.message}`);
+        if (er) say(`Could not save the fog: ${er.message}`);
       });
     };
     if (now) run(); else fogTimer.current = setTimeout(run, 300);
@@ -1633,7 +1644,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     setTick((v) => v + 1);
     const settings = { ...(sc.settings ?? {}), difficult: encodeDifficult(difficultRef.current) };
     const { error: er } = await supabase.from("vtt_scenes").update({ settings, updated_at: new Date().toISOString() }).eq("id", sc.id);
-    if (er) setChatErr(`Could not save the terrain: ${er.message}`);
+    if (er) say(`Could not save the terrain: ${er.message}`);
   }, [supabase]);
   const terrainDown = (sq: Pt) => {
     const m = stateRef.current?.map; if (!m) return;
@@ -1650,7 +1661,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     const sc = stateRef.current?.scene; if (!sc) return;
     const settings = { ...(sc.settings ?? {}), ...patch };
     const { error: er } = await supabase.from("vtt_scenes").update({ settings, updated_at: new Date().toISOString() }).eq("id", sc.id);
-    if (er) { setChatErr(`Could not change ${patch.light ? "the light" : "line of sight"}: ${er.message}`); return; }
+    if (er) { say(`Could not change ${patch.light ? "the light" : "line of sight"}: ${er.message}`); return; }
     void load();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [supabase]);
@@ -1667,7 +1678,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     if (mode === "reveal-room" || mode === "hide-room") {
       const sh = shapeOf(); if (!sh) return;
       const cells = roomCells(sh.shape, sh.rooms, c, r);
-      if (!cells) { setChatErr("There is no room there. Use the brush for open ground."); return; }
+      if (!cells) { say("There is no room there. Use the brush for open ground."); return; }
       paintFog(cells, mode === "reveal-room"); saveFog(null);
     } else {
       brushing.current = { on: mode === "reveal-brush" };
@@ -1684,7 +1695,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     m.door_state = next; mapSig.current = ""; renderBase(); requestDraw();
     const { error: er } = await supabase.rpc("tabletop_set_doors", { p_scene: sc.id, p_edges: edges, p_open: open });
     if (er) {
-      setChatErr(/next to the door/.test(er.message) ? "Move your token next to the door first." : /only the GM/.test(er.message) ? "Only the GM can open that door." : `Could not change the door: ${er.message}`);
+      say(/next to the door/.test(er.message) ? "Move your token next to the door first." : /only the GM/.test(er.message) ? "Only the GM can open that door." : `Could not change the door: ${er.message}`);
       m.door_state = before; renderBase(); requestDraw();
     }
   }, [supabase, renderBase, requestDraw]);
@@ -1758,12 +1769,12 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     for (const id of ids) drawingsRef.current.delete(id);
     requestDraw();
     const { error: er } = await supabase.from("vtt_drawings").delete().in("id", ids);
-    if (er) { for (const d of keep) drawingsRef.current.set(d.id, d); requestDraw(); setChatErr(`Could not erase: ${er.message}`); }
+    if (er) { for (const d of keep) drawingsRef.current.set(d.id, d); requestDraw(); say(`Could not erase: ${er.message}`); }
   };
   const saveDrawing = async (row: Omit<Drawing, "id" | "owner">) => {
     const st = stateRef.current; if (!st) return;
     const { data, error: er } = await supabase.from("vtt_drawings").insert({ ...row, campaign_id: campaignId, owner: st.me }).select("*").single();
-    if (er || !data) { setChatErr(`Could not draw that: ${er?.message ?? "no row"}`); return; }
+    if (er || !data) { say(`Could not draw that: ${er?.message ?? "no row"}`); return; }
     drawingsRef.current.set((data as Drawing).id, data as Drawing); requestDraw();
   };
   const drawDown = (sq: Pt, free: boolean) => {
@@ -1772,7 +1783,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     if (drawKind === "erase") { const d = drawingAt(sq); if (d) void eraseDrawings([d.id]); return; }
     if (drawKind === "text") {
       const t = drawText.trim();
-      if (!t) { setChatErr("Type the words in the drawing bar first, then click where they go."); return; }
+      if (!t) { say("Type the words in the drawing bar first, then click where they go."); return; }
       void saveDrawing({ scene_id: st.scene.id, layer, kind: "text", points: [[sq.x, sq.y]], color: drawColor, width: 0.05, fill: false, text: t.slice(0, 200), size: Math.max(0.4, drawWidth * 6) });
       return;
     }
@@ -1799,7 +1810,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   const clearDrawings = async (all: boolean) => {
     const st = stateRef.current; if (!st?.scene) return;
     const ids = [...drawingsRef.current.values()].filter((d) => (all ? true : d.owner === st.me)).map((d) => d.id);
-    if (!ids.length) { setChatErr(all ? "There are no drawings on this scene." : "You have no drawings on this scene."); return; }
+    if (!ids.length) { say(all ? "There are no drawings on this scene." : "You have no drawings on this scene."); return; }
     if (all && !window.confirm(`Erase all ${ids.length} drawings on this scene, everyone's? This cannot be undone.`)) return;
     await eraseDrawings(ids); send("drawings", {});
   };
@@ -1807,24 +1818,30 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     const st = stateRef.current; if (!st) return;
     const mine = [...drawingsRef.current.values()].filter((d) => d.owner === st.me);
     const last = mine[mine.length - 1];
-    if (last) void eraseDrawings([last.id]); else setChatErr("Nothing of yours to take back on this scene.");
+    if (last) void eraseDrawings([last.id]); else say("Nothing of yours to take back on this scene.");
   };
 
   // Shift + double-click a token: its sheet, in a new tab. A player's own character opens on its character sheet;
   // for the GM a character opens in the Codex and a monster in its stat block.
-  const openSheet = (e: React.MouseEvent) => {
-    if (!e.shiftKey) return;
-    const st = stateRef.current; if (!st) return;
-    const sq = toSquares(screenPt(e)), t = tokenAt({ x: sq.x * cellRef.current, y: sq.y * cellRef.current });
-    if (!t) return;
+  // Audit U4: the same thing from a button, for anyone who does not know the shortcut.
+  const sheetUrlFor = (t: Token): string | null => {
+    const st = stateRef.current; if (!st) return null;
     const gm = st.role === "gm";
     const ownChar = !!t.character_id && st.party.some((p) => p.profile_id === st.me && p.character_id === t.character_id);
-    const url = t.character_id && ownChar ? `/me/sheet?c=${t.character_id}`
+    return t.character_id && ownChar ? `/me/sheet?c=${t.character_id}`
       : t.character_id && gm ? `/gm/codex?character=${t.character_id}`
       : t.stat_block_id && gm ? `/gm/statblock?sb=${t.stat_block_id}`
       : gm && entryFor(t) ? `/gm/combat` : null;
-    if (!url) { setChatErr(gm ? `${t.name} has no sheet: it is not a character and has no stat block.` : `Only ${t.name}'s player and the GM can open that sheet.`); return; }
+  };
+  const openSheetFor = (t: Token) => {
+    const url = sheetUrlFor(t);
+    if (!url) { say(stateRef.current?.role === "gm" ? `${t.name} has no sheet: it is not a character and has no stat block.` : `Only ${t.name}'s player and the GM can open that sheet.`); return; }
     window.open(url, "_blank", "noopener");
+  };
+  const openSheet = (e: React.MouseEvent) => {
+    if (!e.shiftKey) return;
+    const sq = toSquares(screenPt(e)), t = tokenAt({ x: sq.x * cellRef.current, y: sq.y * cellRef.current });
+    if (t) openSheetFor(t);
   };
 
   // ---- touch: two fingers pinch and pan; a long press pings ----
@@ -1888,7 +1905,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
           const cur = selDoorsRef.current, next = cur.includes(dr.key) ? cur.filter((k) => k !== dr.key) : [...cur, dr.key];
           setSelDoors(next); selDoorsRef.current = next; requestDraw(); return;
         }
-        if (st.role !== "gm" && !PLAYER_DOORS.has(dr.kind)) { setChatErr("Only the GM can open that door."); return; }
+        if (st.role !== "gm" && !PLAYER_DOORS.has(dr.kind)) { say("Only the GM can open that door."); return; }
         setSelDoors([]); selDoorsRef.current = [];
         void setDoors([dr.key], !dr.open); return;
       }
@@ -2050,7 +2067,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
       if (tplLinger && sc) {
         const row = { campaign_id: campaignId, scene_id: sc.id, owner: st.me, ...pv.geom, color: pv.color, effect: tplEffect || null };
         void supabase.from("vtt_templates").insert(row).select("*").single().then(({ data, error: er }) => {
-          if (er || !data) { setChatErr(`Could not leave the template: ${er?.message ?? "no row"}`); return; }
+          if (er || !data) { say(`Could not leave the template: ${er?.message ?? "no row"}`); return; }
           templatesRef.current.set((data as Tpl).id, data as Tpl); setSelTpl((data as Tpl).id); requestDraw();
         });
         sendTpl(true, true); tplPreview.current = null;
@@ -2064,7 +2081,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
       if (t && td.moved) {
         templatesRef.current.set(t.id, { ...t, x: td.now.x, y: td.now.y });
         void supabase.from("vtt_templates").update({ x: td.now.x, y: td.now.y, updated_at: new Date().toISOString() }).eq("id", t.id).then(({ error: er }) => {
-          if (er) { setChatErr(`Could not move the template: ${er.message}`); templatesRef.current.set(t.id, t); requestDraw(); }
+          if (er) { say(`Could not move the template: ${er.message}`); templatesRef.current.set(t.id, t); requestDraw(); }
         });
       }
       requestDraw(); return;
@@ -2093,7 +2110,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
           void supabase.rpc("tabletop_move_token", { p_token: id, p_x: p.x, p_y: p.y, p_rot: null }).then(({ error: er }) => {
             if (er) {
               const m = er.message;
-              setChatErr(/wait for your turn/.test(m) ? `Wait for your turn to move ${t.name}.`
+              say(/wait for your turn/.test(m) ? `Wait for your turn to move ${t.name}.`
                 : /not enough movement left: (\d+)/.test(m) ? `${t.name} has ${m.match(/(\d+) ft/)?.[1] ?? 0} ft of movement left this turn. Dash adds more.`
                 : /speed is 0/.test(m) ? `${t.name} cannot move right now (speed 0).`
                 : /wall is in the way/.test(m) ? `A wall is in the way of ${t.name}.`
@@ -2151,7 +2168,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
 
   const updateTokens = useCallback(async (ids: string[], patch: Partial<Token>, notify = false) => {
     const { error: er } = await supabase.from("vtt_tokens").update({ ...patch, updated_at: new Date().toISOString() }).in("id", ids);
-    if (er) { setChatErr(`Could not change the token: ${er.message}`); return; }
+    if (er) { say(`Could not change the token: ${er.message}`); return; }
     for (const id of ids) { const t = tokensRef.current.get(id); if (t) tokensRef.current.set(id, { ...t, ...patch }); }
     setTick((v) => v + 1); requestDraw();
     if (notify) send("refresh", {});
@@ -2167,7 +2184,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     if (stateRef.current?.role === "gm") await updateTokens([id], { style });
     else {
       const { error: er } = await supabase.rpc("tabletop_set_token_markers", { p_token: id, p_markers: markers });
-      if (er) setChatErr(`Could not change the markers: ${er.message}`);
+      if (er) say(`Could not change the markers: ${er.message}`);
       else { const cur = tokensRef.current.get(id); if (cur) tokensRef.current.set(id, { ...cur, style }); setTick((v) => v + 1); requestDraw(); }
     }
     setMarkerBusy(false);
@@ -2188,7 +2205,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     }
     setTick((v) => v + 1); requestDraw();
     const { error: er } = await supabase.rpc("tabletop_set_token_elevation", { p_tokens: list, p_feet: f });
-    if (er) { setChatErr(/height is between/.test(er.message) ? "A height is between -9999 and 9999 ft." : `Could not change the height: ${er.message}`); void load(); }
+    if (er) { say(/height is between/.test(er.message) ? "A height is between -9999 and 9999 ft." : `Could not change the height: ${er.message}`); void load(); }
   }, [supabase, requestDraw, load]);
 
   // Saves what the token maker made: uploads the cut-out picture (and an imported border), then sets the
@@ -2243,7 +2260,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   const deleteTokens = useCallback(async (ids: string[]) => {
     if (!ids.length) return;
     const { error: er } = await supabase.from("vtt_tokens").delete().in("id", ids);
-    if (er) { setChatErr(`Could not remove: ${er.message}`); return; }
+    if (er) { say(`Could not remove: ${er.message}`); return; }
     for (const id of ids) tokensRef.current.delete(id);
     setSelected([]); requestDraw();
   }, [supabase, requestDraw]);
@@ -2255,7 +2272,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
       tokensRef.current.set(id, { ...t, rot });
       // A Supabase query only runs once something awaits it or calls then(); a bare `void` never sends it.
       void supabase.rpc("tabletop_move_token", { p_token: id, p_x: t.x, p_y: t.y, p_rot: rot }).then(({ error: er }) => {
-        if (er) { setChatErr(`Could not turn ${t.name}: ${er.message}`); tokensRef.current.set(id, t); requestDraw(); }
+        if (er) { say(`Could not turn ${t.name}: ${er.message}`); tokensRef.current.set(id, t); requestDraw(); }
       });
     }
     requestDraw();
@@ -2267,7 +2284,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     const rot = (((t.rot + by) % 360) + 360) % 360;
     templatesRef.current.set(t.id, { ...t, rot }); requestDraw();
     void supabase.from("vtt_templates").update({ rot, updated_at: new Date().toISOString() }).eq("id", t.id).then(({ error: er }) => {
-      if (er) { setChatErr(`Could not turn the template: ${er.message}`); templatesRef.current.set(t.id, t); requestDraw(); }
+      if (er) { say(`Could not turn the template: ${er.message}`); templatesRef.current.set(t.id, t); requestDraw(); }
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [supabase, requestDraw]);
@@ -2275,7 +2292,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     const t = selTplRef.current ? templatesRef.current.get(selTplRef.current) : null;
     if (!t || !canEditTpl(t)) return;
     const { error: er } = await supabase.from("vtt_templates").delete().eq("id", t.id);
-    if (er) { setChatErr(`Could not remove the template: ${er.message}`); return; }
+    if (er) { say(`Could not remove the template: ${er.message}`); return; }
     templatesRef.current.delete(t.id); setSelTpl(null); requestDraw();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [supabase, requestDraw]);
@@ -2337,7 +2354,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
         name, image_url: t.image_url ?? null, x: p.x, y: p.y, size: t.size, rot: 0, layer: "token", hidden: !!t.hidden, controlled_by: [], style: t.style ?? {} });
     }
     const { data, error: er } = await supabase.from("vtt_tokens").insert(rows).select("*");
-    if (er) { setChatErr(`Could not add the token: ${er.message}`); return; }
+    if (er) { say(`Could not add the token: ${er.message}`); return; }
     for (const row of (data ?? []) as Token[]) tokensRef.current.set(row.id, { ...row, mine: true });
     setSelected(((data ?? []) as Token[]).map((r) => r.id)); requestDraw();
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -2371,7 +2388,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
       const { error: er } = await supabase.rpc("tabletop_say", {
         p_campaign: campaignId, p_body: parsed.body, p_kind: parsed.kind, p_as_name: asName, p_character: asWho || null, p_whisper_to: to,
       });
-      if (er) { setChatErr(er.message); return; }
+      if (er) { setChatErr(friendlyError(er)); return; }
       setDraft("");
       void pollFeed(false);
     } finally { setSending(false); }
@@ -2411,7 +2428,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     setHoBusy(true);
     try {
       const { data, error: er } = await supabase.rpc("tabletop_show_handout", { p_campaign: campaignId, p_entry: hoPick, p_characters: hoTo });
-      if (er) { setChatErr(/no player characters/.test(er.message) ? "There are no player characters to show it to." : `Could not show it: ${er.message}`); return; }
+      if (er) { setChatErr(/no player characters/.test(er.message) ? "There are no player characters to show it to." : friendlyError(er, "show it")); return; }
       const r = data as { id: string; characters: string[] };
       send("handout", { id: r.id, characters: hoTo === null ? null : r.characters });
       setHoPick(""); setChatErr(null);
@@ -2441,7 +2458,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   const addPin = async (sq: Pt) => {
     const sc = stateRef.current?.scene; if (!sc) return;
     const { data, error: er } = await supabase.from("vtt_pins").insert({ campaign_id: campaignId, scene_id: sc.id, x: Math.round(sq.x * 100) / 100, y: Math.round(sq.y * 100) / 100, label: "Pin" }).select("id").single();
-    if (er || !data) { setChatErr(/vtt_pins/.test(er?.message ?? "") ? "Pins are not set up yet (the p128 migration)." : `Could not add the pin: ${er?.message ?? "no row"}`); return; }
+    if (er || !data) { setChatErr(/vtt_pins/.test(er?.message ?? "") ? notReady("Pins", "p128") : friendlyError(er ?? "no row", "add the pin")); return; }
     await loadPins(); setOpenPin((data as { id: string }).id); send("pins", {});
   };
   const loadEntries = useCallback(() => {
@@ -2486,7 +2503,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
       });
       if (er) {
         void clearPictures(campaignId, [up.path]);
-        setChatErr(/no player characters/.test(er.message) ? "There are no player characters to show it to." : /tabletop_show_image_handout/.test(er.message) ? "Picture handouts are not set up yet (the p133 migration)." : `Could not show it: ${er.message}`);
+        setChatErr(/no player characters/.test(er.message) ? "There are no player characters to show it to." : /tabletop_show_image_handout/.test(er.message) ? notReady("Picture handouts", "p133") : friendlyError(er, "show it"));
         return;
       }
       const r = data as { id: string; characters: string[] };
@@ -2527,7 +2544,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   };
   const viewScene = async (sceneId: string) => {
     const { error: er } = await supabase.rpc("tabletop_view_scene", { p_scene: sceneId });
-    if (er) { setChatErr(er.message); return; }
+    if (er) { setChatErr(friendlyError(er)); return; }
     await load();
   };
   // phase 6c: a token to another floor, at the same spot (its players' view goes with it, on the server)
@@ -2566,13 +2583,13 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   };
   const activate = async (id: string) => {
     const { error: er } = await supabase.rpc("tabletop_activate_scene", { p_scene: id });
-    if (er) setChatErr(er.message); else { send("refresh", {}); await load(); }
+    if (er) setChatErr(friendlyError(er)); else { send("refresh", {}); await load(); }
   };
   const sceneSetting = async (patch: Scene["settings"]) => {
     const st = stateRef.current; if (!st?.scene) return;
     const settings = { ...st.scene.settings, ...patch };
     const { error: er } = await supabase.from("vtt_scenes").update({ settings, updated_at: new Date().toISOString() }).eq("id", st.scene.id);
-    if (er) setChatErr(er.message); else await load();
+    if (er) setChatErr(friendlyError(er)); else await load();
   };
 
   // GM: the add-token form
@@ -2814,6 +2831,12 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
             <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: C.muted, padding: 24, textAlign: "center" }}>
               {isGm ? "Put a battle map on the table from the Scenes tab on the right." : "The GM has not put a map on the table yet. Chat and dice work in the meantime."}
             </div>
+          )}
+          {canvasMsg && (
+            <div role={canvasMsg.ok ? "status" : "alert"} style={{ position: "absolute", bottom: 14, left: "50%", transform: "translateX(-50%)", maxWidth: "min(560px, 90%)", padding: "8px 14px", borderRadius: 8, background: "rgba(28,24,20,0.95)", border: `1px solid ${canvasMsg.ok ? C.line : "#e07a70"}`, color: canvasMsg.ok ? C.text : "#f0a59c", fontSize: 13, textAlign: "center", zIndex: 5, pointerEvents: "none" }}>{canvasMsg.text}</div>
+          )}
+          {scene && !isGm && sel.length === 1 && sheetUrlFor(sel[0]) && (
+            <button type="button" onClick={() => openSheetFor(sel[0])} title="Your sheet in a new tab (or Shift + double-click your token)" style={{ position: "absolute", top: 10, right: 10, zIndex: 5, padding: "8px 12px", minHeight: 36, borderRadius: 8, border: `1px solid ${C.sun}`, background: "rgba(28,24,20,0.95)", color: C.sun, fontSize: 13, cursor: "pointer" }}>Open sheet</button>
           )}
           {scene && tool === "template" && (
             <div style={{ position: "absolute", top: 10, left: "50%", transform: "translateX(-50%)", display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", background: "rgba(28,24,20,0.95)", border: `1px solid ${C.line}`, borderRadius: 10, padding: "6px 8px" }}>
@@ -3392,6 +3415,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                     <button type="button" onClick={() => void updateTokens(sel.map((t) => t.id), { hidden: !sel.every((t) => t.hidden) }, true)} style={small}>{sel.every((t) => t.hidden) ? "Show to players" : "Hide from players"} (H)</button>
                     <button type="button" onClick={() => void updateTokens(sel.map((t) => t.id), { layer: sel.every((t) => t.layer === "gm") ? "token" : "gm" }, true)} style={small}>{sel.every((t) => t.layer === "gm") ? "Back to the table" : "To the GM layer"}</button>
                     <button type="button" onClick={() => turn(sel.map((t) => t.id), 45)} style={small}>Turn 45 (R)</button>
+                    {sel.length === 1 && <button type="button" onClick={() => openSheetFor(sel[0])} title="Its sheet in a new tab (or Shift + double-click the token)" style={small}>Open sheet</button>}
                     <button type="button" onClick={() => void deleteTokens(sel.map((t) => t.id))} style={{ ...small, color: "#e07a70" }}>Remove (Delete)</button>
                   </div>
                 </div>
@@ -3566,8 +3590,8 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
               )}
               <div style={{ fontWeight: 600, fontSize: 13, marginTop: 18 }}>Invite the players</div>
               <p style={{ color: C.muted, fontSize: 12, margin: "6px 0" }}>Players sign in the way they do for their character page; anyone with a claimed character in this campaign gets in.</p>
-              <button type="button" onClick={() => { void navigator.clipboard?.writeText(`${window.location.origin}/tabletop/${campaignId}`); setChatErr("Table link copied."); }} style={{ ...small, width: "100%" }}>Copy the table link</button>
-              {chatErr && <p role="status" style={{ color: chatErr === "Table link copied." ? C.muted : "#e07a70", fontSize: 12, marginTop: 10 }}>{chatErr}</p>}
+              <button type="button" onClick={() => { void navigator.clipboard?.writeText(`${window.location.origin}/tabletop/${campaignId}`); say("Table link copied.", true); }} style={{ ...small, width: "100%" }}>Copy the table link</button>
+              {chatErr && <p role="status" style={{ color: "#e07a70", fontSize: 12, marginTop: 10 }}>{chatErr}</p>}
             </div>
           )}
 

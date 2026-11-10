@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { C } from "@/lib/forge-theme";
 import type { createClient } from "@/lib/supabase/client";
 import { isDiscordWebhook } from "@/lib/addons/discord";
+import { friendlyError, notReady } from "@/lib/friendly-error";
 
 // components/addons-panel.tsx (2026-11-09)
 //
@@ -56,7 +57,7 @@ export default function AddonsPanel({ campaignId, supabase, onHooksChanged }: { 
       supabase.from("addon_hooks").select("*").eq("campaign_id", campaignId).order("created_at"),
     ]);
     const e = k.error ?? h.error;
-    if (e) { setErr(/addon_/.test(e.message) ? "Add-ons are not set up yet (the p131 migration)." : e.message); return; }
+    if (e) { setErr(/addon_/.test(e.message) ? notReady("Add-ons", "p131") : friendlyError(e)); return; }
     setKeys((k.data ?? []) as Key[]); setHooks((h.data ?? []) as Hook[]);
   }, [supabase, campaignId]);
   useEffect(() => { void load(); }, [load]);
@@ -65,7 +66,7 @@ export default function AddonsPanel({ campaignId, supabase, onHooksChanged }: { 
     setBusy(true); setErr(null);
     const { error } = await job();
     setBusy(false);
-    if (error) { setErr(error.message); return; }
+    if (error) { setErr(friendlyError(error)); return; }
     await load();
     if (hooksChanged) onHooksChanged();
   };

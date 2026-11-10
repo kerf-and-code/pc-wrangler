@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { surfaces } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
+import { ConnectProblem, LinkInvalid } from "@/components/load-problem";
 
 type Msg = { id: string; author_profile: string; display_name: string | null; body: string; created_at: string };
 type Grant = { id: string; from_ts: string; to_ts: string };
@@ -14,7 +15,7 @@ export default function ChatPage() {
   const [code, setCode] = useState<string | null>(null);
   const [uid, setUid] = useState<string | null>(null);
   const [campaignName, setCampaignName] = useState<string | null>(null);
-  const [status, setStatus] = useState<"loading" | "ready" | "invalid">("loading");
+  const [status, setStatus] = useState<"loading" | "ready" | "invalid" | "offline">("loading");
   const [messages, setMessages] = useState<Msg[]>([]);
   const [name, setName] = useState<string>("");
   const [draft, setDraft] = useState<string>("");
@@ -50,13 +51,14 @@ export default function ChatPage() {
       let { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         const { data, error } = await supabase.auth.signInAnonymously();
-        if (error) { if (active) setStatus("invalid"); return; }
+        if (error) { if (active) setStatus("offline"); return; }
         user = data.user;
       }
       if (active && user) setUid(user.id);
 
-      const { data: ctx } = await supabase.rpc("chat_context", { code: shareCode });
+      const { data: ctx, error: cErr } = await supabase.rpc("chat_context", { code: shareCode });
       if (!active) return;
+      if (cErr) { setStatus("offline"); return; } // audit U9
       if (!ctx || !ctx.length) { setStatus("invalid"); return; }
       setStatus("ready");
       await refresh(shareCode);
@@ -109,7 +111,8 @@ export default function ChatPage() {
         </p>
 
         {status === "loading" && <div style={{ ...box, color: C.muted, fontSize: 14 }}>Loading…</div>}
-        {status === "invalid" && <div style={{ ...box, color: C.muted, fontSize: 14 }}>This link looks broken. Ask your GM for the campaign link.</div>}
+        {status === "invalid" && <div style={box}><LinkInvalid /></div>}
+        {status === "offline" && <div style={box}><ConnectProblem /></div>}
 
         {status === "ready" && (
           <>

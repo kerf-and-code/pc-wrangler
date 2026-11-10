@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { C } from "@/lib/forge-theme";
 import type { createClient } from "@/lib/supabase/client";
 import { describeTable, parseTable } from "@/lib/tabletop/roll-tables";
+import { friendlyError, notReady } from "@/lib/friendly-error";
 
 // components/roll-tables-panel.tsx (2026-11-08)
 //
@@ -42,7 +43,7 @@ export default function RollTablesPanel({ campaignId, isGm, supabase, asWho, gmN
   const load = useCallback(async () => {
     const { data, error } = await supabase.from("roll_tables")
       .select("id, name, body, players_can_roll, results_gm_only, updated_at").eq("campaign_id", campaignId).order("name");
-    if (error) { setErr(/roll_tables/.test(error.message) ? "Rollable tables are not set up yet (the p123 migration)." : error.message); setRows([]); return; }
+    if (error) { setErr(/roll_tables/.test(error.message) ? notReady("Rollable tables", "p123") : friendlyError(error)); setRows([]); return; }
     setRows((data ?? []) as Row[]);
   }, [supabase, campaignId]);
   useEffect(() => { void load(); }, [load]);

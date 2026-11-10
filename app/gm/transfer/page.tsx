@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
+import { friendlyError } from "@/lib/friendly-error";
 
 // app/gm/transfer/page.tsx (2026-11-09)
 //
@@ -43,7 +44,7 @@ export default function TransferPage() {
     setBusy(true); setMsg(null);
     const { data, error } = await supabase.rpc("accept_campaign_transfer", { p_token: token });
     setBusy(false);
-    if (error) { setMsg(error.message); return; }
+    if (error) { setMsg(friendlyError(error)); return; }
     window.location.href = `/gm?campaign=${encodeURIComponent(String(data))}`;
   }
 

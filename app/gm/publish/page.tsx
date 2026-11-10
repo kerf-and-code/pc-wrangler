@@ -22,6 +22,7 @@ import { PortraitUploader } from "@/components/portrait-uploader";
 import { C, FORGE_RADIUS, STONE } from "@/lib/forge-theme";
 import { SAX } from "@/lib/theme";
 import { initialCampaignId, useRememberCampaign } from "@/lib/campaign-context";
+import { friendlyError } from "@/lib/friendly-error";
 
 type Campaign = {
   id: string; name: string;
@@ -169,7 +170,7 @@ export default function PublishPage() {
       const { data, error } = await supabase.rpc("set_public_slug", {
         p_campaign: campaign.id, p_slug: slugDraft,
       });
-      if (error) { setNote(error.message); return; }
+      if (error) { setNote(friendlyError(error)); return; }
       const next = data as string;
       setCampaigns((cs) => cs.map((c) => (c.id === campaign.id ? { ...c, public_slug: next } : c)));
       setSlugDraft(next);

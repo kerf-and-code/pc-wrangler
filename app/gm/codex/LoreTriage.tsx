@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { SAX, surfaces } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
+import { friendlyError } from "@/lib/friendly-error";
 
 // The "Loose ends" tab, in two sections.
 //
@@ -250,7 +251,7 @@ export default function LoreTriage({ campaignId, entries, chars, onChanged }: {
       supabase.from("entries").select("id, title, body, tags")
         .eq("campaign_id", campaignId).eq("type", "lore").order("title"),
     ]);
-    if (beatRes.error) setErr(beatRes.error.message);
+    if (beatRes.error) setErr(friendlyError(beatRes.error));
     else setBeats((beatRes.data as Beat[]) || []);
     if (!entryRes.error) {
       const rows = ((entryRes.data as { id: string; title: string; body: string | null; tags: string[] | null }[]) || [])

@@ -4,6 +4,8 @@ import React, { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
+import { friendlyError } from "@/lib/friendly-error";
+import { ConnectProblem, LinkInvalid } from "@/components/load-problem";
 
 type Sched = { session_id: string; session_number: number | null; scheduled_at: string; campaign_name: string };
 
@@ -18,7 +20,7 @@ export default function PlayerSchedulePage() {
   const [code, setCode] = useState<string | null>(null);
   const [sched, setSched] = useState<Sched | null>(null);
   const [displayName, setDisplayName] = useState<string>("");
-  const [status, setStatus] = useState<"loading" | "gate" | "ready" | "none" | "invalid">("loading");
+  const [status, setStatus] = useState<"loading" | "gate" | "ready" | "none" | "invalid" | "offline">("loading");
   const [choice, setChoice] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -39,8 +41,9 @@ export default function PlayerSchedulePage() {
       const m = user.user_metadata || {};
       if (active) setDisplayName(m.full_name || m.name || m.user_name || m.preferred_username || "");
 
-      const { data } = await supabase.rpc("next_scheduled_for_share", { code: shareCode });
+      const { data, error: sErr } = await supabase.rpc("next_scheduled_for_share", { code: shareCode });
       if (!active) return;
+      if (sErr) { setStatus("offline"); return; } // audit U9: a failed read is not "nothing scheduled"
       if (data && data.length) {
         setSched(data[0]);
         setStatus("ready");
@@ -76,7 +79,7 @@ export default function PlayerSchedulePage() {
       code, p_session_id: sched.session_id, p_status: value, p_display_name: displayName.trim() || null,
     });
     setSaving(false);
-    if (rpcErr) setError(rpcErr.message);
+    if (rpcErr) setError(friendlyError(rpcErr));
     else setSaved(true);
   }
 
@@ -98,9 +101,8 @@ export default function PlayerSchedulePage() {
 
         {status === "loading" && <p style={{ textAlign: "center", color: C.muted, fontSize: 14 }}>Loading…</p>}
 
-        {status === "invalid" && (
-          <p style={{ textAlign: "center", color: C.muted, fontSize: 14, lineHeight: 1.6 }}>This link looks broken. Ask your GM for the campaign link.</p>
-        )}
+        {status === "invalid" && <LinkInvalid />}
+        {status === "offline" && <ConnectProblem />}
 
         {status === "none" && (
           <p style={{ textAlign: "center", color: C.muted, fontSize: 14, lineHeight: 1.6 }}>No session is on the calendar yet. Check back once your GM sets a time.</p>

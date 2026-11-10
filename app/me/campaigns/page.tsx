@@ -106,7 +106,7 @@ export default function MyCampaignsPage() {
                 <A href={`/record?share=${c.share_code}`} onClick={enter}>Record</A>
               </>}
               <A href={tabletopUrl(c.campaign_id)} onClick={(e) => { e?.preventDefault(); enter(); openTabletop(c.campaign_id); }}>Tabletop</A>
-              <A href="/me/forge" onClick={enter}>New character</A>
+              <A href="/me/forge" onClick={enter}>+ New character</A>
             </div>
           </div>
           );

@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { C } from "@/lib/forge-theme";
 import { POI_ICONS, POI_ICON_SVG, POI_ICON_CATEGORIES, type PoiIcon } from "@/lib/worldmap/poi-icons";
+import { friendlyError } from "@/lib/friendly-error";
 
 // Phase 4 icons: browse the 169 built-in POI icons (searchable; rendered inline so they tint) and
 // upload/manage personal SVG icons against a ~1 MB per-campaign budget. Personal icons render as
@@ -58,7 +59,7 @@ export default function IconLibrary({ campaignId, onPick, builtinOnly }: { campa
   const remove = useCallback(async (id: string) => {
     if (!window.confirm("Delete this icon from your library? Markers already using it lose their picture.")) return;
     const { error } = await supabase.from("map_icons").delete().eq("id", id);
-    if (error) { setStatus(error.message); return; }
+    if (error) { setStatus(friendlyError(error)); return; }
     setPersonal((prev) => prev.filter((i) => i.id !== id));
   }, [supabase]);
 

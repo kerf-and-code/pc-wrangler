@@ -7,6 +7,7 @@ import GmIdentityCard from "@/components/gm-identity-card";
 import { surfaces, ui } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import { initialCampaignId, useRememberCampaign, initialSessionId, useRememberSession, gmHref } from "@/lib/campaign-context";
+import { friendlyError } from "@/lib/friendly-error";
 
 type Campaign = { id: string; name: string };
 type Sess = { id: string; session_number: number | null; status: string };
@@ -158,7 +159,7 @@ export default function CapturePage() {
     const { data, error: e } = await supabase.from("capture_jobs")
       .insert({ campaign_id: campaignId, session_id: sessionId, source: "online", status: "draft" })
       .select("id, status, source").single();
-    if (e) { setError(e.message); return; }
+    if (e) { setError(friendlyError(e)); return; }
     setJob(data as Job);
     setTracks([]);
   }
@@ -171,11 +172,11 @@ export default function CapturePage() {
     const path = `${campaignId}/${job.id}/${charId}-${Date.now()}.${ext}`;
     const { error: upErr } = await supabase.storage.from("session-audio").upload(path, file);
     if (upErr) {
-      setError(upErr.message);
+      setError(friendlyError(upErr));
     } else {
       const { error: insErr } = await supabase.from("audio_tracks")
         .insert({ job_id: job.id, campaign_id: campaignId, character_id: charId, storage_path: path, status: "pending" });
-      if (insErr) setError(insErr.message);
+      if (insErr) setError(friendlyError(insErr));
       else await loadTracks(job.id);
     }
     setUploading((p) => ({ ...p, [charId]: false }));
@@ -198,7 +199,7 @@ export default function CapturePage() {
     if (!job) return;
     setQueuing(true);
     const { error: e } = await supabase.from("capture_jobs").update({ status }).eq("id", job.id);
-    if (e) setError(e.message);
+    if (e) setError(friendlyError(e));
     else setJob({ ...job, status });
     setQueuing(false);
   }
@@ -235,7 +236,7 @@ export default function CapturePage() {
     <PageShell width={860}>
       <h1 style={{ ...ui.h1, fontSize: 28, margin: "4px 0 4px" }}>Capture</h1>
       <p style={{ color: C.muted, fontSize: 14, margin: "0 0 20px" }}>
-        When you record over Discord, run <code style={{ fontFamily: "ui-monospace, monospace", color: C.text }}>/record</code> to start and <code style={{ fontFamily: "ui-monospace, monospace", color: C.text }}>/stop</code> when you finish; the job, each player&apos;s track, and transcription all appear here on their own. Manual upload is the backup for tables that do not record over Discord. Nothing is processed until consent is on file.
+        When you record over Discord, run <code style={{ fontFamily: "ui-monospace, monospace", color: C.text }}>/record</code> to start and <code style={{ fontFamily: "ui-monospace, monospace", color: C.text }}>/stop</code> when you finish; the recording, each player&apos;s audio, and the transcript all appear here on their own. Manual upload is the backup for tables that do not record over Discord. Nothing is processed until consent is on file.
       </p>
       <p style={{ color: C.muted, fontSize: 13.5, margin: "-12px 0 20px" }}>
         Playing in person? <a href="/gm/record" style={{ color: C.sun }}>Record the room</a> with one microphone instead, then map the voices on <a href="/gm/speakers" style={{ color: C.sun }}>Speakers</a>.

@@ -15,6 +15,7 @@ import PageShell from "@/components/page-shell";
 import { createClient } from "@/lib/supabase/client";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import { SAX } from "@/lib/theme";
+import { ConnectProblem, LinkInvalid } from "@/components/load-problem";
 
 type Entry = { id: string; name: string; kind: string; initiative: number | null; defeated: boolean; is_turn: boolean; conditions: string[] };
 type Fight = { name: string; round: number; order: Entry[] } | null;
@@ -27,6 +28,7 @@ export default function PlayerInitiativePage() {
   const [fight, setFight] = useState<Fight>(null);
   const [loaded, setLoaded] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [offline, setOffline] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -35,7 +37,7 @@ export default function PlayerInitiativePage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         const { error } = await supabase.auth.signInAnonymously();
-        if (error) { setShare(null); return; }
+        if (error) { setOffline(true); return; } // audit U9: a sign-in failure is not a bad link
       }
       setShare(code);
     })();
@@ -61,8 +63,9 @@ export default function PlayerInitiativePage() {
   return (
     <PageShell width={640}>
       <h1 style={{ fontFamily: SAX.serif, fontSize: 30, margin: "4px 0 2px", color: C.text }}>Initiative</h1>
-      {share === undefined && <p style={{ color: C.muted }}>Loading…</p>}
-      {share === null && <p style={{ color: C.muted }}>This link looks broken. Ask your GM for the campaign link.</p>}
+      {share === undefined && !offline && <p style={{ color: C.muted }}>Loading…</p>}
+      {offline && <ConnectProblem />}
+      {share === null && <LinkInvalid />}
       {share && loaded && !fight && !err && (
         <p style={{ color: C.muted, fontSize: 14, lineHeight: 1.6 }}>No fight right now. When your GM starts one, the turn order shows up here on its own.</p>
       )}

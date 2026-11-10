@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { C } from "@/lib/forge-theme";
 import type { createClient } from "@/lib/supabase/client";
+import { friendlyError, notReady } from "@/lib/friendly-error";
 
 // components/table-pins.tsx (2026-11-09)
 //
@@ -134,7 +135,7 @@ export function TokenNotes({ tokenId, tokenName, campaignId, supabase, onChange,
     let live = true;
     void supabase.from("vtt_token_notes").select("body").eq("token_id", tokenId).maybeSingle().then(({ data, error }) => {
       if (!live) return;
-      if (error) { setStatus(/vtt_token_notes/.test(error.message) ? "Notes are not set up yet (the p128 migration)." : error.message); setBody(""); return; }
+      if (error) { setStatus(/vtt_token_notes/.test(error.message) ? notReady("Notes", "p128") : friendlyError(error)); setBody(""); return; }
       setBody((data as { body?: string } | null)?.body ?? "");
     });
     return () => { live = false; };

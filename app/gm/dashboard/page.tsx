@@ -7,6 +7,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { SAX, STONE } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import { initialCampaignId, useRememberCampaign, initialSessionId, useRememberSession } from "@/lib/campaign-context";
+import { friendlyError } from "@/lib/friendly-error";
 
 // recharts needs real hex/rgba, not CSS vars; mapped onto the cellar theme.
 const T = {
@@ -93,7 +94,7 @@ const CSS = `
 `;
 
 function evennessWord(cv: number | null): { word: string; color: string } {
-  if (cv == null) return { word: "\u2014", color: T.muted };
+  if (cv == null) return { word: "-", color: T.muted };
   if (cv < 0.3) return { word: "Even", color: T.good };
   if (cv < 0.6) return { word: "A bit uneven", color: T.sun };
   return { word: "Lopsided", color: T.warn };
@@ -140,7 +141,7 @@ export default function Dashboard() {
       supabase.from("v_loot_fairness").select("*").eq("campaign_id", id),
     ]);
     const firstErr = sess.error || eq.error || sp.error || ar.error || lt.error;
-    if (firstErr) setErr(firstErr.message);
+    if (firstErr) setErr(friendlyError(firstErr));
     const sessRows = sess.data || [];
     setSessions(sessRows);
     setEquity(eq.data || []);

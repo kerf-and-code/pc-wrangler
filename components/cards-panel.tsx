@@ -5,6 +5,7 @@ import { C } from "@/lib/forge-theme";
 import type { createClient } from "@/lib/supabase/client";
 import { MAX_CARDS, SUIT_SYMBOL, cardKey, isRed, nameFromFile, parseCustomDeck, shuffled, standardDeck, type CardFace, type Suit } from "@/lib/tabletop/cards";
 import { clearPictures, pictureProblem, uploadPicture, uploadPictures } from "@/lib/tabletop/table-files";
+import { friendlyError, notReady } from "@/lib/friendly-error";
 
 // components/cards-panel.tsx (2026-11-09)
 //
@@ -34,7 +35,7 @@ export function useTableCards(supabase: Supa, campaignId: string) {
   const [error, setError] = useState<string | null>(null);
   const reload = useCallback(async () => {
     const { data: d, error: er } = await supabase.rpc("tabletop_cards", { p_campaign: campaignId });
-    if (er) { setError(/tabletop_cards/.test(er.message) ? "Card decks are not set up yet (the p130 migration)." : er.message); return; }
+    if (er) { setError(/tabletop_cards/.test(er.message) ? notReady("Card decks", "p130") : friendlyError(er)); return; }
     setError(null);
     const t = d as TableCards;
     setData({ decks: t.decks ?? [], table: t.table ?? [], hand: t.hand ?? [], hands: t.hands ?? [], others: t.others ?? null });
@@ -112,7 +113,7 @@ export default function CardsPanel({ campaignId, supabase, isGm, me, seats, data
     setBusy(true); setMsg(null);
     const { error: er } = await job();
     setBusy(false);
-    if (er) { setMsg(er.message); return false; }
+    if (er) { setMsg(friendlyError(er)); return false; }
     if (ok) setMsg(ok);
     await reload(); onChanged();
     return true;
@@ -380,7 +381,7 @@ function NewDeck({ campaignId, supabase, onDone, onCancel }: { campaignId: strin
     }
     setBusy("Making the deck...");
     const { data: d, error: er } = await supabase.from("vtt_decks").insert({ campaign_id: campaignId, name: n, kind, back_color: back, back_path: backPath, players_draw: playersDraw }).select("id").single();
-    if (er || !d) { void clearPictures(campaignId, uploaded); setBusy(null); setErr(/back_path/.test(er?.message ?? "") ? "Card pictures are not set up yet (the p133 migration)." : er?.message ?? "Could not make the deck."); return; }
+    if (er || !d) { void clearPictures(campaignId, uploaded); setBusy(null); setErr(/back_path/.test(er?.message ?? "") ? notReady("Card pictures", "p133") : er?.message ?? "Could not make the deck."); return; }
     const id = (d as { id: string }).id;
     // a new deck starts shuffled
     const rows = shuffled(faces).map((f, i) => ({ deck_id: id, campaign_id: campaignId, name: f.name, body: f.body, suit: f.suit, rank: f.rank, ord: i + 1, image_path: cardPaths.get(cardKey(f.name)) ?? null }));

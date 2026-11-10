@@ -12,7 +12,7 @@ import {
 
 // components/dm-screen.tsx
 //
-// The DM Screen canvas. A GM picks (or makes) a named board and arranges the cards they sent over from
+// The GM screen canvas. A GM picks (or makes) a named board and arranges the cards they sent over from
 // the compendium. Placement is free-form: drag a card by its header, resize from the bottom-right corner.
 // Each card is a stored snapshot (PlacedCard.entry), rendered through the compendium's own CardBody so it
 // looks identical to the lookup tool. Layout changes persist to dm_boards (p92) on drop.
@@ -79,7 +79,7 @@ export default function DmScreen() {
       const found = list.find((b) => b.id === want) ?? list[0] ?? null;
       selectBoard(found);
     } catch (e) {
-      setErr(e instanceof Error ? e.message : "Could not load your DM Screen boards.");
+      setErr(e instanceof Error ? e.message : "Could not load your GM screen boards.");
     }
   }, [supabase, selectBoard]);
 
@@ -193,8 +193,8 @@ export default function DmScreen() {
   const worldW = Math.max(1400, maxRight + 240);
   const worldH = Math.max(900, maxBottom + 240);
 
-  if (loading) return <p style={{ color: C.muted }}>Loading your DM Screen…</p>;
-  if (!gmId) return <p style={{ color: C.muted }}>Sign in as a GM to use the DM Screen.</p>;
+  if (loading) return <p style={{ color: C.muted }}>Loading your GM screen…</p>;
+  if (!gmId) return <p style={{ color: C.muted }}>Sign in as a GM to use the GM screen.</p>;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -240,9 +240,9 @@ export default function DmScreen() {
       )}
 
       {boards.length === 0 ? (
-        <p style={{ color: C.muted, fontSize: 14 }}>No boards yet. Create one, then send cards over from the <a href="/gm/compendium" style={{ color: C.sun }}>Rules compendium</a> with the “To DM Screen” button.</p>
+        <p style={{ color: C.muted, fontSize: 14 }}>No boards yet. Create one, then send cards over from the <a href="/gm/compendium" style={{ color: C.sun }}>Rules compendium</a> with the “To GM screen” button.</p>
       ) : cards.length === 0 ? (
-        <p style={{ color: C.muted, fontSize: 14 }}>This board is empty. Open the <a href="/gm/compendium" style={{ color: C.sun }}>Rules compendium</a>, look something up, and press “To DM Screen” to place it here.</p>
+        <p style={{ color: C.muted, fontSize: 14 }}>This board is empty. Open the <a href="/gm/compendium" style={{ color: C.sun }}>Rules compendium</a>, look something up, and press “To GM screen” to place it here.</p>
       ) : null}
 
       {/* canvas: a fixed-height scrollable viewport over a zoomable "world" that holds the cards */}

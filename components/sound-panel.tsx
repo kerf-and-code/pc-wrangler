@@ -7,6 +7,7 @@ import {
   MAX_AMBIENT, MAX_SOUND_BYTES, SOUND_TYPES, clock, musicPosition, nameFromFile, toInput,
   type AudioInput, type AudioState,
 } from "@/lib/tabletop/sound";
+import { friendlyError, notReady } from "@/lib/friendly-error";
 
 // components/sound-panel.tsx (2026-11-08)
 //
@@ -50,7 +51,7 @@ export default function SoundPanel({ campaignId, supabase, audio, serverNow, sav
 
   const load = useCallback(async () => {
     const { data, error } = await supabase.from("vtt_sounds").select("id, name, kind, url, duration, bytes").eq("campaign_id", campaignId).order("kind").order("name");
-    if (error) { setErr(/vtt_sounds/.test(error.message) ? "Sound is not set up yet (the p124 migration)." : error.message); setSounds([]); return; }
+    if (error) { setErr(/vtt_sounds/.test(error.message) ? notReady("Sound", "p124") : friendlyError(error)); setSounds([]); return; }
     setSounds((data ?? []) as Sound[]);
   }, [supabase, campaignId]);
   useEffect(() => { void load(); }, [load]);
@@ -114,7 +115,7 @@ export default function SoundPanel({ campaignId, supabase, audio, serverNow, sav
   const on = (x: boolean): React.CSSProperties => ({ ...small, color: x ? C.sun : C.text, borderColor: x ? C.sun : C.line });
   const head: React.CSSProperties = { fontWeight: 600, fontSize: 13, margin: "16px 0 6px" };
 
-  if (missing) return <div style={{ flex: 1, padding: 12, color: C.muted, fontSize: 12.5 }}>Sound is not set up yet: run the p124 migration.</div>;
+  if (missing) return <div style={{ flex: 1, padding: 12, color: C.muted, fontSize: 12.5 }}>Sound is not available yet.</div>;
 
   const list = (k: "music" | "ambient") => (sounds ?? []).filter((s) => s.kind === k);
   return (

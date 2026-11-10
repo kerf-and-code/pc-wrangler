@@ -8,6 +8,7 @@ import { useMomentPlayer, MomentButton } from "@/components/moment-player";
 import { surfaces, ui } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import { initialCampaignId, useRememberCampaign, gmHref } from "@/lib/campaign-context";
+import { friendlyError } from "@/lib/friendly-error";
 
 type Campaign = { id: string; name: string };
 type Sess = { id: string; session_number: number | null };
@@ -118,7 +119,7 @@ export default function PrepPage() {
       campaign_id: campaignId, title: pTitle.trim(), note: pNote.trim() || null, kind: pKind,
       difficulty: pKind === "encounter" && pDiff ? pDiff : null, linked_event_id, linked_character_id, position: pos, done: false,
     }).select("id, title, note, kind, difficulty, linked_event_id, linked_character_id, position, done, source").single();
-    if (e) setError(e.message);
+    if (e) setError(friendlyError(e));
     else if (data) { setPlan((arr) => [...arr, data as PlanItem]); setPTitle(""); setPNote(""); setPLink(""); setPDiff(""); setPKind("scene"); }
     setPBusy(false);
   }

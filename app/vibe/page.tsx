@@ -4,6 +4,8 @@ import React, { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
+import { friendlyError } from "@/lib/friendly-error";
+import { ConnectProblem, LinkInvalid } from "@/components/load-problem";
 
 const SPOTLIGHT: { value: string; label: string; hint: string }[] = [
   { value: "wanted_more", label: "Wanted more", hint: "I was in the background" },
@@ -16,7 +18,7 @@ export default function VibeCheckPage() {
   const [code, setCode] = useState<string | null>(null);
   const [sessionNo, setSessionNo] = useState<number | null>(null);
   const [campaignName, setCampaignName] = useState<string | null>(null);
-  const [status, setStatus] = useState<"loading" | "ready" | "none" | "invalid">("loading");
+  const [status, setStatus] = useState<"loading" | "ready" | "none" | "invalid" | "offline">("loading");
 
   const [playerName, setPlayerName] = useState<string>("");
   const [satisfaction, setSatisfaction] = useState<number | null>(null);
@@ -43,19 +45,21 @@ export default function VibeCheckPage() {
       let { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         const { data, error: signErr } = await supabase.auth.signInAnonymously();
-        if (signErr) { if (active) setStatus("invalid"); return; }
+        if (signErr) { if (active) setStatus("offline"); return; }
         user = data.user;
       }
 
       if (sParam) {
         const sNum = parseInt(sParam, 10);
-        const { data } = await supabase.rpc("vibe_target", { code: shareCode, p_session_number: sNum });
+        const { data, error: vErr } = await supabase.rpc("vibe_target", { code: shareCode, p_session_number: sNum });
         if (!active) return;
+        if (vErr) { setStatus("offline"); return; }
         if (data && data.length) { setCampaignName(data[0].campaign_name); setSessionNo(sNum); setStatus("ready"); }
         else setStatus("invalid");
       } else {
-        const { data } = await supabase.rpc("latest_processed_session", { code: shareCode });
+        const { data, error: lErr } = await supabase.rpc("latest_processed_session", { code: shareCode });
         if (!active) return;
+        if (lErr) { setStatus("offline"); return; }
         if (data && data.length && data[0].session_number !== null) {
           setCampaignName(data[0].campaign_name); setSessionNo(data[0].session_number); setStatus("ready");
         } else {
@@ -106,7 +110,7 @@ export default function VibeCheckPage() {
       p_anonymous: anonymous,
     });
     setSubmitting(false);
-    if (rpcErr) setError(rpcErr.message);
+    if (rpcErr) setError(friendlyError(rpcErr));
     else setSubmitted(true);
   }
 
@@ -125,9 +129,8 @@ export default function VibeCheckPage() {
 
           {status === "loading" && <p style={{ textAlign: "center", color: C.muted, fontSize: 14 }}>Loading…</p>}
 
-          {status === "invalid" && (
-            <p style={{ textAlign: "center", color: C.muted, fontSize: 14, lineHeight: 1.6 }}>This link looks broken. Ask your GM for the campaign link.</p>
-          )}
+          {status === "invalid" && <LinkInvalid />}
+          {status === "offline" && <ConnectProblem />}
 
           {status === "none" && (
             <p style={{ textAlign: "center", color: C.muted, fontSize: 14, lineHeight: 1.6 }}>

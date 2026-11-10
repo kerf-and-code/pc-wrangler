@@ -11,6 +11,7 @@ import {
 } from "@/lib/dungeon/classic";
 import TileLibrary from "./TileLibrary";
 import type { CustomTile } from "@/lib/tiles/custom";
+import { notReady } from "@/lib/friendly-error";
 
 // The Dungeon tab (rebuilt 2026-11-06). Paint floors on a square grid across three stacked levels, then
 // add what makes a map read like one from a printed adventure: doors set into the walls, furniture,
@@ -117,7 +118,7 @@ export default function DungeonCreator({ campaignId }: { campaignId: string }) {
       }
       const { data: extra, error } = await supabase.from("dungeon_maps").select("marks, meta").eq("campaign_id", campaignId).maybeSingle();
       if (off) return;
-      if (error && /marks|meta/.test(error.message)) setMsg("Doors, furniture and the title cannot be saved yet: run migration p103 in Supabase.");
+      if (error && /marks|meta/.test(error.message)) setMsg(notReady("Saving doors, furniture and the title", "p103"));
       const ex = extra as { marks?: unknown; meta?: unknown } | null;
       setMarks(normalizeMarks(ex?.marks, LEVELS, size));
       setMeta(normalizeMeta(ex?.meta, LEVELS));
@@ -143,7 +144,7 @@ export default function DungeonCreator({ campaignId }: { campaignId: string }) {
           { onConflict: "campaign_id" },
         );
         setSaveState(e2 ? "error" : "saved");
-        setMsg("Floors saved. Doors, furniture and the title are not saved until migration p103 is run.");
+        setMsg("Floors saved. " + notReady("Saving doors, furniture and the title", "p103"));
       } else { setSaveState("error"); setMsg(`Not saved: ${error.message}`); }
     }, 900);
     return () => clearTimeout(t);

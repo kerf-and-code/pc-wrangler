@@ -115,7 +115,7 @@ export default function CodingPage() {
       <a href="/gm/reliability" style={{ fontSize: 13, color: C.muted }}>{"←"} Back to Reliability</a>
       <h1 style={{ ...ui.h1, fontSize: 28, margin: "8px 0 4px" }}>Second coding{data?.session != null ? `: session ${data.session}` : ""}</h1>
       <p style={{ color: C.muted, fontSize: 14, margin: "0 0 16px" }}>
-        You are the second coder. For each line, pick the one event it shows, or Nothing here. You never see what the extractor said, which is the point.
+        You are the second coder. For each line, pick the one event it shows, or Nothing here. You never see what Six Axes&apos; automatic notes said, which is the point.
       </p>
 
       <details open={showHelp} onToggle={(e) => {
@@ -138,7 +138,7 @@ export default function CodingPage() {
           </ol>
           <p style={{ margin: "0 0 6px" }}><strong style={{ color: C.text }}>Keep it blind:</strong></p>
           <ul style={{ margin: "0 0 10px", paddingLeft: 20 }}>
-            <li>Do not open this session in Review, the Session Log or Mechanics until you finish. Agreement only means something if you have not seen the extractor&apos;s calls.</li>
+            <li>Do not open this session in Review, the Session log or Mechanics until you finish. Agreement only means something if you have not seen the automatic notes.</li>
             <li>The best coder is someone who has not reviewed the session yet. If you already reviewed it, your memory of its suggestions will push the numbers up; a co-GM or a friend who knows the game is better.</li>
             <li>Results stay hidden until every line is coded, so you cannot check your score halfway through.</li>
           </ul>
@@ -157,7 +157,7 @@ export default function CodingPage() {
 
       {data && data.status === "done" && !allDone && (
         <p style={{ color: C.sun, fontSize: 13, margin: "0 0 12px" }}>
-          This session has already been through Review. If you were the one who reviewed it, you have seen the extractor&apos;s calls, so this check will not be fully blind.
+          This session has already been through Review. If you were the one who reviewed it, you have seen the automatic notes, so this check will not be fully blind.
         </p>
       )}
 

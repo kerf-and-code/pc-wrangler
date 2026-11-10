@@ -21,6 +21,7 @@ import TokenMaker from "@/components/token-maker";
 import { createClient } from "@/lib/supabase/client";
 
 import { FORGE_RADIUS } from "@/lib/forge-theme";
+import {  } from "@/lib/friendly-error";
 const BUCKET = "campaign-maps";
 const MAX_BYTES = 4 * 1024 * 1024; // 4 MB; portraits don't need more and the bucket isn't a CDN.
 const OK_TYPES = ["image/png", "image/jpeg", "image/webp"];
@@ -99,7 +100,7 @@ export function PortraitUploader({
       const msg = e?.message || e?.error || "Unknown error.";
       const hint =
         status === 403 || /row-level security|policy|unauthor/i.test(msg)
-          ? " The storage policy for this path is not granting write access. Check /gm/start for an unapplied migration."
+          ? " You may not have permission to save a picture here. If you should, let us know."
           : status === 404 || /bucket/i.test(msg)
             ? " The storage bucket was not found."
             : status === 413 || /large|size/i.test(msg)

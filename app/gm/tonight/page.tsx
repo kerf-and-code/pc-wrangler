@@ -20,6 +20,8 @@ import { createClient } from "@/lib/supabase/client";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import { SAX } from "@/lib/theme";
 import { initialCampaignId, useRememberCampaign, useRememberSession, urlParam, gmHref } from "@/lib/campaign-context";
+import { friendlyError } from "@/lib/friendly-error";
+import { openTabletop, tabletopUrl } from "@/lib/tabletop/open";
 
 type Campaign = { id: string; name: string; system: string | null; share_code: string | null; discord_channel_id: string | null };
 type Sess = { id: string; session_number: number | null; status: string | null; scheduled_at: string | null; recap: string | null; started_at: string | null; ended_at: string | null; capture_modality: string | null };
@@ -184,7 +186,7 @@ export default function TonightPage() {
       capture_modality: modality, consent_recorded: false, started_at: new Date().toISOString(),
     }).select("id").single();
     setBusy(false);
-    if (error) { setErr(error.message); return; }
+    if (error) { setErr(friendlyError(error)); return; }
     setMsg(`Session ${nextNum} is live.`);
     void loadCampaign(campaignId, (data as { id: string }).id);
   }
@@ -199,7 +201,7 @@ export default function TonightPage() {
       source: "manual", payload: entry.note.trim() ? { note: entry.note.trim() } : null,
     });
     setBusy(false);
-    if (error) { setErr(error.message); return; }
+    if (error) { setErr(friendlyError(error)); return; }
     setEntry((e) => ({ ...e, note: "" }));
     setLogged((n) => n + 1);
   }
@@ -366,7 +368,8 @@ export default function TonightPage() {
                 ? <a href={gmHref("/gm/combat", { campaign: campaignId, combat: activeCombat.id })} style={btn(true)}>Back to the fight: {activeCombat.name}</a>
                 : <a href={gmHref("/gm/encounters", { campaign: campaignId })} style={btn()}>Start a fight</a>}
               <a href={gmHref("/gm/compendium", {})} style={btn()}>Compendium</a>
-              <a href="/gm/screen" style={btn()}>DM Screen</a>
+              <a href={tabletopUrl(campaignId)} onClick={(e) => { e.preventDefault(); openTabletop(campaignId); }} style={btn()} title="The shared table in its own window, for a second screen">Open the tabletop</a>
+              <a href="/gm/screen" style={btn()}>GM screen</a>
               <a href={gmHref("/gm/roll", { campaign: campaignId })} style={btn()}>Roll</a>
               <a href={gmHref("/gm/prep", { campaign: campaignId })} style={btn()}>Prep sheet</a>
             </div>

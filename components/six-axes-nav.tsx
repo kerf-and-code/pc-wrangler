@@ -47,24 +47,25 @@ const GM_GROUPS: Group[] = [
     // (Their own character sheet moved to the "You" group, which every GM menu now ends with.)
   ] },
   { label: "Prep", children: [
-    { href: "/gm/prep", label: "Prep" },
+    { href: "/gm/prep", label: "Prep sheet" },
     { href: "/gm/encounters", label: "Encounters", needs: "adversary" },
-    { href: "/gm/statblock", label: "Monster Maker", needs: "adversary" },
+    { href: "/gm/statblock", label: "Monster maker", needs: "adversary" },
     { href: "/gm/timeline", label: "Timeline" },
   ] },
   { label: "Session", children: [
     { href: "/gm/tonight", label: "Tonight" },
+    { href: "/tabletop", label: "Tabletop" },
     { href: "/gm/combat", label: "Combat", needs: "adversary" },
     { href: "/gm/roll", label: "Roll" },
     { href: "/gm/compendium", label: "Compendium" },
-    { href: "/gm/screen", label: "DM Screen" },
+    { href: "/gm/screen", label: "GM screen" },
     { href: "/gm/record", label: "Record in person" },
   ] },
   { label: "After", children: [
     { href: "/gm/review", label: "Review" },
     { href: "/gm/speakers", label: "Speakers" },
     { href: "/gm/transcripts", label: "Transcripts" },
-    { href: "/gm/sessions", label: "Sessions" },
+    { href: "/gm/sessions", label: "Session log" },
     // Was "Check-in", the same word as the player's post-session survey. It is where the GM reads
     // those check-ins (and party chat); attendance itself now lives on Tonight.
     { href: "/gm/table", label: "Player check-ins" },
@@ -72,8 +73,8 @@ const GM_GROUPS: Group[] = [
   ] },
   { label: "World", children: [
     { href: "/gm/codex", label: "Codex" },
-    { href: "/gm/map", label: "Maps" },
-    { href: "/gm/world", label: "World Builder" },
+    { href: "/gm/map", label: "Image maps" },
+    { href: "/gm/world", label: "World builder" },
     { href: "/gm/import", label: "Import" },
     { href: "/gm/publish", label: "Publish" },
     { href: "/gm/search", label: "Search" },
@@ -108,8 +109,8 @@ const PLAYER_TABLE: PGroup = {
     { href: "/me", label: "Journal" },
     { href: "/recaps", label: "Recaps" },
     { href: "/lore", label: "Lore" },
-    { href: "/map", label: "Map" },
-    { href: "/world", label: "World Map" },
+    { href: "/map", label: "Image map" },
+    { href: "/world", label: "World map" },
     { href: "/chat", label: "Chat" },
   ],
 };
@@ -117,6 +118,7 @@ const PLAYER_SESSION: PGroup = {
   label: "Session", scoped: true,
   children: [
     { href: "/schedule", label: "Schedule" },
+    { href: "/tabletop", label: "Tabletop" },
     { href: "/initiative", label: "Initiative" },
     { href: "/record", label: "Record" },
     { href: "/vibe", label: "Check-in" },
@@ -129,7 +131,7 @@ const PLAYER_YOU: PGroup = {
     { href: "/me/sheet", label: "Character sheet" },
     { href: "/me/campaigns", label: "Campaigns" },
     { href: "/me/characters", label: "Characters" },
-    { href: "/me/library", label: "Library" },
+    { href: "/me/library", label: "Character library" },
     { href: "/me/threads", label: "Threads" },
     { href: "/me/codex", label: "Codex" },
     { href: "/me/notes", label: "Notes" },

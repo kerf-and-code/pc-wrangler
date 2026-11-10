@@ -196,7 +196,7 @@ export default function BattleMapCreator({ campaignId }: { campaignId: string })
   const listMaps = useCallback(async (): Promise<BattleMapSummary[] | null> => {
     const { data, error } = await supabase.from("battle_maps").select("id, name, kind, updated_at").eq("campaign_id", campaignId).order("created_at", { ascending: true });
     if (error) {
-      if (missingTable(error.message)) setStatus("migration");
+      if (missingTable(error.message)) { console.warn("[setup] battle maps: migration p104-battle-maps has not been run"); setStatus("migration"); }
       else { setStatus("error"); setMsg(`Could not load maps: ${error.message}`); }
       return null;
     }
@@ -836,8 +836,9 @@ export default function BattleMapCreator({ campaignId }: { campaignId: string })
   if (status === "loading") return <p style={{ color: C.muted }}>Loading maps…</p>;
   if (status === "migration") return (
     <div style={panel}>
-      <p style={{ color: C.text, margin: 0 }}>Battle maps need one database update before they can be saved.</p>
-      <p style={{ color: C.muted, fontSize: 13 }}>Run supabase/migrations/p104-battle-maps.sql in the Supabase SQL editor, then reload this page. Your existing dungeon map is copied over automatically the first time.</p>
+      {/* Push 12 (audit U6): the migration name is for the owner and goes to the console (p104-battle-maps.sql). */}
+      <p style={{ color: C.text, margin: 0 }}>Battle maps are not available yet.</p>
+      <p style={{ color: C.muted, fontSize: 13 }}>Your existing dungeon map is safe, and is copied over automatically once they are.</p>
     </div>
   );
   if (status === "error") return <div style={panel}><p role="alert" style={{ color: "#c98a7a", margin: 0 }}>{msg}</p></div>;

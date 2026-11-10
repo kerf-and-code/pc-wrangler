@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { C } from "@/lib/forge-theme";
+import { friendlyError } from "@/lib/friendly-error";
 
 // Phase 2b: define the tiers (map_layers) and CRUD the regions. A region sits at one tier, may nest
 // inside a parent one tier UP, points at a codex entry (pick an existing one, or mint a new location
@@ -102,7 +103,7 @@ export default function RegionsPanel({ worldMapId, campaignId, onChanged, onPain
   const patchRegion = useCallback(async (id: string, patch: RegionPatch) => {
     setRegions((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)));
     const { error } = await supabase.from("regions").update(patch).eq("id", id);
-    if (error) setStatus(error.message);
+    if (error) setStatus(friendlyError(error));
     onChanged?.();
   }, [supabase, onChanged]);
 
@@ -111,7 +112,7 @@ export default function RegionsPanel({ worldMapId, campaignId, onChanged, onPain
     const name = regions.find((r) => r.id === id)?.name;
     if (!window.confirm(`Delete ${name ? `the region "${name}"` : "this region"} and the hexes painted into it? This cannot be undone.`)) return;
     const { error } = await supabase.from("regions").delete().eq("id", id);
-    if (error) { setStatus(error.message); return; }
+    if (error) { setStatus(friendlyError(error)); return; }
     setRegions((prev) => prev.filter((r) => r.id !== id));
     setPaintId((pv) => (pv === id ? null : pv));
     onChanged?.();
@@ -172,8 +173,8 @@ export default function RegionsPanel({ worldMapId, campaignId, onChanged, onPain
         {sortedLayers.map((l, i) => (
           <div key={l.id} style={{ display: "flex", gap: 5, alignItems: "center" }}>
             <input value={l.name} onChange={(e) => renameLayer(l.id, e.target.value)} style={{ ...field, flex: 1, minWidth: 0 }} />
-            <button type="button" onClick={() => moveLayer(l.id, -1)} disabled={i === 0} style={{ ...mini, opacity: i === 0 ? 0.4 : 1 }}>up</button>
-            <button type="button" onClick={() => moveLayer(l.id, 1)} disabled={i === sortedLayers.length - 1} style={{ ...mini, opacity: i === sortedLayers.length - 1 ? 0.4 : 1 }}>dn</button>
+            <button type="button" onClick={() => moveLayer(l.id, -1)} disabled={i === 0} style={{ ...mini, opacity: i === 0 ? 0.4 : 1 }}>Move up</button>
+            <button type="button" onClick={() => moveLayer(l.id, 1)} disabled={i === sortedLayers.length - 1} style={{ ...mini, opacity: i === sortedLayers.length - 1 ? 0.4 : 1 }}>Move down</button>
             <button type="button" onClick={() => deleteLayer(l.id)} style={mini}>x</button>
           </div>
         ))}
@@ -211,7 +212,7 @@ export default function RegionsPanel({ worldMapId, campaignId, onChanged, onPain
                         </select>
                         <input type="color" value={r.tint || "#8a8378"} onChange={(e) => patchRegion(r.id, { tint: e.target.value })} title="Region colour"
                           style={{ width: 30, height: 28, padding: 0, border: `1px solid ${C.line}`, borderRadius: 6, background: C.surface2, cursor: "pointer" }} />
-                        {r.tint && <button type="button" onClick={() => patchRegion(r.id, { tint: null })} style={mini}>auto</button>}
+                        {r.tint && <button type="button" onClick={() => patchRegion(r.id, { tint: null })} style={mini} title="Go back to the default tint">Default tint</button>}
                       </div>
                       <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
                         <select value={r.entry_id || ""} onChange={(e) => patchRegion(r.id, { entry_id: e.target.value || null })} style={{ ...field, flex: "1 1 140px" }}>
