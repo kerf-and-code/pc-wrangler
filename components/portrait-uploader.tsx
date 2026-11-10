@@ -21,7 +21,7 @@ import TokenMaker from "@/components/token-maker";
 import { createClient } from "@/lib/supabase/client";
 
 import { FORGE_RADIUS } from "@/lib/forge-theme";
-import {  } from "@/lib/friendly-error";
+import { useDialogFocus } from "@/lib/use-dialog-focus";
 const BUCKET = "campaign-maps";
 const MAX_BYTES = 4 * 1024 * 1024; // 4 MB; portraits don't need more and the bucket isn't a CDN.
 const OK_TYPES = ["image/png", "image/jpeg", "image/webp"];
@@ -52,6 +52,8 @@ export function PortraitUploader({
   buttonStyle, textColor = "#e8e3d8", mutedColor = "#9a9488", maker = false, name,
 }: PortraitUploaderProps) {
   const [makerOpen, setMakerOpen] = useState(false);
+  const makerRef = useRef<HTMLDivElement | null>(null);
+  useDialogFocus(makerRef, makerOpen, () => setMakerOpen(false)); // audit U14
   const supabase = React.useMemo(() => createClient(), []);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [busy, setBusy] = useState(false);
@@ -156,8 +158,7 @@ export function PortraitUploader({
         {error && <span style={{ fontSize: 11.5, color: "#c98a7a" }}>{error}</span>}
       </div>
       {makerOpen && (
-        <div role="dialog" aria-modal="true" aria-label="Token maker for the portrait"
-          onKeyDown={(e) => { if (e.key === "Escape") setMakerOpen(false); }}
+        <div ref={makerRef} role="dialog" aria-modal="true" aria-label="Token maker for the portrait"
           style={{ position: "fixed", inset: 0, zIndex: 60, background: "rgba(10,8,6,0.78)", display: "flex", alignItems: "flex-start", justifyContent: "center", overflowY: "auto", padding: "24px 12px" }}>
           <div style={{ background: "#1b1714", border: "1px solid rgba(255,255,255,0.16)", borderRadius: 12, padding: 18, width: "min(1000px, 100%)", boxSizing: "border-box" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>

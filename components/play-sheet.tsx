@@ -206,7 +206,7 @@ export default function PlaySheet({ name, sheet, saveProf, ruleset, characterId,
 
   // ---- layout ----
   const box: React.CSSProperties = { ...stonePanel(), marginBottom: 0, padding: "12px 14px" };
-  const btn = (on = false): React.CSSProperties => ({ ...stoneButton(on ? "primary" : "stone"), fontSize: 12.5, padding: "6px 11px" });
+  const btn = (on = false): React.CSSProperties => ({ ...stoneButton(on ? "primary" : "stone"), fontSize: 12.5, padding: "6px 11px", minHeight: "var(--sax-tap, 0px)" });
   const mono: React.CSSProperties = { fontFamily: FORGE_FONTS.mono };
   const tiny: React.CSSProperties = { ...mono, fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: STONE.inkFaint };
   const field: React.CSSProperties = { padding: "6px 8px", borderRadius: 4, border: `1px solid ${STONE.hi}`, background: "rgba(0,0,0,0.25)", color: STONE.ink, fontSize: 14, width: 74, ...mono };

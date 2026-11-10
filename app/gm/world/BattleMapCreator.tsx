@@ -17,6 +17,7 @@ import TileLibrary from "./TileLibrary";
 import MapUpload, { type UploadDest } from "@/components/map-upload";
 import type { CustomTile } from "@/lib/tiles/custom";
 import { openTabletop, tabletopUrl } from "@/lib/tabletop/open";
+import { askConfirm } from "@/lib/confirm";
 
 // The Battle maps tab (2026-11-06). Many named maps per campaign, indoor or outdoor, drawn in the
 // adventure-book style by lib/dungeon/classic. The GM edits the finished map directly: what is on the
@@ -541,9 +542,9 @@ export default function BattleMapCreator({ campaignId }: { campaignId: string })
     return { x: Math.round(x * k) / k, y: Math.round(y * k) / k };
   }
   const finishWall = () => setWallStart(null);
-  const clearWalls = () => {
+  const clearWalls = async () => {
     const m = docRef.current; if (!m || !m.meta.sightWalls[level].length) return;
-    if (!window.confirm(`Remove all ${m.meta.sightWalls[level].length} sight walls on ${m.meta.levelNames[level] || `level ${level + 1}`}? Ctrl+Z brings them back while this page stays open.`)) return;
+    if (!await askConfirm(`Remove all ${m.meta.sightWalls[level].length} sight walls on ${m.meta.levelNames[level] || `level ${level + 1}`}? Ctrl+Z brings them back while this page stays open.`)) return;
     mutate((d) => { d.meta.sightWalls[level] = []; }); setWallStart(null);
   };
   const clickWall = (m: BattleMap, p: Pt, free: boolean) => {
@@ -711,7 +712,7 @@ export default function BattleMapCreator({ campaignId }: { campaignId: string })
 
   const deleteMap = async () => {
     if (!doc) return;
-    if (!window.confirm(`Delete the map "${doc.name}" and everything on it? This cannot be undone.`)) return;
+    if (!await askConfirm(`Delete the map "${doc.name}" and everything on it? This cannot be undone.`)) return;
     const { error } = await supabase.from("battle_maps").delete().eq("id", doc.id);
     if (error) { setMsg(`Could not delete: ${error.message}`); return; }
     dirty.current = false;
@@ -720,16 +721,16 @@ export default function BattleMapCreator({ campaignId }: { campaignId: string })
     if (rest.length) await openMap(rest[0].id); else { setStatus("empty"); setCreating(true); }
   };
 
-  const clearLevel = () => {
+  const clearLevel = async () => {
     if (!doc) return;
-    if (!window.confirm(`Clear everything on ${doc.meta.levelNames[level] || `level ${level + 1}`}? Ctrl+Z brings it back while this page stays open.`)) return;
+    if (!await askConfirm(`Clear everything on ${doc.meta.levelNames[level] || `level ${level + 1}`}? Ctrl+Z brings it back while this page stays open.`)) return;
     mutate((m) => { m.levels[level] = m.levels[level].map(() => 0); m.custom[level] = {}; m.doors[level] = {}; m.elements[level] = []; m.meta.sightWalls[level] = []; });
     setSelId(null); setWallStart(null);
   };
 
-  const changeSize = (newN: number) => {
+  const changeSize = async (newN: number) => {
     if (!doc || newN === doc.n) return;
-    if (newN < doc.n && !window.confirm(`Shrink to ${newN} by ${newN}? Anything beyond square ${newN} is cut off (Ctrl+Z brings it back).`)) return;
+    if (newN < doc.n && !await askConfirm(`Shrink to ${newN} by ${newN}? Anything beyond square ${newN} is cut off (Ctrl+Z brings it back).`)) return;
     pushUndo(); dirty.current = true; setDoc(resizeMap(doc, newN));
   };
 

@@ -13,6 +13,7 @@ import { CampaignSettings, CampaignTrash } from "@/components/campaign-safety";
 import { rulesetForCampaign, pickerSystem } from "@/lib/systems/ruleset";
 import { canonicalSubclass, subclassKey } from "@/lib/subclass-names";
 import { friendlyError } from "@/lib/friendly-error";
+import { askConfirm } from "@/lib/confirm";
 
 // Palette mapped onto the shared cellar theme.
 
@@ -164,7 +165,7 @@ export default function GMWorkspace() {
 
   async function changeSystem(id: string, system: string) {
     const name = campaigns.find((c) => c.id === id)?.name ?? "this campaign";
-    if (!window.confirm(`Switch ${name} to a different game system? The roster, tools and rules shown change to match. Existing characters stay, but fields the new system doesn't use are hidden.`)) return;
+    if (!await askConfirm(`Switch ${name} to a different game system? The roster, tools and rules shown change to match. Existing characters stay, but fields the new system doesn't use are hidden.`)) return;
     setBusy(true); setErr(null);
     const { error } = await supabase.from("campaigns").update({ system }).eq("id", id);
     if (error) setErr(friendlyError(error));
@@ -237,7 +238,7 @@ export default function GMWorkspace() {
 
   async function removeCharacter(id: string) {
     const name = characters.find((c) => c.id === id)?.name ?? "this character";
-    if (!window.confirm(`Remove ${name} from this campaign? They leave the party everywhere: Tonight, check-ins, recording consent, encounters and the roll list, and the Discord bot stops treating them as a player here. Their history (events, rolls, recaps) is kept, and you can restore them from the Roster.`)) return;
+    if (!await askConfirm(`Remove ${name} from this campaign? They leave the party everywhere: Tonight, check-ins, recording consent, encounters and the roll list, and the Discord bot stops treating them as a player here. Their history (events, rolls, recaps) is kept, and you can restore them from the Roster.`)) return;
     setErr(null);
     // Ask for the row back: an update that RLS filters out returns no error and changes nothing.
     const { data, error } = await supabase.from("characters").update({ active: false }).eq("id", id).select("id");
@@ -474,9 +475,9 @@ export default function GMWorkspace() {
           ))}
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-          <input style={{ ...inputStyle, maxWidth: 240 }} placeholder="New campaign name"
+          <input aria-label="New campaign name" style={{ ...inputStyle, maxWidth: 240 }} placeholder="New campaign name"
             value={newCampaign.name} onChange={(e) => setNewCampaign({ ...newCampaign, name: e.target.value })} />
-          <select style={{ ...inputStyle, maxWidth: 200 }} value={newCampaign.system}
+          <select aria-label="Game system" style={{ ...inputStyle, maxWidth: 200 }} value={newCampaign.system}
             onChange={(e) => setNewCampaign({ ...newCampaign, system: e.target.value })}>
             {/* Audit U25: one entry for the 2024 rules; "5.5e" was the same rules under a second name. */}
             <option value="5e">D&amp;D 2024 (5.5e)</option>
@@ -496,7 +497,7 @@ export default function GMWorkspace() {
                 <button style={btnGhost} onClick={() => copySetup(sc.share_code)}>{copied === sc.share_code ? "Copied" : "Copy /setup command"}</button>
               </>}
               <span style={{ fontSize: 12.5, color: C.muted }}>System:</span>
-              <select value={pickerSystem(sc.system)} onChange={(e) => changeSystem(sc.id, e.target.value)} disabled={busy} style={{ ...inputStyle, maxWidth: 200 }}>
+              <select aria-label={`Game system for ${sc.name}`} value={pickerSystem(sc.system)} onChange={(e) => changeSystem(sc.id, e.target.value)} disabled={busy} style={{ ...inputStyle, maxWidth: 200 }}>
                 <option value="5e">D&amp;D 2024 (5.5e)</option>
                 <option value="2014">D&amp;D 2014</option>
                 {listModules().filter((m) => m.id !== "dnd5e").map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}
@@ -597,23 +598,23 @@ export default function GMWorkspace() {
                     <SpecFields spec={rosterSpec} values={editChar} onChange={(p) => setEditChar({ ...editChar, ...p })} onAction={saveEdit} actionLabel="Save" busy={busy} />
                   ) : (
                     <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10, alignItems: "center" }}>
-                      <select style={{ ...inputStyle, maxWidth: 140 }} value={editChar.class}
+                      <select aria-label="Class" style={{ ...inputStyle, maxWidth: 140 }} value={editChar.class}
                         onChange={(e) => setEditChar({ ...editChar, class: e.target.value, subclass: "" })}>
                         <option value="">Class</option>
                         {classOptions.map((c) => <option key={c.id} value={c.name}>{c.name}</option>)}
                       </select>
 
-                      <select style={{ ...inputStyle, maxWidth: 200 }} value={editChar.subclass}
+                      <select aria-label="Subclass" style={{ ...inputStyle, maxWidth: 200 }} value={editChar.subclass}
                         onChange={(e) => setEditChar({ ...editChar, subclass: e.target.value })}
                         disabled={!editChar.class}>
                         <option value="">{editChar.class ? "Subclass" : "Pick a class first"}</option>
                         {editSubclassOptions.map((sc) => <option key={sc} value={sc}>{sc}</option>)}
                       </select>
 
-                      <input style={{ ...inputStyle, maxWidth: 70 }} placeholder="Lvl" type="number"
+                      <input aria-label="Lvl" style={{ ...inputStyle, maxWidth: 70 }} placeholder="Lvl" type="number"
                         value={editChar.level} onChange={(e) => setEditChar({ ...editChar, level: e.target.value })} />
 
-                      <select style={{ ...inputStyle, maxWidth: 150 }} value={editChar.species}
+                      <select aria-label="Species" style={{ ...inputStyle, maxWidth: 150 }} value={editChar.species}
                         onChange={(e) => setEditChar({ ...editChar, species: e.target.value, species_variant: "" })}>
                         <option value="">Species</option>
                         {speciesOptions.map((sp) => (
@@ -622,7 +623,7 @@ export default function GMWorkspace() {
                       </select>
 
                       {editVariantOptions.length > 0 && (
-                        <select style={{ ...inputStyle, maxWidth: 180 }} value={editChar.species_variant}
+                        <select aria-label="Lineage or subrace" style={{ ...inputStyle, maxWidth: 180 }} value={editChar.species_variant}
                           onChange={(e) => setEditChar({ ...editChar, species_variant: e.target.value })}>
                           <option value="">
                             {editVariantOptions.some((v) => v.variant_kind === "lineage") ? "Lineage" : "Subrace"}
@@ -656,10 +657,10 @@ export default function GMWorkspace() {
               <SpecFields spec={rosterSpec} values={newChar} onChange={(p) => setNewChar({ ...newChar, ...p })} name={newChar.name} onName={(v) => setNewChar({ ...newChar, name: v })} onAction={addCharacter} actionLabel="Add" busy={busy} />
             ) : (
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 14, alignItems: "center" }}>
-              <input style={{ ...inputStyle, maxWidth: 150 }} placeholder="Name"
+              <input aria-label="Name" style={{ ...inputStyle, maxWidth: 150 }} placeholder="Name"
                 value={newChar.name} onChange={(e) => setNewChar({ ...newChar, name: e.target.value })} />
 
-              <select
+              <select aria-label="Class"
                 style={{ ...inputStyle, maxWidth: 150 }}
                 value={newChar.class}
                 onChange={(e) => setNewChar({ ...newChar, class: e.target.value, subclass: "" })}
@@ -670,7 +671,7 @@ export default function GMWorkspace() {
                 ))}
               </select>
 
-              <select
+              <select aria-label="Subclass"
                 style={{ ...inputStyle, maxWidth: 200 }}
                 value={newChar.subclass}
                 onChange={(e) => setNewChar({ ...newChar, subclass: e.target.value })}
@@ -683,10 +684,10 @@ export default function GMWorkspace() {
                 ))}
               </select>
 
-              <input style={{ ...inputStyle, maxWidth: 70 }} placeholder="Lvl" type="number"
+              <input aria-label="Lvl" style={{ ...inputStyle, maxWidth: 70 }} placeholder="Lvl" type="number"
                 value={newChar.level} onChange={(e) => setNewChar({ ...newChar, level: e.target.value })} />
 
-              <select
+              <select aria-label="Species"
                 style={{ ...inputStyle, maxWidth: 160 }}
                 value={newChar.species}
                 onChange={(e) => setNewChar({ ...newChar, species: e.target.value, species_variant: "" })}
@@ -702,7 +703,7 @@ export default function GMWorkspace() {
               {/* The missing dimension. Only shows when the chosen species HAS
                   variants, so it stays out of the way for Orc or Warforged. */}
               {variantOptions.length > 0 && (
-                <select
+                <select aria-label="Lineage or subrace"
                   style={{ ...inputStyle, maxWidth: 190 }}
                   value={newChar.species_variant}
                   onChange={(e) => setNewChar({ ...newChar, species_variant: e.target.value })}
@@ -878,7 +879,7 @@ export default function GMWorkspace() {
               return (
                 <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${C.line}`, display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
                   <span style={{ fontSize: 12.5, color: C.muted }}>Import an existing inventory:</span>
-                  <select style={{ ...inputStyle, maxWidth: 240 }} value="" onChange={(e) => importInventory(e.target.value)}>
+                  <select aria-label="Import a play-style inventory" style={{ ...inputStyle, maxWidth: 240 }} value="" onChange={(e) => importInventory(e.target.value)}>
                     <option value="">Choose an inventory</option>
                     {pool.map((d) => <option key={d.id} value={d.id}>{d.player_name || "Unnamed"}</option>)}
                   </select>
@@ -910,7 +911,7 @@ function SpecFields({ spec, values, onChange, onAction, actionLabel, name, onNam
   return (
     <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: onName ? 14 : 10, alignItems: "center" }}>
       {onName && (
-        <input style={{ ...inputStyle, maxWidth: 150 }} placeholder="Name"
+        <input aria-label="Name" style={{ ...inputStyle, maxWidth: 150 }} placeholder="Name"
           value={name ?? ""} onChange={(e) => onName(e.target.value)} />
       )}
       {spec.fields.map((f) => (
@@ -921,13 +922,13 @@ function SpecFields({ spec, values, onChange, onAction, actionLabel, name, onNam
             {f.options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
           </select>
         ) : (
-          <input key={f.col} style={{ ...inputStyle, maxWidth: 180 }}
+          <input aria-label={f.optional ? `${f.label} (optional)` : f.label} key={f.col} style={{ ...inputStyle, maxWidth: 180 }}
             placeholder={f.optional ? `${f.label} (optional)` : f.label}
             value={values[f.col]} onChange={(e) => onChange({ [f.col]: e.target.value } as Partial<RosterValues>)} />
         )
       ))}
       {spec.level.show && (
-        <input style={{ ...inputStyle, maxWidth: 110 }} type="number" placeholder={spec.level.label}
+        <input aria-label={spec.level.label} style={{ ...inputStyle, maxWidth: 110 }} type="number" placeholder={spec.level.label}
           title={spec.level.label} min={spec.level.min} max={spec.level.max}
           value={values.level} onChange={(e) => onChange({ level: e.target.value })} />
       )}

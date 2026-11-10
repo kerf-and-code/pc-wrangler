@@ -215,7 +215,7 @@ export default function PlayActions({ sheet, charLevel, characterId, campaignId,
   const show = (k: Filter) => filter === "all" || filter === k;
 
   const box: React.CSSProperties = { ...stonePanel(), marginBottom: 0, padding: "12px 14px" };
-  const btn = (on = false): React.CSSProperties => ({ ...stoneButton(on ? "primary" : "stone"), fontSize: 12.5, padding: "5px 10px" });
+  const btn = (on = false): React.CSSProperties => ({ ...stoneButton(on ? "primary" : "stone"), fontSize: 12.5, padding: "5px 10px", minHeight: "var(--sax-tap, 0px)" });
   const mono: React.CSSProperties = { fontFamily: FORGE_FONTS.mono };
   const tiny: React.CSSProperties = { ...mono, fontSize: 10, letterSpacing: "0.16em", textTransform: "uppercase", color: STONE.inkFaint };
   const field: React.CSSProperties = { padding: "6px 8px", borderRadius: 4, border: `1px solid ${STONE.hi}`, background: "rgba(0,0,0,0.25)", color: STONE.ink, fontSize: 13 };

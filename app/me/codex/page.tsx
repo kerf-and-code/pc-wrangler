@@ -132,7 +132,7 @@ export default function MyCodexPage() {
               style={{
                 boxSizing: "border-box", width: "100%", marginBottom: 18,
                 background: C.surface2, color: C.text, border: `1px solid ${C.line}`,
-                borderRadius: FORGE_RADIUS, padding: "11px 14px", fontSize: 14.5, outline: "none",
+                borderRadius: FORGE_RADIUS, padding: "11px 14px", fontSize: 14.5,
               }}
             />
 

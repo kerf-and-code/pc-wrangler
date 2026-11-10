@@ -20,6 +20,7 @@ import {
   listCustomEntries, createCustomEntry, updateCustomEntry, deleteCustomEntry, mergeCustom, flattenForOverride,
 } from "@/lib/compendium/custom";
 import { sendCardToScreen } from "@/lib/compendium/dm-board";
+import { useDialogFocus } from "@/lib/use-dialog-focus";
 
 // Working display shapes the typed editor edits in place. A new typed card starts from these blanks.
 type TypedDisplay = SpellDisplay | ItemDisplay | MonsterDisplay | ReferenceDisplay;
@@ -517,7 +518,7 @@ export default function CompendiumTool() {
       <div style={{ display: "flex", gap: 18, flexWrap: "wrap", alignItems: "flex-end" }}>
         <div>
           <div style={{ ...label, marginBottom: 6 }}>Game system</div>
-          <select value={system} onChange={(e) => setSystem(e.target.value)}
+          <select aria-label="Game system" value={system} onChange={(e) => setSystem(e.target.value)}
             style={{ padding: "7px 10px", background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: 7, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
             {listModules().map((m) => (
               <option key={m.id} value={m.id}>{m.label}{COMPENDIUM_READY.has(m.id) ? "" : " · homebrew only"}</option>
@@ -572,7 +573,7 @@ export default function CompendiumTool() {
 
       {/* search + mic */}
       <form onSubmit={onSubmit} style={{ display: "flex", gap: 8, alignItems: "stretch" }}>
-        <input
+        <input aria-label={loading ? "Loading compendium…" : "Type anything: spell, monster, item, class, subclass, species, feat, rule (e.g. fireball, path of the glacier, grappled)"}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder={loading ? "Loading compendium…" : "Type anything: spell, monster, item, class, subclass, species, feat, rule (e.g. fireball, path of the glacier, grappled)"}
@@ -1057,7 +1058,7 @@ function EntryEditor({ state, onChange, onSave, onDelete, onCancel, activeCampai
 
       <div>
         <div style={{ ...label, marginBottom: 4 }}>Name</div>
-        <input value={state.name} onChange={(e) => set("name", e.target.value)} placeholder="Card title" style={field} />
+        <input aria-label="Card title" value={state.name} onChange={(e) => set("name", e.target.value)} placeholder="Card title" style={field} />
       </div>
 
       {/* Card type: only for a brand-new card. An override or an existing edit keeps the base category. */}
@@ -1099,22 +1100,22 @@ function EntryEditor({ state, onChange, onSave, onDelete, onCancel, activeCampai
         <>
           <div>
             <div style={{ ...label, marginBottom: 4 }}>Tag (chip)</div>
-            <input value={state.tag} onChange={(e) => set("tag", e.target.value)} placeholder="house rule" style={field} />
+            <input aria-label="house rule" value={state.tag} onChange={(e) => set("tag", e.target.value)} placeholder="house rule" style={field} />
           </div>
           <div>
             <div style={{ ...label, marginBottom: 4 }}>Meta lines (one per line, shown above the body)</div>
-            <textarea value={state.metaLinesText} onChange={(e) => set("metaLinesText", e.target.value)} rows={2} placeholder={"Level 3 Evocation\nRange 150 ft"} style={{ ...field, resize: "vertical", fontFamily: "inherit" }} />
+            <textarea aria-label={"Level 3 Evocation\nRange 150 ft"} value={state.metaLinesText} onChange={(e) => set("metaLinesText", e.target.value)} rows={2} placeholder={"Level 3 Evocation\nRange 150 ft"} style={{ ...field, resize: "vertical", fontFamily: "inherit" }} />
           </div>
           <div>
             <div style={{ ...label, marginBottom: 4 }}>Body</div>
-            <textarea value={state.body} onChange={(e) => set("body", e.target.value)} rows={5} placeholder="The rules text for this card." style={{ ...field, resize: "vertical", fontFamily: "inherit" }} />
+            <textarea aria-label="The rules text for this card." value={state.body} onChange={(e) => set("body", e.target.value)} rows={5} placeholder="The rules text for this card." style={{ ...field, resize: "vertical", fontFamily: "inherit" }} />
           </div>
         </>
       )}
 
       <div>
         <div style={{ ...label, marginBottom: 4 }}>Voice aliases (comma-separated, optional)</div>
-        <input value={state.aliasesText} onChange={(e) => set("aliasesText", e.target.value)} placeholder="fb, big boom" style={field} />
+        <input aria-label="fb, big boom" value={state.aliasesText} onChange={(e) => set("aliasesText", e.target.value)} placeholder="fb, big boom" style={field} />
       </div>
 
       <div>
@@ -1183,32 +1184,32 @@ function SpellForm({ value, onChange, field, seg }: {
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
       <FieldRow>
         <Labeled label="Level (0 = cantrip)"><input type="number" min={0} max={9} value={value.level} onChange={(e) => set({ level: toNum(e.target.value) ?? 0 })} style={field} /></Labeled>
-        <Labeled label="School"><input value={value.school ?? ""} onChange={(e) => set({ school: orNull(e.target.value) })} placeholder="Evocation" style={field} /></Labeled>
+        <Labeled label="School"><input aria-label="Evocation" value={value.school ?? ""} onChange={(e) => set({ school: orNull(e.target.value) })} placeholder="Evocation" style={field} /></Labeled>
       </FieldRow>
       <FieldRow>
-        <Labeled label="Casting time"><input value={value.castingTime ?? ""} onChange={(e) => set({ castingTime: orNull(e.target.value) })} placeholder="1 action" style={field} /></Labeled>
-        <Labeled label="Range"><input value={value.range ?? ""} onChange={(e) => set({ range: orNull(e.target.value) })} placeholder="150 feet" style={field} /></Labeled>
+        <Labeled label="Casting time"><input aria-label="1 action" value={value.castingTime ?? ""} onChange={(e) => set({ castingTime: orNull(e.target.value) })} placeholder="1 action" style={field} /></Labeled>
+        <Labeled label="Range"><input aria-label="150 feet" value={value.range ?? ""} onChange={(e) => set({ range: orNull(e.target.value) })} placeholder="150 feet" style={field} /></Labeled>
       </FieldRow>
       <FieldRow>
-        <Labeled label="Components"><input value={value.components ?? ""} onChange={(e) => set({ components: orNull(e.target.value) })} placeholder="V, S, M" style={field} /></Labeled>
-        <Labeled label="Duration"><input value={value.duration ?? ""} onChange={(e) => set({ duration: orNull(e.target.value) })} placeholder="Instantaneous" style={field} /></Labeled>
+        <Labeled label="Components"><input aria-label="V, S, M" value={value.components ?? ""} onChange={(e) => set({ components: orNull(e.target.value) })} placeholder="V, S, M" style={field} /></Labeled>
+        <Labeled label="Duration"><input aria-label="Instantaneous" value={value.duration ?? ""} onChange={(e) => set({ duration: orNull(e.target.value) })} placeholder="Instantaneous" style={field} /></Labeled>
       </FieldRow>
       <FieldRow>
         <Labeled label="Concentration" min={110}><button type="button" onClick={() => set({ concentration: !value.concentration })} style={seg(value.concentration)}>{value.concentration ? "Yes" : "No"}</button></Labeled>
         <Labeled label="Ritual" min={110}><button type="button" onClick={() => set({ ritual: !value.ritual })} style={seg(value.ritual)}>{value.ritual ? "Yes" : "No"}</button></Labeled>
       </FieldRow>
       <FieldRow>
-        <Labeled label="Damage (e.g. 8d6)"><input value={dmg?.base ?? ""} onChange={(e) => setDamage(e.target.value, dmg?.type ?? "")} placeholder="8d6" style={field} /></Labeled>
-        <Labeled label="Damage type"><input value={dmg?.type ?? ""} onChange={(e) => setDamage(dmg?.base ?? "", e.target.value)} placeholder="fire" style={field} /></Labeled>
-        <Labeled label="Attack type"><input value={value.attackType ?? ""} onChange={(e) => set({ attackType: orNull(e.target.value) })} placeholder="ranged" style={field} /></Labeled>
+        <Labeled label="Damage (e.g. 8d6)"><input aria-label="8d6" value={dmg?.base ?? ""} onChange={(e) => setDamage(e.target.value, dmg?.type ?? "")} placeholder="8d6" style={field} /></Labeled>
+        <Labeled label="Damage type"><input aria-label="fire" value={dmg?.type ?? ""} onChange={(e) => setDamage(dmg?.base ?? "", e.target.value)} placeholder="fire" style={field} /></Labeled>
+        <Labeled label="Attack type"><input aria-label="ranged" value={value.attackType ?? ""} onChange={(e) => set({ attackType: orNull(e.target.value) })} placeholder="ranged" style={field} /></Labeled>
       </FieldRow>
       <div>
         <div style={fLabel}>Classes (comma-separated)</div>
-        <input value={value.classes.join(", ")} onChange={(e) => set({ classes: csvList(e.target.value) })} placeholder="Wizard, Sorcerer" style={field} />
+        <input aria-label="Wizard, Sorcerer" value={value.classes.join(", ")} onChange={(e) => set({ classes: csvList(e.target.value) })} placeholder="Wizard, Sorcerer" style={field} />
       </div>
       <div>
         <div style={fLabel}>Description</div>
-        <textarea value={value.description ?? ""} onChange={(e) => set({ description: orNull(e.target.value) })} rows={5} placeholder="What the spell does." style={{ ...field, resize: "vertical", fontFamily: "inherit" }} />
+        <textarea aria-label="What the spell does." value={value.description ?? ""} onChange={(e) => set({ description: orNull(e.target.value) })} rows={5} placeholder="What the spell does." style={{ ...field, resize: "vertical", fontFamily: "inherit" }} />
       </div>
     </div>
   );
@@ -1226,20 +1227,20 @@ function ItemForm({ value, onChange, field, seg }: {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
       <FieldRow>
-        <Labeled label="Type"><input value={value.type ?? ""} onChange={(e) => set({ type: orNull(e.target.value) })} placeholder="Wondrous item" style={field} /></Labeled>
-        <Labeled label="Rarity"><input value={value.rarity ?? ""} onChange={(e) => set({ rarity: orNull(e.target.value) })} placeholder="rare" style={field} /></Labeled>
+        <Labeled label="Type"><input aria-label="Wondrous item" value={value.type ?? ""} onChange={(e) => set({ type: orNull(e.target.value) })} placeholder="Wondrous item" style={field} /></Labeled>
+        <Labeled label="Rarity"><input aria-label="rare" value={value.rarity ?? ""} onChange={(e) => set({ rarity: orNull(e.target.value) })} placeholder="rare" style={field} /></Labeled>
       </FieldRow>
       <FieldRow>
         <Labeled label="Attunement" min={140}><button type="button" onClick={() => set({ attunement: !value.attunement })} style={seg(value.attunement)}>{value.attunement ? "Required" : "Not required"}</button></Labeled>
-        <Labeled label="Attunement note"><input value={value.attunementNote ?? ""} onChange={(e) => set({ attunementNote: orNull(e.target.value) })} placeholder="by a spellcaster" style={field} /></Labeled>
+        <Labeled label="Attunement note"><input aria-label="by a spellcaster" value={value.attunementNote ?? ""} onChange={(e) => set({ attunementNote: orNull(e.target.value) })} placeholder="by a spellcaster" style={field} /></Labeled>
       </FieldRow>
       <FieldRow>
-        <Labeled label="Variants label"><input value={v?.label ?? ""} onChange={(e) => setVariants(e.target.value, (v?.options ?? []).join(", "))} placeholder="Bonus" style={field} /></Labeled>
-        <Labeled label="Variant options (comma)"><input value={(v?.options ?? []).join(", ")} onChange={(e) => setVariants(v?.label ?? "", e.target.value)} placeholder="+1, +2, +3" style={field} /></Labeled>
+        <Labeled label="Variants label"><input aria-label="Bonus" value={v?.label ?? ""} onChange={(e) => setVariants(e.target.value, (v?.options ?? []).join(", "))} placeholder="Bonus" style={field} /></Labeled>
+        <Labeled label="Variant options (comma)"><input aria-label="+1, +2, +3" value={(v?.options ?? []).join(", ")} onChange={(e) => setVariants(v?.label ?? "", e.target.value)} placeholder="+1, +2, +3" style={field} /></Labeled>
       </FieldRow>
       <div>
         <div style={fLabel}>Description</div>
-        <textarea value={value.description ?? ""} onChange={(e) => set({ description: orNull(e.target.value) })} rows={5} placeholder="What the item does." style={{ ...field, resize: "vertical", fontFamily: "inherit" }} />
+        <textarea aria-label="What the item does." value={value.description ?? ""} onChange={(e) => set({ description: orNull(e.target.value) })} rows={5} placeholder="What the item does." style={{ ...field, resize: "vertical", fontFamily: "inherit" }} />
       </div>
     </div>
   );
@@ -1267,21 +1268,21 @@ function MonsterForm({ value, onChange, field }: {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
       <FieldRow>
-        <Labeled label="Size" min={90}><input value={value.size ?? ""} onChange={(e) => set({ size: orNull(e.target.value) })} placeholder="Large" style={field} /></Labeled>
-        <Labeled label="Type"><input value={value.type ?? ""} onChange={(e) => set({ type: orNull(e.target.value) })} placeholder="dragon" style={field} /></Labeled>
-        <Labeled label="Alignment"><input value={value.alignment ?? ""} onChange={(e) => set({ alignment: orNull(e.target.value) })} placeholder="chaotic evil" style={field} /></Labeled>
+        <Labeled label="Size" min={90}><input aria-label="Large" value={value.size ?? ""} onChange={(e) => set({ size: orNull(e.target.value) })} placeholder="Large" style={field} /></Labeled>
+        <Labeled label="Type"><input aria-label="dragon" value={value.type ?? ""} onChange={(e) => set({ type: orNull(e.target.value) })} placeholder="dragon" style={field} /></Labeled>
+        <Labeled label="Alignment"><input aria-label="chaotic evil" value={value.alignment ?? ""} onChange={(e) => set({ alignment: orNull(e.target.value) })} placeholder="chaotic evil" style={field} /></Labeled>
       </FieldRow>
       <FieldRow>
-        <Labeled label="AC" min={80}><input value={value.ac == null ? "" : String(value.ac)} onChange={(e) => set({ ac: orNull(e.target.value) })} placeholder="18" style={field} /></Labeled>
-        <Labeled label="HP" min={80}><input value={value.hp == null ? "" : String(value.hp)} onChange={(e) => set({ hp: orNull(e.target.value) })} placeholder="152" style={field} /></Labeled>
-        <Labeled label="Hit dice" min={100}><input value={value.hitDice ?? ""} onChange={(e) => set({ hitDice: orNull(e.target.value) })} placeholder="16d10 + 64" style={field} /></Labeled>
-        <Labeled label="Speed"><input value={value.speed ?? ""} onChange={(e) => set({ speed: orNull(e.target.value) })} placeholder="40 ft., fly 80 ft." style={field} /></Labeled>
+        <Labeled label="AC" min={80}><input aria-label="18" value={value.ac == null ? "" : String(value.ac)} onChange={(e) => set({ ac: orNull(e.target.value) })} placeholder="18" style={field} /></Labeled>
+        <Labeled label="HP" min={80}><input aria-label="152" value={value.hp == null ? "" : String(value.hp)} onChange={(e) => set({ hp: orNull(e.target.value) })} placeholder="152" style={field} /></Labeled>
+        <Labeled label="Hit dice" min={100}><input aria-label="16d10 + 64" value={value.hitDice ?? ""} onChange={(e) => set({ hitDice: orNull(e.target.value) })} placeholder="16d10 + 64" style={field} /></Labeled>
+        <Labeled label="Speed"><input aria-label="40 ft., fly 80 ft." value={value.speed ?? ""} onChange={(e) => set({ speed: orNull(e.target.value) })} placeholder="40 ft., fly 80 ft." style={field} /></Labeled>
       </FieldRow>
       <FieldRow>
-        <Labeled label="Senses"><input value={value.senses ?? ""} onChange={(e) => set({ senses: orNull(e.target.value) })} placeholder="darkvision 60 ft." style={field} /></Labeled>
-        <Labeled label="Languages"><input value={value.languages ?? ""} onChange={(e) => set({ languages: orNull(e.target.value) })} placeholder="Common, Draconic" style={field} /></Labeled>
-        <Labeled label="CR" min={90}><input value={value.cr ?? ""} onChange={(e) => set({ cr: orNull(e.target.value) })} placeholder="10" style={field} /></Labeled>
-        <Labeled label="XP" min={90}><input type="number" value={value.xp ?? ""} onChange={(e) => set({ xp: toNum(e.target.value) })} placeholder="5900" style={field} /></Labeled>
+        <Labeled label="Senses"><input aria-label="darkvision 60 ft." value={value.senses ?? ""} onChange={(e) => set({ senses: orNull(e.target.value) })} placeholder="darkvision 60 ft." style={field} /></Labeled>
+        <Labeled label="Languages"><input aria-label="Common, Draconic" value={value.languages ?? ""} onChange={(e) => set({ languages: orNull(e.target.value) })} placeholder="Common, Draconic" style={field} /></Labeled>
+        <Labeled label="CR" min={90}><input aria-label="10" value={value.cr ?? ""} onChange={(e) => set({ cr: orNull(e.target.value) })} placeholder="10" style={field} /></Labeled>
+        <Labeled label="XP" min={90}><input aria-label="5900" type="number" value={value.xp ?? ""} onChange={(e) => set({ xp: toNum(e.target.value) })} placeholder="5900" style={field} /></Labeled>
       </FieldRow>
       <FieldRow>
         {(["str", "dex", "con", "int", "wis", "cha"] as const).map((k) => (
@@ -1341,7 +1342,7 @@ function TableForm({ value, onChange, field }: {
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
       <div>
         <div style={fLabel}>Intro (optional, shown above the table)</div>
-        <textarea value={value.blurb ?? ""} onChange={(e) => set({ blurb: orNull(e.target.value) })} rows={2} placeholder="A line of context for this table." style={{ ...field, resize: "vertical", fontFamily: "inherit" }} />
+        <textarea aria-label="A line of context for this table." value={value.blurb ?? ""} onChange={(e) => set({ blurb: orNull(e.target.value) })} rows={2} placeholder="A line of context for this table." style={{ ...field, resize: "vertical", fontFamily: "inherit" }} />
       </div>
 
       <div>
@@ -1349,7 +1350,7 @@ function TableForm({ value, onChange, field }: {
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
           {cols.map((c, ci) => (
             <div key={ci} style={{ display: "flex", gap: 6, alignItems: "center" }}>
-              <input value={c} onChange={(e) => setColumn(ci, e.target.value)} placeholder={`Column ${ci + 1}`} style={{ ...cell, flex: 1 }} />
+              <input aria-label={`Column ${ci + 1}`} value={c} onChange={(e) => setColumn(ci, e.target.value)} placeholder={`Column ${ci + 1}`} style={{ ...cell, flex: 1 }} />
               <button type="button" onClick={() => removeColumn(ci)} disabled={cols.length <= 1} title="Remove column" style={xBtn(cols.length <= 1)}>&times;</button>
             </div>
           ))}
@@ -1364,7 +1365,7 @@ function TableForm({ value, onChange, field }: {
             {rows.map((r, ri) => (
               <div key={ri} style={{ display: "flex", gap: 6, alignItems: "center" }}>
                 {cols.map((_, ci) => (
-                  <input key={ci} value={r[ci] ?? ""} onChange={(e) => setCell(ri, ci, e.target.value)} placeholder={cols[ci] || `Col ${ci + 1}`} style={{ ...cell, flex: 1, minWidth: 90 }} />
+                  <input aria-label={cols[ci] || `Col ${ci + 1}`} key={ci} value={r[ci] ?? ""} onChange={(e) => setCell(ri, ci, e.target.value)} placeholder={cols[ci] || `Col ${ci + 1}`} style={{ ...cell, flex: 1, minWidth: 90 }} />
                 ))}
                 <button type="button" onClick={() => removeRow(ri)} title="Remove row" style={xBtn(false)}>&times;</button>
               </div>
@@ -1377,7 +1378,7 @@ function TableForm({ value, onChange, field }: {
 
       <div>
         <div style={fLabel}>Footnote (optional)</div>
-        <textarea value={value.note ?? ""} onChange={(e) => set({ note: orNull(e.target.value) })} rows={2} placeholder="A note shown under the table." style={{ ...field, resize: "vertical", fontFamily: "inherit" }} />
+        <textarea aria-label="A note shown under the table." value={value.note ?? ""} onChange={(e) => set({ note: orNull(e.target.value) })} rows={2} placeholder="A note shown under the table." style={{ ...field, resize: "vertical", fontFamily: "inherit" }} />
       </div>
     </div>
   );
@@ -1505,11 +1506,9 @@ function IndexModal({ entries, title, onPick, onClose }: {
   const [showTop, setShowTop] = useState(false);
   const [mtocOpen, setMtocOpen] = useState(false);
 
-  useEffect(() => {
-    const onKey = (ev: KeyboardEvent) => { if (ev.key === "Escape") onClose(); };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  // Audit U14: focus moves in, Tab stays inside, Escape closes, focus returns to the opener.
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  useDialogFocus(dialogRef, true, onClose);
 
   const gId = (g: string) => `idx-g-${idxSlug(g)}`;
   const sId = (g: string, s: string) => `idx-s-${idxSlug(g)}-${idxSlug(s)}`;
@@ -1567,7 +1566,7 @@ function IndexModal({ entries, title, onPick, onClose }: {
   );
 
   return (
-    <div onClick={onClose} role="dialog" aria-modal="true" aria-label={title}
+    <div ref={dialogRef} onClick={onClose} role="dialog" aria-modal="true" aria-label={title}
       style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
       <style>{IDX_CSS}</style>
       <div onClick={(e) => e.stopPropagation()}

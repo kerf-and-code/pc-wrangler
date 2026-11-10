@@ -5,6 +5,8 @@ import { C } from "@/lib/forge-theme";
 import { defaultConfig, type GenConfig, type Fields } from "@/lib/worldmap/gen/types";
 import { bakeWorld } from "@/lib/worldmap/gen/bake";
 import { renderFields } from "@/lib/worldmap/gen/debug-render";
+import { askConfirm } from "@/lib/confirm";
+import { useDialogFocus } from "@/lib/use-dialog-focus";
 
 // The Generate panel: worker-driven world generation with a progress bar, a preview, validation
 // stats, and a wholesale-replace Accept that bakes and posts to the accept route. Overlay on /gm/world.
@@ -43,6 +45,7 @@ function computeStats(f: Fields): Stats {
 
 export default function GenPanel({ campaignId, onAccepted, onClose }: { campaignId: string; onAccepted: () => void; onClose: () => void }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const dialogRef = useRef<HTMLDivElement | null>(null);
   const workerRef = useRef<Worker | null>(null);
   const fieldsRef = useRef<Fields | null>(null);
 
@@ -99,7 +102,7 @@ export default function GenPanel({ campaignId, onAccepted, onClose }: { campaign
   const accept = useCallback(async () => {
     const f = fieldsRef.current;
     if (!f) return;
-    if (!window.confirm("Replace this world map? The generated terrain, rivers, roads, and pins overwrite the current ones. Hand-placed pins and painted region hexes are cleared. Named regions are kept.")) return;
+    if (!await askConfirm("Replace this world map? The generated terrain, rivers, roads, and pins overwrite the current ones. Hand-placed pins and painted region hexes are cleared. Named regions are kept.")) return;
     setPhase("accepting");
     setError(null);
     const cfg = buildConfig();
@@ -119,13 +122,14 @@ export default function GenPanel({ campaignId, onAccepted, onClose }: { campaign
   }, [buildConfig, campaignId, onAccepted]);
 
   const label: React.CSSProperties = { fontSize: 12, color: C.muted, display: "block", marginBottom: 3 };
-  const field: React.CSSProperties = { background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: 6, padding: "5px 7px", fontSize: 12.5, outline: "none", width: "100%", boxSizing: "border-box" };
+  const field: React.CSSProperties = { background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: 6, padding: "5px 7px", fontSize: 12.5, width: "100%", boxSizing: "border-box" };
   const chip = (on: boolean): React.CSSProperties => ({ fontSize: 12, padding: "5px 9px", borderRadius: 7, cursor: "pointer", border: `1px solid ${on ? C.sun : C.line}`, background: on ? "rgba(200,162,75,0.14)" : C.surface2, color: C.text, fontWeight: 600 });
   const busy = phase === "generating" || phase === "accepting";
+  useDialogFocus(dialogRef, true, () => { if (!busy) onClose(); }); // audit U14: it had no Escape and no dialog role
   const pct = Math.round((progress.index / progress.total) * 100);
 
   return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(10,8,6,0.72)", zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+    <div ref={dialogRef} role="dialog" aria-modal="true" aria-label="Generate world" style={{ position: "fixed", inset: 0, background: "rgba(10,8,6,0.72)", zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
       <div style={{ background: "#1b1712", border: `1px solid ${C.line}`, borderRadius: 12, width: "min(940px, 96vw)", maxHeight: "92vh", overflow: "auto", display: "flex", gap: 18, padding: 20 }}>
         <div style={{ width: 250, flex: "0 0 250px", display: "grid", gap: 11, alignContent: "start" }}>
           <div style={{ fontSize: 16, fontWeight: 700, color: C.text }}>Generate world</div>

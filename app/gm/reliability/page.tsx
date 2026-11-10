@@ -6,6 +6,7 @@ import PageShell from "@/components/page-shell";
 import { surfaces, ui, AXES, type AxisKey } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import { initialCampaignId, useRememberCampaign } from "@/lib/campaign-context";
+import { askConfirm } from "@/lib/confirm";
 
 type Campaign = { id: string; name: string };
 type PE = { status: string; event_type: string; axis: string | null; confidence: number | null; extractor_version: string | null };
@@ -283,7 +284,7 @@ export default function ReliabilityPage() {
 
   async function discardSample() {
     if (!jobId || busy) return;
-    if (!window.confirm("Discard this session's coding sample and every answer in it? This cannot be undone.")) return;
+    if (!await askConfirm("Discard this session's coding sample and every answer in it? This cannot be undone.")) return;
     setBusy(true); setAgreeErr(null);
     const res = await fetch("/api/coding-sample", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ jobId, action: "reset" }) });
     const out = await res.json().catch(() => ({}));

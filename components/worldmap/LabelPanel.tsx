@@ -24,7 +24,7 @@ export default function LabelPanel({
 }) {
   const field: React.CSSProperties = {
     background: c.surface2, color: c.text, border: `1px solid ${c.line}`, borderRadius: 6,
-    padding: "5px 7px", fontSize: 12.5, outline: "none", boxSizing: "border-box",
+    padding: "5px 7px", fontSize: 12.5, boxSizing: "border-box",
   };
   const mini: React.CSSProperties = {
     background: "transparent", border: `1px solid ${c.line}`, borderRadius: 6, padding: "3px 8px",

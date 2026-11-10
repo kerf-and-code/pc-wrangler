@@ -7,6 +7,7 @@ import { SAX } from "@/lib/theme";
 import { UpgradeAccount } from "@/components/upgrade-account";
 import { Header } from "@/app/me/campaigns/page";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
+import { askConfirm } from "@/lib/confirm";
 
 // The personal thread tracker: open threads, favors owed, grudges, hooks.
 //
@@ -100,7 +101,7 @@ export default function MyThreadsPage() {
   }
 
   async function remove(id: string) {
-    if (!window.confirm("Delete this thread? This can't be undone.")) return;
+    if (!await askConfirm("Delete this thread? This can't be undone.")) return;
     setThreads((prev) => prev.filter((t) => t.id !== id));
     const { error: e } = await supabase.from("threads").delete().eq("id", id);
     if (e) load();

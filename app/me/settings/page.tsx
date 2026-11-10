@@ -7,6 +7,7 @@ import { SAX } from "@/lib/theme";
 import { UpgradeAccount } from "@/components/upgrade-account";
 import { Header } from "@/app/me/campaigns/page";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
+import { askConfirm } from "@/lib/confirm";
 
 // Your account.
 //
@@ -94,7 +95,7 @@ export default function MySettingsPage() {
   }, [supabase]);
 
   async function setConsent(row: ConsentRow, on: boolean) {
-    if (!on && !window.confirm(`Stop recording your voice in ${row.campaignName}? From the next session your audio is not uploaded or transcribed. You can turn it back on here.`)) return;
+    if (!on && !await askConfirm(`Stop recording your voice in ${row.campaignName}? From the next session your audio is not uploaded or transcribed. You can turn it back on here.`)) return;
     setConsentBusy(row.campaignId); setConsentError(null);
     const { error: e } = await supabase.rpc("set_my_recording_consent", { p_campaign: row.campaignId, p_consented: on });
     setConsentBusy(null);

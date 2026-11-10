@@ -21,7 +21,7 @@ type Campaign = { id: string; name: string };
 
 const fieldStyle: React.CSSProperties = {
   boxSizing: "border-box", background: C.surface2, color: C.text,
-  border: `1px solid ${C.line}`, borderRadius: 9, padding: "9px 11px", fontSize: 14, outline: "none", width: "100%",
+  border: `1px solid ${C.line}`, borderRadius: 9, padding: "9px 11px", fontSize: 14, width: "100%",
 };
 const primaryBtn: React.CSSProperties = {
   background: C.sun, color: SAX.inkDeep, border: "none", borderRadius: 7,

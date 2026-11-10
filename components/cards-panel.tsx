@@ -268,7 +268,7 @@ function DeckRow({ deck, campaignId, isGm, seats, busy, run, supabase, selected,
               {seats.map((s) => <option key={s.profileId} value={s.profileId}>{s.name}</option>)}
             </select>
             <input type="number" min={1} max={10} value={count} aria-label="How many to deal" onChange={(e) => setCount(Math.max(1, Math.min(10, Number(e.target.value) || 1)))} style={{ ...field, width: 48 }} />
-            <button type="button" disabled={busy || !dealTo || deck.draw === 0} onClick={() => void run(() => supabase.rpc("tabletop_deck_deal", { p_deck: deck.id, p_to: dealTo, p_count: count }))} style={small}>Deal</button>
+            <button type="button" disabled={busy || !dealTo || deck.draw === 0} title={deck.draw === 0 ? "The draw pile is empty" : !dealTo ? "Choose who to deal to first" : undefined} onClick={() => void run(() => supabase.rpc("tabletop_deck_deal", { p_deck: deck.id, p_to: dealTo, p_count: count }))} style={small}>Deal</button>
           </>
         )}
       </div>

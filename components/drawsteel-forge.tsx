@@ -183,7 +183,7 @@ export default function DrawSteelForge({
       {/* Name */}
       <div style={stonePanel()}>
         <label style={forgeLabel}>Character name</label>
-        <input value={name} onChange={(e) => onName(e.target.value)} placeholder="Name your hero"
+        <input aria-label="Name your hero" value={name} onChange={(e) => onName(e.target.value)} placeholder="Name your hero"
           style={{ ...stoneField(), cursor: "text", fontFamily: FORGE_FONTS.display, fontSize: 20 }} />
       </div>
 
@@ -394,6 +394,7 @@ export default function DrawSteelForge({
                   const affordable = on || t.cost <= ancRemaining;
                   return (
                     <button key={t.id} type="button" onClick={() => toggleTrait(t.id, t.cost)} disabled={!affordable}
+                      title={affordable ? undefined : `Costs ${t.cost}, ${ancRemaining} left to spend`}
                       style={{
                         ...selStyle, textAlign: "left", padding: "7px 10px", fontSize: 13,
                         cursor: affordable ? "pointer" : "default",
@@ -427,7 +428,7 @@ export default function DrawSteelForge({
         </div>
         {!career ? (
           <p style={{ color: STONE.inkDim, fontSize: 12, margin: "6px 0 0" }}>
-            Choose a career. Every hero has one — it grants skills, languages, and a perk.
+            Choose a career. Every hero has one: it grants skills, languages, and a perk.
           </p>
         ) : (
           <div style={{ marginTop: 10, display: "grid", gap: 12 }}>
@@ -468,7 +469,7 @@ export default function DrawSteelForge({
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 10 }}>
                   {Array.from({ length: career.languages }).map((_, i) => (
-                    <input key={i} value={langs[i] ?? ""} onChange={(e) => setLang(i, e.target.value)}
+                    <input aria-label={`Language ${i + 1}`} key={i} value={langs[i] ?? ""} onChange={(e) => setLang(i, e.target.value)}
                       placeholder={`Language ${i + 1}`} style={{ ...stoneField(), cursor: "text" }} />
                   ))}
                 </div>

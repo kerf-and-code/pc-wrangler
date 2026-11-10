@@ -9,6 +9,7 @@ import { getModule } from "@/lib/systems/registry";
 import { getActiveCampaign, onActiveCampaignChange } from "@/lib/active-campaign";
 import CommandPalette, { OPEN_PALETTE, type PalettePage } from "@/components/command-palette";
 import { createClient } from "@/lib/supabase/client";
+import { useDialogFocus } from "@/lib/use-dialog-focus";
 
 /* Six Axes navigation.
 
@@ -274,7 +275,7 @@ function readFolded(): string[] {
 }
 
 /** A bottom sheet listing pages. role=dialog, Escape and the backdrop close it, focus moves in on
-    open and back to the tab that opened it on close. */
+    open and back to the tab that opened it on close, and Tab stays inside. */
 function Sheet({ title, sections, current, onClose, extra }: {
   title: string;
   sections: { label?: string; links: { href: string; label: string }[] }[];
@@ -283,13 +284,8 @@ function Sheet({ title, sections, current, onClose, extra }: {
   extra?: React.ReactNode;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const opener = document.activeElement as HTMLElement | null;
-    ref.current?.querySelector<HTMLElement>("a,button")?.focus();
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") { e.preventDefault(); onClose(); } };
-    window.addEventListener("keydown", onKey);
-    return () => { window.removeEventListener("keydown", onKey); opener?.focus?.(); };
-  }, [onClose]);
+  // Audit U14: the same focus handling as before, plus Tab stays inside the sheet.
+  useDialogFocus(ref, true, onClose);
   return (
     <div className="sax-sheet-bg" role="presentation" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="sax-sheet" role="dialog" aria-modal="true" aria-label={title} ref={ref}>

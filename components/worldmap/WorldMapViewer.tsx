@@ -8,6 +8,7 @@ import { type Terrain, createTerrain, decodeTerrain, base64ToBytes, encodeTerrai
 import { POI_ICON_SVG } from "@/lib/worldmap/poi-icons";
 import { pixelToHex, BASE_SIZE } from "@/lib/worldmap/layout";
 import IconLibrary from "@/components/worldmap/IconLibrary";
+import { askConfirm } from "@/lib/confirm";
 
 // Generated POI icon keys (kept in sync with bake.ts); a marker with one of these on an open-water
 // hex is a spurious auto-placed pin, hidden from members. Hand-placed sea markers use other icons.
@@ -235,7 +236,7 @@ export default function WorldMapViewer({ campaignId, shareCode }: { campaignId?:
   }, [supabase]);
 
   const removePoi = useCallback(async (id: string) => {
-    if (!window.confirm("Remove this marker from the map? This cannot be undone.")) return;
+    if (!await askConfirm("Remove this marker from the map? This cannot be undone.")) return;
     const { error } = await supabase.from("map_pois").delete().eq("id", id);
     if (error) { setPoiError(`Could not remove the marker: ${error.message}`); return; }
     setPoiError(null);
@@ -373,8 +374,8 @@ export default function WorldMapViewer({ campaignId, shareCode }: { campaignId?:
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
                 {resolved && <img src={resolved.iconSrc} alt="" style={{ width: 24, height: 24, objectFit: "contain", flex: "0 0 auto" }} />}
                 <span style={{ fontSize: 14, fontWeight: 700, color: C.text, overflow: "hidden", textOverflow: "ellipsis" }}>{title}</span>
-                {editing && <button type="button" onClick={() => removePoi(selectedPoi.id)} style={{ marginLeft: "auto", background: "transparent", border: `1px solid ${C.line}`, borderRadius: 5, color: C.muted, cursor: "pointer", fontSize: 11, padding: "2px 7px" }}>Remove</button>}
-                <button type="button" onClick={() => setSelectedPoi(null)} style={{ marginLeft: editing ? 6 : "auto", background: "transparent", border: "none", color: C.muted, cursor: "pointer", fontSize: 18, lineHeight: 1, padding: 0 }}>{"\u00d7"}</button>
+                {editing && <button type="button" onClick={() => removePoi(selectedPoi.id)} style={{ marginLeft: "auto", background: "transparent", border: `1px solid ${C.line}`, borderRadius: 5, color: C.muted, cursor: "pointer", fontSize: 11, padding: "2px 7px", minHeight: "var(--sax-tap, 0px)" }}>Remove</button>}
+                <button type="button" onClick={() => setSelectedPoi(null)} style={{ marginLeft: editing ? 6 : "auto", background: "transparent", border: "none", color: C.muted, cursor: "pointer", fontSize: 18, lineHeight: 1, padding: 0, minHeight: "var(--sax-tap, 0px)", minWidth: "var(--sax-tap, 0px)" }} aria-label="Close">{"\u00d7"}</button>
               </div>
               {desc ? (
                 <div style={{ fontSize: 12.5, color: C.muted, whiteSpace: "pre-wrap", lineHeight: 1.45 }}>{desc}</div>

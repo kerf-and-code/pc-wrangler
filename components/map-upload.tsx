@@ -35,6 +35,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { C } from "@/lib/forge-theme";
+import { useDialogFocus } from "@/lib/use-dialog-focus";
 import { blankMap, levelSig, toRow } from "@/lib/dungeon/battle";
 import { MAX_UVTT_BYTES, UVTT_EXT, buildImport, describeImport, imageBlob, readUvtt, type Uvtt } from "@/lib/tabletop/uvtt";
 
@@ -90,6 +91,9 @@ export default function MapUpload({ campaignId, onClose, onDone, dest = { kind: 
   const [gridOver, setGridOver] = useState(true);
   const [zoom, setZoom] = useState<"fit" | "1">("fit");
   const [busy, setBusy] = useState<string | null>(null);
+  // Audit U14: focus moves in, Tab stays inside, Escape closes unless an upload is running.
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  useDialogFocus(dialogRef, true, () => { if (!busy) onClose(); });
   const [err, setErr] = useState<string | null>(null);
   // phase 5t: a Universal VTT file's map (grid, walls, doors), when that is what was picked
   const [uv, setUv] = useState<Uvtt | null>(null);
@@ -259,7 +263,7 @@ export default function MapUpload({ campaignId, onClose, onDone, dest = { kind: 
   const small: React.CSSProperties = { padding: "5px 10px", background: "transparent", color: C.text, border: `1px solid ${C.line}`, borderRadius: 7, fontSize: 12.5, cursor: "pointer" };
   const label: React.CSSProperties = { fontSize: 12, color: C.muted, display: "grid", gap: 3 };
   return (
-    <div role="dialog" aria-modal="true" aria-label="Upload a map image" onKeyDown={(e) => { if (e.key === "Escape" && !busy) onClose(); }}
+    <div ref={dialogRef} role="dialog" aria-modal="true" aria-label="Upload a map image"
       style={{ position: "fixed", inset: 0, background: "rgba(8,6,4,0.72)", display: "grid", placeItems: "center", zIndex: 60, padding: 16 }}>
       <div style={{ background: C.panel, border: `1px solid ${C.line}`, borderRadius: 12, width: "min(940px, 100%)", maxHeight: "100%", overflow: "auto", padding: 16, color: C.text }}>
         <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>

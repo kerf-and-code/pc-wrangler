@@ -55,7 +55,7 @@ export default function EnterGate() {
           autoFocus
           style={{
             width: "100%", padding: "12px 14px", fontSize: 16, background: C.surface2, color: C.text,
-            border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, outline: "none", marginBottom: 12,
+            border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, marginBottom: 12,
           }}
         />
         <button

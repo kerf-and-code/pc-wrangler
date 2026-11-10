@@ -59,8 +59,8 @@ export default function PoiPanel({ campaignId, pois, onPatch, onRemove }: {
     setStatus("Codex entry created and linked");
   }, [supabase, campaignId, onPatch]);
 
-  const field: React.CSSProperties = { background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: 6, padding: "5px 7px", fontSize: 12.5, outline: "none", boxSizing: "border-box" };
-  const mini: React.CSSProperties = { background: "transparent", border: `1px solid ${C.line}`, borderRadius: 6, padding: "3px 8px", fontSize: 11.5, cursor: "pointer", color: C.muted };
+  const field: React.CSSProperties = { background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: 6, padding: "5px 7px", fontSize: 12.5, boxSizing: "border-box" };
+  const mini: React.CSSProperties = { background: "transparent", border: `1px solid ${C.line}`, borderRadius: 6, padding: "3px 8px", fontSize: 11.5, cursor: "pointer", color: C.muted, minHeight: "var(--sax-tap, 0px)" };
   const secLabel: React.CSSProperties = { fontSize: 11, color: C.muted, fontFamily: "ui-monospace, monospace", letterSpacing: "0.08em", marginBottom: 6 };
 
   if (pois.length === 0) return <p style={{ fontSize: 12.5, color: C.muted, marginTop: 12 }}>No markers yet. Pick an icon and click the map.</p>;

@@ -17,6 +17,7 @@ import PageShell from "@/components/page-shell";
 import { SAX } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import { Header } from "@/app/me/campaigns/page";
+import { askConfirm } from "@/lib/confirm";
 
 type Campaign = { campaign_id: string; campaign_name: string };
 type Note = { id: string; body: string; updated_at: string };
@@ -168,7 +169,7 @@ function NoteRow({ note, onSave, onRemove }: {
           {dirty ? "unsaved" : new Date(note.updated_at).toLocaleDateString()}
         </span>
         <button
-          onClick={() => { if (confirm("Delete this note? Nobody else has a copy.")) void onRemove(note.id); }}
+          onClick={async () => { if (await askConfirm("Delete this note? Nobody else has a copy.")) void onRemove(note.id); }}
           style={{ background: "transparent", border: "none", cursor: "pointer",
             color: C.muted, fontSize: 12, textDecoration: "underline", padding: 0 }}>
           Delete

@@ -11,6 +11,7 @@ import LoreTriage from "./LoreTriage";
 import BlockEditor, { blocksToPlainText, bodyToBlocks, type Block } from "./BlockEditor";
 import EntryPreview from "./EntryPreview";
 import { initialCampaignId, useRememberCampaign, urlParam, setUrlParam } from "@/lib/campaign-context";
+import { askConfirm } from "@/lib/confirm";
 
 type Campaign = { id: string; name: string; public_slug?: string | null; codex_cover_url?: string | null };
 type Entry = {
@@ -168,9 +169,10 @@ export default function CodexPage() {
   const regenerateSlug = async (entryId: string) => {
     // The warning lives HERE rather than in the database, because a function cannot ask a question.
     // Naming the consequence in the confirm is the whole point of the feature being manual.
-    if (!confirm(
+    if (!await askConfirm(
       "Give this entry a new URL from its current title?\n\n" +
-      "Any link already shared to the old address will stop working. This cannot be undone."
+      "Any link already shared to the old address will stop working. This cannot be undone.",
+      { confirmLabel: "Give it a new URL", danger: true },
     )) return;
     setSlugBusy(true);
     const { data, error } = await supabase.rpc("regenerate_entry_slug", { p_entry: entryId });
@@ -202,7 +204,7 @@ export default function CodexPage() {
   const snap = (f: typeof form, b: Block[]) => JSON.stringify([f, b]);
   const markClean = (f: typeof form, b: Block[]) => { baseline.current = snap(f, b); };
   const dirty = !!mode && snap(form, blocks) !== baseline.current;
-  const okToLeave = () => !dirty || window.confirm("You have unsaved changes in the editor. Discard them?");
+  const okToLeave = async () => !dirty || await askConfirm("You have unsaved changes in the editor. Discard them?", { confirmLabel: "Discard changes", cancelLabel: "Keep editing" });
   useEffect(() => {
     if (!dirty) return;
     const h = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ""; };
@@ -262,22 +264,22 @@ export default function CodexPage() {
   }, [campaignId]);
 
   // ---- open / new ----
-  function openEntry(e: Entry, inTab: string = tab) {
-    if (!okToLeave()) return;
+  async function openEntry(e: Entry, inTab: string = tab) {
+    if (!(await okToLeave())) return;
     const f = { title: e.title, body: e.body || "", name: "", description: "", visibility: e.visibility, tags: (e.tags || []).join(", "), summary: e.summary || "" };
     const b = e.blocks && e.blocks.length ? e.blocks : bodyToBlocks(e.body);
     setMode({ what: "entry", type: e.type, tag: tabDef(inTab)?.tag ?? null, id: e.id });
     setForm(f); setBlocks(b); markClean(f, b); setSaveErr(null);
   }
-  function openChar(c: Char) {
-    if (!okToLeave()) return;
+  async function openChar(c: Char) {
+    if (!(await okToLeave())) return;
     const f = { title: "", body: "", name: c.name, description: c.description || "", visibility: c.visibility, tags: (c.tags || []).join(", "), summary: "" };
     setMode({ what: "character", id: c.id });
     setForm(f); setBlocks([]); markClean(f, []); setSaveErr(null);
   }
-  function newItem() {
+  async function newItem() {
     if (tab === "pc") return;
-    if (!okToLeave()) return;
+    if (!(await okToLeave())) return;
     setBlocks([]); setSaveErr(null);
     if (tab === "npc") {
       const f = { ...blankForm, visibility: "player" };
@@ -377,7 +379,7 @@ export default function CodexPage() {
   async function remove() {
     if (!mode || !mode.id) return;
     const label = mode.what === "entry" ? (form.title.trim() || "this entry") : (form.name.trim() || "this NPC");
-    if (!window.confirm(`Delete "${label}"? Its links and reveals go with it. This cannot be undone.`)) return;
+    if (!await askConfirm(`Delete "${label}"? Its links and reveals go with it. This cannot be undone.`)) return;
     const table = mode.what === "entry" ? "entries" : "characters";
     const { error } = await supabase.from(table).delete().eq("id", mode.id);
     if (error) { setSaveErr(`Not deleted: ${error.message}`); return; }
@@ -470,7 +472,7 @@ export default function CodexPage() {
   const box = { ...surfaces.slate, padding: 18 } as const;
   const input = {
     width: "100%", boxSizing: "border-box" as const, background: C.surface2, color: C.text,
-    border: `1px solid ${C.line}`, borderRadius: 9, padding: "10px 12px", fontSize: 14, outline: "none",
+    border: `1px solid ${C.line}`, borderRadius: 9, padding: "10px 12px", fontSize: 14,
   };
 
   return (
@@ -482,7 +484,7 @@ export default function CodexPage() {
 
         {/* campaign + tabs */}
         <div style={{ ...box, marginBottom: 16 }}>
-          <select value={campaignId} onChange={(e) => { if (okToLeave()) { markClean(blankForm, []); setCampaignId(e.target.value); } }} style={{ ...input }}>
+          <select value={campaignId} onChange={async (e) => { const v = e.target.value; if (await okToLeave()) { markClean(blankForm, []); setCampaignId(v); } }} style={{ ...input }}>
             {campaigns.length === 0 && <option value="">No campaigns yet</option>}
             {campaigns.map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}
           </select>
@@ -515,7 +517,7 @@ export default function CodexPage() {
             {TABS.map((t) => {
               const on = tab === t.key;
               return (
-                <button key={t.key} type="button" onClick={() => { if (!okToLeave()) return; markClean(blankForm, []); setTab(t.key); setMode(null); }}
+                <button key={t.key} type="button" onClick={async () => { if (!(await okToLeave())) return; markClean(blankForm, []); setTab(t.key); setMode(null); }}
                   style={{ padding: "8px 14px", borderRadius: FORGE_RADIUS, border: `1px solid ${on ? C.sun : C.line}`,
                     background: on ? C.sun : C.surface2, color: on ? SAX.inkDeep : C.text, fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
                   {t.label}
@@ -665,7 +667,7 @@ export default function CodexPage() {
                   <div style={{ display: "grid", gap: 14, alignContent: "start" }}>
                 {mode.what === "entry" && (
                   <div style={{ marginBottom: 12 }}>
-                    <label style={{ fontSize: 11, color: C.muted }}>Summary — the lead line on the wiki. Leave blank to use the start of the entry.</label>
+                    <label style={{ fontSize: 11, color: C.muted }}>Summary: the lead line on the wiki. Leave blank to use the start of the entry.</label>
                     <textarea value={form.summary} onChange={(e) => setForm({ ...form, summary: e.target.value })}
                       rows={2} placeholder="A sentence or two…"
                       style={{ ...input, marginTop: 4, resize: "vertical", fontFamily: "inherit" }} />

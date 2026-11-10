@@ -20,7 +20,10 @@ export const BAR_SEEN: { key: Bar["visibility"]; label: string }[] = [
   { key: "all", label: "Everyone" }, { key: "owner", label: "Owner and GM" }, { key: "gm", label: "GM only" },
 ];
 export const HEALTH_LABEL: Record<string, string> = { healthy: "healthy", bloodied: "bloodied", down: "down" };
-export const HEALTH_COLOR: Record<string, string> = { healthy: "#5fae5a", bloodied: "#d98a3a", down: "#6b6259" };
+// Audit T21: never colour alone. Blue and orange are told apart with the common colour-vision
+// differences (green and orange are not), and the strip's length says the same thing: full, half, empty.
+export const HEALTH_COLOR: Record<string, string> = { healthy: "#5b9bd5", bloodied: "#e08a2e", down: "#6b6259" };
+export const HEALTH_FILL: Record<string, number> = { healthy: 1, bloodied: 0.5, down: 0 };
 
 const box: React.CSSProperties = { background: "rgba(28,24,20,0.98)", border: `1px solid ${C.line}`, borderRadius: 10, padding: 12, color: C.text, fontSize: 12.5, boxShadow: "0 8px 30px rgba(0,0,0,0.5)", width: "min(420px, calc(100vw - 40px))", maxHeight: "60vh", overflowY: "auto", textAlign: "left" };
 const field: React.CSSProperties = { padding: "5px 7px", background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: 7, fontSize: 12.5 };

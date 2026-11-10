@@ -78,7 +78,7 @@ export default function Pf2eForge({
       {/* Name */}
       <div style={stonePanel()}>
         <label style={forgeLabel}>Character name</label>
-        <input value={name} onChange={(e) => onName(e.target.value)} placeholder="Name your character"
+        <input aria-label="Name your character" value={name} onChange={(e) => onName(e.target.value)} placeholder="Name your character"
           style={{ ...stoneField(), cursor: "text", fontFamily: FORGE_FONTS.display, fontSize: 20 }} />
       </div>
 

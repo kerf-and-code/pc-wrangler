@@ -22,6 +22,7 @@ import { SAX } from "@/lib/theme";
 import { initialCampaignId, useRememberCampaign, useRememberSession, urlParam, gmHref } from "@/lib/campaign-context";
 import { friendlyError } from "@/lib/friendly-error";
 import { openTabletop, tabletopUrl } from "@/lib/tabletop/open";
+import { askConfirm } from "@/lib/confirm";
 
 type Campaign = { id: string; name: string; system: string | null; share_code: string | null; discord_channel_id: string | null };
 type Sess = { id: string; session_number: number | null; status: string | null; scheduled_at: string | null; recap: string | null; started_at: string | null; ended_at: string | null; capture_modality: string | null };
@@ -208,7 +209,7 @@ export default function TonightPage() {
 
   async function endAndProcess() {
     if (!session) return;
-    if (!window.confirm("End this session and open player check-in? Players can then rate the session, and the recap pipeline starts. You can reopen it later from the Session Log.")) return;
+    if (!await askConfirm("End this session and open player check-in? Players can then rate the session, and Six Axes starts drafting the recap. You can reopen it later from the Session log.")) return;
     setBusy(true); setErr(null); setMsg(null);
     const res = await fetch("/api/session/close", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sessionId: session.id, force: false, process: true }) });
     const out = await res.json().catch(() => ({}));

@@ -114,7 +114,7 @@ export default function DaggerheartForge({
       {/* Name */}
       <div style={stonePanel()}>
         <label style={forgeLabel}>Character name</label>
-        <input value={name} onChange={(e) => onName(e.target.value)} placeholder="Name your character"
+        <input aria-label="Name your character" value={name} onChange={(e) => onName(e.target.value)} placeholder="Name your character"
           style={{ ...stoneField(), cursor: "text", fontFamily: FORGE_FONTS.display, fontSize: 20 }} />
       </div>
 
@@ -307,7 +307,7 @@ export default function DaggerheartForge({
         <div style={{ display: "grid", gap: 8 }}>
           {dbuild.experiences.map((e, i) => (
             <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-              <input value={e.name} onChange={(ev) => setExperience(i, { name: ev.target.value })} placeholder="Experience"
+              <input aria-label="Experience" value={e.name} onChange={(ev) => setExperience(i, { name: ev.target.value })} placeholder="Experience"
                 style={{ ...stoneField(), cursor: "text", flex: "1 1 200px" }} />
               <input type="number" value={e.bonus} onChange={(ev) => setExperience(i, { bonus: parseInt(ev.target.value, 10) || 0 })}
                 style={{ ...stoneField(), width: 70 }} />

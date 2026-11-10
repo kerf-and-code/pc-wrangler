@@ -41,7 +41,7 @@ function looksSentence(title: string): boolean {
 
 const fieldStyle: React.CSSProperties = {
   boxSizing: "border-box", background: C.surface2, color: C.text,
-  border: `1px solid ${C.line}`, borderRadius: 9, padding: "8px 10px", fontSize: 13.5, outline: "none",
+  border: `1px solid ${C.line}`, borderRadius: 9, padding: "8px 10px", fontSize: 13.5,
 };
 const primaryBtn: React.CSSProperties = {
   background: C.sun, color: SAX.inkDeep, border: "none", borderRadius: 7,

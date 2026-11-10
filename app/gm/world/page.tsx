@@ -27,6 +27,7 @@ import {
 import { fitImageToGrid, pixelToHex, BASE_SIZE, type PlacedImage } from "@/lib/worldmap/layout";
 import { initialCampaignId, useRememberCampaign, gmHref } from "@/lib/campaign-context";
 import { friendlyError } from "@/lib/friendly-error";
+import { askConfirm } from "@/lib/confirm";
 
 // The GM's world map. Paint biomes (Erase clears a hex), set the grid size in hex units, and place
 // one or more uploaded map images that you can move (drag) and scale (scroll) to line up or stitch
@@ -593,15 +594,28 @@ export default function WorldMapPage() {
     const { error } = await supabase.from("map_labels").update(patch).eq("id", id);
     if (error) setStatus(`Label change not saved: ${error.message}`); // audit U8
   }, [supabase]);
+  // Audit U29: a removed label can be put back for 8 seconds (the delete returns the whole row, so the
+  // undo restores it exactly), instead of a dialog for something this small.
+  const [labelUndo, setLabelUndo] = useState<Record<string, unknown> | null>(null);
+  useEffect(() => { if (!labelUndo) return; const t = setTimeout(() => setLabelUndo(null), 8000); return () => clearTimeout(t); }, [labelUndo]);
   const removeLabel = useCallback(async (id: string) => {
-    const { error } = await supabase.from("map_labels").delete().eq("id", id);
+    const { data, error } = await supabase.from("map_labels").delete().eq("id", id).select("*");
     if (error) { setStatus(friendlyError(error)); return; }
     setLabelRows((prev) => prev.filter((l) => l.id !== id));
+    const row = (data as Record<string, unknown>[] | null)?.[0];
+    if (row) setLabelUndo(row);
   }, [supabase]);
+  const undoRemoveLabel = useCallback(async () => {
+    const row = labelUndo; if (!row) return;
+    setLabelUndo(null);
+    const ins = await supabase.from("map_labels").insert(row).select("id, x, y, text, size, color, locked").single();
+    if (ins.error || !ins.data) { setStatus(friendlyError(ins.error, "bring the label back")); return; }
+    setLabelRows((prev) => [...prev, ins.data as LabelRow]);
+  }, [supabase, labelUndo]);
 
-  const roughenCoasts = useCallback(() => {
+  const roughenCoasts = useCallback(async () => {
     if (!terrain || !mapRow) return;
-    if (!window.confirm("Reshape the ocean coastlines with natural noise? This carves inlets and adds spits, edits the terrain, and can't be undone. You can run it again for more effect.")) return;
+    if (!await askConfirm("Reshape the ocean coastlines with natural noise? This carves inlets and adds spits, edits the terrain, and can't be undone. You can run it again for more effect.")) return;
     const nb = new Uint8Array(terrain.biome), nf = new Uint8Array(terrain.flags);
     roughenCoastsInPlace(nb, nf, terrain.meta.width, terrain.meta.height, 0.3, 2, (Math.random() * 1e9) | 0);
     const nt: Terrain = { meta: terrain.meta, biome: nb, flags: nf };
@@ -643,7 +657,7 @@ export default function WorldMapPage() {
   const clearAll = useCallback(async () => {
     if (!mapRow) return;
     const n = poiRows.length;
-    if (!window.confirm(`Delete all ${n} marker${n === 1 ? "" : "s"}, every river name, and every area label on this map? Terrain, regions, and layers are kept. This cannot be undone.`)) return;
+    if (!await askConfirm(`Delete all ${n} marker${n === 1 ? "" : "s"}, every river name, and every area label on this map? Terrain, regions, and layers are kept. This cannot be undone.`)) return;
     const [poiRes, featRes, lblRes] = await Promise.all([
       supabase.from("map_pois").delete().eq("world_map_id", mapRow.id),
       supabase.from("map_features").update({ name: null }).eq("world_map_id", mapRow.id).not("name", "is", null),
@@ -720,7 +734,7 @@ export default function WorldMapPage() {
 
   const removePoi = useCallback(async (id: string) => {
     const name = poiRows.find((r) => r.id === id)?.name;
-    if (!window.confirm(`Delete the marker${name ? ` "${name}"` : ""}? This cannot be undone.`)) return;
+    if (!await askConfirm(`Delete the marker${name ? ` "${name}"` : ""}? This cannot be undone.`)) return;
     const { error } = await supabase.from("map_pois").delete().eq("id", id);
     if (error) { setStatus(friendlyError(error)); return; }
     setPoiRows((prev) => prev.filter((r) => r.id !== id));
@@ -843,7 +857,7 @@ export default function WorldMapPage() {
   const onTraceFile = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; e.target.value = "";
     if (!file || !terrain || !mapRow) return;
-    if (!window.confirm("Trace this image into hex tiles with AI? It replaces the current terrain with the AI's best reading, which you can then edit and re-render.")) return;
+    if (!await askConfirm("Trace this image into hex tiles with AI? It replaces the current terrain with the AI's best reading, which you can then edit and re-render.")) return;
     setTracing(true); setStatus("Reading the map into tiles\u2026");
     try {
       const dataUrl = await downscaleToDataUrl(file, 1536, 0.85);
@@ -932,7 +946,7 @@ export default function WorldMapPage() {
   }, [supabase]);
 
   const removeImage = useCallback(async (id: string) => {
-    if (!window.confirm("Remove this image from the map? This cannot be undone.")) return;
+    if (!await askConfirm("Remove this image from the map? This cannot be undone.")) return;
     const { error } = await supabase.from("map_images").delete().eq("id", id);
     if (error) { setStatus(`Failed: ${error.message}`); return; }
     setImages((prev) => prev.filter((i) => i.id !== id));
@@ -965,7 +979,7 @@ export default function WorldMapPage() {
   const numInput: React.CSSProperties = { width: 58, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: 7, padding: "6px 8px", fontSize: 13 };
   const smallBtn: React.CSSProperties = { background: C.sun, color: "#171310", border: "none", borderRadius: 7, padding: "6px 12px", fontWeight: 700, fontSize: 12.5, cursor: "pointer" };
   const uploadBtn: React.CSSProperties = { display: "block", textAlign: "center", padding: "7px 9px", borderRadius: 7, cursor: "pointer", border: `1px solid ${C.line}`, background: C.surface2, color: C.text, fontSize: 12.5, fontWeight: 600 };
-  const miniBtn: React.CSSProperties = { background: "transparent", border: `1px solid ${C.line}`, borderRadius: 6, padding: "3px 8px", fontSize: 11.5, cursor: "pointer", color: C.muted };
+  const miniBtn: React.CSSProperties = { background: "transparent", border: `1px solid ${C.line}`, borderRadius: 6, padding: "3px 8px", fontSize: 11.5, cursor: "pointer", color: C.muted, minHeight: "var(--sax-tap, 0px)" };
   const modeChip = (label: string, on: boolean, onClick: () => void): React.ReactElement => (
     <button type="button" onClick={onClick}
       style={{
@@ -1324,6 +1338,12 @@ export default function WorldMapPage() {
               />
               <RiverLabels rivers={namedRivers} onRename={renameRiver} c={C} />
               <LabelPanel labels={labelRows} placing={labelPlacing} onArm={armLabel} onPatch={patchLabel} onRemove={removeLabel} c={C} />
+              {labelUndo && (
+                <div role="status" style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 8, fontSize: 12.5, color: C.muted }}>
+                  <span>Label removed.</span>
+                  <button type="button" onClick={() => void undoRemoveLabel()} style={{ ...miniBtn, color: C.sun, borderColor: C.sun }}>Undo</button>
+                </div>
+              )}
               <button type="button" onClick={clearAll}
                 style={{ marginTop: 16, width: "100%", padding: "7px 9px", borderRadius: 7, cursor: "pointer", border: "1px solid #7a3b2f", background: "rgba(150,60,45,0.14)", color: "#e6b3a3", fontSize: 12.5, fontWeight: 600 }}>
                 Clear all markers &amp; river names
@@ -1367,7 +1387,7 @@ export default function WorldMapPage() {
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
                   {resolved && <img src={resolved.iconSrc} alt="" style={{ width: 24, height: 24, objectFit: "contain", flex: "0 0 auto" }} />}
                   <span style={{ fontSize: 14, fontWeight: 700, color: C.text, overflow: "hidden", textOverflow: "ellipsis" }}>{title}</span>
-                  <button type="button" onClick={() => setSelectedPoi(null)} style={{ marginLeft: "auto", background: "transparent", border: "none", color: C.muted, cursor: "pointer", fontSize: 18, lineHeight: 1, padding: 0 }}>{"\u00d7"}</button>
+                  <button type="button" aria-label="Close" onClick={() => setSelectedPoi(null)} style={{ marginLeft: "auto", background: "transparent", border: "none", color: C.muted, cursor: "pointer", fontSize: 18, lineHeight: 1, padding: 0, minHeight: "var(--sax-tap, 0px)", minWidth: "var(--sax-tap, 0px)" }}>{"\u00d7"}</button>
                 </div>
                 {desc ? (
                   <div style={{ fontSize: 12.5, color: C.muted, whiteSpace: "pre-wrap", lineHeight: 1.45 }}>{desc}</div>

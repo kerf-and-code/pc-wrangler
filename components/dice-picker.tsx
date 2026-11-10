@@ -216,11 +216,11 @@ export default function DicePicker(
       <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
         <span style={{ fontFamily: SAX.mono, fontSize: 10, letterSpacing: "0.16em",
           textTransform: "uppercase", color: C.muted }}>Modifier</span>
-        <button onClick={() => emit(counts, mod - 1)} style={step}>-</button>
+        <button onClick={() => emit(counts, mod - 1)} aria-label="Lower the modifier" style={step}>-</button>
         <input type="number" value={mod} onChange={(e) => emit(counts, Number(e.target.value) || 0)}
           aria-label="Flat modifier"
           style={{ width: 78, textAlign: "center", padding: "6px 0", fontSize: 15, fontFamily: SAX.mono }} />
-        <button onClick={() => emit(counts, mod + 1)} style={step}>+</button>
+        <button onClick={() => emit(counts, mod + 1)} aria-label="Raise the modifier" style={step}>+</button>
 
         {total > 0 && (
           <button onClick={() => emit({}, 0)} style={{ ...step, width: "auto", padding: "6px 12px" }}>

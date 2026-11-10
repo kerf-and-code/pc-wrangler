@@ -68,7 +68,7 @@
   }
 }
 
-/* Six Axes — global stone backdrop.
+/* Six Axes: global stone backdrop.
    The further-back wall sits on the body, darkened with a faint warm lamp glow
    so any page that does not paint its own background reveals the cellar. Pages
    wrapped in PageShell paint their own copy on top (identical), and the Power
@@ -83,4 +83,50 @@ body {
   background-attachment: fixed;
   background-repeat: no-repeat;
   min-height: 100dvh;
+}
+
+/* Push 13 (audit U11): a visible ring on whatever the keyboard is on, on every page, not only inside
+   PageShell. !important because many fields set their outline inline. Mouse clicks do not show it
+   (focus-visible), so it costs pointer users nothing. */
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+button:focus-visible,
+a:focus-visible,
+summary:focus-visible,
+[role="button"]:focus-visible {
+  outline: 2px solid var(--sax-accent, #C8A24B) !important;
+  outline-offset: 2px;
+}
+
+/* Push 13 (audit U19): iPhone Safari zooms the page when a field under 16px gets focus, and the
+   layout then needs pinching back. Phones and tablets get 16px fields; desktops keep the designed sizes. */
+@media (max-width: 1023px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="color"]),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Push 13 (audit U18): on a touch screen or a narrow window, small buttons are at least 40px tall, so
+   the rest, cast and heal buttons on the player sheet are not mis-tapped. Style helpers opt in with
+   minHeight: "var(--sax-tap, 0px)"; on a desktop with a mouse the variable is unset and nothing changes. */
+@media (pointer: coarse), (max-width: 1023px) {
+  :root {
+    --sax-tap: 40px;
+  }
+}
+
+/* Text for screen readers only (the tabletop's list of tokens, for one). */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }

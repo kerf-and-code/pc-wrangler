@@ -12,6 +12,7 @@ import {
 import TileLibrary from "./TileLibrary";
 import type { CustomTile } from "@/lib/tiles/custom";
 import { notReady } from "@/lib/friendly-error";
+import { askConfirm } from "@/lib/confirm";
 
 // The Dungeon tab (rebuilt 2026-11-06). Paint floors on a square grid across three stacked levels, then
 // add what makes a map read like one from a printed adventure: doors set into the walls, furniture,
@@ -299,8 +300,8 @@ export default function DungeonCreator({ campaignId }: { campaignId: string }) {
     setLevels((prev) => resizeLevels(prev, n, newN)); setCustom((prev) => remapCustom(prev, n, newN)); setMarks((prev) => remapMarks(prev, n, newN)); setN(newN);
   };
 
-  const clearLevel = () => {
-    if (!window.confirm(`Clear everything on ${meta.levelNames[level] || `level ${level + 1}`}? Ctrl+Z brings it back while this page stays open.`)) return;
+  const clearLevel = async () => {
+    if (!await askConfirm(`Clear everything on ${meta.levelNames[level] || `level ${level + 1}`}? Ctrl+Z brings it back while this page stays open.`)) return;
     snapshot();
     setLevels((prev) => { const next = prev.map((a) => a.slice()); next[level] = next[level].map(() => 0); return next; });
     setCustom((prev) => { const next = prev.map((o) => ({ ...o })); next[level] = {}; return next; });

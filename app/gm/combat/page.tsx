@@ -55,6 +55,7 @@ import {
   initialCampaignId, initialSessionId, useRememberCampaign, useRememberSession, urlParam, setUrlParam, gmHref,
 } from "@/lib/campaign-context";
 import { friendlyError, notReady } from "@/lib/friendly-error";
+import { askConfirm } from "@/lib/confirm";
 
 type Campaign = { id: string; name: string; system: string | null; share_code: string | null };
 type Sess = { id: string; session_number: number | null; status: string | null };
@@ -274,7 +275,7 @@ export default function CombatPage() {
 
   async function endFight() {
     if (!combat) return;
-    if (!window.confirm(`End "${combat.name}"? Players stop seeing it, and it leaves this page. The rolls stay in this session's Mechanics.`)) return;
+    if (!await askConfirm(`End "${combat.name}"? Players stop seeing it, and it leaves this page. The rolls stay in this session's Mechanics.`)) return;
     if (timer.current) { clearTimeout(timer.current); timer.current = null; }
     await flush();
     const { error } = await supabase.from("combats").update({ status: "ended", ended_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq("id", combat.id);
@@ -754,8 +755,11 @@ function CombatantRow({ c, isTurn, isSelected, onSelect, onChange, onRemove, inp
         borderRadius: FORGE_RADIUS, padding: "10px 12px", opacity: c.defeated ? 0.5 : 1, cursor: "pointer" }}>
       <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
         <input value={c.initiative ?? ""} onClick={(e) => e.stopPropagation()} onChange={(e) => onChange((x) => ({ ...x, initiative: numOrNull(e.target.value) }))}
-          placeholder="Init" inputMode="numeric" title="Initiative" style={{ ...input, width: 54, textAlign: "center", fontFamily: SAX.mono }} />
-        <span style={{ color: C.text, fontSize: 15, fontWeight: 700, textDecoration: c.defeated ? "line-through" : undefined }}>{c.name}</span>
+          placeholder="Init" inputMode="numeric" title="Initiative" aria-label={`Initiative for ${c.name}`} style={{ ...input, width: 54, textAlign: "center", fontFamily: SAX.mono }} />
+        {/* Audit U15: the name is a real button, so a keyboard can pick who the attack, save and detail panel act for. */}
+        <button type="button" aria-pressed={isSelected} onClick={(e) => { e.stopPropagation(); onSelect(); }}
+          title={isSelected ? "Selected" : `Select ${c.name}`}
+          style={{ background: "transparent", border: "none", padding: 0, cursor: "pointer", textAlign: "left", font: "inherit", color: C.text, fontSize: 15, fontWeight: 700, textDecoration: c.defeated ? "line-through" : undefined, minHeight: "var(--sax-tap, 0px)" }}>{c.name}</button>
         <span style={{ fontSize: 11, color: C.muted, border: `1px solid ${C.line}`, borderRadius: 999, padding: "0 7px" }}>{c.kind === "pc" ? "PC" : "monster"}</span>
         {isTurn && <span style={{ fontSize: 11, color: C.sun, fontWeight: 700 }}>TURN</span>}
         {bloodied && <span style={{ fontSize: 11, color: C.warn }}>bloodied</span>}
@@ -895,7 +899,7 @@ function DetailPanel({ c, adv, onAdv, onRoll, box, btn, eyebrow, input, isTurn, 
                 {others.map((o) => {
                   const on = saveTargets.includes(o.id);
                   return <button key={o.id} type="button" aria-pressed={on} onClick={() => onSaveTargets(on ? saveTargets.filter((x) => x !== o.id) : [...saveTargets, o.id])}
-                    style={{ ...btn(on), padding: "2px 8px", fontSize: 11.5 }}>{o.name}</button>;
+                    style={{ ...btn(on), padding: "2px 8px", fontSize: 11.5, minHeight: "var(--sax-tap, 0px)" }}>{o.name}</button>;
                 })}
                 <select value={failCond} onChange={(e) => onFailCond(e.target.value)} style={{ ...input, padding: "3px 6px", fontSize: 12 }} aria-label="Condition on a failed save">
                   <option value="">no condition on a failure</option>
@@ -924,7 +928,7 @@ function ActionLine({ a, adv, onRoll, btn, target, saveCount, busy, onAttack, on
   target: Combatant | null; saveCount: number; busy: boolean; onAttack: () => void; onSaveAction: () => void;
 }) {
   const [open, setOpen] = useState(false);
-  const small: React.CSSProperties = { ...btn(), padding: "3px 9px", fontSize: 12 };
+  const small: React.CSSProperties = { ...btn(), padding: "3px 9px", fontSize: 12, minHeight: "var(--sax-tap, 0px)" };
   return (
     <div style={{ padding: "6px 0", borderTop: `1px solid ${C.line}` }}>
       <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>

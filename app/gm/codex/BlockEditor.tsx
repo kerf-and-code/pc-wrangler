@@ -72,7 +72,7 @@ export default function BlockEditor({
 
   const input: React.CSSProperties = {
     width: "100%", background: C.surface2, color: C.text, border: `1px solid ${C.line}`,
-    borderRadius: FORGE_RADIUS, padding: "9px 11px", fontFamily: "inherit", fontSize: 14, outline: "none",
+    borderRadius: FORGE_RADIUS, padding: "9px 11px", fontFamily: "inherit", fontSize: 14,
   };
   const ctrlBtn: React.CSSProperties = {
     background: "transparent", color: C.muted, border: `1px solid ${C.line}`, borderRadius: 6,

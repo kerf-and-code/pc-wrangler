@@ -290,14 +290,14 @@ export default function RollerPage() {
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
           <div>
             <Label>Campaign</Label>
-            <select value={campaignId} onChange={(e) => setCampaignId(e.target.value)} style={field}>
+            <select aria-label="Campaign" value={campaignId} onChange={(e) => setCampaignId(e.target.value)} style={field}>
               <option value="">Pick a campaign</option>
               {campaigns.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
           </div>
           <div>
             <Label>Session</Label>
-            <select value={sessionId} onChange={(e) => setSessionId(e.target.value)} style={field}>
+            <select aria-label="Session" value={sessionId} onChange={(e) => setSessionId(e.target.value)} style={field}>
               {sessions.length === 0 && <option value="">No sessions</option>}
               {sessions.map((s) => (
                 <option key={s.id} value={s.id}>
@@ -330,7 +330,7 @@ export default function RollerPage() {
         {isPercentile && (
           <div style={{ marginBottom: 10 }}>
             <Label>Skill target</Label>
-            <input type="number" min={1} max={99} value={target}
+            <input aria-label="Target number" type="number" min={1} max={99} value={target}
               onChange={(e) => setTarget(Math.max(1, Math.min(99, Math.round(Number(e.target.value) || 0))))}
               style={{ ...field, fontFamily: SAX.mono }} />
             <p style={{ ...body, marginTop: 6, marginBottom: 0, fontSize: 12.5 }}>
@@ -342,7 +342,7 @@ export default function RollerPage() {
         {isPf2e && (
           <div style={{ marginBottom: 10 }}>
             <Label>DC (optional)</Label>
-            <input type="number" min={1} value={dc} onChange={(e) => setDc(e.target.value)}
+            <input aria-label="e.g. 18" type="number" min={1} value={dc} onChange={(e) => setDc(e.target.value)}
               placeholder="e.g. 18" style={{ ...field, fontFamily: SAX.mono }} />
             <p style={{ ...body, marginTop: 6, marginBottom: 0, fontSize: 12.5 }}>
               Set a DC to read the degree of success: critical success at DC+10, critical failure at
@@ -353,12 +353,12 @@ export default function RollerPage() {
         {isDuality && (<>
           <div style={{ marginBottom: 10 }}>
             <Label>Modifier</Label>
-            <input value={dualityMod} onChange={(e) => setDualityMod(e.target.value)}
+            <input aria-label="e.g. 2 (trait + bonuses)" value={dualityMod} onChange={(e) => setDualityMod(e.target.value)}
               placeholder="e.g. 2 (trait + bonuses)" style={{ ...field, fontFamily: SAX.mono }} />
           </div>
           <div style={{ marginBottom: 10 }}>
             <Label>Difficulty (optional)</Label>
-            <input type="number" min={1} value={dualityDiff} onChange={(e) => setDualityDiff(e.target.value)}
+            <input aria-label="e.g. 14" type="number" min={1} value={dualityDiff} onChange={(e) => setDualityDiff(e.target.value)}
               placeholder="e.g. 14" style={{ ...field, fontFamily: SAX.mono }} />
             <p style={{ ...body, marginTop: 6, marginBottom: 0, fontSize: 12.5 }}>
               Roll 2d12 (Hope + Fear) plus your modifier against the Difficulty. Higher Hope die is with
@@ -369,13 +369,13 @@ export default function RollerPage() {
         {isPool && (<>
           <div style={{ marginBottom: 10 }}>
             <Label>Pool size</Label>
-            <input type="number" min={1} max={30} value={poolSize}
+            <input aria-label="Dice in the pool" type="number" min={1} max={30} value={poolSize}
               onChange={(e) => setPoolSize(Math.max(1, Math.min(30, Math.round(Number(e.target.value) || 0))))}
               style={{ ...field, fontFamily: SAX.mono }} />
           </div>
           <div style={{ marginBottom: 10 }}>
             <Label>Difficulty (successes, optional)</Label>
-            <input type="number" min={1} value={poolDiff} onChange={(e) => setPoolDiff(e.target.value)}
+            <input aria-label="e.g. 3" type="number" min={1} value={poolDiff} onChange={(e) => setPoolDiff(e.target.value)}
               placeholder="e.g. 3" style={{ ...field, fontFamily: SAX.mono }} />
             <p style={{ ...body, marginTop: 6, marginBottom: 0, fontSize: 12.5 }}>
               Roll a pool of d{poolDie}s. Each 6 or higher is a success; a pair of 10s adds a critical
@@ -386,13 +386,13 @@ export default function RollerPage() {
         {isPowerRoll && (<>
           <div style={{ marginBottom: 10 }}>
             <Label>Modifier (characteristic + bonuses)</Label>
-            <input value={dsMod} onChange={(e) => setDsMod(e.target.value)}
+            <input aria-label="e.g. 2" value={dsMod} onChange={(e) => setDsMod(e.target.value)}
               placeholder="e.g. 2" style={{ ...field, fontFamily: SAX.mono }} />
           </div>
           <div style={{ marginBottom: 10 }}>
             <Label>Edges / banes</Label>
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-              {[{ v: -2, l: "Bane \u00D72" }, { v: -1, l: "Bane" }, { v: 0, l: "\u2014" }, { v: 1, l: "Edge" }, { v: 2, l: "Edge \u00D72" }].map((o) => (
+              {[{ v: -2, l: "Bane \u00D72" }, { v: -1, l: "Bane" }, { v: 0, l: "None" }, { v: 1, l: "Edge" }, { v: 2, l: "Edge \u00D72" }].map((o) => (
                 <button key={o.v} type="button" onClick={() => setDsEB(o.v)} style={chip(dsEB === o.v)}>{o.l}</button>
               ))}
             </div>
@@ -405,7 +405,7 @@ export default function RollerPage() {
         {isLancer && (<>
           <div style={{ marginBottom: 10 }}>
             <Label>Bonus (grit, tier, tags)</Label>
-            <input value={lancerMod} onChange={(e) => setLancerMod(e.target.value)}
+            <input aria-label="e.g. 4" value={lancerMod} onChange={(e) => setLancerMod(e.target.value)}
               placeholder="e.g. 4" style={{ ...field, fontFamily: SAX.mono }} />
           </div>
           <div style={{ marginBottom: 10 }}>
@@ -424,7 +424,7 @@ export default function RollerPage() {
           </div>
           <div style={{ marginBottom: 10 }}>
             <Label>Target (Evasion / E-Defense / DC, optional)</Label>
-            <input type="number" min={1} value={lancerTarget} onChange={(e) => setLancerTarget(e.target.value)}
+            <input aria-label="e.g. 10" type="number" min={1} value={lancerTarget} onChange={(e) => setLancerTarget(e.target.value)}
               placeholder="e.g. 10" style={{ ...field, fontFamily: SAX.mono }} />
             <p style={{ ...body, marginTop: 6, marginBottom: 0, fontSize: 12.5 }}>
               Roll 1d20 + bonus against the target to read hit or miss. A natural 20 on the d20 is a critical hit.
@@ -436,7 +436,7 @@ export default function RollerPage() {
 
         <div style={{ marginTop: 12, marginBottom: 10 }}>
           <Label>Or type it</Label>
-          <input value={notation} onChange={(e) => setNotation(e.target.value)}
+          <input aria-label="2d4 + 2d8 + 1d20 + 16" value={notation} onChange={(e) => setNotation(e.target.value)}
             placeholder="2d4 + 2d8 + 1d20 + 16"
             style={{ ...field, fontFamily: SAX.mono }} />
           <p style={{ ...body, marginTop: 6, marginBottom: 0, fontSize: 12.5 }}>
@@ -471,14 +471,14 @@ export default function RollerPage() {
           {!isPercentile && !isDuality && !isPool && !isPowerRoll && (
           <div>
             <Label>What kind</Label>
-            <select value={kind} onChange={(e) => setKind(e.target.value)} style={field}>
+            <select aria-label="Roll kind" value={kind} onChange={(e) => setKind(e.target.value)} style={field}>
               {KINDS.map((k) => <option key={k.key} value={k.key}>{k.label}</option>)}
             </select>
           </div>
           )}
           <div>
             <Label>Who is rolling</Label>
-            <select value={characterId} onChange={(e) => setCharacterId(e.target.value)} style={field}>
+            <select aria-label="Character" value={characterId} onChange={(e) => setCharacterId(e.target.value)} style={field}>
               <option value="">A monster or the GM</option>
               {characters.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
@@ -486,11 +486,11 @@ export default function RollerPage() {
         </div>
 
         {!characterId && (
-          <input value={actor} onChange={(e) => setActor(e.target.value)}
+          <input aria-label="Name the monster, if you like (Grultok, goblin archer)" value={actor} onChange={(e) => setActor(e.target.value)}
             placeholder="Name the monster, if you like (Grultok, goblin archer)"
             style={{ ...field, marginBottom: 10 }} />
         )}
-        <input value={label} onChange={(e) => setLabel(e.target.value)}
+        <input aria-label="What for? (longsword, fireball, perception)" value={label} onChange={(e) => setLabel(e.target.value)}
           placeholder="What for? (longsword, fireball, perception)"
           style={{ ...field, marginBottom: 12 }} />
 

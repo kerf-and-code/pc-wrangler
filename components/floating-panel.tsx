@@ -87,7 +87,7 @@ export default function FloatingPanel({ open, onClose, title, storageKey, width 
     setPos(next); remember(next);
   };
 
-  const small: React.CSSProperties = { background: "transparent", border: `1px solid ${STONE.hi}`, borderRadius: 4, color: STONE.ink, fontSize: 11.5, padding: "2px 8px", cursor: "pointer", fontFamily: FORGE_FONTS.body };
+  const small: React.CSSProperties = { background: "transparent", border: `1px solid ${STONE.hi}`, borderRadius: 4, color: STONE.ink, fontSize: 11.5, padding: "2px 8px", minHeight: "var(--sax-tap, 0px)", cursor: "pointer", fontFamily: FORGE_FONTS.body };
 
   return (
     <div ref={ref} role="dialog" aria-modal="false" aria-label={typeof title === "string" ? title : "Floating panel"} hidden={!open}

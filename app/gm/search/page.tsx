@@ -178,7 +178,7 @@ export default function SearchPage() {
 
   const pcs = chars.filter((c) => c.kind === "pc");
   const box = { ...surfaces.slate, padding: 18 } as const;
-  const input = { width: "100%", boxSizing: "border-box" as const, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "11px 13px", fontSize: 15, outline: "none" };
+  const input = { width: "100%", boxSizing: "border-box" as const, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "11px 13px", fontSize: 15 };
   const cardInner = { background: C.surface2, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "11px 13px" } as const;
   const sectionLabel = { fontSize: 12, color: C.muted, fontFamily: "ui-monospace, monospace", letterSpacing: "0.1em", marginBottom: 10 } as const;
 

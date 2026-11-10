@@ -98,7 +98,7 @@ export default function ChatPage() {
   const box = { ...surfaces.slate, padding: 18 } as const;
   // No inline background/border: PageShell's cascade gives inputs the carved field look (gradient,
   // inset shadow). Setting them inline here is what made these read flat.
-  const input = { boxSizing: "border-box" as const, color: C.text, borderRadius: FORGE_RADIUS, padding: "10px 12px", fontSize: 14, outline: "none" };
+  const input = { boxSizing: "border-box" as const, color: C.text, borderRadius: FORGE_RADIUS, padding: "10px 12px", fontSize: 14 };
 
   return (
     <PageShell width={720}>

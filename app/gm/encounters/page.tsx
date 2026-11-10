@@ -19,6 +19,7 @@ import { initialCampaignId, useRememberCampaign, preferredSessionId, gmHref } fr
 import { subclassKey } from "@/lib/subclass-names";
 import { rulesetForCampaign } from "@/lib/systems/ruleset";
 import { friendlyError, notReady } from "@/lib/friendly-error";
+import { askConfirm } from "@/lib/confirm";
 
 // ============================================================================
 // THE TWO METHODS ARE GENUINELY DIFFERENT. THIS IS THE WHOLE POINT OF THE TOOL.
@@ -470,7 +471,7 @@ export default function EncountersPage() {
   async function deleteEncounter() {
     if (!encId) return;
     const e = savedList.find((x) => x.id === encId);
-    if (!window.confirm(`Delete the saved encounter "${e?.name ?? "this encounter"}"? Fights already run from it are kept.`)) return;
+    if (!await askConfirm(`Delete the saved encounter "${e?.name ?? "this encounter"}"? Fights already run from it are kept.`)) return;
     const { error } = await supabase.from("encounters").delete().eq("id", encId);
     if (error) { setEncMsg(`Not deleted: ${error.message}`); return; }
     setEncId(null); setEncName(""); setEncMsg("Deleted.");

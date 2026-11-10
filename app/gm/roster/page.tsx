@@ -10,6 +10,7 @@ import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import CharacterSheetPeek, { type Build } from "@/components/character-sheet-peek";
 import { initialCampaignId, useRememberCampaign } from "@/lib/campaign-context";
 import { friendlyError } from "@/lib/friendly-error";
+import { askConfirm } from "@/lib/confirm";
 
 type Campaign = { id: string; name: string; share_code: string | null };
 type Char = { id: string; name: string; profile_id: string | null; invite_code: string | null; build: Build; active: boolean | null };
@@ -86,7 +87,7 @@ export default function RosterPage() {
     setBusy(false);
   }
   async function setActive(ch: Char, activeNow: boolean) {
-    if (!activeNow && !window.confirm(`Remove ${ch.name} from this campaign? They leave the party everywhere: Tonight, check-ins, recording consent, encounters and the roll list, and the Discord bot stops treating them as a player here. Their history (events, rolls, recaps) is kept, and you can restore them below.`)) return;
+    if (!activeNow && !await askConfirm(`Remove ${ch.name} from this campaign? They leave the party everywhere: Tonight, check-ins, recording consent, encounters and the roll list, and the Discord bot stops treating them as a player here. Their history (events, rolls, recaps) is kept, and you can restore them below.`)) return;
     setBusy(true); setError(null);
     // Checked: an update that RLS filters out returns no error and changes nothing, so ask for the row back.
     const { data, error: e } = await supabase.from("characters").update({ active: activeNow }).eq("id", ch.id).select("id");
@@ -171,16 +172,17 @@ export default function RosterPage() {
                           <span style={{ fontSize: 13 }}>
                             <span style={{ color: C.muted }}>inventory:</span> <span style={{ color: C.good, fontWeight: 600 }}>{respLabel(r)}</span>
                           </span>
-                          <button type="button" onClick={() => { if (window.confirm(`Unbind ${respLabel(r)} from ${ch.name}? The inventory stays, but it stops showing on this character until you bind it again.`)) unbind(r.id); }} disabled={busy} style={{ background: "transparent", color: C.warn, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600 }}>Unbind</button>
+                          <button type="button" onClick={async () => { if (await askConfirm(`Unbind ${respLabel(r)} from ${ch.name}? The inventory stays, but it stops showing on this character until you bind it again.`)) unbind(r.id); }} disabled={busy} style={{ background: "transparent", color: C.warn, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600 }}>Unbind</button>
                         </div>
                       ) : unassigned.length > 0 ? (
-                        <select defaultValue="" disabled={busy} onChange={(e) => {
-                          const id = e.target.value;
+                        <select defaultValue="" disabled={busy} onChange={async (e) => {
+                          const el = e.currentTarget;
+                          const id = el.value;
                           if (!id) return;
                           const u = unassigned.find((x) => x.id === id);
                           // Binding takes effect on pick, so a misclick in the list used to bind the wrong inventory.
-                          if (window.confirm(`Bind ${u ? respLabel(u) : "this inventory"} to ${ch.name}?`)) bind(id, ch.id);
-                          else e.target.value = "";
+                          if (await askConfirm(`Bind ${u ? respLabel(u) : "this inventory"} to ${ch.name}?`)) bind(id, ch.id);
+                          else el.value = "";
                         }}
                           style={{ background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "9px 12px", fontSize: 13, minWidth: 200, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
                           <option value="">Bind an inventory…</option>
@@ -223,7 +225,7 @@ export default function RosterPage() {
               if (!shareCode) return null;
               const rotate = async () => {
                 if (rotating) return;
-                if (!window.confirm("Regenerate the session link? The old link stops working immediately, and everyone will need the new one.")) return;
+                if (!await askConfirm("Regenerate the session link? The old link stops working immediately, and everyone will need the new one.")) return;
                 setRotating(true);
                 setRotateMsg(null);
                 try {

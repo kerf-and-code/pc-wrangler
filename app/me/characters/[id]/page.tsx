@@ -7,6 +7,7 @@ import { SAX } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import BlockEditor, { type Block } from "@/app/gm/codex/BlockEditor";
 import { PortraitUploader } from "@/components/portrait-uploader";
+import { askConfirm } from "@/lib/confirm";
 
 // app/me/characters/[id]/page.tsx
 //
@@ -36,7 +37,7 @@ const candLabel = (c: CandItem) => (c.item_kind === "npc" ? "NPC" : c.item_type)
 // inline is what left these flat. Radius routed through FORGE_RADIUS too.
 const field: React.CSSProperties = {
   boxSizing: "border-box", width: "100%", color: C.text,
-  borderRadius: FORGE_RADIUS, padding: "9px 11px", fontSize: 14, outline: "none",
+  borderRadius: FORGE_RADIUS, padding: "9px 11px", fontSize: 14,
 };
 const primaryBtn: React.CSSProperties = { background: C.sun, color: SAX.inkDeep, border: "none", borderRadius: 7, padding: "9px 16px", fontWeight: 700, fontSize: 13.5, cursor: "pointer" };
 const ghostBtn: React.CSSProperties = { background: "transparent", color: C.muted, border: `1px solid ${C.line}`, borderRadius: 7, padding: "7px 12px", fontWeight: 600, fontSize: 12.5, cursor: "pointer" };
@@ -172,7 +173,7 @@ export default function CharacterPage() {
     else timersRef.current[id] = setTimeout(() => { void flush(id); }, 600);
   };
   const del = async (id: string) => {
-    if (!window.confirm("Delete this section? This can't be undone.")) return;
+    if (!await askConfirm("Delete this section? This can't be undone.")) return;
     setSectionError(null);
     const { error } = await supabase.from("character_wiki_sections").delete().eq("id", id);
     if (error) { setSectionError(`Could not delete that section: ${error.message}`); return; }

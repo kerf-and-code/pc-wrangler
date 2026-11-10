@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { surfaces } from "@/lib/theme";
 import { FORGE_RADIUS, C } from "@/lib/forge-theme";
+import { askConfirm } from "@/lib/confirm";
 
 type Identity = {
   id: string;
@@ -77,7 +78,7 @@ export default function GmIdentityCard({ campaignId }: { campaignId: string }) {
   }
 
   async function unlink(id: string) {
-    if (!window.confirm("Unlink this narrator voice? Recordings will stop attributing this Discord ID as the narrator.")) return;
+    if (!await askConfirm("Unlink this narrator voice? Recordings will stop attributing this Discord ID as the narrator.")) return;
     setSaving(true);
     setError(null);
     setNotice(null);

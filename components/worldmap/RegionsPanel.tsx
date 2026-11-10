@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { C } from "@/lib/forge-theme";
 import { friendlyError } from "@/lib/friendly-error";
+import { askConfirm } from "@/lib/confirm";
 
 // Phase 2b: define the tiers (map_layers) and CRUD the regions. A region sits at one tier, may nest
 // inside a parent one tier UP, points at a codex entry (pick an existing one, or mint a new location
@@ -72,6 +73,8 @@ export default function RegionsPanel({ worldMapId, campaignId, onChanged, onPain
   }, [supabase]);
 
   const deleteLayer = useCallback(async (id: string) => {
+    // Audit U13: regions on this panel already confirm; a tier did not.
+    if (!await askConfirm("Delete this tier? Its regions must be removed first. This cannot be undone.")) return;
     const { error } = await supabase.from("map_layers").delete().eq("id", id);
     if (error) { setStatus(error.code === "23503" ? "Remove this tier's regions first." : error.message); return; }
     setLayers((prev) => prev.filter((l) => l.id !== id));
@@ -110,7 +113,7 @@ export default function RegionsPanel({ worldMapId, campaignId, onChanged, onPain
   const deleteRegion = useCallback(async (id: string) => {
     // One stray click used to erase a region and every hex painted into it, with no way back.
     const name = regions.find((r) => r.id === id)?.name;
-    if (!window.confirm(`Delete ${name ? `the region "${name}"` : "this region"} and the hexes painted into it? This cannot be undone.`)) return;
+    if (!await askConfirm(`Delete ${name ? `the region "${name}"` : "this region"} and the hexes painted into it? This cannot be undone.`)) return;
     const { error } = await supabase.from("regions").delete().eq("id", id);
     if (error) { setStatus(friendlyError(error)); return; }
     setRegions((prev) => prev.filter((r) => r.id !== id));
@@ -159,8 +162,8 @@ export default function RegionsPanel({ worldMapId, campaignId, onChanged, onPain
     return o;
   }, [metrics, milesPerHex, useMetric]);
 
-  const field: React.CSSProperties = { background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: 6, padding: "5px 7px", fontSize: 12.5, outline: "none" };
-  const mini: React.CSSProperties = { background: "transparent", border: `1px solid ${C.line}`, borderRadius: 6, padding: "3px 7px", fontSize: 11.5, cursor: "pointer", color: C.muted };
+  const field: React.CSSProperties = { background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: 6, padding: "5px 7px", fontSize: 12.5 };
+  const mini: React.CSSProperties = { background: "transparent", border: `1px solid ${C.line}`, borderRadius: 6, padding: "3px 7px", fontSize: 11.5, cursor: "pointer", color: C.muted, minHeight: "var(--sax-tap, 0px)" };
   const secLabel: React.CSSProperties = { fontSize: 11, color: C.muted, fontFamily: "ui-monospace, monospace", letterSpacing: "0.08em", marginBottom: 8 };
 
   return (
@@ -175,7 +178,7 @@ export default function RegionsPanel({ worldMapId, campaignId, onChanged, onPain
             <input value={l.name} onChange={(e) => renameLayer(l.id, e.target.value)} style={{ ...field, flex: 1, minWidth: 0 }} />
             <button type="button" onClick={() => moveLayer(l.id, -1)} disabled={i === 0} style={{ ...mini, opacity: i === 0 ? 0.4 : 1 }}>Move up</button>
             <button type="button" onClick={() => moveLayer(l.id, 1)} disabled={i === sortedLayers.length - 1} style={{ ...mini, opacity: i === sortedLayers.length - 1 ? 0.4 : 1 }}>Move down</button>
-            <button type="button" onClick={() => deleteLayer(l.id)} style={mini}>x</button>
+            <button type="button" onClick={() => deleteLayer(l.id)} style={mini}>Delete tier</button>
           </div>
         ))}
       </div>

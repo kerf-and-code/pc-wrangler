@@ -6,6 +6,7 @@ import PageShell from "@/components/page-shell";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import MapFog from "@/components/map-fog";
 import { initialCampaignId, useRememberCampaign, gmHref } from "@/lib/campaign-context";
+import { askConfirm } from "@/lib/confirm";
 
 const VIS: { v: string; l: string }[] = [
   { v: "common", l: "Common knowledge" },
@@ -164,7 +165,7 @@ export default function MapPage() {
 
   async function deleteMap(id: string) {
     const m = maps.find((x) => x.id === id);
-    if (!window.confirm(`Delete ${m?.name ? `"${m.name}"` : "this map"} and every pin on it? This cannot be undone.`)) return;
+    if (!await askConfirm(`Delete ${m?.name ? `"${m.name}"` : "this map"} and every pin on it? This cannot be undone.`)) return;
     const { error } = await supabase.from("maps").delete().eq("id", id);
     if (error) { setWriteErr(`The map was not deleted: ${error.message}`); return; }
     setWriteErr(null);
@@ -302,7 +303,7 @@ export default function MapPage() {
 
   const eyebrow = { fontFamily: "ui-monospace, monospace", fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase" as const, color: C.muted, marginBottom: 6 };
   const box = { background: C.surface, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "16px 18px", marginBottom: 14 } as const;
-  const input = { width: "100%", boxSizing: "border-box" as const, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "9px 12px", fontSize: 14, outline: "none" };
+  const input = { width: "100%", boxSizing: "border-box" as const, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "9px 12px", fontSize: 14 };
   const sel2 = { ...input, marginTop: 4 };
 
   return (

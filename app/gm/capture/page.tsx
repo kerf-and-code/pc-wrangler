@@ -8,6 +8,7 @@ import { surfaces, ui } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import { initialCampaignId, useRememberCampaign, initialSessionId, useRememberSession, gmHref } from "@/lib/campaign-context";
 import { friendlyError } from "@/lib/friendly-error";
+import { askConfirm } from "@/lib/confirm";
 
 type Campaign = { id: string; name: string };
 type Sess = { id: string; session_number: number | null; status: string };
@@ -143,7 +144,7 @@ export default function CapturePage() {
   // person), but never on: only the player can give consent.
   async function revokeStanding(charId: string, name: string) {
     if (!campaignId) return;
-    if (!window.confirm(`Revoke ${name}'s standing consent for this campaign? Their voice will not be recorded from the next recording until they consent again themselves.`)) return;
+    if (!await askConfirm(`Revoke ${name}'s standing consent for this campaign? Their voice will not be recorded from the next recording until they consent again themselves.`)) return;
     setError(null);
     const { error: e } = await supabase.from("recording_consents")
       .update({ consented: false, method: "gm_revoke" })
@@ -184,7 +185,7 @@ export default function CapturePage() {
 
   async function removeTrack(t: Track) {
     if (!job) return;
-    if (!window.confirm("Remove this track? The audio file is deleted from storage and cannot be recovered.")) return;
+    if (!await askConfirm("Remove this track? The audio file is deleted from storage and cannot be recovered.")) return;
     setError(null);
     if (t.storage_path) {
       const { error: se } = await supabase.storage.from("session-audio").remove([t.storage_path]);
@@ -384,7 +385,7 @@ export default function CapturePage() {
                         <span style={{ fontSize: 13, color: C.muted }}>
                           Queued. Each track is being transcribed; when that finishes, proposed events appear on the <a href="/gm/review" style={{ color: C.sun }}>Review page</a> automatically.
                         </span>
-                        <button type="button" onClick={() => { if (window.confirm("Send this job back to draft? Transcription in progress stops, and you will need to queue it again.")) void setJobStatus("draft"); }} style={{ background: "transparent", color: C.plum, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "8px 14px", fontSize: 12, cursor: "pointer" }}>Back to draft</button>
+                        <button type="button" onClick={async () => { if (await askConfirm("Send this job back to draft? Transcription in progress stops, and you will need to queue it again.", { confirmLabel: "Back to draft", danger: true })) void setJobStatus("draft"); }} style={{ background: "transparent", color: C.plum, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "8px 14px", fontSize: 12, cursor: "pointer" }}>Back to draft</button>
                       </>
                     )}
                   </div>

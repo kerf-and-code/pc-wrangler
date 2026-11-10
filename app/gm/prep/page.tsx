@@ -9,6 +9,7 @@ import { surfaces, ui } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import { initialCampaignId, useRememberCampaign, gmHref } from "@/lib/campaign-context";
 import { friendlyError } from "@/lib/friendly-error";
+import { askConfirm } from "@/lib/confirm";
 
 type Campaign = { id: string; name: string };
 type Sess = { id: string; session_number: number | null };
@@ -126,7 +127,7 @@ export default function PrepPage() {
 
   async function removePlanItem(id: string) {
     const it = plan.find((p) => p.id === id);
-    if (!window.confirm(`Remove ${it?.title ? `"${it.title}"` : "this item"} from the plan? This cannot be undone.`)) return;
+    if (!await askConfirm(`Remove ${it?.title ? `"${it.title}"` : "this item"} from the plan? This cannot be undone.`)) return;
     const { error: e } = await supabase.from("session_plan_items").delete().eq("id", id);
     if (e) { setError(`Not removed: ${e.message}`); return; }
     setPlan((arr) => arr.filter((p) => p.id !== id));
@@ -203,7 +204,7 @@ export default function PrepPage() {
   }, [recent, sessions]);
 
   const box = { ...surfaces.slate, padding: 18 } as const;
-  const input = { width: "100%", boxSizing: "border-box" as const, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "11px 13px", fontSize: 15, outline: "none" };
+  const input = { width: "100%", boxSizing: "border-box" as const, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "11px 13px", fontSize: 15 };
   const sectionTitle = (t: string, sub: string) => (
     <div style={{ margin: "22px 0 10px" }}>
       <div style={{ fontSize: 18, fontWeight: 700, color: C.text }}>{t}</div>

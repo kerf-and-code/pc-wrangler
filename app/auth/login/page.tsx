@@ -238,7 +238,6 @@ export default function LoginPage() {
                 padding: "12px 14px",
                 color: C.text,
                 fontSize: 15,
-                outline: "none",
                 marginBottom: 12, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}
             />
             <button

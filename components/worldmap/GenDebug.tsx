@@ -41,7 +41,7 @@ export default function GenDebug() {
   useEffect(() => { run(); }, [run]);
 
   const label: React.CSSProperties = { fontSize: 12, color: C.muted, display: "block", marginBottom: 3 };
-  const field: React.CSSProperties = { background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: 6, padding: "5px 7px", fontSize: 12.5, outline: "none", width: "100%", boxSizing: "border-box" };
+  const field: React.CSSProperties = { background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: 6, padding: "5px 7px", fontSize: 12.5, width: "100%", boxSizing: "border-box" };
   const chip = (on: boolean): React.CSSProperties => ({ fontSize: 12, padding: "5px 10px", borderRadius: 7, cursor: "pointer", border: `1px solid ${on ? C.sun : C.line}`, background: on ? "rgba(200,162,75,0.14)" : C.surface2, color: C.text, fontWeight: 600 });
 
   return (

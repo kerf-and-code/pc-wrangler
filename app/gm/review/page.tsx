@@ -8,6 +8,7 @@ import { surfaces, ui, AXES, type AxisKey } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import { initialCampaignId, useRememberCampaign, preferredSessionId, useRememberSession } from "@/lib/campaign-context";
 import { friendlyError } from "@/lib/friendly-error";
+import { askConfirm } from "@/lib/confirm";
 
 type Campaign = { id: string; name: string };
 type JobRow = { id: string; status: string; extract_cursor: number; session_id: string; session: { session_number: number | null } | null };
@@ -687,11 +688,11 @@ export default function ReviewPage() {
                             Create entities
                           </label>
                           <button type="button" disabled={busy}
-                            onClick={() => {
+                            onClick={async () => {
                               const msg = bulkCreates
                                 ? `Accept all ${gmView.length} beats and create the NPCs, places, factions, items and lore they name? Accepted beats cannot be un-accepted here.`
                                 : `Accept all ${gmView.length} beats? Accepted beats cannot be un-accepted here.`;
-                              if (window.confirm(msg)) void acceptGmSet(gmView, bulkCreates);
+                              if (await askConfirm(msg, { confirmLabel: "Accept all" })) void acceptGmSet(gmView, bulkCreates);
                             }}
                             title={bulkCreates ? "Accept every beat below and create the entities they name" : "Accept every beat below without creating entities"}
                             style={{ ...btn(C.sun, C.ink), opacity: busy ? 0.55 : 1, cursor: busy ? "default" : "pointer" }}>

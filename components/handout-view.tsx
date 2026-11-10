@@ -11,6 +11,7 @@
 
 import React, { useEffect, useRef } from "react";
 import { C } from "@/lib/forge-theme";
+import { useDialogFocus } from "@/lib/use-dialog-focus";
 
 export type HandoutBlock =
   | { id?: string; type: "text"; text: string }
@@ -56,9 +57,11 @@ export function HandoutBody({ h }: { h: Handout }) {
 
 export default function HandoutView({ h, onClose }: { h: Handout; onClose: () => void }) {
   const closeRef = useRef<HTMLButtonElement | null>(null);
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  useDialogFocus(dialogRef, true, onClose, closeRef); // audit U14: Tab stays inside, focus returns on close
   useEffect(() => { closeRef.current?.focus(); }, [h.id]);
   return (
-    <div role="dialog" aria-modal="true" aria-label={`Handout: ${h.title}`} onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
+    <div ref={dialogRef} role="dialog" aria-modal="true" aria-label={`Handout: ${h.title}`}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
       style={{ position: "fixed", inset: 0, background: "rgba(8,6,4,0.72)", display: "grid", placeItems: "center", zIndex: 60, padding: 16 }}>
       <div style={{ background: "#1f1a15", border: "1px solid #3a332a", borderRadius: 12, width: h.picture ? "min(960px, 100%)" : "min(680px, 100%)", maxHeight: "100%", overflow: "auto", padding: "18px 22px" }}>

@@ -9,6 +9,7 @@ import {
   type DmBoard, type PlacedCard,
   listBoards, createBoard, renameBoard, deleteBoard, saveBoardCards,
 } from "@/lib/compendium/dm-board";
+import { askConfirm } from "@/lib/confirm";
 
 // components/dm-screen.tsx
 //
@@ -179,7 +180,7 @@ export default function DmScreen() {
   };
   const onDelete = async () => {
     if (!activeId) return;
-    if (typeof window !== "undefined" && !window.confirm("Delete this board and its cards? This can't be undone.")) return;
+    if (typeof window !== "undefined" && !await askConfirm("Delete this board and its cards? This can't be undone.")) return;
     try { await deleteBoard(supabase, activeId); await refresh(null); }
     catch (e) { setErr(e instanceof Error ? e.message : "Could not delete the board."); }
   };

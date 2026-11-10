@@ -150,7 +150,7 @@ export default function SessionZero() {
           <strong>Veils</strong> are things that can happen but stay off-screen, faded to black.
         </div>
         <Grid>
-          <Field label="Lines (never appears)"><textarea style={ta} rows={3} placeholder="One per line" value={d.lines} onChange={(e) => set("lines", e.target.value)} /></Field>
+          <Field label="Lines (never appears)"><textarea aria-label="One per line" style={ta} rows={3} placeholder="One per line" value={d.lines} onChange={(e) => set("lines", e.target.value)} /></Field>
           <Field label="Veils (off-screen only)"><textarea style={ta} rows={3} placeholder="One per line" value={d.veils} onChange={(e) => set("veils", e.target.value)} /></Field>
         </Grid>
         <div style={{ marginTop: 12 }}>
@@ -177,7 +177,7 @@ export default function SessionZero() {
         <Field label="Setting in a sentence or two"><textarea style={ta} rows={2} value={d.setting} onChange={(e) => set("setting", e.target.value)} /></Field>
         <Grid>
           <Field label="Starting level / power"><input style={inp} value={d.charLevel} onChange={(e) => set("charLevel", e.target.value)} /></Field>
-          <Field label="Allowed sources / content"><input style={inp} placeholder="Core only, plus X, no homebrew..." value={d.sources} onChange={(e) => set("sources", e.target.value)} /></Field>
+          <Field label="Allowed sources / content"><input aria-label="Core only, plus X, no homebrew..." style={inp} placeholder="Core only, plus X, no homebrew..." value={d.sources} onChange={(e) => set("sources", e.target.value)} /></Field>
         </Grid>
         <Field label="How do the characters know each other?"><textarea style={ta} rows={2} placeholder="Shared history, party bonds, why they stay together..." value={d.connections} onChange={(e) => set("connections", e.target.value)} /></Field>
       </Section>
@@ -188,20 +188,20 @@ export default function SessionZero() {
           <Field label="Attendance and scheduling"><input style={inp} placeholder="Play with 4 of 5? Cancel threshold?" value={d.attendance} onChange={(e) => set("attendance", e.target.value)} /></Field>
           <Field label="A missing player's character"><input style={inp} placeholder="GM runs them, faded out, sidelined..." value={d.missingPc} onChange={(e) => set("missingPc", e.target.value)} /></Field>
           <Field label="Sharing the spotlight"><input style={inp} value={d.spotlight} onChange={(e) => set("spotlight", e.target.value)} /></Field>
-          <Field label="How the group makes decisions"><input style={inp} placeholder="Talk it out, party leader, vote..." value={d.decisions} onChange={(e) => set("decisions", e.target.value)} /></Field>
+          <Field label="How the group makes decisions"><input aria-label="Talk it out, party leader, vote..." style={inp} placeholder="Talk it out, party leader, vote..." value={d.decisions} onChange={(e) => set("decisions", e.target.value)} /></Field>
         </Grid>
-        <Field label="PvP and inter-party conflict"><input style={inp} placeholder="Allowed with consent? Off the table?" value={d.pvp} onChange={(e) => set("pvp", e.target.value)} /></Field>
+        <Field label="PvP and inter-party conflict"><input aria-label="Allowed with consent? Off the table?" style={inp} placeholder="Allowed with consent? Off the table?" value={d.pvp} onChange={(e) => set("pvp", e.target.value)} /></Field>
       </Section>
 
       {/* Rules */}
       <Section id="rules" d={discussed} onToggle={toggleDiscussed}>
         <Field label="House rules and rulings"><textarea style={ta} rows={2} value={d.houseRules} onChange={(e) => set("houseRules", e.target.value)} /></Field>
-        <Field label="Death, dying, and revival"><input style={inp} placeholder="How lethal? Raising the dead? New characters at what level?" value={d.deathRules} onChange={(e) => set("deathRules", e.target.value)} /></Field>
+        <Field label="Death, dying, and revival"><input aria-label="How lethal? Raising the dead? New characters at what level?" style={inp} placeholder="How lethal? Raising the dead? New characters at what level?" value={d.deathRules} onChange={(e) => set("deathRules", e.target.value)} /></Field>
       </Section>
 
       {/* Logistics */}
       <Section id="logistics" d={discussed} onToggle={toggleDiscussed}>
-        <Field label="Tools, notes, food, recaps"><textarea style={ta} rows={2} placeholder="Who takes notes, who recaps, VTT and dice, snacks..." value={d.logistics} onChange={(e) => set("logistics", e.target.value)} /></Field>
+        <Field label="Tools, notes, food, recaps"><textarea aria-label="Who takes notes, who recaps, VTT and dice, snacks..." style={ta} rows={2} placeholder="Who takes notes, who recaps, VTT and dice, snacks..." value={d.logistics} onChange={(e) => set("logistics", e.target.value)} /></Field>
       </Section>
 
       {/* Charter */}
@@ -219,7 +219,7 @@ export default function SessionZero() {
 function buildCharter(d: Data): string {
   const lines: string[] = [];
   const title = d.campaign.trim() || "Our Campaign";
-  lines.push(`# ${title} — Table Charter`, "");
+  lines.push(`# ${title}: Table Charter`, "");
 
   const basics: string[] = [];
   if (d.gm.trim()) basics.push(`- Game master: ${d.gm.trim()}`);

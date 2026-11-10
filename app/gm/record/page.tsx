@@ -28,6 +28,7 @@ import { createClient } from "@/lib/supabase/client";
 import { C, FORGE_RADIUS, STONE } from "@/lib/forge-theme";
 import { SAX } from "@/lib/theme";
 import { initialCampaignId, useRememberCampaign, initialSessionId, useRememberSession } from "@/lib/campaign-context";
+import { askConfirm } from "@/lib/confirm";
 
 type Phase = "idle" | "armed" | "recording" | "stopped" | "uploading" | "done" | "error";
 type Campaign = { id: string; name: string };
@@ -260,8 +261,8 @@ export default function RoomRecordPage() {
     }
   }, [campaignId, consent, sessionId]);
 
-  const stopRecording = useCallback(() => {
-    if (!window.confirm("Stop recording? You can upload what was recorded, but you cannot add more to this recording afterwards.")) return;
+  const stopRecording = useCallback(async () => {
+    if (!await askConfirm("Stop recording? You can upload what was recorded, but you cannot add more to this recording afterwards.")) return;
     mrRef.current?.stop();
     streamRef.current?.getTracks().forEach((t) => t.stop());
     audioCtxRef.current?.close();
@@ -346,8 +347,8 @@ export default function RoomRecordPage() {
           </p>
           <button style={btn(true)} onClick={() => void upload()}>Upload it now</button>
           <button style={{ ...btn(false), marginLeft: 8 }}
-            onClick={() => {
-              if (!window.confirm("Discard this recording? It has not been uploaded, and it cannot be recovered afterwards.")) return;
+            onClick={async () => {
+              if (!await askConfirm("Discard this recording? It has not been uploaded, and it cannot be recovered afterwards.")) return;
               void clear(); saveMeta(null); setRecovered(0); setRecoveredMeta(null);
             }}>Discard it</button>
         </Card>

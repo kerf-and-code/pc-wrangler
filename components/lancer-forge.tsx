@@ -133,7 +133,7 @@ export default function LancerForge({
       {/* Callsign */}
       <div style={stonePanel()}>
         <label style={forgeLabel}>Pilot callsign</label>
-        <input value={name} onChange={(e) => onName(e.target.value)} placeholder="Name your pilot"
+        <input aria-label="Name your pilot" value={name} onChange={(e) => onName(e.target.value)} placeholder="Name your pilot"
           style={{ ...stoneField(), cursor: "text", fontFamily: FORGE_FONTS.display, fontSize: 20 }} />
       </div>
 
@@ -392,7 +392,7 @@ export default function LancerForge({
                     </span>
                   </span>
                   <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 12, color: STONE.inkDim }}>{s.sp} SP</span>
-                  <button type="button" onClick={() => removeSystem(i)}
+                  <button type="button" aria-label="Remove system" title="Remove system" onClick={() => removeSystem(i)}
                     style={{ background: "none", border: "none", color: STONE.inkDim, cursor: "pointer", fontSize: 16, lineHeight: 1 }}>
                     ×
                   </button>
@@ -439,7 +439,7 @@ export default function LancerForge({
                 <select value={rank} onChange={(e) => setSkillTrigRank(id, parseInt(e.target.value, 10))} style={{ ...selStyle, width: "auto", padding: "4px 8px", fontSize: 13 }}>
                   {[1, 2, 3].map((r) => <option key={r} value={r}>{sign(skillBonusForRank(r))}</option>)}
                 </select>
-                <button type="button" onClick={() => dropSkillTrig(id)} style={{ background: "none", border: "none", color: STONE.inkDim, cursor: "pointer", fontSize: 16, lineHeight: 1 }}>×</button>
+                <button type="button" aria-label="Remove skill trigger" title="Remove skill trigger" onClick={() => dropSkillTrig(id)} style={{ background: "none", border: "none", color: STONE.inkDim, cursor: "pointer", fontSize: 16, lineHeight: 1 }}>×</button>
               </div>
             );
           })}
@@ -481,7 +481,7 @@ export default function LancerForge({
                 <select value={rank} onChange={(e) => setTalentRank(id, parseInt(e.target.value, 10))} style={{ ...selStyle, width: "auto", padding: "4px 8px", fontSize: 13 }}>
                   {[1, 2, 3].map((r) => <option key={r} value={r}>Rank {ROMAN[r]}</option>)}
                 </select>
-                <button type="button" onClick={() => dropTalent(id)} style={{ background: "none", border: "none", color: STONE.inkDim, cursor: "pointer", fontSize: 16, lineHeight: 1 }}>×</button>
+                <button type="button" aria-label="Remove talent" title="Remove talent" onClick={() => dropTalent(id)} style={{ background: "none", border: "none", color: STONE.inkDim, cursor: "pointer", fontSize: 16, lineHeight: 1 }}>×</button>
               </div>
             );
           })}
@@ -527,7 +527,7 @@ export default function LancerForge({
                 <select value={rank} onChange={(e) => setLicenseRank(id, parseInt(e.target.value, 10))} style={{ ...selStyle, width: "auto", padding: "4px 8px", fontSize: 13 }}>
                   {[1, 2, 3].map((r) => <option key={r} value={r}>Rank {ROMAN[r]}</option>)}
                 </select>
-                <button type="button" onClick={() => dropLicense(id)} style={{ background: "none", border: "none", color: STONE.inkDim, cursor: "pointer", fontSize: 16, lineHeight: 1 }}>×</button>
+                <button type="button" aria-label="Remove license" title="Remove license" onClick={() => dropLicense(id)} style={{ background: "none", border: "none", color: STONE.inkDim, cursor: "pointer", fontSize: 16, lineHeight: 1 }}>×</button>
               </div>
             );
           })}
@@ -579,7 +579,7 @@ export default function LancerForge({
                   {c.name}
                   <span style={{ color: STONE.inkDim, fontSize: 11.5 }}>{"  "}{c.manufacturer}{c.mods ? ` · ${coreBonusModLabel(c.mods)}` : ""}</span>
                 </span>
-                <button type="button" onClick={() => removeCoreBonus(id)} style={{ background: "none", border: "none", color: STONE.inkDim, cursor: "pointer", fontSize: 16, lineHeight: 1 }}>×</button>
+                <button type="button" aria-label="Remove core bonus" title="Remove core bonus" onClick={() => removeCoreBonus(id)} style={{ background: "none", border: "none", color: STONE.inkDim, cursor: "pointer", fontSize: 16, lineHeight: 1 }}>×</button>
               </div>
             );
           })}
@@ -654,7 +654,7 @@ export default function LancerForge({
                     {w.name}
                     <span style={{ color: STONE.inkDim, fontSize: 11.5 }}>{"  "}{bits.join(" · ")}</span>
                   </span>
-                  <button type="button" onClick={() => removePilotWeapon(i)}
+                  <button type="button" aria-label="Remove weapon" title="Remove weapon" onClick={() => removePilotWeapon(i)}
                     style={{ background: "none", border: "none", color: STONE.inkDim, cursor: "pointer", fontSize: 16, lineHeight: 1 }}>×</button>
                 </div>
               );
@@ -698,7 +698,7 @@ export default function LancerForge({
                     {g.tags.length ? <span style={{ color: STONE.inkDim, fontSize: 11.5 }}>{"  "}{g.tags.join(", ")}</span> : null}
                     <span style={{ display: "block", color: STONE.inkDim, fontSize: 11.5, marginTop: 2 }}>{g.note}</span>
                   </span>
-                  <button type="button" onClick={() => removePilotGear(i)}
+                  <button type="button" aria-label="Remove gear" title="Remove gear" onClick={() => removePilotGear(i)}
                     style={{ background: "none", border: "none", color: STONE.inkDim, cursor: "pointer", fontSize: 16, lineHeight: 1 }}>×</button>
                 </div>
               );

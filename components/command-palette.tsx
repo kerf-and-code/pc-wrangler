@@ -193,7 +193,7 @@ export default function CommandPalette({ pages }: { pages: PalettePage[] }) {
         <input ref={inputRef} value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search pages, Codex, NPCs and sessions"
           placeholder={campaign ? `Search pages, Codex, NPCs, sessions in ${campaign.name || "this campaign"}…` : "Search pages…"}
           role="combobox" aria-expanded="true" aria-controls="sax-palette-list" aria-activedescendant={items[sel] ? `sax-pal-${sel}` : undefined}
-          style={{ width: "100%", boxSizing: "border-box", background: "transparent", border: "none", borderBottom: `1px solid ${STONE.hi}`, color: STONE.ink, fontSize: 16, padding: "14px 16px", outline: "none" }} />
+          style={{ width: "100%", boxSizing: "border-box", background: "transparent", border: "none", borderBottom: `1px solid ${STONE.hi}`, color: STONE.ink, fontSize: 16, padding: "14px 16px" }} />
         {err && <div role="alert" style={{ color: "#e08a7a", fontSize: 13, padding: "8px 16px" }}>{err}</div>}
         <div ref={listRef} id="sax-palette-list" role="listbox" style={{ maxHeight: "50vh", overflowY: "auto", padding: 6 }}>
           {items.length === 0 && <div style={{ color: STONE.inkDim, fontSize: 13.5, padding: "10px 12px" }}>Nothing matches.</div>}

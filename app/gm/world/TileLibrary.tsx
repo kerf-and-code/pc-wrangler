@@ -127,8 +127,8 @@ export default function TileLibrary({ scope, onChange }: { scope: TileScope; onC
               <>
                 <label style={{ ...label3, marginTop: 14 }}>2 &middot; Zoom</label>
                 <div style={{ display: "flex", gap: 6 }}>
-                  <button type="button" onClick={() => zoom(1 / 1.2)} style={btn("transparent", C.text)}>&minus;</button>
-                  <button type="button" onClick={() => zoom(1.2)} style={btn("transparent", C.text)}>+</button>
+                  <button type="button" onClick={() => zoom(1 / 1.2)} aria-label="Zoom out" style={btn("transparent", C.text)}>&minus;</button>
+                  <button type="button" onClick={() => zoom(1.2)} aria-label="Zoom in" style={btn("transparent", C.text)}>+</button>
                   <button type="button" onClick={() => { const f = fitRef.current; setView({ scale: f, ox: (V - img.naturalWidth * f) / 2, oy: (V - img.naturalHeight * f) / 2 }); }} style={btn("transparent", C.muted)}>Reset</button>
                 </div>
                 <label style={{ ...label3, marginTop: 14 }}>3 &middot; Name</label>

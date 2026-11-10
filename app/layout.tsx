@@ -9,6 +9,7 @@ import { organizationSchema, websiteSchema } from "@/lib/seo";
 import Analytics from "@/components/analytics";
 import TermsGate from "@/components/terms-gate";
 import SentryClient from "@/components/sentry-client";
+import ConfirmHost from "@/components/confirm-host";
 import "./globals.css";
 
 // Google Analytics 4 measurement ID. A measurement ID is public (it ships in the page), so hard-coding
@@ -215,6 +216,8 @@ export default function RootLayout({
           <TermsGate />
           {/* Browser error reporting, off unless NEXT_PUBLIC_SENTRY_DSN is set (audit T1). */}
           <SentryClient />
+          {/* The in-app confirm dialog behind askConfirm, replacing window.confirm (audit L-U1). */}
+          <ConfirmHost />
         </ThemeProvider>
       </body>
     </html>

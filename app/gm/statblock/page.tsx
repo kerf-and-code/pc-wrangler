@@ -247,7 +247,7 @@ function StatBlockInner() {
     <Shell>
       <div style={{ display: "grid", gap: 18, maxWidth: 900, margin: "0 auto" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-          <input
+          <input aria-label="Creature name"
             value={name} onChange={(e) => setName(e.target.value)} placeholder="Creature name"
             style={{ ...stoneField(), fontFamily: FORGE_FONTS.display, fontSize: 22, flex: 1, minWidth: 240 }}
           />
@@ -288,7 +288,7 @@ function StatBlockInner() {
 
         <div style={stonePanel()}>
           <div style={forgeLabel}>Notes</div>
-          <textarea
+          <textarea aria-label="Lair, tactics, treasure, or anything else for your eyes."
             value={block.notes || ""} onChange={(e) => patch({ notes: e.target.value })}
             placeholder="Lair, tactics, treasure, or anything else for your eyes."
             style={{ ...stoneField(), width: "100%", minHeight: 70, marginTop: 6, resize: "vertical" }}
@@ -308,7 +308,7 @@ function StatBlockInner() {
           entries={pblock.spells} onChange={(v) => ppatch({ spells: v })} collapsedWhenEmpty />
         <div style={stonePanel()}>
           <div style={forgeLabel}>Notes</div>
-          <textarea
+          <textarea aria-label="Lore, tactics, or anything else for your eyes."
             value={pblock.blurb} onChange={(e) => ppatch({ blurb: e.target.value })}
             placeholder="Lore, tactics, or anything else for your eyes."
             style={{ ...stoneField(), width: "100%", minHeight: 70, marginTop: 6, resize: "vertical" }}
@@ -329,7 +329,7 @@ function StatBlockInner() {
           entries={dblock.fearFeatures} onChange={(v) => dpatch({ fearFeatures: v })} collapsedWhenEmpty />
         <div style={stonePanel()}>
           <div style={forgeLabel}>Notes</div>
-          <textarea
+          <textarea aria-label="Lore, tactics, or anything else for your eyes."
             value={dblock.blurb} onChange={(e) => dpatch({ blurb: e.target.value })}
             placeholder="Lore, tactics, or anything else for your eyes."
             style={{ ...stoneField(), width: "100%", minHeight: 70, marginTop: 6, resize: "vertical" }}
@@ -351,7 +351,7 @@ function StatBlockInner() {
           entries={sblock.villainActions} onChange={(v) => spatch({ villainActions: v })} collapsedWhenEmpty />
         <div style={stonePanel()}>
           <div style={forgeLabel}>Notes</div>
-          <textarea
+          <textarea aria-label="Lore, tactics, or anything else for your eyes."
             value={sblock.blurb} onChange={(e) => spatch({ blurb: e.target.value })}
             placeholder="Lore, tactics, or anything else for your eyes."
             style={{ ...stoneField(), width: "100%", minHeight: 70, marginTop: 6, resize: "vertical" }}
@@ -372,7 +372,7 @@ function StatBlockInner() {
           entries={nblock.reactions} onChange={(v) => npatch({ reactions: v })} collapsedWhenEmpty />
         <div style={stonePanel()}>
           <div style={forgeLabel}>Notes</div>
-          <textarea
+          <textarea aria-label="Tactics, protocols, or anything else for your eyes."
             value={nblock.blurb} onChange={(e) => npatch({ blurb: e.target.value })}
             placeholder="Tactics, protocols, or anything else for your eyes."
             style={{ ...stoneField(), width: "100%", minHeight: 70, marginTop: 6, resize: "vertical" }}
@@ -430,7 +430,7 @@ function AbilityBlock({ block, onAbil }: { block: StatBlockDoc; onAbil: (k: stri
         {ABILITIES.map(([k, lbl]) => (
           <div key={k} style={{ textAlign: "center" }}>
             <div style={{ fontFamily: FORGE_FONTS.mono, fontSize: 11, color: STONE.inkDim }}>{lbl}</div>
-            <input
+            <input aria-label={`${lbl} score`}
               type="number" value={block[k]} onChange={(e) => onAbil(k, parseInt(e.target.value, 10) || 0)}
               style={{ ...stoneField(), textAlign: "center", padding: "6px 2px", width: "100%" }}
             />
@@ -492,11 +492,11 @@ function EntryListPanel({ title, hint, entries, onChange, collapsedWhenEmpty }: 
             {entries.map((e, i) => (
               <div key={i} style={{ borderLeft: `2px solid ${STONE.mortar}`, paddingLeft: 12 }}>
                 <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 4 }}>
-                  <input value={e.name} onChange={(ev) => update(i, { ...e, name: ev.target.value })}
+                  <input aria-label="Name" value={e.name} onChange={(ev) => update(i, { ...e, name: ev.target.value })}
                     placeholder="Name" style={{ ...stoneField(), flex: 1, fontWeight: 600 }} />
                   <button className="forge-btn is-ghost" style={{ ...stoneButton("ghost"), padding: "4px 10px", fontSize: 11 }} onClick={() => remove(i)}>Remove</button>
                 </div>
-                <textarea value={e.desc} onChange={(ev) => update(i, { ...e, desc: ev.target.value })}
+                <textarea aria-label="Description" value={e.desc} onChange={(ev) => update(i, { ...e, desc: ev.target.value })}
                   placeholder="Description" style={{ ...stoneField(), width: "100%", minHeight: 54, resize: "vertical" }} />
               </div>
             ))}
@@ -647,10 +647,10 @@ function PickerView({ rows, monsters, srdMode, onSrdMode, onNew, onEdit, onPrefi
           <span style={{ flex: 1 }} />
           <SrdToggle mode={srdMode} onMode={onSrdMode} />
         </div>
-        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search monsters…"
+        <input aria-label="Search monsters…" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search monsters…"
           style={{ ...stoneField(), width: "100%", margin: "10px 0" }} />
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center", marginBottom: 8 }}>
-          <select value={type} onChange={(e) => setType(e.target.value)}
+          <select aria-label="Creature type" value={type} onChange={(e) => setType(e.target.value)}
             style={{ ...stoneField(), width: "auto", minWidth: 140, padding: "7px 10px", fontSize: 13 }}>
             <option value="">Any type</option>
             {MONSTER_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
@@ -667,13 +667,13 @@ function PickerView({ rows, monsters, srdMode, onSrdMode, onNew, onEdit, onPrefi
           </select>
 
           <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 11, color: STONE.inkFaint }}>CR</span>
-          <select value={crMin} onChange={(e) => setCrMin(e.target.value)}
+          <select aria-label="Lowest challenge rating" value={crMin} onChange={(e) => setCrMin(e.target.value)}
             style={{ ...stoneField(), width: "auto", minWidth: 76, padding: "7px 10px", fontSize: 13 }}>
             <option value="">min</option>
             {CR_ORDER.map((c) => <option key={c} value={c}>{c}</option>)}
           </select>
           <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 11, color: STONE.inkFaint }}>to</span>
-          <select value={crMax} onChange={(e) => setCrMax(e.target.value)}
+          <select aria-label="Highest challenge rating" value={crMax} onChange={(e) => setCrMax(e.target.value)}
             style={{ ...stoneField(), width: "auto", minWidth: 76, padding: "7px 10px", fontSize: 13 }}>
             <option value="">max</option>
             {CR_ORDER.map((c) => <option key={c} value={c}>{c}</option>)}
@@ -784,9 +784,9 @@ function Pf2eIdentityBlock({ pblock, onPatch }: { pblock: PF2Creature; onPatch: 
         <Field label="Speed"><input value={pblock.speed} onChange={(e) => onPatch({ speed: e.target.value })} placeholder="25 feet, fly 40 feet" style={stoneField()} /></Field>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginTop: 10 }}>
-        <Field label="Traits"><input value={csv(pblock.traits)} onChange={(e) => onPatch({ traits: parse(e.target.value) })} placeholder="undead, fiend, aquatic" style={stoneField()} /></Field>
-        <Field label="Senses"><input value={pblock.senses} onChange={(e) => onPatch({ senses: e.target.value })} placeholder="darkvision, scent (imprecise) 30 feet" style={stoneField()} /></Field>
-        <Field label="Languages"><input value={pblock.languages} onChange={(e) => onPatch({ languages: e.target.value })} placeholder="Common, Draconic" style={stoneField()} /></Field>
+        <Field label="Traits"><input aria-label="undead, fiend, aquatic" value={csv(pblock.traits)} onChange={(e) => onPatch({ traits: parse(e.target.value) })} placeholder="undead, fiend, aquatic" style={stoneField()} /></Field>
+        <Field label="Senses"><input aria-label="darkvision, scent (imprecise) 30 feet" value={pblock.senses} onChange={(e) => onPatch({ senses: e.target.value })} placeholder="darkvision, scent (imprecise) 30 feet" style={stoneField()} /></Field>
+        <Field label="Languages"><input aria-label="Common, Draconic" value={pblock.languages} onChange={(e) => onPatch({ languages: e.target.value })} placeholder="Common, Draconic" style={stoneField()} /></Field>
       </div>
     </div>
   );
@@ -823,10 +823,10 @@ function Pf2eDefensesBlock({ pblock, onPatch }: { pblock: PF2Creature; onPatch: 
         <Field label="HP"><NumInput value={pblock.hp} onChange={(v) => onPatch({ hp: v ?? 0 })} /></Field>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginTop: 10 }}>
-        <Field label="Skills"><input value={pblock.skills} onChange={(e) => onPatch({ skills: e.target.value })} placeholder="Athletics +12, Stealth +9" style={stoneField()} /></Field>
-        <Field label="Immunities"><input value={csv(pblock.immunities)} onChange={(e) => onPatch({ immunities: parse(e.target.value) })} placeholder="fire, paralyzed" style={stoneField()} /></Field>
-        <Field label="Resistances"><input value={csv(pblock.resistances)} onChange={(e) => onPatch({ resistances: parse(e.target.value) })} placeholder="physical 10, fire 5" style={stoneField()} /></Field>
-        <Field label="Weaknesses"><input value={csv(pblock.weaknesses)} onChange={(e) => onPatch({ weaknesses: parse(e.target.value) })} placeholder="cold iron 5, good 10" style={stoneField()} /></Field>
+        <Field label="Skills"><input aria-label="Athletics +12, Stealth +9" value={pblock.skills} onChange={(e) => onPatch({ skills: e.target.value })} placeholder="Athletics +12, Stealth +9" style={stoneField()} /></Field>
+        <Field label="Immunities"><input aria-label="fire, paralyzed" value={csv(pblock.immunities)} onChange={(e) => onPatch({ immunities: parse(e.target.value) })} placeholder="fire, paralyzed" style={stoneField()} /></Field>
+        <Field label="Resistances"><input aria-label="physical 10, fire 5" value={csv(pblock.resistances)} onChange={(e) => onPatch({ resistances: parse(e.target.value) })} placeholder="physical 10, fire 5" style={stoneField()} /></Field>
+        <Field label="Weaknesses"><input aria-label="cold iron 5, good 10" value={csv(pblock.weaknesses)} onChange={(e) => onPatch({ weaknesses: parse(e.target.value) })} placeholder="cold iron 5, good 10" style={stoneField()} /></Field>
       </div>
     </div>
   );
@@ -844,7 +844,7 @@ function DHIdentityBlock({ dblock, onPatch }: { dblock: DHAdversary; onPatch: (p
           </select>
         </Field>
         <Field label="Type">
-          <select value={dblock.type} onChange={(e) => onPatch({ type: e.target.value as DHAdversary["type"] })} style={stoneField()}>
+          <select aria-label="Adversary type" value={dblock.type} onChange={(e) => onPatch({ type: e.target.value as DHAdversary["type"] })} style={stoneField()}>
             {DH_ADVERSARY_TYPES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
           </select>
         </Field>
@@ -859,9 +859,9 @@ function DHIdentityBlock({ dblock, onPatch }: { dblock: DHAdversary; onPatch: (p
         Tier {dblock.tier} benchmarks: ATK +{bm.atk}, Difficulty {bm.difficulty}, Thresholds {bm.major}/{bm.severe}, damage {bm.damageDice}.
       </p>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginTop: 10 }}>
-        <Field label="Description"><input value={dblock.description} onChange={(e) => onPatch({ description: e.target.value })} placeholder="A horse-sized insect with acidic blood." style={stoneField()} /></Field>
-        <Field label="Motives &amp; tactics"><input value={dblock.motives} onChange={(e) => onPatch({ motives: e.target.value })} placeholder="Burrow, drag away, feed" style={stoneField()} /></Field>
-        <Field label="Experiences"><input value={dblock.experiences} onChange={(e) => onPatch({ experiences: e.target.value })} placeholder="Tremor Sense +2" style={stoneField()} /></Field>
+        <Field label="Description"><input aria-label="A horse-sized insect with acidic blood." value={dblock.description} onChange={(e) => onPatch({ description: e.target.value })} placeholder="A horse-sized insect with acidic blood." style={stoneField()} /></Field>
+        <Field label="Motives &amp; tactics"><input aria-label="Burrow, drag away, feed" value={dblock.motives} onChange={(e) => onPatch({ motives: e.target.value })} placeholder="Burrow, drag away, feed" style={stoneField()} /></Field>
+        <Field label="Experiences"><input aria-label="Tremor Sense +2" value={dblock.experiences} onChange={(e) => onPatch({ experiences: e.target.value })} placeholder="Tremor Sense +2" style={stoneField()} /></Field>
       </div>
     </div>
   );
@@ -872,7 +872,7 @@ function DHAttackBlock({ dblock, onPatch }: { dblock: DHAdversary; onPatch: (p: 
     <div style={stonePanel()}>
       <div style={forgeLabel}>Standard attack</div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 10, marginTop: 8 }}>
-        <Field label="Name"><input value={dblock.attackName} onChange={(e) => onPatch({ attackName: e.target.value })} placeholder="Claws" style={stoneField()} /></Field>
+        <Field label="Name"><input aria-label="Claws" value={dblock.attackName} onChange={(e) => onPatch({ attackName: e.target.value })} placeholder="Claws" style={stoneField()} /></Field>
         <Field label="Range"><input value={dblock.attackRange} onChange={(e) => onPatch({ attackRange: e.target.value })} placeholder="Very Close" style={stoneField()} /></Field>
         <Field label="Damage"><input value={dblock.attackDamage} onChange={(e) => onPatch({ attackDamage: e.target.value })} placeholder="1d12+2 phy" style={stoneField()} /></Field>
       </div>
@@ -895,7 +895,7 @@ function DSIdentityBlock({ sblock, onPatch }: { sblock: DSAdversary; onPatch: (p
           </select>
         </Field>
         <Field label="Role">
-          <select value={sblock.role} onChange={(e) => onPatch({ role: e.target.value as DSRole })} style={stoneField()}>
+          <select aria-label="Role" value={sblock.role} onChange={(e) => onPatch({ role: e.target.value as DSRole })} style={stoneField()}>
             {DS_ROLES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
           </select>
         </Field>
@@ -922,7 +922,7 @@ function DSStatsBlock({ sblock, onPatch }: { sblock: DSAdversary; onPatch: (p: P
     <div style={stonePanel()}>
       <div style={forgeLabel}>Stats</div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))", gap: 10, marginTop: 8 }}>
-        <Field label="Size"><input value={sblock.size} onChange={(e) => onPatch({ size: e.target.value })} placeholder="1M" style={stoneField()} /></Field>
+        <Field label="Size"><input aria-label="1M" value={sblock.size} onChange={(e) => onPatch({ size: e.target.value })} placeholder="1M" style={stoneField()} /></Field>
         <Field label="Speed"><NumInput value={sblock.speed} onChange={(v) => onPatch({ speed: v ?? 0 })} /></Field>
         <Field label="Stamina"><NumInput value={sblock.stamina} onChange={(v) => onPatch({ stamina: v ?? 0 })} /></Field>
         <Field label="Stability"><NumInput value={sblock.stability} onChange={(v) => onPatch({ stability: v ?? 0 })} /></Field>
@@ -930,7 +930,7 @@ function DSStatsBlock({ sblock, onPatch }: { sblock: DSAdversary; onPatch: (p: P
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginTop: 10 }}>
         <Field label="Immunity"><input value={sblock.immunity} onChange={(e) => onPatch({ immunity: e.target.value })} placeholder="Weakened 5" style={stoneField()} /></Field>
-        <Field label="Movement"><input value={sblock.movement} onChange={(e) => onPatch({ movement: e.target.value })} placeholder="Climb, Fly" style={stoneField()} /></Field>
+        <Field label="Movement"><input aria-label="Climb, Fly" value={sblock.movement} onChange={(e) => onPatch({ movement: e.target.value })} placeholder="Climb, Fly" style={stoneField()} /></Field>
         <Field label="With captain"><input value={sblock.withCaptain} onChange={(e) => onPatch({ withCaptain: e.target.value })} placeholder="Gain an edge on strikes" style={stoneField()} /></Field>
         <Field label="Weakness"><input value={sblock.weakness} onChange={(e) => onPatch({ weakness: e.target.value })} placeholder="Fire 5" style={stoneField()} /></Field>
       </div>
@@ -963,7 +963,7 @@ function LancerNPCIdentityBlock({ nblock, onPatch }: { nblock: LancerNPC; onPatc
       <div style={forgeLabel}>Identity</div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 10, marginTop: 8 }}>
         <Field label="Tier">
-          <select value={nblock.tier} onChange={(e) => onPatch({ tier: parseInt(e.target.value, 10) as LancerNPCTier })} style={stoneField()}>
+          <select aria-label="Tier" value={nblock.tier} onChange={(e) => onPatch({ tier: parseInt(e.target.value, 10) as LancerNPCTier })} style={stoneField()}>
             {LANCER_NPC_TIERS.map((t) => <option key={t} value={t}>Tier {t}</option>)}
           </select>
         </Field>
@@ -974,7 +974,7 @@ function LancerNPCIdentityBlock({ nblock, onPatch }: { nblock: LancerNPC; onPatc
           </select>
         </Field>
         <Field label="Size">
-          <select value={nblock.size} onChange={(e) => onPatch({ size: parseFloat(e.target.value) })} style={stoneField()}>
+          <select aria-label="Size" value={nblock.size} onChange={(e) => onPatch({ size: parseFloat(e.target.value) })} style={stoneField()}>
             {LANCER_NPC_SIZES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
           </select>
         </Field>

@@ -6,6 +6,7 @@ import PageShell from "@/components/page-shell";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import { initialCampaignId, useRememberCampaign, initialSessionId, useRememberSession, gmHref } from "@/lib/campaign-context";
 import { friendlyError } from "@/lib/friendly-error";
+import { askConfirm } from "@/lib/confirm";
 
 const STATUS_TONE: Record<string, string> = {
   scheduled: C.muted, live: C.warn, completed: C.sun, processed: C.good, cancelled: C.muted,
@@ -253,15 +254,16 @@ export default function SessionWorkspace() {
         // still finishing up (concat + upload), which is normal and just needs a moment, NOT a crash.
         // Only when the sidecar looks dead do we lead with the "close anyway" framing.
         const finishing = Boolean(data?.captureAlive);
-        const goAhead = window.confirm(
+        const goAhead = await askConfirm(
           finishing
             ? "Six Axes is still finishing this recording and saving the audio (" + String(data.captureStatus) + ").\n\n" +
               "On a long session this can take a minute or two, and it will close on its own once it is done.\n\n" +
-              "Recommended: click Cancel, wait a moment, then Close again. Only force the close now if it has been stuck for several minutes."
+              "Recommended: choose Wait, give it a moment, then Close again. Only force the close now if it has been stuck for several minutes."
             : "Six Axes still has an open recording for this session (" + String(data.captureStatus) + ").\n\n" +
               "Run /stop in Discord first if the game is still going.\n\n" +
               "If the bot crashed and will never finish, close anyway? That also clears the " +
               "stuck recording so /record works again.",
+          { confirmLabel: "Close anyway", cancelLabel: "Wait", danger: true },
         );
         setSessionClosing(false);
         if (goAhead) await closeSession(true, process);
@@ -313,7 +315,7 @@ export default function SessionWorkspace() {
   // End and process: close the session AND open it for player check-in, in one guarded
   // write so status, ended_at, and processed_at can never disagree.
   async function endAndProcess() {
-    if (!window.confirm("End this session and open player check-in? Players can then rate the session, and Six Axes starts drafting the recap. You can reopen the session later if you need to.")) return;
+    if (!await askConfirm("End this session and open player check-in? Players can then rate the session, and Six Axes starts drafting the recap. You can reopen the session later if you need to.")) return;
     await closeSession(false, true);
   }
 
@@ -326,7 +328,7 @@ export default function SessionWorkspace() {
     if (!session || sessionReopening) return;
     const cur = sessions.find((s) => s.id === session);
     const label = cur?.session_number != null ? "Session " + String(cur.session_number) : "this session";
-    if (!window.confirm("Reopen " + label + " and make it live again? Recording can continue into it.")) return;
+    if (!await askConfirm("Reopen " + label + " and make it live again? Recording can continue into it.")) return;
     setSessionReopening(true); setErr(null); setLifecycleMsg(null);
     try {
       const res = await fetch("/api/session/reopen", {
@@ -355,7 +357,7 @@ export default function SessionWorkspace() {
     if (!session || sessionDeleting) return;
     const cur = sessions.find((s) => s.id === session);
     const label = cur?.session_number != null ? `Session ${cur.session_number}` : "this session";
-    const okToDelete = window.confirm(
+    const okToDelete = await askConfirm(
       `Delete ${label}? This cannot be undone. Only empty sessions can be removed; anything with a recording, logged events, or a saved recap is refused.`,
     );
     if (!okToDelete) return;
@@ -382,7 +384,7 @@ export default function SessionWorkspace() {
 
   async function generateRecap() {
     if (!session || recapLoading) return;
-    if (recap.trim() && !window.confirm("Replace the recap text with a new draft? Anything you wrote or edited here will be lost.")) return;
+    if (recap.trim() && !await askConfirm("Replace the recap text with a new draft? Anything you wrote or edited here will be lost.")) return;
     setRecapLoading(true); setRecapMsg(null); setErr(null);
     try {
       const res = await fetch("/api/recap", {
@@ -630,7 +632,7 @@ export default function SessionWorkspace() {
   }
 
   async function deleteEvent(id: string) {
-    if (!window.confirm("Delete this logged event? It also leaves the session's stats and recap inputs. This cannot be undone.")) return;
+    if (!await askConfirm("Delete this logged event? It also leaves the session's stats and recap inputs. This cannot be undone.")) return;
     const { error } = await supabase.from("events").delete().eq("id", id);
     if (error) setErr(friendlyError(error)); else if (session) loadEvents(session);
   }
@@ -651,7 +653,7 @@ export default function SessionWorkspace() {
   }
 
   async function removeLoot(id: string) {
-    if (!window.confirm("Remove this loot entry? It also leaves the loot-fairness numbers. This cannot be undone.")) return;
+    if (!await askConfirm("Remove this loot entry? It also leaves the loot-fairness numbers. This cannot be undone.")) return;
     const { error } = await supabase.from("loot_grants").delete().eq("id", id);
     if (error) setErr(friendlyError(error)); else if (session) loadEvents(session);
   }
@@ -819,7 +821,7 @@ export default function SessionWorkspace() {
               );
             })()}
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-              <select style={inputStyle} value={newSession.modality}
+              <select aria-label="Session type" style={inputStyle} value={newSession.modality}
                 onChange={(e) => setNewSession({ ...newSession, modality: e.target.value })}>
                 <option value="in_person">In person</option>
                 <option value="online">Online</option>
@@ -862,7 +864,7 @@ export default function SessionWorkspace() {
                 ? "Complete: a fuller, scene-by-scene account that leaves little out. Longer, and slower to generate."
                 : "Brief: a short \u201cpreviously on\u201d for players. Switch to Complete for a fuller account."}
             </div>
-            <textarea
+            <textarea aria-label="Generate a recap from this session's notes and logged events, or write your own. This is the 'previously on...' your players see."
               value={recap}
               onChange={(e) => setRecap(e.target.value)}
               placeholder="Generate a recap from this session's notes and logged events, or write your own. This is the 'previously on...' your players see."
@@ -884,7 +886,7 @@ export default function SessionWorkspace() {
                 Email this recap to players (comma-separated). Saves and sends the current text.
               </div>
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-                <input
+                <input aria-label="player1@example.com, player2@example.com"
                   style={{ ...inputStyle, flex: 1, minWidth: 220 }}
                   placeholder="player1@example.com, player2@example.com"
                   value={recipients}
@@ -903,7 +905,7 @@ export default function SessionWorkspace() {
             <div style={{ display: "grid", gap: 8 }}>
               {pollSlots.map((s, i) => (
                 <div key={i} style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                  <input type="datetime-local" value={s}
+                  <input aria-label={`Poll option ${i + 1}`} type="datetime-local" value={s}
                     onChange={(e) => setPollSlots((arr) => arr.map((x, j) => (j === i ? e.target.value : x)))}
                     style={{ ...inputStyle, colorScheme: "dark" }} />
                   {pollSlots.length > 1 && (
@@ -975,7 +977,7 @@ export default function SessionWorkspace() {
           <div style={box}>
             <div style={{ fontSize: 13, color: C.muted, marginBottom: 10 }}>Next session time</div>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-              <input
+              <input aria-label="Scheduled date and time"
                 type="datetime-local"
                 value={schedDraft}
                 onChange={(e) => setSchedDraft(e.target.value)}
@@ -1020,7 +1022,7 @@ export default function SessionWorkspace() {
               The by-hand path. If you record over Discord, events fill in automatically, approve them on the Review page instead of logging here.
             </p>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-              <select style={inputStyle} value={entry.characterId}
+              <select aria-label="Character" style={inputStyle} value={entry.characterId}
                 onChange={(e) => setEntry({ ...entry, characterId: e.target.value })}>
                 <option value="">(table or none)</option>
                 {characters.map((c) => (
@@ -1028,7 +1030,7 @@ export default function SessionWorkspace() {
                 ))}
               </select>
 
-              <select style={inputStyle} value={entry.typeKey} onChange={(e) => pickType(e.target.value)}>
+              <select aria-label="Event type" style={inputStyle} value={entry.typeKey} onChange={(e) => pickType(e.target.value)}>
                 <option value="">Event type...</option>
                 {CAT_ORDER.filter((cat) => typesByCat[cat]).map((cat) => (
                   <optgroup key={cat} label={CAT_LABEL[cat]}>
@@ -1038,21 +1040,21 @@ export default function SessionWorkspace() {
               </select>
 
               {/* defaults, editable */}
-              <select style={{ ...inputStyle, maxWidth: 120 }} value={entry.axis}
+              <select aria-label="Axis" style={{ ...inputStyle, maxWidth: 120 }} value={entry.axis}
                 onChange={(e) => setEntry({ ...entry, axis: e.target.value })}>
                 <option value="">axis…</option>
                 {Object.keys(AXIS_NAME).map((a) => <option key={a} value={a}>{a} · {AXIS_NAME[a]}</option>)}
               </select>
-              <select style={{ ...inputStyle, maxWidth: 90 }} value={entry.frame}
+              <select aria-label="Frame" style={{ ...inputStyle, maxWidth: 90 }} value={entry.frame}
                 onChange={(e) => setEntry({ ...entry, frame: e.target.value })}>
                 <option value="">frame…</option><option value="ic">in-char</option><option value="ooc">out-of-char</option>
               </select>
-              <select style={{ ...inputStyle, maxWidth: 110 }} value={entry.target}
+              <select aria-label="Target" style={{ ...inputStyle, maxWidth: 110 }} value={entry.target}
                 onChange={(e) => setEntry({ ...entry, target: e.target.value })}>
                 <option value="">target…</option><option value="fiction">fiction</option><option value="player">player</option><option value="system">system</option>
               </select>
 
-              <input style={{ ...inputStyle, flex: 1, minWidth: 180 }} placeholder="Note (optional)"
+              <input aria-label="Note (optional)" style={{ ...inputStyle, flex: 1, minWidth: 180 }} placeholder="Note (optional)"
                 value={entry.note} onChange={(e) => setEntry({ ...entry, note: e.target.value })}
                 onKeyDown={(e) => { if (e.key === "Enter") logEvent(); }} />
               <button style={btn} onClick={logEvent} disabled={busy || !entry.typeKey}>Log</button>
@@ -1112,13 +1114,13 @@ export default function SessionWorkspace() {
               </div>
             ))}
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12 }}>
-              <select style={inputStyle} value={newLoot.characterId} onChange={(e) => setNewLoot({ ...newLoot, characterId: e.target.value })}>
+              <select aria-label="Character" style={inputStyle} value={newLoot.characterId} onChange={(e) => setNewLoot({ ...newLoot, characterId: e.target.value })}>
                 <option value="">recipient...</option>
                 {characters.filter((c) => c.kind !== "npc").map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
-              <input style={{ ...inputStyle, flex: 1, minWidth: 140 }} placeholder="Item" value={newLoot.item} onChange={(e) => setNewLoot({ ...newLoot, item: e.target.value })} />
-              <input style={{ ...inputStyle, maxWidth: 110 }} placeholder="Rarity" value={newLoot.rarity} onChange={(e) => setNewLoot({ ...newLoot, rarity: e.target.value })} />
-              <input style={{ ...inputStyle, maxWidth: 90 }} type="number" placeholder="Value" value={newLoot.value} onChange={(e) => setNewLoot({ ...newLoot, value: e.target.value })} />
+              <input aria-label="Item" style={{ ...inputStyle, flex: 1, minWidth: 140 }} placeholder="Item" value={newLoot.item} onChange={(e) => setNewLoot({ ...newLoot, item: e.target.value })} />
+              <input aria-label="Rarity" style={{ ...inputStyle, maxWidth: 110 }} placeholder="Rarity" value={newLoot.rarity} onChange={(e) => setNewLoot({ ...newLoot, rarity: e.target.value })} />
+              <input aria-label="Value" style={{ ...inputStyle, maxWidth: 90 }} type="number" placeholder="Value" value={newLoot.value} onChange={(e) => setNewLoot({ ...newLoot, value: e.target.value })} />
               <button style={btn} onClick={addLoot} disabled={busy || !newLoot.item.trim()}>Add</button>
             </div>
           </div>
@@ -1138,8 +1140,8 @@ export default function SessionWorkspace() {
             ))}
             {arcs.length === 0 && <p style={{ color: C.muted, fontSize: 13 }}>No arcs yet.</p>}
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12 }}>
-              <input style={{ ...inputStyle, flex: 1, minWidth: 160 }} placeholder="New arc title" value={newArc.title} onChange={(e) => setNewArc({ ...newArc, title: e.target.value })} />
-              <select style={inputStyle} value={newArc.characterId} onChange={(e) => setNewArc({ ...newArc, characterId: e.target.value })}>
+              <input aria-label="New arc title" style={{ ...inputStyle, flex: 1, minWidth: 160 }} placeholder="New arc title" value={newArc.title} onChange={(e) => setNewArc({ ...newArc, title: e.target.value })} />
+              <select aria-label="Character" style={inputStyle} value={newArc.characterId} onChange={(e) => setNewArc({ ...newArc, characterId: e.target.value })}>
                 <option value="">whose arc (optional)...</option>
                 {characters.filter((c) => c.kind !== "npc").map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>

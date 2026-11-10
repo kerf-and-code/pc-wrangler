@@ -23,6 +23,7 @@ import { C, FORGE_RADIUS, STONE } from "@/lib/forge-theme";
 import { SAX } from "@/lib/theme";
 import { initialCampaignId, useRememberCampaign } from "@/lib/campaign-context";
 import { friendlyError } from "@/lib/friendly-error";
+import { askConfirm } from "@/lib/confirm";
 
 type Campaign = {
   id: string; name: string;
@@ -139,7 +140,7 @@ export default function PublishPage() {
   }, [items, campaignId, supabase, loadItems]);
 
   const clearAll = useCallback(async () => {
-    if (!window.confirm("Make every item private again? Each one comes off the public page, and you would have to re-pick them one by one.")) return;
+    if (!await askConfirm("Make every item private again? Each one comes off the public page, and you would have to re-pick them one by one.", { confirmLabel: "Make all private", danger: true })) return;
     setBusy(true); setNote(null);
     try {
       const [r1, r2] = await Promise.all([
@@ -180,7 +181,7 @@ export default function PublishPage() {
 
   const togglePublished = useCallback(async () => {
     if (!campaign) return;
-    if (published && !window.confirm("Unpublish this campaign? The public page disappears immediately for anyone with the link. Your item choices are kept for when you publish again.")) return;
+    if (published && !await askConfirm("Unpublish this campaign? The public page disappears immediately for anyone with the link. Your item choices are kept for when you publish again.")) return;
     setBusy(true); setNote(null);
     try {
       let slug = campaign.public_slug;

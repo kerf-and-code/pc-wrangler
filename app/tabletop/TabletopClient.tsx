@@ -29,6 +29,7 @@ import { MarkerStylePicker, TokenMarkerPicker, useMarkerStyle } from "@/componen
 import { drawFrame, frameMoves, normFrame, tracePath, type Frame } from "@/lib/tabletop/frames";
 import TokenMaker, { type TokenMakerResult } from "@/components/token-maker";
 import { openTabletop } from "@/lib/tabletop/open";
+import { useDialogFocus } from "@/lib/use-dialog-focus";
 import { getModule } from "@/lib/systems/registry";
 import MapUpload from "@/components/map-upload";
 import { EFFECTS, drawEffect, isEffect, seedOf, type EffectKind } from "@/lib/tabletop/effects";
@@ -39,7 +40,7 @@ import SoundPanel from "@/components/sound-panel";
 import { encodeDifficult, normDifficult, paintDifficult, pathExtra } from "@/lib/tabletop/terrain";
 import { distance3d, elevationOf, elevationText } from "@/lib/tabletop/elevation";
 import { PinCard, TokenNotes, type EntryOption, type Pin } from "@/components/table-pins";
-import TokenBars, { HEALTH_COLOR, HEALTH_LABEL, type Bar } from "@/components/token-bars";
+import TokenBars, { HEALTH_COLOR, HEALTH_FILL, HEALTH_LABEL, type Bar } from "@/components/token-bars";
 import DiceTray, { diceColor, useDiceSetting, type DiceTrayApi, type TrayDie } from "@/components/dice-tray";
 import CardsPanel, { useTableCards, type Seat } from "@/components/cards-panel";
 import AddonsPanel from "@/components/addons-panel";
@@ -48,6 +49,7 @@ import { clearPictures, pictureProblem, uploadPicture } from "@/lib/tabletop/tab
 import { nameFromFile } from "@/lib/tabletop/cards";
 import { AttackForm, EconomyBar, MarkerChips, MarkerPicker, PlayerEntryControls, SaveBanner, TurnUsed, isMyTurn, type FightEntry, type PendingSave } from "@/components/fight-controls";
 import { friendlyError, notReady } from "@/lib/friendly-error";
+import { askConfirm } from "@/lib/confirm";
 
 // The tabletop, phase 1 (2026-11-06). One page for the GM and the players; tabletop_state (p105)
 // decides the role and strips what players must not see before it leaves the database.
@@ -262,6 +264,10 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     if (text) canvasMsgTimer.current = setTimeout(() => setCanvasMsg(null), ok ? 3000 : 6000);
   }, []);
   useEffect(() => () => { if (canvasMsgTimer.current) clearTimeout(canvasMsgTimer.current); }, []);
+  // Audit U29: removing a template or a place in the turn order can be taken back for 8 seconds, the
+  // same pattern as the Combat page, rather than another dialog mid-session.
+  const [undoBar, setUndoBar] = useState<{ text: string; run: () => void } | null>(null);
+  useEffect(() => { if (!undoBar) return; const t = setTimeout(() => setUndoBar(null), 8000); return () => clearTimeout(t); }, [undoBar]);
   const [selected, setSelected] = useState<string[]>([]);
   const [present, setPresent] = useState<{ key: string; name: string; color: string }[]>([]);
   const [tick, setTick] = useState(0);
@@ -334,6 +340,8 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   const [markerBusy, setMarkerBusy] = useState(false);
   // the token maker, open for one token (picture, shape, border, animated frame)
   const [makerFor, setMakerFor] = useState<string | null>(null);
+  const makerRef = useRef<HTMLDivElement | null>(null);
+  useDialogFocus(makerRef, !!makerFor, () => setMakerFor(null)); // audit U14
   // Phase 5o: darkvision read off each character's saved sheet (characters.build.sheetSnapshot, written
   // by the Forge on save). A darkvision the GM sets on the token itself wins over it.
   const sheetDv = useRef<Map<string, number>>(new Map());
@@ -890,7 +898,8 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
         if (!hpShown && health) {
           const x0 = cx - rad, y0 = cy - rad - bh - bgap;
           ctx.save(); ctx.fillStyle = "rgba(15,12,10,0.85)"; ctx.fillRect(x0 - 1, y0 - 1, rad * 2 + 2, bh + 2);
-          ctx.fillStyle = HEALTH_COLOR[health] ?? "#888"; ctx.fillRect(x0, y0, rad * 2, bh); ctx.restore(); row = 1;
+          // audit T21: the length carries the state too (full, half, empty), not only the colour
+          ctx.fillStyle = HEALTH_COLOR[health] ?? "#888"; ctx.fillRect(x0, y0, rad * 2 * (HEALTH_FILL[health] ?? 1), bh); ctx.restore(); row = 1;
         }
         for (const b of myBars) {
           const x0 = cx - rad, y0 = cy - rad - bh - bgap - row * (bh + 2), w = rad * 2;
@@ -1410,14 +1419,27 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     return { ...cb, combatants: sorted, turn: Math.max(0, sorted.findIndex((c) => c.id === currentId)) };
   });
   const editEntry = (id: string, fn: (c: TC) => TC) => void mutateFight((cb) => ({ ...cb, combatants: cb.combatants.map((c) => (c.id === id ? fn(c) : c)) }));
-  const removeEntry = (id: string) => void mutateFight((cb) => {
-    const index = cb.combatants.findIndex((c) => c.id === id); if (index < 0) return cb;
-    const combatants = cb.combatants.filter((c) => c.id !== id);
-    return { ...cb, combatants, turn: index < cb.turn ? cb.turn - 1 : Math.min(cb.turn, Math.max(0, combatants.length - 1)) };
-  });
+  const removeEntry = (id: string) => {
+    let removed: { c: FightRow["combatants"][number]; index: number } | null = null;
+    void mutateFight((cb) => {
+      const index = cb.combatants.findIndex((c) => c.id === id); if (index < 0) return cb;
+      removed = { c: cb.combatants[index], index };
+      const combatants = cb.combatants.filter((c) => c.id !== id);
+      return { ...cb, combatants, turn: index < cb.turn ? cb.turn - 1 : Math.min(cb.turn, Math.max(0, combatants.length - 1)) };
+    }).then(() => {
+      const r = removed as { c: FightRow["combatants"][number]; index: number } | null;
+      if (!r) return;
+      setUndoBar({ text: `${r.c.name} left the turn order.`, run: () => void mutateFight((cb) => {
+        if (cb.combatants.some((c) => c.id === r.c.id)) return cb;
+        const combatants = [...cb.combatants];
+        combatants.splice(Math.min(r.index, combatants.length), 0, r.c);
+        return { ...cb, combatants, turn: r.index <= cb.turn && cb.combatants.length ? cb.turn + 1 : cb.turn };
+      }) });
+    });
+  };
   const endFight = async () => {
     const cur = fightRow.current; if (!cur) return;
-    if (!window.confirm(`End "${cur.name}"? Players stop seeing it here and on the Combat page. The rolls stay in this session's Mechanics.`)) return;
+    if (!await askConfirm(`End "${cur.name}"? Players stop seeing it here and on the Combat page. The rolls stay in this session's Mechanics.`)) return;
     const { error: er } = await supabase.from("combats").update({ status: "ended", ended_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq("id", cur.id);
     if (er) { say(`Not ended: ${er.message}`); return; }
     fightRow.current = null; setFight(null); setSelEntry(null); send("combat", {}); requestDraw();
@@ -1811,7 +1833,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     const st = stateRef.current; if (!st?.scene) return;
     const ids = [...drawingsRef.current.values()].filter((d) => (all ? true : d.owner === st.me)).map((d) => d.id);
     if (!ids.length) { say(all ? "There are no drawings on this scene." : "You have no drawings on this scene."); return; }
-    if (all && !window.confirm(`Erase all ${ids.length} drawings on this scene, everyone's? This cannot be undone.`)) return;
+    if (all && !await askConfirm(`Erase all ${ids.length} drawings on this scene, everyone's? This cannot be undone.`)) return;
     await eraseDrawings(ids); send("drawings", {});
   };
   const undoMyDrawing = () => {
@@ -2294,6 +2316,12 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     const { error: er } = await supabase.from("vtt_templates").delete().eq("id", t.id);
     if (er) { say(`Could not remove the template: ${er.message}`); return; }
     templatesRef.current.delete(t.id); setSelTpl(null); requestDraw();
+    setUndoBar({ text: "Template removed.", run: () => {
+      void supabase.from("vtt_templates").insert(t).select("*").single().then(({ data, error: e2 }) => {
+        if (e2 || !data) { say(`Could not bring the template back: ${e2?.message ?? "no row"}`); return; }
+        templatesRef.current.set((data as Tpl).id, data as Tpl); requestDraw();
+      });
+    } });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [supabase, requestDraw]);
 
@@ -2758,25 +2786,33 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
 
   return (
     <div style={{ position: "fixed", inset: 0, background: "#15120f", display: "flex", flexDirection: "column", color: C.text }}>
-      {/* top bar */}
-      <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 14px", borderBottom: `1px solid ${C.line}`, background: C.surface }}>
+      {/* top bar. Audit U20: it wraps on a narrow screen, the warnings sit on their own line, and the
+          people present collapse to a count, so the panel toggle (the only way to chat on a phone)
+          can never be pushed off the edge. */}
+      <div style={{ display: "flex", alignItems: "center", gap: narrow ? 8 : 12, flexWrap: "wrap", rowGap: 6, padding: narrow ? "6px 10px" : "8px 14px", borderBottom: `1px solid ${C.line}`, background: C.surface }}>
         <div style={{ fontWeight: 700 }}>{state.campaign.name}</div>
         <div style={{ color: C.muted, fontSize: 13 }}>{scene ? scene.name : "No map on the table"}</div>
-        {isGm && scene && state.scenes.some((s) => s.is_active) && !state.scenes.find((s) => s.id === scene.id)?.is_active && (
-          <span style={{ fontSize: 12, color: "#d9a43a", border: "1px solid #d9a43a", borderRadius: 999, padding: "2px 9px" }}>Viewing: players who were not sent here cannot see it</span>
-        )}
-        {!state.session_id && <div style={{ color: "#d9a43a", fontSize: 12 }}>No open session: rolls show here but are not logged for Mechanics.</div>}
         {fight && (() => { const cur = fight.order.find((e) => e.is_turn); return (
           <button type="button" onClick={() => setPanel("turns")} style={{ background: "rgba(217,164,58,0.12)", border: `1px solid ${C.sun}`, color: C.sun, borderRadius: 999, padding: "3px 10px", fontSize: 12.5, cursor: "pointer" }}>
             Round {fight.round}{cur ? ` · ${cur.name}'s turn` : ""}
           </button>); })()}
         <div style={{ marginLeft: "auto", display: "flex", gap: 6, alignItems: "center" }}>
-          <button type="button" onClick={() => setPanelOpen((v) => !v)} aria-expanded={panelOpen} title="Show or hide the side panel (chat, turns, handouts)" style={{ fontSize: 12, padding: "3px 9px", borderRadius: 999, border: `1px solid ${panelOpen ? C.sun : C.line}`, background: "transparent", color: panelOpen ? C.sun : C.muted, cursor: "pointer" }}>{panelOpen ? "Hide panel" : "Panel"}</button>
+          <button type="button" onClick={() => setPanelOpen((v) => !v)} aria-expanded={panelOpen} title="Show or hide the side panel (chat, turns, handouts)" style={{ fontSize: 12, padding: "3px 9px", minHeight: "var(--sax-tap, 0px)", borderRadius: 999, border: `1px solid ${panelOpen ? C.sun : C.line}`, background: "transparent", color: panelOpen ? C.sun : C.muted, cursor: "pointer" }}>{panelOpen ? "Hide panel" : "Panel"}</button>
           <button type="button" onClick={() => openTabletop(campaignId)} title="Open the table in its own window, for a second screen" style={{ fontSize: 12, padding: "3px 9px", borderRadius: 999, border: `1px solid ${C.line}`, background: "transparent", color: C.muted, cursor: "pointer" }}>New window</button>
-          {present.map((p) => (
-            <span key={p.key} title={p.name} style={{ fontSize: 12, padding: "3px 8px", borderRadius: 999, border: `1px solid ${p.color}`, color: p.color }}>{p.name}</span>
-          ))}
+          {narrow
+            ? present.length > 0 && <span title={present.map((p) => p.name).join(", ")} style={{ fontSize: 12, padding: "3px 8px", borderRadius: 999, border: `1px solid ${C.line}`, color: C.muted }}>{present.length} here</span>
+            : present.map((p) => (
+              <span key={p.key} title={p.name} style={{ fontSize: 12, padding: "3px 8px", borderRadius: 999, border: `1px solid ${p.color}`, color: p.color }}>{p.name}</span>
+            ))}
         </div>
+        {((isGm && scene && state.scenes.some((s) => s.is_active) && !state.scenes.find((s) => s.id === scene.id)?.is_active) || !state.session_id) && (
+          <div style={{ flexBasis: "100%", display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+            {isGm && scene && state.scenes.some((s) => s.is_active) && !state.scenes.find((s) => s.id === scene.id)?.is_active && (
+              <span style={{ fontSize: 12, color: "#d9a43a", border: "1px solid #d9a43a", borderRadius: 999, padding: "2px 9px" }}>Viewing: players who were not sent here cannot see it</span>
+            )}
+            {!state.session_id && <span style={{ color: "#d9a43a", fontSize: 12 }}>No open session: rolls show here but are not logged for Mechanics.</span>}
+          </div>
+        )}
       </div>
 
       <div style={{ flex: 1, display: "flex", minHeight: 0, position: "relative" }}>
@@ -2830,6 +2866,25 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
           ) : (
             <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: C.muted, padding: 24, textAlign: "center" }}>
               {isGm ? "Put a battle map on the table from the Scenes tab on the right." : "The GM has not put a map on the table yet. Chat and dice work in the meantime."}
+            </div>
+          )}
+          {/* Audit T21: the board is one canvas, so a screen reader gets the tokens as a list: the ones this
+              viewer can see, with how each is doing, in the same words the hover label uses. */}
+          {scene && (
+            <ul className="sr-only" aria-label={`Tokens on ${scene.name}`}>
+              {[...tokensRef.current.values()]
+                .filter((t) => t.layer !== "map" && (isGm || (!t.hidden && (!seenTokens.current || seenTokens.current.has(t.id)))))
+                .map((t) => {
+                  const en = entryFor(t) as (Entry & { health?: string }) | null;
+                  const hp = en && en.hp != null && en.maxHp ? `${en.hp} of ${en.maxHp} hit points` : en?.health ? HEALTH_LABEL[en.health] ?? en.health : "";
+                  return <li key={t.id}>{t.name}{t.hidden ? " (hidden)" : ""}{hp ? `, ${hp}` : ""}{en?.is_turn ? ", taking its turn" : ""}</li>;
+                })}
+            </ul>
+          )}
+          {undoBar && (
+            <div role="status" style={{ position: "absolute", bottom: canvasMsg ? 58 : 14, left: "50%", transform: "translateX(-50%)", display: "flex", gap: 10, alignItems: "center", padding: "6px 8px 6px 14px", borderRadius: 8, background: "rgba(28,24,20,0.95)", border: `1px solid ${C.line}`, color: C.text, fontSize: 13, zIndex: 6 }}>
+              <span>{undoBar.text}</span>
+              <button type="button" onClick={() => { const u = undoBar; setUndoBar(null); u.run(); }} style={{ padding: "6px 12px", minHeight: "var(--sax-tap, 0px)", borderRadius: 7, border: `1px solid ${C.sun}`, background: "transparent", color: C.sun, fontSize: 13, cursor: "pointer" }}>Undo</button>
             </div>
           )}
           {canvasMsg && (
@@ -3690,7 +3745,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
       {makerFor && tokensRef.current.get(makerFor) && (() => {
         const tk = tokensRef.current.get(makerFor)!;
         return (
-          <div role="dialog" aria-modal="true" aria-label={`Token maker for ${tk.name}`} style={{ position: "fixed", inset: 0, zIndex: 60, background: "rgba(10,8,6,0.78)", display: "flex", alignItems: "flex-start", justifyContent: "center", overflowY: "auto", padding: "24px 12px" }}>
+          <div ref={makerRef} role="dialog" aria-modal="true" aria-label={`Token maker for ${tk.name}`} style={{ position: "fixed", inset: 0, zIndex: 60, background: "rgba(10,8,6,0.78)", display: "flex", alignItems: "flex-start", justifyContent: "center", overflowY: "auto", padding: "24px 12px" }}>
             <div style={{ background: C.surface, border: `1px solid ${C.line}`, borderRadius: 12, padding: 18, width: "min(1000px, 100%)", boxSizing: "border-box" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
                 <strong style={{ flex: 1, fontSize: 16 }}>Token maker: {tk.name}</strong>

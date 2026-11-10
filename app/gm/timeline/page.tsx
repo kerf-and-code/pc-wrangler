@@ -164,7 +164,7 @@ export default function TimelinePage() {
     .sort((a, b) => a.name.localeCompare(b.name));
 
   const box = { ...surfaces.slate, padding: 18 } as const;
-  const input = { width: "100%", boxSizing: "border-box" as const, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "11px 13px", fontSize: 15, outline: "none" };
+  const input = { width: "100%", boxSizing: "border-box" as const, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "11px 13px", fontSize: 15 };
 
   // Entities render as chips rather than bulleted Rows on purpose: a busy session can name
   // a dozen of them, and a dozen more bullets would bury the arcs and loot underneath.
