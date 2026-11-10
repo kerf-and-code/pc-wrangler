@@ -248,11 +248,21 @@ export default function GMWorkspace() {
     else setDispositions((ds) => ds.map((d) => (d.id === responseId ? { ...d, campaign_id: selected } : d)));
   }
 
+  // Audit T7: deletion runs on the server (app/api/gm/campaign/delete), which removes the campaign's
+  // recordings, maps, handouts and other files as well as its rows. The GM types the name to confirm.
   async function deleteCampaign(id: string) {
-    if (!window.confirm("Delete this campaign and all its sessions, characters, events, recordings, and dispositions? Player inventories are unlinked but kept. This can't be undone.")) return;
+    const name = (campaigns.find((c) => c.id === id)?.name ?? "").trim();
+    const typed = window.prompt(`Delete "${name}" and all its sessions, characters, events, recordings, maps, handouts and dispositions? Player inventories are unlinked but kept. This can't be undone.\n\nType the campaign's name to confirm:`);
+    if (typed === null) return;
+    if (typed.trim() !== name) { setErr("The name didn't match, so nothing was deleted."); return; }
     setErr(null);
-    const { error } = await supabase.rpc("delete_campaign", { p_campaign: id });
-    if (error) { setErr(error.message); return; }
+    const res = await fetch("/api/gm/campaign/delete", {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ campaignId: id, confirm: typed.trim() }),
+    }).catch(() => null);
+    const out = (await res?.json().catch(() => null)) as { ok?: boolean; error?: string; note?: string } | null;
+    if (!res || !res.ok || !out?.ok) { setErr(out?.error || "Could not delete the campaign. Check your connection and try again."); return; }
+    if (out.note) setErr(out.note);
     setCampaigns((cs) => cs.filter((c) => c.id !== id));
     if (selected === id) { setSelected(null); setCharacters([]); }
   }
