@@ -448,7 +448,8 @@ export default function SessionWorkspace() {
       else {
         try { window.localStorage.setItem(`six_axes_recap_recipients_${campaign}`, recipients.trim()); } catch {}
         const failedNote = data.failed?.length ? ` (${data.failed.length} failed)` : "";
-        setRecapMsg(`Sent to ${data.sent} recipient${data.sent === 1 ? "" : "s"}${failedNote}.`);
+        const offNote = data.optedOut?.length ? ` ${data.optedOut.length} address${data.optedOut.length === 1 ? " has" : "es have"} turned recap emails off and ${data.optedOut.length === 1 ? "was" : "were"} skipped.` : "";
+        setRecapMsg(`Sent to ${data.sent} recipient${data.sent === 1 ? "" : "s"}${failedNote}.${offNote}`);
       }
     } catch {
       setRecapMsg("Could not send recap. Try again.");
@@ -473,7 +474,7 @@ export default function SessionWorkspace() {
       });
       const data = await res.json();
       if (!res.ok) setRecapMsg(data.error || "Could not post to Discord.");
-      else setRecapMsg("Posted to Discord.");
+      else setRecapMsg(data.updated ? "Updated the recap already in Discord." : "Posted to Discord.");
     } catch {
       setRecapMsg("Could not post to Discord. Try again.");
     }
@@ -485,6 +486,14 @@ export default function SessionWorkspace() {
     setSchedSaving(true); setSchedMsg(null);
     const iso = schedDraft ? new Date(schedDraft).toISOString() : null;
     const { error } = await supabase.from("sessions").update({ scheduled_at: iso }).eq("id", session);
+    // Audit U2: the time was picked in this browser's time zone, so that is the campaign's zone for
+    // reminder emails, unless one is already set. Best effort: a failure here never blocks the schedule.
+    if (!error && iso && campaign) {
+      try {
+        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        if (tz) void supabase.from("campaigns").update({ time_zone: tz }).eq("id", campaign).is("time_zone", null).then(() => {});
+      } catch { /* ignore */ }
+    }
     if (error) setSchedMsg(error.message);
     else {
       setSessions((arr) => arr.map((s) => (s.id === session ? { ...s, scheduled_at: iso } : s)));
@@ -669,7 +678,7 @@ export default function SessionWorkspace() {
   }
 
   // ---- derived ----
-  const charName = useCallback((id: string) => characters.find((c) => c.id === id)?.name || "— table —", [characters]);
+  const charName = useCallback((id: string) => characters.find((c) => c.id === id)?.name || "(table)", [characters]);
   const typeLabel = useCallback((k: string) => eventTypes.find((t) => t.key === k)?.label || k, [eventTypes]);
 
   // live tally: events per character this session (spotlight preview)
@@ -681,7 +690,7 @@ export default function SessionWorkspace() {
     }
     const total = events.length || 1;
     return Object.entries(perChar)
-      .map(([k, n]) => ({ key: k, name: k === "__table__" ? "— table —" : charName(k), n, share: n / total }))
+      .map(([k, n]) => ({ key: k, name: k === "__table__" ? "(table)" : charName(k), n, share: n / total }))
       .sort((a, b) => b.n - a.n);
   }, [events, charName]);
 
@@ -1012,7 +1021,7 @@ export default function SessionWorkspace() {
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
               <select style={inputStyle} value={entry.characterId}
                 onChange={(e) => setEntry({ ...entry, characterId: e.target.value })}>
-                <option value="">— table / none —</option>
+                <option value="">(table or none)</option>
                 {characters.map((c) => (
                   <option key={c.id} value={c.id}>{c.name}{c.kind === "npc" ? " (NPC)" : ""}</option>
                 ))}
@@ -1030,16 +1039,16 @@ export default function SessionWorkspace() {
               {/* defaults, editable */}
               <select style={{ ...inputStyle, maxWidth: 120 }} value={entry.axis}
                 onChange={(e) => setEntry({ ...entry, axis: e.target.value })}>
-                <option value="">axis —</option>
+                <option value="">axis…</option>
                 {Object.keys(AXIS_NAME).map((a) => <option key={a} value={a}>{a} · {AXIS_NAME[a]}</option>)}
               </select>
               <select style={{ ...inputStyle, maxWidth: 90 }} value={entry.frame}
                 onChange={(e) => setEntry({ ...entry, frame: e.target.value })}>
-                <option value="">frame —</option><option value="ic">in-char</option><option value="ooc">out-of-char</option>
+                <option value="">frame…</option><option value="ic">in-char</option><option value="ooc">out-of-char</option>
               </select>
               <select style={{ ...inputStyle, maxWidth: 110 }} value={entry.target}
                 onChange={(e) => setEntry({ ...entry, target: e.target.value })}>
-                <option value="">target —</option><option value="fiction">fiction</option><option value="player">player</option><option value="system">system</option>
+                <option value="">target…</option><option value="fiction">fiction</option><option value="player">player</option><option value="system">system</option>
               </select>
 
               <input style={{ ...inputStyle, flex: 1, minWidth: 180 }} placeholder="Note (optional)"
@@ -1079,7 +1088,7 @@ export default function SessionWorkspace() {
                   )}
                   <span style={{ fontWeight: 600 }}>{charName(ev.character_id)}</span>
                   <span style={{ color: C.muted }}>{"  "}{typeLabel(ev.event_type)}</span>
-                  {ev.payload?.note && <span style={{ color: C.muted, fontStyle: "italic" }}>{"  — "}{ev.payload.note}</span>}
+                  {ev.payload?.note && <span style={{ color: C.muted, fontStyle: "italic" }}>{"  · "}{ev.payload.note}</span>}
                 </div>
                 <button onClick={() => deleteEvent(ev.id)} style={{ background: "none", border: "none", color: C.muted, cursor: "pointer", fontSize: 12 }}>delete</button>
               </div>

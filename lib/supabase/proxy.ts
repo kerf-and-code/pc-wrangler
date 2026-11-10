@@ -86,6 +86,7 @@ export async function updateSession(request: NextRequest) {
     // checks the key on every call. Keys, webhooks and the nudge (/api/addon/keys, hooks, kick) stay
     // behind login.
     !request.nextUrl.pathname.startsWith("/api/addon/v1") &&
+    !request.nextUrl.pathname.startsWith("/api/email/unsubscribe") &&
     // ---- everything below added 2026-08-03, after a 307 to /auth/login was traced back here ----
     //
     // THE LANDING PAGE. Exact match, because startsWith("/") would exempt the entire site. Without

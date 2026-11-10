@@ -47,6 +47,11 @@ type SpeciesRow = { id: string; name: string; source: string; partnered: boolean
 type VariantRow = { id: string; species_id: string; name: string; variant_kind: string; source: string; partnered: boolean; partner: string | null; edition: string; sort: number };
 type ClassRow   = { id: string; name: string; source: string; partnered: boolean; partner: string | null; edition: string; sort: number };
 
+// The GM's browser time zone (IANA), or null when the browser will not say. Audit U2.
+function browserTimeZone(): string | null {
+  try { return Intl.DateTimeFormat().resolvedOptions().timeZone || null; } catch { return null; }
+}
+
 export default function GMWorkspace() {
   const supabase = useMemo(() => createClient(), []);
   const [userId, setUserId] = useState<string | null>(null);
@@ -112,6 +117,12 @@ export default function GMWorkspace() {
       if (!active) return;
       if (e1) setErr(e1.message);
       setCampaigns(camps || []);
+      // Audit U2: campaigns with no time zone take this GM's browser zone, so reminder emails print local
+      // times. Only the GM's own campaigns, only when unset; best effort.
+      try {
+        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        if (tz && user) void supabase.from("campaigns").update({ time_zone: tz }).eq("gm_id", user.id).is("time_zone", null).then(() => {});
+      } catch { /* ignore */ }
       // Open on the campaign the GM was last working in (URL, then this tab, then the last one used),
       // instead of a blank page that waits for a click.
       if (camps && camps.length) setSelected(initialCampaignId(camps));
@@ -161,7 +172,7 @@ export default function GMWorkspace() {
     setBusy(true); setErr(null);
     const { data: camp, error } = await supabase
       .from("campaigns")
-      .insert({ name: newCampaign.name.trim(), system: newCampaign.system, gm_id: userId })
+      .insert({ name: newCampaign.name.trim(), system: newCampaign.system, gm_id: userId, time_zone: browserTimeZone() })
       .select().single();
     if (error) { setErr(error.message); setBusy(false); return; }
     // The GM must also be a member (role gm) so member-scoped reads work.

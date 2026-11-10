@@ -26,6 +26,8 @@ type Profile = {
 };
 
 // Audit F5: standing recording consent, per campaign (p137 my_recording_consents).
+// Push 1 (audit T12): which emails this address gets (p138 my_email_prefs / set_my_email_prefs).
+type EmailPrefs = { email: string; reminders: boolean; recaps: boolean };
 type ConsentRow = { campaignId: string; campaignName: string; characters: { id: string; name: string }[]; state: "given" | "withdrawn" | "none" };
 
 export default function MySettingsPage() {
@@ -46,6 +48,8 @@ export default function MySettingsPage() {
   const [consents, setConsents] = useState<ConsentRow[] | null>(null);
   const [consentBusy, setConsentBusy] = useState<string | null>(null);
   const [consentError, setConsentError] = useState<string | null>(null);
+  const [emailPrefs, setEmailPrefs] = useState<EmailPrefs | null>(null);
+  const [emailMsg, setEmailMsg] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -70,6 +74,9 @@ export default function MySettingsPage() {
       if (!active) return;
       if (ce) setConsentError("Could not load your recording consent. Reload to try again.");
       else setConsents((cons as ConsentRow[]) || []);
+      const { data: ep } = await supabase.rpc("my_email_prefs");
+      if (!active) return;
+      setEmailPrefs((ep as EmailPrefs | null) ?? null);
     })();
     return () => { active = false; };
   }, [supabase]);
@@ -81,6 +88,15 @@ export default function MySettingsPage() {
     setConsentBusy(null);
     if (e) { setConsentError(`Not saved: ${e.message}`); return; }
     setConsents((cs) => (cs || []).map((c) => (c.campaignId === row.campaignId ? { ...c, state: on ? "given" : "withdrawn" } : c)));
+  }
+
+  async function setEmailPref(key: "reminders" | "recaps", on: boolean) {
+    if (!emailPrefs) return;
+    const next = { ...emailPrefs, [key]: on };
+    setEmailPrefs(next); setEmailMsg(null);
+    const { error: e } = await supabase.rpc("set_my_email_prefs", { p_reminders: next.reminders, p_recaps: next.recaps });
+    if (e) { setEmailPrefs(emailPrefs); setEmailMsg(`Not saved: ${e.message}`); return; }
+    setEmailMsg("Saved.");
   }
 
   async function saveName() {
@@ -229,6 +245,25 @@ export default function MySettingsPage() {
               )}
               {consentError && <p role="alert" style={{ color: C.warn, fontSize: 13, margin: "10px 0 0" }}>{consentError}</p>}
             </Card>
+
+            {emailPrefs && (
+              <Card>
+                <Label>Email</Label>
+                <p style={{ color: C.muted, fontSize: 13.5, lineHeight: 1.6, margin: "0 0 12px" }}>
+                  Emails to <span style={{ color: C.text }}>{emailPrefs.email}</span>. Every email also has its own
+                  unsubscribe link.
+                </p>
+                <div style={{ display: "grid", gap: 10 }}>
+                  {([["reminders", "Session reminders and RSVP requests"], ["recaps", "Session recaps your GM sends"]] as const).map(([key, label]) => (
+                    <label key={key} style={{ display: "flex", alignItems: "center", gap: 10, color: C.text, fontSize: 14, cursor: "pointer" }}>
+                      <input type="checkbox" checked={emailPrefs[key]} onChange={(e) => setEmailPref(key, e.target.checked)} style={{ width: 18, height: 18 }} />
+                      {label}
+                    </label>
+                  ))}
+                </div>
+                {emailMsg && <p role="status" style={{ color: emailMsg === "Saved." ? C.muted : C.warn, fontSize: 13, margin: "10px 0 0" }}>{emailMsg}</p>}
+              </Card>
+            )}
 
             <Card>
               <Label>Your data</Label>

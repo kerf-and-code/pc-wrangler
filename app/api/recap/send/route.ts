@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { allowedRecipients } from "@/lib/email/prefs";
+import { unsubscribeHeaders, unsubscribeUrl } from "@/lib/email/unsubscribe";
 
 export const maxDuration = 30;
 
@@ -8,10 +10,11 @@ export const maxDuration = 30;
 // called, gated only by whatever the sessions row rules allowed. Now: the caller must be the campaign's
 // GM (checked here, not left to RLS), at most 20 addresses per send, at most 3 sends per session and 60
 // recipients per GM in any 24 hours (recap_sends, p134). Each email links to the campaign's recap page.
+// Push 1 (audit T12): addresses that switched recaps off (email_prefs, p138) are skipped, and each email
+// carries its own signed one-click unsubscribe link instead of a mailto nobody reads.
 
 // Must be an address on your Resend-verified sending domain.
 const RECAP_FROM = "Six Axes <recaps@send.kerfandcode.com>";
-const UNSUBSCRIBE_MAILTO = "mailto:unsubscribe@send.kerfandcode.com";
 const MAX_RECIPIENTS = 20;
 const MAX_SENDS_PER_SESSION_PER_DAY = 3;
 const MAX_RECIPIENTS_PER_GM_PER_DAY = 60;
@@ -26,7 +29,7 @@ function esc(s: string) {
     .replace(/"/g, "&quot;");
 }
 
-function recapHtml(campaignName: string, sessionNumber: number | null, recap: string, link: string | null) {
+function recapHtml(campaignName: string, sessionNumber: number | null, recap: string, link: string | null, unsubscribe: string) {
   const paragraphs = esc(recap)
     .split(/\n\s*\n/)
     .map((p) => `<p style="margin:0 0 16px;line-height:1.7;color:#23202b;">${p.replace(/\n/g, "<br/>")}</p>`)
@@ -43,7 +46,7 @@ function recapHtml(campaignName: string, sessionNumber: number | null, recap: st
   </div>
   <div style="max-width:560px;margin:14px auto 0;text-align:center;font-family:Arial,sans-serif;font-size:11px;color:#8a8597;line-height:1.5;">
     You're receiving this because your GM shares Six Axes recaps with your table.<br/>
-    To stop, reply to this email or contact your GM.
+    <a href="${esc(unsubscribe)}" style="color:#8a8597;">Stop recap emails</a>
   </div>
 </body></html>`;
 }
@@ -120,8 +123,17 @@ export async function POST(request: Request) {
 
     let sent = 0;
     let failed: string[] = [];
+    let optedOut: string[] = [];
 
-    if (emails.length) {
+    const prefs = await allowedRecipients(admin, emails, "recaps");
+    if (!prefs.ok) {
+      console.error("recap/send: email_prefs unreadable (has p138 run?)", prefs.error);
+      return NextResponse.json({ error: "Recap email is not available right now. Try again later." }, { status: 503 });
+    }
+    optedOut = prefs.optedOut;
+    const toSend = prefs.allowed;
+
+    if (toSend.length) {
       const apiKey = process.env.RESEND_API_KEY;
       if (!apiKey) {
         return NextResponse.json({ error: "Email service is not configured." }, { status: 500 });
@@ -130,9 +142,9 @@ export async function POST(request: Request) {
       const subject = session.session_number != null
         ? `Recap: ${campaignName}, Session ${session.session_number}`
         : `Recap: ${campaignName}`;
-      const html = recapHtml(campaignName, session.session_number, session.recap, link);
-
-      const results = await Promise.all(emails.map(async (to) => {
+      const results = await Promise.all(toSend.map(async (to) => {
+        const unsub = unsubscribeUrl(origin, to, "recaps");
+        const html = recapHtml(campaignName, session.session_number, session.recap, link, unsub);
         try {
           const res = await fetch("https://api.resend.com/emails", {
             method: "POST",
@@ -142,7 +154,7 @@ export async function POST(request: Request) {
               to: [to],
               subject,
               html,
-              headers: { "List-Unsubscribe": `<${UNSUBSCRIBE_MAILTO}>` },
+              headers: unsubscribeHeaders(unsub),
             }),
           });
           return res.ok ? { to, ok: true } : { to, ok: false };
@@ -154,12 +166,12 @@ export async function POST(request: Request) {
       sent = results.filter((r) => r.ok).length;
       failed = results.filter((r) => !r.ok).map((r) => r.to);
       // Logged after sending, counting what was attempted, so failures still count toward the limits.
-      await admin.from("recap_sends").insert({ campaign_id: session.campaign_id, session_id: session.id, sent_by: user.id, recipients: emails.length });
+      await admin.from("recap_sends").insert({ campaign_id: session.campaign_id, session_id: session.id, sent_by: user.id, recipients: toSend.length });
     }
 
     // Discord posting is a separate action (see /api/recap/post-discord), so this
     // route no longer side-posts to Discord. Email only.
-    return NextResponse.json({ sent, failed });
+    return NextResponse.json({ sent, failed, optedOut });
   } catch {
     return NextResponse.json({ error: "Could not send recap." }, { status: 500 });
   }

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { postRecapToDiscord } from "@/lib/discord/post";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { postOrUpdateRecap, type RecapPost } from "@/lib/discord/post";
 
 export const maxDuration = 30;
 
@@ -18,6 +19,9 @@ export const maxDuration = 30;
 //
 // 2026-11-09: the caller must be the campaign's GM (checked here, not left to RLS), and the post ends
 // with the campaign's recap page, where players read every recap without signing in.
+//
+// Push 1 (audit P10): posting again after an edit updates the messages already in Discord instead of
+// posting the recap twice (their ids live in sessions.discord_recap_post, p138).
 export async function POST(request: Request) {
   try {
     const body = await request.json().catch(() => ({}));
@@ -77,23 +81,34 @@ export async function POST(request: Request) {
       "Run `/mypage` in this server to open your character on the web: the full session " +
       "transcript, your own moments, and the party codex.";
 
-    const posted = await postRecapToDiscord(
+    // Where this recap was posted before, if anywhere. Read separately so a database without p138 still
+    // posts (it just cannot update).
+    const admin = createAdminClient();
+    const { data: prevRow } = await admin.from("sessions").select("discord_recap_post").eq("id", session.id).maybeSingle();
+    const previous = ((prevRow as { discord_recap_post?: RecapPost | null } | null)?.discord_recap_post) ?? null;
+
+    const result = await postOrUpdateRecap(
       discordChannelId,
       campaignName,
       session.session_number,
       session.recap,
       claimNote,
       recapLink,
+      previous && Array.isArray(previous.ids) ? previous : null,
     );
 
-    if (!posted) {
+    if (!result.ok) {
       return NextResponse.json(
         { error: "Could not post to Discord. Check the bot is in the server and the channel is correct." },
         { status: 502 },
       );
     }
 
-    return NextResponse.json({ discordPosted: true });
+    if (result.post) {
+      const { error: saveErr } = await admin.from("sessions").update({ discord_recap_post: result.post }).eq("id", session.id);
+      if (saveErr) console.error("recap/post-discord: could not store the message ids (has p138 run?)", saveErr.message);
+    }
+    return NextResponse.json({ discordPosted: true, updated: result.updated });
   } catch {
     return NextResponse.json({ error: "Could not post recap to Discord." }, { status: 500 });
   }
