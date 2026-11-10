@@ -122,14 +122,18 @@ export default function PublishPage() {
     setBusy(true); setNote(null);
     try {
       const want = items.filter((i) => i.visibility === "common" || i.visibility === "player");
-      await Promise.all([
+      // Audit U8: the note used to report success whether or not the updates worked.
+      const [r1, r2] = await Promise.all([
         supabase.from("entries").update({ is_public: true })
           .eq("campaign_id", campaignId).in("visibility", ["common", "player"]),
         supabase.from("characters").update({ is_public: true })
           .eq("campaign_id", campaignId).eq("kind", "npc").in("visibility", ["common", "player"]),
       ]);
       await loadItems(campaignId);
-      setNote(`Marked ${want.length} item(s) public. Nothing marked GM-only was touched.`);
+      const err = r1.error || r2.error;
+      setNote(err
+        ? `Not everything was marked public: ${err.message}. The list below shows what actually changed.`
+        : `Marked ${want.length} item(s) public. Nothing marked GM-only was touched.`);
     } finally { setBusy(false); }
   }, [items, campaignId, supabase, loadItems]);
 
@@ -137,12 +141,13 @@ export default function PublishPage() {
     if (!window.confirm("Make every item private again? Each one comes off the public page, and you would have to re-pick them one by one.")) return;
     setBusy(true); setNote(null);
     try {
-      await Promise.all([
+      const [r1, r2] = await Promise.all([
         supabase.from("entries").update({ is_public: false }).eq("campaign_id", campaignId),
         supabase.from("characters").update({ is_public: false }).eq("campaign_id", campaignId).eq("kind", "npc"),
       ]);
       await loadItems(campaignId);
-      setNote("Everything is now private again.");
+      const err = r1.error || r2.error;
+      setNote(err ? `Not everything was made private: ${err.message}. The list below shows what is still public.` : "Everything is now private again.");
     } finally { setBusy(false); }
   }, [campaignId, supabase, loadItems]);
 

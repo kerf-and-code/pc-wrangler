@@ -68,6 +68,7 @@ export default function WorldMapViewer({ campaignId, shareCode }: { campaignId?:
   const [selectedChar, setSelectedChar] = useState<{ name: string } | null>(null);
   const [selectedBiome, setSelectedBiome] = useState<number | null>(null);
   const [poiRows, setPoiRows] = useState<Poi[]>([]);
+  const [poiError, setPoiError] = useState<string | null>(null); // audit U8: marker saves say when they fail
   const [armedIcon, setArmedIcon] = useState<{ key: string } | null>(null);
   const [artEnabled, setArtEnabled] = useState(true);
   const [features, setFeatures] = useState<MapFeature[]>([]);
@@ -221,20 +222,23 @@ export default function WorldMapViewer({ campaignId, shareCode }: { campaignId?:
     const ins = await supabase.from("map_pois")
       .insert({ world_map_id: bundle.map.id, x, y, col, row, name: "New marker", visibility: "common", icon_key: armedIcon.key })
       .select("id, x, y, name, icon_key, icon_id, color, entry_id, character_id").single();
-    if (ins.error || !ins.data) return;
+    if (ins.error || !ins.data) { setPoiError(`Could not add the marker: ${ins.error?.message ?? "no reply"}`); return; }
+    setPoiError(null);
     setPoiRows((prev) => [...prev, ins.data as Poi]);
   }, [supabase, bundle, armedIcon]);
 
   const onMovePoi = useCallback(async (id: string, x: number, y: number) => {
     const { col, row } = pixelToHex(x, y, BASE_SIZE);
     setPoiRows((prev) => prev.map((r) => (r.id === id ? { ...r, x, y } : r)));
-    void supabase.from("map_pois").update({ x, y, col, row }).eq("id", id);
+    const { error } = await supabase.from("map_pois").update({ x, y, col, row }).eq("id", id);
+    setPoiError(error ? `Marker move not saved: ${error.message}` : null);
   }, [supabase]);
 
   const removePoi = useCallback(async (id: string) => {
     if (!window.confirm("Remove this marker from the map? This cannot be undone.")) return;
     const { error } = await supabase.from("map_pois").delete().eq("id", id);
-    if (error) return;
+    if (error) { setPoiError(`Could not remove the marker: ${error.message}`); return; }
+    setPoiError(null);
     setPoiRows((prev) => prev.filter((r) => r.id !== id));
     setSelectedPoi(null);
   }, [supabase]);
@@ -275,6 +279,7 @@ export default function WorldMapViewer({ campaignId, shareCode }: { campaignId?:
             that only the browser's back button left. */}
         {backLink}
         <span style={{ fontSize: 15, fontWeight: 700, color: C.text }}>World map</span>
+        {poiError && <span role="alert" style={{ fontSize: 12.5, color: "#e08a7a" }}>{poiError}</span>}
         <button type="button" onClick={() => setArtEnabled((v) => !v)}
           style={{ fontSize: 12, padding: "4px 9px", borderRadius: 7, cursor: "pointer", border: `1px solid ${artEnabled ? C.sun : C.line}`, background: artEnabled ? "rgba(200,162,75,0.14)" : C.surface2, color: C.text }}>
           Art: {artEnabled ? "On" : "Off"}

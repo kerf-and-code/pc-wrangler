@@ -584,11 +584,13 @@ export default function WorldMapPage() {
   }, [supabase, mapRow]);
   const moveLabel = useCallback(async (id: string, x: number, y: number) => {
     setLabelRows((prev) => prev.map((l) => (l.id === id ? { ...l, x, y } : l)));
-    await supabase.from("map_labels").update({ x, y }).eq("id", id);
+    const { error } = await supabase.from("map_labels").update({ x, y }).eq("id", id);
+    if (error) setStatus(`Label move not saved: ${error.message}`); // audit U8
   }, [supabase]);
   const patchLabel = useCallback(async (id: string, patch: LabelPatch) => {
     setLabelRows((prev) => prev.map((l) => (l.id === id ? { ...l, ...patch } : l)));
-    await supabase.from("map_labels").update(patch).eq("id", id);
+    const { error } = await supabase.from("map_labels").update(patch).eq("id", id);
+    if (error) setStatus(`Label change not saved: ${error.message}`); // audit U8
   }, [supabase]);
   const removeLabel = useCallback(async (id: string) => {
     const { error } = await supabase.from("map_labels").delete().eq("id", id);
@@ -913,7 +915,8 @@ export default function WorldMapPage() {
 
   const onImageMove = useCallback((id: string, x: number, y: number) => {
     setImages((prev) => prev.map((i) => (i.id === id ? { ...i, x, y } : i)));
-    void supabase.from("map_images").update({ x, y }).eq("id", id);
+    void supabase.from("map_images").update({ x, y }).eq("id", id)
+      .then(({ error }) => { if (error) setStatus(`Image move not saved: ${error.message}`); }); // audit U8
   }, [supabase]);
 
   const scaleTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
@@ -922,7 +925,8 @@ export default function WorldMapPage() {
     const prev = scaleTimers.current.get(id);
     if (prev) clearTimeout(prev);
     scaleTimers.current.set(id, setTimeout(() => {
-      void supabase.from("map_images").update({ scale }).eq("id", id);
+      void supabase.from("map_images").update({ scale }).eq("id", id)
+        .then(({ error }) => { if (error) setStatus(`Image size not saved: ${error.message}`); }); // audit U8
     }, 500));
   }, [supabase]);
 

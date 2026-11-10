@@ -57,6 +57,9 @@ export default function BastionCreator({ campaignId }: { campaignId: string }) {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
+  // Audit U8: the autosave used to fire and forget. Now it says Saving, Saved or Not saved.
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [saveMsg, setSaveMsg] = useState<string | null>(null);
   const planRef = useRef(plan);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const painting = useRef(false);
@@ -94,8 +97,11 @@ export default function BastionCreator({ campaignId }: { campaignId: string }) {
   }, [supabase, campaignId]);
   useEffect(() => {
     if (!loaded || !campaignId) return;
-    const t = setTimeout(() => {
-      void supabase.from("bastion_maps").upsert({ campaign_id: campaignId, plan, updated_at: new Date().toISOString() }, { onConflict: "campaign_id" });
+    const t = setTimeout(async () => {
+      setSaveState("saving");
+      const { error } = await supabase.from("bastion_maps").upsert({ campaign_id: campaignId, plan, updated_at: new Date().toISOString() }, { onConflict: "campaign_id" });
+      if (error) { setSaveState("error"); setSaveMsg(`Not saved: ${error.message}. Your next change tries again.`); }
+      else { setSaveState("saved"); setSaveMsg(null); }
     }, 900);
     return () => clearTimeout(t);
   }, [plan, loaded, campaignId, supabase]);
@@ -271,7 +277,7 @@ export default function BastionCreator({ campaignId }: { campaignId: string }) {
           style={{ display: "block", width: "min(560px, 86vw)", height: "auto", aspectRatio: "1 / 1", borderRadius: 8, background: "#0e0b08", cursor: tool === "door" ? "pointer" : "crosshair", touchAction: "none" }} />
         <p style={{ color: C.muted, fontSize: 12, margin: "8px 2px 0" }}>
           {plan.gridN}&times;{plan.gridN} grid, 1 square = {FT_PER_SQUARE} ft &middot; {plan.gridN * FT_PER_SQUARE}&times;{plan.gridN * FT_PER_SQUARE} ft across &middot; {deckLabel(plan, deck)}.
-          {tool === "door" ? " Click a cell near an edge to drop a door; click it again to remove." : brushIdx === 0 ? " Eraser selected — drag to clear cells." : " Drag to paint the selected facility."}
+          {tool === "door" ? " Click a cell near an edge to drop a door; click it again to remove." : brushIdx === 0 ? " Eraser selected: drag to clear cells." : " Drag to paint the selected facility."}
         </p>
         {rendered && (
           <div style={{ marginTop: 12 }}>
@@ -335,7 +341,7 @@ export default function BastionCreator({ campaignId }: { campaignId: string }) {
 
         {plan.kind === "ship"
           ? <p style={{ color: hasPropulsion ? C.muted : "#c98a7a", fontSize: 12, marginTop: 12 }}>
-              {hasPropulsion ? "Propulsion Helm placed — this mobile bastion can move." : "A ship bastion needs a propulsion Helm (Eberron source). No defensive walls on a mobile bastion."}
+              {hasPropulsion ? "Propulsion Helm placed, so this mobile bastion can move." : "A ship bastion needs a propulsion Helm (Eberron source). No defensive walls on a mobile bastion."}
             </p>
           : (
             <>
@@ -379,13 +385,17 @@ export default function BastionCreator({ campaignId }: { campaignId: string }) {
           {plan.placements.map((pl, i) => {
             const idx = i + 1, used = squaresUsed(plan, idx), max = maxSquares(pl), over = used > max;
             return (
-              <button key={pl.id} type="button" onClick={() => { setBrushIdx(idx); setTool("paint"); }}
-                style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 8px", background: brushIdx === idx ? C.surface2 : "transparent", border: `1px solid ${brushIdx === idx ? C.sun : C.line}`, borderRadius: 7, cursor: "pointer", textAlign: "left" }}>
-                <span style={{ width: 14, height: 14, borderRadius: 3, flexShrink: 0, border: "1px solid rgba(0,0,0,.4)", background: pl.color }} />
-                <span style={{ flex: 1, color: C.text, fontSize: 12.5 }}>{pl.label}{pl.enlarged ? " (Vast)" : ""}</span>
-                <span style={{ color: over ? "#c98a7a" : C.muted, fontSize: 11.5 }}>{used}/{max}</span>
-                <span onClick={(e) => { e.stopPropagation(); remove(idx); }} style={{ color: C.muted, fontSize: 14, padding: "0 2px", cursor: "pointer" }}>&times;</span>
-              </button>
+              <div key={pl.id}
+                style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 8px", background: brushIdx === idx ? C.surface2 : "transparent", border: `1px solid ${brushIdx === idx ? C.sun : C.line}`, borderRadius: 7 }}>
+                <button type="button" aria-pressed={brushIdx === idx} onClick={() => { setBrushIdx(idx); setTool("paint"); }}
+                  style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0, background: "transparent", border: "none", padding: 0, cursor: "pointer", textAlign: "left" }}>
+                  <span style={{ width: 14, height: 14, borderRadius: 3, flexShrink: 0, border: "1px solid rgba(0,0,0,.4)", background: pl.color }} />
+                  <span style={{ flex: 1, color: C.text, fontSize: 12.5 }}>{pl.label}{pl.enlarged ? " (Vast)" : ""}</span>
+                  <span style={{ color: over ? "#c98a7a" : C.muted, fontSize: 11.5 }}>{used}/{max}</span>
+                </button>
+                <button type="button" onClick={() => remove(idx)} aria-label={`Remove ${pl.label}`}
+                  style={{ background: "transparent", border: "none", color: C.muted, fontSize: 14, padding: "0 2px", cursor: "pointer", lineHeight: 1, flexShrink: 0 }}>&times;</button>
+              </div>
             );
           })}
         </div>
@@ -476,6 +486,11 @@ export default function BastionCreator({ campaignId }: { campaignId: string }) {
         <div style={{ marginTop: 8 }}><button type="button" onClick={clearDeck} style={btn("transparent", C.muted)}>Clear {deckLabel(plan, deck).toLowerCase()}</button></div>
 
         {msg && <p style={{ color: "#c98a7a", fontSize: 12, marginTop: 12 }}>{msg}</p>}
+        {campaignId && saveState !== "idle" && (
+          <p role="status" aria-live="polite" style={{ color: saveState === "error" ? "#c98a7a" : C.muted, fontSize: 12, marginTop: 8 }}>
+            {saveState === "saving" ? "Saving\u2026" : saveState === "saved" ? "Saved" : saveMsg}
+          </p>
+        )}
       </div>
     </div>
   );

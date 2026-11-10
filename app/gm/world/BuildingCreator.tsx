@@ -29,6 +29,9 @@ export default function BuildingCreator({ campaignId }: { campaignId: string }) 
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
+  // Audit U8: the autosave used to fire and forget. Now it says Saving, Saved or Not saved.
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [saveMsg, setSaveMsg] = useState<string | null>(null);
   const planRef = useRef(plan);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const drag = useRef<Drag | null>(null);
@@ -56,8 +59,11 @@ export default function BuildingCreator({ campaignId }: { campaignId: string }) 
 
   useEffect(() => {
     if (!loaded || !campaignId) return;
-    const t = setTimeout(() => {
-      void supabase.from("building_maps").upsert({ campaign_id: campaignId, plan, updated_at: new Date().toISOString() }, { onConflict: "campaign_id" });
+    const t = setTimeout(async () => {
+      setSaveState("saving");
+      const { error } = await supabase.from("building_maps").upsert({ campaign_id: campaignId, plan, updated_at: new Date().toISOString() }, { onConflict: "campaign_id" });
+      if (error) { setSaveState("error"); setSaveMsg(`Not saved: ${error.message}. Your next change tries again.`); }
+      else { setSaveState("saved"); setSaveMsg(null); }
     }, 900);
     return () => clearTimeout(t);
   }, [plan, loaded, campaignId, supabase]);
@@ -167,6 +173,11 @@ export default function BuildingCreator({ campaignId }: { campaignId: string }) 
         <div style={{ marginTop: 8 }}><button type="button" onClick={saveLocally} style={btn("transparent", C.text)}>Save image</button></div>
 
         {msg && <p style={{ color: "#c98a7a", fontSize: 12, marginTop: 12 }}>{msg}</p>}
+        {campaignId && saveState !== "idle" && (
+          <p role="status" aria-live="polite" style={{ color: saveState === "error" ? "#c98a7a" : "#9a917f", fontSize: 12, marginTop: 8 }}>
+            {saveState === "saving" ? "Saving\u2026" : saveState === "saved" ? "Saved" : saveMsg}
+          </p>
+        )}
       </div>
     </div>
   );

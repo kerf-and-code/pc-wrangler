@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { SAX } from "@/lib/theme";
@@ -123,36 +123,90 @@ export default function CharacterPage() {
   const canEdit = isOwner || (isGm && granted);
 
   // ---- private sections (p78) ----
+  // Audit U8: typing used to write to the database on every keystroke and ignore the answer, so a failed
+  // save (expired sign-in, offline) looked kept and was gone on reload. Now edits gather per section and
+  // save 600 ms after the last keystroke (a visibility change saves at once), each section shows Saving,
+  // Saved or Not saved with Retry, a failed edit stays on screen and in the queue, and leaving the page
+  // with unsaved text asks first.
+  const pendingRef = useRef<Record<string, Partial<Section>>>({});
+  const timersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  const [saveState, setSaveState] = useState<Record<string, { s: "saving" | "saved" | "error"; msg?: string }>>({});
+  const [sectionError, setSectionError] = useState<string | null>(null);
+
+  const flush = useCallback(async (id: string) => {
+    clearTimeout(timersRef.current[id]); delete timersRef.current[id];
+    const p = pendingRef.current[id];
+    if (!p) return;
+    delete pendingRef.current[id];
+    setSaveState((m) => ({ ...m, [id]: { s: "saving" } }));
+    const { error } = await supabase.from("character_wiki_sections").update(p).eq("id", id);
+    if (error) {
+      pendingRef.current[id] = { ...p, ...(pendingRef.current[id] || {}) };
+      setSaveState((m) => ({ ...m, [id]: { s: "error", msg: error.message } }));
+    } else if (!pendingRef.current[id]) {
+      setSaveState((m) => ({ ...m, [id]: { s: "saved" } }));
+    }
+  }, [supabase]);
+
+  useEffect(() => {
+    const warn = (e: BeforeUnloadEvent) => { if (Object.keys(pendingRef.current).length) { e.preventDefault(); e.returnValue = ""; } };
+    window.addEventListener("beforeunload", warn);
+    const timers = timersRef.current;
+    return () => { window.removeEventListener("beforeunload", warn); Object.values(timers).forEach(clearTimeout); };
+  }, []);
+
   const addSection = async () => {
+    setSectionError(null);
     const pos = sections.length ? Math.max(...sections.map((s) => s.position)) + 1 : 0;
     const { data, error } = await supabase.from("character_wiki_sections")
       .insert({ character_id: charId, title: "", body: "", visibility: isOwner ? "private" : "shared", position: pos })
       .select("id, title, body, visibility, position").single();
-    if (!error && data) setSections((s) => [...s, data as Section]);
+    if (error || !data) { setSectionError(`Could not add a section: ${error?.message ?? "no reply"}`); return; }
+    setSections((s) => [...s, data as Section]);
   };
-  const patch = async (id: string, p: Partial<Section>) => {
+  const patch = (id: string, p: Partial<Section>, now = false) => {
     setSections((s) => s.map((x) => x.id === id ? { ...x, ...p } : x));
-    await supabase.from("character_wiki_sections").update(p).eq("id", id);
+    pendingRef.current[id] = { ...(pendingRef.current[id] || {}), ...p };
+    clearTimeout(timersRef.current[id]);
+    if (now) void flush(id);
+    else timersRef.current[id] = setTimeout(() => { void flush(id); }, 600);
   };
   const del = async (id: string) => {
     if (!window.confirm("Delete this section? This can't be undone.")) return;
+    setSectionError(null);
+    const { error } = await supabase.from("character_wiki_sections").delete().eq("id", id);
+    if (error) { setSectionError(`Could not delete that section: ${error.message}`); return; }
+    clearTimeout(timersRef.current[id]); delete timersRef.current[id]; delete pendingRef.current[id];
     setSections((s) => s.filter((x) => x.id !== id));
-    await supabase.from("character_wiki_sections").delete().eq("id", id);
   };
   const move = async (id: string, dir: -1 | 1) => {
     const i = sections.findIndex((s) => s.id === id);
     const j = i + dir;
     if (i < 0 || j < 0 || j >= sections.length) return;
+    setSectionError(null);
+    const before = sections;
     const a = sections[i], b = sections[j];
     setSections((s) => { const n = [...s]; [n[i], n[j]] = [n[j], n[i]]; return n; });
-    await Promise.all([
+    const [r1, r2] = await Promise.all([
       supabase.from("character_wiki_sections").update({ position: b.position }).eq("id", a.id),
       supabase.from("character_wiki_sections").update({ position: a.position }).eq("id", b.id),
     ]);
+    if (r1.error || r2.error) {
+      setSections(before);
+      setSectionError(`Could not move that section: ${(r1.error || r2.error)!.message}`);
+    } else {
+      // the two rows swapped places, so keep their position numbers in step with the database
+      setSections((s) => s.map((x) => x.id === a.id ? { ...x, position: b.position } : x.id === b.id ? { ...x, position: a.position } : x));
+    }
   };
   const toggleGrant = async () => {
-    if (granted) { setGranted(false); await supabase.from("character_wiki_gm_edit").delete().eq("character_id", charId); }
-    else { setGranted(true); await supabase.from("character_wiki_gm_edit").insert({ character_id: charId }); }
+    setSectionError(null);
+    const next = !granted;
+    setGranted(next);
+    const { error } = next
+      ? await supabase.from("character_wiki_gm_edit").insert({ character_id: charId })
+      : await supabase.from("character_wiki_gm_edit").delete().eq("character_id", charId);
+    if (error) { setGranted(!next); setSectionError(`Could not change that setting: ${error.message}`); }
   };
 
   // ---- public wiki page (p80) ----
@@ -335,6 +389,7 @@ export default function CharacterPage() {
       )}
 
       <div style={{ ...label, marginBottom: 10 }}>{isOwner ? "Private sections" : "Shared sections"}</div>
+      {sectionError && <p role="alert" style={{ fontSize: 13, color: C.warn, margin: "0 0 12px" }}>{sectionError}</p>}
 
       {visibleSections.length === 0 && (
         <p style={{ color: C.muted, fontSize: 14, marginBottom: 18 }}>
@@ -358,12 +413,18 @@ export default function CharacterPage() {
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 10, flexWrap: "wrap", gap: 8 }}>
                   <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12.5, color: C.muted }}>
                     Visibility
-                    <select value={s.visibility} onChange={(e) => patch(s.id, { visibility: e.target.value })} style={{ ...field, width: "auto", padding: "6px 10px" }}>
+                    <select value={s.visibility} onChange={(e) => patch(s.id, { visibility: e.target.value }, true)} style={{ ...field, width: "auto", padding: "6px 10px" }}>
                       <option value="private">Private (just me)</option>
                       <option value="shared">Shared with my GM</option>
                     </select>
                   </label>
-                  <button type="button" onClick={() => del(s.id)} style={ghostBtn}>Delete</button>
+                  <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <span role="status" aria-live="polite" style={{ fontSize: 12.5, color: saveState[s.id]?.s === "error" ? C.warn : C.muted }}>
+                      {saveState[s.id]?.s === "saving" ? "Saving\u2026" : saveState[s.id]?.s === "saved" ? "Saved" : saveState[s.id]?.s === "error" ? `Not saved: ${saveState[s.id]?.msg ?? "error"}` : ""}
+                    </span>
+                    {saveState[s.id]?.s === "error" && <button type="button" onClick={() => void flush(s.id)} style={ghostBtn}>Retry</button>}
+                    <button type="button" onClick={() => del(s.id)} style={ghostBtn}>Delete</button>
+                  </span>
                 </div>
               </>
             ) : (
