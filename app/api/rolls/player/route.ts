@@ -79,12 +79,16 @@ export async function POST(req: Request) {
   // The open session, if there is one. A roll made between sessions is still a real roll and is
   // still returned; it just has nothing to attach to, and saying so beats logging it against
   // whichever session happened to be most recent.
+  // Audit B3 (2026-11-09): "open" means started and not ended. A session scheduled for next week has
+  // no ended_at either, and sorting by session number picked it, so rolls landed in a game that had
+  // not happened yet. The same rule as the Discord /record route and tabletop_open_session (p134).
   const { data: session } = await admin
     .from("sessions")
     .select("id")
     .eq("campaign_id", ch.campaign_id)
+    .not("started_at", "is", null)
     .is("ended_at", null)
-    .order("session_number", { ascending: false })
+    .order("started_at", { ascending: false })
     .limit(1)
     .maybeSingle();
 

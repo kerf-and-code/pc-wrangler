@@ -36,12 +36,12 @@ export async function addonAuth(req: Request, scope: Scope | null): Promise<{ ke
   return { key: { id: k.id, campaignId: k.campaignId, campaignName: k.campaignName, name: k.name, scopes: k.scopes, owner: k.owner }, admin };
 }
 
-/** The campaign's open session, as tabletop_open_session picks it. */
+/** The campaign's open session, as tabletop_open_session picks it (p134): started and not ended,
+ *  newest start first. A scheduled future session has no ended_at either and must not win. */
 export async function openSession(admin: ReturnType<typeof createAdminClient>, campaignId: string): Promise<string | null> {
-  const { data } = await admin.from("sessions").select("id, started_at, created_at").eq("campaign_id", campaignId).is("ended_at", null);
-  const rows = (data ?? []) as { id: string; started_at: string | null; created_at: string }[];
-  rows.sort((a, b) => (b.started_at ?? b.created_at).localeCompare(a.started_at ?? a.created_at));
-  return rows[0]?.id ?? null;
+  const { data } = await admin.from("sessions").select("id").eq("campaign_id", campaignId)
+    .not("started_at", "is", null).is("ended_at", null).order("started_at", { ascending: false }).limit(1).maybeSingle();
+  return (data as { id: string } | null)?.id ?? null;
 }
 
 /** A line of chat or a roll, in the same shape webhooks send. */

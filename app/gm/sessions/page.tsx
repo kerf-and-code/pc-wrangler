@@ -97,7 +97,7 @@ export default function SessionWorkspace() {
       if (!active) return;
       setUserId(user.id);
       const [{ data: camps }, { data: types }] = await Promise.all([
-        supabase.from("campaigns").select("id,name,system").order("created_at", { ascending: false }),
+        supabase.from("campaigns").select("id,name,system,share_code").order("created_at", { ascending: false }),
         supabase.from("event_types").select("key,label,category,default_axis,default_frame,default_target"),
       ]);
       if (!active) return;
@@ -412,8 +412,19 @@ export default function SessionWorkspace() {
   }
 
   async function copyRecap() {
-    try { await navigator.clipboard.writeText(recap); setRecapMsg("Copied to clipboard."); }
+    try { await navigator.clipboard.writeText(recap); setRecapMsg("Recap text copied."); }
     catch { setRecapMsg("Copy failed; select the text and copy manually."); }
+  }
+  // The page where players read every recap for this campaign (no sign-in needed; the share code is
+  // the key). Players found it only through the player menu before (2026-11-09).
+  const recapLink = (() => {
+    const code = (campaigns.find((c: { id: string }) => c.id === campaign) as { share_code?: string | null } | undefined)?.share_code;
+    return code && typeof window !== "undefined" ? `${window.location.origin}/recaps?share=${encodeURIComponent(code)}` : null;
+  })();
+  async function copyRecapLink() {
+    if (!recapLink) return;
+    try { await navigator.clipboard.writeText(recapLink); setRecapMsg("Recap link copied. Players read every recap there, no sign-in needed."); }
+    catch { setRecapMsg(`Copy failed. The link is ${recapLink}`); }
   }
 
   async function sendRecap() {
@@ -851,7 +862,8 @@ export default function SessionWorkspace() {
               <button style={btn} onClick={saveRecap} disabled={recapSaving || !recap.trim()}>
                 {recapSaving ? "Saving..." : "Save recap"}
               </button>
-              <button style={btnGhost} onClick={copyRecap} disabled={!recap.trim()}>Copy</button>
+              <button style={btnGhost} onClick={copyRecap} disabled={!recap.trim()}>Copy text</button>
+              <button style={btnGhost} onClick={copyRecapLink} disabled={!recapLink} title={recapLink ? "The page where your players read every recap" : "This campaign has no player link yet (Roster)"}>Copy recap link</button>
               <button style={btnGhost} onClick={postRecap} disabled={recapPosting || !recap.trim()}>
                 {recapPosting ? "Posting..." : "Post to Discord"}
               </button>

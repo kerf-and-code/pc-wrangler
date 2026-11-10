@@ -1,12 +1,20 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export const maxDuration = 30;
+
+// Audit B22 / T2 (2026-11-09): this route used to mail the recap to any 50 addresses, as often as it was
+// called, gated only by whatever the sessions row rules allowed. Now: the caller must be the campaign's
+// GM (checked here, not left to RLS), at most 20 addresses per send, at most 3 sends per session and 60
+// recipients per GM in any 24 hours (recap_sends, p134). Each email links to the campaign's recap page.
 
 // Must be an address on your Resend-verified sending domain.
 const RECAP_FROM = "Six Axes <recaps@send.kerfandcode.com>";
 const UNSUBSCRIBE_MAILTO = "mailto:unsubscribe@send.kerfandcode.com";
-const MAX_RECIPIENTS = 50;
+const MAX_RECIPIENTS = 20;
+const MAX_SENDS_PER_SESSION_PER_DAY = 3;
+const MAX_RECIPIENTS_PER_GM_PER_DAY = 60;
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -18,19 +26,20 @@ function esc(s: string) {
     .replace(/"/g, "&quot;");
 }
 
-function recapHtml(campaignName: string, sessionNumber: number | null, recap: string) {
+function recapHtml(campaignName: string, sessionNumber: number | null, recap: string, link: string | null) {
   const paragraphs = esc(recap)
     .split(/\n\s*\n/)
     .map((p) => `<p style="margin:0 0 16px;line-height:1.7;color:#23202b;">${p.replace(/\n/g, "<br/>")}</p>`)
     .join("");
   const heading = sessionNumber != null
-    ? `${esc(campaignName)} — Session ${sessionNumber}`
+    ? `${esc(campaignName)}, Session ${sessionNumber}`
     : esc(campaignName);
   return `<!doctype html><html><body style="margin:0;background:#f4f1ea;padding:24px;font-family:Georgia,'Iowan Old Style',serif;">
   <div style="max-width:560px;margin:0 auto;background:#fffdf8;border:1px solid #e3dbc9;border-radius:12px;padding:28px 30px;">
     <div style="font-size:12px;letter-spacing:0.18em;text-transform:uppercase;color:#9a7b2e;margin-bottom:6px;">Previously on…</div>
     <div style="font-size:20px;font-weight:700;color:#1c1a22;margin-bottom:18px;">${heading}</div>
     ${paragraphs}
+    ${link ? `<p style="margin:22px 0 0;"><a href="${esc(link)}" style="display:inline-block;background:#9a7b2e;color:#fffdf8;text-decoration:none;padding:10px 16px;border-radius:8px;font-family:Arial,sans-serif;font-size:14px;">Read every recap for ${esc(campaignName)}</a></p>` : ""}
   </div>
   <div style="max-width:560px;margin:14px auto 0;text-align:center;font-family:Arial,sans-serif;font-size:11px;color:#8a8597;line-height:1.5;">
     You're receiving this because your GM shares Six Axes recaps with your table.<br/>
@@ -58,7 +67,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Please sign in." }, { status: 401 });
     }
 
-    // RLS ensures the user can only read their own session.
+    // RLS decides which sessions the caller can read; being the GM is checked below as well.
     const { data: session, error: sErr } = await supabase
       .from("sessions")
       .select("id, campaign_id, session_number, recap")
@@ -71,9 +80,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Save a recap before sending." }, { status: 422 });
     }
 
+    const { data: isGm } = await supabase.rpc("is_campaign_gm", { p_campaign: session.campaign_id });
+    if (!isGm) {
+      return NextResponse.json({ error: "Only the campaign's GM sends recaps." }, { status: 403 });
+    }
+
     const { data: campaign } = await supabase
-      .from("campaigns").select("name, discord_channel_id").eq("id", session.campaign_id).single();
+      .from("campaigns").select("name, share_code").eq("id", session.campaign_id).single();
     const campaignName = campaign?.name || "Your campaign";
+    const origin = new URL(request.url).origin;
+    const link = campaign?.share_code ? `${origin}/recaps?share=${encodeURIComponent(campaign.share_code)}` : null;
 
     // Email-only route: require at least one valid email. Discord posting has its
     // own button (/api/recap/post-discord).
@@ -82,6 +98,24 @@ export async function POST(request: Request) {
         { error: "Add at least one valid email address." },
         { status: 400 },
       );
+    }
+
+    // The daily limits, from the log of earlier sends.
+    const admin = createAdminClient();
+    const since = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
+    const { data: recent, error: logErr } = await admin
+      .from("recap_sends").select("session_id, recipients").eq("sent_by", user.id).gte("created_at", since);
+    if (logErr) {
+      console.error("recap/send: recap_sends unreadable (has p134 run?)", logErr.message);
+      return NextResponse.json({ error: "Recap email is not available right now. Try again later." }, { status: 503 });
+    }
+    const rows = (recent ?? []) as { session_id: string; recipients: number }[];
+    if (rows.filter((r) => r.session_id === session.id).length >= MAX_SENDS_PER_SESSION_PER_DAY) {
+      return NextResponse.json({ error: `This recap has already been emailed ${MAX_SENDS_PER_SESSION_PER_DAY} times today. Try again tomorrow, or share the recap link instead.` }, { status: 429 });
+    }
+    const usedToday = rows.reduce((a, r) => a + (r.recipients || 0), 0);
+    if (usedToday + emails.length > MAX_RECIPIENTS_PER_GM_PER_DAY) {
+      return NextResponse.json({ error: `That would pass today's limit of ${MAX_RECIPIENTS_PER_GM_PER_DAY} recap emails. Share the recap link instead, or try again tomorrow.` }, { status: 429 });
     }
 
     let sent = 0;
@@ -94,9 +128,9 @@ export async function POST(request: Request) {
       }
 
       const subject = session.session_number != null
-        ? `Recap — ${campaignName}, Session ${session.session_number}`
-        : `Recap — ${campaignName}`;
-      const html = recapHtml(campaignName, session.session_number, session.recap);
+        ? `Recap: ${campaignName}, Session ${session.session_number}`
+        : `Recap: ${campaignName}`;
+      const html = recapHtml(campaignName, session.session_number, session.recap, link);
 
       const results = await Promise.all(emails.map(async (to) => {
         try {
@@ -119,6 +153,8 @@ export async function POST(request: Request) {
 
       sent = results.filter((r) => r.ok).length;
       failed = results.filter((r) => !r.ok).map((r) => r.to);
+      // Logged after sending, counting what was attempted, so failures still count toward the limits.
+      await admin.from("recap_sends").insert({ campaign_id: session.campaign_id, session_id: session.id, sent_by: user.id, recipients: emails.length });
     }
 
     // Discord posting is a separate action (see /api/recap/post-discord), so this

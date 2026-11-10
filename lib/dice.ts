@@ -25,6 +25,9 @@ export type DiceTerm = {
   count: number;
   sides: number;
   keep?: { mode: "h" | "l"; n: number };
+  /** -1 when the term is subtracted ("1d20-1d4"); absent means added. (Audit B7, 2026-11-09: the sign
+   *  used to be read and then ignored, so "1d20-1d4" rolled as "1d20+1d4".) */
+  sign?: -1;
 };
 
 export type ParsedDice = {
@@ -74,7 +77,7 @@ export function parseDice(input: string): ParsedDice {
       if (n < 1 || n > count) throw new DiceError(`Cannot keep ${n} of ${count} dice.`);
       keep = { mode: m[4] as "h" | "l", n };
     }
-    terms.push({ count, sides, keep });
+    terms.push(m[1] === "-" ? { count, sides, keep, sign: -1 } : { count, sides, keep });
   }
 
   if (terms.length === 0) throw new DiceError("No dice in that. Try d20 or 2d6+3.");
@@ -97,7 +100,7 @@ export function parseDice(input: string): ParsedDice {
 
   const normalized =
     terms.map((t, i) =>
-      `${i > 0 ? "+" : ""}${t.count}d${t.sides}${t.keep ? `k${t.keep.mode}${t.keep.n}` : ""}`).join("")
+      `${t.sign === -1 ? "-" : i > 0 ? "+" : ""}${t.count}d${t.sides}${t.keep ? `k${t.keep.mode}${t.keep.n}` : ""}`).join("")
     + (modifier ? (modifier > 0 ? `+${modifier}` : `${modifier}`) : "");
 
   return { terms, modifier, normalized };
@@ -153,7 +156,7 @@ export function roll(input: string): RollResult {
     faces.forEach((v, i) => {
       const kept = keptIdx.has(i);
       dice.push({ sides: t.sides, value: v, kept });
-      if (kept) total += v;
+      if (kept) total += t.sign === -1 ? -v : v;
     });
   }
 

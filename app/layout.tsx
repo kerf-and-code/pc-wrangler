@@ -5,7 +5,7 @@ import SystemThemeProvider from "@/components/system-theme-provider";
 import SystemEffects from "@/components/system-effects";
 import JsonLd from "@/components/json-ld";
 import { organizationSchema, websiteSchema } from "@/lib/seo";
-import Script from "next/script";
+import Analytics from "@/components/analytics";
 import "./globals.css";
 
 // Google Analytics 4 measurement ID. A measurement ID is public (it ships in the page), so hard-coding
@@ -190,21 +190,11 @@ export default function RootLayout({
   return (
     <html lang="en" className={fontVars} suppressHydrationWarning>
       <body className={`${geistSans.className} antialiased`}>
-        {/* Google Analytics 4. afterInteractive loads gtag once the page is interactive so it never
-            blocks first paint; it fires a pageview on load and, because Next's App Router does client
-            navigation, GA's SPA page_view tracking follows route changes automatically. Production only,
-            so preview builds and local dev do not skew the numbers. */}
-        {process.env.NODE_ENV === "production" && (
-          <>
-            <Script src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`} strategy="afterInteractive" />
-            <Script id="ga4-init" strategy="afterInteractive">
-              {`window.dataLayer = window.dataLayer || [];
-function gtag(){dataLayer.push(arguments);}
-gtag('js', new Date());
-gtag('config', '${GA_ID}');`}
-            </Script>
-          </>
-        )}
+        {/* Google Analytics 4 (components/analytics.tsx): never on player, share-code or sign-in pages,
+            and page views carry the path only, so share codes never reach Google (audit T3). Real
+            production only: VERCEL_ENV is "preview" on preview deploys, where NODE_ENV is also
+            "production". */}
+        {(process.env.VERCEL_ENV ? process.env.VERCEL_ENV === "production" : process.env.NODE_ENV === "production") && <Analytics id={GA_ID} />}
         {/* Sitewide entity graph: Organization + WebSite. Product/FAQ/breadcrumb schema is added
             per-page (home, /faq, /tools/*). */}
         <JsonLd data={[organizationSchema(), websiteSchema()]} />

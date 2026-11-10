@@ -153,10 +153,13 @@ export async function POST(request: NextRequest) {
 
   // Find the open session for each held campaign. Only campaigns with a live
   // session are eligible routing targets.
+  // Audit B3 (2026-11-09): only sessions actually underway (started, not ended). A scheduled future
+  // session also has no ended_at, and could win as the "live" one.
   const { data: openSessions } = await sb
     .from("sessions")
     .select("id, campaign_id, started_at, created_at")
     .in("campaign_id", campaignIds)
+    .not("started_at", "is", null)
     .is("ended_at", null);
 
   // campaign_id -> { session_id, ts } keeping the most-recently-started open session.

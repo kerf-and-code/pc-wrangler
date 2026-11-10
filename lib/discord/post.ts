@@ -39,12 +39,17 @@ function chunkRecap(text: string, size: number): string[] {
 //
 // It goes in a FIELD rather than appended to the description, so it cannot interact with
 // the 4000 character chunking or push a long recap over the embed limit.
+//
+// recapLink (2026-11-09) is the campaign's recap page (/recaps?share=...). Unlike a claim link it is
+// one link for the whole table and binds nothing, so it is safe in a public channel; it gets its own
+// field, before the claim note.
 export async function postRecapToDiscord(
   channelId: string,
   campaignName: string,
   sessionNumber: number | null,
   recap: string,
   claimNote?: string | null,
+  recapLink?: string | null,
 ): Promise<boolean> {
   const token = process.env.DISCORD_BOT_TOKEN;
   if (!token || !channelId) return false;
@@ -53,7 +58,7 @@ export async function postRecapToDiscord(
   if (!body) return false;
 
   const title = sessionNumber != null
-    ? `Previously on ${campaignName} \u2014 Session ${sessionNumber}`
+    ? `Previously on ${campaignName}, Session ${sessionNumber}`
     : `Previously on ${campaignName}`;
 
   const parts = chunkRecap(body, MAX_DESC);
@@ -65,8 +70,11 @@ export async function postRecapToDiscord(
       if (i === 0) embed.title = title;
       // Last embed only: the reader reaches the end of the story before being asked for
       // anything.
-      if (i === parts.length - 1 && claimNote) {
-        embed.fields = [{ name: "Your character", value: claimNote }];
+      if (i === parts.length - 1 && (claimNote || recapLink)) {
+        embed.fields = [
+          ...(recapLink ? [{ name: "Read every recap", value: recapLink }] : []),
+          ...(claimNote ? [{ name: "Your character", value: claimNote }] : []),
+        ];
       }
       const res = await fetch(`${DISCORD_API}/channels/${channelId}/messages`, {
         method: "POST",

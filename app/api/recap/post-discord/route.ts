@@ -15,6 +15,9 @@ export const maxDuration = 30;
 // sees on screen is exactly what goes out, to either destination.
 //
 // Nothing posts without a GM click.
+//
+// 2026-11-09: the caller must be the campaign's GM (checked here, not left to RLS), and the post ends
+// with the campaign's recap page, where players read every recap without signing in.
 export async function POST(request: Request) {
   try {
     const body = await request.json().catch(() => ({}));
@@ -42,9 +45,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Save a recap before posting." }, { status: 422 });
     }
 
+    const { data: isGm } = await supabase.rpc("is_campaign_gm", { p_campaign: session.campaign_id });
+    if (!isGm) {
+      return NextResponse.json({ error: "Only the campaign's GM posts recaps." }, { status: 403 });
+    }
+
     const { data: campaign } = await supabase
       .from("campaigns")
-      .select("name, discord_channel_id")
+      .select("name, discord_channel_id, share_code")
       .eq("id", session.campaign_id)
       .single();
 
@@ -61,6 +69,10 @@ export async function POST(request: Request) {
     // Points at the command rather than carrying a link, because an invite code is per
     // character and this message is read by the whole table. /mypage answers each player
     // privately with their own.
+    // The campaign's recap page goes first: one link for the whole table, no sign-in needed.
+    const recapLink = campaign?.share_code
+      ? `${new URL(request.url).origin}/recaps?share=${encodeURIComponent(campaign.share_code)}`
+      : null;
     const claimNote =
       "Run `/mypage` in this server to open your character on the web: the full session " +
       "transcript, your own moments, and the party codex.";
@@ -71,6 +83,7 @@ export async function POST(request: Request) {
       session.session_number,
       session.recap,
       claimNote,
+      recapLink,
     );
 
     if (!posted) {
