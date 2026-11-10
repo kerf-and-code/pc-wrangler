@@ -172,7 +172,7 @@ export default function PlayCompanions({ companions, onChange, monsters, charact
             <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginTop: 8 }}>
               <span style={{ ...mono, fontSize: 20, fontWeight: 700, color: c.hp === 0 ? C.warn : STONE.ink }}>{c.hp}<span style={{ fontSize: 13, color: STONE.inkFaint }}> / {c.hpMax}</span>{c.temp ? <span style={{ fontSize: 13, color: "#6fa3d8" }}> +{c.temp} temp</span> : null}</span>
               <div style={{ flex: "1 1 80px", height: 6, background: "rgba(0,0,0,0.35)", borderRadius: 3 }}>
-                <div style={{ width: `${frac * 100}%`, height: 6, borderRadius: 3, background: frac > 0.5 ? "#5fae5a" : frac > 0.25 ? "#d9a43a" : "#d0463c" }} />
+                <div style={{ width: `${frac * 100}%`, height: 6, borderRadius: 3, background: frac > 0.5 ? C.good : frac > 0.25 ? "#d9a43a" : C.warn }} />
               </div>
               <input aria-label={`Amount for ${c.name}`} value={amt[c.id] ?? ""} inputMode="numeric" placeholder="amount"
                 onChange={(e) => setAmt({ ...amt, [c.id]: e.target.value.replace(/\D/g, "").slice(0, 4) })} style={{ ...field, width: 70 }} />

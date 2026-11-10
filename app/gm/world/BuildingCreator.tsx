@@ -172,9 +172,9 @@ export default function BuildingCreator({ campaignId }: { campaignId: string }) 
         <div style={{ marginTop: 8 }}><button type="button" onClick={render} disabled={busy} style={btn(C.sun, "#1b1712")}>{busy ? "Painting\u2026" : "Paint building"}</button></div>
         <div style={{ marginTop: 8 }}><button type="button" onClick={saveLocally} style={btn("transparent", C.text)}>Save image</button></div>
 
-        {msg && <p style={{ color: "#c98a7a", fontSize: 12, marginTop: 12 }}>{msg}</p>}
+        {msg && <p style={{ color: C.warn, fontSize: 12, marginTop: 12 }}>{msg}</p>}
         {campaignId && saveState !== "idle" && (
-          <p role="status" aria-live="polite" style={{ color: saveState === "error" ? "#c98a7a" : "#9a917f", fontSize: 12, marginTop: 8 }}>
+          <p role="status" aria-live="polite" style={{ color: saveState === "error" ? C.warn : "#9a917f", fontSize: 12, marginTop: 8 }}>
             {saveState === "saving" ? "Saving\u2026" : saveState === "saved" ? "Saved" : saveMsg}
           </p>
         )}

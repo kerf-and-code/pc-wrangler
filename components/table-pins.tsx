@@ -112,11 +112,11 @@ export function PinCard({ pin, isGm, campaignId, supabase, entries, onNeedEntrie
         Players see it <span style={{ color: C.muted }}>(once the fog there is lifted)</span>
       </label>
       <div style={{ display: "flex", gap: 6, marginTop: 10, flexWrap: "wrap" }}>
-        <button type="button" disabled={busy} onClick={() => void save()} style={{ ...small, background: C.sun, color: "#1b1712", border: "none", fontWeight: 600 }}>{busy ? "Saving..." : "Save"}</button>
+        <button type="button" disabled={busy} onClick={() => void save()} style={{ ...small, background: C.sun, color: "#1b1712", border: "none", fontWeight: 600 }}>{busy ? "Saving…" : "Save"}</button>
         {pin.entryId && <button type="button" onClick={() => onRead(pin)} style={small}>Read the entry</button>}
         {!confirmDel
-          ? <button type="button" onClick={() => setConfirmDel(true)} style={{ ...small, color: "#e07a70", marginLeft: "auto" }}>Delete</button>
-          : <button type="button" disabled={busy} onClick={() => void remove()} style={{ ...small, background: "#e07a70", color: "#1b1712", border: "none", marginLeft: "auto" }}>Delete this pin</button>}
+          ? <button type="button" onClick={() => setConfirmDel(true)} style={{ ...small, color: C.warn, marginLeft: "auto" }}>Delete</button>
+          : <button type="button" disabled={busy} onClick={() => void remove()} style={{ ...small, background: C.warn, color: "#1b1712", border: "none", marginLeft: "auto" }}>Delete this pin</button>}
       </div>
     </div>
   );
@@ -143,7 +143,7 @@ export function TokenNotes({ tokenId, tokenName, campaignId, supabase, onChange,
 
   const save = (text: string) => {
     if (timer.current) window.clearTimeout(timer.current);
-    setStatus("Saving...");
+    setStatus("Saving…");
     timer.current = window.setTimeout(async () => {
       const t = text.slice(0, 4000);
       const { error } = t.trim()
@@ -162,7 +162,7 @@ export function TokenNotes({ tokenId, tokenName, campaignId, supabase, onChange,
         <button type="button" onClick={onClose} style={small}>Done</button>
       </div>
       <textarea aria-label={`Note on ${tokenName}`} value={body ?? ""} disabled={body === null} rows={5} maxLength={4000}
-        placeholder={body === null ? "Loading..." : "Motives, secrets, what they carry. Only you see this."}
+        placeholder={body === null ? "Loading…" : "Motives, secrets, what they carry. Only you see this."}
         onChange={(e) => { setBody(e.target.value); save(e.target.value); }} style={{ ...field, resize: "vertical" }} />
     </div>
   );

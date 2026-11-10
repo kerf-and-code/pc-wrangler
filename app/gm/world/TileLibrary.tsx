@@ -157,7 +157,7 @@ export default function TileLibrary({ scope, onChange }: { scope: TileScope; onC
         </div>
       )}
 
-      {msg && <p style={{ color: "#c98a7a", fontSize: 12, marginTop: 10 }}>{msg}</p>}
+      {msg && <p style={{ color: C.warn, fontSize: 12, marginTop: 10 }}>{msg}</p>}
     </div>
   );
 }

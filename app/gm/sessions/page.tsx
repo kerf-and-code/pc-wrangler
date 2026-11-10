@@ -7,6 +7,7 @@ import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import { initialCampaignId, useRememberCampaign, initialSessionId, useRememberSession, gmHref } from "@/lib/campaign-context";
 import { friendlyError } from "@/lib/friendly-error";
 import { askConfirm } from "@/lib/confirm";
+import { fmtDateTime } from "@/lib/format";
 
 const STATUS_TONE: Record<string, string> = {
   scheduled: C.muted, live: C.warn, completed: C.sun, processed: C.good, cancelled: C.muted,
@@ -703,13 +704,13 @@ export default function SessionWorkspace() {
     return m;
   }, [eventTypes]);
 
-  if (loading) return <Shell><p style={{ color: C.muted }}>Loading...</p></Shell>;
+  if (loading) return <Shell><p role="status" style={{ color: C.muted }}>Loading…</p></Shell>;
 
   return (
     <Shell>
-      <div className="mono" style={{ fontSize: 11, letterSpacing: "0.22em", color: C.brass, textTransform: "uppercase", marginBottom: 18 }}>
-        Session Log
-      </div>
+      <h1 className="mono" style={{ fontSize: 11, fontWeight: 400, letterSpacing: "0.22em", color: C.brass, textTransform: "uppercase", margin: "0 0 18px" }}>
+        Session log
+      </h1>
       {err && <div role="alert" style={{ ...box, borderColor: C.warn, color: C.warn, fontSize: 13 }}>{err}</div>}
 
       {/* campaign + session pickers */}
@@ -777,7 +778,7 @@ export default function SessionWorkspace() {
                         disabled={sessionClosing}
                         style={{ background: "none", color: C.accent, border: `1px solid ${C.accent}`, borderRadius: FORGE_RADIUS, padding: "7px 14px", fontSize: 12, cursor: sessionClosing ? "default" : "pointer", opacity: sessionClosing ? 0.6 : 1 }}
                       >
-                        {sessionClosing ? "Working..." : "End and process"}
+                        {sessionClosing ? "Working…" : "End and process"}
                       </button>
                     )}
                     {isOpen && (
@@ -786,7 +787,7 @@ export default function SessionWorkspace() {
                         disabled={sessionClosing}
                         style={{ background: "none", color: C.brass, border: `1px solid ${C.brassDim}`, borderRadius: FORGE_RADIUS, padding: "7px 14px", fontSize: 12, cursor: sessionClosing ? "default" : "pointer", opacity: sessionClosing ? 0.6 : 1 }}
                       >
-                        {sessionClosing ? "Closing..." : `Close session #${cur.session_number ?? "?"}`}
+                        {sessionClosing ? "Closing…" : `Close session #${cur.session_number ?? "?"}`}
                       </button>
                     )}
                     {canReopen && (
@@ -795,7 +796,7 @@ export default function SessionWorkspace() {
                         disabled={sessionReopening}
                         style={{ background: "none", color: C.accent, border: `1px solid ${C.accent}`, borderRadius: FORGE_RADIUS, padding: "7px 14px", fontSize: 12, cursor: sessionReopening ? "default" : "pointer", opacity: sessionReopening ? 0.6 : 1 }}
                       >
-                        {sessionReopening ? "Reopening..." : `Reopen session #${cur.session_number ?? "?"}`}
+                        {sessionReopening ? "Reopening…" : `Reopen session #${cur.session_number ?? "?"}`}
                       </button>
                     )}
                     {canDelete && (
@@ -804,7 +805,7 @@ export default function SessionWorkspace() {
                         disabled={sessionDeleting}
                         style={{ background: "none", color: C.warn, border: `1px solid ${C.warn}`, borderRadius: FORGE_RADIUS, padding: "7px 14px", fontSize: 12, cursor: sessionDeleting ? "default" : "pointer", opacity: sessionDeleting ? 0.6 : 1 }}
                       >
-                        {sessionDeleting ? "Deleting..." : `Delete session #${cur.session_number ?? "?"}`}
+                        {sessionDeleting ? "Deleting…" : `Delete session #${cur.session_number ?? "?"}`}
                       </button>
                     )}
                   </div>
@@ -855,7 +856,7 @@ export default function SessionWorkspace() {
                   ))}
                 </div>
                 <button style={btnGhost} onClick={generateRecap} disabled={recapLoading}>
-                  {recapLoading ? "Generating..." : recap ? "Regenerate" : "Generate recap"}
+                  {recapLoading ? "Generating…" : recap ? "Regenerate" : "Generate recap"}
                 </button>
               </div>
             </div>
@@ -872,12 +873,12 @@ export default function SessionWorkspace() {
             />
             <div style={{ display: "flex", gap: 8, marginTop: 10, alignItems: "center", flexWrap: "wrap" }}>
               <button style={btn} onClick={saveRecap} disabled={recapSaving || !recap.trim()}>
-                {recapSaving ? "Saving..." : "Save recap"}
+                {recapSaving ? "Saving…" : "Save recap"}
               </button>
               <button style={btnGhost} onClick={copyRecap} disabled={!recap.trim()}>Copy text</button>
               <button style={btnGhost} onClick={copyRecapLink} disabled={!recapLink} title={recapLink ? "The page where your players read every recap" : "This campaign has no player link yet (Roster)"}>Copy recap link</button>
               <button style={btnGhost} onClick={postRecap} disabled={recapPosting || !recap.trim()}>
-                {recapPosting ? "Posting..." : "Post to Discord"}
+                {recapPosting ? "Posting…" : "Post to Discord"}
               </button>
               {recapMsg && <span style={{ fontSize: 12, color: C.muted }}>{recapMsg}</span>}
             </div>
@@ -893,7 +894,7 @@ export default function SessionWorkspace() {
                   onChange={(e) => setRecipients(e.target.value)}
                 />
                 <button style={btn} onClick={sendRecap} disabled={recapSending || !recap.trim() || !recipients.trim()}>
-                  {recapSending ? "Sending..." : "Send to players"}
+                  {recapSending ? "Sending…" : "Send to players"}
                 </button>
               </div>
             </div>
@@ -944,7 +945,7 @@ export default function SessionWorkspace() {
                   return (
                     <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "9px 11px", background: C.ink, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
                       <div style={{ minWidth: 0 }}>
-                        <div style={{ fontSize: 14, color: C.vellum }}>{new Date(iso).toLocaleString([], { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</div>
+                        <div style={{ fontSize: 14, color: C.vellum }}>{fmtDateTime(iso)}</div>
                         <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>{yes.length} available{names.length ? `: ${names.join(", ")}` : ""}</div>
                       </div>
                       <button style={btn} onClick={() => confirmSlot(i)} disabled={confirmBusy}>Confirm</button>
@@ -984,7 +985,7 @@ export default function SessionWorkspace() {
                 style={{ ...inputStyle, colorScheme: "dark" }}
               />
               <button style={btn} onClick={saveSchedule} disabled={schedSaving}>
-                {schedSaving ? "Saving..." : "Save time"}
+                {schedSaving ? "Saving…" : "Save time"}
               </button>
               {schedDraft && <button style={btnGhost} onClick={() => setSchedDraft("")}>Clear</button>}
               {schedMsg && <span style={{ fontSize: 12, color: C.muted }}>{schedMsg}</span>}

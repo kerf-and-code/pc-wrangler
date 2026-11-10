@@ -29,6 +29,7 @@ import { C, FORGE_RADIUS, STONE } from "@/lib/forge-theme";
 import { SAX } from "@/lib/theme";
 import { initialCampaignId, useRememberCampaign, initialSessionId, useRememberSession } from "@/lib/campaign-context";
 import { askConfirm } from "@/lib/confirm";
+import { fmtDateTime } from "@/lib/format";
 
 type Phase = "idle" | "armed" | "recording" | "stopped" | "uploading" | "done" | "error";
 type Campaign = { id: string; name: string };
@@ -342,7 +343,7 @@ export default function RoomRecordPage() {
           <p style={body}>
             About {Math.max(1, Math.round((recovered * 15) / 60))} minute{Math.round((recovered * 15) / 60) === 1 ? "" : "s"} of
             audio from an earlier recording {recoveredMeta
-              ? <>for {campaigns.find((c) => c.id === recoveredMeta.campaignId)?.name ?? "one of your campaigns"} (started {new Date(recoveredMeta.startedAt).toLocaleString()})</>
+              ? <>for {campaigns.find((c) => c.id === recoveredMeta.campaignId)?.name ?? "one of your campaigns"} (started {fmtDateTime(recoveredMeta.startedAt)})</>
               : null} is still on this device and has not been uploaded. Nothing has been lost.
           </p>
           <button style={btn(true)} onClick={() => void upload()}>Upload it now</button>

@@ -3,10 +3,11 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import WorldMapViewer from "@/components/worldmap/WorldMapViewer";
+import PageShell from "@/components/page-shell";
 import { C } from "@/lib/forge-theme";
 import { ConnectProblem, LinkInvalid } from "@/components/load-problem";
 
-// Player World Map: the ?share= entry point (Story -> World Map in the player nav).
+// Player World map: the ?share= entry point (This table, then World map, in the player nav).
 // Mirrors the Lore page's auth: read the share code, sign in anonymously, then hands the
 // code to the viewer, which reads through the share-scoped *_for_player RPCs. Read-only.
 export default function PlayerWorldMapPage() {
@@ -31,12 +32,14 @@ export default function PlayerWorldMapPage() {
     return () => { active = false; };
   }, [supabase]);
 
-  if (offline) return <div style={{ padding: 24 }}><ConnectProblem /></div>;
-  if (shareCode === undefined) {
-    return <p style={{ color: C.muted, fontSize: 14, padding: 24 }}>Loading the world map&hellip;</p>;
-  }
-  if (shareCode === null) {
-    return <div style={{ padding: 24 }}><LinkInvalid /></div>;
-  }
-  return <WorldMapViewer shareCode={shareCode} />;
+  // Audit U27: inside PageShell with the menu, like every other table page.
+  return (
+    <PageShell width={1600}>
+      <h1 className="sr-only">World map</h1>
+      {offline ? <ConnectProblem />
+        : shareCode === undefined ? <p role="status" style={{ color: C.muted, fontSize: 14 }}>Loading the world map&hellip;</p>
+        : shareCode === null ? <LinkInvalid />
+        : <WorldMapViewer shareCode={shareCode} inShell />}
+    </PageShell>
+  );
 }

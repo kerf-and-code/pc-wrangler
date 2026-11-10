@@ -446,7 +446,7 @@ export default function DungeonCreator({ campaignId }: { campaignId: string }) {
           <div style={{ marginTop: 16 }}><button type="button" onClick={saveImage} style={btn(C.sun, "#1b1712")}>Save map image</button></div>
           <div style={{ marginTop: 8 }}><button type="button" onClick={doUndo} style={btn("transparent", C.text)}>Undo (Ctrl+Z)</button></div>
           <div style={{ marginTop: 8 }}><button type="button" onClick={clearLevel} style={btn("transparent", C.muted)}>Clear this level</button></div>
-          {msg && <p role="status" style={{ color: "#c98a7a", fontSize: 12, marginTop: 12 }}>{msg}</p>}
+          {msg && <p role="status" style={{ color: C.warn, fontSize: 12, marginTop: 12 }}>{msg}</p>}
         </div>
       </div>
 

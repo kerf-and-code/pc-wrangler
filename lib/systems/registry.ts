@@ -8,9 +8,8 @@ import { drawsteel } from "./drawsteel";
 import { lancer } from "./lancer";
 import { darkmatter } from "./darkmatter";
 
-// The registry maps a campaign's `system` to its module. Today it holds only D&D 5e, so every
-// campaign resolves to the same module and behavior is unchanged. New systems are added here as
-// their modules are built (pf2e, coc7e, ...).
+// The registry maps a campaign's `system` to its module: D&D 5e and every other system that has a
+// module (MODULES below). New systems are added here as their modules are built.
 //
 // Everything reading the active system goes through getModule(), never a hardcoded system check, so
 // when the day comes that a campaign is "pf2e" the right module simply falls out. Unknown or missing

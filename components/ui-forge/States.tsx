@@ -5,7 +5,7 @@ import { C } from "@/lib/forge-theme";
 // components/ui-forge/States.tsx
 //
 // The three async states every data page hand-rolls: loading, empty, and error. Each is the same
-// slate box the pages already use, with the right text tone. Replaces ~115 bespoke "Loading..."
+// slate box the pages already use, with the right text tone. Replaces ~115 bespoke "Loading…"
 // sites, ~38 empty-state strings, and scattered catch-to-UI, and folds in the accessibility these
 // almost always missed: LoadingState announces politely, ErrorState is a live alert.
 

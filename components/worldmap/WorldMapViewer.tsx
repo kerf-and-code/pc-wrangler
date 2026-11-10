@@ -57,7 +57,9 @@ function poiIconSrc(iconKey: string | null, iconId: string | null, color: string
   return null;
 }
 
-export default function WorldMapViewer({ campaignId, shareCode }: { campaignId?: string; shareCode?: string }) {
+// inShell: drawn inside PageShell with the menu (the player World map, audit U27), so it takes the
+// height left under the menu rather than the whole window.
+export default function WorldMapViewer({ campaignId, shareCode, inShell = false }: { campaignId?: string; shareCode?: string; inShell?: boolean }) {
   const supabase = useMemo(() => createClient(), []);
   const [bundle, setBundle] = useState<Bundle | null | undefined>(undefined);
   const [terrain, setTerrain] = useState<Terrain | null>(null);
@@ -246,7 +248,7 @@ export default function WorldMapViewer({ campaignId, shareCode }: { campaignId?:
 
   // Terrain is decoded only after three more reads, so "no terrain yet" is loading, not missing: it
   // used to say "not available to you" on every visit until the terrain arrived. Every state also
-  // keeps the way back to the table, since this page has no menu.
+  // keeps a way back to the table.
   const backLink = shareCode ? (
     <a href={`/me?share=${encodeURIComponent(shareCode)}`} style={{ fontSize: 13, color: C.sun, textDecoration: "none", padding: "6px 4px", minHeight: 32, display: "inline-flex", alignItems: "center" }}>
       {"\u2190"} Back to your table
@@ -274,7 +276,7 @@ export default function WorldMapViewer({ campaignId, shareCode }: { campaignId?:
   const layers = bundle.layers;
 
   return (
-    <div style={{ height: "100vh", display: "flex", flexDirection: "column", background: "#171310" }}>
+    <div style={{ height: inShell ? "calc(100dvh - 120px)" : "100vh", minHeight: inShell ? 420 : undefined, display: "flex", flexDirection: "column", background: "#171310", borderRadius: inShell ? 8 : undefined, overflow: inShell ? "hidden" : undefined }}>
       <div style={{ display: "flex", gap: 12, alignItems: "center", padding: "10px 16px", borderBottom: `1px solid ${C.line}` }}>
         {/* The player World Map fills the screen and has no menu, so without this it was a dead end
             that only the browser's back button left. */}

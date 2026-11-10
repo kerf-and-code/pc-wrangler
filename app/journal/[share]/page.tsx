@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import { ConnectProblem, LinkInvalid } from "@/components/load-problem";
+import { SAX } from "@/lib/theme";
 
 type Content = {
   campaign: string;
@@ -40,13 +41,13 @@ export default function CampaignJournalPage() {
   }, [supabase]);
 
   const eyebrow = { fontFamily: "ui-monospace, monospace", fontSize: 11, letterSpacing: "0.22em", textTransform: "uppercase" as const, color: C.muted };
-  const sectionTitle = { fontFamily: "'Iowan Old Style', Georgia, serif", fontSize: 20, fontWeight: 700, color: C.text, margin: "32px 0 12px" };
+  const sectionTitle = { fontFamily: SAX.serif, fontSize: 20, fontWeight: 700, color: C.text, margin: "32px 0 12px" };
   const card = { background: C.surface, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "14px 18px", marginBottom: 10 };
 
   return (
     <PageShell width={920}>
       <div style={{ width: "100%", maxWidth: 680, margin: "0 auto" }}>
-        {status === "loading" && <p style={{ textAlign: "center", color: C.muted, fontSize: 14 }}>Loading&hellip;</p>}
+        {status === "loading" && <p role="status" style={{ textAlign: "center", color: C.muted, fontSize: 14 }}>Loading&hellip;</p>}
         {status === "invalid" && <LinkInvalid what="journal link" />}
         {status === "offline" && <ConnectProblem />}
         {status === "empty" && (
@@ -58,7 +59,7 @@ export default function CampaignJournalPage() {
         {status === "ready" && content && (
           <>
             <div style={{ textAlign: "center", marginBottom: 4 }}>
-              <span style={{ fontFamily: "'Iowan Old Style', Georgia, serif", fontSize: 30, fontWeight: 700 }}>{content.campaign}</span>
+              <span style={{ fontFamily: SAX.serif, fontSize: 30, fontWeight: 700 }}>{content.campaign}</span>
             </div>
             <div style={{ ...eyebrow, textAlign: "center", marginBottom: 18 }}>A CHRONICLE {"\u00b7"} {content.sessions} SESSION{content.sessions === 1 ? "" : "S"}</div>
             <div style={{ height: 3, borderRadius: 3, background: `linear-gradient(90deg, ${C.sun}, ${C.plum})`, marginBottom: 28 }} />

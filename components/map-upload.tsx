@@ -331,8 +331,8 @@ export default function MapUpload({ campaignId, onClose, onDone, dest = { kind: 
                   : <>{cols} by {rows} squares ({cols * feet} by {rows * feet} ft){cols !== rows && !tooSmall && !tooBig ? `. The table is square, so it gets ${Math.max(cols, rows) - Math.min(cols, rows)} empty ${cols > rows ? "rows" : "columns"} past the map's edge.` : "."}</>}
               </span>
               {imported && <span role="status" style={{ fontSize: 12.5, color: C.muted, flexBasis: "100%", order: -1 }}>{describeImport(imported.report)}</span>}
-              {tooSmall && <span style={{ fontSize: 12.5, color: "#e07a70" }}>That is under {MIN_SQ} squares a side: make the squares smaller.</span>}
-              {tooBig && <span style={{ fontSize: 12.5, color: "#e07a70" }}>{fixedN ? `This map is ${fixedN} squares a side: make the squares larger, or change the map's grid size first.` : `The table holds up to ${MAX_SQ} squares a side: make the squares larger.`}</span>}
+              {tooSmall && <span style={{ fontSize: 12.5, color: C.warn }}>That is under {MIN_SQ} squares a side: make the squares smaller.</span>}
+              {tooBig && <span style={{ fontSize: 12.5, color: C.warn }}>{fixedN ? `This map is ${fixedN} squares a side: make the squares larger, or change the map's grid size first.` : `The table holds up to ${MAX_SQ} squares a side: make the squares larger.`}</span>}
               <span style={{ flex: 1 }} />
               <button type="button" onClick={() => { setImg(null); setUv(null); setErr(null); }} disabled={!!busy} style={small}>Choose another</button>
               <button type="button" disabled={!!busy || tooSmall || tooBig} onClick={() => void save()}
@@ -342,7 +342,7 @@ export default function MapUpload({ campaignId, onClose, onDone, dest = { kind: 
             </div>
           </>
         )}
-        {err && <p role="alert" style={{ color: "#e07a70", fontSize: 12.5, margin: "10px 0 0" }}>{err}</p>}
+        {err && <p role="alert" style={{ color: C.warn, fontSize: 12.5, margin: "10px 0 0" }}>{err}</p>}
       </div>
     </div>
   );

@@ -14,6 +14,7 @@ import { rulesetForCampaign, pickerSystem } from "@/lib/systems/ruleset";
 import { canonicalSubclass, subclassKey } from "@/lib/subclass-names";
 import { friendlyError } from "@/lib/friendly-error";
 import { askConfirm } from "@/lib/confirm";
+import { fmtDate } from "@/lib/format";
 
 // Palette mapped onto the shared cellar theme.
 
@@ -275,7 +276,7 @@ export default function GMWorkspace() {
     setCampaigns((cs) => cs.filter((c) => c.id !== id));
     if (selected === id) { setSelected(null); setCharacters([]); }
     setTrashKey((k) => k + 1);
-    const when = eraseAt ? new Date(eraseAt).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : "in 30 days";
+    const when = eraseAt ? fmtDate(eraseAt) : "in 30 days";
     setNotice(`${name} is in the trash. Restore it any time before ${when}.`);
   }
   async function reloadCampaigns() {
@@ -452,9 +453,9 @@ export default function GMWorkspace() {
 
   return (
     <Shell>
-      <div className="tpdi-mono" style={{ fontSize: 11, letterSpacing: "0.22em", color: C.brass, textTransform: "uppercase", marginBottom: 18 }}>
-        GM Workspace
-      </div>
+      <h1 className="tpdi-mono" style={{ fontSize: 11, fontWeight: 400, letterSpacing: "0.22em", color: C.brass, textTransform: "uppercase", margin: "0 0 18px" }}>
+        Workspace
+      </h1>
 
       {err && (
         <div role="alert" style={{ ...box, borderColor: C.missing, color: C.warn, marginBottom: 16, fontSize: 13 }}>

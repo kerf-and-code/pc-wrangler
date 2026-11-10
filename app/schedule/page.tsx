@@ -6,6 +6,8 @@ import PageShell from "@/components/page-shell";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import { friendlyError } from "@/lib/friendly-error";
 import { ConnectProblem, LinkInvalid } from "@/components/load-problem";
+import { fmtDateTime } from "@/lib/format";
+import { SAX } from "@/lib/theme";
 
 type Sched = { session_id: string; session_number: number | null; scheduled_at: string; campaign_name: string };
 
@@ -85,21 +87,21 @@ export default function PlayerSchedulePage() {
 
   const card = { width: "100%", maxWidth: 460, margin: "0 auto", background: C.surface, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "32px 28px" } as const;
   const when = sched?.scheduled_at
-    ? new Date(sched.scheduled_at).toLocaleString(undefined, { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })
+    ? fmtDateTime(sched.scheduled_at)
     : "";
 
   return (
     <PageShell width={920}>
       <div style={card}>
         <div style={{ textAlign: "center", marginBottom: 4 }}>
-          <span style={{ fontFamily: "'Iowan Old Style', Georgia, serif", fontSize: 26, fontWeight: 700 }}>Next session</span>
+          <h1 style={{ fontFamily: SAX.serif, fontSize: 26, fontWeight: 700, margin: 0 }}>Next session</h1>
         </div>
         <div style={{ textAlign: "center", fontFamily: "ui-monospace, monospace", fontSize: 11, letterSpacing: "0.28em", color: C.muted, marginBottom: 18 }}>
           {sched?.campaign_name ? sched.campaign_name.toUpperCase() : "SIX AXES"}
         </div>
         <div style={{ height: 3, borderRadius: 3, background: `linear-gradient(90deg, ${C.sun}, ${C.plum})`, marginBottom: 24 }} />
 
-        {status === "loading" && <p style={{ textAlign: "center", color: C.muted, fontSize: 14 }}>Loading…</p>}
+        {status === "loading" && <p role="status" style={{ textAlign: "center", color: C.muted, fontSize: 14 }}>Loading…</p>}
 
         {status === "invalid" && <LinkInvalid />}
         {status === "offline" && <ConnectProblem />}

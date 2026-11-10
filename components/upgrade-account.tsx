@@ -274,7 +274,7 @@ export function UpgradeAccount({
               disabled={busy !== null || !email.trim()}
               style={btn("transparent", C.text, C.line)}
             >
-              {busy === "email" ? "Sending..." : "Send link"}
+              {busy === "email" ? "Sending…" : "Send link"}
             </button>
           </div>
         )}

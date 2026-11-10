@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import { ConnectProblem, LinkInvalid } from "@/components/load-problem";
+import { SAX } from "@/lib/theme";
 
 type Recap = { session_id: string; session_number: number | null; recap: string };
 
@@ -85,9 +86,9 @@ export default function PlayerRecapsPage() {
     <PageShell width={920}>
       <div style={{ width: "100%", maxWidth: 640, margin: "0 auto" }}>
         <div style={{ textAlign: "center", marginBottom: 4 }}>
-          <span style={{ fontFamily: "'Iowan Old Style', Georgia, serif", fontSize: 26, fontWeight: 700 }}>
+          <h1 style={{ fontFamily: SAX.serif, fontSize: 26, fontWeight: 700, margin: 0 }}>
             Session recaps
-          </span>
+          </h1>
         </div>
         <div style={{ ...eyebrow, textAlign: "center", marginBottom: 18 }}>
           {campaignName ? campaignName.toUpperCase() : "SIX AXES"}
@@ -95,7 +96,7 @@ export default function PlayerRecapsPage() {
         <div style={{ height: 3, borderRadius: 3, background: `linear-gradient(90deg, ${C.sun}, ${C.plum})`, marginBottom: 24 }} />
 
         {status === "loading" && (
-          <p style={{ textAlign: "center", color: C.muted, fontSize: 14 }}>Loading…</p>
+          <p role="status" style={{ textAlign: "center", color: C.muted, fontSize: 14 }}>Loading…</p>
         )}
 
 {status === "invalid" && <LinkInvalid />}

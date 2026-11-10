@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { SAX, STONE, surfaces } from "@/lib/theme";
-import { stoneField } from "@/lib/forge-theme";
+import { stoneField, C } from "@/lib/forge-theme";
 
 // components/pacing-calculator.tsx
 //
@@ -170,7 +170,7 @@ function Grid({ children }: { children: React.ReactNode }) {
   return <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>{children}</div>;
 }
 function Stat({ label, value, tone }: { label: string; value: string; tone?: "good" | "bad" }) {
-  const color = tone === "good" ? "#9aa880" : tone === "bad" ? "#d97d6d" : STONE.ink;
+  const color = tone === "good" ? "#9aa880" : tone === "bad" ? C.warn : STONE.ink;
   return (
     <div style={statBox}>
       <div style={statLabel}>{label}</div>

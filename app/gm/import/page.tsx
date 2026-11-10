@@ -97,7 +97,7 @@ export default function ImportPage() {
   return (
     <PageShell width={760}>
       <div style={label}>Backfill</div>
-      <h1 style={{ fontFamily: "'Iowan Old Style', Georgia, serif", fontSize: 30, fontWeight: 700, margin: "0 0 8px" }}>
+      <h1 style={{ fontFamily: SAX.serif, fontSize: 30, fontWeight: 700, margin: "0 0 8px" }}>
         Bring an existing campaign in
       </h1>
       <p style={{ color: C.muted, fontSize: 15, lineHeight: 1.6, margin: "0 0 22px", maxWidth: 620 }}>

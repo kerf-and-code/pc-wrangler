@@ -340,7 +340,7 @@ export default function BastionCreator({ campaignId }: { campaignId: string }) {
         </label>
 
         {plan.kind === "ship"
-          ? <p style={{ color: hasPropulsion ? C.muted : "#c98a7a", fontSize: 12, marginTop: 12 }}>
+          ? <p style={{ color: hasPropulsion ? C.muted : C.warn, fontSize: 12, marginTop: 12 }}>
               {hasPropulsion ? "Propulsion Helm placed, so this mobile bastion can move." : "A ship bastion needs a propulsion Helm (Eberron source). No defensive walls on a mobile bastion."}
             </p>
           : (
@@ -391,7 +391,7 @@ export default function BastionCreator({ campaignId }: { campaignId: string }) {
                   style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0, background: "transparent", border: "none", padding: 0, cursor: "pointer", textAlign: "left" }}>
                   <span style={{ width: 14, height: 14, borderRadius: 3, flexShrink: 0, border: "1px solid rgba(0,0,0,.4)", background: pl.color }} />
                   <span style={{ flex: 1, color: C.text, fontSize: 12.5 }}>{pl.label}{pl.enlarged ? " (Vast)" : ""}</span>
-                  <span style={{ color: over ? "#c98a7a" : C.muted, fontSize: 11.5 }}>{used}/{max}</span>
+                  <span style={{ color: over ? C.warn : C.muted, fontSize: 11.5 }}>{used}/{max}</span>
                 </button>
                 <button type="button" onClick={() => remove(idx)} aria-label={`Remove ${pl.label}`}
                   style={{ background: "transparent", border: "none", color: C.muted, fontSize: 14, padding: "0 2px", cursor: "pointer", lineHeight: 1, flexShrink: 0 }}>&times;</button>
@@ -468,7 +468,7 @@ export default function BastionCreator({ campaignId }: { campaignId: string }) {
             <span style={{ color: C.sun, fontWeight: 600 }}>{cost.totalGp.toLocaleString()} gp &middot; {cost.totalDays} days</span>
           </div>
         </div>
-        {specialCount > specialSlots && <p style={{ color: "#c98a7a", fontSize: 12, marginTop: 10 }}>{specialCount} special facilities placed but only {specialSlots} slots at level {meta.level}.</p>}
+        {specialCount > specialSlots && <p style={{ color: C.warn, fontSize: 12, marginTop: 10 }}>{specialCount} special facilities placed but only {specialSlots} slots at level {meta.level}.</p>}
 
         <label style={label}>Bastion name (optional)</label>
         <input type="text" value={meta.name ?? ""} onChange={(e) => patchMeta({ name: e.target.value || undefined })} placeholder="e.g. Blackbriar Keep"
@@ -485,9 +485,9 @@ export default function BastionCreator({ campaignId }: { campaignId: string }) {
         <div style={{ marginTop: 8 }}><button type="button" onClick={saveLocally} style={btn("transparent", C.text)}>Save image</button></div>
         <div style={{ marginTop: 8 }}><button type="button" onClick={clearDeck} style={btn("transparent", C.muted)}>Clear {deckLabel(plan, deck).toLowerCase()}</button></div>
 
-        {msg && <p style={{ color: "#c98a7a", fontSize: 12, marginTop: 12 }}>{msg}</p>}
+        {msg && <p style={{ color: C.warn, fontSize: 12, marginTop: 12 }}>{msg}</p>}
         {campaignId && saveState !== "idle" && (
-          <p role="status" aria-live="polite" style={{ color: saveState === "error" ? "#c98a7a" : C.muted, fontSize: 12, marginTop: 8 }}>
+          <p role="status" aria-live="polite" style={{ color: saveState === "error" ? C.warn : C.muted, fontSize: 12, marginTop: 8 }}>
             {saveState === "saving" ? "Saving\u2026" : saveState === "saved" ? "Saved" : saveMsg}
           </p>
         )}

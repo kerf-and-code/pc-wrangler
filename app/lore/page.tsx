@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import { ConnectProblem, LinkInvalid } from "@/components/load-problem";
+import { SAX } from "@/lib/theme";
 
 type Item = { item_kind: string; item_type: string; id: string; title: string; body: string | null };
 
@@ -49,12 +50,12 @@ export default function PlayerLorePage() {
     <PageShell width={920}>
       <div style={{ width: "100%", maxWidth: 640, margin: "0 auto" }}>
         <div style={{ textAlign: "center", marginBottom: 4 }}>
-          <span style={{ fontFamily: "'Iowan Old Style', Georgia, serif", fontSize: 26, fontWeight: 700 }}>What you know</span>
+          <h1 style={{ fontFamily: SAX.serif, fontSize: 26, fontWeight: 700, margin: 0 }}>What you know</h1>
         </div>
         <div style={{ ...eyebrow, textAlign: "center", marginBottom: 18 }}>PEOPLE, PLACES, AND LORE YOU&rsquo;VE LEARNED</div>
         <div style={{ height: 3, borderRadius: 3, background: `linear-gradient(90deg, ${C.sun}, ${C.plum})`, marginBottom: 24 }} />
 
-        {status === "loading" && <p style={{ textAlign: "center", color: C.muted, fontSize: 14 }}>Loading&hellip;</p>}
+        {status === "loading" && <p role="status" style={{ textAlign: "center", color: C.muted, fontSize: 14 }}>Loading&hellip;</p>}
         {status === "invalid" && <LinkInvalid />}
         {status === "offline" && <ConnectProblem />}
         {status === "empty" && (

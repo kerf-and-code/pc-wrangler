@@ -90,7 +90,7 @@ export default function BoundariesCard({ campaignId }: { campaignId: string }) {
       </p>
 
       {rows === null ? (
-        <div style={{ color: C.muted, fontSize: 13 }}>Loading...</div>
+        <div role="status" style={{ color: C.muted, fontSize: 13 }}>Loading…</div>
       ) : responded === 0 ? (
         <div style={{ color: C.muted, fontSize: 13, lineHeight: 1.6 }}>
           No safety responses yet. Players set their lines and veils when they take the TAVERN inventory from their session link.

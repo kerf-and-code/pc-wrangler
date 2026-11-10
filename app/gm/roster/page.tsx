@@ -11,6 +11,8 @@ import CharacterSheetPeek, { type Build } from "@/components/character-sheet-pee
 import { initialCampaignId, useRememberCampaign } from "@/lib/campaign-context";
 import { friendlyError } from "@/lib/friendly-error";
 import { askConfirm } from "@/lib/confirm";
+import { fmtDate } from "@/lib/format";
+import { LoadingState } from "@/components/ui-forge/States";
 
 type Campaign = { id: string; name: string; share_code: string | null };
 type Char = { id: string; name: string; profile_id: string | null; invite_code: string | null; build: Build; active: boolean | null };
@@ -54,7 +56,7 @@ export default function RosterPage() {
       setCampaigns(list);
       // A brand-new GM has no campaigns, so campaignId stays "" and the loader
       // below never runs. Clear loading here so they see the empty state, not a
-      // permanent "Loading...".
+      // permanent "Loading…".
       if (list.length) setCampaignId(initialCampaignId(list));
       else setLoading(false);
     })();
@@ -106,7 +108,7 @@ export default function RosterPage() {
 
   const respFor = (charId: string): Resp | null => responses.find((r) => r.assigned_character_id === charId) || null;
   const unassigned = responses.filter((r) => !r.assigned_character_id);
-  const respLabel = (r: Resp): string => r.player_name?.trim() || `Anonymous · ${new Date(r.created_at).toLocaleDateString()}`;
+  const respLabel = (r: Resp): string => r.player_name?.trim() || `Anonymous · ${fmtDate(r.created_at)}`;
   const boundCount = chars.filter((c) => respFor(c.id)).length;
 
   const box = { ...surfaces.slate, padding: 20, marginBottom: 18 } as const;
@@ -128,7 +130,7 @@ export default function RosterPage() {
         </div>
 
         {loading ? (
-          <div style={{ ...box, color: C.muted, fontSize: 14 }}>Loading…</div>
+          <LoadingState />
         ) : (
           <>
             <div style={{ ...box, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
@@ -253,7 +255,7 @@ export default function RosterPage() {
                   <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 8, flexWrap: "wrap" }}>
                     <button type="button" onClick={rotate} disabled={rotating}
                       style={{ background: "transparent", color: C.warn, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "5px 12px", fontSize: 12, fontWeight: 600, cursor: rotating ? "default" : "pointer" }}>
-                      {rotating ? "Regenerating..." : "Regenerate session link"}
+                      {rotating ? "Regenerating…" : "Regenerate session link"}
                     </button>
                     {rotateMsg && <span style={{ fontSize: 12, color: C.muted }}>{rotateMsg}</span>}
                   </div>

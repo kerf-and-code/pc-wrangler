@@ -18,6 +18,7 @@ import { SAX } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import { Header } from "@/app/me/campaigns/page";
 import { askConfirm } from "@/lib/confirm";
+import { fmtDate } from "@/lib/format";
 
 type Campaign = { campaign_id: string; campaign_name: string };
 type Note = { id: string; body: string; updated_at: string };
@@ -166,7 +167,7 @@ function NoteRow({ note, onSave, onRemove }: {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline",
         marginTop: 8, gap: 10 }}>
         <span style={{ fontFamily: SAX.mono, fontSize: 10.5, color: C.muted }}>
-          {dirty ? "unsaved" : new Date(note.updated_at).toLocaleDateString()}
+          {dirty ? "unsaved" : fmtDate(note.updated_at)}
         </span>
         <button
           onClick={async () => { if (await askConfirm("Delete this note? Nobody else has a copy.")) void onRemove(note.id); }}

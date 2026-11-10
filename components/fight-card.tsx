@@ -103,7 +103,7 @@ export default function FightCard({ campaignId, characterId, sheet, onSeen, comp
       <div style={{ display: "grid", gap: 8 }}>
         <span style={{ color: C.muted, fontSize: 13 }}>No fight running. The turn order shows here when the GM starts one.</span>
         <button type="button" onClick={() => openTabletop(campaignId)} style={{ ...btn, justifySelf: "start" }}>Open the tabletop</button>
-        {err && <span role="alert" style={{ color: "#e07a70", fontSize: 12 }}>{err}</span>}
+        {err && <span role="alert" style={{ color: C.warn, fontSize: 12 }}>{err}</span>}
       </div>
     );
   }
@@ -113,7 +113,7 @@ export default function FightCard({ campaignId, characterId, sheet, onSeen, comp
         <span style={{ color: C.muted, fontSize: 13 }}>No fight running right now. When the GM starts one, your HP and conditions show here.</span>
         <span style={{ flex: 1 }} />
         <button type="button" onClick={() => openTabletop(campaignId)} style={btn}>Open the tabletop</button>
-        {err && <span role="alert" style={{ color: "#e07a70", fontSize: 12 }}>{err}</span>}
+        {err && <span role="alert" style={{ color: C.warn, fontSize: 12 }}>{err}</span>}
       </div>
     );
   }
@@ -157,7 +157,7 @@ export default function FightCard({ campaignId, characterId, sheet, onSeen, comp
                 {e.name}{e.mine ? " (you)" : ""}
               </span>
               {e.kind === "pc" && e.hp != null && <span style={{ fontSize: 11.5, color: C.muted }}>{e.hp}{e.maxHp ? `/${e.maxHp}` : ""}</span>}
-              {e.awaitingSave && <span style={{ fontSize: 11, color: "#e07a70" }}>save due</span>}
+              {e.awaitingSave && <span style={{ fontSize: 11, color: C.warn }}>save due</span>}
               {(e.conditions ?? []).length > 0 && <span title={(e.conditions ?? []).join(", ")} style={{ fontSize: 11, color: C.sun }}>{(e.conditions ?? []).length} effect{(e.conditions ?? []).length === 1 ? "" : "s"}</span>}
             </li>
           ))}
@@ -166,7 +166,7 @@ export default function FightCard({ campaignId, characterId, sheet, onSeen, comp
           <button type="button" onClick={() => setFull(true)} style={{ ...btn, padding: "4px 10px", fontSize: 12 }}>All controls</button>
           <button type="button" onClick={() => openTabletop(campaignId)} style={{ ...btn, padding: "4px 10px", fontSize: 12 }}>Open the tabletop</button>
         </div>
-        {err && <p role="alert" style={{ color: "#e07a70", fontSize: 12, margin: 0 }}>{err}</p>}
+        {err && <p role="alert" style={{ color: C.warn, fontSize: 12, margin: 0 }}>{err}</p>}
       </section>
     );
   }
@@ -188,11 +188,11 @@ export default function FightCard({ campaignId, characterId, sheet, onSeen, comp
             <span style={{ fontSize: 26, fontWeight: 700, color: C.text }}>{me.hp ?? "?"}<span style={{ fontSize: 15, color: C.muted }}> / {me.maxHp ?? "?"} HP</span></span>
             {!!me.tempHp && <span style={{ color: "#6fa3d8", fontSize: 14 }}>+{me.tempHp} temp</span>}
             {me.ac != null && <span style={{ color: C.muted, fontSize: 13 }}>AC {me.ac}</span>}
-            {me.defeated && <span style={{ color: "#e07a70", fontSize: 13 }}>down</span>}
+            {me.defeated && <span style={{ color: C.warn, fontSize: 13 }}>down</span>}
           </div>
           {frac != null && (
             <div style={{ height: 6, background: "#2a241d", borderRadius: 3, margin: "6px 0 8px" }}>
-              <div style={{ width: `${frac * 100}%`, height: 6, borderRadius: 3, background: frac > 0.5 ? "#5fae5a" : frac > 0.25 ? "#d9a43a" : "#d0463c" }} />
+              <div style={{ width: `${frac * 100}%`, height: 6, borderRadius: 3, background: frac > 0.5 ? C.good : frac > 0.25 ? "#d9a43a" : C.warn }} />
             </div>
           )}
           <MarkerChips list={me.conditions ?? []} />
@@ -239,7 +239,7 @@ export default function FightCard({ campaignId, characterId, sheet, onSeen, comp
                   <span style={{ width: 26, textAlign: "center", fontWeight: 700, color: C.muted }}>{e.initiative ?? "?"}</span>
                   <span style={{ color: C.text, fontSize: 13.5, fontWeight: e.is_turn ? 700 : 500, textDecoration: e.defeated ? "line-through" : "none" }}>{e.name}</span>
                   {e.kind === "pc" && e.hp != null && <span style={{ fontSize: 12, color: C.muted }}>{e.hp}{e.maxHp ? `/${e.maxHp}` : ""}</span>}
-                  {e.awaitingSave && <span style={{ fontSize: 11, color: "#e07a70" }}>saving throw due</span>}
+                  {e.awaitingSave && <span style={{ fontSize: 11, color: C.warn }}>saving throw due</span>}
                   {e.is_turn && <TurnUsed entry={e} />}
                   <span style={{ flex: 1 }}><MarkerChips list={e.conditions ?? []} /></span>
                   <button type="button" onClick={() => setOpenId(open ? null : e.id)} aria-expanded={open}
@@ -253,7 +253,7 @@ export default function FightCard({ campaignId, characterId, sheet, onSeen, comp
           })}
         </div>
       </div>
-      {err && <p role="alert" style={{ color: "#e07a70", fontSize: 12, margin: "8px 0 0" }}>{err}</p>}
+      {err && <p role="alert" style={{ color: C.warn, fontSize: 12, margin: "8px 0 0" }}>{err}</p>}
     </section>
   );
 }

@@ -3,9 +3,11 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
-import { surfaces } from "@/lib/theme";
+import { surfaces, SAX } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import { ConnectProblem, LinkInvalid } from "@/components/load-problem";
+import { fmtDateTime } from "@/lib/format";
+import { LoadingState } from "@/components/ui-forge/States";
 
 type Msg = { id: string; author_profile: string; display_name: string | null; body: string; created_at: string };
 type Grant = { id: string; from_ts: string; to_ts: string };
@@ -94,7 +96,7 @@ export default function ChatPage() {
     if (code) refresh(code);
   }
 
-  const fmt = (iso: string): string => { try { return new Date(iso).toLocaleString(); } catch (e) { return iso; } };
+  const fmt = (iso: string): string => { return fmtDateTime(iso) || iso; };
   const box = { ...surfaces.slate, padding: 18 } as const;
   // No inline background/border: PageShell's cascade gives inputs the carved field look (gradient,
   // inset shadow). Setting them inline here is what made these read flat.
@@ -103,14 +105,14 @@ export default function ChatPage() {
   return (
     <PageShell width={720}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10, flexWrap: "wrap", marginBottom: 4 }}>
-          <h1 style={{ fontFamily: "'Iowan Old Style', Georgia, serif", fontSize: 26, margin: "8px 0 0" }}>Party chat</h1>
+          <h1 style={{ fontFamily: SAX.serif, fontSize: 26, margin: "8px 0 0" }}>Party chat</h1>
           {campaignName && <span style={{ fontSize: 12, color: C.muted, fontFamily: "ui-monospace, monospace", letterSpacing: "0.12em" }}>{campaignName.toUpperCase()}</span>}
         </div>
         <p style={{ color: C.muted, fontSize: 13, margin: "0 0 18px" }}>
           Just the players. Your GM can’t read this unless you grant them a time window below.
         </p>
 
-        {status === "loading" && <div style={{ ...box, color: C.muted, fontSize: 14 }}>Loading…</div>}
+        {status === "loading" && <LoadingState />}
         {status === "invalid" && <div style={box}><LinkInvalid /></div>}
         {status === "offline" && <div style={box}><ConnectProblem /></div>}
 

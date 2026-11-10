@@ -49,7 +49,7 @@ export function UpdatePasswordForm() {
           style={{ ...stoneButton("primary"), width: "100%" }}
           disabled={isLoading}
         >
-          {isLoading ? "Saving..." : "Save new password"}
+          {isLoading ? "Saving…" : "Save new password"}
         </button>
       </form>
     </>

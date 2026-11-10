@@ -613,14 +613,14 @@ export default function CompendiumTool() {
           </>
         )}
       </div>
-      {cardErr && <p style={{ color: "#c98a7a", fontSize: 13, margin: 0 }}>{cardErr}</p>}
+      {cardErr && <p style={{ color: C.warn, fontSize: 13, margin: 0 }}>{cardErr}</p>}
 
       {/* voice status line */}
       {vosk.supported && (
         <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", minHeight: 18 }}>
           {vosk.listening && <span style={{ ...label, color: "#c0603a" }}>● listening{partial ? `: "${partial}"` : "…"}</span>}
           {vosk.status === "loading" && <span style={label}>downloading the speech model, one time (~40MB)…</span>}
-          {vosk.error && <span style={{ color: "#c98a7a", fontSize: 12.5 }}>Voice error: {vosk.error}</span>}
+          {vosk.error && <span style={{ color: C.warn, fontSize: 12.5 }}>Voice error: {vosk.error}</span>}
           {grammarPhrases.length > 0 && (
             <label style={{ display: "flex", alignItems: "center", gap: 6, color: C.muted, fontSize: 12, cursor: "pointer" }}>
               <input type="checkbox" checked={grammarOn} onChange={(e) => setGrammarOn(e.target.checked)} disabled={vosk.listening} style={{ accentColor: C.sun }} />
@@ -631,7 +631,7 @@ export default function CompendiumTool() {
       )}
 
       {loadError && (
-        <p style={{ color: "#c98a7a", fontSize: 13 }}>
+        <p style={{ color: C.warn, fontSize: 13 }}>
           Couldn&apos;t load the compendium data ({loadError}). Run <code>node scripts/build-compendium-index.mjs {hasEditions(system) ? ruleset : system}</code> and confirm <code>public/compendium/index-{hasEditions(system) ? ruleset : system}.json</code> exists.
         </p>
       )}
@@ -1133,14 +1133,14 @@ function EntryEditor({ state, onChange, onSave, onDelete, onCancel, activeCampai
         </div>
       </div>
 
-      {error && <p style={{ color: "#c98a7a", fontSize: 12.5, margin: 0 }}>{error}</p>}
+      {error && <p style={{ color: C.warn, fontSize: 12.5, margin: 0 }}>{error}</p>}
 
       <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
         <button type="button" onClick={onSave} style={{ padding: "8px 16px", background: C.sun, color: "#1b1712", border: "none", borderRadius: 8, fontWeight: 700, fontSize: 14, cursor: "pointer" }}>Save</button>
         <button type="button" onClick={onCancel} style={{ padding: "8px 14px", background: "transparent", color: C.text, border: `1px solid ${C.line}`, borderRadius: 8, fontSize: 14, cursor: "pointer" }}>Cancel</button>
         <span style={{ flex: 1 }} />
         {state.id && (
-          <button type="button" onClick={onDelete} title={isOverride ? "Delete this override (reverts to the shipped card)" : "Delete this card"} style={{ padding: "8px 14px", background: "transparent", color: "#c98a7a", border: `1px solid ${C.line}`, borderRadius: 8, fontSize: 14, cursor: "pointer" }}>
+          <button type="button" onClick={onDelete} title={isOverride ? "Delete this override (reverts to the shipped card)" : "Delete this card"} style={{ padding: "8px 14px", background: "transparent", color: C.warn, border: `1px solid ${C.line}`, borderRadius: 8, fontSize: 14, cursor: "pointer" }}>
             {isOverride ? "Delete override (revert)" : "Delete"}
           </button>
         )}
@@ -1336,7 +1336,7 @@ function TableForm({ value, onChange, field }: {
 
   const cell: React.CSSProperties = { ...field, padding: "6px 8px", fontSize: 13 };
   const addBtn: React.CSSProperties = { marginTop: 8, padding: "5px 12px", background: "transparent", color: C.sun, border: `1px solid ${C.line}`, borderRadius: 7, fontSize: 12.5, fontWeight: 600, cursor: "pointer" };
-  const xBtn = (disabled: boolean): React.CSSProperties => ({ padding: "4px 9px", background: "transparent", color: "#c98a7a", border: `1px solid ${C.line}`, borderRadius: 7, fontSize: 13, cursor: disabled ? "default" : "pointer", opacity: disabled ? 0.4 : 1, flex: "0 0 auto" });
+  const xBtn = (disabled: boolean): React.CSSProperties => ({ padding: "4px 9px", background: "transparent", color: C.warn, border: `1px solid ${C.line}`, borderRadius: 7, fontSize: 13, cursor: disabled ? "default" : "pointer", opacity: disabled ? 0.4 : 1, flex: "0 0 auto" });
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>

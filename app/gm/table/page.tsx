@@ -6,6 +6,7 @@ import PageShell from "@/components/page-shell";
 import { surfaces, ui } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import { initialCampaignId, useRememberCampaign, initialSessionId, useRememberSession } from "@/lib/campaign-context";
+import { fmtDateTime } from "@/lib/format";
 
 type Campaign = { id: string; name: string; share_code: string };
 type Sess = { id: string; session_number: number | null; status: string; recap: string | null };
@@ -279,7 +280,7 @@ export default function CheckInPage() {
                 {chatReads.map((m, i) => (
                   <div key={i} style={{ background: C.surface2, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "9px 12px", boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
                     <div style={{ fontSize: 12, color: C.muted, marginBottom: 2 }}>
-                      {m.display_name || "Player"} · {new Date(m.created_at).toLocaleString()}
+                      {m.display_name || "Player"} · {fmtDateTime(m.created_at)}
                     </div>
                     <div style={{ fontSize: 14 }}>{m.body}</div>
                   </div>

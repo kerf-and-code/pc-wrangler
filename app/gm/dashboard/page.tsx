@@ -231,7 +231,7 @@ export default function Dashboard() {
     return (
       <PageShell width={980}>
         <div className="wg-scope"><style>{CSS}</style>
-          <p style={{ color: T.muted }}>Loading...</p>
+          <p role="status" style={{ color: T.muted }}>Loading…</p>
         </div>
       </PageShell>
     );
@@ -244,6 +244,7 @@ export default function Dashboard() {
     <PageShell width={980}>
       <div className="wg-scope">
         <style>{CSS}</style>
+        <h1 style={{ fontFamily: SAX.serif, fontSize: 28, fontWeight: 600, margin: "0 0 14px" }}>Dashboard</h1>
 
         {err && <div className="wg-card wg-err">{err}</div>}
 

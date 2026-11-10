@@ -167,7 +167,7 @@ export default function SoundPanel({ campaignId, supabase, audio, serverNow, sav
       {(["music", "ambient"] as const).map((k) => (
         <div key={k}>
           <div style={head}>{k === "music" ? "Music" : "Ambient loops"}</div>
-          {sounds === null && <p style={{ color: C.muted, fontSize: 12.5 }}>Loading...</p>}
+          {sounds === null && <p role="status" style={{ color: C.muted, fontSize: 12.5 }}>Loading…</p>}
           {sounds !== null && list(k).length === 0 && <p style={{ color: C.muted, fontSize: 12.5, margin: 0 }}>{k === "music" ? "No music yet." : "No ambient loops yet (rain, a crowd, a crackling fire)."}</p>}
           <div style={{ display: "grid", gap: 5 }}>
             {list(k).map((s) => {
@@ -181,15 +181,15 @@ export default function SoundPanel({ campaignId, supabase, audio, serverNow, sav
                     ? <button type="button" style={on(playing)} disabled={playing} onClick={() => playMusic(s)} aria-label={`Play ${s.name}`}>{playing ? "Playing" : "Play"}</button>
                     : <button type="button" style={on(playing)} aria-pressed={playing} onClick={() => toggleLayer(s)} aria-label={`${playing ? "Turn off" : "Turn on"} ${s.name}`}>{playing ? "On" : "Off"}</button>}
                   {confirmDel === s.id
-                    ? <button type="button" style={{ ...small, background: "#e07a70", color: "#1b1712", border: "none" }} onClick={() => void remove(s)}>Delete for good</button>
-                    : <button type="button" style={{ ...small, color: "#e07a70" }} onClick={() => setConfirmDel(s.id)} aria-label={`Delete ${s.name}`}>Delete</button>}
+                    ? <button type="button" style={{ ...small, background: C.warn, color: "#1b1712", border: "none" }} onClick={() => void remove(s)}>Delete for good</button>
+                    : <button type="button" style={{ ...small, color: C.warn }} onClick={() => setConfirmDel(s.id)} aria-label={`Delete ${s.name}`}>Delete</button>}
                 </div>
               );
             })}
           </div>
         </div>
       ))}
-      {err && <p role="alert" style={{ color: "#e07a70", fontSize: 12, marginTop: 10 }}>{err}</p>}
+      {err && <p role="alert" style={{ color: C.warn, fontSize: 12, marginTop: 10 }}>{err}</p>}
     </div>
   );
 }

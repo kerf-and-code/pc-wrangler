@@ -105,7 +105,7 @@ export default function ImportReviewPage() {
   return (
     <PageShell width={820}>
       <div style={{ ...label, marginBottom: 6 }}>Older sessions · review</div>
-      <h1 style={{ fontFamily: "'Iowan Old Style', Georgia, serif", fontSize: 28, fontWeight: 700, margin: "0 0 8px" }}>
+      <h1 style={{ fontFamily: SAX.serif, fontSize: 28, fontWeight: 700, margin: "0 0 8px" }}>
         {done ? "Imported" : "Review before it lands"}
       </h1>
       <p style={{ color: C.muted, fontSize: 14.5, lineHeight: 1.6, margin: "0 0 20px", maxWidth: 640 }}>
@@ -114,7 +114,7 @@ export default function ImportReviewPage() {
           : "Everything comes in GM-only until you publish it. Include what is right, skip the rest, then commit."}
       </p>
 
-      {loading && <p style={{ color: C.muted }}>Loading…</p>}
+      {loading && <p role="status" style={{ color: C.muted }}>Loading…</p>}
       {result && <div role="status" aria-live="polite" style={{ ...surfaces.slate, borderRadius: FORGE_RADIUS, padding: 14, marginBottom: 18, color: C.good, fontSize: 14 }}>{result}</div>}
       {error && <div role="alert" style={{ color: C.warn, fontSize: 13.5, marginBottom: 14 }}>{error}</div>}
 

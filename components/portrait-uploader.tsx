@@ -20,7 +20,7 @@ import React, { useRef, useState } from "react";
 import TokenMaker from "@/components/token-maker";
 import { createClient } from "@/lib/supabase/client";
 
-import { FORGE_RADIUS } from "@/lib/forge-theme";
+import { FORGE_RADIUS, C } from "@/lib/forge-theme";
 import { useDialogFocus } from "@/lib/use-dialog-focus";
 const BUCKET = "campaign-maps";
 const MAX_BYTES = 4 * 1024 * 1024; // 4 MB; portraits don't need more and the bucket isn't a CDN.
@@ -155,7 +155,7 @@ export function PortraitUploader({
         ) : (
           <span style={{ fontSize: 12, color: mutedColor, fontStyle: "italic" }}>{notReadyHint}</span>
         )}
-        {error && <span style={{ fontSize: 11.5, color: "#c98a7a" }}>{error}</span>}
+        {error && <span style={{ fontSize: 11.5, color: C.warn }}>{error}</span>}
       </div>
       {makerOpen && (
         <div ref={makerRef} role="dialog" aria-modal="true" aria-label="Token maker for the portrait"

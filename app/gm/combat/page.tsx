@@ -551,7 +551,7 @@ export default function CombatPage() {
 
       {err && <p role="alert" style={{ color: C.warn, fontSize: 13, margin: "0 0 10px" }}>{err}</p>}
       {note && <p role="status" style={{ color: C.muted, fontSize: 13, margin: "0 0 10px" }}>{note}</p>}
-      {loading && <p style={{ color: C.muted }}>Loading…</p>}
+      {loading && <p role="status" style={{ color: C.muted }}>Loading…</p>}
 
       {!loading && campaignId && !combat && (
         <div style={box}>
@@ -793,7 +793,7 @@ function CombatantRow({ c, isTurn, isSelected, onSelect, onChange, onRemove, inp
         return (
           <div onClick={(ev) => ev.stopPropagation()} style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", marginTop: 8 }}>
             {isTurn && pill("action", "Action", "#d9a43a")}
-            {isTurn && pill("bonus", "Bonus action", "#8fd18a")}
+            {isTurn && pill("bonus", "Bonus action", C.good)}
             {pill("reaction", "Reaction", "#c2a8f0")}
             {isTurn && (
               <>
@@ -808,7 +808,7 @@ function CombatantRow({ c, isTurn, isSelected, onSelect, onChange, onRemove, inp
         );
       })()}
       {pendingOf(c).map((ps) => (
-        <div key={ps.id} onClick={(e) => e.stopPropagation()} style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", marginTop: 8, padding: "6px 8px", border: "1px solid #e07a70", borderRadius: FORGE_RADIUS }}>
+        <div key={ps.id} onClick={(e) => e.stopPropagation()} style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", marginTop: 8, padding: "6px 8px", border: `1px solid ${C.warn}`, borderRadius: FORGE_RADIUS }}>
           <span style={{ fontSize: 12.5, color: C.text, flex: "1 1 220px" }}>
             {ps.ability.toUpperCase()} save DC {ps.dc} vs {ps.by}&apos;s {ps.label}{ps.damage ? `: ${ps.damage}${ps.type ? ` ${ps.type}` : ""}${ps.half ? ", half on a success" : ""}` : ""}{ps.conditions?.length ? `, ${ps.conditions.join(", ")} on a failure` : ""}
             {c.kind === "pc" && <span style={{ color: C.muted }}> (waiting for the player)</span>}

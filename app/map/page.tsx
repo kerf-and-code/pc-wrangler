@@ -6,6 +6,7 @@ import PageShell from "@/components/page-shell";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import MapFog from "@/components/map-fog";
 import { ConnectProblem, LinkInvalid } from "@/components/load-problem";
+import { SAX } from "@/lib/theme";
 
 const BUCKET = "campaign-maps";
 
@@ -69,12 +70,12 @@ export default function PlayerMapPage() {
     <PageShell width={1000}>
       <div style={{ width: "100%", maxWidth: 760, margin: "0 auto" }}>
         <div style={{ textAlign: "center", marginBottom: 4 }}>
-          <span style={{ fontFamily: "'Iowan Old Style', Georgia, serif", fontSize: 26, fontWeight: 700 }}>The map</span>
+          <h1 style={{ fontFamily: SAX.serif, fontSize: 26, fontWeight: 700, margin: 0 }}>The map</h1>
         </div>
         <div style={{ ...eyebrow, textAlign: "center", marginBottom: 18 }}>WHERE YOU&rsquo;VE BEEN, WHAT YOU&rsquo;VE FOUND</div>
         <div style={{ height: 3, borderRadius: 3, background: `linear-gradient(90deg, ${C.sun}, ${C.plum})`, marginBottom: 24 }} />
 
-        {status === "loading" && <p style={{ textAlign: "center", color: C.muted, fontSize: 14 }}>Loading&hellip;</p>}
+        {status === "loading" && <p role="status" style={{ textAlign: "center", color: C.muted, fontSize: 14 }}>Loading&hellip;</p>}
         {status === "invalid" && <LinkInvalid />}
         {status === "offline" && <ConnectProblem />}
         {status === "empty" && (

@@ -5,7 +5,45 @@ information and rules a DM commonly needs mid-game that the compendium does not 
 what data already exists in `lib/srd/` versus what would need sourcing. Counts below come from a clean
 run of `scripts/build-compendium-index.mjs` against the current `lib/srd/`.
 
-## Current inventory
+## Status, 10 November 2026
+
+Much of this audit has shipped since it was written. The counts below are read from the built
+indexes in `public/compendium/` (last built 1 November 2026), not from a fresh run of
+`scripts/build-compendium-index.mjs`; re-run it to refresh them.
+
+| Category | 2014 | 2024 | Then (2014 / 2024) |
+|---|---:|---:|---|
+| Spells | 1,076 | 1,081 | 319 / 335 |
+| Magic items | 3,116 | 3,002 | 362 / 249 |
+| Equipment | 237 | 149 | 237 / 149 |
+| Conditions | 15 | 15 | 15 / 15 |
+| Feats | 506 | 518 | 54 / 223 |
+| Class features | 2,747 | 2,689 | 49 / 3 |
+| Classes | 22 | 23 | none |
+| Subclasses | 404 | 404 | none |
+| Species | 167 | 167 | none |
+| Backgrounds | 237 | 238 | none |
+| Monsters | 7,375 | 7,372 | none |
+| Rules glossary | 74 | 97 | 42 / 56 |
+| Reference tables | 14 | 14 | none |
+| **Total** | **15,990** | **15,769** | 1,078 / 1,030 |
+
+Other systems now have their own indexes: Pathfinder 2e (18,306 entries), Draw Steel (796),
+Daggerheart (450) and Lancer (363).
+
+Shipped from the priorities below: monsters and stat blocks, class and subclass features
+(Rage, Sneak Attack, Action Surge, Wild Shape and the rest), 2024 metamagic and invocations as
+options, the 2024 weapon mastery properties (Topple, Vex, Sap and the others, as rules), species and
+backgrounds, and the multi-system indexes. Still open: a spell components glossary (no Verbal,
+Somatic or Material entries), most of hazards and environment (only an Environmental Hazards entry),
+and magic-item identification (Attunement is in; identifying an item is not).
+
+Licensing: the counts are far above the SRD's (for example about 7,400 monsters against roughly 330
+in SRD 5.2), so most of the index is non-SRD book content. That is a known, deliberate choice while
+Six Axes is not commercial, and it is to be revisited before any money is involved (the decision
+recorded with audit push 9). The licensing watch-list further down still applies.
+
+## Inventory when this audit was written
 
 | Category | 2014 | 2024 | Notes |
 |---|---:|---:|---|
@@ -18,18 +56,14 @@ run of `scripts/build-compendium-index.mjs` against the current `lib/srd/`.
 | Rules glossary | 42 | 56 | verbatim SRD 5.1 / 5.2.1 |
 | **Total** | **1078** | **1030** | both-mode = 2108 |
 
-What the compendium does well already: spells, magic items, conditions, the disputed-rules glossary,
-and feats are solid across both editions. The gaps below are the things a DM reaches for that are
-either missing entirely or thin in one edition.
-
 ## Priority 1: high table value, data already in the repo
 
 These are the biggest wins because the data is already sitting in `lib/srd/` and just needs wiring, the
 same pattern as the rules glossary. No external sourcing required.
 
-### Monsters and stat blocks
+### Monsters and stat blocks (shipped)
 
-The single highest-value missing category. "What's this thing's AC, HP, what does its attack do" is
+Shipped: every monster is carded by source (see the status above). Originally: the single highest-value missing category. "What's this thing's AC, HP, what does its attack do" is
 the most common mid-combat lookup, and the data is already here with full stat-block fields (ac, hp,
 cr, speed, ability scores, senses, immunities, special_abilities, actions, bonus_actions, reactions,
 legendary_actions).
@@ -44,7 +78,7 @@ legendary_actions).
   8.3 MB of source, so the built index and grammar grow; consider shipping monsters in a separate
   fetched-on-demand index rather than the main one).
 
-### General class and subclass features
+### General class and subclass features (shipped)
 
 Right now only the *selectable options* (metamagic, invocations, fighting styles) are carded, and only
 for 2014. The marquee always-on features a DM looks up (Rage, Sneak Attack, Divine Smite, Channel
@@ -58,7 +92,7 @@ Divinity, Wild Shape, Action Surge, Ki/Monk features, Bardic Inspiration) are no
   (not every level entry, which includes filler like Ability Score Improvement). Reuses the existing
   `feature` category.
 
-### 2024 metamagic and invocations (per-option)
+### 2024 metamagic and invocations (per-option) (shipped)
 
 2024 currently shows only the umbrella entries because `classes-2024-structured.json` does not break
 the options out per-entry the way 2014 does. So a DM on the 2024 toggle can't look up "Quickened Spell"
@@ -68,7 +102,7 @@ or "Agonizing Blast."
   markdown (`playing-the-game.md` / class sections) the way the 2024 glossary was built.
 - Effort: small, and it brings 2024 to parity with 2014's 49 class-option cards.
 
-### Weapon properties and weapon mastery
+### Weapon properties and weapon mastery (shipped)
 
 Commonly disputed and looked up: what Finesse, Versatile, Heavy, Reach, Thrown, Two-Handed, Loading,
 Light, and Ammunition actually do, and (2024) the weapon mastery properties (Nick, Vex, Sap, Topple,
@@ -83,7 +117,7 @@ the Light property plus the Nick mastery.
 
 ## Priority 2: useful, needs light sourcing or authoring
 
-### Species and backgrounds
+### Species and backgrounds (shipped)
 
 Players and DMs look up racial traits ("what does the Goliath's Powerful Build do") and background
 features constantly, especially in session zero and character creation at the table.
@@ -128,7 +162,7 @@ HP", "crit", "GWM" (Great Weapon Master), "PAM", "AC", "sneak". Adding an option
 the entry schema and grammar would materially raise the voice hit rate. This is a data-model
 improvement that benefits every category at once.
 
-### Multi-system coverage
+### Multi-system coverage (shipped)
 
 The compendium is D&D-only. Six Axes supports Pathfinder 2e, Draw Steel, and Daggerheart, none of which
 have rules in the compendium. This is a large, strategic effort (each system needs its own licensed

@@ -266,7 +266,7 @@ export default function CharacterPage() {
       ? `/c/${camp.public_slug}/party/${ch.id}`
       : null;
 
-  if (status === "loading") return <PageShell width={760}><p style={{ color: C.muted }}>Loading…</p></PageShell>;
+  if (status === "loading") return <PageShell width={760}><p role="status" style={{ color: C.muted }}>Loading…</p></PageShell>;
   if (status === "denied") return <PageShell width={760}><p style={{ color: C.muted }}>That character page is not available to you.</p></PageShell>;
 
   const visibleSections = canEdit ? sections : sections.filter((s) => s.visibility === "shared");

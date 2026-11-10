@@ -113,7 +113,7 @@ export default function RollTablesPanel({ campaignId, isGm, supabase, asWho, gmN
           Paste a numbered table from a book (&ldquo;01-05 Goblins&rdquo;, &ldquo;96-00 A dragon&rdquo;), or write a plain list where each line is as likely as the next.
           &ldquo;3x Bandits&rdquo; makes a line three times as likely. Start with a line like &ldquo;2d6&rdquo; to roll other dice.
         </p>
-        <p id="rt-preview" role="status" style={{ fontSize: 12.5, margin: "8px 0 0", color: preview?.ok ? (preview.table.kind === "numbered" && preview.table.gaps.length ? C.sun : C.good) : "#e07a70" }}>
+        <p id="rt-preview" role="status" style={{ fontSize: 12.5, margin: "8px 0 0", color: preview?.ok ? (preview.table.kind === "numbered" && preview.table.gaps.length ? C.sun : C.good) : C.warn }}>
           {draft.body.trim() ? (preview?.ok ? describeTable(preview.table) : preview?.error) : "Add some entries to see what it will roll."}
         </p>
         <label style={check}>
@@ -125,16 +125,16 @@ export default function RollTablesPanel({ campaignId, isGm, supabase, asWho, gmN
           <span>Results go only to the GM <span style={{ color: C.muted }}>(and to the player who rolled)</span></span>
         </label>
         <div style={{ display: "flex", gap: 6, marginTop: 12, flexWrap: "wrap" }}>
-          <button type="button" onClick={() => void save()} disabled={busy === "save"} style={primary}>{busy === "save" ? "Saving..." : "Save table"}</button>
+          <button type="button" onClick={() => void save()} disabled={busy === "save"} style={primary}>{busy === "save" ? "Saving…" : "Save table"}</button>
           <button type="button" onClick={() => { setDraft(null); setConfirmDelete(false); setErr(null); }} style={small}>Cancel</button>
-          {draft.id && !confirmDelete && <button type="button" onClick={() => setConfirmDelete(true)} style={{ ...small, color: "#e07a70", marginLeft: "auto" }}>Delete</button>}
+          {draft.id && !confirmDelete && <button type="button" onClick={() => setConfirmDelete(true)} style={{ ...small, color: C.warn, marginLeft: "auto" }}>Delete</button>}
           {draft.id && confirmDelete && (
-            <button type="button" onClick={() => void remove()} disabled={busy === "save"} style={{ ...small, color: "#1b1712", background: "#e07a70", border: "none", marginLeft: "auto" }}>
+            <button type="button" onClick={() => void remove()} disabled={busy === "save"} style={{ ...small, color: "#1b1712", background: C.warn, border: "none", marginLeft: "auto" }}>
               Delete {draft.name.trim() || "this table"} for good
             </button>
           )}
         </div>
-        {err && <p role="alert" style={{ color: "#e07a70", fontSize: 12, marginTop: 10 }}>{err}</p>}
+        {err && <p role="alert" style={{ color: C.warn, fontSize: 12, marginTop: 10 }}>{err}</p>}
       </div>
     );
   }
@@ -175,7 +175,7 @@ export default function RollTablesPanel({ campaignId, isGm, supabase, asWho, gmN
                 </div>
                 {isGm && <button type="button" onClick={() => { setErr(null); setDraft({ id: r.id, name: r.name, body: r.body, players_can_roll: r.players_can_roll, results_gm_only: r.results_gm_only }); }} style={{ ...small, padding: "3px 8px" }} aria-label={`Edit ${r.name}`}>Edit</button>}
                 <button type="button" disabled={!p.ok || busy === r.id} onClick={() => void rollOn(r)} style={{ ...primary, padding: "4px 10px", opacity: p.ok ? 1 : 0.5 }} aria-label={`Roll on ${r.name}`}>
-                  {busy === r.id ? "Rolling..." : "Roll"}
+                  {busy === r.id ? "Rolling…" : "Roll"}
                 </button>
               </div>
               {last?.id === r.id && (
@@ -187,7 +187,7 @@ export default function RollTablesPanel({ campaignId, isGm, supabase, asWho, gmN
           );
         })}
       </div>
-      {err && <p role="alert" style={{ color: "#e07a70", fontSize: 12, marginTop: 10 }}>{err}</p>}
+      {err && <p role="alert" style={{ color: C.warn, fontSize: 12, marginTop: 10 }}>{err}</p>}
     </div>
   );
 }

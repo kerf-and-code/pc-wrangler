@@ -7,6 +7,8 @@ import { PlayerDisposition } from "@/components/player-disposition";
 import { SAX, surfaces, ui } from "@/lib/theme";
 import { C, STONE, FORGE_RADIUS } from "@/lib/forge-theme";
 import { initialCampaignId, useRememberCampaign } from "@/lib/campaign-context";
+import { fmtDate } from "@/lib/format";
+import { LoadingState } from "@/components/ui-forge/States";
 
 // The self-report series. Kept OFF the chrome palette on purpose: prior and posterior encode
 // DATA, exactly like AXIS_COLOR, and the shared C.plum/C.sun are now two values of one gold,
@@ -165,7 +167,7 @@ export default function DispositionsPage() {
       const list = (data as Campaign[]) || [];
       setCampaigns(list);
       // No campaigns: the loader effect below early-returns on the empty
-      // campaignId, so clear loading here or the page shows "Loading..." forever.
+      // campaignId, so clear loading here or the page shows "Loading…" forever.
       if (list.length) setCampaignId(initialCampaignId(list));
       else setLoading(false);
     })();
@@ -254,7 +256,7 @@ export default function DispositionsPage() {
       </div>
 
       {loading ? (
-        <div style={{ ...box, color: C.muted, fontSize: 14 }}>Loading…</div>
+        <LoadingState />
       ) : rows.length === 0 ? (
         <div style={{ ...box, color: C.muted, fontSize: 14 }}>No player characters in this campaign yet.</div>
       ) : (
@@ -265,7 +267,7 @@ export default function DispositionsPage() {
               <div key={d.char.id} style={{ ...box, marginBottom: 0 }}>
                 <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
                   <div style={{ fontFamily: SAX.serif, fontSize: 19 }}>{d.char.name}</div>
-                  {d.asOf && <div style={{ fontSize: 11, color: C.muted }}>as of {new Date(d.asOf).toLocaleDateString()}</div>}
+                  {d.asOf && <div style={{ fontSize: 11, color: C.muted }}>as of {fmtDate(d.asOf)}</div>}
                 </div>
 
                 <Radar d={d} />
@@ -298,7 +300,7 @@ export default function DispositionsPage() {
           look. The character posteriors above stay open, as they always have been. */}
       {!loading && players.length > 0 && (
         <div style={{ marginTop: 34 }}>
-          <div style={{ fontFamily: "'Iowan Old Style', Georgia, serif", fontSize: 20, fontWeight: 700, color: C.text, marginBottom: 6 }}>
+          <div style={{ fontFamily: SAX.serif, fontSize: 20, fontWeight: 700, color: C.text, marginBottom: 6 }}>
             The players behind them
           </div>
           <p style={{ color: C.muted, fontSize: 13, lineHeight: 1.6, margin: "0 0 16px", maxWidth: 620 }}>
@@ -320,7 +322,7 @@ export default function DispositionsPage() {
 
       {!loading && rows.some((r) => r.modelVersion) && (
         <div style={{ color: C.muted, fontSize: 11.5, marginTop: 16 }}>
-          Model: {rows.find((r) => r.modelVersion)?.modelVersion}. Posterior engagement is on a 0–1 scale (0.5 = table-typical given opportunity); the self-report polygon is the 1–5 inventory normalized to the same scale.
+          Model: {rows.find((r) => r.modelVersion)?.modelVersion}. Posterior engagement is on a 0 to 1 scale (0.5 = table-typical given opportunity); the self-report polygon is the 1 to 5 inventory normalized to the same scale.
         </div>
       )}
     </PageShell>

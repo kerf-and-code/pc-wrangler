@@ -209,13 +209,13 @@ export default function RecordPage() {
   return (
     <PageShell width={920}>
         <div style={card}>
-          <div style={{ textAlign: "center", fontFamily: "'Iowan Old Style', Georgia, serif", fontSize: 25, fontWeight: 700 }}>Record your side</div>
+          <h1 style={{ textAlign: "center", fontFamily: SAX.serif, fontSize: 25, fontWeight: 700, margin: 0 }}>Record your side</h1>
           <div style={{ textAlign: "center", fontFamily: "ui-monospace, monospace", fontSize: 11, letterSpacing: "0.22em", color: C.muted, marginTop: 6 }}>
             {campaignName ? campaignName.toUpperCase() : "SIX AXES"}
           </div>
           <div style={{ height: 3, borderRadius: 3, background: `linear-gradient(90deg, ${C.sun}, ${C.plum})`, margin: "18px 0 22px" }} />
 
-          {status === "loading" && <p style={{ textAlign: "center", color: C.muted, fontSize: 14 }}>Loading…</p>}
+          {status === "loading" && <p role="status" style={{ textAlign: "center", color: C.muted, fontSize: 14 }}>Loading…</p>}
           {status === "invalid" && <LinkInvalid />}
           {status === "offline" && <ConnectProblem />}
 

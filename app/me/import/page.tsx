@@ -34,11 +34,8 @@
 import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import SixAxesNav from "@/components/six-axes-nav";
-import {
-  STONE, FORGE_FONTS, forgeBackground, forgeVignette, stonePanel, stoneButton,
-  FORGE_BUTTON_CSS, forgeHeading, forgeLabel, forgeRuleLine, stoneChip,
-} from "@/lib/forge-theme";
+import PageShell from "@/components/page-shell";
+import { STONE, stonePanel, stoneButton, forgeHeading, forgeLabel, forgeRuleLine, stoneChip, C } from "@/lib/forge-theme";
 import { saveToLibrary } from "@/lib/pc-library";
 import { loadCatalog } from "@/lib/catalog";
 import { loadSrd } from "@/lib/srd/srd";
@@ -202,12 +199,8 @@ function ImportInner() {
   }, [build, report, supabase, router, setStage, target]);
 
   return (
-    <div style={{ minHeight: "100vh", position: "relative", ...forgeBackground() }}>
-      <style>{FORGE_BUTTON_CSS}</style>
-      <div style={forgeVignette} />
-      <div className="sax-navpad" style={{ position: "relative", zIndex: 1 }}>
-        <SixAxesNav />
-        <main style={{ maxWidth: 900, margin: "0 auto", padding: "28px 20px 64px", ...FORGE_FONTS }}>
+    <PageShell width={900}>
+        <main>
           <h1 style={{ ...forgeHeading, fontSize: 28, marginBottom: 4 }}>{target ? `Update ${target.name} from D&D Beyond` : "Import from D&D Beyond"}</h1>
           {target && (
             <p role="status" style={{ ...stonePanel(), padding: "10px 14px", color: STONE.ink, fontSize: 13.5 }}>
@@ -217,7 +210,7 @@ function ImportInner() {
               Weapons D&amp;D Beyond lists as attacks, armor and attuned items come in equipped; the rest is carried.
             </p>
           )}
-          {targetErr && <p role="alert" style={{ color: "#e07a70", fontSize: 13.5 }}>{targetErr}</p>}
+          {targetErr && <p role="alert" style={{ color: C.warn, fontSize: 13.5 }}>{targetErr}</p>}
           <p style={{ color: STONE.inkDim, marginTop: 0, marginBottom: 18, fontSize: 14 }}>
             Upload a character-sheet PDF exported from D&amp;D Beyond. It is read in your browser and
             never uploaded anywhere. Everything on the sheet is kept, including the parts Six Axes
@@ -335,8 +328,7 @@ function ImportInner() {
             </>
           ) : null}
         </main>
-      </div>
-    </div>
+    </PageShell>
   );
 }
 

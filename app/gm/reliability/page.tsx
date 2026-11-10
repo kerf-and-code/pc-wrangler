@@ -7,6 +7,7 @@ import { surfaces, ui, AXES, type AxisKey } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import { initialCampaignId, useRememberCampaign } from "@/lib/campaign-context";
 import { askConfirm } from "@/lib/confirm";
+import { LoadingState } from "@/components/ui-forge/States";
 
 type Campaign = { id: string; name: string };
 type PE = { status: string; event_type: string; axis: string | null; confidence: number | null; extractor_version: string | null };
@@ -185,7 +186,7 @@ export default function ReliabilityPage() {
       ((ets as { key: string; label: string }[]) || []).forEach((e) => { lab[e.key] = e.label; });
       setLabels(lab);
       // No campaigns: the loader effect below early-returns on the empty
-      // campaignId, so clear loading here or the page shows "Loading..." forever.
+      // campaignId, so clear loading here or the page shows "Loading…" forever.
       if (list.length) setCampaignId(initialCampaignId(list));
       else setLoading(false);
     })();
@@ -367,7 +368,7 @@ export default function ReliabilityPage() {
 
         {partial && !loading && <p role="alert" style={{ color: C.warn, fontSize: 13, margin: "0 0 12px" }}>{partial}</p>}
         {loading ? (
-          <div style={{ ...box, color: C.muted, fontSize: 14 }}>Loading…</div>
+          <LoadingState />
         ) : stats.reviewed === 0 ? (
           <div style={{ ...box, color: C.muted, fontSize: 14 }}>
             No reviewed proposals yet. As you accept and reject in the Review queue, precision and calibration fill in.

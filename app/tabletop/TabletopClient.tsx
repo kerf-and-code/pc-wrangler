@@ -50,6 +50,7 @@ import { nameFromFile } from "@/lib/tabletop/cards";
 import { AttackForm, EconomyBar, MarkerChips, MarkerPicker, PlayerEntryControls, SaveBanner, TurnUsed, isMyTurn, type FightEntry, type PendingSave } from "@/components/fight-controls";
 import { friendlyError, notReady } from "@/lib/friendly-error";
 import { askConfirm } from "@/lib/confirm";
+import { fmtDateTime } from "@/lib/format";
 
 // The tabletop, phase 1 (2026-11-06). One page for the GM and the players; tabletop_state (p105)
 // decides the role and strips what players must not see before it leaves the database.
@@ -2708,10 +2709,10 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
         {kept && (
           <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: 4, flexWrap: "wrap" }}>
             <span style={{ fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: C.muted, minWidth: 50 }}>Attack</span>
-            <span style={{ fontSize: 22, fontWeight: 700, color: crit ? "#8fd18a" : fumble ? "#e07a70" : C.text }}>{kept.rolls?.total ?? "?"}</span>
+            <span style={{ fontSize: 22, fontWeight: 700, color: crit ? C.good : fumble ? C.warn : C.text }}>{kept.rolls?.total ?? "?"}</span>
             {attacks.map((x) => <span key={x.id} style={{ display: "inline-flex", gap: 3, textDecoration: x.rolls?.discarded ? "line-through" : "none", opacity: x.rolls?.discarded ? 0.6 : 1 }}>{chips(x)}</span>)}
-            {crit && <span style={{ fontSize: 12, color: "#8fd18a" }}>critical hit</span>}
-            {fumble && <span style={{ fontSize: 12, color: "#e07a70" }}>natural 1</span>}
+            {crit && <span style={{ fontSize: 12, color: C.good }}>critical hit</span>}
+            {fumble && <span style={{ fontSize: 12, color: C.warn }}>natural 1</span>}
             {isGm && dndTable && tgt?.ac != null && !crit && !fumble && <span style={{ fontSize: 12, color: C.muted }}>vs AC {tgt.ac}: {Number(kept.rolls?.total) >= tgt.ac ? "hits" : "misses"}</span>}
           </div>
         )}
@@ -2727,19 +2728,19 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
           <div key={x.id} style={{ fontSize: 12.5, color: C.muted, marginTop: 3 }}>{x.event_type}: <b style={{ color: C.text }}>{x.rolls?.total ?? "?"}</b></div>
         ))}
         {crit && dmg.length > 0 && <div style={{ fontSize: 11.5, color: C.muted, marginTop: 3 }}>Damage as D&amp;D Beyond rolled it (it doubles the dice on a critical, and adds what the sheet adds, such as Rage).</div>}
-        {applied && <div style={{ fontSize: 12.5, color: applied.startsWith("missed ") ? "#e07a70" : "#8fd18a", marginTop: 5 }}>{applied.startsWith("missed ") ? `Missed ${applied.slice(7)}` : `Applied to ${applied}`}</div>}
+        {applied && <div style={{ fontSize: 12.5, color: applied.startsWith("missed ") ? C.warn : C.good, marginTop: 5 }}>{applied.startsWith("missed ") ? `Missed ${applied.slice(7)}` : `Applied to ${applied}`}</div>}
         {canApply && (
           <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", marginTop: 6 }}>
             <select aria-label="Who the damage lands on" value={target} onChange={(ev) => setApplyTo((m) => ({ ...m, [key]: ev.target.value }))} style={{ ...field, flex: "1 1 120px", padding: "4px 6px" }}>
               <option value="">Target…</option>
               {choices.map((e) => <option key={e.id} value={e.id}>{e.name}{e.defeated ? " (down)" : ""}</option>)}
             </select>
-            <button type="button" disabled={!target} onClick={() => void applyOutside(key, ids, target, false)} style={{ ...small, padding: "4px 9px", color: "#e07a70" }}>{applied ? "Apply anyway" : `Apply ${total}`}</button>
+            <button type="button" disabled={!target} onClick={() => void applyOutside(key, ids, target, false)} style={{ ...small, padding: "4px 9px", color: C.warn }}>{applied ? "Apply anyway" : `Apply ${total}`}</button>
             <button type="button" disabled={!target} onClick={() => void applyOutside(key, ids, target, true)} style={{ ...small, padding: "4px 9px" }}>Half ({Math.floor(total / 2)})</button>
           </div>
         )}
         {!fightNow && dmg.length > 0 && !applied && (isGm || mineRoll) && <div style={{ fontSize: 11.5, color: C.muted, marginTop: 4 }}>Start a fight to land this damage on a creature.</div>}
-        {note && <div role={note.bad ? "alert" : "status"} style={{ fontSize: 12, color: note.bad ? "#e07a70" : "#8fd18a", marginTop: 4 }}>{note.text}</div>}
+        {note && <div role={note.bad ? "alert" : "status"} style={{ fontSize: 12, color: note.bad ? C.warn : C.good, marginTop: 4 }}>{note.text}</div>}
       </div>
     );
   };
@@ -2751,7 +2752,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
         {badge && <span style={{ fontSize: 11, color: C.sun }}>{badge}</span>}
       </div>
       <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginTop: 4 }}>
-        <span style={{ fontSize: 26, fontWeight: 700, color: nat === 20 ? "#8fd18a" : nat === 1 ? "#e07a70" : C.text }}>{total ?? "?"}</span>
+        <span style={{ fontSize: 26, fontWeight: 700, color: nat === 20 ? C.good : nat === 1 ? C.warn : C.text }}>{total ?? "?"}</span>
         <span style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
           {dice.map((d, i) => (
             <span key={i} title={`d${d.sides}`} style={{ fontSize: 11.5, padding: "1px 6px", borderRadius: 5, border: `1px solid ${C.line}`, color: d.kept ? C.text : C.muted, textDecoration: d.kept ? "none" : "line-through" }}>
@@ -2888,7 +2889,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
             </div>
           )}
           {canvasMsg && (
-            <div role={canvasMsg.ok ? "status" : "alert"} style={{ position: "absolute", bottom: 14, left: "50%", transform: "translateX(-50%)", maxWidth: "min(560px, 90%)", padding: "8px 14px", borderRadius: 8, background: "rgba(28,24,20,0.95)", border: `1px solid ${canvasMsg.ok ? C.line : "#e07a70"}`, color: canvasMsg.ok ? C.text : "#f0a59c", fontSize: 13, textAlign: "center", zIndex: 5, pointerEvents: "none" }}>{canvasMsg.text}</div>
+            <div role={canvasMsg.ok ? "status" : "alert"} style={{ position: "absolute", bottom: 14, left: "50%", transform: "translateX(-50%)", maxWidth: "min(560px, 90%)", padding: "8px 14px", borderRadius: 8, background: "rgba(28,24,20,0.95)", border: `1px solid ${canvasMsg.ok ? C.line : C.warn}`, color: canvasMsg.ok ? C.text : "#f0a59c", fontSize: 13, textAlign: "center", zIndex: 5, pointerEvents: "none" }}>{canvasMsg.text}</div>
           )}
           {scene && !isGm && sel.length === 1 && sheetUrlFor(sel[0]) && (
             <button type="button" onClick={() => openSheetFor(sel[0])} title="Your sheet in a new tab (or Shift + double-click your token)" style={{ position: "absolute", top: 10, right: 10, zIndex: 5, padding: "8px 12px", minHeight: 36, borderRadius: 8, border: `1px solid ${C.sun}`, background: "rgba(28,24,20,0.95)", color: C.sun, fontSize: 13, cursor: "pointer" }}>Open sheet</button>
@@ -2923,7 +2924,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
               )}
               <button type="button" onClick={undoMyDrawing} style={small}>Undo mine</button>
               <button type="button" onClick={() => void clearDrawings(false)} style={small}>Clear mine</button>
-              {isGm && <button type="button" onClick={() => void clearDrawings(true)} style={{ ...small, color: "#e07a70" }}>Clear all</button>}
+              {isGm && <button type="button" onClick={() => void clearDrawings(true)} style={{ ...small, color: C.warn }}>Clear all</button>}
             </div>
           )}
           {scene && isGm && tool === "terrain" && (
@@ -2985,7 +2986,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                     <option value="">No effect</option>
                     {EFFECTS.map((x) => <option key={x.key} value={x.key}>{x.label}</option>)}
                   </select>
-                  <button type="button" onClick={() => void removeTpl()} style={{ ...small, color: "#e07a70" }}>Remove</button>
+                  <button type="button" onClick={() => void removeTpl()} style={{ ...small, color: C.warn }}>Remove</button>
                 </>
               ) : <span style={{ color: C.muted }}>placed by someone else</span>}
             </div>
@@ -3208,7 +3209,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                 <textarea aria-label="Message" value={draft} onChange={(e) => setDraft(e.target.value)} rows={2}
                   onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void submit(); } }}
                   placeholder="Say something, /r 1d20+5 Attack, /w GM psst, /em draws a blade" style={{ ...field, resize: "none" }} />
-                {chatErr && <p role="status" style={{ color: "#e07a70", fontSize: 12, margin: "6px 0 0" }}>{chatErr}</p>}
+                {chatErr && <p role="status" style={{ color: C.warn, fontSize: 12, margin: "6px 0 0" }}>{chatErr}</p>}
               </div>
             </>
           )}
@@ -3293,7 +3294,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                             {isGm && e.ac != null && <span style={{ fontSize: 11.5, color: C.muted }}>AC {e.ac}</span>}
                             {isGm && !tokenForEntry(e) && <button type="button" onClick={() => void addTokenFor([e])} title={`${e.name} has no token on this scene: put one on the table, linked to this entry`} aria-label={`Add a token for ${e.name}`} style={{ ...small, padding: "1px 7px", fontSize: 11 }}>Add token</button>}
                           </div>
-                          {frac != null && <div style={{ height: 4, background: "#2a241d", borderRadius: 2, marginTop: 5 }}><div style={{ width: `${frac * 100}%`, height: 4, borderRadius: 2, background: frac > 0.5 ? "#5fae5a" : frac > 0.25 ? "#d9a43a" : "#d0463c" }} /></div>}
+                          {frac != null && <div style={{ height: 4, background: "#2a241d", borderRadius: 2, marginTop: 5 }}><div style={{ width: `${frac * 100}%`, height: 4, borderRadius: 2, background: frac > 0.5 ? C.good : frac > 0.25 ? "#d9a43a" : C.warn }} /></div>}
                           {(e.conditions ?? []).length > 0 && <div style={{ marginTop: 5 }}><MarkerChips list={e.conditions ?? []} /></div>}
                           {e.is_turn && !isGm && !mineEntry && <div style={{ marginTop: 3 }}><TurnUsed entry={e as unknown as FightEntry} /></div>}
                           {isGm && e.econ && (e.is_turn || e.econ.reaction) && (
@@ -3303,7 +3304,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                                 return (
                                   <button key={k} type="button" aria-pressed={used} title={used ? "Used: click to give it back" : "Ready: click to mark it used"}
                                     onClick={() => editEntry(e.id, (c) => ({ ...c, econ: { ...econOf(c), [k]: !used, ...(k === "action" && used ? { attacks: 0 } : {}) } }))}
-                                    style={{ ...small, padding: "1px 7px", fontSize: 11, textDecoration: used ? "line-through" : "none", color: used ? C.muted : k === "action" ? "#d9a43a" : k === "bonus" ? "#8fd18a" : "#c2a8f0" }}>
+                                    style={{ ...small, padding: "1px 7px", fontSize: 11, textDecoration: used ? "line-through" : "none", color: used ? C.muted : k === "action" ? "#d9a43a" : k === "bonus" ? C.good : "#c2a8f0" }}>
                                     {k === "bonus" ? "Bonus" : k === "action" ? "Action" : "Reaction"}
                                   </button>
                                 );
@@ -3312,9 +3313,9 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                               {e.is_turn && <button type="button" onClick={() => editEntry(e.id, (c) => ({ ...c, econ: { ...FRESH_ECON } }))} style={{ ...small, padding: "1px 7px", fontSize: 11, color: C.muted }} title="Give back everything this turn">Fresh turn</button>}
                             </div>
                           )}
-                          {!isGm && e.awaitingSave && !mineEntry && <div style={{ fontSize: 11, color: "#e07a70", marginTop: 4 }}>saving throw due</div>}
+                          {!isGm && e.awaitingSave && !mineEntry && <div style={{ fontSize: 11, color: C.warn, marginTop: 4 }}>saving throw due</div>}
                           {isGm && (e.pendingSaves ?? []).map((ps) => (
-                            <div key={ps.id} style={{ marginTop: 6, padding: "5px 7px", border: "1px solid #e07a70", borderRadius: 6, fontSize: 12 }}>
+                            <div key={ps.id} style={{ marginTop: 6, padding: "5px 7px", border: `1px solid ${C.warn}`, borderRadius: 6, fontSize: 12 }}>
                               <div>{ps.ability.toUpperCase()} save DC {ps.dc} vs {ps.by}&apos;s {ps.label}{ps.damage ? `: ${ps.damage}${ps.half ? ", half on a success" : ""}` : ""}{e.kind === "pc" ? " (waiting for the player)" : ""}</div>
                               <div style={{ display: "flex", gap: 6, marginTop: 4 }}>
                                 {([true, false] as const).map((ok) => (
@@ -3323,7 +3324,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                                     let y = (dmg > 0 ? applyDamage(c, dmg) : c) as TC & { pendingSaves?: PendingSave[] };
                                     if (!ok && ps.conditions?.length) y = { ...y, conditions: [...new Set([...y.conditions, ...ps.conditions])] };
                                     return { ...y, pendingSaves: (y.pendingSaves ?? []).filter((p) => p.id !== ps.id), lastSave: { label: ps.label, by: ps.by, total: null, dc: ps.dc, saved: ok, damage: dmg, at: Date.now() / 1000 } } as TC;
-                                  })} style={{ ...small, padding: "2px 8px", color: ok ? "#8fd18a" : "#e07a70" }}>{ok ? "Saved" : "Failed"}</button>
+                                  })} style={{ ...small, padding: "2px 8px", color: ok ? C.good : C.warn }}>{ok ? "Saved" : "Failed"}</button>
                                 ))}
                               </div>
                             </div>
@@ -3346,8 +3347,8 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                             <div style={{ marginTop: 8, paddingTop: 8, borderTop: `1px solid ${C.line}` }}>
                               <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
                                 <input aria-label={`Amount for ${e.name}`} value={hpAmt} onChange={(ev) => setHpAmt(ev.target.value.replace(/[^0-9]/g, "").slice(0, 4))} placeholder="HP" style={{ ...field, width: 60, padding: "5px 6px" }} />
-                                <button type="button" onClick={() => { const n2 = parseInt(hpAmt, 10); if (n2 > 0) { editEntry(e.id, (c) => applyDamage(c, n2) as TC); setHpAmt(""); } }} style={{ ...small, color: "#e07a70" }}>Damage</button>
-                                <button type="button" onClick={() => { const n2 = parseInt(hpAmt, 10); if (n2 > 0) { editEntry(e.id, (c) => applyHealing(c, n2) as TC); setHpAmt(""); } }} style={{ ...small, color: "#8fd18a" }}>Heal</button>
+                                <button type="button" onClick={() => { const n2 = parseInt(hpAmt, 10); if (n2 > 0) { editEntry(e.id, (c) => applyDamage(c, n2) as TC); setHpAmt(""); } }} style={{ ...small, color: C.warn }}>Damage</button>
+                                <button type="button" onClick={() => { const n2 = parseInt(hpAmt, 10); if (n2 > 0) { editEntry(e.id, (c) => applyHealing(c, n2) as TC); setHpAmt(""); } }} style={{ ...small, color: C.good }}>Heal</button>
                               </div>
                               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, marginTop: 6 }}>
                                 <label style={{ fontSize: 11.5, color: C.muted }}>Init<input aria-label={`Initiative for ${e.name}`} defaultValue={e.initiative ?? ""} key={`i${e.id}${e.initiative}`} onBlur={(ev) => { const v = ev.target.value.trim(); editEntry(e.id, (c) => ({ ...c, initiative: v === "" ? null : Number(v) || 0 })); }} style={{ ...field, padding: "4px 6px" }} /></label>
@@ -3361,7 +3362,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, marginTop: 8 }}>
                                 <button type="button" onClick={() => editEntry(e.id, (c) => ({ ...c, defeated: !c.defeated }))} style={small}>{e.defeated ? "Not defeated" : "Defeated"}</button>
                                 <button type="button" onClick={() => editEntry(e.id, (c) => ({ ...c, hidden: !c.hidden }))} style={small}>{e.hidden ? "Reveal" : "Hide"}</button>
-                                <button type="button" onClick={() => { removeEntry(e.id); setSelEntry(null); }} style={{ ...small, color: "#e07a70" }}>Remove</button>
+                                <button type="button" onClick={() => { removeEntry(e.id); setSelEntry(null); }} style={{ ...small, color: C.warn }}>Remove</button>
                               </div>
                             </div>
                           )}
@@ -3369,11 +3370,11 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                       );
                     })}
                   </div>
-                  {isGm && <button type="button" onClick={() => void endFight()} style={{ ...small, width: "100%", marginTop: 14, color: "#e07a70" }}>End the fight</button>}
+                  {isGm && <button type="button" onClick={() => void endFight()} style={{ ...small, width: "100%", marginTop: 14, color: C.warn }}>End the fight</button>}
                   {!isGm && <p style={{ color: C.muted, fontSize: 11.5, marginTop: 10 }}>Click a name to change your own HP and conditions, or (on your turn) mark your effects on someone else. Monster HP stays with the GM. Your own initiative roll goes straight into the order.</p>}
                 </>
               )}
-              {chatErr && <p role="status" style={{ color: "#e07a70", fontSize: 12, marginTop: 10 }}>{chatErr}</p>}
+              {chatErr && <p role="status" style={{ color: C.warn, fontSize: 12, marginTop: 10 }}>{chatErr}</p>}
             </div>
           )}
 
@@ -3471,7 +3472,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                     <button type="button" onClick={() => void updateTokens(sel.map((t) => t.id), { layer: sel.every((t) => t.layer === "gm") ? "token" : "gm" }, true)} style={small}>{sel.every((t) => t.layer === "gm") ? "Back to the table" : "To the GM layer"}</button>
                     <button type="button" onClick={() => turn(sel.map((t) => t.id), 45)} style={small}>Turn 45 (R)</button>
                     {sel.length === 1 && <button type="button" onClick={() => openSheetFor(sel[0])} title="Its sheet in a new tab (or Shift + double-click the token)" style={small}>Open sheet</button>}
-                    <button type="button" onClick={() => void deleteTokens(sel.map((t) => t.id))} style={{ ...small, color: "#e07a70" }}>Remove (Delete)</button>
+                    <button type="button" onClick={() => void deleteTokens(sel.map((t) => t.id))} style={{ ...small, color: C.warn }}>Remove (Delete)</button>
                   </div>
                 </div>
               )}
@@ -3543,7 +3544,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                   </button>
                 </>
               )}
-              {chatErr && <p role="status" style={{ color: "#e07a70", fontSize: 12, marginTop: 10 }}>{chatErr}</p>}
+              {chatErr && <p role="status" style={{ color: C.warn, fontSize: 12, marginTop: 10 }}>{chatErr}</p>}
             </div>
           )}
 
@@ -3646,7 +3647,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
               <div style={{ fontWeight: 600, fontSize: 13, marginTop: 18 }}>Invite the players</div>
               <p style={{ color: C.muted, fontSize: 12, margin: "6px 0" }}>Players sign in the way they do for their character page; anyone with a claimed character in this campaign gets in.</p>
               <button type="button" onClick={() => { void navigator.clipboard?.writeText(`${window.location.origin}/tabletop/${campaignId}`); say("Table link copied.", true); }} style={{ ...small, width: "100%" }}>Copy the table link</button>
-              {chatErr && <p role="status" style={{ color: "#e07a70", fontSize: 12, marginTop: 10 }}>{chatErr}</p>}
+              {chatErr && <p role="status" style={{ color: C.warn, fontSize: 12, marginTop: 10 }}>{chatErr}</p>}
             </div>
           )}
 
@@ -3677,7 +3678,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                   <p style={{ color: C.muted, fontSize: 12, margin: "6px 0" }}>A handout is a wiki entry or a picture. It pops up for the players you pick. A wiki entry stays in their Codex; a picture stays here in their Handouts.</p>
                   <input aria-label="Find an entry" value={hoQuery} onChange={(e) => setHoQuery(e.target.value.slice(0, 60))} placeholder="Find an entry…" style={field} />
                   <div style={{ maxHeight: 180, overflowY: "auto", marginTop: 6, border: `1px solid ${C.line}`, borderRadius: 7 }} role="listbox" aria-label="Wiki entries">
-                    {hoEntries === null && <p style={{ color: C.muted, fontSize: 12, margin: 8 }}>Loading the wiki…</p>}
+                    {hoEntries === null && <p role="status" style={{ color: C.muted, fontSize: 12, margin: 8 }}>Loading the wiki…</p>}
                     {hoEntries !== null && hoEntries.length === 0 && <p style={{ color: C.muted, fontSize: 12, margin: 8 }}>No wiki entries yet. Write one in the Codex first.</p>}
                     {(hoEntries ?? []).filter((x) => !hoQuery.trim() || x.title.toLowerCase().includes(hoQuery.trim().toLowerCase())).slice(0, 60).map((x) => (
                       <button key={x.id} type="button" role="option" aria-selected={hoPick === x.id} onClick={() => setHoPick(x.id)}
@@ -3728,14 +3729,14 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                   <div key={h.id} style={{ display: "flex", gap: 6, alignItems: "center", border: `1px solid ${C.line}`, borderRadius: 8, padding: "6px 8px" }}>
                     <button type="button" onClick={() => setOpenHandout(h)} style={{ flex: 1, textAlign: "left", background: "none", border: "none", color: C.text, cursor: "pointer", padding: 0, fontSize: 13 }}>
                       {h.title}
-                      <span style={{ display: "block", fontSize: 11, color: C.muted }}>{isGm ? `to ${h.shownTo ? h.shownTo.join(", ") : "everyone"}, ` : ""}{new Date(h.shownAt).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span>
+                      <span style={{ display: "block", fontSize: 11, color: C.muted }}>{isGm ? `to ${h.shownTo ? h.shownTo.join(", ") : "everyone"}, ` : ""}{fmtDateTime(h.shownAt, { weekday: false })}</span>
                     </button>
                     {isGm && <button type="button" onClick={() => send("handout", { id: h.id, characters: null })} title="Pop it up again for the players it was shown to" style={{ ...small, padding: "3px 8px" }}>Again</button>}
-                    {isGm && <button type="button" onClick={() => void hideHandout(h.id)} title={h.picture ? "Take it back: the players can no longer open the picture" : "Take it back: the players lose what this showing revealed"} style={{ ...small, padding: "3px 8px", color: "#e07a70" }}>Hide</button>}
+                    {isGm && <button type="button" onClick={() => void hideHandout(h.id)} title={h.picture ? "Take it back: the players can no longer open the picture" : "Take it back: the players lose what this showing revealed"} style={{ ...small, padding: "3px 8px", color: C.warn }}>Hide</button>}
                   </div>
                 ))}
               </div>
-              {chatErr && <p role="status" style={{ color: "#e07a70", fontSize: 12, marginTop: 10 }}>{chatErr}</p>}
+              {chatErr && <p role="status" style={{ color: C.warn, fontSize: 12, marginTop: 10 }}>{chatErr}</p>}
             </div>
           )}
         </div>

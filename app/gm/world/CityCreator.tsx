@@ -146,7 +146,7 @@ export default function CityCreator({ campaignId }: { campaignId: string }) {
         <div style={{ marginTop: 8 }}><button type="button" onClick={render} disabled={busy} style={btn(C.sun, "#1b1712")}>{busy ? "Painting\u2026" : "Paint city"}</button></div>
         <div style={{ marginTop: 8 }}><button type="button" onClick={saveLocally} style={btn("transparent", C.text)}>Save image</button></div>
 
-        {msg && <p style={{ color: "#c98a7a", fontSize: 12, marginTop: 12 }}>{msg}</p>}
+        {msg && <p style={{ color: C.warn, fontSize: 12, marginTop: 12 }}>{msg}</p>}
       </div>
     </div>
   );

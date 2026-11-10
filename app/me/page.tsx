@@ -7,6 +7,7 @@ import { UpgradeAccount } from "@/components/upgrade-account";
 import { PlayerDisposition } from "@/components/player-disposition";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import { ConnectProblem, LinkInvalid } from "@/components/load-problem";
+import { SAX } from "@/lib/theme";
 
 const AXES = ["N", "T", "O", "S", "E", "I"] as const;
 type Axis = typeof AXES[number];
@@ -57,7 +58,7 @@ export default function PlayerJournalPage() {
   }, [supabase]);
 
   const eyebrow = { fontFamily: "ui-monospace, monospace", fontSize: 11, letterSpacing: "0.22em", textTransform: "uppercase" as const, color: C.muted };
-  const sectionTitle = { fontFamily: "'Iowan Old Style', Georgia, serif", fontSize: 20, fontWeight: 700, color: C.text, margin: "32px 0 12px" };
+  const sectionTitle = { fontFamily: SAX.serif, fontSize: 20, fontWeight: 700, color: C.text, margin: "32px 0 12px" };
   const card = { background: C.surface, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "14px 18px", marginBottom: 10 };
 
   const post = journal?.posterior || null;
@@ -68,7 +69,7 @@ export default function PlayerJournalPage() {
     <PageShell width={920}>
       <div style={{ width: "100%", maxWidth: 640, margin: "0 auto" }}>
         <div style={{ textAlign: "center", marginBottom: 4 }}>
-          <span style={{ fontFamily: "'Iowan Old Style', Georgia, serif", fontSize: 26, fontWeight: 700 }}>
+          <span style={{ fontFamily: SAX.serif, fontSize: 26, fontWeight: 700 }}>
             {journal?.character ? journal.character.name : "Your journal"}
           </span>
         </div>
@@ -79,7 +80,7 @@ export default function PlayerJournalPage() {
             an account, so it needs no gate here. Lands back on /me when done. */}
         <UpgradeAccount variant="card" next="/me" />
 
-        {status === "loading" && <p style={{ textAlign: "center", color: C.muted, fontSize: 14 }}>Loading&hellip;</p>}
+        {status === "loading" && <p role="status" style={{ textAlign: "center", color: C.muted, fontSize: 14 }}>Loading&hellip;</p>}
         {status === "invalid" && <LinkInvalid what="invite link" />}
         {status === "error" && <ConnectProblem />}
         {status === "unclaimed" && (

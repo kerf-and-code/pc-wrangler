@@ -7,6 +7,7 @@ import SchemaHealthCard from "@/components/schema-health-card";
 import TableTapCard from "@/components/table-tap-card";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import { initialCampaignId, useRememberCampaign } from "@/lib/campaign-context";
+import { SAX } from "@/lib/theme";
 
 type Step = { key: string; label: string; desc: string; href: string; cta: string; done: boolean; optional?: boolean; alt?: { href: string; cta: string } };
 
@@ -97,7 +98,7 @@ export default function GettingStartedPage() {
       <div style={{ fontFamily: "ui-monospace, monospace", fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", color: C.muted, marginBottom: 6 }}>
         Getting started
       </div>
-      <h1 style={{ fontFamily: "'Iowan Old Style', Georgia, serif", fontSize: 30, fontWeight: 700, margin: "0 0 8px" }}>
+      <h1 style={{ fontFamily: SAX.serif, fontSize: 30, fontWeight: 700, margin: "0 0 8px" }}>
         Start here
       </h1>
       <p style={{ color: C.muted, fontSize: 15, lineHeight: 1.6, margin: "0 0 22px", maxWidth: 600 }}>
@@ -109,7 +110,7 @@ export default function GettingStartedPage() {
           never run, so the reason has to be visible before the instruction. */}
       <SchemaHealthCard />
 
-      {status === "loading" && <p style={{ color: C.muted, fontSize: 14 }}>Loading…</p>}
+      {status === "loading" && <p role="status" style={{ color: C.muted, fontSize: 14 }}>Loading…</p>}
       {status === "signin" && <p style={{ color: C.muted, fontSize: 14, lineHeight: 1.6 }}>Sign in to see your progress.</p>}
 
       {status === "ready" && (

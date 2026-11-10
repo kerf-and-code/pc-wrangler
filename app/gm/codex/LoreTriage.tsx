@@ -293,7 +293,7 @@ export default function LoreTriage({ campaignId, entries, chars, onChanged }: {
       </p>
 
       {err && <p role="alert" style={{ color: C.warn, fontSize: 13, marginBottom: 12 }}>{err}</p>}
-      {loading && <p style={{ color: C.muted, fontSize: 13.5 }}>Loading…</p>}
+      {loading && <p role="status" style={{ color: C.muted, fontSize: 13.5 }}>Loading…</p>}
 
       <div style={sectionLabel}>NEW · {beats.length}</div>
       {beats.length === 0 ? (

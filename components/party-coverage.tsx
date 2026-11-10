@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { SAX, STONE, surfaces } from "@/lib/theme";
-import { stoneField } from "@/lib/forge-theme";
+import { stoneField, C } from "@/lib/forge-theme";
 import {
   CoverageSystem,
   PartyMember,
@@ -171,7 +171,7 @@ export default function PartyCoverage() {
             </span>
           ) : (
             <span>
-              <span style={{ color: "#d97d6d", fontWeight: 600 }}>
+              <span style={{ color: C.warn, fontWeight: 600 }}>
                 {gapCount} gap{gapCount === 1 ? "" : "s"}:
               </span>{" "}
               {coverage.missing.map((r) => ROLE_LABEL[r]).join(", ")}.
@@ -186,7 +186,7 @@ export default function PartyCoverage() {
             return (
               <div key={role} style={{ ...covRow, ...(covered ? null : covRowGap) }}>
                 <div style={covLabel}>
-                  <span style={{ ...dot, background: covered ? "#9aa880" : "#d97d6d" }} />
+                  <span style={{ ...dot, background: covered ? "#9aa880" : C.warn }} />
                   <span style={{ fontWeight: 600 }}>{ROLE_LABEL[role]}</span>
                 </div>
                 <div style={covWho}>

@@ -9,6 +9,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
+import { fmtTime } from "@/lib/format";
 
 const BRASS = C.brass;
 const EVENT_TYPES = new Set([
@@ -195,7 +196,7 @@ export default function TableTap({ shareCode }: { shareCode: string }) {
       }
       const total = e.rolls && "total" in e.rolls ? ` = ${e.rolls.total}` : "";
       const line = `${e.actor_name ?? "Unknown"} ${e.event_type}${e.name ? `: ${e.name}` : ""}${total}`;
-      setFeed((f) => [{ line, fidelity: e.fidelity, at: new Date().toLocaleTimeString() }, ...f].slice(0, 25));
+      setFeed((f) => [{ line, fidelity: e.fidelity, at: fmtTime(new Date()) }, ...f].slice(0, 25));
     }
     while (q.length > 200) q.shift();
     setPending(q.length);
@@ -343,7 +344,7 @@ export default function TableTap({ shareCode }: { shareCode: string }) {
         setCharOptions((prev) => (prev ?? []).filter((c) => c.id !== characterId));
         const actor = actorNamesRef.current[ddbId] ?? ddbId;
         const extra = data.backfilled > 0 ? ` (${data.backfilled} earlier roll${data.backfilled === 1 ? "" : "s"} attributed)` : "";
-        setFeed((f) => [{ line: `Linked ${actor} to ${data.character_name}${extra}`, fidelity: "canonical", at: new Date().toLocaleTimeString() }, ...f].slice(0, 25));
+        setFeed((f) => [{ line: `Linked ${actor} to ${data.character_name}${extra}`, fidelity: "canonical", at: fmtTime(new Date()) }, ...f].slice(0, 25));
         setLastError(null);
       } else {
         setLastError(typeof data.error === "string" ? data.error : "Linking failed. Try again.");
@@ -440,7 +441,7 @@ export default function TableTap({ shareCode }: { shareCode: string }) {
                   cursor: linkSel[ddbId] ? "pointer" : "default",
                 }}
               >
-                {linking === ddbId ? "Linking..." : "Link"}
+                {linking === ddbId ? "Linking…" : "Link"}
               </button>
             </div>
           ))}

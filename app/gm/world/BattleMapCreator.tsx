@@ -834,7 +834,7 @@ export default function BattleMapCreator({ campaignId }: { campaignId: string })
   };
 
   // ---- render ----
-  if (status === "loading") return <p style={{ color: C.muted }}>Loading maps…</p>;
+  if (status === "loading") return <p role="status" style={{ color: C.muted }}>Loading maps…</p>;
   if (status === "migration") return (
     <div style={panel}>
       {/* Push 12 (audit U6): the migration name is for the owner and goes to the console (p104-battle-maps.sql). */}
@@ -842,7 +842,7 @@ export default function BattleMapCreator({ campaignId }: { campaignId: string })
       <p style={{ color: C.muted, fontSize: 13 }}>Your existing dungeon map is safe, and is copied over automatically once they are.</p>
     </div>
   );
-  if (status === "error") return <div style={panel}><p role="alert" style={{ color: "#c98a7a", margin: 0 }}>{msg}</p></div>;
+  if (status === "error") return <div style={panel}><p role="alert" style={{ color: C.warn, margin: 0 }}>{msg}</p></div>;
 
   const newForm = (
     <div style={{ ...panel, maxWidth: 520 }}>
@@ -862,7 +862,7 @@ export default function BattleMapCreator({ campaignId }: { campaignId: string })
         <button type="button" onClick={() => void createMap()} style={btn(C.sun, "#1b1712")}>Create map</button>
         {maps.length > 0 && <button type="button" onClick={() => setCreating(false)} style={btn("transparent", C.text)}>Cancel</button>}
       </div>
-      {msg && <p role="status" style={{ color: "#c98a7a", fontSize: 12, marginTop: 10 }}>{msg}</p>}
+      {msg && <p role="status" style={{ color: C.warn, fontSize: 12, marginTop: 10 }}>{msg}</p>}
     </div>
   );
 
@@ -877,9 +877,9 @@ export default function BattleMapCreator({ campaignId }: { campaignId: string })
         <button type="button" onClick={() => { setCreating(true); setMsg(null); }} style={small}>New map</button>
         <button type="button" onClick={() => { setMsg(null); setUpload({ kind: "map" }); }} title="Make a new map from a picture: a module's battle map, lined up with the grid" style={small}>Upload a map image</button>
         {doc && <button type="button" onClick={() => void createMap(doc)} style={small}>Duplicate</button>}
-        {doc && <button type="button" onClick={() => void deleteMap()} style={{ ...small, color: "#c98a7a" }}>Delete map</button>}
+        {doc && <button type="button" onClick={() => void deleteMap()} style={{ ...small, color: C.warn }}>Delete map</button>}
         <a href={tabletopUrl(campaignId)} onClick={(e) => { e.preventDefault(); openTabletop(campaignId); }} title="The shared table, in its own window: put a map on it from its Scenes tab, add tokens, and invite the players" style={{ ...small, textDecoration: "none", color: C.sun, borderColor: C.sun }}>Open the tabletop</a>
-        <span role="status" style={{ marginLeft: "auto", color: saveState === "error" ? "#c98a7a" : C.muted, fontSize: 12 }}>
+        <span role="status" style={{ marginLeft: "auto", color: saveState === "error" ? C.warn : C.muted, fontSize: 12 }}>
           {saveState === "saving" ? "Saving…" : saveState === "saved" ? "Saved" : saveState === "error" ? "Not saved" : ""}
         </span>
       </div>
@@ -938,7 +938,7 @@ export default function BattleMapCreator({ campaignId }: { campaignId: string })
                 </div>
                 {wallStart && <button type="button" onClick={finishWall} style={{ ...small, width: "100%", marginTop: 8 }}>Finish this wall (Enter)</button>}
                 <p style={{ color: C.text, fontSize: 12.5, margin: "10px 0 0" }}>{doc.meta.sightWalls[level].length} on this level{doc.meta.sightWalls[level].length >= MAX_SIGHT_WALLS ? " (the most a level holds)" : ""}</p>
-                {doc.meta.sightWalls[level].length > 0 && <button type="button" onClick={clearWalls} style={{ ...small, color: "#c98a7a", width: "100%", marginTop: 8 }}>Remove all sight walls on this level</button>}
+                {doc.meta.sightWalls[level].length > 0 && <button type="button" onClick={clearWalls} style={{ ...small, color: C.warn, width: "100%", marginTop: 8 }}>Remove all sight walls on this level</button>}
                 <p style={{ color: C.muted, fontSize: 11.5, margin: "8px 0 0" }}>On the tabletop, turn on line of sight for the scene (Scenes tab) to use them.</p>
               </div>
             )}
@@ -962,7 +962,7 @@ export default function BattleMapCreator({ campaignId }: { campaignId: string })
                   onChange={(e) => updateSel({ s: Number(e.target.value) }, false)} style={{ width: "100%", accentColor: C.sun }} />
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, marginTop: 10 }}>
                   <button type="button" onClick={duplicateSel} style={small}>Duplicate</button>
-                  <button type="button" onClick={deleteSel} style={{ ...small, color: "#c98a7a" }}>Delete</button>
+                  <button type="button" onClick={deleteSel} style={{ ...small, color: C.warn }}>Delete</button>
                   <button type="button" onClick={() => restack(true)} style={small}>Bring to front</button>
                   <button type="button" onClick={() => restack(false)} style={small}>Send to back</button>
                 </div>
@@ -1052,7 +1052,7 @@ export default function BattleMapCreator({ campaignId }: { campaignId: string })
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, marginTop: 8 }}>
                       <button type="button" onClick={() => turnDoor(false)} style={small}>&#8634; Turn left</button>
                       <button type="button" onClick={() => turnDoor(true)} style={small}>Turn right &#8635;</button>
-                      <button type="button" onClick={removeDoor} style={{ ...small, color: "#c98a7a", gridColumn: "1 / -1" }}>Remove door</button>
+                      <button type="button" onClick={removeDoor} style={{ ...small, color: C.warn, gridColumn: "1 / -1" }}>Remove door</button>
                     </div>
                   </div>
                 ) : <p style={{ color: C.muted, fontSize: 12, margin: "10px 0 0" }}>No door selected. Click a door on the map to select it.</p>}
@@ -1071,8 +1071,8 @@ export default function BattleMapCreator({ campaignId }: { campaignId: string })
                     {o && (
                       <>
                         <p style={{ color: C.muted, fontSize: 12, margin: "6px 0 0" }}>{own ? "Your uploaded image is on this level." : "A Gemini painting is on this level."}</p>
-                        {img === "failed" && <p role="status" style={{ color: "#c98a7a", fontSize: 12, margin: "6px 0 0" }}>The image could not be loaded. Upload or paint it again, or remove it.</p>}
-                        {img === "loading" && <p style={{ color: C.muted, fontSize: 12, margin: "6px 0 0" }}>Loading the image…</p>}
+                        {img === "failed" && <p role="status" style={{ color: C.warn, fontSize: 12, margin: "6px 0 0" }}>The image could not be loaded. Upload or paint it again, or remove it.</p>}
+                        {img === "loading" && <p role="status" style={{ color: C.muted, fontSize: 12, margin: "6px 0 0" }}>Loading the image…</p>}
                         {stale && <p role="status" style={{ color: "#d9a43a", fontSize: 12, margin: "6px 0 0" }}>This level has changed since it was painted. Repaint to match.</p>}
                         {check(o.show, (v) => setOverlay({ show: v }), own ? "Show the image" : "Show the painting")}
                         {o.show && (
@@ -1100,7 +1100,7 @@ export default function BattleMapCreator({ campaignId }: { campaignId: string })
                       <button type="button" disabled={painting} onClick={() => void paintLevel()} style={{ ...btn(C.sun, "#1b1712"), opacity: painting ? 0.6 : 1 }}>
                         {painting ? "Painting… (up to a minute)" : !o ? "Paint this level with Gemini" : own ? "Paint with Gemini instead" : "Repaint this level"}
                       </button>
-                      {o && <button type="button" onClick={() => mutate((d) => { d.meta.overlays[level] = null; })} style={{ ...small, color: "#c98a7a" }}>{own ? "Remove image" : "Remove painting"}</button>}
+                      {o && <button type="button" onClick={() => mutate((d) => { d.meta.overlays[level] = null; })} style={{ ...small, color: C.warn }}>{own ? "Remove image" : "Remove painting"}</button>}
                     </div>
                     <p style={{ color: C.muted, fontSize: 11.5, margin: "8px 0 0" }}>
                       Your own image stays in your campaign&apos;s storage; after uploading, trace its walls with the Sight walls tool. Painting sends a picture of this level&apos;s layout (no names, notes or labels) to Google Gemini; the painting can drift from the plan, so your walls, doors and grid stay drawn over it unless you turn that off.
@@ -1179,7 +1179,7 @@ export default function BattleMapCreator({ campaignId }: { campaignId: string })
               <button type="button" onClick={doUndo} style={btn("transparent", C.text)}>Undo (Ctrl+Z)</button>
               <button type="button" onClick={clearLevel} style={btn("transparent", C.muted)}>Clear this level</button>
             </div>
-            {msg && <p role="status" style={{ color: "#c98a7a", fontSize: 12, marginTop: 12 }}>{msg}</p>}
+            {msg && <p role="status" style={{ color: C.warn, fontSize: 12, marginTop: 12 }}>{msg}</p>}
           </div>
         </div>
       )}

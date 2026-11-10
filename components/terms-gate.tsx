@@ -102,7 +102,7 @@ export default function TermsGate() {
           <button type="button" onClick={accept} disabled={busy} style={{
             padding: "10px 16px", minHeight: 44, border: "none", borderRadius: FORGE_RADIUS,
             background: C.brass, color: C.ink, fontWeight: 700, fontSize: 14, cursor: "pointer", opacity: busy ? 0.6 : 1,
-          }}>{busy ? "Saving..." : "Continue"}</button>
+          }}>{busy ? "Saving…" : "Continue"}</button>
           <button type="button" onClick={signOut} style={{
             padding: "10px 16px", minHeight: 44, borderRadius: FORGE_RADIUS, background: "transparent",
             border: `1px solid ${C.line}`, color: C.muted, fontSize: 14, cursor: "pointer",

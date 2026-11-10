@@ -167,7 +167,7 @@ export default function PlayParty({ campaignId, gear, onGear, coins, onCoins, it
         {items && <span style={{ fontSize: 12.5, color: STONE.inkFaint }}>{items.length} stack{items.length === 1 ? "" : "s"}{weight ? `, ${Math.round(weight * 10) / 10} lb` : ""}, shared by the table</span>}
       </div>
       {err && <p role="alert" style={{ fontSize: 12.5, color: C.warn, margin: "8px 0 0" }}>{err}</p>}
-      {!err && items === null && <p style={{ fontSize: 12.5, color: STONE.inkFaint, margin: "8px 0 0" }}>Loading&hellip;</p>}
+      {!err && items === null && <p role="status" style={{ fontSize: 12.5, color: STONE.inkFaint, margin: "8px 0 0" }}>Loading&hellip;</p>}
       {!err && items && items.length === 0 && <p style={{ fontSize: 13, color: STONE.inkFaint, margin: "8px 0 0" }}>The party holds nothing yet. Give something from your inventory or add loot below.</p>}
       {!err && items && items.map((p) => (
         <div key={p.id} style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", padding: "6px 0", borderBottom: `1px solid ${STONE.hi}` }}>

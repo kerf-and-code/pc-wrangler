@@ -6,6 +6,7 @@ import PageShell from "@/components/page-shell";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import { friendlyError } from "@/lib/friendly-error";
 import { ConnectProblem, LinkInvalid } from "@/components/load-problem";
+import { SAX } from "@/lib/theme";
 
 const SPOTLIGHT: { value: string; label: string; hint: string }[] = [
   { value: "wanted_more", label: "Wanted more", hint: "I was in the background" },
@@ -120,14 +121,14 @@ export default function VibeCheckPage() {
     <PageShell width={920}>
         <div style={card}>
           <div style={{ textAlign: "center", marginBottom: 4 }}>
-            <span style={{ fontFamily: "'Iowan Old Style', Georgia, serif", fontSize: 26, fontWeight: 700 }}>Session check-in</span>
+            <h1 style={{ fontFamily: SAX.serif, fontSize: 26, fontWeight: 700, margin: 0 }}>Session check-in</h1>
           </div>
           <div style={{ textAlign: "center", fontFamily: "ui-monospace, monospace", fontSize: 11, letterSpacing: "0.28em", color: C.muted, marginBottom: 18 }}>
             {status === "ready" && campaignName ? `SESSION ${sessionNo} \u00b7 ${campaignName.toUpperCase()}` : campaignName ? campaignName.toUpperCase() : "SIX AXES"}
           </div>
           <div style={{ height: 3, borderRadius: 3, background: `linear-gradient(90deg, ${C.sun}, ${C.plum})`, marginBottom: 24 }} />
 
-          {status === "loading" && <p style={{ textAlign: "center", color: C.muted, fontSize: 14 }}>Loading…</p>}
+          {status === "loading" && <p role="status" style={{ textAlign: "center", color: C.muted, fontSize: 14 }}>Loading…</p>}
 
           {status === "invalid" && <LinkInvalid />}
           {status === "offline" && <ConnectProblem />}

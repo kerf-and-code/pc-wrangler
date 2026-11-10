@@ -342,7 +342,7 @@ export default function PlaySheet({ name, sheet, saveProf, ruleset, characterId,
             </div>
           </div>
           <div style={{ flex: "1 1 120px", height: 8, background: "rgba(0,0,0,0.35)", borderRadius: 4 }}>
-            <div style={{ width: `${(hp / hpMax) * 100}%`, height: 8, borderRadius: 4, background: hp / hpMax > 0.5 ? "#5fae5a" : hp / hpMax > 0.25 ? "#d9a43a" : "#d0463c" }} />
+            <div style={{ width: `${(hp / hpMax) * 100}%`, height: 8, borderRadius: 4, background: hp / hpMax > 0.5 ? C.good : hp / hpMax > 0.25 ? "#d9a43a" : C.warn }} />
           </div>
           <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
             <input aria-label="Amount" value={amt} inputMode="numeric" placeholder="amount" onChange={(e) => setAmt(e.target.value.replace(/[^0-9]/g, "").slice(0, 4))}

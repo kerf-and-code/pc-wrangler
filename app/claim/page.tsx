@@ -20,6 +20,7 @@
 import React from "react";
 import DiscordButton from "@/components/discord-button";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
+import { SAX } from "@/lib/theme";
 
 export default function ClaimPage() {
   return (
@@ -27,7 +28,7 @@ export default function ClaimPage() {
       background: C.bg, color: C.text, padding: 24,
       fontFamily: "ui-sans-serif, system-ui, sans-serif" }}>
       <div style={{ width: "100%", maxWidth: 420, textAlign: "center" }}>
-        <div style={{ fontFamily: "'Iowan Old Style', Georgia, serif", fontSize: 26, fontWeight: 700, marginBottom: 8 }}>
+        <div style={{ fontFamily: SAX.serif, fontSize: 26, fontWeight: 700, marginBottom: 8 }}>
           Open your table
         </div>
         <p style={{ color: C.muted, fontSize: 15, lineHeight: 1.6, margin: "0 0 24px" }}>

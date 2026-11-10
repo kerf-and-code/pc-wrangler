@@ -19,11 +19,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import SixAxesNav from "@/components/six-axes-nav";
-import {
-  STONE, FORGE_FONTS, forgeBackground, forgeVignette, stonePanel, stoneButton,
-  FORGE_BUTTON_CSS, stoneField, stoneChip, forgeHeading, forgeLabel, forgeRuleLine, forgeBoss,
-} from "@/lib/forge-theme";
+import PageShell from "@/components/page-shell";
+import { STONE, FORGE_FONTS, stonePanel, stoneButton, FORGE_BUTTON_CSS, stoneField, stoneChip, forgeHeading, forgeLabel, forgeRuleLine, forgeBoss } from "@/lib/forge-theme";
 import {
   listLibrary, deleteFromLibrary, listMyCampaigns, instantiateToCampaign,
   type LibraryRow, type CampaignOption,
@@ -75,18 +72,9 @@ export default function LibraryPage() {
     }
   }, [supabase, router]);
 
-  const shellStyle: React.CSSProperties = {
-    position: "relative", minHeight: "100dvh", color: STONE.ink,
-    fontFamily: FORGE_FONTS.body, ...forgeBackground(),
-  };
-
   return (
-    <div style={shellStyle}>
+    <PageShell width={920}>
       <FontsAndCss />
-      <div style={forgeVignette} />
-      <div className="sax-navpad" style={{ position: "relative", zIndex: 1 }}>
-        <div style={{ maxWidth: 920, margin: "0 auto", padding: "28px 20px 64px" }}>
-          <SixAxesNav />
 
           <Header />
 
@@ -123,9 +111,7 @@ export default function LibraryPage() {
               )}
             </>
           )}
-        </div>
-      </div>
-    </div>
+    </PageShell>
   );
 }
 

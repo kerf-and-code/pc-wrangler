@@ -9,6 +9,9 @@ import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import { initialCampaignId, useRememberCampaign, initialSessionId, useRememberSession } from "@/lib/campaign-context";
+import { fmtDate } from "@/lib/format";
+import { SAX } from "@/lib/theme";
+import { LoadingState } from "@/components/ui-forge/States";
 
 type Campaign = { id: string; name: string };
 type Session = { id: string; session_number: number | null; created_at: string; scheduled_at: string | null };
@@ -271,14 +274,14 @@ export default function MechanicsPage() {
   const box = { background: C.surface, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "16px 18px", marginBottom: 14 } as const;
   const sel = { background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "9px 12px", fontSize: 14 } as const;
   const sessionLabel = (s: Session) =>
-    `Session ${s.session_number ?? "?"} ${"\u00b7"} ${new Date(s.scheduled_at ?? s.created_at).toLocaleDateString()}`;
+    `Session ${s.session_number ?? "?"} ${"\u00b7"} ${fmtDate(s.scheduled_at ?? s.created_at)}`;
 
   return (
     <PageShell width={900}>
       <div style={{ fontFamily: "ui-monospace, monospace", fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", color: C.muted, marginBottom: 6 }}>
         Insight
       </div>
-      <h1 style={{ fontFamily: "'Iowan Old Style', Georgia, serif", fontSize: 30, fontWeight: 700, margin: "0 0 8px" }}>Mechanics</h1>
+      <h1 style={{ fontFamily: SAX.serif, fontSize: 30, fontWeight: 700, margin: "0 0 8px" }}>Mechanics</h1>
       <p style={{ color: C.muted, fontSize: 14.5, lineHeight: 1.6, margin: "0 0 18px", maxWidth: 640 }}>
         Descriptive stats from rolls captured at the table: who rolled, how the dice treated them, damage dealt, and hit points over the session. Numbers marked unverified came from players without digital dice enabled.
       </p>
@@ -309,7 +312,7 @@ export default function MechanicsPage() {
 
       {loadErr && !loading && <p role="alert" style={{ color: C.warn, fontSize: 13, margin: "0 0 12px" }}>{loadErr}</p>}
       {loading ? (
-        <div style={{ ...box, color: C.muted, fontSize: 14 }}>Loading...</div>
+        <LoadingState />
       ) : events.length === 0 ? (
         <div style={{ ...box, color: C.muted, fontSize: 14, lineHeight: 1.6 }}>
           No captured rolls for this session. Share your session link (Roster tab) and have players keep it open while they play with Beyond20.
@@ -448,7 +451,7 @@ export default function MechanicsPage() {
                   <tr key={r.key}>
                     <td style={{ padding: "9px 10px", fontWeight: 600, color: r.linked ? C.text : C.muted }}>{r.label}</td>
                     <td style={{ padding: "9px 10px", textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{r.d20Count}</td>
-                    <td style={{ padding: "9px 10px", textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{r.natCount ? (r.natSum / r.natCount).toFixed(1) : "\u2014"}</td>
+                    <td style={{ padding: "9px 10px", textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{r.natCount ? (r.natSum / r.natCount).toFixed(1) : "-"}</td>
                     <td style={{ padding: "9px 10px", textAlign: "right", fontVariantNumeric: "tabular-nums", color: r.nat20s ? C.good : C.muted }}>{r.nat20s}</td>
                     <td style={{ padding: "9px 10px", textAlign: "right", fontVariantNumeric: "tabular-nums", color: r.nat1s ? C.warn : C.muted }}>{r.nat1s}</td>
                     <td style={{ padding: "9px 10px", textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{r.advantage}</td>

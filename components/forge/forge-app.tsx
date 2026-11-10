@@ -36,8 +36,8 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { SAX } from "@/lib/theme";
-import SixAxesNav from "@/components/six-axes-nav";
-import { C, STONE, FORGE_FONTS, forgeBackground, forgeVignette, stonePanel, stoneButton, FORGE_BUTTON_CSS, statTile, stoneField, stoneChip, forgeHeading, forgePanelTitle, forgeLabel, forgeRuleLine, forgeBoss } from "@/lib/forge-theme";
+import PageShell from "@/components/page-shell";
+import { C, STONE, FORGE_FONTS, stonePanel, stoneButton, FORGE_BUTTON_CSS, statTile, stoneField, stoneChip, forgeHeading, forgePanelTitle, forgeLabel, forgeRuleLine, forgeBoss } from "@/lib/forge-theme";
 import { loadSrd } from "@/lib/srd/srd";
 import { traitOptions, traitAsksAChoice, lineageSpells } from "@/lib/species-choices";
 import { choicesFor, resolveChoice, choiceKey, costedPicks, actionsFor, type ClassChoice } from "@/lib/class-choices";
@@ -114,6 +114,7 @@ import {
   type Ability, type Build, type EpicChoice, type GearEntry, type ImportAdjust,
 } from "@/lib/srd/derive-sheet";
 import { hasPrintedAbilities, suppressItemEffects, reconcileImport, RECONCILE_VERSION, type DdbSheet } from "@/lib/ddb-import";
+import { fmtTime } from "@/lib/format";
 
 // ---------------------------------------------------------------------------
 // Build defaults + normalization
@@ -1643,11 +1644,6 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
   // Render
   // ---------------------------------------------------------------------------
 
-  const shellStyle: React.CSSProperties = {
-    position: "relative", minHeight: "100dvh", color: STONE.ink,
-    fontFamily: FORGE_FONTS.body, ...forgeBackground(),
-  };
-
   const psheet = useMemo(() => { try { return derivePf2eSheet(pbuild, PF2_RULES); } catch { return null; } }, [pbuild]);
   const dsheet = useMemo(() => { try { return deriveDaggerheartSheet(dbuild, DH_RULES); } catch { return null; } }, [dbuild]);
   const steelSheet = useMemo(() => { try { return deriveDrawSteelSheet(steelBuild, DS_RULES); } catch { return null; } }, [steelBuild]);
@@ -1714,13 +1710,9 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
       textTransform: "uppercase", cursor: "pointer", whiteSpace: "nowrap",
     });
     return (
-      <div style={shellStyle}>
+      <PageShell width={1280}>
         <FontsAndCss />
         <style>{SHEET_CSS}</style>
-        <div style={forgeVignette} />
-        <div className="sax-navpad" style={{ position: "relative", zIndex: 1 }}>
-          <div style={{ maxWidth: 1280, margin: "0 auto", padding: "20px 16px 64px" }}>
-            <SixAxesNav />
 
             {status === "loading" && <Muted>Opening the sheet&hellip;</Muted>}
             {status === "signedout" && <Muted>Sign in to open your character sheet.</Muted>}
@@ -1857,19 +1849,13 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
                 )}
               </>
             )}
-          </div>
-        </div>
-      </div>
+      </PageShell>
     );
   }
 
   return (
-    <div style={shellStyle}>
+    <PageShell width={920}>
       <FontsAndCss />
-      <div style={forgeVignette} />
-      <div className="sax-navpad" style={{ position: "relative", zIndex: 1 }}>
-        <div style={{ maxWidth: 920, margin: "0 auto", padding: "28px 20px 64px" }}>
-          <SixAxesNav />
 
           <Header />
 
@@ -2223,9 +2209,7 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
               )}
             </div>
           )}
-        </div>
-      </div>
-    </div>
+    </PageShell>
   );
 }
 
@@ -4188,7 +4172,7 @@ function IdentityPanel(props: {
       )}
 
       {!catalogReady && (
-        <p style={{ color: STONE.inkFaint, fontSize: 13, marginBottom: 12 }}>Loading the catalog&hellip;</p>
+        <p role="status" style={{ color: STONE.inkFaint, fontSize: 13, marginBottom: 12 }}>Loading the catalog&hellip;</p>
       )}
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
@@ -5661,7 +5645,7 @@ function SheetRollLog({ campaignId, characterId }: { campaignId: string; charact
     const id = setInterval(() => { if (!document.hidden) void load(); }, 8000);
     return () => clearInterval(id);
   }, [open, load]);
-  const time = (iso: string) => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? "" : d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }); };
+  const time = (iso: string) => { return fmtTime(iso); };
   return (
     <div style={{ position: "relative" }}>
       <button type="button" className="forge-btn" aria-expanded={open} aria-haspopup="true" onClick={() => setOpen((o) => !o)}
@@ -5672,11 +5656,11 @@ function SheetRollLog({ campaignId, characterId }: { campaignId: string; charact
             background: "rgba(20,17,13,0.98)", border: `1px solid ${STONE.hi}`, borderRadius: 8, boxShadow: "0 10px 30px rgba(0,0,0,0.5)", padding: 8 }}>
           <div style={{ ...forgeLabel, margin: "0 0 6px" }}>Your rolls this session</div>
           {err && <p role="alert" style={{ fontSize: 12.5, color: C.warn, margin: 0 }}>{err}</p>}
-          {!err && rolls === null && <p style={{ fontSize: 12.5, color: STONE.inkFaint, margin: 0 }}>Loading&hellip;</p>}
+          {!err && rolls === null && <p role="status" style={{ fontSize: 12.5, color: STONE.inkFaint, margin: 0 }}>Loading&hellip;</p>}
           {!err && rolls && rolls.length === 0 && <p style={{ fontSize: 12.5, color: STONE.inkFaint, margin: 0 }}>No rolls yet, or no session open.</p>}
           {rolls && rolls.map((r) => (
             <div key={r.key} style={{ display: "flex", gap: 8, alignItems: "baseline", padding: "4px 2px", borderBottom: `1px solid ${STONE.hi}` }}>
-              <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 16, fontWeight: 700, minWidth: 32, textAlign: "right", color: r.nat === 20 ? "#8fd18a" : r.nat === 1 ? "#e07a70" : STONE.ink }}>{r.total ?? "?"}</span>
+              <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 16, fontWeight: 700, minWidth: 32, textAlign: "right", color: r.nat === 20 ? C.good : r.nat === 1 ? C.warn : STONE.ink }}>{r.total ?? "?"}</span>
               <span style={{ flex: 1, fontSize: 13, color: STONE.ink, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.label}</span>
               {r.from && <span style={{ fontSize: 10.5, color: STONE.inkFaint }}>{r.from}</span>}
               <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 10.5, color: STONE.inkFaint }}>{time(r.at)}</span>

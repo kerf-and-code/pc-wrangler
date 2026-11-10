@@ -70,7 +70,7 @@ function abilMod(score: number): string {
 
 export default function StatBlockPage() {
   return (
-    <Suspense fallback={<div style={{ padding: 40, color: STONE.ink }}>Loading the workshop…</div>}>
+    <Suspense fallback={<div role="status" style={{ padding: 40, color: STONE.ink }}>Loading the workshop…</div>}>
       <StatBlockInner />
     </Suspense>
   );
@@ -227,7 +227,7 @@ function StatBlockInner() {
 
   // -------------------------------------------------------------------------
   if (status === "loading") {
-    return <Shell><div style={{ color: STONE.inkDim, padding: 20 }}>Opening the workshop…</div></Shell>;
+    return <Shell><div role="status" style={{ color: STONE.inkDim, padding: 20 }}>Opening the workshop…</div></Shell>;
   }
 
   if (status === "picker") {

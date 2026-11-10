@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
+import { SAX } from "@/lib/theme";
 
 // Self-serve Beyond20 setup wizard. Browser-aware steps, one-tap copy of the
 // custom-domain URL, and a LIVE connection check: once the player adds the URL
@@ -93,7 +94,7 @@ export default function Beyond20Setup() {
     <div style={{ minHeight: "100dvh", background: C.bg, color: C.text, padding: "32px 20px",
       fontFamily: "ui-sans-serif, system-ui, sans-serif" }}>
       <div style={{ maxWidth: 620, margin: "0 auto" }}>
-        <h1 style={{ fontFamily: "'Iowan Old Style', Georgia, serif", fontSize: 28, margin: 0 }}>Connect your dice</h1>
+        <h1 style={{ fontFamily: SAX.serif, fontSize: 28, margin: 0 }}>Connect your dice</h1>
         <p style={{ color: C.muted, fontSize: 15, lineHeight: 1.6, marginTop: 8 }}>
           One-time setup so your D&amp;D Beyond rolls reach your GM. Takes about a minute. You&rsquo;ll need the free{" "}
           <a href="https://beyond20.here-for-more.info/" target="_blank" rel="noreferrer" style={{ color: C.sun }}>Beyond20 extension</a> installed first.

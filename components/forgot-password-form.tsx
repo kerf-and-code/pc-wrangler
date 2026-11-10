@@ -70,7 +70,7 @@ export function ForgotPasswordForm() {
           style={{ ...stoneButton("primary"), width: "100%" }}
           disabled={isLoading}
         >
-          {isLoading ? "Sending..." : "Send reset email"}
+          {isLoading ? "Sending…" : "Send reset email"}
         </button>
       </form>
       <p style={{ ...authText, textAlign: "center", fontSize: 13, margin: "16px 0 0" }}>

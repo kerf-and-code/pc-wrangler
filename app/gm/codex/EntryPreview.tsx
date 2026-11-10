@@ -37,7 +37,7 @@ const WIKI_CSS = `
 `;
 
 function BlockView({ b }: { b: Block }) {
-  if (b.type === "header") return <h2 className="w-h2">{b.text}</h2>;
+  if (b.type === "header") return <h2 className="w-h2" id={`h-${b.id}`}>{b.text}</h2>;
   if (b.type === "text") return <div className="w-body">{b.text}</div>;
   return (
     <figure>
@@ -87,7 +87,7 @@ export default function EntryPreview({
       <style dangerouslySetInnerHTML={{ __html: WIKI_CSS }} />
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 16px", background: C.surface2, borderBottom: `1px solid ${C.line}` }}>
         <span id="entry-preview-title" style={{ fontFamily: "ui-monospace, monospace", fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", color: C.muted }}>
-          Preview &mdash; how this entry will look published
+          Preview: how this entry will look published
         </span>
         <button type="button" onClick={onClose}
           style={{ background: "transparent", color: C.text, border: `1px solid ${C.line}`, borderRadius: 8, padding: "5px 12px", fontSize: 13, cursor: "pointer" }}>
@@ -102,7 +102,8 @@ export default function EntryPreview({
               <div className="w-card">
                 <div className="ey" style={{ marginBottom: 12 }}>Contents</div>
                 <nav className="w-toc">
-                  {headers.map((h) => <a key={h.id} href="#">{h.text}</a>)}
+                  {/* audit G21: real anchors, like the published page (TocSpy, href="#h-<id>") */}
+                  {headers.map((h) => <a key={h.id} href={`#h-${h.id}`}>{h.text}</a>)}
                 </nav>
               </div>
             </aside>

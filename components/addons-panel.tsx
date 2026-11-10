@@ -5,6 +5,7 @@ import { C } from "@/lib/forge-theme";
 import type { createClient } from "@/lib/supabase/client";
 import { isDiscordWebhook } from "@/lib/addons/discord";
 import { friendlyError, notReady } from "@/lib/friendly-error";
+import { fmtDateTime } from "@/lib/format";
 
 // components/addons-panel.tsx (2026-11-09)
 //
@@ -31,7 +32,7 @@ const head: React.CSSProperties = { fontWeight: 600, fontSize: 13, margin: "16px
 const box: React.CSSProperties = { border: `1px solid ${C.line}`, borderRadius: 9, padding: 8, marginBottom: 8 };
 const code: React.CSSProperties = { display: "block", whiteSpace: "pre", overflowX: "auto", background: "rgba(0,0,0,0.35)", border: `1px solid ${C.line}`, borderRadius: 7, padding: 8, fontSize: 11.5, fontFamily: "ui-monospace, Menlo, Consolas, monospace", color: C.text };
 
-const when = (iso: string | null) => (iso ? new Date(iso).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "never");
+const when = (iso: string | null) => (iso ? fmtDateTime(iso, { weekday: false }) : "never");
 
 async function post(path: string, body: unknown, method = "POST") {
   const res = await fetch(path, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
@@ -88,7 +89,7 @@ export default function AddonsPanel({ campaignId, supabase, onHooksChanged }: { 
   return (
     <div style={{ flex: 1, overflowY: "auto", padding: 12, fontSize: 12.5, color: C.text }}>
       <p style={{ color: C.muted, margin: 0 }}>Connect other programs to this table: a Discord bot that posts rolls, a stream overlay, your own scripts. Keys let them talk to the table; webhooks tell them what happens here.</p>
-      {err && <p role="status" style={{ color: "#e07a70", margin: "8px 0 0" }}>{err}</p>}
+      {err && <p role="status" style={{ color: C.warn, margin: "8px 0 0" }}>{err}</p>}
 
       <div style={head}>Keys</div>
       {fresh && (
@@ -114,7 +115,7 @@ export default function AddonsPanel({ campaignId, supabase, onHooksChanged }: { 
           </div>
           {k.revoked_at
             ? <button type="button" disabled={busy} onClick={() => void act(() => supabase.from("addon_keys").delete().eq("id", k.id))} style={small}>Remove</button>
-            : <button type="button" disabled={busy} onClick={() => void act(() => supabase.from("addon_keys").update({ revoked_at: new Date().toISOString() }).eq("id", k.id))} style={{ ...small, color: "#e07a70" }}>Revoke</button>}
+            : <button type="button" disabled={busy} onClick={() => void act(() => supabase.from("addon_keys").update({ revoked_at: new Date().toISOString() }).eq("id", k.id))} style={{ ...small, color: C.warn }}>Revoke</button>}
         </div>
       ))}
       {makingKey ? (
@@ -233,12 +234,12 @@ function HookRow({ hook: h, supabase, busy, act, onReload }: {
       {showSecret && <code style={{ ...code, marginTop: 6, whiteSpace: "pre-wrap", wordBreak: "break-all" }}>{h.secret}</code>}
       {note && <p role="status" style={{ color: C.muted, margin: "6px 0 0" }}>{note}</p>}
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
-        <button type="button" disabled={testing || !h.enabled} onClick={() => void test()} style={small}>{testing ? "Sending..." : "Send a test"}</button>
+        <button type="button" disabled={testing || !h.enabled} onClick={() => void test()} style={small}>{testing ? "Sending…" : "Send a test"}</button>
         <button type="button" onClick={() => setShowSecret(!showSecret)} style={small}>{showSecret ? "Hide the secret" : "Show the signing secret"}</button>
         {showSecret && <button type="button" onClick={() => void navigator.clipboard?.writeText(h.secret)} style={small}>Copy</button>}
         {confirmDel
-          ? <button type="button" disabled={busy} onClick={() => void act(() => supabase.from("addon_hooks").delete().eq("id", h.id), true)} style={{ ...small, background: "#e07a70", color: "#1b1712", border: "none", marginLeft: "auto" }}>Delete {h.name}</button>
-          : <button type="button" onClick={() => setConfirmDel(true)} style={{ ...small, color: "#e07a70", marginLeft: "auto" }}>Delete</button>}
+          ? <button type="button" disabled={busy} onClick={() => void act(() => supabase.from("addon_hooks").delete().eq("id", h.id), true)} style={{ ...small, background: C.warn, color: "#1b1712", border: "none", marginLeft: "auto" }}>Delete {h.name}</button>
+          : <button type="button" onClick={() => setConfirmDel(true)} style={{ ...small, color: C.warn, marginLeft: "auto" }}>Delete</button>}
       </div>
     </div>
   );
@@ -279,7 +280,7 @@ function NewHook({ campaignId, onDone, onCancel }: { campaignId: string; onDone:
           <input type="checkbox" checked={secretRolls} onChange={(e) => setSecretRolls(e.target.checked)} style={{ accentColor: C.sun }} />Your secret rolls too
         </label>
       </div>
-      {err && <p role="status" style={{ color: "#e07a70", margin: "6px 0 0" }}>{err}</p>}
+      {err && <p role="status" style={{ color: C.warn, margin: "6px 0 0" }}>{err}</p>}
       <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
         <button type="button" disabled={busy || !name.trim() || !events.length} onClick={() => void save()} style={primary}>{busy ? "Checking the address..." : "Add the webhook"}</button>
         <button type="button" onClick={onCancel} style={small}>Cancel</button>

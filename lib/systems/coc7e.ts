@@ -5,8 +5,8 @@ import type { RulesModule } from "./contract";
 // investigation doesn't reward them, so those D&D-shaped surfaces simply step aside for a CoC
 // campaign rather than showing maths that mean nothing there.
 //
-// It's also the first real proof that the Phase 0 seam ROUTES rather than just compiles. Flip a
-// campaign's `system` to 'coc7e' (by hand for now, until the Phase 4 picker exists) and watch the
+// It's also the first real proof that the Phase 0 seam ROUTES rather than just compiles. Set a
+// campaign's system to Call of Cthulhu (the game-system picker in the Workspace) and watch the
 // wired features react: the roller drops the advantage toggle (no d20-vs-dc), and the encounter
 // balancer shows its "this system doesn't use encounter budgets" note.
 export const coc7e: RulesModule = {

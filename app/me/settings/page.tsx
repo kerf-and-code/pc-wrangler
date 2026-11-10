@@ -8,6 +8,7 @@ import { UpgradeAccount } from "@/components/upgrade-account";
 import { Header } from "@/app/me/campaigns/page";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import { askConfirm } from "@/lib/confirm";
+import { fmtDate } from "@/lib/format";
 
 // Your account.
 //
@@ -211,7 +212,7 @@ export default function MySettingsPage() {
                     borderRadius: FORGE_RADIUS, padding: "9px 12px", fontSize: 14 }}
                 />
                 <button type="button" onClick={saveName} disabled={saving} style={btn(C.sun, C.ink)}>
-                  {saving ? "Saving..." : "Save"}
+                  {saving ? "Saving…" : "Save"}
                 </button>
               </div>
               {saved && <p role="status" aria-live="polite" style={{ color: C.good, fontSize: 12.5, margin: "10px 0 0" }}>Saved.</p>}
@@ -231,7 +232,7 @@ export default function MySettingsPage() {
                   Signed in as <span style={{ color: C.text }}>{profile.email ?? "your linked account"}</span>.
                   Your characters follow you to any device.
                   {profile.upgraded_at && (
-                    <> Linked {new Date(profile.upgraded_at).toLocaleDateString()}.</>
+                    <> Linked {fmtDate(profile.upgraded_at)}.</>
                   )}
                 </p>
               )}
@@ -248,7 +249,7 @@ export default function MySettingsPage() {
                       style={{ flex: "1 1 220px", color: C.text, borderRadius: FORGE_RADIUS, padding: "9px 12px", fontSize: 16 }}
                     />
                     <button type="button" onClick={changeEmail} disabled={emailChangeBusy} style={btn("transparent", C.text, C.line)}>
-                      {emailChangeBusy ? "Sending..." : "Send confirmation"}
+                      {emailChangeBusy ? "Sending…" : "Send confirmation"}
                     </button>
                   </div>
                   {emailChangeMsg && (
@@ -270,7 +271,7 @@ export default function MySettingsPage() {
                 your voice is not uploaded or transcribed. Audio already recorded follows
                 the 60-day deletion.
               </p>
-              {consents === null && !consentError && <p style={{ color: C.muted, fontSize: 13, margin: 0 }}>Loading your campaigns&hellip;</p>}
+              {consents === null && !consentError && <p role="status" style={{ color: C.muted, fontSize: 13, margin: 0 }}>Loading your campaigns&hellip;</p>}
               {consents && consents.length === 0 && <p style={{ color: C.muted, fontSize: 13, margin: 0 }}>You have no characters in a campaign yet.</p>}
               {consents && consents.length > 0 && (
                 <div style={{ display: "grid", gap: 8 }}>
@@ -291,15 +292,15 @@ export default function MySettingsPage() {
                       </div>
                       {c.state === "given" && c.carried && (
                         <button type="button" disabled={consentBusy === c.campaignId} onClick={() => setConsent(c, true)} style={btn("transparent", C.text, C.line)}>
-                          {consentBusy === c.campaignId ? "Saving..." : "Confirm, keep recording"}
+                          {consentBusy === c.campaignId ? "Saving…" : "Confirm, keep recording"}
                         </button>
                       )}
                       {c.state === "given"
                         ? <button type="button" disabled={consentBusy === c.campaignId} onClick={() => setConsent(c, false)} style={btn("transparent", C.text, C.line)}>
-                            {consentBusy === c.campaignId ? "Saving..." : "Stop recording me"}
+                            {consentBusy === c.campaignId ? "Saving…" : "Stop recording me"}
                           </button>
                         : <button type="button" disabled={consentBusy === c.campaignId} onClick={() => setConsent(c, true)} style={btn("transparent", C.text, C.line)}>
-                            {consentBusy === c.campaignId ? "Saving..." : "I consent to recording"}
+                            {consentBusy === c.campaignId ? "Saving…" : "I consent to recording"}
                           </button>}
                     </div>
                   ))}
@@ -386,7 +387,7 @@ export default function MySettingsPage() {
                         cursor: confirmText === "DELETE" && !deleting ? "pointer" : "default",
                       }}
                     >
-                      {deleting ? "Deleting..." : "Delete forever"}
+                      {deleting ? "Deleting…" : "Delete forever"}
                     </button>
                     <button type="button" onClick={() => { setShowDelete(false); setConfirmText(""); }} style={btn("transparent", C.muted, C.line)}>
                       Cancel

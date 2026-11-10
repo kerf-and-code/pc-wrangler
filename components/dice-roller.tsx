@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { SAX, STONE, surfaces } from "@/lib/theme";
-import { stoneField } from "@/lib/forge-theme";
+import { stoneField, C } from "@/lib/forge-theme";
 import { roll, applyAdvantage, parseDice, DiceError } from "@/lib/dice";
 import { countsToNotation, notationToCounts } from "@/components/dice-picker";
 import {
@@ -301,7 +301,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 const TONE_COLOR: Record<Tone, string> = {
-  good: "#9aa880", bad: "#d97d6d", warn: "#e2b878", neutral: STONE.ink,
+  good: "#9aa880", bad: C.warn, warn: "#e2b878", neutral: STONE.ink,
 };
 
 // ---- styles (carved dark forge register) ----

@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
+import { SAX } from "@/lib/theme";
 
 // Pass-through claim: sign in anonymously, bind the character to this link, and
 // send the player into their portal. Recording consent is captured at character
@@ -40,14 +41,14 @@ export default function JoinPage() {
       <div style={{ maxWidth: 420 }}>
         {failed ? (
           <>
-            <div role="alert" style={{ fontFamily: "'Iowan Old Style', Georgia, serif", fontSize: 22, color: C.warn }}>
+            <div role="alert" style={{ fontFamily: SAX.serif, fontSize: 22, color: C.warn }}>
               This invite link isn&rsquo;t valid.
             </div>
             <p style={{ color: C.muted, marginTop: 12, fontSize: 15 }}>Ask your GM to resend your personal link.</p>
           </>
         ) : (
           <>
-            <div style={{ fontFamily: "'Iowan Old Style', Georgia, serif", fontSize: 22, color: C.brass }}>
+            <div style={{ fontFamily: SAX.serif, fontSize: 22, color: C.brass }}>
               Joining the table&hellip;
             </div>
             <p style={{ color: C.muted, marginTop: 12, fontSize: 15 }}>Binding your character to this link.</p>

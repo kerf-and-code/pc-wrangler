@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
+import { fmtDate } from "@/lib/format";
 
 // components/campaign-safety.tsx (2026-11-09)
 //
@@ -137,7 +138,7 @@ export function CampaignSettings({ campaign, isOwner, onChanged, onTrashed }: {
             {zones.map((z) => <option key={z} value={z}>{z.replace(/_/g, " ")}</option>)}
           </select>
         </label>
-        <button type="button" style={ghost} onClick={save} disabled={busy || !dirty}>{busy ? "Saving..." : "Save details"}</button>
+        <button type="button" style={ghost} onClick={save} disabled={busy || !dirty}>{busy ? "Saving…" : "Save details"}</button>
       </div>
       {msg && <p role="status" style={{ margin: 0, fontSize: 13, color: msg === "Saved." ? C.muted : C.warn }}>{msg}</p>}
 
@@ -154,7 +155,7 @@ export function CampaignSettings({ campaign, isOwner, onChanged, onTrashed }: {
             <>
               <p style={{ margin: 0, fontSize: 13, color: C.muted, lineHeight: 1.55 }}>
                 Offered to <span style={{ color: C.text }}>{pending.toEmail}</span>
-                {pending.expiresAt ? `, until ${new Date(pending.expiresAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}` : ""}.
+                {pending.expiresAt ? `, until ${fmtDate(pending.expiresAt)}` : ""}.
                 When they accept, they become the GM and you stay in the campaign as a player.
               </p>
               {handLink && <input readOnly value={handLink} onFocus={(e) => e.currentTarget.select()} aria-label="Handover link" style={{ ...field, width: "100%" }} />}
@@ -169,7 +170,7 @@ export function CampaignSettings({ campaign, isOwner, onChanged, onTrashed }: {
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                 <input type="email" value={handTo} onChange={(e) => setHandTo(e.target.value)} placeholder="their email address"
                   aria-label="New GM's email address" style={{ ...field, flex: "1 1 240px" }} />
-                <button type="button" style={ghost} onClick={handOver} disabled={handBusy || !handTo.trim()}>{handBusy ? "Sending..." : "Send handover"}</button>
+                <button type="button" style={ghost} onClick={handOver} disabled={handBusy || !handTo.trim()}>{handBusy ? "Sending…" : "Send handover"}</button>
               </div>
             </>
           )}
@@ -188,7 +189,7 @@ export function CampaignSettings({ campaign, isOwner, onChanged, onTrashed }: {
             ? <div><button type="button" style={danger} onClick={() => setConfirming(true)} disabled={busy}>Move to trash</button></div>
             : <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
                 <button type="button" style={{ ...danger, background: "rgba(200,80,70,0.12)" }} onClick={trash} disabled={busy}>
-                  {busy ? "Moving..." : `Yes, move ${campaign.name} to the trash`}
+                  {busy ? "Moving…" : `Yes, move ${campaign.name} to the trash`}
                 </button>
                 <button type="button" style={ghost} onClick={() => setConfirming(false)} disabled={busy}>Keep it</button>
               </div>}
@@ -245,7 +246,7 @@ export function CampaignTrash({ refreshKey, onRestored }: { refreshKey: number; 
   }
 
   if (!items.length && !msg) return null;
-  const day = (iso: string) => new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+  const day = (iso: string) => fmtDate(iso);
   return (
     <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${C.line}` }}>
       <div style={{ fontSize: 13, color: C.muted, marginBottom: 8 }}>Trash</div>
@@ -255,7 +256,7 @@ export function CampaignTrash({ refreshKey, onRestored }: { refreshKey: number; 
             <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
               <span style={{ flex: 1, color: C.text, fontSize: 14 }}>{t.name}</span>
               <span style={{ fontSize: 12.5, color: C.muted }}>erased on {day(t.eraseAt)}</span>
-              <button type="button" style={ghost} onClick={() => restore(t)} disabled={busy === t.id}>{busy === t.id ? "Working..." : "Restore"}</button>
+              <button type="button" style={ghost} onClick={() => restore(t)} disabled={busy === t.id}>{busy === t.id ? "Working…" : "Restore"}</button>
               <button type="button" style={danger} onClick={() => { setErasing(erasing === t.id ? null : t.id); setTyped(""); }} disabled={busy === t.id}>Delete forever now</button>
             </div>
             {erasing === t.id && (
@@ -266,7 +267,7 @@ export function CampaignTrash({ refreshKey, onRestored }: { refreshKey: number; 
                 </label>
                 <button type="button" style={{ ...danger, background: "rgba(200,80,70,0.12)" }} onClick={() => eraseNow(t)}
                   disabled={busy === t.id || typed.trim() !== t.name.trim()}>
-                  {busy === t.id ? "Deleting..." : "Delete forever"}
+                  {busy === t.id ? "Deleting…" : "Delete forever"}
                 </button>
               </div>
             )}

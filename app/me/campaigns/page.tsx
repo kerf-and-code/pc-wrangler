@@ -8,6 +8,7 @@ import { UpgradeAccount } from "@/components/upgrade-account";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import { setActiveCampaign } from "@/lib/active-campaign";
 import { openTabletop, tabletopUrl } from "@/lib/tabletop/open";
+import { fmtDate } from "@/lib/format";
 
 // Every campaign this player has a character in, across all of them.
 //
@@ -94,7 +95,7 @@ export default function MyCampaignsPage() {
               Run by {c.gm_name}. You play{" "}
               {c.my_characters === 1 ? "one character" : `${c.my_characters} characters`} here.
               {c.last_session_at && (
-                <> Last session {new Date(c.last_session_at).toLocaleDateString()}.</>
+                <> Last session {fmtDate(c.last_session_at)}.</>
               )}
             </div>
 

@@ -16,7 +16,7 @@
 
 import { useMemo, useState } from "react";
 import { SAX, STONE, surfaces } from "@/lib/theme";
-import { stoneField } from "@/lib/forge-theme";
+import { stoneField, C } from "@/lib/forge-theme";
 import { computeDnd, CR_LIST, type DndMethod } from "@/lib/tools/encounter-dnd";
 import { pf2Budget, pf2EncounterXp, pf2Threat, PF2_THREATS, PF2_THREAT_LABEL } from "@/lib/pf2e/encounter";
 import { dsBands, dsDifficultyOf, dsSpend, dsBenchmarkEV, DS_DIFFICULTY_LABEL } from "@/lib/drawsteel/encounter";
@@ -291,9 +291,9 @@ export default function EncounterBalancer() {
           </div>
           <div style={tierRow}>
             <div style={tierCell}><div style={tierLabel}>Trivial</div><div style={tierNum}>&lt;{ds.bands.trivialMax}</div></div>
-            <div style={tierCell}><div style={tierLabel}>Easy</div><div style={tierNum}>{ds.bands.trivialMax}&ndash;{ds.bands.standardMin - 1}</div></div>
-            <div style={tierCell}><div style={tierLabel}>Standard</div><div style={tierNum}>{ds.bands.standardMin}&ndash;{ds.bands.standardMax}</div></div>
-            <div style={tierCell}><div style={tierLabel}>Hard</div><div style={tierNum}>{ds.bands.standardMax + 1}&ndash;{ds.bands.hardMax}</div></div>
+            <div style={tierCell}><div style={tierLabel}>Easy</div><div style={tierNum}>{ds.bands.trivialMax} to {ds.bands.standardMin - 1}</div></div>
+            <div style={tierCell}><div style={tierLabel}>Standard</div><div style={tierNum}>{ds.bands.standardMin} to {ds.bands.standardMax}</div></div>
+            <div style={tierCell}><div style={tierLabel}>Hard</div><div style={tierNum}>{ds.bands.standardMax + 1} to {ds.bands.hardMax}</div></div>
             <div style={tierCell}><div style={tierLabel}>Extreme</div><div style={tierNum}>&gt;{ds.bands.hardMax}</div></div>
           </div>
           <p style={verdictNote}>Each hero&apos;s strength is 4 + 2 per level; two average Victories add another hero&apos;s worth. Each cell shows the EV range that lands in that band.</p>
@@ -324,19 +324,19 @@ function clampInt(v: string, lo: number, hi: number) {
   return Math.max(lo, Math.min(hi, n));
 }
 function bandColorDnd(band: string) {
-  if (band === "Deadly" || band === "High") return "#d97d6d";
+  if (band === "Deadly" || band === "High") return C.warn;
   if (band === "Hard" || band === "Moderate") return "#e2b878";
   if (band === "Trivial") return STONE.inkFaint;
   return "#9aa880";
 }
 function bandColorPf(t: string | null) {
-  if (t === "extreme" || t === "severe") return "#d97d6d";
+  if (t === "extreme" || t === "severe") return C.warn;
   if (t === "moderate") return "#e2b878";
   if (!t || t === "trivial") return STONE.inkFaint;
   return "#9aa880";
 }
 function bandColorDs(t: string | null) {
-  if (t === "extreme" || t === "hard") return "#d97d6d";
+  if (t === "extreme" || t === "hard") return C.warn;
   if (t === "standard") return "#e2b878";
   if (!t || t === "trivial") return STONE.inkFaint;
   return "#9aa880";
@@ -347,7 +347,7 @@ function dhStatus(spent: number, budget: number) {
   return "Under budget";
 }
 function bandColorDh(spent: number, budget: number) {
-  if (spent > budget) return "#d97d6d";
+  if (spent > budget) return C.warn;
   if (spent === budget) return "#e2b878";
   return "#9aa880";
 }

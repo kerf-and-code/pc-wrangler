@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { SAX } from "@/lib/theme";
 import { FORGE_RADIUS, C } from "@/lib/forge-theme";
+import { fmtDate } from "@/lib/format";
 
 // The PLAYER-level disposition: how a person tends to play, across every character
 // they have ever played. Distinct from the character posterior, which /me has shown
@@ -190,7 +191,7 @@ export function PlayerDisposition({
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 4 }}>
               <span style={{ color: C.text }}>{TAVERN[ax]}</span>
               <span style={{ fontFamily: SAX.mono, color: C.muted, fontSize: 12 }}>
-                {typeof v === "number" ? Math.round(v * 100) : "\u2014"}
+                {typeof v === "number" ? Math.round(v * 100) : "-"}
               </span>
             </div>
             <div style={{ position: "relative", height: 8, background: "rgba(255,255,255,0.06)", borderRadius: FORGE_RADIUS, overflow: "hidden" }}>
@@ -217,7 +218,7 @@ export function PlayerDisposition({
       <p style={{ color: C.muted, fontSize: 11, fontFamily: SAX.mono, margin: "12px 0 0", letterSpacing: "0.04em" }}>
         {nChars} character{nChars === 1 ? "" : "s"}
         {hasSelfReport ? " \u00B7 self-report on file" : " \u00B7 no self-report"}
-        {" \u00B7 "}{new Date(disp.as_of).toLocaleDateString()}
+        {" \u00B7 "}{fmtDate(disp.as_of)}
       </p>
 
       {error && <p role="alert" style={{ color: C.warn, fontSize: 12.5, margin: "10px 0 0" }}>{error}</p>}

@@ -502,7 +502,7 @@ export default function RollerPage() {
       {error && <Card tone="warn"><p style={{ ...body, marginBottom: 0 }}>{error}</p></Card>}
 
       {loadingLog && log.length === 0 && (
-        <Card><p style={{ ...body, marginBottom: 0 }}>Loading this session&apos;s rolls…</p></Card>
+        <Card><p role="status" style={{ ...body, marginBottom: 0 }}>Loading this session&apos;s rolls…</p></Card>
       )}
 
       {log.length > 0 && (

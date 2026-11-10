@@ -146,7 +146,7 @@ export default function MyThreadsPage() {
               ))}
             </select>
             <button type="button" onClick={add} disabled={busy || !title.trim()} style={btn(C.sun, C.ink)}>
-              {busy ? "Saving..." : "Add"}
+              {busy ? "Saving…" : "Add"}
             </button>
           </div>
           {error && <p role="alert" style={{ color: C.warn, fontSize: 12.5, margin: "10px 0 0" }}>{error}</p>}

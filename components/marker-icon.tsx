@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
+import { C } from "@/lib/forge-theme";
 import {
   badgeColors, iconFor, markerLabel, readMarkerStyle, saveMarkerStyle,
   MARKER_CATS, MARKER_STYLES, MAX_TOKEN_MARKERS, TOKEN_MARKERS,
@@ -100,7 +101,7 @@ export function TokenMarkerPicker({ value, onChange, busy, style, onStyle }: {
         <input aria-label="Search markers" placeholder="Search markers" value={q} onChange={(e) => setQ(e.target.value)}
           style={{ flex: "1 1 160px", minWidth: 0, padding: "5px 8px", borderRadius: 7, border: `1px solid ${LINE}`, background: "#1e1a16", color: "#f2e6c9", fontSize: 13 }} />
         <button type="button" disabled={busy || !value.length} onClick={() => onChange([])}
-          style={{ padding: "5px 10px", borderRadius: 7, border: "1px solid #e07a70", background: "transparent", color: "#e07a70", fontSize: 12.5, cursor: value.length ? "pointer" : "default", opacity: value.length ? 1 : 0.5 }}>Clear all</button>
+          style={{ padding: "5px 10px", borderRadius: 7, border: `1px solid ${C.warn}`, background: "transparent", color: C.warn, fontSize: 12.5, cursor: value.length ? "pointer" : "default", opacity: value.length ? 1 : 0.5 }}>Clear all</button>
         {onStyle && <MarkerStylePicker style={style} onChange={onStyle} />}
       </div>
 

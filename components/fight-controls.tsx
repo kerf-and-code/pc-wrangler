@@ -143,15 +143,15 @@ export function PlayerEntryControls({ fightId, entry, onChanged, myTurn = true }
           <input aria-label={`Amount for ${entry.name}`} value={amt} inputMode="numeric" placeholder="amount"
             onChange={(ev) => setAmt(ev.target.value.replace(/[^0-9]/g, "").slice(0, 4))}
             style={{ width: 72, padding: "5px 7px", borderRadius: 7, border: `1px solid ${C.line}`, background: C.surface2, color: C.text, fontSize: 13 }} />
-          <button type="button" disabled={busy || !(n > 0)} onClick={() => void run("heal", { value: n })} style={{ ...small, color: "#8fd18a" }}>Heal</button>
-          <button type="button" disabled={busy || !(n > 0)} onClick={() => void run("damage", { value: n })} style={{ ...small, color: "#e07a70" }}>Take damage</button>
+          <button type="button" disabled={busy || !(n > 0)} onClick={() => void run("heal", { value: n })} style={{ ...small, color: C.good }}>Heal</button>
+          <button type="button" disabled={busy || !(n > 0)} onClick={() => void run("damage", { value: n })} style={{ ...small, color: C.warn }}>Take damage</button>
           <button type="button" disabled={busy || !(n >= 0) || amt === ""} onClick={() => void run("temp", { value: n })} style={{ ...small, color: "#6fa3d8" }} title="Temporary HP do not stack: this replaces what you have">Set temp HP</button>
         </div>
       )}
       {!entry.mine && <p style={{ fontSize: 12, color: C.muted, margin: "0 0 2px" }}>{myTurn ? `Mark your own effects on ${entry.name}. Their HP stays with the GM.` : `Wait for your turn to affect ${entry.name}.`}</p>}
       <MarkerPicker current={entry.conditions ?? []} busy={busy || (!entry.mine && !myTurn)}
         onToggle={(m, on) => void run(on ? "add_condition" : "remove_condition", { condition: m })} />
-      {err && <p role="alert" style={{ color: "#e07a70", fontSize: 12, margin: "6px 0 0" }}>{err}</p>}
+      {err && <p role="alert" style={{ color: C.warn, fontSize: 12, margin: "6px 0 0" }}>{err}</p>}
     </div>
   );
 }
@@ -354,7 +354,7 @@ export function SaveBanner({ campaignId, characterId, entry, saves, onDone }: {
   };
   const field: React.CSSProperties = { padding: "4px 6px", borderRadius: 7, border: `1px solid ${C.line}`, background: C.surface2, color: C.text, fontSize: 13, width: 52 };
   return (
-    <div role="alert" style={{ border: "1px solid #e07a70", borderRadius: 8, padding: "8px 10px", background: "rgba(224,122,112,0.08)", display: "grid", gap: 8 }}>
+    <div role="alert" style={{ border: `1px solid ${C.warn}`, borderRadius: 8, padding: "8px 10px", background: "rgba(224,122,112,0.08)", display: "grid", gap: 8 }}>
       {pending.map((ps) => (
         <div key={ps.id} style={{ display: "grid", gap: 4 }}>
           <div style={{ fontSize: 13, color: C.text }}>
@@ -370,7 +370,7 @@ export function SaveBanner({ campaignId, characterId, entry, saves, onDone }: {
                 {m === "adv" ? "Advantage" : m === "dis" ? "Disadvantage" : "Straight"}
               </button>
             ))}
-            <button type="button" disabled={busy} onClick={() => void rollSave(ps)} style={{ padding: "5px 12px", borderRadius: 7, border: "none", background: "#e07a70", color: "#1b1712", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
+            <button type="button" disabled={busy} onClick={() => void rollSave(ps)} style={{ padding: "5px 12px", borderRadius: 7, border: "none", background: C.warn, color: "#1b1712", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
               Roll {ps.ability.toUpperCase()} save
             </button>
           </div>
@@ -449,7 +449,7 @@ export function EconomyBar({ fightId, entry, myTurn, onChanged }: { fightId: str
     <div style={{ display: "grid", gap: 7 }} aria-label="What is left of your turn">
       <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
         {pip("Action", e.action && e.attacks === 0, "#d9a43a")}
-        {pip("Bonus action", e.bonus, "#8fd18a")}
+        {pip("Bonus action", e.bonus, C.good)}
         {pip("Reaction", e.reaction, "#c2a8f0")}
         <span style={{ fontSize: 12.5, color: C.text }}>
           {left == null ? "Speed not set" : `${left} of ${(entry.speedNow ?? 0) + e.dash} ft left`}
@@ -459,7 +459,7 @@ export function EconomyBar({ fightId, entry, myTurn, onChanged }: { fightId: str
         <span style={{ flex: 1 }} />
         <button type="button" onClick={() => setEdit((v) => !v)} aria-expanded={edit} style={{ ...small, color: C.muted }}>Speed and attacks</button>
       </div>
-      {entry.cantAct && <p role="status" style={{ fontSize: 12.5, color: "#e07a70", margin: 0 }}>{entry.cantAct}: no actions, bonus actions or reactions until it ends.</p>}
+      {entry.cantAct && <p role="status" style={{ fontSize: 12.5, color: C.warn, margin: 0 }}>{entry.cantAct}: no actions, bonus actions or reactions until it ends.</p>}
       {!myTurn && !entry.cantAct && <p style={{ fontSize: 12, color: C.muted, margin: 0 }}>Not your turn: only your reaction can be used now.</p>}
       {edit && (
         <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
@@ -479,7 +479,7 @@ export function EconomyBar({ fightId, entry, myTurn, onChanged }: { fightId: str
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
         <input aria-label="What you use it for" value={note} onChange={(ev) => setNote(ev.target.value.slice(0, 60))} placeholder="what for, e.g. Cunning Action: Dash" style={{ ...field, width: 210 }} />
         <button type="button" disabled={busy || !turnOk || e.action} onClick={() => spend("action")} style={small}>Use action</button>
-        <button type="button" disabled={busy || !turnOk || e.bonus} onClick={() => spend("bonus")} style={{ ...small, color: "#8fd18a" }}>Use bonus action</button>
+        <button type="button" disabled={busy || !turnOk || e.bonus} onClick={() => spend("bonus")} style={{ ...small, color: C.good }}>Use bonus action</button>
         <button type="button" disabled={busy || !!entry.cantAct || e.reaction} onClick={() => spend("reaction")} style={{ ...small, color: "#c2a8f0" }}>Use reaction</button>
       </div>
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
@@ -494,7 +494,7 @@ export function EconomyBar({ fightId, entry, myTurn, onChanged }: { fightId: str
           </button>
         )}
       </div>
-      {err && <p role="alert" style={{ color: "#e07a70", fontSize: 12, margin: 0 }}>{err}</p>}
+      {err && <p role="alert" style={{ color: C.warn, fontSize: 12, margin: 0 }}>{err}</p>}
     </div>
   );
 }

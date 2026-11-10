@@ -258,7 +258,7 @@ export default function LoginPage() {
                 opacity: sending ? 0.7 : 1,
               }}
             >
-              {sending ? "Sending..." : "Email me a sign-in link"}
+              {sending ? "Sending…" : "Email me a sign-in link"}
             </button>
             <p style={{ textAlign: "center", color: C.muted, fontSize: 12, lineHeight: 1.5, margin: "10px 4px 0" }}>
               No password needed. We email you a link that signs you in.

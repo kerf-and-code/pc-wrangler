@@ -13,7 +13,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { SAX, STONE, surfaces } from "@/lib/theme";
-import { stoneField } from "@/lib/forge-theme";
+import { stoneField, C } from "@/lib/forge-theme";
 import { generateTerrain } from "@/lib/worldmap/gen/pipeline";
 import { defaultConfig } from "@/lib/worldmap/gen/types";
 import { bakeWorld } from "@/lib/worldmap/gen/bake";
@@ -62,7 +62,7 @@ export default function MapGenerator() {
     setErr(null);
     // A new map invalidates the previous AI painting.
     setAiUrl(null); setAiErr(null); setAiStatus("idle");
-    // Let the "Generating..." state paint before the synchronous pipeline blocks the thread.
+    // Let the "Generating…" state paint before the synchronous pipeline blocks the thread.
     await new Promise((r) => setTimeout(r, 20));
     try {
       const [W, H] = SIZES[sizeKey];
@@ -312,7 +312,7 @@ const ghost: React.CSSProperties = { background: "rgba(0,0,0,0.24)", color: STON
 const cta: React.CSSProperties = { background: `linear-gradient(180deg, ${STONE.brassHi}, ${SAX.brass})`, color: "#241a0d", border: "none", borderRadius: 3, padding: "12px 24px", fontFamily: SAX.mono, fontSize: 13, letterSpacing: "0.08em", textTransform: "uppercase", cursor: "pointer" };
 const dl: React.CSSProperties = { background: "rgba(0,0,0,0.24)", color: STONE.brassHi, border: `1px solid ${STONE.hi}`, borderRadius: 3, padding: "12px 22px", fontFamily: SAX.mono, fontSize: 13, letterSpacing: "0.08em", textTransform: "uppercase", textDecoration: "none" };
 const hint: React.CSSProperties = { fontSize: 12.5, color: STONE.inkFaint, fontFamily: SAX.serif };
-const errStyle: React.CSSProperties = { color: "#d97d6d", fontSize: 14, margin: "12px 0 0", fontFamily: SAX.serif };
+const errStyle: React.CSSProperties = { color: C.warn, fontSize: 14, margin: "12px 0 0", fontFamily: SAX.serif };
 const preview: React.CSSProperties = { marginTop: 14, background: "rgba(0,0,0,0.34)", boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.4)", borderRadius: 6, padding: 8, overflow: "hidden" };
 const teaser: React.CSSProperties = { ...surfaces.panel, marginTop: 14, padding: "14px 18px", fontSize: 15, lineHeight: 1.6, color: STONE.inkDim };
 const h2: React.CSSProperties = { fontSize: 22, fontWeight: 600, color: STONE.ink, margin: "0 0 8px", fontFamily: "var(--forge-display, 'Cinzel', serif)" };

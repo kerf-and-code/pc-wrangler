@@ -126,7 +126,7 @@ export function RollKeyForExtension({ code, extensionVersion }: { code: string; 
             <div style={note}>Your Six Axes Capture is an older version. Update it to 2.3 or later to connect it to you.</div>
           ) : (
             <button type="button" style={{ ...btn, opacity: busy ? 0.6 : 1 }} disabled={busy} onClick={connect}>
-              {busy ? "Connecting..." : info.has_key ? "Connect again" : "Connect the extension to me"}
+              {busy ? "Connecting…" : info.has_key ? "Connect again" : "Connect the extension to me"}
             </button>
           )}
         </>

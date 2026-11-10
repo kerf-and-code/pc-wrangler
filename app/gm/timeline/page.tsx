@@ -6,6 +6,7 @@ import PageShell from "@/components/page-shell";
 import { surfaces, ui } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import { initialCampaignId, useRememberCampaign, gmHref } from "@/lib/campaign-context";
+import { fmtDate } from "@/lib/format";
 
 type Campaign = { id: string; name: string };
 type Sess = { id: string; session_number: number | null; status: string; started_at: string | null; scheduled_at: string | null };
@@ -118,7 +119,7 @@ export default function TimelinePage() {
   const dateOf = (s: Sess): string => {
     const d = s.started_at || s.scheduled_at;
     if (!d) return "";
-    try { return new Date(d).toLocaleDateString(); } catch (e) { return ""; }
+    return fmtDate(d);
   };
 
   // build per-session bundles, honoring the PC filter

@@ -53,7 +53,7 @@ export default function TransferPage() {
     <PageShell>
       <div style={card}>
         <div style={{ fontSize: 12, letterSpacing: "0.16em", textTransform: "uppercase", color: C.brass, marginBottom: 8 }}>Campaign handover</div>
-        {status === "loading" && <p style={{ color: C.muted }}>Loading&hellip;</p>}
+        {status === "loading" && <p role="status" style={{ color: C.muted }}>Loading&hellip;</p>}
         {status === "missing" && <p style={{ color: C.muted }}>This handover link is not valid. Ask the GM to send a new one.</p>}
         {status === "error" && <p style={{ color: C.warn }}>Could not load this handover. Reload to try again.</p>}
         {status === "ready" && info && (
@@ -67,7 +67,7 @@ export default function TransferPage() {
                 </p>
                 <button type="button" onClick={accept} disabled={busy}
                   style={{ background: C.brass, color: C.ink, border: "none", borderRadius: FORGE_RADIUS, padding: "10px 18px", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
-                  {busy ? "Accepting..." : `Accept and run ${info.campaignName}`}
+                  {busy ? "Accepting…" : `Accept and run ${info.campaignName}`}
                 </button>
               </>
             )}

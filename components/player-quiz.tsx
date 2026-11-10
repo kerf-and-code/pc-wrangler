@@ -17,6 +17,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { AXES, SAX, STONE, surfaces, type AxisKey } from "@/lib/theme";
+import { C } from "@/lib/forge-theme";
 
 const KEYS: AxisKey[] = ["N", "T", "O", "S", "E", "I"];
 const FLAVOR: AxisKey[] = ["N", "T", "O", "S", "E"];
@@ -335,7 +336,7 @@ function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 function scoreColor(v: number) {
-  if (v <= 2) return "#d97d6d";
+  if (v <= 2) return C.warn;
   if (v >= 4) return "#9aa880";
   return STONE.inkFaint;
 }

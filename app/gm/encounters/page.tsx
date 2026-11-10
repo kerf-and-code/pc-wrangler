@@ -399,9 +399,9 @@ export default function EncountersPage() {
     const note = [
       `${method === "2024" ? "2024 XP budget" : "2014 thresholds"}: ${verdict.label}.`,
       method === "2014"
-        ? `${rawXp.toLocaleString()} xp x${mult} = ${effectiveXp.toLocaleString()} adjusted.`
-        : `${rawXp.toLocaleString()} xp.`,
-      `${levelled.length} characters. ${xpPerPlayer.toLocaleString()} xp each.`,
+        ? `${rawXp.toLocaleString()} XP x${mult} = ${effectiveXp.toLocaleString()} adjusted.`
+        : `${rawXp.toLocaleString()} XP.`,
+      `${levelled.length} characters. ${xpPerPlayer.toLocaleString()} XP each.`,
       coverage && coverage.missing.length
         ? `Party has no ${coverage.missing.map((m) => CAP_LABEL[m] ?? m).join(", ")}.`
         : "",
@@ -629,9 +629,9 @@ export default function EncountersPage() {
 
   return (
     <PageShell width={980}>
-      <div style={{ fontFamily: SAX.serif, fontSize: 26, fontWeight: 700, color: C.text, marginBottom: 4 }}>
+      <h1 style={{ fontFamily: SAX.serif, fontSize: 26, fontWeight: 700, color: C.text, margin: "0 0 4px" }}>
         Encounter balancer
-      </div>
+      </h1>
       <p style={{ color: C.muted, fontSize: 13.5, lineHeight: 1.6, margin: "0 0 20px", maxWidth: 660 }}>
         Built against the party actually sitting at your table tonight, not the one the
         module assumed.
@@ -698,7 +698,7 @@ export default function EncountersPage() {
           </select>
         </div>
 
-        {loading && <p style={{ color: C.muted, fontSize: 13 }}>Loading&hellip;</p>}
+        {loading && <p role="status" style={{ color: C.muted, fontSize: 13 }}>Loading&hellip;</p>}
         {!loading && chars.length === 0 && (
           <p style={{ color: C.muted, fontSize: 13 }}>No characters in this campaign yet.</p>
         )}
@@ -778,7 +778,7 @@ export default function EncountersPage() {
               style={{ ...inputStyle, width: 110 }}
             >
               {CR_LIST.map((cr) => (
-                <option key={cr} value={cr}>CR {cr} &middot; {CR_XP[cr].toLocaleString()}xp</option>
+                <option key={cr} value={cr}>CR {cr} &middot; {CR_XP[cr].toLocaleString()}XP</option>
               ))}
             </select>
             <input
@@ -873,14 +873,14 @@ export default function EncountersPage() {
             </span>
             <span style={{ fontFamily: SAX.mono, fontSize: 14, color: C.muted }}>
               {method === "2014" ? (
-                <>{rawXp.toLocaleString()} xp &times; {mult} = <strong style={{ color: C.text }}>{effectiveXp.toLocaleString()} adjusted</strong></>
+                <>{rawXp.toLocaleString()} XP &times; {mult} = <strong style={{ color: C.text }}>{effectiveXp.toLocaleString()} adjusted</strong></>
               ) : (
-                <><strong style={{ color: C.text }}>{rawXp.toLocaleString()} xp</strong> against a {budget.labels[Math.max(0, verdict.idx)]} budget of {(budget.tiers as number[])[Math.max(0, verdict.idx)].toLocaleString()}</>
+                <><strong style={{ color: C.text }}>{rawXp.toLocaleString()} XP</strong> against a {budget.labels[Math.max(0, verdict.idx)]} budget of {(budget.tiers as number[])[Math.max(0, verdict.idx)].toLocaleString()}</>
               )}
             </span>
           </div>
 
-          {/* The gauge. A "Hard" one xp over the line is a different fight from a
+          {/* The gauge. A "Hard" one XP over the line is a different fight from a
               "Hard" that is nearly Deadly, and a label alone hides that. */}
           <div style={{ margin: "4px 0 14px" }}>
             <div style={{ position: "relative", height: 10, background: "rgba(255,255,255,0.05)", borderRadius: FORGE_RADIUS, overflow: "hidden" }}>
@@ -1039,7 +1039,7 @@ export default function EncountersPage() {
               <div style={{ borderTop: `1px solid ${C.line}`, paddingTop: 14 }}>
                 <p style={{ color: C.text, fontSize: 14, lineHeight: 1.65, margin: "0 0 10px" }}>
                   At <strong>{moduleCompare.tierLabel}</strong>, the module&apos;s party could take{" "}
-                  <span style={{ fontFamily: SAX.mono, color: C.brass }}>{moduleCompare.theirs.toLocaleString()}</span> xp.
+                  <span style={{ fontFamily: SAX.mono, color: C.brass }}>{moduleCompare.theirs.toLocaleString()}</span> XP.
                   Yours can take <span style={{ fontFamily: SAX.mono, color: C.brass }}>{moduleCompare.mine.toLocaleString()}</span>.
                 </p>
                 <p style={{ color: C.text, fontSize: 14, lineHeight: 1.65, margin: 0 }}>
@@ -1049,16 +1049,16 @@ export default function EncountersPage() {
                     <>
                       Your party is <strong>{Math.round((1 - moduleCompare.ratio) * 100)}% weaker</strong> than the
                       one this was written for. To hit the same difficulty, aim for about{" "}
-                      <span style={{ fontFamily: SAX.mono, color: C.warn }}>{moduleCompare.targetRaw.toLocaleString()}</span> xp
+                      <span style={{ fontFamily: SAX.mono, color: C.warn }}>{moduleCompare.targetRaw.toLocaleString()}</span> XP
                       of monsters instead of {rawXp.toLocaleString()}: cut roughly{" "}
-                      <strong>{Math.abs(moduleCompare.delta).toLocaleString()} xp</strong> worth.
+                      <strong>{Math.abs(moduleCompare.delta).toLocaleString()} XP</strong> worth.
                     </>
                   ) : (
                     <>
                       Your party is <strong>{Math.round((moduleCompare.ratio - 1) * 100)}% stronger</strong> than the
                       one this was written for. To hit the same difficulty, aim for about{" "}
-                      <span style={{ fontFamily: SAX.mono, color: C.good }}>{moduleCompare.targetRaw.toLocaleString()}</span> xp
-                      of monsters: add roughly <strong>{moduleCompare.delta.toLocaleString()} xp</strong> worth.
+                      <span style={{ fontFamily: SAX.mono, color: C.good }}>{moduleCompare.targetRaw.toLocaleString()}</span> XP
+                      of monsters: add roughly <strong>{moduleCompare.delta.toLocaleString()} XP</strong> worth.
                     </>
                   )}
                 </p>

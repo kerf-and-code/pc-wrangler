@@ -23,6 +23,7 @@ import { initialCampaignId, useRememberCampaign, useRememberSession, urlParam, g
 import { friendlyError } from "@/lib/friendly-error";
 import { openTabletop, tabletopUrl } from "@/lib/tabletop/open";
 import { askConfirm } from "@/lib/confirm";
+import { fmtDateTime } from "@/lib/format";
 
 type Campaign = { id: string; name: string; system: string | null; share_code: string | null; discord_channel_id: string | null };
 type Sess = { id: string; session_number: number | null; status: string | null; scheduled_at: string | null; recap: string | null; started_at: string | null; ended_at: string | null; capture_modality: string | null };
@@ -241,7 +242,7 @@ export default function TonightPage() {
     for (const t of types) (m[t.category] ||= []).push(t);
     return m;
   }, [types]);
-  const when = (iso: string | null) => (iso ? new Date(iso).toLocaleString(undefined, { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : null);
+  const when = (iso: string | null) => (iso ? fmtDateTime(iso) : null);
 
   // ---- styles ----
   const card = (on = false): React.CSSProperties => ({ background: C.panel, border: `1px solid ${on ? C.sun : C.line}`, borderRadius: FORGE_RADIUS, padding: "14px 16px", marginBottom: 14 });
@@ -283,7 +284,7 @@ export default function TonightPage() {
         <p style={{ color: C.muted, fontSize: 14 }}>No campaigns yet. Create one in the {link("/gm", "Workspace")} first.</p>
       )}
 
-      {campaignId && !ready && <p style={{ color: C.muted, fontSize: 14 }}>Loading tonight…</p>}
+      {campaignId && !ready && <p role="status" style={{ color: C.muted, fontSize: 14 }}>Loading tonight…</p>}
 
       {ready && !session && (
         <div style={card(true)}>

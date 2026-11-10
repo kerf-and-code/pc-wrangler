@@ -63,7 +63,7 @@ export default function PlayerInitiativePage() {
   return (
     <PageShell width={640}>
       <h1 style={{ fontFamily: SAX.serif, fontSize: 30, margin: "4px 0 2px", color: C.text }}>Initiative</h1>
-      {share === undefined && !offline && <p style={{ color: C.muted }}>Loading…</p>}
+      {share === undefined && !offline && <p role="status" style={{ color: C.muted }}>Loading…</p>}
       {offline && <ConnectProblem />}
       {share === null && <LinkInvalid />}
       {share && loaded && !fight && !err && (

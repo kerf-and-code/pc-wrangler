@@ -24,6 +24,7 @@ import { C, FORGE_RADIUS, STONE } from "@/lib/forge-theme";
 import { SAX } from "@/lib/theme";
 import { getActiveCampaign } from "@/lib/active-campaign";
 import { urlParam } from "@/lib/campaign-context";
+import { fmtDateTime } from "@/lib/format";
 
 type Speaker = { label: number; seconds: number; utterances: number; samples: string[] };
 type Character = { id: string; name: string };
@@ -158,7 +159,7 @@ export default function SpeakersPage() {
           {tracks.length === 0 && <option value="">No in-person recordings yet</option>}
           {tracks.map((t) => (
             <option key={t.id} value={t.id}>
-              {campNames[t.campaign_id] ? `${campNames[t.campaign_id]} \u00B7 ` : ""}{new Date(t.created_at).toLocaleString()}
+              {campNames[t.campaign_id] ? `${campNames[t.campaign_id]} \u00B7 ` : ""}{fmtDateTime(t.created_at)}
               {t.duration_seconds ? ` \u00B7 ${mins(t.duration_seconds)}` : ""}
             </option>
           ))}

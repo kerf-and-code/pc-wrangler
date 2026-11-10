@@ -170,7 +170,7 @@ export default function CardsPanel({ campaignId, supabase, isGm, me, seats, data
           </div>
         </div>
       )}
-      {msg && <p role="status" style={{ color: "#e07a70", margin: "4px 0" }}>{msg}</p>}
+      {msg && <p role="status" style={{ color: C.warn, margin: "4px 0" }}>{msg}</p>}
 
       <div style={head}>On the table</div>
       {data.table.length === 0 ? <p style={{ color: C.muted, margin: 0 }}>No cards played.</p> : (
@@ -282,14 +282,14 @@ function DeckRow({ deck, campaignId, isGm, seats, busy, run, supabase, selected,
             <input type="checkbox" checked={deck.playersDraw} onChange={(e) => void run(() => supabase.from("vtt_decks").update({ players_draw: e.target.checked, updated_at: new Date().toISOString() }).eq("id", deck.id))} style={{ accentColor: C.sun }} />Players draw
           </label>
           <label style={{ ...small, display: "inline-flex", alignItems: "center", cursor: backBusy ? "wait" : "pointer" }}>
-            {backBusy ? "Uploading..." : deck.back ? "New back picture" : "Back picture"}
+            {backBusy ? "Uploading…" : deck.back ? "New back picture" : "Back picture"}
             <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" disabled={backBusy || busy} onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) void setBackPicture(f); }} style={{ display: "none" }} />
           </label>
           {deck.back && <button type="button" disabled={busy} onClick={() => void setBackPicture(null)} style={small}>No back picture</button>}
           {confirm === "delete"
-            ? <button type="button" disabled={busy} onClick={() => { setConfirm(""); void deleteDeck(); }} style={{ ...small, background: "#e07a70", color: "#1b1712", border: "none", marginLeft: "auto" }}>Delete {deck.name} and its cards</button>
-            : <button type="button" onClick={() => setConfirm("delete")} style={{ ...small, color: "#e07a70", marginLeft: "auto" }}>Delete</button>}
-          {backErr && <p role="status" style={{ color: "#e07a70", margin: 0, flexBasis: "100%" }}>{backErr}</p>}
+            ? <button type="button" disabled={busy} onClick={() => { setConfirm(""); void deleteDeck(); }} style={{ ...small, background: C.warn, color: "#1b1712", border: "none", marginLeft: "auto" }}>Delete {deck.name} and its cards</button>
+            : <button type="button" onClick={() => setConfirm("delete")} style={{ ...small, color: C.warn, marginLeft: "auto" }}>Delete</button>}
+          {backErr && <p role="status" style={{ color: C.warn, margin: 0, flexBasis: "100%" }}>{backErr}</p>}
         </div>
       )}
     </div>
@@ -447,10 +447,10 @@ function NewDeck({ campaignId, supabase, onDone, onCancel }: { campaignId: strin
         {backPic && <button type="button" onClick={() => { URL.revokeObjectURL(backPic.url); setBackPic(null); }} style={{ ...small, padding: "3px 8px" }}>No picture</button>}
       </div>
       <label style={{ display: "flex", gap: 6, alignItems: "center", marginTop: 8 }}><input type="checkbox" checked={playersDraw} onChange={(e) => setPlayersDraw(e.target.checked)} style={{ accentColor: C.sun }} />Players can draw from it</label>
-      {err && <p role="status" style={{ color: "#e07a70", margin: "6px 0 0" }}>{err}</p>}
+      {err && <p role="status" style={{ color: C.warn, margin: "6px 0 0" }}>{err}</p>}
       {busy && <p role="status" style={{ color: C.muted, margin: "6px 0 0" }}>{busy}</p>}
       <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
-        <button type="button" disabled={!!busy} onClick={() => void create()} style={primary}>{busy ? "Working..." : "Make the deck"}</button>
+        <button type="button" disabled={!!busy} onClick={() => void create()} style={primary}>{busy ? "Working…" : "Make the deck"}</button>
         <button type="button" disabled={!!busy} onClick={onCancel} style={small}>Cancel</button>
       </div>
     </div>

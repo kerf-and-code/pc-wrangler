@@ -194,7 +194,7 @@ export default function DmScreen() {
   const worldW = Math.max(1400, maxRight + 240);
   const worldH = Math.max(900, maxBottom + 240);
 
-  if (loading) return <p style={{ color: C.muted }}>Loading your GM screen…</p>;
+  if (loading) return <p role="status" style={{ color: C.muted }}>Loading your GM screen…</p>;
   if (!gmId) return <p style={{ color: C.muted }}>Sign in as a GM to use the GM screen.</p>;
 
   return (
@@ -218,7 +218,7 @@ export default function DmScreen() {
           <>
             <button type="button" onClick={onNewBoard} style={seg(false)}>+ New board</button>
             {activeBoard && <button type="button" onClick={() => { setNameDraft(activeBoard.name); setRenaming(true); }} style={seg(false)}>Rename</button>}
-            {activeBoard && <button type="button" onClick={onDelete} style={{ ...seg(false), color: "#c98a7a" }}>Delete</button>}
+            {activeBoard && <button type="button" onClick={onDelete} style={{ ...seg(false), color: C.warn }}>Delete</button>}
           </>
         )}
         {activeBoard && (
@@ -232,7 +232,7 @@ export default function DmScreen() {
         {activeBoard && <span style={{ color: C.muted, fontSize: 12.5 }}>{cards.length} card{cards.length === 1 ? "" : "s"}</span>}
       </div>
 
-      {err && <p style={{ color: "#c98a7a", fontSize: 12.5, margin: 0 }}>{err}</p>}
+      {err && <p style={{ color: C.warn, fontSize: 12.5, margin: 0 }}>{err}</p>}
       {undo && (
         <div role="status" style={{ display: "flex", gap: 10, alignItems: "center", fontSize: 13, color: C.text }}>
           <span>Removed {undo.card.entry.name}.</span>

@@ -8,6 +8,7 @@ import {
 } from "@/lib/tabletop/frames";
 import { applyMask, autoMask, keptShare, paintMask, stampSeed, strokeOverlay, wandRemove } from "@/lib/tabletop/cutout";
 import { cutInBackground, GifJob, WorkerFailed } from "@/lib/tabletop/tools-client";
+import { C } from "@/lib/forge-theme";
 
 // components/token-maker.tsx (2026-11-08)
 //
@@ -37,7 +38,7 @@ const MAX_SIDE = 900;
 const PREVIEW = 360;
 
 const ui = {
-  text: "#f2e6c9", muted: "#a89a84", line: "rgba(255,255,255,0.16)", surface: "#1e1a16", sun: "#d9a43a", warn: "#e07a70",
+  text: "#f2e6c9", muted: "#a89a84", line: "rgba(255,255,255,0.16)", surface: "#1e1a16", sun: "#d9a43a", warn: C.warn,
 };
 const sectionH: React.CSSProperties = { fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", color: ui.muted, margin: "16px 0 6px" };
 const btn = (on = false): React.CSSProperties => ({ padding: "6px 11px", borderRadius: 8, border: `1px solid ${on ? ui.sun : ui.line}`, background: on ? "rgba(217,164,58,0.16)" : "transparent", color: on ? ui.sun : ui.text, fontSize: 13, cursor: "pointer" });
@@ -506,7 +507,7 @@ export default function TokenMaker({ mode, initialImage, initialFrame, name, onS
             style={{ width: "100%", height: "100%", display: "block", touchAction: "none", cursor: !pic ? "pointer" : tool === "move" ? "grab" : "crosshair" }} />
         </div>
         <p style={{ fontSize: 12, color: ui.muted, margin: "6px 0 0" }}>
-          {!pic ? "Choose, drop or paste a picture." : cutting ? "Cutting..." : tool === "keep" ? "Scribble over the parts to keep. It cuts again after each stroke." : tool === "drop" ? "Scribble over background that is still showing." : tool === "move" ? "Drag to move the picture, scroll to zoom." : tool === "wand" ? "Click a patch of background to remove it (uses the tolerance)." : tool === "erase" ? "Paint over what you want gone." : "Paint over what you want back."}
+          {!pic ? "Choose, drop or paste a picture." : cutting ? "Cutting…" : tool === "keep" ? "Scribble over the parts to keep. It cuts again after each stroke." : tool === "drop" ? "Scribble over background that is still showing." : tool === "move" ? "Drag to move the picture, scroll to zoom." : tool === "wand" ? "Click a patch of background to remove it (uses the tolerance)." : tool === "erase" ? "Paint over what you want gone." : "Paint over what you want back."}
         </p>
         <div style={{ ...rowS, marginTop: 8 }}>
           <button type="button" style={btn(paused)} aria-pressed={paused} onClick={() => setPaused((p) => !p)}>{paused ? "Play animation" : "Pause animation"}</button>
@@ -525,7 +526,7 @@ export default function TokenMaker({ mode, initialImage, initialFrame, name, onS
         </div>
 
         <div style={sectionH}>2. Background</div>
-        <p style={{ fontSize: 12.5, color: ui.muted, margin: "0 0 6px" }}>Scribble <strong style={{ color: "#8fd18a" }}>Keep</strong> over your subject (face, hair, armour, anything it holds), then <strong style={{ color: ui.warn }}>Remove</strong> over background that is still showing. It cuts after every stroke, and never removes what you marked Keep.</p>
+        <p style={{ fontSize: 12.5, color: ui.muted, margin: "0 0 6px" }}>Scribble <strong style={{ color: C.good }}>Keep</strong> over your subject (face, hair, armour, anything it holds), then <strong style={{ color: ui.warn }}>Remove</strong> over background that is still showing. It cuts after every stroke, and never removes what you marked Keep.</p>
         <div style={rowS} role="group" aria-label="Tool">
           {([["move", "Move"], ["keep", "Keep"], ["drop", "Remove"], ["wand", "Remove by click"], ["erase", "Erase brush"], ["restore", "Restore brush"]] as [Tool, string][]).map(([k, l]) => (
             <button key={k} type="button" style={btn(tool === k)} aria-pressed={tool === k} disabled={!pic} onClick={() => setTool(k)}>{l}</button>
@@ -617,7 +618,7 @@ export default function TokenMaker({ mode, initialImage, initialFrame, name, onS
         <div style={sectionH}>{mode === "app" ? "7. Save" : "7. Download"}</div>
         {mode === "app" && (
           <div style={rowS}>
-            <button type="button" style={primary} disabled={busy} onClick={() => void saveToToken(false)}>{busy ? "Saving..." : saveLabel}</button>
+            <button type="button" style={primary} disabled={busy} onClick={() => void saveToToken(false)}>{busy ? "Saving…" : saveLabel}</button>
             {hadFrame && <button type="button" style={btn()} disabled={busy} onClick={() => void saveToToken(true)}>Use the picture, no frame</button>}
             {onCancel && <button type="button" style={btn()} disabled={busy} onClick={onCancel}>Cancel</button>}
           </div>
