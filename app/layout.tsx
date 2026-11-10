@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
+import { Suspense } from "react";
 import { ThemeProvider } from "next-themes";
 import SystemThemeProvider from "@/components/system-theme-provider";
 import SystemEffects from "@/components/system-effects";
@@ -193,8 +194,8 @@ export default function RootLayout({
         {/* Google Analytics 4 (components/analytics.tsx): never on player, share-code or sign-in pages,
             and page views carry the path only, so share codes never reach Google (audit T3). Real
             production only: VERCEL_ENV is "preview" on preview deploys, where NODE_ENV is also
-            "production". */}
-        {(process.env.VERCEL_ENV ? process.env.VERCEL_ENV === "production" : process.env.NODE_ENV === "production") && <Analytics id={GA_ID} />}
+            "production". It reads the address, so it sits in Suspense (cacheComponents needs that). */}
+        {(process.env.VERCEL_ENV ? process.env.VERCEL_ENV === "production" : process.env.NODE_ENV === "production") && <Suspense fallback={null}><Analytics id={GA_ID} /></Suspense>}
         {/* Sitewide entity graph: Organization + WebSite. Product/FAQ/breadcrumb schema is added
             per-page (home, /faq, /tools/*). */}
         <JsonLd data={[organizationSchema(), websiteSchema()]} />
