@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { removeAll } from "@/lib/storage/purge";
 
 export const maxDuration = 60;
 
@@ -22,6 +23,10 @@ const BUCKET = "session-audio";
 // Reversing 1 and 3 would orphan the audio: the person's voice would sit in a bucket
 // with nothing pointing at it, undeletable and unfindable. That is the worst possible
 // outcome for a deletion request, and it is exactly what the obvious ordering gives.
+//
+// Audit T8 (push 8): if step 2 fails, the paths would be lost for good (step 1 removed the rows that
+// held them). So any path not removed goes on storage_purge_queue (p144), and the daily audio-retention
+// cron keeps trying until the file is gone.
 //
 // WHAT IS KEPT, AND WHY. The characters stay in their campaigns, unlinked. The events
 // still happened. A player leaving should not detonate their table's history. The
@@ -66,13 +71,20 @@ export async function POST(request: Request) {
 
   const admin = createAdminClient();
 
-  // 2. The audio objects.
+  // 2. The audio objects. Anything that does not go now is queued for the retention cron.
   let audioDeleted = 0;
   const audioFailures: string[] = [];
   if (paths.length > 0) {
-    const { error: rmErr } = await admin.storage.from(BUCKET).remove(paths);
-    if (rmErr) audioFailures.push(rmErr.message);
-    else audioDeleted = paths.length;
+    const r = await removeAll(admin, BUCKET, paths);
+    audioDeleted = r.removed;
+    if (r.failures.length) {
+      audioFailures.push(...r.failures);
+      const { error: qErr } = await admin.from("storage_purge_queue").insert(
+        [...new Set(paths)].map((path) => ({ bucket: BUCKET, path, reason: "account_deletion" })),
+      );
+      if (qErr) audioFailures.push(`queue: ${qErr.message}`);
+      else audioFailures.push("The recordings that could not be deleted now are queued and will be deleted automatically.");
+    }
   }
 
   // 3. The auth user. Cascades the profile, and with it dispositions, threads, and

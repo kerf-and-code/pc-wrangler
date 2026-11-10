@@ -28,7 +28,9 @@ type Profile = {
 // Audit F5: standing recording consent, per campaign (p137 my_recording_consents).
 // Push 1 (audit T12): which emails this address gets (p138 my_email_prefs / set_my_email_prefs).
 type EmailPrefs = { email: string; reminders: boolean; recaps: boolean };
-type ConsentRow = { campaignId: string; campaignName: string; characters: { id: string; name: string }[]; state: "given" | "withdrawn" | "none" };
+// Push 8 (audit T11): carried is true when the standing consent was filled in by the one-off backfill from
+// an earlier single-session yes, not given by the player as standing consent; the page asks them to confirm.
+type ConsentRow = { campaignId: string; campaignName: string; characters: { id: string; name: string }[]; state: "given" | "withdrawn" | "none"; carried?: boolean };
 
 export default function MySettingsPage() {
   const supabase = createClient();
@@ -87,7 +89,7 @@ export default function MySettingsPage() {
     const { error: e } = await supabase.rpc("set_my_recording_consent", { p_campaign: row.campaignId, p_consented: on });
     setConsentBusy(null);
     if (e) { setConsentError(`Not saved: ${e.message}`); return; }
-    setConsents((cs) => (cs || []).map((c) => (c.campaignId === row.campaignId ? { ...c, state: on ? "given" : "withdrawn" } : c)));
+    setConsents((cs) => (cs || []).map((c) => (c.campaignId === row.campaignId ? { ...c, state: on ? "given" : "withdrawn", carried: false } : c)));
   }
 
   async function setEmailPref(key: "reminders" | "recaps", on: boolean) {
@@ -231,7 +233,18 @@ export default function MySettingsPage() {
                           {c.characters.map((ch) => ch.name).join(", ")}:{" "}
                           {c.state === "given" ? "recording on" : c.state === "withdrawn" ? "recording off" : "not asked yet (off)"}
                         </div>
+                        {c.state === "given" && c.carried && (
+                          <div style={{ color: C.text, fontSize: 12.5, marginTop: 4, lineHeight: 1.5 }}>
+                            This was carried over from a session you agreed to record, not asked as a standing yes.
+                            Confirm it, or stop recording.
+                          </div>
+                        )}
                       </div>
+                      {c.state === "given" && c.carried && (
+                        <button type="button" disabled={consentBusy === c.campaignId} onClick={() => setConsent(c, true)} style={btn("transparent", C.text, C.line)}>
+                          {consentBusy === c.campaignId ? "Saving..." : "Confirm, keep recording"}
+                        </button>
+                      )}
                       {c.state === "given"
                         ? <button type="button" disabled={consentBusy === c.campaignId} onClick={() => setConsent(c, false)} style={btn("transparent", C.text, C.line)}>
                             {consentBusy === c.campaignId ? "Saving..." : "Stop recording me"}

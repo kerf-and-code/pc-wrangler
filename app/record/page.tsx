@@ -39,6 +39,9 @@ export default function RecordPage() {
   const [bytes, setBytes] = useState<number>(0);
   const [blob, setBlob] = useState<Blob | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Push 8 (audit T10): an upload only counts as the player's own consent when they are signed in as
+  // the character's owner; otherwise the track is still sent and the page says how to make it count.
+  const [consentRecorded, setConsentRecorded] = useState<boolean | null>(null);
 
   const mrRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -169,8 +172,9 @@ export default function RecordPage() {
 
       const finRes = await fetch("/api/record/finish", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ share, characterId: charId, path: startOut.path, durationSeconds: elapsed }) });
       const finOut = await finRes.json().catch(() => ({}));
-      if (!finRes.ok) { setError(finOut.error || "Saved to storage but could not register. Tell your GM."); setPhase("recorded"); return; }
+      if (!finRes.ok) { setError(finOut.error || "Your file could not be added to the session. Download it below and send it to your GM."); setPhase("recorded"); return; }
 
+      setConsentRecorded(finOut.consentRecorded === true);
       setPhase("uploaded");
     } catch (e) {
       setError("Something went wrong. Your file is saved below.");
@@ -190,7 +194,7 @@ export default function RecordPage() {
     setTimeout(() => URL.revokeObjectURL(url), 4000);
   }
 
-  function reset() { setBlob(null); setBytes(0); setElapsed(0); setPhase("idle"); setError(null); }
+  function reset() { setBlob(null); setBytes(0); setElapsed(0); setPhase("idle"); setError(null); setConsentRecorded(null); }
 
   function chooseChar(id: string) {
     setCharId(id);
@@ -265,7 +269,16 @@ export default function RecordPage() {
                 <div>
                   <div style={{ textAlign: "center", marginBottom: 16 }}>
                     {phase === "uploaded" ? (
-                      <div role="status" aria-live="polite" style={{ fontSize: 16, fontWeight: 700, color: C.good }}>Sent to your GM ✓</div>
+                      <>
+                        <div role="status" aria-live="polite" style={{ fontSize: 16, fontWeight: 700, color: C.good }}>Sent to your GM ✓</div>
+                        {consentRecorded === false && (
+                          <div style={{ fontSize: 12.5, color: C.muted, marginTop: 6, lineHeight: 1.5 }}>
+                            This upload did not record your consent, because you are not signed in as this
+                            character&apos;s player. Sign in first next time and an upload also counts as your consent
+                            for the session.
+                          </div>
+                        )}
+                      </>
                     ) : (
                       <div style={{ fontSize: 15, fontWeight: 600 }}>Recorded {fmt(elapsed)} · {fmtMB(bytes)}</div>
                     )}
