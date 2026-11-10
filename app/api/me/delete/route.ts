@@ -28,6 +28,10 @@ const BUCKET = "session-audio";
 // held them). So any path not removed goes on storage_purge_queue (p144), and the daily audio-retention
 // cron keeps trying until the file is gone.
 //
+// Push 9 (audit T14): delete_my_account (p145) also returns map_paths, pictures in campaign-maps that
+// are only this person's (library portraits no character still shows, custom tiles). They go the same
+// way as the audio, queued if the delete fails.
+//
 // WHAT IS KEPT, AND WHY. The characters stay in their campaigns, unlinked. The events
 // still happened. A player leaving should not detonate their table's history. The
 // privacy policy says this in those words rather than hiding it.
@@ -68,6 +72,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: delErr.message }, { status: 500 });
   }
   const paths = ((result as { storage_paths?: string[] } | null)?.storage_paths ?? []).filter(Boolean);
+  const mapPaths = ((result as { map_paths?: string[] } | null)?.map_paths ?? []).filter(Boolean);
 
   const admin = createAdminClient();
 
@@ -84,6 +89,16 @@ export async function POST(request: Request) {
       );
       if (qErr) audioFailures.push(`queue: ${qErr.message}`);
       else audioFailures.push("The recordings that could not be deleted now are queued and will be deleted automatically.");
+    }
+  }
+
+  // 2b. Pictures that were only theirs.
+  if (mapPaths.length > 0) {
+    const r = await removeAll(admin, "campaign-maps", mapPaths);
+    if (r.failures.length) {
+      await admin.from("storage_purge_queue").insert(
+        [...new Set(mapPaths)].map((path) => ({ bucket: "campaign-maps", path, reason: "account_deletion" })),
+      );
     }
   }
 

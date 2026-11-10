@@ -11,7 +11,7 @@ export default function TermsOfServicePage() {
   return (
     <LegalPage>
       <h1>Terms of Service</h1>
-      <p className="meta">Effective date: July 14, 2026</p>
+      <p className="meta">Effective date: July 14, 2026 &middot; Last updated: November 10, 2026</p>
 
       <p>
         These Terms govern your use of Six Axes, operated by Kerf and Code, LLC (&ldquo;we,&rdquo; &ldquo;us&rdquo;). By
@@ -73,7 +73,12 @@ export default function TermsOfServicePage() {
       <h2>16. Changes to these Terms</h2>
       <p>We may update these Terms and will post the new effective date. Material changes will be communicated by email to account holders and by notice in the app. Continued use after changes means you accept them.</p>
 
-      <h2>17. Contact</h2>
+      <h2 id="reporting">17. Reporting content, copyright and takedowns</h2>
+      <p>Anyone can report content hosted on Six Axes, including a published campaign wiki (every published page has a &ldquo;Report this page&rdquo; link) or an uploaded image, that they believe is illegal, abusive, or infringes their rights. Email us at the address in Section 18 with the page&rsquo;s address and what is wrong with it. We review every report and remove content that breaks these Terms or the law.</p>
+      <p><strong>Copyright (DMCA).</strong> If you believe content on Six Axes infringes your copyright, send a notice to our designated agent, Kerf and Code, LLC, at the address in Section 18, including: your physical or electronic signature; identification of the copyrighted work; the address of the material on Six Axes; your contact details; a statement that you have a good-faith belief the use is not authorized by the owner, its agent, or the law; and a statement, under penalty of perjury, that the notice is accurate and that you are the owner or authorized to act for the owner. We will remove or disable access to the material and notify the person who posted it, who may send a counter-notice. We terminate the accounts of repeat infringers in appropriate circumstances.</p>
+      <p><strong>Game publishers.</strong> If you publish a game whose content appears in Six Axes and want it credited differently or removed, contact us and we will act on it promptly. See also the <a href="/licenses">game system licenses</a>.</p>
+
+      <h2>18. Contact</h2>
       <p>kncadmin@kerfandcode.com &middot; Kerf and Code, LLC &middot; 739 N 95th St Apt 103, Seattle, WA 98103.</p>
     </LegalPage>
   );

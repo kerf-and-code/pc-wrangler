@@ -10,6 +10,11 @@ import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 
 // Your account.
 //
+// Push 9: change the sign-in email (audit F12). Supabase sends a confirmation link; the address changes
+// only when it is followed. On load the profile's copy of the address is refreshed from the sign-in
+// record (sync_my_email, p145), so a change shows here once confirmed. The export and deletion texts
+// now match what export_my_data and delete_my_account cover (audit T14, G11).
+//
 // This page reads public.profiles directly, which is allowed because the RLS is
 // self-only (id = auth.uid()). It is in fact the ONLY page that reads profiles
 // directly; everything that renders another person goes through profiles_public or
@@ -52,12 +57,17 @@ export default function MySettingsPage() {
   const [consentError, setConsentError] = useState<string | null>(null);
   const [emailPrefs, setEmailPrefs] = useState<EmailPrefs | null>(null);
   const [emailMsg, setEmailMsg] = useState<string | null>(null);
+  const [newEmail, setNewEmail] = useState("");
+  const [emailChangeBusy, setEmailChangeBusy] = useState(false);
+  const [emailChangeMsg, setEmailChangeMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
   useEffect(() => {
     let active = true;
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { if (active) setStatus("signedout"); return; }
+      // Keep the profile's copy of the address in step with the sign-in record (after an email change).
+      if (!user.is_anonymous) await supabase.rpc("sync_my_email");
 
       const { data, error: e } = await supabase
         .from("profiles")
@@ -99,6 +109,21 @@ export default function MySettingsPage() {
     const { error: e } = await supabase.rpc("set_my_email_prefs", { p_reminders: next.reminders, p_recaps: next.recaps });
     if (e) { setEmailPrefs(emailPrefs); setEmailMsg(`Not saved: ${e.message}`); return; }
     setEmailMsg("Saved.");
+  }
+
+  async function changeEmail() {
+    const next = newEmail.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(next)) { setEmailChangeMsg({ ok: false, text: "Enter a full email address." }); return; }
+    if (profile?.email && next === profile.email.toLowerCase()) { setEmailChangeMsg({ ok: false, text: "That is already your address." }); return; }
+    setEmailChangeBusy(true); setEmailChangeMsg(null);
+    const { error: e } = await supabase.auth.updateUser(
+      { email: next },
+      { emailRedirectTo: `${window.location.origin}/auth/confirm?next=/me/settings` },
+    );
+    setEmailChangeBusy(false);
+    if (e) { setEmailChangeMsg({ ok: false, text: `Not changed: ${e.message}` }); return; }
+    setEmailChangeMsg({ ok: true, text: `Check ${next} (and your current address) for a confirmation link. Your email changes once you follow it.` });
+    setNewEmail("");
   }
 
   async function saveName() {
@@ -209,6 +234,29 @@ export default function MySettingsPage() {
                   )}
                 </p>
               )}
+              {!profile.is_anonymous && (
+                <div style={{ marginTop: 14 }}>
+                  <label htmlFor="new-email" style={{ display: "block", color: C.text, fontSize: 13.5, marginBottom: 6 }}>Change your email</label>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    <input
+                      id="new-email"
+                      type="email"
+                      autoComplete="email"
+                      value={newEmail}
+                      onChange={(e) => { setNewEmail(e.target.value); setEmailChangeMsg(null); }}
+                      style={{ flex: "1 1 220px", color: C.text, borderRadius: FORGE_RADIUS, padding: "9px 12px", fontSize: 16 }}
+                    />
+                    <button type="button" onClick={changeEmail} disabled={emailChangeBusy} style={btn("transparent", C.text, C.line)}>
+                      {emailChangeBusy ? "Sending..." : "Send confirmation"}
+                    </button>
+                  </div>
+                  {emailChangeMsg && (
+                    <p role={emailChangeMsg.ok ? "status" : "alert"} style={{ color: emailChangeMsg.ok ? C.good : C.warn, fontSize: 12.5, margin: "8px 0 0", lineHeight: 1.5 }}>
+                      {emailChangeMsg.text}
+                    </p>
+                  )}
+                </div>
+              )}
             </Card>
 
             <Card>
@@ -281,9 +329,11 @@ export default function MySettingsPage() {
             <Card>
               <Label>Your data</Label>
               <p style={{ color: C.muted, fontSize: 13.5, lineHeight: 1.6, margin: "0 0 12px" }}>
-                Take everything we hold about you: your characters, your self-reports and
-                how they changed over time, your dispositions, your threads, your check-ins,
-                and your transcribed words. One JSON file, nothing withheld.
+                Take everything we hold about you: your characters with their full sheets and
+                pages, your library, your notes, your self-reports and how they changed over
+                time, your dispositions, your threads, your check-ins, your chat, your
+                transcribed words, and your settings. One JSON file, nothing withheld. A
+                campaign you run has its own export in the GM workspace.
               </p>
               <button type="button" onClick={exportData} disabled={exporting} style={btn("transparent", C.text, C.line)}>
                 {exporting ? "Building your export..." : "Export my data"}
@@ -295,7 +345,8 @@ export default function MySettingsPage() {
               <p style={{ color: C.muted, fontSize: 13.5, lineHeight: 1.6, margin: "0 0 12px" }}>
                 Deletes everything that is <em>about you</em>: your recordings, your
                 transcribed words, your self-reports, your dispositions, your threads,
-                your check-ins, your chat.
+                your check-ins, your chat, your notes, your library, the character page
+                sections you wrote, and your settings.
               </p>
               <p style={{ color: C.muted, fontSize: 13.5, lineHeight: 1.6, margin: "0 0 14px" }}>
                 Your <strong style={{ color: C.text }}>characters stay in their campaigns</strong>,

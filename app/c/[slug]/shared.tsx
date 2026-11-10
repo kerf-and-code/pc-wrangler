@@ -203,6 +203,10 @@ export function WikiHead() {
           text-transform: uppercase; color: var(--w-muted); text-decoration: none; white-space: nowrap; }
         .w-mark:hover { color: var(--w-accent); }
         @media (max-width: 720px) { .w-mark { display: none; } }
+        .w-foot { max-width: 820px; margin: 0 auto; padding: 0 24px 40px; text-align: right;
+          font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.12em; }
+        .w-foot a { color: var(--w-muted); text-decoration: underline; text-underline-offset: 3px; }
+        .w-foot a:hover { color: var(--w-accent); }
 
         /* ---- content column ---- */
         .w-main { max-width: 820px; margin: 0 auto; width: 100%; padding: 40px 24px 90px; position: relative; }
@@ -356,6 +360,8 @@ export function Shell({ slug, campaign, counts, current, wide, children }: {
     <>
       <TopNav slug={slug} campaign={campaign} counts={counts} current={current} />
       <main className={wide ? "w-main-wide" : "w-main"}>{children}</main>
+      {/* Push 9 (audit T23): every published page can be reported; the Terms say how reports are handled. */}
+      <footer className="w-foot"><a href="/terms#reporting">Report this page</a></footer>
     </>
   );
 }

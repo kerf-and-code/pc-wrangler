@@ -7,6 +7,7 @@ import SystemEffects from "@/components/system-effects";
 import JsonLd from "@/components/json-ld";
 import { organizationSchema, websiteSchema } from "@/lib/seo";
 import Analytics from "@/components/analytics";
+import TermsGate from "@/components/terms-gate";
 import "./globals.css";
 
 // Google Analytics 4 measurement ID. A measurement ID is public (it ships in the page), so hard-coding
@@ -209,6 +210,8 @@ export default function RootLayout({
           {/* Per-system ambient effects (grain / scanlines / sweep / motes / pulse), keyed on data-system. */}
           <SystemEffects />
           {children}
+          {/* Asks a signed-in account once to confirm it is 18+ and accepts the terms (audit T13). */}
+          <TermsGate />
         </ThemeProvider>
       </body>
     </html>

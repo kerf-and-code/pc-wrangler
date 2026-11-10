@@ -17,12 +17,12 @@ export default function LicensesPage() {
   return (
     <LegalPage>
       <h1>Game System Licenses</h1>
-      <p className="meta">Last updated: November 1, 2026</p>
+      <p className="meta">Last updated: November 10, 2026</p>
 
       <p>
         Six Axes supports several tabletop roleplaying systems. For each, Six Axes ships only that
-        system&rsquo;s game <strong>mechanics</strong> &mdash; the numbers and structure a creator or tool
-        needs &mdash; never the publisher&rsquo;s descriptive text, artwork, or setting. Six Axes is an
+        system&rsquo;s game <strong>mechanics</strong> (the numbers and structure a creator or tool
+        needs), never the publisher&rsquo;s descriptive text, artwork, or setting. Six Axes is an
         independent product and is not an official or endorsed product of any of these publishers. Where a
         publisher&rsquo;s license requires a specific notice, that notice appears below.
       </p>

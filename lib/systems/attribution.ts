@@ -6,6 +6,16 @@
 // The three third-party-license notices (Draw Steel, Daggerheart, Lancer) are VERBATIM as the licenses
 // require and match the copies in the Terms of Service. The D&D SRD notice is the standard CC-BY-4.0
 // attribution. Only game MECHANICS ship in Six Axes; publishers' descriptive prose does not.
+//
+// Push 9:
+//   T15  the D&D entry carries the SRD 5.2 notice as well as the SRD 5.1 one: the 2024 data (classes,
+//        species, feats, monsters and more) comes from SRD 5.2, and CC BY 4.0 needs each work credited.
+//        The statement is the one the SRD 5.2 itself asks for.
+//   T16  the partnered publishers entry no longer says the content is used with permission. Nothing on
+//        record shows a permission given to Kerf and Code (as opposed to D&D Beyond), and a public
+//        statement of a licence that does not exist is worse than none. It now says only what is true
+//        whatever the agreements are. Restore the stronger wording per publisher once permission is
+//        confirmed in writing.
 
 import { OGL_MONSTER_SOURCES, MONSTER_SOURCES } from "@/lib/monster-sources";
 
@@ -75,10 +85,11 @@ export const SYSTEM_ATTRIBUTIONS: SystemAttribution[] = [
   {
     id: "dnd5e",
     system: "D&D 5e",
-    license: "SRD 5.1 (CC BY 4.0)",
-    short: "Includes material from the System Reference Document 5.1 by Wizards of the Coast LLC, licensed under CC BY 4.0.",
+    license: "SRD 5.1 and SRD 5.2 (CC BY 4.0)",
+    short: "Includes material from the System Reference Documents 5.1 and 5.2 by Wizards of the Coast LLC, licensed under CC BY 4.0.",
     notice: [
       "This work includes material from the System Reference Document 5.1 (“SRD 5.1”) by Wizards of the Coast LLC, available at https://dnd.wizards.com/resources/systems-reference-document. The SRD 5.1 is licensed under the Creative Commons Attribution 4.0 International License, available at https://creativecommons.org/licenses/by/4.0/legalcode.",
+      "This work includes material from the System Reference Document 5.2 (“SRD 5.2”) by Wizards of the Coast LLC, available at https://www.dndbeyond.com/srd. The SRD 5.2 is licensed under the Creative Commons Attribution 4.0 International License, available at https://creativecommons.org/licenses/by/4.0/legalcode.",
       "Six Axes is not affiliated with, endorsed, sponsored, or specifically approved by Wizards of the Coast LLC.",
     ],
     url: "https://creativecommons.org/licenses/by/4.0/legalcode",
@@ -167,16 +178,16 @@ export const SYSTEM_ATTRIBUTIONS: SystemAttribution[] = [
     url: "https://koboldpress.com/orclicense",
   },
   {
-    // Partnered 5e publishers whose player options, monsters and magic items ship in Six Axes by
-    // agreement. The agreement requires attribution and a statement that each publisher owns all rights
-    // to its content. Six Axes describes every rule in its own words; none of the publishers' text is
-    // reproduced. Not a selectable system, so id "" keeps it off the in-Forge line; it lists on /licenses.
+    // Third-party 5e publishers whose player options, monsters and magic items appear in Six Axes. Six
+    // Axes describes every rule in its own words; none of the publishers' text is reproduced. Push 9
+    // (audit T16): this no longer claims permission (see the note at the top of the file). Not a
+    // selectable system, so id "" keeps it off the in-Forge line; it lists on /licenses.
     id: "",
-    system: "D&D 5e partnered publishers",
-    license: "Used with permission",
-    short: "Includes partnered 5e content used with permission; all rights belong to the respective publishers.",
+    system: "D&D 5e third-party publishers",
+    license: "Credit and ownership",
+    short: "Includes game mechanics from third-party 5e publishers; all rights belong to the respective publishers.",
     notice: [
-      "Six Axes includes classes, subclasses, species, backgrounds, monsters and magic items from the partnered publishers and works listed below, used with their permission. Each publisher owns all rights, title and interest in and to its content, including its classes, subclasses, species and other character options, their names, and their game mechanics. Six Axes describes those mechanics in its own words and does not reproduce the publishers' text, artwork or setting material. Six Axes is an independent product and is not published or endorsed by any of these publishers.",
+      "Six Axes includes game mechanics for classes, subclasses, species, backgrounds, monsters and magic items from the third-party publishers and works listed below. Each publisher owns all rights, title and interest in and to its content, including its classes, subclasses, species and other character options, their names, and their game mechanics. Six Axes describes those mechanics in its own words and does not reproduce the publishers' text, artwork or setting material. Six Axes is an independent product and is not published, endorsed or sponsored by any of these publishers. A publisher who would like its content credited differently, or removed, can contact us and we will act on it promptly.",
       ...PARTNER_WORKS.map((p) => p.publisher + ": " + p.works.join("; ") + "."),
     ],
   },
