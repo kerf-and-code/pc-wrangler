@@ -71,6 +71,21 @@ export async function updateSession(request: NextRequest) {
     !request.nextUrl.pathname.startsWith("/api/vtt") &&
     !request.nextUrl.pathname.startsWith("/api/cron") &&
     !request.nextUrl.pathname.startsWith("/table") &&
+    //
+    // ---- added 2026-11-09 (audit B1, B2) ----
+    // PLAYER SHARE PAGES that were missed: built for logged-out players (they sign in anonymously
+    // through the share code), but without these lines a new player was bounced to the login form.
+    !request.nextUrl.pathname.startsWith("/recaps") &&
+    !request.nextUrl.pathname.startsWith("/initiative") &&
+    !request.nextUrl.pathname.startsWith("/world") &&
+    !request.nextUrl.pathname.startsWith("/schedule") &&
+    // The licences page is public documentation, like /privacy and /terms.
+    !request.nextUrl.pathname.startsWith("/licenses") &&
+    // THE ADD-ON API. Outside programs (bots, overlays, scripts) carry an add-on key, never a session
+    // cookie, so without this every call got the login page. Only /api/addon/v1 is open: lib/addons/api.ts
+    // checks the key on every call. Keys, webhooks and the nudge (/api/addon/keys, hooks, kick) stay
+    // behind login.
+    !request.nextUrl.pathname.startsWith("/api/addon/v1") &&
     // ---- everything below added 2026-08-03, after a 307 to /auth/login was traced back here ----
     //
     // THE LANDING PAGE. Exact match, because startsWith("/") would exempt the entire site. Without

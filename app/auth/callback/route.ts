@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { safeNext } from "@/lib/auth/safe-next";
 
 // OAuth (PKCE) sends the user back here with a ?code=...
 // We exchange it for a session cookie, then send them on.
@@ -27,7 +28,8 @@ export async function GET(request: Request) {
   // A player returning from "sign in with Discord" to claim their characters. The button
   // sends ?claim=1, and the callback runs claim_by_discord once the session exists.
   const isClaim = searchParams.get("claim") === "1";
-  const next = searchParams.get("next") ?? (isUpgrade ? "/me" : isClaim ? "/me" : "/gm");
+  // Only a path on this site (audit B10): next arrives in the link, and anyone can write a link.
+  const next = safeNext(searchParams.get("next"), isUpgrade ? "/me" : isClaim ? "/me" : "/gm");
 
   if (code) {
     const supabase = await createClient();

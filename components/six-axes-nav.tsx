@@ -27,7 +27,12 @@ import { createClient } from "@/lib/supabase/client";
    sheet listing that group's pages, so any page is two taps away and every control has a word.
 
    The player portal (opened through a ?share link, or a /me dossier page) uses the same shell with
-   its own three groups. */
+   its own three groups.
+
+   2026-11-09: the menu never shrinks to "You" alone. A GM on their own /me pages (their character
+   sheet, library, notes) keeps the whole GM menu, which now always carries a "You" group. A player
+   whose tab has no table remembered falls back to the table they last opened in this browser, else
+   their most recently played campaign, and the Table box names it with "Switch table". */
 
 type Leaf = { href: string; label: string; needs?: "character" | "adversary" };
 type Group = { label: string; children: Leaf[] };
@@ -39,8 +44,7 @@ const GM_GROUPS: Group[] = [
     { href: "/gm/roster", label: "Roster" },
     // The play-style questionnaire, taken by the GM. It used to sit alone as "Profile".
     { href: "/play", label: "Your play style" },
-    // A GM who also plays reaches their own character sheet from here (phase 5d).
-    { href: "/me/sheet", label: "Your character sheet" },
+    // (Their own character sheet moved to the "You" group, which every GM menu now ends with.)
   ] },
   { label: "Prep", children: [
     { href: "/gm/prep", label: "Prep" },
@@ -132,6 +136,10 @@ const PLAYER_YOU: PGroup = {
     { href: "/me/settings", label: "Settings" },
   ],
 };
+
+// The GM's menu ends with the same account pages a player has, so a GM who opens their own character
+// sheet, library or notes never loses the rest of their menu.
+const GM_YOU: Group = { label: "You", children: PLAYER_YOU.children };
 
 // Routes that only exist for players. Known from the path alone, so the server renders the right
 // menu: deciding after mount meant players first saw the GM menu, which then swapped and pushed the
@@ -240,14 +248,18 @@ const NAV_CSS = `
 // Persist the last share code we saw, so the dossier can still link back to the table.
 // Session-scoped on purpose (sessionStorage, not localStorage): a player who closes the tab and
 // comes back through a DIFFERENT campaign's link should not be silently routed into the old one.
+// 2026-11-09: also kept in localStorage as the browser's last table, the fallback when this tab has
+// none (a new tab on a /me page used to lose the table and session groups entirely). A campaign link
+// always wins over both, and the Table box always names the table, so the fallback is never silent.
 function rememberShare(code: string | null): string | null {
   if (typeof window === "undefined") return null;
   try {
     if (code) {
       window.sessionStorage.setItem("sixaxes.share", code);
+      try { window.localStorage.setItem("sixaxes.share.last", code); } catch { /* storage blocked */ }
       return code;
     }
-    return window.sessionStorage.getItem("sixaxes.share");
+    return window.sessionStorage.getItem("sixaxes.share") ?? window.localStorage.getItem("sixaxes.share.last");
   } catch {
     return null;
   }
@@ -338,6 +350,42 @@ export default function SixAxesNav() {
     })();
     return () => { off = true; };
   }, [tableCode]);
+  // Is this person a GM? On their own /me pages a GM keeps the GM menu (see the header). Remembered per
+  // browser so the menu settles quickly next time; checked again on every /me page.
+  const [gmUser, setGmUser] = useState(false);
+  useEffect(() => {
+    if (!pathname.startsWith("/me/")) return;
+    try { if (window.localStorage.getItem("sax_is_gm") === "1") setGmUser(true); } catch { /* storage blocked */ }
+    let off = false;
+    (async () => {
+      const sb = createClient();
+      const { data: { user } } = await sb.auth.getUser();
+      if (off || !user) return;
+      const { count } = await sb.from("campaigns").select("id", { count: "exact", head: true }).eq("gm_id", user.id);
+      if (off) return;
+      const gm = (count ?? 0) > 0;
+      setGmUser(gm);
+      try { window.localStorage.setItem("sax_is_gm", gm ? "1" : "0"); } catch { /* storage blocked */ }
+    })();
+    return () => { off = true; };
+  }, [pathname]);
+  // A player with no table remembered anywhere: their most recently played campaign, so the table and
+  // session groups are still there (named in the Table box, with "Switch table").
+  useEffect(() => {
+    if (remembered || share.on || !pathname.startsWith("/me")) return;
+    let off = false;
+    (async () => {
+      const sb = createClient();
+      const { data: { user } } = await sb.auth.getUser();
+      if (off || !user) return;
+      const { data } = await sb.rpc("my_campaigns");
+      if (off) return;
+      const list = ((data ?? []) as { share_code: string | null; last_session_at: string | null }[]).filter((c) => c.share_code);
+      list.sort((a, b) => (b.last_session_at ?? "").localeCompare(a.last_session_at ?? ""));
+      if (list[0]?.share_code) setRemembered(list[0].share_code);
+    })();
+    return () => { off = true; };
+  }, [remembered, share.on, pathname]);
   // Decided after mount: reading navigator during render would differ between server and client.
   const [isMac, setIsMac] = useState(false);
 
@@ -359,7 +407,8 @@ export default function SixAxesNav() {
   }, []);
 
   useEffect(() => {
-    if (campaignName || share.on || pathname.startsWith("/me") || !pathname.startsWith("/gm")) return;
+    // the GM's campaign box: on /gm pages, and on a GM's own /me pages (they keep the GM menu there)
+    if (campaignName || share.on || !(pathname.startsWith("/gm") || pathname.startsWith("/me/"))) return;
     let off = false;
     let timer: number | undefined;
     (async () => {
@@ -448,7 +497,9 @@ export default function SixAxesNav() {
   // account-scoped dossier page (/me/* carries no ?share=).
   const onDossier = onRoute(pathname, "/me");
   const onTableRoute = pathname === "/me" || PLAYER_ROUTES.some((r) => onRoute(pathname, r));
-  const isPlayer = share.on || onDossier || onTableRoute;
+  // A GM on their own account pages keeps the GM menu (with its "You" group).
+  const gmAtHome = gmUser && !share.on && pathname.startsWith("/me/");
+  const isPlayer = !gmAtHome && (share.on || onDossier || onTableRoute);
 
   if (isPlayer) {
     // Remember the share code whenever we see one, so a player on a dossier page keeps their way
@@ -510,11 +561,11 @@ export default function SixAxesNav() {
   // ---- GM NAVIGATION ----
   const mod = getModule(activeSystem);
   // A leaf shows unless it declares a capability the active campaign's system lacks.
-  const groups: Group[] = GM_GROUPS.map((g) => ({
+  const groups: Group[] = [...GM_GROUPS.map((g) => ({
     ...g,
     children: g.children.filter((c) =>
       c.needs === "adversary" ? Boolean(mod.adversary) : c.needs === "character" ? Boolean(mod.character) : true),
-  }));
+  })), GM_YOU];
   const hit = findLeaf(groups, pathname);
   const current = hit?.l.href ?? (pathname === "/gm/help" ? "/gm/help" : null);
   const activeGroup = hit?.g.label ?? null;
