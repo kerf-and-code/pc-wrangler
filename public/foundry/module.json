@@ -2,7 +2,7 @@
   "id": "six-axes",
   "title": "Six Axes",
   "description": "Sends what your table rolls to Six Axes, so your recap, campaign wiki and encounter maths are built from what actually happened. Rolls only. No audio, no chat text, no character sheets.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "compatibility": {
     "minimum": "12",
     "verified": "14.365"

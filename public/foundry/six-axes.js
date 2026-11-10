@@ -1,5 +1,5 @@
 /**
- * six-axes.js — a Foundry VTT module that sends rolls to Six Axes.
+ * six-axes.js: a Foundry VTT module that sends rolls to Six Axes.
  *
  * WHAT IT SENDS, AND WHAT IT DOES NOT
  *   Rolls only: the dice, their faces, the total, and what the roll was for. It does not read chat
@@ -31,6 +31,14 @@
 const MODULE = "six-axes";
 const DEFAULT_ENDPOINT = "https://www.six-axes.com/api/vtt/ingest";
 
+/*
+ * ROLL KEYS (0.2.0, audit B12)
+ *   The table code only proves the sender has the table link. A roll key, made by the GM on
+ *   six-axes.com/foundry, proves the rolls come from the GM's own client, so Six Axes counts them as
+ *   verified. Without one they still arrive, as unverified. The key is a CLIENT setting: it stays in
+ *   the GM's own browser and is never synced to the players in the world.
+ */
+
 /* -------------------------------------------------------------------------- settings */
 
 Hooks.once("init", () => {
@@ -38,6 +46,15 @@ Hooks.once("init", () => {
     name: "Table code",
     hint: "From your GM: Table \u2192 Roster \u2192 Table Tap. Without it nothing is sent anywhere.",
     scope: "world",
+    config: true,
+    type: String,
+    default: "",
+  });
+
+  game.settings.register(MODULE, "rollKey", {
+    name: "Roll key",
+    hint: "Optional. Make one at six-axes.com/foundry while signed in as the GM, so your table's rolls count as verified. Kept in this browser only.",
+    scope: "client",
     config: true,
     type: String,
     default: "",
@@ -222,13 +239,14 @@ async function flush() {
 
   const code = (game.settings.get(MODULE, "shareCode") || "").trim().toLowerCase();
   const endpoint = (game.settings.get(MODULE, "endpoint") || DEFAULT_ENDPOINT).trim();
+  const rollKey = (game.settings.get(MODULE, "rollKey") || "").trim();
   if (!code) return;
 
   try {
     const res = await fetch(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ share_codes: [code], events }),
+      body: JSON.stringify({ share_codes: [code], keys: rollKey ? [rollKey] : [], events }),
     });
     if (!res.ok) {
       const body = await res.text().catch(() => "");

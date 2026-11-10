@@ -10,6 +10,8 @@ const linkRows = document.getElementById("link-rows");
 const linkStatus = document.getElementById("link-status");
 
 let codes = [];
+// table code -> roll key (handed over on the table link page; see link-capture.js)
+let keys = {};
 // code -> { name, characters: [{ id, name, ddb_character_id }] }
 const campCache = {};
 
@@ -26,6 +28,15 @@ function getCodes() {
 }
 function setCodes(list) {
   return new Promise((resolve) => chrome.storage.sync.set({ shareCodes: list }, resolve));
+}
+function getKeys() {
+  return new Promise((resolve) => chrome.storage.sync.get(["ingestKeys"], (cfg) => {
+    const k = cfg && cfg.ingestKeys;
+    resolve(k && typeof k === "object" ? k : {});
+  }));
+}
+function setKeys(map) {
+  return new Promise((resolve) => chrome.storage.sync.set({ ingestKeys: map }, resolve));
 }
 function getUnmatched() {
   return new Promise((resolve) => chrome.storage.local.get(["unmatched"], (st) => resolve((st && st.unmatched) || {})));
@@ -75,7 +86,9 @@ function renderCampaigns() {
     rm.addEventListener("click", async () => {
       codes = codes.filter((c) => c !== code);
       delete campCache[code];
+      delete keys[code];
       await setCodes(codes);
+      await setKeys(keys);
       renderCampaigns();
       await renderLinking();
     });
@@ -86,6 +99,15 @@ function renderCampaigns() {
     fetchCampaign(code).then((info) => {
       name.textContent = `${info.name}  \u00b7  ${code}`;
     });
+
+    // Verified when a roll key is saved for this table; otherwise say how to get one.
+    const badge = document.createElement("div");
+    badge.className = keys[code] ? "camp-badge ok" : "camp-badge";
+    badge.textContent = keys[code] ? "Verified" : "Unverified";
+    badge.title = keys[code]
+      ? "Your rolls here count as verified."
+      : "Open your table link while signed in to Six Axes and press Connect.";
+    row.insertBefore(badge, rm);
   }
 }
 
@@ -215,6 +237,7 @@ document.getElementById("save").addEventListener("click", async () => {
 
 (async function init() {
   codes = await getCodes();
+  keys = await getKeys();
   await setCodes(codes); // persist any migrated legacy code
   renderCampaigns();
   await renderLinking();

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import SiteShell from "@/components/site/site-shell";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
+import { RollKeyForCopy } from "@/components/roll-key";
 
 // app/foundry/page.tsx
 //
@@ -13,6 +14,9 @@ import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 // It states what the module can see BEFORE it says how to install it. A table is being asked to let
 // software watch their game, and burying the boundary under a numbered list would be the wrong way
 // round.
+//
+// Push 7 (audit B12): a "Verified rolls" section where the GM makes a roll key for the module, so the
+// table's rolls count as verified rather than as rolls from anyone holding the table code.
 
 export const metadata: Metadata = {
   title: "Six Axes for Foundry VTT",
@@ -65,6 +69,21 @@ export default function FoundryPage() {
           <p style={body}>
             That is it. Roll something and it will appear on your session&apos;s Mechanics page.
           </p>
+        </section>
+
+        <section style={card}>
+          <h2 style={h2}>Verified rolls</h2>
+          <p style={body}>
+            The table code lets the module send rolls, but anyone with your table link has that code too.
+            A roll key proves the rolls come from you, so Six Axes counts them as verified. Without one,
+            rolls still arrive and are marked unverified.
+          </p>
+          <p style={body}>
+            Sign in to Six Axes as the GM, type your table code, and paste the key into{" "}
+            <strong>Roll key</strong> in the module settings. The key stays in your own browser; your
+            players never see it. Making a new key retires the old one.
+          </p>
+          <RollKeyForCopy />
         </section>
 
         <section style={card}>

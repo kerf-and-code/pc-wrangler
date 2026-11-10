@@ -16,6 +16,12 @@ import { createAdminClient } from "@/lib/supabase/admin";
 //     (VPN/CGNAT defeat IP caps), which is acceptable because free-tier renders cost nothing; the caps
 //     exist to stay within the free quota and slow casual looping, and the honest ask is "sign up".
 //
+// Audit L-B1 (push 7): the caps are checked and the render is RESERVED in one step, in
+// tool_render_reserve (p143), which takes a lock so parallel requests are counted one at a time. Before
+// this, the count was read first and the log row written only after a render that takes up to a
+// minute, so N requests fired together all saw the old count. A failed render gives its reservation
+// back. The IP comes from x-forwarded-for, which Vercel overwrites, so a client cannot fake it.
+//
 // Public route: /api/tools is on the logged-out allowlist in lib/supabase/proxy.ts.
 
 export const maxDuration = 60; // image generation can take a while
@@ -99,6 +105,15 @@ const STYLE_REINTERP: Record<string, string> = {
 type Body = { controlImage: string; style?: string; biomes?: { label: string; color: string }[] };
 
 export async function POST(request: Request) {
+  const admin = createAdminClient();
+  let reservedId: number | null = null;
+  // Gives the reservation back when the render did not happen, so a failure does not use up a free render.
+  const release = async () => {
+    if (reservedId === null) return;
+    const id = reservedId;
+    reservedId = null;
+    await admin.from("tool_render_log").delete().eq("id", id);
+  };
   try {
     const { controlImage, style, biomes } = (await request.json().catch(() => ({}))) as Body;
     if (typeof controlImage !== "string" || !controlImage.startsWith("data:image")) {
@@ -120,26 +135,27 @@ export async function POST(request: Request) {
         : "";
     const promptText = STYLE_PROMPTS[chosen] + reinterp + legend;
 
-    const admin = createAdminClient();
     const ip = (request.headers.get("x-forwarded-for")?.split(",")[0] || request.headers.get("x-real-ip") || "").trim() || "unknown";
-    const since = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
 
-    // Global ceiling: protect the shared free-tier quota.
-    const { count: gCount } = await admin
-      .from("tool_render_log").select("id", { count: "exact", head: true })
-      .gte("created_at", since);
-    if ((gCount ?? 0) >= GLOBAL_DAILY) {
+    // Global ceiling (protects the shared free-tier quota) and the soft per-IP cap, checked and reserved
+    // together so parallel requests cannot all slip under them.
+    const { data: resv, error: rErr } = await admin.rpc("tool_render_reserve", {
+      p_tool: "map-render", p_ip: ip, p_global: GLOBAL_DAILY, p_per_ip: PER_IP_DAILY,
+    });
+    if (rErr) {
+      return NextResponse.json({ error: "AI rendering isn't available right now." }, { status: 503 });
+    }
+    const r = (Array.isArray(resv) ? resv[0] : resv) as { reserved_id: number | null; refused: string | null } | undefined;
+    if (r?.refused === "global") {
       return NextResponse.json({ error: "Free renders are all used up for today. Join the pilot to get your own.", limited: true }, { status: 429 });
     }
-    // Soft per-IP cap: friction, not a wall.
-    if (ip !== "unknown") {
-      const { count: ipCount } = await admin
-        .from("tool_render_log").select("id", { count: "exact", head: true })
-        .eq("ip", ip).gte("created_at", since);
-      if ((ipCount ?? 0) >= PER_IP_DAILY) {
-        return NextResponse.json({ error: `You've used your ${PER_IP_DAILY} free renders for today. Join the pilot for more.`, limited: true }, { status: 429 });
-      }
+    if (r?.refused === "ip") {
+      return NextResponse.json({ error: `You've used your ${PER_IP_DAILY} free renders for today. Join the pilot for more.`, limited: true }, { status: 429 });
     }
+    if (!r || r.reserved_id === null || r.reserved_id === undefined) {
+      return NextResponse.json({ error: "AI rendering isn't available right now." }, { status: 503 });
+    }
+    reservedId = Number(r.reserved_id);
 
     const mime = controlImage.match(/^data:(image\/\w+);base64,/)?.[1] || "image/jpeg";
     const b64 = controlImage.replace(/^data:image\/\w+;base64,/, "");
@@ -153,6 +169,7 @@ export async function POST(request: Request) {
       }),
     });
     if (!gemResp.ok) {
+      await release();
       return NextResponse.json({ error: `Image service error (${gemResp.status}). Please try again.` }, { status: 502 });
     }
 
@@ -163,15 +180,16 @@ export async function POST(request: Request) {
     const parts = gem.candidates?.[0]?.content?.parts ?? [];
     const outB64 = parts.map((p) => p.inline_data?.data ?? p.inlineData?.data).filter(Boolean).pop();
     if (!outB64) {
+      await release();
       const why = gem.promptFeedback?.blockReason ? `blocked (${gem.promptFeedback.blockReason})` : "no image returned";
       return NextResponse.json({ error: `The image service returned nothing (${why}). Please try again.` }, { status: 502 });
     }
 
-    // Record the successful render (best-effort; a failed log must not fail the response).
-    await admin.from("tool_render_log").insert({ tool: "map-render", ip });
-
+    // The reservation made above is the record of this render.
+    reservedId = null;
     return NextResponse.json({ ok: true, image: `data:image/png;base64,${outB64}` });
   } catch (e) {
+    await release().catch(() => {});
     const detail = e instanceof Error ? e.message : String(e);
     return NextResponse.json({ error: `Could not render the map: ${detail.slice(0, 200)}` }, { status: 500 });
   }

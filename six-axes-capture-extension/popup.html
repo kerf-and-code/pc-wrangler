@@ -18,6 +18,8 @@
     .camp-row { display: flex; align-items: center; gap: 8px; border: 1px solid #3D2F52; border-radius: 8px;
       padding: 8px 10px; margin-bottom: 6px; background: rgba(11,7,18,0.35); }
     .camp-name { flex: 1; font-size: 12.5px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .camp-badge { font-size: 10.5px; color: #A597BD; border: 1px solid #3D2F52; border-radius: 6px; padding: 2px 6px; white-space: nowrap; }
+    .camp-badge.ok { color: #8FBF8F; border-color: #4E6B4E; }
     .camp-remove { width: auto; margin: 0; padding: 5px 10px; font-size: 11px; background: none;
       color: #E07A5F; border: 1px solid #3D2F52; font-weight: 600; }
 
@@ -34,6 +36,7 @@
 <body>
   <h1>Six Axes Capture</h1>
   <p>Add each table's campaign code once (your GM has it). Rolls on D&amp;D Beyond flow to whichever of your tables has a session open, so switching tables needs no re-entry.</p>
+  <p>To have your rolls count as verified, open your table link while signed in to Six Axes and press Connect.</p>
   <label for="code">ADD A CAMPAIGN CODE</label>
   <input id="code" placeholder="e.g. 2930a13916" autocomplete="off" />
   <button id="save">Add campaign</button>

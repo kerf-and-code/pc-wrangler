@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { createClient as createSessionClient } from "@/lib/supabase/server";
+import { emptyProof, proofFromKeys, proofFromSession } from "@/lib/vtt/ingest-keys";
 
 // POST /api/vtt/ingest
 // Receives normalized table events (Beyond20 now; Foundry/Owlbear later) from the
@@ -12,6 +14,13 @@ import { createClient } from "@supabase/supabase-js";
 // that character linked. The live session is the disambiguator; if a DDB character is
 // somehow linked in two campaigns that are both live at once, the most recently
 // started session wins. A single legacy share_code still works.
+//
+// WHO SENT IT (audit B12, push 7). A share code only proves the sender has the table link, which every
+// player has. So a roll is stored as "canonical" only when the request PROVES its sender can vouch for
+// that character: a player roll key (lib/vtt/ingest-keys.ts) or signed-in session covering a character
+// the sender owns, or a GM roll key or GM session for that campaign. Everything else still lands, so an
+// older extension keeps working, but as "unverified", whatever the client claims. A key alone also
+// counts as holding that campaign's code.
 
 const EVENT_TYPES = new Set([
   "to-hit",
@@ -31,6 +40,7 @@ const EVENT_TYPES = new Set([
 const SOURCES = new Set(["beyond20", "foundry", "owlbear"]);
 const MAX_EVENTS_PER_BATCH = 50;
 const MAX_CODES = 20;
+const MAX_KEYS = 20;
 const MAX_JSON_CHARS = 16000;
 
 function serviceClient() {
@@ -92,6 +102,8 @@ const CORS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type",
+  // Only roll keys in the body authenticate a cross-origin sender; a session counts only on a
+  // same-origin request (see the session check in POST).
   "Access-Control-Max-Age": "86400",
 };
 
@@ -101,7 +113,7 @@ export async function OPTIONS() {
 }
 
 export async function GET() {
-  return NextResponse.json({ ok: true, expects: "POST { share_codes: [...], events: [...] }" }, { headers: CORS });
+  return NextResponse.json({ ok: true, expects: "POST { share_codes: [...], keys?: [...], events: [...] }" }, { headers: CORS });
 }
 
 export async function POST(request: NextRequest) {
@@ -124,8 +136,12 @@ export async function POST(request: NextRequest) {
   }
   codes = Array.from(new Set(codes)).slice(0, MAX_CODES);
 
+  const keys: string[] = Array.isArray(body?.keys)
+    ? Array.from(new Set((body.keys as unknown[]).filter((k): k is string => typeof k === "string").map((k) => k.trim()))).slice(0, MAX_KEYS)
+    : [];
+
   const events = Array.isArray(body?.events) ? body.events : null;
-  if (codes.length === 0 || !events || events.length === 0) {
+  if ((codes.length === 0 && keys.length === 0) || !events || events.length === 0) {
     return NextResponse.json(
       { error: "Expected { share_codes: [...], events: [...] } with at least one code and one event." },
       { status: 400, headers: CORS }
@@ -140,16 +156,38 @@ export async function POST(request: NextRequest) {
 
   const sb = serviceClient();
 
-  // Resolve the held codes to campaigns.
-  const { data: camps } = await sb
-    .from("campaigns")
-    .select("id, name, share_code")
-    .in("share_code", codes);
-  const campaigns = camps ?? [];
-  if (campaigns.length === 0) {
+  // Roll keys first: they prove who is sending, and each also counts as holding its campaign.
+  const proof = emptyProof();
+  await proofFromKeys(sb, keys, proof);
+
+  // Resolve the held codes (and key campaigns) to campaigns.
+  const campaignsById = new Map<string, { id: string }>();
+  if (codes.length > 0) {
+    const { data: camps } = await sb.from("campaigns").select("id").in("share_code", codes);
+    for (const c of (camps ?? []) as { id: string }[]) campaignsById.set(c.id, c);
+  }
+  for (const id of proof.keyCampaigns) campaignsById.set(id, { id });
+  if (campaignsById.size === 0) {
     return NextResponse.json({ error: "No campaign matched the codes provided." }, { status: 404, headers: CORS });
   }
-  const campaignIds = campaigns.map((c: any) => c.id);
+  const campaignIds = Array.from(campaignsById.keys());
+
+  // A signed-in sender on the site itself (Table Tap) proves the same way as a key. Only a request the
+  // browser marks as same-origin counts, so another site cannot make a signed-in GM's browser post
+  // rolls that borrow their session (the auth cookie is also SameSite=Lax).
+  const origin = request.headers.get("origin");
+  const sameOrigin = request.headers.get("sec-fetch-site") === "same-origin"
+    || (origin !== null && origin === request.nextUrl.origin);
+  if (sameOrigin) {
+    try {
+      const session = await createSessionClient();
+      const { data: claimsData } = await session.auth.getClaims();
+      const uid = claimsData?.claims?.sub as string | undefined;
+      if (uid) await proofFromSession(sb, uid, campaignIds, proof);
+    } catch {
+      // no session: the share code (and any key) decides
+    }
+  }
 
   // Find the open session for each held campaign. Only campaigns with a live
   // session are eligible routing targets.
@@ -215,7 +253,11 @@ export async function POST(request: NextRequest) {
     return best;
   }
 
+  const proven = (campaignId: string, characterId: string | null) =>
+    proof.gmCampaigns.has(campaignId) || (characterId !== null && proof.ownCharacters.has(characterId));
+
   const rows = [];
+  let verified = 0;
   let skipped = 0;
   const unmatched = new Set<string>();
   for (const e of events) {
@@ -259,7 +301,8 @@ export async function POST(request: NextRequest) {
       name: cleanString(e?.name, 200),
       rolls: cleanJson(e?.rolls),
       state: cleanJson(e?.state),
-      fidelity: e?.fidelity === "canonical" ? "canonical" : "unverified",
+      // Canonical only when the client says so AND this request proved it may vouch for the character.
+      fidelity: e?.fidelity === "canonical" && proven(campaignId!, characterId) ? "canonical" : "unverified",
       rolled_at: cleanTimestamp(e?.rolled_at),
     });
   }
@@ -271,6 +314,8 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  for (const r of rows) if (r.fidelity === "canonical") verified += 1;
+
   const { error } = await sb.from("vtt_events").insert(rows);
   if (error) {
     return NextResponse.json({ error: "Insert failed. Try again." }, { status: 500, headers: CORS });
@@ -278,6 +323,7 @@ export async function POST(request: NextRequest) {
 
   return NextResponse.json({
     inserted: rows.length,
+    verified,
     skipped,
     live_campaigns: liveCampaignIds.length,
     unmatched_ddb_ids: Array.from(unmatched),

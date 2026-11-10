@@ -6,9 +6,43 @@
 // Then it tells the page it succeeded so the page can show a confirmation. This is
 // the only place the extension touches pc-wrangler, and it only reads a code from
 // the path.
+//
+// 2.3.0 (audit B12): it also marks the page with data-sixaxes-capture="<version>", so the page can
+// tell the extension is installed even if this script's message arrived before the page listened,
+// and it accepts a roll key the page hands over after the signed-in player presses "Connect". The
+// key is kept per table code in chrome.storage.sync under "ingestKeys" and sent with every batch,
+// which is what lets the server count that player's rolls as verified.
 
 (function () {
   var MAX_CODES = 20;
+  var VERSION = chrome.runtime.getManifest().version;
+
+  try { document.documentElement.setAttribute("data-sixaxes-capture", VERSION); } catch (e) { /* no DOM yet */ }
+
+  // A roll key handed over by this page (components/roll-key.tsx). Only accepted from this window,
+  // only for the code in this page's address, and only in the expected shape.
+  window.addEventListener("message", function (e) {
+    if (e.source !== window || e.origin !== window.location.origin) return;
+    var d = e.data;
+    if (!d || d.__sixaxesKey !== true) return;
+    var here = codeFromPath();
+    var key = typeof d.key === "string" ? d.key : "";
+    if (!here || d.code !== here || key.indexOf("sxk_") !== 0 || key.length > 80) {
+      window.postMessage({ __sixaxesKeySaved: true, ok: false, code: d.code }, window.location.origin);
+      return;
+    }
+    try {
+      chrome.storage.sync.get(["ingestKeys"], function (cfg) {
+        var keys = (cfg && cfg.ingestKeys && typeof cfg.ingestKeys === "object") ? cfg.ingestKeys : {};
+        keys[here] = key;
+        chrome.storage.sync.set({ ingestKeys: keys }, function () {
+          window.postMessage({ __sixaxesKeySaved: true, ok: !chrome.runtime.lastError, code: here }, window.location.origin);
+        });
+      });
+    } catch (err) {
+      window.postMessage({ __sixaxesKeySaved: true, ok: false, code: here }, window.location.origin);
+    }
+  });
 
   function codeFromPath() {
     // Expect /x/<code>. Take the segment after "x", strip query/hash noise.
@@ -39,7 +73,7 @@
           window.postMessage({ __sixaxesLink: true, ok: false, reason: "storage" }, window.location.origin);
           return;
         }
-        window.postMessage({ __sixaxesLink: true, ok: true, code: code }, window.location.origin);
+        window.postMessage({ __sixaxesLink: true, ok: true, code: code, version: VERSION }, window.location.origin);
       });
     });
   } catch (e) {

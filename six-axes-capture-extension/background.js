@@ -8,6 +8,10 @@
 // not yet linked), paired with the actor name from the batch, into
 // chrome.storage.local under "unmatched". The popup reads that to offer a self-link
 // picker across all the player's campaigns.
+//
+// 2.3.0 (audit B12): it also sends the roll keys saved per table code ("ingestKeys", handed over on
+// the table link page). A key proves the rolls are this player's, so the server counts them as
+// verified; without one they still arrive, as unverified.
 
 // The canonical host. The old vercel.app address still resolves and redirects, but a redirect on
 // a cross-origin POST is not free: the browser re-issues it as a preflight against the new origin,
@@ -40,7 +44,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     return; // synchronous response, channel can close
   }
 
-  chrome.storage.sync.get(["shareCodes", "shareCode"], async (cfg) => {
+  chrome.storage.sync.get(["shareCodes", "shareCode", "ingestKeys"], async (cfg) => {
     // Prefer the saved set; fall back to a legacy single code.
     let codes = Array.isArray(cfg && cfg.shareCodes) ? cfg.shareCodes.filter(Boolean) : [];
     if (codes.length === 0 && cfg && cfg.shareCode) codes = [cfg.shareCode];
@@ -49,12 +53,15 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       return;
     }
 
+    const keyMap = (cfg && cfg.ingestKeys && typeof cfg.ingestKeys === "object") ? cfg.ingestKeys : {};
+    const keys = codes.map((c) => keyMap[c]).filter((k) => typeof k === "string" && k);
+
     const batch = events.slice(0, MAX_EVENTS_PER_BATCH);
     try {
       const res = await fetch(INGEST, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ share_codes: codes, events: batch }),
+        body: JSON.stringify({ share_codes: codes, keys, events: batch }),
       });
       let data = null;
       try { data = await res.json(); } catch { data = null; }

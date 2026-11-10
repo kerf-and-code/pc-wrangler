@@ -7,6 +7,10 @@ import { createAdminClient } from "@/lib/supabase/admin";
 // stores a weekly recurrence anchor if the poll was recurring, and updates the
 // Discord message. No collision with /record's auto-open: this is a future
 // scheduled session, distinct from the live one.
+//
+// Audit B20 (push 7): the poll is closed FIRST, and only if it was still open, so two clicks or two
+// tabs cannot both create a session. Only the request that closed it goes on; if the session then
+// cannot be created, the poll is opened again so the GM can retry.
 export async function POST(req: NextRequest) {
   let body: { pollId?: string; slotIdx?: number };
   try {
@@ -44,6 +48,18 @@ export async function POST(req: NextRequest) {
   const slot = poll.slots?.[slotIdx];
   if (!slot) return NextResponse.json({ error: "That slot no longer exists." }, { status: 400 });
 
+  // Claim the poll: only one request can move it from open to closed.
+  const { data: closedRows, error: cErr } = await admin
+    .from("session_polls")
+    .update({ status: "closed", chosen_slot: slot })
+    .eq("id", pollId)
+    .eq("status", "open")
+    .select("id");
+  if (cErr) return NextResponse.json({ error: "Could not confirm the poll. Try again." }, { status: 500 });
+  if (!closedRows || closedRows.length === 0) {
+    return NextResponse.json({ error: "This poll is already closed." }, { status: 400 });
+  }
+
   const { data: maxRow } = await admin
     .from("sessions")
     .select("session_number")
@@ -58,10 +74,13 @@ export async function POST(req: NextRequest) {
     .insert({ campaign_id: poll.campaign_id, session_number: nextNum, status: "scheduled", scheduled_at: slot })
     .select("id")
     .single();
-  if (sErr || !sessRow) return NextResponse.json({ error: "Could not create the session." }, { status: 500 });
+  if (sErr || !sessRow) {
+    await admin.from("session_polls").update({ status: "open", chosen_slot: null }).eq("id", pollId).eq("status", "closed").is("session_id", null);
+    return NextResponse.json({ error: "Could not create the session." }, { status: 500 });
+  }
   const sessionId = (sessRow as { id: string }).id;
 
-  await admin.from("session_polls").update({ status: "closed", chosen_slot: slot, session_id: sessionId }).eq("id", pollId);
+  await admin.from("session_polls").update({ session_id: sessionId }).eq("id", pollId);
   if (poll.recurring) {
     await admin.from("campaigns").update({ recur_rule: { interval: "weekly", anchor: slot } }).eq("id", poll.campaign_id);
   }

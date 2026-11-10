@@ -16,6 +16,15 @@ import { discordMessage, isDiscordWebhook } from "@/lib/addons/discord";
 // Any 2xx within 5 seconds counts. Redirects are not followed.
 // A Discord channel webhook gets a readable message instead (lib/addons/discord.ts); when Discord says
 // to slow down (429), the delivery is retried like any other failure.
+//
+// Audit L-B4 (push 7): the time budget is checked before EVERY send, not only between claims, and a
+// claim takes at most CLAIM_BATCH deliveries. A send can take 5 seconds, so a send only starts with more
+// than SEND_RESERVE_MS left; anything claimed but not started is left alone, its 45 second claim lapses
+// and the minute cron sends it. Before this, 25 slow deliveries to one hook could outrun the function's
+// time limit mid-batch and be sent twice.
+
+const CLAIM_BATCH = 5;
+const SEND_RESERVE_MS = 6000;
 
 type Claimed = { id: number; hookId: string; event: string; payload: unknown; createdAt: string; attempts: number; url: string; secret: string; campaignId: string; campaignName: string };
 
@@ -54,9 +63,10 @@ async function sendOne(d: Claimed): Promise<{ ok: boolean; status: number; error
 /** Sends due deliveries until none are left or the time budget runs out; how many were sent and failed. */
 export async function drain(admin: SupabaseClient, campaignId: string | null, budgetMs: number): Promise<{ sent: number; failed: number }> {
   const until = Date.now() + budgetMs;
+  const timeLeft = () => Date.now() + SEND_RESERVE_MS < until;
   let sent = 0, failed = 0;
-  while (Date.now() + 6000 < until) {
-    const { data, error } = await admin.rpc("addon_claim", { p_campaign: campaignId, p_limit: 25 });
+  while (timeLeft()) {
+    const { data, error } = await admin.rpc("addon_claim", { p_campaign: campaignId, p_limit: CLAIM_BATCH });
     if (error) throw new Error(`addon_claim: ${error.message}`);
     const batch = (data ?? []) as Claimed[];
     if (!batch.length) break;
@@ -64,6 +74,7 @@ export async function drain(admin: SupabaseClient, campaignId: string | null, bu
     for (const d of batch) byHook.set(d.hookId, [...(byHook.get(d.hookId) ?? []), d]);
     await Promise.all([...byHook.values()].map(async (list) => {
       for (const d of list) {
+        if (!timeLeft()) return; // left claimed; the cron picks it up once the claim lapses
         const r = await sendOne(d);
         if (r.ok) sent++; else failed++;
         await admin.rpc("addon_settle", { p_id: d.id, p_ok: r.ok, p_status: r.status, p_error: r.error });

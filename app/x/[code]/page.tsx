@@ -5,28 +5,50 @@
 // If the Six Axes Capture extension is installed, its link-capture content script
 // saves the code silently and posts a confirmation this page listens for. If not,
 // this page shows what to install. Either way the player pastes nothing.
+//
+// Push 7 (audit B12): a signed-in player can also connect the extension to their account here, so
+// their rolls count as verified (components/roll-key.tsx). Extension 2.3 and later marks the page with
+// data-sixaxes-capture="<version>" so the page knows it is there even if its message came first.
+// The code now comes from useParams: a client page's params prop is a Promise in this Next version,
+// so params.code read as undefined and the card showed "unknown". useParams reads the request, which
+// cacheComponents only allows inside a Suspense boundary, so the default export wraps the page in one
+// (the build refused the page without it).
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
+import { RollKeyForExtension } from "@/components/roll-key";
 
 const BEYOND20_CHROME =
   "https://chrome.google.com/webstore/detail/beyond20/aibeceakhehbogooeplpapmbmknmdmpb";
 // Replace with the real Chrome Web Store URL once Six Axes Capture is published.
 const CAPTURE_STORE_URL = "";
 
-export default function LinkLandingPage({
-  params,
-}: {
-  params: { code: string };
-}) {
-  const code = (params?.code || "").toLowerCase();
+export default function LinkLandingPage() {
+  return (
+    <Suspense fallback={<main style={{ minHeight: "100vh", background: C.bg }} />}>
+      <LinkLanding />
+    </Suspense>
+  );
+}
+
+function LinkLanding() {
+  const params = useParams<{ code: string }>();
+  const code = String(params?.code || "").toLowerCase();
   const [saved, setSaved] = useState(false);
+  // null: no extension seen; "old": an extension before 2.3; otherwise its version
+  const [extVersion, setExtVersion] = useState<string | null>(null);
 
   useEffect(() => {
+    const marked = document.documentElement.dataset.sixaxesCapture;
+    if (marked) { setExtVersion(marked); setSaved(true); }
     function onMessage(e: MessageEvent) {
       if (e.source !== window) return;
-      const d = e.data as { __sixaxesLink?: boolean; ok?: boolean };
-      if (d && d.__sixaxesLink === true && d.ok === true) setSaved(true);
+      const d = e.data as { __sixaxesLink?: boolean; ok?: boolean; version?: string };
+      if (d && d.__sixaxesLink === true && d.ok === true) {
+        setSaved(true);
+        setExtVersion((v) => (typeof d.version === "string" ? d.version : v ?? "old"));
+      }
     }
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
@@ -122,6 +144,8 @@ export default function LinkLandingPage({
           </li>
           <li>Reopen this link. The code saves on its own.</li>
         </ol>
+
+        <RollKeyForExtension code={code} extensionVersion={extVersion} />
       </section>
     </main>
   );
