@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { extract } from "@/lib/backfill/extract";
+import { hasGmAccess } from "@/lib/ai-allowance";
 import type { NormalizedImport } from "@/lib/backfill/types";
 
 export const maxDuration = 60;
@@ -43,6 +44,12 @@ export async function POST(request: Request) {
     }
 
     const admin = createAdminClient();
+
+    // Audit T4: imports spend model calls, so they need GM pilot access (the /gm page gate does not cover
+    // the API). lib/backfill/extract.ts caps the calls one import can make.
+    if (!(await hasGmAccess(admin, user.id))) {
+      return NextResponse.json({ error: "Importing needs GM access: enter your GM access code first." }, { status: 403 });
+    }
 
     // Open the job first, so a failure mid-extraction still leaves a record the GM can see and retry.
     const { data: jobRow, error: jErr } = await admin

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { opsAlert } from "@/lib/ops-alert";
 
 export const maxDuration = 60;
 
@@ -358,8 +359,16 @@ export async function GET(request: Request) {
     awaitingSidecar.length, noAudio.length, sweepTruncated ? " (sweep truncated)" : "",
   );
 
+  // Audit T1: a failed submit is a failed run. It used to return 200, so Vercel showed a healthy cron
+  // while sessions stranded; now it alerts (lib/ops-alert.ts) and returns 500.
+  const ok = submitResults.every((r) => r.ok);
+  if (!ok) {
+    const failed = submitResults.filter((r) => !r.ok);
+    await opsAlert("cron advance-jobs", `${failed.length} of ${submitResults.length} transcription submit(s) failed`, failed.slice(0, 5));
+  }
+
   return NextResponse.json({
-    ok: submitResults.every((r) => r.ok),
+    ok,
     ready: submitResults.length,
     submitted,
     results: submitResults,
@@ -374,5 +383,5 @@ export async function GET(request: Request) {
     awaitingSidecar,
     // Draft jobs the sidecar finished with but that produced no uploaded audio.
     noAudio,
-  });
+  }, { status: ok ? 200 : 500 });
 }

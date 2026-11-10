@@ -6,11 +6,13 @@
 -- early tables existed only in the live database. This file puts all of it in the repo.
 --
 -- What it is: a record, and the way to stand up a fresh copy (a staging or local project). It is not a
--- migration to apply to production, which already has all of it. p1 to p134 are history; on a fresh
--- database run only this file, then any migration numbered after p134.
+-- migration to apply to production, which already has all of it. p1 to p133 are history; on a fresh
+-- database run only this file, then p134 and every migration after it, in order.
 --
 -- Not included: data, sequence positions, the auth and storage schemas (Supabase creates those), storage
--- buckets and their policies, vault secrets, cron jobs, and grants beyond anon, authenticated, service_role.
+-- buckets and their policies, vault secrets, cron jobs, table grants beyond anon, authenticated and
+-- service_role, and grants on functions (the export did not capture who may run each function; the
+-- revoke and grant lines in the numbered migrations are the record of that).
 --
 -- Idempotent: tables, indexes and extensions use if not exists; functions, views and triggers use
 -- create or replace; policies are dropped and recreated; constraints skip when already present.

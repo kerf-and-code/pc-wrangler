@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { releaseAi, reserveAi } from "@/lib/ai-allowance";
 
 // POST /api/battle-map/paint (2026-11-06)
 //
@@ -11,8 +12,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 // as Gemini kept it in place. Gemini cannot promise that, so the editor keeps the real walls, doors and
 // grid drawn over the painting by default and flags a painting once the map changes.
 //
-// Same guard rails as /api/world-map/imagine: signed in, GM of the campaign, one ai_map_renders row per
-// render, stored in the campaign-maps bucket. Nothing but the plan image and the prompt goes to Google.
+// Same guard rails as /api/world-map/imagine: signed in, GM of the campaign, GM pilot access and a daily
+// cap (lib/ai-allowance.ts, kind "battle", audit T4), stored in the campaign-maps bucket. Nothing but the plan image and the prompt goes to Google.
 
 export const maxDuration = 60;
 
@@ -70,6 +71,12 @@ export async function POST(request: Request) {
     const { data: camp } = await supa.from("campaigns").select("gm_id").eq("id", campaignId).maybeSingle();
     if ((camp as { gm_id: string } | null)?.gm_id !== user.id) return NextResponse.json({ error: "Not permitted." }, { status: 403 });
 
+    const admin = createAdminClient();
+    const grant = await reserveAi(admin, user.id, campaignId, "battle");
+    if (!grant.ok) return NextResponse.json({ error: grant.error, limited: grant.limited, remaining: 0 }, { status: grant.status });
+    let done = false;
+    try {
+
     const kindNote = kind === "outdoor"
       ? "This is an OUTDOOR map: open ground everywhere except the walled buildings, ruins or caves. "
       : "This is an INDOOR map: everything outside the walls is solid rock. ";
@@ -107,15 +114,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: `The image service returned no image: ${why}` }, { status: 502 });
     }
 
-    const admin = createAdminClient();
     const ext = out.mime === "image/jpeg" ? "jpg" : "png";
     const path = `${campaignId}/battle-${crypto.randomUUID()}.${ext}`;
     const up = await admin.storage.from("campaign-maps").upload(path, Buffer.from(out.data, "base64"), { contentType: out.mime === "image/jpeg" ? "image/jpeg" : "image/png", upsert: false });
     if (up.error) return NextResponse.json({ error: `Upload failed: ${up.error.message}` }, { status: 500 });
     const url = admin.storage.from("campaign-maps").getPublicUrl(path).data.publicUrl;
-    await admin.from("ai_map_renders").insert({ campaign_id: campaignId, profile_id: user.id });
-
-    return NextResponse.json({ ok: true, url });
+    done = true;
+    return NextResponse.json({ ok: true, url, remaining: grant.remaining });
+    } finally {
+      if (!done) await releaseAi(admin, grant.id);
+    }
   } catch (e) {
     const detail = e instanceof Error ? e.message : String(e);
     console.error("[api/battle-map/paint] failure:", detail, e);

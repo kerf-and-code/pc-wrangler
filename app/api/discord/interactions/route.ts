@@ -298,7 +298,7 @@ async function handleClaimSelect(interaction: Interaction) {
   const sb = serviceClient();
   const { data: character, error } = await sb
     .from("characters")
-    .select("id, name, discord_user_id")
+    .select("id, name, discord_user_id, profile_id")
     .eq("id", characterId)
     .eq("campaign_id", campaignId)
     .single();
@@ -307,6 +307,21 @@ async function handleClaimSelect(interaction: Interaction) {
   }
   if (character.discord_user_id && character.discord_user_id !== userId) {
     return updateMessage(`"${character.name}" is already linked to someone else. Ask your GM if that's wrong.`);
+  }
+  // Audit B4 (p135): a character a player already owns on the website goes only to that same player.
+  // Without this, anyone with the share code could link a web-claimed character (no Discord id yet) to
+  // their own Discord, and signing in with Discord then moved the character to them.
+  if (character.profile_id) {
+    const { data: allowed, error: ruleErr } = await sb.rpc("discord_claim_allowed", {
+      p_owner: character.profile_id, p_campaign: campaignId, p_discord: userId,
+    });
+    if (ruleErr) {
+      console.error("discord claim: discord_claim_allowed failed (has p135 run?)", ruleErr.message);
+      return updateMessage("Could not check that character right now. Try again in a moment.");
+    }
+    if (!allowed) {
+      return updateMessage(`"${character.name}" already belongs to a player on Six Axes, so it can't be linked from here. If it's yours, ask your GM to link it.`);
+    }
   }
 
   await sb.from("characters").update({ discord_user_id: null })
@@ -322,7 +337,7 @@ async function handleClaimSelect(interaction: Interaction) {
     type: UPDATE_MESSAGE,
     data: {
       content:
-        `Linked \u2014 you're playing "${character.name}". Recaps and voice will attribute to you.\n\n` +
+        `Linked: you're playing "${character.name}". Recaps and voice will attribute to you.\n\n` +
         "One thing before you play: this campaign records its sessions so your GM can build recaps and table analytics.\n\n" +
         // The 60-day deletion is the strongest thing we can tell someone whose voice we
         // are about to record, and it was nowhere near the moment they actually consent.

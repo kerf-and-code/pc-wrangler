@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { releaseAi, reserveAi } from "@/lib/ai-allowance";
 
 export const maxDuration = 60;
 
@@ -36,6 +38,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Not permitted." }, { status: 403 });
     }
 
+    // GM pilot access and a daily cap (lib/ai-allowance.ts, kind "trace", audit T4). The slot is given
+    // back only when the model call itself fails; an answer that will not parse was still a paid call.
+    const admin = createAdminClient();
+    const grant = await reserveAi(admin, user.id, campaignId, "trace");
+    if (!grant.ok) return NextResponse.json({ error: grant.error, limited: grant.limited }, { status: grant.status });
+    let called = false;
+    try {
     const mimeMatch = image.match(/^data:(image\/\w+);base64,/);
     const mime = mimeMatch ? mimeMatch[1] : "image/png";
     const b64 = image.replace(/^data:image\/\w+;base64,/, "");
@@ -64,6 +73,7 @@ export async function POST(request: Request) {
         generationConfig: { responseMimeType: "application/json" },
       }),
     });
+    if (gemResp.ok) called = true;
     if (!gemResp.ok) {
       const detail = await gemResp.text();
       return NextResponse.json({ error: `Trace service error (${gemResp.status}): ${detail.slice(0, 200)}` }, { status: 502 });
@@ -98,6 +108,9 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ ok: true, tiles });
+    } finally {
+      if (!called) await releaseAi(admin, grant.id);
+    }
   } catch (e) {
     const detail = e instanceof Error ? e.message : String(e);
     console.error("[api/world-map/trace] failure:", detail, e);

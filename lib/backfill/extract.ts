@@ -222,16 +222,24 @@ export type ExtractOptions = {
   complete?: Complete;      // model transport; defaults to Anthropic
   buildRecaps?: boolean;    // write per-session recaps (needs the model). Default true when sessions exist.
   extractProse?: boolean;   // run the model over unstructured notes. Default true.
+  maxModelCalls?: number;   // most model calls for one import (audit T4). Default MAX_MODEL_CALLS.
 };
+
+/** One import makes at most this many model calls: prose notes first, then session recaps. Notes past the
+ *  cap are skipped with a warning, and recaps past it fall back to the session's opening text. */
+export const MAX_MODEL_CALLS = 120;
 
 // Orchestrate. Structural notes map straight through (no model). Prose notes and recaps use the model when
 // enabled. Everything is deduped before returning.
 export async function extract(norm: NormalizedImport, opts: ExtractOptions = {}): Promise<ExtractResult> {
-  const complete = opts.complete ?? anthropicComplete;
+  const transport = opts.complete ?? anthropicComplete;
   const doProse = opts.extractProse ?? true;
   const doRecaps = opts.buildRecaps ?? true;
   const warnings = [...norm.warnings];
   let usedModel = false;
+  let budget = Math.max(0, opts.maxModelCalls ?? MAX_MODEL_CALLS);
+  // Every model call spends one from the budget; notes too short to send spend nothing.
+  const complete: Complete = (system, prompt) => { budget--; return transport(system, prompt); };
 
   const structural: EntityCandidate[] = [];
   const proseNotes: SourceNote[] = [];
@@ -243,10 +251,13 @@ export async function extract(norm: NormalizedImport, opts: ExtractOptions = {})
 
   const prose: EntityCandidate[] = [];
   if (doProse && proseNotes.length) {
+    let skipped = 0;
     for (const n of proseNotes) {
+      if (budget <= 0) { skipped++; continue; }
       try { prose.push(...await extractProse(n, complete)); usedModel = true; }
       catch (e) { warnings.push(`Extraction failed for "${n.title}": ${e instanceof Error ? e.message : "error"}`); }
     }
+    if (skipped) warnings.push(`${skipped} unstructured note(s) were not scanned for entities: one import scans at most ${opts.maxModelCalls ?? MAX_MODEL_CALLS} notes and sessions. Import the rest separately.`);
   } else if (!doProse && proseNotes.length) {
     warnings.push(`${proseNotes.length} unstructured note(s) were not scanned for entities (prose extraction off).`);
   }
@@ -255,10 +266,17 @@ export async function extract(norm: NormalizedImport, opts: ExtractOptions = {})
 
   const recaps: SessionRecap[] = [];
   if (doRecaps && norm.sessions.length) {
+    let plain = 0;
     for (const s of norm.sessions) {
+      if (budget <= 0) {
+        plain++;
+        recaps.push({ index: s.index, label: s.label, date: s.date, recap: s.text.slice(0, 600), entityNames: [] });
+        continue;
+      }
       recaps.push(await recapOne(s, complete));
       usedModel = true;
     }
+    if (plain) warnings.push(`${plain} session(s) got their opening text instead of a written recap: one import writes at most ${opts.maxModelCalls ?? MAX_MODEL_CALLS} recaps and note scans.`);
   } else if (norm.sessions.length) {
     for (const s of norm.sessions) recaps.push({ index: s.index, label: s.label, date: s.date, recap: s.text.slice(0, 600), entityNames: [] });
   }

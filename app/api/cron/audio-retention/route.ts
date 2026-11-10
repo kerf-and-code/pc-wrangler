@@ -16,6 +16,7 @@
 
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { opsAlert } from "@/lib/ops-alert";
 
 export const maxDuration = 60;
 
@@ -37,6 +38,7 @@ export async function GET(request: Request) {
     .limit(BATCH);
 
   if (dueErr) {
+    await opsAlert("cron audio-retention", "could not list audio due for deletion", dueErr.message);
     return NextResponse.json({ error: dueErr.message, stage: "select" }, { status: 500 });
   }
   if (!due || due.length === 0) {
@@ -70,11 +72,15 @@ export async function GET(request: Request) {
     purged += 1;
   }
 
+  // Audit T1: deletion is a promise to players, so a failure alerts and fails the run (it used to be a 200).
+  if (failures.length) {
+    await opsAlert("cron audio-retention", `${failures.length} of ${due.length} recording(s) could not be deleted`, failures.slice(0, 5));
+  }
   return NextResponse.json({
     ok: failures.length === 0,
     due: due.length,
     purged,
     failures,
     more: due.length === BATCH,
-  });
+  }, { status: failures.length ? 500 : 200 });
 }

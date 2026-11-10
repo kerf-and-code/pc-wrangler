@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { opsAlert } from "@/lib/ops-alert";
 
 export const maxDuration = 60;
 
@@ -18,7 +19,7 @@ function admin() {
 }
 
 function reminderHtml(campaignName: string, sessionNumber: number | null, whenText: string) {
-  const heading = sessionNumber != null ? `${campaignName} — Session ${sessionNumber}` : campaignName;
+  const heading = sessionNumber != null ? `${campaignName}, Session ${sessionNumber}` : campaignName;
   return `<!doctype html><html><body style="margin:0;background:#f4f1ea;padding:24px;font-family:Georgia,serif;">
   <div style="max-width:560px;margin:0 auto;background:#fffdf8;border:1px solid #e3dbc9;border-radius:12px;padding:28px 30px;">
     <div style="font-size:12px;letter-spacing:0.18em;text-transform:uppercase;color:#9a7b2e;margin-bottom:6px;">Session reminder</div>
@@ -56,7 +57,7 @@ export async function GET(request: Request) {
     .is("reminder_sent_at", null);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  let processed = 0, emailed = 0;
+  let processed = 0, emailed = 0, failed = 0;
 
   for (const s of due || []) {
     const { data: rsvps } = await sb
@@ -95,7 +96,7 @@ export async function GET(request: Request) {
             from: REMINDER_FROM, to: [to], subject, html,
             headers: { "List-Unsubscribe": `<${UNSUBSCRIBE_MAILTO}>` },
           }),
-        }).then((r) => { if (r.ok) emailed++; }).catch(() => {})));
+        }).then((r) => { if (r.ok) emailed++; else failed++; }).catch(() => { failed++; })));
     }
 
     // Mark reminded regardless, so we never re-process this session.
@@ -103,5 +104,7 @@ export async function GET(request: Request) {
     processed++;
   }
 
-  return NextResponse.json({ processed, emailed });
+  // Audit T1: failed sends used to vanish (.catch(() => {})). Now they alert and fail the run.
+  if (failed) await opsAlert("cron session-reminders", `${failed} reminder email(s) failed to send, ${emailed} sent`);
+  return NextResponse.json({ processed, emailed, failed }, { status: failed ? 500 : 200 });
 }

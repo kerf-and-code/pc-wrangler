@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { releaseAi, reserveAi } from "@/lib/ai-allowance";
 
 export const maxDuration = 60; // Nano Banana image generation can take a while
 
-const DAILY_LIMIT = 3;
-const RATE_LIMIT_ENABLED = false; // TESTING: set true to enforce DAILY_LIMIT
+// Daily cap, pilot check and reserve-before-call: lib/ai-allowance.ts (kind "world"), audit T4.
 // Nano Banana 2 (gemini-3.1-flash-image) outputs 1K/2K/4K; the older gemini-2.5-flash-image was 1K only.
 // Both overridable via env: if the model 404s, try "gemini-3.1-flash-image-preview". Size: 1K|2K|4K.
 const MODEL = process.env.GEMINI_IMAGE_MODEL || "gemini-3.1-flash-image";
@@ -248,17 +248,10 @@ export async function POST(request: Request) {
 
     const admin = createAdminClient();
 
-    // Rate limit: 3 per rolling 24h per GM.
-    const since = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
-    const { count } = await admin
-      .from("ai_map_renders")
-      .select("id", { count: "exact", head: true })
-      .eq("profile_id", user.id)
-      .gte("created_at", since);
-    const used = count ?? 0;
-    if (RATE_LIMIT_ENABLED && used >= DAILY_LIMIT) {
-      return NextResponse.json({ error: `Daily fantasy-view limit reached (${DAILY_LIMIT} per day). Try again later.`, limited: true, remaining: 0 }, { status: 429 });
-    }
+    const grant = await reserveAi(admin, user.id, campaignId, "world");
+    if (!grant.ok) return NextResponse.json({ error: grant.error, limited: grant.limited, remaining: 0 }, { status: grant.status });
+    let done = false;
+    try {
 
     const mimeMatch = controlImage.match(/^data:(image\/\w+);base64,/);
     const mime = mimeMatch ? mimeMatch[1] : "image/png";
@@ -304,9 +297,11 @@ export async function POST(request: Request) {
       const { data: wm } = await admin.from("world_maps").select("id").eq("campaign_id", campaignId).maybeSingle();
       if (wm) await admin.from("world_maps").update({ ai_image_url: url, ai_image_at: new Date().toISOString(), style: chosenStyle }).eq("id", (wm as { id: string }).id);
     }
-    await admin.from("ai_map_renders").insert({ campaign_id: campaignId, profile_id: user.id });
-
-    return NextResponse.json({ ok: true, url, remaining: Math.max(0, DAILY_LIMIT - (used + 1)) });
+    done = true;
+    return NextResponse.json({ ok: true, url, remaining: grant.remaining });
+    } finally {
+      if (!done) await releaseAi(admin, grant.id);
+    }
   } catch (e) {
     const detail = e instanceof Error ? e.message : String(e);
     console.error("[api/world-map/imagine] failure:", detail, e);
