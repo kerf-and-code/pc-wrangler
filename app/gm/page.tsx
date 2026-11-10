@@ -9,6 +9,7 @@ import { listModules } from "@/lib/systems/registry";
 import { getRosterFields, type RosterSpec } from "@/lib/systems/roster-fields";
 import { computeCoverage, rolesForClass, classesForRole, ROLE_LABEL, type CoverageSystem } from "@/lib/party/coverage";
 import { initialCampaignId, useRememberCampaign } from "@/lib/campaign-context";
+import { CampaignSettings, CampaignTrash } from "@/components/campaign-safety";
 import { canonicalSubclass, subclassKey } from "@/lib/subclass-names";
 
 // Palette mapped onto the shared cellar theme.
@@ -107,7 +108,7 @@ export default function GMWorkspace() {
         { data: clsRows },
         { data: dispRows },
       ] = await Promise.all([
-        supabase.from("campaigns").select("id,name,system,gm_id,share_code").order("created_at", { ascending: false }),
+        supabase.from("campaigns").select("id,name,system,gm_id,share_code,time_zone").order("created_at", { ascending: false }),
         supabase.from("class_capabilities").select("class,subclass,capabilities,partnered,partner"),
         supabase.from("species").select("id,name,source,partnered,partner,edition,sort").order("sort").order("name"),
         supabase.from("species_variants").select("id,species_id,name,variant_kind,source,partnered,partner,edition,sort").order("sort").order("name"),
@@ -259,23 +260,24 @@ export default function GMWorkspace() {
     else setDispositions((ds) => ds.map((d) => (d.id === responseId ? { ...d, campaign_id: selected } : d)));
   }
 
-  // Audit T7: deletion runs on the server (app/api/gm/campaign/delete), which removes the campaign's
-  // recordings, maps, handouts and other files as well as its rows. The GM types the name to confirm.
-  async function deleteCampaign(id: string) {
-    const name = (campaigns.find((c) => c.id === id)?.name ?? "").trim();
-    const typed = window.prompt(`Delete "${name}" and all its sessions, characters, events, recordings, maps, handouts and dispositions? Player inventories are unlinked but kept. This can't be undone.\n\nType the campaign's name to confirm:`);
-    if (typed === null) return;
-    if (typed.trim() !== name) { setErr("The name didn't match, so nothing was deleted."); return; }
-    setErr(null);
-    const res = await fetch("/api/gm/campaign/delete", {
-      method: "POST", headers: { "content-type": "application/json" },
-      body: JSON.stringify({ campaignId: id, confirm: typed.trim() }),
-    }).catch(() => null);
-    const out = (await res?.json().catch(() => null)) as { ok?: boolean; error?: string; note?: string } | null;
-    if (!res || !res.ok || !out?.ok) { setErr(out?.error || "Could not delete the campaign. Check your connection and try again."); return; }
-    if (out.note) setErr(out.note);
+  // Push 2 (audit F4, F9, U16): campaign details and the Danger zone live in CampaignSettings, the trash
+  // in CampaignTrash (components/campaign-safety.tsx). Deleting moves a campaign to a 30-day trash; only
+  // "Delete forever now" in the trash erases it (app/api/gm/campaign/delete, which removes the files too).
+  const [trashKey, setTrashKey] = useState(0);
+  const [notice, setNotice] = useState<string | null>(null);
+  function campaignTrashed(id: string, eraseAt: string) {
+    const name = campaigns.find((c) => c.id === id)?.name ?? "The campaign";
     setCampaigns((cs) => cs.filter((c) => c.id !== id));
     if (selected === id) { setSelected(null); setCharacters([]); }
+    setTrashKey((k) => k + 1);
+    const when = eraseAt ? new Date(eraseAt).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : "in 30 days";
+    setNotice(`${name} is in the trash. Restore it any time before ${when}.`);
+  }
+  async function reloadCampaigns() {
+    const { data, error } = await supabase.from("campaigns").select("id,name,system,gm_id,share_code,time_zone").order("created_at", { ascending: false });
+    if (error) { setErr(error.message); return; }
+    setCampaigns(data || []);
+    setNotice(null);
   }
 
   // Partner chips come from every catalog table, not just class_capabilities: a partner can ship
@@ -496,13 +498,19 @@ export default function GMWorkspace() {
                 <option value="5.5e">D&amp;D 5.5e</option>
                 {listModules().filter((m) => m.id !== "dnd5e").map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}
               </select>
-              <button onClick={() => deleteCampaign(sc.id)}
-                style={{ marginLeft: "auto", background: "none", border: `1px solid ${C.line}`, color: C.muted, borderRadius: FORGE_RADIUS, padding: "9px 14px", fontSize: 12.5, cursor: "pointer" }}>
-                Delete campaign
-              </button>
             </div>
           ) : null;
         })()}
+        {(() => {
+          const sc = campaigns.find((c) => c.id === selected);
+          return sc ? (
+            <CampaignSettings campaign={sc} isOwner={sc.gm_id === userId}
+              onChanged={(patch) => setCampaigns((cs) => cs.map((c) => (c.id === sc.id ? { ...c, ...patch } : c)))}
+              onTrashed={(eraseAt) => campaignTrashed(sc.id, eraseAt)} />
+          ) : null;
+        })()}
+        {notice && <p role="status" style={{ margin: "12px 0 0", fontSize: 13, color: C.muted }}>{notice}</p>}
+        <CampaignTrash refreshKey={trashKey} onRestored={reloadCampaigns} />
       </div>
 
       {selected && (

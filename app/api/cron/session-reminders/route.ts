@@ -17,6 +17,7 @@ export const maxDuration = 60;
 //     one-click unsubscribe link (audit T12; the old mailto went to an address nobody reads);
 //   - the session is marked reminded only when at least one email went out or there was no one to email,
 //     so a run where every send failed is tried again (it used to be marked sent regardless).
+//   - a campaign in the trash (push 2) sends nothing.
 
 const REMINDER_FROM = "Six Axes <recaps@send.kerfandcode.com>";
 const WINDOW_HOURS = 30; // remind for sessions scheduled within the next ~30h
@@ -100,8 +101,11 @@ export async function GET(request: Request) {
     const [{ data: rsvps }, { data: party }, { data: campaign }] = await Promise.all([
       sb.from("attendance").select("profile_id, status").eq("session_id", s.id),
       sb.from("characters").select("profile_id").eq("campaign_id", s.campaign_id).eq("kind", "pc").eq("active", true).not("profile_id", "is", null),
-      sb.from("campaigns").select("name, share_code, time_zone, gm_id").eq("id", s.campaign_id).single(),
+      sb.from("campaigns").select("name, share_code, time_zone, gm_id, deleted_at").eq("id", s.campaign_id).single(),
     ]);
+    // A campaign in the trash (p139) sends nothing; it is not marked, so a restore before the session
+    // still gets its reminder on the next run.
+    if ((campaign as { deleted_at?: string | null } | null)?.deleted_at) continue;
     const rows = (rsvps as { profile_id: string | null; status: string }[] | null) ?? [];
     const answered = new Set(rows.map((r) => r.profile_id).filter((p): p is string => !!p));
     const going = new Set(rows.filter((r) => r.status === "going" || r.status === "maybe").map((r) => r.profile_id).filter((p): p is string => !!p));

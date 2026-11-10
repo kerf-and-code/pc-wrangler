@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { listAll, removeAll } from "@/lib/storage/purge";
+import { purgeCampaign } from "@/lib/campaign/purge";
 import { opsAlert } from "@/lib/ops-alert";
 
 export const maxDuration = 60;
@@ -20,7 +20,6 @@ export const maxDuration = 60;
 // If step 3 partly fails the campaign is still gone; the leftovers are logged and alerted with the
 // campaign id so they can be cleared, and the GM is told plainly rather than shown a clean success.
 
-const BUCKETS = ["session-audio", "campaign-maps", "table-files"] as const;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function POST(request: Request) {
@@ -42,29 +41,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Type the campaign's name exactly to confirm." }, { status: 400 });
   }
 
-  // 1. Recording paths, before the rows that hold them are gone.
-  const { data: tracks, error: trErr } = await admin.from("audio_tracks").select("storage_path").eq("campaign_id", campaignId).not("storage_path", "is", null);
-  if (trErr) return NextResponse.json({ error: "Could not read the campaign's recordings. Nothing was deleted; try again." }, { status: 500 });
-  const audioPaths = ((tracks as { storage_path: string }[] | null) ?? []).map((t) => t.storage_path);
-
-  // 2. The rows.
-  const { error: delErr } = await supabase.rpc("delete_campaign", { p_campaign: campaignId });
-  if (delErr) return NextResponse.json({ error: delErr.message }, { status: 500 });
-
-  // 3. The files.
-  const failures: string[] = [];
-  let removed = 0;
-  for (const bucket of BUCKETS) {
-    let paths: string[] = bucket === "session-audio" ? [...audioPaths] : [];
-    try {
-      paths = paths.concat(await listAll(admin, bucket, campaignId));
-    } catch (e) {
-      failures.push(e instanceof Error ? e.message : `${bucket}: could not list`);
-    }
-    const r = await removeAll(admin, bucket, paths);
-    removed += r.removed;
-    failures.push(...r.failures);
+  // Paths first, then the rows (as the signed-in GM: delete_campaign checks it), then the files.
+  const result = await purgeCampaign(admin, campaignId, async () => {
+    const { error } = await supabase.rpc("delete_campaign", { p_campaign: campaignId });
+    return error ? error.message : null;
+  });
+  if (!result.ok) {
+    return NextResponse.json({ error: result.stage === "read"
+      ? "Could not read the campaign's recordings. Nothing was deleted; try again."
+      : result.error }, { status: 500 });
   }
+  const failures = result.failures;
+  const removed = result.filesRemoved;
 
   if (failures.length) {
     await opsAlert("campaign delete", `campaign ${campaignId} deleted, but some files were left in storage`, failures.slice(0, 5));
