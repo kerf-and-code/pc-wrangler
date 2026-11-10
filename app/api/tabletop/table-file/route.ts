@@ -35,9 +35,11 @@ export async function GET(req: Request) {
   if (!user) return new NextResponse("Sign in first.", { status: 401, headers: { "Cache-Control": "no-store" } });
   const { data: ok } = await supabase.rpc("tabletop_file_ok", { p_campaign: c, p_path: p });
   if (ok !== true) return notFound();
-  const { data, error } = await createAdminClient().storage.from(BUCKET).createSignedUrl(p, 3600);
+  // Audit B19 (push 6): a short link, never cached, so a picture the GM hides stops opening within two
+  // minutes (it stayed viewable for up to an hour).
+  const { data, error } = await createAdminClient().storage.from(BUCKET).createSignedUrl(p, 120);
   if (error || !data?.signedUrl) return notFound();
-  return NextResponse.redirect(data.signedUrl, { status: 302, headers: { "Cache-Control": "private, max-age=600" } });
+  return NextResponse.redirect(data.signedUrl, { status: 302, headers: { "Cache-Control": "no-store" } });
 }
 
 async function gmOf(campaignId: string): Promise<NextResponse | null> {

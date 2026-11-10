@@ -1449,7 +1449,10 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
 
   useEffect(() => {
     if (!state?.me) return;
-    const ch = supabase.channel(`tabletop:${campaignId}`, { config: { broadcast: { self: false }, presence: { key: state.me } } });
+    // Audit B11 (push 6): a private channel, which only the campaign's GM and players can join (p142's
+    // realtime.messages policies). NEXT_PUBLIC_TABLETOP_PUBLIC_CHANNEL=1 goes back to the old public one.
+    const privateChannel = process.env.NEXT_PUBLIC_TABLETOP_PUBLIC_CHANNEL !== "1";
+    const ch = supabase.channel(`tabletop:${campaignId}`, { config: { private: privateChannel, broadcast: { self: false }, presence: { key: state.me } } });
     const upsert = (row: Token) => {
       const st = stateRef.current; if (!st?.scene) return;
       // a token that went to another floor (or scene) leaves this one
@@ -1497,6 +1500,8 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
         remoteDrag.current.set(d.id, { x: d.x, y: d.y, until: performance.now() + 4000 }); requestDraw();
       })
       .on("broadcast", { event: "vanish" }, ({ payload }) => {
+        // only the GM hides tokens from the players' view (audit B11)
+        if ((payload as { from?: string }).from !== stateRef.current?.campaign.gm_id) return;
         // the GM moved these into the fog: players stop drawing them (the database stops sending them)
         if (stateRef.current?.role === "gm") return;
         for (const id of ((payload as { ids?: string[] }).ids ?? [])) { const t = tokensRef.current.get(id); if (t && !t.mine) { tokensRef.current.delete(id); remoteDrag.current.delete(id); } }
@@ -1510,7 +1515,8 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
       .on("broadcast", { event: "ping" }, ({ payload }) => {
         const p = payload as { x: number; y: number; color: string; pull?: boolean };
         pings.current.push({ x: p.x, y: p.y, color: p.color, born: performance.now() });
-        if (p.pull) { const cv = canvasRef.current; if (cv) { const r = cv.getBoundingClientRect(); camRef.current = centerOn(camRef.current, p.x * cellRef.current, p.y * cellRef.current, r.width, r.height); } }
+        // only the GM's ping pulls everyone's view (audit B11)
+        if (p.pull && (payload as { from?: string }).from === stateRef.current?.campaign.gm_id) { const cv = canvasRef.current; if (cv) { const r = cv.getBoundingClientRect(); camRef.current = centerOn(camRef.current, p.x * cellRef.current, p.y * cellRef.current, r.width, r.height); } }
         requestDraw();
       })
       .on("broadcast", { event: "refresh" }, () => { void load(); })
@@ -1566,7 +1572,8 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   }, [supabase, campaignId, state?.me, state?.role]);
 
   const send = (event: string, payload: Record<string, unknown>) => {
-    void channelRef.current?.send({ type: "broadcast", event, payload });
+    // every message says who sent it, so receivers can refuse GM-only ones from anyone else (audit B11)
+    void channelRef.current?.send({ type: "broadcast", event, payload: { ...payload, from: stateRef.current?.me } });
     if (event === "combat") kickRef.current();
   };
 

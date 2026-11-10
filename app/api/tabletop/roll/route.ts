@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { roll, DiceError } from "@/lib/dice";
-import { sortForTurns, type Combatant } from "@/lib/combat";
+import { type Combatant } from "@/lib/combat";
 import { critDice } from "@/lib/combat-effects";
 
 // app/api/tabletop/roll/route.ts (2026-11-06)
@@ -108,7 +108,8 @@ export async function POST(req: Request) {
 
   const admin = createAdminClient();
   let characterId: string | null = null;
-  let actorName = (typeof b.asName === "string" ? b.asName : "").trim().slice(0, 80);
+  // Audit B16 (push 6): only the GM rolls under a name; a player rolls as themselves or their character.
+  let actorName = isGm && typeof b.asName === "string" ? b.asName.trim().slice(0, 80) : "";
   if (b.characterId) {
     const { data: ch } = await admin.from("characters").select("id, name, campaign_id, profile_id").eq("id", b.characterId).maybeSingle();
     const row = ch as { id: string; name: string; campaign_id: string; profile_id: string | null } | null;
@@ -241,20 +242,15 @@ export async function POST(req: Request) {
   }).select("*").single();
   if (mErr) return NextResponse.json({ error: `The roll was made but could not be posted: ${mErr.message}` }, { status: 500 });
 
+  // Audit B8 (push 6): the fight row is locked while one initiative is set and the order re-sorted
+  // (tabletop_set_initiative, p142), so two players rolling at once no longer overwrite each other.
   let initiativeSet = false;
   if (b.initiative && characterId) {
-    const { data: cb } = await admin.from("combats").select("id, round, turn, combatants")
-      .eq("campaign_id", campaignId).eq("status", "active").order("updated_at", { ascending: false }).limit(1).maybeSingle();
-    const row = cb as { id: string; round: number; turn: number; combatants: Combatant[] } | null;
-    const mine = row?.combatants.find((c) => c.kind === "pc" && c.characterId === characterId);
-    if (row && mine && mine.initiative == null) {
-      const withInit = row.combatants.map((c) => (c.id === mine.id ? { ...c, initiative: result.total } : c));
-      const first = row.round === 1 && row.turn === 0;
-      const { error: cErr } = await admin.from("combats").update({
-        combatants: first ? sortForTurns(withInit) : withInit, turn: first ? 0 : row.turn, updated_at: new Date().toISOString(),
-      }).eq("id", row.id);
-      initiativeSet = !cErr;
-    }
+    const { data: set, error: iErr } = await admin.rpc("tabletop_set_initiative", {
+      p_campaign: campaignId, p_character: characterId, p_total: Math.round(result.total),
+    });
+    if (iErr) console.error("tabletop/roll: initiative not set (has p142 run?)", iErr.message);
+    initiativeSet = set === true;
   }
 
   return NextResponse.json({ ok: true, message: msg, logged: !!eventId, initiativeSet, against, saveNote, saved });

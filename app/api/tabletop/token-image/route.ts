@@ -75,8 +75,14 @@ export async function DELETE(req: Request) {
   const urls = (Array.isArray(body.urls) ? body.urls : []).filter((u): u is string => typeof u === "string").slice(0, 4);
   if (!urls.length) return NextResponse.json({ ok: true, removed: 0 });
 
-  const refused = await mayChange(supabase, campaignId, tokenId);
-  if (refused) return NextResponse.json({ error: refused }, { status: 403 });
+  // Audit B21 (push 6): only the GM tidies away unused token pictures. A player who controlled any token
+  // could delete pictures the GM had uploaded but not placed yet. A player's request removes nothing.
+  const { data: isGm } = await supabase.rpc("is_campaign_gm", { p_campaign: campaignId });
+  if (!isGm) {
+    const refused = await mayChange(supabase, campaignId, tokenId);
+    if (refused) return NextResponse.json({ error: refused }, { status: 403 });
+    return NextResponse.json({ ok: true, removed: 0 });
+  }
 
   const admin = createAdminClient();
   // the exact public address of this campaign's tokens folder, so only its files can be named
