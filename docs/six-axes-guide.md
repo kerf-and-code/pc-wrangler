@@ -36,7 +36,7 @@ Players see three groups. Two are about the table they arrived through; one is a
 
 **Session.** Schedule (upcoming sessions with RSVP, and the availability polls you post, answered in Discord), Initiative (the turn order of a fight the GM is running, whose turn it is, and conditions on the party), Record (the in-person self-recorder), and Check-in (a quick post-session pulse, resubmittable).
 
-**You.** The part that is theirs, not the table's. Campaigns lists every table they play at. Characters is their whole stable across all of them. Threads is a private tracker for favors owed, grudges, and hooks they have not followed up, and nobody else can see it, not even you. Codex gathers what they have learned across every campaign. Your profile is the questionnaire taken AS THEMSELVES rather than as a character. Settings is where they export everything you hold about them, or delete their account.
+**You.** The part that is theirs, not the table's. Campaigns lists every table they play at. Characters is their whole stable across all of them. Threads is a private tracker for favors owed, grudges, and hooks they have not followed up, and nobody else can see it, not even you. Codex gathers what they have learned across every campaign. You as a player is the play-style questionnaire taken AS THEMSELVES, across every campaign; Character play style (This table) is the same questions answered as one character. Settings is where they export everything you hold about them, or delete their account.
 
 ## Guests and accounts
 

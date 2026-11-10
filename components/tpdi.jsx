@@ -10,7 +10,7 @@ import { SAX, AXES } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 
 /*
-  TPDI — Player Disposition Inventory (cold-start prior)
+  TPDI: Player Disposition Inventory (cold-start prior)
   Single-file front door for the player-typing system.
   Scoring is methodology-honest:
     - Flavor axes (Character / Encounter / System / Table / World) are ipsatized
@@ -365,8 +365,10 @@ export default function TPDI({ scope = "character" }) {
               />
             </div>
 
+            {/* Audit U1: the two scopes are the two levels of the disposition model, so each page says
+                which one it is. They used to share this heading and the player-scope advice below. */}
             <h1 className="tpdi-serif" style={{ fontSize: 40, lineHeight: 1.08, fontWeight: 600, margin: "8px 0 16px" }}>
-              How do you play?
+              {isPlayerScope ? "How do you play?" : "How does your character play?"}
             </h1>
             <p style={{ fontSize: 17, lineHeight: 1.6, color: "#D8D0C0", maxWidth: 560 }}>
               Twenty-four quick reads on what pulls you to the table. There are no better or worse
@@ -374,8 +376,15 @@ export default function TPDI({ scope = "character" }) {
               you log real sessions, how you actually play refines it.
             </p>
             <p style={{ fontSize: 14, lineHeight: 1.6, color: C.muted, maxWidth: 560, marginTop: 14 }}>
-              Answer for how you tend to play in general, not one character or one night. If a
-              statement does not fit your experience yet, you can mark it as no basis to answer.
+              {isPlayerScope
+                ? "Answer as yourself, across every character you play, not one character or one night."
+                : "Answer as the character you play in this campaign, the way they act at the table, even where that differs from you."}
+              {" "}If a statement does not fit your experience yet, you can mark it as no basis to answer.
+            </p>
+            <p style={{ fontSize: 13, lineHeight: 1.6, color: C.muted, maxWidth: 560, marginTop: 8 }}>
+              {isPlayerScope
+                ? <>This is you as a player, the same for every campaign. Each character also has its own: <a href="/play" style={{ color: C.brass }}>Character play style</a>.</>
+                : <>This is for one character. How you play as yourself, across every campaign, is a separate questionnaire: <a href="/me/profile" style={{ color: C.brass }}>You as a player</a>.</>}
             </p>
 
             <input value={playerName} onChange={(e) => setPlayerName(e.target.value)}

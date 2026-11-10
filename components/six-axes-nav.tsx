@@ -42,8 +42,8 @@ const GM_GROUPS: Group[] = [
     { href: "/gm/start", label: "Start here" },
     { href: "/gm", label: "Workspace" },
     { href: "/gm/roster", label: "Roster" },
-    // The play-style questionnaire, taken by the GM. It used to sit alone as "Profile".
-    { href: "/play", label: "Your play style" },
+    // The GM's own play-style questionnaire is "You as a player" in the You group this menu ends with
+    // (audit U1: this entry pointed at the character-scope page, a second door to the same questionnaire).
     // (Their own character sheet moved to the "You" group, which every GM menu now ends with.)
   ] },
   { label: "Prep", children: [
@@ -103,7 +103,8 @@ const PLAYER_TABLE: PGroup = {
   children: [
     // The Player Disposition Inventory. Labeled "Inventory" until November 2026, which in a D&D
     // app reads as the character's gear.
-    { href: "/play", label: "Play style" },
+    // Audit U1: the character-scope questionnaire; "You as a player" (/me/profile) is the player scope.
+    { href: "/play", label: "Character play style" },
     { href: "/me", label: "Journal" },
     { href: "/recaps", label: "Recaps" },
     { href: "/lore", label: "Lore" },
@@ -132,7 +133,7 @@ const PLAYER_YOU: PGroup = {
     { href: "/me/threads", label: "Threads" },
     { href: "/me/codex", label: "Codex" },
     { href: "/me/notes", label: "Notes" },
-    { href: "/me/profile", label: "Your profile" },
+    { href: "/me/profile", label: "You as a player" },
     { href: "/me/settings", label: "Settings" },
   ],
 };
