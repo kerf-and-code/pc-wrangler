@@ -100,7 +100,7 @@ import {
 } from "@/lib/pc-library";
 import {
   describeItem, describeBackground, describeSpecies, describeSkill, describeFeat,
-  traitList, type TraitEntry, type Described,
+  traitList, shownSpeciesTraits, type TraitEntry, type Described, type OwnTrait, type OwnSpeciesMech,
   type ItemRecord, type BackgroundRecord, type SpeciesMechRecord,
 } from "@/lib/descriptions";
 import { CharacterSheetPrint, type PrintTrait, type PrintFeature } from "@/components/character-sheet-print";
@@ -765,8 +765,22 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
     return fx;
   }, [build, speciesVariant, srd.speciesByName, srd.variantByName, srd.bgByName, srd.featByName, resolvedSpecies, edition]);
 
+  // Every species trait the sheets show: SRD text, else the bundled summary (rules-data), plus the
+  // player's own (a same-name own trait replaces the built-in one). One list, so the Species tab, the
+  // Features tab, the play sheet and the print agree.
+  const speciesTraitsShown = useMemo(() => shownSpeciesTraits(
+    traitList(srd.speciesByName[build.meta.species]?.traits),
+    speciesMechanics(build.meta.species, ruleset)?.traits,
+    build.speciesTraits,
+  ), [srd.speciesByName, build.meta.species, build.speciesTraits, ruleset]);
+
   const deriveCtx = useMemo(() => {
-    const base0 = printedAbilities ? suppressItemEffects(ctx) : ctx;
+    const raw0 = printedAbilities ? suppressItemEffects(ctx) : ctx;
+    // A species the rules data does not know gets the player's own speed, darkvision and resistances.
+    const own = build.speciesMech;
+    const base0 = own && build.meta.species && !raw0.species?.[build.meta.species]
+      ? { ...raw0, species: { ...raw0.species, [build.meta.species]: { speed: own.speed, darkvision: own.darkvision, resist: own.resist } } }
+      : raw0;
     // The picked lineage / ancestry / legacy changes the species entry itself (Wood Elf speed 35,
     // Drow darkvision 120, a legacy's resistance), so it is laid over a COPY of that entry.
     const re = resolvedSpecies?.option ? resolvedSpecies.effects : null;
@@ -800,7 +814,7 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
         },
       },
     };
-  }, [ctx, printedAbilities, effects.resist, build.meta.species, resolvedSpecies]);
+  }, [ctx, printedAbilities, effects.resist, build.meta.species, build.speciesMech, resolvedSpecies]);
 
   // Apply the chosen species' ability bonuses (2014 carry "CON +2"; 2024 carry none) into
   // build.featMods, which the engine adds to the base scores.
@@ -1182,6 +1196,9 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
     t.speciesChoices = { ...(t.speciesChoices || {}), [trait]: value };
     return b;
   });
+  // The player's own species traits and, for a species the rules data does not know, its numbers.
+  const setOwnTraits = (list: OwnTrait[]) => patch((b) => ({ ...b, speciesTraits: list }));
+  const setOwnMech = (m: OwnSpeciesMech) => patch((b) => ({ ...b, speciesMech: m }));
 
   const toggleSpell = (name: string, cantrip: boolean) => patch((b) => {
     const key = cantrip ? "cantrips" : "known";
@@ -1783,7 +1800,7 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
                           classes={[{ className: build.meta.className, level: build.level }, ...multi.map((c) => ({ className: c.className, level: c.level }))]
                             .filter((c) => c.className)
                             .map((c) => ({ ...c, groups: classProgression(classRecWithSub(c.className), c.level) }))}
-                          species={build.meta.species} speciesRec={srd.speciesByName[build.meta.species]}
+                          species={build.meta.species} speciesRec={srd.speciesByName[build.meta.species]} shownTraits={speciesTraitsShown}
                           variantName={speciesVariant} variantRec={srd.variantByName[speciesVariant]}
                           feats={[...chosenFeats, ...importedFeats]} itemNotes={sheet.itemNotes || []}
                           importAdjust={importedSheet ? build.importAdjust : undefined}
@@ -2000,6 +2017,9 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
                     .map((e) => e.name).concat(["Gaming Set", "Musical Instrument"]).sort()}
                   choices={(build as Build & { speciesChoices?: Record<string, string> }).speciesChoices || {}}
                   onSpecies={setSpecies} onVariant={setVariant} onChoice={setSpeciesChoice}
+                  ownTraits={build.speciesTraits || []} onOwnTraits={setOwnTraits}
+                  ownMech={build.speciesMech} onOwnMech={setOwnMech}
+                  knownSpecies={!!ctx.species?.[build.meta.species]}
                 />
               )}
 
@@ -2117,7 +2137,7 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
                   masteries={Object.entries((build as Build & { classChoices?: Record<string, string[]> }).classChoices || {})
                     .filter(([k]) => /Weapon Mastery/i.test(k))
                     .flatMap(([, v]) => v)}
-                  species={build.meta.species} speciesRec={srd.speciesByName[build.meta.species]}
+                  species={build.meta.species} speciesRec={srd.speciesByName[build.meta.species]} shownTraits={speciesTraitsShown}
                   variantName={speciesVariant} variantRec={srd.variantByName[speciesVariant]}
                   background={build.meta.background} backgroundRec={srd.bgByName[build.meta.background]}
                   className={build.meta.className} classRec={classRecWithSub(build.meta.className)}
@@ -2169,7 +2189,7 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
                   className={build.meta.className} subclass={build.meta.subclass}
                   background={build.meta.background} level={build.level}
                   sheet={sheet}
-                  speciesTraits={traitList(srd.speciesByName[build.meta.species]?.traits) as PrintTrait[]}
+                  speciesTraits={speciesTraitsShown as PrintTrait[]}
                   variantTraits={traitList(srd.variantByName[speciesVariant]?.traits) as PrintTrait[]}
                   classFeatures={classFeatureGroups}
                   feats={chosenFeats as PrintFeature[]}
@@ -2796,8 +2816,12 @@ function SpellsPanel({ build, spells, sheet, edition, structuredRec, granted, on
  */
 function SpeciesPanel({
   build, speciesVariant, speciesOpts, variantOpts, speciesRec, variantRec, desc, mech, resolved, toolNames,
-  choices, onSpecies, onVariant, onChoice,
+  choices, onSpecies, onVariant, onChoice, ownTraits, onOwnTraits, ownMech, onOwnMech, knownSpecies,
 }: {
+  ownTraits: OwnTrait[]; onOwnTraits: (list: OwnTrait[]) => void;
+  ownMech: OwnSpeciesMech | undefined; onOwnMech: (m: OwnSpeciesMech) => void;
+  /** Whether the rules data knows this species (its speed, darkvision and resistances apply on their own). */
+  knownSpecies: boolean;
   mech: ReturnType<typeof speciesMechanics>;
   resolved: ReturnType<typeof resolveSpecies>;
   toolNames: string[];
@@ -3013,15 +3037,88 @@ function SpeciesPanel({
         </div>
       )}
 
-      {build.meta.species && shownTraits.length === 0 && (
+      {build.meta.species && shownTraits.length === 0 && ownTraits.length === 0 && (
         <Muted>
-          No trait data for this species yet. Catalog entries from partnered content are names only;
-          the SRD species carry full traits.
+          No trait data for this species yet. Add its traits below in your own words (or from your
+          book), and they show on your sheet.
         </Muted>
+      )}
+
+      {build.meta.species && (
+        <OwnSpeciesTraits species={build.meta.species} traits={ownTraits} onTraits={onOwnTraits}
+          mech={knownSpecies ? undefined : ownMech || {}} onMech={onOwnMech} />
       )}
     </div>
   );
 }
+
+/**
+ * The player's own species traits (audit: species traits). For a homebrew species, a book the app
+ * has no data for, or a trait the bundled summary leaves out. Only the player's words are stored, on
+ * their character; nothing here ships as app data. For a species the rules data does not know, it also
+ * takes the numbers the sheet needs (speed, darkvision, resistances), since nothing else supplies them.
+ */
+function OwnSpeciesTraits({ species, traits, onTraits, mech, onMech }: {
+  species: string;
+  traits: OwnTrait[]; onTraits: (list: OwnTrait[]) => void;
+  mech: OwnSpeciesMech | undefined; onMech: (m: OwnSpeciesMech) => void;
+}) {
+  const field = { ...stoneField(), fontSize: 13.5, padding: "8px 10px" };
+  const num = (v: string) => { const n = Math.round(Number(v)); return v.trim() && Number.isFinite(n) && n >= 0 && n <= 500 ? n : undefined; };
+  const setAt = (i: number, p: Partial<OwnTrait>) => onTraits(traits.map((t, j) => (j === i ? { ...t, ...p } : t)));
+  return (
+    <div style={{ marginTop: 18, paddingTop: 14, borderTop: `1px solid ${STONE.hi}` }}>
+      <label style={forgeLabel}>Your own traits</label>
+      <p style={{ fontSize: 12.5, color: STONE.inkFaint, margin: "0 0 10px", lineHeight: 1.55 }}>
+        Add anything {species} has that is not listed above. These stay with this character and show on its sheet.
+        {traits.some((t) => t.from === "sheet") ? " Traits marked “from your sheet” came in with your D&D Beyond import." : ""}
+      </p>
+      <div style={{ display: "grid", gap: 10 }}>
+        {traits.map((t, i) => (
+          <div key={i} style={{ background: "rgba(0,0,0,0.24)", borderRadius: 4, padding: "10px 12px", display: "grid", gap: 6 }}>
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <input aria-label="Trait name" value={t.name} placeholder={"Trait name (Darkvision, Celestial Resistance…)"}
+                onChange={(e) => setAt(i, { name: e.target.value.slice(0, 80), from: "player" })} style={{ ...field, flex: 1 }} />
+              {t.from === "sheet" && <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 11, color: STONE.inkFaint, whiteSpace: "nowrap" }}>from your sheet</span>}
+              <button type="button" className="forge-btn" onClick={() => onTraits(traits.filter((_, j) => j !== i))}
+                aria-label={`Remove ${t.name || "this trait"}`} style={{ ...stoneButton("ghost"), fontSize: 12, padding: "6px 10px" }}>Remove</button>
+            </div>
+            <textarea aria-label="What it does" value={t.desc} rows={3} placeholder="What it does, in a sentence or two."
+              onChange={(e) => setAt(i, { desc: e.target.value.slice(0, 1500), from: "player" })} style={{ ...field, resize: "vertical", lineHeight: 1.5 }} />
+          </div>
+        ))}
+      </div>
+      <button type="button" className="forge-btn" onClick={() => onTraits([...traits, { name: "", desc: "", from: "player" }])}
+        style={{ ...stoneButton("ghost"), fontSize: 12.5, padding: "6px 12px", marginTop: 10 }}>+ Add a trait</button>
+
+      {mech && (
+        <div style={{ marginTop: 14 }}>
+          <label style={forgeLabel}>Numbers for your sheet</label>
+          <p style={{ fontSize: 12.5, color: STONE.inkFaint, margin: "0 0 8px", lineHeight: 1.55 }}>
+            Six Axes has no rules data for {species}, so fill these in and the sheet uses them. Leave a box empty if it does not apply.
+          </p>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 10 }}>
+            <label style={{ fontSize: 12.5, color: STONE.inkDim }}>Speed (feet)
+              <input inputMode="numeric" value={mech.speed ?? ""} placeholder="30"
+                onChange={(e) => onMech({ ...mech, speed: num(e.target.value) })} style={{ ...field, marginTop: 4 }} />
+            </label>
+            <label style={{ fontSize: 12.5, color: STONE.inkDim }}>Darkvision (feet)
+              <input inputMode="numeric" value={mech.darkvision ?? ""} placeholder="none"
+                onChange={(e) => onMech({ ...mech, darkvision: num(e.target.value) })} style={{ ...field, marginTop: 4 }} />
+            </label>
+            <label style={{ fontSize: 12.5, color: STONE.inkDim }}>Resistances (comma separated)
+              <input value={(mech.resist || []).join(", ")} placeholder="poison, necrotic"
+                onChange={(e) => onMech({ ...mech, resist: e.target.value.split(",").map((x) => x.trim().toLowerCase()).filter(Boolean).slice(0, 13) })}
+                style={{ ...field, marginTop: 4 }} />
+            </label>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
 
 
 /**
@@ -4800,10 +4897,12 @@ function ProficiencyBlock({ coreTraits, backgroundRec, masteries }: {
 }
 
 function FeaturesPanel({
-  species, speciesRec, variantName, variantRec, background, backgroundRec,
+  species, speciesRec, shownTraits, variantName, variantRec, background, backgroundRec,
   className, classRec, level, chosenFeats, coreTraits, masteries,
 }: {
   species: string; speciesRec: SpeciesMechRecord | undefined;
+  /** SRD, bundled summary and the player's own traits together (shownSpeciesTraits). */
+  shownTraits?: TraitEntry[];
   variantName: string; variantRec: SpeciesVariantRec | undefined;
   background: string; backgroundRec: BackgroundRecord | undefined;
   className: string; classRec: ClassRecord | undefined;
@@ -4812,7 +4911,7 @@ function FeaturesPanel({
   coreTraits: string;
   masteries: string[];
 }) {
-  const speciesTraits = traitList(speciesRec?.traits);
+  const speciesTraits = shownTraits ?? traitList(speciesRec?.traits);
   const variantTraits = traitList(variantRec?.traits);
   const bgDesc = describeBackground(backgroundRec);
   // Class features the character has gained, as a compact "level: names" roster.
@@ -4837,7 +4936,7 @@ function FeaturesPanel({
       <FeatureGroup label={species || "Species"}>
         {speciesTraits.length > 0
           ? speciesTraits.map((t, i) => <TraitItem key={i} trait={t} />)
-          : <MutedNote>Traits for this species aren&rsquo;t modeled yet, only its name is on the sheet.</MutedNote>}
+          : <MutedNote>No traits recorded for this species yet. Add your own on the Species tab.</MutedNote>}
       </FeatureGroup>
 
       {/* Lineage / subrace */}
@@ -5247,9 +5346,10 @@ const SHEET_CSS = `
 // Features and traits: each class's features up to its level (name first, the rules text a click
 // away, as D&D Beyond shows them), the species and lineage traits, feats, and what active magic items
 // add. Proficiencies sit in the left column (SheetProficiencies).
-function SheetFeatures({ classes, species, speciesRec, variantName, variantRec, feats, itemNotes, importAdjust, onClearAdjust, onRematch }: {
+function SheetFeatures({ classes, species, speciesRec, shownTraits, variantName, variantRec, feats, itemNotes, importAdjust, onClearAdjust, onRematch }: {
   classes: { className: string; level: number; groups: LevelGroup[] }[];
   species: string; speciesRec: SpeciesMechRecord | undefined;
+  shownTraits?: TraitEntry[];
   variantName: string; variantRec: SpeciesVariantRec | undefined;
   feats: { level: number; name: string; desc?: string; category?: string }[];
   itemNotes: string[];
@@ -5260,7 +5360,7 @@ function SheetFeatures({ classes, species, speciesRec, variantName, variantRec, 
   const toggle = (k: string) => setOpen((s) => { const n = new Set(s); if (n.has(k)) n.delete(k); else n.add(k); return n; });
   const allKeys = classes.flatMap((c) => c.groups.flatMap((g) => g.features.map((f, i) => `${c.className}-${g.level}-${i}`)));
   const allOpen = allKeys.length > 0 && allKeys.every((k) => open.has(k));
-  const speciesTraits = traitList(speciesRec?.traits);
+  const speciesTraits = shownTraits ?? traitList(speciesRec?.traits);
   const variantTraits = traitList(variantRec?.traits);
   return (
     <div style={stonePanel()}>
@@ -5290,7 +5390,7 @@ function SheetFeatures({ classes, species, speciesRec, variantName, variantRec, 
       <FeatureGroup label={species || "Species"}>
         {speciesTraits.length > 0
           ? speciesTraits.map((t, i) => <TraitItem key={i} trait={t} />)
-          : <MutedNote>Traits for this species are not in the ruleset data yet.</MutedNote>}
+          : <MutedNote>No traits recorded for this species yet. Add your own in the Forge, on the Species tab.</MutedNote>}
       </FeatureGroup>
       {variantName && (
         <FeatureGroup label={`${variantName}${variantRec?.variant_kind ? ` (${variantRec.variant_kind})` : ""}`}>

@@ -105,6 +105,19 @@ export type Build = {
   hpMaxMod?: number;
   hpMaxOverride?: number | null;
   /**
+   * Species traits the player keeps on the character: for a homebrew species, a book the app has no
+   * data for, or anything the bundled summaries miss. A D&D Beyond import fills it from the player's own
+   * sheet (from: "sheet"). Shown with the species' built-in traits; one with the same name replaces it.
+   * Kept with the character, never shipped as app data.
+   */
+  speciesTraits?: { name: string; desc: string; from?: "sheet" | "player" }[];
+  /**
+   * Standing numbers for a species the rules data does not know (no speed, darkvision or resistances
+   * otherwise). Only used when the species has no entry in the rules context, so it can never fight a
+   * known species' own figures.
+   */
+  speciesMech?: { speed?: number; darkvision?: number; resist?: string[] };
+  /**
    * Labels only, for the ability breakdown: where featMods' points came from (background, species,
    * choices). The engine still adds featMods itself; when these do not add up to it per ability, the
    * breakdown shows featMods as one line instead.

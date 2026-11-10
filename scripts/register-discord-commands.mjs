@@ -87,6 +87,21 @@ const commands = [
     description: "Stop the current recording and process the audio.",
     default_member_permissions: MANAGE_GUILD,
   },
+  {
+    name: "consent",
+    description: "Turn recording of your voice on or off for this campaign.",
+    options: [
+      {
+        name: "choice",
+        description: "on to allow recording, off to stop it.",
+        type: 3, // STRING
+        required: true,
+        choices: [{ name: "on", value: "on" }, { name: "off", value: "off" }],
+      },
+      CODE_OPTIONAL,
+    ],
+    // no permission gate: players use this
+  },
 ];
 
 const url = TEST_GUILD

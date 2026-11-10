@@ -37,6 +37,8 @@ export default function CapturePage() {
   useRememberSession(campaignId, sessionId);
   const [chars, setChars] = useState<Char[]>([]);
   const [blanket, setBlanket] = useState<Record<string, boolean>>({});
+  // Audit F5: players who switched their standing consent off (Settings or /consent), shown as such.
+  const [withdrawn, setWithdrawn] = useState<Record<string, boolean>>({});
   const [optout, setOptout] = useState<Record<string, boolean>>({});
   const [att, setAtt] = useState<Record<string, string>>({});
   const [consentOk, setConsentOk] = useState<boolean>(false);
@@ -85,19 +87,23 @@ export default function CapturePage() {
   }
 
   useEffect(() => {
-    if (!sessionId) { setBlanket({}); setOptout({}); setAtt({}); setJob(null); setTracks([]); setConsentOk(false); return; }
+    if (!sessionId) { setBlanket({}); setWithdrawn({}); setOptout({}); setAtt({}); setJob(null); setTracks([]); setConsentOk(false); return; }
     let active = true;
     (async () => {
-      const [{ data: bl }, { data: oo }, { data: aRows }, { data: jobs }] = await Promise.all([
+      const [{ data: bl }, { data: oo }, { data: aRows }, { data: jobs }, { data: wd }] = await Promise.all([
         supabase.from("recording_consents").select("character_id").eq("campaign_id", campaignId).is("session_id", null).eq("consented", true),
         supabase.from("recording_consents").select("character_id").eq("session_id", sessionId).eq("consented", false),
         supabase.from("attendance").select("character_id, status").eq("session_id", sessionId),
         supabase.from("capture_jobs").select("id, status, source").eq("session_id", sessionId).order("created_at", { ascending: false }).limit(1),
+        supabase.from("recording_consents").select("character_id").eq("campaign_id", campaignId).is("session_id", null).eq("consented", false),
       ]);
       if (!active) return;
       const bmap: Record<string, boolean> = {};
       ((bl as { character_id: string | null }[]) || []).forEach((r) => { if (r.character_id) bmap[r.character_id] = true; });
       setBlanket(bmap);
+      const wmap: Record<string, boolean> = {};
+      ((wd as { character_id: string | null }[]) || []).forEach((r) => { if (r.character_id) wmap[r.character_id] = true; });
+      setWithdrawn(wmap);
       const omap: Record<string, boolean> = {};
       ((oo as { character_id: string | null }[]) || []).forEach((r) => { if (r.character_id) omap[r.character_id] = true; });
       setOptout(omap);
@@ -130,6 +136,21 @@ export default function CapturePage() {
       setError(`${out ? "Opt-out" : "Opt-in"} was not saved: ${e.message}`);
     }
     loadGate(sessionId);
+  }
+
+  // Audit F5: the GM can switch a player's standing consent OFF (for example when the player asks in
+  // person), but never on: only the player can give consent.
+  async function revokeStanding(charId: string, name: string) {
+    if (!campaignId) return;
+    if (!window.confirm(`Revoke ${name}'s standing consent for this campaign? Their voice will not be recorded from the next recording until they consent again themselves.`)) return;
+    setError(null);
+    const { error: e } = await supabase.from("recording_consents")
+      .update({ consented: false, method: "gm_revoke" })
+      .eq("campaign_id", campaignId).is("session_id", null).eq("character_id", charId);
+    if (e) { setError(`Revoking was not saved: ${e.message}`); return; }
+    setBlanket((p) => ({ ...p, [charId]: false }));
+    setWithdrawn((p) => ({ ...p, [charId]: true }));
+    if (sessionId) loadGate(sessionId);
   }
 
   async function createJob() {
@@ -236,7 +257,7 @@ export default function CapturePage() {
           </select>
         </div>
 
-        {/* narrator (GM) voice link — campaign-scoped, so it shows once a campaign is picked */}
+        {/* narrator (GM) voice link: campaign-scoped, so it shows once a campaign is picked */}
         <GmIdentityCard campaignId={campaignId} />
 
         {selectedSession && (
@@ -250,7 +271,7 @@ export default function CapturePage() {
                 </span>
               </div>
               <div style={{ color: C.muted, fontSize: 13, marginBottom: 14 }}>
-                Consent is captured when players claim their character. Opt a player out to exclude just them from this session; the gate clears once every present player is either consented or opted out.
+                Consent is captured when players claim their character, and players can switch it off themselves (Settings or /consent in Discord). Opt a player out to exclude just them from this session; the gate clears once every present player is either consented or opted out.
               </div>
               {chars.length === 0 && <p style={{ color: C.muted, fontSize: 13 }}>No player characters in the roster yet.</p>}
               <div style={{ display: "grid", gap: 8 }}>
@@ -265,14 +286,21 @@ export default function CapturePage() {
                       <span style={{ flex: 1, fontSize: 14, fontWeight: 600 }}>{ch.name}{ch.class ? <span style={{ color: C.muted, fontWeight: 400 }}> · {ch.class}</span> : null}</span>
                       {out ? <span style={{ fontSize: 11, color: C.warn, fontFamily: "ui-monospace, monospace" }}>OPTED OUT</span>
                         : consented ? <span style={{ fontSize: 11, color: C.good, fontFamily: "ui-monospace, monospace" }}>CONSENTED</span>
+                        : withdrawn[ch.id] ? <span style={{ fontSize: 11, color: C.warn, fontFamily: "ui-monospace, monospace" }}>WITHDREW</span>
                         : <span style={{ fontSize: 11, color: C.muted, fontFamily: "ui-monospace, monospace" }}>NO CONSENT</span>}
+                      {consented && !out && (
+                        <button type="button" onClick={(e) => { e.preventDefault(); void revokeStanding(ch.id, ch.name); }}
+                          style={{ fontSize: 11, background: "transparent", border: `1px solid ${C.line}`, color: C.muted, borderRadius: 6, padding: "3px 8px", cursor: "pointer" }}>
+                          Revoke
+                        </button>
+                      )}
                       {present && <span style={{ fontSize: 11, color: C.plum, fontFamily: "ui-monospace, monospace" }}>PRESENT</span>}
                     </label>
                   );
                 })}
               </div>
               {!consentOk && presentChars.length > 0 && missing.length > 0 && (
-                <p style={{ color: C.warn, fontSize: 12.5, marginTop: 12 }}>Not consented, opt them out to proceed, or have them claim &amp; consent: {missing.map((c) => c.name).join(", ")}.</p>
+                <p style={{ color: C.warn, fontSize: 12.5, marginTop: 12 }}>Not consented, opt them out to proceed, or have them claim &amp; consent: {missing.map((c) => c.name).join(", ")}.{missing.some((c) => withdrawn[c.id]) ? " A player who withdrew has asked not to be recorded: opt them out rather than asking again." : ""}</p>
               )}
               {!consentOk && presentChars.length === 0 && (
                 <p style={{ color: C.muted, fontSize: 12.5, marginTop: 12 }}>Mark attendance on <a href={gmHref("/gm/tonight", { campaign: campaignId, session: sessionId })} style={{ color: C.sun }}>Tonight</a> so the gate knows who needs to consent.</p>

@@ -154,6 +154,7 @@ export async function POST(request: Request) {
     if (name === "session") return await handleSession(interaction);
     if (name === "record") return await handleRecord(interaction);
     if (name === "stop") return await handleStop(interaction);
+    if (name === "consent") return await handleConsentCommand(interaction);
     return ephemeral("Unknown command.");
   }
 
@@ -344,7 +345,7 @@ async function handleClaimSelect(interaction: Interaction) {
         // Consent given without the material facts is not informed consent, it is a
         // button press.
         "\u2022 Your audio is **deleted automatically 60 days after recording**. The transcript stays; the recording does not.\n" +
-        "\u2022 You can opt out any time by asking your GM, and they can exclude you from any session.\n" +
+        "\u2022 You can stop it any time with /consent choice:off or on your Settings page, and your GM can exclude you from any session.\n" +
         `\u2022 Full details: ${siteBase()}/ai-recording\n\n` +
         "Tap **I consent** to agree to be recorded for this campaign.",
       components: [
@@ -1154,30 +1155,61 @@ async function handleConsentButton(interaction: Interaction) {
     return ephemeral("Link your character first with /claim, then tap I consent.");
   }
 
-  // Standing (blanket) consent for the whole campaign: session_id is null.
-  // Per-session exclusion is the GM's opt-out, not a player action.
-  const { data: existing } = await sb
+  const saved = await setStandingConsent(sb, campaignId, character, true, "discord_claim");
+  if (!saved) return ephemeral("Could not save your consent. Try again in a moment.");
+  return ephemeral(`Thanks, ${character.name}. You consent to be recorded for this campaign. To stop at any time, use /consent choice:off here or your Settings page on the site.`);
+}
+
+// Standing (blanket) consent for the whole campaign: session_id is null. Per-session exclusion is the
+// GM's opt-out. Every reader counts only consented = true, so false is a withdrawal everywhere.
+async function setStandingConsent(
+  sb: ReturnType<typeof serviceClient>, campaignId: string,
+  character: { id: string; profile_id: string | null }, consented: boolean, method: string,
+): Promise<boolean> {
+  const { data: existing, error: readErr } = await sb
     .from("recording_consents")
     .select("id")
     .eq("campaign_id", campaignId)
     .is("session_id", null)
     .eq("character_id", character.id)
     .maybeSingle();
+  if (readErr) return false;
+  const { error } = existing
+    ? await sb.from("recording_consents")
+        .update({ consented, method, profile_id: character.profile_id, created_at: new Date().toISOString() })
+        .eq("id", existing.id)
+    : await sb.from("recording_consents").insert({
+        campaign_id: campaignId, session_id: null, character_id: character.id,
+        profile_id: character.profile_id, consented, method,
+      });
+  return !error;
+}
 
-  if (existing) {
-    await sb.from("recording_consents")
-      .update({ consented: true, method: "discord_claim", profile_id: character.profile_id })
-      .eq("id", existing.id);
-  } else {
-    await sb.from("recording_consents").insert({
-      campaign_id: campaignId,
-      session_id: null,
-      character_id: character.id,
-      profile_id: character.profile_id,
-      consented: true,
-      method: "discord_claim",
-    });
+// /consent choice:on|off (audit F5): a player gives or withdraws standing recording consent for this
+// campaign themselves, as easily as the I consent button gave it.
+async function handleConsentCommand(interaction: Interaction) {
+  const userId = discordUserId(interaction);
+  const choice = (optionValue(interaction, "choice") ?? "").trim().toLowerCase();
+  if (!userId) return ephemeral("Could not read your Discord account. Try again.");
+  if (choice !== "on" && choice !== "off") return ephemeral("Use /consent choice:on or /consent choice:off.");
+  const sb = serviceClient();
+  const campaign = await resolveCampaign(interaction, sb);
+  if (!campaign) return ephemeral("Run /consent in your campaign's channel, or add code:<your share code>.");
+  const { data: chars } = await sb
+    .from("characters")
+    .select("id, name, profile_id")
+    .eq("campaign_id", campaign.id)
+    .eq("discord_user_id", userId)
+    .eq("kind", "pc");
+  const list = (chars as { id: string; name: string; profile_id: string | null }[] | null) ?? [];
+  if (!list.length) return ephemeral(`You have no character linked in "${campaign.name}". Link one with /claim first.`);
+  const on = choice === "on";
+  for (const ch of list) {
+    if (!(await setStandingConsent(sb, campaign.id, ch, on, "discord_command"))) {
+      return ephemeral("Could not save that. Try again in a moment.");
+    }
   }
-
-  return ephemeral(`Thanks, ${character.name}. You consent to be recorded for this campaign. You can opt out any time through your GM.`);
+  return ephemeral(on
+    ? `Recording is on for you in "${campaign.name}". Turn it off any time with /consent choice:off.`
+    : `Recording is off for you in "${campaign.name}". From the next recording your voice is not uploaded or transcribed. Turn it back on with /consent choice:on.`);
 }

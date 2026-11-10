@@ -74,7 +74,8 @@ export type DdbSheet = {
   currency: Record<"cp" | "sp" | "ep" | "gp" | "pp", number | null>;
   proficiencies: Record<string, string>;
   attacks: { name: string; hit: string | null; damage: string | null; notes: string | null }[];
-  features: { name: string; source: string | null; desc: string }[];
+  /** section: the "=== ... ===" heading the feature sits under (species traits, class features, feats). */
+  features: { name: string; source: string | null; desc: string; section?: string | null }[];
   bio: Record<string, string | null>;
   spells: { save_dc: number | null; attack_bonus: string | null; slots: Record<string, number>; list: DdbSpell[] };
   equipment: DdbItem[];
@@ -329,7 +330,7 @@ function parseAttacks(f: Map<string, string>): DdbSheet["attacks"] {
  *
  * Collected PER PAGE because the indices restart: a 4-page sheet has FeaturesTraits4/5/6 twice.
  */
-function parseFeatures(perPage: Map<string, string>[]): DdbSheet["features"] {
+export function parseFeatures(perPage: Map<string, string>[]): DdbSheet["features"] {
   const blobs: string[] = [];
   for (const pf of perPage) {
     const keys = [...pf.keys()]
@@ -341,8 +342,12 @@ function parseFeatures(perPage: Map<string, string>[]): DdbSheet["features"] {
   let curName: string | null = null;
   let curSrc: string | null = null;
   let curBody: string[] = [];
+  // The heading each feature sits under ("=== SPECIES TRAITS ===" and the like), so the import can
+  // tell a species trait from a class feature or a feat.
+  let curSection: string | null = null;
+  let curFeatSection: string | null = null;
   const flush = () => {
-    if (curName) feats.push({ name: curName, source: curSrc, desc: curBody.join(" ").trim() });
+    if (curName) feats.push({ name: curName, source: curSrc, desc: curBody.join(" ").trim(), section: curFeatSection });
   };
   for (const line of blobs.join("\n").split("\n")) {
     const s = line.trim();
@@ -354,9 +359,13 @@ function parseFeatures(perPage: Map<string, string>[]): DdbSheet["features"] {
       curName = m[1].replace(FEATURE_SOURCE, "").trim();
       curSrc = sm ? sm[1] : null;
       curBody = [];
+      curFeatSection = curSection;
     } else if (/^\|\s+/.test(s)) {
       curBody.push(s.replace(/^\|\s+/, ""));
-    } else if (curName && !s.startsWith("===")) {
+    } else if (s.startsWith("===")) {
+      const head = s.replace(/=/g, "").trim();
+      if (head) curSection = head;
+    } else if (curName) {
       curBody.push(s);
     }
   }

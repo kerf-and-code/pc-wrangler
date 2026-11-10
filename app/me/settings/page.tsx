@@ -25,6 +25,9 @@ type Profile = {
   created_at: string;
 };
 
+// Audit F5: standing recording consent, per campaign (p137 my_recording_consents).
+type ConsentRow = { campaignId: string; campaignName: string; characters: { id: string; name: string }[]; state: "given" | "withdrawn" | "none" };
+
 export default function MySettingsPage() {
   const supabase = createClient();
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -40,6 +43,9 @@ export default function MySettingsPage() {
   const [confirmText, setConfirmText] = useState("");
   const [showDelete, setShowDelete] = useState(false);
   const [rightsError, setRightsError] = useState<string | null>(null);
+  const [consents, setConsents] = useState<ConsentRow[] | null>(null);
+  const [consentBusy, setConsentBusy] = useState<string | null>(null);
+  const [consentError, setConsentError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -60,9 +66,22 @@ export default function MySettingsPage() {
       setProfile(p);
       setName(p?.display_name ?? "");
       setStatus("ready");
+      const { data: cons, error: ce } = await supabase.rpc("my_recording_consents");
+      if (!active) return;
+      if (ce) setConsentError("Could not load your recording consent. Reload to try again.");
+      else setConsents((cons as ConsentRow[]) || []);
     })();
     return () => { active = false; };
   }, [supabase]);
+
+  async function setConsent(row: ConsentRow, on: boolean) {
+    if (!on && !window.confirm(`Stop recording your voice in ${row.campaignName}? From the next session your audio is not uploaded or transcribed. You can turn it back on here.`)) return;
+    setConsentBusy(row.campaignId); setConsentError(null);
+    const { error: e } = await supabase.rpc("set_my_recording_consent", { p_campaign: row.campaignId, p_consented: on });
+    setConsentBusy(null);
+    if (e) { setConsentError(`Not saved: ${e.message}`); return; }
+    setConsents((cs) => (cs || []).map((c) => (c.campaignId === row.campaignId ? { ...c, state: on ? "given" : "withdrawn" } : c)));
+  }
 
   async function saveName() {
     if (!profile) return;
@@ -176,12 +195,39 @@ export default function MySettingsPage() {
 
             <Card>
               <Label>Your recordings</Label>
-              <p style={{ color: C.muted, fontSize: 13.5, lineHeight: 1.6, margin: 0 }}>
+              <p style={{ color: C.muted, fontSize: 13.5, lineHeight: 1.6, margin: "0 0 12px" }}>
                 Session audio is deleted 60 days after it is recorded. The transcript
                 and the moments drawn from it stay; the recording itself does not. You
-                can withdraw consent at any time by telling your GM, and your track is
-                excluded from that session onward.
+                can stop or start recording of your voice for each campaign here (or with
+                /consent in Discord). Turning it off applies from the next recording:
+                your voice is not uploaded or transcribed. Audio already recorded follows
+                the 60-day deletion.
               </p>
+              {consents === null && !consentError && <p style={{ color: C.muted, fontSize: 13, margin: 0 }}>Loading your campaigns&hellip;</p>}
+              {consents && consents.length === 0 && <p style={{ color: C.muted, fontSize: 13, margin: 0 }}>You have no characters in a campaign yet.</p>}
+              {consents && consents.length > 0 && (
+                <div style={{ display: "grid", gap: 8 }}>
+                  {consents.map((c) => (
+                    <div key={c.campaignId} style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", padding: "10px 12px", border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS }}>
+                      <div style={{ flex: 1, minWidth: 180 }}>
+                        <div style={{ color: C.text, fontSize: 14 }}>{c.campaignName}</div>
+                        <div style={{ color: C.muted, fontSize: 12.5 }}>
+                          {c.characters.map((ch) => ch.name).join(", ")}:{" "}
+                          {c.state === "given" ? "recording on" : c.state === "withdrawn" ? "recording off" : "not asked yet (off)"}
+                        </div>
+                      </div>
+                      {c.state === "given"
+                        ? <button type="button" disabled={consentBusy === c.campaignId} onClick={() => setConsent(c, false)} style={btn("transparent", C.text, C.line)}>
+                            {consentBusy === c.campaignId ? "Saving..." : "Stop recording me"}
+                          </button>
+                        : <button type="button" disabled={consentBusy === c.campaignId} onClick={() => setConsent(c, true)} style={btn("transparent", C.text, C.line)}>
+                            {consentBusy === c.campaignId ? "Saving..." : "I consent to recording"}
+                          </button>}
+                    </div>
+                  ))}
+                </div>
+              )}
+              {consentError && <p role="alert" style={{ color: C.warn, fontSize: 13, margin: "10px 0 0" }}>{consentError}</p>}
             </Card>
 
             <Card>

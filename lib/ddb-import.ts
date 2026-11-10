@@ -79,7 +79,7 @@ export type DdbSheet = {
   };
   proficiencies: Record<string, string>;
   attacks: { name: string; hit: string | null; damage: string | null; notes: string | null }[];
-  features: { name: string; source: string | null; desc: string }[];
+  features: { name: string; source: string | null; desc: string; section?: string | null }[];
   bio: Record<string, string | null>;
   spells: {
     save_dc: number | null;
@@ -333,6 +333,14 @@ export function hasPrintedAbilities(build: Build): boolean {
 // The mapper
 // ---------------------------------------------------------------------------
 
+/** The features D&D Beyond lists under its species (or, on older sheets, racial) traits heading. */
+export function speciesTraitsFromSheet(features: DdbSheet["features"]): { name: string; desc: string; from: "sheet" }[] {
+  return (features || [])
+    .filter((f) => /\b(species|racial|race)\b/i.test(f.section || "") && f.name.trim())
+    .slice(0, 30)
+    .map((f) => ({ name: f.name.trim().slice(0, 80), desc: (f.desc || "").trim().slice(0, 1500), from: "sheet" as const }));
+}
+
 export function ddbToBuild(sheet: DdbSheet, ctx: ImportContext): ImportResult {
   const notes: string[] = [];
   const itemIx = indexNames(ctx.items);
@@ -558,6 +566,12 @@ export function ddbToBuild(sheet: DdbSheet, ctx: ImportContext): ImportResult {
     epicChoices: {},
     spells: { cantrips, known },
   };
+
+  // --- the species traits from the player's own sheet (audit: species traits) --
+  // Kept on this character as its own traits, so a species Six Axes has no data for still shows what it
+  // does. This is the player's personal sheet, stored privately with their character.
+  const ownTraits = speciesTraitsFromSheet(sheet.features);
+  if (ownTraits.length) build.speciesTraits = ownTraits;
 
   // --- what the sheet states beyond the engine's inputs (phase 5i.1) ----------
   const extra = build as unknown as Record<string, unknown>;

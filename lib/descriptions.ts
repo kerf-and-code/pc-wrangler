@@ -7,7 +7,7 @@
 // "what does this do" text is consistent everywhere.
 //
 // Honest gaps this does NOT paper over:
-//   - Weapon MASTERY effect text (Topple, Graze, …) is not in the SRD data — only the mastery NAME
+//   - Weapon MASTERY effect text (Topple, Graze, …) is not in the SRD data; only the mastery NAME
 //     is. We show the name; the effect text is a fill-later (a small static table when we add it).
 //   - 2024 mundane gear beyond weapons/armor (Acid, rope) has only weight/cost; that's all we show.
 
@@ -107,7 +107,7 @@ export function describeItem(rec: ItemRecord | undefined): Described | null {
     const effect = masteryEffect(rec.mastery);
     const bodyParts = [
       rec.description ? clean(rec.description) : "",
-      effect ? `Mastery — ${rec.mastery}: ${effect}` : "",
+      effect ? `Mastery: ${rec.mastery}, ${effect}` : "",
     ].filter(Boolean);
     return { lead, body: bodyParts.length ? bodyParts.join("\n\n") : undefined };
   }
@@ -201,7 +201,7 @@ const SKILL_TEXT: Record<string, string> = {
   acrobatics: "Keep your balance, tumble, and stay on your feet in tricky footing.",
   animal: "Calm, handle, or read the intentions of a beast.",
   arcana: "Recall lore about spells, magic items, and the planes.",
-  athletics: "Climb, jump, swim, grapple — raw physical exertion.",
+  athletics: "Climb, jump, swim, grapple: raw physical exertion.",
   deception: "Convincingly hide the truth in word or action.",
   history: "Recall lore about events, people, kingdoms, and wars.",
   insight: "Read a creature's true intentions, mood, or honesty.",
@@ -209,7 +209,7 @@ const SKILL_TEXT: Record<string, string> = {
   investigation: "Deduce from clues, search for hidden details, reason it out.",
   medicine: "Stabilize the dying and diagnose an illness.",
   nature: "Recall lore about terrain, plants, animals, and weather.",
-  perception: "Notice what's around you — spot, hear, or otherwise sense.",
+  perception: "Notice what's around you: spot, hear, or otherwise sense.",
   performance: "Delight an audience with music, dance, acting, or story.",
   persuasion: "Influence someone with tact, grace, or good faith.",
   religion: "Recall lore about deities, rites, holy symbols, and cults.",
@@ -249,4 +249,22 @@ export function traitList(traits: unknown): TraitEntry[] {
     return out;
   }
   return [];
+}
+
+// Species traits a character sheet shows (audit: species traits).
+export type OwnTrait = { name: string; desc: string; from?: "sheet" | "player" };
+export type OwnSpeciesMech = { speed?: number; darkvision?: number; resist?: string[] };
+
+/** The species traits a sheet shows: SRD text, else the bundled summary, plus the player's own (an own
+ *  trait with the same name as a built-in one replaces it). Empty own entries are skipped. */
+export function shownSpeciesTraits(srdTraits: TraitEntry[], summaries: unknown, own: OwnTrait[] | undefined): TraitEntry[] {
+  const mine = (own || [])
+    .map((t) => ({ name: (t.name || "").trim(), desc: (t.desc || "").trim() }))
+    .filter((t) => t.name || t.desc);
+  const fromSummary = Array.isArray(summaries)
+    ? summaries.filter((p): p is [string, string] => Array.isArray(p) && p.length >= 2).map(([name, desc]) => ({ name: String(name), desc: String(desc) }))
+    : [];
+  const base = srdTraits.length ? srdTraits : fromSummary;
+  const taken = new Set(mine.map((t) => t.name.toLowerCase()).filter(Boolean));
+  return [...base.filter((t) => !taken.has(t.name.toLowerCase())), ...mine];
 }
