@@ -5,10 +5,16 @@
 // Discord webhook URL for a private channel only you read) it posts there too. It never throws and
 // waits at most 4 seconds, so an alert can never break the job that sends it. Keep player names, emails
 // and transcript text out of messages: ids and counts only.
+//
+// Push 10 (audit T1): every alert also goes to Sentry when SENTRY_DSN is set (lib/sentry-server.ts), so
+// the dashboard holds the history the Discord channel scrolls away.
+
+import { reportMessage } from "@/lib/sentry-server";
 
 export async function opsAlert(source: string, message: string, detail?: unknown): Promise<void> {
   const extra = detail === undefined ? "" : typeof detail === "string" ? detail : JSON.stringify(detail);
   console.error(`[ops-alert] ${source}: ${message}${extra ? ` ${extra}` : ""}`);
+  await reportMessage(source, message, "warning", extra || undefined);
   const hook = process.env.OPS_ALERT_WEBHOOK;
   if (!hook || !/^https:\/\/(discord\.com|discordapp\.com)\/api\/webhooks\//.test(hook)) return;
   const env = process.env.VERCEL_ENV || process.env.NODE_ENV || "unknown";

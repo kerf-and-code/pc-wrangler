@@ -234,6 +234,8 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   const [tool, setTool] = useState<Tool>("select");
   const [panel, setPanel] = useState<"chat" | "turns" | "tokens" | "scenes" | "handouts" | "tables" | "sound" | "cards" | "addons">("chat");
   const [fight, setFight] = useState<Fight | null>(null);
+  // the live channel is joined (audit T25): polls slow down to a safety net while it is
+  const [rtLive, setRtLive] = useState(false);
   const fightRow = useRef<FightRow | null>(null);
   const fightRef = useRef<Fight | null>(null);
   const [selEntry, setSelEntry] = useState<string | null>(null);
@@ -354,6 +356,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   const seenTokens = useRef<Set<string> | null>(null);
   const renderBaseRef = useRef<() => void>(() => {});
   const loadFightRef = useRef<() => Promise<void>>(async () => {});
+  const pollFeedRef = useRef<(initial: boolean) => Promise<void>>(async () => {});
   const rulerSent = useRef(0);
   const drag = useRef<{ ids: string[]; start: Pt; orig: Map<string, Pt>; now: Map<string, Pt>; free: boolean; lastSend: number; moved: boolean } | null>(null);
   const pan = useRef<{ sx: number; sy: number; ox: number; oy: number; moved: boolean; button: number; shift: boolean } | null>(null);
@@ -1327,9 +1330,11 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   // table is closed (the GM's table relays changes at once when it is open)
   useEffect(() => {
     if (!state || state.role === "gm") return;
-    const id = setInterval(() => { if (!document.hidden) void loadFight(); }, fight ? 8000 : 30000);
+    // with the live channel up, combat changes arrive on it (postgres_changes and the 'combat' broadcast),
+    // so the poll slows to a safety net (audit T25)
+    const id = setInterval(() => { if (!document.hidden) void loadFight(); }, fight && !rtLive ? 8000 : 30000);
     return () => clearInterval(id);
-  }, [state, fight, loadFight]);
+  }, [state, fight, loadFight, rtLive]);
 
   // GM writes: read the row fresh, change it, save it, tell the players' tables. The same rules as the
   // Combat page, so either screen can run the fight.
@@ -1444,7 +1449,14 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   };
 
   useEffect(() => { void load(); void pollFeed(true); }, [load, pollFeed]);
-  useEffect(() => { const id = setInterval(() => { if (!document.hidden) void pollFeed(false); }, 6000); return () => clearInterval(id); }, [pollFeed]);
+  // Audit T25 (push 10): while the live channel is up, rolls from outside the table are announced on it
+  // (p146's 'feed' trigger) and the feed is fetched at once, so the poll is only a slow safety net. When
+  // the channel is down it polls every 6 seconds, as it always did.
+  pollFeedRef.current = pollFeed;
+  useEffect(() => {
+    const id = setInterval(() => { if (!document.hidden) void pollFeed(false); }, rtLive ? 30000 : 6000);
+    return () => clearInterval(id);
+  }, [pollFeed, rtLive]);
   useEffect(() => { feedEnd.current?.scrollIntoView({ block: "end" }); }, [feed.length]);
 
   useEffect(() => {
@@ -1520,6 +1532,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
         requestDraw();
       })
       .on("broadcast", { event: "refresh" }, () => { void load(); })
+      .on("broadcast", { event: "feed" }, () => { void pollFeedRef.current(false); })
       .on("broadcast", { event: "combat" }, () => { void loadFightRef.current(); })
       .on("postgres_changes", { event: "*", schema: "public", table: "combats", filter: `campaign_id=eq.${campaignId}` }, () => {
         // only the GM passes combats' RLS: an edit made on the Combat page reaches this table, which
@@ -1561,13 +1574,14 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
         setPresent(Object.entries(ps).map(([key, arr]) => ({ key, name: arr[0]?.name ?? "Someone", color: arr[0]?.color ?? "#999" })));
       })
       .subscribe(async (status) => {
+        setRtLive(status === "SUBSCRIBED");
         if (status === "SUBSCRIBED") {
           const mineName = state.role === "gm" ? "GM" : state.party.find((p) => p.profile_id === state.me)?.name ?? "Player";
           await ch.track({ name: mineName, color: hueOf(state.me) });
         }
       });
     channelRef.current = ch;
-    return () => { void supabase.removeChannel(ch); channelRef.current = null; };
+    return () => { void supabase.removeChannel(ch); channelRef.current = null; setRtLive(false); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [supabase, campaignId, state?.me, state?.role]);
 

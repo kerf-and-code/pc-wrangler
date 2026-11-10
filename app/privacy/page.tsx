@@ -9,6 +9,8 @@ import LegalPage from "@/components/legal-page";
 // free no-login map tool), Google Analytics (app/layout.tsx, production only). The no-training promise
 // names only the providers whose terms Terry has confirmed (Deepgram, Anthropic); do not widen it without
 // confirming the others' terms for the plan actually in use.
+// Push 10 (2026-11-10): Sentry added for error reporting (lib/sentry-server.ts, components/sentry-client.tsx),
+// which strip personal data and share codes before sending.
 
 export const metadata: Metadata = {
   title: "Privacy Policy",
@@ -21,7 +23,7 @@ export default function PrivacyPolicyPage() {
     <LegalPage>
       <h1>Privacy Policy</h1>
       <p className="meta">Effective date: July 14, 2026</p>
-      <p className="meta">Last updated: November 3, 2026</p>
+      <p className="meta">Last updated: November 10, 2026</p>
 
       <p>
         Six Axes (&ldquo;Six Axes,&rdquo; &ldquo;we,&rdquo; &ldquo;us&rdquo;) is operated by Kerf and Code, LLC,
@@ -85,12 +87,13 @@ export default function PrivacyPolicyPage() {
             <tr><td>Google Cloud</td><td>Statistical computation for disposition modeling</td></tr>
             <tr><td>Google Analytics</td><td>Website usage measurement</td></tr>
             <tr><td>Resend</td><td>Transactional and reminder email, and delivering contact and pilot messages to us</td></tr>
+            <tr><td>Sentry</td><td>Error reporting: when a page or server job fails, the error message, the kind of page it happened on, and your browser and device type, so we can fix it. No names, emails, recordings or share codes are sent</td></tr>
             <tr><td>Discord</td><td>Authentication, and (if enabled) bot and voice features, including posting recaps to a channel the GM chooses</td></tr>
             <tr><td>Google</td><td>Authentication</td></tr>
           </tbody>
         </table>
       </div>
-      <p>Most providers process and store data in the United States. Deepgram and Anthropic process your content to perform the service and, under their commercial terms, <strong>do not use it to train their models</strong>. Groq, Replicate, and Google process it under their own terms. The table above is our current sub-processor list. If it changes, we will update it here.</p>
+      <p>Most providers process and store data in the United States. Deepgram and Anthropic process your content to perform the service and, under their commercial terms, <strong>do not use it to train their models</strong>. Groq, Replicate, Google, and Sentry process it under their own terms. The table above is our current sub-processor list. If it changes, we will update it here.</p>
       <p>Not everything that sounds like AI is. The rules compendium&rsquo;s voice lookup runs speech recognition inside your browser, so that audio never leaves your device. The disposition model, roll statistics, encounter maths, and dice roller are ordinary statistics and code, not AI.</p>
 
       <h2>Recording and consent</h2>

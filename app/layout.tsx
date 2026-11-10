@@ -8,6 +8,7 @@ import JsonLd from "@/components/json-ld";
 import { organizationSchema, websiteSchema } from "@/lib/seo";
 import Analytics from "@/components/analytics";
 import TermsGate from "@/components/terms-gate";
+import SentryClient from "@/components/sentry-client";
 import "./globals.css";
 
 // Google Analytics 4 measurement ID. A measurement ID is public (it ships in the page), so hard-coding
@@ -212,6 +213,8 @@ export default function RootLayout({
           {children}
           {/* Asks a signed-in account once to confirm it is 18+ and accepts the terms (audit T13). */}
           <TermsGate />
+          {/* Browser error reporting, off unless NEXT_PUBLIC_SENTRY_DSN is set (audit T1). */}
+          <SentryClient />
         </ThemeProvider>
       </body>
     </html>

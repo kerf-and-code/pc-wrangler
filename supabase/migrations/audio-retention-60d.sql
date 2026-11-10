@@ -1,3 +1,9 @@
+-- SUPERSEDED (push 10, audit T6). Do not run this file again: it recreates the retention views without security_invoker, which p3-security-fixes.sql set; running it again would let signed-in users read v_campaign_audio_retention past RLS.
+-- Kept for history only. The guard below stops the SQL editor before anything else in this file runs.
+do $guard$ begin
+  raise exception 'Superseded file, do not run again (see supabase/migrations/README.md)';
+end $guard$;
+
 -- Audio retention: 60-day deletion of session audio.
 --
 -- Implements the Part A locked decision ("audio auto-deletes 60 days after

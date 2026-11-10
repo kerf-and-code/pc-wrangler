@@ -1,4 +1,8 @@
-# Six Axes voice sidecar. Worker app: no inbound HTTP, no health checks.
+# Six Axes voice sidecar. Worker app: no inbound HTTP.
+#
+# Push 10 (audit T20): Fly cannot health-check a worker with no port, so the process watches itself:
+# if its poll loop stalls it exits (sidecar.py watchdog), and the restart policy below brings it back.
+# reconcile_orphans in the new process then picks up any recording the old one was holding.
 app = "six-axes-sidecar"
 primary_region = "sjc"
 
@@ -7,3 +11,6 @@ primary_region = "sjc"
 [[vm]]
   size = "shared-cpu-1x"
   memory = "1gb"
+
+[[restart]]
+  policy = "on-failure"

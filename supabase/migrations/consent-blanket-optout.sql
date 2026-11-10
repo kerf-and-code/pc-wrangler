@@ -1,3 +1,9 @@
+-- SUPERSEDED (push 10, audit T6). Do not run this file again: its session_consent_ok() is older than p22-room-consent-gate.sql, which adds the room-consent rule; running this again would silently remove that rule.
+-- Kept for history only. The guard below stops the SQL editor before anything else in this file runs.
+do $guard$ begin
+  raise exception 'Superseded file, do not run again (see supabase/migrations/README.md)';
+end $guard$;
+
 -- Consent model: blanket-at-claim + GM per-session opt-out.
 --
 -- recording_consents rows now carry two meanings, both keyed on character_id:

@@ -1,3 +1,9 @@
+-- SUPERSEDED (push 10, audit T6). Do not run this file again: it was a one-time backfill that turned single-session consent into standing consent (audit T11); running it again could widen consent players never gave.
+-- Kept for history only. The guard below stops the SQL editor before anything else in this file runs.
+do $guard$ begin
+  raise exception 'Superseded file, do not run again (see supabase/migrations/README.md)';
+end $guard$;
+
 -- One-time backfill: give every already-claimed character who previously
 -- consented a standing (blanket) consent row, so the new session_consent_ok
 -- gate does not suddenly read them as un-consented. Idempotent (the NOT EXISTS

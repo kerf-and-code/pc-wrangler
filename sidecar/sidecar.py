@@ -30,6 +30,14 @@ Env:
                              that is 57.6 MB each, which OOM-killed a 1 GB machine.)
   AUDIO_BUCKET               (optional, default 'session-audio')
   OPUS_BITRATE               (optional, default '32k')
+  AUTO_STOP_EMPTY_SECONDS    (optional, default 600; finish a recording once no person has been
+                             in its voice channel for this long. 0 turns it off.)
+  MAX_RECORDING_HOURS        (optional, default 8; finish a recording that has run this long.
+                             0 turns it off.)
+  WATCHDOG_SECONDS           (optional, default 300; exit, so Fly restarts the machine, when the
+                             poll loop has not ticked for this long outside a finalize.)
+  OPS_ALERT_WEBHOOK          (optional; a Discord webhook for a private ops channel. Stalls,
+                             failed finalizes and lost connections are posted there.)
 """
 
 import os
@@ -41,6 +49,7 @@ import asyncio
 import datetime
 import logging
 import tempfile
+import json
 import httpx
 import discord
 
@@ -126,6 +135,20 @@ GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
 GROQ_MODEL = os.environ.get("GROQ_MODEL", "whisper-large-v3-turbo")
 GROQ_LANGUAGE = os.environ.get("GROQ_LANGUAGE", "en")
 GROQ_URL = "https://api.groq.com/openai/v1/audio/transcriptions"
+
+# ---- Push 10 (audits T18, T20, T1): stop forgotten recordings, restart a stuck process, say so. ----
+# A recording left running after everyone has gone (a forgotten /stop) used to run until someone
+# noticed, padding hours of silence that were then stored and sent for transcription. It now finishes
+# on its own once the channel has had no person in it for AUTO_STOP_EMPTY_SECONDS, or after
+# MAX_RECORDING_HOURS, and says so in the campaign's channel. Finishing is the normal finalize, so
+# everything captured up to then is saved exactly as a /stop would save it.
+AUTO_STOP_EMPTY_SECONDS = int(os.environ.get("AUTO_STOP_EMPTY_SECONDS", "600"))
+MAX_RECORDING_HOURS = float(os.environ.get("MAX_RECORDING_HOURS", "8"))
+# A hung (not crashed) process was never restarted: Fly only restarts a machine whose process exits.
+# The watchdog exits when the poll loop has not ticked for WATCHDOG_SECONDS. A finalize legitimately
+# holds the loop for minutes, so the watchdog stands down while one runs. fly.toml restarts on failure.
+WATCHDOG_SECONDS = int(os.environ.get("WATCHDOG_SECONDS", "300"))
+OPS_ALERT_WEBHOOK = os.environ.get("OPS_ALERT_WEBHOOK", "").strip()
 
 REST = f"{SUPABASE_URL}/rest/v1"
 STORAGE = f"{SUPABASE_URL}/storage/v1/object"
@@ -631,6 +654,8 @@ class Recording:
         self.dropped_at = None
         self.notify_channel_id = None   # campaign's linked Discord text channel
         self.notified_drop = False      # one drop notice per outage, cleared on reconnect
+        self.started_at = time.monotonic()  # for MAX_RECORDING_HOURS
+        self.empty_since = None             # monotonic time the channel last emptied of people
 
     def cleanup(self):
         shutil.rmtree(self.tmpdir, ignore_errors=True)
@@ -643,6 +668,8 @@ class Sidecar(discord.Client):
         self.recordings: dict = {}        # rid -> Recording
         self.waiting_logged: set = set()
         self._started = False
+        self.last_tick = time.monotonic()  # the poll loop's last tick, read by the watchdog
+        self.finalizing = 0                # finalizes in progress; the watchdog waits while > 0
 
     async def on_ready(self):
         log.info("Sidecar connected as %s. py-cord %s.", self.user, discord.__version__)
@@ -660,8 +687,13 @@ class Sidecar(discord.Client):
         if not self._started:
             self._started = True
             asyncio.create_task(self.poll_loop())
+            asyncio.create_task(self.watchdog())
 
     async def on_voice_state_update(self, member, before, after):
+        # Bots are not tracked (on_ready skips them too): nobody runs /record from a bot, and a music
+        # bot left in the channel must not count as a person for the auto-stop.
+        if member.bot:
+            return
         key = (str(member.guild.id), str(member.id))
         if after.channel is not None:
             self.voice_locations[key] = str(after.channel.id)
@@ -738,6 +770,7 @@ class Sidecar(discord.Client):
                             log.warning("row %s error: %r", row.get("id"), e)
                     await self.maintain_recordings(http)
                     ticks += 1
+                    self.last_tick = time.monotonic()
                     if ticks % HEARTBEAT_TICKS == 0:
                         await self.heartbeat(http)
                         # Reconcile on a SCHEDULE, not only at boot. Running it once was
@@ -1036,10 +1069,24 @@ class Sidecar(discord.Client):
                             "\u274C Six Axes could not reconnect after several tries and has finalized "
                             "this recording with what it captured. Run /record to start a new segment.",
                         )
+                        await self.ops_alert(f"recording {rec.rid}: voice connection lost for {outage:.0f}s; finalized a partial capture")
                         await self.finalize(http, rec, note="connection lost; partial capture")
                 continue
             rec.reconnect_attempts = 0
             rec.dropped_at = None
+            # Push 10 (audit T18): finish a recording nobody is in any more, or one that has run too long.
+            reason = self.auto_stop_reason(rec)
+            if reason:
+                log.warning("recording %s: auto-stop (%s).", rec.rid, reason)
+                await self.notify(
+                    rec.notify_channel_id,
+                    "\u23F9\uFE0F Six Axes stopped recording on its own: " + reason
+                    + ". Everything captured up to now is saved. Run /record to start again.",
+                )
+                if rec.sink is not None:
+                    await self.rotate_chunk(rec, restart=False)
+                await self.finalize(http, rec, note="auto-stopped: " + reason)
+                continue
             # Rotate the sink on schedule to bound memory.
             if time.monotonic() - rec.chunk_started_at >= FLUSH_SECONDS:
                 await self.rotate_chunk(rec, restart=True)
@@ -1296,9 +1343,15 @@ class Sidecar(discord.Client):
         # mistaken for a dead process by the web app. See _beat_during_finalize. Always cancelled in
         # the finally, so it can never outlive the finalize or leak.
         beat_task = asyncio.create_task(self._beat_during_finalize(http, rec.rid))
+        self.finalizing += 1
         try:
             await self._finalize_impl(http, rec, note)
+        except Exception as e:
+            await self.ops_alert(f"recording {rec.rid}: finalize failed: {e!r}")
+            raise
         finally:
+            self.finalizing -= 1
+            self.last_tick = time.monotonic()
             beat_task.cancel()
             try:
                 await beat_task
@@ -1910,6 +1963,50 @@ class Sidecar(discord.Client):
         except Exception as e:
             log.warning("get_notify_channel(%s) failed: %r", campaign_id, e)
             return None
+
+    def auto_stop_reason(self, rec):
+        """Why this recording should finish on its own now, or None. Counts people from voice_locations,
+        which on_voice_state_update keeps current and which never holds bots."""
+        now = time.monotonic()
+        people = any(ch == str(rec.channel_id) and g == str(rec.guild_id)
+                     for (g, _u), ch in self.voice_locations.items())
+        if people:
+            rec.empty_since = None
+        elif rec.empty_since is None:
+            rec.empty_since = now
+        if AUTO_STOP_EMPTY_SECONDS > 0 and rec.empty_since is not None and now - rec.empty_since >= AUTO_STOP_EMPTY_SECONDS:
+            return f"the voice channel has been empty for {AUTO_STOP_EMPTY_SECONDS // 60} minutes"
+        if MAX_RECORDING_HOURS > 0 and now - rec.started_at >= MAX_RECORDING_HOURS * 3600:
+            return f"it reached the {MAX_RECORDING_HOURS:g} hour limit"
+        return None
+
+    async def watchdog(self):
+        """Exit when the poll loop is stuck, so Fly restarts the machine (fly.toml: restart on failure).
+        reconcile_orphans on the new process picks up any recording row this one was holding."""
+        while not self.is_closed():
+            await asyncio.sleep(30)
+            if WATCHDOG_SECONDS <= 0 or self.finalizing > 0:
+                continue
+            stalled = time.monotonic() - self.last_tick
+            if stalled >= WATCHDOG_SECONDS:
+                log.error("watchdog: poll loop has not ticked for %.0fs; exiting so Fly restarts this machine.", stalled)
+                await self.ops_alert(f"watchdog: poll loop stuck for {stalled:.0f}s on {OWNER_ID}; restarting the machine")
+                os._exit(1)
+
+    async def ops_alert(self, message):
+        """Post to the private ops channel (OPS_ALERT_WEBHOOK), like lib/ops-alert.ts on the web side.
+        Ids and counts only. Never raises, gives up after 4 seconds."""
+        log.error("[ops-alert] sidecar: %s", message)
+        if not OPS_ALERT_WEBHOOK.startswith(("https://discord.com/api/webhooks/", "https://discordapp.com/api/webhooks/")):
+            return
+        try:
+            async with httpx.AsyncClient(timeout=4) as c:
+                await c.post(OPS_ALERT_WEBHOOK, content=json.dumps({
+                    "content": f"**sidecar** ({OWNER_ID}): {message}"[:1900],
+                    "allowed_mentions": {"parse": []},
+                }), headers={"content-type": "application/json"})
+        except Exception as e:
+            log.warning("ops alert could not be posted: %r", e)
 
     async def notify(self, channel_id, content):
         """Post a GM-facing status notice to the campaign's Discord text channel.
