@@ -11,6 +11,8 @@ import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 //                      emails use), plus a Danger zone that moves the campaign to the trash (audit F4,
 //                      U16). Moving to the trash is undoable for 30 days, so it takes a second click, not
 //                      a typed name.
+//   Push 3: CampaignSettings also downloads the whole campaign (audit F3, /api/gm/campaign/export) and,
+//   for the owner, hands it to another GM (audit F2, /api/gm/campaign/transfer and p140).
 //   CampaignTrash      the GM's trash: restore, or delete forever now, which is permanent and so takes the
 //                      campaign's name typed in (p139 my_trashed_campaigns / restore_campaign, and
 //                      /api/gm/campaign/delete, which also removes the files).
@@ -43,6 +45,59 @@ export function CampaignSettings({ campaign, isOwner, onChanged, onTrashed }: {
   const [busy, setBusy] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const zones = useMemo(() => timeZones(), []);
+  const [exporting, setExporting] = useState(false);
+  const [exportMsg, setExportMsg] = useState<string | null>(null);
+  const [handTo, setHandTo] = useState("");
+  const [handBusy, setHandBusy] = useState(false);
+  const [handMsg, setHandMsg] = useState<string | null>(null);
+  const [handLink, setHandLink] = useState<string | null>(null);
+  const [pending, setPending] = useState<{ toEmail: string; expiresAt: string } | null>(null);
+
+  useEffect(() => {
+    if (!isOwner) { setPending(null); return; }
+    let live = true;
+    (async () => {
+      const { data } = await supabase.rpc("my_campaign_transfer", { p_campaign: campaign.id });
+      if (live) setPending((data as { toEmail: string; expiresAt: string } | null) ?? null);
+    })();
+    return () => { live = false; };
+  }, [supabase, campaign.id, isOwner]);
+
+  async function exportCampaign() {
+    setExporting(true); setExportMsg(null);
+    const res = await fetch("/api/gm/campaign/export", {
+      method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ campaignId: campaign.id }),
+    }).catch(() => null);
+    const out = (await res?.json().catch(() => null)) as { url?: string; bytes?: number; error?: string; skipped?: string[] } | null;
+    setExporting(false);
+    if (!res || !res.ok || !out?.url) { setExportMsg(out?.error || "Could not build the export. Try again."); return; }
+    window.location.href = out.url;
+    const mb = ((out.bytes || 0) / 1048576).toFixed(1);
+    setExportMsg(`Downloading (${mb} MB).${out.skipped?.length ? ` Some parts could not be read: ${out.skipped.length}. The README in the zip lists them.` : ""}`);
+  }
+
+  async function handOver() {
+    setHandBusy(true); setHandMsg(null); setHandLink(null);
+    const res = await fetch("/api/gm/campaign/transfer", {
+      method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ campaignId: campaign.id, email: handTo }),
+    }).catch(() => null);
+    const out = (await res?.json().catch(() => null)) as { link?: string; emailed?: boolean; expiresAt?: string; error?: string } | null;
+    setHandBusy(false);
+    if (!res || !res.ok || !out?.link) { setHandMsg(out?.error || "Could not start the handover. Try again."); return; }
+    setPending({ toEmail: handTo.trim().toLowerCase(), expiresAt: out.expiresAt || "" });
+    setHandLink(out.link);
+    setHandTo("");
+    setHandMsg(out.emailed ? "Sent. They accept from the email; the link below works too." : "The email did not go out. Send them the link below yourself.");
+  }
+
+  async function cancelHandover() {
+    setHandBusy(true); setHandMsg(null);
+    const { error } = await supabase.rpc("cancel_campaign_transfer", { p_campaign: campaign.id });
+    setHandBusy(false);
+    if (error) { setHandMsg(`Not cancelled: ${error.message}`); return; }
+    setPending(null); setHandLink(null);
+    setHandMsg("Handover cancelled. The link no longer works.");
+  }
 
   useEffect(() => { setName(campaign.name); setTz(campaign.time_zone || ""); setConfirming(false); setMsg(null); }, [campaign.id, campaign.name, campaign.time_zone]);
 
@@ -85,6 +140,42 @@ export function CampaignSettings({ campaign, isOwner, onChanged, onTrashed }: {
         <button type="button" style={ghost} onClick={save} disabled={busy || !dirty}>{busy ? "Saving..." : "Save details"}</button>
       </div>
       {msg && <p role="status" style={{ margin: 0, fontSize: 13, color: msg === "Saved." ? C.muted : C.warn }}>{msg}</p>}
+
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+        <button type="button" style={ghost} onClick={exportCampaign} disabled={exporting}>{exporting ? "Building the export..." : "Download campaign (zip)"}</button>
+        <span style={{ fontSize: 12.5, color: C.muted }}>Sessions, recaps, codex, characters, maps and table, as JSON and Markdown. Players&rsquo; private notes and the recordings are not included.</span>
+      </div>
+      {exportMsg && <p role="status" style={{ margin: 0, fontSize: 13, color: C.muted }}>{exportMsg}</p>}
+
+      {isOwner && (
+        <div style={{ border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "12px 14px", display: "grid", gap: 8 }}>
+          <div style={{ fontSize: 13, color: C.text, fontWeight: 600 }}>Hand over to another GM</div>
+          {pending ? (
+            <>
+              <p style={{ margin: 0, fontSize: 13, color: C.muted, lineHeight: 1.55 }}>
+                Offered to <span style={{ color: C.text }}>{pending.toEmail}</span>
+                {pending.expiresAt ? `, until ${new Date(pending.expiresAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}` : ""}.
+                When they accept, they become the GM and you stay in the campaign as a player.
+              </p>
+              {handLink && <input readOnly value={handLink} onFocus={(e) => e.currentTarget.select()} aria-label="Handover link" style={{ ...field, width: "100%" }} />}
+              <div><button type="button" style={ghost} onClick={cancelHandover} disabled={handBusy}>Cancel the handover</button></div>
+            </>
+          ) : (
+            <>
+              <p style={{ margin: 0, fontSize: 13, color: C.muted, lineHeight: 1.55 }}>
+                They get an email with a link and accept while signed in with that address (they need GM access). You stay in the
+                campaign as a player. The link works for 7 days.
+              </p>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                <input type="email" value={handTo} onChange={(e) => setHandTo(e.target.value)} placeholder="their email address"
+                  aria-label="New GM's email address" style={{ ...field, flex: "1 1 240px" }} />
+                <button type="button" style={ghost} onClick={handOver} disabled={handBusy || !handTo.trim()}>{handBusy ? "Sending..." : "Send handover"}</button>
+              </div>
+            </>
+          )}
+          {handMsg && <p role="status" style={{ margin: 0, fontSize: 13, color: C.muted }}>{handMsg}</p>}
+        </div>
+      )}
 
       {isOwner && (
         <div style={{ border: `1px solid ${C.warn}`, borderRadius: FORGE_RADIUS, padding: "12px 14px", display: "grid", gap: 8 }}>

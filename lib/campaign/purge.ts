@@ -11,7 +11,8 @@ import { listAll, removeAll } from "@/lib/storage/purge";
 // service role for the purge); then every file under <campaignId>/ in each bucket, plus those recordings.
 // Takes the service-role client for storage.
 
-const BUCKETS = ["session-audio", "campaign-maps", "table-files"] as const;
+// campaign-exports (p140) holds the GM's latest export zip.
+const BUCKETS = ["session-audio", "campaign-maps", "table-files", "campaign-exports"] as const;
 
 export type PurgeResult =
   | { ok: true; filesRemoved: number; failures: string[] }

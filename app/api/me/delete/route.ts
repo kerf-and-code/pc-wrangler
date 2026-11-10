@@ -49,7 +49,7 @@ export async function POST(request: Request) {
   if (b && !b.can_delete) {
     return NextResponse.json(
       {
-        error: "You still run one or more campaigns. Delete or hand them over first, so your players do not lose their history along with you.",
+        error: "You still run one or more campaigns. Hand each one to another GM first (GM workspace, Hand over to another GM), or move it to the trash and delete it forever there, so your players do not lose their history along with you.",
         campaigns: b.campaigns_i_run,
       },
       { status: 409 },
