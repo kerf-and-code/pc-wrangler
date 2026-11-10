@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import { createClient } from "@/lib/supabase/client";
 import { getActiveCampaign, onActiveCampaignChange } from "@/lib/active-campaign";
+import { rulesetForCampaign } from "@/lib/systems/ruleset";
 import { listModules, getModule, isKnownSystem } from "@/lib/systems/registry";
 import { attributionFor } from "@/lib/systems/attribution";
 import { resolveSystemVars } from "@/lib/systems/system-theme";
@@ -275,6 +276,8 @@ export default function CompendiumTool() {
     // afterward are not overridden (this effect runs once).
     const ac0 = getActiveCampaign();
     if (ac0 && isKnownSystem(ac0.system)) setSystem(ac0.system as string);
+    // Audit G7: and the starting ruleset from its D&D edition ("2014" means 2014, otherwise 2024).
+    if (ac0) setRuleset(rulesetForCampaign(ac0.system));
     const unsub = onActiveCampaignChange(readActive); // fires with no args; re-read the signal
     return () => { off = true; unsub(); };
   }, [supabase]);

@@ -17,6 +17,7 @@ import { DS_ORGANIZATIONS, type DSOrganization } from "@/lib/drawsteel/adversary
 import { monsterSourceLabel, monsterSourceTitle } from "@/lib/monster-sources";
 import { initialCampaignId, useRememberCampaign, preferredSessionId, gmHref } from "@/lib/campaign-context";
 import { subclassKey } from "@/lib/subclass-names";
+import { rulesetForCampaign } from "@/lib/systems/ruleset";
 
 // ============================================================================
 // THE TWO METHODS ARE GENUINELY DIFFERENT. THIS IS THE WHOLE POINT OF THE TOOL.
@@ -423,6 +424,12 @@ export default function EncountersPage() {
     setSavedList((data as SavedEncounter[]) || []);
   }, [supabase]);
   useEffect(() => { if (campaignId) { void loadSaved(campaignId); setEncId(null); setEncName(""); setEncMsg(null); } }, [campaignId, loadSaved]);
+  // Audit G7: the campaign's D&D edition is the starting ruleset (the method buttons still switch it).
+  useEffect(() => {
+    if (!campaignId) return;
+    const r = rulesetForCampaign(campaigns.find((c) => c.id === campaignId)?.system);
+    setMethod(r); setSrdMode(r);
+  }, [campaignId, campaigns]);
 
   const foesForSave = (): EncounterFoe[] => foes
     .filter((f) => f.name.trim())
@@ -468,6 +475,78 @@ export default function EncountersPage() {
     setEncId(null); setEncName(""); setEncMsg("Deleted.");
     void loadSaved(campaignId);
   }
+
+  // ---- saved encounters for PF2e, Daggerheart and Draw Steel (audit G1) -------------------------------
+  // The same encounters table: rules is the system ("pf2e" | "daggerheart" | "drawsteel") and foes holds
+  // one object, the party settings and the roster, so the D&D loader (rules 2014 / 2024) never sees it.
+  // There is no combat tracker for these systems yet, so they save and go to the session plan, not Run.
+  type SysSnapshot = Record<string, unknown> & { roster: unknown[] };
+  const dndSaved = savedList.filter((e) => e.rules === "2014" || e.rules === "2024");
+  const sysSaved = (sys: string) => savedList.filter((e) => e.rules === sys);
+
+  async function saveSystemEncounter(sys: string, snapshot: SysSnapshot, fallbackName: string, asNew = false) {
+    if (!campaignId) return;
+    if (!snapshot.roster.length) { setEncMsg("Add at least one creature before saving."); return; }
+    setEncBusy(true); setEncMsg(null);
+    const name = encName.trim() || fallbackName;
+    const row = { campaign_id: campaignId, name, rules: sys, foes: [snapshot], updated_at: new Date().toISOString() };
+    const res = encId && !asNew && sysSaved(sys).some((e) => e.id === encId)
+      ? await supabase.from("encounters").update(row).eq("id", encId).select("id").single()
+      : await supabase.from("encounters").insert(row).select("id").single();
+    setEncBusy(false);
+    if (res.error) { setEncMsg(`Not saved: ${res.error.message}`); return; }
+    setEncId((res.data as { id: string }).id); setEncName(name); setEncMsg("Saved.");
+    void loadSaved(campaignId);
+  }
+
+  function loadSystemEncounter(id: string, apply: (snap: SysSnapshot) => void) {
+    const e = savedList.find((x) => x.id === id);
+    const snap = (e?.foes as unknown as SysSnapshot[] | undefined)?.[0];
+    if (!e || !snap || !Array.isArray(snap.roster)) { setEncMsg("That saved encounter could not be read."); return; }
+    apply(snap);
+    setEncId(e.id); setEncName(e.name); setEncMsg(null);
+  }
+
+  async function systemToPlan(title: string, note: string, difficulty: string) {
+    if (!campaignId) return;
+    const { error } = await supabase.from("session_plan_items").insert({
+      campaign_id: campaignId, title: title.slice(0, 180), note, kind: "encounter", difficulty, source: "gm",
+    });
+    setEncMsg(error ? `Could not add it to the plan: ${error.message}` : "Added to your session plan.");
+  }
+
+  // The save row shared by the three system sections.
+  const systemSaveBox = (sys: string, snapshot: SysSnapshot, fallbackName: string, apply: (snap: SysSnapshot) => void, plan: { note: string; difficulty: string }) => {
+    const list = sysSaved(sys);
+    const mine = !!encId && list.some((e) => e.id === encId);
+    const small: React.CSSProperties = { background: "transparent", color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "7px 14px", fontSize: 12.5, fontWeight: 700, fontFamily: SAX.mono, cursor: "pointer" };
+    return (
+      <div style={box}>
+        <div style={eyebrow}>Save</div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+          {list.length > 0 && (
+            <select value={mine ? encId! : ""} onChange={(e) => e.target.value ? loadSystemEncounter(e.target.value, apply) : (setEncId(null), setEncName(""))} style={{ ...inputStyle, maxWidth: 240 }} aria-label="Saved encounters">
+              <option value="">Saved encounters ({list.length})</option>
+              {list.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
+            </select>
+          )}
+          <input value={encName} onChange={(e) => setEncName(e.target.value)} placeholder={fallbackName} style={{ ...inputStyle, flex: "1 1 200px" }} aria-label="Encounter name" />
+          <button type="button" onClick={() => void saveSystemEncounter(sys, snapshot, fallbackName, false)} disabled={encBusy} style={small}>{mine ? "Save changes" : "Save encounter"}</button>
+          {mine && (
+            <>
+              <button type="button" onClick={() => void saveSystemEncounter(sys, snapshot, fallbackName, true)} disabled={encBusy} style={small}>Save as new</button>
+              <button type="button" onClick={() => void deleteEncounter()} disabled={encBusy} style={{ ...small, color: C.warn }}>Delete</button>
+            </>
+          )}
+          <button type="button" onClick={() => void systemToPlan(encName.trim() || fallbackName, plan.note, plan.difficulty)} disabled={encBusy || !snapshot.roster.length} style={small}>Add to session plan</button>
+        </div>
+        <p style={{ fontSize: 12, color: C.muted, margin: "8px 0 0", lineHeight: 1.5 }}>
+          Running a fight from here works for D&amp;D only for now: the Combat tracker is built on d20 rolls against AC.
+        </p>
+        {encMsg && <p role="status" style={{ fontSize: 12.5, color: C.muted, margin: "8px 0 0" }}>{encMsg}</p>}
+      </div>
+    );
+  };
 
   // Start a live fight on the Combat page: the present party plus every monster, each monster with a
   // snapshot of its stat block (your own block, or the library monster by name + book).
@@ -754,10 +833,10 @@ export default function EncountersPage() {
       <div style={box}>
         <div style={eyebrow}>Save and run</div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-          {savedList.length > 0 && (
+          {dndSaved.length > 0 && (
             <select value={encId ?? ""} onChange={(e) => e.target.value ? loadEncounter(e.target.value) : (setEncId(null), setEncName(""))} style={{ ...inputStyle, maxWidth: 240 }} aria-label="Saved encounters">
-              <option value="">Saved encounters ({savedList.length})</option>
-              {savedList.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
+              <option value="">Saved encounters ({dndSaved.length})</option>
+              {dndSaved.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
             </select>
           )}
           <input value={encName} onChange={(e) => setEncName(e.target.value)} placeholder={defaultEncName()} style={{ ...inputStyle, flex: "1 1 200px" }} aria-label="Encounter name" />
@@ -1073,6 +1152,10 @@ export default function EncountersPage() {
             </div>
           </div>
         </div>
+        {systemSaveBox("pf2e", { level: pfLevel, size: pfSize, roster: pfoes },
+          pfoes.filter((f) => f.name.trim()).map((f) => `${f.count > 1 ? `${f.count}x ` : ""}${f.name.trim()}`).join(", ").slice(0, 80) || "PF2e encounter",
+          (snap) => { setPfLevel(Number(snap.level) || 1); setPfSize(Number(snap.size) || 4); setPfoes((snap.roster as typeof pfoes).map((r) => ({ ...r, id: uid() }))); },
+          { note: `PF2e, party of ${pfSize} at level ${pfLevel}: ${pfTotal} XP, ${pfThreat ? PF2_THREAT_LABEL[pfThreat] : "below Trivial"}.`, difficulty: pfThreat ? PF2_THREAT_LABEL[pfThreat] : "Trivial" })}
       </>)}
 
       {hasEncounterMath && encMethod === "daggerheart" && (<>
@@ -1151,6 +1234,10 @@ export default function EncountersPage() {
             Minions cost 1 point per group equal to the party size; Social and Support cost 1; Horde, Ranged, Skulk, and Standard cost 2; Leader 3; Bruiser 4; Solo 5.
           </p>
         </div>
+        {systemSaveBox("daggerheart", { size: dhSize, adj: dhAdj, roster: dhRoster },
+          dhRoster.map((r) => `${r.count > 1 ? `${r.count}x ` : ""}${r.type}`).join(", ").slice(0, 80) || "Daggerheart encounter",
+          (snap) => { setDhSize(Number(snap.size) || 4); setDhAdj(Array.isArray(snap.adj) ? (snap.adj as DHAdjustment[]) : []); setDhRoster((snap.roster as typeof dhRoster).map((r) => ({ ...r, id: uid() }))); },
+          { note: `Daggerheart, ${dhSize} PCs: ${dhSpent} of ${dhBudget} Battle Points (${dhVerdict.label}).`, difficulty: dhVerdict.label })}
       </>)}
 
       {hasEncounterMath && encMethod === "drawsteel" && (<>
@@ -1247,6 +1334,10 @@ export default function EncountersPage() {
             Each monster costs its Encounter Value. Minions are bought four at a time, so a Minion row&apos;s EV is the cost of a group of four and its count is the number of groups. Keep monsters within {dsLevelCap} levels of the party ({dsLevel + 1} for Solos); rows above that are flagged.
           </p>
         </div>
+        {systemSaveBox("drawsteel", { size: dsSize, level: dsLevel, victories: dsVictories, roster: dsRoster },
+          dsRoster.map((r) => `${r.count > 1 ? `${r.count}x ` : ""}${r.org} L${r.level}`).join(", ").slice(0, 80) || "Draw Steel encounter",
+          (snap) => { setDsSize(Number(snap.size) || 4); setDsLevel(Number(snap.level) || 1); setDsVictories(Number(snap.victories) || 0); setDsRoster((snap.roster as typeof dsRoster).map((r) => ({ ...r, id: uid() }))); },
+          { note: `Draw Steel, ${dsSize} heroes at level ${dsLevel}, ${dsVictories} victories: ${dsSpent} EV, ${dsDiff ? DS_DIFFICULTY_LABEL[dsDiff] : "empty"}.`, difficulty: dsDiff ? DS_DIFFICULTY_LABEL[dsDiff] : "Empty" })}
       </>)}
     </PageShell>
   );

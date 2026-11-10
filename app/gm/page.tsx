@@ -10,6 +10,7 @@ import { getRosterFields, type RosterSpec } from "@/lib/systems/roster-fields";
 import { computeCoverage, rolesForClass, classesForRole, ROLE_LABEL, type CoverageSystem } from "@/lib/party/coverage";
 import { initialCampaignId, useRememberCampaign } from "@/lib/campaign-context";
 import { CampaignSettings, CampaignTrash } from "@/components/campaign-safety";
+import { rulesetForCampaign, pickerSystem } from "@/lib/systems/ruleset";
 import { canonicalSubclass, subclassKey } from "@/lib/subclass-names";
 
 // Palette mapped onto the shared cellar theme.
@@ -157,6 +158,8 @@ export default function GMWorkspace() {
   // system returns a field spec, and the roster shows that system's own choices instead.
   const activeSystem = useMemo(() => campaigns.find((c) => c.id === selected)?.system ?? null, [campaigns, selected]);
   const rosterSpec = useMemo(() => getRosterFields(activeSystem), [activeSystem]);
+  // Audit G7: the selected campaign's D&D edition sets the catalog's edition (the buttons still switch it).
+  useEffect(() => { if (selected) setEdition(rulesetForCampaign(activeSystem)); }, [selected, activeSystem]);
 
   async function changeSystem(id: string, system: string) {
     const name = campaigns.find((c) => c.id === id)?.name ?? "this campaign";
@@ -474,9 +477,9 @@ export default function GMWorkspace() {
             value={newCampaign.name} onChange={(e) => setNewCampaign({ ...newCampaign, name: e.target.value })} />
           <select style={{ ...inputStyle, maxWidth: 200 }} value={newCampaign.system}
             onChange={(e) => setNewCampaign({ ...newCampaign, system: e.target.value })}>
-            <option value="5e">D&amp;D 5e (2024)</option>
+            {/* Audit U25: one entry for the 2024 rules; "5.5e" was the same rules under a second name. */}
+            <option value="5e">D&amp;D 2024 (5.5e)</option>
             <option value="2014">D&amp;D 2014</option>
-            <option value="5.5e">D&amp;D 5.5e</option>
             {listModules().filter((m) => m.id !== "dnd5e").map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}
           </select>
           <button style={btn} onClick={createCampaign} disabled={busy}>Create</button>
@@ -492,10 +495,9 @@ export default function GMWorkspace() {
                 <button style={btnGhost} onClick={() => copySetup(sc.share_code)}>{copied === sc.share_code ? "Copied" : "Copy /setup command"}</button>
               </>}
               <span style={{ fontSize: 12.5, color: C.muted }}>System:</span>
-              <select value={sc.system ?? "5e"} onChange={(e) => changeSystem(sc.id, e.target.value)} disabled={busy} style={{ ...inputStyle, maxWidth: 200 }}>
-                <option value="5e">D&amp;D 5e (2024)</option>
+              <select value={pickerSystem(sc.system)} onChange={(e) => changeSystem(sc.id, e.target.value)} disabled={busy} style={{ ...inputStyle, maxWidth: 200 }}>
+                <option value="5e">D&amp;D 2024 (5.5e)</option>
                 <option value="2014">D&amp;D 2014</option>
-                <option value="5.5e">D&amp;D 5.5e</option>
                 {listModules().filter((m) => m.id !== "dnd5e").map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}
               </select>
             </div>

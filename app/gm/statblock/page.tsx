@@ -35,6 +35,7 @@ import {
   type LancerNPC, type LancerNPCRole, type LancerNPCTier,
 } from "@/lib/lancer/adversary";
 import { getActiveCampaign } from "@/lib/active-campaign";
+import { rulesetForCampaign } from "@/lib/systems/ruleset";
 import { PortraitUploader } from "@/components/portrait-uploader";
 import {
   STONE, FORGE_FONTS, stonePanel, stoneButton, stoneField,
@@ -85,6 +86,8 @@ function StatBlockInner() {
   const [gmId, setGmId] = useState<string | null>(null);
 
   const [srdMode, setSrdMode] = useState<SrdMode>("2014");
+  // Audit G7: the active campaign's D&D edition is the starting monster library (still switchable).
+  useEffect(() => { setSrdMode(rulesetForCampaign(getActiveCampaign()?.system)); }, []);
   const [status, setStatus] = useState<"loading" | "ready" | "picker">("loading");
   const [rows, setRows] = useState<StatBlockRow[]>([]);
 

@@ -29,6 +29,7 @@ import { MarkerStylePicker, TokenMarkerPicker, useMarkerStyle } from "@/componen
 import { drawFrame, frameMoves, normFrame, tracePath, type Frame } from "@/lib/tabletop/frames";
 import TokenMaker, { type TokenMakerResult } from "@/components/token-maker";
 import { openTabletop } from "@/lib/tabletop/open";
+import { getModule } from "@/lib/systems/registry";
 import MapUpload from "@/components/map-upload";
 import { EFFECTS, drawEffect, isEffect, seedOf, type EffectKind } from "@/lib/tabletop/effects";
 import HandoutView, { type Handout } from "@/components/handout-view";
@@ -206,6 +207,17 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     hasHooks.current = data === true;
   }, [supabase, campaignId]);
   useEffect(() => { void checkHooks(); }, [checkHooks]);
+  // Push 5 (audit G3, L-G2): the campaign's game system (p141 tabletop_system). The quick dice and the
+  // roll cards follow it, and only D&D tables are told whether a d20 hits an AC.
+  const [tableSystem, setTableSystem] = useState<string | null>(null);
+  useEffect(() => {
+    let live = true;
+    void supabase.rpc("tabletop_system", { p_campaign: campaignId }).then(({ data }) => { if (live) setTableSystem(typeof data === "string" ? data : null); });
+    return () => { live = false; };
+  }, [supabase, campaignId]);
+  const tableModule = getModule(tableSystem);
+  const dndTable = tableModule.id === "dnd5e" || tableModule.id === "darkmatter";
+  const diceStyle = tableModule.dice.style;
   const kickTimer = useRef<number | null>(null);
   const kickAddons = useCallback(() => {
     if (!hasHooks.current || kickTimer.current !== null) return;
@@ -2634,7 +2646,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
             {attacks.map((x) => <span key={x.id} style={{ display: "inline-flex", gap: 3, textDecoration: x.rolls?.discarded ? "line-through" : "none", opacity: x.rolls?.discarded ? 0.6 : 1 }}>{chips(x)}</span>)}
             {crit && <span style={{ fontSize: 12, color: "#8fd18a" }}>critical hit</span>}
             {fumble && <span style={{ fontSize: 12, color: "#e07a70" }}>natural 1</span>}
-            {isGm && tgt?.ac != null && !crit && !fumble && <span style={{ fontSize: 12, color: C.muted }}>vs AC {tgt.ac}: {Number(kept.rolls?.total) >= tgt.ac ? "hits" : "misses"}</span>}
+            {isGm && dndTable && tgt?.ac != null && !crit && !fumble && <span style={{ fontSize: 12, color: C.muted }}>vs AC {tgt.ac}: {Number(kept.rolls?.total) >= tgt.ac ? "hits" : "misses"}</span>}
           </div>
         )}
         {dmg.length > 0 && (
@@ -3063,16 +3075,29 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
               </div>
               <div style={{ padding: 10, borderTop: `1px solid ${C.line}` }}>
                 <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 8 }}>
+                  {diceStyle.kind === "duality" && (
+                    <button type="button" title="Roll the Hope and Fear dice (2d12)" onClick={() => void rollDice("2d12", "Hope and Fear", false)} style={{ ...small, padding: "5px 9px", fontWeight: 700, color: C.sun }}>Hope &amp; Fear</button>
+                  )}
+                  {diceStyle.kind === "power-roll" && (
+                    <button type="button" title="Power roll (2d10)" onClick={() => void rollDice("2d10", "Power roll", false)} style={{ ...small, padding: "5px 9px", fontWeight: 700, color: C.sun }}>Power roll</button>
+                  )}
                   {[4, 6, 8, 10, 12, 20, 100].map((s) => (
                     <button key={s} type="button" title={`Roll 1d${s}`} onClick={() => quickRoll(s)} style={{ ...small, padding: "5px 7px", fontWeight: 600 }}>d{s}</button>
                   ))}
-                  <select aria-label="Advantage for d20" value={adv} onChange={(e) => setAdv(e.target.value as typeof adv)} style={{ ...field, width: 92, padding: "5px 6px" }}>
-                    <option value="flat">Normal</option><option value="adv">Advantage</option><option value="dis">Disadvantage</option>
-                  </select>
+                  {diceStyle.kind === "d20-vs-dc" && diceStyle.advantage && (
+                    <select aria-label="Advantage for d20" value={adv} onChange={(e) => setAdv(e.target.value as typeof adv)} style={{ ...field, width: 92, padding: "5px 6px" }}>
+                      <option value="flat">Normal</option><option value="adv">Advantage</option><option value="dis">Disadvantage</option>
+                    </select>
+                  )}
                   <label title="Show rolls as dice thrown over the table (this browser only; off when your device asks for reduced motion)" style={{ display: "flex", gap: 4, alignItems: "center", fontSize: 12, color: C.muted, marginLeft: "auto" }}>
                     <input type="checkbox" checked={dice3d} onChange={(e) => setDice3d(e.target.checked)} style={{ accentColor: C.sun }} />3D dice
                   </label>
                 </div>
+                {tableSystem && !dndTable && (
+                  <p style={{ color: C.muted, fontSize: 11.5, margin: "0 0 8px", lineHeight: 1.5 }}>
+                    {tableModule.label}: rolls show their dice and total; read the result by your rules (the table does not judge hits or tiers yet).
+                  </p>
+                )}
                 <div style={{ display: "flex", gap: 6, marginBottom: 6, alignItems: "center" }}>
                   <span style={{ color: C.muted, fontSize: 12 }}>As</span>
                   <select aria-label="Speak and roll as" value={asWho} onChange={(e) => setAsWho(e.target.value)} style={{ ...field, flex: 1 }}>

@@ -45,6 +45,7 @@ import { applyAdvantage } from "@/lib/dice";
 import { MARKERS, BUFFS, DEBUFFS, critDice, markerKind, MARKER_COLORS, econOf, speedNow, FRESH_ECON } from "@/lib/combat-effects";
 import { MarkerGlyph } from "@/components/marker-icon";
 import { openTabletop } from "@/lib/tabletop/open";
+import { getModule } from "@/lib/systems/registry";
 import {
   CONDITIONS, abilityMod, applyDamage, applyHealing, blockActions, combatantId, monsterCombatants, pcCombatant,
   resolveFoeBlock, sortForTurns, type Combatant, type EncounterFoe, type ParsedAction,
@@ -125,7 +126,8 @@ export default function CombatPage() {
     const [{ data: s }, { data: p }, { data: enc, error: encErr }, { data: cbs, error: cbErr }] = await Promise.all([
       supabase.from("sessions").select("id, session_number, status").eq("campaign_id", cid).order("session_number", { ascending: false }),
       supabase.from("characters").select("id, name").eq("campaign_id", cid).eq("kind", "pc").eq("active", true).is("alter_ego_of", null).order("name"),
-      supabase.from("encounters").select("id, name, rules, foes").eq("campaign_id", cid).order("updated_at", { ascending: false }),
+      // D&D encounters only: other systems save a different shape (audit G1) and cannot run here yet.
+      supabase.from("encounters").select("id, name, rules, foes").eq("campaign_id", cid).in("rules", ["2014", "2024"]).order("updated_at", { ascending: false }),
       supabase.from("combats").select("id, name, rules, status, round, turn, combatants, session_id, encounter_id").eq("campaign_id", cid).eq("status", "active").order("updated_at", { ascending: false }),
     ]);
     if (encErr || cbErr) {
@@ -503,6 +505,10 @@ export default function CombatPage() {
   const selected = live.find((c) => c.id === selectedId) ?? current;
   const campaign = campaigns.find((c) => c.id === campaignId);
   const playerLink = campaign?.share_code ? `/initiative?share=${encodeURIComponent(campaign.share_code)}` : null;
+  // Audit G3: this tracker is D&D 5e shaped (d20 rolls against AC, 5e criticals). For another system it
+  // still tracks turns, HP and conditions, but says so and stops declaring hits and misses.
+  const rulesModule = getModule(campaign?.system);
+  const dndRules = rulesModule.id === "dnd5e" || rulesModule.id === "darkmatter";
 
   // ---- styles ----
   const box: React.CSSProperties = { background: C.panel, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "14px 16px", marginBottom: 14 };
@@ -518,6 +524,12 @@ export default function CombatPage() {
         so they show up in Mechanics next to the players&apos;. Build and balance fights on <a href="/gm/encounters" style={{ color: C.sun }}>Encounters</a>, then press Run.
         {campaignId && <> Everything else for the night is on <a href={gmHref("/gm/tonight", { campaign: campaignId, session: sessionId || null })} style={{ color: C.sun }}>Tonight</a>.</>}
       </p>
+      {campaign && !dndRules && (
+        <p role="note" style={{ color: C.text, fontSize: 13.5, margin: "0 0 14px", lineHeight: 1.6, maxWidth: 760, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "10px 12px" }}>
+          This tracker is built for D&amp;D: its rolls are d20s against AC. In {rulesModule.label} use it for turn order, HP and
+          conditions, and roll with your own system&apos;s dice; it won&apos;t call hits or misses.
+        </p>
+      )}
 
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center", marginBottom: 12 }}>
         <select value={campaignId} onChange={(e) => setCampaignId(e.target.value)} style={input} aria-label="Campaign">
@@ -668,8 +680,8 @@ export default function CombatPage() {
                     <strong>{result.attacker}</strong> {result.action} &rarr; <strong>{result.targetName}</strong>
                   </div>
                   <div style={{ color: C.text, fontSize: 13.5, marginTop: 4 }}>
-                    {result.total != null && <>{result.total}{result.ac != null ? ` vs AC ${result.ac}` : ""}: </>}
-                    <strong style={{ color: result.outcome === "miss" ? C.muted : C.sun }}>{verdict}</strong>
+                    {result.total != null && <>{result.total}{dndRules && result.ac != null ? ` vs AC ${result.ac}` : ""}{dndRules ? ": " : ""}</>}
+                    {dndRules && <strong style={{ color: result.outcome === "miss" ? C.muted : C.sun }}>{verdict}</strong>}
                     {result.damage != null && <> · {result.damage} damage{result.parts ? ` (${result.parts})` : ""}{result.outcome === "crit" ? ", dice doubled" : ""}</>}
                   </div>
                   {tgt && (
