@@ -120,7 +120,7 @@ const CAP_LABEL: Record<string, string> = {
 // make an ogre hit harder; missing healing very much does.
 const COMBAT_CRITICAL = ["healing", "ranged", "tank", "control", "aoe"];
 
-type Char = { id: string; name: string; level: number | null; class: string | null; subclass: string | null };
+type Char = { id: string; name: string; level: number | null; class: string | null; subclass: string | null; snap?: unknown; play?: unknown };
 // A foe keeps where its stat block came from (origin + statBlockId / sourceKey / edition), so a saved
 // encounter can be RUN later, not just priced. A typed-in row, or a library row whose name was edited,
 // is "custom": priced by CR, and enters a fight with no stat block (the GM fills in HP by hand).
@@ -200,7 +200,7 @@ export default function EncountersPage() {
   const loadChars = useCallback(async (cid: string) => {
     const { data } = await supabase
       .from("characters")
-      .select("id, name, level, class, subclass")
+      .select("id, name, level, class, subclass, snap:build->sheetSnapshot, play:build->play")
       .eq("campaign_id", cid).eq("kind", "pc").eq("active", true)
       // An ALTER EGO is a second sheet for a player who already has one at the table, not a second
       // body in the fight. Counting both inflates the XP budget and the party size, so a four-player
@@ -569,7 +569,7 @@ export default function EncountersPage() {
       if (!block) unresolved += f.count;
       monsters.push(...monsterCombatants(f.name, f.count, block));
     }
-    const combatants = [...party.map((c) => pcCombatant({ id: c.id, name: c.name })), ...monsters];
+    const combatants = [...party.map((c) => pcCombatant(c)), ...monsters];
     const { data, error } = await supabase.from("combats").insert({
       campaign_id: campaignId, encounter_id: encId, session_id: preferredSessionId(campaignId),
       name: encName.trim() || defaultEncName(), rules: method, combatants,

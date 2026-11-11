@@ -959,10 +959,18 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
   // Phase 5o: numbers other screens read off the saved character without running the engine, saved
   // with it as build.sheetSnapshot: darkvision, for the tabletop's line of sight. The longest of what
   // the sheet works out (species) and what an imported D&D Beyond sheet lists (Eyes of Night, an item).
+  // Push 28 (V3): also AC, maximum HP, initiative, speed and attacks per Attack action, so a PC joins
+  // a fight the GM starts with their numbers already in (lib/combat.ts pcCombatant).
   const sheetSnapshot = useMemo(() => {
     const dv = (t: string | null | undefined) => { const m = /darkvision\D{0,12}(\d+)/i.exec(t || ""); return m ? Number(m[1]) : 0; };
-    return { darkvision: Math.max(0, ...(sheet?.senses || []).map(dv), dv(importedSheet?.defenses?.senses)) };
-  }, [sheet, importedSheet]);
+    const darkvision = Math.max(0, ...(sheet?.senses || []).map(dv), dv(importedSheet?.defenses?.senses));
+    if (!sheet) return { darkvision };
+    const multi = (build as Build & { multiclass?: { className: string; level: number }[] }).multiclass || [];
+    return {
+      darkvision, ac: sheet.ac, hpMax: sheet.hpMax, init: sheet.initiative, speed: sheet.speed,
+      attacks: attacksPerAction([{ className: build.meta.className, subclass: build.meta.subclass, level: build.level }, ...multi]),
+    };
+  }, [sheet, importedSheet, build]);
   const playAttacks = useMemo<AttackRow[]>(() => {
     const rows = applyImportAdjust(attacksBase, build.importAdjust?.attacks);
     if (!importedSheet) return rows;

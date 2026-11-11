@@ -16,6 +16,8 @@ The name comes from the six axes the disposition model tracks: Voice, Tactics, A
 
 The newest changes first. Each one says where to find it.
 
+**11 November 2026: the tabletop and fights.** Player characters now join a fight with their AC, hit points (including damage already taken), initiative bonus and speed from their sheets, whether the fight starts from Encounters, Combat or the tabletop. Characters pick this up the next time their sheet is saved in the Forge. On the tabletop, click an area template and press Target everyone inside to target every creature it touches with one saving throw effect, and fire or radiant templates now light the area around them in a dim or dark scene. Duplicate campaign now copies the table's language too.
+
 **10 November 2026: ask the campaign.** Ask the campaign, under World in the menu: ask a question in your own words ("what did we promise the harbourmaster?") and get a short answer drawn from your transcripts, story beats, Codex, cast and recaps, with each claim numbered back to its source. Sources open the Codex entry or session they came from, and recorded moments play from the line. Also new today: Duplicate campaign on the Workspace copies a prepared world into a fresh campaign, the tabletop keeps scene snapshots you can restore, and each campaign can set the language it plays in, for transcription and recaps.
 
 **10 November 2026: running the table together.** Co-GMs. On the Workspace, the GMs panel lets the campaign's owner invite another GM with a single-use link that works for 7 days. A co-GM runs everything you do except deleting or trashing the campaign, handing it over, and choosing who else is a GM. They can step down from the same panel.
@@ -104,7 +106,7 @@ The shared table for your campaign: battle maps, tokens, handouts and rolls that
 
 **Floors.** A battle map with several levels becomes one place with floors. A token changes floor at the same spot. A player's token can only change floor standing on stairs, a ladder, a trapdoor or a pit, unless you let players change floors anywhere.
 
-**Drawing, templates and terrain.** Draw (D) with a pen, lines, boxes, ellipses and text; each person erases their own. Area templates (T) are circles, cones, squares and lines you size by dragging or by typing a size in feet. Difficult terrain (G) paints squares where movement costs double, and the measure tool counts it.
+**Drawing, templates and terrain.** Draw (D) with a pen, lines, boxes, ellipses and text; each person erases their own. Area templates (T) are circles, cones, squares and lines you size by dragging or by typing a size in feet. A template can hold fire, cold, lightning or another effect and stays where you put it; with lighting on, fire and radiant light the area around them, so a 5 ft square of fire makes a brazier. Click a template and press Target everyone inside to select every creature it touches; in a fight, a player gets them all as the targets of their saving throw effect, rolled once. Difficult terrain (G) paints squares where movement costs double, and the measure tool counts it.
 
 **Handouts, pins and tables.** Show a handout or picture to everyone or to chosen players, and pop it up again later. Pin a Codex entry to the table. Tables are rollable tables you paste or type, one entry per line, numbered like a book's or as a plain list.
 

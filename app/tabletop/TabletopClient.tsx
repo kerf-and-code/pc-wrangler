@@ -8,11 +8,11 @@ import { normalizeLevels, CELL_TYPES } from "@/lib/dungeon/render";
 import { normCustom, normDoors, normElements, normBattleMeta, normSightWalls, piecesOverImage } from "@/lib/dungeon/battle";
 import {
   snapToken, snapCenter, measure, fitCamera, zoomAt, centerOn, toWorld, parseChat, DIAGONAL_RULES,
-  templateCells, templateOutline, insideTemplate, snapOrigin, snapAngle, TEMPLATE_SHAPES,
+  templateCells, templateOutline, insideTemplate, tokensInTemplate, snapOrigin, snapAngle, TEMPLATE_SHAPES,
   type Camera, type Pt, type DiagonalRule, type TemplateGeom, type TemplateShape,
 } from "@/lib/tabletop/geometry";
 import { loadSrd } from "@/lib/srd/srd";
-import { sortForTurns, applyDamage, applyHealing, combatantId, pcCombatant, type Combatant, type Econ } from "@/lib/combat";
+import { sortForTurns, applyDamage, applyHealing, combatantId, pcCombatant, type Combatant, type Econ, type PcSheetSource } from "@/lib/combat";
 import { monsterSourceLabel } from "@/lib/monster-sources";
 import {
   decodeFog, encodeFog, isRevealed, setSquares, fillFog, brushCells, roomsOf, roomCells, doorAt, edgeSegment,
@@ -32,7 +32,7 @@ import { openTabletop } from "@/lib/tabletop/open";
 import { useDialogFocus } from "@/lib/use-dialog-focus";
 import { getModule } from "@/lib/systems/registry";
 import MapUpload from "@/components/map-upload";
-import { EFFECTS, drawEffect, isEffect, seedOf, type EffectKind } from "@/lib/tabletop/effects";
+import { EFFECTS, drawEffect, isEffect, seedOf, templateLight, type EffectKind } from "@/lib/tabletop/effects";
 import HandoutView, { type Handout } from "@/components/handout-view";
 import RollTablesPanel from "@/components/roll-tables-panel";
 import TableSound, { useTableAudio } from "@/components/table-sound";
@@ -282,6 +282,8 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   const [fogOnUi, setFogOnUi] = useState(false);
   const [selDoors, setSelDoors] = useState<string[]>([]);
   const [selTpl, setSelTpl] = useState<string | null>(null);
+  // push 28 (V1): the fight entries inside a template, for a player's save effect, and the tokens behind them
+  const [areaTargets, setAreaTargets] = useState<{ ids: string[]; tokens: string[]; key: number } | null>(null);
   const [tplShape, setTplShape] = useState<TemplateShape>("circle");
   const [tplSize, setTplSize] = useState("");
   const [tplColor, setTplColor] = useState("#e0703a");
@@ -568,7 +570,10 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
       const l = lightOf(t.style); if (!l) return [];
       const p = shownPos(t); if (!onMap(p)) return [];
       return [{ x: p.x, y: p.y, bright: l.bright > 0 ? t.size / 2 + l.bright / feet : 0, r: t.size / 2 + (l.bright + l.dim) / feet }];
-    });
+    }).concat([...templatesRef.current.values()].flatMap((t) => {
+      // push 28 (V2): a fire or radiant area left on the map (a brazier, a campfire) lights its surroundings
+      const L = templateLight(t, feet); return L && onMap(L) ? [L] : [];
+    }));
     const key = mapSig.current + "|" + mode + "|" + lookers.map((p) => `${p.x.toFixed(2)},${p.y.toFixed(2)},${p.dv}`).join(";")
       + "|" + sources.map((p) => `${p.x.toFixed(2)},${p.y.toFixed(2)},${p.r}`).join(";");
     if (key === sight.current.key) return;
@@ -1403,9 +1408,10 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [supabase, requestDraw]);
 
-  const combatantFromToken = (t: Token): TC | null => {
+  // push 28 (V3): a PC comes into the fight with the numbers off their saved sheet
+  const combatantFromToken = (t: Token, sheets: Map<string, PcSheetSource>): TC | null => {
     if (t.kind === "object") return null;
-    if (t.kind === "pc" && t.character_id) return { ...pcCombatant({ id: t.character_id, name: t.name }), tokenId: t.id };
+    if (t.kind === "pc" && t.character_id) return { ...pcCombatant({ id: t.character_id, name: t.name, ...(sheets.get(t.character_id) ?? {}) }), tokenId: t.id };
     const stats = (t.style?.stats ?? {}) as { hp?: number | null; ac?: number | null };
     return { id: combatantId(), kind: "monster", name: t.name, initiative: null, initBonus: 0, hp: stats.hp ?? null, maxHp: stats.hp ?? null, tempHp: 0,
       ac: stats.ac ?? null, conditions: [], hidden: t.hidden || t.layer === "gm", defeated: false, block: null, tokenId: t.id };
@@ -1414,8 +1420,14 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     const st = stateRef.current; if (!st) return;
     const toks = ids.map((i) => tokensRef.current.get(i)).filter((t): t is Token => !!t);
     if (!toks.length) { say("Select tokens on the map first (click, Shift-click or drag a box)."); return; }
+    const sheets = new Map<string, PcSheetSource>();
+    const pcIds = [...new Set(toks.filter((t) => t.kind === "pc" && t.character_id).map((t) => t.character_id as string))];
+    if (pcIds.length) {
+      const { data: cs } = await supabase.from("characters").select("id, snap:build->sheetSnapshot, play:build->play").in("id", pcIds);
+      for (const c of (cs ?? []) as unknown as ({ id: string } & PcSheetSource)[]) sheets.set(c.id, { snap: c.snap, play: c.play });
+    }
     if (!fightRow.current) {
-      const combatants = toks.map(combatantFromToken).filter((c): c is TC => !!c);
+      const combatants = toks.map((t) => combatantFromToken(t, sheets)).filter((c): c is TC => !!c);
       const { data, error: er } = await supabase.from("combats").insert({ campaign_id: campaignId, session_id: st.session_id, name: st.scene?.name ?? "Combat", rules: "2024", combatants }).select(FIGHT_COLS).single();
       if (er || !data) { say(`Could not start the fight: ${er?.message ?? "no row"}`); return; }
       fightRow.current = data as FightRow; setFight(toFight(data as FightRow)); send("combat", {}); setPanel("turns"); requestDraw();
@@ -1423,7 +1435,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     }
     await mutateFight((row) => {
       const have = (t: Token) => row.combatants.some((c) => c.tokenId === t.id || (t.kind === "pc" && c.kind === "pc" && c.characterId === t.character_id));
-      const add = toks.filter((t) => !have(t)).map(combatantFromToken).filter((c): c is TC => !!c);
+      const add = toks.filter((t) => !have(t)).map((t) => combatantFromToken(t, sheets)).filter((c): c is TC => !!c);
       return { ...row, combatants: [...row.combatants, ...add] };
     });
     setPanel("turns");
@@ -2242,6 +2254,34 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     setMarkerBusy(false);
   }, [supabase, updateTokens, requestDraw]);
   useEffect(() => { setMarkerOpen(false); setNotesFor(null); setBarsFor(null); }, [selected]);
+  // picking other tokens by hand lets go of the area's targets
+  useEffect(() => {
+    setAreaTargets((a) => (a && (a.tokens.length !== selected.length || a.tokens.some((id) => !selected.includes(id))) ? null : a));
+  }, [selected]);
+
+  // push 28 (V1): everyone an area template touches. Selects their tokens; a player in the fight gets
+  // them as the targets of a saving throw effect in the Turns tab, ready to roll once for all.
+  const targetInsideTpl = (tplId: string) => {
+    const t = templatesRef.current.get(tplId); if (!t) return;
+    const gm = stateRef.current?.role === "gm";
+    const toks = [...tokensRef.current.values()]
+      .filter((tk) => tk.layer !== "map" && (gm || !seenTokens.current || seenTokens.current.has(tk.id)))
+      .map((tk) => ({ id: tk.id, ...shownPos(tk), size: tk.size }));
+    const inside = tokensInTemplate(t, fps, toks);
+    if (!inside.length) { say("Nobody is inside that template."); return; }
+    const f = fight;
+    const mine = gm ? null : f?.order.find((e) => e.kind === "pc" && myChars.some((c) => c.character_id === e.characterId)) ?? null;
+    const entries = f && mine ? f.order.filter((e) => e.tokenId && inside.includes(e.tokenId) && e.id !== mine.id && !e.defeated) : [];
+    setSelected(inside);
+    if (mine && entries.length) {
+      setAreaTargets({ ids: entries.map((e) => e.id), tokens: inside, key: Date.now() });
+      setPanel("turns");
+      say(`${entries.length} target${entries.length === 1 ? "" : "s"} inside: ${entries.map((e) => e.name).join(", ")}. Set the save and damage in Turns.`, true);
+    } else {
+      setAreaTargets(null);
+      say(`Selected ${inside.length} token${inside.length === 1 ? "" : "s"} inside${!gm && f && mine ? ", none of them in the fight" : ""}.`, true);
+    }
+  };
 
   // phase 5w: height off the ground through tabletop_set_token_elevation (p127): the GM any token, a
   // player their own. It shows at once here; the token's Realtime update brings it to everyone else.
@@ -3005,7 +3045,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                 <input type="checkbox" checked={!!scene.settings?.los} onChange={(e) => void setLos({ los: e.target.checked })} style={{ accentColor: C.sun }} />Line of sight
               </label>
               {!!scene.settings?.los && (
-                <label title="Dim: everything in sight is seen, shaded, and lights brighten their area. Dark: players see only lit areas and what their darkvision reaches. Set lights and darkvision on tokens (Tokens tab)." style={{ display: "flex", gap: 5, fontSize: 12.5, alignItems: "center", color: C.text, margin: "0 4px" }}>
+                <label title="Dim: everything in sight is seen, shaded, and lights brighten their area. Dark: players see only lit areas and what their darkvision reaches. Set lights and darkvision on tokens (Tokens tab). A template with fire or radiant in it lights its surroundings too, like a brazier." style={{ display: "flex", gap: 5, fontSize: 12.5, alignItems: "center", color: C.text, margin: "0 4px" }}>
                   Light
                   <select aria-label="Scene light" value={lightModeOf(scene.settings?.light)} onChange={(e) => void setLos({ light: e.target.value as LightMode })} style={{ ...field, width: "auto", padding: "4px 6px" }}>
                     {LIGHT_MODES.map((l) => <option key={l.key} value={l.key}>{l.label}</option>)}
@@ -3032,13 +3072,17 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                 <>
                   <button type="button" onClick={() => turnTpl(-15)} style={small} title="Shift+R">&#8634; 15</button>
                   <button type="button" onClick={() => turnTpl(15)} style={small} title="R">15 &#8635;</button>
-                  <select aria-label="Effect in this template" value={templatesRef.current.get(selTpl)?.effect ?? ""} onChange={(e) => void setTplEffectOn(selTpl, e.target.value as EffectKind | "")} style={{ ...field, width: "auto", padding: "5px 6px" }}>
+                  <select aria-label="Effect in this template" title="Fire and radiant light the area around them when the scene is dim or dark" value={templatesRef.current.get(selTpl)?.effect ?? ""} onChange={(e) => void setTplEffectOn(selTpl, e.target.value as EffectKind | "")} style={{ ...field, width: "auto", padding: "5px 6px" }}>
                     <option value="">No effect</option>
                     {EFFECTS.map((x) => <option key={x.key} value={x.key}>{x.label}</option>)}
                   </select>
                   <button type="button" onClick={() => void removeTpl()} style={{ ...small, color: C.warn }}>Remove</button>
                 </>
               ) : <span style={{ color: C.muted }}>placed by someone else</span>}
+              <button type="button" onClick={() => targetInsideTpl(selTpl)} style={small}
+                title={isGm ? "Select every token this template touches" : "Select every token this template touches; in a fight, they become the targets of your saving throw effect"}>
+                Target everyone inside
+              </button>
             </div>
           )}
           {/* phase 5x: the open pin */}
@@ -3317,10 +3361,11 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                       </div>
                       <div style={{ marginTop: 8, padding: "8px 10px", border: `1px solid ${C.line}`, borderRadius: 8 }}>
                         <div style={{ fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", color: C.muted, marginBottom: 6 }}>Attack or cast</div>
-                        <AttackForm key={preset || "none"} campaignId={campaignId} characterId={mineE.characterId} presetTarget={preset}
+                        <AttackForm key={areaTargets ? `area-${areaTargets.key}` : preset || "none"} campaignId={campaignId} characterId={mineE.characterId} presetTarget={preset}
+                          presetTargets={areaTargets?.ids}
                           fight={fight as unknown as Parameters<typeof AttackForm>[0]["fight"]}
                           onDone={() => { void loadFight(); send("combat", {}); }} />
-                        <p style={{ fontSize: 11.5, color: C.muted, margin: "6px 0 0" }}>Select a monster&apos;s token to make it the target.</p>
+                        <p style={{ fontSize: 11.5, color: C.muted, margin: "6px 0 0" }}>Select a monster&apos;s token to make it the target. For an area spell, click its template on the map and press Target everyone inside.</p>
                       </div>
                       </>
                     );

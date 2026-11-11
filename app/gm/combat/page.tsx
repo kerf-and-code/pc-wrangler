@@ -61,7 +61,7 @@ import { gmCampaignsFilter } from "@/lib/campaign-gm";
 
 type Campaign = { id: string; name: string; system: string | null; share_code: string | null };
 type Sess = { id: string; session_number: number | null; status: string | null };
-type Pc = { id: string; name: string };
+type Pc = { id: string; name: string; snap?: unknown; play?: unknown };
 type CombatRow = { id: string; name: string; rules: string; status: string; round: number; turn: number; combatants: Combatant[]; session_id: string | null; encounter_id: string | null };
 type SavedEnc = { id: string; name: string; rules: string; foes: EncounterFoe[] };
 type RollLog = { id: string; who: string; label: string; notation: string; total: number; natural: number | null };
@@ -129,7 +129,7 @@ export default function CombatPage() {
     setErr(null);
     const [{ data: s }, { data: p }, { data: enc, error: encErr }, { data: cbs, error: cbErr }] = await Promise.all([
       supabase.from("sessions").select("id, session_number, status").eq("campaign_id", cid).order("session_number", { ascending: false }),
-      supabase.from("characters").select("id, name").eq("campaign_id", cid).eq("kind", "pc").eq("active", true).is("alter_ego_of", null).order("name"),
+      supabase.from("characters").select("id, name, snap:build->sheetSnapshot, play:build->play").eq("campaign_id", cid).eq("kind", "pc").eq("active", true).is("alter_ego_of", null).order("name"),
       // D&D encounters only: other systems save a different shape (audit G1) and cannot run here yet.
       supabase.from("encounters").select("id, name, rules, foes").eq("campaign_id", cid).in("rules", ["2014", "2024"]).order("updated_at", { ascending: false }),
       supabase.from("combats").select("id, name, rules, status, round, turn, combatants, session_id, encounter_id").eq("campaign_id", cid).eq("status", "active").order("updated_at", { ascending: false }),
@@ -265,7 +265,7 @@ export default function CombatPage() {
       if (!block) unresolved += f.count;
       monsters.push(...monsterCombatants(f.name, f.count, block));
     }
-    const combatants = [...pcs.map(pcCombatant), ...monsters];
+    const combatants = [...pcs.map((p) => pcCombatant(p)), ...monsters];
     const { data, error } = await supabase.from("combats").insert({
       campaign_id: campaignId, encounter_id: enc?.id ?? null, session_id: sessionId || null,
       name: enc?.name ?? "Combat", rules: enc?.rules ?? "2024", combatants,

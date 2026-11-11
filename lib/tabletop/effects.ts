@@ -9,6 +9,8 @@
 // The region comes in as a path to clip to plus its bounding box, in canvas pixels. With reduced motion
 // the effect is drawn still (time held at zero).
 
+import { templateOutline, type TemplateGeom } from "@/lib/tabletop/geometry";
+
 export type EffectKind = "fire" | "cold" | "acid" | "lightning" | "poison" | "darkness" | "fog" | "radiant" | "necrotic";
 
 export const EFFECTS: { key: EffectKind; label: string; color: string }[] = [
@@ -24,6 +26,29 @@ export const EFFECTS: { key: EffectKind; label: string; color: string }[] = [
 ];
 export const EFFECT_KEYS = new Set<string>(EFFECTS.map((e) => e.key));
 export const isEffect = (k: unknown): k is EffectKind => typeof k === "string" && EFFECT_KEYS.has(k);
+
+/** Effects that shed light (push 28, V2): fire and radiant, in feet past the area's edge, bright then
+ *  dim. A brazier (a 5 ft square of fire) lights about as far as a torch. */
+export const EFFECT_LIGHT: Partial<Record<EffectKind, { bright: number; dim: number }>> = {
+  fire: { bright: 10, dim: 10 },
+  radiant: { bright: 5, dim: 10 },
+};
+
+/** A burning or radiant template as a light source, in squares, the shape lib/tabletop/sight.ts takes
+ *  (before its visibility polygon): centred in the middle of the area, bright out to the area's
+ *  farthest edge plus the effect's bright light, dim beyond. A round light from the middle is a fair
+ *  stand-in for a cone or a line, which are rarely left burning on a map. Null for any other effect. */
+export function templateLight(t: TemplateGeom & { effect?: string | null }, fps: number): { x: number; y: number; bright: number; r: number } | null {
+  if (!isEffect(t.effect)) return null;
+  const l = EFFECT_LIGHT[t.effect];
+  if (!l) return null;
+  const f = fps > 0 ? fps : 5;
+  const pts = templateOutline(t, f);
+  if (!pts.length) return null;
+  const cx = pts.reduce((s, p) => s + p.x, 0) / pts.length, cy = pts.reduce((s, p) => s + p.y, 0) / pts.length;
+  const reach = Math.max(...pts.map((p) => Math.hypot(p.x - cx, p.y - cy)));
+  return { x: cx, y: cy, bright: reach + l.bright / f, r: reach + (l.bright + l.dim) / f };
+}
 
 export type EffectRegion = { path: (ctx: CanvasRenderingContext2D) => void; x: number; y: number; w: number; h: number };
 

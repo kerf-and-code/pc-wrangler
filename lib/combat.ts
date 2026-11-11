@@ -113,12 +113,52 @@ export function monsterCombatants(name: string, count: number, block: StatBlockD
   }));
 }
 
-export function pcCombatant(c: { id: string; name: string }): Combatant {
+/** Where a PC's numbers come from when the GM puts them in a fight (push 28, V3): the saved sheet's
+ *  snapshot (characters.build.sheetSnapshot, which the Forge writes on every save: ac, hpMax, init,
+ *  speed, attacks) and the sheet's own HP tracker (characters.build.play). Select them as
+ *  `snap:build->sheetSnapshot, play:build->play`. A character saved before push 28 has no numbers in
+ *  its snapshot yet; those stay empty, and the player's sheet fills them when they open it during the
+ *  fight (components/fight-card.tsx, sync_sheet), as before. */
+export type PcSheetSource = { snap?: unknown; play?: unknown };
+export type PcSheetStats = {
+  maxHp: number | null; hp: number | null; tempHp: number; ac: number | null; initBonus: number;
+  speed: number | null; attacksPerAction: number | null;
+};
+
+const whole = (v: unknown, lo: number, hi: number): number | null => {
+  const n = typeof v === "number" ? v : typeof v === "string" && v.trim() !== "" ? Number(v) : NaN;
+  if (!Number.isFinite(n)) return null;
+  const r = Math.round(n);
+  return r < lo || r > hi ? null : r;
+};
+
+export function pcSheetStats(src: PcSheetSource | null | undefined): PcSheetStats {
+  const snap = (src?.snap && typeof src.snap === "object" ? src.snap : {}) as Record<string, unknown>;
+  const play = (src?.play && typeof src.play === "object" ? src.play : {}) as Record<string, unknown>;
+  const maxHp = whole(snap.hpMax, 1, 9999);
+  // The sheet's tracker: missing or null means full HP. Only trusted with a maximum to cap it by.
+  const now = whole(play.hp, 0, 9999);
+  const hp = maxHp == null ? null : now == null ? maxHp : Math.min(now, maxHp);
   return {
+    maxHp, hp,
+    tempHp: maxHp == null ? 0 : whole(play.temp, 0, 999) ?? 0,
+    ac: whole(snap.ac, 1, 40),
+    initBonus: whole(snap.init, -10, 30) ?? 0,
+    speed: whole(snap.speed, 0, 300),
+    attacksPerAction: whole(snap.attacks, 1, 8),
+  };
+}
+
+export function pcCombatant(c: { id: string; name: string } & PcSheetSource): Combatant {
+  const s = pcSheetStats(c);
+  const out: Combatant = {
     id: combatantId(), kind: "pc", name: c.name, characterId: c.id,
-    initiative: null, initBonus: 0, hp: null, maxHp: null, tempHp: 0, ac: null,
+    initiative: null, initBonus: s.initBonus, hp: s.hp, maxHp: s.maxHp, tempHp: s.tempHp, ac: s.ac,
     conditions: [], hidden: false, defeated: false,
   };
+  if (s.speed != null) out.speed = s.speed;
+  if (s.attacksPerAction != null && s.attacksPerAction > 1) out.attacksPerAction = s.attacksPerAction;
+  return out;
 }
 
 /** Damage first eats temporary HP, then HP (floored at 0). Healing raises HP up to max. */
@@ -155,13 +195,13 @@ export type ParsedAction = {
 };
 
 /** Normalize "1d6 + 2" / "2d8 \u2212 1" to the roller's notation ("1d6+2"). */
-const diceNotation = (s: string) => s.replace(/\s+/g, "").replace(/[\u2212\u2013]/g, "-");
+const diceNotation = (s: string) => s.replace(/\s+/g, "").replace(/[\u2212\p{Pd}]/gu, "-");
 
 export function parseAction(entry: NamedEntry): ParsedAction {
   const desc = String(entry.desc ?? "");
   const hit = desc.match(/\+(\d+)\s*to hit/i) || desc.match(/attack(?:\s+roll)?\s*[:,]\s*\+(\d+)/i);
   const damage: { dice: string; type: string }[] = [];
-  const re = /\d+\s*\(\s*(\d+d\d+(?:\s*[+\-\u2212\u2013]\s*\d+)?)\s*\)\s*([A-Za-z]+)?/g;
+  const re = /\d+\s*\(\s*(\d+d\d+(?:\s*[+\-\u2212\p{Pd}]\s*\d+)?)\s*\)\s*([A-Za-z]+)?/gu;
   let m: RegExpExecArray | null;
   while ((m = re.exec(desc))) {
     const t = (m[2] || "").toLowerCase();

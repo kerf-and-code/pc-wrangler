@@ -159,7 +159,14 @@ export async function duplicateCampaign(admin: SupabaseClient, sourceId: string,
   // 3. The campaign itself, and its owner's membership.
   const copyName = (name?.trim() || `${s.name} (copy)`).slice(0, 120);
   const cover = s.codex_cover_url ? s.codex_cover_url.split(sourceId).join(newId) : null;
-  const { error: cErr } = await admin.from("campaigns").insert({ id: newId, name: copyName, system: s.system ?? "5e", gm_id: caller, time_zone: s.time_zone, codex_cover_url: cover });
+  // The table's language (p152) travels with the copy. Read on its own so a database without that
+  // column still duplicates.
+  const { data: langRow, error: langErr } = await admin.from("campaigns").select("audio_language").eq("id", sourceId).maybeSingle();
+  const lang = !langErr ? (langRow as { audio_language: string | null } | null)?.audio_language ?? null : null;
+  const { error: cErr } = await admin.from("campaigns").insert({
+    id: newId, name: copyName, system: s.system ?? "5e", gm_id: caller, time_zone: s.time_zone, codex_cover_url: cover,
+    ...(lang ? { audio_language: lang } : {}),
+  });
   if (cErr) throw new Error(`campaigns: ${cErr.message}`);
   const copiedFiles: { bucket: string; path: string }[] = [];
   try {

@@ -128,6 +128,25 @@ export function insideTemplate(t: TemplateGeom, fps: number, px: number, py: num
   return along >= -eps && along <= L + eps && Math.abs(across) <= W / 2 + eps;
 }
 
+/** The tokens an area template touches (push 28, V1): a token is in when any part of its footprint is,
+ *  as the rules have it for areas of effect. A token's x and y are its centre, in squares, and its
+ *  footprint is size by size squares; it is sampled on a fine grid kept a hair inside its edge, so a
+ *  template that only grazes the corner of a neighbouring square does not catch it. */
+export function tokensInTemplate(t: TemplateGeom, fps: number, tokens: { id: string; x: number; y: number; size: number }[]): string[] {
+  const out: string[] = [];
+  for (const tk of tokens) {
+    const s = Math.max(0.5, tk.size), half = s / 2 - 0.05, steps = Math.max(4, Math.ceil(s * 4));
+    let hit = insideTemplate(t, fps, tk.x, tk.y);
+    for (let i = 0; i <= steps && !hit; i++) {
+      for (let j = 0; j <= steps && !hit; j++) {
+        hit = insideTemplate(t, fps, tk.x - half + (2 * half * i) / steps, tk.y - half + (2 * half * j) / steps);
+      }
+    }
+    if (hit) out.push(tk.id);
+  }
+  return out;
+}
+
 export function templateCells(t: TemplateGeom, fps: number, n: number): [number, number][] {
   const reach = t.size_ft / fps + t.width_ft / fps + 1, out: [number, number][] = [];
   for (let r = Math.max(0, Math.floor(t.y - reach)); r <= Math.min(n - 1, Math.ceil(t.y + reach)); r++)

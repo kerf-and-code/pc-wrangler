@@ -166,13 +166,16 @@ type Against = { target: string; hit: boolean | null; crit: boolean; applied?: b
 
 // Attack someone in the fight: pick the target, the attack's bonus and its damage, then one press rolls
 // the attack and, on a hit, the damage, which lands on the target at once.
-export function AttackForm({ campaignId, characterId, fight, onDone, defaultBonus, presetTarget, defaultDc }: {
+export function AttackForm({ campaignId, characterId, fight, onDone, defaultBonus, presetTarget, presetTargets, defaultDc }: {
   campaignId: string; characterId: string; fight: FightView; onDone: () => void; defaultBonus?: number | null;
   presetTarget?: string;   // a combatant id to start on (the tabletop passes the selected token's)
+  // push 28 (V1): everyone inside an area template; opens as a saving throw effect with them all picked
+  presetTargets?: string[];
   defaultDc?: number | null;   // the sheet's spell save DC, for save effects
 }) {
-  const [mode, setMode] = useState<"attack" | "save">("attack");
-  const [picked, setPicked] = useState<string[]>(presetTarget ? [presetTarget] : []);
+  const areaPicks = (presetTargets ?? []).filter((id) => fight.order.some((e) => e.id === id && e.characterId !== characterId && !e.defeated));
+  const [mode, setMode] = useState<"attack" | "save">(areaPicks.length ? "save" : "attack");
+  const [picked, setPicked] = useState<string[]>(areaPicks.length ? areaPicks : presetTarget ? [presetTarget] : []);
   const [ability, setAbility] = useState("dex");
   const [dc, setDc] = useState(defaultDc != null ? String(defaultDc) : "");
   const [half, setHalf] = useState(true);
