@@ -58,13 +58,13 @@ export default function RiverLabels({
             const changed = !!val.trim() && val.trim() !== name;
             return (
               <div key={name} style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                <input
+                <input aria-label={`Name of ${name}`}
                   value={val}
                   onChange={(e) => setDrafts((d) => ({ ...d, [name]: e.target.value }))}
                   onKeyDown={(e) => { if (e.key === "Enter") void save(name); }}
                   style={inputStyle}
                 />
-                <button
+                <button title={!changed ? "Nothing has changed" : undefined}
                   type="button"
                   onClick={() => void save(name)}
                   disabled={!changed || busy === name}

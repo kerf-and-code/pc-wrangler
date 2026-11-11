@@ -117,11 +117,11 @@ export default function RollTablesPanel({ campaignId, isGm, supabase, asWho, gmN
           {draft.body.trim() ? (preview?.ok ? describeTable(preview.table) : preview?.error) : "Add some entries to see what it will roll."}
         </p>
         <label style={check}>
-          <input type="checkbox" checked={draft.players_can_roll} onChange={(e) => setDraft({ ...draft, players_can_roll: e.target.checked })} />
+          <input aria-label="Players can roll" type="checkbox" checked={draft.players_can_roll} onChange={(e) => setDraft({ ...draft, players_can_roll: e.target.checked })} />
           <span>Players can see and roll it <span style={{ color: C.muted }}>(a wild magic table, say)</span></span>
         </label>
         <label style={check}>
-          <input type="checkbox" checked={draft.results_gm_only} onChange={(e) => setDraft({ ...draft, results_gm_only: e.target.checked })} />
+          <input aria-label="Results for the GM only" type="checkbox" checked={draft.results_gm_only} onChange={(e) => setDraft({ ...draft, results_gm_only: e.target.checked })} />
           <span>Results go only to the GM <span style={{ color: C.muted }}>(and to the player who rolled)</span></span>
         </label>
         <div style={{ display: "flex", gap: 6, marginTop: 12, flexWrap: "wrap" }}>
@@ -174,7 +174,7 @@ export default function RollTablesPanel({ campaignId, isGm, supabase, asWho, gmN
                   </div>
                 </div>
                 {isGm && <button type="button" onClick={() => { setErr(null); setDraft({ id: r.id, name: r.name, body: r.body, players_can_roll: r.players_can_roll, results_gm_only: r.results_gm_only }); }} style={{ ...small, padding: "3px 8px" }} aria-label={`Edit ${r.name}`}>Edit</button>}
-                <button type="button" disabled={!p.ok || busy === r.id} onClick={() => void rollOn(r)} style={{ ...primary, padding: "4px 10px", opacity: p.ok ? 1 : 0.5 }} aria-label={`Roll on ${r.name}`}>
+                <button title={!p.ok ? "The table has a problem: fix it to roll" : undefined} type="button" disabled={!p.ok || busy === r.id} onClick={() => void rollOn(r)} style={{ ...primary, padding: "4px 10px", opacity: p.ok ? 1 : 0.5 }} aria-label={`Roll on ${r.name}`}>
                   {busy === r.id ? "Rolling…" : "Roll"}
                 </button>
               </div>

@@ -125,7 +125,7 @@ export default function MyCodexPage() {
 
         {status === "ready" && (
           <>
-            <input
+            <input aria-label="Search everything you have learned…"
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Search everything you have learned…"
@@ -356,7 +356,7 @@ function NoteBox({ entryId, campaignId, supabase }: {
           {state === "saving" ? "saving" : state === "saved" ? "saved" : "only you can see this"}
         </span>
       </div>
-      <textarea
+      <textarea aria-label={state === "loading" ? "" : "What you made of this, what you suspect, what you want to come back to."}
         value={body}
         onChange={(e) => { setBody(e.target.value); setState("idle"); }}
         onBlur={() => { if (state === "idle") void save(); }}

@@ -8,6 +8,7 @@ import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import { initialCampaignId, useRememberCampaign } from "@/lib/campaign-context";
 import { askConfirm } from "@/lib/confirm";
 import { LoadingState } from "@/components/ui-forge/States";
+import CampaignPicker from "@/components/ui-forge/CampaignPicker";
 
 type Campaign = { id: string; name: string };
 type PE = { status: string; event_type: string; axis: string | null; confidence: number | null; extractor_version: string | null };
@@ -358,12 +359,7 @@ export default function ReliabilityPage() {
       </p>
 
         <div style={box}>
-          <label style={{ fontSize: 12, color: C.muted, fontFamily: "ui-monospace, monospace", letterSpacing: "0.1em" }}>CAMPAIGN</label>
-          <select value={campaignId} onChange={(e) => setCampaignId(e.target.value)}
-            style={{ display: "block", width: "100%", marginTop: 6, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "10px 12px", fontSize: 15, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
-            {campaigns.length === 0 && <option value="">No campaigns yet</option>}
-            {campaigns.map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}
-          </select>
+          <CampaignPicker campaigns={campaigns} value={campaignId} onChange={setCampaignId} selectStyle={{ display: "block", width: "100%", marginTop: 6, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "10px 12px", fontSize: 15, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }} />
         </div>
 
         {partial && !loading && <p role="alert" style={{ color: C.warn, fontSize: 13, margin: "0 0 12px" }}>{partial}</p>}

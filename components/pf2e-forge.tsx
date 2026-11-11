@@ -67,7 +67,7 @@ export default function Pf2eForge({
 
   const selStyle = { ...stoneField(), cursor: "pointer" as const };
   const abilitySelect = (value: PF2Ability | undefined, onSel: (a: PF2Ability | "") => void) => (
-    <select value={value ?? ""} onChange={(e) => onSel(e.target.value as PF2Ability | "")} style={{ ...selStyle, minWidth: 74 }}>
+    <select aria-label="Ability boost" value={value ?? ""} onChange={(e) => onSel(e.target.value as PF2Ability | "")} style={{ ...selStyle, minWidth: 74 }}>
       <option value="">-</option>
       {ABILITIES.map(([k, lbl]) => <option key={k} value={k}>{lbl}</option>)}
     </select>
@@ -115,7 +115,7 @@ export default function Pf2eForge({
             </select>
           </Field>
           <Field label="Key ability">
-            <select value={pbuild.keyAbility} onChange={(e) => set({ keyAbility: e.target.value as PF2Ability })} style={selStyle}>
+            <select aria-label="Key ability" value={pbuild.keyAbility} onChange={(e) => set({ keyAbility: e.target.value as PF2Ability })} style={selStyle}>
               {keyOptions.map((k) => <option key={k} value={k}>{k.toUpperCase()}</option>)}
             </select>
           </Field>

@@ -387,9 +387,9 @@ export default function TonightPage() {
                 <option value="">Who (optional)</option>
                 {pcs.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
               </select>
-              <input value={entry.note} onChange={(e) => setEntry({ ...entry, note: e.target.value })} placeholder="Note (optional)" style={{ ...input, flex: "1 1 180px" }}
+              <input aria-label="Note (optional)" value={entry.note} onChange={(e) => setEntry({ ...entry, note: e.target.value })} placeholder="Note (optional)" style={{ ...input, flex: "1 1 180px" }}
                 onKeyDown={(e) => { if (e.key === "Enter" && entry.typeKey) void logEvent(); }} />
-              <button type="button" style={btn()} disabled={busy || !entry.typeKey} onClick={() => void logEvent()}>Log it</button>
+              <button title={!entry.typeKey ? "Choose what happened first" : undefined} type="button" style={btn()} disabled={busy || !entry.typeKey} onClick={() => void logEvent()}>Log it</button>
             </div>
             {logged > 0 && <p style={{ color: C.muted, fontSize: 12.5, margin: "6px 0 0" }}>{logged} logged tonight. Edit or remove them on the {link(gmHref("/gm/sessions", q), "Session Log")}.</p>}
           </div>

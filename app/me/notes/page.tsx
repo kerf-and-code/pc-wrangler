@@ -98,7 +98,7 @@ export default function NotesPage() {
         {status === "ready" && (
           <>
             {campaigns.length > 1 && (
-              <select value={campaignId} onChange={(e) => setCampaignId(e.target.value)}
+              <select aria-label="Campaign" value={campaignId} onChange={(e) => setCampaignId(e.target.value)}
                 style={{ ...field, marginBottom: 14 }}>
                 {campaigns.map((c) => (
                   <option key={c.campaign_id} value={c.campaign_id}>{c.campaign_name}</option>
@@ -106,14 +106,14 @@ export default function NotesPage() {
               </select>
             )}
 
-            <textarea
+            <textarea aria-label="New note"
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
               placeholder="A suspicion, a name you want to remember, something you meant to ask about."
               rows={3}
               style={{ ...field, resize: "vertical", marginBottom: 8 }}
             />
-            <button onClick={() => void add()} disabled={!draft.trim() || busy}
+            <button title={!draft.trim() ? "Write the note first" : undefined} onClick={() => void add()} disabled={!draft.trim() || busy}
               style={{
                 ...field, width: "auto", cursor: draft.trim() ? "pointer" : "default",
                 opacity: draft.trim() ? 1 : 0.45, padding: "8px 16px", marginBottom: 22,
@@ -154,7 +154,7 @@ function NoteRow({ note, onSave, onRemove }: {
       background: C.surface, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS,
       padding: "12px 14px", marginBottom: 9,
     }}>
-      <textarea
+      <textarea aria-label="Note"
         value={body}
         onChange={(e) => { setBody(e.target.value); setDirty(true); }}
         onBlur={() => { if (dirty) { void onSave(note.id, body); setDirty(false); } }}

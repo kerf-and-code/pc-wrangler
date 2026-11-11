@@ -96,7 +96,7 @@ export default function IconLibrary({ campaignId, onPick, builtinOnly }: { campa
       </>)}
 
       <div style={{ ...secLabel, marginTop: 16 }}>BUILT-IN ICONS ({totalShown})</div>
-      <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search icons\u2026"
+      <input aria-label="Search icons\u2026" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search icons\u2026"
         style={{ width: "100%", background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: 7, padding: "6px 8px", fontSize: 12.5, marginBottom: 8, boxSizing: "border-box" }} />
       <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
         {groups.map(({ cat: c, icons }) => {

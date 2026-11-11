@@ -7,6 +7,7 @@ import { surfaces, ui } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import { initialCampaignId, useRememberCampaign, initialSessionId, useRememberSession } from "@/lib/campaign-context";
 import { fmtDateTime } from "@/lib/format";
+import CampaignPicker from "@/components/ui-forge/CampaignPicker";
 
 type Campaign = { id: string; name: string; share_code: string };
 type Sess = { id: string; session_number: number | null; status: string; recap: string | null };
@@ -158,18 +159,13 @@ export default function CheckInPage() {
 
         {/* campaign + portal link */}
         <div style={{ ...box, marginBottom: 18 }}>
-          <label style={{ fontSize: 12, color: C.muted, fontFamily: "ui-monospace, monospace", letterSpacing: "0.1em" }}>CAMPAIGN</label>
-          <select value={campaignId} onChange={(e) => setCampaignId(e.target.value)}
-            style={{ display: "block", width: "100%", marginTop: 6, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "10px 12px", fontSize: 15, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
-            {campaigns.length === 0 && <option value="">No campaigns yet</option>}
-            {campaigns.map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}
-          </select>
+          <CampaignPicker campaigns={campaigns} value={campaignId} onChange={setCampaignId} selectStyle={{ display: "block", width: "100%", marginTop: 6, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "10px 12px", fontSize: 15, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }} />
 
           <div style={{ fontSize: 12, color: C.muted, marginTop: 14, marginBottom: 6 }}>
             One link for your players: Play style, Check-in, and Chat. Check-in auto-shows the latest processed session.
           </div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            <input readOnly value={portalLink()} style={{ flex: 1, minWidth: 220, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "10px 12px", fontSize: 13, fontFamily: "ui-monospace, monospace", boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }} />
+            <input aria-label="Player check-in link" readOnly value={portalLink()} style={{ flex: 1, minWidth: 220, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "10px 12px", fontSize: 13, fontFamily: "ui-monospace, monospace", boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }} />
             <button type="button" onClick={copyLink} style={btn(C.sun, C.ink)}>{copied ? "Copied" : "Copy"}</button>
           </div>
 

@@ -411,7 +411,7 @@ export default function PlayInventory({ gear, catalog, itemByName, ctx, str, att
                       </label>
                       {v.equippable && (
                         <label style={{ fontSize: 12.5, color: STONE.ink, display: "flex", gap: 6, alignItems: "center" }}>How many
-                          <input type="number" min={1} max={9999} value={v.qty} onChange={(ev) => { const n = Math.max(1, Math.min(9999, parseInt(ev.target.value, 10) || 1)); change(v.i, (e) => ({ ...e, qty: n })); }} style={{ ...field, width: 64 }} />
+                          <input aria-label="Quantity" type="number" min={1} max={9999} value={v.qty} onChange={(ev) => { const n = Math.max(1, Math.min(9999, parseInt(ev.target.value, 10) || 1)); change(v.i, (e) => ({ ...e, qty: n })); }} style={{ ...field, width: 64 }} />
                         </label>
                       )}
                       <button type="button" className="forge-btn" onClick={() => remove(v)} aria-label={`Remove ${v.e.n}`} style={btn()}>Remove</button>
@@ -435,7 +435,7 @@ function CoinsBox({ coins, onCoins, box, tiny, field }: { coins: Coins; onCoins:
         {COIN_KEYS.map((k) => (
           <label key={k} style={{ display: "grid", gap: 3, fontSize: 11.5, color: STONE.inkFaint }}>
             {COIN_NAME[k]} ({k})
-            <input type="number" min={0} max={9999999} value={coins[k] ?? 0}
+            <input aria-label={`${k} coins`} type="number" min={0} max={9999999} value={coins[k] ?? 0}
               onChange={(e) => onCoins({ ...coins, [k]: Math.max(0, Math.min(9999999, parseInt(e.target.value, 10) || 0)) })}
               style={{ ...field, fontFamily: FORGE_FONTS.mono }} />
           </label>

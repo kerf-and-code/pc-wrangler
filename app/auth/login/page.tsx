@@ -223,7 +223,7 @@ export default function LoginPage() {
           </div>
         ) : (
           <>
-            <input
+            <input aria-label="Email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}

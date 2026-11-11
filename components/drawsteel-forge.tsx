@@ -237,7 +237,7 @@ export default function DrawSteelForge({
               const taken = new Set(subIds.filter((_v, j) => j !== i && subIds[j]));
               return (
                 <Field key={i} label={sc.picks > 1 ? `Choice ${i + 1}` : "Subclass"}>
-                  <select value={subIds[i] ?? ""} onChange={(e) => setSubAt(i, e.target.value)} style={selStyle}>
+                  <select aria-label="Subclass" value={subIds[i] ?? ""} onChange={(e) => setSubAt(i, e.target.value)} style={selStyle}>
                     <option value="">Choose...</option>
                     {sc.options.filter((o) => !taken.has(o.id) || o.id === subIds[i]).map((o) => (
                       <option key={o.id} value={o.id}>
@@ -250,7 +250,7 @@ export default function DrawSteelForge({
             })}
             {groupGrantOption?.grantsSkillFrom && (
               <Field label={`${groupGrantOption.name} skill (${DS_SKILL_GROUP_LABEL[groupGrantOption.grantsSkillFrom]})`}>
-                <select value={dsBuild.subclassSkill ?? ""} onChange={(e) => set({ subclassSkill: e.target.value })} style={selStyle}>
+                <select aria-label="Subclass skill" value={dsBuild.subclassSkill ?? ""} onChange={(e) => set({ subclassSkill: e.target.value })} style={selStyle}>
                   <option value="">Choose...</option>
                   {DS_SKILL_GROUPS[groupGrantOption.grantsSkillFrom].map((s) => <option key={s} value={s}>{s}</option>)}
                 </select>
@@ -271,7 +271,7 @@ export default function DrawSteelForge({
           </p>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10 }}>
             <Field label="Deity or saint">
-              <select value={dsBuild.deityId} onChange={(e) => setDeity(e.target.value)} style={selStyle}>
+              <select aria-label="Deity" value={dsBuild.deityId} onChange={(e) => setDeity(e.target.value)} style={selStyle}>
                 <option value="">Choose...</option>
                 <optgroup label="Deities">
                   {DS_DEITIES.filter((x) => x.kind === "deity").map((x) => (
@@ -289,7 +289,7 @@ export default function DrawSteelForge({
               const taken = new Set(domainIds.filter((_v, j) => j !== i && domainIds[j]));
               return (
                 <Field key={i} label={faithDomains > 1 ? `Domain ${i + 1}` : "Domain"}>
-                  <select value={domainIds[i] ?? ""} onChange={(e) => setDomainAt(i, e.target.value)}
+                  <select aria-label="Domain" value={domainIds[i] ?? ""} onChange={(e) => setDomainAt(i, e.target.value)}
                     disabled={!dsBuild.deityId} style={selStyle}>
                     <option value="">{dsBuild.deityId ? "Choose..." : "Pick a deity first"}</option>
                     {deityDomains.filter((dm) => !taken.has(dm.id) || dm.id === domainIds[i]).map((dm) => (
@@ -451,7 +451,7 @@ export default function DrawSteelForge({
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10 }}>
                   {choiceSlots.map((slot, i) => (
                     <Field key={i} label={slotLabel(slot)}>
-                      <select value={choices[i] ?? ""} onChange={(e) => setChoice(i, e.target.value)} style={selStyle}>
+                      <select aria-label="Choose skills" value={choices[i] ?? ""} onChange={(e) => setChoice(i, e.target.value)} style={selStyle}>
                         <option value="">Choose...</option>
                         {optionsFor(slot, i).map((s) => <option key={s} value={s}>{s}</option>)}
                       </select>
@@ -562,7 +562,7 @@ export default function DrawSteelForge({
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: 10 }}>
           {DS_CHARS.map((c) => (
             <Field key={c} label={DS_CHAR_LABEL[c]}>
-              <input type="number" min={-5} max={5} value={dsBuild.characteristics[c] ?? 0}
+              <input aria-label={`${c} characteristic`} type="number" min={-5} max={5} value={dsBuild.characteristics[c] ?? 0}
                 onChange={(e) => setChar(c, parseInt(e.target.value, 10) || 0)} style={stoneField()} />
             </Field>
           ))}

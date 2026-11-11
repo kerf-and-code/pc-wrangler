@@ -132,7 +132,7 @@ export default function TileLibrary({ scope, onChange }: { scope: TileScope; onC
                   <button type="button" onClick={() => { const f = fitRef.current; setView({ scale: f, ox: (V - img.naturalWidth * f) / 2, oy: (V - img.naturalHeight * f) / 2 }); }} style={btn("transparent", C.muted)}>Reset</button>
                 </div>
                 <label style={{ ...label3, marginTop: 14 }}>3 &middot; Name</label>
-                <input type="text" value={label} onChange={(e) => setLabel(e.target.value)} placeholder="e.g. Mushroom grotto"
+                <input aria-label="Tile name" type="text" value={label} onChange={(e) => setLabel(e.target.value)} placeholder="e.g. Mushroom grotto"
                   style={{ width: "100%", padding: "7px 9px", background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: 7, fontSize: 13 }} />
                 <div style={{ marginTop: 14 }}><button type="button" onClick={save} disabled={busy} style={{ ...btn(C.sun, "#1b1712"), width: "100%" }}>{busy ? "Saving…" : "Save tile to library"}</button></div>
               </>

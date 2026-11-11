@@ -12,6 +12,7 @@ import BlockEditor, { blocksToPlainText, bodyToBlocks, type Block } from "./Bloc
 import EntryPreview from "./EntryPreview";
 import { initialCampaignId, useRememberCampaign, urlParam, setUrlParam } from "@/lib/campaign-context";
 import { askConfirm } from "@/lib/confirm";
+import CampaignPicker from "@/components/ui-forge/CampaignPicker";
 
 type Campaign = { id: string; name: string; public_slug?: string | null; codex_cover_url?: string | null };
 type Entry = {
@@ -484,10 +485,7 @@ export default function CodexPage() {
 
         {/* campaign + tabs */}
         <div style={{ ...box, marginBottom: 16 }}>
-          <select value={campaignId} onChange={async (e) => { const v = e.target.value; if (await okToLeave()) { markClean(blankForm, []); setCampaignId(v); } }} style={{ ...input }}>
-            {campaigns.length === 0 && <option value="">No campaigns yet</option>}
-            {campaigns.map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}
-          </select>
+          <CampaignPicker campaigns={campaigns} value={campaignId} onChange={async (v) => { if (await okToLeave()) { markClean(blankForm, []); setCampaignId(v); } }} label={null} selectStyle={{ ...input }} />
           {/* THE COVER FOR THE PUBLISHED PAGE, set here because this is where a GM is thinking
               about what the public codex looks like. It sits under the campaign picker so it is
               obviously per-campaign rather than a global setting. */}
@@ -579,9 +577,9 @@ export default function CodexPage() {
                   {/* content column */}
                   <div>
                 {mode.what === "entry" ? (
-                  <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Title" style={{ ...input, fontSize: 16, fontWeight: 600, marginBottom: 12 }} />
+                  <input aria-label="Title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Title" style={{ ...input, fontSize: 16, fontWeight: 600, marginBottom: 12 }} />
                 ) : (
-                  <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Name" style={{ ...input, fontSize: 16, fontWeight: 600, marginBottom: 12 }} />
+                  <input aria-label="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Name" style={{ ...input, fontSize: 16, fontWeight: 600, marginBottom: 12 }} />
                 )}
 
                 {/* THE PUBLISHED URL, shown so a GM can see what a reader gets before deciding
@@ -620,7 +618,7 @@ export default function CodexPage() {
                     <BlockEditor blocks={blocks} onChange={setBlocks} onUploadImage={onUploadBlockImage} />
                   </div>
                 ) : (
-                  <textarea
+                  <textarea aria-label="Description (markdown)"
                     value={form.description}
                     onChange={(e) => setForm({ ...form, description: e.target.value })}
                     placeholder="Description (markdown)"
@@ -632,13 +630,13 @@ export default function CodexPage() {
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 12 }}>
                   <div style={{ flex: "1 1 160px" }}>
                     <label style={{ fontSize: 11, color: C.muted }}>Who can see this</label>
-                    <select value={form.visibility} onChange={(e) => setForm({ ...form, visibility: e.target.value })} style={{ ...input, marginTop: 4 }}>
+                    <select aria-label="Who can see this" value={form.visibility} onChange={(e) => setForm({ ...form, visibility: e.target.value })} style={{ ...input, marginTop: 4 }}>
                       {VIS.map((v) => (<option key={v.v} value={v.v}>{v.l}</option>))}
                     </select>
                   </div>
                   <div style={{ flex: "1 1 160px" }}>
                     <label style={{ fontSize: 11, color: C.muted }}>Tags (comma-separated)</label>
-                    <input value={form.tags} onChange={(e) => setForm({ ...form, tags: e.target.value })} placeholder="forest, ruin, hook" style={{ ...input, marginTop: 4 }} />
+                    <input aria-label="Tags" value={form.tags} onChange={(e) => setForm({ ...form, tags: e.target.value })} placeholder="forest, ruin, hook" style={{ ...input, marginTop: 4 }} />
                   </div>
                 </div>
 
@@ -668,7 +666,7 @@ export default function CodexPage() {
                 {mode.what === "entry" && (
                   <div style={{ marginBottom: 12 }}>
                     <label style={{ fontSize: 11, color: C.muted }}>Summary: the lead line on the wiki. Leave blank to use the start of the entry.</label>
-                    <textarea value={form.summary} onChange={(e) => setForm({ ...form, summary: e.target.value })}
+                    <textarea aria-label="A sentence or two…" value={form.summary} onChange={(e) => setForm({ ...form, summary: e.target.value })}
                       rows={2} placeholder="A sentence or two…"
                       style={{ ...input, marginTop: 4, resize: "vertical", fontFamily: "inherit" }} />
                   </div>
@@ -722,7 +720,7 @@ export default function CodexPage() {
                       </div>
                     )}
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                      <select value={linkPick} onChange={(e) => setLinkPick(e.target.value)} style={{ ...input, flex: "2 1 200px" }}>
+                      <select aria-label="Link to…" value={linkPick} onChange={(e) => setLinkPick(e.target.value)} style={{ ...input, flex: "2 1 200px" }}>
                         <option value="">Link to…</option>
                         <optgroup label="PCs">
                           {chars.filter((c) => c.kind === "pc" && c.id !== curId).map((c) => (<option key={c.id} value={`character:${c.id}`}>{c.name}</option>))}
@@ -734,8 +732,8 @@ export default function CodexPage() {
                           {entries.filter((e) => e.id !== curId).map((e) => (<option key={e.id} value={`entry:${e.id}`}>{labelOf("entry", e.id)}</option>))}
                         </optgroup>
                       </select>
-                      <input value={linkRel} onChange={(e) => setLinkRel(e.target.value)} placeholder="relation (optional)" style={{ ...input, flex: "1 1 140px" }} />
-                      <button type="button" onClick={addLink} disabled={!linkPick}
+                      <input aria-label="relation (optional)" value={linkRel} onChange={(e) => setLinkRel(e.target.value)} placeholder="relation (optional)" style={{ ...input, flex: "1 1 140px" }} />
+                      <button title={!linkPick ? "Choose an entry to link first" : undefined} type="button" onClick={addLink} disabled={!linkPick}
                         style={{ background: C.plum, color: SAX.inkDeep, border: "none", borderRadius: 9, padding: "10px 16px", fontWeight: 700, fontSize: 13, cursor: linkPick ? "pointer" : "default", opacity: linkPick ? 1 : 0.6 }}>
                         Link
                       </button>
@@ -771,13 +769,13 @@ export default function CodexPage() {
                         </div>
                       )}
                       <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                        <select value={revealPick} onChange={(e) => setRevealPick(e.target.value)} style={{ ...input, flex: "2 1 200px" }}>
+                        <select aria-label="Reveal to…" value={revealPick} onChange={(e) => setRevealPick(e.target.value)} style={{ ...input, flex: "2 1 200px" }}>
                           <option value="">Reveal to…</option>
                           {chars.filter((c) => c.kind === "pc" && !curReveals.some((r) => r.revealed_to_character_id === c.id)).map((c) => (
                             <option key={c.id} value={c.id}>{c.name}</option>
                           ))}
                         </select>
-                        <button type="button" onClick={() => revealTo(revealPick)} disabled={!revealPick}
+                        <button title={!revealPick ? "Choose who to reveal it to first" : undefined} type="button" onClick={() => revealTo(revealPick)} disabled={!revealPick}
                           style={{ background: C.sun, color: SAX.inkDeep, border: "none", borderRadius: 9, padding: "10px 16px", fontWeight: 700, fontSize: 13, cursor: revealPick ? "pointer" : "default", opacity: revealPick ? 1 : 0.6 }}>
                           Reveal
                         </button>

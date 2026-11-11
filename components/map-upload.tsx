@@ -301,17 +301,17 @@ export default function MapUpload({ campaignId, onClose, onDone, dest = { kind: 
               <label style={label}>Squares across<input aria-label="Squares across" value={across} inputMode="numeric" disabled={!!uv} onChange={(e) => fitAcross(e.target.value.replace(/[^0-9]/g, "").slice(0, 3))} style={{ ...field, width: 70 }} /></label>
               <label style={label}>Square size (px)
                 <span style={{ display: "flex", gap: 4 }}>
-                  <button type="button" aria-label="Smaller squares" disabled={!!uv} onClick={() => setPx(cal.px - 0.25)} style={small}>-</button>
+                  <button title={!!uv ? "Set by the imported map file" : undefined} type="button" aria-label="Smaller squares" disabled={!!uv} onClick={() => setPx(cal.px - 0.25)} style={small}>-</button>
                   <input aria-label="Square size in pixels" value={Math.round(cal.px * 100) / 100} inputMode="decimal" disabled={!!uv}
                     onChange={(e) => { const v = parseFloat(e.target.value); if (v > 0) setPx(v); }} style={{ ...field, width: 72 }} />
-                  <button type="button" aria-label="Larger squares" disabled={!!uv} onClick={() => setPx(cal.px + 0.25)} style={small}>+</button>
+                  <button title={!!uv ? "Set by the imported map file" : undefined} type="button" aria-label="Larger squares" disabled={!!uv} onClick={() => setPx(cal.px + 0.25)} style={small}>+</button>
                 </span>
               </label>
               {!fixedN && <label style={label}>Feet per square<input aria-label="Feet per square" value={fps} inputMode="numeric" onChange={(e) => setFps(e.target.value.replace(/[^0-9]/g, "").slice(0, 4))} style={{ ...field, width: 60 }} /></label>}
               {!fixedN && <label style={{ ...label, display: "flex", gap: 6, alignItems: "center" }}><input type="checkbox" checked={gridOver} onChange={(e) => setGridOver(e.target.checked)} />Table grid over the map</label>}
               {uv && uv.objects.length > 0 && (
                 <label style={{ ...label, display: "flex", gap: 6, alignItems: "center" }}>
-                  <input type="checkbox" checked={objectWalls} onChange={(e) => setObjectWalls(e.target.checked)} />Pillars and furniture block sight too ({uv.objects.length})
+                  <input aria-label="Make walls from objects" type="checkbox" checked={objectWalls} onChange={(e) => setObjectWalls(e.target.checked)} />Pillars and furniture block sight too ({uv.objects.length})
                 </label>
               )}
               <span style={{ flex: 1 }} />
@@ -335,7 +335,7 @@ export default function MapUpload({ campaignId, onClose, onDone, dest = { kind: 
               {tooBig && <span style={{ fontSize: 12.5, color: C.warn }}>{fixedN ? `This map is ${fixedN} squares a side: make the squares larger, or change the map's grid size first.` : `The table holds up to ${MAX_SQ} squares a side: make the squares larger.`}</span>}
               <span style={{ flex: 1 }} />
               <button type="button" onClick={() => { setImg(null); setUv(null); setErr(null); }} disabled={!!busy} style={small}>Choose another</button>
-              <button type="button" disabled={!!busy || tooSmall || tooBig} onClick={() => void save()}
+              <button title={tooSmall ? "The squares are too small" : tooBig ? "The squares are too large" : undefined} type="button" disabled={!!busy || tooSmall || tooBig} onClick={() => void save()}
                 style={{ ...small, border: "none", background: tooSmall || tooBig ? C.line : C.sun, color: "#1b1712", fontWeight: 700, padding: "8px 16px" }}>
                 {busy ? `${busy}…` : dest.kind === "level" ? "Use it on this level" : dest.kind === "map" ? "Make the map" : "Put it on the table"}
               </button>

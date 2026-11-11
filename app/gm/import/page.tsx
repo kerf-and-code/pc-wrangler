@@ -109,7 +109,7 @@ export default function ImportPage() {
       {camps.length > 1 && (
         <div style={{ marginBottom: 16 }}>
           <div style={label}>Campaign</div>
-          <select value={campaignId} onChange={(e) => setCampaignId(e.target.value)} style={fieldStyle}>
+          <select aria-label="Campaign" value={campaignId} onChange={(e) => setCampaignId(e.target.value)} style={fieldStyle}>
             {camps.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
         </div>
@@ -130,7 +130,7 @@ export default function ImportPage() {
         <div style={{ fontSize: 13, color: C.muted, marginTop: 6, lineHeight: 1.5 }}>
           An Obsidian vault or World Anvil export as a .zip, a World Anvil .json, a .docx or .pdf, or .md / .txt.
         </div>
-        <input ref={inputRef} type="file" multiple hidden
+        <input aria-label="Drop files here, or click to choose" ref={inputRef} type="file" multiple hidden
           accept=".zip,.json,.md,.markdown,.txt,.docx,.pdf,.html,.htm,.csv"
           onChange={(e) => addFiles(e.target.files)} />
       </div>
@@ -148,7 +148,7 @@ export default function ImportPage() {
 
       <details style={{ marginBottom: 16 }}>
         <summary style={{ cursor: "pointer", color: C.muted, fontSize: 13.5 }}>…or paste notes instead</summary>
-        <textarea value={pasted} onChange={(e) => { setPasted(e.target.value); setPreview(null); }} rows={7}
+        <textarea aria-label="Session notes to import" value={pasted} onChange={(e) => { setPasted(e.target.value); setPreview(null); }} rows={7}
           placeholder="Paste session notes. Mark sessions with lines like &quot;Session 3&quot; or a date to build a timeline."
           style={{ ...fieldStyle, marginTop: 8, resize: "vertical", fontFamily: "ui-monospace, monospace", fontSize: 13 }} />
       </details>

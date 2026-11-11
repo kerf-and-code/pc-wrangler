@@ -258,7 +258,7 @@ export function UpgradeAccount({
           </p>
         ) : (
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-            <input
+            <input aria-label="Email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -268,7 +268,7 @@ export function UpgradeAccount({
                 border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS,
                 padding: "9px 12px", fontSize: 14, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}
             />
-            <button
+            <button title={!email.trim() ? "Type your email first" : undefined}
               type="button"
               onClick={linkEmail}
               disabled={busy !== null || !email.trim()}

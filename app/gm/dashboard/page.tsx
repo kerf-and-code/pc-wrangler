@@ -345,7 +345,7 @@ export default function Dashboard() {
             <section className="wg-card">
               <div className="wg-card-h">
                 <span className="wg-card-t">Spotlight share by character</span>
-                <select className="wg-sel" value={selectedSession || ""} onChange={(e) => setSelectedSession(e.target.value || null)}>
+                <select aria-label="Spotlight share by character" className="wg-sel" value={selectedSession || ""} onChange={(e) => setSelectedSession(e.target.value || null)}>
                   {sessions.map((s) => <option key={s.id} value={s.id}>Session {s.session_number ?? "?"}</option>)}
                 </select>
               </div>

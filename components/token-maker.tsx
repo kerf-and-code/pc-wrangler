@@ -529,14 +529,14 @@ export default function TokenMaker({ mode, initialImage, initialFrame, name, onS
         <p style={{ fontSize: 12.5, color: ui.muted, margin: "0 0 6px" }}>Scribble <strong style={{ color: C.good }}>Keep</strong> over your subject (face, hair, armour, anything it holds), then <strong style={{ color: ui.warn }}>Remove</strong> over background that is still showing. It cuts after every stroke, and never removes what you marked Keep.</p>
         <div style={rowS} role="group" aria-label="Tool">
           {([["move", "Move"], ["keep", "Keep"], ["drop", "Remove"], ["wand", "Remove by click"], ["erase", "Erase brush"], ["restore", "Restore brush"]] as [Tool, string][]).map(([k, l]) => (
-            <button key={k} type="button" style={btn(tool === k)} aria-pressed={tool === k} disabled={!pic} onClick={() => setTool(k)}>{l}</button>
+            <button title={!pic ? "Choose a picture first" : undefined} key={k} type="button" style={btn(tool === k)} aria-pressed={tool === k} disabled={!pic} onClick={() => setTool(k)}>{l}</button>
           ))}
         </div>
         {["keep", "drop", "erase", "restore"].includes(tool) && <label style={{ ...lab, marginTop: 6 }}>Brush size<input type="range" min={4} max={80} value={brush} onChange={(e) => setBrush(Number(e.target.value))} /></label>}
         <div style={{ ...rowS, marginTop: 6 }}>
-          <button type="button" style={btn()} disabled={!history.length || cutting} onClick={undo}>Undo</button>
-          <button type="button" style={btn()} disabled={!pic || cutting} onClick={clearStrokes}>Clear strokes</button>
-          <button type="button" style={btn()} disabled={!pic || cutting} onClick={resetMask}>Bring everything back</button>
+          <button title={!history.length ? "Nothing to undo" : undefined} type="button" style={btn()} disabled={!history.length || cutting} onClick={undo}>Undo</button>
+          <button title={!pic ? "Choose a picture first" : undefined} type="button" style={btn()} disabled={!pic || cutting} onClick={clearStrokes}>Clear strokes</button>
+          <button title={!pic ? "Choose a picture first" : undefined} type="button" style={btn()} disabled={!pic || cutting} onClick={resetMask}>Bring everything back</button>
         </div>
         <div style={{ ...rowS, marginTop: 8 }}>
           <span style={{ fontSize: 12, color: ui.muted }}>Subject in the middle?</span>
@@ -545,7 +545,7 @@ export default function TokenMaker({ mode, initialImage, initialFrame, name, onS
         </div>
         <div style={{ ...rowS, marginTop: 8 }}>
           <span style={{ fontSize: 12, color: ui.muted }}>Plain background?</span>
-          <button type="button" style={btn(autoOn)} disabled={!pic} onClick={() => runAuto()}>Quick remove</button>
+          <button title={!pic ? "Choose a picture first" : undefined} type="button" style={btn(autoOn)} disabled={!pic} onClick={() => runAuto()}>Quick remove</button>
           <label style={lab}>Tolerance
             <input type="range" min={0} max={100} value={tolerance} disabled={!pic}
               onChange={(e) => { const v = Number(e.target.value); setTolerance(v); if (autoOn && pic) { setMask(autoMask(pic.rgba, pic.w, pic.h, v)); } }} />
@@ -558,7 +558,7 @@ export default function TokenMaker({ mode, initialImage, initialFrame, name, onS
         </div>
         <div style={{ ...rowS, marginTop: 6 }}>
           <label style={lab}>Zoom<input type="range" min={30} max={500} value={Math.round(zoom * 100)} disabled={!pic} onChange={(e) => setZoom(Number(e.target.value) / 100)} /></label>
-          <button type="button" style={btn()} disabled={!pic} onClick={() => { setZoom(1); setPan({ x: 0, y: 0 }); }}>Centre</button>
+          <button title={!pic ? "Choose a picture first" : undefined} type="button" style={btn()} disabled={!pic} onClick={() => { setZoom(1); setPan({ x: 0, y: 0 }); }}>Centre</button>
         </div>
 
         <div style={sectionH}>4. Border</div>
@@ -596,7 +596,7 @@ export default function TokenMaker({ mode, initialImage, initialFrame, name, onS
         </div>
         {frame.effect && (
           <div style={{ ...rowS, marginTop: 6 }}>
-            <label style={lab}><input type="checkbox" checked={!!frame.effectColor} onChange={(e) => patch({ effectColor: e.target.checked ? (FRAME_EFFECTS.find((x) => x.id === frame.effect)?.colors[1] ?? "#d9a43a") : null })} />Own effect colour</label>
+            <label style={lab}><input aria-label="Effect colour" type="checkbox" checked={!!frame.effectColor} onChange={(e) => patch({ effectColor: e.target.checked ? (FRAME_EFFECTS.find((x) => x.id === frame.effect)?.colors[1] ?? "#d9a43a") : null })} />Own effect colour</label>
             {frame.effectColor && <input type="color" aria-label="Effect colour" value={frame.effectColor} onChange={(e) => patch({ effectColor: e.target.value })} />}
           </div>
         )}
@@ -629,13 +629,13 @@ export default function TokenMaker({ mode, initialImage, initialFrame, name, onS
               {[256, 512, 1024].map((s) => <option key={s} value={s}>{s} px</option>)}
             </select>
           </label>
-          <button type="button" style={mode === "free" ? primary : btn()} disabled={!pic} onClick={() => void savePng(true)}>Download token (PNG)</button>
-          <button type="button" style={btn()} disabled={!pic} onClick={() => void savePng(false)}>Picture only</button>
-          {moving && canRecord && <button type="button" style={btn(recording)} disabled={!pic || recording} onClick={() => void saveVideo()}>{recording ? "Recording 4 seconds..." : "Animated (WebM video)"}</button>}
+          <button title={!pic ? "Choose a picture first" : undefined} type="button" style={mode === "free" ? primary : btn()} disabled={!pic} onClick={() => void savePng(true)}>Download token (PNG)</button>
+          <button title={!pic ? "Choose a picture first" : undefined} type="button" style={btn()} disabled={!pic} onClick={() => void savePng(false)}>Picture only</button>
+          {moving && canRecord && <button title={!pic ? "Choose a picture first" : undefined} type="button" style={btn(recording)} disabled={!pic || recording} onClick={() => void saveVideo()}>{recording ? "Recording 4 seconds..." : "Animated (WebM video)"}</button>}
         </div>
         {moving && (
           <div style={{ ...rowS, marginTop: 8 }}>
-            <button type="button" style={btn(gifProgress != null)} disabled={!pic || gifProgress != null} onClick={() => void saveGif()}>
+            <button title={!pic ? "Choose a picture first" : undefined} type="button" style={btn(gifProgress != null)} disabled={!pic || gifProgress != null} onClick={() => void saveGif()}>
               {gifProgress != null ? `Making the GIF... ${Math.round(gifProgress * 100)}%` : "Animated GIF"}
             </button>
             <label style={lab}>GIF background

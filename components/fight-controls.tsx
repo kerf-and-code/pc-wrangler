@@ -143,8 +143,8 @@ export function PlayerEntryControls({ fightId, entry, onChanged, myTurn = true }
           <input aria-label={`Amount for ${entry.name}`} value={amt} inputMode="numeric" placeholder="amount"
             onChange={(ev) => setAmt(ev.target.value.replace(/[^0-9]/g, "").slice(0, 4))}
             style={{ width: 72, padding: "5px 7px", borderRadius: 7, border: `1px solid ${C.line}`, background: C.surface2, color: C.text, fontSize: 13 }} />
-          <button type="button" disabled={busy || !(n > 0)} onClick={() => void run("heal", { value: n })} style={{ ...small, color: C.good }}>Heal</button>
-          <button type="button" disabled={busy || !(n > 0)} onClick={() => void run("damage", { value: n })} style={{ ...small, color: C.warn }}>Take damage</button>
+          <button title={!(n > 0) ? "Type an amount first" : undefined} type="button" disabled={busy || !(n > 0)} onClick={() => void run("heal", { value: n })} style={{ ...small, color: C.good }}>Heal</button>
+          <button title={!(n > 0) ? "Type an amount first" : undefined} type="button" disabled={busy || !(n > 0)} onClick={() => void run("damage", { value: n })} style={{ ...small, color: C.warn }}>Take damage</button>
           <button type="button" disabled={busy || !(n >= 0) || amt === ""} onClick={() => void run("temp", { value: n })} style={{ ...small, color: "#6fa3d8" }} title="Temporary HP do not stack: this replaces what you have">Set temp HP</button>
         </div>
       )}
@@ -281,7 +281,7 @@ export function AttackForm({ campaignId, characterId, fight, onDone, defaultBonu
         <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
           {costPick}
           <span style={{ flex: 1, fontSize: 12, color: C.muted, minWidth: 160 }}>The damage is rolled once and waits on each target until they roll their save.</span>
-          <button type="button" disabled={busy || !picked.length || !canNow || !!blocked} onClick={() => void saveEffect()}
+          <button title={!picked.length ? "Choose at least one target" : !canNow ? "Wait for your turn" : blocked ? String(blocked) : undefined} type="button" disabled={busy || !picked.length || !canNow || !!blocked} onClick={() => void saveEffect()}
             style={{ padding: "6px 14px", borderRadius: 7, border: "none", background: canNow && !blocked && picked.length ? C.sun : C.line, color: "#1b1712", fontWeight: 700, fontSize: 13, cursor: canNow && !blocked && picked.length ? "pointer" : "default" }}>
             {busy ? "Rolling…" : `Cast on ${picked.length || "…"}`}
           </button>
@@ -312,7 +312,7 @@ export function AttackForm({ campaignId, characterId, fight, onDone, defaultBonu
         <button type="button" onClick={() => setAdv("adv")} style={seg(adv === "adv")}>Advantage</button>
         {costPick}
         <span style={{ flex: 1 }} />
-        <button type="button" disabled={busy || !tgt || !canNow || !!blocked} onClick={() => void attack()}
+        <button title={!tgt ? "Choose a target first" : !canNow ? "Wait for your turn" : blocked ? String(blocked) : undefined} type="button" disabled={busy || !tgt || !canNow || !!blocked} onClick={() => void attack()}
           style={{ padding: "6px 14px", borderRadius: 7, border: "none", background: canNow && !blocked && tgt ? C.sun : C.line, color: "#1b1712", fontWeight: 700, fontSize: 13, cursor: canNow && !blocked && tgt ? "pointer" : "default" }}>
           {busy ? "Rolling…" : tgt ? `Attack ${tgt.name}` : "Attack"}
         </button>
@@ -464,9 +464,9 @@ export function EconomyBar({ fightId, entry, myTurn, onChanged }: { fightId: str
       {edit && (
         <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
           <label style={{ fontSize: 12, color: C.muted }}>Speed <input aria-label="Walking speed in feet" value={spd} inputMode="numeric" onChange={(ev) => setSpd(ev.target.value.replace(/[^0-9]/g, "").slice(0, 3))} style={{ ...field, width: 50 }} /> ft</label>
-          <button type="button" disabled={busy || spd === ""} onClick={() => void run("set_speed", { value: parseInt(spd, 10) })} style={small}>Set</button>
+          <button title={spd === "" ? "Type a speed first" : undefined} type="button" disabled={busy || spd === ""} onClick={() => void run("set_speed", { value: parseInt(spd, 10) })} style={small}>Set</button>
           <label style={{ fontSize: 12, color: C.muted }}>Attacks per Attack action <input aria-label="Attacks per Attack action" value={apa} inputMode="numeric" onChange={(ev) => setApa(ev.target.value.replace(/[^0-9]/g, "").slice(0, 1))} style={{ ...field, width: 34 }} /></label>
-          <button type="button" disabled={busy || !(parseInt(apa, 10) >= 1)} onClick={() => void run("set_attacks", { value: parseInt(apa, 10) })} style={small}>Set</button>
+          <button title={!(parseInt(apa, 10) >= 1) ? "Type at least 1" : undefined} type="button" disabled={busy || !(parseInt(apa, 10) >= 1)} onClick={() => void run("set_attacks", { value: parseInt(apa, 10) })} style={small}>Set</button>
           <span style={{ fontSize: 11.5, color: C.muted }}>Filled in from your sheet; Hasted doubles speed and Slowed halves it.</span>
         </div>
       )}
@@ -478,13 +478,13 @@ export function EconomyBar({ fightId, entry, myTurn, onChanged }: { fightId: str
       </div>
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
         <input aria-label="What you use it for" value={note} onChange={(ev) => setNote(ev.target.value.slice(0, 60))} placeholder="what for, e.g. Cunning Action: Dash" style={{ ...field, width: 210 }} />
-        <button type="button" disabled={busy || !turnOk || e.action} onClick={() => spend("action")} style={small}>Use action</button>
-        <button type="button" disabled={busy || !turnOk || e.bonus} onClick={() => spend("bonus")} style={{ ...small, color: C.good }}>Use bonus action</button>
-        <button type="button" disabled={busy || !!entry.cantAct || e.reaction} onClick={() => spend("reaction")} style={{ ...small, color: "#c2a8f0" }}>Use reaction</button>
+        <button title={!turnOk ? "Wait for your turn" : e.action ? "Your action is used this turn" : undefined} type="button" disabled={busy || !turnOk || e.action} onClick={() => spend("action")} style={small}>Use action</button>
+        <button title={!turnOk ? "Wait for your turn" : e.bonus ? "Your bonus action is used this turn" : undefined} type="button" disabled={busy || !turnOk || e.bonus} onClick={() => spend("bonus")} style={{ ...small, color: C.good }}>Use bonus action</button>
+        <button title={entry.cantAct ? "You cannot act right now" : e.reaction ? "Your reaction is used this round" : undefined} type="button" disabled={busy || !!entry.cantAct || e.reaction} onClick={() => spend("reaction")} style={{ ...small, color: "#c2a8f0" }}>Use reaction</button>
       </div>
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
         <input aria-label="Feet to move" value={feet} inputMode="numeric" onChange={(ev) => setFeet(ev.target.value.replace(/[^0-9]/g, "").slice(0, 3))} placeholder="ft" style={{ ...field, width: 50 }} />
-        <button type="button" disabled={busy || !myTurn || !(parseInt(feet, 10) > 0)} onClick={() => void run("move", { value: parseInt(feet, 10) })} style={small}>Move</button>
+        <button title={!myTurn ? "Wait for your turn" : !(parseInt(feet, 10) > 0) ? "Type how far to move" : undefined} type="button" disabled={busy || !myTurn || !(parseInt(feet, 10) > 0)} onClick={() => void run("move", { value: parseInt(feet, 10) })} style={small}>Move</button>
         <span style={{ fontSize: 11.5, color: C.muted }}>Moving your token on the tabletop counts this for you.</span>
         <span style={{ flex: 1 }} />
         {last && (

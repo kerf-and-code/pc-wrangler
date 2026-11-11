@@ -48,13 +48,13 @@ export default function GenDebug() {
     <div style={{ display: "flex", gap: 16, padding: 20, background: "#171310", minHeight: "100vh", color: C.text, flexWrap: "wrap" }}>
       <div style={{ width: 240, flex: "0 0 240px", display: "grid", gap: 12, alignContent: "start" }}>
         <div style={{ fontSize: 16, fontWeight: 700 }}>World gen (6a debug)</div>
-        <div><span style={label}>Seed</span><input value={seed} onChange={(e) => setSeed(e.target.value)} style={field} /></div>
+        <div><span style={label}>Seed</span><input aria-label="Seed" value={seed} onChange={(e) => setSeed(e.target.value)} style={field} /></div>
         <div><span style={label}>Size {size}x{size}</span>
           <div style={{ display: "flex", gap: 6 }}>{[60, 100, 150].map((s) => <button key={s} type="button" onClick={() => setSize(s)} style={{ ...chip(size === s), flex: 1 }}>{s}</button>)}</div>
         </div>
-        <div><span style={label}>Ocean coverage {ocean.toFixed(2)}</span><input type="range" min={0.4} max={0.8} step={0.01} value={ocean} onChange={(e) => setOcean(Number(e.target.value))} style={{ width: "100%" }} /></div>
-        <div><span style={label}>Continents {continents}</span><input type="range" min={1} max={4} step={1} value={continents} onChange={(e) => setContinents(Number(e.target.value))} style={{ width: "100%" }} disabled={archipelago} /></div>
-        <div><span style={label}>Land concentration {landConc.toFixed(2)}</span><input type="range" min={0} max={1} step={0.05} value={landConc} onChange={(e) => setLandConc(Number(e.target.value))} style={{ width: "100%" }} disabled={archipelago} /></div>
+        <div><span style={label}>Ocean coverage {ocean.toFixed(2)}</span><input aria-label="Ocean" type="range" min={0.4} max={0.8} step={0.01} value={ocean} onChange={(e) => setOcean(Number(e.target.value))} style={{ width: "100%" }} /></div>
+        <div><span style={label}>Continents {continents}</span><input aria-label="Continents" type="range" min={1} max={4} step={1} value={continents} onChange={(e) => setContinents(Number(e.target.value))} style={{ width: "100%" }} disabled={archipelago} /></div>
+        <div><span style={label}>Land concentration {landConc.toFixed(2)}</span><input aria-label="Land concentration" type="range" min={0} max={1} step={0.05} value={landConc} onChange={(e) => setLandConc(Number(e.target.value))} style={{ width: "100%" }} disabled={archipelago} /></div>
         <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 12.5 }}><input type="checkbox" checked={archipelago} onChange={(e) => setArchipelago(e.target.checked)} /> Archipelago mode</label>
         <div>
           <span style={label}>View</span>

@@ -30,6 +30,7 @@ import { getModule } from "@/lib/systems/registry";
 import { C, FORGE_RADIUS, STONE } from "@/lib/forge-theme";
 import { SAX } from "@/lib/theme";
 import { initialCampaignId, useRememberCampaign } from "@/lib/campaign-context";
+import CampaignPicker from "@/components/ui-forge/CampaignPicker";
 
 type Campaign = { id: string; name: string; system: string | null };
 type Session = { id: string; session_number: number | null; ended_at: string | null };
@@ -289,11 +290,7 @@ export default function RollerPage() {
       <Card>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
           <div>
-            <Label>Campaign</Label>
-            <select aria-label="Campaign" value={campaignId} onChange={(e) => setCampaignId(e.target.value)} style={field}>
-              <option value="">Pick a campaign</option>
-              {campaigns.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
+            <CampaignPicker campaigns={campaigns} value={campaignId} onChange={setCampaignId} placeholder="Pick a campaign" selectStyle={field} />
           </div>
           <div>
             <Label>Session</Label>
@@ -318,7 +315,7 @@ export default function RollerPage() {
         <Label>The roll</Label>
         {!isDuality && !isPool && !isPowerRoll && !isLancer && (
         <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
-          <button type="button" onClick={() => setCocMode(false)} disabled={moduleIsPercentile}
+          <button title={moduleIsPercentile ? "This campaign rolls percentile dice" : undefined} type="button" onClick={() => setCocMode(false)} disabled={moduleIsPercentile}
             style={{ ...chip(!isPercentile), opacity: moduleIsPercentile ? 0.4 : 1, cursor: moduleIsPercentile ? "default" : "pointer" }}>
             d20 &middot; D&amp;D
           </button>
@@ -447,7 +444,7 @@ export default function RollerPage() {
 
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
           {(["dis", "flat", "adv"] as const).map((m) => (
-            <button key={m} onClick={() => setMode(m)} disabled={m !== "flat" && !advMeaningful}
+            <button title={m !== "flat" && !advMeaningful ? "This roll has no advantage or disadvantage" : undefined} key={m} onClick={() => setMode(m)} disabled={m !== "flat" && !advMeaningful}
               style={{ ...chip(mode === m), opacity: m !== "flat" && !advMeaningful ? 0.4 : 1 }}>
               {m === "adv" ? "Advantage" : m === "dis" ? "Disadvantage" : "Straight"}
             </button>
@@ -494,7 +491,7 @@ export default function RollerPage() {
           placeholder="What for? (longsword, fireball, perception)"
           style={{ ...field, marginBottom: 12 }} />
 
-        <button onClick={() => void doRoll()} disabled={busy || !campaignId || Boolean(valid)} style={btn}>
+        <button title={!campaignId ? "Pick a campaign first" : valid ? String(valid) : undefined} onClick={() => void doRoll()} disabled={busy || !campaignId || Boolean(valid)} style={btn}>
           {busy ? "Rolling…" : isPercentile ? "Roll d100" : isDuality ? "Roll with Hope & Fear" : isPool ? "Roll pool" : isPowerRoll ? "Roll power" : "Roll"}
         </button>
       </Card>

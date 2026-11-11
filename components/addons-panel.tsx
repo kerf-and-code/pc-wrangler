@@ -131,7 +131,7 @@ export default function AddonsPanel({ campaignId, supabase, onHooksChanged }: { 
           </div>
           <p style={{ color: C.muted, fontSize: 11.5, margin: "6px 0 0" }}>Lines it posts show as from the add-on, marked &quot;via {keyName.trim() || "its name"}&quot;.</p>
           <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
-            <button type="button" disabled={busy || !keyName.trim() || !keyScopes.length} onClick={() => void makeKey()} style={primary}>Make the key</button>
+            <button title={!keyName.trim() ? "Name the key first" : !keyScopes.length ? "Choose at least one permission" : undefined} type="button" disabled={busy || !keyName.trim() || !keyScopes.length} onClick={() => void makeKey()} style={primary}>Make the key</button>
             <button type="button" onClick={() => setMakingKey(false)} style={small}>Cancel</button>
           </div>
         </div>
@@ -234,7 +234,7 @@ function HookRow({ hook: h, supabase, busy, act, onReload }: {
       {showSecret && <code style={{ ...code, marginTop: 6, whiteSpace: "pre-wrap", wordBreak: "break-all" }}>{h.secret}</code>}
       {note && <p role="status" style={{ color: C.muted, margin: "6px 0 0" }}>{note}</p>}
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
-        <button type="button" disabled={testing || !h.enabled} onClick={() => void test()} style={small}>{testing ? "Sending…" : "Send a test"}</button>
+        <button title={!h.enabled ? "Turn the webhook on first" : undefined} type="button" disabled={testing || !h.enabled} onClick={() => void test()} style={small}>{testing ? "Sending…" : "Send a test"}</button>
         <button type="button" onClick={() => setShowSecret(!showSecret)} style={small}>{showSecret ? "Hide the secret" : "Show the signing secret"}</button>
         {showSecret && <button type="button" onClick={() => void navigator.clipboard?.writeText(h.secret)} style={small}>Copy</button>}
         {confirmDel
@@ -282,7 +282,7 @@ function NewHook({ campaignId, onDone, onCancel }: { campaignId: string; onDone:
       </div>
       {err && <p role="status" style={{ color: C.warn, margin: "6px 0 0" }}>{err}</p>}
       <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
-        <button type="button" disabled={busy || !name.trim() || !events.length} onClick={() => void save()} style={primary}>{busy ? "Checking the address..." : "Add the webhook"}</button>
+        <button title={!name.trim() ? "Name the webhook first" : !events.length ? "Choose at least one event" : undefined} type="button" disabled={busy || !name.trim() || !events.length} onClick={() => void save()} style={primary}>{busy ? "Checking the address..." : "Add the webhook"}</button>
         <button type="button" onClick={onCancel} style={small}>Cancel</button>
       </div>
     </div>

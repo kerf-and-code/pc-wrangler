@@ -107,35 +107,35 @@ export default function CityCreator({ campaignId }: { campaignId: string }) {
 
       <div style={{ width: 260, background: C.surface, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: 16 }}>
         <label style={label}>Layout</label>
-        <select value={layout} onChange={(e) => changeLayout(e.target.value as CityLayout)} style={select}>
+        <select aria-label="Layout" value={layout} onChange={(e) => changeLayout(e.target.value as CityLayout)} style={select}>
           {(Object.keys(LAYOUTS) as CityLayout[]).map((k) => <option key={k} value={k}>{LAYOUTS[k].name}</option>)}
         </select>
 
         <label style={label}>{cfg.d1[0]}: {density}</label>
-        <input type="range" min={cfg.d1[1]} max={cfg.d1[2]} value={density} onChange={(e) => { setDensity(+e.target.value); clear(); }} style={range} />
+        <input aria-label="Density" type="range" min={cfg.d1[1]} max={cfg.d1[2]} value={density} onChange={(e) => { setDensity(+e.target.value); clear(); }} style={range} />
         <label style={label}>{cfg.d2[0]}: {detail}</label>
-        <input type="range" min={cfg.d2[1]} max={cfg.d2[2]} value={detail} onChange={(e) => { setDetail(+e.target.value); clear(); }} style={range} />
+        <input aria-label="Detail" type="range" min={cfg.d2[1]} max={cfg.d2[2]} value={detail} onChange={(e) => { setDetail(+e.target.value); clear(); }} style={range} />
         <label style={label}>Irregularity: {jitter}%</label>
-        <input type="range" min={0} max={60} value={jitter} onChange={(e) => { setJitter(+e.target.value); clear(); }} style={range} />
+        <input aria-label="Irregularity" type="range" min={0} max={60} value={jitter} onChange={(e) => { setJitter(+e.target.value); clear(); }} style={range} />
 
         <label style={label}>Centerpiece</label>
-        <select value={centerpiece} onChange={(e) => { setCenterpiece(e.target.value as Centerpiece); clear(); }} style={select}>
+        <select aria-label="Centerpiece" value={centerpiece} onChange={(e) => { setCenterpiece(e.target.value as Centerpiece); clear(); }} style={select}>
           {CENTERPIECES.map((c) => <option key={c.v} value={c.v}>{c.label}</option>)}
         </select>
 
         <label style={label}>Style</label>
-        <select value={style} onChange={(e) => setStyle(e.target.value)} style={select}>
+        <select aria-label="Style" value={style} onChange={(e) => setStyle(e.target.value)} style={select}>
           {STYLES.map((s) => <option key={s.v} value={s.v}>{s.label}</option>)}
         </select>
 
         <label style={label}>Flavour</label>
-        <textarea value={modifier} onChange={(e) => setModifier(e.target.value)} rows={2}
+        <textarea aria-label="Describe it (optional)" value={modifier} onChange={(e) => setModifier(e.target.value)} rows={2}
           placeholder="e.g. besieged, snow-dusted, lantern-lit at dusk"
           style={{ width: "100%", padding: "8px 9px", background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: 7, fontFamily: "inherit", fontSize: 13, resize: "vertical" }} />
 
         <div style={{ display: "flex", gap: 14, marginTop: 12 }}>
           <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: C.text }}>
-            <input type="checkbox" checked={wall} onChange={(e) => { setWall(e.target.checked); clear(); }} style={{ accentColor: C.sun }} /> Wall
+            <input aria-label="City wall" type="checkbox" checked={wall} onChange={(e) => { setWall(e.target.checked); clear(); }} style={{ accentColor: C.sun }} /> Wall
           </label>
           <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: C.text }}>
             <input type="checkbox" checked={river} onChange={(e) => { setRiver(e.target.checked); clear(); }} style={{ accentColor: C.sun }} /> River

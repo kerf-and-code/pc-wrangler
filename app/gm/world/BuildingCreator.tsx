@@ -147,12 +147,12 @@ export default function BuildingCreator({ campaignId }: { campaignId: string }) 
 
       <div style={{ width: 260, background: C.surface, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: 16 }}>
         <label style={label}>Building type</label>
-        <select value={plan.type} onChange={(e) => regen(e.target.value, buildingDef(e.target.value).rooms, plan.seed)} style={select}>
+        <select aria-label="Building type" value={plan.type} onChange={(e) => regen(e.target.value, buildingDef(e.target.value).rooms, plan.seed)} style={select}>
           {Object.entries(groups).map(([g, items]) => <optgroup key={g} label={g}>{items.map((b) => <option key={b.key} value={b.key}>{b.label}</option>)}</optgroup>)}
         </select>
 
         <label style={label}>Rooms: {plan.rooms}</label>
-        <input type="range" min={1} max={12} value={plan.rooms} onChange={(e) => regen(plan.type, +e.target.value, plan.seed)} style={{ width: "100%", accentColor: C.sun }} />
+        <input aria-label="Rooms" type="range" min={1} max={12} value={plan.rooms} onChange={(e) => regen(plan.type, +e.target.value, plan.seed)} style={{ width: "100%", accentColor: C.sun }} />
 
         <label style={label}>Orientation</label>
         <div style={{ display: "flex", gap: 6 }}>
@@ -162,10 +162,10 @@ export default function BuildingCreator({ campaignId }: { campaignId: string }) 
         </div>
 
         <label style={label}>Style</label>
-        <select value={style} onChange={(e) => setStyle(e.target.value)} style={select}>{STYLES.map((s) => <option key={s.v} value={s.v}>{s.label}</option>)}</select>
+        <select aria-label="Style" value={style} onChange={(e) => setStyle(e.target.value)} style={select}>{STYLES.map((s) => <option key={s.v} value={s.v}>{s.label}</option>)}</select>
 
         <label style={label}>Flavour</label>
-        <textarea value={modifier} onChange={(e) => setModifier(e.target.value)} rows={2} placeholder="e.g. cluttered and lived-in, fire in the hearth"
+        <textarea aria-label="Describe it (optional)" value={modifier} onChange={(e) => setModifier(e.target.value)} rows={2} placeholder="e.g. cluttered and lived-in, fire in the hearth"
           style={{ width: "100%", padding: "8px 9px", background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: 7, fontFamily: "inherit", fontSize: 13, resize: "vertical" }} />
 
         <div style={{ marginTop: 14 }}><button type="button" onClick={() => regen(plan.type, plan.rooms, (Math.random() * 1e9) | 0)} style={btn("transparent", C.text)}>New layout</button></div>

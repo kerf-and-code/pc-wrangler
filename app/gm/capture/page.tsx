@@ -9,6 +9,7 @@ import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import { initialCampaignId, useRememberCampaign, initialSessionId, useRememberSession, gmHref } from "@/lib/campaign-context";
 import { friendlyError } from "@/lib/friendly-error";
 import { askConfirm } from "@/lib/confirm";
+import CampaignPicker from "@/components/ui-forge/CampaignPicker";
 
 type Campaign = { id: string; name: string };
 type Sess = { id: string; session_number: number | null; status: string };
@@ -245,14 +246,9 @@ export default function CapturePage() {
 
         {/* campaign + session */}
         <div style={box}>
-          <label style={{ fontSize: 12, color: C.muted, fontFamily: "ui-monospace, monospace", letterSpacing: "0.1em" }}>CAMPAIGN</label>
-          <select value={campaignId} onChange={(e) => setCampaignId(e.target.value)}
-            style={{ display: "block", width: "100%", marginTop: 6, marginBottom: 14, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "10px 12px", fontSize: 15, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
-            {campaigns.length === 0 && <option value="">No campaigns yet</option>}
-            {campaigns.map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}
-          </select>
+          <CampaignPicker campaigns={campaigns} value={campaignId} onChange={setCampaignId} selectStyle={{ display: "block", width: "100%", marginTop: 6, marginBottom: 14, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "10px 12px", fontSize: 15, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }} />
           <label style={{ fontSize: 12, color: C.muted, fontFamily: "ui-monospace, monospace", letterSpacing: "0.1em" }}>SESSION</label>
-          <select value={sessionId} onChange={(e) => setSessionId(e.target.value)}
+          <select aria-label="Session" value={sessionId} onChange={(e) => setSessionId(e.target.value)}
             style={{ display: "block", width: "100%", marginTop: 6, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "10px 12px", fontSize: 15, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
             {sessions.length === 0 && <option value="">No sessions yet</option>}
             {sessions.map((s) => (<option key={s.id} value={s.id}>Session {s.session_number ?? "?"} ({s.status})</option>))}
@@ -373,7 +369,7 @@ export default function CapturePage() {
                   <div style={{ marginTop: 18, display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
                     {isDraft ? (
                       <>
-                        <button type="button" onClick={submitJob} disabled={!consentOk || tracks.length === 0 || queuing}
+                        <button title={!consentOk ? "Everyone at the table needs consent on file or an opt-out first" : tracks.length === 0 ? "There are no tracks to transcribe yet" : undefined} type="button" onClick={submitJob} disabled={!consentOk || tracks.length === 0 || queuing}
                           style={{ ...btn(C.good, C.ink), opacity: !consentOk || tracks.length === 0 || queuing ? 0.5 : 1, cursor: !consentOk || tracks.length === 0 ? "not-allowed" : "pointer" }}>
                           {queuing ? "Queuing…" : "Queue for transcription"}
                         </button>

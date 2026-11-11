@@ -51,7 +51,7 @@ export default function LabelPanel({
         <div style={{ display: "grid", gap: 8, marginTop: 8 }}>
           {labels.map((lb) => (
             <div key={lb.id} style={{ border: `1px solid ${c.line}`, borderRadius: 7, padding: 8, background: c.surface2, display: "grid", gap: 6 }}>
-              <input
+              <input aria-label="Area name"
                 value={lb.text}
                 onChange={(e) => onPatch(lb.id, { text: e.target.value })}
                 placeholder="Area name"
@@ -59,10 +59,10 @@ export default function LabelPanel({
               />
               <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
                 <label style={{ fontSize: 11.5, color: c.muted }}>Size</label>
-                <select value={lb.size} onChange={(e) => onPatch(lb.id, { size: Number(e.target.value) })} style={{ ...field, flex: "0 0 auto" }}>
+                <select aria-label="Size" value={lb.size} onChange={(e) => onPatch(lb.id, { size: Number(e.target.value) })} style={{ ...field, flex: "0 0 auto" }}>
                   {[14, 18, 24, 32, 44, 60].map((s) => <option key={s} value={s}>{s}</option>)}
                 </select>
-                <input type="color" value={lb.color || "#f2e9d6"} onChange={(e) => onPatch(lb.id, { color: e.target.value })} title="Label colour"
+                <input aria-label="Label colour" type="color" value={lb.color || "#f2e9d6"} onChange={(e) => onPatch(lb.id, { color: e.target.value })} title="Label colour"
                   style={{ width: 30, height: 28, padding: 0, border: `1px solid ${c.line}`, borderRadius: 6, background: c.surface2, cursor: "pointer", flex: "0 0 auto" }} />
                 {lb.color && <button type="button" onClick={() => onPatch(lb.id, { color: null })} style={mini} title="Go back to the default colour">Default colour</button>}
                 <button type="button" onClick={() => onPatch(lb.id, { locked: !lb.locked })} title={lb.locked ? "Unlock to move" : "Lock so it won't drag"}

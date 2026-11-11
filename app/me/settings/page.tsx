@@ -203,7 +203,7 @@ export default function MySettingsPage() {
                 characters have their own names; this one is yours.
               </p>
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                <input
+                <input aria-label="Your name"
                   value={name}
                   onChange={(e) => { setName(e.target.value); setSaved(false); }}
                   placeholder="Your name"
@@ -367,7 +367,7 @@ export default function MySettingsPage() {
                     This cannot be undone. Type <strong>DELETE</strong> to confirm.
                   </p>
                   <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                    <input
+                    <input aria-label="Delete"
                       value={confirmText}
                       onChange={(e) => setConfirmText(e.target.value)}
                       placeholder="DELETE"
@@ -376,7 +376,7 @@ export default function MySettingsPage() {
                         borderRadius: FORGE_RADIUS, padding: "9px 12px",
                         fontSize: 14, fontFamily: SAX.mono, letterSpacing: "0.1em" }}
                     />
-                    <button
+                    <button title={confirmText !== "DELETE" ? "Type DELETE to confirm" : undefined}
                       type="button"
                       onClick={deleteAccount}
                       disabled={deleting || confirmText !== "DELETE"}

@@ -83,22 +83,22 @@ export default function PoiPanel({ campaignId, pois, onPatch, onRemove }: {
                 <div style={{ display: "grid", gap: 8, margin: "6px 0 4px" }}>
                   {items.map((p) => (
           <div key={p.id} style={{ border: `1px solid ${C.line}`, borderRadius: 7, padding: 8, background: C.surface2, display: "grid", gap: 6 }}>
-            <input value={p.name} onChange={(e) => onPatch(p.id, { name: e.target.value })} style={{ ...field, width: "100%" }} />
+            <input aria-label="Marker name" value={p.name} onChange={(e) => onPatch(p.id, { name: e.target.value })} style={{ ...field, width: "100%" }} />
             <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
-              <select value={p.visibility} onChange={(e) => onPatch(p.id, { visibility: e.target.value })} style={{ ...field, flex: "0 0 auto" }}>
+              <select aria-label="Who can see it" value={p.visibility} onChange={(e) => onPatch(p.id, { visibility: e.target.value })} style={{ ...field, flex: "0 0 auto" }}>
                 {VIS.map((v) => <option key={v} value={v}>{v}</option>)}
               </select>
-              <select value={p.entry_id || ""} onChange={(e) => onPatch(p.id, { entry_id: e.target.value || null })} style={{ ...field, flex: "1 1 130px" }}>
+              <select aria-label="Codex entry" value={p.entry_id || ""} onChange={(e) => onPatch(p.id, { entry_id: e.target.value || null })} style={{ ...field, flex: "1 1 130px" }}>
                 <option value="">No codex entry</option>
                 {entries.map((en) => <option key={en.id} value={en.id}>{en.title || "(untitled)"}</option>)}
               </select>
-              <select value={p.character_id || ""} onChange={(e) => onPatch(p.id, { character_id: e.target.value || null })} style={{ ...field, flex: "1 1 130px" }}>
+              <select aria-label="Character" value={p.character_id || ""} onChange={(e) => onPatch(p.id, { character_id: e.target.value || null })} style={{ ...field, flex: "1 1 130px" }}>
                 <option value="">No linked character</option>
                 {chars.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
               {p.icon_key && (
                 <>
-                  <input type="color" value={p.color || "#e6d8b5"} onChange={(e) => onPatch(p.id, { color: e.target.value })} title="Marker colour"
+                  <input aria-label="Marker colour" type="color" value={p.color || "#e6d8b5"} onChange={(e) => onPatch(p.id, { color: e.target.value })} title="Marker colour"
                     style={{ width: 30, height: 28, padding: 0, border: `1px solid ${C.line}`, borderRadius: 6, background: C.surface2, cursor: "pointer", flex: "0 0 auto" }} />
                   {p.color && <button type="button" onClick={() => onPatch(p.id, { color: null })} style={mini}>auto</button>}
                 </>
@@ -111,7 +111,7 @@ export default function PoiPanel({ campaignId, pois, onPatch, onRemove }: {
               <button type="button" onClick={() => onRemove(p.id)} style={mini}>Delete</button>
             </div>
             {!p.entry_id && (
-              <textarea value={p.note || ""} onChange={(e) => onPatch(p.id, { note: e.target.value })} placeholder="Short note (shown if there is no linked entry)" rows={2} style={{ ...field, width: "100%", resize: "vertical" }} />
+              <textarea aria-label="Short note (shown if there is no linked entry)" value={p.note || ""} onChange={(e) => onPatch(p.id, { note: e.target.value })} placeholder="Short note (shown if there is no linked entry)" rows={2} style={{ ...field, width: "100%", resize: "vertical" }} />
             )}
           </div>
                   ))}

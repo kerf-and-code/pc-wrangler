@@ -7,6 +7,7 @@ import { surfaces, ui } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import { initialCampaignId, useRememberCampaign, initialSessionId, useRememberSession } from "@/lib/campaign-context";
 import { friendlyError } from "@/lib/friendly-error";
+import CampaignPicker from "@/components/ui-forge/CampaignPicker";
 
 type Campaign = { id: string; name: string };
 type Sess = { id: string; session_number: number | null; status: string };
@@ -187,17 +188,14 @@ export default function TranscriptsPage() {
 
       <div style={{ ...box, marginBottom: 16 }}>
         <label style={label}>CAMPAIGN</label>
-        <select value={campaignId} onChange={(e) => setCampaignId(e.target.value)} style={{ ...input, marginTop: 6, marginBottom: 14 }}>
-          {campaigns.length === 0 && <option value="">No campaigns yet</option>}
-          {campaigns.map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}
-        </select>
+        <CampaignPicker campaigns={campaigns} value={campaignId} onChange={setCampaignId} label={null} selectStyle={{ ...input, marginTop: 6, marginBottom: 14 }} />
         <label style={label}>SESSION</label>
-        <select value={sessionId} onChange={(e) => setSessionId(e.target.value)} style={{ ...input, marginTop: 6, marginBottom: 14 }}>
+        <select aria-label="Session" value={sessionId} onChange={(e) => setSessionId(e.target.value)} style={{ ...input, marginTop: 6, marginBottom: 14 }}>
           {sessions.length === 0 && <option value="">No sessions yet</option>}
           {sessions.map((s) => (<option key={s.id} value={s.id}>Session {s.session_number ?? "?"} ({s.status})</option>))}
         </select>
         <label style={label}>SPEAKER</label>
-        <select value={speaker} onChange={(e) => setSpeaker(e.target.value)} style={{ ...input, marginTop: 6 }}>
+        <select aria-label="Speaker" value={speaker} onChange={(e) => setSpeaker(e.target.value)} style={{ ...input, marginTop: 6 }}>
           <option value="">All speakers</option>
           {speakers.map((s) => (<option key={s.key} value={s.key}>{s.name}</option>))}
         </select>

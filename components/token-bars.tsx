@@ -69,9 +69,9 @@ export default function TokenBars({ tokenId, tokenName, isCreature, isGm, bars, 
             {isGm
               ? <input aria-label="Bar name" defaultValue={b.label} maxLength={24} onBlur={(e) => { const v = e.target.value.trim(); if (v && v !== b.label) void patch(b, { label: v }); }} style={{ ...field, flex: 1, minWidth: 0 }} />
               : <span style={{ flex: 1 }}>{b.label}</span>}
-            <button type="button" disabled={busy || b.value <= 0} aria-label={`${b.label} down one`} onClick={() => void setValue(b, b.value - 1)} style={small}>-</button>
+            <button title={b.value <= 0 ? "Already at zero" : undefined} type="button" disabled={busy || b.value <= 0} aria-label={`${b.label} down one`} onClick={() => void setValue(b, b.value - 1)} style={small}>-</button>
             <span aria-live="polite" style={{ minWidth: 54, textAlign: "center", fontWeight: 600 }}>{b.value} / {b.most}</span>
-            <button type="button" disabled={busy || b.value >= b.most} aria-label={`${b.label} up one`} onClick={() => void setValue(b, b.value + 1)} style={small}>+</button>
+            <button title={b.value >= b.most ? "Already at the most" : undefined} type="button" disabled={busy || b.value >= b.most} aria-label={`${b.label} up one`} onClick={() => void setValue(b, b.value + 1)} style={small}>+</button>
           </div>
           <div aria-hidden style={{ height: 6, background: "rgba(255,255,255,0.08)", borderRadius: 3, marginTop: 6, overflow: "hidden" }}>
             <div style={{ width: `${(b.value / b.most) * 100}%`, height: "100%", background: b.color }} />
@@ -95,7 +95,7 @@ export default function TokenBars({ tokenId, tokenName, isCreature, isGm, bars, 
       {isGm && bars.length < MAX_BARS && <button type="button" disabled={busy} onClick={() => void add()} style={small}>Add a bar</button>}
       {isGm && isCreature && (
         <label style={{ display: "flex", gap: 8, alignItems: "flex-start", marginTop: 10 }}>
-          <input type="checkbox" checked={healthToPlayers} onChange={(e) => onHealthToPlayers(e.target.checked)} />
+          <input aria-label="Show players how it is doing" type="checkbox" checked={healthToPlayers} onChange={(e) => onHealthToPlayers(e.target.checked)} />
           <span>Players see how it is doing in a fight <span style={{ color: C.muted }}>(healthy, bloodied at half or below, down; never its hit points)</span></span>
         </label>
       )}

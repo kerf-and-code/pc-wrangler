@@ -872,12 +872,12 @@ export default function SessionWorkspace() {
               style={{ ...inputStyle, width: "100%", boxSizing: "border-box", minHeight: 160, lineHeight: 1.6, resize: "vertical", fontFamily: "inherit" }}
             />
             <div style={{ display: "flex", gap: 8, marginTop: 10, alignItems: "center", flexWrap: "wrap" }}>
-              <button style={btn} onClick={saveRecap} disabled={recapSaving || !recap.trim()}>
+              <button title={!recap.trim() ? "Write or generate a recap first" : undefined} style={btn} onClick={saveRecap} disabled={recapSaving || !recap.trim()}>
                 {recapSaving ? "Saving…" : "Save recap"}
               </button>
-              <button style={btnGhost} onClick={copyRecap} disabled={!recap.trim()}>Copy text</button>
+              <button title={!recap.trim() ? "Write or generate a recap first" : undefined} style={btnGhost} onClick={copyRecap} disabled={!recap.trim()}>Copy text</button>
               <button style={btnGhost} onClick={copyRecapLink} disabled={!recapLink} title={recapLink ? "The page where your players read every recap" : "This campaign has no player link yet (Roster)"}>Copy recap link</button>
-              <button style={btnGhost} onClick={postRecap} disabled={recapPosting || !recap.trim()}>
+              <button title={!recap.trim() ? "Write or generate a recap first" : undefined} style={btnGhost} onClick={postRecap} disabled={recapPosting || !recap.trim()}>
                 {recapPosting ? "Posting…" : "Post to Discord"}
               </button>
               {recapMsg && <span style={{ fontSize: 12, color: C.muted }}>{recapMsg}</span>}
@@ -893,7 +893,7 @@ export default function SessionWorkspace() {
                   value={recipients}
                   onChange={(e) => setRecipients(e.target.value)}
                 />
-                <button style={btn} onClick={sendRecap} disabled={recapSending || !recap.trim() || !recipients.trim()}>
+                <button title={!recap.trim() ? "Write or generate a recap first" : !recipients.trim() ? "Add at least one email address" : undefined} style={btn} onClick={sendRecap} disabled={recapSending || !recap.trim() || !recipients.trim()}>
                   {recapSending ? "Sending…" : "Send to players"}
                 </button>
               </div>
@@ -1058,7 +1058,7 @@ export default function SessionWorkspace() {
               <input aria-label="Note (optional)" style={{ ...inputStyle, flex: 1, minWidth: 180 }} placeholder="Note (optional)"
                 value={entry.note} onChange={(e) => setEntry({ ...entry, note: e.target.value })}
                 onKeyDown={(e) => { if (e.key === "Enter") logEvent(); }} />
-              <button style={btn} onClick={logEvent} disabled={busy || !entry.typeKey}>Log</button>
+              <button title={!entry.typeKey ? "Choose what happened first" : undefined} style={btn} onClick={logEvent} disabled={busy || !entry.typeKey}>Log</button>
             </div>
           </div>
 
@@ -1122,7 +1122,7 @@ export default function SessionWorkspace() {
               <input aria-label="Item" style={{ ...inputStyle, flex: 1, minWidth: 140 }} placeholder="Item" value={newLoot.item} onChange={(e) => setNewLoot({ ...newLoot, item: e.target.value })} />
               <input aria-label="Rarity" style={{ ...inputStyle, maxWidth: 110 }} placeholder="Rarity" value={newLoot.rarity} onChange={(e) => setNewLoot({ ...newLoot, rarity: e.target.value })} />
               <input aria-label="Value" style={{ ...inputStyle, maxWidth: 90 }} type="number" placeholder="Value" value={newLoot.value} onChange={(e) => setNewLoot({ ...newLoot, value: e.target.value })} />
-              <button style={btn} onClick={addLoot} disabled={busy || !newLoot.item.trim()}>Add</button>
+              <button title={!newLoot.item.trim() ? "Name the item first" : undefined} style={btn} onClick={addLoot} disabled={busy || !newLoot.item.trim()}>Add</button>
             </div>
           </div>
 
@@ -1146,7 +1146,7 @@ export default function SessionWorkspace() {
                 <option value="">whose arc (optional)...</option>
                 {characters.filter((c) => c.kind !== "npc").map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
-              <button style={btn} onClick={addArc} disabled={busy || !newArc.title.trim()}>Add arc</button>
+              <button title={!newArc.title.trim() ? "Give the arc a title first" : undefined} style={btn} onClick={addArc} disabled={busy || !newArc.title.trim()}>Add arc</button>
             </div>
           </div>
         </>

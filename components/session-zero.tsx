@@ -151,7 +151,7 @@ export default function SessionZero() {
         </div>
         <Grid>
           <Field label="Lines (never appears)"><textarea aria-label="One per line" style={ta} rows={3} placeholder="One per line" value={d.lines} onChange={(e) => set("lines", e.target.value)} /></Field>
-          <Field label="Veils (off-screen only)"><textarea style={ta} rows={3} placeholder="One per line" value={d.veils} onChange={(e) => set("veils", e.target.value)} /></Field>
+          <Field label="Veils (off-screen only)"><textarea aria-label="One per line" style={ta} rows={3} placeholder="One per line" value={d.veils} onChange={(e) => set("veils", e.target.value)} /></Field>
         </Grid>
         <div style={{ marginTop: 12 }}>
           <div style={smallLabel}>Safety tools this table uses</div>

@@ -151,7 +151,7 @@ export default function CardsPanel({ campaignId, supabase, isGm, me, seats, data
                     <option value="">Pass to...</option>
                     {others.map((s) => <option key={s.profileId} value={s.profileId}>{s.name}</option>)}
                   </select>
-                  <button type="button" disabled={busy || !passTo} onClick={() => void move(picked, "hand", false, passTo)} style={small}>Pass</button>
+                  <button title={!passTo ? "Choose who to pass it to first" : undefined} type="button" disabled={busy || !passTo} onClick={() => void move(picked, "hand", false, passTo)} style={small}>Pass</button>
                 </span>
               )}
             </>}
@@ -260,7 +260,7 @@ function DeckRow({ deck, campaignId, isGm, seats, busy, run, supabase, selected,
         {deck.discardTop && <CardView card={deck.discardTop} back={deck.backColor} backPicture={deck.back} selected={selected === deck.discardTop.id} onClick={() => onPick(deck.discardTop!.id)} />}
       </div>
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8, alignItems: "center" }}>
-        {canDraw && <button type="button" disabled={busy || deck.draw === 0} onClick={() => void run(() => supabase.rpc("tabletop_deck_draw", { p_deck: deck.id, p_count: 1 }))} style={primary}>{deck.draw === 0 ? "Deck empty" : "Draw a card"}</button>}
+        {canDraw && <button title={deck.draw === 0 ? "The draw pile is empty" : undefined} type="button" disabled={busy || deck.draw === 0} onClick={() => void run(() => supabase.rpc("tabletop_deck_draw", { p_deck: deck.id, p_count: 1 }))} style={primary}>{deck.draw === 0 ? "Deck empty" : "Draw a card"}</button>}
         {isGm && (
           <>
             <select aria-label={`Deal from ${deck.name} to`} value={dealTo} onChange={(e) => setDealTo(e.target.value)} style={{ ...field, maxWidth: 130 }}>

@@ -10,6 +10,7 @@ import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import { initialCampaignId, useRememberCampaign, gmHref } from "@/lib/campaign-context";
 import { friendlyError } from "@/lib/friendly-error";
 import { askConfirm } from "@/lib/confirm";
+import CampaignPicker from "@/components/ui-forge/CampaignPicker";
 
 type Campaign = { id: string; name: string };
 type Sess = { id: string; session_number: number | null };
@@ -224,10 +225,7 @@ export default function PrepPage() {
       </p>
 
       <div style={{ ...box, marginBottom: 4 }}>
-        <select value={campaignId} onChange={(e) => setCampaignId(e.target.value)} style={input}>
-          {campaigns.length === 0 && <option value="">No campaigns yet</option>}
-          {campaigns.map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}
-        </select>
+        <CampaignPicker campaigns={campaigns} value={campaignId} onChange={setCampaignId} label={null} selectStyle={input} />
       </div>
 
       {player.error && <p role="alert" style={{ color: C.warn, fontSize: 12.5, margin: "10px 0 0" }}>{player.error}</p>}
@@ -243,19 +241,19 @@ export default function PrepPage() {
       <div style={box}>
         <div style={{ display: "grid", gap: 8, marginBottom: plan.length ? 14 : 0 }}>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            <input placeholder={"What happens\u2026"} value={pTitle} onChange={(e) => setPTitle(e.target.value)} style={{ ...input, flex: "1 1 220px" }} />
-            <select value={pKind} onChange={(e) => setPKind(e.target.value)} style={{ ...input, width: "auto", flex: "0 0 auto" }}>
+            <input aria-label={"What happens\u2026"} placeholder={"What happens\u2026"} value={pTitle} onChange={(e) => setPTitle(e.target.value)} style={{ ...input, flex: "1 1 220px" }} />
+            <select aria-label="Kind of plan item" value={pKind} onChange={(e) => setPKind(e.target.value)} style={{ ...input, width: "auto", flex: "0 0 auto" }}>
               {PLAN_KINDS.map((k) => <option key={k.v} value={k.v}>{k.l}</option>)}
             </select>
             {pKind === "encounter" && (
-              <select value={pDiff} onChange={(e) => setPDiff(e.target.value)} style={{ ...input, width: "auto", flex: "0 0 auto" }}>
+              <select aria-label="Difficulty" value={pDiff} onChange={(e) => setPDiff(e.target.value)} style={{ ...input, width: "auto", flex: "0 0 auto" }}>
                 <option value="">difficulty</option>
                 {PLAN_DIFFS.map((d) => <option key={d} value={d}>{d}</option>)}
               </select>
             )}
           </div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            <select value={pLink} onChange={(e) => setPLink(e.target.value)} style={{ ...input, flex: "1 1 200px" }}>
+            <select aria-label="Link it to" value={pLink} onChange={(e) => setPLink(e.target.value)} style={{ ...input, flex: "1 1 200px" }}>
               <option value="">{"Link to\u2026 (optional)"}</option>
               {threads.length > 0 && (
                 <optgroup label="Open threads">
@@ -268,12 +266,12 @@ export default function PrepPage() {
                 </optgroup>
               )}
             </select>
-            <button type="button" onClick={addPlanItem} disabled={pBusy || !pTitle.trim()}
+            <button title={!pTitle.trim() ? "Give the item a title first" : undefined} type="button" onClick={addPlanItem} disabled={pBusy || !pTitle.trim()}
               style={{ background: C.sun, color: C.ink, border: "none", borderRadius: FORGE_RADIUS, padding: "0 20px", fontSize: 14, fontWeight: 700, cursor: pBusy || !pTitle.trim() ? "default" : "pointer", opacity: pBusy || !pTitle.trim() ? 0.6 : 1 }}>
               Add
             </button>
           </div>
-          <input placeholder="Notes (optional)" value={pNote} onChange={(e) => setPNote(e.target.value)} style={input} />
+          <input aria-label="Notes (optional)" placeholder="Notes (optional)" value={pNote} onChange={(e) => setPNote(e.target.value)} style={input} />
         </div>
 
         {plan.length === 0 ? (

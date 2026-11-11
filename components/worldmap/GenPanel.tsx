@@ -135,7 +135,7 @@ export default function GenPanel({ campaignId, onAccepted, onClose }: { campaign
           <div style={{ fontSize: 16, fontWeight: 700, color: C.text }}>Generate world</div>
           <div><span style={label}>Seed</span>
             <div style={{ display: "flex", gap: 6 }}>
-              <input value={seed} onChange={(e) => setSeed(e.target.value)} placeholder="word or number" style={{ ...field, flex: 1 }} disabled={busy} />
+              <input aria-label="Seed" value={seed} onChange={(e) => setSeed(e.target.value)} placeholder="word or number" style={{ ...field, flex: 1 }} disabled={busy} />
               <button type="button" onClick={() => setSeed(String(Math.floor(Math.random() * 1000000000)))} style={{ ...chip(false), padding: "5px 9px", whiteSpace: "nowrap" }} disabled={busy} title="Pick a random seed">Random</button>
             </div>
             <div style={{ fontSize: 11, color: C.muted, marginTop: 3 }}>Same seed = same world. Type a number, a word, or hit Random.</div>
@@ -143,9 +143,9 @@ export default function GenPanel({ campaignId, onAccepted, onClose }: { campaign
           <div><span style={label}>Size {size}x{size}</span>
             <div style={{ display: "flex", gap: 5 }}>{[60, 100, 150, 200, 250].map((s) => <button key={s} type="button" onClick={() => setSize(s)} style={{ ...chip(size === s), flex: 1, padding: "5px 2px" }} disabled={busy}>{s}</button>)}</div>
           </div>
-          <div><span style={label}>Ocean coverage {ocean.toFixed(2)}</span><input type="range" min={0.05} max={0.95} step={0.01} value={ocean} onChange={(e) => setOcean(Number(e.target.value))} style={{ width: "100%" }} disabled={busy} /></div>
-          <div><span style={label}>Continents {continents}</span><input type="range" min={1} max={8} step={1} value={continents} onChange={(e) => setContinents(Number(e.target.value))} style={{ width: "100%" }} disabled={busy || archipelago} /></div>
-          <div><span style={label}>Land concentration {landConc.toFixed(2)}</span><input type="range" min={0} max={1} step={0.05} value={landConc} onChange={(e) => setLandConc(Number(e.target.value))} style={{ width: "100%" }} disabled={busy || archipelago} /></div>
+          <div><span style={label}>Ocean coverage {ocean.toFixed(2)}</span><input aria-label="Ocean" type="range" min={0.05} max={0.95} step={0.01} value={ocean} onChange={(e) => setOcean(Number(e.target.value))} style={{ width: "100%" }} disabled={busy} /></div>
+          <div><span style={label}>Continents {continents}</span><input aria-label="Continents" type="range" min={1} max={8} step={1} value={continents} onChange={(e) => setContinents(Number(e.target.value))} style={{ width: "100%" }} disabled={busy || archipelago} /></div>
+          <div><span style={label}>Land concentration {landConc.toFixed(2)}</span><input aria-label="Land concentration" type="range" min={0} max={1} step={0.05} value={landConc} onChange={(e) => setLandConc(Number(e.target.value))} style={{ width: "100%" }} disabled={busy || archipelago} /></div>
           <div><span style={label}>Prevailing wind</span>
             <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>{WINDS.map(([n, v]) => <button key={v} type="button" onClick={() => setWind(v)} style={chip(wind === v)} disabled={busy}>{n}</button>)}</div>
           </div>

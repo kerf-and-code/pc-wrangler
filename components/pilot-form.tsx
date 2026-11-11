@@ -123,7 +123,7 @@ export default function PilotForm() {
       </Field>
 
       <Field label="Tell us about your table" hint="Group size, how long you have been running it, what you are hoping Six Axes does for you. Anything you like.">
-        <textarea name="description" rows={5} maxLength={2000} style={{ ...input, resize: "vertical" }} />
+        <textarea aria-label="Description" name="description" rows={5} maxLength={2000} style={{ ...input, resize: "vertical" }} />
       </Field>
 
       {/* Honeypot: visually hidden, off the tab order, ignored by humans. */}

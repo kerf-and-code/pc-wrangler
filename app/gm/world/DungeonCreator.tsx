@@ -415,14 +415,14 @@ export default function DungeonCreator({ campaignId }: { campaignId: string }) {
           {tool === "labels" && (
             <>
               <label style={label}>Label text</label>
-              <input value={labelText} onChange={(e) => setLabelText(e.target.value.slice(0, 40))} placeholder="A, 12, Throne room" style={field} />
+              <input aria-label="A, 12, Throne room" value={labelText} onChange={(e) => setLabelText(e.target.value.slice(0, 40))} placeholder="A, 12, Throne room" style={field} />
             </>
           )}
 
           <label style={label}>Map title</label>
-          <input value={meta.title} onChange={(e) => setMeta((m) => ({ ...m, title: e.target.value.slice(0, 80) }))} placeholder="The Sunken Chapel" style={field} />
+          <input aria-label="The Sunken Chapel" value={meta.title} onChange={(e) => setMeta((m) => ({ ...m, title: e.target.value.slice(0, 80) }))} placeholder="The Sunken Chapel" style={field} />
           <label style={label}>This level&apos;s name</label>
-          <input value={meta.levelNames[level] || ""} onChange={(e) => setMeta((m) => ({ ...m, levelNames: m.levelNames.map((x, i) => (i === level ? e.target.value.slice(0, 60) : x)) }))} placeholder={`Level ${level + 1}`} style={field} />
+          <input aria-label="Level name" value={meta.levelNames[level] || ""} onChange={(e) => setMeta((m) => ({ ...m, levelNames: m.levelNames.map((x, i) => (i === level ? e.target.value.slice(0, 60) : x)) }))} placeholder={`Level ${level + 1}`} style={field} />
           <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 12, color: C.text, fontSize: 12.5, cursor: "pointer" }}>
             <input type="checkbox" checked={meta.autoNumber} onChange={(e) => setMeta((m) => ({ ...m, autoNumber: e.target.checked }))} style={{ accentColor: C.sun }} />
             Number the rooms automatically
@@ -436,7 +436,7 @@ export default function DungeonCreator({ campaignId }: { campaignId: string }) {
           <div style={{ display: "flex", gap: 6 }}>{SIZES.map((s) => <button key={s} type="button" onClick={() => changeSize(s)} style={seg(n === s)}>{s}</button>)}</div>
           <label style={label}>Feet per square</label>
           <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-            <input type="number" min={1} max={100} step={1} value={fps}
+            <input aria-label="Feet per square" type="number" min={1} max={100} step={1} value={fps}
               onChange={(e) => setFps(Math.max(1, Math.min(100, Math.round(Number(e.target.value) || 1))))}
               style={{ ...field, width: 80 }} />
             <span style={{ color: C.muted, fontSize: 12 }}>ft / square</span>

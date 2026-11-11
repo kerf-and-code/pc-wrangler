@@ -296,8 +296,8 @@ export default function PlayActions({ sheet, charLevel, characterId, campaignId,
                   <span style={{ ...mono, fontSize: 12.5, color: left ? C.sun : C.warn }}>{left} / {p.max}</span>
                   <span style={{ fontSize: 11.5, color: STONE.inkFaint }}>{p.shortRest === "all" ? "back on a short rest" : p.shortRest === "one" ? "one back on a short rest" : "back on a long rest"}</span>
                   <span style={{ flex: 1 }} />
-                  <button type="button" className="forge-btn" disabled={left === 0} onClick={() => onSpend(p.key, (spent[p.key] || 0) + 1)} style={btn()}>Use one</button>
-                  <button type="button" className="forge-btn" disabled={!(spent[p.key] > 0)} onClick={() => onSpend(p.key, (spent[p.key] || 0) - 1)} style={btn()}>Give one back</button>
+                  <button title={left === 0 ? "None left" : undefined} type="button" className="forge-btn" disabled={left === 0} onClick={() => onSpend(p.key, (spent[p.key] || 0) + 1)} style={btn()}>Use one</button>
+                  <button title={!(spent[p.key] > 0) ? "None used yet" : undefined} type="button" className="forge-btn" disabled={!(spent[p.key] > 0)} onClick={() => onSpend(p.key, (spent[p.key] || 0) - 1)} style={btn()}>Give one back</button>
                 </div>
               );
             })}

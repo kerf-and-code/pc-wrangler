@@ -2735,8 +2735,8 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
               <option value="">Target…</option>
               {choices.map((e) => <option key={e.id} value={e.id}>{e.name}{e.defeated ? " (down)" : ""}</option>)}
             </select>
-            <button type="button" disabled={!target} onClick={() => void applyOutside(key, ids, target, false)} style={{ ...small, padding: "4px 9px", color: C.warn }}>{applied ? "Apply anyway" : `Apply ${total}`}</button>
-            <button type="button" disabled={!target} onClick={() => void applyOutside(key, ids, target, true)} style={{ ...small, padding: "4px 9px" }}>Half ({Math.floor(total / 2)})</button>
+            <button title={!target ? "Pick a target token first" : undefined} type="button" disabled={!target} onClick={() => void applyOutside(key, ids, target, false)} style={{ ...small, padding: "4px 9px", color: C.warn }}>{applied ? "Apply anyway" : `Apply ${total}`}</button>
+            <button title={!target ? "Pick a target token first" : undefined} type="button" disabled={!target} onClick={() => void applyOutside(key, ids, target, true)} style={{ ...small, padding: "4px 9px" }}>Half ({Math.floor(total / 2)})</button>
           </div>
         )}
         {!fightNow && dmg.length > 0 && !applied && (isGm || mineRoll) && <div style={{ fontSize: 11.5, color: C.muted, marginTop: 4 }}>Start a fight to land this damage on a creature.</div>}
@@ -2936,7 +2936,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
               {[1, 3, 5].map((b) => (
                 <button key={b} type="button" title={`Brush ${b} by ${b} squares`} aria-pressed={terrainBrush === b} onClick={() => setTerrainBrush(b)} style={{ ...seg(terrainBrush === b), flex: "0 0 auto", padding: "6px 8px" }}>{b}</button>
               ))}
-              <button type="button" disabled={!difficultRef.current.size} onClick={() => { difficultRef.current = new Set(); requestDraw(); void saveTerrain(); }} style={{ ...small, padding: "6px 10px" }}>Clear all</button>
+              <button title={!difficultRef.current.size ? "No difficult terrain on this scene" : undefined} type="button" disabled={!difficultRef.current.size} onClick={() => { difficultRef.current = new Set(); requestDraw(); void saveTerrain(); }} style={{ ...small, padding: "6px 10px" }}>Clear all</button>
               <span style={{ fontSize: 12, color: C.muted }}>{difficultRef.current.size} square{difficultRef.current.size === 1 ? "" : "s"}. Moving through them costs double.</span>
             </div>
           )}
@@ -3037,7 +3037,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                     <span role="group" aria-label={`Floor of ${tk.name}`} title={can ? "Take this token to another floor, at the same spot" : "Stand on stairs, a ladder, a trapdoor or a pit to change floor"} style={{ display: "inline-flex", gap: 4, alignItems: "center" }}>
                       <span style={{ color: C.muted }}>Floor</span>
                       {floors.filter((f) => !f.current).map((f) => (
-                        <button key={f.level} type="button" disabled={!can} onClick={() => void takeToFloor(tk, f.level)} style={{ ...small, padding: "3px 8px", opacity: can ? 1 : 0.5, cursor: can ? "pointer" : "not-allowed" }}>To {f.name}</button>
+                        <button title={!can ? "You cannot send it there" : undefined} key={f.level} type="button" disabled={!can} onClick={() => void takeToFloor(tk, f.level)} style={{ ...small, padding: "3px 8px", opacity: can ? 1 : 0.5, cursor: can ? "pointer" : "not-allowed" }}>To {f.name}</button>
                       ))}
                     </span>
                   );
@@ -3452,7 +3452,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                       </div>
                       {(lightOf(sel[0].style) || darkvisionOf(sel[0].style) > 0) && <p style={{ color: C.muted, fontSize: 11.5, margin: "4px 0 0" }}>Used when the scene has line of sight on and its light set to Dim or Dark. Measured from the token&apos;s edge; walls stop light.</p>}
                       <label style={label}>Image</label>
-                      <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" disabled={uploading}
+                      <input aria-label="Image" type="file" accept="image/png,image/jpeg,image/webp,image/gif" disabled={uploading}
                         onChange={(e) => { const f = e.target.files?.[0]; if (f) void uploadImage(f, (url) => void updateTokens([sel[0].id], { image_url: url })); }} style={{ fontSize: 12, color: C.muted }} />
                       <div style={{ display: "flex", gap: 6, alignItems: "center", marginTop: 6, flexWrap: "wrap" }}>
                         <button type="button" onClick={() => setMakerFor(sel[0].id)} style={small}>Open the token maker</button>
@@ -3481,7 +3481,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                   <div style={{ fontWeight: 600, fontSize: 13 }}>The party</div>
                   <div style={{ display: "grid", gap: 6, marginTop: 8 }}>
                     {party.filter((p) => p.character_id).map((p) => (
-                      <button key={p.character_id!} type="button" disabled={onSceneTokens.has(p.character_id)}
+                      <button title={onSceneTokens.has(p.character_id) ? `${p.name} is already on the table` : undefined} key={p.character_id!} type="button" disabled={onSceneTokens.has(p.character_id)}
                         onClick={() => void addToken({ name: p.name, size: 1, kind: "pc", character_id: p.character_id, image_url: p.portrait_url })}
                         style={{ ...small, textAlign: "left", opacity: onSceneTokens.has(p.character_id) ? 0.45 : 1 }}>
                         {onSceneTokens.has(p.character_id) ? `${p.name} is on the table` : `Add ${p.name}`}
@@ -3534,11 +3534,11 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                       <label style={{ display: "flex", gap: 6, fontSize: 12.5, alignItems: "center" }}><input type="checkbox" checked={tHidden} onChange={(e) => setTHidden(e.target.checked)} style={{ accentColor: C.sun }} />Start hidden</label></div>
                   </div>
                   <label style={label}>Image (optional)</label>
-                  <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" disabled={uploading} onChange={(e) => { const f = e.target.files?.[0]; if (f) void uploadImage(f, setTImage); }} style={{ fontSize: 12, color: C.muted }} />
+                  <input aria-label="Image (optional)" type="file" accept="image/png,image/jpeg,image/webp,image/gif" disabled={uploading} onChange={(e) => { const f = e.target.files?.[0]; if (f) void uploadImage(f, setTImage); }} style={{ fontSize: 12, color: C.muted }} />
                   <input aria-label="Or paste an image link" value={tImage} onChange={(e) => setTImage(e.target.value.trim())} placeholder="or paste an image link" style={{ ...field, marginTop: 6 }} />
                   <p style={{ color: C.muted, fontSize: 11.5, margin: "6px 0 0" }}>No image: a disc with initials. Copies are numbered (Goblin 2, Goblin 3).</p>
                   {tStats && <p style={{ color: C.muted, fontSize: 11.5, margin: "6px 0 0" }}>From the library: {tStats.hp ?? "?"} HP, AC {tStats.ac ?? "?"} (kept with the token for the HP bars coming next).</p>}
-                  <button type="button" disabled={!tName.trim() || uploading} onClick={() => void addToken({ name: tName.trim(), size: tSize, kind: tKind, image_url: tImage || null, hidden: tHidden, style: tStats ? { stats: tStats } : {} }, tCount)}
+                  <button title={!tName.trim() ? "Name the token first" : undefined} type="button" disabled={!tName.trim() || uploading} onClick={() => void addToken({ name: tName.trim(), size: tSize, kind: tKind, image_url: tImage || null, hidden: tHidden, style: tStats ? { stats: tStats } : {} }, tCount)}
                     style={{ ...small, marginTop: 10, width: "100%", background: C.sun, color: "#1b1712", border: "none", fontWeight: 600, padding: "9px 0" }}>
                     {uploading ? "Uploading…" : `Add ${tCount > 1 ? `${tCount} ` : ""}to the table`}
                   </button>
@@ -3581,7 +3581,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                                   return <button key={p.profile_id} type="button" aria-pressed={on} onClick={() => setSendPick((cur) => cur && { ...cur, who: on ? cur.who.filter((x) => x !== p.profile_id) : [...cur.who, p.profile_id] })}
                                     style={{ ...small, padding: "2px 8px", color: on ? C.sun : C.muted, borderColor: on ? C.sun : C.line }}>{p.name}</button>;
                                 })}
-                                <button type="button" disabled={!sendPick!.who.length} onClick={() => void placeOn(s.id, sendPick!.who)} style={{ ...small, padding: "2px 10px", background: sendPick!.who.length ? C.sun : "transparent", color: sendPick!.who.length ? "#1b1712" : C.muted, border: "none", fontWeight: 600 }}>Send</button>
+                                <button title={!sendPick!.who.length ? "Choose who to send it to first" : undefined} type="button" disabled={!sendPick!.who.length} onClick={() => void placeOn(s.id, sendPick!.who)} style={{ ...small, padding: "2px 10px", background: sendPick!.who.length ? C.sun : "transparent", color: sendPick!.who.length ? "#1b1712" : C.muted, border: "none", fontWeight: 600 }}>Send</button>
                               </div>
                             )}
                           </div>
@@ -3613,7 +3613,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                   )}
                   <label style={label} htmlFor="tt-scene-name">Scene name (optional)</label>
                   <input id="tt-scene-name" value={newSceneName} onChange={(e) => setNewSceneName(e.target.value.slice(0, 80))} style={field} />
-                  <button type="button" disabled={!newMap} onClick={() => void makeScene()} style={{ ...small, marginTop: 10, width: "100%", background: newMap ? C.sun : "transparent", color: newMap ? "#1b1712" : C.muted, border: newMap ? "none" : `1px solid ${C.line}`, fontWeight: 600, padding: "9px 0" }}>Put it on the table</button>
+                  <button title={!newMap ? "Choose a map first" : undefined} type="button" disabled={!newMap} onClick={() => void makeScene()} style={{ ...small, marginTop: 10, width: "100%", background: newMap ? C.sun : "transparent", color: newMap ? "#1b1712" : C.muted, border: newMap ? "none" : `1px solid ${C.line}`, fontWeight: 600, padding: "9px 0" }}>Put it on the table</button>
                 </>
               )}
               {scene && (
@@ -3695,7 +3695,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                         style={{ ...small, padding: "3px 9px", color: on ? C.sun : C.muted, borderColor: on ? C.sun : C.line }}>{p.name}</button>;
                     })}
                   </div>
-                  <button type="button" disabled={!hoPick || hoBusy} onClick={() => void showHandout()} style={{ ...small, marginTop: 8, width: "100%", background: hoPick ? C.sun : "transparent", color: hoPick ? "#1b1712" : C.muted, border: hoPick ? "none" : `1px solid ${C.line}`, fontWeight: 600, padding: "8px 0" }}>
+                  <button title={!hoPick ? "Choose a handout first" : undefined} type="button" disabled={!hoPick || hoBusy} onClick={() => void showHandout()} style={{ ...small, marginTop: 8, width: "100%", background: hoPick ? C.sun : "transparent", color: hoPick ? "#1b1712" : C.muted, border: hoPick ? "none" : `1px solid ${C.line}`, fontWeight: 600, padding: "8px 0" }}>
                     {hoBusy ? "Showing…" : hoTo === null ? "Show it to everyone" : `Show it to ${hoTo.length}`}
                   </button>
                   <a href="/gm/codex" target="_blank" rel="noopener" style={{ display: "block", marginTop: 6, fontSize: 12, color: C.muted }}>Write a new entry in the Codex</a>
@@ -3713,7 +3713,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                       <input aria-label="Title of the picture" value={hoPicTitle} maxLength={80} onChange={(e) => setHoPicTitle(e.target.value)} placeholder="Title" style={{ ...field, marginTop: 8 }} />
                       <textarea aria-label="Caption" value={hoPicNote} maxLength={600} rows={2} onChange={(e) => setHoPicNote(e.target.value)} placeholder="A caption the players see with it (optional)" style={{ ...field, marginTop: 6, resize: "vertical" }} />
                       <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
-                        <button type="button" disabled={hoBusy || !hoPicTitle.trim()} onClick={() => void showPicture()} style={{ ...small, flex: 1, background: C.sun, color: "#1b1712", border: "none", fontWeight: 600, padding: "8px 0" }}>
+                        <button title={!hoPicTitle.trim() ? "Give the picture a title first" : undefined} type="button" disabled={hoBusy || !hoPicTitle.trim()} onClick={() => void showPicture()} style={{ ...small, flex: 1, background: C.sun, color: "#1b1712", border: "none", fontWeight: 600, padding: "8px 0" }}>
                           {hoBusy ? "Showing…" : hoTo === null ? "Show the picture to everyone" : `Show the picture to ${hoTo.length}`}
                         </button>
                         <button type="button" disabled={hoBusy} onClick={() => pickHandoutPicture(null)} style={small}>Cancel</button>

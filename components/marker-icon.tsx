@@ -100,7 +100,7 @@ export function TokenMarkerPicker({ value, onChange, busy, style, onStyle }: {
       <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
         <input aria-label="Search markers" placeholder="Search markers" value={q} onChange={(e) => setQ(e.target.value)}
           style={{ flex: "1 1 160px", minWidth: 0, padding: "5px 8px", borderRadius: 7, border: `1px solid ${LINE}`, background: "#1e1a16", color: "#f2e6c9", fontSize: 13 }} />
-        <button type="button" disabled={busy || !value.length} onClick={() => onChange([])}
+        <button title={!value.length ? "Nothing to clear" : undefined} type="button" disabled={busy || !value.length} onClick={() => onChange([])}
           style={{ padding: "5px 10px", borderRadius: 7, border: `1px solid ${C.warn}`, background: "transparent", color: C.warn, fontSize: 12.5, cursor: value.length ? "pointer" : "default", opacity: value.length ? 1 : 0.5 }}>Clear all</button>
         {onStyle && <MarkerStylePicker style={style} onChange={onStyle} />}
       </div>

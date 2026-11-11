@@ -184,10 +184,10 @@ export default function VibeCheckPage() {
                 })}
               </div>
 
-              <textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="Anything you want the GM to know? (optional)" rows={3}
+              <textarea aria-label="Anything you want the GM to know? (optional)" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Anything you want the GM to know? (optional)" rows={3}
                 style={{ width: "100%", boxSizing: "border-box", borderRadius: FORGE_RADIUS, padding: "10px 12px", color: C.text, fontSize: 14, resize: "vertical", marginBottom: 14, fontFamily: "inherit" }} />
               {!anonymous && (
-                <input value={playerName} onChange={(e) => setPlayerName(e.target.value)} placeholder="Your name (so the GM knows who)"
+                <input aria-label="Your name (so the GM knows who)" value={playerName} onChange={(e) => setPlayerName(e.target.value)} placeholder="Your name (so the GM knows who)"
                   style={{ width: "100%", boxSizing: "border-box", borderRadius: FORGE_RADIUS, padding: "10px 12px", color: C.text, fontSize: 14, marginBottom: 14 }} />
               )}
 

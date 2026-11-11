@@ -13,6 +13,7 @@ import { friendlyError } from "@/lib/friendly-error";
 import { askConfirm } from "@/lib/confirm";
 import { fmtDate } from "@/lib/format";
 import { LoadingState } from "@/components/ui-forge/States";
+import CampaignPicker from "@/components/ui-forge/CampaignPicker";
 
 type Campaign = { id: string; name: string; share_code: string | null };
 type Char = { id: string; name: string; profile_id: string | null; invite_code: string | null; build: Build; active: boolean | null };
@@ -121,12 +122,7 @@ export default function RosterPage() {
       </p>
 
         <div style={box}>
-          <label style={{ fontSize: 12, color: C.muted, fontFamily: "ui-monospace, monospace", letterSpacing: "0.1em" }}>CAMPAIGN</label>
-          <select value={campaignId} onChange={(e) => setCampaignId(e.target.value)}
-            style={{ display: "block", width: "100%", marginTop: 6, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "10px 12px", fontSize: 15, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
-            {campaigns.length === 0 && <option value="">No campaigns yet</option>}
-            {campaigns.map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}
-          </select>
+          <CampaignPicker campaigns={campaigns} value={campaignId} onChange={setCampaignId} selectStyle={{ display: "block", width: "100%", marginTop: 6, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "10px 12px", fontSize: 15, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }} />
         </div>
 
         {loading ? (
@@ -177,7 +173,7 @@ export default function RosterPage() {
                           <button type="button" onClick={async () => { if (await askConfirm(`Unbind ${respLabel(r)} from ${ch.name}? The inventory stays, but it stops showing on this character until you bind it again.`)) unbind(r.id); }} disabled={busy} style={{ background: "transparent", color: C.warn, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600 }}>Unbind</button>
                         </div>
                       ) : unassigned.length > 0 ? (
-                        <select defaultValue="" disabled={busy} onChange={async (e) => {
+                        <select aria-label="Bind an inventory…" defaultValue="" disabled={busy} onChange={async (e) => {
                           const el = e.currentTarget;
                           const id = el.value;
                           if (!id) return;

@@ -138,7 +138,7 @@ export function CampaignSettings({ campaign, isOwner, onChanged, onTrashed }: {
             {zones.map((z) => <option key={z} value={z}>{z.replace(/_/g, " ")}</option>)}
           </select>
         </label>
-        <button type="button" style={ghost} onClick={save} disabled={busy || !dirty}>{busy ? "Saving…" : "Save details"}</button>
+        <button title={!dirty ? "Nothing has changed yet" : undefined} type="button" style={ghost} onClick={save} disabled={busy || !dirty}>{busy ? "Saving…" : "Save details"}</button>
       </div>
       {msg && <p role="status" style={{ margin: 0, fontSize: 13, color: msg === "Saved." ? C.muted : C.warn }}>{msg}</p>}
 
@@ -170,7 +170,7 @@ export function CampaignSettings({ campaign, isOwner, onChanged, onTrashed }: {
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                 <input type="email" value={handTo} onChange={(e) => setHandTo(e.target.value)} placeholder="their email address"
                   aria-label="New GM's email address" style={{ ...field, flex: "1 1 240px" }} />
-                <button type="button" style={ghost} onClick={handOver} disabled={handBusy || !handTo.trim()}>{handBusy ? "Sending…" : "Send handover"}</button>
+                <button title={!handTo.trim() ? "Type who should receive the campaign first" : undefined} type="button" style={ghost} onClick={handOver} disabled={handBusy || !handTo.trim()}>{handBusy ? "Sending…" : "Send handover"}</button>
               </div>
             </>
           )}
@@ -265,7 +265,7 @@ export function CampaignTrash({ refreshKey, onRestored }: { refreshKey: number; 
                   This cannot be undone. Type {t.name} to confirm.
                   <input value={typed} onChange={(e) => setTyped(e.target.value)} style={field} autoComplete="off" />
                 </label>
-                <button type="button" style={{ ...danger, background: "rgba(200,80,70,0.12)" }} onClick={() => eraseNow(t)}
+                <button title={typed.trim() !== t.name.trim() ? "Type the campaign name to confirm" : undefined} type="button" style={{ ...danger, background: "rgba(200,80,70,0.12)" }} onClick={() => eraseNow(t)}
                   disabled={busy === t.id || typed.trim() !== t.name.trim()}>
                   {busy === t.id ? "Deleting…" : "Delete forever"}
                 </button>

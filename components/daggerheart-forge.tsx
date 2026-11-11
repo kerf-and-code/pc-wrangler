@@ -139,7 +139,7 @@ export default function DaggerheartForge({
             </select>
           </Field>
           <Field label="Ancestry">
-            <select value={dbuild.ancestryId} onChange={(e) => set({ ancestryId: e.target.value })} style={selStyle}>
+            <select aria-label="Ancestry" value={dbuild.ancestryId} onChange={(e) => set({ ancestryId: e.target.value })} style={selStyle}>
               <option value="">Choose...</option>
               {DH_ANCESTRY_LIST.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
             </select>
@@ -151,7 +151,7 @@ export default function DaggerheartForge({
             </select>
           </Field>
           <Field label="Community">
-            <select value={dbuild.communityId} onChange={(e) => set({ communityId: e.target.value })} style={selStyle}>
+            <select aria-label="Community" value={dbuild.communityId} onChange={(e) => set({ communityId: e.target.value })} style={selStyle}>
               <option value="">Choose...</option>
               {DH_COMMUNITY_LIST.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
@@ -174,7 +174,7 @@ export default function DaggerheartForge({
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 10 }}>
           {DH_TRAITS.map((t) => (
             <Field key={t} label={TRAIT_LABEL[t]}>
-              <select value={dbuild.traits[t] ?? 0} onChange={(e) => setTrait(t, parseInt(e.target.value, 10))} style={selStyle}>
+              <select aria-label={`${t} trait`} value={dbuild.traits[t] ?? 0} onChange={(e) => setTrait(t, parseInt(e.target.value, 10))} style={selStyle}>
                 {TRAIT_VALUE_OPTIONS.map((v) => <option key={v} value={v}>{sign(v)}</option>)}
               </select>
             </Field>
@@ -187,7 +187,7 @@ export default function DaggerheartForge({
         <div style={forgeLabel}>Armor</div>
         <div style={{ marginTop: 8 }}>
           <Field label="Equipped armor">
-            <select value={dbuild.armorId} onChange={(e) => set({ armorId: e.target.value })} style={selStyle}>
+            <select aria-label="Armor" value={dbuild.armorId} onChange={(e) => set({ armorId: e.target.value })} style={selStyle}>
               <option value="">Unarmored</option>
               {DH_ARMOR_LIST.map((a) => (
                 <option key={a.id} value={a.id}>
@@ -208,7 +208,7 @@ export default function DaggerheartForge({
           Passive features (shields, Heavy, Cumbersome, Brave) affect the sheet; use Custom for homebrew.
         </p>
         <Field label="Primary weapon">
-          <select value={dbuild.weaponId} onChange={(e) => set({ weaponId: e.target.value })} style={selStyle}>
+          <select aria-label="Primary weapon" value={dbuild.weaponId} onChange={(e) => set({ weaponId: e.target.value })} style={selStyle}>
             <option value="">None</option>
             {DH_WEAPON_LIST.filter((w) => w.category === "primary" && w.tier <= tierOf(dbuild.level)).map((w) => (
               <option key={w.id} value={w.id}>
@@ -228,18 +228,18 @@ export default function DaggerheartForge({
             </Field>
             <Field label="Range"><input value={dbuild.customWeapon.range} onChange={(e) => setCustom({ range: e.target.value })} style={stoneField()} /></Field>
             <Field label="Damage die">
-              <select value={dbuild.customWeapon.damageDie} onChange={(e) => setCustom({ damageDie: e.target.value })} style={selStyle}>
+              <select aria-label="Damage die" value={dbuild.customWeapon.damageDie} onChange={(e) => setCustom({ damageDie: e.target.value })} style={selStyle}>
                 {["d4", "d6", "d8", "d10", "d12", "d20"].map((d) => <option key={d} value={d}>{d}</option>)}
               </select>
             </Field>
             <Field label="Damage bonus"><input type="number" value={dbuild.customWeapon.damageBonus} onChange={(e) => setCustom({ damageBonus: parseInt(e.target.value, 10) || 0 })} style={stoneField()} /></Field>
             <Field label="Type">
-              <select value={dbuild.customWeapon.damageType} onChange={(e) => setCustom({ damageType: e.target.value as DHDamageType })} style={selStyle}>
+              <select aria-label="Damage type" value={dbuild.customWeapon.damageType} onChange={(e) => setCustom({ damageType: e.target.value as DHDamageType })} style={selStyle}>
                 <option value="phy">phy</option><option value="mag">mag</option>
               </select>
             </Field>
             <Field label="Burden">
-              <select value={dbuild.customWeapon.burden} onChange={(e) => setCustom({ burden: e.target.value as DHBurden })} style={selStyle}>
+              <select aria-label="Burden" value={dbuild.customWeapon.burden} onChange={(e) => setCustom({ burden: e.target.value as DHBurden })} style={selStyle}>
                 <option value="One-Handed">One-Handed</option><option value="Two-Handed">Two-Handed</option>
               </select>
             </Field>
@@ -247,7 +247,7 @@ export default function DaggerheartForge({
         )}
         <div style={{ marginTop: 10 }}>
           <Field label="Secondary weapon (one-handed)">
-            <select value={dbuild.secondaryId} onChange={(e) => set({ secondaryId: e.target.value })} style={selStyle}>
+            <select aria-label="Secondary weapon" value={dbuild.secondaryId} onChange={(e) => set({ secondaryId: e.target.value })} style={selStyle}>
               <option value="">None</option>
               {DH_WEAPON_LIST.filter((w) => w.category === "secondary" && w.tier <= tierOf(dbuild.level)).map((w) => (
                 <option key={w.id} value={w.id}>
@@ -275,7 +275,7 @@ export default function DaggerheartForge({
                 {a.kind === "trait" && (
                   <>
                     {[0, 1].map((slot) => (
-                      <select key={slot} value={a.traits?.[slot] ?? "agility"}
+                      <select aria-label="Trait to advance" key={slot} value={a.traits?.[slot] ?? "agility"}
                         onChange={(e) => setAdvancementTrait(i, slot as 0 | 1, e.target.value as DHTrait)} style={{ ...selStyle, minWidth: 110 }}>
                         {DH_TRAITS.map((t) => <option key={t} value={t}>{TRAIT_LABEL[t]}</option>)}
                       </select>
@@ -288,7 +288,7 @@ export default function DaggerheartForge({
             ))}
           </div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
-            <select defaultValue="" onChange={(e) => { if (e.target.value) { addAdvancement(e.target.value as AdvancementKind); e.target.value = ""; } }}
+            <select aria-label="Add advancement..." defaultValue="" onChange={(e) => { if (e.target.value) { addAdvancement(e.target.value as AdvancementKind); e.target.value = ""; } }}
               style={{ ...selStyle, minWidth: 220 }}>
               <option value="">Add advancement...</option>
               {ADVANCEMENTS.map((o) => <option key={o.kind} value={o.kind}>{o.label}</option>)}
@@ -309,7 +309,7 @@ export default function DaggerheartForge({
             <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
               <input aria-label="Experience" value={e.name} onChange={(ev) => setExperience(i, { name: ev.target.value })} placeholder="Experience"
                 style={{ ...stoneField(), cursor: "text", flex: "1 1 200px" }} />
-              <input type="number" value={e.bonus} onChange={(ev) => setExperience(i, { bonus: parseInt(ev.target.value, 10) || 0 })}
+              <input aria-label="Experience bonus" type="number" value={e.bonus} onChange={(ev) => setExperience(i, { bonus: parseInt(ev.target.value, 10) || 0 })}
                 style={{ ...stoneField(), width: 70 }} />
               <button type="button" onClick={() => removeExperience(i)}
                 style={{ ...selStyle, cursor: "pointer", padding: "6px 10px", fontSize: 12 }}>Remove</button>
@@ -347,7 +347,7 @@ export default function DaggerheartForge({
               {dbuild.vault.map((id) => (
                 <div key={id} style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                   <span style={{ fontSize: 13, color: STONE.inkDim, flex: "1 1 200px" }}>{cardLabel(id)}</span>
-                  <button type="button" onClick={() => cardToLoadout(id)} disabled={dbuild.loadout.length >= 5}
+                  <button title={dbuild.loadout.length >= 5 ? "Your loadout holds five cards" : undefined} type="button" onClick={() => cardToLoadout(id)} disabled={dbuild.loadout.length >= 5}
                     style={{ ...selStyle, cursor: dbuild.loadout.length >= 5 ? "default" : "pointer", padding: "5px 9px", fontSize: 12, opacity: dbuild.loadout.length >= 5 ? 0.5 : 1 }}>To loadout</button>
                   <button type="button" onClick={() => removeCard(id)} style={{ ...selStyle, cursor: "pointer", padding: "5px 9px", fontSize: 12 }}>Remove</button>
                 </div>
@@ -357,7 +357,7 @@ export default function DaggerheartForge({
         )}
 
         <div style={{ marginTop: 12 }}>
-          <select value="" disabled={!cls} onChange={(e) => { addCard(e.target.value); e.currentTarget.value = ""; }}
+          <select aria-label="Add a domain card" value="" disabled={!cls} onChange={(e) => { addCard(e.target.value); e.currentTarget.value = ""; }}
             style={{ ...selStyle, minWidth: 260 }}>
             <option value="">{cls ? "Add a domain card…" : "Choose a class first"}</option>
             {available.map((c) => (

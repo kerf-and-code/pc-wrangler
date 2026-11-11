@@ -134,7 +134,7 @@ export default function GmIdentityCard({ campaignId }: { campaignId: string }) {
       </div>
 
       <label style={{ fontSize: 12, color: C.muted, fontFamily: "ui-monospace, monospace", letterSpacing: "0.1em" }}>DISCORD USER ID</label>
-      <input
+      <input aria-label="Discord user ID"
         value={discordId}
         onChange={(e) => setDiscordId(e.target.value.trim())}
         placeholder="e.g. 1493069747766427731"
@@ -146,7 +146,7 @@ export default function GmIdentityCard({ campaignId }: { campaignId: string }) {
       </div>
 
       <label style={{ fontSize: 12, color: C.muted, fontFamily: "ui-monospace, monospace", letterSpacing: "0.1em" }}>DISPLAY NAME (OPTIONAL)</label>
-      <input
+      <input aria-label="Narrator name"
         value={displayName}
         onChange={(e) => setDisplayName(e.target.value)}
         placeholder="the GM"
@@ -154,7 +154,7 @@ export default function GmIdentityCard({ campaignId }: { campaignId: string }) {
       />
 
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
-        <button
+        <button title={!discordId ? "Type your Discord user ID first" : undefined}
           type="button"
           onClick={save}
           disabled={saving || loading || !discordId}

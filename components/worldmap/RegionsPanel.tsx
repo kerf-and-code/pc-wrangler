@@ -175,9 +175,9 @@ export default function RegionsPanel({ worldMapId, campaignId, onChanged, onPain
       <div style={{ display: "grid", gap: 5, marginBottom: 8 }}>
         {sortedLayers.map((l, i) => (
           <div key={l.id} style={{ display: "flex", gap: 5, alignItems: "center" }}>
-            <input value={l.name} onChange={(e) => renameLayer(l.id, e.target.value)} style={{ ...field, flex: 1, minWidth: 0 }} />
-            <button type="button" onClick={() => moveLayer(l.id, -1)} disabled={i === 0} style={{ ...mini, opacity: i === 0 ? 0.4 : 1 }}>Move up</button>
-            <button type="button" onClick={() => moveLayer(l.id, 1)} disabled={i === sortedLayers.length - 1} style={{ ...mini, opacity: i === sortedLayers.length - 1 ? 0.4 : 1 }}>Move down</button>
+            <input aria-label="Tiers" value={l.name} onChange={(e) => renameLayer(l.id, e.target.value)} style={{ ...field, flex: 1, minWidth: 0 }} />
+            <button title={i === 0 ? "Already the top tier" : undefined} type="button" onClick={() => moveLayer(l.id, -1)} disabled={i === 0} style={{ ...mini, opacity: i === 0 ? 0.4 : 1 }}>Move up</button>
+            <button title={i === sortedLayers.length - 1 ? "Already the bottom tier" : undefined} type="button" onClick={() => moveLayer(l.id, 1)} disabled={i === sortedLayers.length - 1} style={{ ...mini, opacity: i === sortedLayers.length - 1 ? 0.4 : 1 }}>Move down</button>
             <button type="button" onClick={() => deleteLayer(l.id)} style={mini}>Delete tier</button>
           </div>
         ))}
@@ -202,23 +202,23 @@ export default function RegionsPanel({ worldMapId, campaignId, onChanged, onPain
                   const ro = readout(r.id);
                   return (
                     <div key={r.id} style={{ border: `1px solid ${C.line}`, borderRadius: 7, padding: 8, background: C.surface2, display: "grid", gap: 6 }}>
-                      <input value={r.name} onChange={(e) => patchRegion(r.id, { name: e.target.value })} style={{ ...field }} />
+                      <input aria-label="Region name" value={r.name} onChange={(e) => patchRegion(r.id, { name: e.target.value })} style={{ ...field }} />
                       <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                         {parents.length > 0 && (
-                          <select value={r.parent_region_id || ""} onChange={(e) => patchRegion(r.id, { parent_region_id: e.target.value || null })} style={{ ...field, flex: "1 1 120px" }}>
+                          <select aria-label="Parent region" value={r.parent_region_id || ""} onChange={(e) => patchRegion(r.id, { parent_region_id: e.target.value || null })} style={{ ...field, flex: "1 1 120px" }}>
                             <option value="">No parent</option>
                             {parents.map((p) => <option key={p.id} value={p.id}>in: {p.name}</option>)}
                           </select>
                         )}
-                        <select value={r.visibility} onChange={(e) => patchRegion(r.id, { visibility: e.target.value })} style={{ ...field, flex: "0 0 auto" }}>
+                        <select aria-label="Who can see it" value={r.visibility} onChange={(e) => patchRegion(r.id, { visibility: e.target.value })} style={{ ...field, flex: "0 0 auto" }}>
                           {VIS.map((v) => <option key={v} value={v}>{v}</option>)}
                         </select>
-                        <input type="color" value={r.tint || "#8a8378"} onChange={(e) => patchRegion(r.id, { tint: e.target.value })} title="Region colour"
+                        <input aria-label="Region colour" type="color" value={r.tint || "#8a8378"} onChange={(e) => patchRegion(r.id, { tint: e.target.value })} title="Region colour"
                           style={{ width: 30, height: 28, padding: 0, border: `1px solid ${C.line}`, borderRadius: 6, background: C.surface2, cursor: "pointer" }} />
                         {r.tint && <button type="button" onClick={() => patchRegion(r.id, { tint: null })} style={mini} title="Go back to the default tint">Default tint</button>}
                       </div>
                       <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
-                        <select value={r.entry_id || ""} onChange={(e) => patchRegion(r.id, { entry_id: e.target.value || null })} style={{ ...field, flex: "1 1 140px" }}>
+                        <select aria-label="Codex entry" value={r.entry_id || ""} onChange={(e) => patchRegion(r.id, { entry_id: e.target.value || null })} style={{ ...field, flex: "1 1 140px" }}>
                           <option value="">No codex entry</option>
                           {entries.map((en) => <option key={en.id} value={en.id}>{en.title || "(untitled)"}</option>)}
                         </select>

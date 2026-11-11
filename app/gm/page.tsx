@@ -644,7 +644,7 @@ export default function GMWorkspace() {
 
             {/* add character.
 
-                Every picker below is a constrained <select>, not an <input list=>.
+                Every picker below is a constrained <select aria-label="Class">, not an <input list=>.
                 The old datalists were free-text fields with suggestions: you could
                 type anything, and the app would accept it. That is how 12 of 52 PCs
                 ended up with a subclass the catalog has never heard of, which means
@@ -917,7 +917,7 @@ function SpecFields({ spec, values, onChange, onAction, actionLabel, name, onNam
       )}
       {spec.fields.map((f) => (
         f.options.length > 0 ? (
-          <select key={f.col} style={{ ...inputStyle, maxWidth: 200 }} value={values[f.col]}
+          <select aria-label={f.label ?? f.col} key={f.col} style={{ ...inputStyle, maxWidth: 200 }} value={values[f.col]}
             onChange={(e) => onChange({ [f.col]: e.target.value } as Partial<RosterValues>)}>
             <option value="">{f.label}{f.optional ? " (optional)" : ""}</option>
             {f.options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}

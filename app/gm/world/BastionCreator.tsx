@@ -311,13 +311,13 @@ export default function BastionCreator({ campaignId }: { campaignId: string }) {
 
         <label style={label}>Character level</label>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          <input type="number" min={BASTION_START_LEVEL} max={20} step={1} value={meta.level}
+          <input aria-label="Character level" type="number" min={BASTION_START_LEVEL} max={20} step={1} value={meta.level}
             onChange={(e) => patchMeta({ level: Math.max(BASTION_START_LEVEL, Math.min(20, Math.round(Number(e.target.value) || BASTION_START_LEVEL))) })} style={num} />
           <span style={{ color: C.muted, fontSize: 12 }}>Special facility slots: {specialCount}/{specialSlots}</span>
         </div>
 
         <label style={label}>Class (pre-fills the gating below)</label>
-        <select value={meta.className ?? ""} onChange={(e) => changeClass(e.target.value)} style={select}>
+        <select aria-label="Class (pre-fills the gating below)" value={meta.className ?? ""} onChange={(e) => changeClass(e.target.value)} style={select}>
           <option value="">Custom / none</option>
           {Object.keys(CLASS_CAPABILITIES).map((cn) => <option key={cn} value={cn}>{cn}</option>)}
         </select>
@@ -327,7 +327,7 @@ export default function BastionCreator({ campaignId }: { campaignId: string }) {
           {CAP_TOGGLES.map((t) => <button key={String(t.key)} type="button" onClick={() => toggleCap(t.key)} style={chip(!!(meta.caps as Record<string, boolean> | undefined)?.[t.key])}>{t.label}</button>)}
         </div>
         <label style={label}>Skill proficiencies (comma-separated)</label>
-        <input type="text" value={skillsText} onChange={(e) => setSkillsText(e.target.value)} placeholder="e.g. Medicine"
+        <input aria-label="Skills" type="text" value={skillsText} onChange={(e) => setSkillsText(e.target.value)} placeholder="e.g. Medicine"
           style={{ width: "100%", padding: "7px 9px", background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: 7, fontSize: 13 }} />
 
         <label style={label}>Content sources offered</label>
@@ -335,7 +335,7 @@ export default function BastionCreator({ campaignId }: { campaignId: string }) {
           {SOURCES.map((s) => <button key={s} type="button" onClick={() => toggleSource(s)} style={chip((meta.allowedSources ?? ["base"]).includes(s))}>{SOURCE_LABEL[s]}</button>)}
         </div>
         <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10, color: C.text, fontSize: 13, cursor: "pointer" }}>
-          <input type="checkbox" checked={!!meta.enforceFactionRenown} onChange={(e) => patchMeta({ enforceFactionRenown: e.target.checked })} style={{ accentColor: C.sun }} />
+          <input aria-label="Enforce faction renown" type="checkbox" checked={!!meta.enforceFactionRenown} onChange={(e) => patchMeta({ enforceFactionRenown: e.target.checked })} style={{ accentColor: C.sun }} />
           Hard-gate faction / renown facilities
         </label>
 
@@ -347,7 +347,7 @@ export default function BastionCreator({ campaignId }: { campaignId: string }) {
             <>
               <label style={label}>Defensive walls ({DEFENSIVE_WALL.gpPerSquare} gp / {DEFENSIVE_WALL.daysPerSquare} days per 5-ft square)</label>
               <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                <input type="number" min={0} max={999} step={1} value={meta.defensiveWallSquares ?? 0}
+                <input aria-label="Defensive wall squares" type="number" min={0} max={999} step={1} value={meta.defensiveWallSquares ?? 0}
                   onChange={(e) => patchMeta({ defensiveWallSquares: Math.max(0, Math.round(Number(e.target.value) || 0)) })} style={num} />
                 <span style={{ color: C.muted, fontSize: 12 }}>squares of 20-ft wall</span>
               </div>
@@ -420,7 +420,7 @@ export default function BastionCreator({ campaignId }: { campaignId: string }) {
                 Enlarge to Vast (+{selectedFac.enlargeToVastGp} gp)
               </label>
             )}
-            <input type="text" value={selected.planeOrType ?? ""} onChange={(e) => patchPlacement(brushIdx, { planeOrType: e.target.value })}
+            <input aria-label="Optional note (garden type, plane, guild…)" type="text" value={selected.planeOrType ?? ""} onChange={(e) => patchPlacement(brushIdx, { planeOrType: e.target.value })}
               placeholder="Optional note (garden type, plane, guild…)"
               style={{ width: "100%", marginTop: 8, padding: "6px 8px", background: C.surface, color: C.text, border: `1px solid ${C.line}`, borderRadius: 7, fontSize: 12.5 }} />
           </div>
@@ -471,14 +471,14 @@ export default function BastionCreator({ campaignId }: { campaignId: string }) {
         {specialCount > specialSlots && <p style={{ color: C.warn, fontSize: 12, marginTop: 10 }}>{specialCount} special facilities placed but only {specialSlots} slots at level {meta.level}.</p>}
 
         <label style={label}>Bastion name (optional)</label>
-        <input type="text" value={meta.name ?? ""} onChange={(e) => patchMeta({ name: e.target.value || undefined })} placeholder="e.g. Blackbriar Keep"
+        <input aria-label="Bastion name" type="text" value={meta.name ?? ""} onChange={(e) => patchMeta({ name: e.target.value || undefined })} placeholder="e.g. Blackbriar Keep"
           style={{ width: "100%", padding: "7px 9px", background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: 7, fontSize: 13 }} />
 
         <label style={label}>Style</label>
-        <select value={style} onChange={(e) => setStyle(e.target.value)} style={select}>{STYLES.map((s) => <option key={s.v} value={s.v}>{s.label}</option>)}</select>
+        <select aria-label="Style" value={style} onChange={(e) => setStyle(e.target.value)} style={select}>{STYLES.map((s) => <option key={s.v} value={s.v}>{s.label}</option>)}</select>
 
         <label style={label}>Flavour</label>
-        <textarea value={modifier} onChange={(e) => setModifier(e.target.value)} rows={2} placeholder="e.g. candle-lit stone halls, banners overhead"
+        <textarea aria-label="Describe it (optional)" value={modifier} onChange={(e) => setModifier(e.target.value)} rows={2} placeholder="e.g. candle-lit stone halls, banners overhead"
           style={{ width: "100%", padding: "8px 9px", background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: 7, fontFamily: "inherit", fontSize: 13, resize: "vertical" }} />
 
         <div style={{ marginTop: 14 }}><button type="button" onClick={doRender} disabled={busy} style={btn(C.sun, "#1b1712")}>{busy ? "Painting…" : `Paint ${deckLabel(plan, deck).toLowerCase()}`}</button></div>

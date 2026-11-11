@@ -24,6 +24,7 @@ import { SAX } from "@/lib/theme";
 import { initialCampaignId, useRememberCampaign } from "@/lib/campaign-context";
 import { friendlyError } from "@/lib/friendly-error";
 import { askConfirm } from "@/lib/confirm";
+import CampaignPicker from "@/components/ui-forge/CampaignPicker";
 
 type Campaign = {
   id: string; name: string;
@@ -222,18 +223,14 @@ export default function PublishPage() {
       </p>
 
       <Card>
-        <Label>Campaign</Label>
-        <select value={campaignId} onChange={(e) => setCampaignId(e.target.value)} style={field}>
-          <option value="">Pick a campaign</option>
-          {campaigns.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-        </select>
+        <CampaignPicker campaigns={campaigns} value={campaignId} onChange={setCampaignId} placeholder="Pick a campaign" selectStyle={field} />
       </Card>
 
       {campaign && (
         <>
           <Card tone={published ? "good" : undefined}>
             <Label>{published ? "Live" : "Not published"}</Label>
-            <textarea value={blurb} onChange={(e) => setBlurb(e.target.value)} rows={2}
+            <textarea aria-label="Campaign blurb" value={blurb} onChange={(e) => setBlurb(e.target.value)} rows={2}
               placeholder="A line about the campaign, shown at the top of the page."
               style={{ ...field, marginBottom: 10, resize: "vertical" }} />
             {published && url && (
@@ -293,10 +290,10 @@ export default function PublishPage() {
               <Label>Address</Label>
               <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 10 }}>
                 <span style={{ fontFamily: SAX.mono, fontSize: 13, color: C.muted }}>/c/</span>
-                <input value={slugDraft} onChange={(e) => setSlugDraft(e.target.value)}
+                <input aria-label="Page address" value={slugDraft} onChange={(e) => setSlugDraft(e.target.value)}
                   placeholder="emberwatch" disabled={busy}
                   style={{ ...field, flex: "1 1 200px", width: "auto", fontFamily: SAX.mono, fontSize: 14 }} />
-                <button onClick={() => void saveSlug()} disabled={busy || !slugDraft.trim()} style={btn(false)}>
+                <button title={!slugDraft.trim() ? "Type an address first" : undefined} onClick={() => void saveSlug()} disabled={busy || !slugDraft.trim()} style={btn(false)}>
                   Save address
                 </button>
               </div>

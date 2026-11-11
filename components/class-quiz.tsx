@@ -160,7 +160,7 @@ function Question({ id, quiz, stack, number, headRef, onChoose, onBack, onRestar
         })}
       </div>
       <div className="cq-row">
-        <button type="button" className="cq-btn" onClick={onBack} disabled={!stack.some((s) => !s.auto)}>Back</button>
+        <button title={!stack.some((s) => !s.auto) ? "This is the first question" : undefined} type="button" className="cq-btn" onClick={onBack} disabled={!stack.some((s) => !s.auto)}>Back</button>
         {stack.length > 0 && <button type="button" className="cq-btn" onClick={onRestart}>Start over</button>}
         <span className="cq-hint">Keys 1 to 9 answer, Backspace goes back</span>
       </div>

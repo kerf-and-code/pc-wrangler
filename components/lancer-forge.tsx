@@ -176,7 +176,7 @@ export default function LancerForge({
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: 10 }}>
           {MECH_SKILLS.map((k) => (
             <Field key={k} label={MECH_SKILL_LABEL[k]}>
-              <input type="number" min={0} max={MAX_MECH_SKILL} value={build.skills[k] ?? 0}
+              <input aria-label={`${k} skill`} type="number" min={0} max={MAX_MECH_SKILL} value={build.skills[k] ?? 0}
                 onChange={(e) => setSkill(k, parseInt(e.target.value, 10) || 0)} style={stoneField()} />
             </Field>
           ))}
@@ -297,7 +297,7 @@ export default function LancerForge({
               return (
                 <div key={`${mount}-${i}`}>
                   <Field label={`${mount} mount`}>
-                    <select value={selId} onChange={(e) => setWeapon(i, e.target.value)} style={selStyle}>
+                    <select aria-label="Empty" value={selId} onChange={(e) => setWeapon(i, e.target.value)} style={selStyle}>
                       <option value="">Empty</option>
                       {WEAPON_LICENSES.map((lic) => {
                         const opts = options.filter((w) => licenseOf(w.license) === lic);
@@ -324,7 +324,7 @@ export default function LancerForge({
                       const mod = LANCER_MODS.find((m) => m.id === modId);
                       return (
                         <div style={{ marginTop: 6 }}>
-                          <select value={modId} onChange={(e) => setMod(i, e.target.value)} style={{ ...selStyle, fontSize: 13 }}>
+                          <select aria-label="Mod" value={modId} onChange={(e) => setMod(i, e.target.value)} style={{ ...selStyle, fontSize: 13 }}>
                             <option value="">No mod</option>
                             {modOpts.map((m) => <option key={m.id} value={m.id}>{m.name} ({m.sp} SP)</option>)}
                           </select>
@@ -436,7 +436,7 @@ export default function LancerForge({
             return (
               <div key={id} style={{ display: "flex", gap: 10, alignItems: "center", borderLeft: `2px solid ${STONE.inkFaint}`, paddingLeft: 12 }}>
                 <span style={{ color: STONE.ink, fontSize: 14, flex: 1 }}>{t.name}</span>
-                <select value={rank} onChange={(e) => setSkillTrigRank(id, parseInt(e.target.value, 10))} style={{ ...selStyle, width: "auto", padding: "4px 8px", fontSize: 13 }}>
+                <select aria-label="Rank" value={rank} onChange={(e) => setSkillTrigRank(id, parseInt(e.target.value, 10))} style={{ ...selStyle, width: "auto", padding: "4px 8px", fontSize: 13 }}>
                   {[1, 2, 3].map((r) => <option key={r} value={r}>{sign(skillBonusForRank(r))}</option>)}
                 </select>
                 <button type="button" aria-label="Remove skill trigger" title="Remove skill trigger" onClick={() => dropSkillTrig(id)} style={{ background: "none", border: "none", color: STONE.inkDim, cursor: "pointer", fontSize: 16, lineHeight: 1 }}>×</button>
@@ -478,7 +478,7 @@ export default function LancerForge({
             return (
               <div key={id} style={{ display: "flex", gap: 10, alignItems: "center", borderLeft: `2px solid ${STONE.inkFaint}`, paddingLeft: 12 }}>
                 <span style={{ color: STONE.ink, fontSize: 14, flex: 1 }}>{t.name}</span>
-                <select value={rank} onChange={(e) => setTalentRank(id, parseInt(e.target.value, 10))} style={{ ...selStyle, width: "auto", padding: "4px 8px", fontSize: 13 }}>
+                <select aria-label="Rank" value={rank} onChange={(e) => setTalentRank(id, parseInt(e.target.value, 10))} style={{ ...selStyle, width: "auto", padding: "4px 8px", fontSize: 13 }}>
                   {[1, 2, 3].map((r) => <option key={r} value={r}>Rank {ROMAN[r]}</option>)}
                 </select>
                 <button type="button" aria-label="Remove talent" title="Remove talent" onClick={() => dropTalent(id)} style={{ background: "none", border: "none", color: STONE.inkDim, cursor: "pointer", fontSize: 16, lineHeight: 1 }}>×</button>
@@ -524,7 +524,7 @@ export default function LancerForge({
                 <span style={{ color: STONE.ink, fontSize: 14, flex: 1 }}>
                   {f.name}<span style={{ color: STONE.inkDim, fontSize: 11.5 }}>{"  "}{f.manufacturer}</span>
                 </span>
-                <select value={rank} onChange={(e) => setLicenseRank(id, parseInt(e.target.value, 10))} style={{ ...selStyle, width: "auto", padding: "4px 8px", fontSize: 13 }}>
+                <select aria-label="Rank" value={rank} onChange={(e) => setLicenseRank(id, parseInt(e.target.value, 10))} style={{ ...selStyle, width: "auto", padding: "4px 8px", fontSize: 13 }}>
                   {[1, 2, 3].map((r) => <option key={r} value={r}>Rank {ROMAN[r]}</option>)}
                 </select>
                 <button type="button" aria-label="Remove license" title="Remove license" onClick={() => dropLicense(id)} style={{ background: "none", border: "none", color: STONE.inkDim, cursor: "pointer", fontSize: 16, lineHeight: 1 }}>×</button>
@@ -624,7 +624,7 @@ export default function LancerForge({
             </span>
           </div>
           <div style={{ marginTop: 8 }}>
-            <select value="" disabled={pilotWeapons.length >= MAX_PILOT_WEAPONS}
+            <select aria-label="Weapons" value="" disabled={pilotWeapons.length >= MAX_PILOT_WEAPONS}
               onChange={(e) => { addPilotWeapon(e.target.value); e.currentTarget.selectedIndex = 0; }} style={selStyle}>
               <option value="">{pilotWeapons.length >= MAX_PILOT_WEAPONS ? "Two weapons carried" : "Add a weapon..."}</option>
               {(["Archaic", "Alloy/Composite", "Signature"] as const).map((cat) => (
@@ -672,7 +672,7 @@ export default function LancerForge({
             </span>
           </div>
           <div style={{ marginTop: 8 }}>
-            <select value="" disabled={pilotGear.length >= MAX_PILOT_GEAR}
+            <select aria-label="Other gear" value="" disabled={pilotGear.length >= MAX_PILOT_GEAR}
               onChange={(e) => { addPilotGear(e.target.value); e.currentTarget.selectedIndex = 0; }} style={selStyle}>
               <option value="">{pilotGear.length >= MAX_PILOT_GEAR ? "Three pieces carried" : "Add gear..."}</option>
               {(["Limited", "Utility"] as const).map((grp) => (

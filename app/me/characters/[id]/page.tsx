@@ -328,7 +328,7 @@ export default function CharacterPage() {
 
           <div style={{ marginBottom: 14 }}>
             <div style={{ ...label, marginBottom: 6 }}>Summary</div>
-            <input value={summary} onChange={(e) => setSummary(e.target.value)} maxLength={280}
+            <input aria-label="One-line summary" value={summary} onChange={(e) => setSummary(e.target.value)} maxLength={280}
               placeholder="One line under the name, e.g. a half-elf ranger hunting the coven that burned her village."
               style={field} />
           </div>
@@ -365,14 +365,14 @@ export default function CharacterPage() {
               </div>
             )}
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              <select value={linkTarget} onChange={(e) => setLinkTarget(e.target.value)} style={{ ...field, flex: "1 1 180px" }}>
+              <select aria-label="Link to…" value={linkTarget} onChange={(e) => setLinkTarget(e.target.value)} style={{ ...field, flex: "1 1 180px" }}>
                 <option value="">Link to…</option>
                 {cands
                   .filter((c) => c.id !== ch.id && !links.some((l) => l.source_id === c.id || l.target_id === c.id))
                   .map((c) => <option key={c.id} value={c.id}>{c.title} ({candLabel(c)})</option>)}
               </select>
-              <input value={linkRel} onChange={(e) => setLinkRel(e.target.value)} placeholder="relation (optional)" maxLength={60} style={{ ...field, flex: "1 1 140px" }} />
-              <button type="button" onClick={addLink} disabled={!linkTarget} style={{ ...primaryBtn, opacity: linkTarget ? 1 : 0.6 }}>Add</button>
+              <input aria-label="Relation (optional)" value={linkRel} onChange={(e) => setLinkRel(e.target.value)} placeholder="relation (optional)" maxLength={60} style={{ ...field, flex: "1 1 140px" }} />
+              <button title={!linkTarget ? "Choose who to link first" : undefined} type="button" onClick={addLink} disabled={!linkTarget} style={{ ...primaryBtn, opacity: linkTarget ? 1 : 0.6 }}>Add</button>
             </div>
           </div>
         </section>
@@ -381,7 +381,7 @@ export default function CharacterPage() {
       {/* ---- PRIVATE / GM-SHARED SECTIONS (p78) ---- */}
       {isOwner && (
         <div style={{ display: "flex", alignItems: "center", gap: 10, background: C.surface, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "12px 14px", marginBottom: 16 }}>
-          <input type="checkbox" checked={granted} onChange={toggleGrant} style={{ width: 17, height: 17, accentColor: SAX.brass }} />
+          <input aria-label="Let the GM edit this page" type="checkbox" checked={granted} onChange={toggleGrant} style={{ width: 17, height: 17, accentColor: SAX.brass }} />
           <div>
             <div style={{ fontSize: 14, color: C.text, fontWeight: 600 }}>Let my GM edit my private sections</div>
             <div style={{ fontSize: 12.5, color: C.muted, marginTop: 2 }}>They can already read anything you mark shared. This lets them add and change those sections too.</div>
@@ -404,12 +404,12 @@ export default function CharacterPage() {
             {canEdit ? (
               <>
                 <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8 }}>
-                  <input value={s.title} placeholder="Section title (Backstory, Goals, Bonds, A secret…)" onChange={(e) => patch(s.id, { title: e.target.value })}
+                  <input aria-label="Section title (Backstory, Goals, Bonds, A secret…)" value={s.title} placeholder="Section title (Backstory, Goals, Bonds, A secret…)" onChange={(e) => patch(s.id, { title: e.target.value })}
                     style={{ ...field, fontWeight: 600 }} />
                   <button type="button" title="Move up" onClick={() => move(s.id, -1)} disabled={i === 0} style={{ ...ghostBtn, padding: "6px 9px", opacity: i === 0 ? 0.4 : 1 }}>↑</button>
                   <button type="button" title="Move down" onClick={() => move(s.id, 1)} disabled={i === visibleSections.length - 1} style={{ ...ghostBtn, padding: "6px 9px", opacity: i === visibleSections.length - 1 ? 0.4 : 1 }}>↓</button>
                 </div>
-                <textarea value={s.body} placeholder="Write it here…" rows={5} onChange={(e) => patch(s.id, { body: e.target.value })}
+                <textarea aria-label="Write it here…" value={s.body} placeholder="Write it here…" rows={5} onChange={(e) => patch(s.id, { body: e.target.value })}
                   style={{ ...field, resize: "vertical", lineHeight: 1.55 }} />
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 10, flexWrap: "wrap", gap: 8 }}>
                   <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12.5, color: C.muted }}>

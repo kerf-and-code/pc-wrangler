@@ -197,14 +197,14 @@ export default function PlayParty({ campaignId, gear, onGear, coins, onCoins, it
             {(() => { const g = givable.find((x) => String(x.i) === give.idx); return g && (g.e.qty ?? 1) > 1 ? (
               <input type="number" min={1} max={g.e.qty} aria-label="How many to give" value={give.qty} onChange={(e) => setGive({ ...give, qty: e.target.value.replace(/\D/g, "").slice(0, 4) })} style={{ ...field, width: 60 }} />
             ) : null; })()}
-            <button type="button" className="forge-btn" disabled={busy || !give.idx} onClick={() => void doGive()} style={btn()}>Give to the party</button>
+            <button title={!give.idx ? "Choose an item first" : undefined} type="button" className="forge-btn" disabled={busy || !give.idx} onClick={() => void doGive()} style={btn()}>Give to the party</button>
           </div>
           <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
             <span style={{ fontSize: 12.5, color: STONE.ink, minWidth: 90 }}>Found loot</span>
             <input aria-label="Loot name" list="party-loot-names" value={loot.name} onChange={(e) => setLoot({ ...loot, name: e.target.value.slice(0, 80) })} placeholder="Item name" style={{ ...field, flex: "1 1 180px" }} />
             <datalist id="party-loot-names">{catalogNames.slice(0, 3000).map((n) => <option key={n} value={n} />)}</datalist>
             <input type="number" min={1} aria-label="How many found" value={loot.qty} onChange={(e) => setLoot({ ...loot, qty: e.target.value.replace(/\D/g, "").slice(0, 4) })} style={{ ...field, width: 60 }} />
-            <button type="button" className="forge-btn" disabled={busy || !loot.name.trim()} onClick={() => void doLoot()} style={btn()}>Add to the party</button>
+            <button title={!loot.name.trim() ? "Name the item first" : undefined} type="button" className="forge-btn" disabled={busy || !loot.name.trim()} onClick={() => void doLoot()} style={btn()}>Add to the party</button>
           </div>
           <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
             <span style={{ fontSize: 12.5, color: STONE.ink, minWidth: 90 }}>Purse</span>
@@ -214,8 +214,8 @@ export default function PlayParty({ campaignId, gear, onGear, coins, onCoins, it
             <select aria-label="Which coin" value={coinMove.coin} onChange={(e) => setCoinMove({ ...coinMove, coin: e.target.value as keyof Funds })} style={{ ...field, width: "auto" }}>
               {COINS.map((k) => <option key={k} value={k}>{k}</option>)}
             </select>
-            <button type="button" className="forge-btn" disabled={busy || !(parseInt(coinMove.amt, 10) > 0)} onClick={() => void moveCoins("in")} style={btn()}>Put in</button>
-            <button type="button" className="forge-btn" disabled={busy || !(parseInt(coinMove.amt, 10) > 0)} onClick={() => void moveCoins("out")} style={btn()}>Take out</button>
+            <button title={!(parseInt(coinMove.amt, 10) > 0) ? "Type an amount first" : undefined} type="button" className="forge-btn" disabled={busy || !(parseInt(coinMove.amt, 10) > 0)} onClick={() => void moveCoins("in")} style={btn()}>Put in</button>
+            <button title={!(parseInt(coinMove.amt, 10) > 0) ? "Type an amount first" : undefined} type="button" className="forge-btn" disabled={busy || !(parseInt(coinMove.amt, 10) > 0)} onClick={() => void moveCoins("out")} style={btn()}>Take out</button>
           </div>
         </div>
       )}

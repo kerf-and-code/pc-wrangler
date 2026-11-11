@@ -296,7 +296,7 @@ export default function WorldMapViewer({ campaignId, shareCode, inShell = false 
         {layers.length > 0 && (
           <div style={{ display: "flex", gap: 8, alignItems: "center", marginLeft: "auto" }}>
             <span style={{ fontSize: 12, color: C.muted }}>Layer</span>
-            <input type="range" min={0} max={layers.length - 1}
+            <input aria-label="Layer" type="range" min={0} max={layers.length - 1}
               value={Math.max(0, layers.findIndex((l) => l.id === selectedLayerId))}
               onChange={(e) => setSelectedLayerId(layers[Number(e.target.value)]?.id || "")} />
             <span style={{ fontSize: 12.5, color: C.text }}>{layers.find((l) => l.id === selectedLayerId)?.name || ""}</span>

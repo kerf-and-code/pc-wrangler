@@ -44,6 +44,7 @@ import {
 import { SAX } from "@/lib/theme";
 import PageShell from "@/components/page-shell";
 import { monsterSourceLabel, monsterSourceTitle, monsterSource } from "@/lib/monster-sources";
+import Button from "@/components/ui-forge/Button";
 
 type SrdMode = "2024" | "2014" | "both";
 // source_key is declared explicitly because the index signature types everything else as unknown,
@@ -386,9 +387,9 @@ function StatBlockInner() {
             {saveState === "saving" ? "Saving…" : saveState === "saved" ? "Saved"
               : saveState === "error" ? "Save failed. Retrying on next change." : "Unsaved changes"}
           </span>
-          <button className="forge-btn is-primary" style={stoneButton("primary")} onClick={saveAndExit}>
+          <Button variant="primary" onClick={saveAndExit}>
             Save &amp; close
-          </button>
+          </Button>
         </div>
       </div>
     </Shell>
@@ -480,9 +481,9 @@ function EntryListPanel({ title, hint, entries, onChange, collapsedWhenEmpty }: 
         <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 11, color: STONE.inkFaint }}>{entries.length}</span>
         <span style={{ flex: 1 }} />
         {collapsedWhenEmpty && entries.length === 0 && !open ? (
-          <button className="forge-btn is-ghost" style={{ ...stoneButton("ghost"), padding: "5px 12px", fontSize: 12 }} onClick={() => setOpen(true)}>Add</button>
+          <Button variant="ghost" style={{ padding: "5px 12px", fontSize: 12 }} onClick={() => setOpen(true)}>Add</Button>
         ) : (
-          <button className="forge-btn is-ghost" style={{ ...stoneButton("ghost"), padding: "5px 12px", fontSize: 12 }} onClick={add}>+ Add</button>
+          <Button variant="ghost" style={{ padding: "5px 12px", fontSize: 12 }} onClick={add}>+ Add</Button>
         )}
       </div>
       {open && (
@@ -494,7 +495,7 @@ function EntryListPanel({ title, hint, entries, onChange, collapsedWhenEmpty }: 
                 <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 4 }}>
                   <input aria-label="Name" value={e.name} onChange={(ev) => update(i, { ...e, name: ev.target.value })}
                     placeholder="Name" style={{ ...stoneField(), flex: 1, fontWeight: 600 }} />
-                  <button className="forge-btn is-ghost" style={{ ...stoneButton("ghost"), padding: "4px 10px", fontSize: 11 }} onClick={() => remove(i)}>Remove</button>
+                  <Button variant="ghost" style={{ padding: "4px 10px", fontSize: 11 }} onClick={() => remove(i)}>Remove</Button>
                 </div>
                 <textarea aria-label="Description" value={e.desc} onChange={(ev) => update(i, { ...e, desc: ev.target.value })}
                   placeholder="Description" style={{ ...stoneField(), width: "100%", minHeight: 54, resize: "vertical" }} />
@@ -621,7 +622,7 @@ function PickerView({ rows, monsters, srdMode, onSrdMode, onNew, onEdit, onPrefi
       <div style={{ display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap" }}>
         <h1 style={{ fontFamily: FORGE_FONTS.display, fontSize: 26, color: STONE.ink, margin: 0 }}>Monster maker</h1>
         <span style={{ flex: 1 }} />
-        <button className="forge-btn is-primary" style={stoneButton("primary")} onClick={onNew}>+ New from scratch</button>
+        <Button variant="primary" onClick={onNew}>+ New from scratch</Button>
       </div>
 
       {rows.length > 0 && (
@@ -800,7 +801,7 @@ function Pf2eAbilityBlock({ pblock, onPatch }: { pblock: PF2Creature; onPatch: (
         {PF2_ABILITIES.map(([k, lbl]) => (
           <label key={k} style={{ display: "grid", gap: 3, textAlign: "center" }}>
             <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 10.5, color: STONE.inkDim, textTransform: "uppercase" }}>{lbl}</span>
-            <input type="number" value={pblock.abilities[k]} onChange={(e) => onPatch({ abilities: { ...pblock.abilities, [k]: parseInt(e.target.value, 10) || 0 } })}
+            <input aria-label={`${String(k).toUpperCase()} modifier`} type="number" value={pblock.abilities[k]} onChange={(e) => onPatch({ abilities: { ...pblock.abilities, [k]: parseInt(e.target.value, 10) || 0 } })}
               style={{ ...stoneField(), textAlign: "center", padding: "6px 2px", width: "100%" }} />
           </label>
         ))}

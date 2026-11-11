@@ -202,13 +202,13 @@ export default function DmScreen() {
       {/* board controls */}
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
         {boards.length > 0 && !renaming && (
-          <select value={activeId ?? ""} onChange={(e) => selectBoard(boards.find((b) => b.id === e.target.value) ?? null)} style={{ ...field, maxWidth: 280 }}>
+          <select aria-label="Board" value={activeId ?? ""} onChange={(e) => selectBoard(boards.find((b) => b.id === e.target.value) ?? null)} style={{ ...field, maxWidth: 280 }}>
             {boards.map((b) => <option key={b.id} value={b.id}>{b.name}{b.cards.length ? ` (${b.cards.length})` : ""}</option>)}
           </select>
         )}
         {renaming && (
           <>
-            <input value={nameDraft} onChange={(e) => setNameDraft(e.target.value)} placeholder="Board name" style={{ ...field, maxWidth: 240 }} autoFocus
+            <input aria-label="Board name" value={nameDraft} onChange={(e) => setNameDraft(e.target.value)} placeholder="Board name" style={{ ...field, maxWidth: 240 }} autoFocus
               onKeyDown={(e) => { if (e.key === "Enter") void onRename(); if (e.key === "Escape") setRenaming(false); }} />
             <button type="button" onClick={() => void onRename()} style={seg(true)}>Save</button>
             <button type="button" onClick={() => setRenaming(false)} style={seg(false)}>Cancel</button>

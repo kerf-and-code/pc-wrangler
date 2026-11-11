@@ -115,7 +115,7 @@ export default function EncounterBalancer() {
       {/* System picker */}
       <div style={row}>
         <label style={fieldLabel}>System</label>
-        <select value={system} onChange={(e) => setSystem(e.target.value as SystemKey)} style={{ ...input, maxWidth: 260 }}>
+        <select aria-label="System" value={system} onChange={(e) => setSystem(e.target.value as SystemKey)} style={{ ...input, maxWidth: 260 }}>
           {SYSTEMS.map(([k, label]) => <option key={k} value={k}>{label}</option>)}
         </select>
         {system === "dnd" && (
@@ -134,10 +134,10 @@ export default function EncounterBalancer() {
         <div style={{ marginTop: 12 }}>
           {party.map((p) => (
             <div key={p.id} style={pcRow}>
-              <select value={p.cls} onChange={(e) => upd(setParty, p.id, { cls: e.target.value })} style={{ ...input, flex: "1 1 130px" }}>
+              <select aria-label="Class" value={p.cls} onChange={(e) => upd(setParty, p.id, { cls: e.target.value })} style={{ ...input, flex: "1 1 130px" }}>
                 {classList.map((c) => <option key={c} value={c}>{c}</option>)}
               </select>
-              <input value={p.sub} onChange={(e) => upd(setParty, p.id, { sub: e.target.value })} placeholder="Subclass (optional)" maxLength={40} style={{ ...input, flex: "1 1 150px" }} />
+              <input aria-label="Subclass (optional)" value={p.sub} onChange={(e) => upd(setParty, p.id, { sub: e.target.value })} placeholder="Subclass (optional)" maxLength={40} style={{ ...input, flex: "1 1 150px" }} />
               <input type="number" min={1} max={levelMax} value={p.level} onChange={(e) => upd(setParty, p.id, { level: clampInt(e.target.value, 1, levelMax) })} style={{ ...input, width: 74 }} aria-label="Level" />
               <button onClick={() => setParty((xs) => xs.length > 1 ? xs.filter((x) => x.id !== p.id) : xs)} style={xBtn} aria-label="Remove">×</button>
             </div>
@@ -147,7 +147,7 @@ export default function EncounterBalancer() {
         {system === "drawsteel" && (
           <div style={{ ...pcRow, marginTop: 12 }}>
             <label style={fieldLabel}>Victories earned (avg)</label>
-            <input type="number" min={0} value={dsVictories} onChange={(e) => setDsVictories(Math.max(0, parseInt(e.target.value, 10) || 0))} style={{ ...input, width: 84 }} />
+            <input aria-label="Victories earned (avg)" type="number" min={0} value={dsVictories} onChange={(e) => setDsVictories(Math.max(0, parseInt(e.target.value, 10) || 0))} style={{ ...input, width: 84 }} />
           </div>
         )}
       </section>
@@ -163,7 +163,7 @@ export default function EncounterBalancer() {
               {dndRows.map((f) => (
                 <div key={f.id} style={pcRow}>
                   <label style={miniLbl}>CR</label>
-                  <select value={f.cr} onChange={(e) => upd(setDndRows, f.id, { cr: e.target.value })} style={{ ...input, flex: "1 1 100px" }}>
+                  <select aria-label="Cr" value={f.cr} onChange={(e) => upd(setDndRows, f.id, { cr: e.target.value })} style={{ ...input, flex: "1 1 100px" }}>
                     {CR_LIST.map((c) => <option key={c} value={c}>{c}</option>)}
                   </select>
                   <label style={miniLbl}>x</label>
@@ -200,7 +200,7 @@ export default function EncounterBalancer() {
             <div style={{ marginTop: 12 }}>
               {dsRows.map((f) => (
                 <div key={f.id} style={pcRow}>
-                  <select value={f.org} onChange={(e) => upd(setDsRows, f.id, { org: e.target.value as DSOrganization })} style={{ ...input, flex: "1 1 130px" }}>
+                  <select aria-label="Organization" value={f.org} onChange={(e) => upd(setDsRows, f.id, { org: e.target.value as DSOrganization })} style={{ ...input, flex: "1 1 130px" }}>
                     {DS_ORGANIZATIONS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                   </select>
                   <label style={miniLbl}>Lvl</label>
@@ -222,7 +222,7 @@ export default function EncounterBalancer() {
             <div style={{ marginTop: 12 }}>
               {dhRows.map((f) => (
                 <div key={f.id} style={pcRow}>
-                  <select value={f.type} onChange={(e) => upd(setDhRows, f.id, { type: e.target.value as DHAdversaryType })} style={{ ...input, flex: "1 1 150px" }}>
+                  <select aria-label="Adversary type" value={f.type} onChange={(e) => upd(setDhRows, f.id, { type: e.target.value as DHAdversaryType })} style={{ ...input, flex: "1 1 150px" }}>
                     {DH_ADVERSARY_TYPES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                   </select>
                   <label style={miniLbl}>x</label>

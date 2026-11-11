@@ -120,7 +120,7 @@ export default function ImportReviewPage() {
 
       {!loading && !done && (
         <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 20, flexWrap: "wrap" }}>
-          <button type="button" disabled={committing || includedCount + includedSessions === 0} onClick={commit}
+          <button title={includedCount + includedSessions === 0 ? "Tick at least one item or session to import" : undefined} type="button" disabled={committing || includedCount + includedSessions === 0} onClick={commit}
             style={{ ...primaryBtn, opacity: committing || includedCount + includedSessions === 0 ? 0.6 : 1 }}>
             {committing ? "Committing…" : `Commit ${includedCount} entit${includedCount === 1 ? "y" : "ies"}` + (includedSessions ? ` + ${includedSessions} session${includedSessions === 1 ? "" : "s"}` : "")}
           </button>
@@ -158,7 +158,7 @@ export default function ImportReviewPage() {
                 return (
                   <div key={c.id} style={{ ...surfaces.slate, borderRadius: FORGE_RADIUS, padding: "11px 13px", display: "flex", gap: 12, alignItems: "flex-start", opacity: on || k === "pc" ? 1 : 0.5 }}>
                     {!done && k !== "pc" && (
-                      <input type="checkbox" checked={on} onChange={() => toggleCand(c)} style={{ marginTop: 3, width: 16, height: 16, accentColor: SAX.brass }} />
+                      <input aria-label={`Import ${c.name ?? "this"}`} type="checkbox" checked={on} onChange={() => toggleCand(c)} style={{ marginTop: 3, width: 16, height: 16, accentColor: SAX.brass }} />
                     )}
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 14.5, color: C.text, fontWeight: 600 }}>
@@ -192,7 +192,7 @@ export default function ImportReviewPage() {
               const on = included(s.decision);
               return (
                 <div key={s.id} style={{ ...surfaces.slate, borderRadius: FORGE_RADIUS, padding: "11px 13px", display: "flex", gap: 12, alignItems: "flex-start", opacity: on ? 1 : 0.5 }}>
-                  {!done && <input type="checkbox" checked={on} onChange={() => setSessDecision([s.id], on ? "rejected" : "approved")} style={{ marginTop: 3, width: 16, height: 16, accentColor: SAX.brass }} />}
+                  {!done && <input aria-label="Import this session" type="checkbox" checked={on} onChange={() => setSessDecision([s.id], on ? "rejected" : "approved")} style={{ marginTop: 3, width: 16, height: 16, accentColor: SAX.brass }} />}
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 14, color: C.text, fontWeight: 600 }}>{s.label || `Session ${s.idx}`} {s.occurred_on && <span style={{ color: C.muted, fontWeight: 400 }}>· {s.occurred_on}</span>}</div>
                     {s.recap && <div style={{ fontSize: 12.5, color: C.muted, lineHeight: 1.5, marginTop: 4 }}>{s.recap.length > 200 ? `${s.recap.slice(0, 200)}…` : s.recap}</div>}

@@ -120,13 +120,13 @@ export default function MyThreadsPage() {
 
         {/* new thread */}
         <div style={{ background: C.surface, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: 16, marginBottom: 22, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
-          <input
+          <input aria-label="Who owes you what? What did you leave unfinished?"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Who owes you what? What did you leave unfinished?"
             style={input()}
           />
-          <textarea
+          <textarea aria-label="Any detail you want to remember (optional)"
             value={detail}
             onChange={(e) => setDetail(e.target.value)}
             placeholder="Any detail you want to remember (optional)"
@@ -134,10 +134,10 @@ export default function MyThreadsPage() {
             style={{ ...input(), marginTop: 8, resize: "vertical" }}
           />
           <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap", alignItems: "center" }}>
-            <select value={kind} onChange={(e) => setKind(e.target.value)} style={{ ...input(), width: "auto", flex: "0 0 auto" }}>
+            <select aria-label="Kind of thread" value={kind} onChange={(e) => setKind(e.target.value)} style={{ ...input(), width: "auto", flex: "0 0 auto" }}>
               {KINDS.map((k) => <option key={k.key} value={k.key}>{k.label}</option>)}
             </select>
-            <select value={charId} onChange={(e) => setCharId(e.target.value)} style={{ ...input(), width: "auto", flex: "1 1 180px" }}>
+            <select aria-label="Character" value={charId} onChange={(e) => setCharId(e.target.value)} style={{ ...input(), width: "auto", flex: "1 1 180px" }}>
               <option value="">No character</option>
               {chars.map((c) => (
                 <option key={c.character_id} value={c.character_id}>
@@ -145,7 +145,7 @@ export default function MyThreadsPage() {
                 </option>
               ))}
             </select>
-            <button type="button" onClick={add} disabled={busy || !title.trim()} style={btn(C.sun, C.ink)}>
+            <button title={!title.trim() ? "Give the thread a title first" : undefined} type="button" onClick={add} disabled={busy || !title.trim()} style={btn(C.sun, C.ink)}>
               {busy ? "Saving…" : "Add"}
             </button>
           </div>

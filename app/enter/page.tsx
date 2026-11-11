@@ -47,7 +47,7 @@ export default function EnterGate() {
         <p style={{ color: C.muted, fontSize: 15, lineHeight: 1.6, margin: "0 0 22px" }}>
           Six Axes is in a private pilot. Enter the access code you were given to continue.
         </p>
-        <input
+        <input aria-label="Access code"
           type="password"
           value={code}
           onChange={(e) => setCode(e.target.value)}
@@ -59,7 +59,7 @@ export default function EnterGate() {
             border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, marginBottom: 12,
           }}
         />
-        <button
+        <button title={!code.trim() ? "Type the access code first" : undefined}
           onClick={() => void submit()}
           disabled={busy || !code.trim()}
           style={{

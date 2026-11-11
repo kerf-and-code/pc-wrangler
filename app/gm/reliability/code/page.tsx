@@ -226,8 +226,8 @@ export default function CodingPage() {
                 </div>
               ))}
               <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>
-                <button type="button" onClick={() => setIdx((i) => Math.max(i - 1, 0))} disabled={idx === 0} style={btn(false)}>{"←"} Previous</button>
-                <button type="button" onClick={() => setIdx((i) => Math.min(i + 1, items.length - 1))} disabled={idx >= items.length - 1} style={btn(false)}>Next {"→"}</button>
+                <button title={idx === 0 ? "This is the first line" : undefined} type="button" onClick={() => setIdx((i) => Math.max(i - 1, 0))} disabled={idx === 0} style={btn(false)}>{"←"} Previous</button>
+                <button title={idx >= items.length - 1 ? "This is the last line" : undefined} type="button" onClick={() => setIdx((i) => Math.min(i + 1, items.length - 1))} disabled={idx >= items.length - 1} style={btn(false)}>Next {"→"}</button>
               </div>
             </div>
           )}

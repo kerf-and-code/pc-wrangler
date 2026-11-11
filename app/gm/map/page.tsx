@@ -8,6 +8,7 @@ import MapFog from "@/components/map-fog";
 import { initialCampaignId, useRememberCampaign, gmHref } from "@/lib/campaign-context";
 import { askConfirm } from "@/lib/confirm";
 import { SAX } from "@/lib/theme";
+import CampaignPicker from "@/components/ui-forge/CampaignPicker";
 
 const VIS: { v: string; l: string }[] = [
   { v: "common", l: "Common knowledge" },
@@ -325,10 +326,7 @@ export default function MapPage() {
       </p>
 
       <div style={{ ...box, display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
-        <select value={campaignId} onChange={(e) => setCampaignId(e.target.value)} style={{ ...input, width: "auto", flex: "1 1 200px" }}>
-          {campaigns.length === 0 && <option value="">No campaigns yet</option>}
-          {campaigns.map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}
-        </select>
+        <CampaignPicker campaigns={campaigns} value={campaignId} onChange={setCampaignId} label={null} selectStyle={{ ...input, width: "auto", flex: "1 1 200px" }} />
         {maps.map((m) => (
           <button key={m.id} type="button" onClick={() => { setActiveMap(m); setSelected(null); }}
             style={{ background: activeMap?.id === m.id ? C.sun : "transparent", color: activeMap?.id === m.id ? C.ink : C.text, border: `1px solid ${activeMap?.id === m.id ? C.sun : C.line}`, borderRadius: 999, padding: "6px 14px", fontSize: 13, cursor: "pointer", boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
@@ -338,12 +336,12 @@ export default function MapPage() {
       </div>
 
       <div style={{ ...box, display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-        <input value={mapName} onChange={(e) => setMapName(e.target.value)} placeholder="Map name (optional)" style={{ ...input, flex: "1 1 180px" }} />
+        <input aria-label="Map name (optional)" value={mapName} onChange={(e) => setMapName(e.target.value)} placeholder="Map name (optional)" style={{ ...input, flex: "1 1 180px" }} />
         <input ref={fileRef} type="file" accept="image/*" onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadMap(f); }}
           style={{ fontSize: 13, color: C.muted }} disabled={uploading || !campaignId} />
         {uploading && <span style={{ fontSize: 12, color: C.muted }}>Uploading…</span>}
         {activeMap && (
-          <select value={activeMap.linked_entry_id || ""}
+          <select aria-label="The place this map depicts" value={activeMap.linked_entry_id || ""}
             onChange={(e) => setMapPlace(e.target.value || null)}
             title="The place this map depicts"
             style={{ ...input, width: "auto", flex: "1 1 200px" }}>
@@ -414,12 +412,12 @@ export default function MapPage() {
               <div style={box}>
                 <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 12 }}>Pin</div>
                 <label style={{ fontSize: 11, color: C.muted }}>Label</label>
-                <input value={sel.label || ""}
+                <input aria-label="Ravenhollow" value={sel.label || ""}
                   onChange={(e) => updatePin(sel.id, { label: e.target.value })}
                   placeholder="Ravenhollow" style={sel2} />
 
                 <label style={{ fontSize: 11, color: C.muted, display: "block", marginTop: 12 }}>Links to</label>
-                <select value={sel.linked_type && sel.linked_id ? `${sel.linked_type}:${sel.linked_id}` : ""}
+                <select aria-label="Links to" value={sel.linked_type && sel.linked_id ? `${sel.linked_type}:${sel.linked_id}` : ""}
                   onChange={(e) => {
                     const v = e.target.value;
                     if (!v) updatePin(sel.id, { linked_type: null, linked_id: null });
@@ -439,7 +437,7 @@ export default function MapPage() {
                 )}
 
                 <label style={{ fontSize: 11, color: C.muted, display: "block", marginTop: 12 }}>Who can see this pin</label>
-                <select value={sel.visibility} onChange={(e) => updatePin(sel.id, { visibility: e.target.value })} style={sel2}>
+                <select aria-label="Who can see this pin" value={sel.visibility} onChange={(e) => updatePin(sel.id, { visibility: e.target.value })} style={sel2}>
                   {VIS.map((v) => <option key={v.v} value={v.v}>{v.l}</option>)}
                 </select>
 
@@ -462,7 +460,7 @@ export default function MapPage() {
                   map are numbered and joined by a line. The line breaks wherever a stop is
                   somewhere else, rather than drawing a leg the party never travelled.
                 </div>
-                <select value={traceSession} onChange={(e) => setTraceSession(e.target.value)} style={sel2}>
+                <select aria-label="Session trace" value={traceSession} onChange={(e) => setTraceSession(e.target.value)} style={sel2}>
                   <option value="">No trace</option>
                   {sessions.map((ss) => (
                     <option key={ss.id} value={ss.id}>Session {ss.session_number ?? "?"}</option>

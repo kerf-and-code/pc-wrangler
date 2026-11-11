@@ -7,6 +7,7 @@ import { surfaces, ui } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import { initialCampaignId, useRememberCampaign, gmHref } from "@/lib/campaign-context";
 import { fmtDate } from "@/lib/format";
+import CampaignPicker from "@/components/ui-forge/CampaignPicker";
 
 type Campaign = { id: string; name: string };
 type Sess = { id: string; session_number: number | null; status: string; started_at: string | null; scheduled_at: string | null };
@@ -203,18 +204,15 @@ export default function TimelinePage() {
       </p>
 
         <div style={{ ...box, marginBottom: 18 }}>
-          <select value={campaignId} onChange={(e) => setCampaignId(e.target.value)} style={{ ...input, marginBottom: 12 }}>
-            {campaigns.length === 0 && <option value="">No campaigns yet</option>}
-            {campaigns.map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}
-          </select>
+          <CampaignPicker campaigns={campaigns} value={campaignId} onChange={setCampaignId} label={null} selectStyle={{ ...input, marginBottom: 12 }} />
           <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
             <span style={{ fontSize: 12, color: C.muted }}>Trace:</span>
-            <select value={pc} onChange={(e) => setPc(e.target.value)} style={{ ...input, width: "auto", flex: "0 1 200px", padding: "8px 10px", fontSize: 13 }}>
+            <select aria-label="Trace" value={pc} onChange={(e) => setPc(e.target.value)} style={{ ...input, width: "auto", flex: "0 1 200px", padding: "8px 10px", fontSize: 13 }}>
               <option value="">the whole party</option>
               {pcs.map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}
             </select>
             {(placeOpts.length > 0 || npcOpts.length > 0 || facOpts.length > 0) && (
-              <select value={entity} onChange={(e) => setEntity(e.target.value)} style={{ ...input, width: "auto", flex: "0 1 220px", padding: "8px 10px", fontSize: 13 }}>
+              <select aria-label="Place or person" value={entity} onChange={(e) => setEntity(e.target.value)} style={{ ...input, width: "auto", flex: "0 1 220px", padding: "8px 10px", fontSize: 13 }}>
                 <option value="">every place and person</option>
                 {placeOpts.length > 0 && (
                   <optgroup label="Places">

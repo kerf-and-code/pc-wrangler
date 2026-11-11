@@ -1,10 +1,10 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
-import { stoneButton } from "@/lib/forge-theme";
 import { authHeading, authText, authLabel, authField, authError, authLink } from "@/components/auth/auth-shell";
 import Link from "next/link";
 import { useState } from "react";
+import Button from "@/components/ui-forge/Button";
 
 // Rendered inside AuthShell (the dungeon panel), so this owns only the heading + form, not a card.
 
@@ -64,14 +64,13 @@ export function ForgotPasswordForm() {
           />
         </div>
         {error && <p style={authError}>{error}</p>}
-        <button
+        <Button variant="primary"
           type="submit"
-          className="forge-btn is-primary"
-          style={{ ...stoneButton("primary"), width: "100%" }}
+          style={{ width: "100%" }}
           disabled={isLoading}
         >
           {isLoading ? "Sending…" : "Send reset email"}
-        </button>
+        </Button>
       </form>
       <p style={{ ...authText, textAlign: "center", fontSize: 13, margin: "16px 0 0" }}>
         Already have an account? <Link href="/auth/login" style={authLink}>Log in</Link>

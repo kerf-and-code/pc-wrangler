@@ -554,7 +554,7 @@ export default function CompendiumTool() {
         <div>
           <div style={{ ...label, marginBottom: 6 }}>Browse</div>
           <div style={{ display: "flex", gap: 6 }}>
-            <button type="button" onClick={() => setIndexOpen(true)} disabled={!entries.length}
+            <button title={!entries.length ? "The compendium is still loading" : undefined} type="button" onClick={() => setIndexOpen(true)} disabled={!entries.length}
               style={{ ...seg(false), opacity: entries.length ? 1 : 0.5, cursor: entries.length ? "pointer" : "default" }}>
               Index{entries.length ? ` (${entries.length.toLocaleString()})` : ""}
             </button>
@@ -580,7 +580,7 @@ export default function CompendiumTool() {
           disabled={loading || !!loadError}
           style={{ flex: 1, minWidth: 0, padding: "11px 13px", background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: 9, fontSize: 15 }}
         />
-        <button type="submit" disabled={loading || !!loadError} style={{ padding: "0 16px", background: C.sun, color: "#1b1712", border: "none", borderRadius: 9, fontWeight: 700, fontSize: 14, cursor: "pointer" }}>Look up</button>
+        <button title={loadError ? "The compendium did not load" : loading ? "The compendium is still loading" : undefined} type="submit" disabled={loading || !!loadError} style={{ padding: "0 16px", background: C.sun, color: "#1b1712", border: "none", borderRadius: 9, fontWeight: 700, fontSize: 14, cursor: "pointer" }}>Look up</button>
         {vosk.supported && (
           <button type="button" onClick={toggleMic} disabled={loading || !!loadError || vosk.status === "loading"}
             title={listenMode === "push" ? "Listen for one phrase" : "Listen continuously"}
@@ -1183,7 +1183,7 @@ function SpellForm({ value, onChange, field, seg }: {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
       <FieldRow>
-        <Labeled label="Level (0 = cantrip)"><input type="number" min={0} max={9} value={value.level} onChange={(e) => set({ level: toNum(e.target.value) ?? 0 })} style={field} /></Labeled>
+        <Labeled label="Level (0 = cantrip)"><input aria-label="Spell level" type="number" min={0} max={9} value={value.level} onChange={(e) => set({ level: toNum(e.target.value) ?? 0 })} style={field} /></Labeled>
         <Labeled label="School"><input aria-label="Evocation" value={value.school ?? ""} onChange={(e) => set({ school: orNull(e.target.value) })} placeholder="Evocation" style={field} /></Labeled>
       </FieldRow>
       <FieldRow>
@@ -1262,7 +1262,7 @@ function MonsterForm({ value, onChange, field }: {
   const section = (labelText: string, key: TraitSection) => (
     <div>
       <div style={fLabel}>{labelText} (one per line, &quot;Name. Effect&quot;)</div>
-      <textarea value={traitsToText(value[key])} onChange={(e) => set({ [key]: textToTraits(e.target.value) } as Partial<MonsterDisplay>)} rows={3} style={{ ...field, resize: "vertical", fontFamily: "inherit" }} />
+      <textarea aria-label={labelText} value={traitsToText(value[key])} onChange={(e) => set({ [key]: textToTraits(e.target.value) } as Partial<MonsterDisplay>)} rows={3} style={{ ...field, resize: "vertical", fontFamily: "inherit" }} />
     </div>
   );
   return (
@@ -1287,17 +1287,17 @@ function MonsterForm({ value, onChange, field }: {
       <FieldRow>
         {(["str", "dex", "con", "int", "wis", "cha"] as const).map((k) => (
           <Labeled key={k} label={k.toUpperCase()} min={70}>
-            <input type="number" value={value.abilities[k] ?? ""} onChange={(e) => setAb(k, e.target.value)} style={field} />
+            <input aria-label={`${k.toUpperCase()} score`} type="number" value={value.abilities[k] ?? ""} onChange={(e) => setAb(k, e.target.value)} style={field} />
           </Labeled>
         ))}
       </FieldRow>
       <FieldRow>
-        <Labeled label="Vulnerabilities"><input value={value.damageVulnerabilities ?? ""} onChange={(e) => set({ damageVulnerabilities: orNull(e.target.value) })} style={field} /></Labeled>
-        <Labeled label="Resistances"><input value={value.damageResistances ?? ""} onChange={(e) => set({ damageResistances: orNull(e.target.value) })} style={field} /></Labeled>
+        <Labeled label="Vulnerabilities"><input aria-label="Damage vulnerabilities" value={value.damageVulnerabilities ?? ""} onChange={(e) => set({ damageVulnerabilities: orNull(e.target.value) })} style={field} /></Labeled>
+        <Labeled label="Resistances"><input aria-label="Damage resistances" value={value.damageResistances ?? ""} onChange={(e) => set({ damageResistances: orNull(e.target.value) })} style={field} /></Labeled>
       </FieldRow>
       <FieldRow>
-        <Labeled label="Damage immunities"><input value={value.damageImmunities ?? ""} onChange={(e) => set({ damageImmunities: orNull(e.target.value) })} style={field} /></Labeled>
-        <Labeled label="Condition immunities"><input value={value.conditionImmunities ?? ""} onChange={(e) => set({ conditionImmunities: orNull(e.target.value) })} style={field} /></Labeled>
+        <Labeled label="Damage immunities"><input aria-label="Damage immunities" value={value.damageImmunities ?? ""} onChange={(e) => set({ damageImmunities: orNull(e.target.value) })} style={field} /></Labeled>
+        <Labeled label="Condition immunities"><input aria-label="Condition immunities" value={value.conditionImmunities ?? ""} onChange={(e) => set({ conditionImmunities: orNull(e.target.value) })} style={field} /></Labeled>
       </FieldRow>
       {section("Traits", "traits")}
       {section("Actions", "actions")}

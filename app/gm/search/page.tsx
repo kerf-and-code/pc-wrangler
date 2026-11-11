@@ -6,6 +6,7 @@ import PageShell from "@/components/page-shell";
 import { surfaces, ui } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import { initialCampaignId, useRememberCampaign, gmHref } from "@/lib/campaign-context";
+import CampaignPicker from "@/components/ui-forge/CampaignPicker";
 
 // Result titles open the thing they name (Codex entry, NPC/PC, session) instead of being plain text.
 const resultLink: React.CSSProperties = { color: "inherit", textDecoration: "underline", textDecorationColor: "rgba(200,162,75,0.55)", textUnderlineOffset: 3 };
@@ -201,14 +202,11 @@ export default function SearchPage() {
       </p>
 
       <div style={{ ...box, marginBottom: 16 }}>
-        <select value={campaignId} onChange={(e) => setCampaignId(e.target.value)} style={{ ...input, marginBottom: 12 }}>
-          {campaigns.length === 0 && <option value="">No campaigns yet</option>}
-          {campaigns.map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}
-        </select>
-        <input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search cast, notes, lore, places, threads, loot, logs, check-ins, transcripts…" style={{ ...input, marginBottom: 12 }} />
+        <CampaignPicker campaigns={campaigns} value={campaignId} onChange={setCampaignId} label={null} selectStyle={{ ...input, marginBottom: 12 }} />
+        <input aria-label="Search cast, notes, lore, places, threads, loot, logs, check-ins, transcripts…" autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search cast, notes, lore, places, threads, loot, logs, check-ins, transcripts…" style={{ ...input, marginBottom: 12 }} />
         <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
           <span style={{ fontSize: 12, color: C.muted }}>Involving:</span>
-          <select value={pc} onChange={(e) => setPc(e.target.value)} style={{ ...input, width: "auto", flex: "0 1 200px", padding: "8px 10px", fontSize: 13 }}>
+          <select aria-label="Involving" value={pc} onChange={(e) => setPc(e.target.value)} style={{ ...input, width: "auto", flex: "0 1 200px", padding: "8px 10px", fontSize: 13 }}>
             <option value="">any PC</option>
             {pcs.map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}
           </select>

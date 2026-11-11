@@ -201,7 +201,7 @@ export default function MapGenerator() {
           </label>
 
           <label style={{ ...field, flexDirection: "row", alignItems: "center", gap: 8 }}>
-            <input type="checkbox" checked={archipelago} onChange={(e) => setArchipelago(e.target.checked)} />
+            <input aria-label="Archipelago" type="checkbox" checked={archipelago} onChange={(e) => setArchipelago(e.target.checked)} />
             <span style={label}>Archipelago (scattered islands)</span>
           </label>
         </div>
@@ -232,13 +232,13 @@ export default function MapGenerator() {
       <div style={teaser}>
         <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
           <strong style={{ color: STONE.ink }}>Paint it with AI</strong>
-          <select value={style} onChange={(e) => setStyle(e.target.value)} style={{ ...input, maxWidth: 170 }} disabled={aiStatus === "working"}>
+          <select aria-label="Paint it with AI" value={style} onChange={(e) => setStyle(e.target.value)} style={{ ...input, maxWidth: 170 }} disabled={aiStatus === "working"}>
             <option value="fantasy">Fantasy</option>
             <option value="scifi">Sci-fi</option>
             <option value="grimdark">Grimdark</option>
             <option value="urban">Modern</option>
           </select>
-          <button onClick={() => void paintAi()} disabled={aiStatus === "working" || !url} style={{ ...cta, opacity: aiStatus === "working" || !url ? 0.6 : 1 }}>
+          <button title={!url ? "Generate a map first" : undefined} onClick={() => void paintAi()} disabled={aiStatus === "working" || !url} style={{ ...cta, opacity: aiStatus === "working" || !url ? 0.6 : 1 }}>
             {aiStatus === "working" ? "Painting…" : "Paint this map"}
           </button>
           <span style={hint}>Dissolves the hexes into a cohesive illustrated world, keeping every coast, river and road in place.</span>

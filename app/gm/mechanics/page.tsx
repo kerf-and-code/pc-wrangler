@@ -12,6 +12,7 @@ import { initialCampaignId, useRememberCampaign, initialSessionId, useRememberSe
 import { fmtDate } from "@/lib/format";
 import { SAX } from "@/lib/theme";
 import { LoadingState } from "@/components/ui-forge/States";
+import CampaignPicker from "@/components/ui-forge/CampaignPicker";
 
 type Campaign = { id: string; name: string };
 type Session = { id: string; session_number: number | null; created_at: string; scheduled_at: string | null };
@@ -300,11 +301,8 @@ export default function MechanicsPage() {
       </div>
 
       <div style={{ ...box, display: "flex", gap: 12, flexWrap: "wrap" }}>
-        <select value={campaignId} onChange={(e: any) => setCampaignId(e.target.value)} style={sel}>
-          {campaigns.length === 0 && <option value="">No campaigns yet</option>}
-          {campaigns.map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}
-        </select>
-        <select value={sessionId} onChange={(e: any) => setSessionId(e.target.value)} style={sel}>
+        <CampaignPicker campaigns={campaigns} value={campaignId} onChange={setCampaignId} label={null} selectStyle={sel} />
+        <select aria-label="Session" value={sessionId} onChange={(e: any) => setSessionId(e.target.value)} style={sel}>
           {sessions.length === 0 && <option value="">No sessions yet</option>}
           {sessions.map((s) => (<option key={s.id} value={s.id}>{sessionLabel(s)}</option>))}
         </select>

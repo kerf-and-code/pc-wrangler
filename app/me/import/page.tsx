@@ -35,7 +35,7 @@ import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } fr
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
-import { STONE, stonePanel, stoneButton, forgeHeading, forgeLabel, forgeRuleLine, stoneChip, C } from "@/lib/forge-theme";
+import { STONE, stonePanel, forgeHeading, forgeLabel, forgeRuleLine, stoneChip, C } from "@/lib/forge-theme";
 import { saveToLibrary } from "@/lib/pc-library";
 import { loadCatalog } from "@/lib/catalog";
 import { loadSrd } from "@/lib/srd/srd";
@@ -44,6 +44,7 @@ import { ITEM_BONUSES } from "@/lib/srd/derive-sheet";
 import { knownSubclassNames } from "@/lib/subclass-features";
 import { parseSheet, FlattenedSheetError, type PdfDocumentLike, type DdbSheet } from "@/lib/ddb-parse";
 import { ddbToBuild, type ImportContext, type ImportReport } from "@/lib/ddb-import";
+import Button from "@/components/ui-forge/Button";
 
 type Stage = "idle" | "reading" | "ready" | "saving" | "error";
 
@@ -220,7 +221,7 @@ function ImportInner() {
 
           <section style={{ ...stonePanel(), padding: 18, marginTop: 18 }}>
             <div style={forgeLabel}>Character sheet PDF</div>
-            <input
+            <input aria-label="Character sheet PDF"
               ref={fileRef}
               type="file"
               accept="application/pdf,.pdf"
@@ -232,14 +233,12 @@ function ImportInner() {
               }}
             />
             <div style={{ display: "flex", gap: 10, alignItems: "center", marginTop: 8, flexWrap: "wrap" }}>
-              <button
-                className="forge-btn is-primary"
-                style={stoneButton("primary")}
+              <Button variant="primary"
                 onClick={() => fileRef.current?.click()}
                 disabled={stage === "reading" || stage === "saving"}
               >
                 {stage === "reading" ? "Reading…" : "Choose PDF"}
-              </button>
+              </Button>
               {fileName ? (
                 <span style={{ color: STONE.inkDim, fontSize: 13 }}>{fileName}</span>
               ) : null}
@@ -308,22 +307,18 @@ function ImportInner() {
               ) : null}
 
               <div style={{ display: "flex", gap: 10, marginTop: 20, flexWrap: "wrap" }}>
-                <button
-                  className="forge-btn is-primary"
-                  style={stoneButton("primary")}
+                <Button variant="primary"
                   onClick={() => void onSave()}
                   disabled={stage === "saving"}
                 >
                   {stage === "saving" ? "Saving…" : target ? `Update ${target.name}` : "Save to my library"}
-                </button>
-                <button
-                  className="forge-btn is-ghost"
-                  style={stoneButton("ghost")}
+                </Button>
+                <Button variant="ghost"
                   onClick={() => { setSheet(null); setBuild(null); setReport(null); setStage("idle"); setFileName(""); }}
                   disabled={stage === "saving"}
                 >
                   Discard
-                </button>
+                </Button>
               </div>
             </>
           ) : null}

@@ -155,7 +155,7 @@ export default function SpeakersPage() {
 
       <Card>
         <Label>Recording</Label>
-        <select value={trackId} onChange={(e) => setTrackId(e.target.value)} style={field}>
+        <select aria-label="Recording" value={trackId} onChange={(e) => setTrackId(e.target.value)} style={field}>
           {tracks.length === 0 && <option value="">No in-person recordings yet</option>}
           {tracks.map((t) => (
             <option key={t.id} value={t.id}>
@@ -198,7 +198,7 @@ export default function SpeakersPage() {
             )}
 
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-              <select
+              <select aria-label="Who is this voice"
                 value={a.isGm ? "__gm" : a.characterId ?? ""}
                 onChange={(e) => {
                   const v = e.target.value;

@@ -60,7 +60,7 @@ export default function MagicItemFinder() {
       </div>
 
       <div style={panel}>
-        <input
+        <input aria-label="Search by name (Flame Tongue, Cloak of...)"
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Search by name (Flame Tongue, Cloak of...)"

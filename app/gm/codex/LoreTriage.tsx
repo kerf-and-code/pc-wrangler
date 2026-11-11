@@ -115,21 +115,21 @@ function TriageRow({ beat, options, onResolved }: {
       <div style={{ fontSize: 14, color: C.text, lineHeight: 1.55, marginBottom: 12 }}>{beat.summary}</div>
       <div style={{ display: "grid", gap: 8 }}>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-          <select value={pick} disabled={disabled} onChange={(e) => setPick(e.target.value)} style={{ ...fieldStyle, flex: "1 1 220px", minWidth: 180 }}>
+          <select aria-label="Attach to an existing entity…" value={pick} disabled={disabled} onChange={(e) => setPick(e.target.value)} style={{ ...fieldStyle, flex: "1 1 220px", minWidth: 180 }}>
             <option value="">Attach to an existing entity…</option>
             {options.map((o) => <option key={`${o.kind}:${o.id}`} value={`${o.kind}:${o.id}`}>{o.label}</option>)}
           </select>
           <button type="button" disabled={disabled} onClick={doAttach} style={primaryBtn}>{busy === "attach" ? "Attaching…" : "Attach"}</button>
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-          <input value={newName} disabled={disabled} onChange={(e) => setNewName(e.target.value)} placeholder="…or create a new one, named" style={{ ...fieldStyle, flex: "1 1 200px", minWidth: 160 }} />
-          <select value={newKind} disabled={disabled} onChange={(e) => setNewKind(e.target.value as Kind)} style={{ ...fieldStyle, flex: "0 0 auto" }}>
+          <input aria-label="…or create a new one, named" value={newName} disabled={disabled} onChange={(e) => setNewName(e.target.value)} placeholder="…or create a new one, named" style={{ ...fieldStyle, flex: "1 1 200px", minWidth: 160 }} />
+          <select aria-label="Kind of entry" value={newKind} disabled={disabled} onChange={(e) => setNewKind(e.target.value as Kind)} style={{ ...fieldStyle, flex: "0 0 auto" }}>
             <option value="npc">NPC</option><option value="location">Place</option><option value="faction">Faction</option>
           </select>
           <button type="button" disabled={disabled} onClick={doCreate} style={primaryBtn}>{busy === "create" ? "Creating…" : "Create + attach"}</button>
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-          <input value={title} disabled={disabled} onChange={(e) => setTitle(e.target.value)} placeholder="…or keep as its own lore entry, titled" style={{ ...fieldStyle, flex: "1 1 200px", minWidth: 160 }} />
+          <input aria-label="…or keep as its own lore entry, titled" value={title} disabled={disabled} onChange={(e) => setTitle(e.target.value)} placeholder="…or keep as its own lore entry, titled" style={{ ...fieldStyle, flex: "1 1 200px", minWidth: 160 }} />
           <button type="button" disabled={disabled} onClick={doKeep} style={primaryBtn}>{busy === "keep" ? "Keeping…" : "Keep as lore"}</button>
         </div>
         <div style={{ display: "flex", justifyContent: "flex-end" }}>
@@ -201,21 +201,21 @@ function BacklogRow({ entry, options, onResolved }: {
       )}
       <div style={{ display: "grid", gap: 8 }}>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-          <select value={pick} disabled={disabled} onChange={(e) => setPick(e.target.value)} style={{ ...fieldStyle, flex: "1 1 220px", minWidth: 180 }}>
+          <select aria-label="Fold into an existing entity…" value={pick} disabled={disabled} onChange={(e) => setPick(e.target.value)} style={{ ...fieldStyle, flex: "1 1 220px", minWidth: 180 }}>
             <option value="">Fold into an existing entity…</option>
             {options.map((o) => <option key={`${o.kind}:${o.id}`} value={`${o.kind}:${o.id}`}>{o.label}</option>)}
           </select>
           <button type="button" disabled={disabled} onClick={doAttach} style={primaryBtn}>{busy === "attach" ? "Folding…" : "Fold in"}</button>
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-          <input value={newName} disabled={disabled} onChange={(e) => setNewName(e.target.value)} placeholder="…or make a new entity, named" style={{ ...fieldStyle, flex: "1 1 200px", minWidth: 160 }} />
-          <select value={newKind} disabled={disabled} onChange={(e) => setNewKind(e.target.value as Kind)} style={{ ...fieldStyle, flex: "0 0 auto" }}>
+          <input aria-label="…or make a new entity, named" value={newName} disabled={disabled} onChange={(e) => setNewName(e.target.value)} placeholder="…or make a new entity, named" style={{ ...fieldStyle, flex: "1 1 200px", minWidth: 160 }} />
+          <select aria-label="Kind of entry" value={newKind} disabled={disabled} onChange={(e) => setNewKind(e.target.value as Kind)} style={{ ...fieldStyle, flex: "0 0 auto" }}>
             <option value="npc">NPC</option><option value="location">Place</option><option value="faction">Faction</option>
           </select>
           <button type="button" disabled={disabled} onClick={doCreate} style={primaryBtn}>{busy === "create" ? "Creating…" : "Create + fold"}</button>
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-          <input value={title} disabled={disabled} onChange={(e) => setTitle(e.target.value)} placeholder="…or keep it, with a real title" style={{ ...fieldStyle, flex: "1 1 200px", minWidth: 160 }} />
+          <input aria-label="…or keep it, with a real title" value={title} disabled={disabled} onChange={(e) => setTitle(e.target.value)} placeholder="…or keep it, with a real title" style={{ ...fieldStyle, flex: "1 1 200px", minWidth: 160 }} />
           <button type="button" disabled={disabled} onClick={doRetitle} style={primaryBtn}>{busy === "retitle" ? "Saving…" : "Retitle + keep"}</button>
         </div>
         <div style={{ display: "flex", justifyContent: "flex-end" }}>

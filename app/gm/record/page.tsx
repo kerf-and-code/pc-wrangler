@@ -30,6 +30,7 @@ import { SAX } from "@/lib/theme";
 import { initialCampaignId, useRememberCampaign, initialSessionId, useRememberSession } from "@/lib/campaign-context";
 import { askConfirm } from "@/lib/confirm";
 import { fmtDateTime } from "@/lib/format";
+import CampaignPicker from "@/components/ui-forge/CampaignPicker";
 
 type Phase = "idle" | "armed" | "recording" | "stopped" | "uploading" | "done" | "error";
 type Campaign = { id: string; name: string };
@@ -356,16 +357,12 @@ export default function RoomRecordPage() {
       )}
 
       <Card>
-        <Label>Campaign</Label>
-        <select value={campaignId} onChange={(e) => setCampaignId(e.target.value)} disabled={busy} style={field}>
-          <option value="">Pick a campaign</option>
-          {campaigns.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-        </select>
+        <CampaignPicker campaigns={campaigns} value={campaignId} onChange={setCampaignId} placeholder="Pick a campaign" disabled={!!busy} selectStyle={field} />
       </Card>
 
       <Card tone={session && session.ended_at ? "warn" : undefined}>
         <Label>Session</Label>
-        <select value={sessionId} onChange={(e) => setSessionId(e.target.value)} disabled={busy || !campaignId} style={field}>
+        <select aria-label="Session" value={sessionId} onChange={(e) => setSessionId(e.target.value)} disabled={busy || !campaignId} style={field}>
           {sessions.length === 0 && <option value="">No sessions on this campaign yet</option>}
           {sessions.map((s) => (
             <option key={s.id} value={s.id}>
@@ -421,7 +418,7 @@ export default function RoomRecordPage() {
         </p>
 
         {phase !== "recording" && phase !== "uploading" && phase !== "done" && phase !== "stopped" && (
-          <button style={btn(true)} disabled={!consent || !campaignId || !sessionId}
+          <button title={!campaignId ? "Pick a campaign first" : !sessionId ? "Pick a session first" : !consent ? "Confirm everyone agrees to being recorded first" : undefined} style={btn(true)} disabled={!consent || !campaignId || !sessionId}
             onClick={() => void startRecording()}>Start recording</button>
         )}
         {phase === "recording" && (

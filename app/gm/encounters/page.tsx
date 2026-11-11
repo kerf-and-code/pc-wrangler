@@ -20,6 +20,7 @@ import { subclassKey } from "@/lib/subclass-names";
 import { rulesetForCampaign } from "@/lib/systems/ruleset";
 import { friendlyError, notReady } from "@/lib/friendly-error";
 import { askConfirm } from "@/lib/confirm";
+import CampaignPicker from "@/components/ui-forge/CampaignPicker";
 
 // ============================================================================
 // THE TWO METHODS ARE GENUINELY DIFFERENT. THIS IS THE WHOLE POINT OF THE TOOL.
@@ -540,7 +541,7 @@ export default function EncountersPage() {
               <button type="button" onClick={() => void deleteEncounter()} disabled={encBusy} style={{ ...small, color: C.warn }}>Delete</button>
             </>
           )}
-          <button type="button" onClick={() => void systemToPlan(encName.trim() || fallbackName, plan.note, plan.difficulty)} disabled={encBusy || !snapshot.roster.length} style={small}>Add to session plan</button>
+          <button title={!snapshot.roster.length ? "Add some monsters first" : undefined} type="button" onClick={() => void systemToPlan(encName.trim() || fallbackName, plan.note, plan.difficulty)} disabled={encBusy || !snapshot.roster.length} style={small}>Add to session plan</button>
         </div>
         <p style={{ fontSize: 12, color: C.muted, margin: "8px 0 0", lineHeight: 1.5 }}>
           Running a fight from here works for D&amp;D only for now: the Combat tracker is built on d20 rolls against AC.
@@ -644,9 +645,7 @@ export default function EncountersPage() {
             This campaign&apos;s system doesn&apos;t use encounter budgets, so the CR and XP balancer is
             hidden here, its maths wouldn&apos;t mean anything. Switch to a D&amp;D campaign to use it.
           </p>
-          <select value={campaignId} onChange={(e) => setCampaignId(e.target.value)} style={{ ...inputStyle, maxWidth: 240 }}>
-            {campaigns.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
+          <CampaignPicker campaigns={campaigns} value={campaignId} onChange={setCampaignId} label={null} selectStyle={{ ...inputStyle, maxWidth: 240 }} />
         </div>
       )}
 
@@ -693,9 +692,7 @@ export default function EncountersPage() {
       <div style={box}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 10 }}>
           <div style={{ ...eyebrow, marginBottom: 0 }}>Who is at the table</div>
-          <select value={campaignId} onChange={(e) => setCampaignId(e.target.value)} style={{ ...inputStyle, maxWidth: 240 }}>
-            {campaigns.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
+          <CampaignPicker campaigns={campaigns} value={campaignId} onChange={setCampaignId} label={null} selectStyle={{ ...inputStyle, maxWidth: 240 }} />
         </div>
 
         {loading && <p role="status" style={{ color: C.muted, fontSize: 13 }}>Loading&hellip;</p>}
@@ -765,14 +762,14 @@ export default function EncountersPage() {
         <div style={eyebrow}>The encounter</div>
         {foes.map((f) => (
           <div key={f.id} style={{ display: "flex", gap: 8, marginBottom: 8, flexWrap: "wrap", alignItems: "center" }}>
-            <input
+            <input aria-label="Monster (optional)"
               value={f.name}
               // Renaming a library monster breaks its link to the stat block, so it becomes custom.
               onChange={(e) => setFoes((fs) => fs.map((x) => x.id === f.id ? { ...x, name: e.target.value, origin: "custom", statBlockId: null, sourceKey: null } : x))}
               placeholder="Monster (optional)"
               style={{ ...inputStyle, flex: "1 1 170px" }}
             />
-            <select
+            <select aria-label="Challenge rating"
               value={f.cr}
               onChange={(e) => setFoes((fs) => fs.map((x) => x.id === f.id ? { ...x, cr: e.target.value } : x))}
               style={{ ...inputStyle, width: 110 }}
@@ -781,7 +778,7 @@ export default function EncountersPage() {
                 <option key={cr} value={cr}>CR {cr} &middot; {CR_XP[cr].toLocaleString()}XP</option>
               ))}
             </select>
-            <input
+            <input aria-label="How many"
               type="number" min={1} value={f.count}
               onChange={(e) => setFoes((fs) => fs.map((x) => x.id === f.id ? { ...x, count: Math.max(1, Number(e.target.value) || 1) } : x))}
               style={{ ...inputStyle, width: 70 }}
@@ -1026,11 +1023,11 @@ export default function EncountersPage() {
           <>
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center", margin: "14px 0" }}>
               <span style={{ color: C.muted, fontSize: 13 }}>Written for</span>
-              <input type="number" min={1} max={10} value={modSize}
+              <input aria-label="Written for" type="number" min={1} max={10} value={modSize}
                 onChange={(e) => setModSize(Math.max(1, Number(e.target.value) || 1))}
                 style={{ ...inputStyle, width: 66 }} />
               <span style={{ color: C.muted, fontSize: 13 }}>characters of level</span>
-              <input type="number" min={1} max={20} value={modLevel}
+              <input aria-label="Level the module was written for" type="number" min={1} max={20} value={modLevel}
                 onChange={(e) => setModLevel(Math.max(1, Math.min(20, Number(e.target.value) || 1)))}
                 style={{ ...inputStyle, width: 66 }} />
             </div>
@@ -1090,9 +1087,7 @@ export default function EncountersPage() {
       {hasEncounterMath && encMethod === "pf2e" && (<>
         <div style={box}>
           <div style={eyebrow}>Party</div>
-          <select value={campaignId} onChange={(e) => setCampaignId(e.target.value)} style={{ ...inputStyle, maxWidth: 240 }}>
-            {campaigns.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
+          <CampaignPicker campaigns={campaigns} value={campaignId} onChange={setCampaignId} label={null} selectStyle={{ ...inputStyle, maxWidth: 240 }} />
           <div style={{ display: "flex", gap: 14, marginTop: 12, flexWrap: "wrap" }}>
             <label style={{ display: "grid", gap: 4 }}>
               <span style={{ fontSize: 12, color: C.muted }}>Party level</span>
@@ -1121,7 +1116,7 @@ export default function EncountersPage() {
           {pfoes.length === 0 && <p style={{ color: C.muted, fontSize: 13, margin: "0 0 10px" }}>Add creatures by level to price the fight.</p>}
           {pfoes.map((f) => (
             <div key={f.id} style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8, flexWrap: "wrap" }}>
-              <input value={f.name} placeholder="Creature" onChange={(e) => setPfoes((xs) => xs.map((x) => (x.id === f.id ? { ...x, name: e.target.value } : x)))} style={{ ...inputStyle, flex: 1, minWidth: 140 }} />
+              <input aria-label="Creature" value={f.name} placeholder="Creature" onChange={(e) => setPfoes((xs) => xs.map((x) => (x.id === f.id ? { ...x, name: e.target.value } : x)))} style={{ ...inputStyle, flex: 1, minWidth: 140 }} />
               <label style={{ display: "flex", gap: 5, alignItems: "center", fontSize: 12, color: C.muted }}>Lvl
                 <input type="number" value={f.level} onChange={(e) => setPfoes((xs) => xs.map((x) => (x.id === f.id ? { ...x, level: parseInt(e.target.value, 10) || 0 } : x)))} style={{ ...inputStyle, width: 64 }} />
               </label>
@@ -1135,7 +1130,7 @@ export default function EncountersPage() {
           <div style={{ display: "flex", gap: 8, marginTop: 6, flexWrap: "wrap", alignItems: "center" }}>
             <button onClick={() => setPfoes((xs) => [...xs, { id: uid(), name: "", level: pfLevel, count: 1 }])} style={ghostBtn}>Add creature</button>
             {statBlocks.filter((r) => r.system === "pf2e" && r.level != null).length > 0 && (
-              <select value="" onChange={(e) => { const r = statBlocks.find((x) => x.id === e.target.value); if (r) setPfoes((xs) => [...xs, { id: uid(), name: r.name, level: r.level ?? pfLevel, count: 1 }]); }} style={{ ...inputStyle, maxWidth: 220 }}>
+              <select aria-label="Add from library…" value="" onChange={(e) => { const r = statBlocks.find((x) => x.id === e.target.value); if (r) setPfoes((xs) => [...xs, { id: uid(), name: r.name, level: r.level ?? pfLevel, count: 1 }]); }} style={{ ...inputStyle, maxWidth: 220 }}>
                 <option value="">Add from library…</option>
                 {statBlocks.filter((r) => r.system === "pf2e" && r.level != null).map((r) => <option key={r.id} value={r.id}>{r.name} (Lvl {r.level})</option>)}
               </select>
@@ -1163,9 +1158,7 @@ export default function EncountersPage() {
       {hasEncounterMath && encMethod === "daggerheart" && (<>
         <div style={box}>
           <div style={eyebrow}>Party</div>
-          <select value={campaignId} onChange={(e) => setCampaignId(e.target.value)} style={{ ...inputStyle, maxWidth: 240 }}>
-            {campaigns.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
+          <CampaignPicker campaigns={campaigns} value={campaignId} onChange={setCampaignId} label={null} selectStyle={{ ...inputStyle, maxWidth: 240 }} />
           <div style={{ display: "flex", gap: 18, marginTop: 12, flexWrap: "wrap", alignItems: "flex-end" }}>
             <label style={{ display: "grid", gap: 4 }}>
               <span style={{ fontSize: 12, color: C.muted }}>PCs in combat</span>
@@ -1202,12 +1195,12 @@ export default function EncountersPage() {
           {dhRoster.length === 0 && <p style={{ color: C.muted, fontSize: 13, margin: "0 0 10px" }}>Add adversaries by type to spend your Battle Points.</p>}
           {dhRoster.map((r) => (
             <div key={r.id} style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8, flexWrap: "wrap" }}>
-              <select value={r.type} onChange={(e) => setDhRoster((xs) => xs.map((x) => (x.id === r.id ? { ...x, type: e.target.value as DHAdversaryType } : x)))} style={{ ...inputStyle, flex: 1, minWidth: 150 }}>
+              <select aria-label="Adversary type" value={r.type} onChange={(e) => setDhRoster((xs) => xs.map((x) => (x.id === r.id ? { ...x, type: e.target.value as DHAdversaryType } : x)))} style={{ ...inputStyle, flex: 1, minWidth: 150 }}>
                 {DH_ADVERSARY_TYPES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
               </select>
               <label style={{ display: "flex", gap: 5, alignItems: "center", fontSize: 12, color: C.muted }}>
                 {r.type === "minion" ? "groups" : "\u00D7"}
-                <input type="number" value={r.count} onChange={(e) => setDhRoster((xs) => xs.map((x) => (x.id === r.id ? { ...x, count: Math.max(1, parseInt(e.target.value, 10) || 1) } : x)))} style={{ ...inputStyle, width: 64 }} />
+                <input aria-label="How many" type="number" value={r.count} onChange={(e) => setDhRoster((xs) => xs.map((x) => (x.id === r.id ? { ...x, count: Math.max(1, parseInt(e.target.value, 10) || 1) } : x)))} style={{ ...inputStyle, width: 64 }} />
               </label>
               <span style={{ fontFamily: SAX.mono, fontSize: 12, color: C.muted, minWidth: 60, textAlign: "right" }}>{DH_BP_COST[r.type] * r.count} pts</span>
               <button onClick={() => setDhRoster((xs) => xs.filter((x) => x.id !== r.id))} style={ghostBtn}>Remove</button>
@@ -1216,7 +1209,7 @@ export default function EncountersPage() {
           <div style={{ display: "flex", gap: 8, marginTop: 6, flexWrap: "wrap", alignItems: "center" }}>
             <button onClick={() => setDhRoster((xs) => [...xs, { id: uid(), type: "standard", count: 1 }])} style={ghostBtn}>Add adversary</button>
             {statBlocks.filter((r) => r.system === "daggerheart").length > 0 && (
-              <select value="" onChange={(e) => { const r = statBlocks.find((x) => x.id === e.target.value); if (r) setDhRoster((xs) => [...xs, { id: uid(), type: ((r.type as DHAdversaryType) || "standard"), count: 1 }]); }} style={{ ...inputStyle, maxWidth: 220 }}>
+              <select aria-label="Add from library&hellip;" value="" onChange={(e) => { const r = statBlocks.find((x) => x.id === e.target.value); if (r) setDhRoster((xs) => [...xs, { id: uid(), type: ((r.type as DHAdversaryType) || "standard"), count: 1 }]); }} style={{ ...inputStyle, maxWidth: 220 }}>
                 <option value="">Add from library&hellip;</option>
                 {statBlocks.filter((r) => r.system === "daggerheart").map((r) => <option key={r.id} value={r.id}>{r.name}{r.type ? ` (${r.type})` : ""}</option>)}
               </select>
@@ -1245,9 +1238,7 @@ export default function EncountersPage() {
       {hasEncounterMath && encMethod === "drawsteel" && (<>
         <div style={box}>
           <div style={eyebrow}>Party</div>
-          <select value={campaignId} onChange={(e) => setCampaignId(e.target.value)} style={{ ...inputStyle, maxWidth: 240 }}>
-            {campaigns.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
+          <CampaignPicker campaigns={campaigns} value={campaignId} onChange={setCampaignId} label={null} selectStyle={{ ...inputStyle, maxWidth: 240 }} />
           <div style={{ display: "flex", gap: 14, marginTop: 12, flexWrap: "wrap", alignItems: "flex-end" }}>
             <label style={{ display: "grid", gap: 4 }}>
               <span style={{ fontSize: 12, color: C.muted }}>Heroes</span>
@@ -1296,7 +1287,7 @@ export default function EncountersPage() {
             const overLevel = r.level > (r.org === "solo" ? dsLevel + 1 : dsLevelCap);
             return (
               <div key={r.id} style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8, flexWrap: "wrap" }}>
-                <select value={r.org} onChange={(e) => setDsRoster((xs) => xs.map((x) => (x.id === r.id ? { ...x, org: e.target.value as DSOrganization, ev: null } : x)))} style={{ ...inputStyle, flex: 1, minWidth: 140 }}>
+                <select aria-label="Organization" value={r.org} onChange={(e) => setDsRoster((xs) => xs.map((x) => (x.id === r.id ? { ...x, org: e.target.value as DSOrganization, ev: null } : x)))} style={{ ...inputStyle, flex: 1, minWidth: 140 }}>
                   {DS_ORGANIZATIONS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                 </select>
                 <label style={{ display: "flex", gap: 5, alignItems: "center", fontSize: 12, color: C.muted }}>Lvl
@@ -1316,7 +1307,7 @@ export default function EncountersPage() {
           <div style={{ display: "flex", gap: 8, marginTop: 6, flexWrap: "wrap", alignItems: "center" }}>
             <button onClick={() => setDsRoster((xs) => [...xs, { id: uid(), org: "platoon", level: dsLevel, count: 1, ev: null }])} style={ghostBtn}>Add monster</button>
             {statBlocks.filter((r) => r.system === "drawsteel").length > 0 && (
-              <select value="" onChange={(e) => { const r = statBlocks.find((x) => x.id === e.target.value); if (r) setDsRoster((xs) => [...xs, { id: uid(), org: ((r.type as DSOrganization) || "platoon"), level: r.level ?? dsLevel, count: 1, ev: r.xp ?? null }]); }} style={{ ...inputStyle, maxWidth: 220 }}>
+              <select aria-label="Add from library&hellip;" value="" onChange={(e) => { const r = statBlocks.find((x) => x.id === e.target.value); if (r) setDsRoster((xs) => [...xs, { id: uid(), org: ((r.type as DSOrganization) || "platoon"), level: r.level ?? dsLevel, count: 1, ev: r.xp ?? null }]); }} style={{ ...inputStyle, maxWidth: 220 }}>
                 <option value="">Add from library&hellip;</option>
                 {statBlocks.filter((r) => r.system === "drawsteel").map((r) => <option key={r.id} value={r.id}>{r.name}{r.xp != null ? ` (EV ${r.xp})` : ""}</option>)}
               </select>
@@ -1373,7 +1364,7 @@ function MonsterPicker({ catalog, srdMode, onSrdMode, hasOwn, onAdd, C, inputSty
       background: "rgba(255,255,255,0.02)",
     }}>
       <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 10 }}>
-        <input
+        <input aria-label="Search monsters…"
           value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search monsters…"
           style={{ ...inputStyle, flex: "1 1 200px" }}
         />

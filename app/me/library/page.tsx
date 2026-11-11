@@ -20,11 +20,12 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import PageShell from "@/components/page-shell";
-import { STONE, FORGE_FONTS, stonePanel, stoneButton, FORGE_BUTTON_CSS, stoneField, stoneChip, forgeHeading, forgeLabel, forgeRuleLine, forgeBoss } from "@/lib/forge-theme";
+import { STONE, FORGE_FONTS, stonePanel, FORGE_BUTTON_CSS, stoneField, stoneChip, forgeHeading, forgeLabel, forgeRuleLine, forgeBoss } from "@/lib/forge-theme";
 import {
   listLibrary, deleteFromLibrary, listMyCampaigns, instantiateToCampaign,
   type LibraryRow, type CampaignOption,
 } from "@/lib/pc-library";
+import Button from "@/components/ui-forge/Button";
 
 const OPTION_STYLE: React.CSSProperties = { background: "#1a1611", color: "#f0e6d0" };
 
@@ -85,10 +86,10 @@ export default function LibraryPage() {
           {(status === "ready" || status === "empty") && (
             <>
               <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 18 }}>
-                <button className="forge-btn is-primary" style={stoneButton("primary")}
+                <Button variant="primary"
                   onClick={() => router.push("/me/forge")}>
                   + New character
-                </button>
+                </Button>
               </div>
 
               {status === "empty" && (
@@ -142,41 +143,41 @@ function LibraryCard({ row, campaigns, busy, onEdit, onDelete, onPlay }: {
         {/* Play in campaign */}
         <div style={{ flex: "1 1 240px", position: "relative" }}>
           <label style={forgeLabel}>Play in campaign</label>
-          <select value={target} onChange={(e) => setTarget(e.target.value)} style={stoneField()} disabled={busy}>
+          <select aria-label="Play in campaign" value={target} onChange={(e) => setTarget(e.target.value)} style={stoneField()} disabled={busy}>
             <option value="" style={OPTION_STYLE}>No campaign</option>
             {campaigns.map((c) => (
               <option key={c.campaign_id} value={c.campaign_id} style={OPTION_STYLE}>{c.campaign_name}</option>
             ))}
           </select>
         </div>
-        <button className="forge-btn" style={{ ...stoneButton("stone"), opacity: target && !busy ? 1 : 0.5 }}
+        <Button title={!target ? "Choose a campaign first" : undefined} style={{ opacity: target && !busy ? 1 : 0.5 }}
           disabled={!target || busy} onClick={() => onPlay(target)}>
           {busy ? "Launching…" : "Launch"}
-        </button>
+        </Button>
 
         <span style={{ flex: 1 }} />
 
-        <button className="forge-btn is-ghost" style={{ ...stoneButton("ghost"), padding: "10px 16px" }}
+        <Button variant="ghost" style={{ padding: "10px 16px" }}
           disabled={busy} onClick={onEdit}>
           Edit
-        </button>
+        </Button>
 
         {confirming ? (
           <>
-            <button className="forge-btn is-danger" style={{ ...stoneButton("danger"), padding: "10px 16px" }}
+            <Button variant="danger" style={{ padding: "10px 16px" }}
               disabled={busy} onClick={onDelete}>
               {busy ? "Deleting…" : "Confirm delete"}
-            </button>
-            <button className="forge-btn is-ghost" style={{ ...stoneButton("ghost"), padding: "10px 16px" }}
+            </Button>
+            <Button variant="ghost" style={{ padding: "10px 16px" }}
               disabled={busy} onClick={() => setConfirming(false)}>
               Cancel
-            </button>
+            </Button>
           </>
         ) : (
-          <button className="forge-btn is-ghost" style={{ ...stoneButton("ghost"), padding: "10px 16px" }}
+          <Button variant="ghost" style={{ padding: "10px 16px" }}
             disabled={busy} onClick={() => setConfirming(true)}>
             Delete
-          </button>
+          </Button>
         )}
       </div>
 

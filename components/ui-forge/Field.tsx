@@ -15,8 +15,8 @@ import { stoneField, forgeLabel } from "@/lib/forge-theme";
 // appearance:auto: it keeps the carved look and the native arrow, matching the app default rather
 // than the Forge-only variant. A page that draws its own arrow can still override via `style`.
 
-export function Label({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
-  return <label style={{ ...forgeLabel, ...style }}>{children}</label>;
+export function Label({ children, style, htmlFor }: { children: React.ReactNode; style?: React.CSSProperties; htmlFor?: string }) {
+  return <label htmlFor={htmlFor} style={{ ...forgeLabel, ...style }}>{children}</label>;
 }
 
 export const Field = React.forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>(

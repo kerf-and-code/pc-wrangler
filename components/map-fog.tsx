@@ -384,7 +384,7 @@ export default function MapFog({
                 style={{ ...btn, opacity: !painting ? 0.35 : erasing ? 0.5 : 1 }}>Reveal</button>
               <button onClick={() => setErasing(true)} disabled={!painting}
                 style={{ ...btn, opacity: !painting ? 0.35 : erasing ? 1 : 0.5 }}>Hide</button>
-              <input type="range" min={1} max={10} value={brush} title="Brush size" disabled={!painting}
+              <input aria-label="Brush size" type="range" min={1} max={10} value={brush} title="Brush size" disabled={!painting}
                 onChange={(e) => setBrush(Number(e.target.value))} style={{ width: 74 }} />
               <button onClick={() => fill(true)} style={btn}>All</button>
               <button onClick={() => fill(false)} style={btn}>None</button>

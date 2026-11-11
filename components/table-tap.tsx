@@ -421,7 +421,7 @@ export default function TableTap({ shareCode }: { shareCode: string }) {
                 {actorNamesRef.current[ddbId] ?? "Unknown"}{" "}
                 <span style={{ color: C.muted, fontSize: 12 }}>(D&amp;D Beyond {ddbId})</span> is
               </span>
-              <select
+              <select aria-label="Link your character"
                 value={linkSel[ddbId] ?? ""}
                 onChange={(e: any) => setLinkSel((s) => ({ ...s, [ddbId]: e.target.value }))}
                 style={{ background: C.field, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "6px 8px", fontSize: 13 }}
@@ -431,7 +431,7 @@ export default function TableTap({ shareCode }: { shareCode: string }) {
                   <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
               </select>
-              <button
+              <button title={!linkSel[ddbId] ? "Choose a character first" : undefined}
                 onClick={() => void linkCharacter(ddbId)}
                 disabled={!linkSel[ddbId] || linking === ddbId}
                 style={{

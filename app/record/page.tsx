@@ -236,7 +236,7 @@ export default function RecordPage() {
               </p>
 
               <label style={{ fontSize: 12, color: C.muted, fontFamily: "ui-monospace, monospace", letterSpacing: "0.1em" }}>YOUR CHARACTER</label>
-              <select value={charId} onChange={(e) => chooseChar(e.target.value)} disabled={phase === "recording" || phase === "uploading"}
+              <select aria-label="Your character" value={charId} onChange={(e) => chooseChar(e.target.value)} disabled={phase === "recording" || phase === "uploading"}
                 style={{ display: "block", width: "100%", marginTop: 6, marginBottom: 16, color: C.text, borderRadius: FORGE_RADIUS, padding: "11px 12px", fontSize: 15 }}>
                 <option value="">Pick your character…</option>
                 {roster.map((r) => (<option key={r.character_id} value={r.character_id}>{r.name}</option>))}
@@ -249,7 +249,7 @@ export default function RecordPage() {
               </div>
 
               {phase === "idle" && (
-                <button type="button" onClick={startRecording} disabled={!charId}
+                <button title={!charId ? "Choose your character first" : undefined} type="button" onClick={startRecording} disabled={!charId}
                   style={{ ...bigBtn(C.warn, C.ink), opacity: !charId ? 0.5 : 1, cursor: !charId ? "default" : "pointer" }}>● Start recording</button>
               )}
 

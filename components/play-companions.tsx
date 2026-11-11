@@ -176,9 +176,9 @@ export default function PlayCompanions({ companions, onChange, monsters, charact
               </div>
               <input aria-label={`Amount for ${c.name}`} value={amt[c.id] ?? ""} inputMode="numeric" placeholder="amount"
                 onChange={(e) => setAmt({ ...amt, [c.id]: e.target.value.replace(/\D/g, "").slice(0, 4) })} style={{ ...field, width: 70 }} />
-              <button type="button" className="forge-btn" disabled={!(n > 0) || c.hp >= c.hpMax} onClick={() => { heal(c, n); setAmt({ ...amt, [c.id]: "" }); }} aria-label={`Heal ${c.name}`} style={{ ...btn(), color: C.good }}>Heal</button>
-              <button type="button" className="forge-btn" disabled={!(n > 0)} onClick={() => { damage(c, n); setAmt({ ...amt, [c.id]: "" }); }} aria-label={`Damage ${c.name}`} style={{ ...btn(), color: C.warn }}>Damage</button>
-              <button type="button" className="forge-btn" disabled={!(n >= 0) || amt[c.id] === undefined || amt[c.id] === ""} onClick={() => { set(c.id, (x) => ({ ...x, temp: n })); setAmt({ ...amt, [c.id]: "" }); }} aria-label={`Set temporary HP for ${c.name}`} style={{ ...btn(), color: "#6fa3d8" }}>Set temp</button>
+              <button title={!(n > 0) ? "Type an amount first" : c.hp >= c.hpMax ? "Already at full hit points" : undefined} type="button" className="forge-btn" disabled={!(n > 0) || c.hp >= c.hpMax} onClick={() => { heal(c, n); setAmt({ ...amt, [c.id]: "" }); }} aria-label={`Heal ${c.name}`} style={{ ...btn(), color: C.good }}>Heal</button>
+              <button title={!(n > 0) ? "Type an amount first" : undefined} type="button" className="forge-btn" disabled={!(n > 0)} onClick={() => { damage(c, n); setAmt({ ...amt, [c.id]: "" }); }} aria-label={`Damage ${c.name}`} style={{ ...btn(), color: C.warn }}>Damage</button>
+              <button title={!(n >= 0) || amt[c.id] === undefined || amt[c.id] === "" ? "Type an amount first" : undefined} type="button" className="forge-btn" disabled={!(n >= 0) || amt[c.id] === undefined || amt[c.id] === ""} onClick={() => { set(c.id, (x) => ({ ...x, temp: n })); setAmt({ ...amt, [c.id]: "" }); }} aria-label={`Set temporary HP for ${c.name}`} style={{ ...btn(), color: "#6fa3d8" }}>Set temp</button>
               {c.kind === "form" && <button type="button" className="forge-btn" aria-pressed={!!c.active} onClick={() => takeForm(c)} style={btn(!!c.active)}>{c.active ? "Leave the form" : "Take this form"}</button>}
             </div>
             {c.kind === "form" && ruleset === "2024" && <p style={{ fontSize: 11.5, color: STONE.inkFaint, margin: "6px 0 0" }}>2024 rules: in Wild Shape you keep your own HP and gain temporary HP equal to your Druid level; this tracker is for the form&apos;s own numbers if your table uses them.</p>}
@@ -222,7 +222,7 @@ export default function PlayCompanions({ companions, onChange, monsters, charact
                   <button type="button" className="forge-btn" onClick={() => onChange(companions.filter((x) => x.id !== c.id))} aria-label={`Remove ${c.name}`} style={btn()}>Remove</button>
                 </div>
                 <label style={{ display: "grid", gap: 3, fontSize: 11.5, color: STONE.inkFaint }}>Notes
-                  <textarea key={`no-${c.id}`} rows={2} defaultValue={c.notes ?? ""} onBlur={(e) => { const v = e.target.value.slice(0, 2000); if (v !== (c.notes ?? "")) set(c.id, (x) => ({ ...x, notes: v })); }} style={{ ...field, resize: "vertical", fontFamily: FORGE_FONTS.body }} />
+                  <textarea aria-label="Notes" key={`no-${c.id}`} rows={2} defaultValue={c.notes ?? ""} onBlur={(e) => { const v = e.target.value.slice(0, 2000); if (v !== (c.notes ?? "")) set(c.id, (x) => ({ ...x, notes: v })); }} style={{ ...field, resize: "vertical", fontFamily: FORGE_FONTS.body }} />
                 </label>
               </div>
             )}

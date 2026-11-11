@@ -102,8 +102,8 @@ export default function BlockEditor({
                 <span title="Drag to reorder" style={{ cursor: "grab", color: C.muted, fontSize: 15, userSelect: "none" }}>&#x2059;</span>
                 <span style={{ fontFamily: "ui-monospace, monospace", fontSize: 10.5, letterSpacing: "0.1em", textTransform: "uppercase", color: C.muted }}>{b.type}</span>
                 <div style={{ marginLeft: "auto", display: "flex", gap: 5, flexWrap: "wrap" }}>
-                  <button type="button" style={ctrlBtn} onClick={() => move(i, i - 1)} disabled={i === 0}>&uarr;</button>
-                  <button type="button" style={ctrlBtn} onClick={() => move(i, i + 1)} disabled={i === blocks.length - 1}>&darr;</button>
+                  <button title={i === 0 ? "Already the first block" : undefined} type="button" style={ctrlBtn} onClick={() => move(i, i - 1)} disabled={i === 0}>&uarr;</button>
+                  <button title={i === blocks.length - 1 ? "Already the last block" : undefined} type="button" style={ctrlBtn} onClick={() => move(i, i + 1)} disabled={i === blocks.length - 1}>&darr;</button>
                   <button type="button" onClick={() => setBlock(b.id, { ...b, width: "full" })}
                     style={{ ...ctrlBtn, borderColor: !half ? C.sun : C.line, color: !half ? C.sun : C.muted }}>Full</button>
                   <button type="button" onClick={() => setBlock(b.id, { ...b, width: "half" })}
@@ -113,10 +113,10 @@ export default function BlockEditor({
               </div>
 
               {b.type === "header" ? (
-                <input value={b.text} onChange={(e) => setBlock(b.id, { ...b, text: e.target.value })}
+                <input aria-label="Section heading" value={b.text} onChange={(e) => setBlock(b.id, { ...b, text: e.target.value })}
                   placeholder="Section heading" style={{ ...input, fontSize: 17, fontWeight: 700, fontFamily: "inherit" }} />
               ) : b.type === "text" ? (
-                <textarea value={b.text} onChange={(e) => setBlock(b.id, { ...b, text: e.target.value })}
+                <textarea aria-label="Text block" value={b.text} onChange={(e) => setBlock(b.id, { ...b, text: e.target.value })}
                   placeholder="Write. Markdown works for bold, italics, and links." rows={half ? 6 : 4}
                   style={{ ...input, resize: "vertical", lineHeight: 1.6 }} />
               ) : (
@@ -130,7 +130,7 @@ export default function BlockEditor({
                       marginLeft: b.align === "right" || b.align === "center" ? "auto" : 0,
                       marginRight: b.align === "left" || b.align === "center" ? "auto" : 0,
                     }} />
-                  <input value={b.caption} onChange={(e) => setBlock(b.id, { ...b, caption: e.target.value })}
+                  <input aria-label="Caption (optional)" value={b.caption} onChange={(e) => setBlock(b.id, { ...b, caption: e.target.value })}
                     placeholder="Caption (optional)" style={{ ...input, marginBottom: 8 }} />
                   <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                     {ALIGNS.map((a) => (

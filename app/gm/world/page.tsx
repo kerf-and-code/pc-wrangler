@@ -28,6 +28,7 @@ import { fitImageToGrid, pixelToHex, BASE_SIZE, type PlacedImage } from "@/lib/w
 import { initialCampaignId, useRememberCampaign, gmHref } from "@/lib/campaign-context";
 import { friendlyError } from "@/lib/friendly-error";
 import { askConfirm } from "@/lib/confirm";
+import CampaignPicker from "@/components/ui-forge/CampaignPicker";
 
 // The GM's world map. Paint biomes (Erase clears a hex), set the grid size in hex units, and place
 // one or more uploaded map images that you can move (drag) and scale (scroll) to line up or stitch
@@ -1061,10 +1062,7 @@ export default function WorldMapPage() {
       </p>
 
       <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginBottom: 14 }}>
-        <select value={campaignId} onChange={(e) => setCampaignId(e.target.value)}
-          style={{ background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: 9, padding: "8px 10px", fontSize: 14 }}>
-          {campaigns.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-        </select>
+        <CampaignPicker campaigns={campaigns} value={campaignId} onChange={setCampaignId} label={null} selectStyle={{ background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: 9, padding: "8px 10px", fontSize: 14 }} />
         <span style={{ fontSize: 12.5, color: C.muted }}>{status}</span>
         {mapRow && (
           <button type="button" onClick={togglePlayerEdit} title="Let party members add to this map"
@@ -1099,14 +1097,14 @@ export default function WorldMapPage() {
         )}
         {mapRow && (
           <>
-            <select value={mapStyle} onChange={(e) => setMapStyle(e.target.value)} disabled={imagining} title="Render style"
+            <select aria-label="Render style" value={mapStyle} onChange={(e) => setMapStyle(e.target.value)} disabled={imagining} title="Render style"
               style={{ fontSize: 12, padding: "5px 8px", borderRadius: 7, border: `1px solid ${C.line}`, background: C.surface2, color: C.text, cursor: imagining ? "default" : "pointer" }}>
               <option value="fantasy">Fantasy</option>
               <option value="scifi">Sci-fi</option>
               <option value="grimdark">Grimdark</option>
               <option value="urban">Urban</option>
             </select>
-            <input type="text" value={mapModifier} onChange={(e) => setMapModifier(e.target.value)} disabled={imagining} placeholder="flavour (optional)" title="Extra prompt flavour"
+            <input aria-label="flavour (optional)" type="text" value={mapModifier} onChange={(e) => setMapModifier(e.target.value)} disabled={imagining} placeholder="flavour (optional)" title="Extra prompt flavour"
               style={{ fontSize: 12, padding: "5px 8px", borderRadius: 7, border: `1px solid ${C.line}`, background: C.surface2, color: C.text, width: 150 }} />
             <button type="button" onClick={generateFantasyView} disabled={imagining} title="Repaint the current world in the chosen style (AI)"
               style={{ fontSize: 12, padding: "5px 10px", borderRadius: 7, cursor: imagining ? "default" : "pointer",
@@ -1144,7 +1142,7 @@ export default function WorldMapPage() {
         {layerRows.length > 0 && (
           <div style={{ display: "flex", gap: 8, alignItems: "center" }} title="Step through the region tiers to see their names on the map">
             <span style={{ fontSize: 12, color: C.muted }}>View layer</span>
-            <input type="range" min={-1} max={layerRows.length - 1}
+            <input aria-label="View layer" type="range" min={-1} max={layerRows.length - 1}
               value={selectedLayerId ? layerRows.findIndex((l) => l.id === selectedLayerId) : -1}
               onChange={(e) => { const i = Number(e.target.value); setSelectedLayerId(i < 0 ? "" : (layerRows[i]?.id || "")); }} />
             <span style={{ fontSize: 12.5, color: selectedLayerId ? C.text : C.muted }}>{selectedLayerId ? (layerRows.find((l) => l.id === selectedLayerId)?.name || "") : "Off"}</span>
@@ -1163,9 +1161,9 @@ export default function WorldMapPage() {
           <div style={{ marginBottom: 14 }}>
             <div style={secLabel}>MAP SIZE (HEXES)</div>
             <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-              <input type="number" min={1} max={MAX_DIM} value={sizeW} onChange={(e) => setSizeW(e.target.value)} style={numInput} />
+              <input aria-label="Map size (hexes)" type="number" min={1} max={MAX_DIM} value={sizeW} onChange={(e) => setSizeW(e.target.value)} style={numInput} />
               <span style={{ color: C.muted, fontSize: 13 }}>x</span>
-              <input type="number" min={1} max={MAX_DIM} value={sizeH} onChange={(e) => setSizeH(e.target.value)} style={numInput} />
+              <input aria-label="Map height in hexes" type="number" min={1} max={MAX_DIM} value={sizeH} onChange={(e) => setSizeH(e.target.value)} style={numInput} />
               <button type="button" onClick={applyResize} style={smallBtn}>Resize</button>
             </div>
             <p style={{ fontSize: 11, color: C.muted, margin: "6px 0 0", lineHeight: 1.4 }}>
@@ -1176,7 +1174,7 @@ export default function WorldMapPage() {
           <div style={{ marginBottom: 14 }}>
             <div style={secLabel}>SCALE (MILES PER HEX)</div>
             <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-              <input type="number" min={1} max={500} value={Math.round(mphex)}
+              <input aria-label="Scale (miles per hex)" type="number" min={1} max={500} value={Math.round(mphex)}
                 onChange={(e) => setMilesPerHex(Math.max(1, Math.min(500, Math.round(Number(e.target.value) || 1))))} style={numInput} />
               <span style={{ color: C.muted, fontSize: 13 }}>mi / hex</span>
               <button type="button" onClick={() => setMilesPerHex(null)} style={smallBtn}>Default</button>
@@ -1306,10 +1304,10 @@ export default function WorldMapPage() {
                   Click hexes to lay the {drawKind}; gaps between clicks fill in. {drawPath.length} hex{drawPath.length === 1 ? "" : "es"} so far.
                 </div>
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                  <button type="button" onClick={commitDraw} disabled={drawPath.length < 2}
+                  <button title={drawPath.length < 2 ? "Click at least two points first" : undefined} type="button" onClick={commitDraw} disabled={drawPath.length < 2}
                     style={{ padding: "5px 10px", borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: drawPath.length < 2 ? "default" : "pointer",
                       border: `1px solid ${drawPath.length < 2 ? C.line : C.sun}`, background: drawPath.length < 2 ? C.surface2 : "rgba(200,162,75,0.16)", color: C.text, opacity: drawPath.length < 2 ? 0.5 : 1 }}>Finish</button>
-                  <button type="button" onClick={undoDrawPoint} disabled={!drawPath.length}
+                  <button title={!drawPath.length ? "No points to undo" : undefined} type="button" onClick={undoDrawPoint} disabled={!drawPath.length}
                     style={{ padding: "5px 10px", borderRadius: 6, fontSize: 12, cursor: drawPath.length ? "pointer" : "default", border: `1px solid ${C.line}`, background: "transparent", color: C.muted, opacity: drawPath.length ? 1 : 0.5 }}>Undo point</button>
                   <button type="button" onClick={cancelDraw}
                     style={{ padding: "5px 10px", borderRadius: 6, fontSize: 12, cursor: "pointer", border: `1px solid ${C.line}`, background: "transparent", color: C.muted }}>Cancel</button>

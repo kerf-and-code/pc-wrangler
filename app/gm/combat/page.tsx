@@ -56,6 +56,7 @@ import {
 } from "@/lib/campaign-context";
 import { friendlyError, notReady } from "@/lib/friendly-error";
 import { askConfirm } from "@/lib/confirm";
+import CampaignPicker from "@/components/ui-forge/CampaignPicker";
 
 type Campaign = { id: string; name: string; system: string | null; share_code: string | null };
 type Sess = { id: string; session_number: number | null; status: string | null };
@@ -534,10 +535,7 @@ export default function CombatPage() {
       )}
 
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center", marginBottom: 12 }}>
-        <select value={campaignId} onChange={(e) => setCampaignId(e.target.value)} style={input} aria-label="Campaign">
-          {campaigns.length === 0 && <option value="">No campaigns yet</option>}
-          {campaigns.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-        </select>
+        <CampaignPicker campaigns={campaigns} value={campaignId} onChange={setCampaignId} label={null} selectStyle={input} />
         <select value={sessionId} onChange={(e) => { setSessionId(e.target.value); if (combat) update((cb) => ({ ...cb, session_id: e.target.value || null })); }} style={input} aria-label="Session the rolls are logged to">
           <option value="">Rolls not tied to a session</option>
           {sessions.map((s) => <option key={s.id} value={s.id}>Session {s.session_number ?? "?"}{s.status === "live" ? " (live)" : s.status === "scheduled" ? " (scheduled)" : ""}</option>)}
@@ -612,7 +610,7 @@ export default function CombatPage() {
                   <option value="">Player character…</option>
                   {pcs.filter((p) => !live.some((c) => c.characterId === p.id)).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
                 </select>
-                <button type="button" style={btn()} disabled={!addPc} onClick={() => { const p = pcs.find((x) => x.id === addPc); if (p) addCombatants([pcCombatant(p)]); setAddPc(""); }}>Add PC</button>
+                <button title={!addPc ? "Choose a player character first" : undefined} type="button" style={btn()} disabled={!addPc} onClick={() => { const p = pcs.find((x) => x.id === addPc); if (p) addCombatants([pcCombatant(p)]); setAddPc(""); }}>Add PC</button>
               </div>
               <input value={monQuery} onChange={(e) => setMonQuery(e.target.value)} placeholder="Search your stat blocks and the monster library" style={{ ...input, width: "100%", marginBottom: 6 }} aria-label="Search monsters" />
               {monHits.length > 0 && (
@@ -626,11 +624,11 @@ export default function CombatPage() {
                 </div>
               )}
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
-                <input value={custom.name} onChange={(e) => setCustom({ ...custom, name: e.target.value })} placeholder="Custom name" style={{ ...input, flex: "1 1 140px" }} />
-                <input value={custom.hp} onChange={(e) => setCustom({ ...custom, hp: e.target.value })} placeholder="HP" inputMode="numeric" style={{ ...input, width: 64 }} />
-                <input value={custom.ac} onChange={(e) => setCustom({ ...custom, ac: e.target.value })} placeholder="AC" inputMode="numeric" style={{ ...input, width: 64 }} />
-                <input value={custom.init} onChange={(e) => setCustom({ ...custom, init: e.target.value })} placeholder="Init +" inputMode="numeric" style={{ ...input, width: 70 }} />
-                <button type="button" style={btn()} disabled={!custom.name.trim()} onClick={() => {
+                <input aria-label="Custom name" value={custom.name} onChange={(e) => setCustom({ ...custom, name: e.target.value })} placeholder="Custom name" style={{ ...input, flex: "1 1 140px" }} />
+                <input aria-label="Hp" value={custom.hp} onChange={(e) => setCustom({ ...custom, hp: e.target.value })} placeholder="HP" inputMode="numeric" style={{ ...input, width: 64 }} />
+                <input aria-label="Ac" value={custom.ac} onChange={(e) => setCustom({ ...custom, ac: e.target.value })} placeholder="AC" inputMode="numeric" style={{ ...input, width: 64 }} />
+                <input aria-label="Init +" value={custom.init} onChange={(e) => setCustom({ ...custom, init: e.target.value })} placeholder="Init +" inputMode="numeric" style={{ ...input, width: 70 }} />
+                <button title={!custom.name.trim() ? "Name the combatant first" : undefined} type="button" style={btn()} disabled={!custom.name.trim()} onClick={() => {
                   const hp = Number(custom.hp); const ac = Number(custom.ac); const ib = Number(custom.init);
                   const [m] = monsterCombatants(custom.name.trim(), 1, null);
                   addCombatants([{ ...m, hp: custom.hp ? hp : null, maxHp: custom.hp ? hp : null, ac: custom.ac ? ac : null, initBonus: custom.init ? ib : 0 }]);
@@ -777,8 +775,8 @@ function CombatantRow({ c, isTurn, isSelected, onSelect, onChange, onRemove, inp
         <input value={c.tempHp || ""} onChange={(e) => onChange((x) => ({ ...x, tempHp: Math.max(0, Number(e.target.value) || 0) }))} inputMode="numeric" style={{ ...input, width: 46, textAlign: "center" }} aria-label="Temporary HP" />
         <input value={amt} onChange={(e) => setAmt(e.target.value)} placeholder="amount" inputMode="numeric" style={{ ...input, width: 72 }} aria-label="Damage or healing amount"
           onKeyDown={(e) => { if (e.key === "Enter" && n > 0) { onChange((x) => applyDamage(x, n)); setAmt(""); } }} />
-        <button type="button" style={{ ...btn(), color: C.warn }} disabled={!(n > 0)} onClick={() => { onChange((x) => applyDamage(x, n)); setAmt(""); }}>Damage</button>
-        <button type="button" style={{ ...btn(), color: C.good }} disabled={!(n > 0)} onClick={() => { onChange((x) => applyHealing(x, n)); setAmt(""); }}>Heal</button>
+        <button title={!(n > 0) ? "Type an amount first" : undefined} type="button" style={{ ...btn(), color: C.warn }} disabled={!(n > 0)} onClick={() => { onChange((x) => applyDamage(x, n)); setAmt(""); }}>Damage</button>
+        <button title={!(n > 0) ? "Type an amount first" : undefined} type="button" style={{ ...btn(), color: C.good }} disabled={!(n > 0)} onClick={() => { onChange((x) => applyHealing(x, n)); setAmt(""); }}>Heal</button>
       </div>
       {(isTurn || econOf(c).reaction) && (() => {
         const e = econOf(c), sp = speedNow(c.speed, c.conditions);

@@ -198,7 +198,7 @@ export default function DicePicker(
               </button>
 
               <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 6, justifyContent: "center" }}>
-                <button onClick={() => bump(d.sides, -1)} disabled={n === 0}
+                <button title={n === 0 ? "None to remove" : undefined} onClick={() => bump(d.sides, -1)} disabled={n === 0}
                   aria-label={`One fewer ${d.label}`} style={step}>-</button>
                 <input value={n} onChange={(e) => setExact(d.sides, e.target.value)}
                   inputMode="numeric" aria-label={`How many ${d.label}`}

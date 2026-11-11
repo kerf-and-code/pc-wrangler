@@ -183,7 +183,7 @@ export default function DiceRoller() {
             </label>
             <div style={{ ...diceRow, marginTop: 12 }}>
               {(["dis", "flat", "adv"] as const).map((m) => (
-                <button key={m} type="button" aria-pressed={adv === m} onClick={() => setAdv(m)} disabled={m !== "flat" && !advMeaningful}
+                <button title={m !== "flat" && !advMeaningful ? "This roll has no advantage or disadvantage" : undefined} key={m} type="button" aria-pressed={adv === m} onClick={() => setAdv(m)} disabled={m !== "flat" && !advMeaningful}
                   className="fx-chip" style={{ ...chip, ...(adv === m ? chipOn : null), opacity: m !== "flat" && !advMeaningful ? 0.4 : 1 }}>
                   {m === "adv" ? "Advantage" : m === "dis" ? "Disadvantage" : "Straight"}
                 </button>
@@ -204,7 +204,7 @@ export default function DiceRoller() {
         {mode === "coc" && (
           <div>
             <Field label="Skill target (1-99)">
-              <input type="number" min={1} max={99} value={cocTarget}
+              <input aria-label="Skill target" type="number" min={1} max={99} value={cocTarget}
                 onChange={(e) => setCocTarget(Math.max(1, Math.min(99, Math.round(Number(e.target.value) || 0))))}
                 style={mono} />
             </Field>
@@ -248,7 +248,7 @@ export default function DiceRoller() {
 
         <div style={notationPreview}>{invalid ?? `rolling ${finalNotation}`}</div>
 
-        <button type="button" onClick={doRoll} disabled={!!invalid} className="fx-primary" style={rollBtn}>Roll</button>
+        <button title={invalid ? String(invalid) : undefined} type="button" onClick={doRoll} disabled={!!invalid} className="fx-primary" style={rollBtn}>Roll</button>
       </div>
 
       {log.length > 0 && (

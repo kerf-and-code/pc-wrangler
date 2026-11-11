@@ -1,10 +1,10 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
-import { stoneButton } from "@/lib/forge-theme";
 import { authHeading, authText, authLabel, authField, authError } from "@/components/auth/auth-shell";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import Button from "@/components/ui-forge/Button";
 
 // Rendered inside AuthShell (the dungeon panel), so this owns only the heading + form, not a card.
 
@@ -43,14 +43,13 @@ export function UpdatePasswordForm() {
           <input id="password" type="password" placeholder="New password" required value={password} onChange={(e) => setPassword(e.target.value)} style={authField} />
         </div>
         {error && <p style={authError}>{error}</p>}
-        <button
+        <Button variant="primary"
           type="submit"
-          className="forge-btn is-primary"
-          style={{ ...stoneButton("primary"), width: "100%" }}
+          style={{ width: "100%" }}
           disabled={isLoading}
         >
           {isLoading ? "Saving…" : "Save new password"}
-        </button>
+        </Button>
       </form>
     </>
   );

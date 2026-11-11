@@ -154,7 +154,7 @@ export default function PlayerQuiz() {
         </div>
 
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 18 }}>
-          <button onClick={back} disabled={idx === 0} style={{ ...ghost, color: idx === 0 ? STONE.inkFaint : STONE.brassHi, cursor: idx === 0 ? "default" : "pointer" }}>Back</button>
+          <button title={idx === 0 ? "This is the first question" : undefined} onClick={back} disabled={idx === 0} style={{ ...ghost, color: idx === 0 ? STONE.inkFaint : STONE.brassHi, cursor: idx === 0 ? "default" : "pointer" }}>Back</button>
           <button onClick={() => record("NB")} style={nbBtn}>No basis to answer</button>
         </div>
         <div style={{ ...mono, textAlign: "center", marginTop: 16, color: STONE.inkFaint }}>tip: keys 1 to 5 to answer, 0 to skip</div>

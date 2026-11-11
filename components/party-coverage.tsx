@@ -109,14 +109,14 @@ export default function PartyCoverage() {
           {rows.map((r, i) => (
             <div key={i} style={rowBox}>
               <div style={rowTop}>
-                <input
+                <input aria-label={`${cap(cfg.memberNoun)} ${i + 1} (optional name)`}
                   value={r.name}
                   onChange={(e) => updateRow(i, { name: e.target.value })}
                   placeholder={`${cap(cfg.memberNoun)} ${i + 1} (optional name)`}
                   style={nameInput}
                 />
                 {cfg.inputMode !== "roles" && (
-                  <select
+                  <select aria-label="Value"
                     value={r.value}
                     onChange={(e) => updateRow(i, { value: e.target.value })}
                     style={rowSelect}

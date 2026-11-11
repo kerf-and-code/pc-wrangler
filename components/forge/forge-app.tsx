@@ -115,6 +115,7 @@ import {
 } from "@/lib/srd/derive-sheet";
 import { hasPrintedAbilities, suppressItemEffects, reconcileImport, RECONCILE_VERSION, type DdbSheet } from "@/lib/ddb-import";
 import { fmtTime } from "@/lib/format";
+import Button from "@/components/ui-forge/Button";
 
 // ---------------------------------------------------------------------------
 // Build defaults + normalization
@@ -1930,7 +1931,7 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
                     {(mode === "library" ? libKin : kin).map((k) => {
                       const here = k.id === (mode === "library" ? libId : row?.id);
                       return (
-                        <button key={k.id} className="forge-btn" disabled={here}
+                        <button title={here ? "Already here" : undefined} key={k.id} className="forge-btn" disabled={here}
                           onClick={() => {
                             window.location.href = mode === "library"
                               ? `/me/forge?lib=${k.id}` : `/me/forge?c=${k.id}`;
@@ -2170,25 +2171,25 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
                     : "Unsaved changes"}
                 </span>
                 {mode === "character" && (
-                  <button className="forge-btn is-ghost" style={stoneButton("ghost")}
+                  <Button variant="ghost"
                     disabled={copied === "copying"} onClick={saveToLibraryFromCharacter}>
                     {copied === "copying" ? "Saving to library…"
                       : copied === "done" ? "Saved to library ✓"
                       : copied === "error" ? "Copy failed, retry"
                       : "Save to library"}
-                  </button>
+                  </Button>
                 )}
                 {sheet && (
-                  <button className="forge-btn is-ghost" style={stoneButton("ghost")} onClick={downloadPdf}>
+                  <Button variant="ghost" onClick={downloadPdf}>
                     Download PDF
-                  </button>
+                  </Button>
                 )}
-                <button className="forge-btn is-ghost" style={stoneButton("ghost")} onClick={saveAndExit}>
+                <Button variant="ghost" onClick={saveAndExit}>
                   Save &amp; exit
-                </button>
-                <button className="forge-btn is-primary" style={stoneButton("primary")} onClick={saveAndContinue}>
+                </Button>
+                <Button variant="primary" onClick={saveAndContinue}>
                   Save &amp; continue
-                </button>
+                </Button>
               </div>
 
               {sheet && (
@@ -2287,14 +2288,14 @@ function FinishPanel({ build, name, sheet, onTab, effects }: {
           </p>
           <div style={{ display: "grid", gap: 6 }}>
             {gaps.map((g) => (
-              <button key={g.label} onClick={() => onTab(g.tab)} className="forge-btn"
-                style={{ ...stoneButton("stone"), textAlign: "left", display: "flex",
+              <Button key={g.label} onClick={() => onTab(g.tab)}
+                style={{ textAlign: "left", display: "flex",
                   justifyContent: "space-between", gap: 12, fontSize: 13.5 }}>
                 <span style={{ color: STONE.ink }}>{g.label}</span>
                 <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 11, color: STONE.inkFaint }}>
                   {TABS.find((t) => t.key === g.tab)?.label} &rarr;
                 </span>
-              </button>
+              </Button>
             ))}
           </div>
         </>
@@ -2754,13 +2755,13 @@ function SpellsPanel({ build, spells, sheet, edition, structuredRec, granted, on
           <div style={{ display: "grid", gap: 6, marginBottom: 10 }}>
             {loadouts.map((o) => (
               <div key={o.name} style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-                <button className="forge-btn" onClick={() => onApplyLoadout(o.name)}
-                  style={{ ...stoneButton("stone"), fontSize: 13, flex: "1 1 180px", textAlign: "left" }}>
+                <Button onClick={() => onApplyLoadout(o.name)}
+                  style={{ fontSize: 13, flex: "1 1 180px", textAlign: "left" }}>
                   {o.name}
                   <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 11, color: STONE.inkFaint, marginLeft: 8 }}>
                     {o.cantrips.length} cantrips, {o.known.length} spells
                   </span>
-                </button>
+                </Button>
                 <button onClick={() => onSaveLoadout(o.name)} title="Overwrite with the current list"
                   style={{ ...stoneButton("ghost"), fontSize: 12, padding: "6px 10px" }}>Update</button>
                 <button onClick={() => onDeleteLoadout(o.name)}
@@ -2988,7 +2989,7 @@ function SpeciesPanel({
                   <div style={{ fontSize: 14, color: STONE.ink, marginBottom: 6 }}>{t.name}</div>
                   {opts.length > 0 ? (
                     <>
-                      <select value={picked} onChange={(e) => onChoice(key, e.target.value)}
+                      <select aria-label="Choice" value={picked} onChange={(e) => onChoice(key, e.target.value)}
                         style={{ ...stoneField(), fontSize: 13.5, padding: "8px 10px" }}>
                         <option value="">Not chosen</option>
                         {opts.map((o) => (
@@ -3032,7 +3033,7 @@ function SpeciesPanel({
               Ability score increases from {build.meta.species}
             </div>
             {pick.kind === "flexible" && (
-              <select value={choices[SPECIES_ASI_PATTERN_KEY] || ""}
+              <select aria-label="Choose a pattern" value={choices[SPECIES_ASI_PATTERN_KEY] || ""}
                 onChange={(e) => onChoice(SPECIES_ASI_PATTERN_KEY, e.target.value)} style={sel}>
                 <option value="">Choose a pattern</option>
                 {Object.keys(ASI_PATTERNS).map((k) => <option key={k} value={k}>{k}</option>)}
@@ -3041,7 +3042,7 @@ function SpeciesPanel({
             {amounts.map((amt, i) => {
               const taken = amounts.map((_, j) => (j !== i ? choices[speciesAsiKey(j)] : "")).filter(Boolean);
               return (
-                <select key={i} value={choices[speciesAsiKey(i)] || ""}
+                <select aria-label="Ability score increase" key={i} value={choices[speciesAsiKey(i)] || ""}
                   onChange={(e) => onChoice(speciesAsiKey(i), e.target.value)} style={sel}>
                   <option value="">+{amt} to...</option>
                   {ABILITIES.filter((a) => !exclude.includes(a) && !taken.includes(a)).map((a) => (
@@ -3071,7 +3072,7 @@ function SpeciesPanel({
                 <div style={{ fontSize: 14, color: STONE.ink, marginBottom: 2 }}>
                   Skill proficiency{sk.n > 1 ? ` ${i + 1}` : ""} from {build.meta.species}
                 </div>
-                <select value={choices[speciesSkillKey(i)] || ""} onChange={(e) => onChoice(speciesSkillKey(i), e.target.value)} style={sel}>
+                <select aria-label="Skill" value={choices[speciesSkillKey(i)] || ""} onChange={(e) => onChoice(speciesSkillKey(i), e.target.value)} style={sel}>
                   <option value="">Not chosen</option>
                   {skillOpts.map(([k, label]) => <option key={k} value={k}>{label}</option>)}
                 </select>
@@ -3082,7 +3083,7 @@ function SpeciesPanel({
                 <div style={{ fontSize: 14, color: STONE.ink, marginBottom: 2 }}>
                   Tool proficiency{tp.n > 1 ? ` ${i + 1}` : ""} from {build.meta.species}
                 </div>
-                <select value={choices[speciesToolKey(i)] || ""} onChange={(e) => onChoice(speciesToolKey(i), e.target.value)} style={sel}>
+                <select aria-label="Tool" value={choices[speciesToolKey(i)] || ""} onChange={(e) => onChoice(speciesToolKey(i), e.target.value)} style={sel}>
                   <option value="">Not chosen</option>
                   {toolOpts.map((t) => <option key={t} value={t}>{t}</option>)}
                 </select>
@@ -3095,7 +3096,7 @@ function SpeciesPanel({
       {mech?.spellAbility === "choose" && (
         <div style={{ marginTop: 12, background: "rgba(0,0,0,0.24)", borderRadius: 4, padding: "10px 12px" }}>
           <div style={{ fontSize: 14, color: STONE.ink, marginBottom: 6 }}>Spellcasting ability for species spells</div>
-          <select value={choices[SPECIES_ABILITY_KEY] || ""} onChange={(e) => onChoice(SPECIES_ABILITY_KEY, e.target.value)}
+          <select aria-label="Spellcasting ability for species spells" value={choices[SPECIES_ABILITY_KEY] || ""} onChange={(e) => onChoice(SPECIES_ABILITY_KEY, e.target.value)}
             style={{ ...stoneField(), fontSize: 13.5, padding: "8px 10px" }}>
             <option value="">Not chosen</option>
             {SPECIES_ABILITY_OPTIONS.map((a) => <option key={a} value={a}>{a}</option>)}
@@ -3477,17 +3478,17 @@ function GrantedEquipmentPanel({ bgRec, coreTraits, catalog, owned, onAdd }: {
               </div>
 
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-                <button className="forge-btn" disabled={toAdd.length === 0}
+                <button title={toAdd.length === 0 ? "Tick the items to add first" : undefined} className="forge-btn" disabled={toAdd.length === 0}
                   onClick={() => onAdd(toAdd.flatMap((i) => Array.from({ length: Math.min(i.qty, 20) }, () => i.name)))}
                   style={{ ...stoneButton("primary"), fontSize: 12.5, opacity: toAdd.length ? 1 : 0.45 }}>
                   {toAdd.length ? `Add ${toAdd.length} item${toAdd.length === 1 ? "" : "s"}` : "Already added"}
                 </button>
                 {missing.length > 0 && (
-                  <button className="forge-btn"
+                  <Button
                     onClick={() => onAdd(missing.filter((i) => !has(i.name)).map((i) => i.name))}
-                    style={{ ...stoneButton("stone"), fontSize: 12.5 }}>
+                    style={{ fontSize: 12.5 }}>
                     Add {missing.length} as notes
-                  </button>
+                  </Button>
                 )}
               </div>
 
@@ -3630,10 +3631,10 @@ function ResourcePanel({ structuredRec, level, costed, extraPools, extraClasses,
               const left = pool ? remaining(pool, spent) : 0;
               const affordable = left >= c.amount;
               return (
-                <button key={c.name} className="forge-btn" disabled={!affordable}
+                <Button key={c.name} disabled={!affordable}
                   onClick={() => onSpend(c.resource, (spent[c.resource] || 0) + c.amount)}
                   title={affordable ? c.summary : `Needs ${c.amount}, you have ${left}`}
-                  style={{ ...stoneButton("stone"), fontSize: 12.5, padding: "7px 12px",
+                  style={{ fontSize: 12.5, padding: "7px 12px",
                     display: "flex", gap: 7, alignItems: "baseline",
                     opacity: affordable ? 1 : 0.4,
                     cursor: affordable ? "pointer" : "not-allowed" }}>
@@ -3641,7 +3642,7 @@ function ResourcePanel({ structuredRec, level, costed, extraPools, extraClasses,
                   <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 11, color: C.plum }}>
                     &minus;{c.amount}
                   </span>
-                </button>
+                </Button>
               );
             })}
           </div>
@@ -3662,12 +3663,12 @@ function ResourcePanel({ structuredRec, level, costed, extraPools, extraClasses,
         {/* A short rest gives back different amounts per resource - all of a monk's Focus Points,
             one Channel Divinity, none of a barbarian's rages - so this applies each pool's own rule
             rather than one blanket refill. Spell slots are untouched: they are long-rest. */}
-        <button className="forge-btn" disabled={!anySpent}
+        <Button disabled={!anySpent}
           title={anySpent ? "Recover what each feature gets back on a short rest" : "Nothing is spent, so there is nothing to recover"}
           onClick={() => onSpentMap(afterShortRest([...pools, ...slots], spent))}
-          style={{ ...stoneButton("stone"), fontSize: 12.5, opacity: anySpent ? 1 : 0.45 }}>
+          style={{ fontSize: 12.5, opacity: anySpent ? 1 : 0.45 }}>
           Short rest
-        </button>
+        </Button>
         <span style={{ fontSize: 12, color: STONE.inkFaint, lineHeight: 1.5 }}>
           A short rest returns what each feature actually recovers, not everything.
         </span>
@@ -4018,7 +4019,7 @@ function PickerField({
           placeholder={value || placeholder || `Search ${label.toLowerCase()}`}
           style={{ ...stoneField(), flex: "1 1 200px", width: "auto", fontSize: 13.5, padding: "9px 11px" }} />
         {(filters || []).map((f) => (
-          <select key={f.label} value={active[f.label] || ""}
+          <select aria-label={f.label} key={f.label} value={active[f.label] || ""}
             onChange={(e) => { setActive((a) => ({ ...a, [f.label]: e.target.value })); setOpen(true); }}
             style={{ ...stoneField(), width: "auto", minWidth: 130, fontSize: 13, padding: "9px 10px" }}>
             <option value="" style={OPTION_STYLE}>{f.label}</option>
@@ -4026,8 +4027,8 @@ function PickerField({
           </select>
         ))}
         {anyFilter && (
-          <button className="forge-btn" onClick={() => { setQ(""); setActive({}); }}
-            style={{ ...stoneButton("stone"), fontSize: 12.5, padding: "8px 12px" }}>Clear</button>
+          <Button onClick={() => { setQ(""); setActive({}); }}
+            style={{ fontSize: 12.5, padding: "8px 12px" }}>Clear</Button>
         )}
       </div>
 
@@ -4090,7 +4091,7 @@ function Field({ label, value, onChange, options, placeholder, disabled }: {
   return (
     <div style={{ marginBottom: 16, position: "relative" }}>
       <label style={forgeLabel}>{label}</label>
-      <select value={value} onChange={(e) => onChange(e.target.value)} disabled={disabled}
+      <select aria-label="Choose" value={value} onChange={(e) => onChange(e.target.value)} disabled={disabled}
         style={{ ...stoneField(), opacity: disabled ? 0.5 : 1 }}>
         <option value="" style={OPTION_STYLE}>{placeholder || `Choose ${label.toLowerCase()}`}</option>
         {opts.map((o) => <option key={o} value={o} style={OPTION_STYLE}>{o}</option>)}
@@ -4277,10 +4278,10 @@ function IdentityPanel(props: {
           </p>
           {onAddAlter ? (
             <>
-              <button className="forge-btn" onClick={onAddAlter}
-                style={{ ...stoneButton("stone"), fontSize: 12.5 }}>
+              <Button onClick={onAddAlter}
+                style={{ fontSize: 12.5 }}>
                 Add an alter ego
-              </button>
+              </Button>
               <p style={{ fontSize: 11.5, color: STONE.inkFaint, margin: "8px 0 0", lineHeight: 1.5 }}>
                 Recording and events stay on this character, whichever sheet is open. Your GM sees
                 both on the Roster.
@@ -4446,7 +4447,7 @@ function AbilityGenerator({ build, onAbility, onMany }: {
                     {e.assignedTo.toUpperCase()} &times;
                   </button>
                 ) : (
-                  <select value="" onChange={(ev) => ev.target.value && place(i, ev.target.value as AbilityKey)}
+                  <select aria-label="Put this score in" value="" onChange={(ev) => ev.target.value && place(i, ev.target.value as AbilityKey)}
                     style={{ ...stoneField(), width: "auto", fontSize: 11.5, padding: "3px 6px" }}>
                     <option value="">to&hellip;</option>
                     {ABILITIES.map((a) => (
@@ -4529,10 +4530,10 @@ function ClassProgressionPanel({ className, level, progression, epicRows, classR
   const tableBlock = cols.length > 0 && shownRows.length > 0 ? (
     <div style={{ marginBottom: 16 }}>
       {table.length > 1 && (
-        <button className="forge-btn" onClick={() => setFullTable((v) => !v)}
-          style={{ ...stoneButton("stone"), fontSize: 12, padding: "5px 11px", marginBottom: 6 }}>
+        <Button onClick={() => setFullTable((v) => !v)}
+          style={{ fontSize: 12, padding: "5px 11px", marginBottom: 6 }}>
           {fullTable ? "Just this level" : `Show all ${Math.min(table.length, Math.max(1, level))} levels`}
-        </button>
+        </Button>
       )}
       <div style={{ overflowX: "auto" }}>
       <table style={{ borderCollapse: "collapse", fontSize: 12.5, minWidth: "100%" }}>
@@ -4696,8 +4697,8 @@ function BoonSlot({ level, choice, boons, onChoose }: {
         <span style={stoneChip("brass")}>epic boon</span>
         <span style={{ flex: 1 }} />
         {choice && (
-          <button className="forge-btn is-ghost" style={{ ...stoneButton("ghost"), padding: "5px 12px", fontSize: 12 }}
-            onClick={() => onChoose(null)}>Clear</button>
+          <Button variant="ghost" style={{ padding: "5px 12px", fontSize: 12 }}
+            onClick={() => onChoose(null)}>Clear</Button>
         )}
       </div>
       <FeatEditor choice={choice || { name: "", isFeat: true, desc: "" }} featList={boons} onChoose={onChoose} />
@@ -4730,8 +4731,8 @@ function AsiSlot({ level, choice, featList, onChoose }: {
           </button>
         ))}
         {mode !== "none" && (
-          <button className="forge-btn is-ghost" style={{ ...stoneButton("ghost"), padding: "5px 12px", fontSize: 12 }}
-            onClick={() => onChoose(null)}>Clear</button>
+          <Button variant="ghost" style={{ padding: "5px 12px", fontSize: 12 }}
+            onClick={() => onChoose(null)}>Clear</Button>
         )}
       </div>
 
@@ -4768,14 +4769,14 @@ function AsiEditor({ choice, onChoose }: {
               <div style={{ fontFamily: FORGE_FONTS.mono, fontSize: 10, letterSpacing: "0.2em",
                 textTransform: "uppercase", color: STONE.inkFaint, marginBottom: 5 }}>{a}</div>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-                <button className="forge-btn is-ghost" style={{ ...stoneButton("ghost"), padding: "2px 9px" }}
-                  onClick={() => set(a, cur - 1)} disabled={cur <= 0} aria-label={`Lower ${a}`}>−</button>
+                <Button title={cur <= 0 ? "Nothing to lower" : undefined} variant="ghost" style={{ padding: "2px 9px" }}
+                  onClick={() => set(a, cur - 1)} disabled={cur <= 0} aria-label={`Lower ${a}`}>−</Button>
                 <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 16, color: cur ? STONE.brassHi : STONE.inkFaint, minWidth: 20 }}>
                   {cur ? `+${cur}` : "none"}
                 </span>
-                <button className="forge-btn is-ghost" style={{ ...stoneButton("ghost"), padding: "2px 9px" }}
+                <Button variant="ghost" style={{ padding: "2px 9px" }}
                   onClick={() => set(a, cur + 1)} disabled={!canPlus || cur >= 2} aria-label={`Raise ${a}`}
-                  title={cur >= 2 ? "Two is the most one ability can take" : !canPlus ? "No increases left to give" : undefined}>+</button>
+                  title={cur >= 2 ? "Two is the most one ability can take" : !canPlus ? "No increases left to give" : undefined}>+</Button>
               </div>
             </div>
           );
@@ -5165,8 +5166,8 @@ function GearPanel({ build, gearIndex, gearTypes, ctx, itemByName, onAdd, onRemo
             {filtered.map((g) => <option key={g.name} value={g.name} style={OPTION_STYLE}>{g.name}  ·  {g.type}</option>)}
           </select>
         </div>
-        <button className="forge-btn" style={stoneButton("stone")}
-          onClick={() => { onAdd(pick); setPick(""); }}>Add</button>
+        <Button
+          onClick={() => { onAdd(pick); setPick(""); }}>Add</Button>
       </div>
 
       {build.gear.items.length === 0 && (
@@ -5188,7 +5189,7 @@ function GearPanel({ build, gearIndex, gearTypes, ctx, itemByName, onAdd, onRemo
               </span>
 
               {variantSpec && (
-                <select value={e.variant || ""} onChange={(ev) => onVariant(i, ev.target.value)}
+                <select aria-label="Variant" value={e.variant || ""} onChange={(ev) => onVariant(i, ev.target.value)}
                   style={{ ...stoneField(), width: 150, padding: "6px 10px", fontSize: 13 }}>
                   <option value="" style={OPTION_STYLE}>{variantSpec.options[0] ? "Choose variant" : ""}</option>
                   {variantSpec.options.map((o) => <option key={o.name} value={o.name} style={OPTION_STYLE}>{o.name}</option>)}
@@ -5196,14 +5197,14 @@ function GearPanel({ build, gearIndex, gearTypes, ctx, itemByName, onAdd, onRemo
               )}
 
               {canMod && (
-                <select value={e.mod || 0} onChange={(ev) => onMod(i, parseInt(ev.target.value, 10))}
+                <select aria-label="Modifier" value={e.mod || 0} onChange={(ev) => onMod(i, parseInt(ev.target.value, 10))}
                   style={{ ...stoneField(), width: 74, padding: "6px 10px", fontSize: 13 }}>
                   {[0, 1, 2, 3].map((n) => <option key={n} value={n} style={OPTION_STYLE}>{n ? `+${n}` : "±0"}</option>)}
                 </select>
               )}
 
-              <button className="forge-btn is-ghost" style={{ ...stoneButton("ghost"), padding: "6px 12px", fontSize: 12 }}
-                onClick={() => onRemove(i)}>Remove</button>
+              <Button variant="ghost" style={{ padding: "6px 12px", fontSize: 12 }}
+                onClick={() => onRemove(i)}>Remove</Button>
             </div>
 
             {desc && <div style={{ marginTop: 8 }}><DescBlock desc={desc} compact /></div>}
@@ -5602,7 +5603,7 @@ function SheetProficiencies({ coreTraits, backgroundRec, masteries, ruleset, spe
           </select>
           <input aria-label="Another language" value={typed} onChange={(e) => setTyped(e.target.value.slice(0, 40))} placeholder="or type one"
             onKeyDown={(e) => { if (e.key === "Enter") add(typed); }} style={{ ...stoneField(), width: 140, padding: "5px 8px", fontSize: 13, cursor: "text" }} />
-          <button type="button" className="forge-btn" disabled={!typed.trim()} title={typed.trim() ? undefined : "Type something to add first"} onClick={() => add(typed)} style={{ ...stoneButton("stone"), fontSize: 12, padding: "4px 10px" }}>Add</button>
+          <Button type="button" disabled={!typed.trim()} title={typed.trim() ? undefined : "Type something to add first"} onClick={() => add(typed)} style={{ fontSize: 12, padding: "4px 10px" }}>Add</Button>
         </div>
       </FeatureGroup>
     </div>

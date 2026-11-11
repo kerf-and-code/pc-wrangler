@@ -248,7 +248,7 @@ export default function PlaySheet({ name, sheet, saveProf, ruleset, characterId,
           <p style={{ fontSize: 12.5, color: STONE.inkFaint, margin: "6px 0 8px" }}>Each die rolls with your Constitution modifier ({sign(sheet.mods.con ?? 0)}) and heals that much. {hp >= hpMax ? "You are at full HP." : `${hpMax - hp} HP to go.`}</p>
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
             {dice.map((d) => (
-              <button key={d.die} type="button" className="forge-btn" disabled={busy || d.left === 0 || hp >= hpMax} onClick={() => void spendHitDie(d.die)} style={btn()}>
+              <button title={d.left === 0 ? "No hit dice of this size left" : hp >= hpMax ? "Already at full hit points" : undefined} key={d.die} type="button" className="forge-btn" disabled={busy || d.left === 0 || hp >= hpMax} onClick={() => void spendHitDie(d.die)} style={btn()}>
                 Spend a d{d.die} <span style={{ ...mono, color: STONE.inkFaint }}>({d.left} of {d.total} left)</span>
               </button>
             ))}
@@ -347,8 +347,8 @@ export default function PlaySheet({ name, sheet, saveProf, ruleset, characterId,
           <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
             <input aria-label="Amount" value={amt} inputMode="numeric" placeholder="amount" onChange={(e) => setAmt(e.target.value.replace(/[^0-9]/g, "").slice(0, 4))}
               onKeyDown={(e) => { if (e.key === "Enter") void damage(n); }} style={field} />
-            <button type="button" className="forge-btn" disabled={!(n > 0) || hp >= hpMax} onClick={() => void heal(n)} style={{ ...btn(), color: C.good }}>Heal</button>
-            <button type="button" className="forge-btn" disabled={!(n > 0)} onClick={() => void damage(n)} style={{ ...btn(), color: C.warn }}>Damage</button>
+            <button title={!(n > 0) ? "Type an amount first" : hp >= hpMax ? "Already at full hit points" : undefined} type="button" className="forge-btn" disabled={!(n > 0) || hp >= hpMax} onClick={() => void heal(n)} style={{ ...btn(), color: C.good }}>Heal</button>
+            <button title={!(n > 0) ? "Type an amount first" : undefined} type="button" className="forge-btn" disabled={!(n > 0)} onClick={() => void damage(n)} style={{ ...btn(), color: C.warn }}>Damage</button>
             <button type="button" className="forge-btn" disabled={amt === ""} onClick={() => void setTemp(n)} title="Temporary HP do not stack: this replaces what you have" style={{ ...btn(), color: "#6fa3d8" }}>Set temp</button>
           </div>
         </div>
@@ -380,7 +380,7 @@ export default function PlaySheet({ name, sheet, saveProf, ruleset, characterId,
               <>
                 <span style={{ fontSize: 13, color: STONE.ink }}>Successes {[0, 1, 2].map((i) => <span key={i} aria-hidden style={{ display: "inline-block", width: 11, height: 11, marginLeft: 3, borderRadius: 6, border: `1px solid ${C.good}`, background: i < death.s ? C.good : "transparent" }} />)}</span>
                 <span style={{ fontSize: 13, color: STONE.ink }}>Failures {[0, 1, 2].map((i) => <span key={i} aria-hidden style={{ display: "inline-block", width: 11, height: 11, marginLeft: 3, borderRadius: 6, border: `1px solid ${C.warn}`, background: i < death.f ? C.warn : "transparent" }} />)}</span>
-                <button type="button" className="forge-btn" disabled={busy || death.f >= 3} onClick={() => void deathSave()} style={btn(true)}>Roll a death save</button>
+                <button title={death.f >= 3 ? "Three failures: the character has died" : undefined} type="button" className="forge-btn" disabled={busy || death.f >= 3} onClick={() => void deathSave()} style={btn(true)}>Roll a death save</button>
               </>
             )}
             <span style={{ fontSize: 11.5, color: STONE.inkFaint }}>{death.s} of 3 successes, {death.f} of 3 failures</span>
@@ -452,7 +452,7 @@ export default function PlaySheet({ name, sheet, saveProf, ruleset, characterId,
                     <option value="">Damage type</option>
                     {DAMAGE_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
                   </select>
-                  <button type="button" className="forge-btn" disabled={!defAdd.type}
+                  <button title={!defAdd.type ? "Choose a damage type first" : undefined} type="button" className="forge-btn" disabled={!defAdd.type}
                     onClick={() => { const cur = customDefenses?.[defAdd.kind] ?? []; if (!cur.includes(defAdd.type)) onCustomDefenses({ ...customDefenses, [defAdd.kind]: [...cur, defAdd.type] }); setDefAdd({ ...defAdd, type: "" }); }}
                     style={{ ...btn(), fontSize: 12, padding: "4px 10px" }}>Add</button>
                 </div>
@@ -470,9 +470,9 @@ export default function PlaySheet({ name, sheet, saveProf, ruleset, characterId,
             </div>
             <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 10 }}>
               <span style={{ fontSize: 13, color: STONE.ink }}>Exhaustion</span>
-              <button type="button" className="forge-btn" aria-label="One less level of exhaustion" disabled={ex === 0} onClick={() => void setExhaustion(ex - 1)} style={btn()}>-</button>
+              <button title={ex === 0 ? "Already at none" : undefined} type="button" className="forge-btn" aria-label="One less level of exhaustion" disabled={ex === 0} onClick={() => void setExhaustion(ex - 1)} style={btn()}>-</button>
               <span style={{ ...mono, fontSize: 16, color: ex ? C.warn : STONE.ink, minWidth: 14, textAlign: "center" }}>{ex}</span>
-              <button type="button" className="forge-btn" aria-label="One more level of exhaustion" disabled={ex === 6} onClick={() => void setExhaustion(ex + 1)} style={btn()}>+</button>
+              <button title={ex === 6 ? "Six is the most" : undefined} type="button" className="forge-btn" aria-label="One more level of exhaustion" disabled={ex === 6} onClick={() => void setExhaustion(ex + 1)} style={btn()}>+</button>
             </div>
             {ex > 0 && <p style={{ fontSize: 12, color: STONE.inkFaint, margin: "6px 0 0" }}>
               {ex >= 6 ? "Level 6: death." : ruleset === "2024" ? `-${2 * ex} to every d20 test and -${5 * ex} ft speed, already applied above.` : "2014 exhaustion: check the levels table with your GM; the sheet does not apply it."}

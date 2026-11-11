@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { SAX, STONE } from "@/lib/theme";
-import { stonePanel, stoneField, stoneButton, forgeLabel } from "@/lib/forge-theme";
+import { stonePanel, stoneField, forgeLabel } from "@/lib/forge-theme";
+import Button from "@/components/ui-forge/Button";
 
 // components/contact-form.tsx
 //
@@ -97,9 +98,9 @@ export default function ContactForm() {
       {state.status === "error" && <p style={errText}>{state.error}</p>}
 
       <div style={{ marginTop: 18 }}>
-        <button type="submit" className="forge-btn is-primary" style={stoneButton("primary")} disabled={state.status === "sending"}>
+        <Button variant="primary" type="submit" disabled={state.status === "sending"}>
           {state.status === "sending" ? "Sending…" : "Send message"}
-        </button>
+        </Button>
       </div>
       <p style={fine}>No account needed. This goes straight to Terry; nothing is stored on the site.</p>
     </form>
