@@ -65,6 +65,7 @@ import PlayInventory, { attunementLimit, type Coins, type CharNotes } from "@/co
 import FloatingPanel from "@/components/floating-panel";
 import PlayCompanions, { type Companion, type MonsterRec } from "@/components/play-companions";
 import PlayParty from "@/components/play-party";
+import PartyStash from "@/components/party-stash";
 import { combatAct, type FightEntry, type FightView } from "@/components/fight-controls";
 import { trackedResources, type TrackInputs } from "@/lib/play/tracks";
 import { isWeapon, unarmedAttack, weaponAttack, weaponProfText, applyAttackFeatures, baseWeaponFor, applyImportAdjust, importedAttackRows, type AttackRow, type WeaponRecord } from "@/lib/play/attacks";
@@ -1726,6 +1727,14 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
                   ? "The character sheet is for D&D 5e characters for now. Characters in other systems play from the Forge."
                   : "This character's sheet has not derived yet. Pick a species and a class in the Forge first."}</Muted>
                 <a className="forge-btn" href={forgeHref} style={{ ...stoneButton("stone"), display: "inline-block", marginTop: 10, textDecoration: "none" }}>Open in the Forge</a>
+              </div>
+            )}
+            {/* Push 20 (audit G10): the party inventory for a character in a system whose sheet has no
+                inventory yet. No Give or Take here (no gear to move into); the stack list, found loot and the
+                purse work as they do for the GM. */}
+            {status === "ready" && !dndReady && system !== "dnd5e" && campaignNow && (
+              <div style={{ marginTop: 14 }}>
+                <PartyStash campaignId={campaignNow} ruleset={null} />
               </div>
             )}
 
@@ -4811,21 +4820,15 @@ function FeatEditor({ choice, featList, onChoose }: {
     ? (ABILITIES.find((a) => typeof choice.mods?.[a] === "number") as Ability | undefined)
     : undefined;
 
-  // Non-ASI structured effects (Tough's hpPerLevel, speed feats) go into mods too, so the engine
-  // applies them retroactively. They live alongside any ability increase.
-  const featEffectMods = (f: FeatOption | undefined): Record<string, number> => {
-    const e = f?.effects; if (!e) return {};
-    const m: Record<string, number> = {};
-    if (e.hpPerLevel) m.hpPerLevel = e.hpPerLevel;
-    if (e.speed) m.speed = e.speed;
-    if (e.ac) m.ac = e.ac;
-    if (e.initiative) m.initiative = e.initiative;
-    return m;
-  };
+  // Push 20 (audit G15): a feat's numeric effects (hit points, speed, AC, initiative) are no longer
+  // stored on the choice. The engine counts each feat by name from RulesContext.featEffects, so the
+  // numbers stay right when the data changes, and Tough no longer counts twice. Older choices that
+  // still carry them are skipped by the engine. Only the ability increase is stored here.
+  const featEffectMods = (): Record<string, number> => ({});
 
   const pickFeat = (name: string) => {
     const f = featList.find((x) => x.name === name);
-    const next: EpicChoiceInput = { name, isFeat: true, desc: f?.description || "", mods: { ...featEffectMods(f) } };
+    const next: EpicChoiceInput = { name, isFeat: true, desc: f?.description || "", mods: { ...featEffectMods() } };
     // Apply a FIXED ability increase immediately; leave variable ones for the ability selector.
     const fa = f?.asi ? fixedAsiAbility(f.asi) : null;
     const amt = f?.asi ? (f.asi.amount || f.asi.any || firstFixedAmount(f.asi)) : 0;
@@ -4834,7 +4837,7 @@ function FeatEditor({ choice, featList, onChoose }: {
   };
   const pickAbility = (a: Ability) => {
     // Keep the feat's structured effects; set the chosen ability's increase.
-    const base = featEffectMods(picked);
+    const base = featEffectMods();
     onChoose({ ...choice, mods: asiAmount ? { ...base, [a]: asiAmount } : base });
   };
 
@@ -5386,7 +5389,7 @@ type FeatAsi = {
 // Structured non-ASI feat effects the engine can apply retroactively: hpPerLevel (Tough adds 2 HP
 // per level), speed (Mobile/Speedy add feet). These flow through the same mods object as the ASI,
 // which the engine reads as em.hpPerLevel / em.speed.
-type FeatEffects = { hpPerLevel?: number; speed?: number; ac?: number; initiative?: number };
+type FeatEffects = { hpPerLevel?: number; hpFlat?: number; speed?: number; ac?: number; acArmored?: number; initiative?: number; initiativeProf?: number };
 type FeatOption = { name: string; category?: string; prerequisite?: string; description?: string; asi?: FeatAsi; effects?: FeatEffects };
 
 // What the picker writes into build.epicChoices[level]. It's an EpicChoice the engine already

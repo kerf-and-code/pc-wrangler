@@ -15,7 +15,7 @@
 
 import type {
   RulesContext, ClassRule, SpeciesRule, SubclassRule, ItemDef,
-  ItemEffect, ItemVariant, Ruleset, Ability,
+  ItemEffect, ItemVariant, Ruleset, Ability, FeatEffects,
 } from "./derive-sheet";
 
 import type { SpeciesMechanics } from "./species-mechanics";
@@ -25,6 +25,8 @@ import equipment2024 from "./equipment-2024.json";
 import equipment2014 from "./equipment-2014.json";
 import magicItems2024 from "./magic-items-2024.json";
 import magicItems2014 from "./magic-items-2014.json";
+import feats2024 from "./feats-2024.json";
+import feats2014 from "./feats-2014.json";
 
 // ---------------------------------------------------------------------------
 // Raw forge tables, typed. These carry MORE than the engine reads (traits, subclass
@@ -204,6 +206,18 @@ export function buildRulesContext(ruleset: Ruleset): RulesContext {
     itemEffects: RULES_DATA.ITEM_EFFECTS,
     itemVariants: RULES_DATA.ITEM_VARIANTS,
     items,
+    featEffects: featEffectsFor(ruleset),
     // epic defaults to DEFAULT_EPIC inside deriveSheet; override here only for a house ruleset.
   };
+}
+
+/** Push 20 (audit G15): each feat's numeric effects by lower-case name, from the feats JSON. */
+function featEffectsFor(ruleset: Ruleset): Record<string, FeatEffects> {
+  const out: Record<string, FeatEffects> = {};
+  const list = (ruleset === "2014" ? feats2014 : feats2024) as unknown as { name: string; effects?: FeatEffects }[];
+  for (const f of list) {
+    const key = f.name.trim().toLowerCase();
+    if (f.effects && !out[key]) out[key] = f.effects;
+  }
+  return out;
 }

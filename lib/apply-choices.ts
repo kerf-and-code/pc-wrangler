@@ -161,14 +161,10 @@ export function choiceEffects(input: ChoiceInputs): ChoiceEffects {
   // --- the feat a background grants --------------------------------------------------------
   const gf = input.grantedFeat;
   if (gf) {
-    const e = gf.effects || {};
-    // Same four the ASI feat editor maps. Kept in step deliberately: a feat granted by a background
-    // and the same feat taken as an ASI pick must land on the sheet identically, or a player will
-    // find their Tough gives different hit points depending where it came from.
-    for (const k of ["hpPerLevel", "speed", "ac", "initiative"] as const) {
-      const v = e[k];
-      if (typeof v === "number" && v) featMods[k] = (featMods[k] || 0) + v;
-    }
+    // Push 20 (audit G15): the feat's numeric effects (hit points, speed, AC, initiative) are no longer
+    // added here. The engine counts every feat by name (RulesContext.featEffects), and the Forge passes
+    // the background's feat among those names, so a granted feat and the same feat taken at a level land
+    // identically. Adding them here as well is how Tough came to count twice.
 
     const asi = gf.asi;
     const amount = Number(asi?.amount ?? asi?.any ?? 0) || 0;
@@ -190,7 +186,7 @@ export function choiceEffects(input: ChoiceInputs): ChoiceEffects {
       unapplied.push(`${gf.name}: choose which ability it raises`);
     }
 
-    if (Object.keys(e).length) {
+    if (Object.keys(gf.effects || {}).length) {
       applied.push(`${gf.name} from your background`);
     }
   }

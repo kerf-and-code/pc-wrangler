@@ -731,7 +731,9 @@ export const attackKey = (n: string) => n.toLowerCase().replace(/[,()]/g, " ").r
  * Alert and Tough feats, Thaumaturge and Magician). An import matched against an older engine is matched
  * again by the Forge, so the new rule and the old adjustment do not both count.
  */
-export const RECONCILE_VERSION = 2;
+export const RECONCILE_VERSION = 3;
+// Version 3 (push 20, audit G15): feats counted by name from their effects (Mobile, Speedy, Boon of
+// Speed, Boon of Fortitude, Defense and others), and Tough no longer counting twice.
 
 export function reconcileImport(
   sheet: DdbSheet,

@@ -135,7 +135,7 @@ export type Build = {
    */
   importAdjust?: ImportAdjust;
   /**
-   * The character's feats by name, for the ones the engine models (Alert, Tough). Filled at derive
+   * The character's feats by name; their numbers come from RulesContext.featEffects. Filled at derive
    * time by the Forge from the chosen feats, the feats a D&D Beyond import lists, and the background's
    * origin feat; not something the player edits here.
    */
@@ -198,7 +198,37 @@ export type RulesContext = {
   itemVariants: Record<string, ItemVariant>;
   items: Record<string, ItemDef>;          // name -> { kind, sub, rarity }
   epic?: EpicTable;                         // defaults to DEFAULT_EPIC
+  /**
+   * Push 20 (audit G15): each feat's numeric effects, by lower-case name (lib/srd/rules-context.ts
+   * reads them from the feats JSON). The character's feats (`build.feats`) are looked up here at derive
+   * time, so a feat counts once whether it was taken at a level, granted by a background, or listed
+   * on an imported sheet, and a feat whose effects are filled in later applies to existing characters.
+   * Without it, only Tough and Alert are modelled, as before.
+   */
+  featEffects?: Record<string, FeatEffects>;
 };
+
+/** Numbers a feat adds. acArmored applies only while wearing body armor (the 2024 Defense style);
+ *  initiativeProf adds the proficiency bonus (the 2024 Alert). */
+export type FeatEffects = {
+  hpPerLevel?: number; hpFlat?: number; speed?: number; ac?: number; acArmored?: number;
+  initiative?: number; initiativeProf?: number;
+};
+const FEAT_EFFECT_KEYS = ["hpPerLevel", "hpFlat", "speed", "ac", "acArmored", "initiative", "initiativeProf"] as const;
+
+/** The summed effects of the character's feats. Without ctx.featEffects: Tough and Alert by name. */
+export function featTotals(names: string[] | undefined, ctx: Pick<RulesContext, "featEffects" | "ruleset">): Required<FeatEffects> {
+  const out: Required<FeatEffects> = { hpPerLevel: 0, hpFlat: 0, speed: 0, ac: 0, acArmored: 0, initiative: 0, initiativeProf: 0 };
+  const set = new Set((names || []).map((f) => f.trim().toLowerCase()).filter(Boolean));
+  const table: Record<string, FeatEffects> = ctx.featEffects
+    ?? { tough: { hpPerLevel: 2 }, alert: ctx.ruleset === "2014" ? { initiative: 5 } : { initiativeProf: 1 } };
+  for (const n of set) {
+    const e = table[n];
+    if (!e) continue;
+    for (const k of FEAT_EFFECT_KEYS) out[k] += Number(e[k] || 0);
+  }
+  return out;
+}
 
 export type ClassRule = {
   hitDie?: number;
@@ -510,7 +540,10 @@ function sneakDice(build: Build, ctx: RulesContext, epic: EpicTable): number {
 }
 
 // Aggregate the per-level epic (21-30) choices into modifier and grant bundles.
-function epicAgg(build: Build) {
+// byName (push 20): when the context carries feat effects, a feat choice's stored effect numbers are
+// skipped, because featTotals counts that feat by name. Older builds stored Tough's hpPerLevel on the
+// choice as well, which is how Tough came to count twice (audit G15 follow-up).
+function epicAgg(build: Build, byName = false) {
   const out = {
     mods: {} as Record<string, number>,
     grants: { allSkillProf: false, saveProf: [] as string[], senses: [] as string[], resist: [] as string[], advConc: false },
@@ -521,7 +554,10 @@ function epicAgg(build: Build) {
   Object.keys(build.epicChoices).map(Number).sort((a, b) => a - b).forEach((L) => {
     for (const ch of build.epicChoices[L] || []) {
       if (!ch) continue;
-      if (ch.mods) for (const k in ch.mods) out.mods[k] = (out.mods[k] || 0) + ch.mods[k];
+      if (ch.mods) for (const k in ch.mods) {
+        if (byName && ch.isFeat && (FEAT_EFFECT_KEYS as readonly string[]).includes(k)) continue;
+        out.mods[k] = (out.mods[k] || 0) + ch.mods[k];
+      }
       if (ch.grants) {
         if (ch.grants.allSkillProf) out.grants.allSkillProf = true;
         if (ch.grants.advConc) out.grants.advConc = true;
@@ -615,8 +651,10 @@ export function deriveSheet(build: Build, ctx: RulesContext): DerivedSheet {  co
   // of two level 3 ones.
   const totalLevel = build.level + (build.multiclass || []).reduce((n, c) => n + (c.level || 0), 0);
   const P = proficiencyBonus(totalLevel, epic);
-  const ep = epicAgg(build);
+  const ep = epicAgg(build, !!ctx.featEffects);
   const em = ep.mods;
+  // Push 20 (audit G15): the feats' numbers, by name. Replaces the Tough and Alert special cases.
+  const fx = featTotals(build.feats, ctx);
 
   // Effective abilities: stored scores with current gear effects applied, so changing gear
   // flows into every derived number with no rebuild.
@@ -719,10 +757,12 @@ export function deriveSheet(build: Build, ctx: RulesContext): DerivedSheet {  co
   const speciesAc = ctx.species[build.meta.species]?.acBonus || 0;
   // Item AC: flat bonuses always; Bracers of Defense only with no armor and no shield.
   const itemAc = ib.ac + (!worn.body && !worn.shield ? ib.acUnarmored : 0);
-  let ac = acBase + dexToAc + acAbil + build.armorMisc + (em.ac || 0) + gearAcBonus + shieldBonus + speciesAc + itemAc;
+  // Feat AC (push 20): flat, plus acArmored only while body armor is worn (the 2024 Defense style).
+  const featAc = fx.ac + (worn.body ? fx.acArmored : 0);
+  let ac = acBase + dexToAc + acAbil + build.armorMisc + (em.ac || 0) + featAc + gearAcBonus + shieldBonus + speciesAc + itemAc;
   // Robe of the Archmagi: base 15 plus DEX with no body armor, when that beats the usual base.
   if (ib.acBaseNoArmor && !worn.body) {
-    const robe = ib.acBaseNoArmor + m.dex + build.armorMisc + (em.ac || 0) + shieldBonus + speciesAc + itemAc;
+    const robe = ib.acBaseNoArmor + m.dex + build.armorMisc + (em.ac || 0) + fx.ac + shieldBonus + speciesAc + itemAc;
     if (robe > ac) { ac = robe; acFormula = `${ib.acBaseNoArmor} plus DEX (item)`; }
   }
   // Species natural armor (Lizardfolk, Tortle) replaces the base only without body armor, and only
@@ -730,7 +770,7 @@ export function deriveSheet(build: Build, ctx: RulesContext): DerivedSheet {  co
   const nat = ctx.species[build.meta.species]?.naturalArmor;
   if (nat && !worn.body) {
     const natAc = nat.base + (nat.addDex ? m.dex : 0) + (nat.addAbil ? m[nat.addAbil] : 0)
-      + build.armorMisc + (em.ac || 0) + gearAcBonus
+      + build.armorMisc + (em.ac || 0) + fx.ac + gearAcBonus
       + shieldBonus + speciesAc + itemAc;
     if (natAc > ac) {
       ac = natAc;
@@ -746,10 +786,9 @@ export function deriveSheet(build: Build, ctx: RulesContext): DerivedSheet {  co
   const avg = epic.hitDieAvg || (Math.floor(hd / 2) + 1);
   const spMods = ctx.species[build.meta.species]?.mods || {};
   const ftMods = build.featMods || {};
-  // Feats the engine models (phase 5o). Tough: +2 HP per character level (both editions). Alert:
-  // initiative plus the proficiency bonus (2024) or plus 5 (2014).
-  const featSet = new Set((build.feats || []).map((f) => f.trim().toLowerCase()));
-  const toughHp = featSet.has("tough") ? 2 * totalLevel : 0;
+  // Feats (phase 5o, push 20): per-level and flat hit points from featTotals (Tough is 2 a level,
+  // Boon of Fortitude a flat 40).
+  const featHp = fx.hpPerLevel * totalLevel + fx.hpFlat;
   const perLvl = (em.hpPerLevel || 0) + (spMods.hpPerLevel || 0) + (ftMods.hpPerLevel || 0);
 
   // Draconic Resilience raises HP max by 3 at the subclass level and +1 per level after.
@@ -769,7 +808,7 @@ export function deriveSheet(build: Build, ctx: RulesContext): DerivedSheet {  co
     return n + (c.level || 0) * cavg;
   }, 0);
   const hpMaxRolled = hd + (build.level - 1) * avg + extraHp
-    + totalLevel * m.con + perLvl * totalLevel + classHp + toughHp;
+    + totalLevel * m.con + perLvl * totalLevel + classHp + featHp;
   // the player's adjustments (phase 5e): an override replaces the maximum; a modifier adds to it
   const adj = build.importAdjust || {};
   const hpMax = typeof build.hpMaxOverride === "number" && build.hpMaxOverride > 0
@@ -827,11 +866,12 @@ export function deriveSheet(build: Build, ctx: RulesContext): DerivedSheet {  co
   const spellAttack = isCaster && castAbil ? m[castAbil] + P + (em.spellAttack || 0) + ib.spellAttack + (adj.spellAttack || 0) : 0;
 
   // Initiative is a Dexterity check, so an item's bonus to checks counts.
-  const alertInit = featSet.has("alert") ? (ctx.ruleset === "2014" ? 5 : P) : 0;
-  const init = m.dex + (em.initiative || 0) + ib.checks + alertInit + (adj.init || 0);
+  // Alert: plus 5 (2014) or plus the proficiency bonus (2024), now from featTotals.
+  const featInit = fx.initiative + (fx.initiativeProf ? P : 0);
+  const init = m.dex + (em.initiative || 0) + ib.checks + featInit + (adj.init || 0);
 
   // Speed: species base plus class movement features (Monk unarmored, Barbarian fast).
-  let speed = (ctx.species[build.meta.species]?.speed || 30) + (em.speed || 0);
+  let speed = (ctx.species[build.meta.species]?.speed || 30) + (em.speed || 0) + fx.speed;
   const wa = worn;
   let speedLabel = "";
   if (build.meta.className === "Monk" && !wa.body && !wa.shield && build.armorBase <= 10) {

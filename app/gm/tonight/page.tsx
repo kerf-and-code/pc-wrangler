@@ -12,6 +12,8 @@
 //   go live / start   POST /api/session/reopen, or the live-session insert the Session Log uses
 //   quick log         insert into events with source "manual" (as the Session Log does)
 //   end and process   POST /api/session/close { process: true } (the guarded close route)
+//   party inventory   components/party-stash.tsx on party_items / party_funds (push 20, audit G10): the
+//                     same stash players see on their sheets, so the GM can seed and settle it
 // Each step links to the full page for anything beyond the common case.
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -25,6 +27,9 @@ import { openTabletop, tabletopUrl } from "@/lib/tabletop/open";
 import { askConfirm } from "@/lib/confirm";
 import { fmtDateTime } from "@/lib/format";
 import { gmCampaignsFilter } from "@/lib/campaign-gm";
+import PartyStash from "@/components/party-stash";
+import { getModule } from "@/lib/systems/registry";
+import { rulesetForCampaign } from "@/lib/systems/ruleset";
 
 type Campaign = { id: string; name: string; system: string | null; share_code: string | null; discord_channel_id: string | null };
 type Sess = { id: string; session_number: number | null; status: string | null; scheduled_at: string | null; recap: string | null; started_at: string | null; ended_at: string | null; capture_modality: string | null };
@@ -426,6 +431,14 @@ export default function TonightPage() {
             </div>
           </div>
         </>
+      )}
+
+      {ready && campaign && (
+        <div style={{ marginTop: 18 }}>
+          <PartyStash campaignId={campaign.id}
+            ruleset={getModule(campaign.system).id === "dnd5e" ? rulesetForCampaign(campaign.system) : null}
+            lead="Shared with every player at the table: they see it on their sheet and take things into their own gear. Add the loot you hand out here, and pay out or collect coins." />
+        </div>
       )}
     </PageShell>
   );

@@ -73,7 +73,10 @@
  {
   "name": "Alert",
   "category": "Origin",
-  "description": "Initiative Proficiency. When you roll Initiative, you can add your Proficiency Bonus to the roll. Initiative Swap. Immediately after you roll Initiative, you can swap your Initiative with the Initiative of one willing ally in the same combat. You can’t make this swap if you or the ally has the Incapacitated condition."
+  "description": "Initiative Proficiency. When you roll Initiative, you can add your Proficiency Bonus to the roll. Initiative Swap. Immediately after you roll Initiative, you can swap your Initiative with the Initiative of one willing ally in the same combat. You can’t make this swap if you or the ally has the Incapacitated condition.",
+  "effects": {
+   "initiativeProf": 1
+  }
  },
  {
   "name": "Arcane Artist",
@@ -327,6 +330,9 @@
   "description": "Ability Score Increase. Increase one ability score of your choice by 1, to a maximum of 30. Fortified Health. Your Hit Point maximum increases by 40. In addition, whenever you regain Hit Points, you can regain additional Hit Points equal to your Constitution modifier. Once you’ve regained these additional Hit Points, you can’t do so again until the start of your next turn.",
   "asi": {
    "any": 1
+  },
+  "effects": {
+   "hpFlat": 40
   }
  },
  {
@@ -469,7 +475,7 @@
   "name": "Boon of Spell Recall",
   "category": "Epic Boon",
   "prerequisite": "Level 19+",
-  "description": "Ability Score Increase. Increase your Intelligence, Wisdom, or Charisma score by 1, to a maximum of 30. Free Casting. Whenever you cast a spell with a level 1–4 spell slot, roll 1d4. If the number you roll is the same as the slot’s level, the slot isn’t expended.",
+  "description": "Ability Score Increase. Increase your Intelligence, Wisdom, or Charisma score by 1, to a maximum of 30. Free Casting. Whenever you cast a spell with a level 1 to 4 spell slot, roll 1d4. If the number you roll is the same as the slot’s level, the slot isn’t expended.",
   "asi": {
    "choice": [
     "int",
@@ -692,7 +698,10 @@
   "name": "Defense",
   "category": "Fighting Style",
   "prerequisite": "Fighting Style Feature",
-  "description": "While you’re wearing Light, Medium, or Heavy armor, you gain a +1 bonus to Armor Class."
+  "description": "While you’re wearing Light, Medium, or Heavy armor, you gain a +1 bonus to Armor Class.",
+  "effects": {
+   "acArmored": 1
+  }
  },
  {
   "name": "Defensive Duelist",
@@ -1369,7 +1378,7 @@
   "name": "Infernal Pact",
   "category": "Feat",
   "prerequisite": "Can’t Have Another Planar Pact Feat",
-  "description": "Planar Pact Feat (Prerequisite: Can’t Have Another Planar Pact Feat) Infernal Resistance. You have Resistance to Fire damage and Poison damage. Infernal Sight. You can see normally in Dim Light and Darkness—both magical and nonmagical—within 60 feet of yourself. Silver-Tongued. You gain proficiency in the Deception skill."
+  "description": "Planar Pact Feat (Prerequisite: Can’t Have Another Planar Pact Feat) Infernal Resistance. You have Resistance to Fire damage and Poison damage. Infernal Sight. You can see normally in Dim Light and Darkness (both magical and nonmagical) within 60 feet of yourself. Silver-Tongued. You gain proficiency in the Deception skill."
  },
  {
   "name": "Initiate of High Sorcery",
@@ -1502,7 +1511,7 @@
   "name": "Living Shadow",
   "category": "Dark Gift",
   "prerequisite": "Ravenloft Campaign",
-  "description": "The shadow you cast is animate and ever-present—sometimes it even acts according to its own will. You gain the following features. Grasping Shadow. You learn the Mage Hand spell and can cast it without spell components. Intelligence, Wisdom, or Charisma is your spellcasting ability for this spell (choose when you select this feat). Lengthened Strike. When you make a melee attack roll as part of the Attack or Magic action on your turn, you can increase your reach for that attack by 10 feet, as your shadow stretches to aid you. You can use this feature a number of times equal to your Proficiency Bonus, and you regain all expended uses when you finish a Long Rest. Ominous Will. Immediately after you make a D20 Test and roll a 1 on the d20, your shadow attempts to exert its will. Make a Wisdom saving throw (DC 13 plus your Proficiency Bonus). On a failed save, you have the Incapacitated condition until the start of your next turn, at which point you must roll on the Shadow’s Will table to determine what you do during that turn. Shadow’s Will"
+  "description": "The shadow you cast is animate and ever-present; sometimes it even acts according to its own will. You gain the following features. Grasping Shadow. You learn the Mage Hand spell and can cast it without spell components. Intelligence, Wisdom, or Charisma is your spellcasting ability for this spell (choose when you select this feat). Lengthened Strike. When you make a melee attack roll as part of the Attack or Magic action on your turn, you can increase your reach for that attack by 10 feet, as your shadow stretches to aid you. You can use this feature a number of times equal to your Proficiency Bonus, and you regain all expended uses when you finish a Long Rest. Ominous Will. Immediately after you make a D20 Test and roll a 1 on the d20, your shadow attempts to exert its will. Make a Wisdom saving throw (DC 13 plus your Proficiency Bonus). On a failed save, you have the Incapacitated condition until the start of your next turn, at which point you must roll on the Shadow’s Will table to determine what you do during that turn. Shadow’s Will"
  },
  {
   "name": "Lordly Resolve",
