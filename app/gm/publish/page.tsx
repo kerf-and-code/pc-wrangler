@@ -25,6 +25,7 @@ import { initialCampaignId, useRememberCampaign } from "@/lib/campaign-context";
 import { friendlyError } from "@/lib/friendly-error";
 import { askConfirm } from "@/lib/confirm";
 import CampaignPicker from "@/components/ui-forge/CampaignPicker";
+import { gmCampaignsFilter } from "@/lib/campaign-gm";
 
 type Campaign = {
   id: string; name: string;
@@ -76,7 +77,7 @@ export default function PublishPage() {
       const { data } = await supabase
         .from("campaigns")
         .select("id, name, public_slug, public_published_at, public_blurb, public_listed, codex_cover_url, system")
-        .eq("gm_id", user.id).order("name");
+        .or(await gmCampaignsFilter(supabase, user.id)).order("name");
       const rows = (data as Campaign[]) ?? [];
       setCampaigns(rows);
       if (rows.length) setCampaignId(initialCampaignId(rows));

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isCampaignGm } from "@/lib/campaign-gm";
 
 // app/api/transcribe/speakers/route.ts
 //
@@ -176,7 +177,7 @@ async function authorize(trackId: string) {
 
   const { data: camp } = await admin
     .from("campaigns").select("gm_id").eq("id", track.campaign_id).maybeSingle();
-  if (!camp || camp.gm_id !== user.id) {
+  if (!camp || !(await isCampaignGm(admin, track.campaign_id, user.id, camp.gm_id ?? null))) {
     return { error: NextResponse.json({ error: "Only the GM of this campaign can do that." }, { status: 403 }) };
   }
 

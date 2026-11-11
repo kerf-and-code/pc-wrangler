@@ -31,11 +31,12 @@ export async function POST(request: Request) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Please sign in." }, { status: 401 });
 
-  const { data: isGm } = await supabase.rpc("is_campaign_gm", { p_campaign: campaignId });
-  if (!isGm) return NextResponse.json({ error: "Only this campaign's GM can delete it." }, { status: 403 });
-
+  // Deleting is an owner action (p149): a co-GM is a GM of the campaign but cannot delete it.
   const admin = createAdminClient();
-  const { data: camp } = await admin.from("campaigns").select("name").eq("id", campaignId).maybeSingle();
+  const { data: camp } = await admin.from("campaigns").select("name, gm_id").eq("id", campaignId).maybeSingle();
+  if ((camp as { gm_id: string } | null)?.gm_id !== user.id) {
+    return NextResponse.json({ error: "Only the campaign's owner can delete it." }, { status: 403 });
+  }
   const name = ((camp as { name: string | null } | null)?.name || "").trim();
   if ((body.confirm || "").trim() !== name) {
     return NextResponse.json({ error: "Type the campaign's name exactly to confirm." }, { status: 400 });

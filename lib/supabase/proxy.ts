@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
 import { hasEnvVars } from "../utils";
+import { coGmsAnything } from "../campaign-gm";
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
@@ -95,6 +96,10 @@ export async function updateSession(request: NextRequest) {
     !request.nextUrl.pathname.startsWith("/developers") &&
     // The installable-app manifest (audit F14): browsers fetch it without cookies.
     request.nextUrl.pathname !== "/manifest.webmanifest" &&
+    // ---- added 2026-11-10 (push 18) ----
+    // Co-GM invite links: a logged-out visitor sees "sign in, then open this link again" instead of
+    // losing the link to the login redirect. accept_gm_invite (p149) needs a signed-in account anyway.
+    !request.nextUrl.pathname.startsWith("/cogm/") &&
     // ---- everything below added 2026-08-03, after a 307 to /auth/login was traced back here ----
     //
     // THE LANDING PAGE. Exact match, because startsWith("/") would exempt the entire site. Without
@@ -187,13 +192,17 @@ export async function updateSession(request: NextRequest) {
             .eq("id", user.sub as string)
             .maybeSingle()
         : { data: null };
-      if (!profile?.access_granted) {
+      // Co-GMs (p149, push 18): an account that co-GMs a campaign may use /gm for it without the
+      // account-wide GM flag (Terry, 2026-11-10: campaign-only access). Pages list only the campaigns
+      // they run, and starting a new campaign stays with GM access.
+      const coGm = admin && profile?.access_role !== "gm" ? await coGmsAnything(admin, user.sub as string) : false;
+      if (!profile?.access_granted && !coGm) {
         // No code entered yet: send to the code screen.
         const url = request.nextUrl.clone();
         url.pathname = "/enter";
         return NextResponse.redirect(url);
       }
-      if (path.startsWith("/gm") && profile.access_role !== "gm") {
+      if (path.startsWith("/gm") && profile?.access_role !== "gm" && !coGm) {
         // In the pilot on a player code: the GM tools are off-limits, send them to their own area.
         const url = request.nextUrl.clone();
         url.pathname = "/me";

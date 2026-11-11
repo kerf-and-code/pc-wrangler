@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isCampaignGm } from "@/lib/campaign-gm";
 
 // gm_identities has RLS enabled with no policies, so the browser client cannot
 // touch it. All access runs here through the admin client, gated by an explicit
@@ -32,8 +33,8 @@ async function requireCampaignOwner(campaignId: string): Promise<Gate> {
     .select("id, gm_id")
     .eq("id", campaignId)
     .maybeSingle();
-  const owner = (camp as { gm_id: string } | null)?.gm_id;
-  if (!owner || owner !== user.id) {
+  const owner = (camp as { gm_id: string } | null)?.gm_id ?? null;
+  if (!owner || !(await isCampaignGm(supa, campaignId, user.id, owner))) {
     return { ok: false, res: NextResponse.json({ error: "Not found or not permitted." }, { status: 403 }) };
   }
   return { ok: true, userId: user.id };

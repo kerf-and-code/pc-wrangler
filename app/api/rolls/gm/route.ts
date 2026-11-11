@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { roll, DiceError } from "@/lib/dice";
+import { isCampaignGm } from "@/lib/campaign-gm";
 
 // app/api/rolls/gm/route.ts
 //
@@ -69,7 +70,7 @@ export async function POST(req: Request) {
   const { data: camp } = await admin
     .from("campaigns").select("id, gm_id").eq("id", b.campaignId ?? "").maybeSingle();
   if (!camp) return NextResponse.json({ error: "Campaign not found." }, { status: 404 });
-  if (camp.gm_id !== user.id) {
+  if (!(await isCampaignGm(admin, b.campaignId, user.id, camp.gm_id ?? null))) {
     return NextResponse.json({ error: "Only this campaign's GM can roll here." }, { status: 403 });
   }
 

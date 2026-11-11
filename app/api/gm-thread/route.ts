@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isCampaignGm } from "@/lib/campaign-gm";
 
 const ALLOWED = new Set(["open", "resolved", "dropped"]);
 
@@ -38,7 +39,7 @@ export async function POST(req: NextRequest) {
     .select("gm_id")
     .eq("id", ev.campaign_id)
     .maybeSingle();
-  if ((camp as { gm_id: string } | null)?.gm_id !== user.id) {
+  if (!(await isCampaignGm(supa, ev.campaign_id, user.id, (camp as { gm_id: string } | null)?.gm_id ?? null))) {
     return NextResponse.json({ error: "Not permitted." }, { status: 403 });
   }
 

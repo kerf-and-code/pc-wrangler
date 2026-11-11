@@ -10,6 +10,7 @@ import { parseAndIngest, parsePasted, type InputFile } from "@/lib/backfill/pars
 import type { SessionMode } from "@/lib/backfill/ingest";
 import type { NormalizedImport } from "@/lib/backfill/types";
 import { initialCampaignId, useRememberCampaign } from "@/lib/campaign-context";
+import { gmCampaignsFilter } from "@/lib/campaign-gm";
 
 // app/gm/import/page.tsx
 //
@@ -52,7 +53,7 @@ export default function ImportPage() {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const { data } = await supabase.from("campaigns").select("id, name, system").eq("gm_id", user.id).order("created_at");
+      const { data } = await supabase.from("campaigns").select("id, name, system").or(await gmCampaignsFilter(supabase, user.id)).order("created_at");
       const list = (data as Campaign[]) || [];
       setCamps(list);
       if (list[0]) setCampaignId(initialCampaignId(list));

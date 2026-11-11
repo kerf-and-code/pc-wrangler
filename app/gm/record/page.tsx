@@ -31,6 +31,7 @@ import { initialCampaignId, useRememberCampaign, initialSessionId, useRememberSe
 import { askConfirm } from "@/lib/confirm";
 import { fmtDateTime } from "@/lib/format";
 import CampaignPicker from "@/components/ui-forge/CampaignPicker";
+import { gmCampaignsFilter } from "@/lib/campaign-gm";
 
 type Phase = "idle" | "armed" | "recording" | "stopped" | "uploading" | "done" | "error";
 type Campaign = { id: string; name: string };
@@ -132,7 +133,7 @@ export default function RoomRecordPage() {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const { data } = await supabase.from("campaigns").select("id, name, system").eq("gm_id", user.id).order("name");
+      const { data } = await supabase.from("campaigns").select("id, name, system").or(await gmCampaignsFilter(supabase, user.id)).order("name");
       setCampaigns((data as Campaign[]) ?? []);
       if (data?.length) setCampaignId(initialCampaignId(data));
       const left = await all().catch(() => []);

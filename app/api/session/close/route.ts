@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isCampaignGm } from "@/lib/campaign-gm";
 
 export const maxDuration = 30;
 
@@ -82,7 +83,7 @@ export async function POST(request: Request) {
       .select("id, gm_id")
       .eq("id", session.campaign_id)
       .single();
-    if (!campaign || campaign.gm_id !== user.id) {
+    if (!campaign || !(await isCampaignGm(admin, session.campaign_id, user.id, campaign.gm_id ?? null))) {
       return NextResponse.json({ error: "Not permitted." }, { status: 403 });
     }
 

@@ -57,6 +57,7 @@ import {
 import { friendlyError, notReady } from "@/lib/friendly-error";
 import { askConfirm } from "@/lib/confirm";
 import CampaignPicker from "@/components/ui-forge/CampaignPicker";
+import { gmCampaignsFilter } from "@/lib/campaign-gm";
 
 type Campaign = { id: string; name: string; system: string | null; share_code: string | null };
 type Sess = { id: string; session_number: number | null; status: string | null };
@@ -112,7 +113,7 @@ export default function CombatPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { setErr("Sign in to run a fight."); setLoading(false); return; }
       const [{ data: camps }, own] = await Promise.all([
-        supabase.from("campaigns").select("id, name, system, share_code").eq("gm_id", user.id).order("created_at", { ascending: false }),
+        supabase.from("campaigns").select("id, name, system, share_code").or(await gmCampaignsFilter(supabase, user.id)).order("created_at", { ascending: false }),
         listStatBlocks(supabase).catch(() => [] as StatBlockRow[]),
       ]);
       const list = (camps as Campaign[]) || [];

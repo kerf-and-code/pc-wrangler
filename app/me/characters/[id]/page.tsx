@@ -8,6 +8,7 @@ import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import BlockEditor, { type Block } from "@/app/gm/codex/BlockEditor";
 import { PortraitUploader } from "@/components/portrait-uploader";
 import { askConfirm } from "@/lib/confirm";
+import { isCampaignGm } from "@/lib/campaign-gm";
 
 // app/me/characters/[id]/page.tsx
 //
@@ -107,7 +108,7 @@ export default function CharacterPage() {
       .select("gm_id, public_slug, public_published_at").eq("id", character.campaign_id).maybeSingle();
     const c = campData as Campaign | null;
     setCamp(c);
-    setIsGm(c?.gm_id === user.id);
+    setIsGm(await isCampaignGm(supabase, character.campaign_id, user.id, c?.gm_id ?? null));
 
     const [{ data: sData }, { data: gData }] = await Promise.all([
       supabase.from("character_wiki_sections").select("id, title, body, visibility, position").eq("character_id", charId).order("position").order("created_at"),

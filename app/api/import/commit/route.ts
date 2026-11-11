@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { planCommit, foldText } from "@/lib/backfill/commit-map";
 import type { EntityCandidate } from "@/lib/backfill/extract";
+import { isCampaignGm } from "@/lib/campaign-gm";
 
 export const maxDuration = 60;
 
@@ -64,7 +65,7 @@ export async function POST(request: Request) {
 
     // Owner gate through the RLS client, same as lore-triage.
     const { data: campRow } = await supa.from("campaigns").select("gm_id").eq("id", job.campaign_id).maybeSingle();
-    if ((campRow as { gm_id: string } | null)?.gm_id !== user.id) {
+    if (!(await isCampaignGm(supa, job.campaign_id, user.id, (campRow as { gm_id: string } | null)?.gm_id ?? null))) {
       return NextResponse.json({ error: "Not permitted." }, { status: 403 });
     }
     if (job.status === "committed") return NextResponse.json({ error: "This import was already committed." }, { status: 409 });

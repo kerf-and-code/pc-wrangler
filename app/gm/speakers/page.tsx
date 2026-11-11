@@ -25,6 +25,7 @@ import { SAX } from "@/lib/theme";
 import { getActiveCampaign } from "@/lib/active-campaign";
 import { urlParam } from "@/lib/campaign-context";
 import { fmtDateTime } from "@/lib/format";
+import { gmCampaignsFilter } from "@/lib/campaign-gm";
 
 type Speaker = { label: number; seconds: number; utterances: number; samples: string[] };
 type Character = { id: string; name: string };
@@ -53,7 +54,7 @@ export default function SpeakersPage() {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const { data: camps } = await supabase.from("campaigns").select("id, name").eq("gm_id", user.id);
+      const { data: camps } = await supabase.from("campaigns").select("id, name").or(await gmCampaignsFilter(supabase, user.id));
       const campRows = (camps as { id: string; name: string }[]) || [];
       setCampNames(Object.fromEntries(campRows.map((c) => [c.id, c.name])));
       const ids = campRows.map((c) => c.id);

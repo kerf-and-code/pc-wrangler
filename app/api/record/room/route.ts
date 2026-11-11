@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isCampaignGm } from "@/lib/campaign-gm";
 
 // app/api/record/room/route.ts
 //
@@ -59,7 +60,7 @@ export async function POST(req: Request) {
     .eq("id", b.campaignId ?? "")
     .maybeSingle();
   if (!camp) return NextResponse.json({ error: "Campaign not found." }, { status: 404 });
-  if (camp.gm_id !== user.id) {
+  if (!(await isCampaignGm(admin, b.campaignId, user.id, camp.gm_id ?? null))) {
     return NextResponse.json({ error: "Only the GM of this campaign can record it." }, { status: 403 });
   }
 

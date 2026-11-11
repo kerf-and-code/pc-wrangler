@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { anthropicCompleteFor, extract } from "@/lib/backfill/extract";
 import { hasGmAccess } from "@/lib/ai-allowance";
 import type { NormalizedImport } from "@/lib/backfill/types";
+import { isCampaignGm } from "@/lib/campaign-gm";
 
 export const maxDuration = 60;
 
@@ -39,7 +40,7 @@ export async function POST(request: Request) {
 
     // Owner gate: only the campaign's GM can import into it.
     const { data: campRow } = await supa.from("campaigns").select("gm_id").eq("id", campaignId).maybeSingle();
-    if ((campRow as { gm_id: string } | null)?.gm_id !== user.id) {
+    if (!(await isCampaignGm(supa, campaignId, user.id, (campRow as { gm_id: string } | null)?.gm_id ?? null))) {
       return NextResponse.json({ error: "Not permitted." }, { status: 403 });
     }
 
@@ -47,7 +48,7 @@ export async function POST(request: Request) {
 
     // Audit T4: imports spend model calls, so they need GM pilot access (the /gm page gate does not cover
     // the API). lib/backfill/extract.ts caps the calls one import can make.
-    if (!(await hasGmAccess(admin, user.id))) {
+    if (!(await hasGmAccess(admin, user.id)) && !(await isCampaignGm(admin, campaignId, user.id))) {
       return NextResponse.json({ error: "Importing needs GM access: enter your GM access code first." }, { status: 403 });
     }
 

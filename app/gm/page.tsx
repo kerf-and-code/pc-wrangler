@@ -10,6 +10,7 @@ import { getRosterFields, type RosterSpec } from "@/lib/systems/roster-fields";
 import { computeCoverage, rolesForClass, classesForRole, ROLE_LABEL, type CoverageSystem } from "@/lib/party/coverage";
 import { initialCampaignId, useRememberCampaign } from "@/lib/campaign-context";
 import { CampaignSettings, CampaignTrash } from "@/components/campaign-safety";
+import { CampaignGms } from "@/components/campaign-gms";
 import { rulesetForCampaign, pickerSystem } from "@/lib/systems/ruleset";
 import { canonicalSubclass, subclassKey } from "@/lib/subclass-names";
 import { friendlyError } from "@/lib/friendly-error";
@@ -60,6 +61,9 @@ function browserTimeZone(): string | null {
 export default function GMWorkspace() {
   const supabase = useMemo(() => createClient(), []);
   const [userId, setUserId] = useState<string | null>(null);
+  // Push 18: a co-GM without the account-wide GM flag runs the campaigns they were invited to but does
+  // not start new ones (Terry, 2026-11-10: campaign-only access). null while loading.
+  const [gmAccess, setGmAccess] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
 
@@ -104,6 +108,8 @@ export default function GMWorkspace() {
       if (!user) { if (active) { setErr("Please sign in to use the GM workspace."); setLoading(false); } return; }
       if (!active) return;
       setUserId(user.id);
+      void supabase.from("profiles").select("access_granted, access_role").eq("id", user.id).maybeSingle()
+        .then(({ data }) => { const p = data as { access_granted: boolean | null; access_role: string | null } | null; if (active) setGmAccess(!!p?.access_granted && p.access_role === "gm"); });
       const [
         { data: camps, error: e1 },
         { data: capRows },
@@ -475,6 +481,11 @@ export default function GMWorkspace() {
             </button>
           ))}
         </div>
+        {gmAccess === false ? (
+          <p style={{ margin: 0, fontSize: 13, color: C.muted, lineHeight: 1.55 }}>
+            You co-GM the campaigns above. Starting a campaign of your own needs GM access: <a href="/pilot" style={{ color: C.brass }}>apply for the pilot</a>.
+          </p>
+        ) : (
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
           <input aria-label="New campaign name" style={{ ...inputStyle, maxWidth: 240 }} placeholder="New campaign name"
             value={newCampaign.name} onChange={(e) => setNewCampaign({ ...newCampaign, name: e.target.value })} />
@@ -487,6 +498,7 @@ export default function GMWorkspace() {
           </select>
           <button style={btn} onClick={createCampaign} disabled={busy}>Create</button>
         </div>
+        )}
         {(() => {
           const sc = campaigns.find((c) => c.id === selected);
           return sc ? (
@@ -512,6 +524,13 @@ export default function GMWorkspace() {
             <CampaignSettings campaign={sc} isOwner={sc.gm_id === userId}
               onChanged={(patch) => setCampaigns((cs) => cs.map((c) => (c.id === sc.id ? { ...c, ...patch } : c)))}
               onTrashed={(eraseAt) => campaignTrashed(sc.id, eraseAt)} />
+          ) : null;
+        })()}
+        {(() => {
+          const sc = campaigns.find((c) => c.id === selected);
+          return sc ? (
+            <CampaignGms campaignId={sc.id} campaignName={sc.name} isOwner={sc.gm_id === userId} userId={userId}
+              onLeft={() => { void reloadCampaigns().then(() => setNotice(`You stepped down as co-GM of ${sc.name}.`)); }} />
           ) : null;
         })()}
         {notice && <p role="status" style={{ margin: "12px 0 0", fontSize: 13, color: C.muted }}>{notice}</p>}

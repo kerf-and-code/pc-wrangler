@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { releaseAi, reserveAi } from "@/lib/ai-allowance";
 import { geminiTokens, recordUsage } from "@/lib/usage";
+import { isCampaignGm } from "@/lib/campaign-gm";
 
 export const maxDuration = 60;
 
@@ -35,7 +36,7 @@ export async function POST(request: Request) {
     if (!user) return NextResponse.json({ error: "Not signed in." }, { status: 401 });
 
     const { data: camp } = await supa.from("campaigns").select("gm_id").eq("id", campaignId).maybeSingle();
-    if ((camp as { gm_id: string } | null)?.gm_id !== user.id) {
+    if (!(await isCampaignGm(supa, campaignId, user.id, (camp as { gm_id: string } | null)?.gm_id ?? null))) {
       return NextResponse.json({ error: "Not permitted." }, { status: 403 });
     }
 

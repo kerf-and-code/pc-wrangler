@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isCampaignGm } from "@/lib/campaign-gm";
 
 // Kinds that are born as open threads so the prep sheet can find dangling ones.
 const OPEN_THREAD_KINDS = new Set(["framing", "hook", "quest_update"]);
@@ -186,7 +187,7 @@ export async function POST(req: NextRequest) {
     .select("gm_id")
     .eq("id", prop.campaign_id)
     .maybeSingle();
-  if ((camp as { gm_id: string } | null)?.gm_id !== user.id) {
+  if (!(await isCampaignGm(supa, prop.campaign_id, user.id, (camp as { gm_id: string } | null)?.gm_id ?? null))) {
     return NextResponse.json({ error: "Not permitted." }, { status: 403 });
   }
 

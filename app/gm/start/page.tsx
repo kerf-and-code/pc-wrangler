@@ -8,6 +8,7 @@ import TableTapCard from "@/components/table-tap-card";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import { initialCampaignId, useRememberCampaign } from "@/lib/campaign-context";
 import { SAX } from "@/lib/theme";
+import { gmCampaignsFilter } from "@/lib/campaign-gm";
 
 type Step = { key: string; label: string; desc: string; href: string; cta: string; done: boolean; optional?: boolean; alt?: { href: string; cta: string } };
 
@@ -31,7 +32,7 @@ export default function GettingStartedPage() {
       // Progress is for ONE campaign, the shared active one (lib/campaign-context), not "anything in the
       // account": it used to check the first campaign for Discord but every campaign for the rest, so a
       // GM with two tables saw a mix of both.
-      const { data: campRows } = await supabase.from("campaigns").select("id, name, system, share_code, discord_channel_id").eq("gm_id", user.id).order("created_at", { ascending: true });
+      const { data: campRows } = await supabase.from("campaigns").select("id, name, system, share_code, discord_channel_id").or(await gmCampaignsFilter(supabase, user.id)).order("created_at", { ascending: true });
       if (!active) return;
       const camps = (campRows as { id: string; name: string; system: string | null; share_code: string | null; discord_channel_id: string | null }[]) || [];
       setCampaigns(camps);

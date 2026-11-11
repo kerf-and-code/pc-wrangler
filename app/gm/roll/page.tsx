@@ -31,6 +31,7 @@ import { C, FORGE_RADIUS, STONE } from "@/lib/forge-theme";
 import { SAX } from "@/lib/theme";
 import { initialCampaignId, useRememberCampaign } from "@/lib/campaign-context";
 import CampaignPicker from "@/components/ui-forge/CampaignPicker";
+import { gmCampaignsFilter } from "@/lib/campaign-gm";
 
 type Campaign = { id: string; name: string; system: string | null };
 type Session = { id: string; session_number: number | null; ended_at: string | null };
@@ -89,7 +90,7 @@ export default function RollerPage() {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const { data } = await supabase.from("campaigns").select("id, name, system").eq("gm_id", user.id).order("name");
+      const { data } = await supabase.from("campaigns").select("id, name, system").or(await gmCampaignsFilter(supabase, user.id)).order("name");
       const rows = (data as Campaign[]) ?? [];
       setCampaigns(rows);
       if (rows.length) setCampaignId(initialCampaignId(rows));

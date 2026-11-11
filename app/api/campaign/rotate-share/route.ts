@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
+import { isCampaignGm } from "@/lib/campaign-gm";
 
 // POST /api/campaign/rotate-share  { campaign_id }
 // Rotates a campaign's share_code so an old session/table/record link stops
@@ -74,7 +75,7 @@ export async function POST(request: NextRequest) {
   if (!campaign) {
     return NextResponse.json({ error: "Campaign not found." }, { status: 404 });
   }
-  if (campaign.gm_id !== userId) {
+  if (!(await isCampaignGm(sb, campaignId, userId, campaign.gm_id ?? null))) {
     return NextResponse.json({ error: "Only the campaign's GM can rotate its link." }, { status: 403 });
   }
 

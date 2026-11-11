@@ -24,6 +24,7 @@ import { friendlyError } from "@/lib/friendly-error";
 import { openTabletop, tabletopUrl } from "@/lib/tabletop/open";
 import { askConfirm } from "@/lib/confirm";
 import { fmtDateTime } from "@/lib/format";
+import { gmCampaignsFilter } from "@/lib/campaign-gm";
 
 type Campaign = { id: string; name: string; system: string | null; share_code: string | null; discord_channel_id: string | null };
 type Sess = { id: string; session_number: number | null; status: string | null; scheduled_at: string | null; recap: string | null; started_at: string | null; ended_at: string | null; capture_modality: string | null };
@@ -82,7 +83,7 @@ export default function TonightPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { setErr("Sign in to run your session."); setCampaigns([]); return; }
       const [{ data: camps }, { data: t }] = await Promise.all([
-        supabase.from("campaigns").select("id, name, system, share_code, discord_channel_id").eq("gm_id", user.id).order("created_at", { ascending: false }),
+        supabase.from("campaigns").select("id, name, system, share_code, discord_channel_id").or(await gmCampaignsFilter(supabase, user.id)).order("created_at", { ascending: false }),
         supabase.from("event_types").select("key,label,category,default_axis,default_frame,default_target"),
       ]);
       const list = (camps as Campaign[]) || [];

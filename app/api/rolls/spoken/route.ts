@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { detectSpokenRolls, type RollKind } from "@/lib/spoken-rolls";
+import { isCampaignGm } from "@/lib/campaign-gm";
 
 // app/api/rolls/spoken/route.ts
 //
@@ -73,7 +74,7 @@ export async function POST(req: Request) {
 
   const { data: camp } = await admin
     .from("campaigns").select("gm_id").eq("id", job.campaign_id).maybeSingle();
-  if (!camp || camp.gm_id !== user.id) {
+  if (!camp || !(await isCampaignGm(admin, job.campaign_id, user.id, camp.gm_id ?? null))) {
     return NextResponse.json({ error: "Only the GM of this campaign can do that." }, { status: 403 });
   }
 
