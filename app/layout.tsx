@@ -54,6 +54,10 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
   },
+  // Installed on an iPhone home screen (audit F14): open full screen, under this name, with this icon.
+  // The web app manifest (app/manifest.ts) covers Android and desktop.
+  appleWebApp: { capable: true, title: "Six Axes", statusBarStyle: "black-translucent" },
+  icons: { apple: "/icons/apple-touch-icon.png" },
 };
 
 // Next 16 moves themeColor/colorScheme out of `metadata` into a `viewport` export. Matches the dark

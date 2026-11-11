@@ -8,6 +8,7 @@ import { friendlyError } from "@/lib/friendly-error";
 import { ConnectProblem, LinkInvalid } from "@/components/load-problem";
 import { fmtDateTime } from "@/lib/format";
 import { SAX } from "@/lib/theme";
+import { downloadSessionIcs } from "@/lib/calendar";
 
 type Sched = { session_id: string; session_number: number | null; scheduled_at: string; campaign_name: string };
 
@@ -132,6 +133,11 @@ export default function PlayerSchedulePage() {
                 {sched.session_number != null ? `Session ${sched.session_number}` : "Next session"}
               </div>
               <div style={{ color: C.sun, fontSize: 15 }}>{when}</div>
+              {/* audit F8: one tap puts this session in the phone's own calendar */}
+              <button type="button" onClick={() => downloadSessionIcs({ id: sched.session_id, title: `${sched.campaign_name}${sched.session_number != null ? `: session ${sched.session_number}` : ""}`, start: sched.scheduled_at, url: window.location.href })}
+                style={{ marginTop: 8, background: "transparent", border: "none", padding: 0, color: C.muted, fontSize: 13, cursor: "pointer", textDecoration: "underline", minHeight: "var(--sax-tap, 0px)" }}>
+                Add to calendar
+              </button>
             </div>
 
             <div style={{ display: "grid", gap: 8 }}>

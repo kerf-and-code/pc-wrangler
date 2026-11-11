@@ -1,3 +1,4 @@
+import { anthropicTokens, recordUsage } from "@/lib/usage";
 // Campaign journal builder. Sibling of lib/recap/build.ts: gathers the campaign's
 // captured material (session recaps, arcs, loot, dice highlights, NPC cast) and
 // makes ONE model call to weave the recaps into a continuous chronicle. Returns
@@ -51,7 +52,7 @@ function natD20(rolls: any): number | null {
   return typeof v === "number" ? v : null;
 }
 
-async function callClaude(apiKey: string, system: string, user: string, maxTokens: number): Promise<string> {
+async function callClaude(apiKey: string, system: string, user: string, maxTokens: number, campaignId: string | null = null): Promise<string> {
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: { "x-api-key": apiKey, "anthropic-version": "2023-06-01", "content-type": "application/json" },
@@ -59,6 +60,7 @@ async function callClaude(apiKey: string, system: string, user: string, maxToken
   });
   if (!res.ok) throw new Error("model error");
   const data = await res.json();
+  await recordUsage({ kind: "ai", provider: "anthropic", model: JOURNAL_MODEL, route: "journal", campaignId, ...anthropicTokens(data) });
   return (data.content || []).filter((b: any) => b.type === "text").map((b: any) => b.text).join("\n").trim();
 }
 
@@ -164,7 +166,7 @@ export async function buildJournal(supabase: DbLike, campaignId: string): Promis
 
   let chronicle = "";
   try {
-    chronicle = await callClaude(apiKey, system, context, CHRONICLE_TOKENS);
+    chronicle = await callClaude(apiKey, system, context, CHRONICLE_TOKENS, campaignId);
   } catch {
     return { ok: false, error: "The journal model returned an error. Try again.", status: 502 };
   }

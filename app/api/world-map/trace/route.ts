@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { releaseAi, reserveAi } from "@/lib/ai-allowance";
+import { geminiTokens, recordUsage } from "@/lib/usage";
 
 export const maxDuration = 60;
 
@@ -80,6 +81,7 @@ export async function POST(request: Request) {
     }
 
     const gem = (await gemResp.json()) as { candidates?: { content?: { parts?: { text?: string }[] } }[] };
+    await recordUsage({ kind: "ai", provider: "google", model: MODEL, route: "world-map/trace", campaignId, ...geminiTokens(gem) });
     const text = gem.candidates?.[0]?.content?.parts?.map((p) => p.text).filter(Boolean).join("") ?? "";
 
     let parsed: unknown;

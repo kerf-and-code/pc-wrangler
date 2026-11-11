@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { extract } from "@/lib/backfill/extract";
+import { anthropicCompleteFor, extract } from "@/lib/backfill/extract";
 import { hasGmAccess } from "@/lib/ai-allowance";
 import type { NormalizedImport } from "@/lib/backfill/types";
 
@@ -74,7 +74,7 @@ export async function POST(request: Request) {
     // Extract: structural notes map straight through (no model); prose + recaps use the model.
     let candidates, recaps, warnings;
     try {
-      const result = await extract(bundle, {}); // default = the same Anthropic call the live extractor uses
+      const result = await extract(bundle, { complete: anthropicCompleteFor(campaignId) }); // the same Anthropic call the live extractor uses, metered to this campaign
       candidates = result.candidates;
       recaps = result.recaps;
       warnings = result.warnings;

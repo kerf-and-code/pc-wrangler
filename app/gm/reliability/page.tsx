@@ -9,6 +9,7 @@ import { initialCampaignId, useRememberCampaign } from "@/lib/campaign-context";
 import { askConfirm } from "@/lib/confirm";
 import { LoadingState } from "@/components/ui-forge/States";
 import CampaignPicker from "@/components/ui-forge/CampaignPicker";
+import UsagePanel from "@/components/usage-panel";
 
 type Campaign = { id: string; name: string };
 type PE = { status: string; event_type: string; axis: string | null; confidence: number | null; extractor_version: string | null };
@@ -431,6 +432,9 @@ export default function ReliabilityPage() {
             </div>
           </>
         )}
+
+        {/* push 16 (audit T22): what the campaign used, recorded from p147 on */}
+        {campaignId && <UsagePanel supabase={supabase} campaignId={campaignId} />}
 
         {/* human second coding: agreement between the extractor and a person */}
         <div style={box}>

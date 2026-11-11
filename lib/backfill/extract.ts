@@ -19,6 +19,7 @@
 // no network.
 
 import { EntityKind, NormalizedImport, SourceNote, SessionSegment } from "./types";
+import { anthropicTokens, recordUsage } from "@/lib/usage";
 
 export type CandidateKind = "npc" | "location" | "faction" | "item" | "lore" | "pc";
 
@@ -53,7 +54,8 @@ export type ExtractResult = {
 // model), so backfill and live extraction speak to the model the same way.
 export type Complete = (system: string, prompt: string) => Promise<string>;
 
-export const anthropicComplete: Complete = async (system, prompt) => {
+/** The Anthropic transport, recording its usage against a campaign (push 16, audit T22). */
+export const anthropicCompleteFor = (campaignId: string | null): Complete => async (system, prompt) => {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) throw new Error("Server is missing the extraction API key.");
   const res = await fetch("https://api.anthropic.com/v1/messages", {
@@ -67,12 +69,14 @@ export const anthropicComplete: Complete = async (system, prompt) => {
     }),
   });
   const data = await res.json();
+  await recordUsage({ kind: "ai", provider: "anthropic", model: "claude-sonnet-4-6", route: "import", campaignId, ...anthropicTokens(data) });
   return ((data?.content || []) as { type?: string; text?: string }[])
     .filter((b) => b?.type === "text")
     .map((b) => b.text || "")
     .join("")
     .trim();
 };
+export const anthropicComplete: Complete = anthropicCompleteFor(null);
 
 // Structural kind -> codex kind. `session`/`event`/`unknown` are not entities here (session feeds recaps;
 // unknown prose goes to the model), so they return null.

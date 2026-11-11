@@ -1,3 +1,4 @@
+import { anthropicTokens, recordUsage } from "@/lib/usage";
 // Shared recap builder. Gathers a session's context (GM notes, accepted player
 // events, GM narration/NPCs, loot, threads, transcript) and produces a
 // "previously on" recap. Used by the manual generate route and the auto-draft on
@@ -62,7 +63,7 @@ type DbLike = { from: (table: string) => any };
 type BuildResult = { ok: true; recap: string } | { ok: false; error: string; status: number };
 type RecapMode = "brief" | "complete";
 
-async function callClaude(apiKey: string, system: string, user: string, maxTokens: number): Promise<string> {
+async function callClaude(apiKey: string, system: string, user: string, maxTokens: number, sessionId: string | null = null): Promise<string> {
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
@@ -79,6 +80,7 @@ async function callClaude(apiKey: string, system: string, user: string, maxToken
   });
   if (!res.ok) throw new Error("model error");
   const data = await res.json();
+  await recordUsage({ kind: "ai", provider: "anthropic", model: RECAP_MODEL, route: "recap", sessionId, ...anthropicTokens(data) });
   return (data.content || [])
     .filter((b: any) => b.type === "text")
     .map((b: any) => b.text)
@@ -207,7 +209,7 @@ export async function buildRecap(supabase: DbLike, sessionId: string, mode: Reca
     const lines = events.map((ev: any) => {
       const who = nameOf(ev.character_id);
       const axis = ev.axis ? `[${AXIS_NAME[ev.axis] || ev.axis}] ` : "";
-      const note = ev.payload?.note ? ` — ${ev.payload.note}` : "";
+      const note = ev.payload?.note ? `: ${ev.payload.note}` : "";
       return `- ${axis}${who}: ${typeLabel(ev.event_type)}${note}`;
     });
     parts.push(`\nLogged events (in order):\n${lines.join("\n")}`);
@@ -287,7 +289,7 @@ export async function buildRecap(supabase: DbLike, sessionId: string, mode: Reca
 
           const summaries = await Promise.all(
             working.map((chunk, i) =>
-              callClaude(apiKey, CHUNK_SYSTEM, `Part ${i + 1} of ${working.length}:\n\n${chunk}`, CHUNK_TOKENS)),
+              callClaude(apiKey, CHUNK_SYSTEM, `Part ${i + 1} of ${working.length}:\n\n${chunk}`, CHUNK_TOKENS, sessionId)),
           );
 
           // If the session produced a lot of chunks, the concatenated beats can get
@@ -304,7 +306,7 @@ export async function buildRecap(supabase: DbLike, sessionId: string, mode: Reca
             if (acc) reduced.push(acc);
             const reducedBeats = await Promise.all(
               reduced.map((r, i) =>
-                callClaude(apiKey, CHUNK_SYSTEM, `Beats group ${i + 1} of ${reduced.length}:\n\n${r}`, CHUNK_TOKENS)),
+                callClaude(apiKey, CHUNK_SYSTEM, `Beats group ${i + 1} of ${reduced.length}:\n\n${r}`, CHUNK_TOKENS, sessionId)),
             );
             beats = reducedBeats.join("\n");
           } else {
@@ -346,7 +348,7 @@ export async function buildRecap(supabase: DbLike, sessionId: string, mode: Reca
 
   let recap = "";
   try {
-    recap = await callClaude(apiKey, system, context, maxTokens);
+    recap = await callClaude(apiKey, system, context, maxTokens, sessionId);
   } catch {
     return { ok: false, error: "The recap model returned an error. Try again.", status: 502 };
   }

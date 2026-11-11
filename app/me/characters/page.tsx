@@ -7,6 +7,8 @@ import { SAX } from "@/lib/theme";
 import { UpgradeAccount } from "@/components/upgrade-account";
 import { Header } from "@/app/me/campaigns/page";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
+import { askConfirm } from "@/lib/confirm";
+import { friendlyError } from "@/lib/friendly-error";
 
 // The stable: every character this person owns, across every campaign.
 //
@@ -31,6 +33,20 @@ export default function MyCharactersPage() {
   const supabase = createClient();
   const [rows, setRows] = useState<Char[]>([]);
   const [status, setStatus] = useState<"loading" | "ready" | "empty" | "error">("loading");
+  const [note, setNote] = useState<{ text: string; bad: boolean } | null>(null);
+
+  // Audit F6: a player can retire a character themselves. Same as the GM's remove on the roster
+  // (active = false): it leaves the party everywhere, and its story stays with the campaign. Bringing it
+  // back is the GM's call, so there is no un-retire here.
+  async function retire(c: Char) {
+    if (!await askConfirm(`Retire ${c.name} from ${c.campaign_name}? They leave the party there: Tonight, check-ins, encounters and the roll list. Their story stays with the campaign, and only your GM can bring them back.`, { confirmLabel: "Retire" })) return;
+    setNote(null);
+    const { data, error } = await supabase.from("characters").update({ active: false }).eq("id", c.character_id).select("id");
+    if (error) { setNote({ text: friendlyError(error, "retire them"), bad: true }); return; }
+    if (!data || data.length === 0) { setNote({ text: `${c.name} could not be retired from here. Ask your GM.`, bad: true }); return; }
+    setRows((rs) => rs.map((r) => (r.character_id === c.character_id ? { ...r, active: false } : r)));
+    setNote({ text: `${c.name} is retired from ${c.campaign_name}.`, bad: false });
+  }
 
   useEffect(() => {
     let active = true;
@@ -74,6 +90,7 @@ export default function MyCharactersPage() {
           </a>
         </div>
 
+        {note && <p role={note.bad ? "alert" : "status"} style={{ color: note.bad ? C.warn : C.muted, fontSize: 13.5, margin: "0 0 14px" }}>{note.text}</p>}
         {status === "loading" && <Muted>Loading&hellip;</Muted>}
         {status === "error" && <Muted>Something went wrong loading your characters. Please refresh.</Muted>}
         {status === "empty" && (
@@ -131,6 +148,11 @@ export default function MyCharactersPage() {
                   <a href={`/me/forge?c=${c.character_id}`} style={{ fontFamily: SAX.mono, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: C.muted, textDecoration: "none" }}>
                     Forge
                   </a>
+                  {c.active && (
+                    <button type="button" onClick={() => void retire(c)} style={{ marginLeft: "auto", background: "transparent", border: "none", padding: 0, cursor: "pointer", fontFamily: SAX.mono, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: C.muted, minHeight: "var(--sax-tap, 0px)" }}>
+                      Retire
+                    </button>
+                  )}
                 </div>
               </div>
             ))}

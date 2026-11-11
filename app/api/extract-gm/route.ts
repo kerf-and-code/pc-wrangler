@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { anthropicTokens, recordUsage } from "@/lib/usage";
 
 // Version-pinned like the player extractor, stamped on every proposed GM event.
 const MODEL = "claude-sonnet-4-6";
@@ -147,7 +148,7 @@ export async function POST(req: NextRequest) {
   const windowSegs = segments.slice(cursor, cursor + WINDOW);
   const transcriptText = windowSegs.map((s, idx) => `[${cursor + idx}] ${s.text}`).join("\n");
   const catalogText = kinds
-    .map((k) => `${k.kind} — ${k.label} (${k.category}; feeds ${k.feeds && k.feeds.length ? k.feeds.join(",") : "none"})`)
+    .map((k) => `${k.kind}: ${k.label} (${k.category}; feeds ${k.feeds && k.feeds.length ? k.feeds.join(",") : "none"})`)
     .join("\n");
   const rosterText = chars.length ? chars.map((c) => c.name).join(", ") : "(no player characters on file)";
 
@@ -175,6 +176,7 @@ Keep summary tight and factual. Only fill location_name/faction_name when a prop
       body: JSON.stringify({ model: MODEL, max_tokens: 3000, system, messages: [{ role: "user", content: prompt }] }),
     });
     const data = await res.json();
+    await recordUsage({ kind: "ai", provider: "anthropic", model: MODEL, route: "extract-gm", campaignId: job.campaign_id, sessionId: job.session_id, ...anthropicTokens(data) });
     const text: string = (data?.content || [])
       .filter((bl: { type?: string }) => bl?.type === "text")
       .map((bl: { text?: string }) => bl.text || "")

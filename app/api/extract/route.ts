@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { anthropicTokens, recordUsage } from "@/lib/usage";
 
 // Version-pinned per the methods plan: prompt revision + model, stamped on
 // every proposed and accepted event so coding can be compared across versions.
@@ -173,7 +174,7 @@ export async function POST(req: NextRequest) {
 
   const windowSegs = segments.slice(cursor, cursor + WINDOW);
   const transcriptText = windowSegs.map((s, idx) => `[${cursor + idx}] ${nameOf(s.character_id)}: ${s.text}`).join("\n");
-  const catalogText = etypes.map((e) => `${e.key} — ${e.label} (${e.category}; default axis ${e.default_axis ?? "none"}, frame ${e.default_frame ?? "none"}, target ${e.default_target ?? "none"})`).join("\n");
+  const catalogText = etypes.map((e) => `${e.key}: ${e.label} (${e.category}; default axis ${e.default_axis ?? "none"}, frame ${e.default_frame ?? "none"}, target ${e.default_target ?? "none"})`).join("\n");
   const rosterText = chars.length ? chars.map((c) => `${c.name} (${c.kind})`).join(", ") : "(no roster on file)";
 
   const system = "You extract tabletop RPG play events from a session transcript for spotlight-equity analytics. You are precise and conservative: only propose an event when the line clearly supports it. Prefer precision over recall. Output STRICT JSON only, no prose, no code fences.";
@@ -205,6 +206,7 @@ Return a JSON array. Return [] if nothing in this window is clearly an event.`;
       body: JSON.stringify({ model: MODEL, max_tokens: 2000, system, messages: [{ role: "user", content: prompt }] }),
     });
     const data = await res.json();
+    await recordUsage({ kind: "ai", provider: "anthropic", model: MODEL, route: "extract", campaignId: job.campaign_id, sessionId: job.session_id, ...anthropicTokens(data) });
     const text: string = (data?.content || [])
       .filter((bl: { type?: string }) => bl?.type === "text")
       .map((bl: { text?: string }) => bl.text || "")

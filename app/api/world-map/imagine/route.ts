@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { releaseAi, reserveAi } from "@/lib/ai-allowance";
+import { geminiTokens, recordUsage } from "@/lib/usage";
 
 export const maxDuration = 60; // Nano Banana image generation can take a while
 
@@ -274,6 +275,7 @@ export async function POST(request: Request) {
       promptFeedback?: { blockReason?: string };
       candidates?: { finishReason?: string; content?: { parts?: Array<{ text?: string; inline_data?: { data?: string }; inlineData?: { data?: string } }> } }[];
     };
+    await recordUsage({ kind: "image", provider: "google", model: MODEL, route: "world-map/imagine", campaignId, images: 1, ...geminiTokens(gem) });
     const cand = gem.candidates?.[0];
     const parts = cand?.content?.parts ?? [];
     // The REST response uses camelCase inlineData; accept snake_case too for safety.

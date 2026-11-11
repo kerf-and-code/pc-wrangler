@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { geminiTokens, recordUsage } from "@/lib/usage";
 
 // app/api/tools/map-render/route.ts
 //
@@ -177,6 +178,7 @@ export async function POST(request: Request) {
       promptFeedback?: { blockReason?: string };
       candidates?: { finishReason?: string; content?: { parts?: Array<{ text?: string; inline_data?: { data?: string }; inlineData?: { data?: string } }> } }[];
     };
+    await recordUsage({ kind: "image", provider: "google", model: MODEL, route: "tools/map-render", images: 1, ...geminiTokens(gem) });
     const parts = gem.candidates?.[0]?.content?.parts ?? [];
     const outB64 = parts.map((p) => p.inline_data?.data ?? p.inlineData?.data).filter(Boolean).pop();
     if (!outB64) {

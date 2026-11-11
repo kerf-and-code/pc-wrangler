@@ -88,7 +88,7 @@ export default function AddonsPanel({ campaignId, supabase, onHooksChanged }: { 
 
   return (
     <div style={{ flex: 1, overflowY: "auto", padding: 12, fontSize: 12.5, color: C.text }}>
-      <p style={{ color: C.muted, margin: 0 }}>Connect other programs to this table: a Discord bot that posts rolls, a stream overlay, your own scripts. Keys let them talk to the table; webhooks tell them what happens here.</p>
+      <p style={{ color: C.muted, margin: 0 }}>Connect other programs to this table: a Discord bot that posts rolls, a stream overlay, your own scripts. Keys let them talk to the table; webhooks tell them what happens here. <a href="/developers" target="_blank" rel="noreferrer" style={{ color: C.sun }}>Developer reference</a></p>
       {err && <p role="status" style={{ color: C.warn, margin: "8px 0 0" }}>{err}</p>}
 
       <div style={head}>Keys</div>

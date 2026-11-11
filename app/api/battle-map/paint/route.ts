@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { releaseAi, reserveAi } from "@/lib/ai-allowance";
+import { geminiTokens, recordUsage } from "@/lib/usage";
 
 // POST /api/battle-map/paint (2026-11-06)
 //
@@ -103,6 +104,7 @@ export async function POST(request: Request) {
       promptFeedback?: { blockReason?: string };
       candidates?: { finishReason?: string; content?: { parts?: Array<{ text?: string; inline_data?: { data?: string; mime_type?: string }; inlineData?: { data?: string; mimeType?: string } }> } }[];
     };
+    await recordUsage({ kind: "image", provider: "google", model: MODEL, route: "battle-map/paint", campaignId, images: 1, ...geminiTokens(gem) });
     const cand = gem.candidates?.[0];
     const parts = cand?.content?.parts ?? [];
     const imgs = parts.map((pt) => ({ data: pt.inline_data?.data ?? pt.inlineData?.data, mime: pt.inline_data?.mime_type ?? pt.inlineData?.mimeType })).filter((x) => !!x.data);

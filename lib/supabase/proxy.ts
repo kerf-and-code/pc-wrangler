@@ -87,6 +87,14 @@ export async function updateSession(request: NextRequest) {
     // behind login.
     !request.nextUrl.pathname.startsWith("/api/addon/v1") &&
     !request.nextUrl.pathname.startsWith("/api/email/unsubscribe") &&
+    // ---- added 2026-11-10 (push 16) ----
+    // Calendar feeds (audit F8): a calendar app fetches /api/calendar/<secret>.ics with no cookie; the
+    // token in the address is the only key, checked by calendar_feed() (p147).
+    !request.nextUrl.pathname.startsWith("/api/calendar/") &&
+    // The add-on developer reference is public documentation (audit P9).
+    !request.nextUrl.pathname.startsWith("/developers") &&
+    // The installable-app manifest (audit F14): browsers fetch it without cookies.
+    request.nextUrl.pathname !== "/manifest.webmanifest" &&
     // ---- everything below added 2026-08-03, after a 307 to /auth/login was traced back here ----
     //
     // THE LANDING PAGE. Exact match, because startsWith("/") would exempt the entire site. Without
