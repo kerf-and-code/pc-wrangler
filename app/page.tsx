@@ -9,7 +9,7 @@ import { READS } from "@/components/sample-output";
 import { POINTS } from "@/components/trust-section";
 import JsonLd from "@/components/json-ld";
 import { softwareApplicationSchema } from "@/lib/seo";
-import { FULL_TOOLSET, THEMED_TABLE, PLANNED, systemsDots } from "@/lib/marketing/systems";
+import { FULL_TOOLSET, FULL_TOOLSET_NOTE, THEMED_TABLE, PLANNED, systemsDots } from "@/lib/marketing/systems";
 import MobileMenu from "@/components/site/mobile-menu";
 import { LANDING_NAV, PILOT_CTA } from "@/lib/marketing/nav";
 
@@ -355,6 +355,7 @@ export default function Home() {
               <h3>Full toolset</h3>
               <p>Character builder, monsters or NPCs, encounter maths, system-correct dice. On D&amp;D 5e the builder and compendium go well past the free rules, with partnered publishers&apos; classes and species used with permission.</p>
               <p className="nt-tier-list">{systemsDots(FULL_TOOLSET)}</p>
+              <p>{FULL_TOOLSET_NOTE}</p>
             </div>
             <div data-reveal>
               <h3>Themed table and dice</h3>

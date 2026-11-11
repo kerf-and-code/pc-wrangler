@@ -66,6 +66,7 @@ import FloatingPanel from "@/components/floating-panel";
 import PlayCompanions, { type Companion, type MonsterRec } from "@/components/play-companions";
 import PlayParty from "@/components/play-party";
 import PartyStash from "@/components/party-stash";
+import SystemPlay, { type PlaySheet as SystemPlaySheet, type SystemPlayState } from "@/components/system-play";
 import { combatAct, type FightEntry, type FightView } from "@/components/fight-controls";
 import { trackedResources, type TrackInputs } from "@/lib/play/tracks";
 import { isWeapon, unarmedAttack, weaponAttack, weaponProfText, applyAttackFeatures, baseWeaponFor, applyImportAdjust, importedAttackRows, type AttackRow, type WeaponRecord } from "@/lib/play/attacks";
@@ -1670,6 +1671,27 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
   // The turn tracker sits behind the Initiative button, in a small window the player can move.
   // ---------------------------------------------------------------------------
   if (view === "play") {
+    // Push 22 (audit G5): the at-the-table tracker for the systems outside D&D 5e.
+    const playSheet: SystemPlaySheet | null =
+      system === "pf2e" && psheet ? { system: "pf2e", sheet: psheet }
+      : system === "daggerheart" && dsheet ? { system: "daggerheart", sheet: dsheet }
+      : system === "drawsteel" && steelSheet ? { system: "drawsteel", sheet: steelSheet }
+      : system === "lancer" && lanSheet ? { system: "lancer", sheet: lanSheet }
+      : null;
+    type WithPlay = { play?: SystemPlayState };
+    const playState: SystemPlayState | undefined =
+      system === "pf2e" ? (pbuild as Pf2eBuild & WithPlay).play
+      : system === "daggerheart" ? (dbuild as DHBuild & WithPlay).play
+      : system === "drawsteel" ? (steelBuild as DSBuild & WithPlay).play
+      : system === "lancer" ? (lancerBuild as LancerBuild & WithPlay).play
+      : undefined;
+    const setPlayState = (st: SystemPlayState) => {
+      if (system === "pf2e") setPbuild((b) => ({ ...b, play: st } as Pf2eBuild));
+      else if (system === "daggerheart") setDbuild((b) => ({ ...b, play: st } as DHBuild));
+      else if (system === "drawsteel") setSteelBuild((b) => ({ ...b, play: st } as DSBuild));
+      else if (system === "lancer") setLancerBuild((b) => ({ ...b, play: st } as LancerBuild));
+      setSaveState("idle");
+    };
     const charIdNow = mode === "character" && row ? row.id : null;
     const campaignNow = mode === "character" && row ? row.campaign_id : null;
     const spentNow = (build as Build & { spent?: Record<string, number> }).spent || {};
@@ -1724,9 +1746,17 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
               <div style={stonePanel()}>
                 <PanelTitle>Character sheet</PanelTitle>
                 <Muted>{system !== "dnd5e"
-                  ? "The character sheet is for D&D 5e characters for now. Characters in other systems play from the Forge."
+                  ? (playSheet
+                    ? "The full sheet, with attacks, spells and inventory, is for D&D 5e for now. Track this character's numbers below, and change the build in the Forge."
+                    : "This character's sheet has not derived yet. Finish the build in the Forge first.")
                   : "This character's sheet has not derived yet. Pick a species and a class in the Forge first."}</Muted>
                 <a className="forge-btn" href={forgeHref} style={{ ...stoneButton("stone"), display: "inline-block", marginTop: 10, textDecoration: "none" }}>Open in the Forge</a>
+              </div>
+            )}
+            {/* Push 22 (audit G5): hit points and the system's own resources, saved in the build as play. */}
+            {status === "ready" && !dndReady && playSheet && (
+              <div style={{ marginTop: 14 }}>
+                <SystemPlay play={playSheet} state={playState} onChange={setPlayState} />
               </div>
             )}
             {/* Push 20 (audit G10): the party inventory for a character in a system whose sheet has no

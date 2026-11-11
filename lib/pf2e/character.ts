@@ -84,7 +84,44 @@ export interface Pf2eBuild {
   };
   skills: Record<string, ProfRank>;  // skill id -> chosen rank
   armor: { category: ArmorCategory; dexCap: number; itemBonus: number };
-  feats: Record<string, string[]>;   // slot -> chosen feats (freeform for now)
+  feats: Record<string, string[]>;   // slot key (pf2eFeatSlots) -> chosen feat names
+  /** Push 22 (audit G4): spells the character knows or prepares, by name and rank (0 = cantrip). */
+  spells?: { name: string; rank: number }[];
+  /** Push 22: carried gear, by name. Recorded only; armor still sets AC through `armor` above. */
+  gear?: { name: string; qty: number }[];
+}
+
+export type Pf2eFeatType = "ancestry" | "class" | "skill" | "general";
+export type Pf2eFeatSlot = { key: string; type: Pf2eFeatType; level: number; label: string };
+
+const ANCESTRY_FEAT_LEVELS = [1, 5, 9, 13, 17];
+const GENERAL_FEAT_LEVELS = [3, 7, 11, 15, 19];
+/** Classes in PF2_RULES that take a class feat at level 1 (the fighter and the rogue; the cleric and
+ *  the wizard start at 2). */
+const CLASS_FEAT_AT_1 = new Set(["fighter", "rogue"]);
+
+/**
+ * The feat slots a character has by level (Player Core): ancestry feats at 1, 5, 9, 13 and 17; class
+ * feats at every even level (and level 1 for the fighter and rogue); skill feats at every even level
+ * (every level for the rogue); general feats at 3, 7, 11, 15 and 19.
+ */
+export function pf2eFeatSlots(level: number, classId: string): Pf2eFeatSlot[] {
+  const lv = clamp(Math.round(level) || 1, 1, 20);
+  const out: Pf2eFeatSlot[] = [];
+  const add = (type: Pf2eFeatType, at: number) =>
+    out.push({ key: `${type}-${at}`, type, level: at, label: `${type[0].toUpperCase()}${type.slice(1)} feat (level ${at})` });
+  for (let at = 1; at <= lv; at++) {
+    if (ANCESTRY_FEAT_LEVELS.includes(at)) add("ancestry", at);
+    if (at % 2 === 0 || (at === 1 && CLASS_FEAT_AT_1.has(classId))) add("class", at);
+    if (at % 2 === 0 || classId === "rogue") add("skill", at);
+    if (GENERAL_FEAT_LEVELS.includes(at)) add("general", at);
+  }
+  return out;
+}
+
+/** The highest spell rank a full caster can cast at this level (rank 1 at 1, rank 10 at 19). */
+export function pf2eMaxSpellRank(level: number): number {
+  return clamp(Math.ceil((Math.round(level) || 1) / 2), 1, 10);
 }
 
 export interface Pf2eSheet {

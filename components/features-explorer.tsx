@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { SAX, STONE } from "@/lib/theme";
 import { stonePanel } from "@/lib/forge-theme";
-import { FULL_TOOLSET, THEMED_TABLE, systemsAnd } from "@/lib/marketing/systems";
+import { FULL_TOOLSET, FULL_TOOLSET_NOTE, THEMED_TABLE, systemsAnd } from "@/lib/marketing/systems";
 
 // components/features-explorer.tsx
 //
@@ -87,7 +87,7 @@ const FEATURES: Feature[] = [
     title: "One core, a module per game",
     lead: "It reskins and re-rules itself around your table.",
     paras: [
-      `${systemsAnd(FULL_TOOLSET)} get the full toolset: a character builder, monsters or NPCs, encounter maths, and system-correct dice. ${systemsAnd(THEMED_TABLE)} run as a themed table with the right roller, with more on the way.`,
+      `${systemsAnd(FULL_TOOLSET)} get the full toolset: a character builder, monsters or NPCs, encounter maths, and system-correct dice. ${FULL_TOOLSET_NOTE} ${systemsAnd(THEMED_TABLE)} run as a themed table with the right roller, with more on the way.`,
       "On D&D 5e the builder goes well past the free rules: subclasses, species, feats, spells and magic items from the books most tables play from, written in our own words, plus classes and species from partnered publishers, used with their permission.",
       "The record, recap, wiki, and player insight work the same on every system. What changes is the dice and the sheet, not the loop.",
     ],

@@ -8,16 +8,23 @@
 // Prose surfaces (pilot sentence, FAQ answer, features paragraph) call systemsAnd(); the dotted tier
 // lists on the landing page call systemsDots(). Change a tier here and all four surfaces follow.
 
+// Push 22 (audit G6): Lancer moves up. It has a character builder with derivation, an NPC builder in the
+// Monster Maker and a Forge column, so "builders still to come" undersold it. FULL_TOOLSET_NOTE says
+// plainly where the depth differs, so the full tier no longer oversells the newer systems either.
 export const FULL_TOOLSET = [
   "D&D 5e (2014 and 2024)",
   "Pathfinder 2e",
   "Draw Steel",
   "Daggerheart",
+  "Lancer",
 ] as const;
+
+/** One honest line under the full tier: what only D&D 5e has so far. Keep it true as systems deepen. */
+export const FULL_TOOLSET_NOTE =
+  "D&D 5e goes deepest: its play sheet carries attacks, spells and inventory. The other systems keep hit points and resources at the table, and Lancer has no encounter maths yet.";
 
 export const THEMED_TABLE = [
   "Call of Cthulhu",
-  "Lancer",
   "a generic d10 pool",
 ] as const;
 

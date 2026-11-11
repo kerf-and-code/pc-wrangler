@@ -11,6 +11,7 @@ import {
 } from "@/lib/pf2e/character";
 import { PF2_RULES } from "@/lib/pf2e/rules-data";
 import { STONE, FORGE_FONTS, stonePanel, stoneField, forgeLabel, statTile } from "@/lib/forge-theme";
+import { Pf2eFeatsPanel, Pf2eSpellsPanel, Pf2eGearPanel } from "@/components/pf2e-picks";
 
 const ABILITIES: [PF2Ability, string][] = [
   ["str", "Str"], ["dex", "Dex"], ["con", "Con"], ["int", "Int"], ["wis", "Wis"], ["cha", "Cha"],
@@ -176,6 +177,11 @@ export default function Pf2eForge({
           </Field>
         </div>
       </div>
+
+      {/* Push 22 (audit G4): feats, spells and gear, named from the compendium's records. */}
+      {pbuild.classId && <Pf2eFeatsPanel pbuild={pbuild} onChange={onChange} />}
+      {cls?.spell && <Pf2eSpellsPanel pbuild={pbuild} onChange={onChange} />}
+      <Pf2eGearPanel pbuild={pbuild} onChange={onChange} />
 
       {/* Live sheet */}
       <div style={stonePanel()}>
