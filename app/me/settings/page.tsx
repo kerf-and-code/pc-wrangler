@@ -34,7 +34,7 @@ type Profile = {
 
 // Audit F5: standing recording consent, per campaign (p137 my_recording_consents).
 // Push 1 (audit T12): which emails this address gets (p138 my_email_prefs / set_my_email_prefs).
-type EmailPrefs = { email: string; reminders: boolean; recaps: boolean };
+type EmailPrefs = { email: string; reminders: boolean; recaps: boolean; digest?: boolean };
 // Push 8 (audit T11): carried is true when the standing consent was filled in by the one-off backfill from
 // an earlier single-session yes, not given by the player as standing consent; the page asks them to confirm.
 type ConsentRow = { campaignId: string; campaignName: string; characters: { id: string; name: string }[]; state: "given" | "withdrawn" | "none"; carried?: boolean };
@@ -110,6 +110,16 @@ export default function MySettingsPage() {
     setEmailPrefs(next); setEmailMsg(null);
     const { error: e } = await supabase.rpc("set_my_email_prefs", { p_reminders: next.reminders, p_recaps: next.recaps });
     if (e) { setEmailPrefs(emailPrefs); setEmailMsg(`Not saved: ${e.message}`); return; }
+    setEmailMsg("Saved.");
+  }
+
+  // Push 19: the daily digest of unread notifications (p150), off until chosen.
+  async function setDigest(on: boolean) {
+    if (!emailPrefs) return;
+    const prev = emailPrefs;
+    setEmailPrefs({ ...emailPrefs, digest: on }); setEmailMsg(null);
+    const { error: e } = await supabase.rpc("set_my_email_digest", { p_on: on });
+    if (e) { setEmailPrefs(prev); setEmailMsg(/function|schema cache/i.test(e.message) ? "The daily digest is being set up. Try again in a few minutes." : `Not saved: ${e.message}`); return; }
     setEmailMsg("Saved.");
   }
 
@@ -323,6 +333,10 @@ export default function MySettingsPage() {
                       {label}
                     </label>
                   ))}
+                  <label style={{ display: "flex", alignItems: "center", gap: 10, color: C.text, fontSize: 14, cursor: "pointer" }}>
+                    <input type="checkbox" checked={Boolean(emailPrefs.digest)} onChange={(e) => setDigest(e.target.checked)} style={{ width: 18, height: 18 }} />
+                    A daily digest of notifications you have not read in the app
+                  </label>
                 </div>
                 {emailMsg && <p role="status" style={{ color: emailMsg === "Saved." ? C.muted : C.warn, fontSize: 13, margin: "10px 0 0" }}>{emailMsg}</p>}
               </Card>
@@ -334,7 +348,7 @@ export default function MySettingsPage() {
                 Take everything we hold about you: your characters with their full sheets and
                 pages, your library, your notes, your self-reports and how they changed over
                 time, your dispositions, your threads, your check-ins, your chat, your
-                transcribed words, and your settings. One JSON file, nothing withheld. A
+                transcribed words, your notifications, and your settings. One JSON file, nothing withheld. A
                 campaign you run has its own export in the GM workspace.
               </p>
               <button type="button" onClick={exportData} disabled={exporting} style={btn("transparent", C.text, C.line)}>

@@ -10,6 +10,8 @@ import { getActiveCampaign, onActiveCampaignChange } from "@/lib/active-campaign
 import CommandPalette, { OPEN_PALETTE, type PalettePage } from "@/components/command-palette";
 import { createClient } from "@/lib/supabase/client";
 import { useDialogFocus } from "@/lib/use-dialog-focus";
+import { NotificationBell } from "@/components/notification-bell";
+import { gmCampaignsFilter } from "@/lib/campaign-gm";
 
 /* Six Axes navigation.
 
@@ -360,7 +362,7 @@ export default function SixAxesNav() {
       const sb = createClient();
       const { data: { user } } = await sb.auth.getUser();
       if (off || !user) return;
-      const { count } = await sb.from("campaigns").select("id", { count: "exact", head: true }).eq("gm_id", user.id);
+      const { count } = await sb.from("campaigns").select("id", { count: "exact", head: true }).or(await gmCampaignsFilter(sb, user.id));
       if (off) return;
       const gm = (count ?? 0) > 0;
       setGmUser(gm);
@@ -414,7 +416,7 @@ export default function SixAxesNav() {
       const sb = createClient();
       const { data: { user } } = await sb.auth.getUser();
       if (off || !user) return;
-      const { count } = await sb.from("campaigns").select("id", { count: "exact", head: true }).eq("gm_id", user.id);
+      const { count } = await sb.from("campaigns").select("id", { count: "exact", head: true }).or(await gmCampaignsFilter(sb, user.id));
       if (off) return;
       if (!count) { setCampState("none"); return; }
       setCampState("loading");
@@ -530,6 +532,7 @@ export default function SixAxesNav() {
           {tableBlock}
           {sidebarGroups(groups, hrefFor, activeP.label, current)}
           <div className="sax-foot">
+            <NotificationBell placement="side" />
             <a className="sax-item" href="/faq">Help</a>
             <div className="sax-out"><LogoutButton /></div>
           </div>
@@ -539,6 +542,7 @@ export default function SixAxesNav() {
           <div className="sax-top">
             {brand(home)}
             <div className="sax-top-r">
+              <NotificationBell placement="top" />
               <a className="sax-top-camp" href="/me/campaigns" title="Table: switch on your campaigns list">{haveTable ? (tableName ?? "Your table") : "Your campaigns"}</a>
             </div>
           </div>
@@ -617,6 +621,7 @@ export default function SixAxesNav() {
         )}
         {sidebarGroups(groups, plain, activeGroup, current)}
         <div className="sax-foot">
+          <NotificationBell placement="side" />
           <a className="sax-item" href="/gm/help" aria-current={current === "/gm/help" ? "page" : undefined}>Help</a>
           <div className="sax-out"><LogoutButton /></div>
         </div>
@@ -626,6 +631,7 @@ export default function SixAxesNav() {
         <div className="sax-top">
           {brand("/")}
           <div className="sax-top-r">
+            <NotificationBell placement="top" />
             <a className="sax-top-camp" href="/gm" title="Campaign: switch in the Workspace">{campaignName ?? (campState === "none" ? "No campaign yet" : campState === "unchosen" ? "Pick a campaign" : "Loading\u2026")}</a>
             {onGm && (
               <button type="button" className="sax-find sax-plain" onClick={openPalette} aria-label="Find or jump (command palette)">

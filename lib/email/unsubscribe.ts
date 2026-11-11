@@ -3,12 +3,12 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 // lib/email/unsubscribe.ts (2026-11-09)
 //
 // Audit T12 / F7: every email carries a one-click unsubscribe link that works without signing in. The
-// link names the address and what to stop (reminders, recaps or all) and is signed, so nobody can switch
+// link names the address and what to stop (reminders, recaps, the daily digest (push 19) or all) and is signed, so nobody can switch
 // off someone else's email by editing the URL. Server only: the key is EMAIL_LINK_SECRET, or failing that
 // the service-role key, which never leaves the server.
 
-export type EmailKind = "reminders" | "recaps" | "all";
-const KINDS: EmailKind[] = ["reminders", "recaps", "all"];
+export type EmailKind = "reminders" | "recaps" | "digest" | "all";
+const KINDS: EmailKind[] = ["reminders", "recaps", "digest", "all"];
 
 function key(): string {
   const k = process.env.EMAIL_LINK_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY;

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { verifyUnsubscribe, type EmailKind } from "@/lib/email/unsubscribe";
 
-// /api/email/unsubscribe?e=<address>&k=reminders|recaps|all&s=<signature> (2026-11-09)
+// /api/email/unsubscribe?e=<address>&k=reminders|recaps|digest|all&s=<signature> (2026-11-09; digest push 19)
 //
 // Audit T12 / F7: the unsubscribe link in every Six Axes email. No sign-in needed (the signature proves
 // the link was ours, for this address). Opening the link shows a button rather than unsubscribing at once,
@@ -12,6 +12,7 @@ import { verifyUnsubscribe, type EmailKind } from "@/lib/email/unsubscribe";
 const WHAT: Record<EmailKind, string> = {
   reminders: "session reminders and RSVP requests",
   recaps: "session recap emails",
+  digest: "the daily digest",
   all: "all Six Axes emails",
 };
 
@@ -45,12 +46,13 @@ export async function POST(request: Request) {
   const { email, kind, ok } = read(url);
   if (!ok) return page("This link does not work", `<p style="color:#bdb5a6">Nothing was changed.</p>`, 400);
   const admin = createAdminClient();
-  const { data: cur } = await admin.from("email_prefs").select("reminders, recaps").eq("email", email).maybeSingle();
-  const prev = (cur as { reminders: boolean; recaps: boolean } | null) ?? { reminders: true, recaps: true };
+  const { data: cur } = await admin.from("email_prefs").select("reminders, recaps, digest").eq("email", email).maybeSingle();
+  const prev = (cur as { reminders: boolean; recaps: boolean; digest: boolean } | null) ?? { reminders: true, recaps: true, digest: false };
   const next = {
     email,
     reminders: kind === "reminders" || kind === "all" ? false : prev.reminders,
     recaps: kind === "recaps" || kind === "all" ? false : prev.recaps,
+    digest: kind === "digest" || kind === "all" ? false : prev.digest,
     updated_at: new Date().toISOString(),
   };
   const { error } = await admin.from("email_prefs").upsert(next, { onConflict: "email" });

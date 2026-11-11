@@ -26,8 +26,16 @@ export async function GET() {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  // Push 19: notifications (p150) are added here rather than in export_my_data, from the person's own
+  // rows (RLS: own rows only). Absent before p150 runs, so a failed read just leaves them out.
+  const { data: notes, error: nErr } = await supabase.from("notifications")
+    .select("kind, title, link, data, created_at, read_at, emailed_at").order("created_at", { ascending: false }).limit(5000);
+  const out = data && typeof data === "object" && !Array.isArray(data) && !nErr
+    ? { ...(data as Record<string, unknown>), notifications: notes ?? [] }
+    : data;
+
   const stamp = new Date().toISOString().slice(0, 10);
-  return new NextResponse(JSON.stringify(data, null, 2), {
+  return new NextResponse(JSON.stringify(out, null, 2), {
     status: 200,
     headers: {
       "Content-Type": "application/json",
