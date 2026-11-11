@@ -286,6 +286,9 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
   const params = useSearchParams();
   const charId = params.get("c");
   const libIdParam = params.get("lib");
+  // Push 30 (audit P12): a character fresh from the quick build (app/me/quick-build) opens with a note
+  // on what is still the player's to pick.
+  const [quickNote, setQuickNote] = useState(params.get("quick") === "1");
 
   // Which backing store the current session edits. Derived from the URL on load; a NEW build flips
   // to library once its first save creates a pc_library row.
@@ -1938,6 +1941,32 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
           {status === "error" && <Muted>That character could not be loaded. Head back to your stable and try again.</Muted>}
 
           {status === "picking" && <Picking stable={stable} base="/me/forge" lead="Choose a character to bring to the Forge." />}
+
+          {status === "ready" && mode === "new" && system === "dnd5e" && (
+            <p style={{ color: STONE.inkFaint, fontSize: 13.5, margin: "0 0 14px" }}>
+              New to D&amp;D, or in a hurry? The <a href="/me/quick-build" style={{ color: C.sun }}>quick build</a> makes a level 1 character in three steps, then brings it here.
+            </p>
+          )}
+          {dndReady && quickNote && (
+            <div role="status" style={{ ...stonePanel(), marginBottom: 14, borderColor: C.sun }}>
+              <PanelTitle hint="Everything here can still be changed.">Quick build done</PanelTitle>
+              <p style={{ fontSize: 13.5, color: STONE.ink, margin: "0 0 6px", lineHeight: 1.55 }}>
+                Your class, species, background, ability scores and starting gear are in. Still yours to choose: your skills on the Class tab,
+                your species&apos; options on the Species tab, your background feat&apos;s options if it has any, and spells on the Spells tab if your class casts them.
+                {((build as Build & { quick?: { choose?: string[] } }).quick?.choose ?? []).length > 0 && (
+                  <> Your starting gear also lets you pick: {((build as Build & { quick?: { choose?: string[] } }).quick?.choose ?? []).join(", ")}; add those on the Equipment tab.</>
+                )}
+                {(build as Build & { quick?: { aim?: string } }).quick?.aim && (
+                  <> The class quiz pointed you at {(build as Build & { quick?: { aim?: string } }).quick?.aim}, a subclass you pick at level 3.</>
+                )}
+              </p>
+              <button type="button" className="forge-btn" style={{ ...stoneButton("stone"), fontSize: 12.5 }}
+                onClick={() => {
+                  setQuickNote(false);
+                  const u = new URL(window.location.href); u.searchParams.delete("quick"); window.history.replaceState(null, "", u.toString());
+                }}>Got it</button>
+            </div>
+          )}
 
           {pf2eReady && (
             <Pf2eForge pbuild={pbuild} onChange={(b) => { setPbuild(b); setSaveState("idle"); }}

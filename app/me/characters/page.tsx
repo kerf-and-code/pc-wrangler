@@ -89,6 +89,9 @@ export default function MyCharactersPage() {
             + New character
           </a>
         </div>
+        <p style={{ color: C.muted, fontSize: 13, margin: "-8px 0 18px", textAlign: "right" }}>
+          New to D&amp;D? The <a href="/me/quick-build" style={{ color: C.sun }}>quick build</a> makes a level 1 character in three steps.
+        </p>
 
         {note && <p role={note.bad ? "alert" : "status"} style={{ color: note.bad ? C.warn : C.muted, fontSize: 13.5, margin: "0 0 14px" }}>{note.text}</p>}
         {status === "loading" && <Muted>Loading&hellip;</Muted>}

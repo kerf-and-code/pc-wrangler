@@ -85,7 +85,8 @@ export default function LibraryPage() {
 
           {(status === "ready" || status === "empty") && (
             <>
-              <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 18 }}>
+              <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 18 }}>
+                <Button onClick={() => router.push("/me/quick-build")}>Quick build</Button>
                 <Button variant="primary"
                   onClick={() => router.push("/me/forge")}>
                   + New character

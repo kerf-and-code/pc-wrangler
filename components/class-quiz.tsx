@@ -17,7 +17,9 @@ import {
   editionLabel, isPartner, makeQuiz, publisherLabel, runnersUp, settle, type Filters, type Quiz, type Step,
 } from "@/lib/tools/class-quiz";
 
-export default function ClassQuiz() {
+// Push 30 (audit P12): with onBuild, the result offers "Build this character" (the quick build embeds
+// the quiz); without it, the public tool links to the quick build with the class filled in.
+export default function ClassQuiz({ onBuild }: { onBuild?: (className: string, subclass: string) => void } = {}) {
   const [filters, setFilters] = useState<Filters>({ legacy: true, partner: true });
   const quiz = useMemo(() => makeQuiz(filters), [filters]);
   const [stack, setStack] = useState<Step[]>(() => settle(makeQuiz({ legacy: true, partner: true }), []));
@@ -112,7 +114,7 @@ export default function ClassQuiz() {
           ? <Result id={cur.slice(2)} quiz={quiz} stack={stack} headRef={headRef}
               onAlt={(alt) => go([...stack, { node: "alt", text: `Peeked at ${BY_ID[alt].n}`, to: "r:" + alt, auto: false }])}
               onBack={goBack} onRestart={restart} mapOpen={mapOpen}
-              onMap={() => setMapOpen(!mapOpen)} onCopy={() => copyResult(cur.slice(2))} toast={toast} />
+              onMap={() => setMapOpen(!mapOpen)} onCopy={() => copyResult(cur.slice(2))} toast={toast} onBuild={onBuild} />
           : <Question id={cur} quiz={quiz} stack={stack} number={realAnswers + 1} headRef={headRef}
               onChoose={choose} onBack={goBack} onRestart={restart} />}
       </div>
@@ -169,10 +171,11 @@ function Question({ id, quiz, stack, number, headRef, onChoose, onBack, onRestar
   );
 }
 
-function Result({ id, quiz, stack, headRef, onAlt, onBack, onRestart, mapOpen, onMap, onCopy, toast }: {
+function Result({ id, quiz, stack, headRef, onAlt, onBack, onRestart, mapOpen, onMap, onCopy, toast, onBuild }: {
   id: string; quiz: Quiz; stack: Step[]; headRef: React.RefObject<HTMLHeadingElement | null>;
   onAlt: (id: string) => void; onBack: () => void; onRestart: () => void;
   mapOpen: boolean; onMap: () => void; onCopy: () => void; toast: string;
+  onBuild?: (className: string, subclass: string) => void;
 }) {
   const r = BY_ID[id];
   const c = CLASSES[r.c];
@@ -209,6 +212,9 @@ function Result({ id, quiz, stack, headRef, onAlt, onBack, onRestart, mapOpen, o
         </>
       )}
       <div className="cq-row">
+        {onBuild
+          ? <button type="button" className="cq-btn is-primary" onClick={() => onBuild(c.name, r.n)}>Build this character</button>
+          : <a className="cq-btn is-primary" href={`/me/quick-build?class=${encodeURIComponent(c.name)}&subclass=${encodeURIComponent(r.n)}`}>Build this character</a>}
         <button type="button" className="cq-btn" onClick={onBack}>Back</button>
         <button type="button" className="cq-btn" onClick={onRestart}>Start over</button>
         <button type="button" className="cq-btn is-primary" onClick={onMap}>{mapOpen ? "Hide the flowchart" : "Show the whole flowchart"}</button>
@@ -332,6 +338,7 @@ const CSS = `
 .cq-btn { font: inherit; font-size: 15px; font-weight: 600; min-height: 44px; padding: 0 16px; border-radius: 8px; border: 1.5px solid rgba(232,228,218,0.35); background: transparent; color: var(--sn-ink); cursor: pointer; }
 .cq-btn:hover:not(:disabled) { border-color: var(--sn-ink); }
 .cq-btn.is-primary { background: var(--sn-amber); border-color: var(--sn-amber); color: var(--sn-amber-ink); }
+a.cq-btn { display: inline-flex; align-items: center; text-decoration: none; }
 .cq-btn.is-primary:hover { background: var(--sn-amber-hi); border-color: var(--sn-amber-hi); }
 .cq-btn:disabled { opacity: .4; cursor: default; }
 .cq-hint { font-size: 14px; color: var(--sn-faint); margin-left: auto; }
