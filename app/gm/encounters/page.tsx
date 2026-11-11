@@ -8,6 +8,7 @@ import { C, FORGE_RADIUS, stoneField } from "@/lib/forge-theme";
 import { loadSrd } from "@/lib/srd/srd";
 import { listStatBlocks, statBlockFromMonster, type StatBlockRow } from "@/lib/stat-blocks";
 import { resolveFoeBlock, monsterCombatants, pcCombatant, type EncounterFoe, type Combatant } from "@/lib/combat";
+import { normalizeMaps, foeScene, MAX_MAPS } from "@/lib/tabletop/encounter-maps";
 import { getModule } from "@/lib/systems/registry";
 import { pf2Budget, pf2EncounterXp, pf2Threat, PF2_THREATS, PF2_THREAT_LABEL } from "@/lib/pf2e/encounter";
 import { dhBattlePoints, dhAdjustedBudget, dhSpend, DH_ADJUSTMENTS, DH_BP_COST, type DHAdjustment } from "@/lib/daggerheart/encounter";
@@ -124,8 +125,8 @@ type Char = { id: string; name: string; level: number | null; class: string | nu
 // A foe keeps where its stat block came from (origin + statBlockId / sourceKey / edition), so a saved
 // encounter can be RUN later, not just priced. A typed-in row, or a library row whose name was edited,
 // is "custom": priced by CR, and enters a fight with no stat block (the GM fills in HP by hand).
-type Foe = { id: string; name: string; cr: string; count: number } & Partial<Pick<EncounterFoe, "origin" | "statBlockId" | "sourceKey" | "edition">>;
-type SavedEncounter = { id: string; name: string; rules: string; foes: EncounterFoe[]; updated_at: string };
+type Foe = { id: string; name: string; cr: string; count: number } & Partial<Pick<EncounterFoe, "origin" | "statBlockId" | "sourceKey" | "edition" | "scene">>;
+type SavedEncounter = { id: string; name: string; rules: string; foes: EncounterFoe[]; updated_at: string; maps?: unknown };
 type Method = "2024" | "2014";
 // A pickable monster from either source: the GM's own saved stat blocks or the SRD library.
 // `source` is the monster file's source_key (srd-2014, tob2, ...), so library rows can show which book
@@ -155,6 +156,10 @@ export default function EncountersPage() {
   const [savedList, setSavedList] = useState<SavedEncounter[]>([]);
   const [encId, setEncId] = useState<string | null>(null);
   const [encName, setEncName] = useState("");
+  // Push 31 (p155): the tabletop scenes this encounter spans, in order (the first is where it starts),
+  // and the campaign's scenes to pick them from.
+  const [maps, setMaps] = useState<string[]>([]);
+  const [sceneList, setSceneList] = useState<{ id: string; name: string }[]>([]);
   const [encMsg, setEncMsg] = useState<string | null>(null);
   const [encBusy, setEncBusy] = useState(false);
 
@@ -421,12 +426,22 @@ export default function EncountersPage() {
 
   // ---- saved encounters + run --------------------------------------------------
   const loadSaved = useCallback(async (cid: string) => {
-    const { data, error } = await supabase.from("encounters").select("id, name, rules, foes, updated_at")
+    // "*" so the maps column (p155) comes along where it exists, and nothing breaks where it does not
+    const { data, error } = await supabase.from("encounters").select("*")
       .eq("campaign_id", cid).order("updated_at", { ascending: false });
     if (error) { setEncMsg(error.message.includes("does not exist") ? notReady("Saved encounters", "p101") : friendlyError(error)); setSavedList([]); return; }
     setSavedList((data as SavedEncounter[]) || []);
   }, [supabase]);
-  useEffect(() => { if (campaignId) { void loadSaved(campaignId); setEncId(null); setEncName(""); setEncMsg(null); } }, [campaignId, loadSaved]);
+  useEffect(() => { if (campaignId) { void loadSaved(campaignId); setEncId(null); setEncName(""); setEncMsg(null); setMaps([]); } }, [campaignId, loadSaved]);
+  useEffect(() => {
+    if (!campaignId) return;
+    let live = true;
+    void supabase.from("vtt_scenes").select("id, name").eq("campaign_id", campaignId).order("created_at").then(({ data }) => {
+      if (live) setSceneList(((data ?? []) as { id: string; name: string }[]));
+    });
+    return () => { live = false; };
+  }, [campaignId, supabase]);
+  const sceneName = (id: string) => sceneList.find((s) => s.id === id)?.name ?? "a deleted map";
   // Audit G7: the campaign's D&D edition is the starting ruleset (the method buttons still switch it).
   useEffect(() => {
     if (!campaignId) return;
@@ -439,6 +454,7 @@ export default function EncountersPage() {
     .map((f) => ({
       name: f.name.trim(), cr: f.cr, count: f.count, origin: f.origin ?? "custom",
       statBlockId: f.statBlockId ?? null, sourceKey: f.sourceKey ?? null, edition: f.edition ?? null,
+      ...(maps.length ? { scene: foeScene(f.scene, maps) } : {}),
     }));
   const defaultEncName = () => {
     const named = foesForSave();
@@ -451,7 +467,9 @@ export default function EncountersPage() {
     if (!list.length) { setEncMsg("Name at least one monster before saving."); return; }
     setEncBusy(true); setEncMsg(null);
     const name = encName.trim() || defaultEncName();
-    const row = { campaign_id: campaignId, name, rules: method, foes: list, updated_at: new Date().toISOString() };
+    const row = { campaign_id: campaignId, name, rules: method, foes: list, updated_at: new Date().toISOString(), ...(maps.length ? { maps } : {}) };
+    // an encounter that had maps and now has none is saved with an empty list, so they really go
+    if (!maps.length && encId && !asNew && normalizeMaps(savedList.find((x) => x.id === encId)?.maps).length) (row as Record<string, unknown>).maps = [];
     const res = encId && !asNew
       ? await supabase.from("encounters").update(row).eq("id", encId).select("id").single()
       : await supabase.from("encounters").insert(row).select("id").single();
@@ -467,6 +485,7 @@ export default function EncountersPage() {
     setFoes(e.foes.length ? e.foes.map((f) => ({ ...f, id: uid() })) : [{ id: uid(), name: "", cr: "1", count: 1 }]);
     if (e.rules === "2014" || e.rules === "2024") setMethod(e.rules);
     setEncId(e.id); setEncName(e.name); setEncMsg(null);
+    setMaps(normalizeMaps(e.maps));
   }
 
   async function deleteEncounter() {
@@ -567,7 +586,8 @@ export default function EncountersPage() {
         statBlockFromMonster,
       );
       if (!block) unresolved += f.count;
-      monsters.push(...monsterCombatants(f.name, f.count, block));
+      const sceneId = foeScene(f.scene, maps);
+      monsters.push(...monsterCombatants(f.name, f.count, block).map((m) => (sceneId ? { ...m, sceneId } : m)));
     }
     const combatants = [...party.map((c) => pcCombatant(c)), ...monsters];
     const { data, error } = await supabase.from("combats").insert({
@@ -783,6 +803,13 @@ export default function EncountersPage() {
               onChange={(e) => setFoes((fs) => fs.map((x) => x.id === f.id ? { ...x, count: Math.max(1, Number(e.target.value) || 1) } : x))}
               style={{ ...inputStyle, width: 70 }}
             />
+            {maps.length > 1 && (
+              <select aria-label={`Map ${f.name || "this monster"} starts on`} value={foeScene(f.scene, maps) ?? ""}
+                onChange={(e) => setFoes((fs) => fs.map((x) => x.id === f.id ? { ...x, scene: e.target.value } : x))}
+                style={{ ...inputStyle, width: "auto", maxWidth: 180 }}>
+                {maps.map((m) => <option key={m} value={m}>on {sceneName(m)}</option>)}
+              </select>
+            )}
             <button
               type="button"
               onClick={() => setFoes((fs) => fs.length > 1 ? fs.filter((x) => x.id !== f.id) : fs)}
@@ -818,6 +845,30 @@ export default function EncountersPage() {
             Import from library
           </button>
         </div>
+
+        {/* Push 31 (p155): the maps this fight spans. One map: every token goes on it. Several: each
+            monster picks its map above, and the shared turn order shows the GM who is where. */}
+        {sceneList.length > 0 && (
+          <div style={{ marginTop: 12, paddingTop: 10, borderTop: `1px solid ${C.line}` }}>
+            <div style={{ fontSize: 12.5, color: C.muted, marginBottom: 6 }}>
+              Maps (optional): the tabletop scenes this fight spans, like the decks of a ship or two halves of a split party.
+              {maps.length === 0 ? " With none picked, the fight goes on the table's active scene." : maps.length === 1 ? " Every monster starts on it." : " Each monster picks its map above; the first is the default."}
+            </div>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }} role="group" aria-label="Maps this fight spans">
+              {sceneList.map((sc) => {
+                const at = maps.indexOf(sc.id);
+                return (
+                  <button key={sc.id} type="button" aria-pressed={at >= 0} disabled={at < 0 && maps.length >= MAX_MAPS}
+                    onClick={() => setMaps((m) => (m.includes(sc.id) ? m.filter((x) => x !== sc.id) : [...m, sc.id]))}
+                    style={{ background: at >= 0 ? "rgba(217,164,58,0.14)" : "transparent", color: at >= 0 ? C.text : C.muted,
+                      border: `1px solid ${at >= 0 ? C.brass : C.line}`, borderRadius: 999, padding: "4px 11px", fontSize: 12.5, cursor: "pointer" }}>
+                    {at >= 0 ? `${at + 1}. ` : ""}{sc.name}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {pickerOpen && (
           <MonsterPicker

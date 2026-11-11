@@ -51,6 +51,7 @@ import {
   resolveFoeBlock, sortForTurns, type Combatant, type EncounterFoe, type ParsedAction,
   isDndFamilyBlock,
 } from "@/lib/combat";
+import { normalizeMaps, foeScene, groupByScene } from "@/lib/tabletop/encounter-maps";
 import {
   initialCampaignId, initialSessionId, useRememberCampaign, useRememberSession, urlParam, setUrlParam, gmHref,
 } from "@/lib/campaign-context";
@@ -63,7 +64,7 @@ type Campaign = { id: string; name: string; system: string | null; share_code: s
 type Sess = { id: string; session_number: number | null; status: string | null };
 type Pc = { id: string; name: string; snap?: unknown; play?: unknown };
 type CombatRow = { id: string; name: string; rules: string; status: string; round: number; turn: number; combatants: Combatant[]; session_id: string | null; encounter_id: string | null };
-type SavedEnc = { id: string; name: string; rules: string; foes: EncounterFoe[] };
+type SavedEnc = { id: string; name: string; rules: string; foes: EncounterFoe[]; maps?: unknown };
 type RollLog = { id: string; who: string; label: string; notation: string; total: number; natural: number | null };
 type AdvMode = "flat" | "adv" | "dis";
 type HpSnap = { hp: number | null; tempHp: number; defeated: boolean };
@@ -131,7 +132,8 @@ export default function CombatPage() {
       supabase.from("sessions").select("id, session_number, status").eq("campaign_id", cid).order("session_number", { ascending: false }),
       supabase.from("characters").select("id, name, snap:build->sheetSnapshot, play:build->play").eq("campaign_id", cid).eq("kind", "pc").eq("active", true).is("alter_ego_of", null).order("name"),
       // D&D encounters only: other systems save a different shape (audit G1) and cannot run here yet.
-      supabase.from("encounters").select("id, name, rules, foes").eq("campaign_id", cid).in("rules", ["2014", "2024"]).order("updated_at", { ascending: false }),
+      // "*" so the maps column (p155) comes along where it exists
+      supabase.from("encounters").select("*").eq("campaign_id", cid).in("rules", ["2014", "2024"]).order("updated_at", { ascending: false }),
       supabase.from("combats").select("id, name, rules, status, round, turn, combatants, session_id, encounter_id").eq("campaign_id", cid).eq("status", "active").order("updated_at", { ascending: false }),
     ]);
     if (encErr || cbErr) {
@@ -214,16 +216,22 @@ export default function CombatPage() {
   // The campaign's active tabletop scene and the tokens on it, so a combatant without one (a monster
   // added from an encounter here, or one whose token was deleted) can be put on the table, linked by
   // tokenId so its token shows its HP and its turn.
-  const [table, setTable] = useState<{ sceneId: string; n: number; tokenIds: string[]; pcChars: string[] } | null>(null);
+  // Push 31 (V4): every scene of the campaign, not just the active one, so a monster from an encounter
+  // with several maps goes on its own map, and a combatant whose token is on another map (a split
+  // party) is not offered a second one.
+  const [table, setTable] = useState<{ sceneId: string; scenes: { id: string; name: string; n: number }[]; tokenIds: string[]; pcChars: string[] } | null>(null);
   const loadTable = useCallback(async (cid: string) => {
-    const { data: sc } = await supabase.from("vtt_scenes").select("id, battle_map_id").eq("campaign_id", cid).eq("is_active", true).maybeSingle();
-    if (!sc) { setTable(null); return; }
-    const [{ data: toks }, { data: bm }] = await Promise.all([
-      supabase.from("vtt_tokens").select("id, character_id").eq("scene_id", (sc as { id: string }).id),
-      supabase.from("battle_maps").select("n").eq("id", (sc as { battle_map_id: string }).battle_map_id).maybeSingle(),
+    const { data: scs } = await supabase.from("vtt_scenes").select("id, name, battle_map_id, is_active").eq("campaign_id", cid);
+    const list = (scs ?? []) as { id: string; name: string; battle_map_id: string; is_active: boolean }[];
+    const active = list.find((s) => s.is_active);
+    if (!active) { setTable(null); return; }
+    const [{ data: toks }, { data: bms }] = await Promise.all([
+      supabase.from("vtt_tokens").select("id, character_id").eq("campaign_id", cid),
+      supabase.from("battle_maps").select("id, n").in("id", [...new Set(list.map((s) => s.battle_map_id))]),
     ]);
+    const nOf = new Map(((bms ?? []) as { id: string; n: number | null }[]).map((b) => [b.id, Number(b.n) || 20]));
     const rows = (toks ?? []) as { id: string; character_id: string | null }[];
-    setTable({ sceneId: (sc as { id: string }).id, n: Number((bm as { n?: number } | null)?.n) || 20,
+    setTable({ sceneId: active.id, scenes: list.map((s) => ({ id: s.id, name: s.name, n: nOf.get(s.battle_map_id) ?? 20 })),
       tokenIds: rows.map((r) => r.id), pcChars: rows.map((r) => r.character_id).filter((x): x is string => !!x) });
   }, [supabase]);
   useEffect(() => { if (campaignId) void loadTable(campaignId); }, [campaignId, loadTable]);
@@ -233,21 +241,31 @@ export default function CombatPage() {
   const sizeSquares = (size: string | null | undefined) => { const s = (size ?? "").toLowerCase(); return s.startsWith("tiny") ? 0.5 : s.startsWith("large") ? 2 : s.startsWith("huge") ? 3 : s.startsWith("garg") ? 4 : 1; };
   async function putOnTable(list: Combatant[]) {
     if (!table || !campaignId || !list.length) return;
-    // in a row from the middle of the map; the GM drags them where they belong on the tabletop
-    const mid = Math.max(1, Math.floor(table.n / 2));
-    const rows = list.map((c, i) => {
-      const size = sizeSquares(c.block?.size);
-      const step = Math.max(1, size);
-      return { campaign_id: campaignId, scene_id: table.sceneId, kind: c.kind === "pc" ? "pc" : "monster", character_id: c.kind === "pc" ? c.characterId ?? null : null,
-        stat_block_id: null, name: c.name, image_url: null, x: Math.min(table.n - size, mid - 2 + (i % 5) * step) + (size < 1 ? 0.25 : 0), y: Math.min(table.n - size, mid + Math.floor(i / 5) * step) + (size < 1 ? 0.25 : 0),
-        size, rot: 0, layer: "token", hidden: !!c.hidden, controlled_by: [], style: c.kind === "pc" ? {} : { stats: { hp: c.maxHp ?? null, ac: c.ac ?? null } } };
+    // each on its own map (push 31) or the active scene, in a row from the middle of that map; the GM
+    // drags them where they belong on the tabletop
+    const groups = groupByScene(list, table.sceneId, table.scenes.map((s) => s.id));
+    const order: Combatant[] = [];
+    const rows = groups.flatMap((g) => {
+      const n = table.scenes.find((s) => s.id === g.sceneId)?.n ?? 20;
+      const mid = Math.max(1, Math.floor(n / 2));
+      return g.items.map((c, i) => {
+        order.push(c);
+        const size = sizeSquares(c.block?.size);
+        const step = Math.max(1, size);
+        return { campaign_id: campaignId, scene_id: g.sceneId, kind: c.kind === "pc" ? "pc" : "monster", character_id: c.kind === "pc" ? c.characterId ?? null : null,
+          stat_block_id: null, name: c.name, image_url: null, x: Math.min(n - size, mid - 2 + (i % 5) * step) + (size < 1 ? 0.25 : 0), y: Math.min(n - size, mid + Math.floor(i / 5) * step) + (size < 1 ? 0.25 : 0),
+          size, rot: 0, layer: "token", hidden: !!c.hidden, controlled_by: [], style: c.kind === "pc" ? {} : { stats: { hp: c.maxHp ?? null, ac: c.ac ?? null } } };
+      });
     });
     const { data, error } = await supabase.from("vtt_tokens").insert(rows).select("id");
     if (error) { setErr(`Could not put the token on the table: ${error.message}`); return; }
     const ids = ((data ?? []) as { id: string }[]).map((r) => r.id);
-    const link = new Map(list.map((c, i) => [c.id, ids[i]]).filter(([, id]) => !!id) as [string, string][]);
+    const link = new Map(order.map((c, i) => [c.id, ids[i]]).filter(([, id]) => !!id) as [string, string][]);
     update((cb) => ({ ...cb, combatants: cb.combatants.map((x) => (link.has(x.id) ? { ...x, tokenId: link.get(x.id)! } as Combatant : x)) }));
-    setNote(`${ids.length} token${ids.length === 1 ? "" : "s"} put on the table's active scene. Drag ${ids.length === 1 ? "it" : "them"} into place on the tabletop.`);
+    const where = groups.length > 1
+      ? groups.map((g) => `${g.items.length} on ${table.scenes.find((s) => s.id === g.sceneId)?.name ?? "a map"}`).join(", ")
+      : `on ${groups[0].sceneId === table.sceneId ? "the table's active scene" : table.scenes.find((s) => s.id === groups[0].sceneId)?.name ?? "its map"}`;
+    setNote(`${ids.length} token${ids.length === 1 ? "" : "s"} put on the table: ${where}. Drag ${ids.length === 1 ? "it" : "them"} into place on the tabletop.`);
     void loadTable(campaignId);
   }
 
@@ -263,7 +281,8 @@ export default function CombatPage() {
     for (const f of enc?.foes ?? []) {
       const block = resolveFoeBlock(f, blocks as unknown as { id: string; block: unknown; system?: string | null }[], libraryFor, statBlockFromMonster);
       if (!block) unresolved += f.count;
-      monsters.push(...monsterCombatants(f.name, f.count, block));
+      const sceneId = foeScene(f.scene, normalizeMaps(enc?.maps));
+      monsters.push(...monsterCombatants(f.name, f.count, block).map((m) => (sceneId ? { ...m, sceneId } : m)));
     }
     const combatants = [...pcs.map((p) => pcCombatant(p)), ...monsters];
     const { data, error } = await supabase.from("combats").insert({
@@ -645,7 +664,7 @@ export default function CombatPage() {
               if (!missing.length) return null;
               return (
                 <div style={{ ...box, display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-                  <span style={{ flex: "1 1 200px", color: C.muted, fontSize: 13 }}>{missing.length} in this fight {missing.length === 1 ? "has" : "have"} no token on the table&apos;s active scene.</span>
+                  <span style={{ flex: "1 1 200px", color: C.muted, fontSize: 13 }}>{missing.length} in this fight {missing.length === 1 ? "has" : "have"} no token on any of the table&apos;s maps{missing.some((c) => c.sceneId && c.sceneId !== table.sceneId) ? "; each goes on the map its encounter gave it" : ""}.</span>
                   {selected && !hasToken(selected) && <button type="button" style={btn()} onClick={() => void putOnTable([selected])}>Put {selected.name} on the table</button>}
                   <button type="button" style={btn(true)} onClick={() => void putOnTable(missing)}>Put all {missing.length} on the table</button>
                 </div>

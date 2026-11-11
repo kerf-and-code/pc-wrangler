@@ -22,6 +22,7 @@ export type EncounterFoe = {
   statBlockId?: string | null;  // origin "mine": stat_blocks.id
   sourceKey?: string | null;    // origin "srd": the monster file's source_key (srd-2024, tob2, kc-mm24, ...)
   edition?: string | null;      // origin "srd": which library list it was picked from (2014 / 2024 / both)
+  scene?: string | null;        // push 31 (p155): the encounter map (a vtt_scenes id) this foe starts on
 };
 
 export type Combatant = {
@@ -43,6 +44,7 @@ export type Combatant = {
   // Action economy (phase 4c, p112). The database resets econ when this combatant's turn begins.
   econ?: Econ | null;
   speed?: number | null;        // walking speed in feet; null = not tracked
+  sceneId?: string | null;      // push 31 (p155): the tabletop scene a monster starts on, from an encounter with several maps
   attacksPerAction?: number;    // attacks one Attack action makes (Extra Attack); 1 when missing
 };
 

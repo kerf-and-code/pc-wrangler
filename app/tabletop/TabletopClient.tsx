@@ -33,6 +33,7 @@ import { useDialogFocus } from "@/lib/use-dialog-focus";
 import { getModule } from "@/lib/systems/registry";
 import MapUpload from "@/components/map-upload";
 import { EFFECTS, drawEffect, isEffect, seedOf, templateLight, type EffectKind } from "@/lib/tabletop/effects";
+import { sceneOfEntry } from "@/lib/tabletop/encounter-maps";
 import HandoutView, { type Handout } from "@/components/handout-view";
 import RollTablesPanel from "@/components/roll-tables-panel";
 import TableSound, { useTableAudio } from "@/components/table-sound";
@@ -1314,6 +1315,32 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   // A combatant with no token on this scene (made on the Combat page, or its token deleted): put one on
   // the table, sized from its stat block, and link it so the token shows its HP and its turn.
   const tokenForEntry = (e: Entry) => [...tokensRef.current.values()].find((x) => x.id === e.tokenId || (e.kind === "pc" && x.character_id === e.characterId)) ?? null;
+
+  // Push 31 (V4): one fight across several maps. For the GM, where every entry's token is (any scene of
+  // the campaign), so the turn order can say "on the Lower deck" and jump there. Read again when the
+  // fight's line-up or the scene being viewed changes.
+  const [entryScenes, setEntryScenes] = useState<{ tok: Record<string, string>; pc: Record<string, string[]> }>({ tok: {}, pc: {} });
+  const fightKey = fight ? fight.order.map((e) => `${e.tokenId ?? ""}:${e.characterId ?? ""}`).join(",") : "";
+  useEffect(() => {
+    if (!isGm || !fightKey) { setEntryScenes({ tok: {}, pc: {} }); return; }
+    let live = true;
+    void supabase.from("vtt_tokens").select("id, scene_id, character_id").eq("campaign_id", campaignId).then(({ data }) => {
+      if (!live) return;
+      const tok: Record<string, string> = {}, pc: Record<string, string[]> = {};
+      for (const r of (data ?? []) as { id: string; scene_id: string; character_id: string | null }[]) {
+        tok[r.id] = r.scene_id;
+        if (r.character_id) (pc[r.character_id] ??= []).push(r.scene_id);
+      }
+      setEntryScenes({ tok, pc });
+    });
+    return () => { live = false; };
+  }, [isGm, fightKey, campaignId, supabase, state?.scene?.id]);
+  const entryScene = (e: Entry): string | null => (isGm ? sceneOfEntry(e, entryScenes.tok, entryScenes.pc, state?.scene?.id ?? null) : null);
+  const sceneLabel = (id: string) => state?.scenes.find((s) => s.id === id)?.name ?? "another map";
+  const goToEntry = async (e: Entry, sceneId: string) => {
+    await viewScene(sceneId);
+    window.setTimeout(() => centreOnEntry(e), 250);
+  };
   const addTokenFor = async (entries: Entry[]) => {
     const st = stateRef.current; if (!st?.scene) { say("Open a scene first: a token goes on the scene in front of you."); return; }
     const c = viewCentre();
@@ -3373,6 +3400,18 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                   <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 12, color: C.muted }}>
                     <MarkerStylePicker style={markerStyle} onChange={setMarkerStyle} />
                   </div>
+                  {isGm && (() => {
+                    // push 31: whose turn it is, when that is on another map than the one in view
+                    const cur = fight.order.find((x) => x.is_turn);
+                    const at = cur ? entryScene(cur) : null;
+                    if (!cur || !at || at === scene?.id) return null;
+                    return (
+                      <div role="status" style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginTop: 8, padding: "6px 9px", border: `1px solid ${C.sun}`, borderRadius: 8, fontSize: 12.5 }}>
+                        <span style={{ flex: 1 }}>{cur.name}&apos;s turn is on {sceneLabel(at)}.</span>
+                        <button type="button" onClick={() => void goToEntry(cur, at)} style={{ ...small, color: C.sun }}>Go there</button>
+                      </div>
+                    );
+                  })()}
                   <div style={{ display: "grid", gap: 6, marginTop: 6 }}>
                     {fight.order.map((e) => {
                       const mineEntry = e.kind === "pc" && myChars.some((c) => c.character_id === e.characterId);
@@ -3387,7 +3426,14 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                             </button>
                             {e.hp != null && <span style={{ fontSize: 12, color: C.muted }}>{e.hp}{e.maxHp ? `/${e.maxHp}` : ""}{e.tempHp ? ` +${e.tempHp}` : ""}</span>}
                             {isGm && e.ac != null && <span style={{ fontSize: 11.5, color: C.muted }}>AC {e.ac}</span>}
-                            {isGm && !tokenForEntry(e) && <button type="button" onClick={() => void addTokenFor([e])} title={`${e.name} has no token on this scene: put one on the table, linked to this entry`} aria-label={`Add a token for ${e.name}`} style={{ ...small, padding: "1px 7px", fontSize: 11 }}>Add token</button>}
+                            {isGm && (() => {
+                              const at = entryScene(e);
+                              return at && at !== scene?.id ? (
+                                <button type="button" onClick={() => void goToEntry(e, at)} title={`${e.name} is on ${sceneLabel(at)}: look at that map`}
+                                  style={{ ...small, padding: "1px 7px", fontSize: 11, color: "#c2a8f0" }}>on {sceneLabel(at)}</button>
+                              ) : null;
+                            })()}
+                            {isGm && !tokenForEntry(e) && !(entryScene(e) && entryScene(e) !== scene?.id) && <button type="button" onClick={() => void addTokenFor([e])} title={`${e.name} has no token on this scene: put one on the table, linked to this entry`} aria-label={`Add a token for ${e.name}`} style={{ ...small, padding: "1px 7px", fontSize: 11 }}>Add token</button>}
                           </div>
                           {frac != null && <div style={{ height: 4, background: "#2a241d", borderRadius: 2, marginTop: 5 }}><div style={{ width: `${frac * 100}%`, height: 4, borderRadius: 2, background: frac > 0.5 ? C.good : frac > 0.25 ? "#d9a43a" : C.warn }} /></div>}
                           {(e.conditions ?? []).length > 0 && <div style={{ marginTop: 5 }}><MarkerChips list={e.conditions ?? []} /></div>}
