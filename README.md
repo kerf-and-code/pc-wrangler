@@ -39,7 +39,8 @@ npm test
 npm run build
 ```
 
-Secrets live in `.env.local`, which is never committed. There is one Supabase project and it is
+Secrets live in `.env.local`, which is never committed. `OWNER_IDS` (see `.env.example`) names the
+accounts that may use the owner console at `/admin`, where pilot access is granted and revoked. There is one Supabase project and it is
 production, so migrations are written to be safe to run twice and are run by hand; the ledger in
 `public._migrations` records which have run.
 
