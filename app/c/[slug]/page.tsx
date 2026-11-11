@@ -20,7 +20,7 @@ export async function generateMetadata({ params }: P): Promise<Metadata> {
   const { slug } = await params;
   const { campaign, listed } = await load(slug);
   if (!campaign) return { title: "Campaign not found" };
-  const title = `${campaign.name} — campaign codex`;
+  const title = `${campaign.name}: campaign codex`;
   const description =
     campaign.blurb ||
     `The places and cast of ${campaign.name}, drawn from what was actually said at the table.`;
@@ -39,7 +39,7 @@ export default function CodexPage({ params }: P) {
 
 async function CodexBody({ params }: P) {
   const { slug } = await params;
-  const { campaign, items, snapshotUrl } = await load(slug);
+  const { campaign, items, snapshotUrl, links } = await load(slug);
   if (!campaign) notFound();
 
   const counts = countsOf(items);
@@ -75,6 +75,13 @@ async function CodexBody({ params }: P) {
       {snapshotUrl && (
         // eslint-disable-next-line @next/next/no-img-element
         <img className="w-hero" src={snapshotUrl} alt={`${campaign.name} world map`} />
+      )}
+
+      {/* push 33 (audit P3): the connections between the codex's items, as a graph */}
+      {links.length > 0 && (
+        <p style={{ margin: "0 0 18px" }}>
+          <a className="w-all" href={`/c/${slug}/graph`}>See how it all connects &rarr;</a>
+        </p>
       )}
 
       <CodexFilter total={items.length} />

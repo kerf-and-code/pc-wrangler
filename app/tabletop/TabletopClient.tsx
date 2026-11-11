@@ -7,7 +7,7 @@ import { renderClassic, layoutBare } from "@/lib/dungeon/classic";
 import { normalizeLevels, CELL_TYPES } from "@/lib/dungeon/render";
 import { normCustom, normDoors, normElements, normBattleMeta, normSightWalls, piecesOverImage } from "@/lib/dungeon/battle";
 import {
-  snapToken, snapCenter, measure, fitCamera, zoomAt, centerOn, toWorld, parseChat, DIAGONAL_RULES,
+  snapTokenOn, snapPointOn, measure, fitCamera, zoomAt, centerOn, toWorld, parseChat, DIAGONAL_RULES,
   templateCells, templateOutline, insideTemplate, tokensInTemplate, snapOrigin, snapAngle, TEMPLATE_SHAPES,
   type Camera, type Pt, type DiagonalRule, type TemplateGeom, type TemplateShape,
 } from "@/lib/tabletop/geometry";
@@ -34,6 +34,7 @@ import { getModule } from "@/lib/systems/registry";
 import MapUpload from "@/components/map-upload";
 import { EFFECTS, drawEffect, isEffect, seedOf, templateLight, type EffectKind } from "@/lib/tabletop/effects";
 import { sceneOfEntry } from "@/lib/tabletop/encounter-maps";
+import { GRID_KINDS, gridOf, isHex, offsetOf, ruleForGrid, hexCentres, hexCorners, type GridKind } from "@/lib/tabletop/hex";
 import HandoutView, { type Handout } from "@/components/handout-view";
 import RollTablesPanel from "@/components/roll-tables-panel";
 import TableSound, { useTableAudio } from "@/components/table-sound";
@@ -120,7 +121,7 @@ type MapJson = {
   id: string; kind: string; n: number; feet_per_square: number; grid: unknown; custom: unknown; doors: unknown; elements: unknown; meta: Record<string, unknown>;
   door_state?: Record<string, boolean>; fog?: { on: boolean; revealed: string }; walls?: string[];
 };
-type Scene = { id: string; name: string; battle_map_id: string; level: number; settings: { show_labels?: boolean; diagonal?: DiagonalRule; los?: boolean; light?: LightMode; difficult?: number[]; freeFloors?: boolean } };
+type Scene = { id: string; name: string; battle_map_id: string; level: number; settings: { show_labels?: boolean; diagonal?: DiagonalRule; los?: boolean; light?: LightMode; difficult?: number[]; freeFloors?: boolean; grid?: GridKind; hexOffset?: { x: number; y: number } } };
 type State = {
   role: "gm" | "player"; me: string; campaign: { id: string; name: string; gm_id: string }; session_id: string | null;
   scene: Scene | null; map: MapJson | null; tokens: Token[]; party: PartyMember[];
@@ -333,6 +334,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   const myRuler = useRef<Ruler | null>(null);
   const keepRuler = useRef(false);
   const templatesRef = useRef<Map<string, Tpl>>(new Map());
+  const hexPath = useRef<{ key: string; path: Path2D } | null>(null);   // push 33: the hex grid, drawn once per layout
   const tplPreview = useRef<{ geom: TemplateGeom; color: string; done: number | null } | null>(null);
   const remoteTpl = useRef<Map<string, { geom: TemplateGeom; color: string; done: number | null }>>(new Map());
   const tplDrag = useRef<{ id: string; start: Pt; orig: Pt; now: Pt; moved: boolean } | null>(null);
@@ -683,6 +685,29 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     if (base) { ctx.imageSmoothingQuality = "high"; ctx.drawImage(base, 0, 0); }
     let animating = false;
     const n = stateRef.current?.map?.n ?? 0;
+
+    // push 33 (P16): a hex scene's grid, over the map, inside its edges (the path is cached)
+    const gsets = stateRef.current?.scene?.settings, gk = gridOf(gsets);
+    if (isHex(gk) && n > 0) {
+      const off = offsetOf(gsets), key = `${gk}|${off.x}|${off.y}|${n}|${cell}`;
+      if (hexPath.current?.key !== key) {
+        const path = new Path2D();
+        for (const c of hexCentres(n, gk, off)) {
+          const cs = hexCorners(c, gk);
+          path.moveTo(cs[0].x * cell, cs[0].y * cell);
+          for (let k = 1; k < 6; k++) path.lineTo(cs[k].x * cell, cs[k].y * cell);
+          path.closePath();
+        }
+        hexPath.current = { key, path };
+      }
+      ctx.save();
+      ctx.beginPath(); ctx.rect(0, 0, n * cell, n * cell); ctx.clip();
+      ctx.lineWidth = Math.max(1, 1.2 / cam.s);
+      ctx.strokeStyle = "rgba(0,0,0,0.35)"; ctx.stroke(hexPath.current.path);
+      ctx.lineWidth = Math.max(0.6, 0.7 / cam.s);
+      ctx.strokeStyle = "rgba(255,255,255,0.32)"; ctx.stroke(hexPath.current.path);
+      ctx.restore();
+    }
 
     // area templates, under the tokens: covered squares, the shape, its origin and size
     const drawTpl = (g: TemplateGeom, color: string, alpha: number, sel: boolean) => {
@@ -1347,7 +1372,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     const rows = entries.map((e, i) => {
       const cb = fightRow.current?.combatants.find((x) => x.id === e.id);
       const size = sizeSquares(cb?.block?.size);
-      const p = snapToken(c.x + (i % 4) * Math.max(1, size), c.y + Math.floor(i / 4) * Math.max(1, size), size);
+      const p = snapTokenOn(stateRef.current?.scene?.settings, c.x + (i % 4) * Math.max(1, size), c.y + Math.floor(i / 4) * Math.max(1, size), size);
       return { campaign_id: campaignId, scene_id: st.scene!.id, kind: e.kind === "pc" ? "pc" : "monster", character_id: e.kind === "pc" ? e.characterId ?? null : null,
         stat_block_id: null, name: e.name, image_url: null, x: p.x, y: p.y, size, rot: 0, layer: "token", hidden: !!e.hidden, controlled_by: [],
         style: e.kind === "pc" ? {} : { stats: { hp: cb?.maxHp ?? null, ac: cb?.ac ?? null } } };
@@ -1374,7 +1399,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     const spots: [number, number][] = [[0, 0], [1, 0], [0, 1], [1, 1], [-1, 0], [-1, 1], [0, -1], [1, -1], [2, 0], [2, 1], [-1, -1], [2, -1]];
     const rows = pcs.map((p, i) => {
       const [dx, dy] = spots[i % spots.length];
-      const pos = snapToken(c.x + dx + 4 * Math.floor(i / spots.length), c.y + dy, 1);
+      const pos = snapTokenOn(stateRef.current?.scene?.settings, c.x + dx + 4 * Math.floor(i / spots.length), c.y + dy, 1);
       return { campaign_id: campaignId, scene_id: st.scene!.id, kind: "pc", character_id: p.character_id, stat_block_id: null, name: p.name,
         image_url: p.portrait_url, x: pos.x, y: pos.y, size: 1, rot: 0, layer: "token", hidden: false, controlled_by: [], style: {} };
     });
@@ -1983,7 +2008,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
       setSelTpl(null); requestDraw(); return;
     }
     if (tool === "ruler") {
-      const p = e.altKey ? sq : snapCenter(sq);
+      const p = e.altKey ? sq : snapPointOn(stateRef.current?.scene?.settings, sq);
       myRuler.current = { points: [p, { ...p }], color: myColor, done: null, by: st.me };
       keepRuler.current = false;
       requestDraw(); return;
@@ -2090,7 +2115,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     }
     if (myRuler.current && myRuler.current.done === null) {
       const pts = myRuler.current.points;
-      pts[pts.length - 1] = e.altKey ? sq : snapCenter(sq);
+      pts[pts.length - 1] = e.altKey ? sq : snapPointOn(stateRef.current?.scene?.settings, sq);
       const t = performance.now();
       if (t - rulerSent.current > DRAG_SEND_MS) { rulerSent.current = t; send("ruler", { by: me, color: myColor, points: pts, done: false }); }
       requestDraw(); return;
@@ -2105,7 +2130,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
       const segs = allSegs ? forMove(allSegs) : null;
       for (const id of d.ids) {
         const o = d.orig.get(id)!, t = tokensRef.current.get(id)!;
-        const want = d.free || e.altKey ? { x: o.x + dx, y: o.y + dy } : snapToken(o.x + dx, o.y + dy, t.size);
+        const want = d.free || e.altKey ? { x: o.x + dx, y: o.y + dy } : snapTokenOn(stateRef.current?.scene?.settings, o.x + dx, o.y + dy, t.size);
         const stop = segs ? moveStop(o, want, segs) : null;
         d.now.set(id, stop?.blocked ? { x: stop.x, y: stop.y } : want);
       }
@@ -2474,7 +2499,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     const rows: (Record<string, unknown> & { name: string })[] = [];
     for (let i = 0; i < count; i++) {
       const name = count > 1 || taken.includes(t.name) ? enumerated(t.name, [...taken, ...rows.map((r) => r.name)]) : t.name;
-      const p = snapToken(c.x + (i % 4) * Math.max(1, t.size), c.y + Math.floor(i / 4) * Math.max(1, t.size), t.size);
+      const p = snapTokenOn(stateRef.current?.scene?.settings, c.x + (i % 4) * Math.max(1, t.size), c.y + Math.floor(i / 4) * Math.max(1, t.size), t.size);
       rows.push({ campaign_id: campaignId, scene_id: st.scene.id, kind: t.kind, character_id: t.character_id ?? null, stat_block_id: t.stat_block_id ?? null,
         name, image_url: t.image_url ?? null, x: p.x, y: p.y, size: t.size, rot: 0, layer: "token", hidden: !!t.hidden, controlled_by: [], style: t.style ?? {} });
     }
@@ -2703,10 +2728,10 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   const addFloor = async (level: number) => {
     const st = stateRef.current; if (!st?.scene) return;
     const bm = st.battle_maps?.find((b) => b.id === st.scene!.battle_map_id);
-    const { show_labels, diagonal, los, light, freeFloors } = st.scene.settings ?? {};
+    const { show_labels, diagonal, los, light, freeFloors, grid, hexOffset } = st.scene.settings ?? {};
     const { error: er } = await supabase.from("vtt_scenes").insert({
       campaign_id: campaignId, battle_map_id: st.scene.battle_map_id, level,
-      name: `${bm?.name ?? "Map"}: ${bm?.levelNames?.[level] || `Level ${level + 1}`}`, settings: { show_labels, diagonal, los, light, freeFloors },
+      name: `${bm?.name ?? "Map"}: ${bm?.levelNames?.[level] || `Level ${level + 1}`}`, settings: { show_labels, diagonal, los, light, freeFloors, grid, hexOffset },
     });
     if (er) { setChatErr(`Could not add the floor: ${er.message}`); return; }
     send("refresh", {}); await load(); await loadFloors();
@@ -3793,10 +3818,38 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                         </div>
                       )))}
                   </div>
-                  <label style={label} htmlFor="tt-diag">Ruler diagonals</label>
-                  <select id="tt-diag" value={rule} onChange={(e) => void sceneSetting({ diagonal: e.target.value as DiagonalRule })} style={field}>
-                    {DIAGONAL_RULES.map((d) => <option key={d.key} value={d.key}>{d.label}</option>)}
+                  {/* push 33 (P16): squares or hexes */}
+                  <label style={label} htmlFor="tt-grid">Grid</label>
+                  <select id="tt-grid" value={gridOf(scene.settings)} style={field}
+                    onChange={(e) => { const g = e.target.value as GridKind; void sceneSetting({ grid: g, diagonal: ruleForGrid(g) ?? "five" }); }}>
+                    {GRID_KINDS.map((g) => <option key={g.key} value={g.key}>{g.label}</option>)}
                   </select>
+                  {isHex(gridOf(scene.settings)) ? (() => {
+                    const off = offsetOf(scene.settings);
+                    const nudge = (dx: number, dy: number) => void sceneSetting({ hexOffset: { x: Math.round((off.x + dx) * 100) / 100, y: Math.round((off.y + dy) * 100) / 100 } });
+                    return (
+                      <div style={{ marginTop: 6 }}>
+                        <div style={{ display: "flex", gap: 4, alignItems: "center", flexWrap: "wrap", fontSize: 12 }}>
+                          <span style={{ color: C.muted }}>Line the hexes up with the image:</span>
+                          <button type="button" aria-label="Move the hexes left" onClick={() => nudge(-0.1, 0)} style={{ ...small, padding: "2px 8px" }}>&larr;</button>
+                          <button type="button" aria-label="Move the hexes right" onClick={() => nudge(0.1, 0)} style={{ ...small, padding: "2px 8px" }}>&rarr;</button>
+                          <button type="button" aria-label="Move the hexes up" onClick={() => nudge(0, -0.1)} style={{ ...small, padding: "2px 8px" }}>&uarr;</button>
+                          <button type="button" aria-label="Move the hexes down" onClick={() => nudge(0, 0.1)} style={{ ...small, padding: "2px 8px" }}>&darr;</button>
+                          {(off.x !== 0 || off.y !== 0) && <button type="button" onClick={() => void sceneSetting({ hexOffset: { x: 0, y: 0 } })} style={{ ...small, padding: "2px 8px" }}>Reset</button>}
+                        </div>
+                        <p style={{ color: C.muted, fontSize: 11.5, margin: "6px 0 0", lineHeight: 1.45 }}>
+                          One hex is one square across. Tokens and the ruler snap to hexes, and moves count in hexes. Fog, walls, sight and area templates stay on the squares underneath. To hide the map&apos;s own square grid, turn it off in the battle map editor.
+                        </p>
+                      </div>
+                    );
+                  })() : (
+                    <>
+                      <label style={label} htmlFor="tt-diag">Ruler diagonals</label>
+                      <select id="tt-diag" value={rule} onChange={(e) => void sceneSetting({ diagonal: e.target.value as DiagonalRule })} style={field}>
+                        {DIAGONAL_RULES.map((d) => <option key={d.key} value={d.key}>{d.label}</option>)}
+                      </select>
+                    </>
+                  )}
                   <label style={{ display: "flex", gap: 8, marginTop: 10, fontSize: 12.5, alignItems: "center" }}>
                     <input type="checkbox" checked={!!scene.settings?.show_labels} onChange={(e) => void sceneSetting({ show_labels: e.target.checked })} style={{ accentColor: C.sun }} />
                     Show the map&apos;s text labels to players

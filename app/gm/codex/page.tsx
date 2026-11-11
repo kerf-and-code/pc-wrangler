@@ -8,6 +8,8 @@ import { useMomentPlayer, MomentButton } from "@/components/moment-player";
 import { SAX, surfaces, ui } from "@/lib/theme";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import LoreTriage from "./LoreTriage";
+import CodexGraph from "@/components/codex-graph";
+import { buildGraph } from "@/lib/codex-graph";
 import BlockEditor, { blocksToPlainText, bodyToBlocks, type Block } from "./BlockEditor";
 import EntryPreview from "./EntryPreview";
 import { initialCampaignId, useRememberCampaign, urlParam, setUrlParam } from "@/lib/campaign-context";
@@ -83,6 +85,8 @@ const TABS: { key: string; label: string; type?: string; tag?: string }[] = [
   { key: "lore", label: "Lore", type: "lore" },
   { key: "npc", label: "NPCs" },
   { key: "pc", label: "PCs" },
+  // push 33 (audit P3): every connection at once
+  { key: "graph", label: "Graph" },
   { key: "triage", label: "Loose ends" },
 ];
 
@@ -527,6 +531,27 @@ export default function CodexPage() {
 
         {tab === "triage" ? (
           <LoreTriage campaignId={campaignId} entries={entries} chars={chars} onChanged={() => { void reload(campaignId); }} />
+        ) : tab === "graph" ? (
+          <div style={box}>
+            {(() => {
+              const g = buildGraph(entries, chars, links, { includeUnlinked: true });
+              return (
+                <CodexGraph nodes={g.nodes} edges={g.edges}
+                  colors={{ text: C.text, muted: C.muted, line: C.line, panel: C.surface2, accent: C.sun }}
+                  emptyText="No connections yet. Open an entry or a character and link it to others in its Connections box; they show up here as a map of who knows whom and what sits where."
+                  onOpen={(n) => {
+                    if (n.kind === "entry") {
+                      const e = entries.find((x) => x.id === n.id); if (!e) return;
+                      const key = TABS.find((t) => t.type && matchesTab(e, t.key))?.key ?? "note";
+                      setTab(key); void openEntry(e, key);
+                    } else {
+                      const c = chars.find((x) => x.id === n.id); if (!c) return;
+                      setTab(c.kind === "pc" ? "pc" : "npc"); void openChar(c);
+                    }
+                  }} />
+              );
+            })()}
+          </div>
         ) : (
         <div style={{ display: "flex", flexWrap: "wrap", gap: 16, alignItems: "flex-start" }}>
           {/* list */}

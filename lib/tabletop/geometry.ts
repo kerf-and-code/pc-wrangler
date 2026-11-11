@@ -4,10 +4,14 @@
 // diagonal rule, and the camera. Coordinates are in SQUARES from the grid's top-left corner unless a
 // name says pixels. No React, no Supabase, so it can be tested on its own.
 
-export type Pt = { x: number; y: number };
-export type DiagonalRule = "five" | "alternate" | "euclid";
+import { hexSteps, gridOf, offsetOf, snapHex, isHex } from "@/lib/tabletop/hex";
 
-export const DIAGONAL_RULES: { key: DiagonalRule; label: string }[] = [
+export type Pt = { x: number; y: number };
+// "hexp" and "hexf" (push 33, P16): a scene played on hexes, pointed or flat top (lib/tabletop/hex.ts).
+// Set with the scene's grid, not offered among the diagonal rules.
+export type DiagonalRule = "five" | "alternate" | "euclid" | "hexp" | "hexf";
+
+export const DIAGONAL_RULES: { key: Exclude<DiagonalRule, "hexp" | "hexf">; label: string }[] = [
   { key: "five", label: "5e: every diagonal is one square" },
   { key: "alternate", label: "Alternating 5 and 10 feet" },
   { key: "euclid", label: "Straight-line distance" },
@@ -26,12 +30,25 @@ export function snapToken(x: number, y: number, size: number): Pt {
 // The ruler snaps to square centres, so a measure counts whole squares.
 export const snapCenter = (p: Pt): Pt => ({ x: Math.floor(p.x) + 0.5, y: Math.floor(p.y) + 0.5 });
 
+// Push 33 (P16): the same two snaps for the scene's grid. On hexes every token centres on a hex (a
+// big creature on a hex too), and the ruler goes hex centre to hex centre.
+type GridSettings = { grid?: unknown; hexOffset?: unknown } | null | undefined;
+export function snapTokenOn(settings: GridSettings, x: number, y: number, size: number): Pt {
+  const g = gridOf(settings);
+  return isHex(g) ? snapHex({ x, y }, g, offsetOf(settings)) : snapToken(x, y, size);
+}
+export function snapPointOn(settings: GridSettings, p: Pt): Pt {
+  const g = gridOf(settings);
+  return isHex(g) ? snapHex(p, g, offsetOf(settings)) : snapCenter(p);
+}
+
 // Distance along a path of points (start, waypoints, end), in squares and feet. The alternating rule
 // carries its diagonal count across waypoints, as it does on a real table: the second diagonal of a
 // move costs double wherever the turn happens.
 export function measure(points: Pt[], rule: DiagonalRule, feetPerSquare: number): { squares: number; feet: number } {
   let squares = 0, diagonals = 0;
   for (let i = 1; i < points.length; i++) {
+    if (rule === "hexp" || rule === "hexf") { squares += hexSteps(points[i - 1], points[i], rule === "hexp" ? "hex-pointy" : "hex-flat"); continue; }
     const dx = Math.abs(points[i].x - points[i - 1].x), dy = Math.abs(points[i].y - points[i - 1].y);
     if (rule === "euclid") { squares += Math.hypot(dx, dy); continue; }
     const diag = Math.min(dx, dy), straight = Math.max(dx, dy) - diag;
