@@ -81,6 +81,7 @@ const GM_GROUPS: Group[] = [
     { href: "/gm/import", label: "Import" },
     { href: "/gm/publish", label: "Publish" },
     { href: "/gm/search", label: "Search" },
+    { href: "/gm/ask", label: "Ask the campaign" },
   ] },
   { label: "Insight", children: [
     { href: "/gm/dispositions", label: "Dispositions" },

@@ -199,6 +199,7 @@ export default function SearchPage() {
       <h1 style={{ ...ui.h1, fontSize: 28, margin: "4px 0 4px" }}>Search</h1>
       <p style={{ color: C.muted, fontSize: 14, margin: "0 0 18px" }}>
         That time in Middlebrook with the librarian and Bobble, a few keystrokes away. Spans cast, notes, places, story threads, loot, session logs, player check-ins, and transcripts.
+        {" "}Have a question rather than a word? <a href={gmHref("/gm/ask", { campaign: campaignId })} style={resultLink}>Ask the campaign</a>.
       </p>
 
       <div style={{ ...box, marginBottom: 16 }}>
