@@ -132,37 +132,95 @@ const INVOCATIONS_2024: NonNullable<ClassChoice["filter"]>["named"] = [
   { name: "Witch Sight", summary: "Truesight out to 30 feet", minLevel: 15 },
 ];
 
+/** Push 21: the 2014 Fighting Style options (SRD 5.1). Fighters choose from all six. */
+const FIGHTING_STYLES_2014: NonNullable<NonNullable<ClassChoice["filter"]>["named"]> = [
+      { name: "Archery", summary: "+2 to attack rolls with ranged weapons" },
+      { name: "Defense", summary: "+1 AC while wearing armor" },
+      { name: "Dueling", summary: "+2 damage with a one-handed melee weapon and no other weapon" },
+      { name: "Great Weapon Fighting", summary: "Reroll 1s and 2s on damage dice with a two-handed melee weapon" },
+      { name: "Protection", summary: "Reaction with a shield: impose Disadvantage on an attack against a nearby ally" },
+      { name: "Two-Weapon Fighting", summary: "Add your ability modifier to the off-hand attack's damage" },
+];
+const PALADIN_STYLES_2014 = FIGHTING_STYLES_2014.filter((o) => ["Defense", "Dueling", "Great Weapon Fighting", "Protection"].includes(o.name));
+const RANGER_STYLES_2014 = FIGHTING_STYLES_2014.filter((o) => ["Archery", "Defense", "Dueling", "Two-Weapon Fighting"].includes(o.name));
+
+/**
+ * Push 21: the 2014 Eldritch Invocations (SRD 5.1), with the level each needs and the pact or cantrip it
+ * requires. A different list from 2024's, so neither is a fallback for the other.
+ */
+const INVOCATIONS_2014: NonNullable<ClassChoice["filter"]>["named"] = [
+  { name: "Agonizing Blast", summary: "Add Charisma to Eldritch Blast damage", minLevel: 2, requires: "Eldritch Blast" },
+  { name: "Armor of Shadows", summary: "Cast Mage Armor on yourself at will", minLevel: 2 },
+  { name: "Beast Speech", summary: "Cast Speak with Animals at will", minLevel: 2 },
+  { name: "Beguiling Influence", summary: "Proficiency in Deception and Persuasion", minLevel: 2 },
+  { name: "Book of Ancient Secrets", summary: "Write ritual spells into your Book of Shadows", minLevel: 2, requires: "Pact of the Tome" },
+  { name: "Devil's Sight", summary: "See in magical and normal darkness to 120 feet", minLevel: 2 },
+  { name: "Eldritch Sight", summary: "Cast Detect Magic at will", minLevel: 2 },
+  { name: "Eldritch Spear", summary: "Eldritch Blast reaches 300 feet", minLevel: 2, requires: "Eldritch Blast" },
+  { name: "Eyes of the Rune Keeper", summary: "Read all writing", minLevel: 2 },
+  { name: "Fiendish Vigor", summary: "Cast False Life on yourself at will", minLevel: 2 },
+  { name: "Gaze of Two Minds", summary: "Perceive through a willing humanoid's senses", minLevel: 2 },
+  { name: "Mask of Many Faces", summary: "Cast Disguise Self at will", minLevel: 2 },
+  { name: "Misty Visions", summary: "Cast Silent Image at will", minLevel: 2 },
+  { name: "Repelling Blast", summary: "Push a creature 10 feet when Eldritch Blast hits", minLevel: 2, requires: "Eldritch Blast" },
+  { name: "Thief of Five Fates", summary: "Cast Bane once per long rest with a pact slot", minLevel: 2 },
+  { name: "Voice of the Chain Master", summary: "Speak to and sense through your familiar", minLevel: 2, requires: "Pact of the Chain" },
+  { name: "Mire the Mind", summary: "Cast Slow once per long rest with a pact slot", minLevel: 5 },
+  { name: "One with Shadows", summary: "Turn invisible in dim light or darkness", minLevel: 5 },
+  { name: "Sign of Ill Omen", summary: "Cast Bestow Curse once per long rest with a pact slot", minLevel: 5 },
+  { name: "Thirsting Blade", summary: "Attack twice with your pact weapon", minLevel: 5, requires: "Pact of the Blade" },
+  { name: "Bewitching Whispers", summary: "Cast Compulsion once per long rest with a pact slot", minLevel: 7 },
+  { name: "Dreadful Word", summary: "Cast Confusion once per long rest with a pact slot", minLevel: 7 },
+  { name: "Sculptor of Flesh", summary: "Cast Polymorph once per long rest with a pact slot", minLevel: 7 },
+  { name: "Ascendant Step", summary: "Cast Levitate on yourself at will", minLevel: 9 },
+  { name: "Minions of Chaos", summary: "Cast Conjure Elemental once per long rest with a pact slot", minLevel: 9 },
+  { name: "Otherworldly Leap", summary: "Cast Jump on yourself at will", minLevel: 9 },
+  { name: "Whispers of the Grave", summary: "Cast Speak with Dead at will", minLevel: 9 },
+  { name: "Lifedrinker", summary: "Extra necrotic damage equal to Charisma on a pact weapon hit", minLevel: 12, requires: "Pact of the Blade" },
+  { name: "Chains of Carceri", summary: "Cast Hold Monster at will on celestials, fiends and elementals", minLevel: 15, requires: "Pact of the Chain" },
+  { name: "Master of Myriad Forms", summary: "Cast Alter Self at will", minLevel: 15 },
+  { name: "Visions of Distant Realms", summary: "Cast Arcane Eye at will", minLevel: 15 },
+  { name: "Witch Sight", summary: "See the true form of shapechangers and illusions within 30 feet", minLevel: 15 },
+];
+
 export const CLASS_CHOICES: ClassChoice[] = [
   // --- resolvable from data already in lib/srd, no option list authored -----------------------
   // Fighting Style is a FEAT CATEGORY in feats-2024.json - twelve of them - so these three need no
   // list of their own. The class text says so outright: "you gain a Fighting Style feat of your
   // choice (see Feats)".
-  { className: "Fighter", level: 1, feature: "Fighting Style", choose: 1, kind: "feat",
+  { className: "Fighter", edition: "2024", level: 1, feature: "Fighting Style", choose: 1, kind: "feat",
     filter: { featCategory: "Fighting Style" } },
-  { className: "Paladin", level: 2, feature: "Fighting Style", choose: 1, kind: "feat",
+  { className: "Paladin", edition: "2024", level: 2, feature: "Fighting Style", choose: 1, kind: "feat",
     filter: { featCategory: "Fighting Style" } },
-  { className: "Ranger", level: 2, feature: "Fighting Style", choose: 1, kind: "feat",
+  { className: "Ranger", edition: "2024", level: 2, feature: "Fighting Style", choose: 1, kind: "feat",
     filter: { featCategory: "Fighting Style" } },
 
   // The class text names its own six skills, so this is transcribed from the feature's own
   // description rather than looked up anywhere.
-  { className: "Wizard", level: 2, feature: "Scholar", choose: 1, kind: "skill",
+  { className: "Wizard", edition: "2024", level: 2, feature: "Scholar", choose: 1, kind: "skill",
     filter: { proficientOnly: true,
       options: ["Arcana", "History", "Investigation", "Medicine", "Nature", "Religion"] },
     note: "One you already have proficiency in." },
 
-  { className: "Ranger", level: 2, feature: "Deft Explorer", choose: 1, kind: "skill",
+  { className: "Ranger", edition: "2024", level: 2, feature: "Deft Explorer", choose: 1, kind: "skill",
     filter: { proficientOnly: true }, note: "Gains Expertise in the chosen skill." },
 
   // Spell picks with a level band. The spell catalog does the rest.
+  // Push 21 (audit G14): each now names its class list. Mystic Arcanum is a Warlock spell and Spell
+  // Mastery and Signature Spells are Wizard spells in both editions; without the class the picker
+  // offered every class's spells of that level. The arcana at 13, 15 and 17 were missing.
   { className: "Warlock", level: 11, feature: "Mystic Arcanum", choose: 1, kind: "spell",
-    filter: { spellLevelMin: 6, spellLevelMax: 6 } },
+    filter: { spellClass: "Warlock", spellLevelMin: 6, spellLevelMax: 6 } },
+  ...([[13, 7], [15, 8], [17, 9]] as [number, number][]).map(([lv, sl]): ClassChoice => ({
+    className: "Warlock", level: lv, feature: `Mystic Arcanum (level ${sl} spell)`, choose: 1, kind: "spell",
+    filter: { spellClass: "Warlock", spellLevelMin: sl, spellLevelMax: sl },
+  })),
   { className: "Wizard", level: 18, feature: "Spell Mastery (level 1)", choose: 1, kind: "spell",
-    filter: { spellLevelMin: 1, spellLevelMax: 1 } },
+    filter: { spellClass: "Wizard", spellLevelMin: 1, spellLevelMax: 1 }, note: "One in your spellbook." },
   { className: "Wizard", level: 18, feature: "Spell Mastery (level 2)", choose: 1, kind: "spell",
-    filter: { spellLevelMin: 2, spellLevelMax: 2 } },
+    filter: { spellClass: "Wizard", spellLevelMin: 2, spellLevelMax: 2 }, note: "One in your spellbook." },
   { className: "Wizard", level: 20, feature: "Signature Spells", choose: 2, kind: "spell",
-    filter: { spellLevelMin: 3, spellLevelMax: 3 } },
+    filter: { spellClass: "Wizard", spellLevelMin: 3, spellLevelMax: 3 }, note: "Two in your spellbook." },
 
   // --- authored from Terry's worklist, 2026-08-09 ---------------------------------------------
   //
@@ -171,11 +229,11 @@ export const CLASS_CHOICES: ClassChoice[] = [
   // rather than at build time - a picker for those would record a decision the character does not
   // make once. They belong on the Roll tab as reference, not here.
   {
-    className: "Ranger", level: 9, feature: "Expertise", choose: 2, kind: "skill",
+    className: "Ranger", edition: "2024", level: 9, feature: "Expertise", choose: 2, kind: "skill",
     filter: { proficientOnly: true },
   },
   {
-    className: "Fighter", subclass: "Champion", level: 7, feature: "Additional Fighting Style",
+    className: "Fighter", edition: "2024", subclass: "Champion", level: 7, feature: "Additional Fighting Style",
     choose: 1, kind: "feat", filter: { featCategory: "Fighting Style" },
     note: "One you do not already have.",
   },
@@ -184,12 +242,12 @@ export const CLASS_CHOICES: ClassChoice[] = [
     choose: 3, kind: "skill",
   },
   {
-    className: "Wizard", subclass: "Evoker", level: 3, feature: "Evocation Savant",
+    className: "Wizard", edition: "2024", subclass: "Evoker", level: 3, feature: "Evocation Savant",
     choose: 2, kind: "spell",
     filter: { spellSchool: "Evocation", spellClass: "Wizard", spellLevelMin: 1, spellLevelMax: 2 },
   },
   {
-    className: "Ranger", subclass: "Hunter", level: 3, feature: "Hunter's Prey", choose: 1,
+    className: "Ranger", edition: "2024", subclass: "Hunter", level: 3, feature: "Hunter's Prey", choose: 1,
     kind: "option",
     filter: { named: [
       { name: "Colossus Slayer", summary: "Once a turn, +1d8 against a damaged target" },
@@ -197,7 +255,7 @@ export const CLASS_CHOICES: ClassChoice[] = [
     ] },
   },
   {
-    className: "Ranger", subclass: "Hunter", level: 7, feature: "Defensive Tactics", choose: 1,
+    className: "Ranger", edition: "2024", subclass: "Hunter", level: 7, feature: "Defensive Tactics", choose: 1,
     kind: "option",
     filter: { named: [
       { name: "Escape the Horde", summary: "Opportunity Attacks against you have Disadvantage" },
@@ -205,7 +263,7 @@ export const CLASS_CHOICES: ClassChoice[] = [
     ] },
   },
   {
-    className: "Druid", subclass: "Circle of the Land", level: 3, feature: "Circle of the Land Spells",
+    className: "Druid", edition: "2024", subclass: "Circle of the Land", level: 3, feature: "Circle of the Land Spells",
     choose: 1, kind: "option",
     filter: { named: [
       { name: "Arid", summary: "Blur, Burning Hands, Fire Bolt and the desert list" },
@@ -235,7 +293,7 @@ export const CLASS_CHOICES: ClassChoice[] = [
     note: "Any damage type except Force. Changeable after a Short or Long Rest.",
   },
   {
-    className: "Sorcerer", subclass: "Draconic Sorcery", level: 6, feature: "Elemental Affinity",
+    className: "Sorcerer", edition: "2024", subclass: "Draconic Sorcery", level: 6, feature: "Elemental Affinity",
     choose: 1, kind: "option",
     filter: { named: [
       { name: "Acid", summary: "Add your Charisma to one Acid damage roll per turn" },
@@ -248,7 +306,7 @@ export const CLASS_CHOICES: ClassChoice[] = [
 
   // --- named lists, authored because they exist in no machine-readable source -----------------
   {
-    className: "Cleric", level: 7, feature: "Blessed Strikes", choose: 1, kind: "option",
+    className: "Cleric", edition: "2024", level: 7, feature: "Blessed Strikes", choose: 1, kind: "option",
     filter: { named: [
       { name: "Divine Strike", summary: "Once a turn, +1d8 Necrotic or Radiant on a weapon hit" },
       { name: "Potent Spellcasting", summary: "Add Wisdom to your Cleric cantrip damage" },
@@ -258,21 +316,21 @@ export const CLASS_CHOICES: ClassChoice[] = [
   // 2024 only. Each is a short, closed list, and each summary is a one-line paraphrase written to
   // make the picker usable rather than to reproduce the rules. The full text stays in the book.
   {
-    className: "Cleric", level: 1, feature: "Divine Order", choose: 1, kind: "option",
+    className: "Cleric", edition: "2024", level: 1, feature: "Divine Order", choose: 1, kind: "option",
     filter: { named: [
       { name: "Protector", summary: "Martial weapon proficiency and Heavy armor training" },
       { name: "Thaumaturge", summary: "An extra cantrip, plus Wisdom to Arcana and Religion checks" },
     ] },
   },
   {
-    className: "Druid", level: 1, feature: "Primal Order", choose: 1, kind: "option",
+    className: "Druid", edition: "2024", level: 1, feature: "Primal Order", choose: 1, kind: "option",
     filter: { named: [
       { name: "Magician", summary: "An extra cantrip, plus Wisdom to Arcana and Nature checks" },
       { name: "Warden", summary: "Martial weapon proficiency and Medium armor training" },
     ] },
   },
   {
-    className: "Druid", level: 7, feature: "Elemental Fury", choose: 1, kind: "option",
+    className: "Druid", edition: "2024", level: 7, feature: "Elemental Fury", choose: 1, kind: "option",
     filter: { named: [
       { name: "Potent Spellcasting", summary: "Add Wisdom to your Druid cantrip damage" },
       { name: "Primal Strike", summary: "Once a turn, +1d8 elemental damage on a weapon or Beast form hit" },
@@ -304,7 +362,7 @@ export const CLASS_CHOICES: ClassChoice[] = [
   // which were which, and the prerequisites only make sense against the level they were taken at.
   ...([[1, 1], [2, 2], [5, 2], [7, 1], [9, 1], [12, 1], [15, 1], [18, 1]] as [number, number][])
     .map(([lv, n]) => ({
-      className: "Warlock", level: lv, feature: `Eldritch Invocations (level ${lv})`,
+      className: "Warlock", edition: "2024" as const, level: lv, feature: `Eldritch Invocations (level ${lv})`,
       choose: n, kind: "option" as const,
       filter: { named: INVOCATIONS_2024 },
       note: lv === 1 ? "You can swap one invocation whenever you gain a Warlock level." : undefined,
@@ -344,22 +402,22 @@ export const CLASS_CHOICES: ClassChoice[] = [
 
   // --- the originals -------------------------------------------------------------------------
   {
-    className: "Barbarian", level: 1, feature: "Weapon Mastery",
+    className: "Barbarian", edition: "2024", level: 1, feature: "Weapon Mastery",
     choose: 2, kind: "weapon",
     filter: { weaponCategory: ["Simple", "Martial"], weaponRange: ["Melee"] },
     note: "Changeable after any Long Rest.",
   },
   {
-    className: "Barbarian", level: 3, feature: "Primal Knowledge",
+    className: "Barbarian", edition: "2024", level: 3, feature: "Primal Knowledge",
     choose: 1, kind: "skill",
     note: "From the skills available to Barbarians at level 1.",
   },
   {
-    className: "Bard", level: 2, feature: "Expertise",
+    className: "Bard", edition: "2024", level: 2, feature: "Expertise",
     choose: 2, kind: "skill", filter: { proficientOnly: true },
   },
   {
-    className: "Bard", level: 9, feature: "Expertise",
+    className: "Bard", edition: "2024", level: 9, feature: "Expertise",
     choose: 2, kind: "skill", filter: { proficientOnly: true },
   },
   {
@@ -371,25 +429,25 @@ export const CLASS_CHOICES: ClassChoice[] = [
     choose: 2, kind: "skill", filter: { proficientOnly: true },
   },
   {
-    className: "Fighter", level: 1, feature: "Weapon Mastery",
+    className: "Fighter", edition: "2024", level: 1, feature: "Weapon Mastery",
     choose: 3, kind: "weapon",
     filter: { weaponCategory: ["Simple", "Martial"] },
     note: "Changeable after any Long Rest.",
   },
   {
-    className: "Ranger", level: 1, feature: "Weapon Mastery",
+    className: "Ranger", edition: "2024", level: 1, feature: "Weapon Mastery",
     choose: 2, kind: "weapon",
     filter: { weaponCategory: ["Simple", "Martial"] },
     note: "Changeable after any Long Rest.",
   },
   {
-    className: "Rogue", level: 1, feature: "Weapon Mastery",
+    className: "Rogue", edition: "2024", level: 1, feature: "Weapon Mastery",
     choose: 2, kind: "weapon",
     filter: { weaponCategory: ["Simple", "Martial"] },
     note: "Changeable after any Long Rest.",
   },
   {
-    className: "Paladin", level: 1, feature: "Weapon Mastery",
+    className: "Paladin", edition: "2024", level: 1, feature: "Weapon Mastery",
     choose: 2, kind: "weapon",
     filter: { weaponCategory: ["Simple", "Martial"] },
     note: "Changeable after any Long Rest.",
@@ -473,18 +531,18 @@ export const CLASS_CHOICES: ClassChoice[] = [
     filter: { options: ["Deception", "Performance", "Persuasion"] },
   },
   {
-    className: "Monk", subclass: "Warrior of the Mystic Arts", level: 3,
+    className: "Monk", edition: "2024", subclass: "Warrior of the Mystic Arts", level: 3,
     feature: "Mystic Arts Cantrips", choose: 2, kind: "spell",
     filter: { spellClass: "Sorcerer", spellLevelMin: 0, spellLevelMax: 0 },
     note: "Blade Ward and Thunderclap are the book's suggestion. Wisdom is your casting ability.",
   },
   {
-    className: "Monk", subclass: "Warrior of the Mystic Arts", level: 10,
+    className: "Monk", edition: "2024", subclass: "Warrior of the Mystic Arts", level: 10,
     feature: "Mystic Arts Cantrip (level 10)", choose: 1, kind: "spell",
     filter: { spellClass: "Sorcerer", spellLevelMin: 0, spellLevelMax: 0 },
   },
   {
-    className: "Warlock", subclass: "Vestige Patron", level: 3,
+    className: "Warlock", edition: "2024", subclass: "Vestige Patron", level: 3,
     feature: "Vestige Form", choose: 1, kind: "option",
     filter: { named: [
       { name: "Celestial", summary: "Radiant strikes; Divine Power heals and ends Blinded, Deafened, or Poisoned" },
@@ -494,7 +552,7 @@ export const CLASS_CHOICES: ClassChoice[] = [
     note: "Changeable after any Long Rest.",
   },
   {
-    className: "Warlock", subclass: "Vestige Patron", level: 3,
+    className: "Warlock", edition: "2024", subclass: "Vestige Patron", level: 3,
     feature: "Vestige Spells", choose: 1, kind: "option",
     filter: { named: [
       { name: "Life", summary: "Aid, Bless, Cure Wounds, Revivify and the healing list" },
@@ -505,20 +563,20 @@ export const CLASS_CHOICES: ClassChoice[] = [
     note: "That domain's spells become always-prepared Warlock spells at the matching levels.",
   },
   ...(["Conjuration", "Enchantment", "Necromancy", "Transmutation"] as const).map((school): ClassChoice => ({
-    className: "Wizard",
+    className: "Wizard", edition: "2024",
     subclass: { Conjuration: "Conjurer", Enchantment: "Enchanter", Necromancy: "Necromancer", Transmutation: "Transmuter" }[school],
     level: 3, feature: `${school} Savant`, choose: 2, kind: "spell",
     filter: { spellSchool: school, spellClass: "Wizard", spellLevelMin: 1, spellLevelMax: 2 },
     note: "Added to your spellbook free. One more each time you gain a new spell slot level.",
   })),
   {
-    className: "Wizard", subclass: "Enchanter", level: 3,
+    className: "Wizard", edition: "2024", subclass: "Enchanter", level: 3,
     feature: "Enchanting Conversationalist", choose: 1, kind: "skill",
     filter: { options: ["Deception", "Intimidation", "Persuasion"] },
     note: "Add your Intelligence modifier (min +1) to checks with it.",
   },
   {
-    className: "Wizard", subclass: "Transmuter", level: 3,
+    className: "Wizard", edition: "2024", subclass: "Transmuter", level: 3,
     feature: "Transmuter's Stone", choose: 1, kind: "option",
     filter: { named: [
       { name: "Darkvision", summary: "Bearer gains Darkvision 60 ft, or +60 ft" },
@@ -527,6 +585,149 @@ export const CLASS_CHOICES: ClassChoice[] = [
     ] },
     note: "Bearer also gains Constitution save proficiency. Changeable when you slot-cast a Transmutation spell.",
   },
+  // --- 2014 rules (push 21, audit G14) ---------------------------------------------------------
+  //
+  // Until push 21 most entries above had no edition, so a 2014 character was offered 2024 choices:
+  // Weapon Mastery, the 2024 invocations, Fighting Style feats, a level 2 Bard Expertise, a level 7
+  // Champion style. Those are now marked 2024 and these are the 2014 versions. Every option list is
+  // read off lib/srd/classes-2014-structured.json and subclasses-2014-structured.json (the SRD 5.1
+  // features and their choice lists); the summaries are our own one-line paraphrases. The one fact
+  // not taken from that data is when warlocks gain invocations: its progression table says levels 4
+  // and 6, the SRD table says 5 and 7, and the SRD is followed here.
+  ...([["Fighter", 1, FIGHTING_STYLES_2014], ["Paladin", 2, PALADIN_STYLES_2014], ["Ranger", 2, RANGER_STYLES_2014]] as const)
+    .map(([cls, lv, list]): ClassChoice => ({
+      className: cls, edition: "2014", level: lv, feature: "Fighting Style", choose: 1, kind: "option",
+      filter: { named: [...list] }, note: "A style can't be taken twice.",
+    })),
+  {
+    className: "Fighter", subclass: "Champion", edition: "2014", level: 10, feature: "Additional Fighting Style",
+    choose: 1, kind: "option", filter: { named: [...FIGHTING_STYLES_2014] }, note: "One you do not already have.",
+  },
+  ...[3, 10].map((lv): ClassChoice => ({
+    className: "Bard", edition: "2014", level: lv, feature: "Expertise", choose: 2, kind: "skill",
+    filter: { proficientOnly: true },
+  })),
+  // Magical Secrets: spells from any class of a level the bard can cast, or cantrips. Bard 10 casts up
+  // to 5th level, 14 up to 7th, 18 up to 9th; a Lore bard at 6 up to 3rd.
+  ...([[10, 5], [14, 7], [18, 9]] as [number, number][]).map(([lv, hi]): ClassChoice => ({
+    className: "Bard", edition: "2014", level: lv, feature: `Magical Secrets (level ${lv})`, choose: 2, kind: "spell",
+    filter: { spellLevelMin: 0, spellLevelMax: hi }, note: "From any class. They count as Bard spells and as spells known.",
+  })),
+  {
+    className: "Bard", subclass: "College of Lore", edition: "2014", level: 6, feature: "Additional Magical Secrets",
+    choose: 2, kind: "spell", filter: { spellLevelMin: 0, spellLevelMax: 3 }, note: "From any class. They count as Bard spells.",
+  },
+  {
+    className: "Druid", subclass: "Circle of the Land", edition: "2014", level: 2, feature: "Bonus Cantrip",
+    choose: 1, kind: "spell", filter: { spellClass: "Druid", spellLevelMin: 0, spellLevelMax: 0 },
+  },
+  {
+    className: "Druid", subclass: "Circle of the Land", edition: "2014", level: 2, feature: "Circle of the Land (land)",
+    choose: 1, kind: "option",
+    filter: { named: [
+      { name: "Arctic", summary: "Arctic circle spells from 3rd level" },
+      { name: "Coast", summary: "Coast circle spells from 3rd level" },
+      { name: "Desert", summary: "Desert circle spells from 3rd level" },
+      { name: "Forest", summary: "Forest circle spells from 3rd level" },
+      { name: "Grassland", summary: "Grassland circle spells from 3rd level" },
+      { name: "Mountain", summary: "Mountain circle spells from 3rd level" },
+      { name: "Swamp", summary: "Swamp circle spells from 3rd level" },
+    ] },
+  },
+  // Favored Enemy: one at 1, another at 6 and 14. Natural Explorer: a terrain at 1, 6 and 10.
+  ...([[1, "Favored Enemy"], [6, "Favored Enemy"], [14, "Favored Enemy"]] as [number, string][]).map(([lv, f]): ClassChoice => ({
+    className: "Ranger", edition: "2014", level: lv, feature: `${f} (level ${lv})`, choose: 1, kind: "option",
+    filter: { named: [
+        { name: "Aberrations", summary: "Your favored enemy, with a language they speak" },
+        { name: "Beasts", summary: "Your favored enemy, with a language they speak" },
+        { name: "Celestials", summary: "Your favored enemy, with a language they speak" },
+        { name: "Constructs", summary: "Your favored enemy, with a language they speak" },
+        { name: "Dragons", summary: "Your favored enemy, with a language they speak" },
+        { name: "Elementals", summary: "Your favored enemy, with a language they speak" },
+        { name: "Fey", summary: "Your favored enemy, with a language they speak" },
+        { name: "Fiends", summary: "Your favored enemy, with a language they speak" },
+        { name: "Giants", summary: "Your favored enemy, with a language they speak" },
+        { name: "Monstrosities", summary: "Your favored enemy, with a language they speak" },
+        { name: "Oozes", summary: "Your favored enemy, with a language they speak" },
+        { name: "Plants", summary: "Your favored enemy, with a language they speak" },
+        { name: "Undead", summary: "Your favored enemy, with a language they speak" },
+      { name: "Two humanoid races", summary: "Two kinds of humanoid (such as gnolls and orcs), named in your notes" },
+    ] },
+    note: "One you have not already chosen.",
+  })),
+  ...[1, 6, 10].map((lv): ClassChoice => ({
+    className: "Ranger", edition: "2014", level: lv, feature: `Natural Explorer (level ${lv})`, choose: 1, kind: "option",
+    filter: { named: [
+      { name: "Arctic", summary: "Your favored terrain" },
+      { name: "Coast", summary: "Your favored terrain" },
+      { name: "Desert", summary: "Your favored terrain" },
+      { name: "Forest", summary: "Your favored terrain" },
+      { name: "Grassland", summary: "Your favored terrain" },
+      { name: "Mountain", summary: "Your favored terrain" },
+      { name: "Swamp", summary: "Your favored terrain" },
+    ] },
+    note: "One you have not already chosen.",
+  })),
+  {
+    className: "Ranger", subclass: "Hunter", edition: "2014", level: 3, feature: "Hunter's Prey", choose: 1, kind: "option",
+    filter: { named: [
+      { name: "Colossus Slayer", summary: "Once a turn, +1d8 against a creature below its hit point maximum" },
+      { name: "Giant Killer", summary: "Reaction attack when a Large or bigger creature next to you attacks you" },
+      { name: "Horde Breaker", summary: "Once a turn, another attack against a second creature next to the first" },
+    ] },
+  },
+  {
+    className: "Ranger", subclass: "Hunter", edition: "2014", level: 7, feature: "Defensive Tactics", choose: 1, kind: "option",
+    filter: { named: [
+      { name: "Escape the Horde", summary: "Opportunity attacks against you have disadvantage" },
+      { name: "Multiattack Defense", summary: "+4 AC against a creature's later attacks that turn" },
+      { name: "Steel Will", summary: "Advantage on saves against being frightened" },
+    ] },
+  },
+  {
+    className: "Ranger", subclass: "Hunter", edition: "2014", level: 11, feature: "Multiattack", choose: 1, kind: "option",
+    filter: { named: [
+      { name: "Volley", summary: "Ranged attack against every creature near a point" },
+      { name: "Whirlwind Attack", summary: "Melee attack against every creature within 5 feet" },
+    ] },
+  },
+  {
+    className: "Ranger", subclass: "Hunter", edition: "2014", level: 15, feature: "Superior Hunter's Defense", choose: 1, kind: "option",
+    filter: { named: [
+      { name: "Evasion", summary: "No damage on a successful Dexterity save, half on a failure" },
+      { name: "Stand Against the Tide", summary: "Turn a missed melee attack onto another creature" },
+      { name: "Uncanny Dodge", summary: "Reaction: halve an attack's damage against you" },
+    ] },
+  },
+  {
+    className: "Sorcerer", subclass: "Draconic Bloodline", edition: "2014", level: 1, feature: "Dragon Ancestor",
+    choose: 1, kind: "option",
+    filter: { named: [
+      { name: "Black", summary: "Acid damage, for your later Draconic features" },
+      { name: "Blue", summary: "Lightning damage, for your later Draconic features" },
+      { name: "Brass", summary: "Fire damage, for your later Draconic features" },
+      { name: "Bronze", summary: "Lightning damage, for your later Draconic features" },
+      { name: "Copper", summary: "Acid damage, for your later Draconic features" },
+      { name: "Gold", summary: "Fire damage, for your later Draconic features" },
+      { name: "Green", summary: "Poison damage, for your later Draconic features" },
+      { name: "Red", summary: "Fire damage, for your later Draconic features" },
+      { name: "Silver", summary: "Cold damage, for your later Draconic features" },
+      { name: "White", summary: "Cold damage, for your later Draconic features" },
+    ] },
+  },
+  {
+    className: "Warlock", edition: "2014", level: 3, feature: "Pact Boon", choose: 1, kind: "option",
+    filter: { named: [
+      { name: "Pact of the Blade", summary: "Conjure a melee pact weapon you are proficient with" },
+      { name: "Pact of the Chain", summary: "Find Familiar as a ritual, with extra familiar forms" },
+      { name: "Pact of the Tome", summary: "A Book of Shadows with three cantrips from any class" },
+    ] },
+  },
+  ...([[2, 2], [5, 1], [7, 1], [9, 1], [12, 1], [15, 1], [18, 1]] as [number, number][]).map(([lv, n]): ClassChoice => ({
+    className: "Warlock", edition: "2014", level: lv, feature: `Eldritch Invocations (level ${lv})`, choose: n, kind: "option",
+    filter: { named: INVOCATIONS_2014 },
+    note: lv === 2 ? "You can swap one invocation whenever you gain a Warlock level." : undefined,
+  })),
 ];
 
 export type ResolveInput = {
@@ -614,12 +815,15 @@ export function resolveChoice(choice: ClassChoice, data: ResolveInput): { value:
 export function choicesFor(
   className: string, subclass: string, level: number, edition?: string,
 ): ClassChoice[] {
+  // The Forge's "both" catalogue derives on the 2024 rules, so it gets the 2024 choices (push 21);
+  // before, it matched neither edition and lost every edition-marked entry.
+  const ed = edition === "both" ? "2024" : edition;
   return CLASS_CHOICES
     .filter((c) => c.className === className && c.level <= level)
     .filter((c) => !c.subclass || sameSubclass(c.subclass, subclass))
     // No edition on the entry means it applies to both. No edition passed in means show everything,
     // which keeps existing callers working rather than silently emptying their lists.
-    .filter((c) => !c.edition || !edition || c.edition === edition)
+    .filter((c) => !c.edition || !ed || c.edition === ed)
     .sort((a, b) => a.level - b.level || a.feature.localeCompare(b.feature));
 }
 
