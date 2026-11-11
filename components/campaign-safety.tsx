@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import { fmtDate } from "@/lib/format";
 import { askConfirm } from "@/lib/confirm";
+import { TABLE_LANGUAGES } from "@/lib/languages";
 
 // components/campaign-safety.tsx (2026-11-09)
 //
@@ -122,6 +123,26 @@ export function CampaignSettings({ campaign, isOwner, onChanged, onTrashed }: {
 
   const dirty = name.trim() !== campaign.name || (tz || null) !== (campaign.time_zone || null);
 
+  // Push 26 (audit P2): the table's language, read on its own so the panel still works before p152
+  // has run (then the field stays hidden).
+  const [lang, setLang] = useState<string | null>(null);
+  const [langMsg, setLangMsg] = useState<string | null>(null);
+  useEffect(() => {
+    let live = true;
+    setLang(null); setLangMsg(null);
+    void supabase.from("campaigns").select("audio_language").eq("id", campaign.id).maybeSingle().then(({ data, error }) => {
+      if (live && !error) setLang((data as { audio_language: string | null } | null)?.audio_language || "en");
+    });
+    return () => { live = false; };
+  }, [supabase, campaign.id]);
+  async function saveLang(code: string) {
+    const prev = lang;
+    setLang(code); setLangMsg(null);
+    const { error } = await supabase.from("campaigns").update({ audio_language: code === "en" ? null : code }).eq("id", campaign.id);
+    if (error) { setLang(prev); setLangMsg(`Not saved: ${error.message}`); return; }
+    setLangMsg("Saved. New recordings are transcribed in this language, and recaps are written in it.");
+  }
+
   async function save() {
     const n = name.trim();
     if (!n) { setMsg("A campaign needs a name."); return; }
@@ -159,6 +180,19 @@ export function CampaignSettings({ campaign, isOwner, onChanged, onTrashed }: {
         <button title={!dirty ? "Nothing has changed yet" : undefined} type="button" style={ghost} onClick={save} disabled={busy || !dirty}>{busy ? "Saving…" : "Save details"}</button>
       </div>
       {msg && <p role="status" style={{ margin: 0, fontSize: 13, color: msg === "Saved." ? C.muted : C.warn }}>{msg}</p>}
+
+      {lang !== null && (
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "flex-end" }}>
+          <label style={{ display: "grid", gap: 4, fontSize: 12.5, color: C.muted, flex: "1 1 220px", maxWidth: 320 }}>
+            Language the table plays in
+            <select value={lang} onChange={(e) => void saveLang(e.target.value)} style={field}>
+              {TABLE_LANGUAGES.map((l) => <option key={l.code} value={l.code}>{l.name}</option>)}
+            </select>
+          </label>
+          <span style={{ fontSize: 12.5, color: C.muted, flex: "1 1 240px" }}>Sets the language recordings are transcribed in and recaps and the journal are written in. The app itself stays in English.</span>
+        </div>
+      )}
+      {langMsg && <p role="status" style={{ margin: 0, fontSize: 13, color: langMsg.startsWith("Saved") ? C.muted : C.warn }}>{langMsg}</p>}
 
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
         <button type="button" style={ghost} onClick={exportCampaign} disabled={exporting}>{exporting ? "Building the export..." : "Download campaign (zip)"}</button>

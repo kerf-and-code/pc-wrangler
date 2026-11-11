@@ -1,4 +1,5 @@
 import { anthropicTokens, recordUsage } from "@/lib/usage";
+import { campaignLanguage, writeInLanguage } from "@/lib/languages";
 // Campaign journal builder. Sibling of lib/recap/build.ts: gathers the campaign's
 // captured material (session recaps, arcs, loot, dice highlights, NPC cast) and
 // makes ONE model call to weave the recaps into a continuous chronicle. Returns
@@ -162,7 +163,7 @@ export async function buildJournal(supabase: DbLike, campaignId: string): Promis
 - Open with a short evocative preamble naming the campaign and its heroes.
 - Ground everything in the provided recaps and arcs. Do NOT invent characters, outcomes, or plot beats not present in the input.
 - Refer to player characters by name. Engaging, neutral fantasy-narrative voice.
-- Flowing prose. You may use short act-style section breaks (a bold line) between major movements if it helps, but keep it narrative, no bullet lists.`;
+- Flowing prose. You may use short act-style section breaks (a bold line) between major movements if it helps, but keep it narrative, no bullet lists.${writeInLanguage(await campaignLanguage(supabase, campaignId))}`;
 
   let chronicle = "";
   try {

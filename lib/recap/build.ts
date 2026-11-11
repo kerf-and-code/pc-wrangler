@@ -1,4 +1,5 @@
 import { anthropicTokens, recordUsage } from "@/lib/usage";
+import { campaignLanguage, writeInLanguage } from "@/lib/languages";
 // Shared recap builder. Gathers a session's context (GM notes, accepted player
 // events, GM narration/NPCs, loot, threads, transcript) and produces a
 // "previously on" recap. Used by the manual generate route and the auto-draft on
@@ -338,7 +339,8 @@ export async function buildRecap(supabase: DbLike, sessionId: string, mode: Reca
   // Brief is the short player-facing "previously on." Complete walks the whole
   // session and needs far more room. Same model, same context; only the prompt and
   // the length ceiling differ.
-  const system = mode === "complete" ? COMPLETE_SYSTEM : SYSTEM;
+  // Push 26 (audit P2): the recap is written in the table's language (campaigns.audio_language).
+  const system = (mode === "complete" ? COMPLETE_SYSTEM : SYSTEM) + writeInLanguage(await campaignLanguage(supabase, campaignId));
   // complete is the version the GM shares with players, so it needs room for a whole
   // session. 3000 tokens (~2200 words) forced uniform compression on a 2.5-hour game no
   // matter how the prompt was worded, which is what read as "arbitrarily leaving things

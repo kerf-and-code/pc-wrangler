@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { campaignLanguage } from "@/lib/languages";
 
 // This route hands one signed URL per track to Deepgram. Six tracks means six sequential
 // round trips, and the platform default cut the function off partway through: on
@@ -224,6 +225,8 @@ export async function POST(req: NextRequest) {
   // one bad track still costs exactly one track, never the others. The only behavioural change
   // is that they no longer wait in line.
   type SubmitResult = { ok: boolean; track: string; reason?: string };
+  // Push 26 (audit P2): the table's language (campaigns.audio_language, p152), English when unset.
+  const audioLanguage = await campaignLanguage(admin, job.campaign_id);
   async function submitTrack(
     t: { id: string; storage_path: string; kind?: string | null },
   ): Promise<SubmitResult> {
@@ -248,7 +251,7 @@ export async function POST(req: NextRequest) {
           headers: { Authorization: `Bearer ${replicateToken}`, "Content-Type": "application/json" },
           body: JSON.stringify({
             version: replicateVersion,
-            input: { file_url: signed.signedUrl, language: "en", group_segments: true },
+            input: { file_url: signed.signedUrl, language: audioLanguage, group_segments: true },
             webhook: rcb,
             webhook_events_filter: ["completed"],
           }),
@@ -278,6 +281,9 @@ export async function POST(req: NextRequest) {
       // They are per-file and carry no meaning across recordings, which is why the mapping from
       // label to character is stored on the track rather than treated as an identity.
       if (t.kind === "room") params.set("diarize", "true");
+      // Deepgram defaults to English. Another language is asked for by name; if Deepgram does not take
+      // it, the track fails with Deepgram's reason rather than coming back as English nonsense.
+      if (audioLanguage !== "en") params.set("language", audioLanguage);
 
       const res = await fetch(`https://api.deepgram.com/v1/listen?${params.toString()}`, {
         method: "POST",

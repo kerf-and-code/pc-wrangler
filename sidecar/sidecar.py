@@ -50,6 +50,7 @@ import datetime
 import logging
 import tempfile
 import json
+import re
 import httpx
 import discord
 
@@ -134,6 +135,10 @@ TRANSCRIBE_PROVIDER = os.environ.get("TRANSCRIBE_PROVIDER", "deepgram").strip().
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
 GROQ_MODEL = os.environ.get("GROQ_MODEL", "whisper-large-v3-turbo")
 GROQ_LANGUAGE = os.environ.get("GROQ_LANGUAGE", "en")
+# Push 26 (audit P2): each campaign's own language (campaigns.audio_language, p152) overrides
+# GROQ_LANGUAGE. Looked up once per campaign and kept for five minutes.
+_LANG_CACHE: dict = {}
+_LANG_TTL = 300
 GROQ_URL = "https://api.groq.com/openai/v1/audio/transcriptions"
 
 # ---- Push 10 (audits T18, T20, T1): stop forgotten recordings, restart a stuck process, say so. ----
@@ -1726,7 +1731,29 @@ class Sidecar(discord.Client):
             log.warning("set_job_status(%s -> %s) failed: %r", job_id, status, e)
             return False
 
-    async def groq_transcribe(self, http, file_path):
+    async def campaign_language(self, http, campaign_id):
+        """The campaign's transcription language (an ISO 639-1 code), or GROQ_LANGUAGE when it has
+        none or the column is not there yet (before p152). Cached for five minutes per campaign."""
+        if not campaign_id:
+            return GROQ_LANGUAGE
+        hit = _LANG_CACHE.get(campaign_id)
+        if hit and time.time() - hit[1] < _LANG_TTL:
+            return hit[0]
+        lang = GROQ_LANGUAGE
+        try:
+            r = await http.get(f"{REST}/campaigns", headers=HEADERS,
+                               params={"id": f"eq.{campaign_id}", "select": "audio_language"})
+            if r.status_code == 200:
+                rows = r.json()
+                code = (rows[0].get("audio_language") if rows else None) or ""
+                if re.fullmatch(r"[a-z]{2}", code):
+                    lang = code
+        except Exception as e:
+            log.warning("  campaign_language(%s) failed, using %s: %r", campaign_id, GROQ_LANGUAGE, e)
+        _LANG_CACHE[campaign_id] = (lang, time.time())
+        return lang
+
+    async def groq_transcribe(self, http, file_path, language=None):
         """Transcribe one local (trimmed) ogg with Groq Whisper. Returns the verbose_json
         segment list ([{start,end,text}, in seconds]) or None on any failure - the caller
         reads None as 'fall back to Deepgram'. One bounded retry: a 429 (free-tier
@@ -1740,7 +1767,7 @@ class Sidecar(discord.Client):
             return None
         files = {"file": ("audio.ogg", blob, "audio/ogg")}
         data = {"model": GROQ_MODEL, "response_format": "verbose_json", "temperature": "0",
-                "language": GROQ_LANGUAGE, "timestamp_granularities[]": "segment"}
+                "language": language or GROQ_LANGUAGE, "timestamp_granularities[]": "segment"}
         headers = {"Authorization": f"Bearer {GROQ_API_KEY}"}
         for attempt in range(2):
             try:
@@ -1774,7 +1801,7 @@ class Sidecar(discord.Client):
         """Groq-transcribe a trimmed track, write transcript_segments (remapped to real session
         time via tmap), and mark the track 'done'. Returns the number of segments written (>=0)
         on success, or None to fall back to Deepgram (the track is left 'pending')."""
-        segs = await self.groq_transcribe(http, file_path)
+        segs = await self.groq_transcribe(http, file_path, await self.campaign_language(http, campaign_id))
         if segs is None:
             return None
         rows = []
