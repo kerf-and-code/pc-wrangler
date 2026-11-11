@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import { fmtDate } from "@/lib/format";
+import { askConfirm } from "@/lib/confirm";
 
 // components/campaign-safety.tsx (2026-11-09)
 //
@@ -63,6 +64,23 @@ export function CampaignSettings({ campaign, isOwner, onChanged, onTrashed }: {
     })();
     return () => { live = false; };
   }, [supabase, campaign.id, isOwner]);
+
+  // Push 24 (audit F16): copy the prepared world into a new campaign, then open it in the Workspace.
+  const [duplicating, setDuplicating] = useState(false);
+  const [dupMsg, setDupMsg] = useState<string | null>(null);
+  async function duplicateCampaign() {
+    const ok = await askConfirm(`Make a new campaign from ${campaign.name}? It copies the codex, NPCs, stat blocks, encounters, roll tables, prep, maps, tabletop scenes and card decks. Players, sessions, recaps and recordings stay here.`, { confirmLabel: "Duplicate" });
+    if (!ok) return;
+    setDuplicating(true); setDupMsg(null);
+    const res = await fetch("/api/gm/campaign/duplicate", {
+      method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ campaignId: campaign.id }),
+    }).catch(() => null);
+    const out = (await res?.json().catch(() => null)) as { campaignId?: string; name?: string; error?: string } | null;
+    setDuplicating(false);
+    if (!res || !res.ok || !out?.campaignId) { setDupMsg(out?.error || "Could not duplicate the campaign. Try again."); return; }
+    setDupMsg(`Made ${out.name}. Opening it...`);
+    window.location.assign(`/gm?campaign=${encodeURIComponent(out.campaignId)}`);
+  }
 
   async function exportCampaign() {
     setExporting(true); setExportMsg(null);
@@ -147,6 +165,12 @@ export function CampaignSettings({ campaign, isOwner, onChanged, onTrashed }: {
         <span style={{ fontSize: 12.5, color: C.muted }}>Sessions, recaps, codex, characters, maps and table, as JSON and Markdown. Players&rsquo; private notes and the recordings are not included.</span>
       </div>
       {exportMsg && <p role="status" style={{ margin: 0, fontSize: 13, color: C.muted }}>{exportMsg}</p>}
+
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+        <button type="button" style={ghost} onClick={() => void duplicateCampaign()} disabled={duplicating}>{duplicating ? "Duplicating..." : "Duplicate campaign"}</button>
+        <span style={{ fontSize: 12.5, color: C.muted }}>A fresh campaign with the same world and prep, for another table or a new run. No players, sessions or recordings.</span>
+      </div>
+      {dupMsg && <p role="status" style={{ margin: 0, fontSize: 13, color: C.muted }}>{dupMsg}</p>}
 
       {isOwner && (
         <div style={{ border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "12px 14px", display: "grid", gap: 8 }}>
