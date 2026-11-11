@@ -12,6 +12,22 @@ Consent comes first, always. Nothing is transcribed until each player has agreed
 
 The name comes from the six axes the disposition model tracks: Voice, Tactics, Arcana, Rapport, Exploration, and Nerve. It reads them for each character, and, once a player has played more than one, for the player underneath them.
 
+## What's new
+
+The newest changes first. Each one says where to find it.
+
+**10 November 2026: running the table together.** Co-GMs. On the Workspace, the GMs panel lets the campaign's owner invite another GM with a single-use link that works for 7 days. A co-GM runs everything you do except deleting or trashing the campaign, handing it over, and choosing who else is a GM. They can step down from the same panel.
+
+**10 November 2026: notifications.** A bell in the menu, for GMs and players. Players hear when a session is scheduled, moved or cancelled and when a recap goes out; GMs hear about RSVPs, players joining, recordings ready to review or failed, and co-GM changes. A daily email digest of anything unread is off until you turn it on in Settings.
+
+**10 November 2026: the party inventory and other systems.** The party's shared stash and purse now sit at the bottom of Tonight, so you can seed loot and pay out coins without opening a sheet. Players in Pathfinder 2e, Daggerheart, Draw Steel and Lancer get the stash on their sheet page too, along with an At the table tracker for hit points and their system's resources. The PF2e Forge now records feats by level, spells and gear.
+
+**10 November 2026: rules.** Feats now count once wherever they came from, which fixes Tough adding twice its hit points when taken at a level or from a background; Boon of Fortitude, the 2024 Defense style and Alert in both editions now change the sheet. A 2014 character is now offered the 2014 choices (Fighting Styles, Expertise at 3 and 10, Magical Secrets, the 2014 invocations, Favored Enemy and the rest) instead of the 2024 ones.
+
+**10 November 2026: calendars and the app.** Add to calendar on a session, and a calendar link on your Campaigns page that keeps your calendar app up to date. Six Axes can be installed to a phone's home screen. Players can leave a table (their character is kept in their library), and anyone can start their own game from the Campaigns page.
+
+**9 November 2026: the tabletop.** Card decks, floors, 3D dice, and add-ons with webhooks. See The tabletop below for how each works, and the developer reference at /developers for add-ons.
+
 ## A tour of your side (the GM menu)
 
 The menu runs in the order your week does: Home, Prep, Session, After, World and Insight. On a laptop every group is listed down the left side; click a group's name to fold it away, and the group you are in always stays open. The campaign you are working in is named at the top. On a phone or tablet, the tabs along the bottom open each group's pages, and More holds Home, Insight and Help. Find (Ctrl+K, or Cmd+K on a Mac) jumps to any page, Codex entry, NPC or session from anywhere.
@@ -73,6 +89,30 @@ Easiest of all: open Session, then Tonight. It picks tonight's session for you (
 5. Playing in person instead? Skip /record and open Record in person on a laptop or tablet in the middle of the table: confirm everyone agrees, press Start, and press Stop when you wrap. When transcription finishes, map who was speaking on the Speakers page, then review as usual. Alternatively each player can use the self-recorder on their phone (the player Record page), or you can upload per-player audio on the Capture page.
 
 **Somebody does not want to be recorded.** That is fine and it does not stop the session. On the Capture page you can opt any character out of any session; their track is excluded from transcription and from analysis, and everyone else records normally. A player can also withdraw at any time by telling you, and they are excluded from that session onward.
+
+## The tabletop
+
+The shared table for your campaign: battle maps, tokens, handouts and rolls that you and your players see at once. Open it from Session, then Tabletop, or with Open the tabletop on Tonight, which puts it in its own window for a second screen. Players reach it once they have claimed a character and signed in.
+
+**Maps and scenes.** Scenes holds the table's maps. Upload a map image, use a battle map from the World builder, or import a Universal VTT file (the .dd2vtt, .df2vtt and .uvtt files that Dungeondraft, DungeonFog and Arkenforge export), which brings its walls and doors with it. Look at a scene yourself without moving anyone, or send the players to it. Every scene is saved as a snapshot when a session ends, and you can save one by hand; This scene, Snapshots puts one scene back as it was (tokens, drawings, templates, pins, fog and doors), and keeps the way it was just before as a snapshot too.
+
+**Tokens.** Tokens adds a creature or character; Everyone in the fight without a token gets one. Select and move with V, measure with M (right-click or Q adds a waypoint), and set height with [ and ]. Each token can carry status markers, resource bars you choose who sees, and a private note only you read. A player opens their own sheet from their token with Open sheet.
+
+**Fog, doors, walls and sight.** Fog of war (U) reveals or hides a room with one click, or squares with the brush. Doors block sight until they are opened. You can draw invisible sight walls at any angle over a map, and turn on vision so players see only what their own tokens can see, inside what the fog reveals.
+
+**Floors.** A battle map with several levels becomes one place with floors. A token changes floor at the same spot. A player's token can only change floor standing on stairs, a ladder, a trapdoor or a pit, unless you let players change floors anywhere.
+
+**Drawing, templates and terrain.** Draw (D) with a pen, lines, boxes, ellipses and text; each person erases their own. Area templates (T) are circles, cones, squares and lines you size by dragging or by typing a size in feet. Difficult terrain (G) paints squares where movement costs double, and the measure tool counts it.
+
+**Handouts, pins and tables.** Show a handout or picture to everyone or to chosen players, and pop it up again later. Pin a Codex entry to the table. Tables are rollable tables you paste or type, one entry per line, numbered like a book's or as a plain list.
+
+**Card decks.** Make a deck of playing cards (with jokers if you want them) or your own cards, one per line as Name | text, or from a folder of pictures. Shuffle, draw and deal to players; the table keeps track of where every card is.
+
+**Sound.** Play music and ambient sound for the whole table. Everyone hears the same moment of the track, even when their clocks disagree.
+
+**Rolls and 3D dice.** Rolls use your system's dice: d20 for D&D and Pathfinder, Hope and Fear for Daggerheart, the power roll for Draw Steel. Rolls you mark as private only you see. Turn on 3D dice to see rolls thrown over the table; it is per browser and stays off when your device asks for reduced motion.
+
+**Add-ons and webhooks.** The Add-ons tab in the tabletop's side panel (yours, not the players') gives a campaign a key for outside programs (bots, stream overlays, scripts) to read and post to the table, and webhooks that tell them when something happens. The full reference for add-on authors is public at /developers.
 
 ## Collect the insights
 

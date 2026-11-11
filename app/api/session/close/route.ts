@@ -236,9 +236,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: uErr.message }, { status: 500 });
     }
 
+    // Push 25 (audit P14): keep every tabletop scene as it stood at the end of the session, so the GM
+    // can put one back later. Best effort: a failure here never undoes the close.
+    const { data: snapCount, error: snapErr } = await admin.rpc("snapshot_campaign_scenes_at_close", {
+      p_campaign: session.campaign_id, p_session: sessionId,
+    });
+    if (snapErr) console.error("session close: scene snapshots failed (has p151 run?)", snapErr.message);
+
     return NextResponse.json({
       ok: true,
       closed: true,
+      sceneSnapshots: snapErr ? 0 : Number(snapCount ?? 0),
       processed: process,
       forced: force && Boolean(openCapture),
       orphanCleared,

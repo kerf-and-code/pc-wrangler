@@ -307,6 +307,11 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   const [fxKind, setFxKind] = useState<EffectKind>("fire");
   const [fxRadius, setFxRadius] = useState(0);
   const [sendPick, setSendPick] = useState<{ scene: string; who: string[] } | null>(null);
+  // Push 25 (audit P14): this scene's snapshots (p151), loaded when the GM opens the list.
+  type Snap = { id: string; label: string; taken_at: string; session_number: number | null; tokens: number; drawings: number };
+  const [snaps, setSnaps] = useState<{ scene: string; list: Snap[] } | null>(null);
+  const [snapBusy, setSnapBusy] = useState(false);
+  const [snapConfirm, setSnapConfirm] = useState<string | null>(null);
   const [panelOpen, setPanelOpen] = useState(true);
   const [narrow, setNarrow] = useState(false);
 
@@ -1323,6 +1328,30 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     const link = new Map(entries.map((e, i) => [e.id, made[i]?.id]).filter(([, id]) => !!id) as [string, string][]);
     if (link.size) await mutateFight((cb) => ({ ...cb, combatants: cb.combatants.map((x) => (link.has(x.id) ? { ...x, tokenId: link.get(x.id)! } : x)) }));
     setSelected(made.map((t) => t.id)); requestDraw();
+  };
+
+  // Push 23 (audit P13): every party character with no token on this scene gets one, in a tight group
+  // around the middle of the GM's view, with the character's portrait. The fight's version above covers
+  // whoever is in initiative; this is for walking the party onto a fresh map.
+  const placeParty = async () => {
+    const st = stateRef.current; if (!st?.scene) { say("Open a scene first: the party goes on the scene in front of you."); return; }
+    const have = new Set([...tokensRef.current.values()].map((t) => t.character_id).filter(Boolean));
+    const pcs = st.party.filter((p) => p.character_id && p.profile_id !== st.campaign.gm_id && !have.has(p.character_id));
+    if (!pcs.length) { say("Everyone in the party already has a token on this scene.", true); return; }
+    const c = viewCentre();
+    const spots: [number, number][] = [[0, 0], [1, 0], [0, 1], [1, 1], [-1, 0], [-1, 1], [0, -1], [1, -1], [2, 0], [2, 1], [-1, -1], [2, -1]];
+    const rows = pcs.map((p, i) => {
+      const [dx, dy] = spots[i % spots.length];
+      const pos = snapToken(c.x + dx + 4 * Math.floor(i / spots.length), c.y + dy, 1);
+      return { campaign_id: campaignId, scene_id: st.scene!.id, kind: "pc", character_id: p.character_id, stat_block_id: null, name: p.name,
+        image_url: p.portrait_url, x: pos.x, y: pos.y, size: 1, rot: 0, layer: "token", hidden: false, controlled_by: [], style: {} };
+    });
+    const { data, error: er } = await supabase.from("vtt_tokens").insert(rows).select("*");
+    if (er) { say(`Could not place the party: ${er.message}`); return; }
+    const made = (data ?? []) as Token[];
+    for (const t of made) tokensRef.current.set(t.id, { ...t, mine: true });
+    setSelected(made.map((t) => t.id)); requestDraw();
+    say(`${made.length} party token${made.length === 1 ? "" : "s"} placed.`, true);
   };
 
   // ---- the fight ----
@@ -2571,6 +2600,27 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     if (er) { setChatErr(`Could not move them: ${er.message}`); return; }
     setSendPick(null); send("refresh", {}); await load();
   };
+  const loadSnaps = async (sceneId: string) => {
+    const { data, error: er } = await supabase.rpc("scene_snapshots_for", { p_scene: sceneId });
+    if (er) { setChatErr(/function|schema cache/i.test(er.message) ? "Scene snapshots are being set up. Try again in a few minutes." : friendlyError(er)); return; }
+    setSnaps({ scene: sceneId, list: (data ?? []) as Snap[] });
+  };
+  const saveSnap = async (sceneId: string) => {
+    setSnapBusy(true);
+    const { error: er } = await supabase.rpc("snapshot_scene", { p_scene: sceneId, p_label: null });
+    setSnapBusy(false);
+    if (er) { setChatErr(friendlyError(er)); return; }
+    say("Snapshot saved.", true);
+    await loadSnaps(sceneId);
+  };
+  const restoreSnap = async (sceneId: string, snapId: string) => {
+    setSnapBusy(true); setSnapConfirm(null);
+    const { error: er } = await supabase.rpc("restore_scene_snapshot", { p_snapshot: snapId });
+    setSnapBusy(false);
+    if (er) { setChatErr(friendlyError(er)); return; }
+    send("refresh", {}); await load(); await loadSnaps(sceneId);
+    say("Scene restored. The way it was just before is saved as a snapshot too.", true);
+  };
   const viewScene = async (sceneId: string) => {
     const { error: er } = await supabase.rpc("tabletop_view_scene", { p_scene: sceneId });
     if (er) { setChatErr(friendlyError(er)); return; }
@@ -3381,6 +3431,16 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
           {panel === "tokens" && isGm && (
             <div style={{ flex: 1, overflowY: "auto", padding: 12 }}>
               {!scene && <p style={{ color: C.muted, fontSize: 13 }}>Put a map on the table first (Scenes tab).</p>}
+              {scene && (() => {
+                const have = new Set([...tokensRef.current.values()].map((t) => t.character_id).filter(Boolean));
+                const missing = party.filter((p) => p.character_id && p.profile_id !== state?.campaign.gm_id && !have.has(p.character_id)).length;
+                return missing > 0 ? (
+                  <button type="button" onClick={() => void placeParty()} style={{ ...small, width: "100%", marginBottom: 12 }}
+                    title="Each party character with no token on this scene gets one, grouped in the middle of your view">
+                    Place the party ({missing} without a token)
+                  </button>
+                ) : null;
+              })()}
               {scene && sel.length > 0 && (
                 <div style={{ padding: 10, border: `1px solid ${C.sun}`, borderRadius: 8, marginBottom: 12 }}>
                   <div style={{ fontWeight: 600, fontSize: 13 }}>{sel.length === 1 ? sel[0].name : `${sel.length} tokens`}</div>
@@ -3619,6 +3679,29 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
               {scene && (
                 <>
                   <div style={{ fontWeight: 600, fontSize: 13, marginTop: 18 }}>This scene</div>
+                  <div style={{ border: `1px solid ${C.line}`, borderRadius: 8, padding: "8px 10px", marginTop: 8, display: "grid", gap: 6 }}>
+                    <div style={{ fontSize: 12.5, color: C.text }}>Snapshots</div>
+                    <p style={{ fontSize: 11.5, color: C.muted, margin: 0 }}>Every scene is saved when a session ends. Restore puts tokens, drawings, templates, pins, fog and doors back on this scene only.</p>
+                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                      <button type="button" disabled={snapBusy} onClick={() => void saveSnap(scene.id)} style={{ ...small, padding: "3px 8px" }}>Save a snapshot now</button>
+                      <button type="button" onClick={() => (snaps?.scene === scene.id ? setSnaps(null) : void loadSnaps(scene.id))} aria-expanded={snaps?.scene === scene.id} style={{ ...small, padding: "3px 8px" }}>
+                        {snaps?.scene === scene.id ? "Hide snapshots" : "Show snapshots"}
+                      </button>
+                    </div>
+                    {snaps?.scene === scene.id && (snaps.list.length === 0
+                      ? <p style={{ fontSize: 12, color: C.muted, margin: 0 }}>None yet.</p>
+                      : snaps.list.map((sn) => (
+                        <div key={sn.id} style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", fontSize: 12 }}>
+                          <span style={{ flex: "1 1 150px", color: C.text }}>{sn.label}<span style={{ display: "block", color: C.muted, fontSize: 11 }}>{fmtDateTime(sn.taken_at)} · {sn.tokens} token{sn.tokens === 1 ? "" : "s"}</span></span>
+                          {snapConfirm === sn.id
+                            ? <>
+                                <button type="button" disabled={snapBusy} onClick={() => void restoreSnap(scene.id, sn.id)} style={{ ...small, padding: "2px 8px", background: C.sun, color: "#1b1712", border: "none", fontWeight: 600 }}>Yes, restore</button>
+                                <button type="button" onClick={() => setSnapConfirm(null)} style={{ ...small, padding: "2px 8px" }}>Cancel</button>
+                              </>
+                            : <button type="button" disabled={snapBusy} onClick={() => setSnapConfirm(sn.id)} style={{ ...small, padding: "2px 8px" }}>Restore</button>}
+                        </div>
+                      )))}
+                  </div>
                   <label style={label} htmlFor="tt-diag">Ruler diagonals</label>
                   <select id="tt-diag" value={rule} onChange={(e) => void sceneSetting({ diagonal: e.target.value as DiagonalRule })} style={field}>
                     {DIAGONAL_RULES.map((d) => <option key={d.key} value={d.key}>{d.label}</option>)}
