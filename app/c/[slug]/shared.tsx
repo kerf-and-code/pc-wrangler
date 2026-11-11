@@ -9,6 +9,7 @@
 import React from "react";
 import { createClient } from "@supabase/supabase-js";
 import ThemeToggle from "./theme-toggle";
+import { codexThemeCss } from "@/lib/codex-themes";
 
 export type WikiBlock =
   | { id: string; type: "text"; text: string; width?: "full" | "half" }
@@ -33,6 +34,8 @@ export type Campaign = {
   blurb: string | null;
   items: number;
   codex_cover_url?: string | null;
+  /** Push 32 (audit P11, p156): the GM's chosen look (lib/codex-themes), from public_campaign_theme. */
+  theme?: string | null;
 };
 
 // A public connection between two codex items. entity_links types are "entry" | "character";
@@ -82,14 +85,17 @@ function anon() {
 
 export async function load(slug: string) {
   const supabase = anon();
-  const [{ data: head }, { data: items }, { data: listed }, { data: snapshot }, { data: links }] = await Promise.all([
+  const [{ data: head }, { data: items }, { data: listed }, { data: snapshot }, { data: links }, { data: theme }] = await Promise.all([
     supabase.rpc("public_campaign", { p_slug: slug }),
     supabase.rpc("public_codex", { p_slug: slug }),
     supabase.rpc("public_campaign_listing", { p_slug: slug }),
     supabase.rpc("public_world_snapshot", { p_slug: slug }),
     supabase.rpc("public_codex_links", { p_slug: slug }),
+    // a missing function (p156 not run yet) leaves the default look
+    supabase.rpc("public_campaign_theme", { p_slug: slug }),
   ]);
-  const campaign = (Array.isArray(head) ? head[0] : head) as Campaign | null;
+  const head0 = (Array.isArray(head) ? head[0] : head) as Campaign | null;
+  const campaign = head0 ? { ...head0, theme: typeof theme === "string" ? theme : null } : null;
   const all = ((items as Item[]) ?? []).filter((i) => SECTIONS.some((s) => s.type === i.item_type));
   return {
     campaign: campaign ?? null,
@@ -356,8 +362,10 @@ export function Shell({ slug, campaign, counts, current, wide, children }: {
   wide?: boolean;
   children: React.ReactNode;
 }) {
+  const themeCss = codexThemeCss(campaign.theme);
   return (
     <>
+      {themeCss && <style dangerouslySetInnerHTML={{ __html: themeCss }} />}
       <TopNav slug={slug} campaign={campaign} counts={counts} current={current} />
       <main className={wide ? "w-main-wide" : "w-main"}>{children}</main>
       {/* Push 9 (audit T23): every published page can be reported; the Terms say how reports are handled. */}

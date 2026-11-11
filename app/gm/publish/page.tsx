@@ -19,13 +19,14 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import PageShell from "@/components/page-shell";
 import { createClient } from "@/lib/supabase/client";
 import { PortraitUploader } from "@/components/portrait-uploader";
-import { C, FORGE_RADIUS, STONE } from "@/lib/forge-theme";
+import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import { SAX } from "@/lib/theme";
 import { initialCampaignId, useRememberCampaign } from "@/lib/campaign-context";
 import { friendlyError } from "@/lib/friendly-error";
 import { askConfirm } from "@/lib/confirm";
 import CampaignPicker from "@/components/ui-forge/CampaignPicker";
 import { gmCampaignsFilter } from "@/lib/campaign-gm";
+import { CODEX_THEMES, DEFAULT_CODEX_THEME, codexTheme } from "@/lib/codex-themes";
 
 type Campaign = {
   id: string; name: string;
@@ -66,6 +67,28 @@ export default function PublishPage() {
     if (error) return;
     setCampaigns((prev) => prev.map((c) =>
       (c.id === campaignId ? { ...c, codex_cover_url: url || null } : c)));
+  };
+  // Push 32 (audit P11, p156): the look of the public page, read on its own so the page still works
+  // on a database without the column (theme stays null: the original gold).
+  const [theme, setTheme] = useState<string | null>(null);
+  const [themeReady, setThemeReady] = useState(false);
+  useEffect(() => {
+    if (!campaignId) return;
+    let live = true;
+    setThemeReady(false);
+    void supabase.from("campaigns").select("codex_theme").eq("id", campaignId).maybeSingle().then(({ data, error }) => {
+      if (!live) return;
+      setTheme(error ? null : ((data as { codex_theme: string | null } | null)?.codex_theme ?? null));
+      setThemeReady(!error);
+    });
+    return () => { live = false; };
+  }, [supabase, campaignId]);
+  const saveTheme = async (key: string) => {
+    if (!campaignId) return;
+    const prev = theme;
+    setTheme(key);
+    const { error } = await supabase.from("campaigns").update({ codex_theme: key === DEFAULT_CODEX_THEME ? null : key }).eq("id", campaignId);
+    if (error) { setTheme(prev); setNote(`Could not change the look: ${error.message}`); }
   };
   const published = Boolean(campaign?.public_published_at);
   const publicCount = items.filter((i) => i.is_public).length;
@@ -269,6 +292,29 @@ export default function PublishPage() {
               </button>
             )}
           </Card>
+
+          {themeReady && (
+            <Card>
+              <Label>Look</Label>
+              <div role="radiogroup" aria-label="The public page's look" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 8 }}>
+                {CODEX_THEMES.map((t) => {
+                  const on = codexTheme(theme).key === t.key;
+                  const bg = t.dark["--w-panel"] ?? "#1f1a15", accent = t.dark["--w-accent"] ?? "#c9a24b", ink = t.dark["--w-ink"] ?? "#ece4d6";
+                  return (
+                    <button key={t.key} type="button" role="radio" aria-checked={on} onClick={() => void saveTheme(t.key)}
+                      style={{ textAlign: "left", cursor: "pointer", background: bg, color: ink, border: `2px solid ${on ? accent : "transparent"}`,
+                        borderRadius: 10, padding: "10px 12px", outline: on ? `1px solid ${accent}` : "none" }}>
+                      <div style={{ fontFamily: t.heading === "Cinzel" ? "Cinzel, Georgia, serif" : "'EB Garamond', Georgia, serif", fontSize: 16, color: accent, letterSpacing: t.heading === "Cinzel" ? "0.08em" : 0 }}>{t.label}</div>
+                      <div style={{ fontSize: 12, marginTop: 4, opacity: 0.85, lineHeight: 1.4 }}>{t.blurb}</div>
+                    </button>
+                  );
+                })}
+              </div>
+              <p style={{ ...body, marginTop: 8, marginBottom: 0 }}>
+                The colours and headings of the public page. Every look has a dark and a light version; readers pick which with the switch on the page.
+              </p>
+            </Card>
+          )}
 
           <Card>
             <Label>Being found</Label>

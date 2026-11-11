@@ -18,6 +18,7 @@ import MapUpload, { type UploadDest } from "@/components/map-upload";
 import type { CustomTile } from "@/lib/tiles/custom";
 import { openTabletop, tabletopUrl } from "@/lib/tabletop/open";
 import { askConfirm } from "@/lib/confirm";
+import { detectWalls, withoutExisting, type Wall } from "@/lib/tabletop/wall-detect";
 
 // The Battle maps tab (2026-11-06). Many named maps per campaign, indoor or outdoor, drawn in the
 // adventure-book style by lib/dungeon/classic. The GM edits the finished map directly: what is on the
@@ -126,6 +127,9 @@ export default function BattleMapCreator({ campaignId }: { campaignId: string })
   const [wallMode, setWallMode] = useState<"draw" | "erase">("draw");
   const [wallStart, setWallStart] = useState<Pt | null>(null);   // the open end of the wall being drawn
   const [wallKind, setWallKind] = useState<WallKind>(0);           // phase 5v: what the next wall is (WALL_KINDS)
+  // push 32 (audit P8): walls found in the level's image, shown for the GM to keep or discard
+  const [found, setFound] = useState<Wall[] | null>(null);
+  const [findSens, setFindSens] = useState(0.5);
   const [upload, setUpload] = useState<UploadDest | null>(null);
   const hoverAlt = useRef(false);
 
@@ -330,6 +334,15 @@ export default function BattleMapCreator({ campaignId }: { campaignId: string })
       ctx.lineWidth = 2; ctx.strokeStyle = SELECT_COLOR; ctx.strokeRect(-bw / 2 - 3, -bh / 2 - 3, bw + 6, bh + 6);
       ctx.restore();
     }
+    // push 32: walls found in the image, not yet kept: dashed blue over everything
+    if (found && found.length) {
+      ctx.save(); ctx.lineCap = "round"; ctx.setLineDash([Math.max(4, S * 0.25), Math.max(3, S * 0.15)]);
+      ctx.lineWidth = Math.max(3, S * 0.1); ctx.strokeStyle = "rgba(10,14,20,0.85)";
+      for (const w of found) { ctx.beginPath(); ctx.moveTo(gx + w[0] * S, gy + w[1] * S); ctx.lineTo(gx + w[2] * S, gy + w[3] * S); ctx.stroke(); }
+      ctx.lineWidth = Math.max(2, S * 0.06); ctx.strokeStyle = "#5ec8ff";
+      for (const w of found) { ctx.beginPath(); ctx.moveTo(gx + w[0] * S, gy + w[1] * S); ctx.lineTo(gx + w[2] * S, gy + w[3] * S); ctx.stroke(); }
+      ctx.restore();
+    }
     const hv = hover.current;
     // sight walls: bold while the tool is on, a faint dashed line otherwise (never in the saved image)
     const walls = m.meta.sightWalls[level];
@@ -392,7 +405,7 @@ export default function BattleMapCreator({ campaignId }: { campaignId: string })
       ctx.save(); ctx.lineWidth = 1.5; ctx.strokeStyle = SELECT_COLOR; ctx.strokeRect(gx + c * S, gy + r * S, brushSize * S, brushSize * S); ctx.restore();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [level, selId, selDoor, tool, piece, labelText, paintMode, brushSize, wallMode, wallStart, wallKind]);
+  }, [level, selId, selDoor, tool, piece, labelText, paintMode, brushSize, wallMode, wallStart, wallKind, found]);
 
   const renderBase = useCallback(() => {
     const m = work.current ?? docRef.current; if (!m) return;
@@ -542,6 +555,39 @@ export default function BattleMapCreator({ campaignId }: { campaignId: string })
     return { x: Math.round(x * k) / k, y: Math.round(y * k) / k };
   }
   const finishWall = () => setWallStart(null);
+  // push 32 (audit P8): read the level's image over the grid and propose walls (lib/tabletop/wall-detect)
+  const findWalls = (sens: number) => {
+    const m = docRef.current; if (!m) return;
+    const o = m.meta.overlays[level];
+    const img = o ? paintImgs.current.get(o.url) : null;
+    if (!img || typeof img === "string") { setMsg(img === "failed" ? "The image could not be loaded, so no walls were looked for." : "The image is still loading. Try again in a moment."); return; }
+    const n = m.n, S = Math.max(6, Math.min(12, Math.floor(2400 / n))), W = n * S;
+    const cv = document.createElement("canvas"); cv.width = W; cv.height = W;
+    const cx = cv.getContext("2d", { willReadFrequently: true }); if (!cx) return;
+    cx.drawImage(img, 0, 0, W, W);
+    let px: Uint8ClampedArray;
+    try { px = cx.getImageData(0, 0, W, W).data; } catch { setMsg("This image cannot be read in the browser, so no walls were looked for."); return; }
+    // brightness, with see-through pixels counted as light (nothing is drawn there)
+    const lum = new Float32Array(W * W);
+    for (let i = 0, p = 0; i < lum.length; i++, p += 4) {
+      const a = px[p + 3] / 255;
+      lum[i] = ((0.2126 * px[p] + 0.7152 * px[p + 1] + 0.0722 * px[p + 2]) / 255) * a + (1 - a);
+    }
+    const have = m.meta.sightWalls[level];
+    const room = Math.max(0, MAX_SIGHT_WALLS - have.length);
+    const got = withoutExisting(detectWalls(lum, n, S, sens), have);
+    setFound(got.slice(0, room));
+    setMsg(got.length > room ? `Found ${got.length}, but a level holds ${MAX_SIGHT_WALLS} sight walls, so the first ${room} are shown.` : null);
+  };
+  const keepFound = () => {
+    if (!found?.length) return;
+    const k = found.length, add = found.map((w) => [w[0], w[1], w[2], w[3]] as SightWall);
+    mutate((d) => { d.meta.sightWalls[level].push(...add); });
+    setFound(null); setMsg(`Kept ${k} wall${k === 1 ? "" : "s"}. Ctrl+Z takes them back.`);
+  };
+  // a proposal belongs to the level and the tool it was made for
+  useEffect(() => { setFound(null); }, [level, tool]);
+
   const clearWalls = async () => {
     const m = docRef.current; if (!m || !m.meta.sightWalls[level].length) return;
     if (!await askConfirm(`Remove all ${m.meta.sightWalls[level].length} sight walls on ${m.meta.levelNames[level] || `level ${level + 1}`}? Ctrl+Z brings them back while this page stays open.`)) return;
@@ -937,6 +983,29 @@ export default function BattleMapCreator({ campaignId }: { campaignId: string })
                   <button type="button" onClick={() => { setWallMode("erase"); setWallStart(null); }} style={seg(wallMode === "erase")}>Erase</button>
                 </div>
                 {wallStart && <button type="button" onClick={finishWall} style={{ ...small, width: "100%", marginTop: 8 }}>Finish this wall (Enter)</button>}
+                {/* push 32 (audit P8): find the walls in this level's image */}
+                {doc.meta.overlays[level] && (
+                  <div style={{ marginTop: 10, paddingTop: 8, borderTop: `1px solid ${C.line}` }}>
+                    {found == null ? (
+                      <button type="button" onClick={() => findWalls(findSens)} style={{ ...small, width: "100%" }}
+                        title="Looks for the dark lines and solid dark areas along the grid in this level's image">Find walls in the image</button>
+                    ) : (
+                      <>
+                        <p style={{ color: C.text, fontSize: 12.5, margin: 0 }} role="status">
+                          {found.length ? `${found.length} wall${found.length === 1 ? "" : "s"} found, dashed blue on the map.` : "No walls found at this sensitivity."}
+                        </p>
+                        <label style={{ display: "block", color: C.muted, fontSize: 11.5, margin: "8px 0 2px" }} htmlFor="bm-find-sens">Sensitivity: higher finds fainter walls, and more wrong ones</label>
+                        <input id="bm-find-sens" type="range" min={0} max={1} step={0.1} value={findSens}
+                          onChange={(e) => { const v = Number(e.target.value); setFindSens(v); findWalls(v); }} style={{ width: "100%" }} />
+                        <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
+                          <button type="button" disabled={!found.length} onClick={keepFound} style={{ ...small, flex: 1, color: found.length ? SELECT_COLOR : C.muted }}>Keep {found.length || ""}</button>
+                          <button type="button" onClick={() => setFound(null)} style={{ ...small, flex: 1 }}>Discard</button>
+                        </div>
+                      </>
+                    )}
+                    <p style={{ color: C.muted, fontSize: 11.5, margin: "6px 0 0" }}>Works best on maps whose walls are dark lines along the grid. Doors are yours to add; erase any wall it got wrong.</p>
+                  </div>
+                )}
                 <p style={{ color: C.text, fontSize: 12.5, margin: "10px 0 0" }}>{doc.meta.sightWalls[level].length} on this level{doc.meta.sightWalls[level].length >= MAX_SIGHT_WALLS ? " (the most a level holds)" : ""}</p>
                 {doc.meta.sightWalls[level].length > 0 && <button type="button" onClick={clearWalls} style={{ ...small, color: C.warn, width: "100%", marginTop: 8 }}>Remove all sight walls on this level</button>}
                 <p style={{ color: C.muted, fontSize: 11.5, margin: "8px 0 0" }}>On the tabletop, turn on line of sight for the scene (Scenes tab) to use them.</p>
