@@ -163,9 +163,14 @@ export async function duplicateCampaign(admin: SupabaseClient, sourceId: string,
   // column still duplicates.
   const { data: langRow, error: langErr } = await admin.from("campaigns").select("audio_language").eq("id", sourceId).maybeSingle();
   const lang = !langErr ? (langRow as { audio_language: string | null } | null)?.audio_language ?? null : null;
+  // The in-game calendar and the date the story stands at (p154), the same way: a module's calendar
+  // is part of its world.
+  const { data: calRow, error: calErr } = await admin.from("campaigns").select("world_calendar, world_day").eq("id", sourceId).maybeSingle();
+  const world = !calErr && calRow ? (calRow as { world_calendar: unknown; world_day: number | null }) : null;
   const { error: cErr } = await admin.from("campaigns").insert({
     id: newId, name: copyName, system: s.system ?? "5e", gm_id: caller, time_zone: s.time_zone, codex_cover_url: cover,
     ...(lang ? { audio_language: lang } : {}),
+    ...(world?.world_calendar ? { world_calendar: world.world_calendar, world_day: world.world_day } : {}),
   });
   if (cErr) throw new Error(`campaigns: ${cErr.message}`);
   const copiedFiles: { bucket: string; path: string }[] = [];

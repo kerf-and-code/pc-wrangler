@@ -28,6 +28,7 @@ import { askConfirm } from "@/lib/confirm";
 import { fmtDateTime } from "@/lib/format";
 import { gmCampaignsFilter } from "@/lib/campaign-gm";
 import PartyStash from "@/components/party-stash";
+import WorldClock from "@/components/world-clock";
 import { getModule } from "@/lib/systems/registry";
 import { rulesetForCampaign } from "@/lib/systems/ruleset";
 
@@ -431,6 +432,12 @@ export default function TonightPage() {
             </div>
           </div>
         </>
+      )}
+
+      {ready && campaign && (
+        <div style={{ marginTop: 18 }}>
+          <WorldClock compact campaignId={campaign.id} sessionId={session?.id ?? null} />
+        </div>
       )}
 
       {ready && campaign && (

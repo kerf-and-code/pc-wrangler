@@ -8,6 +8,8 @@ import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import { initialCampaignId, useRememberCampaign, gmHref } from "@/lib/campaign-context";
 import { fmtDate } from "@/lib/format";
 import CampaignPicker from "@/components/ui-forge/CampaignPicker";
+import WorldClock, { DateFields } from "@/components/world-clock";
+import { formatWorldDate, sinceText, type WorldCalendar } from "@/lib/world-calendar";
 
 type Campaign = { id: string; name: string };
 type Sess = { id: string; session_number: number | null; status: string; started_at: string | null; scheduled_at: string | null };
@@ -37,6 +39,13 @@ export default function TimelinePage() {
   const [entity, setEntity] = useState<string>("");
   const [chars, setChars] = useState<Char[]>([]);
   const [pc, setPc] = useState<string>("");
+  // In-game time (push 29, F15): the campaign's calendar and today's date, each session's in-game day,
+  // and the session whose date is being set.
+  const [cal, setCal] = useState<WorldCalendar | null>(null);
+  const [worldToday, setWorldToday] = useState<number | null>(null);
+  const [sessDays, setSessDays] = useState<Record<string, number | null>>({});
+  const [dating, setDating] = useState<{ id: string; day: number } | null>(null);
+  const [dateErr, setDateErr] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -95,6 +104,10 @@ export default function TimelinePage() {
       setEntries((en as Entry[]) || []);
       setGmEvents(gm);
       setEntity("");
+      setDating(null);
+      // Read apart from the rest, so a database without p154 still shows the timeline.
+      const { data: wd, error: wdErr } = await supabase.from("sessions").select("id, world_day").eq("campaign_id", campaignId);
+      if (active) setSessDays(wdErr ? {} : Object.fromEntries(((wd ?? []) as { id: string; world_day: number | null }[]).map((r) => [r.id, r.world_day])));
     })();
     return () => { active = false; };
   }, [campaignId, supabase]);
@@ -165,6 +178,22 @@ export default function TimelinePage() {
     .map((id) => ({ key: `fac:${id}`, name: titleOf(id) })).filter((o) => o.name)
     .sort((a, b) => a.name.localeCompare(b.name));
 
+  // The dated session before this one, by session number, whatever the filters show.
+  const prevDated = (s: Sess): Sess | null => {
+    let best: Sess | null = null;
+    for (const o of sessions) {
+      if (o.id === s.id || sessDays[o.id] == null || (o.session_number ?? 0) >= (s.session_number ?? 0)) continue;
+      if (!best || (o.session_number ?? 0) > (best.session_number ?? 0)) best = o;
+    }
+    return best;
+  };
+  const saveSessDay = async (id: string, day: number | null) => {
+    setDateErr(null);
+    const { error } = await supabase.from("sessions").update({ world_day: day }).eq("id", id);
+    if (error) { setDateErr(`Could not save the date: ${error.message}`); return; }
+    setSessDays((m) => ({ ...m, [id]: day })); setDating(null);
+  };
+
   const box = { ...surfaces.slate, padding: 18 } as const;
   const input = { width: "100%", boxSizing: "border-box" as const, background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "11px 13px", fontSize: 15 };
 
@@ -179,7 +208,7 @@ export default function TimelinePage() {
       display: "inline-block", fontSize: 12, lineHeight: 1.4, padding: "2px 8px",
       borderRadius: 999, border: `1px solid ${color}55`, background: `${color}14`, color, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>{children}</span>
   );
-  const ChipRow = ({ label, color, children }: { label: string; color: string; children: React.ReactNode }) => (
+  const ChipRow = ({ label, children }: { label: string; color: string; children: React.ReactNode }) => (
     <div style={{ display: "flex", gap: 6, alignItems: "baseline", flexWrap: "wrap", marginTop: 8 }}>
       <span style={{ fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: "0.06em", minWidth: 52 }}>{label}</span>
       {children}
@@ -197,7 +226,7 @@ export default function TimelinePage() {
     <PageShell width={820}>
       <h1 style={{ ...ui.h1, fontSize: 28, margin: "4px 0 4px" }}>Timeline</h1>
       <p style={{ color: C.muted, fontSize: 14, margin: "0 0 6px" }}>
-        The campaign session by session: where the party went, who they met, arcs opened and advanced, loot handed out. Trace one PC to follow their arc, or one place, person, or faction to see every session it turns up in.
+        The campaign session by session: where the party went, who they met, arcs opened and advanced, loot handed out. Trace one PC to follow their arc, or one place, person, or faction to see every session it turns up in. Keep in-game time with a calendar, and each session shows the date it happened in the world.
       </p>
       <p style={{ color: C.muted, fontSize: 12.5, margin: "0 0 18px" }}>
         Loose ends captured from your narration (framing, hooks, quests) live on the <a href="/gm/prep" style={{ color: C.plum, textDecoration: "none", borderBottom: `1px solid ${C.plum}` }}>Prep sheet</a>.
@@ -234,6 +263,13 @@ export default function TimelinePage() {
           </div>
         </div>
 
+        {campaignId && (
+          <div style={{ marginBottom: 18 }}>
+            <WorldClock campaignId={campaignId} onChange={(c, d) => { setCal(c); setWorldToday(d); }} />
+          </div>
+        )}
+
+        {dateErr && <p role="alert" style={{ color: C.warn, fontSize: 13, margin: "0 0 12px" }}>{dateErr}</p>}
         {nodes.length === 0 ? (
           <div style={{ ...box, color: C.muted, fontSize: 14 }}>
             {sessions.length === 0
@@ -254,6 +290,33 @@ export default function TimelinePage() {
                       <a href={gmHref("/gm/sessions", { campaign: campaignId, session: s.id })} style={{ fontSize: 16, fontWeight: 700, color: "inherit", textDecoration: "none" }} title="Open in the Session Log">Session {s.session_number ?? "?"}</a>
                       <span style={{ fontSize: 12, color: C.muted }}>{dateOf(s)}{dateOf(s) ? " · " : ""}{s.status}</span>
                     </div>
+                    {cal && (() => {
+                      const day = sessDays[s.id] ?? null;
+                      const prev = prevDated(s);
+                      const since = prev ? sinceText(cal, day, sessDays[prev.id] ?? null, `session ${prev.session_number ?? "?"}`) : null;
+                      if (dating?.id === s.id) {
+                        return (
+                          <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginTop: 8 }}>
+                            <DateFields cal={cal} value={dating.day} onChange={(d) => setDating({ id: s.id, day: d })} idPrefix={`tl-${s.id}`} />
+                            {worldToday != null && <button type="button" onClick={() => setDating({ id: s.id, day: worldToday })} style={{ ...input, width: "auto", padding: "5px 10px", fontSize: 12.5, cursor: "pointer" }}>Today in the world</button>}
+                            <button type="button" onClick={() => void saveSessDay(s.id, dating.day)} style={{ ...input, width: "auto", padding: "5px 12px", fontSize: 12.5, cursor: "pointer", color: C.sun, borderColor: C.sun }}>Save</button>
+                            {day != null && <button type="button" onClick={() => void saveSessDay(s.id, null)} style={{ ...input, width: "auto", padding: "5px 10px", fontSize: 12.5, cursor: "pointer" }}>Clear</button>}
+                            <button type="button" onClick={() => setDating(null)} style={{ ...input, width: "auto", padding: "5px 10px", fontSize: 12.5, cursor: "pointer" }}>Cancel</button>
+                          </div>
+                        );
+                      }
+                      return (
+                        <div style={{ fontSize: 13, color: C.muted, marginTop: 6, display: "flex", gap: 8, flexWrap: "wrap", alignItems: "baseline" }}>
+                          {day != null
+                            ? <span><span style={{ color: C.text }}>{formatWorldDate(cal, day)}</span>{since ? `, ${since}` : ""}</span>
+                            : <span>No in-game date</span>}
+                          <button type="button" onClick={() => setDating({ id: s.id, day: day ?? (prev ? sessDays[prev.id] ?? worldToday ?? 0 : worldToday ?? 0) })}
+                            style={{ background: "none", border: "none", padding: 0, color: C.sun, cursor: "pointer", fontSize: 12.5, textDecoration: "underline" }}>
+                            {day != null ? "change" : "set the date"}
+                          </button>
+                        </div>
+                      );
+                    })()}
                     {opened.length === 0 && touched.length === 0 && grants.length === 0
                       && places.length === 0 && met.length === 0 && factions.length === 0 && (
                       <div style={{ fontSize: 13, color: C.muted, marginTop: 6 }}>Nothing recorded for this session.</div>

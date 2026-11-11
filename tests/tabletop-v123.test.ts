@@ -43,7 +43,8 @@ describe("tokensInTemplate (V1)", () => {
     expect(tokensInTemplate(fireball, 5, toks).sort()).toEqual(["big", "centre", "edge"]);
   });
   it("follows a cone's direction", () => {
-    const cone: TemplateGeom = { shape: "cone", x: 10, y: 10.5, size_ft: 20, width_ft: 5, rot: 0 };
+    // 25 ft reaches 5 squares, past the far token's near edge at 4 squares; a 20 ft cone would stop exactly at it
+    const cone: TemplateGeom = { shape: "cone", x: 10, y: 10.5, size_ft: 25, width_ft: 5, rot: 0 };
     expect(tokensInTemplate(cone, 5, toks).sort()).toEqual(["centre", "edge", "far"]);
     expect(tokensInTemplate({ ...cone, rot: 180 }, 5, toks)).toEqual(["big"]);
   });
