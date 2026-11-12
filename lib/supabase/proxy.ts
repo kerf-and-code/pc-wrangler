@@ -100,6 +100,12 @@ export async function updateSession(request: NextRequest) {
     // Co-GM invite links: a logged-out visitor sees "sign in, then open this link again" instead of
     // losing the link to the login redirect. accept_gm_invite (p149) needs a signed-in account anyway.
     !request.nextUrl.pathname.startsWith("/cogm/") &&
+    //
+    // THE DISCORD ACTIVITY (push 34, audit P7). It runs inside Discord on discordsays.com, where the
+    // website's cookies do not exist; it signs in through Discord and its API checks a Discord session
+    // on every call (lib/discord/activity.ts), so both must be reachable with no website login.
+    !request.nextUrl.pathname.startsWith("/activity") &&
+    !request.nextUrl.pathname.startsWith("/api/activity") &&
     // ---- everything below added 2026-08-03, after a 307 to /auth/login was traced back here ----
     //
     // THE LANDING PAGE. Exact match, because startsWith("/") would exempt the entire site. Without

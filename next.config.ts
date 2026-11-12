@@ -21,10 +21,23 @@ const SECURITY_HEADERS = [
   { key: "Permissions-Policy", value: "camera=(), geolocation=(), microphone=(self)" },
 ];
 
+// The Discord Activity (push 34, audit P7) is the one page another site frames: Discord shows it in an
+// iframe on <app id>.discordsays.com and forwards the requests here. Discord's first load carries a
+// frame_id in the query (proxy.ts sends it to /activity), so only a request with frame_id may be framed,
+// and only by Discord. Every other response keeps SECURITY_HEADERS. The page's own scripts, styles and
+// API calls carry no frame_id, which is fine: only the document's headers decide framing.
+const DISCORD_FRAME_HEADERS = [
+  { key: "Content-Security-Policy", value: "frame-ancestors https://discord.com https://*.discord.com https://*.discordsays.com https://discordapp.com https://*.discordapp.com; base-uri 'self'; object-src 'none'" },
+  ...SECURITY_HEADERS.filter((h) => h.key !== "Content-Security-Policy" && h.key !== "X-Frame-Options"),
+];
+
 const nextConfig: NextConfig = {
   cacheComponents: true,
   async headers() {
-    return [{ source: "/:path*", headers: SECURITY_HEADERS }];
+    return [
+      { source: "/:path*", missing: [{ type: "query", key: "frame_id" }], headers: SECURITY_HEADERS },
+      { source: "/:path*", has: [{ type: "query", key: "frame_id" }], headers: DISCORD_FRAME_HEADERS },
+    ];
   },
   async redirects() {
     return [
