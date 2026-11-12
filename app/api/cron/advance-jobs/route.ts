@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { opsAlert } from "@/lib/ops-alert";
 import { internalHeaders, internalSecret } from "@/lib/internal-auth";
+import { withCronBeat } from "@/lib/cron-beat";
 
 export const maxDuration = 60;
 
@@ -73,7 +74,7 @@ const SWEEP_BUDGET_MS = 45_000;                  // stop sweeping past this so n
 // /api/session/close and /record use to judge alive-versus-crashed, so all three agree.
 const CAPTURE_ALIVE_MS = 3 * 60_000;
 
-export async function GET(request: Request) {
+async function run(request: Request) {
   const auth = request.headers.get("authorization");
   const secret = process.env.CRON_SECRET;
   if (!secret || auth !== `Bearer ${secret}`) {
@@ -387,3 +388,7 @@ export async function GET(request: Request) {
     noAudio,
   }, { status: ok ? 200 : 500 });
 }
+
+// Push 50 (audit round 2, T15): every run is stamped in cron_runs (lib/cron-beat.ts), so a job that
+// stops is noticed.
+export const GET = withCronBeat("advance-jobs", run);

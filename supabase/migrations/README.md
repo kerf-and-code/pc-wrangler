@@ -20,6 +20,8 @@ rules are what keep production and this folder in step.
    ```
 
 7. Pair it with a read-only check in `supabase/checks`.
+8. Run `node scripts/check-migrations.mjs` (or `npm test`, which runs it on p171 and later): it checks
+   the name, the ledger line and that every statement can run twice.
 
 ## Checking what has run
 
@@ -29,8 +31,11 @@ live schema is the only record.
 
 ## Never run
 
-- `0000-base-schema.sql` is a snapshot of the live schema for reference and local testing. Running it on
-  production puts back older function definitions.
+- `0000-base-schema.sql` is the whole schema as the migrations leave it after p170 (refreshed in push 50;
+  `docs/base-schema.md` says how it was built and tested, and how to refresh it). It is for standing up
+  a fresh database. Running it on production would put back older function definitions if anything
+  there is newer. `supabase/checks/schema-fingerprint-check.sql` shows any difference between
+  production and the files.
 - `consent-blanket-optout.sql`, `audio-retention-60d.sql` and `consent-backfill-blanket.sql` are
   superseded and refuse to run (each explains why at the top).
 - The other unnumbered files (`a1` to `a4`, `b1` to `b4`, `capture-control-guild-guard`, `catalog`,

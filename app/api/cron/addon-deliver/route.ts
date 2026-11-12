@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { drain } from "@/lib/addons/deliver";
+import { withCronBeat } from "@/lib/cron-beat";
 
 // app/api/cron/addon-deliver/route.ts (2026-11-09)
 //
@@ -9,7 +10,7 @@ import { drain } from "@/lib/addons/deliver";
 
 export const maxDuration = 60;
 
-export async function GET(req: Request) {
+async function run(req: Request) {
   const auth = req.headers.get("authorization");
   if (!process.env.CRON_SECRET || auth !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -19,3 +20,7 @@ export async function GET(req: Request) {
   const r = await drain(admin, null, 50000);
   return NextResponse.json({ ...r, pruned: pruned ?? 0 });
 }
+
+// Push 50 (audit round 2, T15): every run is stamped in cron_runs (lib/cron-beat.ts), so a job that
+// stops is noticed.
+export const GET = withCronBeat("addon-deliver", run);

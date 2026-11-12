@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { opsAlert } from "@/lib/ops-alert";
 import { digestEmail, type NotificationRow } from "@/lib/notifications";
 import { unsubscribeHeaders, unsubscribeUrl } from "@/lib/email/unsubscribe";
+import { withCronBeat } from "@/lib/cron-beat";
 
 export const maxDuration = 60;
 
@@ -24,7 +25,7 @@ function admin() {
 
 type Batch = { profile_id: string; email: string; items: NotificationRow[] };
 
-export async function GET(request: Request) {
+async function run(request: Request) {
   const auth = request.headers.get("authorization");
   if (!process.env.CRON_SECRET || auth !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -73,3 +74,7 @@ export async function GET(request: Request) {
   }
   return NextResponse.json({ ok: true, people: batch.length, sent, failed, unmarked, more: batch.length >= BATCH });
 }
+
+// Push 50 (audit round 2, T15): every run is stamped in cron_runs (lib/cron-beat.ts), so a job that
+// stops is noticed.
+export const GET = withCronBeat("notification-digest", run);

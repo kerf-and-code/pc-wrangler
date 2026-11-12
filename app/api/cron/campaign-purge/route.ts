@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { purgeCampaign } from "@/lib/campaign/purge";
 import { opsAlert } from "@/lib/ops-alert";
+import { withCronBeat } from "@/lib/cron-beat";
 
 // app/api/cron/campaign-purge/route.ts (2026-11-09)
 //
@@ -13,7 +14,7 @@ import { opsAlert } from "@/lib/ops-alert";
 export const maxDuration = 60;
 const PER_RUN = 5;
 
-export async function GET(request: Request) {
+async function run(request: Request) {
   const auth = request.headers.get("authorization");
   if (!process.env.CRON_SECRET || auth !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -51,3 +52,7 @@ export async function GET(request: Request) {
   }
   return NextResponse.json({ erased: erased.length, problems, more: ((due as unknown[] | null) ?? []).length === PER_RUN, pruned: pErr ? null : pruned }, { status: problems.length ? 500 : 200 });
 }
+
+// Push 50 (audit round 2, T15): every run is stamped in cron_runs (lib/cron-beat.ts), so a job that
+// stops is noticed.
+export const GET = withCronBeat("campaign-purge", run);

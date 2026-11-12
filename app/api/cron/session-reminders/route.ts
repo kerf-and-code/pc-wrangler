@@ -4,6 +4,7 @@ import { opsAlert } from "@/lib/ops-alert";
 import { allowedRecipients } from "@/lib/email/prefs";
 import { formatSessionTime } from "@/lib/email/time";
 import { unsubscribeHeaders, unsubscribeUrl } from "@/lib/email/unsubscribe";
+import { withCronBeat } from "@/lib/cron-beat";
 
 export const maxDuration = 60;
 
@@ -59,7 +60,7 @@ function emailHtml(o: {
 </body></html>`;
 }
 
-export async function GET(request: Request) {
+async function run(request: Request) {
   // Vercel Cron sends Authorization: Bearer <CRON_SECRET> when CRON_SECRET is set.
   const auth = request.headers.get("authorization");
   if (!process.env.CRON_SECRET || auth !== `Bearer ${process.env.CRON_SECRET}`) {
@@ -163,3 +164,7 @@ export async function GET(request: Request) {
   if (failed) await opsAlert("cron session-reminders", `${failed} reminder email(s) failed to send, ${emailed} sent, ${retried} session(s) left for the next run`);
   return NextResponse.json({ processed, emailed, failed, skipped, retried }, { status: failed ? 500 : 200 });
 }
+
+// Push 50 (audit round 2, T15): every run is stamped in cron_runs (lib/cron-beat.ts), so a job that
+// stops is noticed.
+export const GET = withCronBeat("session-reminders", run);

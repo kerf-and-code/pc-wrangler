@@ -155,8 +155,28 @@ MAX_RECORDING_HOURS = float(os.environ.get("MAX_RECORDING_HOURS", "8"))
 WATCHDOG_SECONDS = int(os.environ.get("WATCHDOG_SECONDS", "300"))
 OPS_ALERT_WEBHOOK = os.environ.get("OPS_ALERT_WEBHOOK", "").strip()
 
+# ---- Push 50 (audit round 2, T14): audio that survives a restart. ----------------------------------
+# Each finished chunk used to live only in a temp folder on the machine, so a restart, an OOM kill or a
+# `fly deploy` in the middle of a session lost everything recorded so far. Now every chunk is also
+# uploaded, as it finishes, to the audio bucket under _chunks/<capture_control id>/, with a small marker
+# per chunk recording its length and when it closed. A new process that takes over the recording
+# downloads them, puts silence in for the time it was down, and carries on; one that cannot rejoin
+# finishes the recording from them. Lost: the chunk that was still open (up to FLUSH_SECONDS) and the
+# restart itself. The chunks are deleted when the recording is finished; leftovers (a finish that
+# failed) are swept after CHUNK_SWEEP_DAYS. Only speakers allowed at capture are ever in a chunk.
+DURABLE_CHUNKS = os.environ.get("DURABLE_CHUNKS", "1") == "1"
+CHUNK_PREFIX = "_chunks"
+# A gap longer than this is not padded in full: past two hours the table has surely stopped.
+MAX_RESTART_GAP_SECONDS = float(os.environ.get("MAX_RESTART_GAP_SECONDS", "7200"))
+CHUNK_SWEEP_DAYS = float(os.environ.get("CHUNK_SWEEP_DAYS", "2"))
+# How often the leftover sweep runs, in poll ticks (about six hours at a 4 second poll).
+CHUNK_SWEEP_TICKS = int(os.environ.get("CHUNK_SWEEP_TICKS", "5400"))
+_WALL_RE = re.compile(r"^(\d{5})-(\d+)-(\d+)$")
+_CHUNK_RE = re.compile(r"^(\d{5})\.ogg$")
+
 REST = f"{SUPABASE_URL}/rest/v1"
 STORAGE = f"{SUPABASE_URL}/storage/v1/object"
+STORAGE_LIST = f"{SUPABASE_URL}/storage/v1/object/list"
 HEADERS = {"apikey": SERVICE_KEY, "Authorization": f"Bearer {SERVICE_KEY}"}
 WRITE_HEADERS = {**HEADERS, "Content-Type": "application/json", "Prefer": "return=minimal"}
 RETURN_HEADERS = {**HEADERS, "Content-Type": "application/json", "Prefer": "return=representation"}
@@ -813,6 +833,8 @@ class Sidecar(discord.Client):
                         # conditional write, so repeating it costs one query and can never
                         # take a row out from under a live process.
                         await self.reconcile_orphans(http)
+                    if DURABLE_CHUNKS and ticks % CHUNK_SWEEP_TICKS == 1:
+                        await self.sweep_chunks(http)
                     if ticks % 15 == 0:
                         log.info("poll alive: tick %d, %d active recording(s), tracking %d voice location(s)",
                                  ticks, len(self.recordings), len(self.voice_locations))
@@ -911,10 +933,11 @@ class Sidecar(discord.Client):
         The in-process reconnect handler could never have covered this. There was no
         process left to run it.
 
-        WHAT THIS CANNOT DO. Audio captured before the crash is gone. Chunks live in a
-        tempfile directory on the machine's filesystem and a restart takes them with it.
-        Rejoining resumes capture from now; it does not recover the earlier part, and the
-        GM is told that outright rather than left to infer it from a short recap."""
+        WHAT IT RECOVERS (push 50, audit round 2 T14). Every finished chunk is also saved to the
+        audio bucket (persist_chunk), so the audio from before the crash is downloaded and kept:
+        a rejoined recording carries on with it and a silent gap for the downtime, and one that
+        cannot rejoin is finished from it. Still lost: the chunk that was open when the process
+        died (up to FLUSH_SECONDS) and the downtime itself. The GM is told which happened."""
         try:
             cutoff = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(seconds=ORPHAN_STALE_SECONDS)
             cutoff_iso = cutoff.isoformat()
@@ -983,12 +1006,30 @@ class Sidecar(discord.Client):
                 continue
 
             notify_channel = await self.get_notify_channel(http, row.get("campaign_id"))
+            chan_id = row.get("channel_id")
 
-            # A stale 'stopping' row means the process died DURING finalize. The chunks went
-            # with it, so there is nothing to resume and nothing to upload. Retire the row so
-            # the guild lock releases and /record works again.
+            # Push 50 (audit round 2, T14): whatever the previous process saved off the machine. Every
+            # path below that cannot resume finishes the recording from these instead of losing it.
+            saved = Recording(rid, None, str(chan_id) if chan_id else None, str(row.get("guild_id")),
+                              row.get("campaign_id"), row.get("session_id"))
+            saved.notify_channel_id = notify_channel
+            n_saved, last_closed = (await self.recover_chunks(http, saved)) if DURABLE_CHUNKS else (0, None)
+
+            async def finish_saved(reason, told):
+                """Finish the recording from the saved chunks, and tell the table."""
+                await self.notify(notify_channel, told)
+                await self.finalize(http, saved, note=f"process restarted; {reason}; finished from saved chunks")
+
+            # A stale 'stopping' row means the process died DURING finalize.
             if status == "stopping":
-                log.error("reconcile: %s died during finalize; its audio is gone. Retiring the row.", rid)
+                if n_saved:
+                    log.warning("reconcile: %s died during finalize; finishing it from %d saved chunk(s).", rid, n_saved)
+                    await finish_saved("died during finalize",
+                                       "\u26A0\uFE0F Six Axes restarted while it was processing the last recording. "
+                                       "The audio was saved as it went, so it is being processed again now.")
+                    continue
+                saved.cleanup()
+                log.error("reconcile: %s died during finalize and nothing was saved; retiring the row.", rid)
                 await self.patch_status(http, rid, "done", error="process died during finalize; audio lost")
                 await self.notify(
                     notify_channel,
@@ -997,14 +1038,20 @@ class Sidecar(discord.Client):
                 )
                 continue
 
-            chan_id = row.get("channel_id")
             channel = self.get_channel(int(chan_id)) if chan_id else None
             members = list(getattr(channel, "members", [])) if channel else []
             humans = [m for m in members if not getattr(m, "bot", False)]
 
             if not channel or not humans:
-                log.warning("reconcile: %s cannot resume (channel=%s, %d human member(s)); retiring the row.",
-                            rid, chan_id, len(humans))
+                log.warning("reconcile: %s cannot resume (channel=%s, %d human member(s)); %s.",
+                            rid, chan_id, len(humans), "finishing from saved chunks" if n_saved else "retiring the row")
+                if n_saved:
+                    await finish_saved("voice channel empty on recovery",
+                                       "\u26A0\uFE0F Six Axes restarted and the voice channel was empty, so it stopped "
+                                       "recording. Everything recorded before the restart was saved and is being "
+                                       "processed. Run /record to start again.")
+                    continue
+                saved.cleanup()
                 await self.patch_status(http, rid, "done",
                                         error="process restarted; voice channel empty on recovery")
                 await self.notify(
@@ -1018,6 +1065,13 @@ class Sidecar(discord.Client):
                 vc = await channel.connect(timeout=30.0, reconnect=False)
             except Exception as e:
                 log.warning("reconcile: %s rejoin failed: %r", rid, e)
+                if n_saved:
+                    await finish_saved(f"rejoin failed: {type(e).__name__}",
+                                       "\u26A0\uFE0F Six Axes restarted and could not rejoin the voice channel. "
+                                       "Everything recorded before the restart was saved and is being processed. "
+                                       "Run /record to start again.")
+                    continue
+                saved.cleanup()
                 await self.patch_status(http, rid, "done", error=f"process restarted; rejoin failed: {e}")
                 await self.notify(
                     notify_channel,
@@ -1026,10 +1080,13 @@ class Sidecar(discord.Client):
                 )
                 continue
 
-            rec = Recording(rid, vc, str(chan_id), str(row.get("guild_id")),
-                            row.get("campaign_id"), row.get("session_id"))
+            rec = saved
+            rec.vc = vc
+            # The time the process was down, as silence, so the rest of the session stays on its clock.
+            await self.add_restart_gap(rec, last_closed)
             await self.refresh_permits(http, rec)
             rec.sink = rec.new_sink()
+            rec.chunk_started_at = time.monotonic()
             try:
                 vc.start_recording(rec.sink, _after_record)
             except Exception as e:
@@ -1038,19 +1095,29 @@ class Sidecar(discord.Client):
                     await vc.disconnect()
                 except Exception:
                     pass
+                if n_saved:
+                    rec.sink = None
+                    await finish_saved(f"start_recording failed: {type(e).__name__}",
+                                       "\u26A0\uFE0F Six Axes restarted and could not start recording again. "
+                                       "Everything recorded before the restart was saved and is being processed. "
+                                       "Run /record to start again.")
+                    continue
                 rec.cleanup()
                 await self.patch_status(http, rid, "done",
                                         error=f"process restarted; start_recording failed: {e}")
                 continue
 
-            rec.notify_channel_id = notify_channel
             self.recordings[rid] = rec
-            log.info("RECOVERED: request %s rejoined channel %s (session %s). Audio from before the "
-                     "restart is lost.", rid, chan_id, row.get("session_id"))
+            log.info("RECOVERED: request %s rejoined channel %s (session %s); %d saved chunk(s) kept.",
+                     rid, chan_id, row.get("session_id"), n_saved)
             await self.notify(
                 notify_channel,
-                "\u26A0\uFE0F Six Axes restarted and has rejoined the voice channel. Recording has "
-                "resumed, but anything said during the restart was not captured.",
+                ("\u26A0\uFE0F Six Axes restarted and has rejoined the voice channel. Recording has resumed, "
+                 "and what it recorded before the restart was kept; only the last minute or so before the "
+                 "restart and the restart itself are missing.")
+                if n_saved else
+                ("\u26A0\uFE0F Six Axes restarted and has rejoined the voice channel. Recording has "
+                 "resumed, but anything said during the restart was not captured."),
             )
 
     async def handle_control_row(self, http, row):
@@ -1314,6 +1381,10 @@ class Sidecar(discord.Client):
                 log.info("  chunk %d: speaker %s %.1fs speech, padded to %.1fs (%d KB staged wav -> ogg)",
                          idx, uid, secs, target, staged_kb)
         rec.chunk_seconds[idx] = chunk_wall
+        # Push 50 (T14): keep this chunk off the machine too, so a restart does not take it.
+        if DURABLE_CHUNKS:
+            files = [(uid, path) for uid, lst in rec.speaker_chunks.items() for (i, path, _secs) in lst if i == idx]
+            await self.persist_chunk(rec.rid, idx, chunk_wall, files)
 
     async def reconnect(self, rec: Recording) -> bool:
         try:
@@ -1384,7 +1455,16 @@ class Sidecar(discord.Client):
         beat_task = asyncio.create_task(self._beat_during_finalize(http, rec.rid))
         self.finalizing += 1
         try:
-            await self._finalize_impl(http, rec, note)
+            clean = await self._finalize_impl(http, rec, note)
+            # Push 50 (T14): the saved chunks are only needed until the recording is finished. When a
+            # speaker was lost to a failed concat or upload they are kept, so the audio can still be
+            # rebuilt by hand; the sweep removes them after CHUNK_SWEEP_DAYS either way.
+            if DURABLE_CHUNKS:
+                if clean:
+                    await self.delete_chunks(http, rec.rid)
+                else:
+                    await self.ops_alert(f"recording {rec.rid}: finished with losses; its saved chunks are kept under "
+                                         f"{AUDIO_BUCKET}/{CHUNK_PREFIX}/{rec.rid}/ for {CHUNK_SWEEP_DAYS:g} days")
         except Exception as e:
             await self.ops_alert(f"recording {rec.rid}: finalize failed: {e!r}")
             raise
@@ -1409,11 +1489,11 @@ class Sidecar(discord.Client):
             log.info("stop %s: no audio captured; marking done.", rec.rid)
             await self.patch_status(http, rec.rid, "done", error=note)
             rec.cleanup()
-            return
+            return True
         if not (rec.campaign_id and rec.session_id):
             await self.patch_status(http, rec.rid, "error", error="missing campaign or session")
             rec.cleanup()
-            return
+            return True
 
         # Attribute speakers -> a player character or the GM narrator; build one
         # continuous ogg per mapped speaker.
@@ -1421,7 +1501,7 @@ class Sidecar(discord.Client):
         if not job_id:
             await self.patch_status(http, rec.rid, "error", error="could not create capture job")
             rec.cleanup()
-            return
+            return False
 
         # Per-speaker consent, resolved ONCE for the whole job.
         #
@@ -1634,6 +1714,7 @@ class Sidecar(discord.Client):
             log.error("STOPPED WITH LOSSES: %d speaker(s) recorded but not delivered for job %s.",
                       failed + orphaned, job_id)
         rec.cleanup()
+        return not (failed or orphaned)
 
     # ------------------------------------------------------------ data helpers
 
@@ -2013,6 +2094,179 @@ class Sidecar(discord.Client):
                     delay *= 2
         log.error("insert_track FAILED after %d attempts for %s", attempts, storage_path)
         return False
+
+    # ------------------------------------------------- saved chunks (push 50, audit round 2 T14)
+
+    @staticmethod
+    def chunk_base(rid):
+        return f"{CHUNK_PREFIX}/{rid}"
+
+    async def persist_chunk(self, rid, idx, wall_secs, files):
+        """Upload one finished chunk: each speaker's .ogg, then a marker named
+        <idx>-<length ms>-<closed at, epoch ms>. The marker goes last, so a chunk only counts as saved
+        once every speaker's file in it is up. Runs in the flush task, so it has its own client.
+        Best effort: a failure costs only the restart safety of this one chunk."""
+        base = self.chunk_base(rid)
+        try:
+            async with httpx.AsyncClient(timeout=60) as http:
+                for uid, path in files:
+                    with open(path, "rb") as fh:
+                        blob = fh.read()
+                    if not await self.upload_blob(http, f"{base}/{uid}/{idx:05d}.ogg", blob, "audio/ogg"):
+                        log.warning("chunk %d of %s: not saved off the machine; a restart now would lose it.", idx, rid)
+                        return False
+                marker = f"{base}/_wall/{idx:05d}-{int(round(wall_secs * 1000))}-{int(time.time() * 1000)}"
+                # Sent as audio/ogg, not text: the bucket may only accept audio types. Its contents are
+                # never read; the name carries everything.
+                return await self.upload_blob(http, marker, b"1", "audio/ogg")
+        except Exception as e:
+            log.warning("chunk %d of %s: saving off the machine failed: %r", idx, rid, e)
+            return False
+
+    async def list_objects(self, http, prefix):
+        """Every entry directly under prefix in the audio bucket. A folder comes back with id None."""
+        out, offset = [], 0
+        while True:
+            r = await http.post(
+                f"{STORAGE_LIST}/{AUDIO_BUCKET}",
+                headers={**HEADERS, "Content-Type": "application/json"},
+                json={"prefix": prefix, "limit": 1000, "offset": offset, "sortBy": {"column": "name", "order": "asc"}},
+            )
+            r.raise_for_status()
+            page = r.json() or []
+            out.extend(page)
+            if len(page) < 1000:
+                return out
+            offset += 1000
+
+    async def recover_chunks(self, http, rec):
+        """Load a recording's saved chunks into rec (speaker_chunks, chunk_seconds, chunk_index).
+        Returns (chunks recovered, epoch ms the last one closed), or (0, None) when there are none or
+        they cannot be read. A speaker file whose chunk has no marker is ignored: that chunk never
+        finished saving, so its length is unknown."""
+        base = self.chunk_base(rec.rid)
+        self.finalizing += 1   # a long download holds the poll loop; keep the watchdog off
+        try:
+            marks = {}
+            for o in await self.list_objects(http, f"{base}/_wall"):
+                m = _WALL_RE.match(o.get("name") or "")
+                if m:
+                    marks[int(m.group(1))] = (int(m.group(2)) / 1000.0, int(m.group(3)))
+            if not marks:
+                return 0, None
+            speakers = [o.get("name") for o in await self.list_objects(http, base)
+                        if o.get("id") is None and o.get("name") and o.get("name") != "_wall"]
+            files = 0
+            for uid in speakers:
+                for o in await self.list_objects(http, f"{base}/{uid}"):
+                    m = _CHUNK_RE.match(o.get("name") or "")
+                    if not m or int(m.group(1)) not in marks:
+                        continue
+                    idx = int(m.group(1))
+                    resp = await http.get(f"{STORAGE}/{AUDIO_BUCKET}/{base}/{uid}/{o['name']}", headers=HEADERS)
+                    resp.raise_for_status()
+                    path = os.path.join(rec.tmpdir, f"{uid}-{idx}.ogg")
+                    with open(path, "wb") as fh:
+                        fh.write(resp.content)
+                    rec.speaker_chunks.setdefault(uid, []).append((idx, path, marks[idx][0]))
+                    files += 1
+                    self.last_tick = time.monotonic()
+                    if files % 50 == 0:
+                        # a long download must not let the row look abandoned to another machine
+                        try:
+                            await http.patch(f"{REST}/capture_control", params={"id": f"eq.{rec.rid}"},
+                                             headers=WRITE_HEADERS, json={"heartbeat_at": _now_iso(), "owner": OWNER_ID})
+                        except Exception:
+                            pass
+            for idx, (secs, _closed) in marks.items():
+                rec.chunk_seconds[idx] = secs
+            last = max(marks)
+            rec.chunk_index = last + 1
+            missing = [i for i in range(last + 1) if i not in marks]
+            log.info("recover %s: %d saved chunk(s), %d speaker file(s), %.0f s of audio%s.",
+                     rec.rid, len(marks), files, sum(v[0] for v in marks.values()),
+                     f"; chunk(s) {missing[:10]} never finished saving" if missing else "")
+            return len(marks), marks[last][1]
+        except Exception as e:
+            log.warning("recover %s: could not read its saved chunks: %r", rec.rid, e)
+            return 0, None
+        finally:
+            self.finalizing -= 1
+            self.last_tick = time.monotonic()
+
+    async def add_restart_gap(self, rec, last_closed_ms):
+        """A silent chunk for the time between the last saved chunk and now, so speakers after the
+        restart stay on the session's clock. Saved like any chunk, in case of a second restart."""
+        if not last_closed_ms:
+            return
+        gap = min(max(0.0, time.time() - last_closed_ms / 1000.0), MAX_RESTART_GAP_SECONDS)
+        if gap < 0.5:
+            return
+        idx = rec.chunk_index
+        rec.chunk_seconds[idx] = gap
+        rec.chunk_index = idx + 1
+        if DURABLE_CHUNKS:
+            await self.persist_chunk(rec.rid, idx, gap, [])
+
+    async def delete_chunks(self, http, rid):
+        """Remove every saved chunk of one recording."""
+        base = self.chunk_base(rid)
+        try:
+            paths = []
+            for o in await self.list_objects(http, base):
+                name = o.get("name")
+                if not name:
+                    continue
+                if o.get("id") is None:
+                    for f in await self.list_objects(http, f"{base}/{name}"):
+                        if f.get("name"):
+                            paths.append(f"{base}/{name}/{f['name']}")
+                else:
+                    paths.append(f"{base}/{name}")
+            for i in range(0, len(paths), 500):
+                r = await http.request("DELETE", f"{STORAGE}/{AUDIO_BUCKET}",
+                                       headers={**HEADERS, "Content-Type": "application/json"},
+                                       json={"prefixes": paths[i:i + 500]})
+                r.raise_for_status()
+            if paths:
+                log.info("chunks %s: %d saved file(s) removed.", rid, len(paths))
+            return True
+        except Exception as e:
+            log.warning("chunks %s: could not remove the saved files: %r", rid, e)
+            return False
+
+    async def sweep_chunks(self, http):
+        """Remove saved chunks nobody will use: recordings not held here whose control row is
+        finished (or gone) and older than CHUNK_SWEEP_DAYS. Keeps the bucket's promise that audio
+        lives only as long as the privacy page says."""
+        try:
+            rids = [o.get("name") for o in await self.list_objects(http, CHUNK_PREFIX)
+                    if o.get("id") is None and o.get("name") and o.get("name") not in self.recordings]
+            if not rids:
+                return
+            cutoff = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=CHUNK_SWEEP_DAYS)
+            for i in range(0, len(rids), 50):
+                part = [x for x in rids[i:i + 50] if re.match(r"^[0-9a-fA-F-]{36}$", x)]
+                if not part:
+                    continue
+                r = await http.get(f"{REST}/capture_control", headers=HEADERS,
+                                   params={"id": f"in.({','.join(part)})", "select": "id,status,updated_at"})
+                r.raise_for_status()
+                rows = {row["id"]: row for row in r.json()}
+                for rid in part:
+                    row = rows.get(rid)
+                    if row and row.get("status") in ("requested", "active", "stopping"):
+                        continue
+                    when = (row or {}).get("updated_at")
+                    if row and when:
+                        try:
+                            if datetime.datetime.fromisoformat(when.replace("Z", "+00:00")) > cutoff:
+                                continue
+                        except Exception:
+                            continue
+                    await self.delete_chunks(http, rid)
+        except Exception as e:
+            log.warning("chunk sweep failed: %r", e)
 
     async def delete_blob(self, http, path):
         """Remove an uploaded object. Used when its audio_tracks row could not be created,

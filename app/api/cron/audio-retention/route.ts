@@ -24,6 +24,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { opsAlert } from "@/lib/ops-alert";
+import { withCronBeat } from "@/lib/cron-beat";
 
 export const maxDuration = 60;
 
@@ -34,7 +35,7 @@ const QUEUE_BATCH = 200;
 
 type Failure = { track_id: string; reason: string };
 
-export async function GET(request: Request) {
+async function run(request: Request) {
   // Vercel Cron sends Authorization: Bearer <CRON_SECRET> when CRON_SECRET is set.
   const auth = request.headers.get("authorization");
   if (!process.env.CRON_SECRET || auth !== `Bearer ${process.env.CRON_SECRET}`) {
@@ -151,3 +152,7 @@ async function drainQueue(admin: ReturnType<typeof createAdminClient>): Promise<
   }
   return out;
 }
+
+// Push 50 (audit round 2, T15): every run is stamped in cron_runs (lib/cron-beat.ts), so a job that
+// stops is noticed.
+export const GET = withCronBeat("audio-retention", run);
