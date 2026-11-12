@@ -359,6 +359,7 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
   // phase 5d: the character sheet's open tab, and whether its floating turn tracker is showing
   const [sheetTab, setSheetTab] = useState<SheetTab>("actions");
   const [initOpen, setInitOpen] = useState(false);
+  const seenSaves = useRef("");
 
   // Catalog + its scoping controls.
   const [catalog, setCatalog] = useState<Catalog | null>(null);
@@ -990,6 +991,8 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
     return {
       darkvision, ac: sheet.ac, hpMax: sheet.hpMax, init: sheet.initiative, speed: sheet.speed,
       attacks: attacksPerAction([{ className: build.meta.className, subclass: build.meta.subclass, level: build.level }, ...multi]),
+      // push 45 (U1): saving throw bonuses, for the save prompt on the tabletop and in the Activity
+      saves: sheet.saves,
     };
   }, [sheet, importedSheet, build]);
   const playAttacks = useMemo<AttackRow[]>(() => {
@@ -1032,6 +1035,11 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
   // the play state so the sheet still shows them after the fight ends.
   const onFightSeen = useCallback((f: FightView | null, me: FightEntry | null) => {
     setFightMine(f && me && me.mine ? { id: f.id, me } : null);
+    // Push 45 (audit round 2, LV11): a save waiting on this character opens the turn tracker, where it is
+    // answered; before, nothing on the sheet said a save was due
+    const due = (me?.mine ? me.pendingSaves ?? [] : []).map((p) => p.id).join(",");
+    if (due && due !== seenSaves.current) setInitOpen(true);
+    seenSaves.current = due;
     setFightView(f && me && me.mine ? f : null);
     if (!f || !me || !me.mine || me.hp == null) return;
     const cur = (build as Build & { play?: PlayState }).play || {};
@@ -1755,7 +1763,8 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
         }
       }
     }
-    const initLabel = fightView ? `Initiative · round ${fightView.round}${fightMine?.me.is_turn ? ", your turn" : ""}` : "Initiative";
+    const savesDue = fightMine?.me.pendingSaves ?? [];
+    const initLabel = fightView ? `Initiative · round ${fightView.round}${savesDue.length ? ", save due" : fightMine?.me.is_turn ? ", your turn" : ""}` : "Initiative";
     const saveText = saveState === "saving" ? "Saving…" : saveState === "error" ? "Could not save" : saveState === "idle" ? "Unsaved changes" : "Saved";
     const tabBtn = (on: boolean): React.CSSProperties => ({
       background: on ? "rgba(0,0,0,0.35)" : "transparent", border: "none", borderBottom: `2px solid ${on ? SAX.brass : "transparent"}`,
@@ -1812,7 +1821,8 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
                     <button type="button" className="forge-btn" aria-pressed={initOpen} aria-haspopup="dialog"
                       disabled={!campaignNow} title={campaignNow ? "Show or hide the turn order" : "Only a character at a campaign table is in fights"}
                       onClick={() => setInitOpen((o) => !o)}
-                      style={{ ...stoneButton(initOpen || fightMine?.me.is_turn ? "primary" : "stone"), fontSize: 12.5, padding: "6px 12px" }}>{initLabel}</button>
+                      style={{ ...stoneButton(initOpen || fightMine?.me.is_turn || savesDue.length ? "primary" : "stone"), fontSize: 12.5, padding: "6px 12px",
+                        ...(savesDue.length ? { outline: `2px solid ${C.warn}`, outlineOffset: 1 } : {}) }}>{initLabel}</button>
                     {campaignNow && charIdNow && <SheetRollLog campaignId={campaignNow} characterId={charIdNow} />}
                     <a className="forge-btn" href={forgeHref} style={{ ...stoneButton("ghost"), fontSize: 12.5, padding: "6px 12px", textDecoration: "none" }}>Edit in the Forge</a>
                     {charIdNow && <a className="forge-btn" href={`/me/import?into=${charIdNow}`} title="Replace this character's build with a D&D Beyond character-sheet PDF, keeping HP, coins, notes and the rest of the sheet's own state"
@@ -1820,6 +1830,14 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
                     <span role="status" style={{ fontFamily: FORGE_FONTS.mono, fontSize: 11, color: saveState === "error" ? C.warn : STONE.inkFaint }}>{saveText}</span>
                   </div>
                 </header>
+                {savesDue.length > 0 && !initOpen && (
+                  <div role="alert" style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", margin: "0 0 12px", padding: "8px 12px", border: `1px solid ${C.warn}`, borderRadius: 8, background: "rgba(224,122,112,0.08)" }}>
+                    <span style={{ flex: 1, minWidth: 0, fontSize: 13.5, color: STONE.ink }}>
+                      {savesDue[0].by}&apos;s {savesDue[0].label}: make a {savesDue[0].ability.toUpperCase()} save, DC {savesDue[0].dc}.{savesDue.length > 1 ? ` ${savesDue.length - 1} more waiting.` : ""}
+                    </span>
+                    <button type="button" className="forge-btn" onClick={() => setInitOpen(true)} style={{ ...stoneButton("primary"), fontSize: 12.5, padding: "6px 12px" }}>Roll the save</button>
+                  </div>
+                )}
 
                 <div className="sax-sheet-grid">
                   <div>

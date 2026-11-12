@@ -49,6 +49,9 @@ export type Combatant = {
   // push 36: marked by the GM on the tabletop with Target everyone inside (an area template); the time
   // of that marking. The Combat page offers the newest marking as the targets of a save effect.
   areaTarget?: number | null;
+  // push 45 (audit round 2, G3): a monster's challenge rating when it has no stat block snapshot (a
+  // monster put on the tabletop from the library). Calibration reads block.cr, then this.
+  cr?: string | null;
 };
 
 /** push 36: who the GM last marked on the tabletop as inside an area (the newest marking only), less the
@@ -150,6 +153,21 @@ const whole = (v: unknown, lo: number, hi: number): number | null => {
   const r = Math.round(n);
   return r < lo || r > hi ? null : r;
 };
+
+/** Push 45 (audit round 2, U1): a character's saving throw bonuses from the sheet snapshot the Forge
+ *  saves (`saves`, keyed str dex con int wis cha), or null when the snapshot has none (a character not
+ *  saved since push 45). The tabletop and the Discord Activity put these in the save prompt, which used
+ *  to start at +0. */
+export function snapSaves(snap: unknown): Record<string, number> | null {
+  const raw = snap && typeof snap === "object" ? (snap as { saves?: unknown }).saves : null;
+  if (!raw || typeof raw !== "object") return null;
+  const out: Record<string, number> = {};
+  for (const k of ["str", "dex", "con", "int", "wis", "cha"]) {
+    const v = whole((raw as Record<string, unknown>)[k], -10, 30);
+    if (v !== null) out[k] = v;
+  }
+  return Object.keys(out).length ? out : null;
+}
 
 export function pcSheetStats(src: PcSheetSource | null | undefined): PcSheetStats {
   const snap = (src?.snap && typeof src.snap === "object" ? src.snap : {}) as Record<string, unknown>;

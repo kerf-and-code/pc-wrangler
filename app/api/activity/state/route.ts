@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { callAs, combatForWatcher, feedForWatcher, forWatcher, isUuid, placesFor, sessionFrom } from "@/lib/discord/activity";
 import { activityHand } from "@/lib/discord/activity-view";
+import { snapSaves } from "@/lib/combat";
 
 // GET /api/activity/state?campaign=<id>&since=<iso> (2026-11-11, push 34, audit P7)
 //
@@ -63,11 +64,11 @@ export async function GET(req: Request) {
     return NextResponse.json({ ...base, state: forWatcher(state as { tokens?: Record<string, unknown>[] } | null), combat: combatForWatcher(combat as { order?: Record<string, unknown>[] } | null), feed: feedForWatcher(feed as { messages?: { whisper_to?: unknown; gm_only?: boolean }[] } | null) });
   }
   // each character's initiative bonus, from the sheet snapshot the Forge saves (push 28), for the
-  // "Roll initiative" button
+  // "Roll initiative" button; push 45 (U1): and its save bonuses, for the save prompt
   const rows = ((chars as { data: unknown }).data ?? []) as { id: string; name: string; snap?: { init?: unknown } | null }[];
   const characters = rows.map((r) => {
     const v = Number(r.snap?.init);
-    return { id: r.id, name: r.name, init: Number.isFinite(v) ? Math.max(-10, Math.min(30, Math.round(v))) : null };
+    return { id: r.id, name: r.name, init: Number.isFinite(v) ? Math.max(-10, Math.min(30, Math.round(v))) : null, saves: snapSaves(r.snap) };
   });
   return NextResponse.json({ ...base, me: { ...base.me, characters, hand: activityHand(cards) }, state, combat, feed });
 }

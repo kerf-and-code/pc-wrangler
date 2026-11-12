@@ -49,6 +49,11 @@ import { critDice } from "@/lib/combat-effects";
 // Push 36: with `manual` (a whole number) and `saveFor`, the player rolled their save with their own
 // dice and typed the total. Nothing is rolled here: that total settles the save, the chat card says it
 // was rolled at the table, and Mechanics files it as unverified rather than canonical.
+//
+// Push 45 (audit round 2, B4): a typed total settles a save and nothing else. A request that also asked
+// for an attack, damage at a target, a save effect or initiative used to carry the typed number into
+// those too, so a player could type 30 and land it as an attack roll or as damage. Such a request is now
+// refused, as is a typed total with no character to save for.
 
 export type RollBody = {
   campaignId?: string; notation?: string; label?: string; gmOnly?: boolean; characterId?: string | null; asName?: string;
@@ -143,6 +148,9 @@ export async function tableRoll(admin: SupabaseClient, who: Roller, b: RollBody)
   }
 
   let result: RollResult;
+  if (b.manual != null && (!b.saveFor || !characterId || rollFor || b.saveAgainst || b.initiative)) {
+    return { status: 400, body: { error: "A total you rolled yourself can only answer a saving throw." } };
+  }
   const manual = b.saveFor && typeof b.manual === "number" && Number.isInteger(b.manual) && b.manual >= -10 && b.manual <= 60 ? b.manual : null;
   if (b.manual != null && manual == null) return { status: 400, body: { error: "Type the total you rolled, a whole number." } };
   if (manual != null) {

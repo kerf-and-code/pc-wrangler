@@ -7,6 +7,9 @@
 // predicted DMG band against how it went (rounds, the party's net HP lost, characters dropped) and,
 // once there are enough fights, says whether harder predictions went with harder fights. The maths is
 // in lib/calibration.ts.
+//
+// Push 45 (audit round 2, G4): fights that were never ended are named, since they are the most common
+// reason a fight is missing here, and a campaign outside D&D is told the page measures D&D fights only.
 
 import React, { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -18,7 +21,8 @@ import { LoadingState } from "@/components/ui-forge/States";
 import CampaignPicker from "@/components/ui-forge/CampaignPicker";
 import { byBand, fightResult, reading, MIN_FIGHTS_TO_JUDGE, type FightResult, type FightRow } from "@/lib/calibration";
 
-type Campaign = { id: string; name: string };
+type Campaign = { id: string; name: string; system?: string | null };
+const isDnd = (system: string | null | undefined) => !system || system === "dnd5e" || system === "darkmatter";
 const pct = (x: number | null) => (x === null ? "not tracked" : `${Math.round(x * 100)}%`);
 const PAGE = 1000;
 
@@ -29,10 +33,11 @@ export default function CalibrationPage() {
   useRememberCampaign(campaignId, campaigns);
   const [rows, setRows] = useState<FightRow[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [open, setOpen] = useState<{ n: number; list: { id: string; name: string; created_at: string }[] }>({ n: 0, list: [] });
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase.from("campaigns").select("id, name").order("created_at", { ascending: true });
+      const { data } = await supabase.from("campaigns").select("id, name, system").order("created_at", { ascending: true });
       const list = (data as Campaign[]) || [];
       setCampaigns(list);
       if (list.length) setCampaignId(initialCampaignId(list)); else setRows([]);
@@ -60,6 +65,10 @@ export default function CalibrationPage() {
         if (!data || data.length < PAGE) break;
       }
       if (!off) setRows(all);
+      // fights still running, or left running: not measured until they end
+      const { data: run, count } = await supabase.from("combats").select("id, name, created_at", { count: "exact" })
+        .eq("campaign_id", campaignId).neq("status", "ended").order("created_at", { ascending: true }).limit(5);
+      if (!off) setOpen({ n: count ?? (run ?? []).length, list: (run ?? []) as { id: string; name: string; created_at: string }[] });
     })();
     return () => { off = true; };
   }, [supabase, campaignId]);
@@ -68,6 +77,14 @@ export default function CalibrationPage() {
   const unmeasured = (rows?.length ?? 0) - results.length;
   const bands = useMemo(() => byBand(results), [results]);
   const methods = useMemo(() => [...new Set(results.map((r) => r.method))].sort(), [results]);
+  const camp = campaigns.find((c) => c.id === campaignId);
+  const notEnded = open.n > 0 && (
+    <div style={{ background: C.surface2, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "14px 16px", marginBottom: 14, fontSize: 13.5, color: C.text, lineHeight: 1.55 }}>
+      {open.n} {open.n === 1 ? "fight has" : "fights have"} not been ended, so {open.n === 1 ? "it is" : "they are"} not measured yet:{" "}
+      {open.list.map((f) => `${f.name} (started ${new Date(f.created_at).toLocaleDateString()})`).join(", ")}{open.n > open.list.length ? ", and more" : ""}.
+      {" "}End a fight with End fight on the <a href="/gm/combat" style={{ color: C.sun }}>Combat page</a> or the tabletop when it is over.
+    </div>
+  );
 
   const box: React.CSSProperties = { background: C.surface2, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "14px 16px", marginBottom: 14 };
   const th: React.CSSProperties = { textAlign: "left", color: C.muted, fontWeight: 600, fontSize: 12, padding: "6px 8px", borderBottom: `1px solid ${C.line}` };
@@ -87,12 +104,18 @@ export default function CalibrationPage() {
       {err ? <p role="alert" style={{ color: C.warn }}>{err}</p>
         : rows === null ? <LoadingState />
         : results.length === 0 ? (
+          <>
+          {notEnded}
           <div style={{ ...box, color: C.muted, fontSize: 14, lineHeight: 1.55 }}>
-            No measured fights yet. Every D&amp;D fight you run on the Combat page or the tabletop is measured from now on; end it with End fight and it appears here.
-            {unmeasured > 0 && <> {unmeasured} earlier finished {unmeasured === 1 ? "fight was" : "fights were"} run before measuring started, so {unmeasured === 1 ? "it is" : "they are"} left out: where everyone ended says nothing about what the fight cost them.</>}
+            {camp && !isDnd(camp.system)
+              ? <>Calibration uses the D&amp;D encounter math (monster CR against character level), so it measures D&amp;D fights only, and {camp.name} is not a D&amp;D campaign.</>
+              : <>No measured fights yet. Every D&amp;D fight you run on the Combat page or the tabletop is measured from now on; end it with End fight and it appears here.</>}
+            {unmeasured > 0 && <> {unmeasured} earlier finished {unmeasured === 1 ? "fight was" : "fights were"} run before measuring started, or not under D&amp;D rules, so {unmeasured === 1 ? "it is" : "they are"} left out.</>}
           </div>
+          </>
         ) : (
           <>
+            {notEnded}
             {methods.map((m) => {
               const r = reading(results, m);
               return (

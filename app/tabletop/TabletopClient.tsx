@@ -12,7 +12,9 @@ import {
   type Camera, type Pt, type DiagonalRule, type TemplateGeom, type TemplateShape,
 } from "@/lib/tabletop/geometry";
 import { loadSrd } from "@/lib/srd/srd";
-import { sortForTurns, applyDamage, applyHealing, combatantId, pcCombatant, markArea, type Combatant, type Econ, type PcSheetSource } from "@/lib/combat";
+import { writeFight } from "@/lib/tabletop/fight-write";
+import type { StatBlockDoc } from "@/lib/stat-blocks";
+import { sortForTurns, applyDamage, applyHealing, combatantId, pcCombatant, markArea, snapSaves, initBonusOf, isDndFamilyBlock, type Combatant, type Econ, type PcSheetSource } from "@/lib/combat";
 import { monsterSourceLabel } from "@/lib/monster-sources";
 import {
   decodeFog, encodeFog, isRevealed, setSquares, fillFog, brushCells, roomsOf, roomCells, doorAt, edgeSegment,
@@ -360,6 +362,16 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   // Phase 5o: darkvision read off each character's saved sheet (characters.build.sheetSnapshot, written
   // by the Forge on save). A darkvision the GM sets on the token itself wins over it.
   const sheetDv = useRef<Map<string, number>>(new Map());
+  // push 45 (audit round 2, R7 and G5): every GM of the campaign, co-GMs too (tabletop_gm_ids, p168).
+  // Four places checked the owner alone, so a co-GM's vanish and pull-everyone ping were ignored, their
+  // chat did not show as the GM's, and their own characters counted as party.
+  const [gmIds, setGmIds] = useState<string[]>([]);
+  const gmIdsRef = useRef<string[]>([]);
+  gmIdsRef.current = gmIds;
+  const isGmId = (id: string | null | undefined) => !!id && (id === stateRef.current?.campaign.gm_id || gmIdsRef.current.includes(id));
+  // push 45 (U1): each character's save bonuses off its saved sheet, for the save prompt
+  const [sheetSaves, setSheetSaves] = useState<Record<string, Record<string, number>>>({});
+  const myCharIds = useRef<string[]>([]);
   const tokenDv = (t: Token) => darkvisionOf(t.style) || (t.character_id ? sheetDv.current.get(t.character_id) ?? 0 : 0);
   const touches = useRef<Map<number, Pt>>(new Map());
   const pinch = useRef<{ d: number; mid: Pt } | null>(null);
@@ -427,6 +439,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   const rule: DiagonalRule = state?.scene?.settings?.diagonal ?? "five";
   const party = useMemo(() => state?.party ?? [], [state]);
   const myChars = useMemo(() => party.filter((p) => p.profile_id === me && p.character_id), [party, me]);
+  myCharIds.current = myChars.map((c) => c.character_id as string);
   // phase 6c (p132): the floors of this place (the scenes made from this battle map's levels), and the
   // pieces on this floor, for the stairs test
   const [floors, setFloors] = useState<Floor[]>([]);
@@ -1183,20 +1196,26 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   // tab comes back into view and once a minute, so a sheet saved mid-session reaches the table without a
   // reload. Returns whether anything changed.
   const refreshSheetDv = useCallback(async (tokens: Token[]): Promise<boolean> => {
-    const charIds = [...new Set(tokens.map((t) => t.character_id).filter(Boolean))] as string[];
+    const charIds = [...new Set([...tokens.map((t) => t.character_id), ...myCharIds.current].filter(Boolean))] as string[];
     const dvs = new Map<string, number>();
     if (charIds.length) {
       const { data: cs, error: er } = await supabase.from("characters").select("id, snap:build->sheetSnapshot").in("id", charIds);
       if (er) return false;
+      const sv: Record<string, Record<string, number>> = {};
       for (const c of (cs ?? []) as unknown as { id: string; snap: { darkvision?: number } | null }[]) {
         const dv = Math.min(600, Number(c.snap?.darkvision) || 0); if (dv > 0) dvs.set(c.id, dv);
+        const s = snapSaves(c.snap); if (s) sv[c.id] = s;
       }
+      setSheetSaves((old) => (JSON.stringify(old) === JSON.stringify(sv) ? old : sv));
     }
     const prev = sheetDv.current;
     const same = prev.size === dvs.size && [...dvs].every(([k, v]) => prev.get(k) === v);
     sheetDv.current = dvs;
     return !same;
   }, [supabase]);
+  // push 45: the player's own characters' save bonuses as soon as their characters are known
+  const myCharKey = myChars.map((c) => c.character_id).join(",");
+  useEffect(() => { if (myCharKey) void refreshSheetDv([...tokensRef.current.values()]); }, [myCharKey, refreshSheetDv]);
   useEffect(() => {
     const again = () => {
       if (document.visibilityState !== "visible") return;
@@ -1397,7 +1416,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   const placeParty = async () => {
     const st = stateRef.current; if (!st?.scene) { say("Open a scene first: the party goes on the scene in front of you."); return; }
     const have = new Set([...tokensRef.current.values()].map((t) => t.character_id).filter(Boolean));
-    const pcs = st.party.filter((p) => p.character_id && p.profile_id !== st.campaign.gm_id && !have.has(p.character_id));
+    const pcs = st.party.filter((p) => p.character_id && !isGmId(p.profile_id) && !have.has(p.character_id));
     if (!pcs.length) { say("Everyone in the party already has a token on this scene.", true); return; }
     const c = viewCentre();
     const spots: [number, number][] = [[0, 0], [1, 0], [0, 1], [1, 1], [-1, 0], [-1, 1], [0, -1], [1, -1], [2, 0], [2, 1], [-1, -1], [2, -1]];
@@ -1437,6 +1456,15 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   }, [supabase, campaignId, requestDraw]);
   loadFightRef.current = loadFight;
   useEffect(() => { if (state?.me) void loadFight(); }, [state?.me, loadFight]);
+  useEffect(() => {
+    if (!state?.me) return;
+    let live = true;
+    void supabase.rpc("tabletop_gm_ids", { p_campaign: campaignId }).then(({ data, error: er }) => {
+      // before p168 the function is missing: the owner alone, as before
+      if (live && !er && Array.isArray(data)) setGmIds((data as string[]).filter((x) => typeof x === "string"));
+    });
+    return () => { live = false; };
+  }, [state?.me, supabase, campaignId]);
   // players also poll: a fight started or changed on the Combat page reaches them even when the GM's
   // table is closed (the GM's table relays changes at once when it is open)
   useEffect(() => {
@@ -1448,17 +1476,20 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   }, [state, fight, loadFight, rtLive]);
 
   // GM writes: read the row fresh, change it, save it, tell the players' tables. The same rules as the
-  // Combat page, so either screen can run the fight.
+  // Combat page, so either screen can run the fight. Push 45 (B7): the save only lands if nobody changed
+  // the fight since the read (lib/tabletop/fight-write.ts); otherwise the change is made again on a
+  // fresh read, so a player's save or attack in between is kept.
   const mutateFight = useCallback(async (fn: (row: FightRow) => FightRow) => {
     const cur = fightRow.current; if (!cur) return;
     setFightBusy(true);
     try {
-      const { data, error: e1 } = await supabase.from("combats").select(FIGHT_COLS).eq("id", cur.id).single();
-      if (e1 || !data) { say(`Could not read the fight: ${e1?.message ?? "gone"}`); return; }
-      const next = fn(data as FightRow);
-      const { data: saved, error: e2 } = await supabase.from("combats").update({ round: next.round, turn: next.turn, combatants: next.combatants, updated_at: new Date().toISOString() }).eq("id", cur.id).select(FIGHT_COLS).maybeSingle();
-      if (e2) { say(`Could not save the fight: ${e2.message}`); return; }
-      const shown = (saved as FightRow | null) ?? next;   // as saved: the database starts a fresh turn when the turn moves
+      let next: FightRow | null = null;
+      const w = await writeFight<FightRow>(supabase, cur.id, FIGHT_COLS, (fresh) => {
+        next = fn(fresh);
+        return { round: next.round, turn: next.turn, combatants: next.combatants };
+      });
+      if (w.error || !next) { say(`Could not save the fight: ${w.error ?? "gone"}`); return; }
+      const shown = w.row ?? (next as FightRow);   // as saved: the database starts a fresh turn when the turn moves
       fightRow.current = shown; setFight(toFight(shown)); send("combat", {}); requestDraw();
     } finally { setFightBusy(false); }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1478,17 +1509,22 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     seenSaves.current = seen;
     if (!fresh.length) return;
     const [, ability, dc, by, label] = fresh[0].split("|");
-    setPanel("turns");
+    setPanel("turns"); setPanelOpen(true);
     if (!first) say(`${by}'s ${label}: make a ${ability.toUpperCase()} save, DC ${dc}. It is in the Turns tab.`);
   }, [myPendingSaves, say]);
 
   // push 28 (V3): a PC comes into the fight with the numbers off their saved sheet
-  const combatantFromToken = (t: Token, sheets: Map<string, PcSheetSource>): TC | null => {
+  // push 45 (G3): a monster from the GM's stat blocks comes in with its block (CR, actions), one from the
+  // library with its CR, so calibration can predict a fight started here
+  const combatantFromToken = (t: Token, sheets: Map<string, PcSheetSource>, blocksById: Map<string, StatBlockDoc> = new Map()): TC | null => {
     if (t.kind === "object") return null;
     if (t.kind === "pc" && t.character_id) return { ...pcCombatant({ id: t.character_id, name: t.name, ...(sheets.get(t.character_id) ?? {}) }), tokenId: t.id };
-    const stats = (t.style?.stats ?? {}) as { hp?: number | null; ac?: number | null };
-    return { id: combatantId(), kind: "monster", name: t.name, initiative: null, initBonus: 0, hp: stats.hp ?? null, maxHp: stats.hp ?? null, tempHp: 0,
-      ac: stats.ac ?? null, conditions: [], hidden: t.hidden || t.layer === "gm", defeated: false, block: null, tokenId: t.id };
+    const stats = (t.style?.stats ?? {}) as { hp?: number | null; ac?: number | null; cr?: string | null };
+    const block = t.stat_block_id ? blocksById.get(t.stat_block_id) ?? null : null;
+    const out: TC = { id: combatantId(), kind: "monster", name: t.name, initiative: null, initBonus: block ? initBonusOf(block) : 0, hp: stats.hp ?? null, maxHp: stats.hp ?? null, tempHp: 0,
+      ac: stats.ac ?? null, conditions: [], hidden: t.hidden || t.layer === "gm", defeated: false, block, tokenId: t.id };
+    if (!block && stats.cr) out.cr = String(stats.cr).slice(0, 8);
+    return out;
   };
   const addToFight = useCallback(async (ids: string[]) => {
     const st = stateRef.current; if (!st) return;
@@ -1500,19 +1536,28 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
       const { data: cs } = await supabase.from("characters").select("id, snap:build->sheetSnapshot, play:build->play").in("id", pcIds);
       for (const c of (cs ?? []) as unknown as ({ id: string } & PcSheetSource)[]) sheets.set(c.id, { snap: c.snap, play: c.play });
     }
+    const blocksById = new Map<string, StatBlockDoc>();
+    const blockIds = [...new Set(toks.filter((t) => t.kind !== "pc" && t.stat_block_id).map((t) => t.stat_block_id as string))];
+    if (blockIds.length) {
+      const { data: bs } = await supabase.from("stat_blocks").select("id, block, system").in("id", blockIds);
+      for (const b of (bs ?? []) as { id: string; block: unknown; system?: string | null }[]) if (isDndFamilyBlock(b.system)) blocksById.set(b.id, b.block as StatBlockDoc);
+    }
     if (!fightRow.current) {
-      const combatants = toks.map((t) => combatantFromToken(t, sheets)).filter((c): c is TC => !!c);
-      const { data, error: er } = await supabase.from("combats").insert({ campaign_id: campaignId, session_id: st.session_id, name: st.scene?.name ?? "Combat", rules: "2024", combatants }).select(FIGHT_COLS).single();
+      const combatants = toks.map((t) => combatantFromToken(t, sheets, blocksById)).filter((c): c is TC => !!c);
+      // push 45 (G3): 2014 when every library monster here came from the 2014 list, else 2024
+      const eds = toks.map((t) => (t.style?.stats as { edition?: string } | undefined)?.edition).filter(Boolean);
+      const rules = eds.length && eds.every((e) => e === "2014") ? "2014" : "2024";
+      const { data, error: er } = await supabase.from("combats").insert({ campaign_id: campaignId, session_id: st.session_id, name: st.scene?.name ?? "Combat", rules, combatants }).select(FIGHT_COLS).single();
       if (er || !data) { say(`Could not start the fight: ${er?.message ?? "no row"}`); return; }
-      fightRow.current = data as FightRow; setFight(toFight(data as FightRow)); send("combat", {}); setPanel("turns"); requestDraw();
+      fightRow.current = data as FightRow; setFight(toFight(data as FightRow)); send("combat", {}); setPanel("turns"); setPanelOpen(true); requestDraw();
       return;
     }
     await mutateFight((row) => {
       const have = (t: Token) => row.combatants.some((c) => c.tokenId === t.id || (t.kind === "pc" && c.kind === "pc" && c.characterId === t.character_id));
-      const add = toks.filter((t) => !have(t)).map((t) => combatantFromToken(t, sheets)).filter((c): c is TC => !!c);
+      const add = toks.filter((t) => !have(t)).map((t) => combatantFromToken(t, sheets, blocksById)).filter((c): c is TC => !!c);
       return { ...row, combatants: [...row.combatants, ...add] };
     });
-    setPanel("turns");
+    setPanel("turns"); setPanelOpen(true);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [supabase, campaignId, mutateFight]);
 
@@ -1662,7 +1707,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
       })
       .on("broadcast", { event: "vanish" }, ({ payload }) => {
         // only the GM hides tokens from the players' view (audit B11)
-        if ((payload as { from?: string }).from !== stateRef.current?.campaign.gm_id) return;
+        if (!isGmId((payload as { from?: string }).from)) return;
         // the GM moved these into the fog: players stop drawing them (the database stops sending them)
         if (stateRef.current?.role === "gm") return;
         for (const id of ((payload as { ids?: string[] }).ids ?? [])) { const t = tokensRef.current.get(id); if (t && !t.mine) { tokensRef.current.delete(id); remoteDrag.current.delete(id); } }
@@ -1677,7 +1722,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
         const p = payload as { x: number; y: number; color: string; pull?: boolean };
         pings.current.push({ x: p.x, y: p.y, color: p.color, born: performance.now() });
         // only the GM's ping pulls everyone's view (audit B11)
-        if (p.pull && (payload as { from?: string }).from === stateRef.current?.campaign.gm_id) { const cv = canvasRef.current; if (cv) { const r = cv.getBoundingClientRect(); camRef.current = centerOn(camRef.current, p.x * cellRef.current, p.y * cellRef.current, r.width, r.height); } }
+        if (p.pull && isGmId((payload as { from?: string }).from)) { const cv = canvasRef.current; if (cv) { const r = cv.getBoundingClientRect(); camRef.current = centerOn(camRef.current, p.x * cellRef.current, p.y * cellRef.current, r.width, r.height); } }
         requestDraw();
       })
       .on("broadcast", { event: "refresh" }, () => { void load(); })
@@ -2362,7 +2407,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     }
     if (mine && entries.length) {
       setAreaTargets({ ids: entries.map((e) => e.id), tokens: inside, key: Date.now() });
-      setPanel("turns");
+      setPanel("turns"); setPanelOpen(true);
       say(`${entries.length} target${entries.length === 1 ? "" : "s"} inside: ${entries.map((e) => e.name).join(", ")}. Set the save and damage in Turns.`, true);
     } else {
       setAreaTargets(null);
@@ -2806,7 +2851,10 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   const [tImage, setTImage] = useState("");
   const [tHidden, setTHidden] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [tStats, setTStats] = useState<{ hp: number | null; ac: number | null } | null>(null);
+  // push 45 (G3): a library monster keeps its CR and rules edition, and a monster from your stat blocks
+  // keeps which block it is, so a fight started here can be calibrated like one from the Combat page
+  const [tStats, setTStats] = useState<{ hp: number | null; ac: number | null; cr?: string | null; edition?: string } | null>(null);
+  const [tBlockId, setTBlockId] = useState<string | null>(null);
   const [libEdition, setLibEdition] = useState<"2014" | "2024">("2024");
   const [libQuery, setLibQuery] = useState("");
   const library = useMemo(() => (isGm && panel === "tokens" ? (loadSrd("monsters", libEdition) as unknown as LibMonster[]) : []), [isGm, panel, libEdition]);
@@ -2976,7 +3024,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
         <div style={{ fontWeight: 700 }}>{state.campaign.name}</div>
         <div style={{ color: C.muted, fontSize: 13 }}>{scene ? scene.name : "No map on the table"}</div>
         {fight && (() => { const cur = fight.order.find((e) => e.is_turn); return (
-          <button type="button" onClick={() => setPanel("turns")} style={{ background: "rgba(217,164,58,0.12)", border: `1px solid ${C.sun}`, color: C.sun, borderRadius: 999, padding: "3px 10px", fontSize: 12.5, cursor: "pointer" }}>
+          <button type="button" onClick={() => { setPanel("turns"); setPanelOpen(true); }} style={{ background: "rgba(217,164,58,0.12)", border: `1px solid ${C.sun}`, color: C.sun, borderRadius: 999, padding: "3px 10px", fontSize: 12.5, cursor: "pointer" }}>
             Round {fight.round}{cur ? ` · ${cur.name}'s turn` : ""}
           </button>); })()}
         <div style={{ marginLeft: "auto", display: "flex", gap: 6, alignItems: "center" }}>
@@ -3356,7 +3404,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                     return <div key={f.key} style={{ fontSize: 13.5, background: "rgba(140,110,200,0.12)", border: "1px solid rgba(140,110,200,0.35)", borderRadius: 8, padding: "6px 8px" }}>
                       <span style={{ color: "#c2a8f0", fontSize: 12 }}>{m.author_profile === me ? `You whisper to ${to}` : `${who} whispers to you`}</span><div>{m.body}</div></div>;
                   }
-                  return <div key={f.key} style={{ fontSize: 13.5 }}><b style={{ color: m.author_profile === state.campaign.gm_id && !m.roll?.addon ? C.sun : C.text }}>{who}:</b> {m.body}{via}</div>;
+                  return <div key={f.key} style={{ fontSize: 13.5 }}><b style={{ color: isGmId(m.author_profile) && !m.roll?.addon ? C.sun : C.text }}>{who}:</b> {m.body}{via}</div>;
                 })}
                 <div ref={feedEnd} />
               </div>
@@ -3439,7 +3487,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                       <>
                       {(mineE.pendingSaves ?? []).length > 0 && (
                         <div style={{ marginTop: 12 }}>
-                          <SaveBanner campaignId={campaignId} characterId={mineE.characterId} entry={mineE as unknown as FightEntry} onDone={() => { void loadFight(); send("combat", {}); }} />
+                          <SaveBanner campaignId={campaignId} characterId={mineE.characterId} entry={mineE as unknown as FightEntry} saves={sheetSaves[mineE.characterId] ?? null} onDone={() => { void loadFight(); send("combat", {}); }} />
                         </div>
                       )}
                       {mineE.lastSave && Date.now() / 1000 - mineE.lastSave.at < 600 && (
@@ -3590,7 +3638,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
               {!scene && <p style={{ color: C.muted, fontSize: 13 }}>Put a map on the table first (Scenes tab).</p>}
               {scene && (() => {
                 const have = new Set([...tokensRef.current.values()].map((t) => t.character_id).filter(Boolean));
-                const missing = party.filter((p) => p.character_id && p.profile_id !== state?.campaign.gm_id && !have.has(p.character_id)).length;
+                const missing = party.filter((p) => p.character_id && !isGmId(p.profile_id) && !have.has(p.character_id)).length;
                 return missing > 0 ? (
                   <button type="button" onClick={() => void placeParty()} style={{ ...small, width: "100%", marginBottom: 12 }}
                     title="Each party character with no token on this scene gets one, grouped in the middle of your view">
@@ -3718,7 +3766,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                     <div style={{ maxHeight: 180, overflowY: "auto", border: `1px solid ${C.line}`, borderRadius: 7, marginTop: 6 }}>
                       {libHits.map((m, i) => (
                         <button key={`${m.name}-${m.source_key ?? ""}-${i}`} type="button"
-                          onClick={() => { setTName(m.name); setTSize(sizeFromText(m.size ?? null)); setTKind("monster"); setTStats({ hp: typeof m.hp === "number" ? m.hp : null, ac: typeof m.ac === "number" ? m.ac : null }); setLibQuery(""); }}
+                          onClick={() => { setTName(m.name); setTSize(sizeFromText(m.size ?? null)); setTKind("monster"); setTBlockId(null); setTStats({ hp: typeof m.hp === "number" ? m.hp : null, ac: typeof m.ac === "number" ? m.ac : null, cr: m.cr != null ? String(m.cr) : null, edition: libEdition }); setLibQuery(""); }}
                           style={{ display: "block", width: "100%", textAlign: "left", padding: "6px 8px", background: "transparent", color: C.text, border: "none", borderBottom: `1px solid ${C.line}`, fontSize: 12.5, cursor: "pointer" }}>
                           {m.name} <span style={{ color: C.muted }}>· CR {String(m.cr ?? "?")} · {m.size ?? "?"}{m.source_key ? ` · ${monsterSourceLabel(m.source_key)}` : ""}</span>
                         </button>
@@ -3729,7 +3777,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                   {blocks.length > 0 && (
                     <>
                       <label style={label} htmlFor="tt-block">From your stat blocks</label>
-                      <select id="tt-block" value="" onChange={(e) => { const b = blocks.find((x) => x.id === e.target.value); if (b) { setTName(b.name); setTSize(sizeFromText(b.size)); setTKind("monster"); setTStats(null); } }} style={field}>
+                      <select id="tt-block" value="" onChange={(e) => { const b = blocks.find((x) => x.id === e.target.value); if (b) { setTName(b.name); setTSize(sizeFromText(b.size)); setTKind("monster"); setTStats(null); setTBlockId(b.id); } }} style={field}>
                         <option value="">Pick one to fill the form…</option>
                         {blocks.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
                       </select>
@@ -3755,7 +3803,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                   <input aria-label="Or paste an image link" value={tImage} onChange={(e) => setTImage(e.target.value.trim())} placeholder="or paste an image link" style={{ ...field, marginTop: 6 }} />
                   <p style={{ color: C.muted, fontSize: 11.5, margin: "6px 0 0" }}>No image: a disc with initials. Copies are numbered (Goblin 2, Goblin 3).</p>
                   {tStats && <p style={{ color: C.muted, fontSize: 11.5, margin: "6px 0 0" }}>From the library: {tStats.hp ?? "?"} HP, AC {tStats.ac ?? "?"} (kept with the token for the HP bars coming next).</p>}
-                  <button title={!tName.trim() ? "Name the token first" : undefined} type="button" disabled={!tName.trim() || uploading} onClick={() => void addToken({ name: tName.trim(), size: tSize, kind: tKind, image_url: tImage || null, hidden: tHidden, style: tStats ? { stats: tStats } : {} }, tCount)}
+                  <button title={!tName.trim() ? "Name the token first" : undefined} type="button" disabled={!tName.trim() || uploading} onClick={() => void addToken({ name: tName.trim(), size: tSize, kind: tKind, image_url: tImage || null, hidden: tHidden, style: tStats ? { stats: tStats } : {}, stat_block_id: tKind === "monster" ? tBlockId : null }, tCount)}
                     style={{ ...small, marginTop: 10, width: "100%", background: C.sun, color: "#1b1712", border: "none", fontWeight: 600, padding: "9px 0" }}>
                     {uploading ? "Uploading…" : `Add ${tCount > 1 ? `${tCount} ` : ""}to the table`}
                   </button>
@@ -3773,7 +3821,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                   const activeId = state.scenes.find((s) => s.is_active)?.id ?? null;
                   const place = new Map((state.placements ?? []).map((p) => [p.profile_id, p.scene_id]));
                   const sceneOf = (profile: string) => place.get(profile) ?? activeId;
-                  const players = party.filter((p) => p.character_id && p.profile_id !== state.campaign.gm_id);
+                  const players = party.filter((p) => p.character_id && !isGmId(p.profile_id));
                   const split = players.some((p) => sceneOf(p.profile_id) !== activeId);
                   return (
                     <>

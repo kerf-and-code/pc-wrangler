@@ -31,13 +31,20 @@ import { mergeMessages, sinceOf, proxiedUrl, diceNotation, rollLine, type FeedMe
 type Role = "gm" | "player" | "watch";
 type Camp = { id: string; name: string; role: Role };
 type Token = { id: string; kind: string; character_id: string | null; name: string; image_url: string | null; x: number; y: number; size: number; layer: string; hidden: boolean; mine?: boolean };
+/** A short fingerprint of what a map picture is drawn from (push 45, B3): FNV-1a over its JSON. */
+function sig(v: unknown): string {
+  const t = JSON.stringify(v) ?? "";
+  let h = 0x811c9dc5;
+  for (let i = 0; i < t.length; i++) { h ^= t.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
+  return `${t.length.toString(36)}.${h.toString(36)}`;
+}
 type MapJson = { id: string; kind: string; n: number; feet_per_square: number; grid: unknown; custom: unknown; doors: unknown; elements: unknown; meta: Record<string, unknown>; door_state?: Record<string, boolean>; fog?: { on: boolean; revealed: string }; walls?: string[] };
 type TableState = { scene: { id: string; name: string; settings?: Record<string, unknown> } | null; map: MapJson | null; tokens: Token[] } | null;
 type Entry = { id: string; name: string; kind: string; initiative: number | null; defeated: boolean; is_turn: boolean; tokenId?: string | null; characterId?: string | null; mine?: boolean; hp?: number | null; maxHp?: number | null; tempHp?: number | null; conditions?: string[]; health?: "healthy" | "bloodied" | "down";
   // push 36: on your own character, the saving throws the GM's effects are waiting on
   pendingSaves?: { id: string; by: string; label: string; ability: string; dc: number; damage: number; type?: string; half: boolean; conditions?: string[] }[] };
 type Combat = { id: string; name: string; round: number; order: Entry[] } | null;
-type Char = { id: string; name: string; init?: number | null };
+type Char = { id: string; name: string; init?: number | null; saves?: Record<string, number> | null };
 
 const INK = "#ece4d6", MUTED = "#a99e86", LINE = "#3a332a", PANEL = "#1f1a15", DEEP = "#14110d", GOLD = "#c9a24b", GOOD = "#7cc49a", WARN = "#e8907e";
 const DICE = [4, 6, 8, 10, 12, 20, 100];
@@ -205,7 +212,7 @@ export default function ActivityApp() {
           <MapView state={state} combat={combat} canMove={camp?.role !== "watch"} onMove={move} inDiscord={inDiscord.current} say={say} />
         </div>
         <aside style={{ flex: "0 1 340px", minWidth: 280, borderLeft: `1px solid ${LINE}`, overflow: "auto", padding: 12, display: "grid", gap: 14, alignContent: "start" }}>
-          {camp?.role === "player" && <SavePrompt combat={combat} onRoll={(e, ps, bonus, manual) => void roll(manual != null ? "1d20" : `1d20${bonus >= 0 ? "+" : ""}${bonus}`, `${ps.ability.toUpperCase()} save vs ${ps.label}`, { characterId: e.characterId, saveFor: ps.id, manual })} />}
+          {camp?.role === "player" && <SavePrompt combat={combat} chars={chars} onRoll={(e, ps, bonus, manual) => void roll(manual != null ? "1d20" : `1d20${bonus >= 0 ? "+" : ""}${bonus}`, `${ps.ability.toUpperCase()} save vs ${ps.label}`, { characterId: e.characterId, saveFor: ps.id, manual })} />}
           <TurnOrder combat={combat} chars={chars} role={camp?.role ?? "watch"} onInitiative={(c) => void roll(`1d20${c.init ? (c.init > 0 ? `+${c.init}` : `${c.init}`) : ""}`, "Initiative", { characterId: c.id, initiative: true })} />
           {camp?.role !== "watch" && <DicePanel chars={chars} gm={camp?.role === "gm"} onRoll={roll} />}
           {camp?.role !== "watch" && hand.length > 0 && <Hand hand={hand} onCard={(c, a) => void card(c, a)} />}
@@ -262,7 +269,11 @@ function MapView({ state, combat, canMove, onMove, inDiscord, say }: {
     const ov = meta.overlays[0];
     const ovImg = ov && ov.show ? image(ov.url) : null;
     const gsets = state?.scene?.settings, gk = gridOf(gsets), off = offsetOf(gsets);
-    const key = `${map.id}|${JSON.stringify(map.door_state ?? {})}|${(map.walls ?? []).join(",")}|${ovImg ? "img" : "plain"}|${gk}|${off.x}|${off.y}`;
+    // push 45 (audit round 2, B3): the key covers everything the picture is drawn from. It used to leave
+    // out the grid, custom tiles, doors, elements and map settings, which change when the GM reveals
+    // squares (the server sends what is under them only then) or the scene moves to another floor, so
+    // the Activity kept drawing the old picture.
+    const key = `${map.id}|${sig([map.grid, map.custom, map.doors, map.elements, map.meta, map.feet_per_square, map.kind, map.door_state ?? {}, map.walls ?? []])}|${ovImg ? "img" : "plain"}|${gk}|${off.x}|${off.y}`;
     if (baseRef.current?.key === key) return baseRef.current;
     const allEls = normElements([map.elements], n)[0];
     const piecesInPaint = !!ovImg && !!ov && !piecesOverImage(ov);
@@ -413,11 +424,17 @@ function MapView({ state, combat, canMove, onMove, inDiscord, say }: {
 
 // ---- a saving throw the GM's effect is waiting on (push 36) ----
 type PS = NonNullable<Entry["pendingSaves"]>[number];
-function SavePrompt({ combat, onRoll }: { combat: Combat; onRoll: (e: Entry, ps: PS, bonus: number, manual?: number) => void }) {
+// push 45 (audit round 2, U1): the bonus starts at the character's save off its saved sheet, not +0
+function SavePrompt({ combat, chars, onRoll }: { combat: Combat; chars: Char[]; onRoll: (e: Entry, ps: PS, bonus: number, manual?: number) => void }) {
   const [bonus, setBonus] = useState<Record<string, string>>({});
   const [typed, setTyped] = useState<Record<string, string>>({});
   const mine = (combat?.order ?? []).filter((e) => e.mine && (e.pendingSaves ?? []).length);
   if (!mine.length) return null;
+  const sheetBonus = (e: Entry, ps: PS): number | null => {
+    const v = chars.find((c) => c.id === e.characterId)?.saves?.[ps.ability];
+    return typeof v === "number" ? v : null;
+  };
+  const bonusText = (e: Entry, ps: PS) => bonus[ps.id] ?? (sheetBonus(e, ps) != null ? `${sheetBonus(e, ps)! >= 0 ? "+" : ""}${sheetBonus(e, ps)}` : "");
   const field: React.CSSProperties = { background: DEEP, color: INK, border: `1px solid ${LINE}`, borderRadius: 7, padding: "5px 7px", fontSize: 13, width: 56 };
   return (
     <section role="alert" style={{ border: `1px solid ${WARN}`, borderRadius: 10, padding: 10, background: "rgba(232,144,126,0.08)" }}>
@@ -429,9 +446,9 @@ function SavePrompt({ combat, onRoll }: { combat: Combat; onRoll: (e: Entry, ps:
             {(ps.conditions ?? []).length ? ` ${(ps.conditions ?? []).join(", ")} on a failure.` : ""}
           </div>
           <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
-            <label style={{ color: MUTED, fontSize: 12.5 }}>Bonus <input aria-label="Save bonus" inputMode="numeric" placeholder="+0" style={field} value={bonus[ps.id] ?? ""}
+            <label style={{ color: MUTED, fontSize: 12.5 }}>Bonus <input aria-label="Save bonus" inputMode="numeric" placeholder="+0" style={field} value={bonusText(e, ps)}
               onChange={(ev) => setBonus((m) => ({ ...m, [ps.id]: ev.target.value.replace(/[^0-9+-]/g, "").slice(0, 3) }))} /></label>
-            <button type="button" style={{ ...btn(true), background: WARN, color: DEEP, border: "none", fontWeight: 700 }} onClick={() => onRoll(e, ps, parseInt(bonus[ps.id] ?? "0", 10) || 0)}>Roll {ps.ability.toUpperCase()} save</button>
+            <button type="button" style={{ ...btn(true), background: WARN, color: DEEP, border: "none", fontWeight: 700 }} onClick={() => onRoll(e, ps, parseInt(bonusText(e, ps) || "0", 10) || 0)}>Roll {ps.ability.toUpperCase()} save</button>
           </div>
           <form onSubmit={(ev) => { ev.preventDefault(); const n = parseInt(typed[ps.id] ?? "", 10); if (Number.isFinite(n)) onRoll(e, ps, 0, n); }} style={{ display: "flex", gap: 6, alignItems: "center" }}>
             <label style={{ color: MUTED, fontSize: 12.5 }}>or I rolled <input aria-label="The total you rolled, with your bonus" inputMode="numeric" placeholder="total" style={field} value={typed[ps.id] ?? ""}

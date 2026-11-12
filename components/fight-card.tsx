@@ -38,6 +38,12 @@ import { openTabletop } from "@/lib/tabletop/open";
 import { movementLeft } from "@/lib/combat-effects";
 import { AttackForm, combatAct, EconomyBar, isMyTurn, MarkerChips, PlayerEntryControls, SaveBanner, SavesRow, TurnUsed, type FightEntry, type FightView } from "@/components/fight-controls";
 
+// Push 45 (audit round 2, LV12): one wording for a save's result, wherever it shows. A save the GM settled
+// by hand has no total.
+export function lastSaveLine(ls: { label: string; by: string; total: number | null; dc: number; saved: boolean; damage: number }): string {
+  return `Last save: ${ls.label} from ${ls.by}${ls.total != null ? `, ${ls.total} vs DC ${ls.dc}` : ""}, ${ls.saved ? "saved" : "failed"}${ls.damage ? `, ${ls.damage} damage` : ", no damage"}.`;
+}
+
 export default function FightCard({ campaignId, characterId, sheet, onSeen, compact = false }: {
   campaignId: string; characterId: string;
   sheet?: { ac: number; hpMax: number; saves?: Record<string, number>; saveProfs?: string[]; spellDc?: number | null; speed?: number | null; attacksPerAction?: number;
@@ -140,6 +146,12 @@ export default function FightCard({ campaignId, characterId, sheet, onSeen, comp
         {me?.mine && (me.pendingSaves ?? []).length > 0 && (
           <SaveBanner campaignId={campaignId} characterId={characterId} entry={me} saves={sheet?.saves ?? null} onDone={() => void load()} />
         )}
+        {/* push 45 (audit round 2, LV12): the result stays after the banner goes, for ten minutes */}
+        {me?.mine && me.lastSave && Date.now() / 1000 - Number(me.lastSave.at) < 600 && !(me.pendingSaves ?? []).length && (
+          <p role="status" style={{ fontSize: 12.5, color: C.text, margin: 0 }}>
+            {lastSaveLine(me.lastSave)}
+          </p>
+        )}
         {econ && (
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }} aria-label="What is left of your turn">
             {pip(econ.action, "Action")}{pip(econ.bonus, "Bonus")}{pip(econ.reaction, "Reaction")}
@@ -200,8 +212,8 @@ export default function FightCard({ campaignId, characterId, sheet, onSeen, comp
             <div style={{ marginTop: 10 }}><SaveBanner campaignId={campaignId} characterId={characterId} entry={me} saves={sheet?.saves ?? null} onDone={() => void load()} /></div>
           )}
           {me.mine && me.lastSave && (
-            <p style={{ fontSize: 12.5, color: C.muted, margin: "8px 0 0" }}>
-              Last save: {me.lastSave.label} from {me.lastSave.by}, {me.lastSave.total} vs DC {me.lastSave.dc}, {me.lastSave.saved ? "saved" : "failed"}{me.lastSave.damage ? `, ${me.lastSave.damage} damage` : ""}.
+            <p role="status" style={{ fontSize: 12.5, color: C.muted, margin: "8px 0 0" }}>
+              {lastSaveLine(me.lastSave)}
             </p>
           )}
           {me.mine && sheet?.saves && (

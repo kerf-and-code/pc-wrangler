@@ -108,8 +108,13 @@ export default function PlaySheet({ name, sheet, saveProf, ruleset, characterId,
   const [defAdd, setDefAdd] = useState<{ kind: keyof CustomDefenses; type: string }>({ kind: "resist", type: "" });
   const ov: SheetOverrides = overrides ?? { ability: {}, hpMaxMod: 0, hpMaxOverride: null };
 
-  const hpMax = Math.max(1, sheet.hpMax || 1);
+  // Push 45 (audit round 2, LV4): in a fight, the fight's maximum is the one the HP is measured
+  // against. The GM may have set it (a homebrew boost, a typed sheet), and showing the fight's 78 over
+  // the sheet's 10 drew the bar 780% wide across the page.
+  const sheetHpMax = Math.max(1, sheet.hpMax || 1);
   const inFight = !!fight && fight.me.hp != null;
+  const fightMax = inFight && typeof fight!.me.maxHp === "number" && fight!.me.maxHp > 0 ? fight!.me.maxHp : null;
+  const hpMax = fightMax ?? sheetHpMax;
   const hp = inFight ? (fight!.me.hp as number) : Math.min(hpMax, play.hp ?? hpMax);
   const temp = inFight ? (fight!.me.tempHp ?? 0) : (play.temp ?? 0);
   const conds = inFight ? (fight!.me.conditions ?? []) : (play.conds ?? []);
@@ -342,7 +347,7 @@ export default function PlaySheet({ name, sheet, saveProf, ruleset, characterId,
             </div>
           </div>
           <div style={{ flex: "1 1 120px", height: 8, background: "rgba(0,0,0,0.35)", borderRadius: 4 }}>
-            <div style={{ width: `${(hp / hpMax) * 100}%`, height: 8, borderRadius: 4, background: hp / hpMax > 0.5 ? C.good : hp / hpMax > 0.25 ? "#d9a43a" : C.warn }} />
+            <div style={{ width: `${Math.max(0, Math.min(1, hp / hpMax)) * 100}%`, height: 8, borderRadius: 4, background: hp / hpMax > 0.5 ? C.good : hp / hpMax > 0.25 ? "#d9a43a" : C.warn }} />
           </div>
           <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
             <input aria-label="Amount" value={amt} inputMode="numeric" placeholder="amount" onChange={(e) => setAmt(e.target.value.replace(/[^0-9]/g, "").slice(0, 4))}
@@ -352,9 +357,14 @@ export default function PlaySheet({ name, sheet, saveProf, ruleset, characterId,
             <button type="button" className="forge-btn" disabled={amt === ""} onClick={() => void setTemp(n)} title="Temporary HP do not stack: this replaces what you have" style={{ ...btn(), color: "#6fa3d8" }}>Set temp</button>
           </div>
         </div>
+        {fightMax !== null && fightMax !== sheetHpMax && (
+          <p role="note" style={{ fontSize: 12, color: STONE.inkFaint, margin: "8px 0 0" }}>
+            The fight has your maximum as {fightMax}; your sheet says {sheetHpMax}. The fight&apos;s number counts until it ends. Ask your GM if it looks wrong.
+          </p>
+        )}
         {maxOpen && onOverrides && (
           <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginTop: 10, paddingTop: 8, borderTop: `1px solid ${STONE.hi}` }} role="group" aria-label="Maximum HP">
-            <span style={{ fontSize: 12.5, color: STONE.inkFaint }}>From level, hit dice and CON: <b style={{ color: STONE.ink }}>{sheet.hpMaxRolled ?? hpMax}</b></span>
+            <span style={{ fontSize: 12.5, color: STONE.inkFaint }}>From level, hit dice and CON: <b style={{ color: STONE.ink }}>{sheet.hpMaxRolled ?? sheetHpMax}</b></span>
             <label style={{ fontSize: 12.5, color: STONE.inkFaint, display: "flex", gap: 6, alignItems: "center" }}>Modifier
               <input key={`hm-${ov.hpMaxMod}`} inputMode="numeric" defaultValue={ov.hpMaxMod || ""} placeholder="0"
                 onBlur={(e) => { const v = parseInt(e.target.value, 10); onOverrides((o) => ({ ...o, hpMaxMod: Number.isFinite(v) ? Math.max(-999, Math.min(999, v)) : 0 })); }}

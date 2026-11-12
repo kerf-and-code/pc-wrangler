@@ -59,6 +59,7 @@ import { friendlyError, notReady } from "@/lib/friendly-error";
 import { askConfirm } from "@/lib/confirm";
 import CampaignPicker from "@/components/ui-forge/CampaignPicker";
 import { gmCampaignsFilter } from "@/lib/campaign-gm";
+import { writeFight } from "@/lib/tabletop/fight-write";
 
 type Campaign = { id: string; name: string; system: string | null; share_code: string | null };
 type Sess = { id: string; session_number: number | null; status: string | null };
@@ -169,15 +170,18 @@ export default function CombatPage() {
     saving.current = true;
     const fns = queue.current.splice(0);
     setSaveState("saving");
-    const { data: fresh } = await supabase.from("combats").select("id, name, rules, status, round, turn, combatants, session_id, encounter_id").eq("id", cur.id).maybeSingle();
-    const next = fns.reduce((acc, f) => f(acc), (fresh as CombatRow | null) ?? cur);
-    const { data: saved, error } = await supabase.from("combats").update({
-      name: next.name, round: next.round, turn: next.turn, combatants: next.combatants, session_id: next.session_id || null,
-      updated_at: new Date().toISOString(),
-    }).eq("id", next.id).select("id, name, rules, status, round, turn, combatants, session_id, encounter_id").maybeSingle();
+    // push 45 (B7): written only if nobody changed the fight since the read; otherwise replayed on a
+    // fresh read (lib/tabletop/fight-write.ts)
+    let next: CombatRow = cur;
+    const w = await writeFight<CombatRow>(supabase, cur.id, "id, name, rules, status, round, turn, combatants, session_id, encounter_id", (fresh) => {
+      next = fns.reduce((acc, f) => f(acc), fresh);
+      return { name: next.name, round: next.round, turn: next.turn, combatants: next.combatants, session_id: next.session_id || null };
+    });
+    const error = w.error;
+    const saved = w.row;
     saving.current = false;
     setSaveState(error ? "error" : "idle");
-    if (error) { setErr(`Not saved: ${error.message}`); return; }
+    if (error) { setErr(`Not saved: ${error}`); return; }
     // show the fight as saved (the database starts a fresh turn when the turn moves), with anything
     // queued meanwhile still applied on top
     const shown = (saved as CombatRow | null) ?? next;
