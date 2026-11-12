@@ -7,6 +7,12 @@
 // propagate), also set DISCORD_TEST_GUILD_ID=<your server id>.
 //
 // This PUTs the full command set, so re-running it updates/replaces cleanly.
+//
+// Push 37: the Discord Activity (push 34) gave the app an Entry Point command, "Launch", that Discord
+// created when Activities were turned on. A global PUT that leaves it out is refused (or would remove the
+// way players start the Activity), so the global run reads the app's current commands first and sends
+// the Entry Point command back unchanged with the slash commands. Guild runs never carry one: an
+// Entry Point command can only be global.
 
 const APP_ID = process.env.DISCORD_APP_ID;
 const TOKEN = process.env.DISCORD_BOT_TOKEN;
@@ -108,15 +114,31 @@ const url = TEST_GUILD
   ? `https://discord.com/api/v10/applications/${APP_ID}/guilds/${TEST_GUILD}/commands`
   : `https://discord.com/api/v10/applications/${APP_ID}/commands`;
 
+// keep the Activity's Entry Point command (type 4, PRIMARY_ENTRY_POINT) on a global run
+let keep = [];
+if (!TEST_GUILD) {
+  const cur = await fetch(url, { headers: { Authorization: `Bot ${TOKEN}` } });
+  if (!cur.ok) {
+    console.error("Could not read the current commands, so nothing was changed:", cur.status, await cur.text());
+    process.exit(1);
+  }
+  keep = ((await cur.json()) ?? []).filter((c) => c.type === 4).map((c) => ({
+    id: c.id, name: c.name, description: c.description, type: 4, handler: c.handler,
+    ...(c.integration_types ? { integration_types: c.integration_types } : {}),
+    ...(c.contexts ? { contexts: c.contexts } : {}),
+  }));
+  if (keep.length) console.log(`Keeping the Activity's ${keep.map((c) => c.name).join(", ")} command.`);
+}
+
 const res = await fetch(url, {
   method: "PUT",
   headers: { Authorization: `Bot ${TOKEN}`, "content-type": "application/json" },
-  body: JSON.stringify(commands),
+  body: JSON.stringify([...commands, ...keep]),
 });
 
 if (res.ok) {
   const scope = TEST_GUILD ? `guild ${TEST_GUILD} (instant)` : "globally (up to ~1h to appear)";
-  console.log(`Registered ${commands.length} command(s) ${scope}.`);
+  console.log(`Registered ${commands.length} command(s) ${scope}${keep.length ? `, plus the Activity's ${keep.map((c) => c.name).join(", ")}` : ""}.`);
 } else {
   console.error("Registration failed:", res.status, await res.text());
   process.exit(1);
