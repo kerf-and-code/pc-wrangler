@@ -17,7 +17,8 @@
 // ROLLS. In a running fight, with a target picked, an attack rolls against the target's AC on the
 // server and the damage lands on a hit; a save spell leaves a pending save on each target picked
 // (phase 4a/4b), and each spends the right part of the turn (4c). Outside a fight the same rolls go
-// to /api/rolls/player and are recorded for the session. A spell with several attacks (beams, rays)
+// to /api/rolls/player and are recorded for the session. Push 47: each weapon row has a small picker
+// for the ability it attacks with (Auto follows the rules). A spell with several attacks (beams, rays)
 // spends its action on the first; each further one is a follow-up (p115).
 //
 // Phase 5f: class features that cost an action, bonus action or reaction without spending a pool
@@ -33,7 +34,7 @@ import { applyAdvantage } from "@/lib/dice";
 import { critDice, STANDARD_ACTIONS } from "@/lib/combat-effects";
 import { combatAct, type FightEntry, type FightView } from "@/components/fight-controls";
 import { remaining, type Resource } from "@/lib/resources";
-import { fullDamage, damageText, type AttackRow } from "@/lib/play/attacks";
+import { fullDamage, damageText, ABILITY_KEYS, type Ability, type AttackRow } from "@/lib/play/attacks";
 import { readSpell, spellCost, upcasts, ORD, type SpellRecord, type SpellCost } from "@/lib/play/spells";
 import { slotsLeft, slotFor } from "@/lib/play/tracks";
 import type { DerivedSheet } from "@/lib/srd/derive-sheet";
@@ -49,7 +50,7 @@ const ABIL_NAME: Record<string, string> = { str: "STR", dex: "DEX", con: "CON", 
 const sign = (n: number) => `${n >= 0 ? "+" : ""}${n}`;
 const costLabel: Record<SpellCost, string> = { action: "Action", bonus: "Bonus action", reaction: "Reaction", other: "Other" };
 
-export default function PlayActions({ sheet, charLevel, characterId, campaignId, fight, attacks, spells, pools, slots, pactLevel, spent, onSpend, costed, onHealSelf, onFightChanged, tab = "all", features = [] }: {
+export default function PlayActions({ sheet, charLevel, characterId, campaignId, fight, attacks, spells, pools, slots, pactLevel, spent, onSpend, costed, onHealSelf, onFightChanged, tab = "all", features = [], onAttackAbility }: {
   sheet: DerivedSheet; charLevel: number; characterId: string | null; campaignId: string | null;
   fight: { view: FightView; me: FightEntry } | null;
   attacks: AttackRow[]; spells: KnownSpell[]; pools: Resource[]; slots: Resource[]; pactLevel: number | null;
@@ -60,6 +61,8 @@ export default function PlayActions({ sheet, charLevel, characterId, campaignId,
   tab?: "all" | "actions" | "spells";
   /** Phase 5f: features that cost part of the turn but spend no pool. */
   features?: FeatureAction[];
+  /** push 47: set or clear the ability a weapon attacks with (saved on the build) */
+  onAttackAbility?: (weapon: string, ability: Ability | null) => void;
 }) {
   const supabase = useMemo(() => createClient(), []);
   // on a phone each row stacks: the name and its numbers on the left, the button on the right
@@ -184,14 +187,23 @@ export default function PlayActions({ sheet, charLevel, characterId, campaignId,
   };
 
   // ---- rows for the Actions list ----
-  type Row = { key: string; kind: Filter; name: string; range: string; hit: string; effect: string; note?: string; run?: () => void; runLabel?: string };
+  type Row = { key: string; kind: Filter; name: string; range: string; hit: string; effect: string; note?: string; run?: () => void; runLabel?: string; pick?: React.ReactNode };
   const rows: Row[] = [];
   for (const a of attacks) {
     // phase 5i.1: extra dice (Radiant Strikes) show beside the weapon's damage and roll with it
     rows.push({ key: a.key, kind: "attack", name: a.name, range: a.range, hit: sign(a.toHit), effect: `${damageText(a)}${a.versatile ? `, ${a.versatile} two-handed` : ""}`,
       note: [a.properties.join(", "), a.mastery ? `mastery: ${a.mastery}` : "", a.proficient ? "" : "not proficient", a.assumed ? "proficiency assumed" : "",
         ...(a.notes ?? []), ...(a.bonus ?? []).map((b) => `${b.label}: ${b.dice} ${b.type.toLowerCase()}`)].filter(Boolean).join(" · "),
-      run: () => void attack(a.name, a.toHit, fullDamage(a), "attack", a.damageType), runLabel: "Attack" });
+      run: () => void attack(a.name, a.toHit, fullDamage(a), "attack", a.damageType), runLabel: "Attack",
+      // push 47 (G10): which ability this weapon attacks with, for what the rules here do not know
+      pick: onAttackAbility && a.source === "weapon" && a.weapon ? (
+        <select aria-label={`Ability for ${a.name}`} title="The ability this weapon attacks with. Auto follows the rules (Strength, Dexterity for ranged and finesse weapons, the better of the two for a monk's weapons)."
+          value={a.chosen ?? ""} onChange={(e) => onAttackAbility(a.weapon!, (e.target.value || null) as Ability | null)}
+          style={{ marginLeft: 6, padding: "3px 4px", borderRadius: 4, border: `1px solid ${STONE.hi}`, background: "rgba(0,0,0,0.25)", color: STONE.ink, fontSize: 11.5 }}>
+          <option value="">Auto ({a.chosen ? "rules" : a.ability.toUpperCase()})</option>
+          {ABILITY_KEYS.map((k) => <option key={k} value={k}>{k.toUpperCase()}</option>)}
+        </select>
+      ) : undefined });
   }
   for (const s of known) {
     const r = readSpell(s.rec, { slot: s.rec.level, charLevel, castMod });
@@ -227,7 +239,7 @@ export default function PlayActions({ sheet, charLevel, characterId, campaignId,
         <div style={{ fontSize: 12.5, color: STONE.ink }}>{r.effect}</div>
         <div style={{ fontSize: 11.5, color: STONE.inkFaint }}>{[r.range, r.note].filter(Boolean).join(" · ")}</div>
       </div>
-      <div>{runButton(r)}</div>
+      <div>{runButton(r)}{r.pick}</div>
     </div>
   ) : (
     <div key={r.key} style={{ display: "grid", gridTemplateColumns: "minmax(140px, 1.4fr) 90px 80px minmax(120px, 1.6fr) auto", gap: 8, alignItems: "center", padding: "6px 0", borderBottom: `1px solid ${STONE.hi}` }}>
@@ -235,7 +247,7 @@ export default function PlayActions({ sheet, charLevel, characterId, campaignId,
       <div style={{ fontSize: 12, color: STONE.inkFaint }}>{r.range}</div>
       <div style={{ ...mono, fontSize: 13, color: C.plum }}>{r.hit}</div>
       <div style={{ fontSize: 12.5, color: STONE.ink }}>{r.effect}</div>
-      <div>{runButton(r)}</div>
+      <div>{runButton(r)}{r.pick}</div>
     </div>
   );
   const section = (k: Filter, title: string, list: Row[]) => (show(k) && list.length > 0 ? (

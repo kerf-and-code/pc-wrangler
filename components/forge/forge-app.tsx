@@ -42,7 +42,7 @@ import { loadSrd } from "@/lib/srd/srd";
 import { traitOptions, traitAsksAChoice, lineageSpells } from "@/lib/species-choices";
 import { choicesFor, resolveChoice, choiceKey, costedPicks, actionsFor, type ClassChoice } from "@/lib/class-choices";
 import { classTable, classTableColumns } from "@/lib/class-table";
-import { remaining, afterShortRest, speciesResources, type Resource } from "@/lib/resources";
+import { remaining, afterShortRest, speciesResources, classPools, type Resource } from "@/lib/resources";
 import { getActiveCampaign, setActiveCampaign } from "@/lib/active-campaign";
 import { derivePf2eSheet, emptyPf2eBuild, type Pf2eBuild } from "@/lib/pf2e/character";
 import { PF2_RULES } from "@/lib/pf2e/rules-data";
@@ -69,7 +69,7 @@ import PartyStash from "@/components/party-stash";
 import SystemPlay, { type PlaySheet as SystemPlaySheet, type SystemPlayState } from "@/components/system-play";
 import { combatAct, type FightEntry, type FightView } from "@/components/fight-controls";
 import { trackedResources, type TrackInputs } from "@/lib/play/tracks";
-import { isWeapon, unarmedAttack, weaponAttack, weaponProfText, applyAttackFeatures, baseWeaponFor, applyImportAdjust, importedAttackRows, type AttackRow, type WeaponRecord } from "@/lib/play/attacks";
+import { isWeapon, unarmedAttack, weaponAttack, weaponProfText, applyAttackFeatures, baseWeaponFor, applyImportAdjust, importedAttackRows, type Ability as AttackAbility, type AttackRow, type WeaponRecord } from "@/lib/play/attacks";
 import type { SpellRecord as PlaySpell } from "@/lib/play/spells";
 import { attacksPerAction } from "@/lib/combat-effects";
 import { menusFor, type ClassMenu } from "@/lib/class-menus";
@@ -929,10 +929,12 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
         ...speciesResources(traitList(srd.speciesByName[build.meta.species]?.traits).map((t) => t.name), sheet?.proficiencyBonus || 0),
         // Lay on Hands (both editions): a pool of 5 hit points per paladin level, back on a Long Rest
         ...(classLevelOf(build, "Paladin") > 0 ? [{ key: "lay-on-hands", label: "Lay on Hands (HP)", max: 5 * classLevelOf(build, "Paladin"), shortRest: "none" as const }] : []),
+        // push 47 (G9): the pools no class table lists (Bardic Inspiration, Wild Shape, Action Surge ...)
+        ...classPools(ruleset, [{ name: build.meta.className || "", level: build.level || 1 }, ...multi.map((c) => ({ name: c.className, level: c.level || 1 }))], sheet?.mods.cha ?? 0),
       ],
       mcSlots,
     };
-  }, [build, srd, sheet?.proficiencyBonus, ruleset]);
+  }, [build, srd, sheet?.proficiencyBonus, sheet?.mods.cha, ruleset]);
   const costedList = useMemo(() => [
     // Automatic first: a monk's Flurry is not a decision they made, and burying it under the options
     // they picked would read as though it were.
@@ -964,7 +966,9 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
       const named = g.base ? srd.itemByName[g.base] as unknown as WeaponRecord | undefined : undefined;
       const rec = isWeapon(raw) ? raw : isWeapon(named) ? { ...named, name: g.n } : baseWeaponFor(raw as never, srd.equipment as unknown as WeaponRecord[]);
       if (!isWeapon(rec)) return;
-      const row = weaponAttack(rec, sheet.mods, sheet.proficiencyBonus, profText, Number(g.mod) || 0, `${g.n}-${i}`);
+      // push 47 (G10): the ability a player set for this weapon, and Martial Arts for a monk's weapons
+      const chosen = ((build as Build & { attackAbility?: Record<string, AttackAbility> }).attackAbility || {})[g.n] ?? null;
+      const row = { ...weaponAttack(rec, sheet.mods, sheet.proficiencyBonus, profText, Number(g.mod) || 0, `${g.n}-${i}`, { chosen, martialArts: !!sheet.martialArts }), weapon: g.n };
       const baseName = (rec === raw ? rec.name : (raw as { attunement_note?: string } | undefined)?.attunement_note || rec.name).toLowerCase();
       if (mastered.size && !mastered.has(rec.name.toLowerCase()) && !mastered.has(baseName)) row.mastery = null;
       rows.push(row);
@@ -1183,6 +1187,13 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
   const setCompanions = (list: Companion[]) => patch((b) => { (b as Build & { companions?: Companion[] }).companions = list; return b; });
   const setCustomDefenses = (d: CustomDefenses) => patch((b) => { b.customDefenses = d; return b; });
   const setLanguages = (list: string[]) => patch((b) => { (b as Build & { languages?: string[] }).languages = list; return b; });
+  // push 47 (G10): the ability a weapon attacks with, when the player sets one (null goes back to the rules)
+  const setAttackAbility = (weapon: string, ability: AttackAbility | null) => patch((b) => {
+    const m = { ...((b as Build & { attackAbility?: Record<string, AttackAbility> }).attackAbility || {}) };
+    if (ability) m[weapon] = ability; else delete m[weapon];
+    (b as Build & { attackAbility?: Record<string, AttackAbility> }).attackAbility = m;
+    return b;
+  });
   const setCoins = (c: Coins) => patch((b) => { (b as Build & { coins?: Coins }).coins = c; return b; });
   const setNotes = (n: CharNotes) => patch((b) => { (b as Build & { notes?: CharNotes }).notes = n; return b; });
 
@@ -1879,7 +1890,7 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
                           attacks={playAttacks} spells={playSpells} pools={tracks.pools} slots={tracks.slots} pactLevel={tracks.pactLevel}
                           spent={spentNow} onSpend={setSpent}
                           costed={costedList} onHealSelf={healSelf} onFightChanged={() => { /* the fight card polls */ }}
-                          features={featureActions} />
+                          features={featureActions} onAttackAbility={setAttackAbility} />
                       )}
                       {(openTab === "inventory" || openTab === "notes") && (
                         <PlayInventory part={openTab === "inventory" ? "items" : "notes"} gear={build.gear} catalog={gearIndex} itemByName={srd.itemByName} ctx={ctx}

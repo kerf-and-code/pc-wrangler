@@ -26,15 +26,31 @@
  * "short rest" button that treated them alike would be wrong for two of the three, which is worse
  * than the button not existing.
  */
+// Push 47 (audit round 2, G9): Rages and Second Wind were wrong for 2024. The 2024 SRD says of both "You
+// regain one expended use when you finish a Short Rest, and you regain all expended uses when you finish
+// a Long Rest" (lib/srd/classes-2024-structured.json). The 2014 columns, which the 2014 data names
+// differently, follow the 2014 SRD text: rages come back only on a long rest, Channel Divinity, ki and
+// Action Surge on a short or long rest, Indomitable on a long rest.
 export const RESOURCE_COLUMNS = new Map<string, { shortRest: "all" | "one" | "none" }>([
-  ["Rages", { shortRest: "none" }],
+  ["Rages", { shortRest: "one" }],
   ["Channel Divinity", { shortRest: "one" }],
-  ["Second Wind", { shortRest: "all" }],
+  ["Second Wind", { shortRest: "one" }],
   ["Focus Points", { shortRest: "all" }],
   ["Sorcery Points", { shortRest: "none" }],
   ["Favored Enemy", { shortRest: "none" }],
   ["Spell Slots", { shortRest: "all" }],   // Warlock pact magic
+  // 2014 (5e-bits) column names
+  ["Rage Count", { shortRest: "none" }],
+  ["Ki Points", { shortRest: "all" }],
+  ["Channel Divinity Charges", { shortRest: "all" }],
+  ["Action Surges", { shortRest: "all" }],
+  ["Indomitable Uses", { shortRest: "none" }],
 ]);
+
+/** What a column is called on the sheet (the 2014 data's names read oddly as labels). */
+const LABEL: Record<string, string> = {
+  "Rage Count": "Rages", "Channel Divinity Charges": "Channel Divinity", "Action Surges": "Action Surge", "Indomitable Uses": "Indomitable",
+};
 
 /** Spell slot columns, which are resources too but belong in their own row. */
 export const SLOT_COLUMNS = ["1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th"];
@@ -49,7 +65,8 @@ export type Resource = {
 
 const asCount = (v: string | undefined): number | null => {
   const t = String(v ?? "").trim();
-  if (!t || t === "\u2014" || t === "-") return null;
+  // a lone dash of any width means "none" (the source data writes a long dash; 0x2014)
+  if (!t || t === "-" || (t.length === 1 && t.charCodeAt(0) === 0x2014)) return null;
   const n = parseInt(t, 10);
   return Number.isFinite(n) && n > 0 ? n : null;
 };
@@ -69,8 +86,9 @@ export function resourcesFor(
     const rule = RESOURCE_COLUMNS.get(col);
     if (!rule) continue;
     const max = asCount(raw);
-    if (max === null) continue;
-    out.push({ key: col, label: col, max, shortRest: rule.shortRest });
+    // the 2014 data writes a 20th-level barbarian's unlimited rages as 9999: nothing to track
+    if (max === null || max >= 99) continue;
+    out.push({ key: col, label: LABEL[col] ?? col, max, shortRest: rule.shortRest });
   }
   return out;
 }
@@ -148,4 +166,39 @@ export function afterShortRest(
     }
   }
   return next;
+}
+
+/**
+ * Push 47 (audit round 2, G9): class pools that neither edition's class table lists, from the SRD
+ * feature text of each edition (lib/srd/classes-20xx-structured.json):
+ *
+ *   Bardic Inspiration  uses equal to the Charisma modifier (at least 1); back on a long rest, and from
+ *                       level 5 (Font of Inspiration) on a short rest too
+ *   Wild Shape          twice; 2014 back on a short or long rest, 2024 one back on a short rest
+ *   Action Surge        2024 only (2014 has the "Action Surges" column): once, twice from level 17,
+ *                       back on a short or long rest
+ *   Indomitable         2024 only (2014 has the column): once at 9, twice at 13, three times at 17,
+ *                       back on a long rest
+ *   Second Wind         2014 only (2024 has the column): once, back on a short or long rest
+ *   Arcane Recovery     once, back on a long rest
+ *   Sorcerous Restoration  2024, level 5: once, back on a long rest
+ * Lay on Hands is added by the Forge itself.
+ */
+export function classPools(ruleset: "2014" | "2024", classes: { name: string; level: number }[], chaMod: number): Resource[] {
+  const out: Resource[] = [];
+  const add = (r: Resource) => { const at = out.findIndex((x) => x.key === r.key); if (at < 0) out.push(r); else if (out[at].max < r.max) out[at] = r; };
+  for (const c of classes) {
+    const n = (c.name || "").toLowerCase(), lv = Math.max(0, Math.floor(c.level || 0));
+    if (!lv) continue;
+    if (n === "bard") add({ key: "Bardic Inspiration", label: "Bardic Inspiration", max: Math.max(1, chaMod), shortRest: lv >= 5 ? "all" : "none" });
+    if (n === "druid" && lv >= 2) add({ key: "Wild Shape", label: "Wild Shape", max: 2, shortRest: ruleset === "2014" ? "all" : "one" });
+    if (n === "fighter" && ruleset === "2024") {
+      if (lv >= 2) add({ key: "Action Surge", label: "Action Surge", max: lv >= 17 ? 2 : 1, shortRest: "all" });
+      if (lv >= 9) add({ key: "Indomitable", label: "Indomitable", max: lv >= 17 ? 3 : lv >= 13 ? 2 : 1, shortRest: "none" });
+    }
+    if (n === "fighter" && ruleset === "2014") add({ key: "Second Wind", label: "Second Wind", max: 1, shortRest: "all" });
+    if (n === "wizard") add({ key: "Arcane Recovery", label: "Arcane Recovery", max: 1, shortRest: "none" });
+    if (n === "sorcerer" && ruleset === "2024" && lv >= 5) add({ key: "Sorcerous Restoration", label: "Sorcerous Restoration", max: 1, shortRest: "none" });
+  }
+  return out;
 }

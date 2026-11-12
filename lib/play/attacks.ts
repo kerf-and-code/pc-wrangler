@@ -18,6 +18,11 @@
 // another damage type ride in `bonus`, shown beside the weapon's own damage and rolled with it
 // (fullDamage). A magic weapon whose record has no damage of its own (Cinnabar Rapier) attacks as its
 // base weapon (baseWeaponFor).
+//
+// Push 47 (audit round 2, G10): an attack row's ability can be any of the six. A monk's weapons use the
+// better of Strength and Dexterity (Martial Arts), and the player can set a weapon's ability on the
+// sheet for what the rules here do not know (a Pact of the Blade weapon on Charisma, Shillelagh on
+// Wisdom, a Battle Smith on Intelligence); the row then says it was their choice.
 
 export type WeaponRecord = {
   name: string; category?: string; weapon_category?: string | null; weapon_range?: string | null;
@@ -25,12 +30,29 @@ export type WeaponRecord = {
   range?: { normal?: number; long?: number } | null; properties?: string[] | null; mastery?: string | null;
 };
 export type AbilityMods = { str: number; dex: number; con: number; int: number; wis: number; cha: number };
+export type Ability = keyof AbilityMods;
+export const ABILITY_KEYS: Ability[] = ["str", "dex", "con", "int", "wis", "cha"];
+
+/** A monk weapon (Martial Arts): a simple melee weapon, or a martial melee weapon with the Light
+ *  property (2024); 2014's list (simple melee and shortswords, neither heavy nor two-handed) is covered
+ *  by the same test, since a shortsword is a light martial weapon. */
+export function isMonkWeapon(w: WeaponRecord): boolean {
+  if ((w.weapon_range ?? "").toLowerCase() === "ranged") return false;
+  const props = (w.properties ?? []).map((p) => p.toLowerCase());
+  if (props.some((p) => p.startsWith("heavy") || p.startsWith("two-handed"))) return false;
+  const cat = (w.weapon_category ?? "").toLowerCase();
+  return cat === "simple" || (cat === "martial" && props.some((p) => p.startsWith("light")));
+}
 
 export type AttackRow = {
   key: string; name: string; source: "weapon" | "unarmed" | "imported";
   toHit: number; damage: string; damageType: string; versatile: string | null;
   range: string; properties: string[]; mastery: string | null;
-  ability: "str" | "dex"; proficient: boolean; assumed: boolean; melee: boolean;
+  ability: Ability; proficient: boolean; assumed: boolean; melee: boolean;
+  /** The weapon's name in the character's gear, for remembering a chosen ability. */
+  weapon?: string;
+  /** The ability the player chose for this weapon, when they chose one. */
+  chosen?: Ability | null;
   /** Extra damage dice of their own type (Radiant Strikes' 1d8 radiant), rolled with the attack's damage. */
   bonus?: { dice: string; type: string; label: string }[];
   /** What changed this row (Dueling +2 damage, Archery +2 to hit), shown under it. */
@@ -78,11 +100,14 @@ export function versatileDice(w: WeaponRecord): string | null {
   return null;
 }
 
-export function weaponAttack(w: WeaponRecord, mods: AbilityMods, prof: number, profText: string | null | undefined, magic = 0, key = w.name): AttackRow {
+export function weaponAttack(w: WeaponRecord, mods: AbilityMods, prof: number, profText: string | null | undefined, magic = 0, key = w.name,
+  opts: { chosen?: Ability | null; martialArts?: boolean } = {}): AttackRow {
   const props = w.properties ?? [];
   const finesse = props.some((p) => /^finesse/i.test(p));
   const ranged = (w.weapon_range ?? "").toLowerCase() === "ranged";
-  const ability: "str" | "dex" = ranged ? "dex" : finesse && mods.dex > mods.str ? "dex" : "str";
+  const better = (finesse || (opts.martialArts && isMonkWeapon(w))) && mods.dex > mods.str ? "dex" : "str";
+  const chosen = opts.chosen && ABILITY_KEYS.includes(opts.chosen) ? opts.chosen : null;
+  const ability: Ability = chosen ?? (ranged ? "dex" : better);
   const known = weaponProficient(profText, w);
   const proficient = known ?? true;
   const am = mods[ability];
@@ -93,13 +118,14 @@ export function weaponAttack(w: WeaponRecord, mods: AbilityMods, prof: number, p
     damage: withMod(w.damage!.dice, am + magic), damageType: w.damage!.type,
     versatile: vers ? withMod(vers, am + magic) : null,
     range: weaponRange(w), properties: props.map((p) => p.replace(/\s*\(.*\)$/, "")), mastery: w.mastery ?? null,
-    ability, proficient, assumed: known === null, melee: !ranged,
+    ability, proficient, assumed: known === null, melee: !ranged, chosen,
+    ...(chosen ? { notes: [`uses ${chosen.toUpperCase()} (your choice)`] } : {}),
   };
 }
 
 // Unarmed strike: 1 + Strength bludgeoning, or the Martial Arts die with the better of STR and DEX.
 export function unarmedAttack(mods: AbilityMods, prof: number, martialArtsDie: number): AttackRow {
-  const ability: "str" | "dex" = martialArtsDie && mods.dex > mods.str ? "dex" : "str";
+  const ability: Ability = martialArtsDie && mods.dex > mods.str ? "dex" : "str";
   const am = mods[ability];
   // 1 plus the Strength modifier, which can be 0 (phase 5i.2: was held at 1; D&D Beyond prints 0)
   const dmg = martialArtsDie ? withMod(`1d${martialArtsDie}`, am) : `${Math.max(0, 1 + am)}`;

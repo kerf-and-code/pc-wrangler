@@ -27,12 +27,22 @@ type Structured2024 = {
 };
 
 type Structured2014 = {
+  index?: string;
+  name?: string;
   progression?: {
     level?: number;
     prof_bonus?: unknown;
     class_specific?: Record<string, unknown>;
+    spellcasting?: Record<string, unknown> | null;
   }[];
 };
+
+// Push 47 (audit round 2, G1): the 2014 data keeps spell slots in a separate `spellcasting` bag
+// (spell_slots_level_1 .. _9), which this file never read, so a 2014 caster had no slots on the sheet
+// and could not Cast. They become the same columns the 2024 table has ("1st" .. "9th"), so slotsFor()
+// reads both editions alike. A warlock's slots are pact slots, all of one level: they become the 2024
+// warlock's "Spell Slots" and "Slot Level" columns instead, so they come back on a short rest.
+const ORD = ["", "1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th"];
 
 /** "rage_count" -> "Rage Count". The fetched keys are snake_case; a table header should not be. */
 export function humanColumn(key: string): string {
@@ -79,11 +89,18 @@ export function classTable(rec: unknown, maxLevel = 20): ClassTableRow[] {
   }
 
   // --- 2014: one entry per level ------------------------------------------------------------
+  const warlock = /warlock/i.test(String(b.index || b.name || ""));
   for (const row of b.progression || []) {
     const lv = Number(row.level);
     if (row.prof_bonus !== undefined) put(lv, "Proficiency Bonus", asText(row.prof_bonus));
     for (const [k, v] of Object.entries(row.class_specific || {})) {
       put(lv, humanColumn(k), asText(v));
+    }
+    for (let sl = 1; sl <= 9; sl++) {
+      const n = Number((row.spellcasting || {})[`spell_slots_level_${sl}`]);
+      if (!Number.isFinite(n) || n <= 0) continue;
+      if (warlock) { put(lv, "Slot Level", ORD[sl]); put(lv, "Spell Slots", String(n)); }
+      else put(lv, ORD[sl], String(n));
     }
   }
 
