@@ -33,6 +33,9 @@ const DISCORD_FRAME_HEADERS = [
 
 const nextConfig: NextConfig = {
   cacheComponents: true,
+  // Next 16.4 (push 34.5) asks every Cache Components app to choose. false keeps prefetching as it has
+  // been on 16.2; turning it on changes what a link prefetches and is its own tested change.
+  partialPrefetching: false,
   async headers() {
     return [
       { source: "/:path*", missing: [{ type: "query", key: "frame_id" }], headers: SECURITY_HEADERS },

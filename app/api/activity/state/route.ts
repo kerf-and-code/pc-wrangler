@@ -10,7 +10,8 @@ import { callAs, combatForWatcher, feedForWatcher, forWatcher, isUuid, placesFor
 // player or GM here) reads through a player's eyes with everything personal taken out
 // (lib/discord/activity.ts forWatcher). Polled by the Activity every couple of seconds.
 
-export const dynamic = "force-dynamic";
+// No `export const dynamic`: this project runs with cacheComponents on, which rejects it. A GET handler
+// that reads the request (the Authorization header) is rendered per request anyway.
 
 export async function GET(req: Request) {
   const s = sessionFrom(req);
