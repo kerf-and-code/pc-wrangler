@@ -9,6 +9,12 @@
 // chrome.storage.local under "unmatched". The popup reads that to offer a self-link
 // picker across all the player's campaigns.
 //
+// 2.4.0 (push 38): Roll20. Reading the Roll20 chat needs access to app.roll20.net, which is an OPTIONAL
+// permission: nobody who only uses D&D Beyond is asked for it, and the store update does not disable
+// the extension for them. The popup's "Turn on Roll20" asks for it; this worker then registers
+// roll20.js on Roll20 game pages, and takes it away again if the permission is removed. Roll20 events
+// arrive through the same "six-axes-events" message as Beyond20's.
+//
 // 2.3.0 (audit B12): it also sends the roll keys saved per table code ("ingestKeys", handed over on
 // the table link page). A key proves the rolls are this player's, so the server counts them as
 // verified; without one they still arrive, as unverified.
@@ -35,7 +41,36 @@ function recordUnmatched(batch, unmatchedIds) {
   });
 }
 
+// ---- Roll20 (2.4.0) ----
+const ROLL20_ORIGINS = ["https://app.roll20.net/*"];
+const ROLL20_SCRIPT = "sixaxes-roll20";
+async function syncRoll20() {
+  try {
+    const has = await chrome.permissions.contains({ origins: ROLL20_ORIGINS });
+    const reg = await chrome.scripting.getRegisteredContentScripts({ ids: [ROLL20_SCRIPT] });
+    if (has && reg.length === 0) {
+      await chrome.scripting.registerContentScripts([{
+        id: ROLL20_SCRIPT, matches: ["https://app.roll20.net/editor*"], js: ["roll20.js"], runAt: "document_idle", persistAcrossSessions: true,
+      }]);
+      console.log("[Six Axes] Roll20 capture on");
+    } else if (!has && reg.length > 0) {
+      await chrome.scripting.unregisterContentScripts({ ids: [ROLL20_SCRIPT] });
+      console.log("[Six Axes] Roll20 capture off");
+    }
+  } catch (e) {
+    console.log("[Six Axes] Roll20 setup", String(e));
+  }
+}
+chrome.runtime.onInstalled.addListener(syncRoll20);
+chrome.runtime.onStartup.addListener(syncRoll20);
+chrome.permissions.onAdded.addListener(syncRoll20);
+chrome.permissions.onRemoved.addListener(syncRoll20);
+
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+  if (msg && msg.type === "six-axes-roll20-sync") {
+    syncRoll20().then(() => sendResponse({ ok: true }));
+    return true;
+  }
   if (!msg || msg.type !== "six-axes-events") return;
 
   const events = Array.isArray(msg.events) ? msg.events : [];

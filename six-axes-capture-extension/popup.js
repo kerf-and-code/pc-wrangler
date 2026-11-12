@@ -216,6 +216,27 @@ async function linkOne(ddbId, choice, btn) {
   }
 }
 
+// ---- Roll20 (2.4.0): an optional permission, asked for only when the player turns it on ----
+const R20 = { origins: ["https://app.roll20.net/*"] };
+const r20Btn = document.getElementById("r20-toggle");
+const r20Text = document.getElementById("r20-text");
+const r20Status = document.getElementById("r20-status");
+async function renderRoll20() {
+  const on = await chrome.permissions.contains(R20);
+  r20Btn.textContent = on ? "Turn off Roll20" : "Turn on Roll20";
+  r20Btn.className = on ? "r20-off" : "";
+  r20Text.textContent = on
+    ? "On. Rolls you make in the Roll20 chat go to whichever of your tables has a session open. Reload an open Roll20 game for it to start."
+    : "Playing on Roll20? Turn this on and the rolls you make in the Roll20 chat go to your table too. Chrome asks first for access to Roll20.";
+}
+r20Btn.addEventListener("click", async () => {
+  r20Status.textContent = "";
+  const on = await chrome.permissions.contains(R20);
+  const ok = on ? await chrome.permissions.remove(R20) : await chrome.permissions.request(R20);
+  if (!ok && !on) { r20Status.style.color = "#E07A5F"; r20Status.textContent = "Chrome did not give access to Roll20, so it stays off."; }
+  chrome.runtime.sendMessage({ type: "six-axes-roll20-sync" }, () => { void chrome.runtime.lastError; renderRoll20(); });
+});
+
 document.getElementById("save").addEventListener("click", async () => {
   const val = (codeEl.value || "").trim().toLowerCase().slice(0, 64);
   if (!val) {
@@ -241,4 +262,5 @@ document.getElementById("save").addEventListener("click", async () => {
   await setCodes(codes); // persist any migrated legacy code
   renderCampaigns();
   await renderLinking();
+  await renderRoll20();
 })();

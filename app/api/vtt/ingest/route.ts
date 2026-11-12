@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createSessionClient } from "@/lib/supabase/server";
 import { emptyProof, proofFromKeys, proofFromSession } from "@/lib/vtt/ingest-keys";
+import { routeByName, type NamedCharacter } from "@/lib/vtt/name-route";
 
 // POST /api/vtt/ingest
 // Receives normalized table events (Beyond20 now; Foundry/Owlbear later) from the
@@ -21,6 +22,13 @@ import { emptyProof, proofFromKeys, proofFromSession } from "@/lib/vtt/ingest-ke
 // the sender owns, or a GM roll key or GM session for that campaign. Everything else still lands, so an
 // older extension keeps working, but as "unverified", whatever the client claims. A key alone also
 // counts as holding that campaign's code.
+//
+// ROLL20 (push 38, p160). The extension reads rolls from the Roll20 chat, source "roll20". Such a roll
+// has no D&D Beyond id, so it is routed by the name it was rolled under (lib/vtt/name-route.ts) to a
+// player character of that name in a live campaign. Every player with the extension sees every roll in
+// that chat, so each carries its Roll20 message id as `external_id` and a second copy is ignored
+// (unique per campaign, source and id). When the copy that arrives later is the one its sender can vouch
+// for, the stored row is upgraded to canonical.
 
 const EVENT_TYPES = new Set([
   "to-hit",
@@ -37,7 +45,7 @@ const EVENT_TYPES = new Set([
   "other",
 ]);
 
-const SOURCES = new Set(["beyond20", "foundry", "owlbear"]);
+const SOURCES = new Set(["beyond20", "foundry", "owlbear", "roll20"]);
 const MAX_EVENTS_PER_BATCH = 50;
 const MAX_CODES = 20;
 const MAX_KEYS = 20;
@@ -240,6 +248,15 @@ export async function POST(request: NextRequest) {
     }
   }
 
+  // push 38: rolls with no DDB id (Roll20) are routed by name to a player character in a live campaign.
+  let named: NamedCharacter[] = [];
+  const liveTs = new Map(Array.from(liveByCampaign.entries()).map(([id, v]) => [id, v.ts]));
+  if ((events as { ddb_character_id?: unknown; actor_name?: unknown }[]).some((e) => !cleanString(e?.ddb_character_id, 64) && cleanString(e?.actor_name, 200))) {
+    const { data: pcs } = await sb.from("characters").select("id, name, campaign_id")
+      .in("campaign_id", liveCampaignIds).eq("kind", "pc");
+    named = ((pcs ?? []) as { id: string; name: string; campaign_id: string }[]).map((c) => ({ id: c.id, name: c.name, campaignId: c.campaign_id }));
+  }
+
   // Pick the live campaign for a matched DDB id: most-recently-started session wins.
   function routeFor(ddbId: string): { campaignId: string; characterId: string } | null {
     const matches = linkByDdb.get(ddbId);
@@ -271,7 +288,8 @@ export async function POST(request: NextRequest) {
     let campaignId: string | null = null;
     let characterId: string | null = null;
 
-    const routed = ddbId ? routeFor(ddbId) : null;
+    const byName = !ddbId ? routeByName(e?.actor_name, named, liveTs) : null;
+    const routed = ddbId ? routeFor(ddbId) : byName ? { campaignId: byName.campaignId, characterId: byName.id } : null;
     if (routed) {
       campaignId = routed.campaignId;
       characterId = routed.characterId;
@@ -304,6 +322,7 @@ export async function POST(request: NextRequest) {
       // Canonical only when the client says so AND this request proved it may vouch for the character.
       fidelity: e?.fidelity === "canonical" && proven(campaignId!, characterId) ? "canonical" : "unverified",
       rolled_at: cleanTimestamp(e?.rolled_at),
+      external_id: cleanString(e?.external_id, 100),
     });
   }
 
@@ -316,13 +335,33 @@ export async function POST(request: NextRequest) {
 
   for (const r of rows) if (r.fidelity === "canonical") verified += 1;
 
-  const { error } = await sb.from("vtt_events").insert(rows);
-  if (error) {
-    return NextResponse.json({ error: "Insert failed. Try again." }, { status: 500, headers: CORS });
+  // Rows with no external id insert as before. Rows with one (Roll20) skip a copy already stored; a
+  // copy its sender can vouch for upgrades a stored unverified one.
+  const plain = rows.filter((r) => !r.external_id);
+  const keyed = rows.filter((r) => r.external_id);
+  let inserted = 0;
+  if (plain.length) {
+    const { error } = await sb.from("vtt_events").insert(plain);
+    if (error) return NextResponse.json({ error: "Insert failed. Try again." }, { status: 500, headers: CORS });
+    inserted += plain.length;
+  }
+  if (keyed.length) {
+    const { data: fresh, error } = await sb.from("vtt_events")
+      .upsert(keyed, { onConflict: "campaign_id,source,external_id", ignoreDuplicates: true }).select("id");
+    if (error) {
+      const missing = /external_id/.test(error.message);
+      return NextResponse.json({ error: missing ? "Roll20 capture is not set up on the server yet (p160)." : "Insert failed. Try again." }, { status: 500, headers: CORS });
+    }
+    inserted += (fresh ?? []).length;
+    for (const r of keyed.filter((x) => x.fidelity === "canonical")) {
+      await sb.from("vtt_events").update({ fidelity: "canonical", character_id: r.character_id })
+        .eq("campaign_id", r.campaign_id!).eq("source", r.source).eq("external_id", r.external_id!).eq("fidelity", "unverified");
+    }
   }
 
   return NextResponse.json({
-    inserted: rows.length,
+    inserted,
+    duplicates: rows.length - inserted,
     verified,
     skipped,
     live_campaigns: liveCampaignIds.length,

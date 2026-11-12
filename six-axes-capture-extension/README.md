@@ -40,6 +40,30 @@ Beyond20's roll DOM events on the D&D Beyond page itself. This is **Option B**.
 - Store review is typically a few days. Once listed, player setup becomes: install
   Beyond20 + install Six Axes Capture + paste code. No custom domain, ever.
 
+## Roll20 (2.4.0, push 38)
+Rolls made inside Roll20 itself (`/r` commands and the 2024 D&D character sheet's buttons) are read
+from the Roll20 chat by `roll20.js`. Roll20's own scripting cannot send anything out and needs a Pro
+subscription, so the extension does it instead, and no GM needs Pro.
+
+- **Off until the player turns it on.** Access to `app.roll20.net` is an optional permission. The
+  popup's "Turn on Roll20" asks Chrome for it; `background.js` then registers `roll20.js` on Roll20
+  game pages (and removes it if the permission is taken away). Nobody who only uses D&D Beyond is asked.
+- **What it reads:** `div.message.rollresult` (`/r`) and `rolltemplate.dnd-2024--roll` (the 2024 sheet:
+  attack, damage, saving throw, initiative, ability and skill rolls, with advantage and the dropped die).
+- **What it leaves alone:** the default roll template, which is how Beyond20 posts D&D Beyond rolls.
+  The extension already sends those from D&D Beyond, with the character's D&D Beyond id, so reading
+  them here would count each twice. Chat, descriptions without a roll, and system messages are skipped.
+- **Only new messages.** The chat history on screen when the game opens is not sent.
+- **No double counting across players.** Every player with the extension sees every roll; each event
+  carries its Roll20 message id and the server keeps one copy (p160).
+- **Who rolled.** The server matches the name the roll was made under (the sheet's character name, or
+  the speaker for `/r`) to a player character in a campaign with a session open.
+- **Not read yet:** the older "D&D 5E by Roll20" (2014) sheet's templates. They need a sample of that
+  sheet's chat before they can be read correctly.
+
+Test it: load the unpacked extension, turn on Roll20 in the popup, open a Roll20 game with a Six Axes
+session open, roll, and watch the page console for `[Six Axes] Roll20: sent ...`.
+
 ## Roadmap
 - Auto-fill the campaign code from a Six Axes link (deep link the popup) so players
   don't paste anything.

@@ -31,6 +31,10 @@
       border: 1px solid #3D2F52; background: rgba(11,7,18,0.55); color: #F4EEFA; font-size: 13px; }
     .link-btn { width: 100%; margin-top: 8px; padding: 8px; font-size: 13px; }
     .link-status { font-size: 12px; margin-top: 4px; min-height: 15px; color: #A597BD; }
+
+    .r20-section { margin-top: 16px; border-top: 1px solid #3D2F52; padding-top: 14px; }
+    .r20-section h2 { font-size: 13px; margin: 0 0 6px; color: #F4C430; }
+    .r20-off { background: none; color: #F4EEFA; border: 1px solid #3D2F52; font-weight: 600; }
   </style>
 </head>
 <body>
@@ -45,6 +49,13 @@
   <div class="camps-section" id="camps-section">
     <h2>Your campaigns</h2>
     <div id="camp-rows"></div>
+  </div>
+
+  <div class="r20-section">
+    <h2>Roll20</h2>
+    <p id="r20-text">Playing on Roll20? Turn this on and the rolls you make in the Roll20 chat go to your table too. Chrome asks first for access to Roll20.</p>
+    <button id="r20-toggle">Turn on Roll20</button>
+    <div class="status" id="r20-status"></div>
   </div>
 
   <div class="link-section" id="link-section">
