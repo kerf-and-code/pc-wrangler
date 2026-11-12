@@ -86,6 +86,7 @@ const GM_GROUPS: Group[] = [
   { label: "Insight", children: [
     { href: "/gm/dispositions", label: "Dispositions" },
     { href: "/gm/mechanics", label: "Mechanics" },
+    { href: "/gm/calibration", label: "Calibration" },
     { href: "/gm/dashboard", label: "Dashboard" },
     { href: "/gm/reliability", label: "Reliability" },
   ] },
