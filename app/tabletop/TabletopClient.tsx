@@ -12,7 +12,7 @@ import {
   type Camera, type Pt, type DiagonalRule, type TemplateGeom, type TemplateShape,
 } from "@/lib/tabletop/geometry";
 import { loadSrd } from "@/lib/srd/srd";
-import { sortForTurns, applyDamage, applyHealing, combatantId, pcCombatant, type Combatant, type Econ, type PcSheetSource } from "@/lib/combat";
+import { sortForTurns, applyDamage, applyHealing, combatantId, pcCombatant, markArea, type Combatant, type Econ, type PcSheetSource } from "@/lib/combat";
 import { monsterSourceLabel } from "@/lib/monster-sources";
 import {
   decodeFog, encodeFog, isRevealed, setSquares, fillFog, brushCells, roomsOf, roomCells, doorAt, edgeSegment,
@@ -1460,6 +1460,24 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [supabase, requestDraw]);
 
+  // push 36: a saving throw that just landed on one of my characters (the GM's breath weapon, a
+  // fireball) opens the Turns tab, where it waits with Roll and "I rolled", and says so
+  const myPendingSaves = useMemo(() => (fight && state?.role !== "gm"
+    ? fight.order.filter((e) => e.kind === "pc" && myChars.some((c) => c.character_id === e.characterId)).flatMap((e) => (e.pendingSaves ?? []).map((p) => `${p.id}|${p.ability}|${p.dc}|${p.by}|${p.label}`))
+    : []), [fight, state?.role, myChars]);
+  const seenSaves = useRef<Set<string> | null>(null);
+  useEffect(() => {
+    const first = seenSaves.current === null;
+    const seen = seenSaves.current ?? new Set<string>();
+    const fresh = myPendingSaves.filter((k) => !seen.has(k));
+    myPendingSaves.forEach((k) => seen.add(k));
+    seenSaves.current = seen;
+    if (!fresh.length) return;
+    const [, ability, dc, by, label] = fresh[0].split("|");
+    setPanel("turns");
+    if (!first) say(`${by}'s ${label}: make a ${ability.toUpperCase()} save, DC ${dc}. It is in the Turns tab.`);
+  }, [myPendingSaves, say]);
+
   // push 28 (V3): a PC comes into the fight with the numbers off their saved sheet
   const combatantFromToken = (t: Token, sheets: Map<string, PcSheetSource>): TC | null => {
     if (t.kind === "object") return null;
@@ -2325,6 +2343,19 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     const mine = gm ? null : f?.order.find((e) => e.kind === "pc" && myChars.some((c) => c.character_id === e.characterId)) ?? null;
     const entries = f && mine ? f.order.filter((e) => e.tokenId && inside.includes(e.tokenId) && e.id !== mine.id && !e.defeated) : [];
     setSelected(inside);
+    // push 36: the GM in a fight marks everyone inside (but whoever's turn it is) on the fight itself, so
+    // the Combat page offers them as the targets of the next save effect (a breath weapon, a fireball)
+    const row = gm ? fightRow.current : null;
+    if (row) {
+      const turnId = row.combatants[row.turn]?.id;
+      const hit = row.combatants.filter((c) => c.tokenId && inside.includes(c.tokenId) && !c.defeated && c.id !== turnId);
+      if (hit.length) {
+        const ids = hit.map((c) => c.id);
+        void mutateFight((r) => ({ ...r, combatants: markArea(r.combatants, ids.filter((id) => r.combatants.some((c) => c.id === id)), Date.now() / 1000) }));
+        say(`${hit.length} in the fight inside: ${hit.map((c) => c.name).join(", ")}. On the Combat page they are ready as the targets of ${row.combatants[row.turn]?.name ?? "the next"}'s save effect.`, true);
+        return;
+      }
+    }
     if (mine && entries.length) {
       setAreaTargets({ ids: entries.map((e) => e.id), tokens: inside, key: Date.now() });
       setPanel("turns");

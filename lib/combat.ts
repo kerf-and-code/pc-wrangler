@@ -46,7 +46,24 @@ export type Combatant = {
   speed?: number | null;        // walking speed in feet; null = not tracked
   sceneId?: string | null;      // push 31 (p155): the tabletop scene a monster starts on, from an encounter with several maps
   attacksPerAction?: number;    // attacks one Attack action makes (Extra Attack); 1 when missing
+  // push 36: marked by the GM on the tabletop with Target everyone inside (an area template); the time
+  // of that marking. The Combat page offers the newest marking as the targets of a save effect.
+  areaTarget?: number | null;
 };
+
+/** push 36: who the GM last marked on the tabletop as inside an area (the newest marking only), less the
+ *  attacker and anyone defeated. The Combat page uses them as the targets of a save effect. */
+export function areaTargets(cs: Combatant[], attackerId?: string | null): string[] {
+  const stamp = cs.reduce((m, c) => Math.max(m, Number(c.areaTarget) || 0), 0);
+  if (!stamp) return [];
+  return cs.filter((c) => Number(c.areaTarget) === stamp && !c.defeated && c.id !== attackerId).map((c) => c.id);
+}
+
+/** push 36: mark these combatants as inside an area at `at` (seconds), and clear everyone else's mark.
+ *  An empty list clears every mark. */
+export function markArea<T extends Combatant>(cs: T[], ids: string[], at: number): T[] {
+  return cs.map((c) => (ids.includes(c.id) ? { ...c, areaTarget: at } : c.areaTarget ? { ...c, areaTarget: null } : c));
+}
 
 /** What this combatant has spent of its turn. Missing means a fresh turn. */
 export type EconSpend = { cost: "action" | "attack" | "bonus" | "reaction" | "move"; what: string; at: number; locked?: boolean };

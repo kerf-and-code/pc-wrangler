@@ -49,7 +49,7 @@ import { getModule } from "@/lib/systems/registry";
 import {
   CONDITIONS, abilityMod, applyDamage, applyHealing, blockActions, combatantId, monsterCombatants, pcCombatant,
   resolveFoeBlock, sortForTurns, type Combatant, type EncounterFoe, type ParsedAction,
-  isDndFamilyBlock,
+  isDndFamilyBlock, areaTargets, markArea,
 } from "@/lib/combat";
 import { normalizeMaps, foeScene, groupByScene } from "@/lib/tabletop/encounter-maps";
 import {
@@ -446,7 +446,9 @@ export default function CombatPage() {
 
   async function saveActionOn(att: Combatant, a: ParsedAction) {
     if (!a.save) return;
-    const ids = saveTargetsBy[att.id]?.length ? saveTargetsBy[att.id] : targetBy[att.id] ? [targetBy[att.id]] : [];
+    // push 36: with no picks of the GM's own here, the targets marked on the tabletop's area template
+    const chosen = saveTargetsBy[att.id] ?? areaTargets(live, att.id);
+    const ids = chosen.length ? chosen : targetBy[att.id] ? [targetBy[att.id]] : [];
     const tgts = live.filter((c) => ids.includes(c.id));
     if (!tgts.length) return;
     setRolling(true);
@@ -467,6 +469,9 @@ export default function CombatPage() {
         }
       }
       setResult(null);
+      // the area's marking is used up; the next effect starts from fresh picks
+      if (live.some((c) => c.areaTarget)) update((cb) => ({ ...cb, combatants: markArea(cb.combatants, [], 0) }));
+      setSaveTargetsBy((m) => { const n = { ...m }; delete n[att.id]; return n; });
       setSaveLines({ title: `${att.name}: ${a.name}${d ? `, ${d.total} damage (${d.parts})` : ""}, ${base.ability.toUpperCase()} save DC ${base.dc}${failCond ? `, ${failCond} on a failure` : ""}`, lines });
     } finally { setRolling(false); }
   }
@@ -677,7 +682,9 @@ export default function CombatPage() {
                 isTurn={current?.id === selected.id} currentName={current?.name ?? null} busy={rolling}
                 others={live.filter((x) => x.id !== selected.id && !(x.kind === "monster" && x.defeated))}
                 targetId={targetBy[selected.id] ?? ""} onTarget={(id) => setTargetBy((m) => ({ ...m, [selected.id]: id }))}
-                saveTargets={saveTargetsBy[selected.id] ?? []} onSaveTargets={(ids) => setSaveTargetsBy((m) => ({ ...m, [selected.id]: ids }))}
+                saveTargets={saveTargetsBy[selected.id] ?? areaTargets(live, selected.id)} onSaveTargets={(ids) => setSaveTargetsBy((m) => ({ ...m, [selected.id]: ids }))}
+                fromTable={!saveTargetsBy[selected.id] && areaTargets(live, selected.id).length > 0}
+                onClearArea={() => { update((cb) => ({ ...cb, combatants: markArea(cb.combatants, [], 0) })); setSaveTargetsBy((m) => ({ ...m, [selected.id]: [] })); }}
                 failCond={failCondBy[selected.id] ?? ""} onFailCond={(k) => setFailCondBy((m) => ({ ...m, [selected.id]: k }))}
                 onAttack={(a) => void attackWith(selected, a)} onSaveAction={(a) => void saveActionOn(selected, a)} />
             )}
@@ -864,7 +871,8 @@ function CombatantRow({ c, isTurn, isSelected, onSelect, onChange, onRemove, inp
 }
 
 /* ---------------------------------------------------------------- the selected combatant's sheet */
-function DetailPanel({ c, adv, onAdv, onRoll, box, btn, eyebrow, input, isTurn, currentName, busy, others, targetId, onTarget, onAttack, onSaveAction, saveTargets, onSaveTargets, failCond, onFailCond }: {
+function DetailPanel({ c, adv, onAdv, onRoll, box, btn, eyebrow, input, isTurn, currentName, busy, others, targetId, onTarget, onAttack, onSaveAction, saveTargets, onSaveTargets, failCond, onFailCond, fromTable, onClearArea }: {
+  fromTable?: boolean; onClearArea?: () => void;
   saveTargets: string[]; onSaveTargets: (ids: string[]) => void; failCond: string; onFailCond: (k: string) => void;
   c: Combatant; adv: AdvMode; onAdv: (m: AdvMode) => void; onRoll: (notation: string, kind: string, label: string) => void;
   box: React.CSSProperties; btn: (p?: boolean) => React.CSSProperties; eyebrow: React.CSSProperties; input: React.CSSProperties;
@@ -913,12 +921,13 @@ function DetailPanel({ c, adv, onAdv, onRoll, box, btn, eyebrow, input, isTurn, 
             {tgt && <span style={{ fontSize: 12, color: C.muted }}>Attack buttons roll against {tgt.name} and take the damage off on a hit.</span>}
             {groups.some((g) => g.actions.some((a) => a.save)) && (
               <div style={{ flexBasis: "100%", display: "flex", gap: 4, flexWrap: "wrap", alignItems: "center", marginTop: 4 }}>
-                <span style={{ fontSize: 12, color: C.muted }}>Save effects hit:</span>
+                <span style={{ fontSize: 12, color: fromTable ? C.sun : C.muted }}>{fromTable ? "Save effects hit (marked on the table):" : "Save effects hit:"}</span>
                 {others.map((o) => {
                   const on = saveTargets.includes(o.id);
                   return <button key={o.id} type="button" aria-pressed={on} onClick={() => onSaveTargets(on ? saveTargets.filter((x) => x !== o.id) : [...saveTargets, o.id])}
                     style={{ ...btn(on), padding: "2px 8px", fontSize: 11.5, minHeight: "var(--sax-tap, 0px)" }}>{o.name}</button>;
                 })}
+                {fromTable && onClearArea && <button type="button" onClick={onClearArea} style={{ ...btn(), padding: "2px 8px", fontSize: 11.5, color: C.muted }} title="Forget the tabletop's marking and pick by hand">Clear</button>}
                 <select value={failCond} onChange={(e) => onFailCond(e.target.value)} style={{ ...input, padding: "3px 6px", fontSize: 12 }} aria-label="Condition on a failed save">
                   <option value="">no condition on a failure</option>
                   {CONDITIONS.map((k) => <option key={k} value={k}>{k} on a failure</option>)}

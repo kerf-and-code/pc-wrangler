@@ -335,7 +335,8 @@ async function postRoll(campaignId: string, characterId: string, body: Record<st
 }
 
 // The saves waiting on your character: nothing lands until you roll. The bonus comes from the sheet
-// when there is one; it can be changed before rolling.
+// when there is one; it can be changed before rolling. Push 36: or type the total you rolled with your
+// own dice ("I rolled"); the damage lands the same way, full on a failure, half (or none) on a success.
 export function SaveBanner({ campaignId, characterId, entry, saves, onDone }: {
   campaignId: string; characterId: string; entry: FightEntry; saves?: Record<string, number> | null; onDone: () => void;
 }) {
@@ -344,12 +345,15 @@ export function SaveBanner({ campaignId, characterId, entry, saves, onDone }: {
   const [adv, setAdv] = useState<"flat" | "adv" | "dis">("flat");
   const [busy, setBusy] = useState(false);
   const [out, setOut] = useState<string | null>(null);
+  const [typed, setTyped] = useState<Record<string, string>>({});
   if (!pending.length && !out) return null;
-  const rollSave = async (ps: PendingSave) => {
+  const rollSave = async (ps: PendingSave, manual?: number) => {
     const b = parseInt(bonus[ps.id] ?? String(saves?.[ps.ability] ?? 0), 10) || 0;
     setBusy(true); setOut(null);
     try {
-      const r = await postRoll(campaignId, characterId, { notation: applyAdvantage(`1d20${b >= 0 ? "+" : ""}${b}`, adv), label: `${ps.ability.toUpperCase()} save vs ${ps.label}`, saveFor: ps.id });
+      const r = await postRoll(campaignId, characterId, manual != null
+        ? { notation: "1d20", manual, label: `${ps.ability.toUpperCase()} save vs ${ps.label}`, saveFor: ps.id }
+        : { notation: applyAdvantage(`1d20${b >= 0 ? "+" : ""}${b}`, adv), label: `${ps.ability.toUpperCase()} save vs ${ps.label}`, saveFor: ps.id });
       if (!r.ok) { setOut(r.error ?? "Could not roll."); return; }
       const sv = r.saved;
       setOut(sv ? `${r.message?.roll?.total ?? "?"} against DC ${sv.dc}: ${sv.saved ? "saved" : "failed"}. ${sv.damage ? `${sv.damage} damage.` : "No damage."}` : `Rolled ${r.message?.roll?.total ?? "?"}.`);
@@ -376,6 +380,11 @@ export function SaveBanner({ campaignId, characterId, entry, saves, onDone }: {
             <button type="button" disabled={busy} onClick={() => void rollSave(ps)} style={{ padding: "5px 12px", borderRadius: 7, border: "none", background: C.warn, color: "#1b1712", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
               Roll {ps.ability.toUpperCase()} save
             </button>
+            <form onSubmit={(e) => { e.preventDefault(); const n = parseInt(typed[ps.id] ?? "", 10); if (Number.isFinite(n)) void rollSave(ps, n); }} style={{ display: "flex", gap: 4, alignItems: "center" }}>
+              <label style={{ fontSize: 12, color: C.muted }}>or I rolled <input aria-label={`The ${ps.ability} save you rolled, with your bonus`} inputMode="numeric" style={field} placeholder="total"
+                value={typed[ps.id] ?? ""} onChange={(e) => setTyped((m) => ({ ...m, [ps.id]: e.target.value.replace(/[^0-9-]/g, "").slice(0, 3) }))} /></label>
+              <button type="submit" disabled={busy || !/^-?\d+$/.test(typed[ps.id] ?? "")} style={{ padding: "5px 10px", borderRadius: 7, border: `1px solid ${C.warn}`, background: "transparent", color: C.text, fontSize: 12.5, cursor: "pointer" }}>Enter</button>
+            </form>
           </div>
         </div>
       ))}

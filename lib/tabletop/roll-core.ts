@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { roll, DiceError } from "@/lib/dice";
+import { roll, DiceError, type RollResult } from "@/lib/dice";
 import { type Combatant } from "@/lib/combat";
 import { critDice } from "@/lib/combat-effects";
 
@@ -45,10 +45,14 @@ import { critDice } from "@/lib/combat-effects";
 // on someone else's turn while the reaction is unused). The database spends it and refuses when it is
 // gone. Attacks default to attack, save effects to action. A further beam or ray from one casting
 // (Eldritch Blast, Scorching Ray) comes with cost followup and spends nothing more (p115).
+//
+// Push 36: with `manual` (a whole number) and `saveFor`, the player rolled their save with their own
+// dice and typed the total. Nothing is rolled here: that total settles the save, the chat card says it
+// was rolled at the table, and Mechanics files it as unverified rather than canonical.
 
 export type RollBody = {
   campaignId?: string; notation?: string; label?: string; gmOnly?: boolean; characterId?: string | null; asName?: string;
-  initiative?: boolean; target?: string; rollFor?: "attack" | "damage"; saveFor?: string;
+  initiative?: boolean; target?: string; rollFor?: "attack" | "damage"; saveFor?: string; manual?: number;
   saveAgainst?: { targets?: string[]; ability?: string; dc?: number; half?: boolean; type?: string }; cost?: string;
 };
 /** Who is rolling, already checked by the caller: their profile, whether they run the campaign, and how
@@ -138,11 +142,17 @@ export async function tableRoll(admin: SupabaseClient, who: Roller, b: RollBody)
     if (la.crit) notation = critDice(notation);
   }
 
-  let result;
-  try {
-    result = roll(notation);
-  } catch (e) {
-    return { status: 400, body: { error: e instanceof DiceError ? e.message : "Could not read that roll." } };
+  let result: RollResult;
+  const manual = b.saveFor && typeof b.manual === "number" && Number.isInteger(b.manual) && b.manual >= -10 && b.manual <= 60 ? b.manual : null;
+  if (b.manual != null && manual == null) return { status: 400, body: { error: "Type the total you rolled, a whole number." } };
+  if (manual != null) {
+    result = { total: manual, dice: [], modifier: manual, natural: null, notation: "rolled at the table" };
+  } else {
+    try {
+      result = roll(notation);
+    } catch (e) {
+      return { status: 400, body: { error: e instanceof DiceError ? e.message : "Could not read that roll." } };
+    }
   }
 
   // A save effect on targets: the damage is this roll, rolled once; each target waits to roll its save.
@@ -210,7 +220,7 @@ export async function tableRoll(admin: SupabaseClient, who: Roller, b: RollBody)
         gm_only: gmOnly,
       },
       state: null,
-      fidelity: "canonical",
+      fidelity: manual != null ? "unverified" : "canonical",
       rolled_at: rolledAt,
     }).select("id").single();
     if (error) return { status: 500, body: { error: `The roll could not be saved: ${error.message}` } };

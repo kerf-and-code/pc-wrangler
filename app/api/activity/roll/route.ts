@@ -10,13 +10,17 @@ import { tableRoll } from "@/lib/tabletop/roll-core";
 // the server rolls, the card goes to the table's chat, and with `initiative` the total becomes the
 // character's initiative in the running fight. The caller must be the campaign's GM or a player
 // (p158); a player rolls as themselves or their own character, and only the GM may roll hidden.
+//
+// Push 36: with `saveFor` (a pending save's id) the roll is the character's saving throw against a GM's
+// effect, settled as on the web (full, half or no damage); `manual` is a total rolled with their own
+// dice instead.
 
 export const maxDuration = 30;
 
 export async function POST(req: Request) {
   const s = sessionFrom(req);
   if (!s) return NextResponse.json({ error: "Your Discord session ended. Close the Activity and open it again." }, { status: 401 });
-  const b = (await req.json().catch(() => ({}))) as { campaign?: string; notation?: string; label?: string; characterId?: string | null; initiative?: boolean; gmOnly?: boolean };
+  const b = (await req.json().catch(() => ({}))) as { campaign?: string; notation?: string; label?: string; characterId?: string | null; initiative?: boolean; gmOnly?: boolean; saveFor?: string; manual?: number };
   if (!isUuid(b.campaign)) return NextResponse.json({ error: "Pick a campaign." }, { status: 400 });
   const admin = createAdminClient();
   const place = (await placesFor(admin, s).catch(() => [])).find((p) => p.campaignId === b.campaign);
@@ -35,6 +39,8 @@ export async function POST(req: Request) {
     characterId: isUuid(b.characterId) ? b.characterId : null,
     initiative: !!b.initiative,
     gmOnly: place.role === "gm" && !!b.gmOnly,
+    saveFor: typeof b.saveFor === "string" ? b.saveFor.slice(0, 64) : undefined,
+    manual: typeof b.manual === "number" ? b.manual : undefined,
   });
   return NextResponse.json(r.body, { status: r.status });
 }

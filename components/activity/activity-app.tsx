@@ -19,6 +19,7 @@
 // with Use it for the GM's own cards (it goes back to its deck) and Play face up.
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { renderClassic, layoutBare } from "@/lib/dungeon/classic";
 import { normalizeLevels, CELL_TYPES } from "@/lib/dungeon/render";
 import { normCustom, normDoors, normElements, normBattleMeta, piecesOverImage } from "@/lib/dungeon/battle";
@@ -32,7 +33,9 @@ type Camp = { id: string; name: string; role: Role };
 type Token = { id: string; kind: string; character_id: string | null; name: string; image_url: string | null; x: number; y: number; size: number; layer: string; hidden: boolean; mine?: boolean };
 type MapJson = { id: string; kind: string; n: number; feet_per_square: number; grid: unknown; custom: unknown; doors: unknown; elements: unknown; meta: Record<string, unknown>; door_state?: Record<string, boolean>; fog?: { on: boolean; revealed: string }; walls?: string[] };
 type TableState = { scene: { id: string; name: string; settings?: Record<string, unknown> } | null; map: MapJson | null; tokens: Token[] } | null;
-type Entry = { id: string; name: string; kind: string; initiative: number | null; defeated: boolean; is_turn: boolean; tokenId?: string | null; characterId?: string | null; mine?: boolean; hp?: number | null; maxHp?: number | null; tempHp?: number | null; conditions?: string[]; health?: "healthy" | "bloodied" | "down" };
+type Entry = { id: string; name: string; kind: string; initiative: number | null; defeated: boolean; is_turn: boolean; tokenId?: string | null; characterId?: string | null; mine?: boolean; hp?: number | null; maxHp?: number | null; tempHp?: number | null; conditions?: string[]; health?: "healthy" | "bloodied" | "down";
+  // push 36: on your own character, the saving throws the GM's effects are waiting on
+  pendingSaves?: { id: string; by: string; label: string; ability: string; dc: number; damage: number; type?: string; half: boolean; conditions?: string[] }[] };
 type Combat = { id: string; name: string; round: number; order: Entry[] } | null;
 type Char = { id: string; name: string; init?: number | null };
 
@@ -125,13 +128,15 @@ export default function ActivityApp() {
     try { await api("/api/activity/move", { method: "POST", body: JSON.stringify({ campaign: camp.id, token: tokenId, x, y }) }); void poll(); }
     catch (e) { say(e instanceof Error ? e.message : "That move did not go through."); }
   };
-  const roll = async (notation: string, label: string, opts: { characterId?: string | null; initiative?: boolean; gmOnly?: boolean } = {}) => {
+  const roll = async (notation: string, label: string, opts: { characterId?: string | null; initiative?: boolean; gmOnly?: boolean; saveFor?: string; manual?: number } = {}) => {
     if (!camp) return;
     try {
       const j = await api("/api/activity/roll", { method: "POST", body: JSON.stringify({ campaign: camp.id, notation, label, ...opts }) });
       const msg = j.message as FeedMessage | undefined;
       if (msg) setFeed((f) => mergeMessages(f, [msg]));
-      if (opts.initiative) void poll();
+      const sv = j.saved as { saved: boolean; damage: number; dc: number } | null | undefined;
+      if (sv) say(`${(msg?.roll?.total ?? "?")} against DC ${sv.dc}: ${sv.saved ? "saved" : "failed"}. ${sv.damage ? `${sv.damage} damage.` : "No damage."}`);
+      if (opts.initiative || opts.saveFor) void poll();
     } catch (e) { say(e instanceof Error ? e.message : "That roll did not go through."); }
   };
 
@@ -149,7 +154,7 @@ export default function ActivityApp() {
     return (
       <div style={center}><div style={{ maxWidth: 460 }}>
         <h1 style={{ fontFamily: "Georgia, serif", color: GOLD, fontWeight: 600 }}>Six Axes in Discord</h1>
-        <p style={{ color: MUTED, lineHeight: 1.6 }}>This page runs inside Discord. Join a voice channel in your game&apos;s server, open Activities, and pick Six Axes. On the web, the full table is at <a href="/tabletop" style={{ color: GOLD }}>the tabletop</a>.</p>
+        <p style={{ color: MUTED, lineHeight: 1.6 }}>This page runs inside Discord. Join a voice channel in your game&apos;s server, open Activities, and pick Six Axes. On the web, the full table is at <Link href="/tabletop" style={{ color: GOLD }}>the tabletop</Link>.</p>
       </div></div>
     );
   }
@@ -200,6 +205,7 @@ export default function ActivityApp() {
           <MapView state={state} combat={combat} canMove={camp?.role !== "watch"} onMove={move} inDiscord={inDiscord.current} say={say} />
         </div>
         <aside style={{ flex: "0 1 340px", minWidth: 280, borderLeft: `1px solid ${LINE}`, overflow: "auto", padding: 12, display: "grid", gap: 14, alignContent: "start" }}>
+          {camp?.role === "player" && <SavePrompt combat={combat} onRoll={(e, ps, bonus, manual) => void roll(manual != null ? "1d20" : `1d20${bonus >= 0 ? "+" : ""}${bonus}`, `${ps.ability.toUpperCase()} save vs ${ps.label}`, { characterId: e.characterId, saveFor: ps.id, manual })} />}
           <TurnOrder combat={combat} chars={chars} role={camp?.role ?? "watch"} onInitiative={(c) => void roll(`1d20${c.init ? (c.init > 0 ? `+${c.init}` : `${c.init}`) : ""}`, "Initiative", { characterId: c.id, initiative: true })} />
           {camp?.role !== "watch" && <DicePanel chars={chars} gm={camp?.role === "gm"} onRoll={roll} />}
           {camp?.role !== "watch" && hand.length > 0 && <Hand hand={hand} onCard={(c, a) => void card(c, a)} />}
@@ -402,6 +408,39 @@ function MapView({ state, combat, canMove, onMove, inDiscord, say }: {
       </div>
       {sel && <div style={{ position: "absolute", left: 8, bottom: 8, background: PANEL, border: `1px solid ${GOLD}`, borderRadius: 8, padding: "5px 9px", fontSize: 12.5 }}>Tap where to move. <button type="button" style={btn()} onClick={() => setSel(null)}>Cancel</button></div>}
     </div>
+  );
+}
+
+// ---- a saving throw the GM's effect is waiting on (push 36) ----
+type PS = NonNullable<Entry["pendingSaves"]>[number];
+function SavePrompt({ combat, onRoll }: { combat: Combat; onRoll: (e: Entry, ps: PS, bonus: number, manual?: number) => void }) {
+  const [bonus, setBonus] = useState<Record<string, string>>({});
+  const [typed, setTyped] = useState<Record<string, string>>({});
+  const mine = (combat?.order ?? []).filter((e) => e.mine && (e.pendingSaves ?? []).length);
+  if (!mine.length) return null;
+  const field: React.CSSProperties = { background: DEEP, color: INK, border: `1px solid ${LINE}`, borderRadius: 7, padding: "5px 7px", fontSize: 13, width: 56 };
+  return (
+    <section role="alert" style={{ border: `1px solid ${WARN}`, borderRadius: 10, padding: 10, background: "rgba(232,144,126,0.08)" }}>
+      {mine.flatMap((e) => (e.pendingSaves ?? []).map((ps) => (
+        <div key={ps.id} style={{ display: "grid", gap: 6 }}>
+          <div style={{ lineHeight: 1.45 }}>
+            <b>{e.name}</b>: {ps.by}&apos;s {ps.label}. Make a <b>{ps.ability.toUpperCase()}</b> save, DC {ps.dc}.
+            {ps.damage ? ` ${ps.damage}${ps.type ? ` ${ps.type}` : ""} damage on a failure${ps.half ? ", half on a success" : ", none on a success"}.` : ""}
+            {(ps.conditions ?? []).length ? ` ${(ps.conditions ?? []).join(", ")} on a failure.` : ""}
+          </div>
+          <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+            <label style={{ color: MUTED, fontSize: 12.5 }}>Bonus <input aria-label="Save bonus" inputMode="numeric" placeholder="+0" style={field} value={bonus[ps.id] ?? ""}
+              onChange={(ev) => setBonus((m) => ({ ...m, [ps.id]: ev.target.value.replace(/[^0-9+-]/g, "").slice(0, 3) }))} /></label>
+            <button type="button" style={{ ...btn(true), background: WARN, color: DEEP, border: "none", fontWeight: 700 }} onClick={() => onRoll(e, ps, parseInt(bonus[ps.id] ?? "0", 10) || 0)}>Roll {ps.ability.toUpperCase()} save</button>
+          </div>
+          <form onSubmit={(ev) => { ev.preventDefault(); const n = parseInt(typed[ps.id] ?? "", 10); if (Number.isFinite(n)) onRoll(e, ps, 0, n); }} style={{ display: "flex", gap: 6, alignItems: "center" }}>
+            <label style={{ color: MUTED, fontSize: 12.5 }}>or I rolled <input aria-label="The total you rolled, with your bonus" inputMode="numeric" placeholder="total" style={field} value={typed[ps.id] ?? ""}
+              onChange={(ev) => setTyped((m) => ({ ...m, [ps.id]: ev.target.value.replace(/[^0-9-]/g, "").slice(0, 3) }))} /></label>
+            <button type="submit" style={btn()} disabled={!/^-?\d+$/.test(typed[ps.id] ?? "")}>Enter</button>
+          </form>
+        </div>
+      )))}
+    </section>
   );
 }
 
