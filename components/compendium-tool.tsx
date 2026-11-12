@@ -21,6 +21,7 @@ import {
 } from "@/lib/compendium/custom";
 import { sendCardToScreen } from "@/lib/compendium/dm-board";
 import { useDialogFocus } from "@/lib/use-dialog-focus";
+import { nonSrdContentOn } from "@/lib/content-policy";
 
 // Working display shapes the typed editor edits in place. A new typed card starts from these blanks.
 type TypedDisplay = SpellDisplay | ItemDisplay | MonsterDisplay | ReferenceDisplay;
@@ -233,7 +234,9 @@ export default function CompendiumTool() {
         if (off) return;
         // The split search list omits `spoken` when it only repeats the name (the matcher indexes the
         // name itself), so default it here for everything downstream.
-        setBaseEntries(Array.isArray(data) ? data.map((e) => (e.spoken ? e : { ...e, spoken: [] })) : []);
+        // Push 48 (T4): with the non-SRD switch off, "kc" cards are hidden even from files built before it.
+        const keep = nonSrdContentOn() || system !== "dnd5e" ? data : (Array.isArray(data) ? data.filter((e) => e.source !== "kc") : data);
+        setBaseEntries(Array.isArray(keep) ? keep.map((e) => (e.spoken ? e : { ...e, spoken: [] })) : []);
         setLoading(false);
       })
       .catch((e) => { if (!off) { setLoadError(e instanceof Error ? e.message : "Could not load the compendium."); setLoading(false); } });
@@ -638,7 +641,9 @@ export default function CompendiumTool() {
       {!loading && !loadError && (
         <p style={{ ...label, margin: 0 }}>
           {entries.length.toLocaleString()} entries loaded · {system === "dnd5e"
-            ? "SRD 5.1 / 5.2 (CC-BY), book content in Kerf and Code wording (partnered content used with permission), and third-party open-licensed monsters, each labeled by book (see /licenses)"
+            ? (nonSrdContentOn()
+              ? "SRD 5.1 / 5.2 (CC BY 4.0), statistics from other books in Kerf and Code wording (not open content; the rights stay with each publisher), and third-party open-licensed monsters, each labeled by book (see /licenses)"
+              : "SRD 5.1 / 5.2 (CC BY 4.0) and third-party open-licensed monsters, each labeled by book (see /licenses)")
             : `${attributionFor(system)?.short ?? systemLabel(system)}${baseEntries.length === 0 ? " · no shipped cards yet, showing your homebrew" : ""}`} · nothing leaves your browser
         </p>
       )}
@@ -769,7 +774,7 @@ function CardView({ card, otherEdition, canEdit, onEdit, onPin, onDismiss, onEnt
           <span style={chip}>{entryTag(e)}</span>
           {homebrew && <span style={{ ...chip, borderColor: C.sun, color: C.sun }} title="Your homebrew or override">Homebrew</span>}
           {!homebrew && e.source === "kc" && (e.book
-            ? <span style={{ ...chip, borderColor: C.line, color: C.sun }} title="Book facts in Kerf and Code wording; rights belong to the publisher, see /licenses">{e.book}</span>
+            ? <span style={{ ...chip, borderColor: C.line, color: C.sun }} title="Statistics from this book in Kerf and Code wording; not open content, the rights stay with the publisher, see /licenses">{e.book}</span>
             : <span style={{ ...chip, borderColor: C.line, color: C.sun }} title="Original content by Kerf and Code">Kerf &amp; Code</span>)}
           {!homebrew && e.source === "3p" && e.book && <span style={{ ...chip, borderColor: C.line, color: C.muted }} title="Third-party open content (Open Game License 1.0a or ORC), see /licenses">{e.book}</span>}
           {!homebrew && e.source === "srd" && e.book && <span style={{ ...chip, borderColor: C.line, color: C.muted }} title="System Reference Document, CC BY 4.0">{e.book}</span>}

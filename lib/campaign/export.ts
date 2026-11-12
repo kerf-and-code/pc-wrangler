@@ -7,9 +7,10 @@ import { listAll } from "@/lib/storage/purge";
 // Audit F3: everything a GM built in a campaign, as one zip they can keep.
 //
 // WHAT IS IN IT: the campaign's own content (sessions and recaps, characters and NPCs, the codex, links,
-// encounters, stat blocks, compendium entries, DM boards, arcs and moments, prep, loot and party stash,
+// encounters, stat blocks (with the library blocks its encounters and tokens use), compendium entries, DM boards, arcs and moments, prep, loot and party stash,
 // roll tables, battle maps, world map with its layers, regions, markers and labels, the other map
-// builders, and the tabletop's scenes, tokens, pins, handouts, decks, drawings, templates and sounds)
+// builders, the tabletop's scenes, tokens, pins, handouts, decks, drawings, templates, sounds, saved
+// scene snapshots and fog, the Roll20 name choices, and which webhooks exist)
 // as JSON, the codex and recaps also as Markdown, and a list of the campaign's stored files.
 //
 // WHAT IS LEFT OUT, ON PURPOSE: players' private things (their notes, private character pages, self
@@ -59,7 +60,15 @@ const CAMPAIGN_TABLES: Spec[] = [
   { table: "vtt_effects" },
   { table: "vtt_sounds" },
   { table: "vtt_audio" },
+  // Push 48 (audit round 2, G15, R10): tables added since p145.
+  { table: "scene_snapshots", omit: ["taken_by"] },
+  { table: "vtt_name_links", omit: ["created_by"] },
+  { table: "map_fog" },
+  // webhooks: which events go out and whether they are on, never the address or the signing secret
+  { table: "addon_hooks", omit: ["url", "secret", "created_by", "last_error"] },
 ];
+// Columns of the campaign row that are account ids, secrets or trash state, not the GM's content.
+const CAMPAIGN_OMIT = ["gm_id", "share_code", "discord_guild_id", "discord_channel_id", "deleted_at", "trash_restore", "activity_watchers"];
 const WORLD_MAP_TABLES = ["map_layers", "regions", "world_hexes", "map_features", "map_pois", "map_labels", "map_images"];
 const PAGE = 1000;
 const MAX_ROWS = 50000;
@@ -83,10 +92,11 @@ const slug = (s: string) => s.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]
 
 export async function buildCampaignExport(admin: SupabaseClient, campaignId: string): Promise<{ zip: Buffer; name: string; counts: Record<string, number>; skipped: string[] }> {
   const { data: camp, error: cErr } = await admin.from("campaigns")
-    .select("id, name, system, created_at, time_zone, recur_rule, public_slug, public_blurb, codex_cover_url")
-    .eq("id", campaignId).single();
+    .select("*").eq("id", campaignId).single();
   if (cErr || !camp) throw new Error(`campaign: ${cErr?.message ?? "not found"}`);
-  const c = camp as Record<string, unknown> & { name: string };
+  // Push 48 (R10): every setting the campaign has (calendar, codex look, audio language and whatever
+  // comes next), minus the columns in CAMPAIGN_OMIT, instead of a fixed list that fell behind.
+  const c = strip([camp as Record<string, unknown>], CAMPAIGN_OMIT)[0] as Record<string, unknown> & { name: string };
 
   const zip = new JSZip();
   const counts: Record<string, number> = {};
@@ -107,6 +117,25 @@ export async function buildCampaignExport(admin: SupabaseClient, campaignId: str
       try { data[t] = await readAll(admin, t, "world_map_id", worldIds); }
       catch (e) { skipped.push(e instanceof Error ? e.message : t); }
     }
+  }
+
+  // Push 48 (G2): stat blocks from the GM's library that this campaign's encounters or tokens use.
+  // Before p170 they never belonged to a campaign, so an export carried the foes but not their blocks.
+  const have = new Set((data.stat_blocks ?? []).map((b) => String(b.id)));
+  const used = new Set<string>();
+  for (const e of data.encounters ?? []) {
+    for (const f of Array.isArray(e.foes) ? (e.foes as Record<string, unknown>[]) : []) {
+      const id = f && typeof f.statBlockId === "string" ? f.statBlockId : "";
+      if (/^[0-9a-f-]{36}$/i.test(id)) used.add(id);
+    }
+  }
+  for (const t of data.vtt_tokens ?? []) if (typeof t.stat_block_id === "string") used.add(t.stat_block_id);
+  const missing = [...used].filter((id) => !have.has(id));
+  for (let i = 0; i < missing.length; i += 200) {
+    try {
+      const rows = await readAll(admin, "stat_blocks", "id", missing.slice(i, i + 200));
+      data.stat_blocks = [...(data.stat_blocks ?? []), ...strip(rows, ["gm_id"])];
+    } catch (e) { skipped.push(e instanceof Error ? e.message : "stat_blocks"); }
   }
 
   zip.file("campaign.json", JSON.stringify(c, null, 2));

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { fetchAll } from "@/lib/fetch-all";
 
 export const maxDuration = 30;
 
@@ -30,8 +31,29 @@ export async function GET() {
   // rows (RLS: own rows only). Absent before p150 runs, so a failed read just leaves them out.
   const { data: notes, error: nErr } = await supabase.from("notifications")
     .select("kind, title, link, data, created_at, read_at, emailed_at").order("created_at", { ascending: false }).limit(5000);
-  const out = data && typeof data === "object" && !Array.isArray(data) && !nErr
-    ? { ...(data as Record<string, unknown>), notifications: notes ?? [] }
+  // Push 48 (audit round 2, G15, R9): what was added since p145 and is yours: your email choices (p138,
+  // p150), the stat blocks and card decks in your own library (p159) and the campaigns you run or co-GM
+  // (p149). Each read is your own rows under row level security; one that fails (a feature never migrated) is left out.
+  const extra: Record<string, unknown> = {};
+  if (!nErr) extra.notifications = notes ?? [];
+  const { data: prefs, error: pErr } = await supabase.rpc("my_email_prefs");
+  if (!pErr) extra.email_preferences = prefs ?? null;
+  const all = async <T,>(page: (f: number, t: number) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>) => {
+    const r = await fetchAll<T>(page);
+    return r.error ? null : r.data;
+  };
+  const blocks = await all<Record<string, unknown>>((f, t) => supabase.from("stat_blocks")
+    .select("name, system, source_edition, block, campaign_id, created_at, updated_at").eq("gm_id", user.id).order("id").range(f, t));
+  if (blocks) extra.stat_blocks = blocks;
+  const decks = await all<Record<string, unknown>>((f, t) => supabase.from("gm_card_decks")
+    .select("*").eq("owner", user.id).order("id").range(f, t));
+  if (decks) extra.card_deck_library = decks.map((d) => Object.fromEntries(Object.entries(d).filter(([k]) => k !== "owner" && k !== "id")));
+  const cogm = await all<Record<string, unknown>>((f, t) => supabase.from("memberships")
+    .select("role, active, campaign:campaigns(name)").eq("profile_id", user.id).in("role", ["gm", "co-gm"]).order("campaign_id").range(f, t));
+  const nameOf = (c: unknown) => (Array.isArray(c) ? c[0] : c) as { name?: string } | null | undefined;
+  if (cogm) extra.campaigns_you_run = cogm.map((m) => ({ campaign: nameOf(m.campaign)?.name ?? null, role: m.role, active: m.active }));
+  const out = data && typeof data === "object" && !Array.isArray(data)
+    ? { ...(data as Record<string, unknown>), ...extra }
     : data;
 
   const stamp = new Date().toISOString().slice(0, 10);

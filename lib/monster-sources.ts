@@ -2,8 +2,11 @@
 //
 // The monster files mix three kinds of record:
 //   srd-*   Wizards of the Coast System Reference Documents (CC BY 4.0).
-//   kc-*    Kerf and Code entries: book statistics with our own wording (Arcana Unleashed, the 2024
-//           Monster Manual). Not open content; the wording is ours.
+//   kc-*    Book statistics in Kerf and Code wording (Arcana Unleashed, the 2024 Monster Manual). Not
+//           open content: the publisher is the book's publisher (blank where not yet recorded), and
+//           the license is "Not open content". Push 48 (audit round 2, T4) fixed both labels, which
+//           read "Kerf and Code" as though we published the books; lib/content-policy.ts can switch all
+//           of these off.
 //   others  Third-party bestiaries pulled from Open5e (fetch_srd.py): Kobold Press, EN Publishing and
 //           Green Ronin books released as Open Game Content (OGL 1.0a) or under the ORC License.
 //
@@ -15,13 +18,13 @@
 
 import monsterSourcesData from "./srd/monster-sources.json";
 
-export type MonsterLicense = "CC BY 4.0" | "OGL 1.0a" | "ORC" | "Kerf and Code";
+export type MonsterLicense = "CC BY 4.0" | "OGL 1.0a" | "ORC" | "Not open content";
 
 export interface MonsterSource {
   key: string;            // source_key as it appears in the data
   title: string;          // full book title
   short: string;          // compact label for list chips
-  publisher: string;
+  publisher: string;      // "" when not recorded
   license: MonsterLicense;
   thirdParty: boolean;    // true for the Open5e bestiaries (needs the OGL / ORC notices)
   notice?: string;        // the source's copyright notice, verbatim, for OGL Section 15 / ORC
@@ -46,7 +49,7 @@ export function monsterSourceLabel(key: string | null | undefined): string {
 export function monsterSourceTitle(key: string | null | undefined): string {
   const s = monsterSource(key);
   if (!s) return key ?? "";
-  return `${s.title} · ${s.publisher} · ${s.license}`;
+  return [s.title, s.publisher, s.license].filter(Boolean).join(" · ");
 }
 
 export function isThirdPartyMonster(key: string | null | undefined): boolean {

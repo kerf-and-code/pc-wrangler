@@ -8,22 +8,26 @@ export const metadata: Metadata = {
   alternates: { canonical: "/licenses" },
 };
 
-// The user-visible home for the game-system license attributions. Six Axes ships only the game MECHANICS
-// of each supported system (never the publishers' descriptive text), under the license each publisher
-// grants. Where a license requires a specific notice, it appears verbatim here. The notices are sourced
+// The user-visible home for the game-system license attributions. Push 48 (audit round 2, T4): the page
+// used to say Six Axes ships only open mechanics; it also ships statistics from D&D books outside the
+// SRD, in its own words, which are not open content, and the page now says so. Where a license requires a specific notice, it appears verbatim here. The notices are sourced
 // from lib/systems/attribution.ts, the same data the in-Forge attribution line reads, so the two can
 // never drift. A summary of these also appears in the Terms of Service (Section 8).
 export default function LicensesPage() {
   return (
     <LegalPage>
       <h1>Game System Licenses</h1>
-      <p className="meta">Last updated: November 10, 2026</p>
+      <p className="meta">Last updated: November 12, 2026</p>
 
       <p>
-        Six Axes supports several tabletop roleplaying systems. For each, Six Axes ships only that
-        system&rsquo;s game <strong>mechanics</strong> (the numbers and structure a creator or tool
-        needs), never the publisher&rsquo;s descriptive text, artwork, or setting. Six Axes is an
-        independent product and is not an official or endorsed product of any of these publishers. Where a
+        Six Axes supports several tabletop roleplaying systems. For each, Six Axes ships the game
+        <strong> mechanics</strong> (the numbers and structure a creator or tool needs), written in its own
+        words, not the publishers&rsquo; artwork or setting. Most of it comes from open content released
+        under the licenses below. For Dungeons &amp; Dragons, Six Axes also includes statistics from books
+        outside the System Reference Documents, from Wizards of the Coast and from third-party publishers.
+        That material is <strong>not open content</strong>: Six Axes holds no license for it, every entry
+        is labeled with its book, and the rights stay with each publisher. Six Axes is an independent
+        product and is not an official or endorsed product of any of these publishers. Where a
         publisher&rsquo;s license requires a specific notice, that notice appears below.
       </p>
 

@@ -67,7 +67,7 @@ export const COPY_SPECS: CopySpec[] = [
   { table: "map_images", by: "world_map" },
   { table: "vtt_scenes", fk: { battle_map_id: "drop" }, set: { revealed: "\\x", door_state: {} } },
   { table: "vtt_decks" },
-  { table: "vtt_cards", fk: { deck_id: "drop" }, set: { pile: "draw", holder: null, played_by: null, face_up: false } },
+  { table: "vtt_cards", fk: { deck_id: "drop" }, set: { pile: "draw", holder: null, played_by: null, face_up: false, given_by: null } },
   { table: "session_plan_items", fk: { linked_character_id: "null" }, set: { linked_event_id: null, done: false } },
   { table: "entity_links", fk: { source_id: "drop", target_id: "drop" } },
 ];
@@ -167,10 +167,14 @@ export async function duplicateCampaign(admin: SupabaseClient, sourceId: string,
   // is part of its world.
   const { data: calRow, error: calErr } = await admin.from("campaigns").select("world_calendar, world_day").eq("id", sourceId).maybeSingle();
   const world = !calErr && calRow ? (calRow as { world_calendar: unknown; world_day: number | null }) : null;
+  // Push 48 (audit round 2, G20): the codex look (p157) travels too, read on its own for the same reason.
+  const { data: themeRow, error: themeErr } = await admin.from("campaigns").select("codex_theme").eq("id", sourceId).maybeSingle();
+  const theme = !themeErr ? (themeRow as { codex_theme: unknown } | null)?.codex_theme ?? null : null;
   const { error: cErr } = await admin.from("campaigns").insert({
     id: newId, name: copyName, system: s.system ?? "5e", gm_id: caller, time_zone: s.time_zone, codex_cover_url: cover,
     ...(lang ? { audio_language: lang } : {}),
     ...(world?.world_calendar ? { world_calendar: world.world_calendar, world_day: world.world_day } : {}),
+    ...(theme ? { codex_theme: theme } : {}),
   });
   if (cErr) throw new Error(`campaigns: ${cErr.message}`);
   const copiedFiles: { bucket: string; path: string }[] = [];

@@ -8,8 +8,8 @@ import type { LancerNPC } from "@/lib/lancer/adversary";
  * Persistence for GM monster stat blocks. Mirrors lib/pc-library.ts in spirit: a stat block is a
  * living JSONB document (`block`) plus denormalized challenge columns (cr/xp/ac/hp/size/type, and
  * level for PF2e) the encounter builder reads without parsing JSON. A block with campaign_id null is
- * library-wide (usable in any of the GM's campaigns); a block pinned to a campaign is readable by its
- * members.
+ * library-wide (usable in any of the GM's campaigns); a block tied to a campaign belongs to it, so its
+ * co-GMs, export, Duplicate and handover carry it. Only GMs read stat blocks; players never do (p170).
  *
  * Unlike the Forge, there is NO derivation: a monster's numbers are authored directly, so what the
  * GM types into the block IS the stat block. The denorm columns are kept in sync on every save.

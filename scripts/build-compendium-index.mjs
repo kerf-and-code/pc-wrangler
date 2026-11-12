@@ -25,7 +25,8 @@
 //   node scripts/build-compendium-index.mjs 2014
 //   node scripts/build-compendium-index.mjs 2024
 //   node scripts/build-compendium-index.mjs both
-// Overridable for testing: SRD_DIR and OUT_DIR env vars.
+// Overridable for testing: SRD_DIR and OUT_DIR env vars. NON_SRD_CONTENT=off builds without the
+// non-SRD book content (push 48; docs/non-srd-kill-switch.md).
 
 import fs from "node:fs";
 import os from "node:os";
@@ -34,6 +35,8 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
+// U+2014 and U+2013, built from their code points so the source holds neither.
+const LONG_DASHES = new RegExp(`[${String.fromCharCode(0x2014, 0x2013)}]`, "g");
 const SRD_DIR = process.env.SRD_DIR || path.join(ROOT, "lib", "srd");
 const OUT_DIR = process.env.OUT_DIR || path.join(ROOT, "public", "compendium");
 
@@ -143,7 +146,7 @@ function cleanText(s) {
   t = t.replace(/\[([^\]]+)\]\([^)]+\)/g, "$1");     // [text](url) -> text
   t = t.replace(/\*\*/g, "").replace(/\*/g, "");     // bold / italic asterisks
   t = t.replace(/__/g, "").replace(/_/g, "");        // underscore emphasis
-  t = t.replace(/[—–]/g, " - ");                     // em/en dash -> spaced hyphen
+  t = t.replace(LONG_DASHES, " - ");                   // long dashes -> spaced hyphen
   t = t.replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n");
   return t.trim();
 }
@@ -1315,6 +1318,15 @@ async function main() {
       usedIds.add(id);
       e.id = id;
     }
+  }
+
+  // Push 48 (audit round 2, T4): the kill switch for book content that is not open content. With
+  // NON_SRD_CONTENT=off, every D&D entry marked "kc" (book statistics in Kerf and Code wording) is left
+  // out, keeping the SRD and the open third-party bestiaries. docs/non-srd-kill-switch.md has the steps.
+  if (process.env.NON_SRD_CONTENT === "off" && ["2014", "2024", "both"].includes(mode)) {
+    const before = entries.length;
+    entries = entries.filter((e) => e.source !== "kc");
+    console.log(`[compendium] NON_SRD_CONTENT=off: left out ${before - entries.length} non-SRD entries`);
   }
 
   // Grammar: every unique spoken phrase, plus the Vosk unknown token.

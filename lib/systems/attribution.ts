@@ -191,6 +191,18 @@ export const SYSTEM_ATTRIBUTIONS: SystemAttribution[] = [
       ...PARTNER_WORKS.map((p) => p.publisher + ": " + p.works.join("; ") + "."),
     ],
   },
+  {
+    // Push 48 (audit round 2, T4): the Wizards of the Coast books outside the SRD. The licenses page
+    // said Six Axes ships only open mechanics, which left these out. Not a selectable system: id "".
+    id: "",
+    system: "D&D 5e books outside the SRD",
+    license: "Not open content",
+    short: "Includes statistics from Dungeons & Dragons books outside the SRD, in Kerf and Code wording; all rights belong to Wizards of the Coast.",
+    notice: [
+      "Besides the System Reference Documents, Six Axes includes statistics and rules from Dungeons & Dragons sourcebooks and adventures published by Wizards of the Coast (the Monster Manual, Xanathar's Guide to Everything, Tasha's Cauldron of Everything and others), for monsters, spells, magic items, feats, backgrounds and subclasses. Six Axes writes each entry in its own words; the game statistics and names come from the books. This material is not open content and Six Axes holds no license for it from Wizards of the Coast. Every such entry is labeled with its book. Dungeons & Dragons and the book titles are trademarks of Wizards of the Coast, and Six Axes is not published, endorsed or sponsored by Wizards of the Coast.",
+      "Six Axes can remove all of this material at once. A rights holder who wants its content removed can contact us and we will act on it promptly.",
+    ],
+  },
 ];
 
 // The active-system attribution for the in-Forge line. Returns undefined for systems that ship no

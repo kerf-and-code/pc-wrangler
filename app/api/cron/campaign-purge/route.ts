@@ -39,8 +39,15 @@ export async function GET(request: Request) {
     if (r.failures.length) problems.push({ id, detail: `files left: ${r.failures.slice(0, 3).join("; ")}` });
   }
 
+  // Push 48 (audit round 2, T16): the tables that only grew. prune_growing_tables (p170) removes rate-limit
+  // hits (IP addresses) after 2 days, finished webhook deliveries after 14, old notifications, used
+  // Discord setup codes and finished invites and handover offers. A failure alerts but does not stop the
+  // erasing above, which matters more.
+  const { data: pruned, error: pErr } = await admin.rpc("prune_growing_tables");
+  if (pErr) await opsAlert("cron campaign-purge", "prune_growing_tables failed (has p170 run?)", pErr.message);
+
   if (problems.length) {
     await opsAlert("cron campaign-purge", `${problems.length} problem(s) erasing trashed campaigns`, problems.slice(0, 5));
   }
-  return NextResponse.json({ erased: erased.length, problems, more: ((due as unknown[] | null) ?? []).length === PER_RUN }, { status: problems.length ? 500 : 200 });
+  return NextResponse.json({ erased: erased.length, problems, more: ((due as unknown[] | null) ?? []).length === PER_RUN, pruned: pErr ? null : pruned }, { status: problems.length ? 500 : 200 });
 }

@@ -31,6 +31,7 @@ import classes2014 from "./classes-2014.json";
 import species2024 from "./species-2024.json";
 import species2014 from "./species-2014.json";
 import subclasses from "./subclasses.json";
+import { nonSrdContentOn, subclassesWithContentPolicy, withContentPolicy } from "@/lib/content-policy";
 // Non-SRD spells written up by Kerf and Code (Xanathar's, Tasha's, Arcana Unleashed, the Artificer
 // extras, ...). Each carries an `edition` of "2014", "2024" or "both". They used to reach only the
 // compendium; reading them here makes them pickable in the Forge and matchable on import.
@@ -137,8 +138,18 @@ export function loadSrd(domain: FlatDomain, mode: Ruleset): Named[];
 export function loadSrd(domain: "species", mode: Ruleset): SpeciesFile;
 export function loadSrd(domain: "subclasses", mode: Ruleset): Subclass[];
 export function loadSrd(domain: Domain, mode: Ruleset): Named[] | SpeciesFile | Subclass[] {
-  // Subclasses are a single edition-agnostic catalog: mode does not apply.
-  if (domain === "subclasses") return subclasses as unknown as Subclass[];
+  // Push 48 (audit round 2, T4): with NEXT_PUBLIC_NON_SRD_CONTENT=off (lib/content-policy.ts) every
+  // domain comes back without the non-SRD book content. The species files are SRD only already.
+  if (domain === "subclasses") return subclassesWithContentPolicy(subclasses as unknown as Subclass[]);
+  if (domain !== "species" && !nonSrdContentOn()) return withContentPolicy(loadSrdAll(domain, mode));
+  return loadSrdAll(domain, mode);
+}
+
+function loadSrdAll(domain: FlatDomain, mode: Ruleset): Named[];
+function loadSrdAll(domain: "species", mode: Ruleset): SpeciesFile;
+function loadSrdAll(domain: FlatDomain | "species", mode: Ruleset): Named[] | SpeciesFile;
+function loadSrdAll(domain: FlatDomain | "species", mode: Ruleset): Named[] | SpeciesFile {
+  // Subclasses are a single edition-agnostic catalog: mode does not apply (handled above).
 
   if (domain === "species") {
     if (mode === "2024") return SPECIES["2024"];

@@ -175,8 +175,17 @@ function StatBlockInner() {
       } else {
         if (creatingRef.current) return;
         creatingRef.current = true;
+        // Push 48 (audit round 2, G2): a new block belongs to the campaign you are working in, when you
+        // are one of its GMs, so its export, Duplicate, handover and co-GMs carry it. Otherwise it goes
+        // to your library as before. Only GMs ever read stat blocks (p170).
+        const active = getActiveCampaign()?.id ?? null;
+        let campaignId: string | null = null;
+        if (active) {
+          const { data: gmHere } = await supabase.rpc("is_campaign_gm", { p_campaign: active });
+          if (gmHere === true) campaignId = active;
+        }
         const id = await createStatBlock(supabase, {
-          gmId, campaignId: null, name: nextName || "Unnamed", system,
+          gmId, campaignId, name: nextName || "Unnamed", system,
           sourceEdition: system === "pf2e" ? "pf2e" : system === "daggerheart" ? "daggerheart" : system === "drawsteel" ? "drawsteel" : system === "lancer" ? "lancer" : (srdMode === "both" ? "2024" : srdMode), block: nextDoc,
         });
         setRowId(id);
