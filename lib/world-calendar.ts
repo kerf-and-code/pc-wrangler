@@ -8,6 +8,11 @@
 // negative). No leap years: a world's year is the same length every year.
 //
 // Pure: no React, no Supabase. Tested in tests/world-calendar.test.ts.
+//
+// Push 46 (audit round 2, B8): a day number only means a date under one shape of calendar. Making a
+// month longer or shorter changes the year's length, and every stored day number then read as a
+// different date (years off, for a world in year 1200). remapDay gives the number the same year, month
+// and day have in the new shape, and the calendar editor moves every stored date with it.
 
 export type WorldMonth = { name: string; days: number };
 export type WorldCalendar = {
@@ -146,4 +151,17 @@ export function textToMonths(text: string): WorldMonth[] {
     if (out.length >= 24) break;
   }
   return out;
+}
+
+/** Whether two calendars count days the same way (the same number of months, each the same length).
+ *  Names, the week and the era do not matter: renaming never moves a date. */
+export function sameShape(a: WorldCalendar, b: WorldCalendar): boolean {
+  return a.months.length === b.months.length && a.months.every((m, i) => m.days === b.months[i].days);
+}
+
+/** The day number under `to` of the date `day` is under `from`: the same year, the same month (the last
+ *  month when `to` has fewer), and the same day (the month's last day when it is shorter now). */
+export function remapDay(from: WorldCalendar, to: WorldCalendar, day: number): number {
+  const d = toWorldDate(from, day);
+  return fromWorldDate(to, { year: d.year, month: Math.min(d.month, to.months.length - 1), day: d.day });
 }

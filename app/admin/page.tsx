@@ -13,12 +13,13 @@ import PageHeader from "@/components/ui-forge/PageHeader";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import { askConfirm } from "@/lib/confirm";
 import { fmtDate, fmtRelative } from "@/lib/format";
+import { dollars } from "@/lib/costing";
 
 type Account = {
   id: string; display_name: string | null; email: string | null; is_anonymous: boolean;
   access_granted: boolean; access_role: string | null; created_at: string;
   is_owner: boolean; last_sign_in_at: string | null; campaigns_run: number;
-  usage30: { minutes: number; aiCalls: number; tokens: number; images: number } | null;
+  usage30: { minutes: number; aiCalls: number; tokens: number; images: number; sessions?: number; cost?: number } | null;
 };
 type Filter = "all" | "gm" | "player" | "none";
 
@@ -106,7 +107,7 @@ export default function OwnerConsole() {
           </div>
 
           {note && <p role={note.bad ? "alert" : "status"} style={{ color: note.bad ? C.warn : C.muted, fontSize: 13.5 }}>{note.text}</p>}
-          {!usageReady && <p style={{ color: C.muted, fontSize: 12.5 }}>Usage shows once migration p147 has run.</p>}
+          {!usageReady && <p style={{ color: C.muted, fontSize: 12.5 }}>Usage shows once migrations p147 and p169 have run.</p>}
 
           <div style={{ display: "grid", gap: 10 }}>
             {shown.length === 0 && <p style={{ color: C.muted }}>No accounts match.</p>}
@@ -125,7 +126,7 @@ export default function OwnerConsole() {
                     <span>Joined {fmtDate(a.created_at)}</span>
                     <span>Last sign-in {a.last_sign_in_at ? fmtRelative(a.last_sign_in_at) : "never"}</span>
                     <span>Runs {a.campaigns_run} campaign{a.campaigns_run === 1 ? "" : "s"}</span>
-                    {a.usage30 && <span>30 days: {Math.round(a.usage30.minutes).toLocaleString()} min transcribed, {a.usage30.aiCalls.toLocaleString()} AI calls, {a.usage30.images.toLocaleString()} images</span>}
+                    {a.usage30 && <span>30 days: {Math.round(a.usage30.minutes).toLocaleString()} min transcribed, {a.usage30.aiCalls.toLocaleString()} AI calls, {a.usage30.images.toLocaleString()} images{typeof a.usage30.cost === "number" ? `, about ${dollars(a.usage30.cost)} at the costing-model rates` : ""}</span>}
                   </div>
                   <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                     {acc !== "gm" && <button type="button" disabled={busy === a.id} onClick={() => void act(a, "gm")} style={btn()}>Give GM access</button>}

@@ -5,14 +5,20 @@
 // What a campaign has used in the last 30 days: AI calls and tokens, image renders, and transcription
 // minutes, read from usage_events (p147) through row level security (the campaign's GMs only). Record
 // only for now: nothing is capped. Counts start when p147 runs, so the first weeks are partial.
+//
+// Push 46 (audit round 2, R1, B9): the totals are counted in the database (campaign_usage_summary,
+// p169). Reading the rows here stopped at 1,000, whatever limit was asked for, and the sum of those was
+// shown as the whole month. Also an estimated cost at the settled costing-model rates (lib/costing.ts).
 
 import { useEffect, useState } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { C } from "@/lib/forge-theme";
 import { surfaces } from "@/lib/theme";
+import { COSTING, dollars, estimateCost } from "@/lib/costing";
 
 type Row = { kind: "ai" | "image" | "transcription"; route: string | null; input_tokens: number | null; output_tokens: number | null; images: number | null; audio_seconds: number | null };
-type Sum = { aiCalls: number; tokensIn: number; tokensOut: number; images: number; minutes: number; byRoute: [string, number][] };
+type Sum = { aiCalls: number; tokensIn: number; tokensOut: number; images: number; minutes: number; byRoute: [string, number][];
+  speakerMinutes?: number; roomSessions?: number; sessions?: number; exact?: boolean };
 
 const DAYS = 30;
 
@@ -44,13 +50,24 @@ export default function UsagePanel({ supabase, campaignId }: { supabase: Supabas
     setState("loading");
     (async () => {
       const since = new Date(Date.now() - DAYS * 86400 * 1000).toISOString();
+      // counted in the database (p169)
+      const { data: agg, error: aggErr } = await supabase.rpc("campaign_usage_summary", { p_campaign: campaignId, p_since: since });
+      if (!live) return;
+      if (!aggErr && agg) {
+        const a = agg as { rows: number; aiCalls: number; tokensIn: number; tokensOut: number; images: number; minutes: number; speakerMinutes: number; roomSessions: number; sessions: number; byRoute: [string, number][] };
+        setSum({ aiCalls: Number(a.aiCalls), tokensIn: Number(a.tokensIn), tokensOut: Number(a.tokensOut), images: Number(a.images), minutes: Number(a.minutes),
+          byRoute: a.byRoute ?? [], speakerMinutes: Number(a.speakerMinutes), roomSessions: Number(a.roomSessions), sessions: Number(a.sessions), exact: true });
+        setState(Number(a.rows) ? "ready" : "none");
+        return;
+      }
+      // before p169: the old read, which stops at 1,000 rows; the panel says so
       const { data, error } = await supabase.from("usage_events")
         .select("kind, route, input_tokens, output_tokens, images, audio_seconds")
-        .eq("campaign_id", campaignId).gte("created_at", since).limit(10000);
+        .eq("campaign_id", campaignId).gte("created_at", since).limit(1000);
       if (!live) return;
       if (error) { setState(/usage_events/.test(error.message) ? "none" : "error"); return; }
       const rows = (data as Row[] | null) ?? [];
-      setSum(summarise(rows));
+      setSum({ ...summarise(rows), exact: rows.length < 1000 });
       setState(rows.length ? "ready" : "none");
     })();
     return () => { live = false; };
@@ -82,6 +99,18 @@ export default function UsagePanel({ supabase, campaignId }: { supabase: Supabas
             {stat("images painted", n(sum.images))}
             {stat("AI tokens (in / out)", `${n(sum.tokensIn)} / ${n(sum.tokensOut)}`)}
           </div>
+          {!sum.exact && <p role="note" style={{ fontSize: 12.5, color: C.warn, margin: "10px 0 0" }}>These are the first 1,000 records only, so the real totals are higher. The p169 database update counts all of them.</p>}
+          {sum.exact && sum.sessions != null && (() => {
+            const e = estimateCost({ speakerMinutes: sum.speakerMinutes ?? 0, roomSessions: sum.roomSessions ?? 0, sessions: sum.sessions ?? 0 });
+            return (
+              <div style={{ marginTop: 14, fontSize: 13, color: C.text, lineHeight: 1.6 }}>
+                <b>Estimated cost: {dollars(e.total)}</b>{e.perSession != null ? ` (${dollars(e.perSession)} a session over ${sum.sessions} transcribed session${sum.sessions === 1 ? "" : "s"})` : ""}.
+                <div style={{ fontSize: 12, color: C.muted }}>
+                  At the rates in {COSTING.source}: transcription {dollars(e.transcription)} (about {Math.round(COSTING.keptAfterTrim * 100)}% of recorded speaker audio is billed after silence is trimmed){e.room ? `, in-person rooms ${dollars(e.room)}` : ""}, recaps and notes {dollars(e.ai)}, storage and compute {dollars(e.overhead)}. An estimate, not a bill.
+                </div>
+              </div>
+            );
+          })()}
           {sum.byRoute.length > 0 && (
             <div style={{ marginTop: 14, fontSize: 12.5, color: C.muted, lineHeight: 1.7 }}>
               {sum.byRoute.map(([r, c]) => <div key={r}>{ROUTE_LABEL[r] ?? r}: {c.toLocaleString()} call{c === 1 ? "" : "s"}</div>)}

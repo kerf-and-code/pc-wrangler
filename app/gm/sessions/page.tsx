@@ -8,6 +8,7 @@ import { initialCampaignId, useRememberCampaign, initialSessionId, useRememberSe
 import { friendlyError } from "@/lib/friendly-error";
 import { askConfirm } from "@/lib/confirm";
 import { fmtDateTime } from "@/lib/format";
+import { fetchAll } from "@/lib/fetch-all";
 
 const STATUS_TONE: Record<string, string> = {
   scheduled: C.muted, live: C.warn, completed: C.sun, processed: C.good, cancelled: C.muted,
@@ -141,10 +142,11 @@ export default function SessionWorkspace() {
   }, [campaign]);
 
   const loadEvents = useCallback(async (sessionId: string) => {
+    // push 46 (R1): every event of the session, not the first 1,000
     const [{ data: evs }, { data: lootRows }] = await Promise.all([
-      supabase.from("events")
+      fetchAll<Record<string, unknown>>((f, t) => supabase.from("events")
         .select("id,character_id,event_type,axis,frame,target,payload,created_at")
-        .eq("session_id", sessionId).order("created_at", { ascending: false }),
+        .eq("session_id", sessionId).order("created_at", { ascending: false }).order("id").range(f, t)),
       supabase.from("loot_grants").select("id,character_id,item_name,rarity,est_value")
         .eq("session_id", sessionId).order("created_at", { ascending: false }),
     ]);

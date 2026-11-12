@@ -347,7 +347,15 @@ export default function TonightPage() {
           <div style={card(!isOpen && !isOver)}>
             {h2(3, "Start", isOpen || isOver)}
             {isOpen ? (
-              <p style={{ color: C.good, fontSize: 13.5, margin: "0 0 10px" }}>Session {session.session_number} is {session.status}.</p>
+              <>
+                <p style={{ color: C.good, fontSize: 13.5, margin: "0 0 10px" }}>Session {session.session_number} is {session.status}.</p>
+                {/* push 46 (audit round 2, LV10): rolls stop going into a session open this long */}
+                {session.started_at && Date.now() - new Date(session.started_at).getTime() > 18 * 3600 * 1000 && (
+                  <p role="alert" style={{ color: C.warn, fontSize: 13, margin: "0 0 10px" }}>
+                    This session started {when(session.started_at)} and was never ended. Rolls from D&amp;D Beyond and Roll20 stop going into a session after 18 hours, so players&apos; rolls from their other games do not pile up here. End it below, then go live with tonight&apos;s.
+                  </p>
+                )}
+              </>
             ) : isOver ? (
               <p style={{ color: C.muted, fontSize: 13.5, margin: "0 0 10px" }}>This session has ended. Reopen it from the {link(gmHref("/gm/sessions", q), "Session Log")} to record more into it.</p>
             ) : (

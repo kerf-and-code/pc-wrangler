@@ -1,5 +1,6 @@
 import { anthropicTokens, recordUsage } from "@/lib/usage";
 import { campaignLanguage, writeInLanguage } from "@/lib/languages";
+import { fetchAll } from "@/lib/fetch-all";
 // Shared recap builder. Gathers a session's context (GM notes, accepted player
 // events, GM narration/NPCs, loot, threads, transcript) and produces a
 // "previously on" recap. Used by the manual generate route and the auto-draft on
@@ -169,9 +170,10 @@ export async function buildRecap(supabase: DbLike, sessionId: string, mode: Reca
     supabase.from("campaigns").select("name, system").eq("id", campaignId).single(),
     supabase.from("characters").select("id, name, kind").eq("campaign_id", campaignId),
     supabase.from("event_types").select("key, label"),
-    supabase.from("events")
+    // push 46 (R1): every event of the session, not the first 1,000
+    fetchAll<Record<string, unknown>>((f, t) => supabase.from("events")
       .select("event_type, axis, payload, character_id, created_at")
-      .eq("session_id", sessionId).order("created_at", { ascending: true }),
+      .eq("session_id", sessionId).order("created_at", { ascending: true }).order("id").range(f, t)),
     supabase.from("loot_grants")
       .select("item_name, rarity, character_id")
       .eq("session_id", sessionId),

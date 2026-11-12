@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isOwner } from "@/lib/owner";
+import { fetchAll } from "@/lib/fetch-all";
+import { estimateCost } from "@/lib/costing";
 
 // app/api/admin/users/route.ts (push 17, audit F10)
 //
@@ -11,6 +13,11 @@ import { isOwner } from "@/lib/owner";
 // lib/gm-allowlist.ts), "revoke" takes it away (an account still on GM_EMAILS gets GM access back on
 // its next visit, so take it off the list too). Both check OWNER_IDS on every call and use the service role, so a
 // signed-in non-owner gets 403 and nothing else.
+//
+// Push 46 (audit round 2, R1): accounts and campaigns are read in pages, and usage is totalled in the
+// database (usage_by_campaign, p169). Every read used to stop at 1,000 rows, so usage past the first
+// 1,000 records in 30 days was missing. Each account also gets an estimated cost at the settled
+// costing-model rates (lib/costing.ts).
 
 type Profile = { id: string; display_name: string | null; email: string | null; is_anonymous: boolean; access_granted: boolean; access_role: string | null; created_at: string };
 
@@ -29,9 +36,9 @@ export async function GET() {
 
   const since = new Date(Date.now() - 30 * 86400 * 1000).toISOString();
   const [profiles, campaigns, usage] = await Promise.all([
-    admin.from("profiles").select("id, display_name, email, is_anonymous, access_granted, access_role, created_at").order("created_at", { ascending: false }).limit(5000),
-    admin.from("campaigns").select("id, gm_id").is("deleted_at", null).limit(10000),
-    admin.from("usage_events").select("campaign_id, kind, input_tokens, output_tokens, images, audio_seconds").gte("created_at", since).limit(50000),
+    fetchAll<Profile>((f, t) => admin.from("profiles").select("id, display_name, email, is_anonymous, access_granted, access_role, created_at").order("created_at", { ascending: false }).order("id").range(f, t)),
+    fetchAll<{ id: string; gm_id: string }>((f, t) => admin.from("campaigns").select("id, gm_id").is("deleted_at", null).order("id").range(f, t)),
+    admin.rpc("usage_by_campaign", { p_since: since }),
   ]);
   if (profiles.error) return NextResponse.json({ error: "Could not read the accounts." }, { status: 500 });
 
@@ -46,25 +53,30 @@ export async function GET() {
 
   const ownerOf = new Map<string, string>();
   const runs = new Map<string, number>();
-  for (const c of (campaigns.data as { id: string; gm_id: string }[] | null) ?? []) {
+  for (const c of campaigns.data) {
     ownerOf.set(c.id, c.gm_id);
     runs.set(c.gm_id, (runs.get(c.gm_id) ?? 0) + 1);
   }
-  type U = { minutes: number; aiCalls: number; tokens: number; images: number };
+  type U = { minutes: number; aiCalls: number; tokens: number; images: number; speakerMinutes: number; roomSessions: number; sessions: number; cost: number };
   const used = new Map<string, U>();
-  // usage_events is new (p147): before it runs, the read errors and every account shows nothing used.
-  for (const r of (usage.error ? [] : (usage.data as { campaign_id: string | null; kind: string; input_tokens: number | null; output_tokens: number | null; images: number | null; audio_seconds: number | null }[] | null) ?? [])) {
-    const who = r.campaign_id ? ownerOf.get(r.campaign_id) : undefined;
+  // totalled per campaign in the database (p169); before p169 (or p147) every account shows nothing used
+  type Agg = { campaign_id: string; minutes: number; speaker_minutes: number; room_minutes: number; ai_calls: number; tokens: number; images: number; sessions: number; room_sessions: number };
+  for (const r of (usage.error ? [] : (usage.data as Agg[] | null) ?? [])) {
+    const who = ownerOf.get(r.campaign_id);
     if (!who) continue;
-    const u = used.get(who) ?? { minutes: 0, aiCalls: 0, tokens: 0, images: 0 };
-    if (r.kind === "transcription") u.minutes += Number(r.audio_seconds ?? 0) / 60;
-    if (r.kind === "ai") u.aiCalls += 1;
-    if (r.kind === "image") u.images += r.images ?? 1;
-    u.tokens += (r.input_tokens ?? 0) + (r.output_tokens ?? 0);
+    const u = used.get(who) ?? { minutes: 0, aiCalls: 0, tokens: 0, images: 0, speakerMinutes: 0, roomSessions: 0, sessions: 0, cost: 0 };
+    u.minutes += Number(r.minutes) || 0;
+    u.speakerMinutes += Number(r.speaker_minutes) || 0;
+    u.aiCalls += Number(r.ai_calls) || 0;
+    u.tokens += Number(r.tokens) || 0;
+    u.images += Number(r.images) || 0;
+    u.sessions += Number(r.sessions) || 0;
+    u.roomSessions += Number(r.room_sessions) || 0;
     used.set(who, u);
   }
+  for (const u of used.values()) u.cost = estimateCost(u).total;
 
-  const accounts = ((profiles.data as Profile[] | null) ?? []).map((p) => ({
+  const accounts = profiles.data.map((p) => ({
     ...p,
     is_owner: isOwner(p.id),
     last_sign_in_at: lastSeen.get(p.id) ?? null,

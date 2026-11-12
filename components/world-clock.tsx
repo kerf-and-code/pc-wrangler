@@ -18,8 +18,9 @@ import { notReady } from "@/lib/friendly-error";
 import { askConfirm } from "@/lib/confirm";
 import {
   CALENDAR_PRESETS, presetCalendar, normalizeCalendar, toWorldDate, fromWorldDate, formatWorldDate,
-  monthsToText, textToMonths, type WorldCalendar,
+  monthsToText, textToMonths, remapDay, sameShape, type WorldCalendar,
 } from "@/lib/world-calendar";
+import { fetchAll } from "@/lib/fetch-all";
 
 const field: React.CSSProperties = {
   background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: 6,
@@ -101,6 +102,25 @@ export default function WorldClock({ campaignId, compact = false, sessionId = nu
     setBusy(false);
     if (error) { setErr(/world_/.test(error.message) ? notReady("The in-game calendar", "p154") : `Could not save: ${error.message}`); return false; }
     setState(next); onChange?.(next.cal, next.day);
+    return true;
+  };
+
+  // push 46 (audit round 2, B8): months of a different length. Every stored date (today's, and each
+  // session's) keeps its year, month and day; their day numbers move, in one step on the server
+  // (world_calendar_reshape, p169).
+  const reshape = async (from: WorldCalendar, to: WorldCalendar): Promise<boolean> => {
+    if (state?.day == null) return false;
+    setBusy(true); setErr(null);
+    const all = await fetchAll<{ world_day: number | null }>((f, t) => supabase.from("sessions").select("world_day")
+      .eq("campaign_id", campaignId).not("world_day", "is", null).order("id").range(f, t));
+    if (all.error) { setBusy(false); setErr(`Could not read the sessions' dates: ${all.error}`); return false; }
+    const olds = [...new Set(all.data.map((r) => r.world_day).filter((d): d is number => typeof d === "number"))];
+    const moves = olds.map((d) => [d, remapDay(from, to, d)]).filter(([a, b]) => a !== b);
+    const newDay = remapDay(from, to, state.day);
+    const { error } = await supabase.rpc("world_calendar_reshape", { p_campaign: campaignId, p_calendar: to, p_day: newDay, p_moves: moves });
+    setBusy(false);
+    if (error) { setErr(/world_calendar_reshape/.test(error.message) ? notReady("Changing month lengths", "p169") : `Could not save: ${error.message}`); return false; }
+    setState({ cal: to, day: newDay }); onChange?.(to, newDay);
     return true;
   };
 
@@ -214,7 +234,7 @@ export default function WorldClock({ campaignId, compact = false, sessionId = nu
                 <input value={editing.era} maxLength={20} onChange={(e) => setEditing({ ...editing, era: e.target.value })} placeholder="AF" style={{ ...field, width: 120 }} />
               </label>
               <p style={{ fontSize: 12, color: C.muted, margin: 0, lineHeight: 1.5 }}>
-                Dates are kept as days since the start of year 1, so renaming months never moves them; changing how many days a month has relabels the dates after it.
+                Renaming months never moves a date. Changing how many days a month has keeps every date where it was: today&apos;s date and each session&apos;s stay on the same day of the same month and year (a day past the end of a shorter month becomes its last day).
               </p>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                 <button type="button" style={primary} disabled={busy} onClick={() => {
@@ -222,7 +242,8 @@ export default function WorldClock({ campaignId, compact = false, sessionId = nu
                   if (!months.length) { setErr("Add at least one month: a name and a number of days, like \"Frostfall, 30\"."); return; }
                   const next = normalizeCalendar({ ...cal, preset: "custom", months, weekdays: editing.weekdays.split(/[,\n]/), era: editing.era });
                   if (!next) return;
-                  void save({ world_calendar: next }, { cal: next, day }).then((ok) => { if (ok) setEditing(null); });
+                  if (sameShape(cal, next)) { void save({ world_calendar: next }, { cal: next, day }).then((ok) => { if (ok) setEditing(null); }); return; }
+                  void reshape(cal, next).then((ok) => { if (ok) setEditing(null); });
                 }}>Save calendar</button>
                 <button type="button" style={btn} onClick={() => { setEditing(null); setErr(null); }}>Cancel</button>
                 <button type="button" style={{ ...btn, color: C.warn }} disabled={busy}

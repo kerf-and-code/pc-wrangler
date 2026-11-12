@@ -12,6 +12,8 @@
 //        (matched by full name, by first name, by your choice, or nowhere), and a picker to send it to a
 //        character or mark it as not a player character. Saved through /api/vtt/name-link (p167); later
 //        rolls follow the choice and the earlier ones in the campaign move with it.
+//   Push 46 (T6): filters for the source, verified rolls only, and rolls matched to a character, so
+//        a fairness read can be limited to dice the app rolled or a sheet vouched for.
 
 import React, { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -50,6 +52,9 @@ type VttEvent = {
   rolled_at: string | null;
   received_at: string;
 };
+
+// push 46: what each roll source is called in the filter
+const SOURCE_LABEL: Record<string, string> = { beyond20: "D&D Beyond", roll20: "Roll20", foundry: "Foundry", owlbear: "Owlbear", six_axes_tabletop: "Six Axes tabletop", six_axes_roller: "GM roller", spoken: "Said aloud", demo: "Demo" };
 
 const D20_TYPES = new Set(["to-hit", "saving-throw", "skill", "ability", "initiative", "death-save"]);
 
@@ -198,6 +203,17 @@ export default function MechanicsPage() {
   }, [sessionId, supabase, reloadKey]);
 
   const [tab, setTab] = useState<"table" | "dice">("table");
+  // push 46 (audit round 2, T6): which rolls the numbers are drawn from. Every source and every roll
+  // used to be pooled, so typed-in totals, a GM's monster rolls and unverified rolls all fed the
+  // fairness read and the averages.
+  const [srcFilter, setSrcFilter] = useState<string>("all");
+  const [verifiedOnly, setVerifiedOnly] = useState(false);
+  const [matchedOnly, setMatchedOnly] = useState(false);
+  const sources = useMemo(() => [...new Set(events.map((e) => e.source ?? "unknown"))].sort(), [events]);
+  const shown = useMemo(() => events.filter((e) =>
+    (srcFilter === "all" || (e.source ?? "unknown") === srcFilter)
+    && (!verifiedOnly || e.fidelity === "canonical")
+    && (!matchedOnly || !!e.character_id)), [events, srcFilter, verifiedOnly, matchedOnly]);
 
   const stats = useMemo(() => {
     const per: Record<string, CharStats> = {};
@@ -206,7 +222,7 @@ export default function MechanicsPage() {
     const typeCounts: Record<string, number> = {};
     const dmgByType: Record<string, number> = {};
 
-    for (const e of events) {
+    for (const e of shown) {
       typeCounts[e.event_type] = (typeCounts[e.event_type] || 0) + 1;
       if (e.fidelity === "canonical") canonical += 1;
       const key = e.character_id ?? `${e.source ?? "?"}:${e.actor_name ?? "unknown"}`;
@@ -275,7 +291,7 @@ export default function MechanicsPage() {
     // Recorded per die SIZE rather than per roll, because that is the unit a fairness question is
     // asked about. "Is my d20 cursed" is answerable; "is my 2d6+3 cursed" is not.
     const byDie: Record<number, { n: number; sum: number; faces: Record<number, number> }> = {};
-    for (const e of events) {
+    for (const e of shown) {
       for (const g of e.rolls?.dice ?? []) {
         const faces = Number(g?.faces);
         if (!Number.isFinite(faces) || faces < 2) continue;
@@ -312,8 +328,8 @@ export default function MechanicsPage() {
 
     const rows = Object.values(per).sort((a, b) => b.d20Count - a.d20Count || b.damage - a.damage);
     const distMax = Math.max(1, ...dist);
-    return { rows, dist, distMax, d20Total, dmgTotal, canonical, total: events.length, typeCounts, dmgByType, dieRows };
-  }, [events, charNames, nameLinks]);
+    return { rows, dist, distMax, d20Total, dmgTotal, canonical, total: shown.length, typeCounts, dmgByType, dieRows };
+  }, [shown, charNames, nameLinks]);
 
   // push 44: every name rolled under in Roll20 this session, and where its rolls went
   const roll20Names = useMemo(() => {
@@ -397,7 +413,20 @@ export default function MechanicsPage() {
           {sessions.length === 0 && <option value="">No sessions yet</option>}
           {sessions.map((s) => (<option key={s.id} value={s.id}>{sessionLabel(s)}</option>))}
         </select>
+        <select aria-label="Which rolls" value={srcFilter} onChange={(e) => setSrcFilter(e.target.value)} style={sel}>
+          <option value="all">Every source</option>
+          {sources.map((k) => <option key={k} value={k}>{SOURCE_LABEL[k] ?? k}</option>)}
+        </select>
+        <label style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 13, color: C.text }}>
+          <input type="checkbox" checked={verifiedOnly} onChange={(e) => setVerifiedOnly(e.target.checked)} /> Verified rolls only
+        </label>
+        <label style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 13, color: C.text }}>
+          <input type="checkbox" checked={matchedOnly} onChange={(e) => setMatchedOnly(e.target.checked)} /> Characters only
+        </label>
       </div>
+      {events.length > 0 && shown.length !== events.length && (
+        <p role="status" style={{ color: C.muted, fontSize: 12.5, margin: "-6px 0 12px" }}>Showing {shown.length.toLocaleString()} of {events.length.toLocaleString()} rolls.</p>
+      )}
 
       {loadErr && !loading && <p role="alert" style={{ color: C.warn, fontSize: 13, margin: "0 0 12px" }}>{loadErr}</p>}
       {loading ? (

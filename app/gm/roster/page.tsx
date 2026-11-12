@@ -14,6 +14,7 @@ import { askConfirm } from "@/lib/confirm";
 import { fmtDate } from "@/lib/format";
 import { LoadingState } from "@/components/ui-forge/States";
 import CampaignPicker from "@/components/ui-forge/CampaignPicker";
+import { fetchAll } from "@/lib/fetch-all";
 
 type Campaign = { id: string; name: string; share_code: string | null };
 type Char = { id: string; name: string; profile_id: string | null; invite_code: string | null; build: Build; active: boolean | null };
@@ -68,14 +69,20 @@ export default function RosterPage() {
     const [{ data: ch }, { data: rs }, { data: ev }] = await Promise.all([
       supabase.from("characters").select("id, name, profile_id, invite_code, build, active").eq("campaign_id", cid).eq("kind", "pc").order("name", { ascending: true }),
       supabase.from("tpdi_responses").select("id, player_name, assigned_character_id, created_at").eq("campaign_id", cid).order("created_at", { ascending: false }),
-      supabase.from("events").select("character_id").eq("campaign_id", cid),
+      // push 46 (B9): counted in the database (p169); a read of the rows stopped at 1,000
+      supabase.rpc("campaign_event_counts", { p_campaign: cid }),
     ]);
     const all = (ch as Char[]) || [];
     setChars(all.filter((c) => c.active !== false));
     setRemoved(all.filter((c) => c.active === false));
     setResponses((rs as Resp[]) || []);
-    const tally: Record<string, number> = {};
-    ((ev as { character_id: string | null }[]) || []).forEach((e) => { if (e.character_id) tally[e.character_id] = (tally[e.character_id] || 0) + 1; });
+    let tally: Record<string, number> = {};
+    if (ev && typeof ev === "object") tally = Object.fromEntries(Object.entries(ev as Record<string, number>).map(([k, v]) => [k, Number(v) || 0]));
+    else {
+      // before p169: count every row, page by page
+      const all = await fetchAll<{ character_id: string | null }>((f, t) => supabase.from("events").select("character_id").eq("campaign_id", cid).order("id").range(f, t));
+      for (const e of all.data) if (e.character_id) tally[e.character_id] = (tally[e.character_id] || 0) + 1;
+    }
     setCounts(tally);
     setLoading(false);
   }

@@ -66,6 +66,10 @@ const MAX_JSON_CHARS = 16000;
 // Push 42 (audit round 2, T11): at most this many events per campaign in any minute. A busy table rolls
 // a few dozen times a minute; this only stops a stuck retry loop or a script from burying the session.
 const MAX_EVENTS_PER_CAMPAIGN_MINUTE = 300;
+// Push 46 (audit round 2, LV10): a session started more than this long ago and never ended is not live.
+// A test session left open for days collected a player's D&D Beyond rolls from their other tables,
+// since the extension sends to every table it has a code for that has a session open.
+const STALE_SESSION_HOURS = 18;
 
 /** A stable id for an event its sender gave none (Beyond20, Foundry): the same roll sent twice (a retried
  *  batch) gets the same id, so the unique index from p160 stores it once. Only when the roll carries its
@@ -238,15 +242,20 @@ export async function POST(request: NextRequest) {
 
   // campaign_id -> { session_id, ts } keeping the most-recently-started open session.
   const liveByCampaign = new Map<string, { sessionId: string; ts: number }>();
+  const staleBefore = Date.now() - STALE_SESSION_HOURS * 3600 * 1000;
+  let staleSessions = 0;
   for (const s of openSessions ?? []) {
     const ts = new Date((s as any).started_at || (s as any).created_at || 0).getTime();
+    if (ts < staleBefore) { staleSessions += 1; continue; }
     const cur = liveByCampaign.get((s as any).campaign_id);
     if (!cur || ts > cur.ts) liveByCampaign.set((s as any).campaign_id, { sessionId: (s as any).id, ts });
   }
   const liveCampaignIds = Array.from(liveByCampaign.keys());
   if (liveCampaignIds.length === 0) {
     return NextResponse.json(
-      { error: "No open session in any of your campaigns. Start a session in the app, then send events." },
+      { error: staleSessions
+          ? `The session open in your campaign started more than ${STALE_SESSION_HOURS} hours ago, so rolls no longer go into it. Your GM ends it and starts tonight's session.`
+          : "No open session in any of your campaigns. Start a session in the app, then send events." },
       { status: 409, headers: CORS }
     );
   }
