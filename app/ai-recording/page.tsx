@@ -18,7 +18,7 @@ export default function AiRecordingDisclosurePage() {
   return (
     <LegalPage>
       <h1>AI &amp; Recording Disclosure</h1>
-      <p className="meta">Last updated: November 3, 2026</p>
+      <p className="meta">Last updated: November 12, 2026</p>
 
       <h2>What this is</h2>
       <p>Six Axes can record your game session, turn it into a transcript, and use AI to pull out what happened so you get a recap and table analytics without taking notes. This page explains exactly what that involves, so everyone at the table can make an informed choice before anything is recorded.</p>
@@ -26,7 +26,7 @@ export default function AiRecordingDisclosurePage() {
       <h2>What gets recorded</h2>
       <ul>
         <li><strong>Session audio</strong>, only when your GM starts a recording, and only after consent has been given. <strong>If your table records through Discord, the bot joining the voice channel is the signal that recording has started</strong>. There is no separate badge, so your GM should say so out loud.</li>
-        <li><strong>Online</strong>, audio is captured as a <strong>separate track per speaker</strong>. You can <strong>decline</strong>: your track is then dropped before it ever reaches us, and the rest of the table can still record. Withdraw at any time by telling your GM, and you are excluded from that session onward.</li>
+        <li><strong>Online</strong>, audio is captured as a <strong>separate track per speaker</strong>. You can <strong>decline</strong>: the recorder then throws your audio away the moment it arrives, so it is never saved, uploaded or transcribed, and the rest of the table can still record. Anyone in the channel who is not linked to a character is treated the same way. You can stop or start recording of your voice yourself, in Settings (or with /consent in Discord), or ask your GM; a change takes effect within about a minute.</li>
         <li><strong>In person</strong>, one laptop or tablet records the room, and one microphone cannot leave a single voice out. So <strong>everyone present has to agree</strong>, and the GM confirms that before the recording starts. If anyone says no, that session should not be recorded.</li>
       </ul>
 

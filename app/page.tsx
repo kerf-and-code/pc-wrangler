@@ -37,7 +37,8 @@ import { LANDING_NAV, PILOT_CTA } from "@/lib/marketing/nav";
 // Initiative page, the GM screen) with a new combat capture; the compendium figure and count brought up
 // to the current library; the systems section says what the D&D builder now covers; the integrations
 // say plainly that only D&D Beyond rolls (whichever VTT they are sent to) and Foundry rolls arrive
-// automatically, not native Roll20 rolls.
+// automatically, not native Roll20 rolls. Push 43 (2026-11-12): Roll20 chat rolls now arrive too, through
+// the extension (push 38).
 //
 // Server-rendered, because this is the URL every link points at and a crawler needs the content.
 // Client islands: the section rail, the reveal observer, and the lit line, all progressive
@@ -382,6 +383,7 @@ export default function Home() {
           <div className="nt-integrations" data-reveal>
             <p><strong>Discord.</strong> The bot records your voice channel with each player on their own track.</p>
             <p><strong>D&amp;D Beyond.</strong> The browser extension catches every roll made there, whichever virtual tabletop it is sent on to.</p>
+            <p><strong>Roll20.</strong> Turn on Roll20 in the same extension and it reads /r rolls and the 2024 D&amp;D sheet&rsquo;s rolls from your game&rsquo;s chat.</p>
             <p><strong>Foundry VTT.</strong> A module pipes every roll straight in. <Link href="/foundry" className="nt-link">Set it up</Link></p>
             <p><strong>In person.</strong> One laptop or tablet records the room, and the rolls your table says out loud are read from the transcript.</p>
           </div>

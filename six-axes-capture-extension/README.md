@@ -40,6 +40,12 @@ Beyond20's roll DOM events on the D&D Beyond page itself. This is **Option B**.
 - Store review is typically a few days. Once listed, player setup becomes: install
   Beyond20 + install Six Axes Capture + paste code. No custom domain, ever.
 
+## 2.4.1 (push 43): the popup says what Roll20 capture reads
+
+The popup's Roll20 text now says plainly that it sends every roll in the Roll20 game's chat, other
+players' included, with the names they roll under (audit round 2, T3). No behaviour change. Submit it
+after 2.4.0 clears review, with the store listing text in docs/chrome-web-store-submission.md.
+
 ## Roll20 (2.4.0, push 38)
 Rolls made inside Roll20 itself (`/r` commands and the 2024 D&D character sheet's buttons) are read
 from the Roll20 chat by `roll20.js`. Roll20's own scripting cannot send anything out and needs a Pro

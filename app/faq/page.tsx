@@ -11,7 +11,7 @@ import { FULL_TOOLSET, THEMED_TABLE, systemsAnd } from "@/lib/marketing/systems"
 //
 // Quick answers, weighted toward the questions a table actually asks first: consent, recording,
 // and data ownership. Updated 2026-11-03: consent split online (per person) vs in person (room), the
-// provider list, Roll20 corrected (only D&D Beyond rolls sent on to it are captured), and a during-play
+// provider list, Roll20 corrected (only D&D Beyond rolls sent on to it are captured; push 43: Roll20 chat rolls now too), and a during-play
 // answer for Tonight, combat and the compendium. Native <details>/<summary> accordions, so it is server-rendered with no client
 // JS and stays crawlable. Allowlisted in proxy.ts.
 
@@ -151,10 +151,10 @@ const FAQ: QA[] = [
     a: (
       <>
         Both. Online tables record over Discord with each player on their own track, and rolls from
-        D&amp;D Beyond or Foundry arrive automatically. In-person tables record over one microphone in the
-        room, and it reads the rolls spoken aloud, which is the thing no audio-only tool does. A Roll20
-        table gets the recording and everything built from it, but rolls made natively in Roll20 are not
-        captured yet.
+        D&amp;D Beyond, Roll20 or Foundry arrive automatically. In-person tables record over one microphone in
+        the room, and it reads the rolls spoken aloud, which is the thing no audio-only tool does. In Roll20,
+        the browser extension reads /r rolls and the 2024 D&amp;D sheet&rsquo;s rolls from the game&rsquo;s chat
+        once a player turns it on; other sheets&rsquo; roll templates are not read yet.
       </>
     ),
   },
@@ -210,7 +210,7 @@ const FAQ_TEXT: { q: string; a: string }[] = [
   },
   {
     q: "In person or online?",
-    a: "Both. Online tables record over Discord with each player on their own track, and rolls from D&D Beyond or Foundry arrive automatically. In-person tables record over one microphone in the room, and it reads the rolls spoken aloud, which is the thing no audio-only tool does. A Roll20 table gets the recording and everything built from it, but rolls made natively in Roll20 are not captured yet.",
+    a: "Both. Online tables record over Discord with each player on their own track, and rolls from D&D Beyond, Roll20 or Foundry arrive automatically. In-person tables record over one microphone in the room, and it reads the rolls spoken aloud, which is the thing no audio-only tool does. In Roll20, the browser extension reads /r rolls and the 2024 D&D sheet's rolls from the game's chat once a player turns it on; other sheets' roll templates are not read yet.",
   },
 ];
 

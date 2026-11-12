@@ -226,8 +226,8 @@ async function renderRoll20() {
   r20Btn.textContent = on ? "Turn off Roll20" : "Turn on Roll20";
   r20Btn.className = on ? "r20-off" : "";
   r20Text.textContent = on
-    ? "On. Rolls you make in the Roll20 chat go to whichever of your tables has a session open. Reload an open Roll20 game for it to start."
-    : "Playing on Roll20? Turn this on and the rolls you make in the Roll20 chat go to your table too. Chrome asks first for access to Roll20.";
+    ? "On. Every roll in an open Roll20 game's chat (yours and other players') goes to whichever of your tables has a session open. Reload an open Roll20 game for it to start."
+    : "Playing on Roll20? Turn this on and the rolls in your Roll20 game's chat go to your table too: yours and everyone else's in that game, with the names they roll under. Chrome asks first for access to Roll20.";
 }
 r20Btn.addEventListener("click", async () => {
   r20Status.textContent = "";

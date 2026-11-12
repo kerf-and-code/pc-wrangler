@@ -50,12 +50,13 @@ export default function TableTapCard({ shareCode }: { shareCode: string }) {
         color: C.text, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}
     >
       <h2 style={{ color: C.brass, fontSize: 16, margin: "0 0 4px" }}>
-        Capture rolls from D&amp;D Beyond
+        Capture rolls from D&amp;D Beyond and Roll20
       </h2>
       <p style={{ color: C.muted, fontSize: 13, margin: "0 0 14px", lineHeight: 1.5 }}>
         Send each player one link. They install the Six Axes Capture extension once,
         and their rolls flow to this table automatically while a session is open. No
-        codes to type, no tab to keep open.
+        codes to type, no tab to keep open. Roll20 players also turn on Roll20 in the
+        extension; it then reads every roll in that game&apos;s chat.
       </p>
 
       <div style={{ fontSize: 11, letterSpacing: "0.08em", color: C.muted, marginBottom: 6 }}>

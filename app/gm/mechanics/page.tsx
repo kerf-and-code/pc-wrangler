@@ -284,7 +284,7 @@ export default function MechanicsPage() {
       </div>
       <h1 style={{ fontFamily: SAX.serif, fontSize: 30, fontWeight: 700, margin: "0 0 8px" }}>Mechanics</h1>
       <p style={{ color: C.muted, fontSize: 14.5, lineHeight: 1.6, margin: "0 0 18px", maxWidth: 640 }}>
-        Descriptive stats from rolls captured at the table: who rolled, how the dice treated them, damage dealt, and hit points over the session. Numbers marked unverified came from players without digital dice enabled.
+        Descriptive stats from rolls captured at the table: who rolled, how the dice treated them, damage dealt, and hit points over the session. A roll is marked unverified when its sender has not connected Six Axes Capture to their account (they open the player setup link while signed in and press Connect the extension to me), or when Beyond20 sent a formula instead of a result (turn on D&amp;D Beyond digital dice in Beyond20).
       </p>
 
       <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>

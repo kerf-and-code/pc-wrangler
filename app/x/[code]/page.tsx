@@ -79,8 +79,8 @@ function LinkLanding() {
           Join your table on Six Axes
         </h1>
         <p style={{ color: C.muted, fontSize: 14, lineHeight: 1.55, margin: "0 0 20px" }}>
-          Your rolls on D&amp;D Beyond flow to your GM&apos;s table analytics. Two
-          browser extensions, then you&apos;re done. No codes to type.
+          Your rolls on D&amp;D Beyond or in Roll20 flow to your GM&apos;s table analytics. One or
+          two browser extensions, then you&apos;re done. No codes to type.
         </p>
 
         <div
@@ -97,8 +97,8 @@ function LinkLanding() {
                 You&apos;re all set.
               </div>
               <div style={{ color: C.muted, fontSize: 13.5, marginTop: 6, lineHeight: 1.5 }}>
-                Your table code is saved. Open your character on D&amp;D Beyond and
-                roll while your GM has a session open.
+                Your table code is saved. Open your character on D&amp;D Beyond, or your
+                Roll20 game, and roll while your GM has a session open.
               </div>
             </>
           ) : (
@@ -129,7 +129,7 @@ function LinkLanding() {
             <a href={BEYOND20_CHROME} target="_blank" rel="noreferrer" style={{ color: C.sun }}>
               Beyond20
             </a>{" "}
-            (rolls your dice on D&amp;D Beyond).
+            (rolls your dice on D&amp;D Beyond; skip it if you only play in Roll20).
           </li>
           <li>
             Install{" "}
@@ -143,6 +143,11 @@ function LinkLanding() {
             (sends your rolls to the table).
           </li>
           <li>Reopen this link. The code saves on its own.</li>
+          <li>
+            Playing in Roll20? Open Six Axes Capture from the browser toolbar and turn on Roll20. It
+            then reads the rolls in your Roll20 game&apos;s chat, which includes other players&apos;
+            rolls and the names they roll under.
+          </li>
         </ol>
 
         <RollKeyForExtension code={code} extensionVersion={extVersion} />

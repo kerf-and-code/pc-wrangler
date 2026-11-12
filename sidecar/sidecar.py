@@ -564,6 +564,12 @@ class TimelineSink(discord.sinks.WaveSink):
         self.stop_perf = None                   # set by rotate_chunk when the chunk closes
         self._expected: dict = {}               # user -> next expected RTP timestamp
         self._seen: set = set()                 # users already anchored with leading silence
+        # Consent at capture (push 43, audit round 2 T1): the Discord ids whose audio may be kept.
+        # Everyone else's packets are dropped in write() as they arrive, before anything is buffered
+        # or written to disk. Empty until the Recording hands its set over, so a sink that was never
+        # given one keeps nothing (fail closed). See Recording.new_sink and Bot.refresh_permits.
+        self.allowed: frozenset = frozenset()
+        self.dropped: set = set()               # ids whose audio was discarded in this chunk
 
     # The event router registers listeners it finds in __sink_listeners__ as
     # (lookup_key, method_name); it dispatches "rtcp_packet" to the "on_rtcp_packet"
@@ -604,6 +610,12 @@ class TimelineSink(discord.sinks.WaveSink):
             pcm = data
             rtp = None
         if not pcm:
+            return
+
+        # Consent at capture: a speaker without standing consent (or opted out of this session, or
+        # not linked to anyone in the campaign) is never buffered. Their packet ends here.
+        if str(getattr(user, "id", user)) not in self.allowed:
+            self.dropped.add(str(getattr(user, "id", user)))
             return
 
         if user not in self.audio_data:
@@ -661,6 +673,17 @@ class Recording:
         self.notified_drop = False      # one drop notice per outage, cleared on reconnect
         self.started_at = time.monotonic()  # for MAX_RECORDING_HOURS
         self.empty_since = None             # monotonic time the channel last emptied of people
+        # Consent at capture (T1): Discord ids whose audio may be kept, refreshed every chunk by
+        # Bot.refresh_permits. None until the first successful load; a sink made before then keeps
+        # nothing.
+        self.allowed = None
+        self.dropped_ids: set = set()       # everyone discarded at capture, for the stop summary
+
+    def new_sink(self):
+        """A TimelineSink that keeps only the audio of speakers this recording is allowed to keep."""
+        sink = TimelineSink()
+        sink.allowed = self.allowed or frozenset()
+        return sink
 
     def cleanup(self):
         shutil.rmtree(self.tmpdir, ignore_errors=True)
@@ -1005,7 +1028,8 @@ class Sidecar(discord.Client):
 
             rec = Recording(rid, vc, str(chan_id), str(row.get("guild_id")),
                             row.get("campaign_id"), row.get("session_id"))
-            rec.sink = TimelineSink()
+            await self.refresh_permits(http, rec)
+            rec.sink = rec.new_sink()
             try:
                 vc.start_recording(rec.sink, _after_record)
             except Exception as e:
@@ -1094,6 +1118,9 @@ class Sidecar(discord.Client):
                 continue
             # Rotate the sink on schedule to bound memory.
             if time.monotonic() - rec.chunk_started_at >= FLUSH_SECONDS:
+                # A player who /claims or consents mid-session is kept from the next chunk on;
+                # one who opts out is dropped from the next chunk on.
+                await self.refresh_permits(http, rec)
                 await self.rotate_chunk(rec, restart=True)
 
     # ----------------------------------------------------------- start / stop
@@ -1144,7 +1171,9 @@ class Sidecar(discord.Client):
             return
         rec = Recording(rid, vc, chan_id, g, row.get("campaign_id"), row.get("session_id"))
         rec.notify_channel_id = notify_channel
-        rec.sink = TimelineSink()
+        # Consent at capture (T1): know whose audio may be kept BEFORE the first packet arrives.
+        await self.refresh_permits(http, rec)
+        rec.sink = rec.new_sink()
         try:
             vc.start_recording(rec.sink, _after_record)
         except Exception as e:
@@ -1188,7 +1217,7 @@ class Sidecar(discord.Client):
         except Exception as e:
             log.warning("recording %s: stop_recording during rotation raised: %r", rec.rid, e)
         if restart:
-            new_sink = TimelineSink()
+            new_sink = rec.new_sink()
             try:
                 rec.vc.start_recording(new_sink, _after_record)
                 rec.sink = new_sink
@@ -1223,6 +1252,11 @@ class Sidecar(discord.Client):
         except Exception as e:
             log.warning("chunk %d: sink read failed: %r", idx, e)
             return
+        dropped = set(getattr(sink, "dropped", set()) or set())
+        if dropped:
+            rec.dropped_ids |= dropped
+            log.info("  chunk %d: discarded at capture, never written: %d speaker(s) without consent or not linked.",
+                     idx, len(dropped))
 
         # Pass 1: stage every speaker to disk and measure it from the header. The sink
         # already inserted leading and interior silence, so each staged WAV spans from
@@ -1291,7 +1325,7 @@ class Sidecar(discord.Client):
             if channel is None:
                 return False
             rec.vc = await channel.connect(timeout=30.0, reconnect=False)
-            rec.sink = TimelineSink()
+            rec.sink = rec.new_sink()
             rec.vc.start_recording(rec.sink, _after_record)
             rec.chunk_started_at = time.monotonic()
             log.info("recording %s: reconnected and resumed (chunk %d).", rec.rid, rec.chunk_index)
@@ -1390,6 +1424,11 @@ class Sidecar(discord.Client):
             return
 
         # Per-speaker consent, resolved ONCE for the whole job.
+        #
+        # Since push 43 (audit round 2, T1) this is the SECOND gate: TimelineSink.write already
+        # dropped, as each packet arrived, every speaker refresh_permits did not allow, so their audio
+        # was never buffered or written to disk. This check still runs, for a consent withdrawn in
+        # the last chunk and as a backstop.
         #
         # Consent is enforced HERE, at finalize, rather than downstream at transcription.
         # The difference matters: a speaker who has not consented never has their audio
@@ -1587,6 +1626,10 @@ class Sidecar(discord.Client):
                  "%d chunk(s).",
                  rec.rid, job_id, heard, uploaded, unmapped, refused, failed, orphaned,
                  rec.chunk_index)
+        if rec.dropped_ids:
+            # Consent at capture (T1): these were never buffered or written, so they are not "heard".
+            log.info("  plus %d speaker(s) discarded as their audio arrived (no consent, opted out, or not linked).",
+                     len(rec.dropped_ids - set(rec.speaker_chunks)))
         if failed or orphaned:
             log.error("STOPPED WITH LOSSES: %d speaker(s) recorded but not delivered for job %s.",
                       failed + orphaned, job_id)
@@ -1674,6 +1717,62 @@ class Sidecar(discord.Client):
         log.info("consent: %d character(s) with standing consent, %d opted out of this session.",
                  len(consented), len(opted_out))
         return consented, opted_out
+
+    async def refresh_permits(self, http, rec):
+        """Consent at capture (push 43, audit round 2 T1). Which Discord ids this recording may keep:
+
+          the campaign's GM narrator ids (gm_identities), exempt as at finalize, and
+          the Discord id of every active player character with standing consent and no opt-out
+          for this session, the same rule _finalize_impl applies.
+
+        Everyone else (a player who declined, a guest with no character, anyone passing through the
+        channel) is dropped by TimelineSink.write as the packet arrives, so their audio is never
+        buffered, written to disk or uploaded. The finalize gate stays as a second check.
+
+        On a failed lookup the previous set is kept (a network blip must not silence the table
+        mid-session); before the first successful load the set is empty, so nothing is kept."""
+        if not rec.campaign_id:
+            rec.allowed = frozenset()
+            return
+        try:
+            g = await http.get(f"{REST}/gm_identities",
+                               params={"campaign_id": f"eq.{rec.campaign_id}", "select": "discord_user_id"},
+                               headers=HEADERS)
+            g.raise_for_status()
+            c = await http.get(f"{REST}/characters",
+                               params={"campaign_id": f"eq.{rec.campaign_id}", "kind": "eq.pc", "active": "eq.true",
+                                       "discord_user_id": "not.is.null", "select": "id,discord_user_id"},
+                               headers=HEADERS)
+            c.raise_for_status()
+            b = await http.get(f"{REST}/recording_consents",
+                               params={"campaign_id": f"eq.{rec.campaign_id}", "session_id": "is.null",
+                                       "consented": "is.true", "select": "character_id"},
+                               headers=HEADERS)
+            b.raise_for_status()
+            opted = set()
+            if rec.session_id:
+                o = await http.get(f"{REST}/recording_consents",
+                                   params={"session_id": f"eq.{rec.session_id}", "consented": "is.false",
+                                           "select": "character_id"},
+                                   headers=HEADERS)
+                o.raise_for_status()
+                opted = {r["character_id"] for r in o.json() if r.get("character_id")}
+            consented = {r["character_id"] for r in b.json() if r.get("character_id")}
+            allowed = {str(r["discord_user_id"]) for r in g.json() if r.get("discord_user_id")}
+            for ch in c.json():
+                if ch["id"] in consented and ch["id"] not in opted:
+                    allowed.add(str(ch["discord_user_id"]))
+        except Exception as e:
+            log.warning("refresh_permits(%s) failed, keeping the previous set: %r", rec.rid, e)
+            if rec.allowed is None:
+                rec.allowed = frozenset()
+            return
+        new = frozenset(allowed)
+        if new != rec.allowed:
+            log.info("recording %s: %d speaker(s) may be recorded.", rec.rid, len(new))
+        rec.allowed = new
+        if rec.sink is not None:
+            rec.sink.allowed = new   # a reference swap: the audio thread sees the old set or the new one
 
     async def resolve_gm_identity(self, http, campaign_id, discord_uid):
         """A speaker who is not an active PC may be the GM narrator. Match their

@@ -85,7 +85,7 @@ export default function GettingStartedPage() {
       href: "/gm/tonight", cta: "Open Tonight", alt: { href: "/gm/record", cta: "Record the room" }, done: flags.record },
     { key: "review", label: "Review the events", desc: "Approve or reject the moments Six Axes noted from the recording. When you mark it done, a player recap is drafted for you and the disposition read refreshes.", href: "/gm/review", cta: "Open Review", done: flags.review },
     { key: "schedule", label: "Schedule your next session", desc: "Set a time so players can RSVP and get a reminder the day before.", href: "/gm/sessions", cta: "Set a time", done: flags.schedule },
-    { key: "tap", label: "Capture table rolls (optional)", desc: "Players who use Beyond20 with D&D Beyond and Roll20 can keep the Table Tap open during sessions. Their attacks, saves, damage, and HP changes flow into recaps and analytics automatically.", href: "", cta: "", done: flags.tap, optional: true },
+    { key: "tap", label: "Capture table rolls (optional)", desc: "Players install the Six Axes Capture extension from the player setup link (below, and on the Roster). Rolls made on D&D Beyond, or in a Roll20 game once they turn Roll20 on, flow into recaps and analytics while a session is open.", href: "", cta: "", done: flags.tap, optional: true },
   ];
 
   const doneCount = steps.filter((s) => s.done).length;

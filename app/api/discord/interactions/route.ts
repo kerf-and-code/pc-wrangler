@@ -1079,7 +1079,7 @@ async function handleRecord(interaction: Interaction) {
           description:
             "Six Axes is capturing each speaker's audio to help your GM build recaps and table analytics. " +
             "Consent is handled when players claim their character, and anyone without it is never recorded at all. " +
-            "Ask your GM to change opt-outs or to delete a recording at any time." + consentNote,
+            "Players can stop their own recording any time with /consent choice:off; ask your GM to change opt-outs or to delete a recording." + consentNote,
           color: BRASS,
         },
       ],
@@ -1219,6 +1219,6 @@ async function handleConsentCommand(interaction: Interaction) {
     }
   }
   return ephemeral(on
-    ? `Recording is on for you in "${campaign.name}". Turn it off any time with /consent choice:off.`
-    : `Recording is off for you in "${campaign.name}". From the next recording your voice is not uploaded or transcribed. Turn it back on with /consent choice:on.`);
+    ? `Recording is on for you in "${campaign.name}" (from about a minute from now if a recording is running). Turn it off any time with /consent choice:off.`
+    : `Recording is off for you in "${campaign.name}". Within about a minute, including in a recording already running, the bot stops keeping your voice, and it is not transcribed. Turn it back on with /consent choice:on.`);
 }
