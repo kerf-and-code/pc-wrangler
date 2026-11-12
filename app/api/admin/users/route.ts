@@ -7,8 +7,9 @@ import { isOwner } from "@/lib/owner";
 //
 // The owner console's data. GET lists every account with its pilot access, the campaigns it runs, when
 // it last signed in, and what its campaigns used in the last 30 days (usage_events, p147). POST changes
-// one account's access: "gm" or "player" grants it (the same flags /api/gate sets when a code is
-// entered), "revoke" takes it away. Both check OWNER_IDS on every call and use the service role, so a
+// one account's access: "gm" or "player" grants it (the same flags the GM_EMAILS list sets,
+// lib/gm-allowlist.ts), "revoke" takes it away (an account still on GM_EMAILS gets GM access back on
+// its next visit, so take it off the list too). Both check OWNER_IDS on every call and use the service role, so a
 // signed-in non-owner gets 403 and nothing else.
 
 type Profile = { id: string; display_name: string | null; email: string | null; is_anonymous: boolean; access_granted: boolean; access_role: string | null; created_at: string };

@@ -10,9 +10,9 @@ import { FULL_TOOLSET, THEMED_TABLE, systemsAnd } from "@/lib/marketing/systems"
 // the honest, detailed pitch that used to live on the landing page (recording done properly, what you
 // need, this is early), updated for the multi-system reality, and ends in an application form.
 //
-// WHY AN APPLICATION FORM, NOT SIGN-UP: the app is behind an access code now (see proxy.ts, the
-// secondary pilot gate on profiles.access_granted), so open sign-up would just deposit people at the
-// /enter code screen. Instead this collects who they are and what their table looks like and emails
+// WHY AN APPLICATION FORM, NOT SIGN-UP: GM access is by invitation (GM_EMAILS, lib/gm-allowlist.ts,
+// and the owner console; the old access code was retired 2026-11-12), so open sign-up would just
+// deposit people at /enter, told they are not on the list. Instead this collects who they are and what their table looks like and emails
 // it to the admin, who invites them in. The form posts to /api/pilot-request, which must be on the
 // logged-out allowlist in proxy.ts or it 307s to /auth/login.
 //

@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
 import { hasEnvVars } from "../utils";
 import { coGmsAnything } from "../campaign-gm";
+import { grantFromAllowlist } from "../gm-allowlist";
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
@@ -168,22 +169,23 @@ export async function updateSession(request: NextRequest) {
   }
 
   // ---- Secondary access gate (private pilot): GM tools only ----
-  // A signed-in user who has not entered the GM access code is held at /enter, but ONLY on the GM tools
-  // (/gm). The player side (/me) is no longer gated (2026-11-06): players arrive from Discord's /mypage
-  // and /claim already tied to a character, and a second code in front of their own pages only locked
-  // them out. The published wiki, share links, auth and legal pages stay open via the allowlist above,
-  // and /enter itself is never gated. The flag lives on profiles.access_granted and is set ONLY by
-  // /api/gate, after the code is verified server-side, so a user cannot grant themselves by calling the
-  // database directly.
+  // A signed-in account without GM access is held at /enter, but ONLY on the GM tools (/gm). The player
+  // side (/me) is not gated (2026-11-06): players arrive from Discord's /mypage and /claim already tied
+  // to a character. The published wiki, share links, auth and legal pages stay open via the allowlist
+  // above, and /enter itself is never gated.
+  //
+  // GM ACCESS BY EMAIL (push 41.5, 2026-11-12): the shared access code is retired. An account whose
+  // verified email is on GM_EMAILS (server environment) is given GM access on its first visit here, by
+  // lib/gm-allowlist.ts, which writes the same profiles flags the code used to. The owner console still
+  // grants and revokes by hand. Co-GMs (p149) keep their campaign-only access without the flag.
   if (user) {
     const path = request.nextUrl.pathname;
     if (path.startsWith("/gm")) {
       // Read the pilot flags with the SERVICE ROLE, not the `supabase` client above. That client is
       // authenticated via getClaims(), which validates the JWT but does not attach the session to a
       // PostgREST query, so a `.from("profiles")` read here goes out effectively anonymous and RLS
-      // returns nothing, bouncing a genuinely-granted user back to /enter forever. The service role
-      // reads the true row (it only reads, and only this user's own id), the same key /api/gate writes
-      // the flag with. If the key is somehow missing we fail closed to /enter, exactly as before.
+      // returns nothing. The service role reads the true row (only this user's own id). If the key is
+      // somehow missing we fail closed to /enter.
       const admin = process.env.SUPABASE_SERVICE_ROLE_KEY
         ? createClient(
             process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -198,20 +200,18 @@ export async function updateSession(request: NextRequest) {
             .eq("id", user.sub as string)
             .maybeSingle()
         : { data: null };
+      let isGm = !!profile?.access_granted && profile?.access_role === "gm";
+      // Not a GM yet: on the GM_EMAILS list? Then become one now (a one-time write).
+      if (!isGm && admin) isGm = await grantFromAllowlist(admin, user.sub as string);
       // Co-GMs (p149, push 18): an account that co-GMs a campaign may use /gm for it without the
       // account-wide GM flag (Terry, 2026-11-10: campaign-only access). Pages list only the campaigns
       // they run, and starting a new campaign stays with GM access.
-      const coGm = admin && profile?.access_role !== "gm" ? await coGmsAnything(admin, user.sub as string) : false;
-      if (!profile?.access_granted && !coGm) {
-        // No code entered yet: send to the code screen.
+      const coGm = !isGm && admin ? await coGmsAnything(admin, user.sub as string) : false;
+      if (!isGm && !coGm) {
+        // /enter explains: GM access is by invitation, and players have their own pages.
         const url = request.nextUrl.clone();
         url.pathname = "/enter";
-        return NextResponse.redirect(url);
-      }
-      if (path.startsWith("/gm") && profile?.access_role !== "gm" && !coGm) {
-        // In the pilot on a player code: the GM tools are off-limits, send them to their own area.
-        const url = request.nextUrl.clone();
-        url.pathname = "/me";
+        url.search = "";
         return NextResponse.redirect(url);
       }
     }

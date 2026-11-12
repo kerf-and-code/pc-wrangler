@@ -4,8 +4,8 @@ import { isCampaignGm } from "@/lib/campaign-gm";
 // lib/ai-allowance.ts (2026-11-09)
 //
 // Audit T4: every paid AI call goes through here first. Three rules:
-//   1. Pilot access: only an account that entered the GM access code (profiles.access_granted with
-//      access_role "gm", set by /api/gate) may spend. The page gate in lib/supabase/proxy.ts covers /gm
+//   1. Pilot access: only an account with GM access (profiles.access_granted with access_role "gm",
+//      given from the GM_EMAILS list by lib/gm-allowlist.ts or by the owner console) may spend. The page gate in lib/supabase/proxy.ts covers /gm
 //      pages only, not the API, so the routes check it themselves. A co-GM of the campaign (p149) may
 //      spend on that campaign without the account-wide flag (Terry, 2026-11-10: campaign-only access).
 //   2. A daily budget per GM and per kind, over any 24 hours, counted in ai_map_renders (p59, kind p135).
@@ -34,7 +34,7 @@ export async function hasGmAccess(admin: SupabaseClient, userId: string): Promis
 
 export async function reserveAi(admin: SupabaseClient, userId: string, campaignId: string, kind: AiKind): Promise<AiGrant | AiRefusal> {
   if (!(await hasGmAccess(admin, userId)) && !(await isCampaignGm(admin, campaignId, userId))) {
-    return { ok: false, status: 403, error: "AI tools need GM access: enter your GM access code first." };
+    return { ok: false, status: 403, error: "AI tools need GM access. During the pilot it is given by invitation: ask for it from the Pilot page." };
   }
   const limit = AI_DAILY[kind];
   const since = new Date(Date.now() - 24 * 3600 * 1000).toISOString();

@@ -49,7 +49,7 @@ export async function POST(request: Request) {
     // Audit T4: imports spend model calls, so they need GM pilot access (the /gm page gate does not cover
     // the API). lib/backfill/extract.ts caps the calls one import can make.
     if (!(await hasGmAccess(admin, user.id)) && !(await isCampaignGm(admin, campaignId, user.id))) {
-      return NextResponse.json({ error: "Importing needs GM access: enter your GM access code first." }, { status: 403 });
+      return NextResponse.json({ error: "Importing needs GM access. During the pilot it is given by invitation: ask for it from the Pilot page." }, { status: 403 });
     }
 
     // Open the job first, so a failure mid-extraction still leaves a record the GM can see and retry.

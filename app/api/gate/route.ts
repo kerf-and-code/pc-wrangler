@@ -2,18 +2,17 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
+import { grantFromAllowlist } from "@/lib/gm-allowlist";
+import { coGmsAnything } from "@/lib/campaign-gm";
 
-// Verify the pilot access code and, if it matches, set profiles.access_granted for the signed-in user.
+// Where the signed-in account stands with GM access, for /enter.
 //
-// WHY THE CODE IS CHECKED HERE, NOT IN THE DATABASE
-//   The code lives in the SITE_ACCESS_CODE env var, so only the server can read it. The browser sends
-//   an attempt; the server decides. The grant is written with the SERVICE ROLE, not the user's own
-//   client, so a user cannot flip their own access_granted by calling the table directly, they can
-//   only get it set by presenting the correct code to this route.
-export async function POST(request: Request) {
-  const { code } = (await request.json().catch(() => ({ code: "" }))) as { code?: string };
-
-  // Who is asking (their session cookies).
+// Push 41.5 (2026-11-12): the pilot's shared access codes (SITE_ACCESS_CODE, PLAYER_ACCESS_CODE) are
+// retired. GM access now comes from GM_EMAILS (lib/gm-allowlist.ts) or the owner console. This route
+// takes no code: it answers whether the caller is a GM, giving GM access first if their verified email
+// is on the list. The grant is written with the SERVICE ROLE, never the caller's own client, so nobody
+// can set their own flag.
+export async function POST() {
   const cookieStore = await cookies();
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -21,36 +20,21 @@ export async function POST(request: Request) {
     { cookies: { getAll: () => cookieStore.getAll(), setAll: () => {} } },
   );
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    return NextResponse.json({ ok: false, error: "Sign in first." }, { status: 401 });
-  }
+  if (!user) return NextResponse.json({ signedIn: false, gm: false });
 
-  // Two codes: a GM code and a player code. Either one is a valid key to the pilot, so you can hand
-  // them out and rotate them separately. Both grant the same access_granted flag.
-  const gmCode = process.env.SITE_ACCESS_CODE;
-  const playerCode = process.env.PLAYER_ACCESS_CODE;
-  if (!gmCode && !playerCode) {
-    // Misconfigured: fail closed rather than letting everyone through.
-    return NextResponse.json({ ok: false, error: "The gate isn't configured yet." }, { status: 500 });
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    return NextResponse.json({ signedIn: true, gm: false, error: "The server is not set up to check access." }, { status: 500 });
   }
-  const attempt = (code || "").trim();
-  let role: "gm" | "player" | null = null;
-  if (gmCode && attempt === gmCode) role = "gm";
-  else if (playerCode && attempt === playerCode) role = "player";
-  if (!role) {
-    return NextResponse.json({ ok: false, error: "That code isn't right." });
-  }
-
-  // Grant with the service role so the write can't be forged from the client.
   const admin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY,
     { auth: { persistSession: false, autoRefreshToken: false } },
   );
-  const { error } = await admin.from("profiles").update({ access_granted: true, access_role: role }).eq("id", user.id);
-  if (error) {
-    return NextResponse.json({ ok: false, error: "Couldn't save that. Try again." }, { status: 500 });
-  }
-
-  return NextResponse.json({ ok: true });
+  const { data: profile } = await admin.from("profiles").select("access_granted, access_role").eq("id", user.id).maybeSingle();
+  const p = profile as { access_granted: boolean | null; access_role: string | null } | null;
+  let gm = !!p?.access_granted && p?.access_role === "gm";
+  if (!gm) gm = await grantFromAllowlist(admin, user.id);
+  // A co-GM may open the GM tools for the campaigns they co-GM (p149), without account-wide GM access.
+  const coGm = gm ? false : await coGmsAnything(admin, user.id);
+  return NextResponse.json({ signedIn: true, gm, coGm, anonymous: !!user.is_anonymous, email: user.is_anonymous ? null : (user.email ?? null) });
 }
