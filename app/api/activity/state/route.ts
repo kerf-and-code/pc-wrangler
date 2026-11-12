@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { callAs, combatForWatcher, feedForWatcher, forWatcher, isUuid, placesFor, sessionFrom } from "@/lib/discord/activity";
+import { activityHand } from "@/lib/discord/activity-view";
 
 // GET /api/activity/state?campaign=<id>&since=<iso> (2026-11-11, push 34, audit P7)
 //
@@ -37,13 +38,15 @@ export async function GET(req: Request) {
 
   const safe = async <T,>(p: Promise<T>): Promise<T | null> => { try { return await p; } catch { return null; } };
   const sinceOk = since && !Number.isNaN(Date.parse(since)) ? since : "";
-  const [state, combat, feed, chars] = await Promise.all([
+  const [state, combat, feed, chars, cards] = await Promise.all([
     safe(callAs<Record<string, unknown>>(admin, uid, "tabletop_state", { campaign: campaignId })),
     safe(callAs<Record<string, unknown> | null>(admin, uid, "tabletop_combat", { campaign: campaignId })),
     safe(callAs<Record<string, unknown>>(admin, uid, "tabletop_feed", { campaign: campaignId, since: sinceOk, limit: 40 })),
     place.profileId
       ? admin.from("characters").select("id, name, snap:build->sheetSnapshot").eq("campaign_id", campaignId).eq("profile_id", place.profileId).eq("kind", "pc").order("name")
       : Promise.resolve({ data: [] }),
+    // push 35: the caller's own hand (a watcher holds no cards)
+    place.profileId && place.role !== "watch" ? safe(callAs<unknown>(admin, place.profileId, "tabletop_cards", { campaign: campaignId })) : Promise.resolve(null),
   ]);
   if (place.role === "watch") {
     return NextResponse.json({ ...base, state: forWatcher(state as { tokens?: Record<string, unknown>[] } | null), combat: combatForWatcher(combat as { order?: Record<string, unknown>[] } | null), feed: feedForWatcher(feed as { messages?: { whisper_to?: unknown; gm_only?: boolean }[] } | null) });
@@ -55,5 +58,5 @@ export async function GET(req: Request) {
     const v = Number(r.snap?.init);
     return { id: r.id, name: r.name, init: Number.isFinite(v) ? Math.max(-10, Math.min(30, Math.round(v))) : null };
   });
-  return NextResponse.json({ ...base, me: { ...base.me, characters }, state, combat, feed });
+  return NextResponse.json({ ...base, me: { ...base.me, characters, hand: activityHand(cards) }, state, combat, feed });
 }

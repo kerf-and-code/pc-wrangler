@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { removeAll } from "@/lib/storage/purge";
+import { listAll, removeAll } from "@/lib/storage/purge";
 
 export const maxDuration = 60;
 
@@ -101,6 +101,18 @@ export async function POST(request: Request) {
       );
     }
   }
+
+  // 2c. Their deck library's pictures (push 35, p159): copies kept at library/<uid>/ in the private
+  //     table-files bucket. The library rows go with the profile; the files go here, or are queued.
+  try {
+    const libPaths = await listAll(admin, "table-files", `library/${uid}`);
+    if (libPaths.length > 0) {
+      const r = await removeAll(admin, "table-files", libPaths);
+      if (r.failures.length) {
+        await admin.from("storage_purge_queue").insert(libPaths.map((path) => ({ bucket: "table-files", path, reason: "account_deletion" })));
+      }
+    }
+  } catch { /* a listing failure leaves only pictures nobody can open (the bucket is private) */ }
 
   // 3. The auth user. Cascades the profile, and with it dispositions, threads, and
   //    memberships.

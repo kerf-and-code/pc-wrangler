@@ -37,6 +37,24 @@ export function proxiedUrl(url: string | null | undefined, supabaseUrl: string |
   return null;
 }
 
+/** A card in the player's hand, as the Activity shows it (push 35): its words only. Card pictures are
+ *  served to a signed-in website session (app/api/tabletop/table-file), which the Activity does not have,
+ *  so they are left out. `usable`: one of the GM's own cards (a boon, a bane, inspiration), which the
+ *  player can Use; playing cards are only played. `gift`: someone else put it in their hand. */
+export type HandCard = { id: string; name: string; body: string; deck: string; usable: boolean; gift: boolean };
+export function activityHand(cards: unknown): HandCard[] {
+  const t = (cards ?? null) as {
+    decks?: { id: string; name: string; kind: string }[];
+    hand?: { id: string; deckId: string; name?: string; body?: string; holder?: string | null; givenBy?: string | null }[];
+  } | null;
+  if (!t || !Array.isArray(t.hand)) return [];
+  const decks = new Map((t.decks ?? []).map((d) => [d.id, d]));
+  return t.hand.map((c) => {
+    const d = decks.get(c.deckId);
+    return { id: c.id, name: c.name || "A card", body: c.body ?? "", deck: d?.name ?? "", usable: d?.kind === "custom", gift: !!c.givenBy && c.givenBy !== c.holder };
+  });
+}
+
 /** A die button's notation, with advantage or disadvantage on a d20 and a modifier. */
 export function diceNotation(sides: number, count = 1, mod = 0, adv: "flat" | "adv" | "dis" = "flat"): string {
   const m = mod ? (mod > 0 ? `+${mod}` : `${mod}`) : "";

@@ -14,6 +14,9 @@
 // No Supabase session exists in the iframe, so nothing here talks to Supabase directly; pictures
 // stored in Supabase come through the "/sb" URL mapping (lib/discord/activity-view.ts). The page polls
 // every few seconds; the table on the website is the full tool.
+//
+// Push 35: Your cards, the cards in this person's hand (words only; pictures need a website session),
+// with Use it for the GM's own cards (it goes back to its deck) and Play face up.
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { renderClassic, layoutBare } from "@/lib/dungeon/classic";
@@ -22,7 +25,7 @@ import { normCustom, normDoors, normElements, normBattleMeta, piecesOverImage } 
 import { decodeFog, isRevealed, doorsAsDrawn, edgeSegment } from "@/lib/tabletop/fog";
 import { gridOf, isHex, offsetOf, hexCentres, hexCorners } from "@/lib/tabletop/hex";
 import { snapTokenOn } from "@/lib/tabletop/geometry";
-import { mergeMessages, sinceOf, proxiedUrl, diceNotation, rollLine, type FeedMessage } from "@/lib/discord/activity-view";
+import { mergeMessages, sinceOf, proxiedUrl, diceNotation, rollLine, type FeedMessage, type HandCard } from "@/lib/discord/activity-view";
 
 type Role = "gm" | "player" | "watch";
 type Camp = { id: string; name: string; role: Role };
@@ -47,6 +50,7 @@ export default function ActivityApp() {
   const [combat, setCombat] = useState<Combat>(null);
   const [feed, setFeed] = useState<FeedMessage[]>([]);
   const [chars, setChars] = useState<Char[]>([]);
+  const [hand, setHand] = useState<HandCard[]>([]);
   const [note, setNote] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const inDiscord = useRef(false);
@@ -102,6 +106,7 @@ export default function ActivityApp() {
       setCombat((j.combat as Combat) ?? null);
       setFeed((f) => mergeMessages(f, ((j.feed as { messages?: FeedMessage[] } | null)?.messages) ?? []));
       setChars((((j.me as { characters?: Char[] } | undefined)?.characters) ?? []));
+      setHand((((j.me as { hand?: HandCard[] } | undefined)?.hand) ?? []));
       setNote(typeof j.note === "string" ? j.note : null);
       setErr(null);
     } catch (e) { setErr(e instanceof Error ? e.message : "Lost the table for a moment."); }
@@ -128,6 +133,13 @@ export default function ActivityApp() {
       if (msg) setFeed((f) => mergeMessages(f, [msg]));
       if (opts.initiative) void poll();
     } catch (e) { say(e instanceof Error ? e.message : "That roll did not go through."); }
+  };
+
+  // push 35: use a card from your hand (it goes back to its deck), or play it face up on the table
+  const card = async (c: HandCard, action: "use" | "play") => {
+    if (!camp) return;
+    try { await api("/api/activity/card", { method: "POST", body: JSON.stringify({ campaign: camp.id, card: c.id, action }) }); setHand((h) => h.filter((x) => x.id !== c.id)); void poll(); }
+    catch (e) { say(e instanceof Error ? e.message : "That did not go through."); }
   };
 
   const shell: React.CSSProperties = { minHeight: "100vh", background: DEEP, color: INK, fontFamily: "system-ui, sans-serif", fontSize: 14, boxSizing: "border-box" };
@@ -190,6 +202,7 @@ export default function ActivityApp() {
         <aside style={{ flex: "0 1 340px", minWidth: 280, borderLeft: `1px solid ${LINE}`, overflow: "auto", padding: 12, display: "grid", gap: 14, alignContent: "start" }}>
           <TurnOrder combat={combat} chars={chars} role={camp?.role ?? "watch"} onInitiative={(c) => void roll(`1d20${c.init ? (c.init > 0 ? `+${c.init}` : `${c.init}`) : ""}`, "Initiative", { characterId: c.id, initiative: true })} />
           {camp?.role !== "watch" && <DicePanel chars={chars} gm={camp?.role === "gm"} onRoll={roll} />}
+          {camp?.role !== "watch" && hand.length > 0 && <Hand hand={hand} onCard={(c, a) => void card(c, a)} />}
           <Log feed={feed} />
         </aside>
       </div>
@@ -462,6 +475,31 @@ function DicePanel({ chars, gm, onRoll }: { chars: Char[]; gm: boolean; onRoll: 
           </select>
         )}
         {gm && <label style={{ display: "inline-flex", gap: 4, alignItems: "center", fontSize: 12.5, color: MUTED }}><input type="checkbox" checked={hidden} onChange={(e) => setHidden(e.target.checked)} /> hidden</label>}
+      </div>
+    </section>
+  );
+}
+
+// ---- your cards (push 35) ----
+function Hand({ hand, onCard }: { hand: HandCard[]; onCard: (c: HandCard, action: "use" | "play") => void }) {
+  return (
+    <section>
+      <h2 style={h2}>Your cards <span style={{ color: MUTED, fontWeight: 400, fontSize: 12 }}>{hand.length}</span></h2>
+      <div style={{ display: "grid", gap: 6 }}>
+        {hand.map((c) => (
+          <div key={c.id} style={{ border: `1px solid ${c.gift ? GOLD : LINE}`, borderRadius: 8, padding: "7px 9px", background: PANEL }}>
+            <div style={{ display: "flex", gap: 6, alignItems: "baseline" }}>
+              <b style={{ flex: 1 }}>{c.name}</b>
+              {c.gift && <span style={{ color: GOLD, fontSize: 11.5 }}>given to you</span>}
+            </div>
+            {c.body && <div style={{ fontSize: 12.5, lineHeight: 1.4, marginTop: 2 }}>{c.body}</div>}
+            {c.deck && <div style={{ color: MUTED, fontSize: 11.5, marginTop: 2 }}>{c.deck}</div>}
+            <div style={{ display: "flex", gap: 4, marginTop: 6 }}>
+              {c.usable && <button type="button" style={btn(true)} title="Shows it to the table, then it goes back to its deck" onClick={() => onCard(c, "use")}>Use it</button>}
+              <button type="button" style={btn()} onClick={() => onCard(c, "play")}>Play face up</button>
+            </div>
+          </div>
+        ))}
       </div>
     </section>
   );
