@@ -192,6 +192,15 @@ export default function WorldMapViewer({ campaignId, shareCode, inShell = false 
     if (!poi) { setSelectedEntry(null); setSelectedChar(null); return; }
     let off = false;
     (async () => {
+      // Push 40 (p162): a player on the share link cannot read entries or characters directly (they
+      // have no memberships row), so the popup came up empty for every player. The share-scoped
+      // function returns only what players may see: a visible marker, a place they may read.
+      if (shareCode) {
+        const { data } = await supabase.rpc("world_map_poi_detail_for_player", { p_share: shareCode, p_poi: poi.id });
+        const d = data as { entry: { title: string | null; body: string | null } | null; character: { name: string } | null } | null;
+        if (!off) { setSelectedEntry(d?.entry ?? null); setSelectedChar(d?.character ?? null); }
+        return;
+      }
       if (poi.entry_id) {
         const { data } = await supabase.from("entries").select("title, body").eq("id", poi.entry_id).single();
         if (!off) setSelectedEntry((data as { title: string | null; body: string | null }) || null);
@@ -202,7 +211,7 @@ export default function WorldMapViewer({ campaignId, shareCode, inShell = false 
       } else if (!off) { setSelectedChar(null); }
     })();
     return () => { off = true; };
-  }, [selectedPoi, supabase]);
+  }, [selectedPoi, supabase, shareCode]);
 
   const grouped = useMemo(() => {
     const by: Record<string, Biome[]> = {};

@@ -327,6 +327,24 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
   const [speciesVariant, setSpeciesVariant] = useState<string>("");
   const [portraitUrl, setPortraitUrl] = useState<string | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "picking" | "error" | "signedout">("loading");
+  // Push 40 (p162 forge_access): why a character or library build would not open, said plainly instead of
+  // one "could not be loaded" for every cause.
+  const [loadWhy, setLoadWhy] = useState<string | null>(null);
+  const explainFailure = useCallback(async (kind: "character" | "library", id: string, err: { message?: string; code?: string } | null) => {
+    let why: string | null = null;
+    if (!/^[0-9a-f-]{36}$/i.test(id)) why = "That link is incomplete. Open the character again from your list.";
+    else {
+      const { data, error: e2 } = await supabase.rpc("forge_access", { p_kind: kind, p_id: id });
+      const r = e2 ? null : (data as string | null);
+      why = r === "missing" ? (kind === "library" ? "That build no longer exists. It may have been deleted." : "That character no longer exists. It may have been deleted or retired.")
+        : r === "not_yours" ? "That character belongs to another account. If it is yours, you may be signed in with a different account (Discord, Google or email)."
+        : r === "trashed" ? "That character's campaign is in the GM's trash. It comes back if the GM restores the campaign."
+        : r === "signed_out" ? "You were signed out. Sign in again, then open the character."
+        : err?.message ? `Six Axes could not open it: ${err.message}` : null;
+    }
+    setLoadWhy(why);
+    setStatus("error");
+  }, [supabase]);
   // Starts "saved", NOT "idle". A brand-new build must not auto-persist on load: the first autosave
   // creates the pc_library row and flips mode 'new' -> 'library', which LOCKS the system picker. When
   // this started "idle" the flip fired ~1s after the page opened, so the system dropdown was editable
@@ -383,7 +401,7 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
           .eq("id", libIdParam)
           .single();
         if (!active) return;
-        if (error || !data) { setStatus("error"); return; }
+        if (error || !data) { await explainFailure("library", libIdParam, error); return; }
         const r = data as LibRow;
         const sys = (r as { system?: string }).system || "dnd5e";
         setSystem(sys);
@@ -415,7 +433,7 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
         .eq("id", charId)
         .single();
       if (!active) return;
-      if (error || !data) { setStatus("error"); return; }
+      if (error || !data) { await explainFailure("character", charId, error); return; }
       const r = data as CharRow;
       setRow(r);
       const sys = (r as { system?: string }).system || "dnd5e";
@@ -438,7 +456,7 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
       setStatus("ready");
     })();
     return () => { active = false; };
-  }, [supabase, charId, libIdParam, mode, view]);
+  }, [supabase, charId, libIdParam, mode, view, explainFailure]);
 
   // Seed build.meta / level from the denormalized columns when the stored jsonb is empty (a
   // character claimed at the table has species/class set but may never have been opened here).
@@ -1751,7 +1769,7 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
 
             {status === "loading" && <Muted>Opening the sheet&hellip;</Muted>}
             {status === "signedout" && <Muted>Sign in to open your character sheet.</Muted>}
-            {status === "error" && <Muted>That character could not be loaded. Pick it again from your characters.</Muted>}
+            {status === "error" && <Muted>{loadWhy ?? "That character could not be loaded. Pick it again from your characters."}</Muted>}
             {status === "picking" && <Picking stable={stable} base="/me/sheet" lead="Choose a character to play." />}
             {status === "ready" && !dndReady && (
               <div style={stonePanel()}>
@@ -1938,7 +1956,7 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
 
           {status === "loading" && <Muted>Stoking the forge&hellip;</Muted>}
           {status === "signedout" && <Muted>Sign in to open the Forge.</Muted>}
-          {status === "error" && <Muted>That character could not be loaded. Head back to your stable and try again.</Muted>}
+          {status === "error" && <Muted>{loadWhy ?? "That character could not be loaded. Head back to your stable and try again."}</Muted>}
 
           {status === "picking" && <Picking stable={stable} base="/me/forge" lead="Choose a character to bring to the Forge." />}
 

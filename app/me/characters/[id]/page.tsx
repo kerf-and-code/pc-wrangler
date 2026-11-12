@@ -106,9 +106,16 @@ export default function CharacterPage() {
 
     const { data: campData } = await supabase.from("campaigns")
       .select("gm_id, public_slug, public_published_at").eq("id", character.campaign_id).maybeSingle();
-    const c = campData as Campaign | null;
+    let c = campData as Campaign | null;
+    // Push 40 (p162): a player has no memberships row, so "members read campaigns" refuses them the row
+    // and they were always told their GM had not published. The owner reads the public address here.
+    if (!c) {
+      const { data: pub } = await supabase.rpc("character_campaign_public", { p_character: character.id });
+      const p = pub as { public_slug: string | null; public_published_at: string | null } | null;
+      if (p) c = { gm_id: "", public_slug: p.public_slug, public_published_at: p.public_published_at };
+    }
     setCamp(c);
-    setIsGm(await isCampaignGm(supabase, character.campaign_id, user.id, c?.gm_id ?? null));
+    setIsGm(await isCampaignGm(supabase, character.campaign_id, user.id, c?.gm_id || null));
 
     const [{ data: sData }, { data: gData }] = await Promise.all([
       supabase.from("character_wiki_sections").select("id, title, body, visibility, position").eq("character_id", charId).order("position").order("created_at"),

@@ -16,6 +16,8 @@ The name comes from the six axes the disposition model tracks: Voice, Tactics, A
 
 The newest changes first. Each one says where to find it.
 
+**11 November 2026: replay from the timeline, and fixes for players.** On the Timeline, each place, person and faction a session touched has a play button that replays the first moment it came up in that session's recording. Players now see their campaign's public wiki link on their character page (it always said the GM had not published), markers on the player world map show their place and person again, and the Forge says why a character will not open: deleted, on another account, or in a campaign in the trash.
+
 **11 November 2026: encounter calibration.** Insight, Calibration sets each finished D&D fight against the difficulty the DMG math gives it, next to how it actually went: rounds, the party's HP lost, and how often someone dropped. Six Axes now measures every fight as it runs, whichever screen runs it, so fights from today on count; older fights did not record starting HP and are left out. Below ten measured fights it shows the numbers but concludes nothing, because a few fights cannot tell your table from chance.
 
 **11 November 2026: Roll20 rolls.** The Six Axes Capture extension can now read the rolls made inside Roll20: /r commands and the 2024 D&D sheet's attack, damage, save, initiative, ability and skill rolls, advantage included. Open the extension, press Turn on Roll20, and reload the game. No GM needs Roll20 Pro. Each roll goes to the character with the same name in a campaign with a session open, and a roll seen by several players counts once. Rolls Beyond20 sends from D&D Beyond into Roll20 keep coming from D&D Beyond, so nothing is counted twice.

@@ -10,6 +10,7 @@ import { fmtDate } from "@/lib/format";
 import CampaignPicker from "@/components/ui-forge/CampaignPicker";
 import WorldClock, { DateFields } from "@/components/world-clock";
 import { formatWorldDate, sinceText, type WorldCalendar } from "@/lib/world-calendar";
+import { useMomentPlayer, MomentButton } from "@/components/moment-player";
 
 type Campaign = { id: string; name: string };
 type Sess = { id: string; session_number: number | null; status: string; started_at: string | null; scheduled_at: string | null };
@@ -20,7 +21,9 @@ type Char = { id: string; name: string; kind: string };
 // Only the columns the timeline needs. summary and kind are pulled so a future change can
 // show the beat itself under a place; today they are unused on purpose, because a session
 // with 40 beats would drown the arcs and loot this page exists to show.
-type GmEv = { id: string; session_id: string | null; npc_id: string | null; location_id: string | null; faction_id: string | null };
+// Push 40: t_start_seconds and audio_track_id too, so each place, person and faction chip can replay the
+// first moment it came up in that session.
+type GmEv = { id: string; session_id: string | null; npc_id: string | null; location_id: string | null; faction_id: string | null; t_start_seconds: number | null; audio_track_id: string | null };
 type Entry = { id: string; title: string; type: string; tags: string[] | null };
 
 export default function TimelinePage() {
@@ -72,7 +75,7 @@ export default function TimelinePage() {
           const from = page * PAGE;
           const { data, error } = await supabase
             .from("gm_events")
-            .select("id, session_id, npc_id, location_id, faction_id")
+            .select("id, session_id, npc_id, location_id, faction_id, t_start_seconds, audio_track_id")
             .eq("campaign_id", campaignId)
             .order("id", { ascending: true })
             .range(from, from + PAGE - 1);
@@ -111,6 +114,32 @@ export default function TimelinePage() {
     })();
     return () => { active = false; };
   }, [campaignId, supabase]);
+
+  // Push 40: the first recorded moment each place, person and faction came up in each session, keyed
+  // "<session>|<loc|npc|fac>|<id>". Only beats with audio count; the earliest wins.
+  const player = useMomentPlayer();
+  const firstMoment = useMemo(() => {
+    const m = new Map<string, GmEv>();
+    for (const g of gmEvents) {
+      if (!g.session_id || !g.audio_track_id || g.t_start_seconds == null) continue;
+      for (const [kind, id] of [["loc", g.location_id], ["npc", g.npc_id], ["fac", g.faction_id]] as [string, string | null][]) {
+        if (!id) continue;
+        const k = `${g.session_id}|${kind}|${id}`, cur = m.get(k);
+        if (!cur || (g.t_start_seconds as number) < (cur.t_start_seconds as number)) m.set(k, g);
+      }
+    }
+    return m;
+  }, [gmEvents]);
+  const replay = (sessionId: string, kind: string, id: string) => {
+    const g = firstMoment.get(`${sessionId}|${kind}|${id}`);
+    if (!g) return null;
+    const key = `${sessionId}|${kind}|${id}`;
+    return <MomentButton active={player.activeId === key} loading={player.loadingId === key} tStart={g.t_start_seconds}
+      expired={player.isPurged(g.audio_track_id)} onClick={() => void player.play(key, g.audio_track_id, g.t_start_seconds)} />;
+  };
+  const withReplay = (sessionId: string, kind: string, id: string, chip: React.ReactNode) => (
+    <span key={id} style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>{chip}{replay(sessionId, kind, id)}</span>
+  );
 
   const nameOf = (id: string | null): string => {
     if (!id) return "";
@@ -270,6 +299,7 @@ export default function TimelinePage() {
         )}
 
         {dateErr && <p role="alert" style={{ color: C.warn, fontSize: 13, margin: "0 0 12px" }}>{dateErr}</p>}
+        {player.error && <p role="alert" style={{ color: C.warn, fontSize: 13, margin: "0 0 12px" }}>{player.error}</p>}
         {nodes.length === 0 ? (
           <div style={{ ...box, color: C.muted, fontSize: 14 }}>
             {sessions.length === 0
@@ -323,17 +353,17 @@ export default function TimelinePage() {
                     )}
                     {places.length > 0 && (
                       <ChipRow label="Where" color={C.sun}>
-                        {places.map((id) => (<Chip key={id} color={C.sun} href={gmHref("/gm/codex", { campaign: campaignId, entry: id })}>{titleOf(id)}</Chip>))}
+                        {places.map((id) => withReplay(s.id, "loc", id, <Chip color={C.sun} href={gmHref("/gm/codex", { campaign: campaignId, entry: id })}>{titleOf(id)}</Chip>))}
                       </ChipRow>
                     )}
                     {met.length > 0 && (
                       <ChipRow label="Met" color={C.plum}>
-                        {met.map((id) => (<Chip key={id} color={C.plum} href={gmHref("/gm/codex", { campaign: campaignId, character: id })}>{nameOf(id)}</Chip>))}
+                        {met.map((id) => withReplay(s.id, "npc", id, <Chip color={C.plum} href={gmHref("/gm/codex", { campaign: campaignId, character: id })}>{nameOf(id)}</Chip>))}
                       </ChipRow>
                     )}
                     {factions.length > 0 && (
                       <ChipRow label="Factions" color={C.warn}>
-                        {factions.map((id) => (<Chip key={id} color={C.warn} href={gmHref("/gm/codex", { campaign: campaignId, entry: id })}>{titleOf(id)}</Chip>))}
+                        {factions.map((id) => withReplay(s.id, "fac", id, <Chip color={C.warn} href={gmHref("/gm/codex", { campaign: campaignId, entry: id })}>{titleOf(id)}</Chip>))}
                       </ChipRow>
                     )}
                     {opened.map((a) => (
