@@ -1,4 +1,4 @@
-// Six Axes Capture 2.4.0 (push 38): rolls made in Roll20.
+// Six Axes Capture 2.4.0 (push 38): rolls made in Roll20. Updated in 2.4.2 (push 44).
 //
 // Registered by background.js on app.roll20.net/editor pages once the player turns Roll20 on in the
 // popup (an optional permission). It runs in the isolated world and only READS the Roll20 chat: each new
@@ -22,10 +22,27 @@
 // The chat history already on screen when the game opens is not sent: only messages that appear
 // afterwards. Every player with the extension sees every roll, so each event carries the Roll20 message
 // id and the server keeps one copy.
+//
+// 2.4.2 (push 44, audit round 2 B11 and T10): a Roll20 message id is a Firebase push id, which starts
+// with the time the message was written. That time is now the roll's time, and a message written more
+// than a minute before this page started watching is history, even when Roll20 draws it late (older
+// messages loaded on scroll, a reconnect redrawing the chat), so it is not sent. The server reads the
+// time from the id as well and refuses rolls from before the session. The cut-off is the newest message
+// already on screen when watching starts (both times come from Roll20's servers, so a computer clock
+// that is off does not matter), and never earlier than ten minutes before the page started watching.
 
 (function () {
   if (window.__sixAxesRoll20Loaded) return;
   window.__sixAxesRoll20Loaded = true;
+
+  // The time in a Firebase push id ("-P6DCMtQdQv71tOt0F9w"), or null. See lib/vtt/push-id.ts.
+  var PUSH = "-0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz";
+  function pushIdTime(id) {
+    if (typeof id !== "string" || id.length !== 20) return null;
+    var t = 0;
+    for (var i = 0; i < 8; i++) { var v = PUSH.indexOf(id.charAt(i)); if (v < 0) return null; t = t * 64 + v; }
+    return t >= Date.UTC(2015, 0, 1) && t < Date.UTC(2100, 0, 1) ? t : null;
+  }
 
   function txt(el) { return el ? (el.textContent || "").replace(/\s+/g, " ").trim() : ""; }
   function num(s) { var n = parseInt(String(s || "").replace(/[^0-9-]/g, ""), 10); return isFinite(n) ? n : null; }
@@ -75,6 +92,7 @@
   }
 
   function base(msg, actor, kind, name, rolls) {
+    var at = pushIdTime(msg.getAttribute("data-messageid"));
     return {
       source: "roll20",
       external_id: msg.getAttribute("data-messageid"),
@@ -85,7 +103,7 @@
       // Roll20 rolls the dice on its own server; the server still stores this as unverified unless the
       // sender proves the character is theirs
       fidelity: "canonical",
-      rolled_at: new Date().toISOString(),
+      rolled_at: new Date(at !== null ? at : Date.now()).toISOString(),
       rolls: rolls,
       state: null,
     };
@@ -177,6 +195,7 @@
   // tests load this file into a page and call it directly
   window.__sixAxesRoll20Parse = parseMessage;
   window.__sixAxesRoll20Speaker = speakerName;
+  window.__sixAxesRoll20Time = pushIdTime;
 
   // ---- watching the chat ----
   if (typeof chrome === "undefined" || !chrome.runtime || !chrome.runtime.id) return;
@@ -185,6 +204,7 @@
   var lastSpeaker = null;
   var queue = [];
   var timer = null;
+  var cutoff = Date.now() - 10 * 60 * 1000;
 
   function speakerOf(msg) {
     var by = msg.querySelector(":scope > .by");
@@ -210,6 +230,9 @@
     if (seen.has(id)) return;
     seen.add(id);
     if (!send) return;
+    // history drawn late: written before the newest message on screen when watching began
+    var at = pushIdTime(id);
+    if (at !== null && at < cutoff) return;
     var events = parseMessage(msg, speaker);
     if (!events.length) return;
     queue.push.apply(queue, events);
@@ -222,8 +245,10 @@
   }
 
   function start(chat) {
-    // what is on screen now is history: remember it, send nothing
+    // what is on screen now is history: remember it, send nothing, and anything written before the newest
+    // of it (less a minute) is history too when it turns up later
     scan(chat, false);
+    seen.forEach(function (id) { var t = pushIdTime(id); if (t !== null && t - 60 * 1000 > cutoff) cutoff = t - 60 * 1000; });
     var obs = new MutationObserver(function (records) {
       for (var r = 0; r < records.length; r++) {
         var added = records[r].addedNodes;

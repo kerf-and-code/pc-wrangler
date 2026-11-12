@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Six Axes Capture",
-  "version": "2.4.1",
+  "version": "2.4.2",
   "description": "Sends your D&D Beyond rolls (with Beyond20) and, when you turn it on, the rolls in your Roll20 game's chat to your Six Axes table.",
   "icons": {
     "16": "icon-16.png",

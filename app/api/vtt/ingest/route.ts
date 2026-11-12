@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createSessionClient } from "@/lib/supabase/server";
 import { emptyProof, proofFromKeys, proofFromSession } from "@/lib/vtt/ingest-keys";
-import { routeByName, type NamedCharacter } from "@/lib/vtt/name-route";
+import { normName, routeByName, type NamedCharacter, type NameLink } from "@/lib/vtt/name-route";
+import { pushIdTime } from "@/lib/vtt/push-id";
 import { createHash } from "node:crypto";
 
 // POST /api/vtt/ingest
@@ -30,6 +31,17 @@ import { createHash } from "node:crypto";
 // that chat, so each carries its Roll20 message id as `external_id` and a second copy is ignored
 // (unique per campaign, source and id). When the copy that arrives later is the one its sender can vouch
 // for, the stored row is upgraded to canonical.
+//
+// PUSH 44 (audit round 2):
+//   B5   That upgrade now also replaces what the row says (dice, total, name, character, time) with the
+//        vouched copy. Before, a forged first copy kept its forged dice and only gained the badge.
+//   B11, T10  A Roll20 roll's time is read from its message id (lib/vtt/push-id.ts), not from the
+//        sender. A roll made before the session started (more than two minutes before), or claiming a
+//        time in the future, is not stored in the session; old chat that Roll20 shows late cannot land as
+//        tonight's rolls.
+//   T9, B14, G12  Name routing follows the GM's choices (vtt_name_links, p167), sends nowhere when two
+//        player characters share a name, and never hands an NPC's name to a player character. Names that
+//        went nowhere are returned as unmatched_names.
 
 const EVENT_TYPES = new Set([
   "to-hit",
@@ -265,12 +277,20 @@ export async function POST(request: NextRequest) {
   }
 
   // push 38: rolls with no DDB id (Roll20) are routed by name to a player character in a live campaign.
+  // Push 44: every character (an NPC's name blocks a player character) and the GM's links for the name.
   let named: NamedCharacter[] = [];
+  let links: NameLink[] = [];
   const liveTs = new Map(Array.from(liveByCampaign.entries()).map(([id, v]) => [id, v.ts]));
   if ((events as { ddb_character_id?: unknown; actor_name?: unknown }[]).some((e) => !cleanString(e?.ddb_character_id, 64) && cleanString(e?.actor_name, 200))) {
-    const { data: pcs } = await sb.from("characters").select("id, name, campaign_id")
-      .in("campaign_id", liveCampaignIds).eq("kind", "pc");
-    named = ((pcs ?? []) as { id: string; name: string; campaign_id: string }[]).map((c) => ({ id: c.id, name: c.name, campaignId: c.campaign_id }));
+    const [{ data: cs }, { data: ls, error: lerr }] = await Promise.all([
+      sb.from("characters").select("id, name, campaign_id, kind").in("campaign_id", liveCampaignIds),
+      sb.from("vtt_name_links").select("campaign_id, name_norm, character_id").in("campaign_id", liveCampaignIds).eq("source", "roll20"),
+    ]);
+    named = ((cs ?? []) as { id: string; name: string; campaign_id: string; kind: string | null }[])
+      .map((c) => ({ id: c.id, name: c.name, campaignId: c.campaign_id, kind: c.kind }));
+    // before p167 the table is missing: route by name alone, as before
+    if (!lerr) links = ((ls ?? []) as { campaign_id: string; name_norm: string; character_id: string | null }[])
+      .map((l) => ({ campaignId: l.campaign_id, nameNorm: l.name_norm, characterId: l.character_id }));
   }
 
   // Pick the live campaign for a matched DDB id: most-recently-started session wins.
@@ -292,7 +312,10 @@ export async function POST(request: NextRequest) {
   const rows = [];
   let verified = 0;
   let skipped = 0;
+  let stale = 0;
   const unmatched = new Set<string>();
+  const unmatchedNames = new Set<string>();
+  const nowMs = Date.now();
   for (const e of events) {
     const eventType = cleanString(e?.event_type, 32);
     if (!eventType || !EVENT_TYPES.has(eventType)) {
@@ -304,7 +327,7 @@ export async function POST(request: NextRequest) {
     let campaignId: string | null = null;
     let characterId: string | null = null;
 
-    const byName = !ddbId ? routeByName(e?.actor_name, named, liveTs) : null;
+    const byName = !ddbId ? routeByName(e?.actor_name, named, liveTs, links) : null;
     const routed = ddbId ? routeFor(ddbId) : byName ? { campaignId: byName.campaignId, characterId: byName.id } : null;
     if (routed) {
       campaignId = routed.campaignId;
@@ -314,6 +337,7 @@ export async function POST(request: NextRequest) {
       // land it there unattributed (and report it for linking). If several are live,
       // the campaign is genuinely unknown, so skip it rather than guess.
       if (ddbId) unmatched.add(ddbId);
+      else if (normName(e?.actor_name)) unmatchedNames.add(String(e.actor_name).slice(0, 200));
       if (soleLive) {
         campaignId = soleLive;
         characterId = null;
@@ -324,6 +348,20 @@ export async function POST(request: NextRequest) {
     }
 
     const source = cleanString(e?.source, 32);
+    const externalId = cleanString(e?.external_id, 100);
+    let rolledAt = cleanTimestamp(e?.rolled_at);
+    // Push 44 (B11, T10): a Roll20 roll's time is the one in its message id, and it must fall inside
+    // this session (two minutes' grace before the start) and not in the future.
+    if (source === "roll20") {
+      const idMs = pushIdTime(externalId);
+      if (idMs !== null) rolledAt = new Date(idMs).toISOString();
+      const t = rolledAt ? new Date(rolledAt).getTime() : nowMs;
+      const startMs = liveByCampaign.get(campaignId!)!.ts;
+      if (t < startMs - 2 * 60 * 1000 || t > nowMs + 5 * 60 * 1000) {
+        stale += 1;
+        continue;
+      }
+    }
     rows.push({
       campaign_id: campaignId,
       session_id: liveByCampaign.get(campaignId!)!.sessionId,
@@ -337,14 +375,14 @@ export async function POST(request: NextRequest) {
       state: cleanJson(e?.state),
       // Canonical only when the client says so AND this request proved it may vouch for the character.
       fidelity: e?.fidelity === "canonical" && proven(campaignId!, characterId) ? "canonical" : "unverified",
-      rolled_at: cleanTimestamp(e?.rolled_at),
-      external_id: cleanString(e?.external_id, 100),
+      rolled_at: rolledAt,
+      external_id: externalId,
     });
   }
 
   if (rows.length === 0) {
     return NextResponse.json(
-      { error: "No valid events could be routed.", skipped, unmatched_ddb_ids: Array.from(unmatched) },
+      { error: stale && !skipped ? "Those rolls were made before this session started." : "No valid events could be routed.", skipped, stale, unmatched_ddb_ids: Array.from(unmatched), unmatched_names: Array.from(unmatchedNames) },
       { status: 400, headers: CORS }
     );
   }
@@ -387,8 +425,13 @@ export async function POST(request: NextRequest) {
     }
     inserted += (fresh ?? []).length;
     // Only a Roll20 message id can arrive twice from two different senders; a derived id (h:) cannot.
+    // Push 44 (B5): the vouched copy replaces everything the stored copy says, not just its badge, so a
+    // forged first copy cannot keep forged dice under a verified mark.
     for (const r of keyed.filter((x) => x.fidelity === "canonical" && !x.external_id!.startsWith("h:"))) {
-      await sb.from("vtt_events").update({ fidelity: "canonical", character_id: r.character_id })
+      await sb.from("vtt_events").update({
+        fidelity: "canonical", character_id: r.character_id, actor_name: r.actor_name, event_type: r.event_type,
+        name: r.name, rolls: r.rolls, state: r.state, rolled_at: r.rolled_at, session_id: r.session_id,
+      })
         .eq("campaign_id", r.campaign_id!).eq("source", r.source).eq("external_id", r.external_id!).eq("fidelity", "unverified");
     }
   }
@@ -398,7 +441,9 @@ export async function POST(request: NextRequest) {
     duplicates: rows.length - inserted,
     verified,
     skipped,
+    stale,
     live_campaigns: liveCampaignIds.length,
     unmatched_ddb_ids: Array.from(unmatched),
+    unmatched_names: Array.from(unmatchedNames),
   }, { headers: CORS });
 }

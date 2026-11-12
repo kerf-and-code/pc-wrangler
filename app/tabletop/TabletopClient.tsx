@@ -137,7 +137,11 @@ type Message = {
 };
 type OutsideRoll = { id: string; actor_name: string | null; character_id?: string | null; source: string; name: string | null; at: string;
   event_type?: string | null; applied_to?: string | null;
-  rolls: { total?: number; dice?: { faces: number; results: number[] }[]; critical_success?: boolean | null; critical_failure?: boolean | null; damage_type?: string | null; discarded?: boolean } | null };
+  rolls: { total?: number; dice?: { faces: number; results: number[] }[]; dropped?: { faces: number | null; value: number }[]; critical_success?: boolean | null; critical_failure?: boolean | null; damage_type?: string | null; discarded?: boolean } | null };
+// Push 44 (audit round 2, R2): where an outside roll came from, for the badge on its card. Roll20 rolls
+// used to show as D&D Beyond, and their Apply always failed until p167 let the server take them.
+const outsideSource = (src: string | null | undefined): string | null =>
+  src === "beyond20" ? "D&D Beyond" : src === "foundry" ? "Foundry" : src === "roll20" ? "Roll20" : null;
 // Phase 5i: the chat shows one attack from D&D Beyond (its attack roll and every damage roll) as one card
 type FeedRow = { key: string; msg?: Message; ext?: OutsideRoll; group?: OutsideRoll[] };
 const GROUP_MS = 6000;
@@ -2861,8 +2865,13 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     const other = g.filter((x) => x.event_type !== "to-hit" && x.event_type !== "damage");
     const total = dmg.reduce((n, x) => n + (Number(x.rolls?.total) || 0), 0);
     const crit = !!kept?.rolls?.critical_success, fumble = !!kept?.rolls?.critical_failure;
-    const chips = (x: OutsideRoll) => (x.rolls?.dice ?? []).flatMap((d) => d.results.map((v, i) => (
-      <span key={`${x.id}-${d.faces}-${i}`} style={{ fontSize: 11, padding: "0 5px", borderRadius: 5, border: `1px solid ${C.line}`, color: C.muted }}>{v}/d{d.faces}</span>)));
+    // push 44: a die advantage dropped (Roll20 keeps it in `dropped`) shows struck through, as Beyond20's does
+    const chips = (x: OutsideRoll) => [
+      ...(x.rolls?.dice ?? []).flatMap((d) => d.results.map((v, i) => (
+        <span key={`${x.id}-${d.faces}-${i}`} style={{ fontSize: 11, padding: "0 5px", borderRadius: 5, border: `1px solid ${C.line}`, color: C.muted }}>{v}/d{d.faces}</span>))),
+      ...(x.rolls?.dropped ?? []).map((d, i) => (
+        <span key={`${x.id}-x${i}`} title="Dropped by advantage or disadvantage" style={{ fontSize: 11, padding: "0 5px", borderRadius: 5, border: `1px solid ${C.line}`, color: C.muted, textDecoration: "line-through", opacity: 0.6 }}>{d.value}/d{d.faces ?? "?"}</span>)),
+    ];
     const applied = dmg.length > 0 && dmg.every((x) => !!x.applied_to) ? dmg[0].applied_to : null;
     const fightNow = fight;
     const mineRoll = g.every((x) => !!x.character_id && myChars.some((c) => c.character_id === x.character_id));
@@ -2877,7 +2886,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
       <div style={{ background: "#1c1814", border: `1px solid ${crit ? "#5f9c5a" : fumble ? "#a8483f" : C.line}`, borderRadius: 8, padding: "8px 10px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", gap: 8, color: C.muted, fontSize: 12 }}>
           <span><b style={{ color: C.text }}>{who}</b>{first.name ? ` · ${first.name}` : ""}</span>
-          <span style={{ fontSize: 11, color: C.sun }}>{first.source === "foundry" ? "Foundry" : "D&D Beyond"}</span>
+          <span style={{ fontSize: 11, color: C.sun }}>{outsideSource(first.source) ?? "Outside roll"}</span>
         </div>
         {kept && (
           <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: 4, flexWrap: "wrap" }}>
@@ -2900,7 +2909,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
         {other.map((x) => (
           <div key={x.id} style={{ fontSize: 12.5, color: C.muted, marginTop: 3 }}>{x.event_type}: <b style={{ color: C.text }}>{x.rolls?.total ?? "?"}</b></div>
         ))}
-        {crit && dmg.length > 0 && <div style={{ fontSize: 11.5, color: C.muted, marginTop: 3 }}>Damage as D&amp;D Beyond rolled it (it doubles the dice on a critical, and adds what the sheet adds, such as Rage).</div>}
+        {crit && dmg.length > 0 && <div style={{ fontSize: 11.5, color: C.muted, marginTop: 3 }}>Damage as {outsideSource(first.source) ?? "the sheet"} rolled it (it doubles the dice on a critical, and adds what the sheet adds, such as Rage).</div>}
         {applied && <div style={{ fontSize: 12.5, color: applied.startsWith("missed ") ? C.warn : C.good, marginTop: 5 }}>{applied.startsWith("missed ") ? `Missed ${applied.slice(7)}` : `Applied to ${applied}`}</div>}
         {canApply && (
           <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", marginTop: 6 }}>
@@ -3319,13 +3328,14 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                 {feedRows.map((f) => {
                   if (f.group && (f.group.length > 1 || f.group.some((x) => x.event_type === "damage"))) return <div key={f.key}>{renderAttack(f.key, f.group)}</div>;
                   if (f.ext) {
-                    const r = f.ext.rolls, dice = (r?.dice ?? []).flatMap((g) => g.results.map((v) => ({ v, sides: g.faces, kept: true })));
+                    const r = f.ext.rolls, dice = [...(r?.dice ?? []).flatMap((g) => g.results.map((v) => ({ v, sides: g.faces, kept: true }))),
+                      ...(r?.dropped ?? []).map((d) => ({ v: d.value, sides: d.faces ?? 0, kept: false }))];
                     const nat = r?.critical_success ? 20 : r?.critical_failure ? 1 : null;
                     // Who rolled: the name written with the roll, else the party member it belongs to (rolls
                     // from the character sheet carried no name before phase 5d). Only rolls from outside
                     // Six Axes get a badge saying where they came from; our own rollers show none.
                     const who = f.ext.actor_name ?? party.find((p) => p.character_id && p.character_id === f.ext!.character_id)?.name ?? "A player";
-                    const badge = f.ext.source === "beyond20" ? "D&D Beyond" : f.ext.source === "foundry" ? "Foundry" : null;
+                    const badge = outsideSource(f.ext.source);
                     return <div key={f.key}>{renderRoll(who, f.ext.name ?? "", r?.total, dice, nat, badge)}</div>;
                   }
                   const m = f.msg!;

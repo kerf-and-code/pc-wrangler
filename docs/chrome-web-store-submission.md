@@ -4,12 +4,12 @@ Everything you need to paste into the Developer Dashboard. The listing itself is
 **the privacy section is what gets extensions rejected**, so most of this document is
 about that.
 
-Package: `six-axes-capture-extension/`, manifest v3, version 2.4.1.
+Package: `six-axes-capture-extension/`, manifest v3, version 2.4.2 (push 44: Roll20 roll times; no permission or data-use change from 2.4.1).
 
 Push 43 (12 November 2026): rewritten for 2.4.x. Roll20 support adds an OPTIONAL host
 permission (`https://app.roll20.net/*`) and the `scripting` permission, and the Roll20 reader
 sees every roll in a game's chat, including other players' rolls and the names they roll
-under. Sections 1 and 3 say so plainly. Submit 2.4.1 only after 2.4.0 has cleared review.
+under. Sections 1 and 3 say so plainly. Submit 2.4.1 only after 2.4.0 has cleared review; 2.4.2 can go in its place if 2.4.1 has not been submitted yet.
 
 ---
 

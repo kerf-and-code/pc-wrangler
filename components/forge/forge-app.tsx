@@ -5723,7 +5723,7 @@ function SheetRollLog({ campaignId, characterId }: { campaignId: string; charact
     for (const r of f.outside_rolls ?? []) {
       if (r.character_id !== characterId) continue;
       out.push({ key: `e-${r.id}`, at: r.at, label: r.name || "Roll", total: r.rolls?.total ?? null, nat: r.rolls?.critical_success ? 20 : r.rolls?.critical_failure ? 1 : null,
-        from: r.source === "beyond20" ? "D&D Beyond" : r.source === "foundry" ? "Foundry" : null });
+        from: r.source === "beyond20" ? "D&D Beyond" : r.source === "foundry" ? "Foundry" : r.source === "roll20" ? "Roll20" : null });
     }
     out.sort((a, b) => (a.at < b.at ? 1 : -1));
     setRolls(out.slice(0, 30));

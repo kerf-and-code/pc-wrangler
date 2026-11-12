@@ -3,6 +3,15 @@
 // Insight > Mechanics: descriptive statistics over captured table rolls
 // (vtt_events) for one session. Reads with the GM's own client; the
 // "gm reads vtt events" RLS policy scopes rows to campaigns they run.
+//
+// Push 44 (audit round 2):
+//   T6   The dice tab counts dice that advantage or disadvantage dropped. Roll20 keeps the dropped d20 in
+//        `dropped`, not in `dice`, so a fairness read saw only the higher of each pair and read high.
+//        (Beyond20 sends each d20 of an advantage roll as its own row, and that tab always counted both.)
+//   G12, T9, B14  Roll20 names: every name rolled under in Roll20 this session, where its rolls went
+//        (matched by full name, by first name, by your choice, or nowhere), and a picker to send it to a
+//        character or mark it as not a player character. Saved through /api/vtt/name-link (p167); later
+//        rolls follow the choice and the earlier ones in the campaign move with it.
 
 import React, { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -13,6 +22,7 @@ import { fmtDate } from "@/lib/format";
 import { SAX } from "@/lib/theme";
 import { LoadingState } from "@/components/ui-forge/States";
 import CampaignPicker from "@/components/ui-forge/CampaignPicker";
+import { matchKind, normName } from "@/lib/vtt/name-route";
 
 type Campaign = { id: string; name: string };
 type Session = { id: string; session_number: number | null; created_at: string; scheduled_at: string | null };
@@ -20,6 +30,7 @@ type DiceGroup = { faces: number | null; results: number[] };
 type Rolls = {
   total?: number | null;
   dice?: DiceGroup[];
+  dropped?: { faces: number | null; value: number }[];
   advantage?: number;
   discarded?: boolean;
   critical_success?: boolean | null;
@@ -106,6 +117,12 @@ export default function MechanicsPage() {
   useRememberSession(campaignId, sessionId);
   const [events, setEvents] = useState<VttEvent[]>([]);
   const [charNames, setCharNames] = useState<Record<string, string>>({});
+  // push 44: the GM's choices for Roll20 names in this campaign (vtt_name_links, p167), by normName
+  const [nameLinks, setNameLinks] = useState<Record<string, string | null>>({});
+  const [reloadKey, setReloadKey] = useState(0);
+  const [pick, setPick] = useState<Record<string, string>>({});
+  const [linkBusy, setLinkBusy] = useState<string | null>(null);
+  const [linkMsg, setLinkMsg] = useState<{ text: string; bad: boolean } | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [loadErr, setLoadErr] = useState<string | null>(null);
 
@@ -138,6 +155,20 @@ export default function MechanicsPage() {
     })();
   }, [campaignId, supabase]);
 
+  // push 44: before p167 the table is missing and this reads as no choices
+  useEffect(() => {
+    if (!campaignId) return;
+    let live = true;
+    void supabase.from("vtt_name_links").select("name_norm, character_id").eq("campaign_id", campaignId).eq("source", "roll20")
+      .then(({ data, error }) => {
+        if (!live) return;
+        const m: Record<string, string | null> = {};
+        if (!error) for (const l of (data ?? []) as { name_norm: string; character_id: string | null }[]) m[l.name_norm] = l.character_id;
+        setNameLinks(m);
+      });
+    return () => { live = false; };
+  }, [campaignId, supabase, reloadKey]);
+
   useEffect(() => {
     if (!sessionId) return;
     (async () => {
@@ -164,7 +195,7 @@ export default function MechanicsPage() {
       setEvents(all);
       setLoading(false);
     })();
-  }, [sessionId, supabase]);
+  }, [sessionId, supabase, reloadKey]);
 
   const [tab, setTab] = useState<"table" | "dice">("table");
 
@@ -178,7 +209,7 @@ export default function MechanicsPage() {
     for (const e of events) {
       typeCounts[e.event_type] = (typeCounts[e.event_type] || 0) + 1;
       if (e.fidelity === "canonical") canonical += 1;
-      const key = e.character_id ?? `ddb:${e.actor_name ?? "unknown"}`;
+      const key = e.character_id ?? `${e.source ?? "?"}:${e.actor_name ?? "unknown"}`;
       if (!per[key]) {
         per[key] = {
           key,
@@ -190,7 +221,9 @@ export default function MechanicsPage() {
             ? (charNames[e.character_id] ?? "Character")
             : e.source === "six_axes_roller"
               ? (e.actor_name ?? "The GM")
-              : `${e.actor_name ?? "Unknown"} (unlinked)`,
+              : e.source === "roll20" && nameLinks[normName(e.actor_name)] === null
+                ? `${e.actor_name ?? "Unknown"} (not a player character)`
+                : `${e.actor_name ?? "Unknown"} (unlinked)`,
           linked: Boolean(e.character_id),
           d20Count: 0, natSum: 0, natCount: 0, nat20s: 0, nat1s: 0, advantage: 0, damage: 0,
           hpSeries: [], maxHp: null,
@@ -254,6 +287,16 @@ export default function MechanicsPage() {
         }
         byDie[faces] = b;
       }
+      // push 44 (T6): the die advantage or disadvantage dropped was rolled too, and a fairness read
+      // needs it (Roll20 keeps it here; Beyond20 sends it as its own row, counted above)
+      for (const d of e.rolls?.dropped ?? []) {
+        const faces = Number(d?.faces);
+        if (!Number.isFinite(faces) || faces < 2 || typeof d?.value !== "number") continue;
+        const b = byDie[faces] ?? { n: 0, sum: 0, faces: {} };
+        b.n += 1; b.sum += d.value;
+        b.faces[d.value] = (b.faces[d.value] || 0) + 1;
+        byDie[faces] = b;
+      }
     }
     const dieRows = Object.entries(byDie).map(([k, v]) => {
       const sides = Number(k);
@@ -270,7 +313,55 @@ export default function MechanicsPage() {
     const rows = Object.values(per).sort((a, b) => b.d20Count - a.d20Count || b.damage - a.damage);
     const distMax = Math.max(1, ...dist);
     return { rows, dist, distMax, d20Total, dmgTotal, canonical, total: events.length, typeCounts, dmgByType, dieRows };
-  }, [events, charNames]);
+  }, [events, charNames, nameLinks]);
+
+  // push 44: every name rolled under in Roll20 this session, and where its rolls went
+  const roll20Names = useMemo(() => {
+    const m = new Map<string, { norm: string; shown: string; n: number; chars: Set<string>; unmatched: number }>();
+    for (const e of events) {
+      if (e.source !== "roll20") continue;
+      const norm = normName(e.actor_name);
+      if (!norm) continue;
+      const row = m.get(norm) ?? { norm, shown: (e.actor_name ?? "").replace(/\s*\(gm\)\s*$/i, "").trim() || norm, n: 0, chars: new Set<string>(), unmatched: 0 };
+      row.n += 1;
+      if (e.character_id) row.chars.add(e.character_id); else row.unmatched += 1;
+      m.set(norm, row);
+    }
+    return [...m.values()].sort((a, b) => (b.unmatched - a.unmatched) || (b.n - a.n));
+  }, [events]);
+  const charList = useMemo(() => Object.entries(charNames).sort((a, b) => a[1].localeCompare(b[1])), [charNames]);
+  const whereItWent = (r: { norm: string; shown: string; chars: Set<string>; unmatched: number }) => {
+    if (r.norm in nameLinks) {
+      const to = nameLinks[r.norm];
+      return to ? `Your choice: ${charNames[to] ?? "a character"}` : "Your choice: not a player character";
+    }
+    const names = [...r.chars].map((id) => charNames[id] ?? "a character");
+    if (!names.length) return "Not matched to anyone";
+    const partial = [...r.chars].some((id) => matchKind(r.shown, charNames[id]) === "partial");
+    const to = names.join(", ");
+    return `${partial ? "Matched by first name to" : "Matched to"} ${to}${r.unmatched ? ` (${r.unmatched} not matched)` : ""}`;
+  };
+  const saveLink = async (norm: string, shown: string, clear: boolean) => {
+    const choice = pick[norm] ?? "";
+    if (!clear && !choice) return;
+    setLinkBusy(norm); setLinkMsg(null);
+    try {
+      const res = await fetch("/api/vtt/name-link", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ campaignId, actorName: shown, characterId: clear || choice === "__none" ? null : choice, clear }),
+      });
+      const j = (await res.json().catch(() => ({}))) as { error?: string; moved?: number };
+      if (!res.ok) { setLinkMsg({ text: j.error ?? "Could not save that. Try again.", bad: true }); return; }
+      setLinkMsg({ text: clear ? `Cleared your choice for ${shown}. Later rolls go by name again.`
+        : `Saved. Later Roll20 rolls by ${shown} follow it${j.moved ? `, and ${j.moved} earlier roll${j.moved === 1 ? "" : "s"} moved` : ""}.`, bad: false });
+      setPick((p) => { const n = { ...p }; delete n[norm]; return n; });
+      setReloadKey((k) => k + 1);
+    } catch {
+      setLinkMsg({ text: "Network error. Try again.", bad: true });
+    } finally {
+      setLinkBusy(null);
+    }
+  };
 
   const box = { background: C.surface, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "16px 18px", marginBottom: 14 } as const;
   const sel = { background: C.surface2, color: C.text, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "9px 12px", fontSize: 14 } as const;
@@ -313,7 +404,7 @@ export default function MechanicsPage() {
         <LoadingState />
       ) : events.length === 0 ? (
         <div style={{ ...box, color: C.muted, fontSize: 14, lineHeight: 1.6 }}>
-          No captured rolls for this session. Share your session link (Roster tab) and have players keep it open while they play with Beyond20.
+          No captured rolls for this session. Send players the player setup link from the Roster; their rolls on D&amp;D Beyond or in Roll20 arrive while a session is open.
         </div>
       ) : tab === "dice" ? (
         <>
@@ -323,6 +414,7 @@ export default function MechanicsPage() {
             <p style={{ color: C.muted, fontSize: 13.5, lineHeight: 1.6, margin: "0 0 14px" }}>
               One row per die SIZE, because that is the unit a fairness question has an answer for.
               &ldquo;Is my d20 cursed&rdquo; is answerable; &ldquo;is my 2d6+3 cursed&rdquo; is not.
+              Every die counts, including the one advantage or disadvantage dropped.
             </p>
             {stats.dieRows.length === 0 ? (
               <p style={{ color: C.muted, fontSize: 14, margin: 0 }}>
@@ -470,6 +562,47 @@ export default function MechanicsPage() {
                     {t}: <b style={{ color: C.sun }}>{v}</b>
                   </span>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {roll20Names.length > 0 && (
+            <div style={box}>
+              <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 4 }}>Roll20 names</div>
+              <p style={{ color: C.muted, fontSize: 13, lineHeight: 1.55, margin: "0 0 10px" }}>
+                Roll20 rolls go to the character with the same name, or the same first name when only one character has it.
+                Change where a name goes here; later rolls follow your choice, and earlier ones in this campaign move with it.
+                Mark a monster or an NPC as not a player character so its rolls never land on one.
+              </p>
+              {linkMsg && <p role={linkMsg.bad ? "alert" : "status"} style={{ fontSize: 13, color: linkMsg.bad ? C.warn : C.good, margin: "0 0 10px" }}>{linkMsg.text}</p>}
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {roll20Names.map((r) => {
+                  const chosen = r.norm in nameLinks;
+                  const value = pick[r.norm] ?? "";
+                  return (
+                    <div key={r.norm} style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", borderTop: `1px solid ${C.line}`, paddingTop: 8 }}>
+                      <div style={{ flex: "1 1 200px", minWidth: 0 }}>
+                        <div style={{ fontWeight: 600, fontSize: 14 }}>{r.shown} <span style={{ color: C.muted, fontWeight: 400, fontSize: 12.5 }}>{r.n} roll{r.n === 1 ? "" : "s"}</span></div>
+                        <div style={{ fontSize: 12.5, color: r.unmatched && !chosen ? C.warn : C.muted }}>{whereItWent(r)}</div>
+                      </div>
+                      <select aria-label={`Where ${r.shown}'s Roll20 rolls go`} value={value} onChange={(e) => setPick((p) => ({ ...p, [r.norm]: e.target.value }))} style={{ ...sel, padding: "6px 9px", fontSize: 13 }}>
+                        <option value="">Send to…</option>
+                        {charList.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
+                        <option value="__none">Not a player character</option>
+                      </select>
+                      <button type="button" disabled={!value || linkBusy === r.norm} title={!value ? "Pick where this name goes first" : undefined} onClick={() => void saveLink(r.norm, r.shown, false)}
+                        style={{ background: C.sun, color: "#241a0d", border: "none", borderRadius: FORGE_RADIUS, padding: "7px 12px", fontSize: 13, fontWeight: 600, cursor: value ? "pointer" : "default", opacity: value ? 1 : 0.6 }}>
+                        {linkBusy === r.norm ? "Saving…" : "Save"}
+                      </button>
+                      {chosen && (
+                        <button type="button" disabled={linkBusy === r.norm} onClick={() => void saveLink(r.norm, r.shown, true)}
+                          style={{ background: "transparent", color: C.muted, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "7px 12px", fontSize: 13, cursor: "pointer" }}>
+                          Clear my choice
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}

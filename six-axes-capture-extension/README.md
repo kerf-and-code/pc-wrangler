@@ -40,6 +40,15 @@ Beyond20's roll DOM events on the D&D Beyond page itself. This is **Option B**.
 - Store review is typically a few days. Once listed, player setup becomes: install
   Beyond20 + install Six Axes Capture + paste code. No custom domain, ever.
 
+## 2.4.2 (push 44): Roll20 roll times
+- A Roll20 message id starts with the time the message was written (it is a Firebase push id). The
+  roll's time is now taken from it, not from when the extension saw the message.
+- Chat history Roll20 draws late (older messages loaded when scrolling up, the chat redrawn after a
+  reconnect) is no longer sent as new rolls: anything written before the newest message on screen when
+  watching began is history.
+- The server reads the time from the id too and refuses Roll20 rolls from before the session started.
+- Submit after 2.4.1. Nothing new is asked of the player and no permission changes.
+
 ## 2.4.1 (push 43): the popup says what Roll20 capture reads
 
 The popup's Roll20 text now says plainly that it sends every roll in the Roll20 game's chat, other
