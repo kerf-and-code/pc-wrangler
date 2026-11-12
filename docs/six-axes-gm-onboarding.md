@@ -54,10 +54,9 @@ will never be asked again mid-game.
 ## 4. Connect Discord
 
 1. Invite the Six Axes bot to your server (the button is on the Workspace).
-2. In the channel where you want recaps and polls, run:
-   ```
-   /setup code:<your share code>
-   ```
+2. On the Workspace, press **Copy /setup command**, then paste it in the channel where you want
+   recaps and polls. It looks like `/setup code:sx...` and works once, within a day. (Your share code
+   works there too, but only when you are signed in to Six Axes with that same Discord account.)
 3. Each player runs `/claim` once. This links their Discord account to their character, so
    the app knows whose voice is whose, and it is where the consent button appears.
 

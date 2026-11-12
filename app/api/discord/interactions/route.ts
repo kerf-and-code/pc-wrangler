@@ -203,7 +203,7 @@ async function handleSetup(interaction: Interaction) {
 
   const code = (optionValue(interaction, "code") ?? "").trim().toLowerCase();
   if (!code) {
-    return ephemeral("Usage: /setup code:<your campaign share code>");
+    return ephemeral("Usage: /setup code:<the code from Copy /setup command on your Six Axes Workspace>");
   }
 
   const chan = channelId(interaction);
@@ -211,17 +211,26 @@ async function handleSetup(interaction: Interaction) {
     return ephemeral("Could not read the channel. Run /setup directly in the target channel.");
   }
 
+  // Audit round 2, B2 (push 41): /setup used to accept the campaign's share code from anyone with Manage
+  // Server, and every player has that code, so a player could move the campaign's recaps and its
+  // Discord Activity to a server of their own. Now the code must be a one-time setup code from the GM's
+  // Workspace (p165 create_discord_setup_code), or the share code typed by a Discord user who is the
+  // campaign's GM or co-GM (signed in to Six Axes with this Discord account) or its narrator.
   const sb = serviceClient();
-  const { data: campaign, error } = await sb
-    .from("campaigns").select("id, name").eq("share_code", code).single();
-  if (error || !campaign) {
-    return ephemeral("No campaign found for that share code. Double-check the code from your app.");
+  const { data: found, error } = await sb.rpc("discord_setup_resolve", { p_code: code, p_discord: discordUserId(interaction) });
+  if (error) {
+    console.error("discord /setup: discord_setup_resolve failed (has p165 run?)", error.message);
+    return ephemeral("Could not check that code right now. Try again in a minute.");
+  }
+  const campaign = (Array.isArray(found) ? found[0] : found) as { campaign_id: string; name: string } | undefined;
+  if (!campaign) {
+    return ephemeral("That code did not link anything. On your Six Axes Workspace, press Copy /setup command for a fresh code (it works once, within a day), then paste it here.");
   }
 
   const { error: upErr } = await sb
     .from("campaigns")
     .update({ discord_guild_id: guildId, discord_channel_id: chan })
-    .eq("id", campaign.id);
+    .eq("id", campaign.campaign_id);
   if (upErr) {
     return ephemeral("Could not save the channel link. Try again in a moment.");
   }
@@ -452,7 +461,7 @@ async function handleMypage(interaction: Interaction) {
   // the wrong person, nothing that strands a character on a throwaway login. The Discord
   // account they already play on IS the account.
   return ephemeral(
-    "Open your table on the web \u2014 sign in with this same Discord account and your " +
+    "Open your table on the web: sign in with this same Discord account and your " +
     "character, journal, and the party codex are all there:\n" +
     `${base}/claim\n\n` +
     "Because it signs in with Discord, it works on any device and there is nothing to lose.",
@@ -1066,7 +1075,7 @@ async function handleRecord(interaction: Interaction) {
     data: {
       embeds: [
         {
-          title: `Recording ${heading} \u2014 ${campaign.name}`.slice(0, 256),
+          title: `Recording ${heading}: ${campaign.name}`.slice(0, 256),
           description:
             "Six Axes is capturing each speaker's audio to help your GM build recaps and table analytics. " +
             "Consent is handled when players claim their character, and anyone without it is never recorded at all. " +

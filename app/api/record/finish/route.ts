@@ -16,6 +16,12 @@ import { createClient } from "@/lib/supabase/server";
 //        registers the track; whether it is transcribed is decided by consent as usual.
 //   T8   The path comes off storage_purge_queue once the track row exists, so the file now has a row that
 //        retention and account deletion can find.
+//
+// Audit round 2, T2 (push 41): the track is registered only for the character's owner, signed in, or a
+// GM of the campaign, the same rule /api/record/start now applies. A share link alone no longer puts
+// audio into a session under someone else's character. Also, a track longer than MAX_HOURS is refused.
+
+const MAX_HOURS = 12;
 
 // Job stages that still take new tracks: everything before transcription starts.
 const OPEN_STAGES = new Set(["draft", "blocked_consent", "uploading"]);
@@ -33,6 +39,16 @@ export async function POST(req: NextRequest) {
 
   const { data: ch } = await admin.from("characters").select("id, profile_id").eq("id", characterId).eq("campaign_id", camp.id).eq("kind", "pc").single();
   if (!ch) return NextResponse.json({ error: "Unknown character" }, { status: 400 });
+
+  const owner = (ch as { profile_id: string | null }).profile_id;
+  const supa = await createClient();
+  const { data: claims } = await supa.auth.getClaims();
+  const uid = claims?.claims?.sub as string | undefined;
+  if (!uid) return NextResponse.json({ error: "Sign in to record your side. Download your file below and send it to your GM." }, { status: 401 });
+  if (uid !== owner) {
+    const { data: isGm } = await supa.rpc("is_campaign_gm", { p_campaign: camp.id });
+    if (!isGm) return NextResponse.json({ error: "You can only record for your own character. Download your file below and send it to your GM." }, { status: 403 });
+  }
 
   // The path /api/record/start issued: <campaign>/<job>/<character>-self-<ms>.<ext>
   const m = new RegExp(`^${camp.id}/(${UUID})/${characterId}-self-\\d+\\.[a-z0-9]{2,5}$`, "i").exec(path);
@@ -56,18 +72,19 @@ export async function POST(req: NextRequest) {
   }
 
   const dur = typeof durationSeconds === "number" && durationSeconds > 0 ? Math.round(durationSeconds) : null;
+  if (dur !== null && dur > MAX_HOURS * 3600) {
+    const { error: rmErr } = await admin.storage.from("session-audio").remove([path]);
+    if (!rmErr) await dropQueued();
+    return NextResponse.json({ error: `That recording is longer than ${MAX_HOURS} hours, so it was not added. Download it below and send it to your GM.` }, { status: 400 });
+  }
   const { error: insErr } = await admin.from("audio_tracks").insert({ job_id: job.id, campaign_id: camp.id, character_id: characterId, storage_path: path, duration_seconds: dur, status: "pending" });
   if (insErr) return NextResponse.json({ error: "Your file uploaded but could not be added to the session. Download it below and send it to your GM." }, { status: 500 });
   await dropQueued();
 
   // Self-consent: only the character's owner, signed in, and only where no row exists for this session.
   let consentRecorded = false;
-  const owner = (ch as { profile_id: string | null }).profile_id;
   if (job.session_id && owner) {
-    const supa = await createClient();
-    const { data: claims } = await supa.auth.getClaims();
-    const uid = claims?.claims?.sub as string | undefined;
-    if (uid && uid === owner) {
+    if (uid === owner) {
       const { error: cErr } = await admin.from("recording_consents").upsert(
         { session_id: job.session_id, campaign_id: camp.id, character_id: characterId, profile_id: uid, consented: true, method: "self_recording" },
         { onConflict: "session_id,character_id", ignoreDuplicates: true },

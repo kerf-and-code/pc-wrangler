@@ -9,7 +9,8 @@ import { activityHand } from "@/lib/discord/activity-view";
 // the table's own rules apply: the scene they are on, its map, the tokens and fog they may see, the
 // turn order, and the chat and rolls since `since`. A watcher (in the Discord server, not linked to a
 // player or GM here) reads through a player's eyes with everything personal taken out
-// (lib/discord/activity.ts forWatcher). Polled by the Activity every couple of seconds.
+// (lib/discord/activity.ts forWatcher), and only when the GM has let people watch (push 41, p165).
+// Polled by the Activity every couple of seconds.
 
 // No `export const dynamic`: this project runs with cacheComponents on, which rejects it. A GET handler
 // that reads the request (the Authorization header) is rendered per request anyway.
@@ -28,12 +29,22 @@ export async function GET(req: Request) {
   catch { return NextResponse.json({ error: "Could not look up the campaign." }, { status: 500 }); }
   if (!place) return NextResponse.json({ error: "That campaign is not linked to this Discord server." }, { status: 403 });
 
+  const base0 = { role: place.role, campaign: { id: campaignId, name: place.name }, me: { name: s.n, characters: [] as { id: string; name: string; init: number | null }[] } };
+  // Push 41 (audit round 2, T7): someone in the server who is not at this table watches only when the GM
+  // has turned watching on (Workspace, campaigns.activity_watchers, p165). Off by default.
+  if (place.role === "watch") {
+    const { data: w } = await admin.from("campaigns").select("activity_watchers").eq("id", campaignId).maybeSingle();
+    if (!(w as { activity_watchers?: boolean } | null)?.activity_watchers) {
+      return NextResponse.json({ ...base0, state: null, combat: null, feed: null, note: "This table is for its GM and players. To join in, sign in to Six Axes with Discord on the website or run /claim in this server. (The GM can let others watch from the Workspace.)" });
+    }
+  }
+
   let uid = place.profileId;
   if (!uid) {
     const { data } = await admin.rpc("activity_watch_profile", { p_campaign: campaignId });
     uid = typeof data === "string" ? data : null;
   }
-  const base = { role: place.role, campaign: { id: campaignId, name: place.name }, me: { name: s.n, characters: [] as { id: string; name: string; init: number | null }[] } };
+  const base = base0;
   if (!uid) return NextResponse.json({ ...base, state: null, combat: null, feed: null, note: "Nobody has a character in this campaign yet, so there is nothing to show." });
 
   const safe = async <T,>(p: Promise<T>): Promise<T | null> => { try { return await p; } catch { return null; } };

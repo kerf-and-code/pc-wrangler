@@ -27,8 +27,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Watching only: sign in to Six Axes with Discord, or /claim your character, to play." }, { status: 403 });
   }
   try {
-    if (b.action === "use") await callAs(admin, place.profileId, "tabletop_card_use", { card: b.card });
-    else await callAs(admin, place.profileId, "tabletop_card_move", { card: b.card, to: "table", face_up: true });
+    // push 41 (audit round 2, B1): the campaign goes along, so activity_call (p165) refuses a card from
+    // any other campaign
+    if (b.action === "use") await callAs(admin, place.profileId, "tabletop_card_use", { campaign: b.campaign, card: b.card });
+    else await callAs(admin, place.profileId, "tabletop_card_move", { campaign: b.campaign, card: b.card, to: "table", face_up: true });
     return NextResponse.json({ ok: true });
   } catch (e) {
     return NextResponse.json({ error: friendly(e instanceof Error ? e.message : String(e)) }, { status: 409 });

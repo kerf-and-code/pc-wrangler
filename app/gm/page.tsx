@@ -254,12 +254,46 @@ export default function GMWorkspace() {
     else if (selected) await loadCharacters(selected);
   }
 
-  function copySetup(code: string) {
+  // Push 41 (audit round 2, B2): /setup no longer takes the share code from just anyone, because every
+  // player has it. Each press makes a fresh one-time setup code (p165), good for a day; the command it
+  // copies is shown too, for a browser that blocks the clipboard.
+  const [setupCmd, setSetupCmd] = useState<{ campaign: string; cmd: string } | null>(null);
+  async function copySetup(campaignId: string) {
+    setErr(null);
+    const { data, error } = await supabase.rpc("create_discord_setup_code", { p_campaign: campaignId });
+    if (error || typeof data !== "string") {
+      setErr(/create_discord_setup_code/.test(error?.message ?? "") ? "Discord setup codes are not set up on the server yet (the p165 migration)." : friendlyError(error));
+      return;
+    }
+    const cmd = `/setup code:${data}`;
+    setSetupCmd({ campaign: campaignId, cmd });
     try {
-      navigator.clipboard.writeText(`/setup code:${code}`);
-      setCopied(code);
+      await navigator.clipboard.writeText(cmd);
+      setCopied(campaignId);
       setTimeout(() => setCopied(null), 1500);
-    } catch { /* clipboard unavailable */ }
+    } catch { /* clipboard unavailable: the command is shown beside the button */ }
+  }
+
+  // Push 41 (audit round 2, T7): whether people in the linked Discord server who are not at the table may
+  // watch it in the Discord Activity. Off unless the GM turns it on. Read on its own so the page still
+  // works before p165 has run (then the switch simply does not show).
+  const [watchers, setWatchers] = useState<{ campaign: string; on: boolean } | null>(null);
+  useEffect(() => {
+    if (!selected) { setWatchers(null); return; }
+    let active = true;
+    void supabase.from("campaigns").select("activity_watchers").eq("id", selected).maybeSingle()
+      .then(({ data, error }) => {
+        if (!active) return;
+        const on = (data as { activity_watchers?: boolean } | null)?.activity_watchers;
+        setWatchers(error || typeof on !== "boolean" ? null : { campaign: selected, on });
+      });
+    return () => { active = false; };
+  }, [supabase, selected]);
+  async function setWatching(campaignId: string, on: boolean) {
+    setErr(null);
+    const { error } = await supabase.from("campaigns").update({ activity_watchers: on }).eq("id", campaignId);
+    if (error) { setErr(friendlyError(error)); return; }
+    setWatchers({ campaign: campaignId, on });
   }
 
   // Pull an existing (unassigned) inventory into this campaign so it can be assigned.
@@ -507,8 +541,19 @@ export default function GMWorkspace() {
                 <span style={{ fontSize: 12.5, color: C.muted }}>Campaign code:</span>
                 <code style={{ fontSize: 12.5, color: C.vellum, background: C.ink, border: `1px solid ${C.line}`, borderRadius: 7, padding: "5px 9px", boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>{sc.share_code}</code>
                 <a href={DISCORD_INVITE} target="_blank" rel="noreferrer" style={{ ...btnGhost, textDecoration: "none", display: "inline-block" }}>Invite bot</a>
-                <button style={btnGhost} onClick={() => copySetup(sc.share_code)}>{copied === sc.share_code ? "Copied" : "Copy /setup command"}</button>
+                <button style={btnGhost} onClick={() => void copySetup(sc.id)} title="A one-time code for /setup in your Discord server, good for a day">{copied === sc.id ? "Copied" : "Copy /setup command"}</button>
+                {setupCmd && setupCmd.campaign === sc.id && (
+                  <span style={{ fontSize: 12.5, color: C.muted }}>
+                    Paste <code style={{ color: C.vellum }}>{setupCmd.cmd}</code> in the Discord channel for recaps. It works once, within a day.
+                  </span>
+                )}
               </>}
+              {watchers && watchers.campaign === sc.id && (
+                <label style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 12.5, color: C.muted, flexBasis: "100%" }}>
+                  <input type="checkbox" checked={watchers.on} onChange={(e) => void setWatching(sc.id, e.target.checked)} />
+                  Let anyone in the linked Discord server watch this table in the Discord Activity (they see the map, turn order and table chat, never whispers). Off: only you and your players see it.
+                </label>
+              )}
               <span style={{ fontSize: 12.5, color: C.muted }}>System:</span>
               <select aria-label={`Game system for ${sc.name}`} value={pickerSystem(sc.system)} onChange={(e) => changeSystem(sc.id, e.target.value)} disabled={busy} style={{ ...inputStyle, maxWidth: 200 }}>
                 <option value="5e">D&amp;D 2024 (5.5e)</option>

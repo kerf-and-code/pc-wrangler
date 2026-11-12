@@ -28,7 +28,7 @@ const MANAGE_GUILD = "32";
 
 const CODE_REQUIRED = {
   name: "code",
-  description: "Your campaign share code from the app.",
+  description: "The code from Copy /setup command on your Six Axes Workspace.",
   type: 3, // STRING
   required: true,
 };
