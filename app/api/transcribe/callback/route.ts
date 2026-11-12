@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { internalHeaders, internalSecret, verifyTrackCallback } from "@/lib/internal-auth";
 
 // `speaker` appears only when the submission asked for diarization, which happens for room
 // recordings and not for Discord tracks. Optional for exactly that reason.
@@ -65,7 +66,7 @@ async function finalizeJob(admin: Admin, jobId: string): Promise<string | undefi
     .eq("job_id", jobId);
   const all = (tracks as { status: string }[]) || [];
 
-  // still waiting on at least one track — let that track's callback finalize.
+  // still waiting on at least one track: let that track's callback finalize.
   if (all.some((t) => t.status === "pending" || t.status === "transcribing")) return undefined;
 
   const { count } = await admin
@@ -78,7 +79,7 @@ async function finalizeJob(admin: Admin, jobId: string): Promise<string | undefi
   let status: string;
   let error: string | null = null;
   if (segments > 0) {
-    // at least one player produced a transcript — proceed, even if others were
+    // at least one player produced a transcript: proceed, even if others were
     // empty or failed.
     status = "extracting";
   } else if (errored === all.length && all.length > 0) {
@@ -96,17 +97,17 @@ async function finalizeJob(admin: Admin, jobId: string): Promise<string | undefi
 // Best-effort server-side extraction head start. If it doesn't complete, the
 // Review page's auto-start finishes the job.
 function kickExtraction(req: NextRequest, jobId: string) {
-  const secret = process.env.TRANSCRIBE_CALLBACK_SECRET;
-  if (!secret) return;
+  if (!internalSecret()) return;
   const base = process.env.TRANSCRIBE_CALLBACK_BASE || req.nextUrl.origin;
-  const url = `${base}/api/extract/run?job=${encodeURIComponent(jobId)}&k=${encodeURIComponent(secret)}`;
-  void fetch(url, { method: "POST" }).catch(() => {});
+  // push 42 (T5): the internal secret goes in a header, never in the URL
+  const url = `${base}/api/extract/run?job=${encodeURIComponent(jobId)}`;
+  void fetch(url, { method: "POST", headers: internalHeaders() }).catch(() => {});
 }
 
 export async function POST(req: NextRequest) {
-  const trackId = req.nextUrl.searchParams.get("track");
-  const k = req.nextUrl.searchParams.get("k");
-  if (!trackId || k !== process.env.TRANSCRIBE_CALLBACK_SECRET) {
+  // push 42 (audit round 2, T5): the URL must carry our signature for this track (lib/internal-auth.ts)
+  const { ok: signed, trackId } = verifyTrackCallback(req.nextUrl.searchParams);
+  if (!trackId || !signed) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { internalHeaders, isInternal } from "@/lib/internal-auth";
 
 // Server-side extraction. Fired by the transcribe callback, and self-chaining, so a
 // long session finishes without anyone opening a page.
@@ -56,8 +57,8 @@ type StepResult = "done" | "more" | "failed";
 
 export async function POST(req: NextRequest) {
   const jobId = req.nextUrl.searchParams.get("job");
-  const k = req.nextUrl.searchParams.get("k");
-  if (!jobId || k !== process.env.TRANSCRIBE_CALLBACK_SECRET) {
+  // push 42 (audit round 2, T5): only our own routes, by the internal header (lib/internal-auth.ts)
+  if (!jobId || !isInternal(req)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
@@ -69,9 +70,8 @@ export async function POST(req: NextRequest) {
   }
 
   const base = process.env.TRANSCRIBE_CALLBACK_BASE || req.nextUrl.origin;
-  const secret = process.env.TRANSCRIBE_CALLBACK_SECRET as string;
   const body = JSON.stringify({ jobId });
-  const headers = { "Content-Type": "application/json" };
+  const headers = internalHeaders({ "Content-Type": "application/json" });
 
   const pass = Number(req.nextUrl.searchParams.get("pass") || "0");
   const deadline = Date.now() + TIME_BUDGET_MS;
@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
     let lastDetail = "";
     for (let attempt = 1; attempt <= STEP_ATTEMPTS; attempt++) {
       try {
-        const res = await fetch(`${base}${path}?k=${encodeURIComponent(secret)}`, { method: "POST", headers, body });
+        const res = await fetch(`${base}${path}`, { method: "POST", headers, body });
         if (res.ok) {
           const out = (await res.json().catch(() => ({}))) as { done?: boolean };
           return out.done ? "done" : "more";
@@ -130,8 +130,8 @@ export async function POST(req: NextRequest) {
   const moreToDo = (!playerDone && !playerFailed) || (!gmDone && !gmFailed);
   let chained = false;
   if (moreToDo && pass + 1 < MAX_PASSES) {
-    const next = `${base}/api/extract/run?job=${encodeURIComponent(jobId)}&k=${encodeURIComponent(secret)}&pass=${pass + 1}`;
-    void fetch(next, { method: "POST" }).catch(() => {});
+    const next = `${base}/api/extract/run?job=${encodeURIComponent(jobId)}&pass=${pass + 1}`;
+    void fetch(next, { method: "POST", headers: internalHeaders() }).catch(() => {});
     chained = true;
   }
 

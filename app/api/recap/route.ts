@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { buildRecap } from "@/lib/recap/build";
+import { releaseAi, reserveAi } from "@/lib/ai-allowance";
 
 // buildRecap chunks the transcript at CHUNK_SIZE characters and makes ONE sequential
 // model call per chunk, plus a final call to write the recap. 60 seconds was enough while
@@ -15,6 +16,10 @@ import { buildRecap } from "@/lib/recap/build";
 export const maxDuration = 300;
 
 export async function POST(request: Request) {
+  // Push 42 (audit round 2, T12): a recap is 15 to 60 model calls on a long session, so it now takes a
+  // slot from the GM's daily allowance (lib/ai-allowance.ts, kind "recap"), given back if it fails.
+  let reserved: string | null = null;
+  const admin = createAdminClient();
   try {
     const body = await request.json().catch(() => ({}));
     const sessionId = body?.sessionId;
@@ -39,7 +44,7 @@ export async function POST(request: Request) {
     // RLS confirms the caller owns this session and gives us the current draft.
     const { data: session, error: sErr } = await supabase
       .from("sessions")
-      .select("id, recap")
+      .select("id, recap, campaign_id")
       .eq("id", sessionId)
       .single();
     if (sErr || !session) {
@@ -50,14 +55,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ recap: session.recap, skipped: true });
     }
 
+    const grant = await reserveAi(admin, user.id, (session as { campaign_id: string }).campaign_id, "recap");
+    if (!grant.ok) return NextResponse.json({ error: grant.error }, { status: grant.status });
+    reserved = grant.id;
+
     const result = await buildRecap(supabase, sessionId, mode);
     if (!result.ok) {
+      await releaseAi(admin, grant.id);
       return NextResponse.json({ error: result.error }, { status: result.status });
     }
 
     // Persist the draft. Ownership was confirmed by the RLS read above; the admin
     // write avoids depending on a sessions UPDATE policy.
-    const admin = createAdminClient();
     const { error: wErr } = await admin.from("sessions").update({ recap: result.recap }).eq("id", sessionId);
     if (wErr) {
       return NextResponse.json({ error: "Could not save the recap draft." }, { status: 500 });
@@ -71,6 +80,7 @@ export async function POST(request: Request) {
     // side and left nothing in the logs to read afterwards.
     const detail = e instanceof Error ? e.message : String(e);
     console.error("[api/recap] unhandled failure:", detail, e);
+    if (reserved) await releaseAi(admin, reserved);
     // The route is authenticated and ownership-checked above, so the caller is the GM of
     // this campaign. Showing them the actual reason is worth far more than hiding it.
     return NextResponse.json(

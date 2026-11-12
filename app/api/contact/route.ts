@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { allowPublic } from "@/lib/rate-limit";
 
 // app/api/contact/route.ts
 //
@@ -40,6 +41,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "That message is longer than we can accept." }, { status: 400 });
     }
 
+    // Push 42 (audit round 2, T22): a few messages per address an hour and a ceiling per day, so a
+    // script cannot use up the email quota that recaps and reminders to players depend on.
+    if (!(await allowPublic("contact", request, { max: 5, windowSeconds: 3600 }, { max: 60, windowSeconds: 86400 }))) {
+      return NextResponse.json({ error: "Too many messages from here for now. Please try again later, or email kncadmin@kerfandcode.com." }, { status: 429 });
+    }
+
     const apiKey = process.env.RESEND_API_KEY;
     if (!apiKey) {
       return NextResponse.json({ error: "Contact isn't available right now. Please email kncadmin@kerfandcode.com." }, { status: 503 });
@@ -59,7 +66,7 @@ export async function POST(request: Request) {
         from: "Six Axes <contact@send.kerfandcode.com>",
         to: ["kncadmin@kerfandcode.com"],
         reply_to: email,
-        subject: `Six Axes contact: ${topic} — ${name}`,
+        subject: `Six Axes contact (${topic}) from ${name}`,
         text,
       }),
     });

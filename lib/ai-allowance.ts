@@ -13,14 +13,16 @@ import { isCampaignGm } from "@/lib/campaign-gm";
 //      together cannot all slip under the cap. If the call then fails, releaseAi gives the slot back.
 // Takes the service-role client (the log is server-only).
 
-export type AiKind = "world" | "battle" | "trace" | "ask";
+export type AiKind = "world" | "battle" | "trace" | "ask" | "recap" | "journal" | "import";
 
 /** Most calls per GM per 24 hours, by kind. world: the world-map fantasy view and city, dungeon,
  *  building and bastion renders; battle: battle-map paintings; trace: reading terrain from a map image;
- *  ask: questions to Ask the campaign (p153 widened the kind check). */
-export const AI_DAILY: Record<AiKind, number> = { world: 6, battle: 12, trace: 20, ask: 40 };
+ *  ask: questions to Ask the campaign (p153 widened the kind check); recap: writing a session recap
+ *  (15 to 60 model calls on a long session); journal: building the campaign journal; import: bringing in
+ *  notes (up to 120 calls). The last three were added by p166 (push 42, audit round 2 T12). */
+export const AI_DAILY: Record<AiKind, number> = { world: 6, battle: 12, trace: 20, ask: 40, recap: 8, journal: 4, import: 3 };
 
-const LABEL: Record<AiKind, string> = { world: "map renders", battle: "battle-map paintings", trace: "map traces", ask: "questions" };
+const LABEL: Record<AiKind, string> = { world: "map renders", battle: "battle-map paintings", trace: "map traces", ask: "questions", recap: "recaps", journal: "journal builds", import: "imports" };
 
 export type AiGrant = { ok: true; id: string; remaining: number };
 export type AiRefusal = { ok: false; status: number; error: string; limited?: boolean };

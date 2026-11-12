@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { activityConfigured, discordUser, exchangeCode, placesFor, signSession } from "@/lib/discord/activity";
+import { allowHit } from "@/lib/rate-limit";
 
 // POST /api/activity/token   body: { code, guildId } (2026-11-11, push 34, audit P7)
 //
@@ -21,6 +22,12 @@ export async function POST(req: Request) {
   if (!code) return NextResponse.json({ error: "Discord did not send a sign-in code." }, { status: 400 });
   if (!/^\d{5,25}$/.test(guildId)) {
     return NextResponse.json({ error: "Open Six Axes from a voice channel in your Discord server, not a direct message." }, { status: 400 });
+  }
+  // Push 42 (audit round 2, T22): each try is three calls to Discord with the app's own credentials, and
+  // Discord slows down apps that send many bad ones. Counted per Discord server, not per address: inside
+  // Discord the request comes through Discord's own proxy, so many people can share one address.
+  if (!(await allowHit("activity-token", guildId, 60, 600)) || !(await allowHit("activity-token:all", "all", 2000, 3600))) {
+    return NextResponse.json({ error: "Too many sign-in tries from here. Wait a few minutes and open Six Axes again." }, { status: 429 });
   }
 
   let accessToken: string, user: { id: string; name: string };

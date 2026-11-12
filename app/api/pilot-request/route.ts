@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { allowPublic } from "@/lib/rate-limit";
 
 // app/api/pilot-request/route.ts
 //
@@ -85,6 +86,12 @@ export async function POST(request: Request) {
     }
     if (!EMAIL_RE.test(f.email)) {
       return NextResponse.json({ error: "That email does not look right." }, { status: 400 });
+    }
+
+    // Push 42 (audit round 2, T22): a few applications per address an hour and a ceiling per day, so a
+    // script cannot use up the email quota that recaps and reminders to players depend on.
+    if (!(await allowPublic("pilot", request, { max: 5, windowSeconds: 3600 }, { max: 60, windowSeconds: 86400 }))) {
+      return NextResponse.json({ error: "Too many applications from here for now. Please try again later." }, { status: 429 });
     }
 
     const apiKey = process.env.RESEND_API_KEY;

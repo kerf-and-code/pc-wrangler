@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { buildJournal } from "@/lib/journal/build";
+import { releaseAi, reserveAi } from "@/lib/ai-allowance";
 
 // One model call, but now with an 8000-token chronicle over a whole campaign's recaps,
 // which is comfortably past the platform default. The recap route needed the same change
@@ -28,8 +29,21 @@ export async function POST(req: NextRequest) {
   if (!isGm) return NextResponse.json({ error: "Only the campaign GM can build the journal." }, { status: 403 });
 
   const admin = createAdminClient();
-  const result = await buildJournal(admin, campaignId);
-  if (!result.ok) return NextResponse.json({ error: result.error }, { status: result.status });
+  // Push 42 (audit round 2, T12): a journal build takes a slot from the GM's daily allowance
+  // (lib/ai-allowance.ts, kind "journal"), given back if it fails.
+  const grant = await reserveAi(admin, uid, campaignId, "journal");
+  if (!grant.ok) return NextResponse.json({ error: grant.error }, { status: grant.status });
+  let result: Awaited<ReturnType<typeof buildJournal>>;
+  try {
+    result = await buildJournal(admin, campaignId);
+  } catch (e) {
+    await releaseAi(admin, grant.id);
+    throw e;
+  }
+  if (!result.ok) {
+    await releaseAi(admin, grant.id);
+    return NextResponse.json({ error: result.error }, { status: result.status });
+  }
 
   const { error: upErr } = await admin
     .from("campaign_journals")

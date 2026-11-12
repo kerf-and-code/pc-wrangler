@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { anthropicCompleteFor, extract } from "@/lib/backfill/extract";
-import { hasGmAccess } from "@/lib/ai-allowance";
+import { hasGmAccess, releaseAi, reserveAi } from "@/lib/ai-allowance";
 import type { NormalizedImport } from "@/lib/backfill/types";
 import { isCampaignGm } from "@/lib/campaign-gm";
 
@@ -51,6 +51,10 @@ export async function POST(request: Request) {
     if (!(await hasGmAccess(admin, user.id)) && !(await isCampaignGm(admin, campaignId, user.id))) {
       return NextResponse.json({ error: "Importing needs GM access. During the pilot it is given by invitation: ask for it from the Pilot page." }, { status: 403 });
     }
+    // Push 42 (audit round 2, T12): an import is up to 120 model calls, so it takes a slot from the GM's
+    // daily allowance (lib/ai-allowance.ts, kind "import"), given back if it fails before extracting.
+    const grant = await reserveAi(admin, user.id, campaignId, "import");
+    if (!grant.ok) return NextResponse.json({ error: grant.error }, { status: grant.status });
 
     // Open the job first, so a failure mid-extraction still leaves a record the GM can see and retry.
     const { data: jobRow, error: jErr } = await admin
@@ -68,6 +72,7 @@ export async function POST(request: Request) {
       .select("id")
       .single();
     if (jErr || !jobRow) {
+      await releaseAi(admin, grant.id);
       return NextResponse.json({ error: `Could not start import: ${jErr?.message ?? "no job"}` }, { status: 500 });
     }
     const jobId = (jobRow as { id: string }).id;
@@ -82,6 +87,7 @@ export async function POST(request: Request) {
     } catch (e) {
       const detail = e instanceof Error ? e.message : String(e);
       await admin.from("import_jobs").update({ status: "error", error: detail.slice(0, 500) }).eq("id", jobId);
+      await releaseAi(admin, grant.id);
       return NextResponse.json({ error: `Extraction failed: ${detail.slice(0, 300)}`, jobId }, { status: 500 });
     }
 

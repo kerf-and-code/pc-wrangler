@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { anthropicTokens, recordUsage } from "@/lib/usage";
+import { isInternal } from "@/lib/internal-auth";
 
 // Version-pinned per the methods plan: prompt revision + model, stamped on
 // every proposed and accepted event so coding can be compared across versions.
@@ -80,9 +81,8 @@ export async function POST(req: NextRequest) {
   const admin = createAdminClient();
 
   // Browsers authorize via RLS; a trusted server-side caller (the extraction
-  // orchestrator) passes the callback secret and reads the job with admin.
-  const k = req.nextUrl.searchParams.get("k");
-  const trusted = !!k && k === process.env.TRANSCRIBE_CALLBACK_SECRET;
+  // orchestrator) sends the internal secret in a header (push 42, T5) and reads the job with admin.
+  const trusted = isInternal(req);
   const jobSel = "id, campaign_id, session_id, status, extract_cursor, gm_extract_cursor";
   let jobData: unknown = null;
   if (trusted) {

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { campaignLanguage } from "@/lib/languages";
+import { trackCallbackQuery } from "@/lib/internal-auth";
 
 // This route hands one signed URL per track to Deepgram. Six tracks means six sequential
 // round trips, and the platform default cut the function off partway through: on
@@ -109,10 +110,6 @@ export async function POST(req: NextRequest) {
   if (!secret || (!dgKey && !replicateReady)) {
     return NextResponse.json({ error: "Server is missing transcription configuration." }, { status: 500 });
   }
-
-  // `secret` is non-null past the guard, but TypeScript does not carry that narrowing into the
-  // nested submitTrack() closure below, so capture it as a definitely-string value here.
-  const callbackSecret: string = secret;
 
   // Standing (campaign-wide) consent, given when a player claims their character. These
   // are the same two queries session_consent_ok ran internally, so the rule is unchanged;
@@ -245,7 +242,8 @@ export async function POST(req: NextRequest) {
       // Async like Deepgram: create a prediction with a webhook, then /replicate-callback finalizes.
       // If Replicate isn't set up we fall through to the Deepgram path below, so nothing breaks.
       if (t.kind === "room" && replicateReady) {
-        const rcb = `${base}/api/transcribe/replicate-callback?track=${t.id}&k=${encodeURIComponent(callbackSecret)}`;
+        // push 42 (audit round 2, T5): a signed, expiring URL for this track; the secret stays here
+        const rcb = `${base}/api/transcribe/replicate-callback?${trackCallbackQuery(t.id)}`;
         const rres = await fetch("https://api.replicate.com/v1/predictions", {
           method: "POST",
           headers: { Authorization: `Bearer ${replicateToken}`, "Content-Type": "application/json" },
@@ -264,7 +262,7 @@ export async function POST(req: NextRequest) {
         return { ok: false, track: t.id, reason: `replicate ${rres.status}${detail ? `: ${detail.slice(0, 200)}` : ""}` };
       }
 
-      const cb = `${base}/api/transcribe/callback?track=${t.id}&k=${encodeURIComponent(callbackSecret)}`;
+      const cb = `${base}/api/transcribe/callback?${trackCallbackQuery(t.id)}`;
       const params = new URLSearchParams({
         model: "nova-3",
         smart_format: "true",

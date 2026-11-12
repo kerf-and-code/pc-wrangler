@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { opsAlert } from "@/lib/ops-alert";
+import { internalHeaders, internalSecret } from "@/lib/internal-auth";
 
 export const maxDuration = 60;
 
@@ -334,7 +335,7 @@ export async function GET(request: Request) {
   // ==========================================================================================
 
   const kicked: string[] = [];
-  const extractSecret = process.env.TRANSCRIBE_CALLBACK_SECRET;
+  const extractSecret = internalSecret();
   if (extractSecret) {
     const { data: idleExtract } = await admin
       .from("capture_jobs")
@@ -345,8 +346,9 @@ export async function GET(request: Request) {
 
     for (const ej of (idleExtract as Array<{ id: string; extract_cursor: number | null; gm_extract_cursor: number | null }>) || []) {
       if ((ej.extract_cursor || 0) !== 0 || (ej.gm_extract_cursor || 0) !== 0) continue;
-      const url = `${base}/api/extract/run?job=${encodeURIComponent(ej.id)}&k=${encodeURIComponent(extractSecret)}`;
-      void fetch(url, { method: "POST" }).catch(() => {});
+      // push 42 (T5): the internal secret in a header, not the URL
+      const url = `${base}/api/extract/run?job=${encodeURIComponent(ej.id)}`;
+      void fetch(url, { method: "POST", headers: internalHeaders() }).catch(() => {});
       console.log("[advance-jobs] kicked idle extraction for job %s", ej.id);
       kicked.push(ej.id);
     }

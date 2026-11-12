@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { internalHeaders, internalSecret, verifyTrackCallback } from "@/lib/internal-auth";
 
 // app/api/transcribe/replicate-callback/route.ts
 //
@@ -85,17 +86,17 @@ async function finalizeJob(admin: Admin, jobId: string): Promise<string | undefi
 }
 
 function kickExtraction(req: NextRequest, jobId: string) {
-  const secret = process.env.TRANSCRIBE_CALLBACK_SECRET;
-  if (!secret) return;
+  if (!internalSecret()) return;
   const base = process.env.TRANSCRIBE_CALLBACK_BASE || req.nextUrl.origin;
-  const url = `${base}/api/extract/run?job=${encodeURIComponent(jobId)}&k=${encodeURIComponent(secret)}`;
-  void fetch(url, { method: "POST" }).catch(() => {});
+  // push 42 (T5): the internal secret goes in a header, never in the URL
+  const url = `${base}/api/extract/run?job=${encodeURIComponent(jobId)}`;
+  void fetch(url, { method: "POST", headers: internalHeaders() }).catch(() => {});
 }
 
 export async function POST(req: NextRequest) {
-  const trackId = req.nextUrl.searchParams.get("track");
-  const k = req.nextUrl.searchParams.get("k");
-  if (!trackId || k !== process.env.TRANSCRIBE_CALLBACK_SECRET) {
+  // push 42 (audit round 2, T5): the URL must carry our signature for this track (lib/internal-auth.ts)
+  const { ok: signed, trackId } = verifyTrackCallback(req.nextUrl.searchParams);
+  if (!trackId || !signed) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
@@ -151,7 +152,7 @@ export async function POST(req: NextRequest) {
     if (insErr) return failTrack();
   }
 
-  // Empty-but-valid (no speech) is "done", not an error — a quiet room still resolves the track.
+  // Empty-but-valid (no speech) is "done", not an error: a quiet room still resolves the track.
   await admin.from("audio_tracks").update({ status: "done" }).eq("id", t.id);
   const status = await finalizeJob(admin, t.job_id);
   if (status === "extracting") kickExtraction(req, t.job_id);

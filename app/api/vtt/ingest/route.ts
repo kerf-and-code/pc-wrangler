@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { createClient as createSessionClient } from "@/lib/supabase/server";
 import { emptyProof, proofFromKeys, proofFromSession } from "@/lib/vtt/ingest-keys";
 import { routeByName, type NamedCharacter } from "@/lib/vtt/name-route";
+import { createHash } from "node:crypto";
 
 // POST /api/vtt/ingest
 // Receives normalized table events (Beyond20 now; Foundry/Owlbear later) from the
@@ -50,6 +51,21 @@ const MAX_EVENTS_PER_BATCH = 50;
 const MAX_CODES = 20;
 const MAX_KEYS = 20;
 const MAX_JSON_CHARS = 16000;
+// Push 42 (audit round 2, T11): at most this many events per campaign in any minute. A busy table rolls
+// a few dozen times a minute; this only stops a stuck retry loop or a script from burying the session.
+const MAX_EVENTS_PER_CAMPAIGN_MINUTE = 300;
+
+/** A stable id for an event its sender gave none (Beyond20, Foundry): the same roll sent twice (a retried
+ *  batch) gets the same id, so the unique index from p160 stores it once. Only when the roll carries its
+ *  own time, so two genuinely separate rolls are never folded together. Prefixed so it cannot meet a
+ *  Roll20 message id. */
+function derivedEventId(r: { source: string; actor_name: string | null; event_type: string; name: string | null; rolled_at: string | null; rolls: unknown; character_id: string | null; ddb_character_id: string | null }): string | null {
+  if (!r.rolled_at) return null;
+  const h = createHash("sha256")
+    .update(JSON.stringify([r.source, r.actor_name, r.event_type, r.name, r.rolled_at, r.rolls ?? null, r.character_id, r.ddb_character_id]))
+    .digest("hex");
+  return `h:${h.slice(0, 40)}`;
+}
 
 function serviceClient() {
   return createClient(
@@ -335,6 +351,23 @@ export async function POST(request: NextRequest) {
 
   for (const r of rows) if (r.fidelity === "canonical") verified += 1;
 
+  // Push 42 (T11): every event with its own time gets an id, so a retried batch is not stored twice.
+  for (const r of rows) {
+    if (!r.external_id) r.external_id = derivedEventId(r as Parameters<typeof derivedEventId>[0]);
+  }
+
+  // Push 42 (T11): a per-campaign ceiling per minute, counted from what is already stored.
+  const since = new Date(Date.now() - 60 * 1000).toISOString();
+  const perCampaign = new Map<string, number>();
+  for (const r of rows) perCampaign.set(r.campaign_id!, (perCampaign.get(r.campaign_id!) ?? 0) + 1);
+  for (const [cid, n] of perCampaign) {
+    const { count } = await sb.from("vtt_events").select("id", { count: "exact", head: true })
+      .eq("campaign_id", cid).gte("received_at", since);
+    if ((count ?? 0) + n > MAX_EVENTS_PER_CAMPAIGN_MINUTE) {
+      return NextResponse.json({ error: "Too many rolls in the last minute for this table. Wait a minute and roll again." }, { status: 429, headers: CORS });
+    }
+  }
+
   // Rows with no external id insert as before. Rows with one (Roll20) skip a copy already stored; a
   // copy its sender can vouch for upgrades a stored unverified one.
   const plain = rows.filter((r) => !r.external_id);
@@ -353,7 +386,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: missing ? "Roll20 capture is not set up on the server yet (p160)." : "Insert failed. Try again." }, { status: 500, headers: CORS });
     }
     inserted += (fresh ?? []).length;
-    for (const r of keyed.filter((x) => x.fidelity === "canonical")) {
+    // Only a Roll20 message id can arrive twice from two different senders; a derived id (h:) cannot.
+    for (const r of keyed.filter((x) => x.fidelity === "canonical" && !x.external_id!.startsWith("h:"))) {
       await sb.from("vtt_events").update({ fidelity: "canonical", character_id: r.character_id })
         .eq("campaign_id", r.campaign_id!).eq("source", r.source).eq("external_id", r.external_id!).eq("fidelity", "unverified");
     }
