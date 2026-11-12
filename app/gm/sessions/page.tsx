@@ -9,6 +9,7 @@ import { friendlyError } from "@/lib/friendly-error";
 import { askConfirm } from "@/lib/confirm";
 import { fmtDateTime } from "@/lib/format";
 import { fetchAll } from "@/lib/fetch-all";
+import { WhyOff } from "@/components/why-off";
 
 const STATUS_TONE: Record<string, string> = {
   scheduled: C.muted, live: C.warn, completed: C.sun, processed: C.good, cancelled: C.muted,
@@ -883,6 +884,8 @@ export default function SessionWorkspace() {
                 {recapPosting ? "Posting…" : "Post to Discord"}
               </button>
               {recapMsg && <span style={{ fontSize: 12, color: C.muted }}>{recapMsg}</span>}
+              {/* push 49 (U12): the reasons the buttons are off, in view */}
+              {!recapMsg && <WhyOff reason={!recap.trim() ? "Write or generate a recap first." : !recapLink ? "No player link yet for Copy recap link: make one on Roster." : null} />}
             </div>
             <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${C.line}` }}>
               <div style={{ fontSize: 12, color: C.muted, marginBottom: 8 }}>

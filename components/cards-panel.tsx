@@ -6,6 +6,7 @@ import type { createClient } from "@/lib/supabase/client";
 import { MAX_CARDS, SUIT_SYMBOL, cardKey, isRed, nameFromFile, parseCustomDeck, shuffled, standardDeck, type CardFace, type Suit } from "@/lib/tabletop/cards";
 import { clearPictures, pictureProblem, uploadPicture, uploadPictures } from "@/lib/tabletop/table-files";
 import { friendlyError, notReady } from "@/lib/friendly-error";
+import { WhyOff } from "@/components/why-off";
 
 // components/cards-panel.tsx (2026-11-09)
 //
@@ -303,6 +304,7 @@ function DeckRow({ deck, campaignId, isGm, seats, players, busy, run, supabase, 
             <input type="number" min={1} max={10} value={count} aria-label="How many to deal" onChange={(e) => setCount(Math.max(1, Math.min(10, Number(e.target.value) || 1)))} style={{ ...field, width: 48 }} />
             <button type="button" disabled={busy || !dealTo || deck.draw === 0} title={deck.draw === 0 ? "The draw pile is empty" : !dealTo ? "Choose who to deal to first" : undefined} onClick={() => void run(() => supabase.rpc("tabletop_deck_deal", { p_deck: deck.id, p_to: dealTo, p_count: count }))} style={small}>Deal</button>
             <button type="button" aria-expanded={handing} onClick={() => setHanding(!handing)} style={handing ? { ...small, borderColor: C.sun, color: C.sun } : small}>Hand out a card</button>
+            <WhyOff reason={deck.draw > 0 && !dealTo ? "Choose who to deal to first." : null} />
           </>
         )}
       </div>
@@ -368,7 +370,9 @@ function HandOut({ deck, supabase, players, busy, run }: {
   }, [rows, q]);
   const toName = players.find((p) => p.profileId === to)?.name ?? "";
 
-  if (!players.length) return <p style={{ color: C.muted, margin: "8px 0 0" }}>No players at this table yet: a player shows here once their character is in this campaign.</p>;
+  // Push 49 (audit round 2, LV15): say why the list is empty. A card goes to a person, so a character
+  // nobody has claimed (or one played from the GM's own account) has no one to hold it.
+  if (!players.length) return <p style={{ color: C.muted, margin: "8px 0 0", lineHeight: 1.5 }}>Nobody to hand it to yet. A card goes to a player&apos;s account, so a character shows here once a player has claimed it with their invite link. Characters still on your own account cannot hold cards.</p>;
   return (
     <div style={{ marginTop: 8, borderTop: `1px solid ${C.line}`, paddingTop: 8 }}>
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center", marginBottom: 6 }}>
@@ -376,6 +380,7 @@ function HandOut({ deck, supabase, players, busy, run }: {
           <option value="">Give to...</option>
           {players.map((s) => <option key={s.profileId} value={s.profileId}>{s.name}</option>)}
         </select>
+        <WhyOff reason={!to ? "Choose who to give it to, then press Give on a card." : null} />
         {(rows?.length ?? 0) > 8 && <input aria-label="Find a card" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Find a card" style={{ ...field, flex: 1, minWidth: 100 }} />}
       </div>
       {err && <p role="status" style={{ color: C.warn, margin: 0 }}>{err}</p>}

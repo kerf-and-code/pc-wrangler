@@ -134,7 +134,7 @@ export default function MyCharactersPage() {
 
                 <div style={{ color: C.muted, fontSize: 13, marginTop: 5, lineHeight: 1.5 }}>
                   {[
-                    c.level ? `Level ${c.level}` : null,
+                    c.level && c.level > 0 ? `Level ${c.level}` : null, // push 49 (LV2): a retired character carries -1
                     c.species,
                     c.subclass ? `${c.subclass} ${c.class ?? ""}`.trim() : c.class,
                     c.alignment,

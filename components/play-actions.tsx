@@ -39,6 +39,7 @@ import { readSpell, spellCost, upcasts, ORD, type SpellRecord, type SpellCost } 
 import { slotsLeft, slotFor } from "@/lib/play/tracks";
 import type { DerivedSheet } from "@/lib/srd/derive-sheet";
 import { useNarrow } from "@/lib/use-narrow";
+import { WhyOff } from "@/components/why-off";
 
 export type KnownSpell = { rec: SpellRecord; always?: string | null; free?: boolean };
 export type FeatureAction = { key: string; name: string; level: number; cost: "action" | "bonus" | "reaction"; summary: string; from: string };
@@ -320,6 +321,7 @@ export default function PlayActions({ sheet, charLevel, characterId, campaignId,
                   <div style={{ flex: 1 }}><div style={{ color: STONE.ink, fontSize: 13.5 }}>{c.name}</div><div style={{ fontSize: 11.5, color: STONE.inkFaint }}>{c.summary}</div></div>
                   <button type="button" className="forge-btn" disabled={left < c.amount} title={left < c.amount ? `Needs ${c.amount} ${c.resource}, you have ${left}` : undefined}
                     onClick={() => { onSpend(c.resource, (spent[c.resource] || 0) + c.amount); setOut({ text: `${c.name}: ${c.amount} ${c.resource} spent.`, bad: false }); }} style={btn()}>Use ({c.amount} {c.resource})</button>
+                  <WhyOff reason={left < c.amount ? `${left} of ${c.amount} left` : null} style={{ fontSize: 11.5 }} />
                 </div>
               );
             })}

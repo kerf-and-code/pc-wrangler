@@ -26,13 +26,29 @@ export default function PlayerJournalPage() {
   const [journal, setJournal] = useState<Journal | null>(null);
   const [lore, setLore] = useState<LoreItem[]>([]);
   const [profileId, setProfileId] = useState<string | null>(null);
-  const [status, setStatus] = useState<"loading" | "ready" | "unclaimed" | "invalid" | "error">("loading");
+  const [status, setStatus] = useState<"loading" | "ready" | "unclaimed" | "invalid" | "error" | "pick" | "none">("loading");
+  const [tables, setTables] = useState<{ campaign_name: string; share_code: string }[]>([]);
 
   useEffect(() => {
     let active = true;
     (async () => {
       const share = new URLSearchParams(window.location.search).get("share");
-      if (!share) { if (active) setStatus("invalid"); return; }
+      // Push 49 (audit round 2, U5, LV1): /me with no table in the address used to say the link did not
+      // match a table, even to a signed-in player whose menu showed their table. Now a signed-in player
+      // goes straight to their one table, or picks from several; only someone at no table is told so.
+      if (!share) {
+        const { data: { user: u } } = await supabase.auth.getUser();
+        if (!u) { if (active) setStatus("invalid"); return; }
+        const { data: mine, error: mErr } = await supabase.rpc("my_campaigns");
+        if (!active) return;
+        if (mErr) { setStatus("error"); return; }
+        const list = ((mine ?? []) as { campaign_name: string; share_code: string | null }[])
+          .filter((c): c is { campaign_name: string; share_code: string } => !!c.share_code);
+        if (list.length === 1) { window.location.replace(`/me?share=${encodeURIComponent(list[0].share_code)}`); return; }
+        setTables(list);
+        setStatus(list.length ? "pick" : "none");
+        return;
+      }
 
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
@@ -82,6 +98,21 @@ export default function PlayerJournalPage() {
 
         {status === "loading" && <p role="status" style={{ textAlign: "center", color: C.muted, fontSize: 14 }}>Loading&hellip;</p>}
         {status === "invalid" && <LinkInvalid what="invite link" />}
+        {status === "none" && (
+          <p style={{ textAlign: "center", color: C.muted, fontSize: 14, lineHeight: 1.6 }}>
+            You are not at a table yet. Open the personal invite link your GM sent to claim your character.
+          </p>
+        )}
+        {status === "pick" && (
+          <div style={{ textAlign: "center" }}>
+            <p style={{ color: C.muted, fontSize: 14, margin: "0 0 12px" }}>Which table?</p>
+            <div style={{ display: "grid", gap: 8 }}>
+              {tables.map((t) => (
+                <a key={t.share_code} href={`/me?share=${encodeURIComponent(t.share_code)}`} style={{ ...card, display: "block", color: C.text, textDecoration: "none", fontWeight: 600, marginBottom: 0 }}>{t.campaign_name}</a>
+              ))}
+            </div>
+          </div>
+        )}
         {status === "error" && <ConnectProblem />}
         {status === "unclaimed" && (
           <p style={{ textAlign: "center", color: C.muted, fontSize: 14, lineHeight: 1.6 }}>

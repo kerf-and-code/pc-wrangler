@@ -300,7 +300,7 @@ export default function CombatPage() {
 
   async function endFight() {
     if (!combat) return;
-    if (!await askConfirm(`End "${combat.name}"? Players stop seeing it, and it leaves this page. The rolls stay in this session's Mechanics.`)) return;
+    if (!await askConfirm(`End "${combat.name}"? Players stop seeing it, and it leaves the Combat page and the table. The rolls stay in this session's Mechanics.`)) return;
     if (timer.current) { clearTimeout(timer.current); timer.current = null; }
     await flush();
     const { error } = await supabase.from("combats").update({ status: "ended", ended_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq("id", combat.id);

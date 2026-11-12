@@ -60,8 +60,13 @@ export default function CharacterPage() {
   const [summary, setSummary] = useState("");
   const [portraitUrl, setPortraitUrl] = useState<string | null>(null);
   const [blocks, setBlocks] = useState<Block[]>([]);
-  const [pageBusy, setPageBusy] = useState(false);
-  const [pageSaved, setPageSaved] = useState(false);
+  // Push 49 (audit round 2, U8): the public page saves itself like the sections below (a moment after the
+  // last change), with the same Saving, Saved and Not saved with Retry. It used to need a Save page press,
+  // and leaving without one lost the edits without a word.
+  const [pageState, setPageState] = useState<"idle" | "pending" | "saving" | "saved" | "error">("idle");
+  const pageDirtyRef = useRef(false);
+  const pageTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pageDraftRef = useRef<{ blocks: Block[]; summary: string }>({ blocks: [], summary: "" });
   const [pageError, setPageError] = useState<string | null>(null);
 
   // Connections (p80 page + p83 policy): what the owner can link to, and the links their character has.
@@ -89,6 +94,7 @@ export default function CharacterPage() {
     setCh(character);
     setIsPublic(Boolean(character.is_public));
     setSummary(character.summary || "");
+    pageDraftRef.current = { blocks: character.blocks && character.blocks.length ? character.blocks : [], summary: character.summary || "" };
     setPortraitUrl(character.portrait_url);
     setBlocks(character.blocks && character.blocks.length ? character.blocks : []);
 
@@ -158,7 +164,7 @@ export default function CharacterPage() {
   }, [supabase]);
 
   useEffect(() => {
-    const warn = (e: BeforeUnloadEvent) => { if (Object.keys(pendingRef.current).length) { e.preventDefault(); e.returnValue = ""; } };
+    const warn = (e: BeforeUnloadEvent) => { if (Object.keys(pendingRef.current).length || pageDirtyRef.current) { e.preventDefault(); e.returnValue = ""; } };
     window.addEventListener("beforeunload", warn);
     const timers = timersRef.current;
     return () => { window.removeEventListener("beforeunload", warn); Object.values(timers).forEach(clearTimeout); };
@@ -243,13 +249,30 @@ export default function CharacterPage() {
 
   const savePage = async () => {
     if (!ch) return;
-    setPageBusy(true); setPageError(null); setPageSaved(false);
-    const { error } = await supabase.from("characters").update({ blocks, summary: summary.trim() || null }).eq("id", ch.id);
-    setPageBusy(false);
-    if (error) { setPageError(`Could not save the page: ${error.message}`); return; }
-    setPageSaved(true);
-    setTimeout(() => setPageSaved(false), 2500);
+    if (pageTimerRef.current) { clearTimeout(pageTimerRef.current); pageTimerRef.current = null; }
+    const draft = pageDraftRef.current;
+    pageDirtyRef.current = false;
+    setPageState("saving"); setPageError(null);
+    const { error } = await supabase.from("characters").update({ blocks: draft.blocks, summary: draft.summary.trim() || null }).eq("id", ch.id);
+    if (error) { pageDirtyRef.current = true; setPageState("error"); setPageError(`Not saved: ${error.message}`); return; }
+    setPageState(pageDirtyRef.current ? "pending" : "saved");
   };
+  const savePageRef = useRef(savePage);
+  useEffect(() => { savePageRef.current = savePage; });
+  const editPage = (next: { blocks?: Block[]; summary?: string }) => {
+    if (next.blocks) setBlocks(next.blocks);
+    if (next.summary !== undefined) setSummary(next.summary);
+    pageDraftRef.current = { blocks: next.blocks ?? pageDraftRef.current.blocks, summary: next.summary ?? pageDraftRef.current.summary };
+    pageDirtyRef.current = true;
+    setPageState("pending");
+    if (pageTimerRef.current) clearTimeout(pageTimerRef.current);
+    pageTimerRef.current = setTimeout(() => { void savePageRef.current(); }, 1200);
+  };
+  useEffect(() => {
+    const hide = () => { if (document.visibilityState === "hidden" && pageDirtyRef.current) void savePageRef.current(); };
+    document.addEventListener("visibilitychange", hide);
+    return () => { document.removeEventListener("visibilitychange", hide); if (pageTimerRef.current) clearTimeout(pageTimerRef.current); };
+  }, []);
 
   const addLink = async () => {
     if (!ch || !linkTarget) return;
@@ -313,7 +336,7 @@ export default function CharacterPage() {
               <div style={{ fontSize: 14, color: C.text, fontWeight: 600 }}>Show this character on the public wiki</div>
               <div style={{ fontSize: 12.5, color: C.muted, marginTop: 2 }}>
                 {camp?.public_published_at
-                  ? "It appears under The party once you save the page below."
+                  ? "It appears under The party in your campaign's public codex."
                   : "Your GM has not published the campaign yet, so nothing is public until they do, even with this on."}
               </div>
             </div>
@@ -326,7 +349,8 @@ export default function CharacterPage() {
               currentUrl={portraitUrl}
               onUploaded={async (url) => {
                 setPortraitUrl(url);
-                await supabase.from("characters").update({ portrait_url: url }).eq("id", ch.id);
+                const { error: pErr } = await supabase.from("characters").update({ portrait_url: url }).eq("id", ch.id);
+                if (pErr) setPageError(`The portrait did not save: ${pErr.message}`);
               }}
               label="Character portrait"
               maker name={ch.name}
@@ -336,19 +360,19 @@ export default function CharacterPage() {
 
           <div style={{ marginBottom: 14 }}>
             <div style={{ ...label, marginBottom: 6 }}>Summary</div>
-            <input aria-label="One-line summary" value={summary} onChange={(e) => setSummary(e.target.value)} maxLength={280}
+            <input aria-label="One-line summary" value={summary} onChange={(e) => editPage({ summary: e.target.value })} maxLength={280}
               placeholder="One line under the name, e.g. a half-elf ranger hunting the coven that burned her village."
               style={field} />
           </div>
 
           <div style={{ ...label, marginBottom: 6 }}>The page</div>
-          <BlockEditor blocks={blocks} onChange={setBlocks} onUploadImage={uploadBlockImage} />
+          <BlockEditor blocks={blocks} onChange={(b) => editPage({ blocks: b })} onUploadImage={uploadBlockImage} />
 
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 12, flexWrap: "wrap" }}>
-            <button type="button" onClick={savePage} disabled={pageBusy} style={{ ...primaryBtn, opacity: pageBusy ? 0.7 : 1 }}>
-              {pageBusy ? "Saving…" : "Save page"}
-            </button>
-            {pageSaved && <span role="status" aria-live="polite" style={{ fontSize: 13, color: C.good }}>Saved.</span>}
+            <span role="status" aria-live="polite" style={{ fontSize: 13, color: pageState === "saved" ? C.good : C.muted }}>
+              {pageState === "pending" ? "Changes not saved yet" : pageState === "saving" ? "Saving\u2026" : pageState === "saved" ? "Saved" : pageState === "error" ? "" : "Changes save on their own."}
+            </span>
+            {pageState === "error" && <button type="button" onClick={() => void savePage()} style={ghostBtn}>Retry</button>}
             {pageError && <span role="alert" style={{ fontSize: 12.5, color: C.warn }}>{pageError}</span>}
           </div>
 

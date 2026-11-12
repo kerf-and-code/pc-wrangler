@@ -195,7 +195,12 @@ function hueOf(id: string): string {
   let h = 0; for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) % 360;
   return `hsl(${h} 75% 60%)`;
 }
-const initials = (name: string) => name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "").join("") || "?";
+// Push 49 (audit LV17): a one-word name shows its first two letters, so Five and Four read Fi and Fo, not F and F.
+const initials = (name: string) => {
+  const words = name.split(/\s+/).filter(Boolean);
+  if (words.length === 1) { const w = words[0]; return (w[0]?.toUpperCase() ?? "") + (w[1]?.toLowerCase() ?? ""); }
+  return words.slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "").join("") || "?";
+};
 const enumerated = (base: string, taken: string[]) => {
   if (!taken.includes(base)) return base;
   let i = 2; while (taken.includes(`${base} ${i}`)) i++;
@@ -273,6 +278,10 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     if (text) canvasMsgTimer.current = setTimeout(() => setCanvasMsg(null), ok ? 3000 : 6000);
   }, []);
   useEffect(() => () => { if (canvasMsgTimer.current) clearTimeout(canvasMsgTimer.current); }, []);
+  // Push 49 (audit round 2, U3): about 35 panel errors (handouts, pins, effects, scenes, floors, uploads)
+  // went to a line at the bottom of whichever panel was open, often scrolled away or closed on a phone.
+  // Each one now also shows on the map, where the message about a click already goes.
+  useEffect(() => { if (chatErr) say(chatErr); }, [chatErr, say]);
   // Audit U29: removing a template or a place in the turn order can be taken back for 8 seconds, the
   // same pattern as the Combat page, rather than another dialog mid-session.
   const [undoBar, setUndoBar] = useState<{ text: string; run: () => void } | null>(null);
@@ -288,6 +297,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   const difficultRef = useRef<Set<number>>(new Set());
   const terrainPaint = useRef<{ on: boolean } | null>(null);
   const [fogOnUi, setFogOnUi] = useState(false);
+  const [revealArm, setRevealArm] = useState(false);
   const [selDoors, setSelDoors] = useState<string[]>([]);
   const [selTpl, setSelTpl] = useState<string | null>(null);
   // push 28 (V1): the fight entries inside a template, for a player's save effect, and the tokens behind them
@@ -1600,7 +1610,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
   };
   const endFight = async () => {
     const cur = fightRow.current; if (!cur) return;
-    if (!await askConfirm(`End "${cur.name}"? Players stop seeing it here and on the Combat page. The rolls stay in this session's Mechanics.`)) return;
+    if (!await askConfirm(`End "${cur.name}"? Players stop seeing it, and it leaves the Combat page and the table. The rolls stay in this session's Mechanics.`)) return;
     const { error: er } = await supabase.from("combats").update({ status: "ended", ended_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq("id", cur.id);
     if (er) { say(`Not ended: ${er.message}`); return; }
     fightRow.current = null; setFight(null); setSelEntry(null); send("combat", {}); requestDraw();
@@ -2481,12 +2491,25 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [makerFor]);
 
+  // Push 49 (audit round 2, U6): removing tokens (the button, Delete or Backspace) can be taken back for
+  // 8 seconds, the same Undo bar templates use. The rows are read first, so Undo puts back the same
+  // tokens with the same ids, which keeps a fight's links to them.
   const deleteTokens = useCallback(async (ids: string[]) => {
     if (!ids.length) return;
+    const { data: rows } = await supabase.from("vtt_tokens").select("*").in("id", ids);
     const { error: er } = await supabase.from("vtt_tokens").delete().in("id", ids);
     if (er) { say(`Could not remove: ${er.message}`); return; }
     for (const id of ids) tokensRef.current.delete(id);
     setSelected([]); requestDraw();
+    const kept = (rows ?? []) as Record<string, unknown>[];
+    if (!kept.length) return;
+    setUndoBar({ text: kept.length === 1 ? `${String(kept[0].name ?? "Token")} removed.` : `${kept.length} tokens removed.`, run: () => {
+      void supabase.from("vtt_tokens").insert(kept).select("*").then(({ data, error: e2 }) => {
+        if (e2 || !data) { say(`Could not bring them back: ${e2?.message ?? "no row"}`); return; }
+        for (const t of data as Token[]) tokensRef.current.set(t.id, { ...t, mine: true });
+        setSelected((data as Token[]).map((t) => t.id)); requestDraw();
+      });
+    } });
   }, [supabase, requestDraw]);
 
   const turn = useCallback((ids: string[], by: number) => {
@@ -3192,7 +3215,14 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                   </select>
                 </label>
               )}
-              <button type="button" onClick={() => fogAll(true)} style={small}>Reveal all</button>
+              {/* Push 49 (audit round 2, U7): showing the whole map to the players is one more press, not one */}
+              {revealArm
+                ? <>
+                    <span style={{ fontSize: 12.5, color: "#d9a43a" }}>Show the players the whole map?</span>
+                    <button type="button" onClick={() => { setRevealArm(false); fogAll(true); }} style={{ ...small, borderColor: "#d9a43a", color: "#d9a43a" }}>Yes, reveal all</button>
+                    <button type="button" onClick={() => setRevealArm(false)} style={small}>Cancel</button>
+                  </>
+                : <button type="button" onClick={() => setRevealArm(true)} style={small}>Reveal all</button>}
               <button type="button" onClick={() => fogAll(false)} style={small}>Hide all</button>
               {!fogOnUi && <span style={{ fontSize: 12, color: "#d9a43a" }}>Fog is off: players see the whole map.</span>}
             </div>

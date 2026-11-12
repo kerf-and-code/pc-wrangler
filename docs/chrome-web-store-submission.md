@@ -219,21 +219,18 @@ All three are true. The rolls go to the user's own campaign and nowhere else.
 
 ## 4. After approval
 
-Two constants are currently empty strings and need the live store URL:
-
-- `app/x/[code]/page.tsx`: `CAPTURE_STORE_URL = ""`
-- `components/table-tap-card.tsx`: `CAPTURE_STORE_URL = ""`
-
-Fill both with the store listing URL, then:
+One constant is an empty string and needs the live store URL: `CAPTURE_STORE_URL` in
+`lib/capture.ts` (push 49 moved it there from the two pages that used it). Fill it with the store
+listing URL, then:
 
 ```
-git add "app/x/[code]/page.tsx" components/table-tap-card.tsx
+git add lib/capture.ts
 git commit -m "Extension: point the install links at the live Chrome Web Store listing"
 git push
 ```
 
-Until then the install text renders as instructions rather than a link, which works but
-makes the player do the finding.
+Until then the setup page and the GM's table card say the extension is not in the Chrome Web
+Store yet and to ask the GM how to install it.
 
 ---
 

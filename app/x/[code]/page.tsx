@@ -18,11 +18,11 @@ import { Suspense, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import { RollKeyForExtension } from "@/components/roll-key";
+import { CAPTURE_NOT_LISTED, CAPTURE_STORE_URL } from "@/lib/capture";
 
 const BEYOND20_CHROME =
   "https://chrome.google.com/webstore/detail/beyond20/aibeceakhehbogooeplpapmbmknmdmpb";
-// Replace with the real Chrome Web Store URL once Six Axes Capture is published.
-const CAPTURE_STORE_URL = "";
+// The Six Axes Capture store link lives in lib/capture.ts (push 49).
 
 export default function LinkLandingPage() {
   return (
@@ -138,7 +138,7 @@ function LinkLanding() {
                 Six Axes Capture
               </a>
             ) : (
-              <span style={{ color: C.text }}>Six Axes Capture</span>
+              <span style={{ color: C.text }}>Six Axes Capture ({CAPTURE_NOT_LISTED})</span>
             )}{" "}
             (sends your rolls to the table).
           </li>

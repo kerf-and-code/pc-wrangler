@@ -9,12 +9,9 @@
 
 import { useEffect, useState } from "react";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
+import { CAPTURE_NOT_LISTED, CAPTURE_STORE_URL } from "@/lib/capture";
 
-
-
-// Real Chrome Web Store URL once Six Axes Capture is published. Empty until then;
-// the install step renders as plain text rather than a dead link.
-const CAPTURE_STORE_URL = "";
+// The Six Axes Capture store link lives in lib/capture.ts (push 49): empty until the listing is live.
 const BEYOND20_URL =
   "https://chrome.google.com/webstore/detail/beyond20/aibeceakhehbogooeplpapmbmknmdmpb";
 
@@ -100,7 +97,7 @@ export default function TableTapCard({ shareCode }: { shareCode: string }) {
             Six Axes Capture
           </a>
         ) : (
-          <span style={{ color: C.text }}>Six Axes Capture</span>
+          <span style={{ color: C.text }}>Six Axes Capture ({CAPTURE_NOT_LISTED})</span>
         )}{" "}
         and{" "}
         <a href={BEYOND20_URL} target="_blank" rel="noreferrer" style={{ color: C.sun }}>

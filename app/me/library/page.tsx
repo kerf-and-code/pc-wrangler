@@ -125,7 +125,7 @@ function LibraryCard({ row, campaigns, busy, onEdit, onDelete, onPlay }: {
   const [confirming, setConfirming] = useState(false);
 
   const subtitle = useMemo(() => [
-    row.level ? `Level ${row.level}` : null,
+    row.level && row.level > 0 ? `Level ${row.level}` : null, // push 49 (LV2)
     row.species,
     row.subclass ? `${row.subclass} ${row.class ?? ""}`.trim() : row.class,
   ].filter(Boolean).join(" · ") || "No details yet", [row]);

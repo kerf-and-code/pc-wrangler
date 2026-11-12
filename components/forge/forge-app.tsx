@@ -118,6 +118,7 @@ import {
 import { hasPrintedAbilities, suppressItemEffects, reconcileImport, RECONCILE_VERSION, type DdbSheet } from "@/lib/ddb-import";
 import { fmtTime } from "@/lib/format";
 import Button from "@/components/ui-forge/Button";
+import { WhyOff } from "@/components/why-off";
 
 // ---------------------------------------------------------------------------
 // Build defaults + normalization
@@ -443,7 +444,19 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
       // app) theme to that campaign's system and build for it. A Lancer character opens with the Lancer
       // look and the Lancer builder even when reached straight from the stable.
       const cid = (r as { campaign_id?: string }).campaign_id;
-      if (cid) setActiveCampaign({ id: cid, system: sys });
+      // Push 49 (audit round 2, LV5): keep the campaign's name, which the menu's campaign box shows. Without
+      // it the box read "Not chosen yet" on every sheet a co-GM opened.
+      if (cid) {
+        const prev = getActiveCampaign();
+        const known = prev?.id === cid ? prev.name : undefined;
+        setActiveCampaign({ id: cid, name: known, system: sys });
+        if (!known) {
+          void supabase.from("campaigns").select("name").eq("id", cid).maybeSingle().then(({ data: cr }) => {
+            const nm = (cr as { name?: string } | null)?.name;
+            if (nm && getActiveCampaign()?.id === cid) setActiveCampaign({ id: cid, name: nm, system: sys });
+          });
+        }
+      }
       if (sys === "pf2e") setPbuild({ ...emptyPf2eBuild(), ...(r.build as Partial<Pf2eBuild>) });
       else if (sys === "daggerheart") setDbuild({ ...emptyDHBuild(), ...(r.build as Partial<DHBuild>) });
       else if (sys === "drawsteel") setSteelBuild({ ...emptyDSBuild(), ...(r.build as Partial<DSBuild>) });
@@ -1834,6 +1847,7 @@ export default function ForgeApp({ view = "forge" }: { view?: "forge" | "play" }
                       onClick={() => setInitOpen((o) => !o)}
                       style={{ ...stoneButton(initOpen || fightMine?.me.is_turn || savesDue.length ? "primary" : "stone"), fontSize: 12.5, padding: "6px 12px",
                         ...(savesDue.length ? { outline: `2px solid ${C.warn}`, outlineOffset: 1 } : {}) }}>{initLabel}</button>
+                    {!campaignNow && <WhyOff reason="Turn order: only a character at a campaign table is in fights." style={{ fontSize: 11.5 }} />}
                     {campaignNow && charIdNow && <SheetRollLog campaignId={campaignNow} characterId={charIdNow} />}
                     <a className="forge-btn" href={forgeHref} style={{ ...stoneButton("ghost"), fontSize: 12.5, padding: "6px 12px", textDecoration: "none" }}>Edit in the Forge</a>
                     {charIdNow && <a className="forge-btn" href={`/me/import?into=${charIdNow}`} title="Replace this character's build with a D&D Beyond character-sheet PDF, keeping HP, coins, notes and the rest of the sheet's own state"
@@ -5472,7 +5486,7 @@ function Picking({ stable, base, lead }: { stable: StableRow[]; base: string; le
           <div style={{ ...stonePanel(), padding: "14px 20px", display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
             <span style={{ fontFamily: FORGE_FONTS.display, fontSize: 18, color: STONE.ink }}>{c.name}</span>
             <span style={{ fontFamily: FORGE_FONTS.mono, fontSize: 12, color: STONE.inkDim }}>
-              {[c.level ? `L${c.level}` : null, c.species, c.class].filter(Boolean).join(" · ")}
+              {[c.level && c.level > 0 ? `L${c.level}` : null, c.species, c.class].filter(Boolean).join(" · ")}
               {"  "}<span style={{ color: SAX.brass }}>{c.campaign_name}</span>
             </span>
           </div>
@@ -5763,6 +5777,13 @@ function SheetRollLog({ campaignId, characterId }: { campaignId: string; charact
     const id = setInterval(() => { if (!document.hidden) void load(); }, 8000);
     return () => clearInterval(id);
   }, [open, load]);
+  // Push 49 (audit LV13): Escape closes the Rolls popover, as it does every other popover.
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
   const time = (iso: string) => { return fmtTime(iso); };
   return (
     <div style={{ position: "relative" }}>
