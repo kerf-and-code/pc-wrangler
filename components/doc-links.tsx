@@ -2,7 +2,8 @@
 //
 // A list of the Six Axes documents (lib/docs-files.ts), each with a link that opens the PDF in a new tab
 // (it reads on a phone) and one that downloads the Word file (to edit, print or forward). Used by the GM
-// Help page and the player Help page.
+// Help page and the player Help page. On the player page a document's playerBlurb, when it has one,
+// replaces the GM-facing blurb (push 57).
 
 import React from "react";
 import { DOC_FILES, docHref, type DocFile } from "@/lib/docs-files";
@@ -24,7 +25,7 @@ export default function DocLinks({ only }: { only?: "players" }) {
                 aria-label={`Download ${d.title} as a Word file`}>Word file</a>
             </span>
           </div>
-          <div style={{ color: C.muted, fontSize: 13.5, lineHeight: 1.55, marginTop: 3 }}>{d.blurb}</div>
+          <div style={{ color: C.muted, fontSize: 13.5, lineHeight: 1.55, marginTop: 3 }}>{only === "players" ? (d.playerBlurb ?? d.blurb) : d.blurb}</div>
         </li>
       ))}
     </ul>

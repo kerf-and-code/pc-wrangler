@@ -6,8 +6,11 @@
 // and a GM forwarding a link both reach the files.
 //
 // Add a document here and in scripts/build-docs/build.mjs together: the slug is the file name.
+//
+// Push 57 (2026-11-12): playerBlurb is what the player Help page shows. The Player Guide's blurb is
+// written for the GM ("Send it to your players") and read oddly to the player it was sent to.
 
-export type DocFile = { slug: string; title: string; blurb: string; forPlayers: boolean };
+export type DocFile = { slug: string; title: string; blurb: string; playerBlurb?: string; forPlayers: boolean };
 
 export const DOC_FILES: DocFile[] = [
   {
@@ -34,6 +37,7 @@ export const DOC_FILES: DocFile[] = [
     slug: "six-axes-player-guide", forPlayers: true,
     title: "Player Guide",
     blurb: "Claiming a character, getting rolls to the table, the tabletop, and your data. Send it to your players.",
+    playerBlurb: "Claiming your character, getting your rolls to the table, the tabletop, and your data.",
   },
   {
     slug: "six-axes-player-quick-card", forPlayers: true,
