@@ -83,6 +83,11 @@ export async function updateSession(request: NextRequest) {
     !request.nextUrl.pathname.startsWith("/schedule") &&
     // The licences page is public documentation, like /privacy and /terms.
     !request.nextUrl.pathname.startsWith("/licenses") &&
+    // ---- added 2026-11-12 (push 54) ----
+    // The six Six Axes documents (public/docs, PDF and Word), linked from both Help pages. A guest player
+    // has no session, and a GM forwards these links, so they must open logged out. They describe the
+    // product and hold no table data.
+    !request.nextUrl.pathname.startsWith("/docs/") &&
     // THE ADD-ON API. Outside programs (bots, overlays, scripts) carry an add-on key, never a session
     // cookie, so without this every call got the login page. Only /api/addon/v1 is open: lib/addons/api.ts
     // checks the key on every call. Keys, webhooks and the nudge (/api/addon/keys, hooks, kick) stay

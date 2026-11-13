@@ -2,6 +2,8 @@
 
 # dependencies
 /node_modules
+# The document builder's own dependencies (push 54: scripts/build-docs, npm run docs).
+/scripts/build-docs/node_modules
 /.pnp
 .pnp.*
 .yarn/*

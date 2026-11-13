@@ -35,7 +35,10 @@ import { gmCampaignsFilter } from "@/lib/campaign-gm";
    2026-11-09: the menu never shrinks to "You" alone. A GM on their own /me pages (their character
    sheet, library, notes) keeps the whole GM menu, which now always carries a "You" group. A player
    whose tab has no table remembered falls back to the table they last opened in this browser, else
-   their most recently played campaign, and the Table box names it with "Switch table". */
+   their most recently played campaign, and the Table box names it with "Switch table".
+
+   2026-11-12 (push 54): a player's Help goes to /me/help (the Player Guide, the Quick Card and short
+   answers), not the public FAQ, which that page links. */
 
 type Leaf = { href: string; label: string; needs?: "character" | "adversary" };
 type Group = { label: string; children: Leaf[] };
@@ -535,7 +538,7 @@ export default function SixAxesNav() {
           {sidebarGroups(groups, hrefFor, activeP.label, current)}
           <div className="sax-foot">
             <NotificationBell placement="side" />
-            <a className="sax-item" href="/faq">Help</a>
+            <a className="sax-item" href="/me/help" aria-current={pathname === "/me/help" ? "page" : undefined}>Help</a>
             <div className="sax-out"><LogoutButton /></div>
           </div>
         </aside>
@@ -554,7 +557,7 @@ export default function SixAxesNav() {
             <Sheet title={sheetGroup.label} current={current} onClose={closeSheet}
               sections={[
                 { links: sheetGroup.children.map((l) => ({ href: hrefFor(sheetGroup, l), label: l.label })) },
-                ...(sheetGroup.label === PLAYER_YOU.label ? [{ label: "Help", links: [{ href: "/faq", label: "Help and FAQ" }] }] : []),
+                ...(sheetGroup.label === PLAYER_YOU.label ? [{ label: "Help", links: [{ href: "/me/help", label: "Help and guide" }] }] : []),
               ]}
               extra={sheetGroup.label === PLAYER_YOU.label ? <div className="sax-sheet-out"><LogoutButton /></div> : null} />
           )}

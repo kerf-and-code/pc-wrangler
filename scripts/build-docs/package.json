@@ -1,0 +1,13 @@
+{
+  "name": "six-axes-build-docs",
+  "private": true,
+  "type": "module",
+  "description": "Builds the six Six Axes documents into public/docs. Kept apart from the app so its one dependency never reaches the app build.",
+  "scripts": {
+    "build": "node build.mjs"
+  },
+  "dependencies": {
+    "docx": "9.8.1",
+    "jszip": "3.10.1"
+  }
+}

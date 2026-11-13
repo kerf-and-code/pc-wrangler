@@ -2,12 +2,17 @@
 
 // Help: renders lib/help-content.mjs. That file is the single source of truth;
 // scripts/export-help-md.mjs turns the same content into docs/six-axes-guide.md.
+//
+// Push 54 (2026-11-12): a Documents block above the guide links the six documents (the Owner's Manual,
+// GM Onboarding, Your First Two Sessions, both Quick Cards and the Player Guide) as PDFs and Word files,
+// from public/docs (built by npm run docs; the list is lib/docs-files.ts).
 
 import React from "react";
 import PageShell from "@/components/page-shell";
 import { HELP as HELP_RAW } from "@/lib/help-content.mjs";
 import { C, FORGE_RADIUS } from "@/lib/forge-theme";
 import { SAX } from "@/lib/theme";
+import DocLinks from "@/components/doc-links";
 
 type HelpBlock =
   | { kind: "p"; text: string }
@@ -48,6 +53,10 @@ export default function HelpPage() {
       <p style={{ color: C.muted, fontSize: 15, lineHeight: 1.6, margin: "0 0 20px", maxWidth: 640 }}>{HELP.subtitle}</p>
 
       <nav style={{ background: C.surface, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "14px 18px", marginBottom: 22, display: "flex", flexWrap: "wrap", gap: 8, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
+        <a href="#documents"
+          style={{ fontFamily: "ui-monospace, monospace", fontSize: 11.5, letterSpacing: "0.06em", textTransform: "uppercase", color: C.muted, textDecoration: "none", border: `1px solid ${C.line}`, borderRadius: 7, padding: "5px 11px" }}>
+          Documents
+        </a>
         {HELP.sections.map((s) => (
           <a key={s.id} href={`#${s.id}`}
             style={{ fontFamily: "ui-monospace, monospace", fontSize: 11.5, letterSpacing: "0.06em", textTransform: "uppercase", color: C.muted, textDecoration: "none", border: `1px solid ${C.line}`, borderRadius: 7, padding: "5px 11px" }}>
@@ -55,6 +64,15 @@ export default function HelpPage() {
           </a>
         ))}
       </nav>
+
+      <section id="documents" style={{ background: C.surface, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "20px 22px", marginBottom: 16, scrollMarginTop: 16, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>
+        <h2 style={{ fontFamily: SAX.serif, fontSize: 21, fontWeight: 700, margin: "0 0 6px", color: C.sun }}>Documents</h2>
+        <p style={{ color: C.muted, fontSize: 14, lineHeight: 1.6, margin: "0 0 6px" }}>
+          The same ground as this guide, written to be read start to finish, printed, or sent on. The two player
+          documents are also on your players&apos; own Help page.
+        </p>
+        <DocLinks />
+      </section>
 
       {HELP.sections.map((s) => (
         <section key={s.id} id={s.id} style={{ background: C.surface, border: `1px solid ${C.line}`, borderRadius: FORGE_RADIUS, padding: "20px 22px", marginBottom: 16, scrollMarginTop: 16, boxShadow: "inset 1px 1px 0 rgba(255,235,200,0.10), inset -1px -1px 0 rgba(0,0,0,0.55), inset 0 0 34px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.5)" }}>

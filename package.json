@@ -5,7 +5,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "test": "vitest run"
+    "test": "vitest run",
+    "docs": "npm --prefix scripts/build-docs install --no-audit --no-fund && node scripts/build-docs/build.mjs"
   },
   "dependencies": {
     "@discord/embedded-app-sdk": "2.5.0",
