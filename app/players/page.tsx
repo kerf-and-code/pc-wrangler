@@ -13,12 +13,15 @@ import SiteShell from "@/components/site/site-shell";
 //   3. a strip of five: the fight, maps, chat, the check-in, every character, each with a short caption.
 //      (2026-11-03: the fight was added for the players' Initiative page; five across from 1200px.)
 // No eyebrow labels and no dividers; space separates the groups, as on the home page.
+//
+// 2026-11-12 (push 53): the journal line said the Journal was private notes; private notes are Notes (the
+// Journal is the story so far and the read). The fight caption adds the shared tabletop and saves.
 
 export const metadata: Metadata = {
   title: "For players",
   description:
     "What Six Axes gives the players at the table: your own character page, the recap and journal, the "
-    + "lore you can see, the turn order in a fight, shared maps, group chat, scheduling, an anonymous check-in, and every character "
+    + "lore you can see, the shared tabletop and the turn order in a fight, shared maps, group chat, scheduling, an anonymous check-in, and every character "
     + "and campaign in one place. Your data stays yours.",
   alternates: { canonical: "/players" },
 };
@@ -36,7 +39,7 @@ const PAIR: { title: string; shot: Shot; paras: string[] }[] = [
     shot: { img: "/screens/players/recaps.png", w: 712, h: 908, alt: "A session recap as a player reads it" },
     paras: [
       "Miss a session, or forget what happened three weeks ago? Every session gets written up, so you can catch up in a minute instead of asking the table.",
-      "Your journal is yours alone: private notes on your character, your suspicions, your plans.",
+      "Your journal keeps your character's story so far. Your notes are yours alone: suspicions, plans, the names you will need again.",
     ],
   },
   {
@@ -52,7 +55,7 @@ const STRIP: { title: string; shot: Shot; text: string }[] = [
   {
     title: "In the fight",
     shot: { img: "/screens/players/initiative.png", w: 585, h: 1200, alt: "The players' initiative page on a phone: the turn order for round 1, with the current turn marked" },
-    text: "Follow the turn order on your phone while the GM runs the fight. You see whose turn it is, never the monsters' hit points.",
+    text: "Move your own token on the shared tabletop, follow the turn order on your phone, and roll the saves the GM calls for right where they appear. You see whose turn it is, never the monsters' hit points.",
   },
   {
     title: "The map",

@@ -12,6 +12,7 @@ import { softwareApplicationSchema } from "@/lib/seo";
 import { FULL_TOOLSET, FULL_TOOLSET_NOTE, THEMED_TABLE, PLANNED, systemsDots } from "@/lib/marketing/systems";
 import MobileMenu from "@/components/site/mobile-menu";
 import { LANDING_NAV, PILOT_CTA } from "@/lib/marketing/nav";
+import { CAPTURE_STORE_URL } from "@/lib/capture";
 
 // app/page.tsx
 //
@@ -39,6 +40,9 @@ import { LANDING_NAV, PILOT_CTA } from "@/lib/marketing/nav";
 // say plainly that only D&D Beyond rolls (whichever VTT they are sent to) and Foundry rolls arrive
 // automatically, not native Roll20 rolls. Push 43 (2026-11-12): Roll20 chat rolls now arrive too, through
 // the extension (push 38).
+// Push 53 (2026-11-12): the shared tabletop and the Discord Activity in the game-night row; Ask the
+// campaign in the wiki row; Calibration in the insight row; the integrations link Six Axes Capture in the
+// Chrome Web Store (lib/capture.ts) and name the tabletop as a source of rolls.
 //
 // Server-rendered, because this is the URL every link points at and a crawler needs the content.
 // Client islands: the section rail, the reveal observer, and the lit line, all progressive
@@ -242,7 +246,7 @@ export default function Home() {
           <h2 data-reveal>Your table already tells the story. This writes it down.</h2>
           <p className="nt-band-p" data-reveal>
             Nobody has to take notes. The Discord bot hears everyone, the Chrome extension catches every D&amp;D
-            Beyond roll, and nothing reaches the wiki until you approve it.
+            Beyond and Roll20 roll, and nothing reaches the wiki until you approve it.
           </p>
           <LitLine className="nt-lit" text="That Moderate fight left them on a third of their hit points. Your Moderates are landing like Hards." />
         </div>
@@ -263,6 +267,11 @@ export default function Home() {
           the players&apos;. Your players follow the turn order on their phones without ever seeing a
           monster&apos;s hit points.
         </p>
+        <p>
+          Or play the whole fight on the shared tabletop: battle maps with fog, walls and doors, tokens each
+          player moves for their own character, area templates that call for a save from everyone inside, and
+          the same table inside your Discord voice call as an Activity.
+        </p>
       </Row>
 
       {/* WIKI */}
@@ -279,6 +288,10 @@ export default function Home() {
           exactly what appears, so the setting and the cast can go public while the things your players have
           not found yet stay yours.
         </p>
+        <p>
+          Forgot what the party promised the harbourmaster? Ask the campaign in your own words, and the answer
+          comes back with every claim linked to the line or the entry it came from.
+        </p>
       </Row>
 
       {/* INSIGHT */}
@@ -292,6 +305,10 @@ export default function Home() {
         <p>
           It also builds a read of how each player engages, across six axes. It is not a score and no axis
           is the good one. It exists so you can give someone a scene that plays to what they actually enjoy.
+        </p>
+        <p>
+          And it checks your fights: each finished encounter set against the difficulty it was built at, next
+          to how it actually went. Below ten fights it shows the numbers and concludes nothing.
         </p>
         <ul className="nt-axes">
           {TAVERN_ORDER.map((k) => (
@@ -381,10 +398,11 @@ export default function Home() {
             Daggerheart and Draw Steel attributions.
           </p>
           <div className="nt-integrations" data-reveal>
-            <p><strong>Discord.</strong> The bot records your voice channel with each player on their own track.</p>
-            <p><strong>D&amp;D Beyond.</strong> The browser extension catches every roll made there, whichever virtual tabletop it is sent on to.</p>
+            <p><strong>Discord.</strong> The bot records your voice channel with each player on their own track, and the table opens inside the call as an Activity.</p>
+            <p><strong>D&amp;D Beyond.</strong> The browser extension, {CAPTURE_STORE_URL ? <a href={CAPTURE_STORE_URL} className="nt-link" target="_blank" rel="noreferrer">Six Axes Capture</a> : "Six Axes Capture"}, catches every roll made there, whichever virtual tabletop it is sent on to.</p>
             <p><strong>Roll20.</strong> Turn on Roll20 in the same extension and it reads /r rolls and the 2024 D&amp;D sheet&rsquo;s rolls from your game&rsquo;s chat.</p>
             <p><strong>Foundry VTT.</strong> A module pipes every roll straight in. <Link href="/foundry" className="nt-link">Set it up</Link></p>
+            <p><strong>The Six Axes tabletop.</strong> Rolls made on the built-in table land in the session with nothing to install.</p>
             <p><strong>In person.</strong> One laptop or tablet records the room, and the rolls your table says out loud are read from the transcript.</p>
           </div>
         </div>

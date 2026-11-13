@@ -21,6 +21,9 @@ import { FULL_TOOLSET, FULL_TOOLSET_NOTE, THEMED_TABLE, systemsAnd } from "@/lib
 // 2026-11-03: added "Running the night" (Tonight, the combat tracker, the players' Initiative page, the
 // GM screen; capture combat.png), and brought the systems and compendium copy up to the current library
 // (about 16,000 compendium entries, each labeled by book; partnered publishers' content with permission).
+//
+// 2026-11-12 (push 53): the night card adds the shared tabletop and the Discord Activity, the insight card
+// adds Calibration, and the capture card names where rolls come from (extension, Foundry, tabletop).
 
 type Feature = {
   key: string;
@@ -39,7 +42,7 @@ const FEATURES: Feature[] = [
     title: "It knows what you rolled",
     lead: "The one thing a microphone cannot tell you.",
     paras: [
-      "Every session tool transcribes and summarises. Six Axes also captures the mechanics: attacks, saves, damage, hit points, who rolled what and when. On a supported virtual tabletop the numbers arrive automatically; in person, it reads the rolls your table says out loud.",
+      "Every session tool transcribes and summarises. Six Axes also captures the mechanics: attacks, saves, damage, hit points, who rolled what and when. Rolls on D&D Beyond and in Roll20 arrive through the Six Axes Capture extension, Foundry rolls through a module, and rolls on the Six Axes tabletop on their own; in person, it reads the rolls your table says out loud.",
       "That turns into arithmetic nobody else can do. It knows the fight it called Moderate left the party at a third of their hit points, and it can tell you your Moderate encounters land like Hard ones, at your table, across a whole campaign, with its own uncertainty shown so a thin read reads as thin.",
     ],
     img: "/screens/mechanics.png",
@@ -53,6 +56,7 @@ const FEATURES: Feature[] = [
     paras: [
       "Tonight walks you through the session from start to finish: who is here, consent, recording, a quick log for the moment you will want to remember, and the wrap-up. Build a fight on the encounter balancer, save it with its stat blocks, and press Run.",
       "The combat tracker handles initiative, hit points, temporary hit points and conditions, with one-click attack and damage rolls from each monster's stat block. Those rolls land in the session's Mechanics next to the players'. Your players follow the turn order on their phones, without ever seeing a monster's hit points, and the GM screen keeps the rules cards you need pinned beside you.",
+      "Or run it on the shared tabletop: battle maps with fog, walls, doors and floors, tokens each player moves for their own character, area templates that call for a save from everyone inside, card decks, handouts and sound. The same table opens inside your Discord voice call as an Activity.",
     ],
     img: "/screens/combat.png",
     imgAlt: "The combat tracker: initiative order, hit points and AC for player characters and goblins, with the Goblin Hexer's stat block and attack buttons open",
@@ -77,6 +81,7 @@ const FEATURES: Feature[] = [
     paras: [
       "Which threads have gone stale, who has not had a scene in a while, that one character quietly holding two thirds of the loot, the things you half-notice on the night and forget by the next.",
       "And a read of how each player engages across six axes, tactics, arcana, voice, exploration, rapport, and nerve, comparing what they say they like against how they actually play. It is not a score and no axis is the good one; it is there so you can give someone the scene they would love.",
+      "And Calibration checks your fights: each finished encounter set against the difficulty it was built at, next to how it actually went, in rounds, hit points lost and characters dropped. Below ten fights it shows the numbers and concludes nothing.",
     ],
     img: "/screens/dispositions.png",
     imgAlt: "Player disposition radar cards across the six axes",

@@ -12,7 +12,8 @@ import { FULL_TOOLSET, THEMED_TABLE, systemsAnd } from "@/lib/marketing/systems"
 // Quick answers, weighted toward the questions a table actually asks first: consent, recording,
 // and data ownership. Updated 2026-11-03: consent split online (per person) vs in person (room), the
 // provider list, Roll20 corrected (only D&D Beyond rolls sent on to it are captured; push 43: Roll20 chat rolls now too), and a during-play
-// answer for Tonight, combat and the compendium. Native <details>/<summary> accordions, so it is server-rendered with no client
+// answer for Tonight, combat and the compendium. Push 53 (2026-11-12): withdrawing names Settings and
+// /consent, rolls name Roll20 and the tabletop, and the during-play answer names the tabletop. Native <details>/<summary> accordions, so it is server-rendered with no client
 // JS and stays crawlable. Allowlisted in proxy.ts.
 
 export const metadata: Metadata = {
@@ -45,7 +46,7 @@ const FAQ: QA[] = [
         Online, each person, one at a time: over Discord every player is on their own track, so anyone
         who declines is simply left out and the rest of the table can still record. In person, the whole
         room: one microphone cannot leave one voice out, so recording only starts once everyone present
-        agrees. Either way, a player can withdraw at any time by telling the GM.
+        agrees. Either way, a player can withdraw at any time: Stop recording me in their Settings, /consent in Discord, or telling the GM. Online, the bot stops keeping their voice within about a minute.
       </>
     ),
   },
@@ -87,8 +88,8 @@ const FAQ: QA[] = [
       <>
         Two things: the words spoken at the table, transcribed, and the mechanics, who rolled what, the
         damage, the saves, the hit points. Rolls made on D&amp;D Beyond (whichever virtual tabletop they
-        are sent on to) and in Foundry arrive automatically, the GM&apos;s own rolls come from the built-in
-        dice roller and combat tracker, and in person it reads the numbers your table says out loud. You
+        are sent on to), in Roll20, in Foundry and on the Six Axes tabletop arrive automatically, the
+        GM&apos;s own rolls come from the built-in dice roller and combat tracker, and in person it reads the numbers your table says out loud. You
         approve what gets filed into the wiki.
       </>
     ),
@@ -101,7 +102,8 @@ const FAQ: QA[] = [
         for moments worth remembering, and the wrap-up. The combat tracker runs initiative, hit points and
         conditions with one-click rolls from each monster&apos;s stat block, while players follow the turn
         order on their phones. Say a spell or a condition and the rules compendium puts its card on
-        screen.
+        screen. And the shared tabletop holds the battle map, tokens, fog and dice for everyone at once,
+        on the website or inside your Discord voice call.
       </>
     ),
   },
@@ -170,7 +172,7 @@ const FAQ_TEXT: { q: string; a: string }[] = [
   },
   {
     q: "Who agrees to being recorded?",
-    a: "Online, each person, one at a time: over Discord every player is on their own track, so anyone who declines is simply left out and the rest of the table can still record. In person, the whole room: one microphone cannot leave one voice out, so recording only starts once everyone present agrees. Either way, a player can withdraw at any time by telling the GM.",
+    a: "Online, each person, one at a time: over Discord every player is on their own track, so anyone who declines is simply left out and the rest of the table can still record. In person, the whole room: one microphone cannot leave one voice out, so recording only starts once everyone present agrees. Either way, a player can withdraw at any time: Stop recording me in their Settings, /consent in Discord, or telling the GM. Online, the bot stops keeping their voice within about a minute.",
   },
   {
     q: "Where does my table's data go?",
@@ -186,11 +188,11 @@ const FAQ_TEXT: { q: string; a: string }[] = [
   },
   {
     q: "What does it actually record?",
-    a: "Two things: the words spoken at the table, transcribed, and the mechanics: who rolled what, the damage, the saves, the hit points. Rolls made on D&D Beyond (whichever virtual tabletop they are sent on to) and in Foundry arrive automatically, the GM's own rolls come from the built-in dice roller and combat tracker, and in person it reads the numbers your table says out loud. You approve what gets filed into the wiki.",
+    a: "Two things: the words spoken at the table, transcribed, and the mechanics: who rolled what, the damage, the saves, the hit points. Rolls made on D&D Beyond (whichever virtual tabletop they are sent on to), in Roll20, in Foundry and on the Six Axes tabletop arrive automatically, the GM's own rolls come from the built-in dice roller and combat tracker, and in person it reads the numbers your table says out loud. You approve what gets filed into the wiki.",
   },
   {
     q: "Does it help while we are actually playing?",
-    a: "Yes. A Tonight page walks the GM through the night: who is here, consent, recording, a quick log for moments worth remembering, and the wrap-up. The combat tracker runs initiative, hit points and conditions with one-click rolls from each monster's stat block, while players follow the turn order on their phones. Say a spell or a condition and the rules compendium puts its card on screen.",
+    a: "Yes. A Tonight page walks the GM through the night: who is here, consent, recording, a quick log for moments worth remembering, and the wrap-up. The combat tracker runs initiative, hit points and conditions with one-click rolls from each monster's stat block, while players follow the turn order on their phones. Say a spell or a condition and the rules compendium puts its card on screen. And the shared tabletop holds the battle map, tokens, fog and dice for everyone at once, on the website or inside your Discord voice call.",
   },
   {
     q: "Can players keep things private from the GM?",

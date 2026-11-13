@@ -1,205 +1,169 @@
 # Six Axes: Your First Two Sessions
 
-A walkthrough of what actually happens, in order, the first two times you use this. Written
-so you can keep it open on a second monitor on game night.
+*What actually happens, in order, the first two times you use this. Written so you can keep it open on a second monitor on game night.*
 
-The first session is about proving the plumbing works. The second is where it starts paying
-you back.
+The first session is about proving the plumbing works. The second is where it starts paying you back.
 
----
-
-# Session One
+## Session One
 
 ## The week before
 
-**Do the two-minute test.** Join voice, `/record`, say a few words, `/stop`, have one player
-roll something. If events show on **Review** and a row shows on **Mechanics**, you are wired.
+**Do the two-minute test.** Online: join voice, /record, a few words, /stop, and have one player roll something. In person: Session → Record in person, thirty seconds, stop. If events show on Review and a row shows on Mechanics, you are wired. This is the single highest-value thing in this document: everything else can be fixed on the night; a broken setup cannot.
 
-This is the single highest-value thing in this document. Everything else can be fixed on the
-night; a broken bot cannot.
+**Make sure every player has Six Axes Capture**, if they roll on D&D Beyond or in Roll20. It is in the Chrome Web Store (search for Six Axes Capture). Send them the store link and your setup link, and give them the Player Guide.
 
-**Warn your D&D Beyond players about the first roll.** It will not attribute to their
-character. That is expected: the app has to learn their D&D Beyond id, and the first roll is
-what teaches it. The extension popup will show a **Link your character** picker; they choose
-once and it is permanent, and every earlier roll gets backfilled.
+**Warn your D&D Beyond players about the first roll.** It will not attribute to their character. That is expected: the app has to learn their D&D Beyond id, and the first roll teaches it. They choose once from a picker in the extension, and every earlier roll is backfilled. Skip this warning and at least one player will roll, see nothing, and quietly decide the tool is broken.
 
-If you skip this warning, at least one player will roll, see nothing, and quietly decide the
-tool is broken.
+**Check consent, BEFORE the night.** Every player should have tapped I consent when they ran /claim. Tonight shows who has and who has not. The bot discards the audio of anyone who has not consented as it arrives, so there is nothing to recover afterwards. A player can still fix it on the night (I consent in Discord, or in their Settings) and is recorded from about a minute later.
 
-**Check consent.** Everyone who claimed should have consented at claim, or via the `/claim`
-button in Discord. If someone has not, the pipeline will stop after the session rather than
-transcribe them anyway.
+**Optional: set the table.** If you will use the Six Axes tabletop, upload a map in its Scenes tab and add tokens (Everyone in the fight without a token gets one). Players see it once they have claimed and signed in.
 
 ## On the night
 
-### Before you start
+**Open Session → Tonight.** It picks tonight's session and walks you through the night in order. Everything below has a step on it.
 
-Say it out loud: **"I'm recording this session."** On Discord the bot joining the voice
-channel is the only signal, and half the table will not notice it.
+**Say it out loud: "I'm recording this session."** On Discord the bot joining the voice channel is the only signal, and half the table will not notice it.
 
-If someone would rather not be recorded, that is fine and it does not stop anything. Open
-**Play → Capture** and opt them out for this session. Their track is excluded from
-transcription and from analysis; everyone else records normally.
+Online, if someone would rather not be recorded, that is fine and it stops nothing. Opt them out for this session on After → **Capture**, or they press Stop recording me themselves; everyone else records normally. In person it is all or nothing, because one microphone cannot exclude one voice: everyone agrees, or you do not record that night.
 
-### Running it
+## Running it, online
 
-1. Everyone joins voice.
-2. You run `/record`.
-3. You play.
-4. You run `/stop`.
+- Everyone joins voice.
 
-That is the whole of it. The bot captures each speaker on their own track, opens a session,
-and links you as the narrator. Rolls from D&D Beyond arrive alongside, attributed to whoever
-made them.
+- You run /record.
 
-**If someone joins voice late, nothing breaks.** If the session runs long, it is captured in
-rotating chunks automatically.
+- You play.
+
+- You run /stop.
+
+The bot captures each speaker on their own track, opens a session, and links you as the narrator. Rolls from D&D Beyond, Roll20, Foundry or the tabletop arrive alongside, attributed to whoever made them. Late arrivals are fine, and long sessions are handled automatically. If the bot restarts mid-session, it rejoins and carries on, and tells you in your channel.
+
+## Running it, in person
+
+Session → **Record in person**. Confirm everyone agrees, press Start, and put the device somewhere central. **Glance at the level meter before you settle in:** it should move when someone speaks. The recording is saved on the device as it goes, so a closed tab loses nothing; press Stop when you wrap and it uploads.
+
+## Fights
+
+Saved an encounter on Prep → Encounters? Press **Run this encounter** and Session → **Combat** opens with initiative, HP, conditions and one-click attacks from each stat block. **Put all on the table** places the tokens on the tabletop. Players follow the turn order on their Initiative page, and saves you force on them appear on their screens to roll. End the fight when it is over: Calibration lists fights that were never ended.
 
 ## After you wrap
 
-**Do nothing.** Transcription starts on its own within a minute of `/stop`. Extraction follows
-it. Go to bed.
+Press **End and process** on Tonight. **Online: then do nothing.** Transcription starts on its own, extraction follows. Go to bed. In person there is one extra step waiting for you tomorrow.
 
-## The next day: Review
+## The next day
 
-This is the one thing that needs you, and it is the only one.
+**In person only: name the voices.** After → **Speakers**. The app has separated the voices but cannot name them. Each shows a sample line and how much it talks; the largest share is almost always you. Match them up and save. Lines from a voice you have not named are left out of extraction rather than guessed at, so this is what turns a recording into a session.
 
-**Play → Review.** The extractor has proposed events: who did what, which threads moved, what
-was found. Approve, edit, or reject each one.
+**Everyone: Review.** After → **Review**. The extractor has proposed events: who did what, which threads moved, what was found. Approve, edit or reject each one.
 
 - Use the **confidence threshold** to accept the obvious ones in a single click.
-- **Accept + create** turns a captured NPC, place, or faction into a Codex entry, seeded with
-  what you actually narrated about it. Your Codex starts filling itself here.
 
-**When you decide the last proposal, the session finishes itself.** The recap is drafted. The
-disposition model refreshes. There is no Done button. (If you want to leave some proposals
-undecided on purpose, a button appears to let you.)
+- **Accept + create** turns a captured NPC, place or faction into a Codex entry, seeded with what you actually narrated. Your Codex starts filling itself here.
 
-## Send the recap
+**When you decide the last proposal, the session finishes itself.** The recap is drafted. The disposition model refreshes. There is no Done button.
 
-**Play → Sessions.** The recap is already drafted. Read it, fix the names it got wrong, cut
-the bits that do not land.
-
-Then: **Email** or **Post to Discord**. Two buttons, one shared draft, so whatever is on
-screen is exactly what goes out. Nothing sends without you clicking.
+**Send the recap.** After → **Session log**. Read the draft, fix the names it got wrong, cut what does not land. Then **Email** or **Post to Discord**: two buttons, one shared draft. Nothing sends without you clicking.
 
 ## What to expect from session one
 
 **A good recap, and not much else.** That is correct, and it is not a fault.
 
-| Surface | After one session |
-|---|---|
-| Recap | Genuinely useful |
-| Codex | A few NPCs and places, if you narrated them |
-| Mechanics | The dice story of the night. Fun immediately. |
-| Timeline | Sparse |
-| **Dispositions** | **Mostly the model's starting assumption. Ignore them.** |
+| **Surface**      | **After one session**                                                                     |
+|------------------|-------------------------------------------------------------------------------------------|
+| **Recap**        | Genuinely useful                                                                          |
+| **Codex**        | A few NPCs and places, if you narrated them                                               |
+| **Mechanics**    | The dice story of the night. Fun immediately.                                             |
+| **Timeline**     | Sparse. Each place and person has a play button that replays the moment it first came up. |
+| **Calibration**  | Your fight, listed. Nothing concluded below ten fights.                                   |
+| **Dispositions** | Mostly the model's starting assumption. Ignore them.                                      |
 
-**Be honest with yourself about that last row.** A disposition built on one session is a prior
-wearing a number. The app says so in plain language and draws the uncertainty band under the
-score. **Wide band, thin evidence.** Do not open a conversation with a player about it.
+> **Be honest with yourself about that last row.** A disposition built on one session is a prior wearing a number. The app says so in plain language and draws the uncertainty band under the score. Wide band, thin evidence. Do not open a conversation with a player about it.
 
----
+## Session Two
 
-# Session Two
-
-Session one proved the plumbing. Session two is where the app starts doing things you could
-not do yourself.
+Session one proved the plumbing. Session two is where the app starts doing things you could not do yourself.
 
 ## Before: use the prep sheet
 
-**Story → Prep.** It now knows things.
+Prep → **Prep sheet**. It now knows things.
 
 - **Open threads** it heard you leave dangling.
+
 - **NPCs in play** that you introduced and have not returned to.
+
 - **Who has been quiet.** This is the one worth acting on.
-- **Suggest prep** pre-fills a planner from all of the above in one tap. Take what is useful,
-  ignore the rest.
 
-**Balance the fight for the party you actually have.** Play → **Encounters**. Pick who is
-showing up tonight (someone is always missing). Add the monsters. It tells you where the fight
-lands.
+- **Suggest prep** pre-fills a planner from all of the above in one tap.
 
-Two things it does that a generic calculator cannot:
+Not sure what was said? World → **Ask the campaign**: "what did we promise the harbourmaster?" gets a short answer with every claim linked back to the line it came from.
 
-- **If the module was written for four level-5 characters and you have three**, it tells you
-  how much XP to cut. Not roughly. Specifically.
-- **It tells you what your party cannot do.** No healer. No ranged option. No front line.
-  That moves a fight's real danger further than any multiplier, and the published tables do
-  not know about it.
+## Balance the fight for the party you actually have
 
-You can drop the balanced encounter straight into your prep sheet.
+Prep → **Encounters**. Pick who is showing up (someone is always missing), add the monsters, and it tells you where the fight lands, by the 2024 XP budget or the 2014 thresholds.
+
+- **If the module was written for four level-5 characters and you have three,** it tells you how much to cut. Not roughly. Specifically.
+
+- **It tells you what your party cannot do.** No healer. No ranged option. No front line. That moves a fight's real danger further than any multiplier.
+
+- **One fight can span several maps:** the decks of a ship, the floors of a tower. Pick the maps and where each monster starts.
+
+Need something that does not exist? Prep → **Monster maker** builds a stat block from scratch or from any monster in the compendium. It belongs to the campaign, so your co-GMs can use it too.
 
 ## On the night
 
-**Open with the recap.** Two minutes of "previously on." It gets everyone back into the story
-and it quietly rewards the players who read it during the week. This is the highest-return
-thing on this page.
+**Open with the recap.** Two minutes of "previously on." It gets everyone back into the story and quietly rewards the players who read it. This is the highest-return thing on this page.
 
-Then run it the same way: `/record` … play … `/stop`.
+Then run it the same way. Roll for the monsters in Combat or Session → **Roll**, so their rolls count in Mechanics next to the players'. That is the only way the app learns what your encounters actually cost.
 
 ## After: what is different this time
 
-**The Codex is compounding.** Each NPC accretes what you said about them, session by session.
-By session five you will have a campaign bible you never wrote.
+**The Codex is compounding.** Each NPC accretes what you said about them. Its Graph tab draws every connection at once. By session five you have a campaign bible you never wrote.
 
-**The Timeline has shape.** Arcs, loot, who found what and when.
+**The Timeline has shape.** Arcs, loot, who found what and when, and the in-game date if you keep a calendar.
 
-**Mechanics has a baseline.** Now the crits mean something, because there is something to
-compare them to.
+**Mechanics has a baseline.** Now the crits mean something. The dice tab looks at each die on its own and says plainly when it has too few rolls to say anything.
 
 **The Dashboard has flags.** Plain language, not charts.
 
-> **Pick exactly one flag and address it in your next prep.**
->
-> One deliberate adjustment a week compounds. Five at once is noise, and you will not be able
-> to tell which one worked.
+> **Pick exactly one flag and address it in your next prep.** One deliberate adjustment a week compounds. Five at once is noise, and you will not be able to tell which one worked.
 
 ## The dispositions, still
 
-Two sessions is still thin. The bands will still be wide.
+Two sessions is still thin. The bands will still be wide. **What to look for instead of a number:** an axis that is conspicuously quiet for one player. Not "their Rapport is 0.3", but "nobody has given this player a scene where Rapport was the answer." That is a prep problem, not a player problem, and it is fixable in one scene.
 
-**What to look for instead of a number:** an axis that is conspicuously quiet for one player.
-Not "their Rapport is 0.3" — that means little yet — but "nobody has given this player a
-scene where Rapport was the answer."
-
-That is a prep problem, not a player problem, and it is fixable in one scene.
-
----
-
-## When the dispositions actually start meaning something
-
-Roughly: **four or five sessions**, with events approved each time.
-
-Sooner if your players fill in the questionnaire (it gives the model somewhere to start).
-Sooner still once a player has run **more than one character**, because then the model can
-read the *player* underneath the characters, and a new PC no longer starts from nothing.
-
-**The app will tell you when the evidence is thin.** Believe it. It is the most useful thing
-it says.
-
----
+**They start meaning something after roughly four or five sessions**, with events approved each time. Sooner if your players fill in Character play style; sooner still once a player has run more than one character. When you are ready to share a read on the player, Insight → **Dispositions** has **Share with them**. Until you do, they cannot see it.
 
 ## The two mistakes everyone makes
 
-**1. Reading the dispositions too early.** They look like data from the first session. They
-are not. The uncertainty band is not decoration; it is the finding.
+**1. Reading the dispositions too early.** They look like data from the first session. They are not. The uncertainty band is not decoration; it is the finding.
 
-**2. Not warning players about the first roll.** They roll, nothing appears, they conclude the
-tool is broken, and they never look again. One sentence in your Discord channel prevents this
-entirely.
-
----
+**2. Not warning players about the first roll.** They roll, nothing appears, they conclude the tool is broken, and they never look again. One sentence in your Discord channel prevents this entirely.
 
 ## Where things live
 
-| You want | Go |
-|---|---|
-| The recap | Play → Sessions |
-| Approve events | Play → Review |
-| Balance a fight | Play → Encounters |
-| Opt someone out of recording | Play → Capture |
-| Fix a character's class or subclass | Table → Workspace |
-| The dice story | Insight → Mechanics |
-| Table-health flags | Insight → Dashboard |
-| Plan next session | Story → Prep |
+| **You want**                            | **Go**                     |
+|-----------------------------------------|----------------------------|
+| **Run the night**                       | Session → Tonight          |
+| **The shared map**                      | Session → Tabletop         |
+| **Run a fight**                         | Session → Combat           |
+| **Record a game in person**             | Session → Record in person |
+| **Approve events**                      | After → Review             |
+| **Name the voices afterwards**          | After → Speakers           |
+| **Edit and send the recap**             | After → Session log        |
+| **Opt someone out of recording**        | After → Capture            |
+| **Plan next session**                   | Prep → Prep sheet          |
+| **Balance a fight**                     | Prep → Encounters          |
+| **Build a monster**                     | Prep → Monster maker       |
+| **Fix a character's class or subclass** | Home → Workspace           |
+| **Invite links and the setup link**     | Home → Roster              |
+| **The dice story**                      | Insight → Mechanics        |
+| **How your fights went**                | Insight → Calibration      |
+| **Table-health flags**                  | Insight → Dashboard        |
+| **Share a player's read**               | Insight → Dispositions     |
+| **Ask what happened**                   | World → Ask the campaign   |
+| **Publish your codex**                  | World → Publish            |
+| **Build your world map**                | World → World builder      |
+
+---
+
+Generated from the Word document of the same name (updated 12 November 2026). Edit the document and regenerate with pandoc.

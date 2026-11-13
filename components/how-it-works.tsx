@@ -7,6 +7,8 @@ import { FORGE_FONTS, stonePanel, forgeHeading } from "@/lib/forge-theme";
 // recorded, what happens to it, and what you get back. Three steps, server-rendered so it is in the HTML
 // for crawlers and previews. Answers the evaluating GM's first question ("how does this even work?")
 // before any feature detail.
+//
+// 2026-11-12 (push 53): step 01 names Roll20 and the tabletop as roll sources, and says consent is per person.
 
 type Step = { n: string; title: string; body: string };
 
@@ -16,9 +18,9 @@ export const STEPS: Step[] = [
     title: "Record the session",
     body:
       "Play the way you already do. The Discord bot records your voice channel with each player on their "
-      + "own track; in person, it reads the dice and the numbers your table says out loud; and on D&D "
-      + "Beyond, the Chrome extension catches every roll. Everyone opts in first, and anyone can stop it "
-      + "at any time.",
+      + "own track; in person, it reads the dice and the numbers your table says out loud; on D&D Beyond "
+      + "and in Roll20, the Chrome extension catches every roll; and on the Six Axes tabletop, rolls land "
+      + "on their own. Only people who have agreed are recorded, and anyone can stop it at any time.",
   },
   {
     n: "02",

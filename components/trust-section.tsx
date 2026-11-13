@@ -12,13 +12,16 @@ import { FORGE_FONTS, forgeHeading } from "@/lib/forge-theme";
 // 2026-11-03: "Never used to train AI" was replaced. It promised that of every provider, and since Groq,
 // Replicate and Google Gemini joined the list, it is confirmed only for Deepgram and Anthropic (see
 // /privacy). Do not bring it back unless every provider's terms for the plan in use are confirmed.
+//
+// 2026-11-12 (push 53): "Everyone opts in, every time" described the old model. Consent is given once per
+// campaign and checked per person as the audio arrives (push 40), so the point now says that.
 
 type Point = { title: string; body: string };
 
 export const POINTS: Point[] = [
   {
-    title: "Everyone opts in, every time",
-    body: "No one is recorded until they have agreed, and anyone at the table can stop it at any point in the session.",
+    title: "Only the people who agreed",
+    body: "The bot keeps the voices of people who have consented and throws everyone else's away as it arrives. Anyone can switch their own recording off mid-session, and it stops within about a minute.",
   },
   {
     title: "The audio is on a clock",

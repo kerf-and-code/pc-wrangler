@@ -18,6 +18,10 @@ import { FULL_TOOLSET, THEMED_TABLE, systemsAnd } from "@/lib/marketing/systems"
 //
 // Server-rendered so the pitch is crawlable; the form itself is the only client island.
 //
+// 2026-11-12 (push 53): the consent paragraph described the old model ("the pipeline stops"). It now says
+// what happens: consent is checked per person as the audio arrives, and transcription still refuses to run
+// for someone who has neither consented nor been opted out.
+//
 // LAYOUT (2026-10): the home page's 40/60 split. The three reading sections sit in the 40% column and the
 // application form in the 60% column, so the form is in the first screen on desktop. On phones the
 // sections stack first, with a jump link to the form under the lead. The header's pilot button points
@@ -49,8 +53,10 @@ export default function PilotPage() {
             <h2 className="sn-h3">Recording other people, done properly</h2>
             <p className="sn-p">
               Every player consents once, when they claim their character, and is never asked again mid-game in
-              front of the whole table. If someone present has not consented, the pipeline stops rather than
-              transcribing them anyway. It is not a warning you can click past.
+              front of the whole table. On Discord the bot keeps only the voices of people who have consented and
+              throws everyone else&apos;s away as it arrives, and any player can switch their own recording off
+              mid-session. If someone present has neither consented nor been opted out, transcription refuses to
+              run. It is not a warning you can click past.
             </p>
             <p className="sn-p">
               Audio is deleted after 60 days, automatically, and nobody can extend that, including you. The
