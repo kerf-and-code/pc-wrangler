@@ -2776,7 +2776,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
     const st = stateRef.current; if (!st?.scene) return;
     const { data, error: er } = await supabase.from("vtt_effects").insert({ campaign_id: campaignId, scene_id: st.scene.id, token_id: tokenId, owner: st.me, kind: fxKind, radius_ft: fxRadius })
       .select("id, scene_id, token_id, owner, kind, radius_ft").single();
-    if (er || !data) { setChatErr(`Could not add the effect: ${er?.message ?? "no row"}`); return; }
+    if (er || !data) { setChatErr(/row-level security/i.test(er?.message ?? "") ? "You can put effects only on tokens you control." : `Could not add the effect: ${er?.message ?? "no row"}`); return; }
     effectsRef.current.set((data as TokenEffect).id, data as TokenEffect); requestDraw(); setTick((v) => v + 1);
   };
   const removeTokenEffect = async (id: string) => {
@@ -3268,7 +3268,8 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                 onRead={(pn) => void readPin(pn)} onClose={() => setOpenPin(null)} />
             </div>
           )}
-          {scene && tool === "select" && selected.length === 1 && tokensRef.current.get(selected[0]) && (() => {
+          {/* push 52: the effects bar only on a token you control (the server refuses the rest since p172) */}
+          {scene && tool === "select" && selected.length === 1 && tokensRef.current.get(selected[0]) && (isGm || tokensRef.current.get(selected[0])!.mine) && (() => {
             const tk = tokensRef.current.get(selected[0])!;
             const list = [...effectsRef.current.values()].filter((f) => f.token_id === tk.id);
             return (
@@ -3673,6 +3674,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                 selected={sel.length === 1 && sel[0].mine ? libTokenFrom(sel[0]) : null}
                 characters={myChars.map((p) => ({ id: p.character_id!, name: p.name }))}
                 centre={viewCentre} say={say}
+                onTakenOff={(id) => { tokensRef.current.delete(id); setSelected((s) => s.filter((x) => x !== id)); requestDraw(); setTick((n) => n + 1); }}
                 placed={[...tokensRef.current.values()].filter((t) => (t.style as { placedBy?: string } | null)?.placedBy === me).map((t) => ({ id: t.id, name: t.name }))} />
             </div>
           )}

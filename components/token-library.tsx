@@ -39,7 +39,7 @@ function Thumb({ url, name }: { url: string | null; name: string }) {
     : <span aria-hidden style={{ width: 30, height: 30, borderRadius: "50%", background: C.surface2, display: "grid", placeItems: "center", fontSize: 12, color: C.muted, flex: "0 0 auto" }}>{name.slice(0, 2)}</span>;
 }
 
-export default function TokenLibrary({ supabase, campaignId, me, isGm, selected, characters, onPlaceGm, centre, say, placed }: {
+export default function TokenLibrary({ supabase, campaignId, me, isGm, selected, characters, onPlaceGm, centre, say, placed, onTakenOff }: {
   supabase: Supa; campaignId: string; me: string; isGm: boolean;
   /** the one selected token on the table, if any, to save or give */
   selected: LibToken | null;
@@ -50,6 +50,8 @@ export default function TokenLibrary({ supabase, campaignId, me, isGm, selected,
   say: (text: string, ok?: boolean) => void;
   /** player: the tokens they placed on this scene */
   placed?: Who[];
+  /** player: a placed token was taken off, so the table can drop it at once (push 52) */
+  onTakenOff?: (id: string) => void;
 }) {
   const [mine, setMine] = useState<Item[] | null>(null);
   const [given, setGiven] = useState<Item[]>([]);
@@ -99,7 +101,9 @@ export default function TokenLibrary({ supabase, campaignId, me, isGm, selected,
     void run(() => supabase.rpc("tabletop_place_library_token", { p_item: it.id, p_character: asId, p_x: c.x, p_y: c.y }), "place the token", `${it.name} is on the table.`);
   };
   const remove = (it: Item) => run(() => supabase.from("vtt_token_library").delete().eq("id", it.id), "remove the token", it.owner === me ? `${it.name} removed from your tokens.` : `${it.name} taken back.`);
-  const takeOff = (t: Who) => run(() => supabase.rpc("tabletop_remove_placed_token", { p_token: t.id }), "take it off the table", `${t.name} taken off the table.`);
+  const takeOff = async (t: Who) => {
+    if (await run(() => supabase.rpc("tabletop_remove_placed_token", { p_token: t.id }), "take it off the table", `${t.name} taken off the table.`)) onTakenOff?.(t.id);
+  };
 
   const row = (it: Item, actions: React.ReactNode) => (
     <div key={it.id} style={{ display: "flex", gap: 8, alignItems: "center", padding: "5px 0", borderBottom: `1px solid ${C.line}` }}>

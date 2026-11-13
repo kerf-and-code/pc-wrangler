@@ -138,9 +138,9 @@ function LinkLanding() {
                 Six Axes Capture
               </a>
             ) : (
-              <span style={{ color: C.text }}>Six Axes Capture ({CAPTURE_NOT_LISTED})</span>
-            )}{" "}
-            (sends your rolls to the table).
+              <span style={{ color: C.text }}>Six Axes Capture</span>
+            )}
+            , which sends your rolls to the table.{CAPTURE_STORE_URL ? "" : ` It is ${CAPTURE_NOT_LISTED}.`}
           </li>
           <li>Reopen this link. The code saves on its own.</li>
           <li>

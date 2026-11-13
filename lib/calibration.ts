@@ -145,7 +145,13 @@ export function reading(results: FightResult[], method: DndMethod): { rho: numbe
   const n = rs.length;
   const rho = spearman(rs.map((r) => r.predicted!.bandIndex), rs.map((r) => r.hpLost as number));
   if (n < MIN_FIGHTS_TO_JUDGE) {
-    return { rho, n, text: `${n} measured ${n === 1 ? "fight" : "fights"} so far. Below ${MIN_FIGHTS_TO_JUDGE}, any pattern is as likely to be chance as your table, so nothing is concluded yet.` };
+    // Push 52: the count is of fights with the party's HP recorded, which can be fewer than the fights
+    // listed below (it read "0 measured fights" above a table showing one).
+    const listed = results.filter((r) => r.method === method && r.predicted).length;
+    const lead = listed > n
+      ? `${listed} ${listed === 1 ? "fight" : "fights"} listed, ${n} with the party's HP recorded.`
+      : `${n} ${n === 1 ? "fight" : "fights"} with the party's HP recorded so far.`;
+    return { rho, n, text: `${lead} Below ${MIN_FIGHTS_TO_JUDGE}, any pattern is as likely to be chance as your table, so nothing is concluded yet.` };
   }
   if (rho === null) return { rho, n, text: `${n} fights, but they all landed in one band or lost the same HP, so there is nothing to compare yet.` };
   const strength = Math.abs(rho) < 0.2 ? "barely" : Math.abs(rho) < 0.4 ? "weakly" : Math.abs(rho) < 0.6 ? "moderately" : "strongly";
