@@ -53,6 +53,7 @@ import { clearPictures, pictureProblem, uploadPicture } from "@/lib/tabletop/tab
 import { nameFromFile } from "@/lib/tabletop/cards";
 import { AttackForm, EconomyBar, MarkerChips, MarkerPicker, PlayerEntryControls, SaveBanner, TurnUsed, isMyTurn, type FightEntry, type PendingSave } from "@/components/fight-controls";
 import { friendlyError, notReady } from "@/lib/friendly-error";
+import TokenLibrary, { libTokenFrom, type LibToken } from "@/components/token-library";
 import { askConfirm } from "@/lib/confirm";
 import { fmtDateTime } from "@/lib/format";
 
@@ -1675,7 +1676,10 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
       if ((row as unknown as { scene_id?: string }).scene_id !== st.scene.id) { if (tokensRef.current.delete(row.id)) requestDraw(); return; }
       const prev = tokensRef.current.get(row.id);
       const owner = row.character_id ? st.party.find((p) => p.character_id === row.character_id)?.profile_id : null;
-      const t: Token = { ...row, mine: st.role === "gm" || owner === st.me || (row.controlled_by ?? []).includes(st.me) };
+      // push 51: controlled_by holds character ids (p172); an old profile id still counts
+      const ctrl = row.controlled_by ?? [];
+      const t: Token = { ...row, mine: st.role === "gm" || owner === st.me || ctrl.includes(st.me)
+        || st.party.some((p) => p.profile_id === st.me && !!p.character_id && ctrl.includes(p.character_id)) };
       if (prev && (prev.x !== t.x || prev.y !== t.y) && !drag.current?.now.has(t.id)) {
         const from = remoteDrag.current.get(t.id) ?? shownPos(prev);
         shown.current.set(t.id, { x: t.x, y: t.y, fx: from.x, fy: from.y, t0: performance.now() });
@@ -3390,7 +3394,7 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6, padding: 8, borderBottom: `1px solid ${C.line}` }}>
             <button type="button" onClick={() => setPanel("chat")} style={seg(panel === "chat")}>Chat</button>
             <button type="button" onClick={() => setPanel("turns")} style={seg(panel === "turns")}>Turns{fight ? ` (${fight.round})` : ""}</button>
-            {isGm && <button type="button" onClick={() => setPanel("tokens")} style={seg(panel === "tokens")}>Tokens</button>}
+            <button type="button" onClick={() => setPanel("tokens")} style={seg(panel === "tokens")}>{isGm ? "Tokens" : "My tokens"}</button>
             {isGm && <button type="button" onClick={() => setPanel("scenes")} style={seg(panel === "scenes")}>Scenes</button>}
             <button type="button" onClick={() => setPanel("handouts")} style={seg(panel === "handouts")}>Handouts{handouts.length ? ` (${handouts.length})` : ""}</button>
             <button type="button" onClick={() => setPanel("tables")} style={seg(panel === "tables")}>Tables</button>
@@ -3663,6 +3667,15 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
             </div>
           )}
 
+          {panel === "tokens" && !isGm && (
+            <div style={{ flex: 1, overflowY: "auto", padding: 12 }}>
+              <TokenLibrary supabase={supabase} campaignId={campaignId} me={me} isGm={false}
+                selected={sel.length === 1 && sel[0].mine ? libTokenFrom(sel[0]) : null}
+                characters={myChars.map((p) => ({ id: p.character_id!, name: p.name }))}
+                centre={viewCentre} say={say}
+                placed={[...tokensRef.current.values()].filter((t) => (t.style as { placedBy?: string } | null)?.placedBy === me).map((t) => ({ id: t.id, name: t.name }))} />
+            </div>
+          )}
           {panel === "tokens" && isGm && (
             <div style={{ flex: 1, overflowY: "auto", padding: 12 }}>
               {!scene && <p style={{ color: C.muted, fontSize: 13 }}>Put a map on the table first (Scenes tab).</p>}
@@ -3753,10 +3766,12 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                         <button type="button" onClick={() => setMakerFor(sel[0].id)} style={small}>Open the token maker</button>
                         <span style={{ fontSize: 11.5, color: C.muted }}>Remove a background, cut a shape, add a border or an animated frame.</span>
                       </div>
+                      {/* push 51: control goes to characters, so it follows a character to a new player */}
                       <label style={label} htmlFor="tt-ctrl">Also controlled by</label>
                       <select id="tt-ctrl" multiple value={sel[0].controlled_by ?? []} onChange={(e) => void updateTokens([sel[0].id], { controlled_by: [...e.target.selectedOptions].map((o) => o.value) })} style={{ ...field, height: 72 }}>
-                        {party.filter((p) => p.character_id).map((p) => <option key={p.character_id!} value={p.profile_id}>{p.name}</option>)}
+                        {party.filter((p) => p.character_id && !isGmId(p.profile_id)).map((p) => <option key={p.character_id!} value={p.character_id!}>{p.name}</option>)}
                       </select>
+                      <p style={{ color: C.muted, fontSize: 11.5, margin: "4px 0 0" }}>For a familiar, summon or mount: the players of these characters can move it and see what it sees. Ctrl-click (Cmd on a Mac) to pick more than one.</p>
                     </>
                   )}
                   <button type="button" disabled={fightBusy} onClick={() => void addToFight(sel.map((t) => t.id))} style={{ ...small, width: "100%", marginTop: 10, borderColor: C.sun, color: C.sun }}>
@@ -3839,6 +3854,14 @@ export default function TabletopClient({ campaignId }: { campaignId: string }) {
                   </button>
                 </>
               )}
+              {/* push 51: the GM's own token library, and tokens given into players' libraries */}
+              <div style={{ borderTop: `1px solid ${C.line}`, marginTop: 14 }}>
+                <TokenLibrary supabase={supabase} campaignId={campaignId} me={me} isGm
+                  selected={sel.length === 1 ? libTokenFrom(sel[0]) : null}
+                  characters={party.filter((p) => p.character_id && !isGmId(p.profile_id)).map((p) => ({ id: p.character_id!, name: p.name }))}
+                  onPlaceGm={(t: LibToken) => { if (!scene) { say("Put a map on the table first (Scenes tab)."); return; } void addToken({ name: t.name, size: t.size, kind: (t.kind === "monster" || t.kind === "object" ? t.kind : "npc") as Token["kind"], image_url: t.image_url, style: t.style }); }}
+                  centre={viewCentre} say={say} />
+              </div>
               {chatErr && <p role="status" style={{ color: C.warn, fontSize: 12, marginTop: 10 }}>{chatErr}</p>}
             </div>
           )}

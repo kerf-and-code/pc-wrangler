@@ -41,6 +41,14 @@ describe("what a watcher sees", () => {
     const f = feedForWatcher({ messages: [{ whisper_to: null }, { whisper_to: [] }, { whisper_to: ["x"] }, { gm_only: true }] });
     expect(f?.messages).toHaveLength(2);
   });
+  it("carries no profile ids, so it does not say whose eyes it is (push 51, B15)", () => {
+    const s = forWatcher({ me: "u1", party: [{ profile_id: "u1", name: "Mira" }, { profile_id: "u2", name: "Tov" }], tokens: [] });
+    expect(s?.me).toBeNull();
+    expect(s?.party?.map((m) => m.profile_id)).toEqual([null, null]);
+    expect(s?.party?.map((m) => m.name)).toEqual(["Mira", "Tov"]);
+    const f = feedForWatcher({ messages: [{ whisper_to: null, author_profile: "u1", body: "hi" }] });
+    expect(f?.messages?.[0]).toMatchObject({ author_profile: null, body: "hi" });
+  });
   it("strips the borrowed player's personal turn details", () => {
     const c = combatForWatcher({ order: [{ id: "1", mine: true, ac: 15, econ: {}, pendingSaves: [], speed: 30, hp: 10 }] });
     const e = c?.order?.[0] ?? {};

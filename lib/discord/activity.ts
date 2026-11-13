@@ -100,16 +100,23 @@ export const isUuid = (s: unknown): s is string => typeof s === "string" && UUID
 // A watcher reads through a player's eyes (activity_watch_profile), so anything that belongs to that
 // player is taken out: which tokens are theirs, whispers to or from them, and their own GM-only rolls.
 
+// Push 51 (audit round 2, B15): nor whose eyes they are. The payload used to carry the borrowed player's
+// profile id (state.me) and every player's profile id (the party list, each message's author), which
+// told a watcher whose account they were seeing through. A watcher needs none of them: names stay.
 type Tok = Record<string, unknown> & { mine?: boolean; controlled_by?: unknown };
-export function forWatcher<S extends { tokens?: Tok[] } | null>(state: S): S {
+type Member = Record<string, unknown> & { profile_id?: unknown };
+export function forWatcher<S extends { tokens?: Tok[]; party?: Member[]; me?: unknown } | null>(state: S): S {
   if (!state) return state;
   const tokens = (state.tokens ?? []).map((t) => ({ ...t, mine: false, controlled_by: [] }));
-  return { ...state, tokens, role: "watch" } as S;
+  const party = Array.isArray(state.party) ? state.party.map((m) => ({ ...m, profile_id: null })) : state.party;
+  return { ...state, tokens, party, me: null, role: "watch" } as S;
 }
-type Msg = { whisper_to?: unknown; gm_only?: boolean };
+type Msg = Record<string, unknown> & { whisper_to?: unknown; gm_only?: boolean; author_profile?: unknown };
 export function feedForWatcher<F extends { messages?: Msg[] } | null>(feed: F): F {
   if (!feed) return feed;
-  return { ...feed, messages: (feed.messages ?? []).filter((m) => (m.whisper_to == null || (Array.isArray(m.whisper_to) && m.whisper_to.length === 0)) && !m.gm_only) } as F;
+  return { ...feed, messages: (feed.messages ?? [])
+    .filter((m) => (m.whisper_to == null || (Array.isArray(m.whisper_to) && m.whisper_to.length === 0)) && !m.gm_only)
+    .map((m) => ({ ...m, author_profile: null, whisper_to: null })) } as F;
 }
 type Entry = Record<string, unknown> & { mine?: boolean };
 export function combatForWatcher<C extends { order?: Entry[] } | null>(c: C): C {
