@@ -23,7 +23,7 @@ const makeDoc = (outDir) => build(`${outDir}/six-axes-first-two-sessions.docx`, 
   ["h2", "Running it, in person"],
   ["p", "Session → **Record in person**. Confirm everyone agrees, press Start, and put the device somewhere central. **Glance at the level meter before you settle in:** it should move when someone speaks. The recording is saved on the device as it goes, so a closed tab loses nothing; press Stop when you wrap and it uploads."],
   ["h2", "Fights"],
-  ["p", "Saved an encounter on Prep → Encounters? Press **Run this encounter** and Session → **Combat** opens with initiative, HP, conditions and one-click attacks from each stat block. **Put all on the table** places the tokens on the tabletop. Players follow the turn order on their Initiative page, and saves you force on them appear on their screens to roll. End the fight when it is over: Calibration lists fights that were never ended."],
+  ["p", "Saved an encounter on Prep → Encounters? Press **Run this encounter** and Session → **Combat** opens with initiative, HP, conditions and one-click attacks from each stat block. **Put all on the table** (the button names how many) places the tokens on the tabletop. Players follow the turn order on their Initiative page, and saves you force on them appear on their screens to roll. End the fight when it is over: Calibration lists fights that were never ended."],
   ["h2", "After you wrap"],
   ["p", "Press **End and process** on Tonight. **Online: then do nothing.** Transcription starts on its own, extraction follows. Go to bed. In person there is one extra step waiting for you tomorrow."],
 

@@ -33,7 +33,7 @@ const makeDoc = (outDir) => build(`${outDir}/six-axes-player-quick-card.docx`, [
 
   ["rule", "Your voice, your data"],
   ["p", "**Audio is deleted 60 days after it is recorded**, automatically. Nobody can extend it. Transcripts and moments stay; the recording of your voice does not."],
-  ["p", "**Change your mind any time.** Press **Stop recording me** in Settings, or run /consent choice:off in Discord. The bot stops keeping your audio within about a minute; **I consent to recording** turns it back on. **Settings → Download my data** gives you everything held about you."],
+  ["p", "**Change your mind any time.** Press **Stop recording me** in Settings, or run /consent choice:off in Discord. The bot stops keeping your audio within about a minute; **I consent to recording** turns it back on. **Settings → Export my data** gives you everything held about you."],
 ], { compact: true });
 
 export default makeDoc;

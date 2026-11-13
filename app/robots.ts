@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { SITE_URL } from "@/lib/seo";
 
 // app/robots.ts
 //
@@ -9,9 +10,13 @@ import type { MetadataRoute } from "next";
 // "not secret" is not "please index this": a crawler that finds one in a forum post should not put
 // a table's private chronicle into public search results. Disallowing them is a courtesy that costs
 // nothing, and the real gate remains the RPC each of those pages reads through.
+//
+// Push 55 (2026-11-12): the sitemap address comes from SITE_URL (lib/seo.ts), the same host the sitemap
+// and canonical tags use, instead of a pc-wrangler.vercel.app fallback. /docs/ (the six documents) is
+// covered by the "/" allow, and /me/help stays out with the rest of /me/.
 
 export default function robots(): MetadataRoute.Robots {
-  const base = process.env.NEXT_PUBLIC_SITE_URL || "https://pc-wrangler.vercel.app";
+  const base = SITE_URL;
   return {
     rules: [
       {

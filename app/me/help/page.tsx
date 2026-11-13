@@ -78,7 +78,7 @@ export default function PlayerHelpPage() {
             tabletop and on the Initiative page. Roll it there, or type the total from your own dice.
           </Q>
           <Q q="Can I take my data with me?">
-            Yes. <a href="/me/settings" style={a}>Settings</a>, then Download my data, gives you everything held
+            Yes. <a href="/me/settings" style={a}>Settings</a>, then Export my data, gives you everything held
             about you in one file.
           </Q>
           <p style={{ ...p, color: C.muted, margin: "14px 0 0" }}>

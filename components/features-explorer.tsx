@@ -24,6 +24,7 @@ import { FULL_TOOLSET, FULL_TOOLSET_NOTE, THEMED_TABLE, systemsAnd } from "@/lib
 //
 // 2026-11-12 (push 53): the night card adds the shared tabletop and the Discord Activity, the insight card
 // adds Calibration, and the capture card names where rolls come from (extension, Foundry, tabletop).
+// Push 55: the tabletop gets its own card with a capture of a real fight (public/screens/tabletop.webp).
 
 type Feature = {
   key: string;
@@ -56,10 +57,21 @@ const FEATURES: Feature[] = [
     paras: [
       "Tonight walks you through the session from start to finish: who is here, consent, recording, a quick log for the moment you will want to remember, and the wrap-up. Build a fight on the encounter balancer, save it with its stat blocks, and press Run.",
       "The combat tracker handles initiative, hit points, temporary hit points and conditions, with one-click attack and damage rolls from each monster's stat block. Those rolls land in the session's Mechanics next to the players'. Your players follow the turn order on their phones, without ever seeing a monster's hit points, and the GM screen keeps the rules cards you need pinned beside you.",
-      "Or run it on the shared tabletop: battle maps with fog, walls, doors and floors, tokens each player moves for their own character, area templates that call for a save from everyone inside, card decks, handouts and sound. The same table opens inside your Discord voice call as an Activity.",
     ],
     img: "/screens/combat.png",
     imgAlt: "The combat tracker: initiative order, hit points and AC for player characters and goblins, with the Goblin Hexer's stat block and attack buttons open",
+  },
+  {
+    key: "table",
+    label: "The tabletop",
+    title: "A tabletop the whole table shares",
+    lead: "The battle map, on everyone's screen at once.",
+    paras: [
+      "Battle maps with fog of war, walls and doors that block sight, and floors for a tower or a ship's decks. Each player moves their own character's token, plus any familiar or summon you hand them, and nobody else's.",
+      "Area templates select everyone inside and ask each player for the save on their own screen, taking the damage off when they roll. Card decks, handouts, pins and sound play for everyone, every roll lands in the session, and the same table opens inside your Discord voice call as an Activity.",
+    ],
+    img: "/screens/tabletop.webp",
+    imgAlt: "The Six Axes tabletop mid-fight: an Adult White Dragon's cone breath template over the party's tokens on a marble temple map, with the turn order, hit points and AC in the side panel",
   },
   {
     key: "wiki",

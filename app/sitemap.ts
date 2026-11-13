@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 import { createClient } from "@supabase/supabase-js";
 import { GUIDES } from "@/lib/guides/guides";
 import { SITE_URL } from "@/lib/seo";
+import { DOC_FILES, docHref } from "@/lib/docs-files";
 
 // app/sitemap.ts
 //
@@ -61,6 +62,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // from the site but previously absent from the sitemap.
     { url: `${base}/pilot`, changeFrequency: "monthly", priority: 0.6 },
     { url: `${base}/foundry`, changeFrequency: "yearly", priority: 0.4 },
+    // The six documents (push 55), as PDFs: public, linked from both Help pages, and the long-form answer
+    // to "how does Six Axes work". The Word copies are the same text, so only the PDFs are listed.
+    ...DOC_FILES.map((d) => ({
+      url: `${base}${docHref(d.slug, "pdf")}`,
+      changeFrequency: "monthly" as const,
+      priority: 0.5,
+    })),
     { url: `${base}/privacy`, changeFrequency: "yearly", priority: 0.2 },
     { url: `${base}/terms`, changeFrequency: "yearly", priority: 0.2 },
   ];

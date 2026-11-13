@@ -43,6 +43,8 @@ import { CAPTURE_STORE_URL } from "@/lib/capture";
 // Push 53 (2026-11-12): the shared tabletop and the Discord Activity in the game-night row; Ask the
 // campaign in the wiki row; Calibration in the insight row; the integrations link Six Axes Capture in the
 // Chrome Web Store (lib/capture.ts) and name the tabletop as a source of rolls.
+// Push 55 (2026-11-12): the tabletop gets its own row ("table", in the rail), with a capture of a real
+// fight (public/screens/tabletop.webp); the game-night row goes back to the combat tracker alone.
 //
 // Server-rendered, because this is the URL every link points at and a crawler needs the content.
 // Client islands: the section rail, the reveal observer, and the lit line, all progressive
@@ -74,6 +76,7 @@ const RAIL: RailSection[] = [
   { id: "sample", label: "See it" },
   { id: "why", label: "Why" },
   { id: "night", label: "Game night" },
+  { id: "table", label: "Tabletop" },
   { id: "wiki", label: "Living wiki" },
   { id: "insight", label: "Player insight" },
   { id: "maps", label: "Maps & world" },
@@ -267,10 +270,24 @@ export default function Home() {
           the players&apos;. Your players follow the turn order on their phones without ever seeing a
           monster&apos;s hit points.
         </p>
+      </Row>
+
+      {/* TABLETOP */}
+      <Row id="table" title="A tabletop the whole table shares" side="left"
+        img="/screens/tabletop.webp" w={1594} h={960}
+        alt="The Six Axes tabletop mid-fight: an Adult White Dragon's cone breath template over the party's tokens on a marble temple map, with the turn order, hit points and AC in the side panel">
         <p>
-          Or play the whole fight on the shared tabletop: battle maps with fog, walls and doors, tokens each
-          player moves for their own character, area templates that call for a save from everyone inside, and
-          the same table inside your Discord voice call as an Activity.
+          Put the fight on a battle map everyone sees at once. Fog you reveal a room at a time, walls and
+          doors that block sight, floors for a tower or a ship&apos;s decks, and tokens each player moves for
+          their own character.
+        </p>
+        <p>
+          Drop a dragon&apos;s breath as a cone and everyone inside is asked for the save on their own screen,
+          with the damage taken off when they roll. Cards, handouts and sound are there too, and every roll
+          lands in the session with nothing to install.
+        </p>
+        <p>
+          Playing on Discord? The same table opens inside your voice call as an Activity.
         </p>
       </Row>
 

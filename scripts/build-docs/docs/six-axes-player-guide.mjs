@@ -78,7 +78,7 @@ const makeDoc = (outDir) => build(`${outDir}/six-axes-player-guide.docx`, [
     ["**Codex**", "Everything you have been shown, across campaigns."],
     ["**Notes**", "Your own notes."],
     ["**You as a player**", "The same questionnaire, answered as yourself across every campaign."],
-    ["**Settings**", "Recording consent per campaign, which emails you get, Download my data, and deleting your account."],
+    ["**Settings**", "Recording consent per campaign, which emails you get, Export my data, and deleting your account."],
   ]),
   ["p", "The bell in the menu tells you when a session is scheduled, moved or cancelled and when a recap goes out. A daily email of anything unread is off until you turn it on in Settings. Six Axes can also be installed to your phone's home screen. **Help**, in your menu, has this guide and the Player Quick Card to read or download."],
 
@@ -105,7 +105,7 @@ const makeDoc = (outDir) => build(`${outDir}/six-axes-player-guide.docx`, [
   ["p", "**Only people who have consented are recorded.** The Discord bot keeps audio only from players who have consented and are not opted out for that session. Anyone else's audio is discarded as it arrives and never written down."],
   ["p", "**Change your mind at any time.** Press **Stop recording me** for that campaign in Settings, or run **/consent choice:off** in Discord, and the bot stops keeping your audio within about a minute. **I consent to recording** in Settings (or /consent choice:on) turns it back on, from about a minute later. Your GM can also leave you out of any session."],
   ["p", "**Audio is deleted 60 days after it is recorded**, automatically. Nobody can extend it, including your GM. The transcript and the moments drawn from it stay; the recording of your voice does not."],
-  ["p", "**You can take everything.** Settings → **Download my data** gives you one file: your characters, questionnaire answers, reads, threads, check-ins, transcribed words and email choices."],
+  ["p", "**You can take everything.** Settings → **Export my data** gives you one file: your characters, questionnaire answers, reads, threads, check-ins, transcribed words and email choices."],
   ["p", "**You can leave.** Deleting your account removes everything about you. Your characters stay in their campaigns, unlinked from you, because the story your table told together is theirs as well as yours. Every email has a one-click unsubscribe link."],
 
   ["h1", "The short version"],
