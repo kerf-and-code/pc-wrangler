@@ -8,9 +8,24 @@ primary_region = "sjc"
 
 [build]
 
+# Push 59 (2026-11-13): a DEDICATED CPU, not a shared one.
+#
+# A shared vCPU is guaranteed only 6.25% of a core (5 ms per 80 ms). It can run faster while it has burst
+# balance, at most 500 seconds' worth, earned back only while idle. Recording a table is steady work every
+# second: decrypting and decoding every voice packet (about 50 a second per speaker), staging each
+# speaker's minute of audio, encoding and uploading it. With six or seven speakers that is well above
+# 6.25%, so the balance ran out about 50 minutes into the 2026-11-13 session (two hours into Crowned
+# Calamity 19, with fewer speakers). From then on the machine was throttled to 6.25%: the event loop fell
+# 10 to 40 seconds behind, Discord saw the bot's heartbeats stop and dropped its voice connection, 24 times
+# in one night, until a reconnect failed for 70 seconds and the recording was finalized early. The
+# finalize itself crawled (13 minutes to trim one speaker's track, normally seconds).
+#
+# performance-1x is one full core with no quota, so a long session cannot run the machine dry. Fly's
+# minimum memory for it is 2 GB. Keep this here, not only in `fly scale`: a deploy applies [[vm]] from
+# this file and would put the machines back on a shared CPU.
 [[vm]]
-  size = "shared-cpu-1x"
-  memory = "1gb"
+  size = "performance-1x"
+  memory = "2gb"
 
 [[restart]]
   policy = "on-failure"
