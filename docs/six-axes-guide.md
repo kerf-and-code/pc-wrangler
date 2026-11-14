@@ -16,6 +16,8 @@ The name comes from the six axes the disposition model tracks: Voice, Tactics, A
 
 The newest changes first. Each one says where to find it.
 
+**14 November 2026: a dropped voice connection no longer ends the recording.** If Discord drops the bot's voice connection, the bot now keeps trying to get back in for up to 30 minutes while anyone is still in the voice channel, instead of giving up after about a minute and finishing the recording early. It says in your channel that it is still trying, and when it is back, how much was missed. The time it was away goes into the recording as silence, so the rest of the session stays in step. It only finishes early if the voice channel empties. The bot also now runs on a dedicated processor, which was the cause of the repeated drops on 13 November.
+
 **12 November 2026: the documents, in the app.** The six documents (the Owner's Manual, GM Onboarding, Your First Two Sessions, the GM and Player Quick Cards, and the Player Guide) are at the top of this Help page, to read as a PDF or download as a Word file. Players have a Help page of their own now (Help, in their menu), with the Player Guide, the Player Quick Card and short answers to the questions they ask most, in place of the FAQ.
 
 **12 November 2026: Six Axes Capture is in the Chrome Web Store.** Players now install Six Axes Capture from the Chrome Web Store (search for Six Axes Capture); the player setup link, the Table Tap card on the Roster and the home page all link to it. Nothing changes for a player who already has it.
@@ -241,6 +243,8 @@ The point of all this is not the charts. It is five small moves that make the ne
 **Recording into the right session.** /record opens a session automatically if none is live. After a false start, run /record session:2 to record into that exact number instead of creating a new one.
 
 **The bot does not join voice.** Join the voice channel yourself before (or right after) running /record; the bot follows the person who requested the recording. If a recording is stuck, /stop clears it.
+
+**The bot lost its voice connection.** Stay in the voice channel and do not run /record again: the bot comes back on its own, keeps trying for up to 30 minutes while anyone is in the channel, and keeps everything recorded so far. When it is back it says how long it was away, and that stretch is silent in the recording. It only gives up early if the channel empties; if it does give up, run /record to carry on into the same session.
 
 **A scheduling poll got no responses.** Players answer in Discord, so the bot must be able to post in your channel and players must have run /claim. If the poll did not appear at all, link the channel with /setup first.
 

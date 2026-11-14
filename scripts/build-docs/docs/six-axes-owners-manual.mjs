@@ -188,6 +188,7 @@ const makeDoc = (outDir) => build(`${outDir}/six-axes-owners-manual.docx`, [
     ["**/retire**", "GM only: removes a character from the campaign's active roster."],
   ]),
   ["p", "**A restart keeps the recording.** The bot saves each minute as it goes. If it restarts mid-session it rejoins and carries on; if it cannot, it finishes the recording from what it saved. It says so in your channel either way, and the saved minutes are deleted once the recording is finished."],
+  ["p", "**A dropped connection does not end the recording.** If Discord drops the bot's voice connection, it keeps trying to get back in for up to 30 minutes while anyone is still in the voice channel, and says in your channel that it is trying. When it is back it says how much was missed, and that time is silent in the recording so everything after stays in step. It only finishes early if the channel empties. Ask the table to stay in the channel and not run /record again."],
   ["p", "**The Discord Activity.** In a voice channel of a linked server, open Activities and pick Six Axes: everyone in the call sees the table's map with tokens and fog, the turn order and the rolls. Players move their own token, roll dice and initiative, answer saves and use cards; you can roll hidden. Someone not linked to a character sees it only if you turned on watching (Workspace)."],
 
   ["h1", "What your players see"],

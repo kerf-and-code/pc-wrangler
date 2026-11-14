@@ -34,6 +34,8 @@ Env:
                              in its voice channel for this long. 0 turns it off.)
   MAX_RECORDING_HOURS        (optional, default 8; finish a recording that has run this long.
                              0 turns it off.)
+  RECONNECT_GIVE_UP_SECONDS  (optional, default 1800; how long to keep trying to get a dropped voice
+                             connection back while people are still in the channel. Push 60.)
   WATCHDOG_SECONDS           (optional, default 300; exit, so Fly restarts the machine, when the
                              poll loop has not ticked for this long outside a finalize.)
   OPS_ALERT_WEBHOOK          (optional; a Discord webhook for a private ops channel. Stalls,
@@ -59,6 +61,57 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 logging.getLogger("discord.voice.receive.reader").setLevel(logging.WARNING)
 log = logging.getLogger("sidecar")
 
+
+class _VoiceNoise(logging.Filter):
+    """Push 60: one line a minute instead of three log records, with a traceback, for every voice
+    packet that fails to decode.
+
+    After a reconnect or a DAVE key change py-cord logs each undecodable packet three times (two INFO
+    lines from discord.opus, then a WARNING with a full traceback, plus an ERROR with a traceback from
+    the RTP reader). At several speakers that is dozens of records a second, written from the same
+    thread that keeps the voice connection alive; on 2026-11-13 it was part of what held that thread
+    long enough for Discord to drop the bot. The packets themselves are already handled (py-cord
+    conceals them), so the detail is noise: this keeps a count and reports it once a minute."""
+
+    WINDOW_SECONDS = 60.0
+
+    def __init__(self):
+        super().__init__()
+        self._opus = 0
+        self._rtp = 0
+        self._since = time.monotonic()
+
+    def filter(self, record):
+        if record.name == "discord.opus" and record.levelno < logging.ERROR:
+            # Each bad packet is three discord.opus records; count it once, on the WARNING.
+            if record.levelno == logging.WARNING:
+                self._opus += 1
+        elif record.name == "discord.voice.receive.reader" and str(record.msg).startswith("An error occurred while processing RTP packet"):
+            self._rtp += 1
+        else:
+            return True
+        self.flush()
+        return False
+
+    def flush(self, force=False):
+        """Report the count once a window has passed (or now, with force). Called from the filter and
+        from the poll loop, so the last burst is reported even when no more errors follow it."""
+        now = time.monotonic()
+        if not (self._opus or self._rtp):
+            self._since = now
+            return
+        if not force and now - self._since < self.WINDOW_SECONDS:
+            return
+        log.warning("voice: %d packet(s) could not be decoded and were concealed, %d RTP packet error(s), "
+                    "in the last %.0f s.", self._opus, self._rtp, now - self._since)
+        self._opus = self._rtp = 0
+        self._since = now
+
+
+_VOICE_NOISE = _VoiceNoise()
+logging.getLogger("discord.opus").addFilter(_VOICE_NOISE)
+logging.getLogger("discord.voice.receive.reader").addFilter(_VOICE_NOISE)
+
 TOKEN = os.environ["DISCORD_BOT_TOKEN"]
 SUPABASE_URL = os.environ["SUPABASE_URL"].rstrip("/")
 SERVICE_KEY = os.environ["SUPABASE_SERVICE_ROLE_KEY"]
@@ -69,6 +122,16 @@ POLL_SECONDS = int(os.environ.get("POLL_SECONDS", "4"))
 # a recording. A deadline is also the honest unit, since attempts only happen as often as
 # the poll and the two drift apart under load.
 RECONNECT_GRACE_SECONDS = int(os.environ.get("RECONNECT_GRACE_SECONDS", "40"))
+# Push 60: past the grace period the bot only gives up when the voice channel is empty. While people
+# are still in it, it keeps trying for up to RECONNECT_GIVE_UP_SECONDS, spacing attempts out to at
+# most RECONNECT_MAX_INTERVAL_SECONDS apart. On 2026-11-13 the 70-second rule finalized a recording
+# at 7:10pm while the table played on, and nothing after that was captured.
+RECONNECT_GIVE_UP_SECONDS = int(os.environ.get("RECONNECT_GIVE_UP_SECONDS", "1800"))
+RECONNECT_MAX_INTERVAL_SECONDS = int(os.environ.get("RECONNECT_MAX_INTERVAL_SECONDS", "30"))
+# Push 60: ffmpeg runs at a lower CPU priority than the bot, so encoding a chunk or trimming a track can
+# never take CPU time from the thread that keeps the voice connection alive. nice is part of coreutils
+# in the image; if it is ever missing, ffmpeg simply runs at normal priority.
+FFMPEG = (["nice", "-n", "10"] if shutil.which("nice") else []) + ["ffmpeg"]
 # How often to stamp heartbeat_at on rows this process is holding. Every tick would be
 # needlessly chatty; a minute is far tighter than any consumer of the value needs.
 HEARTBEAT_TICKS = int(os.environ.get("HEARTBEAT_TICKS", "15"))
@@ -229,7 +292,7 @@ async def encode_wav_to_ogg(wav_path: str, out_path: str, pad_to_seconds: float 
     """
     try:
         args = [
-            "ffmpeg", "-hide_banner", "-loglevel", "error",
+            *FFMPEG, "-hide_banner", "-loglevel", "error",
             "-i", wav_path, "-ac", "1",
         ]
         if pad_to_seconds and pad_to_seconds > 0:
@@ -252,7 +315,7 @@ async def encode_wav_to_ogg(wav_path: str, out_path: str, pad_to_seconds: float 
 async def make_silence_ogg(seconds: float, out_path: str) -> bool:
     try:
         proc = await asyncio.create_subprocess_exec(
-            "ffmpeg", "-hide_banner", "-loglevel", "error",
+            *FFMPEG, "-hide_banner", "-loglevel", "error",
             "-f", "lavfi", "-i", "anullsrc=r=48000:cl=mono",
             "-t", f"{max(seconds, 0.05):.3f}", "-c:a", "libopus", "-b:a", OPUS_BITRATE,
             "-f", "ogg", "-y", out_path,
@@ -273,7 +336,7 @@ async def _run_concat(list_path: str, out_path: str, copy: bool) -> bool:
     codec = ["-c", "copy"] if copy else ["-c:a", "libopus", "-b:a", OPUS_BITRATE]
     try:
         proc = await asyncio.create_subprocess_exec(
-            "ffmpeg", "-hide_banner", "-loglevel", "error",
+            *FFMPEG, "-hide_banner", "-loglevel", "error",
             "-f", "concat", "-safe", "0", "-i", list_path,
             *codec, "-f", "ogg", "-y", out_path,
             stderr=asyncio.subprocess.PIPE,
@@ -364,7 +427,7 @@ async def _detect_silences(path: str, total_secs: float,
     """
     try:
         proc = await asyncio.create_subprocess_exec(
-            "ffmpeg", "-hide_banner", "-nostats", "-i", path,
+            *FFMPEG, "-hide_banner", "-nostats", "-i", path,
             "-af", f"silencedetect=noise={noise_db}dB:d={min_sil:.3f}",
             "-f", "null", "-",
             stderr=asyncio.subprocess.PIPE,
@@ -499,7 +562,7 @@ async def trim_silence(src_path: str, out_path: str, total_secs: float):
         return (False, None, total_secs)
     try:
         proc = await asyncio.create_subprocess_exec(
-            "ffmpeg", "-hide_banner", "-loglevel", "error",
+            *FFMPEG, "-hide_banner", "-loglevel", "error",
             "-i", src_path, "-ac", "1", "-af", af,
             "-c:a", "libopus", "-b:a", OPUS_BITRATE, "-f", "ogg", "-y", out_path,
             stderr=asyncio.subprocess.PIPE,
@@ -689,6 +752,11 @@ class Recording:
         # Monotonic start of the CURRENT outage, or None while connected. The grace period
         # is measured from here rather than counted in attempts.
         self.dropped_at = None
+        # Push 60: wall-clock start of the current outage (for the silent gap that keeps the session's
+        # clock), when the next reconnect attempt is due, and whether the "still trying" notice went out.
+        self.dropped_wall = None
+        self.next_reconnect_at = 0.0
+        self.notified_long = False
         self.notify_channel_id = None   # campaign's linked Discord text channel
         self.notified_drop = False      # one drop notice per outage, cleared on reconnect
         self.started_at = time.monotonic()  # for MAX_RECORDING_HOURS
@@ -1129,44 +1197,81 @@ class Sidecar(discord.Client):
 
     async def maintain_recordings(self, http):
         """Per-tick upkeep on active recordings: chunk rotation and dead-connection recovery."""
+        _VOICE_NOISE.flush()
         for rec in list(self.recordings.values()):
             # Recover a dropped voice connection (1006 etc.).
+            #
+            # Push 60: the chunk is salvaged once per outage (not on every tick), attempts back off to at
+            # most RECONNECT_MAX_INTERVAL_SECONDS apart, and the recording is only finalized when the
+            # channel has emptied or the outage passes RECONNECT_GIVE_UP_SECONDS. On reconnecting, the
+            # outage goes in as silence, so everything after it stays on the session's clock.
             if not rec.vc.is_connected():
-                log.warning("recording %s: voice connection lost; salvaging chunk and reconnecting.", rec.rid)
-                # Tell the GM once per outage, and explicitly ask them NOT to re-run
-                # /record. The bot comes back on its own; a manual restart during the
-                # gap is exactly what lands a recording in the wrong channel.
-                if not rec.notified_drop:
-                    rec.notified_drop = True
-                    await self.notify(
-                        rec.notify_channel_id,
-                        "\u26A0\uFE0F Six Axes lost its voice connection and is reconnecting. "
-                        "Please stay in the voice channel and do NOT run /record again; "
-                        "it will come back on its own.",
-                    )
-                await self.rotate_chunk(rec, restart=False)
-                if await self.reconnect(rec):
-                    rec.notified_drop = False
-                    rec.dropped_at = None
-                    await self.notify(
-                        rec.notify_channel_id,
-                        "\u2705 Six Axes reconnected and is recording again.",
-                    )
-                else:
-                    rec.reconnect_attempts += 1
-                    if rec.dropped_at is None:
-                        rec.dropped_at = time.monotonic()
-                    outage = time.monotonic() - rec.dropped_at
-                    if outage >= RECONNECT_GRACE_SECONDS:
-                        log.warning("recording %s: reconnect failed for %.0fs (%d attempts); finalizing with what we have.",
-                                    rec.rid, outage, rec.reconnect_attempts)
+                now = time.monotonic()
+                if rec.dropped_at is None:
+                    log.warning("recording %s: voice connection lost; salvaging chunk and reconnecting.", rec.rid)
+                    rec.dropped_at = now
+                    rec.dropped_wall = time.time()
+                    rec.next_reconnect_at = now
+                    rec.notified_long = False
+                    # Tell the GM once per outage, and explicitly ask them NOT to re-run
+                    # /record. The bot comes back on its own; a manual restart during the
+                    # gap is exactly what lands a recording in the wrong channel.
+                    if not rec.notified_drop:
+                        rec.notified_drop = True
                         await self.notify(
                             rec.notify_channel_id,
-                            "\u274C Six Axes could not reconnect after several tries and has finalized "
-                            "this recording with what it captured. Run /record to start a new segment.",
+                            "\u26A0\uFE0F Six Axes lost its voice connection and is reconnecting. "
+                            "Please stay in the voice channel and do NOT run /record again; "
+                            "it will come back on its own.",
                         )
-                        await self.ops_alert(f"recording {rec.rid}: voice connection lost for {outage:.0f}s; finalized a partial capture")
-                        await self.finalize(http, rec, note="connection lost; partial capture")
+                    await self.rotate_chunk(rec, restart=False)
+                if now < rec.next_reconnect_at:
+                    continue
+                if await self.reconnect(rec):
+                    outage = time.monotonic() - rec.dropped_at
+                    if rec.dropped_wall:
+                        await self.add_restart_gap(rec, int(rec.dropped_wall * 1000))
+                    log.info("recording %s: back after %.0f s without a voice connection (%d failed attempt(s)).",
+                             rec.rid, outage, rec.reconnect_attempts)
+                    rec.notified_drop = False
+                    rec.dropped_at = None
+                    rec.dropped_wall = None
+                    rec.reconnect_attempts = 0
+                    await self.notify(
+                        rec.notify_channel_id,
+                        "\u2705 Six Axes reconnected and is recording again."
+                        + (f" About {outage / 60:.0f} minute(s) were not captured while it was away." if outage >= 120 else ""),
+                    )
+                    continue
+                rec.reconnect_attempts += 1
+                outage = now - rec.dropped_at
+                rec.next_reconnect_at = now + min(RECONNECT_MAX_INTERVAL_SECONDS, 5 * rec.reconnect_attempts)
+                people = self.people_in_channel(rec)
+                give_up = None
+                if not people and outage >= RECONNECT_GRACE_SECONDS:
+                    give_up = ("the voice channel is empty",
+                               "\u274C Six Axes lost its voice connection and the voice channel is now empty, so it "
+                               "has finished this recording with what it captured. Run /record to start again.")
+                elif outage >= RECONNECT_GIVE_UP_SECONDS:
+                    give_up = (f"no voice connection for {outage / 60:.0f} minutes",
+                               f"\u274C Six Axes could not get its voice connection back for {outage / 60:.0f} minutes "
+                               "and has finished this recording with what it captured. Run /record to start again.")
+                if give_up:
+                    log.warning("recording %s: reconnect failed for %.0fs (%d attempts), %s; finalizing with what we have.",
+                                rec.rid, outage, rec.reconnect_attempts, give_up[0])
+                    await self.notify(rec.notify_channel_id, give_up[1])
+                    await self.ops_alert(f"recording {rec.rid}: voice connection lost for {outage:.0f}s ({give_up[0]}); finalized a partial capture")
+                    await self.finalize(http, rec, note=f"connection lost; partial capture ({give_up[0]})")
+                elif outage >= RECONNECT_GRACE_SECONDS and not rec.notified_long:
+                    rec.notified_long = True
+                    log.warning("recording %s: still no voice connection after %.0fs; people are in the channel, so it keeps trying.",
+                                rec.rid, outage)
+                    await self.notify(
+                        rec.notify_channel_id,
+                        "\u23F3 Six Axes is still trying to get back into the voice channel. Everything recorded so far "
+                        "is kept. Please stay in the channel and do NOT run /record again.",
+                    )
+                    await self.ops_alert(f"recording {rec.rid}: no voice connection for {outage:.0f}s; still retrying")
                 continue
             rec.reconnect_attempts = 0
             rec.dropped_at = None
@@ -2344,12 +2449,18 @@ class Sidecar(discord.Client):
             log.warning("get_notify_channel(%s) failed: %r", campaign_id, e)
             return None
 
+    def people_in_channel(self, rec):
+        """Whether any person (never a bot) is in the recording's voice channel, from voice_locations, which
+        on_voice_state_update keeps current. While the gateway itself is down it holds the last known
+        state, so an outage never reads as an empty channel; RECONNECT_GIVE_UP_SECONDS bounds that case."""
+        return any(ch == str(rec.channel_id) and g == str(rec.guild_id)
+                   for (g, _u), ch in self.voice_locations.items())
+
     def auto_stop_reason(self, rec):
         """Why this recording should finish on its own now, or None. Counts people from voice_locations,
         which on_voice_state_update keeps current and which never holds bots."""
         now = time.monotonic()
-        people = any(ch == str(rec.channel_id) and g == str(rec.guild_id)
-                     for (g, _u), ch in self.voice_locations.items())
+        people = self.people_in_channel(rec)
         if people:
             rec.empty_since = None
         elif rec.empty_since is None:
