@@ -2117,18 +2117,46 @@ class Sidecar(discord.Client):
             return None
         return len(rows)
 
-    async def upload_blob(self, http, path, blob, content_type):
-        try:
-            r = await http.post(
-                f"{STORAGE}/{AUDIO_BUCKET}/{path}",
-                headers={**HEADERS, "Content-Type": content_type, "x-upsert": "true"},
-                content=blob,
-            )
-            r.raise_for_status()
-            return True
-        except Exception as e:
-            log.warning("upload(%s) failed: %r", path, e)
-            return False
+    async def upload_blob(self, http, path, blob, content_type, attempts=4):
+        """Upload one file to the audio bucket, retrying TRANSIENT failures with backoff (1, 2, 4 s).
+
+        Push 61. This used to try once. A single Cloudflare 520 from Supabase Storage on 2026-11-15
+        cost one saved chunk, and the same call uploads each speaker's finished track at finalize,
+        where one failure is a LOST SPEAKER for the whole session. Transient means a timeout, a
+        dropped connection, 408, 429 or any 5xx. Any other 4xx (a bad path, a rejected type) will
+        never succeed, so it is not retried. The upload is an upsert, so a retry after a request that
+        did land but whose reply was lost just writes the same file again."""
+        delay = 1.0
+        for attempt in range(1, attempts + 1):
+            try:
+                r = await http.post(
+                    f"{STORAGE}/{AUDIO_BUCKET}/{path}",
+                    headers={**HEADERS, "Content-Type": content_type, "x-upsert": "true"},
+                    content=blob,
+                )
+                r.raise_for_status()
+                if attempt > 1:
+                    log.info("upload(%s): succeeded on attempt %d.", path, attempt)
+                return True
+            except httpx.HTTPStatusError as e:
+                code = e.response.status_code
+                transient = code in (408, 429) or code >= 500
+                if not transient or attempt == attempts:
+                    log.warning("upload(%s) failed after %d attempt(s): %r", path, attempt, e)
+                    return False
+                why = f"HTTP {code}"
+            except httpx.TransportError as e:
+                if attempt == attempts:
+                    log.warning("upload(%s) failed after %d attempt(s): %r", path, attempt, e)
+                    return False
+                why = type(e).__name__
+            except Exception as e:
+                log.warning("upload(%s) failed: %r", path, e)
+                return False
+            log.info("upload(%s): attempt %d failed (%s); retrying in %.0f s.", path, attempt, why, delay)
+            await asyncio.sleep(delay)
+            delay *= 2
+        return False
 
     async def insert_track(self, http, job_id, campaign_id, storage_path, duration,
                            character_id=None, gm_identity_id=None, timeline_map=None, attempts=4):
